@@ -1,0 +1,711 @@
+# Single source of truth for the docs Examples pages.
+#
+# The card grids on docs/examples/examples_english.md, examples_spanish.md and
+# examples_chinese.md are generated from this file at build time by the mkdocs
+# hook tools/docs_hooks/examples_grid.py. Never edit the generated grids in the
+# Markdown pages: edit this file instead.
+#
+# To add a tutorial:
+#   1. Append an entry to `examples` with a unique `id`.
+#   2. Pick an `icon` shortcode from https://squidfunk.github.io/mkdocs-material/reference/icons-emojis/
+#      (material-*, fontawesome-*, octicons-* and simple-* are all bundled).
+#   3. Pick a `section` from `sections` and tags from `vocabulary`.
+#   4. Add a `title`, `summary` and `url` under each language it exists in. A
+#      language with no block (or no url) simply does not show the card.
+#
+# The build fails loudly on a duplicate id, an unknown section, a tag outside
+# `vocabulary`, a missing title/summary/url, or an icon that does not exist.
+
+# ---------------------------------------------------------------------------
+# Controlled vocabulary for the filter chips.
+# `levels` and `topics` are two independent filter groups: selecting several
+# values inside a group widens the result (OR), while selecting values across
+# both groups narrows it (AND).
+# ---------------------------------------------------------------------------
+vocabulary:
+  levels:
+    - beginner
+    - intermediate
+    - advanced
+  topics:
+    - single-series
+    - global-models
+    - statistical
+    - deep-learning
+    - foundation-models
+    - probabilistic
+    - interpretability
+    - feature-engineering
+    - anomaly-detection
+    - performance
+    - visualization
+    - case-study
+    - tools
+
+# ---------------------------------------------------------------------------
+# Languages. `page` is the file name inside docs/examples/, `label` is the text
+# used in the language switcher shown at the top of every examples page.
+# ---------------------------------------------------------------------------
+languages:
+  en:
+    page: examples_english.md
+    label: English
+  es:
+    page: examples_spanish.md
+    label: Español
+  zh:
+    page: examples_chinese.md
+    label: 中文
+
+# ---------------------------------------------------------------------------
+# Localised interface strings.
+#   {shown} and {total} are substituted in `count`.
+#   `labels` holds the chip text for every value in `vocabulary`.
+#   `fallback_note` is optional: when set, it is rendered as a note under the
+#   filter bar (used for partially translated pages).
+# ---------------------------------------------------------------------------
+ui:
+  en:
+    search_label: Search examples
+    search_placeholder: Search examples...
+    level: Level
+    topic: Topic
+    clear: Clear filters
+    count: "Showing {shown} of {total} examples"
+    count_all: "Showing all {total} examples"
+    no_results: No examples match your filters.
+    labels:
+      beginner: Beginner
+      intermediate: Intermediate
+      advanced: Advanced
+      single-series: Single series
+      global-models: Global models
+      statistical: Statistical models
+      deep-learning: Deep learning
+      foundation-models: Foundation models
+      probabilistic: Probabilistic
+      interpretability: Interpretability
+      feature-engineering: Feature engineering
+      anomaly-detection: Anomaly detection
+      performance: Performance
+      visualization: Visualization
+      case-study: Case study
+      tools: Tools
+
+  es:
+    search_label: Buscar ejemplos
+    search_placeholder: Buscar ejemplos...
+    level: Nivel
+    topic: Tema
+    clear: Quitar filtros
+    count: "Mostrando {shown} de {total} ejemplos"
+    count_all: "Mostrando los {total} ejemplos"
+    no_results: Ningún ejemplo coincide con los filtros seleccionados.
+    labels:
+      beginner: Principiante
+      intermediate: Intermedio
+      advanced: Avanzado
+      single-series: Serie única
+      global-models: Modelos globales
+      statistical: Modelos estadísticos
+      deep-learning: Deep learning
+      foundation-models: Modelos fundacionales
+      probabilistic: Probabilístico
+      interpretability: Interpretabilidad
+      feature-engineering: Ingeniería de variables
+      anomaly-detection: Detección de anomalías
+      performance: Rendimiento
+      visualization: Visualización
+      case-study: Caso práctico
+      tools: Herramientas
+
+  zh:
+    search_label: 搜索示例
+    search_placeholder: 搜索示例...
+    level: 难度
+    topic: 主题
+    clear: 清除筛选
+    count: "显示 {total} 个示例中的 {shown} 个"
+    count_all: "显示全部 {total} 个示例"
+    no_results: 没有符合筛选条件的示例。
+    fallback_note: 中文教程正在陆续翻译中，完整的示例列表请查看[英文页面](examples_english.md)。
+    labels:
+      beginner: 入门
+      intermediate: 进阶
+      advanced: 高级
+      single-series: 单序列
+      global-models: 全局模型
+      statistical: 统计模型
+      deep-learning: 深度学习
+      foundation-models: 基础模型
+      probabilistic: 概率预测
+      interpretability: 可解释性
+      feature-engineering: 特征工程
+      anomaly-detection: 异常检测
+      performance: 性能优化
+      visualization: 可视化
+      case-study: 实际案例
+      tools: 工具
+
+# ---------------------------------------------------------------------------
+# Sections, rendered in this order. A section with no examples in a given
+# language is skipped entirely on that page.
+# ---------------------------------------------------------------------------
+sections:
+  - id: getting-started
+    en:
+      title: "Getting Started: Fundamental Forecasting"
+      blurb: >-
+        This section provides essential tutorials for users who are just getting started with
+        time series forecasting. These examples cover the most fundamental models and techniques
+        to help you build a strong foundation in forecasting.
+    es:
+      title: "Primeros Pasos: Forecasting Fundamental"
+      blurb: >-
+        Esta sección proporciona tutoriales esenciales para los usuarios que están comenzando con
+        el pronóstico de series temporales. Estos ejemplos cubren los modelos y técnicas más
+        fundamentales para ayudarte a construir una base sólida en forecasting.
+    zh:
+      title: "入门指南：基础预测方法"
+      blurb: >-
+        本节面向时间序列预测初学者，涵盖最常用的模型与技术，帮助你打下扎实的理论与实践基础。
+
+  - id: global-models
+    en:
+      title: "Global Models: Multi-Series Forecasting"
+      blurb: >-
+        These tutorials focus on global models and multi-series forecasting, where you can explore
+        the use of techniques that handle multiple time series simultaneously and compare
+        performance across different forecasting approaches.
+    es:
+      title: "Modelos Globales: Forecasting Multi-Serie"
+      blurb: >-
+        Estos tutoriales se centran en modelos globales y en el pronóstico de series múltiples,
+        donde puedes explorar el uso de técnicas que manejan varias series temporales
+        simultáneamente y comparar el rendimiento entre diferentes enfoques de forecasting.
+    zh:
+      title: "全局模型：多序列预测"
+      blurb: >-
+        本节聚焦全局模型与多序列预测，介绍如何用同一个模型同时处理多条时间序列，并比较不同建模策略的表现。
+
+  - id: advanced-techniques
+    en:
+      title: "Advanced Techniques: Beyond Basic Models"
+      blurb: >-
+        For experienced users looking to deepen their forecasting skills, this section provides
+        advanced techniques, including probabilistic forecasting, handling missing values, and
+        more sophisticated ensemble methods.
+    es:
+      title: "Técnicas Avanzadas: Más Allá de los Modelos Básicos"
+      blurb: >-
+        Para usuarios experimentados que buscan profundizar en sus habilidades de forecasting,
+        esta sección ofrece técnicas avanzadas, como forecasting probabilístico y manejo de
+        valores ausentes.
+    zh:
+      title: "进阶技术：超越基础模型"
+      blurb: >-
+        本节面向希望深入提升预测能力的用户，涵盖概率预测、缺失值处理以及更复杂的集成方法等进阶技术。
+
+  - id: case-studies
+    en:
+      title: Real-World Challenges and Case Studies
+      blurb: >-
+        This section includes real-world applications of time series forecasting to tackle specific
+        challenges, such as forecasting energy demand, web traffic, and even cryptocurrency prices.
+        Learn how to apply forecasting techniques to practical use cases.
+    es:
+      title: Desafíos del Mundo Real y Estudios de Caso
+      blurb: >-
+        Esta sección incluye aplicaciones del mundo real del pronóstico de series temporales para
+        abordar desafíos específicos, como el pronóstico de la demanda de energía, el tráfico web
+        e incluso los precios de criptomonedas. Aprende cómo aplicar técnicas de forecasting a
+        casos prácticos.
+    zh:
+      title: 真实场景与案例研究
+      blurb: >-
+        本节展示时间序列预测在真实业务中的应用，例如电力需求预测、网站流量预测，甚至加密货币价格预测。
+
+# ---------------------------------------------------------------------------
+# Examples.
+# ---------------------------------------------------------------------------
+examples:
+
+  # --- Getting started ------------------------------------------------------
+
+  - id: py27-forecasting-with-ml
+    icon: material-chart-line
+    section: getting-started
+    tags: [beginner, single-series]
+    en:
+      title: "Skforecast: time series forecasting with machine learning"
+      summary: Build your first machine learning forecaster end to end, from lags to backtesting.
+      url: https://www.cienciadedatos.net/documentos/py27-time-series-forecasting-python-scikitlearn.html
+    es:
+      title: "Skforecast: forecasting series temporales con machine learning"
+      summary: Construye tu primer forecaster con machine learning, desde los lags hasta el backtesting.
+      url: https://www.cienciadedatos.net/documentos/py27-forecasting-series-temporales-python-scikitlearn.html
+    zh:
+      title: "Skforecast：用机器学习做时间序列预测"
+      summary: 从滞后特征到回测，完整走通第一个机器学习预测模型。
+      url: https://cienciadedatos.net/documentos/py27-time-series-forecasting-python-scikitlearn-cn.html
+
+  - id: py80-agentic-forecasting
+    icon: material-robot-outline
+    section: getting-started
+    tags: [intermediate, tools]
+    en:
+      title: Agentic forecasting with skforecast-AI
+      summary: An AI assistant that profiles your series, picks and validates a model, and returns the runnable skforecast script behind the forecast.
+      url: https://cienciadedatos.net/documentos/py80-agentic-forecasting-skforecast-ai
+    es:
+      title: Forecasting agéntico con skforecast-AI
+      summary: Un asistente de IA que perfila la serie, elige y valida un modelo, y devuelve el script de skforecast que genera la predicción.
+      url: https://cienciadedatos.net/documentos/py80-forecasting-agentico-skforecast-ai
+
+  - id: py78-skforecast-studio
+    icon: material-view-dashboard
+    section: getting-started
+    tags: [beginner, tools]
+    en:
+      title: "Skforecast Studio: time series forecasting made simple"
+      summary: Build forecasting models visually, no code required, and export production-ready skforecast Python code.
+      url: https://cienciadedatos.net/documentos/py78-skforecast-studio
+
+  - id: py77-statistical-models
+    icon: material-chart-bell-curve
+    section: getting-started
+    tags: [beginner, statistical, single-series]
+    en:
+      title: Forecasting with statistical models
+      summary: Overview of the classical statistical models available through ForecasterStats.
+      url: https://cienciadedatos.net/documentos/py77-forecasting-statistical-models.html
+
+  - id: py51-arima-sarimax
+    icon: material-trending-up
+    section: getting-started
+    tags: [beginner, statistical]
+    en:
+      title: ARIMA and SARIMAX models
+      summary: Fit, tune and validate ARIMA and SARIMAX models, including automatic order selection.
+      url: https://www.cienciadedatos.net/documentos/py51-arima-sarimax-models-python.html
+    es:
+      title: Modelos ARIMA y SARIMAX
+      summary: Ajusta, optimiza y valida modelos ARIMA y SARIMAX, incluyendo la selección automática del orden.
+      url: https://cienciadedatos.net/documentos/py51-modelos-arima-sarimax-python.html
+    zh:
+      title: ARIMA 和 SARIMAX 模型
+      summary: 拟合、调参并验证 ARIMA 与 SARIMAX 模型，包含阶数的自动选择。
+      url: https://www.cienciadedatos.net/documentos/py51-arima-sarimax-models-python-cn.html
+
+  - id: py39-gradient-boosting
+    icon: material-sitemap
+    section: getting-started
+    tags: [beginner, single-series]
+    en:
+      title: "Forecasting with gradient boosting: XGBoost, LightGBM and CatBoost"
+      summary: Compare the three main gradient boosting libraries on the same forecasting problem.
+      url: https://www.cienciadedatos.net/documentos/py39-forecasting-time-series-with-skforecast-xgboost-lightgbm-catboost.html
+    es:
+      title: "Forecasting con gradient boosting: XGBoost, LightGBM y CatBoost"
+      summary: Compara las tres principales librerías de gradient boosting sobre el mismo problema de forecasting.
+      url: https://www.cienciadedatos.net/documentos/py39-forecasting-series-temporales-con-skforecast-xgboost-lightgbm-catboost.html
+    zh:
+      title: "基于梯度提升的预测：XGBoost、LightGBM 与 CatBoost"
+      summary: 在同一个预测问题上比较三大梯度提升库的表现。
+      url: https://www.cienciadedatos.net/documentos/py39-forecasting-time-series-with-skforecast-xgboost-lightgbm-catboost-cn.html
+
+  - id: py72-categorical-series
+    icon: material-format-list-bulleted-type
+    section: getting-started
+    tags: [intermediate, single-series]
+    en:
+      title: Forecasting of categorical time series
+      summary: Predict the next category instead of the next value, using a classifier as the estimator.
+      url: https://cienciadedatos.net/documentos/py72-classification-forecasting-categorical-series.html
+
+  - id: py71-visualizing-time-series
+    icon: material-chart-timeline-variant
+    section: getting-started
+    tags: [beginner, visualization]
+    en:
+      title: Visualizing time series data
+      summary: Plots that reveal trend, seasonality and autocorrelation before you model anything.
+      url: https://cienciadedatos.net/documentos/py71-visualizing-time-series-data.html
+
+  - id: py76-exponential-smoothing
+    icon: material-chart-areaspline
+    section: getting-started
+    tags: [beginner, statistical]
+    en:
+      title: Exponential smoothing models
+      summary: ETS and Holt-Winters models for series with trend and seasonality.
+      url: https://cienciadedatos.net/documentos/py76-exponential-smoothing-models.html
+
+  - id: py73-arar
+    icon: material-chart-line-variant
+    section: getting-started
+    tags: [intermediate, statistical]
+    en:
+      title: ARAR forecasting models in Python
+      summary: An automated alternative to ARIMA that shortens long memory before modelling the remaining signal.
+      url: https://cienciadedatos.net/documentos/py73-arar-forecasting-models-python
+
+  # --- Global models --------------------------------------------------------
+
+  - id: py44-global-models-i
+    icon: material-chart-multiple
+    section: global-models
+    tags: [intermediate, global-models]
+    en:
+      title: "Global Forecasting Models I: Multi-series forecasting"
+      summary: Train a single model on many series at once and predict them all.
+      url: https://www.cienciadedatos.net/documentos/py44-multi-series-forecasting-skforecast.html
+    es:
+      title: "Modelos de Forecasting Globales I: Multi-series forecasting"
+      summary: Entrena un único modelo con muchas series a la vez y predícelas todas.
+      url: https://www.cienciadedatos.net/documentos/py44-multi-series-forecasting-skforecast-español.html
+
+  - id: py53-global-models-ii
+    icon: material-earth
+    section: global-models
+    tags: [intermediate, global-models]
+    en:
+      title: "Global Forecasting Models II: Comparative analysis of single and multi-series forecasting"
+      summary: When does one global model beat one model per series? A side-by-side comparison.
+      url: https://www.cienciadedatos.net/documentos/py53-global-forecasting-models.html
+    es:
+      title: "Modelos de Forecasting Globales II: Análisis comparativo de modelos de una y múltiples series"
+      summary: ¿Cuándo supera un modelo global a un modelo por serie? Una comparación directa.
+      url: https://www.cienciadedatos.net/documentos/py53-modelos-forecasting-globales.html
+
+  - id: py59-global-models-iii
+    icon: material-stairs
+    section: global-models
+    tags: [advanced, global-models, performance]
+    en:
+      title: "Global Forecasting Models III: Modeling thousand time series with a single global model"
+      summary: Scale to thousands of series while keeping training time and memory under control.
+      url: https://www.cienciadedatos.net/documentos/py59-scalable-forecasting-models.html
+    es:
+      title: "Modelos de Forecasting Globales III: Predecir mil series temporales con un único modelo"
+      summary: Escala a miles de series manteniendo bajo control el tiempo de entrenamiento y la memoria.
+      url: https://www.cienciadedatos.net/documentos/py59-modelos-forecasting-escalables.html
+
+  - id: py66-global-models-iv
+    icon: simple-kaggle
+    section: global-models
+    tags: [intermediate, global-models, case-study]
+    en:
+      title: "Global Forecasting Models IV: A step by step guide using Kaggle sticker sales data"
+      summary: A complete walkthrough of a Kaggle forecasting competition with a global model.
+      url: https://cienciadedatos.net/documentos/py66-forecasting-sticker-sales-kaggle.html
+    es:
+      title: "Modelos de Forecasting Globales IV: Guía paso a paso con Kaggle sticker sales"
+      summary: Recorrido completo de una competición de forecasting de Kaggle con un modelo global.
+      url: https://cienciadedatos.net/documentos/py66-forecasting-sticker-sales-kaggle-es.html
+
+  - id: py61-global-models-v
+    icon: material-basket
+    section: global-models
+    tags: [advanced, global-models, case-study]
+    en:
+      title: "Global Forecasting Models V: The M5 accuracy competition"
+      summary: What the winning M5 solutions teach us about global forecasting models.
+      url: https://www.cienciadedatos.net/documentos/py61-m5-forecasting-competition.html
+    es:
+      # No Spanish version exists; the Spanish index on cienciadedatos.net links
+      # to the English article as well.
+      title: "Modelos de Forecasting Globales V: La competición M5 Accuracy"
+      summary: Lo que las soluciones ganadoras del M5 enseñan sobre los modelos globales (artículo en inglés).
+      url: https://www.cienciadedatos.net/documentos/py61-m5-forecasting-competition.html
+
+  - id: py54-deep-learning
+    icon: material-layers
+    section: global-models
+    tags: [intermediate, deep-learning, global-models]
+    en:
+      title: Forecasting with deep learning
+      summary: RNN and LSTM forecasters with ForecasterRnn, from architecture to predictions.
+      url: https://cienciadedatos.net/documentos/py54-forecasting-with-deep-learning
+    es:
+      title: Forecasting con deep learning
+      summary: Forecasters RNN y LSTM con ForecasterRnn, desde la arquitectura hasta las predicciones.
+      url: https://cienciadedatos.net/documentos/py54-forecasting-con-deep-learning
+
+  - id: py68-deep-learning-at-scale
+    icon: material-layers-plus
+    section: global-models
+    tags: [advanced, deep-learning, global-models, performance]
+    en:
+      title: Forecasting at scale with deep learning
+      summary: Train a single neural network over many series without losing per-series accuracy.
+      url: https://cienciadedatos.net/documentos/py68-forecasting-at-scale-with-deep-learning.html
+
+  - id: py64-clustering
+    icon: material-graph-outline
+    section: global-models
+    tags: [advanced, global-models, feature-engineering]
+    en:
+      title: Clustering time series to improve forecasting
+      summary: Group similar series first, then fit one global model per cluster.
+      url: https://cienciadedatos.net/documentos/py64-clustering-time-series-forecasting.html
+    es:
+      title: Clustering de series temporales para mejorar los modelos de forecasting
+      summary: Agrupa primero las series similares y ajusta después un modelo global por grupo.
+      url: https://cienciadedatos.net/documentos/py64-clustering-series-temporales-forecasting.html
+
+  # --- Advanced techniques --------------------------------------------------
+
+  - id: py79-foundation-models
+    icon: material-chip
+    section: advanced-techniques
+    tags: [intermediate, foundation-models]
+    en:
+      title: Forecasting with foundation models
+      summary: Zero-shot forecasting with pre-trained models such as Chronos, TimesFM and Moirai.
+      url: https://www.cienciadedatos.net/documentos/py79-forecasting-with-foundation-models.html
+    es:
+      title: Forecasting con modelos fundacionales
+      summary: Forecasting zero-shot con modelos preentrenados como Chronos, TimesFM y Moirai.
+      url: https://cienciadedatos.net/documentos/py79-forecasting-con-modelos-fundacionales.html
+
+  - id: py42-probabilistic-forecasting
+    icon: material-chart-bell-curve-cumulative
+    section: advanced-techniques
+    tags: [advanced, probabilistic]
+    en:
+      title: Probabilistic forecasting with machine learning
+      summary: Prediction intervals and quantiles via bootstrapping, conformal methods and quantile regression.
+      url: https://www.cienciadedatos.net/documentos/py42-probabilistic-forecasting.html
+    es:
+      title: Forecasting probabilístico con machine learning
+      summary: Intervalos y cuantiles de predicción con bootstrapping, métodos conformales y regresión cuantílica.
+      url: https://cienciadedatos.net/documentos/py42-forecasting-probabilistico.html
+
+  - id: py60-multistep-intervals
+    icon: material-arrow-expand-vertical
+    section: advanced-techniques
+    tags: [advanced, probabilistic]
+    en:
+      title: "Probabilistic forecasting: prediction intervals for multi-step forecasting"
+      summary: Prediction intervals for multi-step horizons, balancing coverage against interval width.
+      url: https://cienciadedatos.net/documentos/py60-probabilistic-forecasting-prediction-intervals-multi-step-forecasting
+    es:
+      title: "Forecasting probabilístico: intervalos de predicción para forecasting multi-step"
+      summary: Intervalos de predicción en horizontes multi-step, equilibrando cobertura y anchura del intervalo.
+      url: https://cienciadedatos.net/documentos/py60-forecasting-probabilistico-intervalos-prediccion-forecasting-multi-step
+
+  - id: py74-crps
+    icon: material-bullseye-arrow
+    section: advanced-techniques
+    tags: [advanced, probabilistic]
+    en:
+      title: Continuous Ranked Probability Score (CRPS) in probabilistic forecasting
+      summary: Evaluate probabilistic forecasts with CRPS, the metric that scores the whole predicted distribution.
+      url: https://cienciadedatos.net/documentos/py74-continuous-ranked-probability-score-crps-probabilistic-forecasting
+
+  - id: py57-interpretable-models
+    icon: material-chart-gantt
+    section: advanced-techniques
+    tags: [intermediate, interpretability]
+    en:
+      title: Interpretable forecasting models
+      summary: Explain what drives a forecast using feature importance and SHAP values.
+      url: https://www.cienciadedatos.net/documentos/py57-interpretable-forecasting-models.html
+    es:
+      title: Interpretabilidad en modelos de forecasting
+      summary: Explica qué determina una predicción con importancia de variables y valores SHAP.
+      url: https://www.cienciadedatos.net/documentos/py57-modelos-forecasting-interpretables.html
+
+  - id: py70-drift-detection
+    icon: material-bell-alert
+    section: advanced-techniques
+    tags: [advanced, anomaly-detection]
+    en:
+      title: Data drift detection in time series forecasting
+      summary: Spot when production data has moved away from what the model was trained on.
+      url: https://cienciadedatos.net/documentos/py70-drift-detection-forecasting-model.html
+
+  - id: py49-trend-tree-models
+    icon: material-tree
+    section: advanced-techniques
+    tags: [intermediate, feature-engineering, single-series]
+    en:
+      title: Modelling time series trend with tree based models
+      summary: Why trees cannot extrapolate a trend, and the differentiation and detrending that fix it.
+      url: https://www.cienciadedatos.net/documentos/py49-modelling-time-series-trend-with-tree-based-models.html
+    es:
+      title: Modelar series temporales con tendencia utilizando modelos de árboles
+      summary: Por qué los árboles no extrapolan la tendencia, y cómo la diferenciación lo resuelve.
+      url: https://cienciadedatos.net/documentos/py49-modelar-tendencia-en-series-temporales-modelos-de-arboles.html
+
+  - id: py46-missing-values
+    icon: material-magnify
+    section: advanced-techniques
+    tags: [intermediate, feature-engineering]
+    en:
+      title: Forecasting time series with missing values
+      summary: Strategies for gaps and NaNs, from imputation to NaN-tolerant estimators.
+      url: https://www.cienciadedatos.net/documentos/py46-forecasting-time-series-missing-values.html
+    es:
+      title: Forecasting de series incompletas con valores faltantes
+      summary: Estrategias para huecos y NaNs, desde la imputación hasta estimadores tolerantes a NaN.
+      url: https://www.cienciadedatos.net/documentos/py46-forecasting-series-temporales-incompletas.html
+
+  - id: py52-stacking-ensemble
+    icon: material-cube-outline
+    section: advanced-techniques
+    tags: [advanced, single-series]
+    en:
+      title: Stacking ensemble of machine learning models to improve forecasting
+      summary: Combine several forecasters into a meta-model that beats each one alone.
+      url: https://cienciadedatos.net/documentos/py52-stacking-ensemble-models-forecasting.html
+    es:
+      title: Stacking ensemble de modelos para mejorar el forecasting
+      summary: Combina varios forecasters en un meta-modelo que supera a cada uno por separado.
+      url: https://cienciadedatos.net/documentos/py52-stacking-ensemble-modelos-forecasting.html
+
+  - id: py62-anomaly-detection
+    icon: material-ghost
+    section: advanced-techniques
+    tags: [advanced, anomaly-detection]
+    en:
+      title: Time series anomaly detection
+      summary: Use forecast errors and prediction intervals to flag anomalous observations.
+      url: https://cienciadedatos.net/documentos/py62-time-series-anomaly-detection.html
+    es:
+      title: Detección de anomalías en series temporales
+      summary: Usa los errores de predicción y los intervalos para señalar observaciones anómalas.
+      url: https://cienciadedatos.net/documentos/py62-deteccion-anomalias-series-temporales.html
+
+  - id: py63-data-leakage
+    icon: material-lock-open-variant
+    section: advanced-techniques
+    tags: [advanced, foundation-models]
+    en:
+      title: Data leakage in pre-trained forecasting models
+      summary: How pre-training data can contaminate a zero-shot benchmark, and how to check for it.
+      url: https://cienciadedatos.net/documentos/py63-data-leakage-pre-trained-forecasting-models.html
+    es:
+      title: Data leakage en modelos de forecasting preentrenados
+      summary: Cómo los datos de preentrenamiento contaminan un benchmark zero-shot, y cómo detectarlo.
+      url: https://cienciadedatos.net/documentos/py63-data-leakage-modelos-forecasting-preentrenados.html
+
+  - id: py65-gpu
+    icon: material-speedometer
+    section: advanced-techniques
+    tags: [advanced, performance]
+    en:
+      title: Accelerate forecasting models with GPU
+      summary: Move gradient boosting training onto a GPU and measure what you actually gain.
+      url: https://cienciadedatos.net/documentos/py65-accelerate-forecasting-models-gpu.html
+    es:
+      title: Acelerar modelos de forecasting con GPU
+      summary: Lleva el entrenamiento del gradient boosting a la GPU y mide lo que realmente ganas.
+      url: https://cienciadedatos.net/documentos/py65-acelerar-modelos-forecasting-gpu
+
+  - id: py75-intelex
+    icon: material-speedometer-medium
+    section: advanced-techniques
+    tags: [advanced, performance]
+    en:
+      title: Accelerate forecasting models with Intel scikit-learn-intelex
+      summary: Speed up scikit-learn estimators on Intel CPUs without changing your code.
+      url: https://cienciadedatos.net/documentos/py75-accelerate-forecasting-with-scikit-learn-intelex.html
+
+  - id: py56-xgboost
+    icon: material-sitemap-outline
+    section: advanced-techniques
+    tags: [intermediate, single-series]
+    en:
+      title: Forecasting with XGBoost
+      summary: A focused guide to using XGBoost as the estimator inside a forecaster.
+      url: https://www.cienciadedatos.net/documentos/py56-forecasting-time-series-with-xgboost.html
+    es:
+      title: Forecasting con XGBoost
+      summary: Guía centrada en el uso de XGBoost como estimador dentro de un forecaster.
+      url: https://www.cienciadedatos.net/documentos/py56-forecasting-series-temporales-con-xgboost.html
+
+  - id: py58-lightgbm
+    icon: material-file-tree
+    section: advanced-techniques
+    tags: [intermediate, single-series]
+    en:
+      title: Forecasting with LightGBM
+      summary: A focused guide to using LightGBM as the estimator inside a forecaster.
+      url: https://www.cienciadedatos.net/documentos/py58-forecasting-time-series-with-lightgbm.html
+    es:
+      title: Forecasting con LightGBM
+      summary: Guía centrada en el uso de LightGBM como estimador dentro de un forecaster.
+      url: https://www.cienciadedatos.net/documentos/py58-forecasting-series-temporales-con-lightgbm.html
+
+  # --- Real-world case studies ----------------------------------------------
+
+  - id: py29-energy-demand
+    icon: material-lightbulb-on
+    section: case-studies
+    tags: [intermediate, case-study]
+    en:
+      title: Forecasting energy demand with machine learning
+      summary: Hourly electricity demand with calendar and weather exogenous variables.
+      url: https://www.cienciadedatos.net/documentos/py29-forecasting-electricity-power-demand-python.html
+    es:
+      title: Forecasting de la demanda eléctrica
+      summary: Demanda eléctrica horaria con variables exógenas de calendario y meteorología.
+      url: https://www.cienciadedatos.net/documentos/py29-forecasting-demanda-energia-electrica-python.html
+    zh:
+      title: 使用机器学习预测能源需求
+      summary: 结合日历与天气外生变量，预测每小时的电力需求。
+      url: https://cienciadedatos.net/documentos/py29-forecasting-electricity-power-demand-python-cn
+
+  - id: py37-web-traffic
+    icon: material-rss
+    section: case-studies
+    tags: [intermediate, case-study]
+    en:
+      title: Forecasting web traffic with machine learning and Python
+      summary: Daily visits to a website, including weekly seasonality and special events.
+      url: https://www.cienciadedatos.net/documentos/py37-forecasting-web-traffic-machine-learning.html
+    es:
+      title: Forecasting de las visitas a una página web
+      summary: Visitas diarias a una web, con estacionalidad semanal y eventos especiales.
+      url: https://www.cienciadedatos.net/documentos/py37-forecasting-visitas-web-machine-learning.html
+
+  - id: py48-intermittent-demand
+    icon: material-waveform
+    section: case-studies
+    tags: [advanced, case-study]
+    en:
+      title: Intermittent demand forecasting
+      summary: Forecasting sparse series that are zero most of the time.
+      url: https://www.cienciadedatos.net/documentos/py48-intermittent-demand-forecasting.html
+    es:
+      title: Predicción de demanda intermitente
+      summary: Forecasting de series dispersas que son cero la mayor parte del tiempo.
+      url: https://www.cienciadedatos.net/documentos/py48-forecasting-demanda-intermitente.html
+
+  - id: py45-covid-impact
+    icon: material-virus
+    section: case-studies
+    tags: [intermediate, case-study, feature-engineering]
+    en:
+      title: Mitigating the impact of covid on forecasting models
+      summary: Down-weight or exclude anomalous periods with weighted time series forecasting.
+      url: https://www.cienciadedatos.net/documentos/py45-weighted-time-series-forecasting.html
+    es:
+      title: Reducir el impacto del Covid en modelos de forecasting
+      summary: Reduce el peso o excluye periodos anómalos con forecasting ponderado.
+      url: https://cienciadedatos.net/documentos/py45-weighted-time-series-forecasting-es
+
+  - id: py41-bitcoin
+    icon: fontawesome-brands-bitcoin
+    section: case-studies
+    tags: [beginner, case-study]
+    en:
+      title: Bitcoin price prediction with Python
+      summary: A cryptocurrency case study, and an honest look at how well it can work.
+      url: https://www.cienciadedatos.net/documentos/py41-forecasting-cryptocurrency-bitcoin-machine-learning-python.html
+    es:
+      title: Predicción del precio de Bitcoin con Python
+      summary: Un caso práctico con criptomonedas, y una mirada honesta a sus límites.
+      url: https://www.cienciadedatos.net/documentos/py41-forecasting-criptomoneda-bitcoin-machine-learning-python.html
