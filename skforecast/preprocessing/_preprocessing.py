@@ -8,8 +8,8 @@
 from __future__ import annotations
 from typing import Any
 import contextlib
+import functools
 import warnings
-from numba import njit
 import numpy as np
 import pandas as pd
 from scipy.stats import mode as scipy_mode
@@ -823,7 +823,40 @@ def reshape_series_exog_dict_to_long(
     return long_df
 
 
-@njit
+def _lazy_njit(func):
+    """
+    Decorator that defers `numba.njit` compilation until the first call, so
+    that importing skforecast does not import numba. The compiled dispatcher
+    is created once and reused in subsequent calls.
+
+    Parameters
+    ----------
+    func : Callable
+        Function to be compiled with `numba.njit` on its first call.
+
+    Returns
+    -------
+    wrapper : Callable
+        Function with the same signature as `func` that compiles it with
+        `numba.njit` the first time it is called and reuses the compiled
+        version afterwards.
+
+    """
+
+    compiled = None
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        nonlocal compiled
+        if compiled is None:
+            from numba import njit
+            compiled = njit(func)
+        return compiled(*args, **kwargs)
+
+    return wrapper
+
+
+@_lazy_njit
 def _np_mean_jit(x: np.ndarray) -> float:  # pragma: no cover
     """
     NumPy mean function implemented with Numba JIT.
@@ -831,7 +864,7 @@ def _np_mean_jit(x: np.ndarray) -> float:  # pragma: no cover
     return np.mean(x)
 
 
-@njit
+@_lazy_njit
 def _np_std_jit(x: np.ndarray, ddof: int = 1) -> float:  # pragma: no cover
     """
     Standard deviation function implemented with Numba JIT.
@@ -851,7 +884,7 @@ def _np_std_jit(x: np.ndarray, ddof: int = 1) -> float:  # pragma: no cover
     return std
 
 
-@njit
+@_lazy_njit
 def _np_min_jit(x: np.ndarray) -> float:  # pragma: no cover
     """
     NumPy min function implemented with Numba JIT.
@@ -859,7 +892,7 @@ def _np_min_jit(x: np.ndarray) -> float:  # pragma: no cover
     return np.min(x)
 
 
-@njit
+@_lazy_njit
 def _np_max_jit(x: np.ndarray) -> float:  # pragma: no cover
     """
     NumPy max function implemented with Numba JIT.
@@ -867,7 +900,7 @@ def _np_max_jit(x: np.ndarray) -> float:  # pragma: no cover
     return np.max(x)
 
 
-@njit
+@_lazy_njit
 def _np_sum_jit(x: np.ndarray) -> float:  # pragma: no cover
     """
     NumPy sum function implemented with Numba JIT.
@@ -875,7 +908,7 @@ def _np_sum_jit(x: np.ndarray) -> float:  # pragma: no cover
     return np.sum(x)
 
 
-@njit
+@_lazy_njit
 def _np_median_jit(x: np.ndarray) -> float:  # pragma: no cover
     """
     NumPy median function implemented with Numba JIT.
@@ -883,7 +916,7 @@ def _np_median_jit(x: np.ndarray) -> float:  # pragma: no cover
     return np.median(x)
 
 
-@njit
+@_lazy_njit
 def _np_min_max_ratio_jit(x: np.ndarray) -> float:  # pragma: no cover
     """
     NumPy min-max ratio function implemented with Numba JIT.
@@ -891,7 +924,7 @@ def _np_min_max_ratio_jit(x: np.ndarray) -> float:  # pragma: no cover
     return np.min(x) / np.max(x)
 
 
-@njit
+@_lazy_njit
 def _np_cv_jit(x: np.ndarray) -> float:  # pragma: no cover
     """
     Coefficient of variation function implemented with Numba JIT.
@@ -911,7 +944,7 @@ def _np_cv_jit(x: np.ndarray) -> float:  # pragma: no cover
     return std / np.mean(x)
 
 
-@njit
+@_lazy_njit
 def _ewm_jit(x: np.ndarray, alpha: float = 0.3) -> float:  # pragma: no cover
     """
     Calculate the exponentially weighted mean of an array.
@@ -945,7 +978,7 @@ def _ewm_jit(x: np.ndarray, alpha: float = 0.3) -> float:  # pragma: no cover
     return ewm
 
 
-@njit
+@_lazy_njit
 def _n_unique_jit(x):  # pragma: no cover
     """
     Count number of unique classes using numba JIT.
@@ -953,7 +986,7 @@ def _n_unique_jit(x):  # pragma: no cover
     return len(np.unique(x))
 
 
-@njit
+@_lazy_njit
 def _n_changes_jit(x):  # pragma: no cover
     """
     Count number of class changes using numba JIT.
