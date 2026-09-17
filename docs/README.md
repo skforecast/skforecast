@@ -17,10 +17,7 @@
 [![License](https://img.shields.io/github/license/skforecast/skforecast)](https://github.com/skforecast/skforecast/blob/main/LICENSE)
 [![DOI](https://zenodo.org/badge/337705968.svg)](https://zenodo.org/doi/10.5281/zenodo.8382787)
 [![llms.txt](https://img.shields.io/badge/llms.txt-available-blue)](https://skforecast.org/latest/llms-full.txt)
-[![paypal](https://img.shields.io/static/v1?style=social&amp;label=Donate&amp;message=%E2%9D%A4&amp;logo=Paypal&amp;color&amp;link=%3curl%3e)](https://www.paypal.com/donate/?hosted_button_id=D2JZSWRLTZDL6)
-[![buymeacoffee](https://img.shields.io/badge/-Buy_me_a%C2%A0coffee-gray?logo=buy-me-a-coffee)](https://www.buymeacoffee.com/skforecast)
-![GitHub Sponsors](https://img.shields.io/github/sponsors/joaquinamatrodrigo?logo=github&label=Github%20sponsors&link=https%3A%2F%2Fgithub.com%2Fsponsors%2FJoaquinAmatRodrigo)
-[![Open Collective](https://img.shields.io/badge/Open_Collective-2A3F54?logo=opencollective&logoColor=white)](https://opencollective.com/skforecast)
+[![Sponsor skforecast](https://img.shields.io/badge/Sponsor-skforecast-f79939?logo=githubsponsors&logoColor=white)](./more/funding.md)
 [![!linkedin](https://img.shields.io/static/v1?logo=linkedin&label=LinkedIn&message=news&color=lightblue)](https://www.linkedin.com/company/skforecast/)
 [![!discord](https://img.shields.io/static/v1?logo=discord&label=discord&message=chat&color=lightgreen)](https://discord.gg/3V52qpNkuj)
 [![Forecasting Python](https://img.shields.io/static/v1?logo=readme&logoColor=white&label=Blog&labelColor=%23333333&message=Forecasting%20Python&color=%23ffab40)](https://cienciadedatos.net/en/forecasting-python)
@@ -47,7 +44,7 @@ Whether you're building quick prototypes or deploying models in production, skfo
 
 :sparkles: **Try [skforecast-ai](https://ai.skforecast.org/)**, an **AI forecasting assistant** that pairs a deterministic engine, powered by [**skforecast**](https://skforecast.org/), with an **LLM reasoning layer**.
 
-:computer: **Try [Skforecast Studio](https://studio.skforecast.org/)** — an interactive, no-code application to build time series forecasting models visually, while automatically generating production-ready Python code using skforecast.
+:computer: **Try [Skforecast Studio](https://studio.skforecast.org/)**, an interactive, no-code application to build time series forecasting models visually, while automatically generating production-ready Python code using skforecast.
 
 ### Get Involved
 
@@ -241,28 +238,13 @@ Marcillo Vera, F., Rosado, R., Zambrano, P., Velastegui, J., Morales, G., Lagla,
 </ul>
 
 
-## Donating
+## Sponsorship and funding
 
-If you found **skforecast** useful, you can support us with a donation. Your contribution will help us **continue developing, maintaining, and improving** this project. Every contribution, no matter the size, makes a difference. **Thank you for your support!**
+**skforecast** is free, open-source software maintained by a small core team, and sustained by institutional funding and by the organizations that sponsor the project.
 
-<a href="https://opencollective.com/skforecast" target="_blank" rel="noopener noreferrer" title="Sponsor us on Open Collective">
-    <img style="margin-bottom: 1em; width: 240px;" src="./img/opencollective_button.png" alt="Sponsor on Open Collective">
-</a>
-<br>
-<a href="https://www.buymeacoffee.com/skforecast" target="_blank" rel="noopener noreferrer" title="Buy me a coffee skforecast">
-    <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=skforecast&button_colour=f79939&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00" alt="Buy me a coffee skforecast">
-</a>
-<br>
-<a href="https://github.com/sponsors/JoaquinAmatRodrigo" target="_blank" title="Become a GitHub Sponsor">
-    <img style="margin-bottom: 1em; width: 240px;" src="./img/github_sponsor_button.png" alt="Become a GitHub Sponsor">
-</a>
-<br>
-<a href="https://github.com/sponsors/JavierEscobarOrtiz" target="_blank" title="Become a GitHub Sponsor">
-    <img style="margin-bottom: 1em; width: 240px;" src="./img/github_sponsor_button.png" alt="Become a GitHub Sponsor">
-</a>
-<br>
+If your company relies on skforecast, you can help keep it healthy and have a say in where it goes: sponsorship tiers, support agreements, feature sponsorship, and training are available. See **[Sponsorship and funding](./more/funding.md)** for details.
 
-[![paypal](https://www.paypalobjects.com/en_US/ES/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=D2JZSWRLTZDL6)
+Individuals can support the project through [Open Collective](https://opencollective.com/skforecast), GitHub Sponsors ([Joaquín Amat Rodrigo](https://github.com/sponsors/JoaquinAmatRodrigo), [Javier Escobar Ortiz](https://github.com/sponsors/JavierEscobarOrtiz)), [Buy Me a Coffee](https://www.buymeacoffee.com/skforecast), or [PayPal](https://www.paypal.com/donate/?hosted_button_id=D2JZSWRLTZDL6).
 
 
 ## License
