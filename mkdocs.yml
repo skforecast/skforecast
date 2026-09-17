@@ -154,8 +154,19 @@ extra_css:
   - stylesheets/extra.css
 extra_javascript:
   - javascripts/version-switcher.js
+  - javascripts/examples-filter.js
   - javascripts/mathjax.js
   - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+
+hooks:
+  # Renders the Examples pages from tools/docs_hooks/examples.yml
+  - tools/docs_hooks/examples_grid.py
+
+# `mkdocs serve` only watches docs_dir and mkdocs.yml, so the examples data needs
+# to be watched explicitly. Note that edits to the hook module itself require a
+# server restart (MkDocs caches hook modules for the process lifetime).
+watch:
+  - tools/docs_hooks
 
 plugins:
   # - git-revision-date-localized: Incluir última fecha de modificación al final de las páginas

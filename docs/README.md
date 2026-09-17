@@ -1,5 +1,3 @@
-<script src="https://kit.fontawesome.com/d20edc211b.js" crossorigin="anonymous"></script>
-
 <div style="margin-bottom: 20px;">
     <img src="img/banner-landing-page-skforecast.png#only-light" align="left" style="margin-bottom: 30px; margin-top: 0px;">
     <img src="img/banner-landing-page-dark-mode-skforecast.png#only-dark" align="left" style="margin-bottom: 30px; margin-top: 0px;">

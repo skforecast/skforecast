@@ -11,6 +11,20 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-docs">Docs</span>               | Documentation improvement             |
 
 
+## 0.26.0 <small>Unreleased</small> { id="0.26.0" }
+
+The main changes in this release are:
+
++ <span class="badge text-bg-docs">Docs</span> The examples and tutorials pages are now a filterable card grid: every tutorial shows an icon, a one line summary and topic tags, and can be narrowed down with a search box and level/topic filters. [Examples](../examples/examples_english.md)
+
+
+**Changed**
+
++ The examples and tutorials pages (English, Spanish and Chinese) are rendered as Material card grids with a search box and level/topic filter chips. Each tutorial now carries a one line summary and tags, and a language switcher links the three pages. The page URLs are unchanged. The three pages are generated at build time from a single source of truth, `tools/docs_hooks/examples.yml`, so the languages can no longer drift apart; add or edit a tutorial there rather than in the Markdown pages.
+
++ The examples pages no longer load Font Awesome from an external kit. All icons come from the sets bundled with the documentation theme, which removes a third party request per page, fixes the icons that did not render, and makes them follow the light and dark color schemes.
+
+
 ## 0.25.0 <small>Sep 11, 2026</small> { id="0.25.0" }
 
 The main changes in this release are:
