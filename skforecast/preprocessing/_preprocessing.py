@@ -1093,6 +1093,9 @@ class RollingFeatures():
             kwargs_stats   = kwargs_stats
         )
 
+        if kwargs_stats is None:
+            kwargs_stats = {}
+
         if isinstance(stats, str):
             stats = [stats]
         self.stats = stats
@@ -1120,7 +1123,7 @@ class RollingFeatures():
         self.features_names = features_names
 
         self.fillna = fillna
-        self.kwargs_stats = kwargs_stats if kwargs_stats is not None else {}
+        self.kwargs_stats = kwargs_stats
 
         window_params_list = []
         for i in range(len(self.stats)):

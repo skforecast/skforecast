@@ -27,6 +27,11 @@ The main changes in this release are:
 
 + The examples and tutorials pages (English, Spanish and Chinese) are rendered as Material card grids with a search box and level/topic filter chips. Each tutorial now carries a one line summary and tags, and a language switcher links the three pages. The page URLs are unchanged. The three pages are generated at build time from a single source of truth, `tools/docs_hooks/examples.yml`, so the languages can no longer drift apart; add or edit a tutorial there rather than in the Markdown pages.
 
+**Fixed**
+
++ <code>[RollingFeatures]</code> raised `TypeError: argument of type 'NoneType' is not iterable` when `kwargs_stats=None`, although `None` is accepted by the parameter validation and by the type hint. It is now handled as an empty dictionary, the same as `kwargs_stats={}`.
+
+
 ## 0.25.0 <small>Sep 11, 2026</small> { id="0.25.0" }
 
 The main changes in this release are:
