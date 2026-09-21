@@ -1,0 +1,59 @@
+name: Context7 Refresh
+
+# Context7 (https://context7.com/skforecast/skforecast) indexes the `main`
+# branch, but only refreshes unpopular libraries every 45 days, and only if they
+# were requested recently. This workflow asks for a refresh as soon as the
+# indexed content changes, so coding agents never get docs of an old release.
+#
+# Requires the repository secret CONTEXT7_API_KEY (context7.com/dashboard).
+
+on:
+  push:
+    branches:
+      - main
+    paths:  # keep in sync with what context7.json leaves indexed
+      - 'context7.json'
+      - 'README.md'
+      - 'AGENTS.md'
+      - 'skills/**'
+      - 'docs/**'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: context7-refresh
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    # Forks do not have the secret
+    if: github.repository == 'skforecast/skforecast'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Request a refresh of /skforecast/skforecast
+        env:
+          CONTEXT7_API_KEY: ${{ secrets.CONTEXT7_API_KEY }}
+        run: |
+          if [ -z "$CONTEXT7_API_KEY" ]; then
+            echo "::error::Secret CONTEXT7_API_KEY is not set"
+            exit 1
+          fi
+          status=$(curl --silent --show-error --max-time 60 \
+            --output response.json --write-out '%{http_code}' \
+            --request POST \
+            --url https://context7.com/api/v1/refresh \
+            --header "Authorization: Bearer $CONTEXT7_API_KEY" \
+            --header 'Content-Type: application/json' \
+            --data '{"libraryName": "/skforecast/skforecast", "branch": "main"}')
+          echo "HTTP $status"
+          cat response.json
+          echo
+          # 429 means a refresh was requested too recently: not worth failing
+          if [ "$status" = "429" ]; then
+            echo "::warning::Context7 rate limit reached, refresh skipped"
+          elif [ "$status" != "200" ]; then
+            echo "::error::Context7 refresh failed with HTTP $status"
+            exit 1
+          fi
