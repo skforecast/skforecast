@@ -34,6 +34,8 @@ The main changes in this release are:
 
 + Fixed an issue in <code>[backtesting_forecaster_multiseries]</code> where <code>[ForecasterDirectMultiVariate]</code> raised `TypeError: 'NoneType' object is not subscriptable` with `use_in_sample_residuals=False`, because only one of `out_sample_residuals_` and `out_sample_residuals_by_bin_` was restored after each `fit()` depending on `use_binned_residuals`. Both attributes are now restored.
 
++ <code>[RollingFeatures]</code> raised `TypeError: argument of type 'NoneType' is not iterable` when `kwargs_stats=None`, although `None` is accepted by the parameter validation and by the type hint. The default value of `kwargs_stats` is now `None`, which is replaced by the documented default `{'ewm': {'alpha': 0.3}}`.
+
 
 ## 0.25.0 <small>Sep 11, 2026</small> { id="0.25.0" }
 
