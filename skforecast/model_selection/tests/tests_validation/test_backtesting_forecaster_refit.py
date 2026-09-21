@@ -21,7 +21,7 @@ from skforecast.model_selection._validation import _backtesting_forecaster
 # Fixtures
 from skforecast.exceptions import IgnoredArgumentWarning
 from skforecast.exceptions import MissingValuesWarning
-from ..fixtures_model_selection import y, y_clf
+from ..fixtures_model_selection import y, y_clf, y_intermittent
 from ..fixtures_model_selection import exog
 from ..fixtures_model_selection import out_sample_residuals
 
@@ -1180,7 +1180,9 @@ def test_output_backtesting_forecaster_interval_out_sample_residuals_binned_no_e
     Estimator is LinearRegression with lags=3, Series y is mocked, no exog,
     12 observations to backtest, steps=4 (no remainder), metric='mean_squared_error',
     'use_in_sample_residuals = False', 'use_binned_residuals = True'.
-    Out sample residuals are set using set_out_sample_residuals method.
+    Out sample residuals are set using set_out_sample_residuals method. The
+    binner of the user's forecaster is used in every fold, not the one refitted
+    in each fold.
     """
     expected_metric = pd.DataFrame({"mean_squared_error": [0.06720844553763934]})
     expected_predictions = pd.DataFrame(
@@ -1191,12 +1193,12 @@ def test_output_backtesting_forecaster_interval_out_sample_residuals_binned_no_e
             [0.52945466, 0.68942089, 1.64953697],
             [0.34597367, 0.3945527 , 1.32960455],
             [0.50223873, 0.70104604, 1.65065467],
-            [0.47833829, 0.63931012, 1.59308945],
-            [0.46082257, 0.65352286, 1.56881561],
+            [0.47833829, 0.63018206, 1.59308945],
+            [0.46082257, 0.62149987, 1.58011165],
             [0.37810191, 0.42668094, 1.36173279],
-            [0.49508366, 0.66544928, 1.5822227 ],
-            [0.48808014, 0.56101875, 1.51770574],
-            [0.47323313, 0.55583175, 1.47287138]]),
+            [0.49508366, 0.68458051, 1.5822227 ],
+            [0.48808014, 0.56746549, 1.51408286],
+            [0.47323313, 0.55997298, 1.47775931]]),
         columns=['pred', 'lower_bound', 'upper_bound'],
         index=pd.RangeIndex(start=38, stop=50, step=1)
     )
@@ -1242,6 +1244,205 @@ def test_output_backtesting_forecaster_interval_out_sample_residuals_binned_no_e
 
     pd.testing.assert_frame_equal(expected_metric, metric)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+@pytest.mark.parametrize(
+    "forecaster_kwargs, interval_method, expected",
+    [
+        (
+            {'lags': 3},
+            'bootstrapping',
+            np.array([[  1.48238765,  -2.84379223,   5.75801316],
+                      [  1.33732167,  -2.3261884 ,   5.02910545],
+                      [  1.2064518 ,  -3.01763891,   4.83286735],
+                      [  1.12944913,  -2.41926671,   5.07403037],
+                      [  1.15996943,  -2.67279472,   5.75909207],
+                      [ -6.74466397, -11.19070988,  -2.43535702],
+                      [ -5.54495412, -10.04709246,  -1.18609919],
+                      [ -3.08877966,  -7.87563463,   1.60979571],
+                      [  5.2430932 ,   0.64842603,   9.73743995],
+                      [  3.14399651,  -1.74486224,   7.60984564],
+                      [  4.55421889,   0.22803901,   8.8298444 ],
+                      [  0.18779283,  -4.31785019,   4.49028308],
+                      [  3.28926582,  -0.95354507,   7.66962233],
+                      [  2.43430112,  -1.70642343,   6.71349828],
+                      [  3.00942   ,  -1.50669403,   7.24087678],
+                      [  3.11394454,  -1.21223535,   7.38957005],
+                      [  2.78598842,  -1.42826923,   6.89709434],
+                      [  2.85101411,  -1.3272533 ,   7.27146175],
+                      [  2.95842847,  -1.09332261,   7.24133535],
+                      [  2.93538022,  -1.54361771,   7.31964514]])
+        ),
+        (
+            {'lags': 3},
+            'conformal',
+            np.array([[  1.48238765,  -2.87892455,   5.84369986],
+                      [  1.33732167,  -1.90254974,   4.57719308],
+                      [  1.2064518 ,  -2.03341962,   4.44632321],
+                      [  1.12944913,  -2.11042228,   4.36932055],
+                      [  1.15996943,  -2.07990198,   4.39984085],
+                      [ -6.74466397, -11.17338034,  -2.3159476 ],
+                      [ -5.54495412,  -9.97367049,  -1.11623775],
+                      [ -3.08877966,  -7.51749603,   1.33993671],
+                      [  5.2430932 ,   0.881781  ,   9.60440541],
+                      [  3.14399651,  -1.21731569,   7.50530872],
+                      [  4.55421889,   0.19290669,   8.9155311 ],
+                      [  0.18779283,  -4.24092354,   4.61650921],
+                      [  3.28926582,  -1.07204639,   7.65057802],
+                      [  2.43430112,  -1.92701109,   6.79561332],
+                      [  3.00942   ,  -1.3518922 ,   7.37073221],
+                      [  3.11394454,  -1.24736766,   7.47525674],
+                      [  2.78598842,  -1.57532378,   7.14730063],
+                      [  2.85101411,  -1.51029809,   7.21232631],
+                      [  2.95842847,  -1.40288373,   7.31974068],
+                      [  2.93538022,  -1.42593199,   7.29669242]])
+        ),
+        (
+            {'lags': 3, 'steps': 5},
+            'bootstrapping',
+            np.array([[  1.5761222 ,  -3.21239763,   6.29438646],
+                      [  1.5761222 ,  -3.21239763,   6.29438646],
+                      [  1.57342719,  -3.21509264,   6.29169145],
+                      [  1.2497618 ,  -3.53875804,   5.96802606],
+                      [  1.2497618 ,  -3.53875804,   5.96802606],
+                      [ -4.08374345,  -8.52978936,   0.2255635 ],
+                      [ -4.08374345,  -8.41815489,   0.37652717],
+                      [ -2.61387997,  -7.26649831,   1.84639066],
+                      [ -3.18250632,  -8.00413848,   1.17689191],
+                      [ -6.52161077, -10.8560222 ,  -2.18337868],
+                      [ -3.04924315,  -7.49528906,   1.2600638 ],
+                      [ -2.07427141,  -6.40868284,   2.38599921],
+                      [ -3.25103507,  -7.90365342,   1.20923556],
+                      [ -2.04033954,  -6.8619717 ,   2.31905869],
+                      [  4.13518476,  -0.34519658,   8.41081027],
+                      [  3.1372783 ,  -1.34310303,   7.46751052],
+                      [  2.05064079,  -2.10442702,   6.41204066],
+                      [  2.29455597,  -2.18582537,   6.48345965],
+                      [  2.72691404,  -1.21751821,   7.05714625],
+                      [  2.67725398,  -1.80312736,   6.95287949]])
+        ),
+        (
+            {'lags': 3, 'steps': 5},
+            'conformal',
+            np.array([[  1.5761222 ,  -3.16321873,   6.31546314],
+                      [  1.5761222 ,  -3.16321873,   6.31546314],
+                      [  1.57342719,  -3.16591374,   6.31276813],
+                      [  1.2497618 ,  -3.48957914,   5.98910273],
+                      [  1.2497618 ,  -3.48957914,   5.98910273],
+                      [ -4.08374345,  -8.51245983,   0.34497292],
+                      [ -4.08374345,  -8.51245983,   0.34497292],
+                      [ -2.61387997,  -7.04259634,   1.81483641],
+                      [ -3.18250632,  -7.61122269,   1.24621005],
+                      [ -6.52161077, -10.95032714,  -2.09289439],
+                      [ -3.04924315,  -7.47795953,   1.37947322],
+                      [ -2.07427141,  -6.50298779,   2.35444496],
+                      [ -3.25103507,  -7.67975144,   1.1776813 ],
+                      [ -2.04033954,  -6.46905591,   2.38837683],
+                      [  4.13518476,  -0.13772007,   8.40808959],
+                      [  3.1372783 ,  -1.13562652,   7.41018313],
+                      [  2.05064079,  -2.22226404,   6.32354562],
+                      [  2.29455597,  -1.97834886,   6.5674608 ],
+                      [  2.72691404,  -1.54599079,   6.99981886],
+                      [  2.67725398,  -1.59565085,   6.95015881]])
+        ),
+    ],
+    ids=[
+        'ForecasterRecursive_bootstrapping', 'ForecasterRecursive_conformal',
+        'ForecasterDirect_bootstrapping', 'ForecasterDirect_conformal'
+    ]
+)
+def test_output_backtesting_forecaster_out_sample_residuals_binned_uses_user_binner_when_refit(
+    forecaster_kwargs, interval_method, expected
+):
+    """
+    Test output of _backtesting_forecaster with refit=True, use_in_sample_residuals=False
+    and use_binned_residuals=True when the binner refitted in each fold learns a
+    different number of bins than the binner of the user's forecaster. The series
+    is intermittent, so the user's binner learns fewer than the 10 requested bins
+    and the binners of the folds learn a different number. The out-of-sample
+    residuals of each bin must be used with the binner that created them, so the
+    predictions are the same as fitting the forecaster on each fold and restoring
+    the binner and residuals of the user's forecaster before predicting. The
+    user's forecaster must not be modified.
+    """
+    forecaster_class = ForecasterDirect if 'steps' in forecaster_kwargs else ForecasterRecursive
+    forecaster = forecaster_class(
+        estimator=LinearRegression(), binner_kwargs={'n_bins': 10}, **forecaster_kwargs
+    )
+    forecaster.fit(y=y_intermittent.iloc[:40], suppress_warnings=True)
+    n_bins_user = forecaster.binner.n_bins_
+
+    rng = np.random.default_rng(42)
+    y_pred_residuals = rng.uniform(-5, 10, size=200)
+    y_true_residuals = y_pred_residuals + rng.uniform(-5, 5, size=200)
+    forecaster.set_out_sample_residuals(
+        y_true=y_true_residuals, y_pred=y_pred_residuals
+    )
+
+    cv = TimeSeriesFold(
+            steps              = 5,
+            initial_train_size = 60,
+            refit              = True,
+        )
+    _, backtest_predictions = _backtesting_forecaster(
+                                  forecaster              = forecaster,
+                                  y                       = y_intermittent,
+                                  exog                    = None,
+                                  cv                      = cv,
+                                  metric                  = 'mean_absolute_error',
+                                  interval                = [0.05, 0.95],
+                                  interval_method         = interval_method,
+                                  n_boot                  = 250,
+                                  random_state            = 123,
+                                  use_in_sample_residuals = False,
+                                  use_binned_residuals    = True,
+                                  n_jobs                  = 1,
+                                  verbose                 = False,
+                                  show_progress           = False,
+                                  suppress_warnings       = True
+                              )
+
+    expected_predictions = pd.DataFrame(
+        data    = expected,
+        columns = ['pred', 'lower_bound', 'upper_bound'],
+        index   = pd.date_range(start='2020-03-01', periods=20, freq='D')
+    )
+    expected_predictions.insert(0, 'fold', np.repeat([0, 1, 2, 3], 5))
+
+    # Same predictions fitting each fold and restoring the user's binner and residuals
+    kwargs_predict = {
+        'steps': 5, 'n_boot': 250, 'random_state': 123,
+        'use_in_sample_residuals': False, 'use_binned_residuals': True,
+        'suppress_warnings': True
+    }
+    manual_predictions = []
+    for fold_start in range(0, 20, 5):
+        forecaster_fold = forecaster_class(
+            estimator=LinearRegression(), binner_kwargs={'n_bins': 10}, **forecaster_kwargs
+        )
+        forecaster_fold.fit(
+            y=y_intermittent.iloc[fold_start:fold_start + 60], suppress_warnings=True
+        )
+        forecaster_fold.binner = forecaster.binner
+        forecaster_fold.binner_intervals_ = forecaster.binner_intervals_
+        forecaster_fold.out_sample_residuals_ = forecaster.out_sample_residuals_
+        forecaster_fold.out_sample_residuals_by_bin_ = forecaster.out_sample_residuals_by_bin_
+        if interval_method == 'bootstrapping':
+            pred = forecaster_fold.predict_quantiles(quantiles=[0.05, 0.95], **kwargs_predict)
+            pred.columns = ['lower_bound', 'upper_bound']
+            pred.insert(0, 'pred', forecaster_fold.predict(steps=5, suppress_warnings=True))
+        else:
+            pred = forecaster_fold.predict_interval(
+                method='conformal', interval=[0.05, 0.95], **kwargs_predict
+            )
+        manual_predictions.append(pred)
+    manual_predictions = pd.concat(manual_predictions)
+
+    assert forecaster.binner.n_bins_ == n_bins_user
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+    pd.testing.assert_frame_equal(
+        backtest_predictions.drop(columns='fold'), manual_predictions, check_names=False
+    )
 
 
 # ******************************************************************************

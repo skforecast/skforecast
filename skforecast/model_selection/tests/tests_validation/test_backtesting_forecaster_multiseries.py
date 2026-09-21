@@ -7,7 +7,7 @@ import pandas as pd
 from lightgbm import LGBMRegressor
 from xgboost import XGBRegressor
 from catboost import CatBoostRegressor
-from sklearn.linear_model import Ridge
+from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.preprocessing import StandardScaler
 from sklearn.compose import make_column_transformer, make_column_selector
 from sklearn.ensemble import HistGradientBoostingRegressor
@@ -27,6 +27,7 @@ from ....recursive.tests.tests_forecaster_recursive_multiseries.fixtures_forecas
 from ..fixtures_model_selection_multiseries import (
     series_wide_range,
     series_wide_dt,
+    series_wide_dt_intermittent,
     series_wide_dt_nans,
     series_long_dt,
     series_long_dt_nans,
@@ -2696,7 +2697,9 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries
     with refit, out of sample residuals and use_binned_residuals=True.
-    Out sample residuals are set using set_out_sample_residuals method.
+    Out sample residuals are set using set_out_sample_residuals method. The
+    binners of the user's forecaster are used in every fold, not the ones
+    refitted in each fold.
     """
     forecaster = ForecasterRecursiveMultiSeries(
         estimator=Ridge(random_state=123), lags=2, transformer_series=None,
@@ -2746,18 +2749,18 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     expected_metric = pd.DataFrame({'levels': ['l1'],
                                     'mean_absolute_error': [0.2126428594686577]})
     expected_predictions = pd.DataFrame(
-                               data = np.array([[0.4978839 , 0.22253806, 0.84910042],
-                                                [0.46288427, 0.17849192, 0.81637876],
-                                                [0.48433446, 0.21116082, 0.82945134],
-                                                [0.48677605, 0.22658078, 0.84471227],
-                                                [0.46487551, 0.17076599, 0.81609259],
-                                                [0.49811831, 0.25457065, 0.84432249],
-                                                [0.49368425, 0.24465891, 0.84667583],
-                                                [0.49274964, 0.24345334, 0.83979343],
-                                                [0.46698305, 0.17287266, 0.81819988],
-                                                [0.47580279, 0.24133499, 0.81025753],
-                                                [0.47419019, 0.21802026, 0.80880852],
-                                                [0.47409035, 0.22581373, 0.82548058]]),
+                               data = np.array([[0.4978839 , 0.22253817, 0.84910021],
+                                                [0.46288427, 0.18267593, 0.82100705],
+                                                [0.48433446, 0.20117412, 0.8265987 ],
+                                                [0.48677605, 0.22316781, 0.83456277],
+                                                [0.46487634, 0.17076616, 0.81609265],
+                                                [0.49811788, 0.25448608, 0.84181162],
+                                                [0.49368404, 0.24458349, 0.84168662],
+                                                [0.49275019, 0.2232682 , 0.83401313],
+                                                [0.4669832 , 0.17287302, 0.81819951],
+                                                [0.47580305, 0.19063986, 0.8296743 ],
+                                                [0.47419026, 0.18891891, 0.83504697],
+                                                [0.47409002, 0.18824333, 0.93895408]]),
                                columns = ['l1', 'l1_lower_bound', 'l1_upper_bound'],
                                index = pd.RangeIndex(start=38, stop=50, step=1)
                            )
@@ -2767,6 +2770,385 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     )
 
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+@pytest.mark.parametrize(
+    "forecaster_kwargs, levels, interval_method, expected",
+    [
+        (
+            {'encoding': 'ordinal'},
+            ['l1', 'l2'],
+            'bootstrapping',
+            np.array([[ 1.39991083, -2.75283484,  5.77812476],
+                      [10.50835539,  5.80670309, 14.97384604],
+                      [ 1.2698104 , -1.92277235,  5.75171751],
+                      [10.45318453,  5.93122119, 14.99479959],
+                      [ 1.23030339, -2.10627481,  5.49099801],
+                      [10.43278123,  5.69956089, 14.68639987],
+                      [ 1.14685671, -2.37849557,  5.77643112],
+                      [10.3785417 ,  5.77721346, 15.12596747],
+                      [ 1.16460992, -2.69624424,  5.65290742],
+                      [10.3879568 ,  5.71974032, 15.0123012 ],
+                      [-5.01167583, -9.65004872, -0.80110385],
+                      [11.10512465,  6.46355217, 15.73723689],
+                      [-0.95424011, -5.67839599,  3.52130683],
+                      [10.30651377,  5.60725699, 14.82958679],
+                      [-3.22109126, -7.87339028,  1.36374853],
+                      [10.39000529,  5.74180574, 15.06078993],
+                      [ 3.61793128, -0.71384735,  8.45703606],
+                      [10.02867385,  5.21462987, 14.42940349],
+                      [ 2.35031514, -2.13092211,  6.74927293],
+                      [10.16726273,  5.57565778, 14.37575579],
+                      [ 4.90816745,  0.75542178,  9.28638138],
+                      [10.54206157,  5.84040927, 15.00755222],
+                      [ 0.26568271, -4.43586661,  4.90419346],
+                      [10.12314398,  5.53665352, 14.39748719],
+                      [ 3.31050338, -1.0302293 ,  7.93180301],
+                      [10.24821526,  5.65630197, 14.76966816],
+                      [ 2.39677378, -1.79452814,  7.09497764],
+                      [10.15189305,  5.45566899, 14.97561399],
+                      [ 3.011216  , -1.40162977,  7.33861607],
+                      [10.19948514,  5.65232657, 14.64866946],
+                      [ 3.0671824 , -1.08556327,  7.44539633],
+                      [ 9.888003  ,  5.1863507 , 14.60099689],
+                      [ 2.7569238 , -1.91706566,  6.89716438],
+                      [ 9.79955855,  5.07749201, 14.23742006],
+                      [ 2.84756052, -1.50713263,  7.40617294],
+                      [ 9.93596046,  5.21414554, 14.37848961],
+                      [ 2.95431105, -1.47603553,  7.67698726],
+                      [ 9.93720204,  5.21897254, 14.56844982],
+                      [ 2.93293176, -1.60935948,  7.24110174],
+                      [ 9.93619607,  5.15801345, 14.64257754]])
+        ),
+        (
+            {'encoding': 'ordinal'},
+            ['l1', 'l2'],
+            'conformal',
+            np.array([[ 1.39991083, -3.02982886,  5.82965051],
+                      [10.50835539,  5.87788071, 15.13883007],
+                      [ 1.2698104 , -1.1908422 ,  3.730463  ],
+                      [10.45318453,  5.82270985, 15.08365921],
+                      [ 1.23030339, -1.23034921,  3.69095599],
+                      [10.43278123,  5.80230655, 15.06325591],
+                      [ 1.14685671, -1.31379589,  3.60750931],
+                      [10.3785417 ,  5.74806702, 15.00901638],
+                      [ 1.16460992, -1.29604268,  3.62526252],
+                      [10.3879568 ,  5.75748212, 15.01843148],
+                      [-5.01167583, -9.59128924, -0.43206241],
+                      [11.10512465,  6.47464997, 15.73559933],
+                      [-0.95424011, -5.53385352,  3.6253733 ],
+                      [10.30651377,  5.67603909, 14.93698845],
+                      [-3.22109126, -7.80070467,  1.35852215],
+                      [10.39000529,  5.75953061, 15.02047997],
+                      [ 3.61793128, -0.8118084 ,  8.04767097],
+                      [10.02867385,  5.39819917, 14.65914853],
+                      [ 2.35031514, -2.07942455,  6.78005482],
+                      [10.16726273,  5.53678805, 14.7977374 ],
+                      [ 4.90816745,  0.47842776,  9.33790713],
+                      [10.54206157,  5.91158689, 15.17253625],
+                      [ 0.26568271, -4.3139307 ,  4.84529613],
+                      [10.12314398,  5.4926693 , 14.75361866],
+                      [ 3.31050338, -1.1192363 ,  7.74024306],
+                      [10.24821526,  5.61774058, 14.87868994],
+                      [ 2.39677378, -2.0329659 ,  6.82651347],
+                      [10.15189305,  5.52141837, 14.78236773],
+                      [ 3.011216  , -1.41852368,  7.44095569],
+                      [10.19948514,  5.56901046, 14.82995982],
+                      [ 3.0671824 , -1.36255728,  7.49692208],
+                      [ 9.888003  ,  5.25752832, 14.51847768],
+                      [ 2.7569238 , -1.67281588,  7.18666349],
+                      [ 9.79955855,  5.16908388, 14.43003323],
+                      [ 2.84756052, -1.58217916,  7.27730021],
+                      [ 9.93596046,  5.30548579, 14.56643514],
+                      [ 2.95431105, -1.47542863,  7.38405073],
+                      [ 9.93720204,  5.30672737, 14.56767672],
+                      [ 2.93293176, -1.49680792,  7.36267144],
+                      [ 9.93619607,  5.30572139, 14.56667075]])
+        ),
+        (
+            {'level': 'l1', 'steps': 5},
+            ['l1'],
+            'bootstrapping',
+            np.array([[  1.49626187,  -3.29225797,   6.21452613],
+                      [  1.17606891,   1.53041681,   1.53041681],
+                      [  1.33022544,   1.68457333,   1.68457333],
+                      [  0.9740685 ,  -2.27951679,  -2.21094741],
+                      [  1.12862098,  -2.12496431,  -2.05639493],
+                      [ -3.61822034,  -8.4398525 ,   0.37193387],
+                      [ -6.33230882, -10.98492717,  -2.01994647],
+                      [ -5.24441814,  -9.64022853,  -0.93205578],
+                      [ -2.6899293 ,  -7.51156146,   1.62243306],
+                      [ -7.95135271, -12.28576414,  -3.70326842],
+                      [ -0.65904162,  -5.48067378,   3.33111259],
+                      [  0.71520709,  -3.29366149,   1.74627866],
+                      [ -2.64562399,  -7.04143438,   1.66673837],
+                      [  0.65497585,  -0.15894114,   5.45068266],
+                      [  5.28981541,   1.24077289,   9.65121528],
+                      [  5.48886391,   1.00848257,   9.81166531],
+                      [  3.87992105,  -0.58625962,   8.08962578],
+                      [  5.44813403,   1.29306622,   9.63703772],
+                      [  0.67509883,  -3.33376975,   1.70617041],
+                      [  7.06639013,   3.01734761,  11.42779   ]])
+        ),
+        (
+            {'level': 'l1', 'steps': 5},
+            ['l1'],
+            'conformal',
+            np.array([[  1.49626187,  -3.23605351,   6.22857724],
+                      [  1.17606891,   0.82172101,   1.53041681],
+                      [  1.33022544,   0.97587754,   1.68457333],
+                      [  0.9740685 ,  -2.27265986,   4.22079685],
+                      [  1.12862098,  -2.11810737,   4.37534933],
+                      [ -3.61822034,  -7.94822195,   0.71178128],
+                      [ -6.33230882, -10.66231044,  -2.00230721],
+                      [ -5.24441814,  -9.57441975,  -0.91441652],
+                      [ -2.6899293 ,  -7.01993091,   1.64007232],
+                      [ -7.95135271, -12.28135432,  -3.62135109],
+                      [ -0.65904162,  -4.98904323,   3.67096   ],
+                      [  0.71520709,  -2.99588179,   4.42629597],
+                      [ -2.64562399,  -6.9756256 ,   1.68437763],
+                      [  0.65497585,  -2.83167873,   4.14163044],
+                      [  5.28981541,   1.08473314,   9.49489768],
+                      [  5.48886391,   1.28378163,   9.69394618],
+                      [  3.87992105,  -0.32516122,   8.08500332],
+                      [  5.44813403,   1.24305176,   9.6532163 ],
+                      [  0.67509883,  -3.03599005,   4.38618772],
+                      [  7.06639013,   2.86130786,  11.2714724 ]])
+        ),
+    ],
+    ids=[
+        'ForecasterRecursiveMultiSeries_bootstrapping',
+        'ForecasterRecursiveMultiSeries_conformal',
+        'ForecasterDirectMultiVariate_bootstrapping',
+        'ForecasterDirectMultiVariate_conformal'
+    ]
+)
+def test_output_backtesting_forecaster_multiseries_out_sample_residuals_binned_uses_user_binner_when_refit(
+    forecaster_kwargs, levels, interval_method, expected
+):
+    """
+    Test output of backtesting_forecaster_multiseries with refit=True,
+    use_in_sample_residuals=False and use_binned_residuals=True when the binners
+    refitted in each fold learn a different number of bins than the binners of
+    the user's forecaster. Series 'l1' is intermittent, so its binner learns
+    fewer than the 10 requested bins and the binners of the folds learn a
+    different number. The out-of-sample residuals of each bin must be used with
+    the binner that created them, so the predictions are the same as fitting the
+    forecaster on each fold and restoring the binners and residuals of the user's
+    forecaster before predicting. The user's forecaster must not be modified.
+    """
+    forecaster_class = (
+        ForecasterDirectMultiVariate if 'level' in forecaster_kwargs
+        else ForecasterRecursiveMultiSeries
+    )
+    forecaster = forecaster_class(
+        estimator=LinearRegression(), lags=3, transformer_series=None,
+        binner_kwargs={'n_bins': 10}, **forecaster_kwargs
+    )
+    forecaster.fit(series=series_wide_dt_intermittent.iloc[:40], suppress_warnings=True)
+    n_bins_user = {level: binner.n_bins_ for level, binner in forecaster.binner.items()}
+
+    rng = np.random.default_rng(42)
+    y_pred_residuals = {level: rng.uniform(-5, 10, size=200) for level in levels}
+    y_true_residuals = {
+        level: y_pred_residuals[level] + rng.uniform(-5, 5, size=200) for level in levels
+    }
+    forecaster.set_out_sample_residuals(
+        y_true=y_true_residuals, y_pred=y_pred_residuals
+    )
+
+    cv = TimeSeriesFold(
+            steps              = 5,
+            initial_train_size = 60,
+            refit              = True,
+        )
+    _, backtest_predictions = backtesting_forecaster_multiseries(
+                                  forecaster              = forecaster,
+                                  series                  = series_wide_dt_intermittent,
+                                  cv                      = cv,
+                                  levels                  = levels,
+                                  metric                  = 'mean_absolute_error',
+                                  add_aggregated_metric   = False,
+                                  interval                = [0.05, 0.95],
+                                  interval_method         = interval_method,
+                                  n_boot                  = 250,
+                                  random_state            = 123,
+                                  use_in_sample_residuals = False,
+                                  use_binned_residuals    = True,
+                                  n_jobs                  = 1,
+                                  verbose                 = False,
+                                  show_progress           = False,
+                                  suppress_warnings       = True
+                              )
+
+    n_levels = len(levels)
+    expected_index = pd.date_range(start='2020-03-01', periods=20, freq='D')
+    if n_levels > 1:
+        expected_index = expected_index.repeat(n_levels)
+    expected_predictions = pd.DataFrame(
+        data    = expected,
+        columns = ['pred', 'lower_bound', 'upper_bound'],
+        index   = expected_index
+    )
+    expected_predictions.insert(0, 'fold', np.repeat([0, 1, 2, 3], 5 * n_levels))
+    expected_predictions.insert(0, 'level', levels * 20)
+
+    # Same predictions fitting each fold and restoring the user's binners and residuals
+    kwargs_levels = {'levels': levels} if forecaster_class is ForecasterRecursiveMultiSeries else {}
+    kwargs_predict = {
+        'steps': 5, 'n_boot': 250, 'random_state': 123,
+        'use_in_sample_residuals': False, 'use_binned_residuals': True,
+        'suppress_warnings': True, **kwargs_levels
+    }
+    manual_predictions = []
+    for fold_start in range(0, 20, 5):
+        forecaster_fold = forecaster_class(
+            estimator=LinearRegression(), lags=3, transformer_series=None,
+            binner_kwargs={'n_bins': 10}, **forecaster_kwargs
+        )
+        forecaster_fold.fit(
+            series=series_wide_dt_intermittent.iloc[fold_start:fold_start + 60],
+            suppress_warnings=True
+        )
+        forecaster_fold.binner = forecaster.binner
+        forecaster_fold.binner_intervals_ = forecaster.binner_intervals_
+        forecaster_fold.out_sample_residuals_ = forecaster.out_sample_residuals_
+        forecaster_fold.out_sample_residuals_by_bin_ = forecaster.out_sample_residuals_by_bin_
+        if interval_method == 'bootstrapping':
+            pred = forecaster_fold.predict_quantiles(quantiles=[0.05, 0.95], **kwargs_predict)
+            pred = pred.rename(columns={'q_0.05': 'lower_bound', 'q_0.95': 'upper_bound'})
+            pred.insert(
+                1, 'pred',
+                forecaster_fold.predict(steps=5, suppress_warnings=True, **kwargs_levels)['pred']
+            )
+        else:
+            pred = forecaster_fold.predict_interval(
+                method='conformal', interval=[0.05, 0.95], **kwargs_predict
+            )
+        manual_predictions.append(pred)
+    manual_predictions = pd.concat(manual_predictions)
+
+    assert {level: binner.n_bins_ for level, binner in forecaster.binner.items()} == n_bins_user
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+    pd.testing.assert_frame_equal(
+        backtest_predictions.drop(columns='fold').reset_index(drop=True),
+        manual_predictions.reset_index(drop=True),
+        check_names=False
+    )
+
+
+@pytest.mark.parametrize(
+    "interval_method, expected",
+    [
+        (
+            'bootstrapping',
+            np.array([[  1.49626187,  -2.59361718,   5.74468056],
+                      [  1.17606891,  -3.07763789,   5.49825969],
+                      [  1.33022544,  -3.00418599,   5.59360788],
+                      [  0.9740685 ,  -3.03480009,   5.33546836],
+                      [  1.12862098,  -3.32849905,   5.48989561],
+                      [ -3.61822034,  -7.70809938,   0.63019835],
+                      [ -6.33230882, -10.58601563,  -2.01011805],
+                      [ -5.24441814,  -9.57882957,  -0.9810357 ],
+                      [ -2.6899293 ,  -6.69879788,   1.67147057],
+                      [ -7.95135271, -12.40847274,  -3.59007808],
+                      [ -0.65904162,  -4.74892066,   3.58937707],
+                      [  0.71520709,  -3.53849971,   5.03739787],
+                      [ -2.64562399,  -6.98003542,   1.61775845],
+                      [  0.65497585,  -3.35389273,   5.01637572],
+                      [  5.28981541,   0.83269538,   9.65109005],
+                      [  5.48886391,   1.39898486,   9.7372826 ],
+                      [  3.87992105,  -0.37378575,   8.20211183],
+                      [  5.44813403,   1.1137226 ,   9.71151647],
+                      [  0.67509883,  -3.33376975,   5.0364987 ],
+                      [  7.06639013,   2.6092701 ,  11.42766476]])
+        ),
+        (
+            'conformal',
+            np.array([[  1.49626187,  -2.86502529,   5.85754902],
+                      [  1.17606891,  -3.18521825,   5.53735607],
+                      [  1.33022544,  -3.03106172,   5.69151259],
+                      [  0.9740685 ,  -3.38721866,   5.33535565],
+                      [  1.12862098,  -3.23266618,   5.48990814],
+                      [ -3.61822034,  -7.97950749,   0.74306682],
+                      [ -6.33230882, -10.69359598,  -1.97102167],
+                      [ -5.24441814,  -9.6057053 ,  -0.88313098],
+                      [ -2.6899293 ,  -7.05121646,   1.67135786],
+                      [ -7.95135271, -12.31263987,  -3.59006555],
+                      [ -0.65904162,  -5.02032877,   3.70224554],
+                      [  0.71520709,  -3.64608007,   5.07649425],
+                      [ -2.64562399,  -7.00691114,   1.71566317],
+                      [  0.65497585,  -3.7063113 ,   5.01626301],
+                      [  5.28981541,   0.92852826,   9.65110257],
+                      [  5.48886391,   1.12757675,   9.85015106],
+                      [  3.87992105,  -0.48136611,   8.24120821],
+                      [  5.44813403,   1.08684687,   9.80942119],
+                      [  0.67509883,  -3.68618832,   5.03638599],
+                      [  7.06639013,   2.70510297,  11.42767729]])
+        ),
+    ],
+    ids=['bootstrapping', 'conformal']
+)
+def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_out_sample_residuals_not_binned_when_refit(
+    interval_method, expected
+):
+    """
+    Test output of backtesting_forecaster_multiseries in ForecasterDirectMultiVariate
+    with refit=True, use_in_sample_residuals=False and use_binned_residuals=False.
+    ForecasterDirectMultiVariate accesses both `out_sample_residuals_` and
+    `out_sample_residuals_by_bin_` when predicting, so both of them must be
+    restored after each fit regardless of `use_binned_residuals`. Otherwise, a
+    TypeError is raised because one of them is None.
+    """
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator          = LinearRegression(),
+                     level              = 'l1',
+                     steps              = 5,
+                     lags               = 3,
+                     transformer_series = None
+                 )
+    forecaster.fit(series=series_wide_dt_intermittent.iloc[:40], suppress_warnings=True)
+
+    rng = np.random.default_rng(42)
+    y_pred_residuals = {'l1': rng.uniform(-5, 10, size=200)}
+    y_true_residuals = {'l1': y_pred_residuals['l1'] + rng.uniform(-5, 5, size=200)}
+    forecaster.set_out_sample_residuals(
+        y_true=y_true_residuals, y_pred=y_pred_residuals
+    )
+
+    cv = TimeSeriesFold(
+            steps              = 5,
+            initial_train_size = 60,
+            refit              = True,
+        )
+    _, backtest_predictions = backtesting_forecaster_multiseries(
+                                  forecaster              = forecaster,
+                                  series                  = series_wide_dt_intermittent,
+                                  cv                      = cv,
+                                  levels                  = ['l1'],
+                                  metric                  = 'mean_absolute_error',
+                                  add_aggregated_metric   = False,
+                                  interval                = [0.05, 0.95],
+                                  interval_method         = interval_method,
+                                  n_boot                  = 250,
+                                  random_state            = 123,
+                                  use_in_sample_residuals = False,
+                                  use_binned_residuals    = False,
+                                  n_jobs                  = 1,
+                                  verbose                 = False,
+                                  show_progress           = False,
+                                  suppress_warnings       = True
+                              )
+
+    expected_predictions = pd.DataFrame(
+        data    = expected,
+        columns = ['pred', 'lower_bound', 'upper_bound'],
+        index   = pd.date_range(start='2020-03-01', periods=20, freq='D')
+    )
+    expected_predictions.insert(0, 'fold', np.repeat([0, 1, 2, 3], 5))
+    expected_predictions.insert(0, 'level', ['l1'] * 20)
+
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
