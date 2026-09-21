@@ -29,7 +29,7 @@ The main changes in this release are:
 
 **Fixed**
 
-+ <code>[RollingFeatures]</code> raised `TypeError: argument of type 'NoneType' is not iterable` when `kwargs_stats=None`, although `None` is accepted by the parameter validation and by the type hint. It is now handled as an empty dictionary, the same as `kwargs_stats={}`.
++ <code>[RollingFeatures]</code> raised `TypeError: argument of type 'NoneType' is not iterable` when `kwargs_stats=None`, although `None` is accepted by the parameter validation and by the type hint. The default value of `kwargs_stats` is now `None`, which is replaced by the documented default `{'ewm': {'alpha': 0.3}}`.
 
 
 ## 0.25.0 <small>Sep 11, 2026</small> { id="0.25.0" }

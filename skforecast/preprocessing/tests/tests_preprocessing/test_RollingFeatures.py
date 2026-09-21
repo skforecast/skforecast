@@ -223,8 +223,8 @@ def test_RollingFeatures_init_store_parameters_when_kwargs_stats_is_None():
 
     rolling = RollingFeatures(stats=['mean', 'ewm'], window_sizes=5, kwargs_stats=None)
 
-    assert rolling.kwargs_stats == {}
-    assert rolling.features_names == ['roll_mean_5', 'roll_ewm_5']
+    assert rolling.kwargs_stats == {'ewm': {'alpha': 0.3}}
+    assert rolling.features_names == ['roll_mean_5', 'roll_ewm_5_alpha_0.3']
 
 
 def test_RollingFeatures_ValueError_apply_stat_when_stat_not_implemented():

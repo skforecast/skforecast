@@ -1045,10 +1045,11 @@ class RollingFeatures():
     fillna : str, float, default None
         Fill missing values in `transform_batch` method. Available 
         methods are: 'mean', 'median', 'ffill', 'bfill', or a float value.
-    kwargs_stats : dict, default {'ewm': {'alpha': 0.3}}
+    kwargs_stats : dict, default None
         Dictionary with additional arguments for the statistics. The keys are the
         statistic names and the values are dictionaries with the arguments for the
-        corresponding statistic. For example, {'ewm': {'alpha': 0.3}}.
+        corresponding statistic. For example, {'ewm': {'alpha': 0.3}}. If `None`,
+        the default {'ewm': {'alpha': 0.3}} is used.
     
     Attributes
     ----------
@@ -1081,7 +1082,7 @@ class RollingFeatures():
         min_periods: int | list[int] | None = None,
         features_names: list[str] | None = None, 
         fillna: str | float | None = None,
-        kwargs_stats: dict[str, dict[str, object]] | None = {'ewm': {'alpha': 0.3}}
+        kwargs_stats: dict[str, dict[str, object]] | None = None
     ) -> None:
         
         self._validate_params(
@@ -1094,7 +1095,7 @@ class RollingFeatures():
         )
 
         if kwargs_stats is None:
-            kwargs_stats = {}
+            kwargs_stats = {'ewm': {'alpha': 0.3}}
 
         if isinstance(stats, str):
             stats = [stats]
