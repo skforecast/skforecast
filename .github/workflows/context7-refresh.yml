@@ -18,6 +18,13 @@ on:
       - 'skills/**'
       - 'docs/**'
   workflow_dispatch:
+    inputs:
+      branch:
+        description: >-
+          Branch version registered in Context7 to refresh. Leave empty to
+          refresh the default index (the branch set in context7.json).
+        required: false
+        default: ''
 
 permissions: {}
 
@@ -35,18 +42,27 @@ jobs:
       - name: Request a refresh of /skforecast/skforecast
         env:
           CONTEXT7_API_KEY: ${{ secrets.CONTEXT7_API_KEY }}
+          BRANCH: ${{ inputs.branch }}
         run: |
           if [ -z "$CONTEXT7_API_KEY" ]; then
             echo "::error::Secret CONTEXT7_API_KEY is not set"
             exit 1
           fi
+          # `branch` is omitted by default: sending "main" returned
+          # 400 branch-not-found, which suggests the field selects a branch
+          # version registered in Context7, not any git branch. The default
+          # index follows the `branch` field of context7.json.
+          body=$(jq -cn --arg branch "$BRANCH" \
+            '{libraryName: "/skforecast/skforecast"}
+             + (if $branch == "" then {} else {branch: $branch} end)')
+          echo "Request body: $body"
           status=$(curl --silent --show-error --max-time 60 \
             --output response.json --write-out '%{http_code}' \
             --request POST \
             --url https://context7.com/api/v1/refresh \
             --header "Authorization: Bearer $CONTEXT7_API_KEY" \
             --header 'Content-Type: application/json' \
-            --data '{"libraryName": "/skforecast/skforecast", "branch": "main"}')
+            --data "$body")
           echo "HTTP $status"
           cat response.json
           echo
