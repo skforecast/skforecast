@@ -27,6 +27,14 @@ The main changes in this release are:
 
 + The examples and tutorials pages (English, Spanish and Chinese) are rendered as Material card grids with a search box and level/topic filter chips. Each tutorial now carries a one line summary and tags, and a language switcher links the three pages. The page URLs are unchanged. The three pages are generated at build time from a single source of truth, `tools/docs_hooks/examples.yml`, so the languages can no longer drift apart; add or edit a tutorial there rather than in the Markdown pages.
 
+
+**Fixed**
+
++ Fixed an issue in <code>[backtesting_forecaster]</code> and <code>[backtesting_forecaster_multiseries]</code> where, with `refit`, `use_in_sample_residuals=False` and `use_binned_residuals=True`, the out-of-sample residuals set by the user were restored after each `fit()` but the binner that created them was not, so the intervals could be built with the residuals of a different bin. The binner and its intervals are now restored together with the residuals in every fold.
+
++ Fixed an issue in <code>[backtesting_forecaster_multiseries]</code> where <code>[ForecasterDirectMultiVariate]</code> raised `TypeError: 'NoneType' object is not subscriptable` with `use_in_sample_residuals=False`, because only one of `out_sample_residuals_` and `out_sample_residuals_by_bin_` was restored after each `fit()` depending on `use_binned_residuals`. Both attributes are now restored.
+
+
 ## 0.25.0 <small>Sep 11, 2026</small> { id="0.25.0" }
 
 The main changes in this release are:
@@ -81,10 +89,6 @@ The main changes in this release are:
 + Fixed an issue in <code>[ForecasterRecursiveMultiSeries]</code> where `predict_bootstrapping` used the requested number of bins instead of the number of bins actually learned by each series binner, raising a `KeyError` when any of them was reduced.
 
 + Fixed an issue in <code>[ForecasterRecursiveMultiSeries]</code> where `set_out_sample_residuals` built the binned residuals of `'_unknown_level'` by joining the bins of the known series, although each series has its own binner. The residuals of all series are now binned with the binner of `'_unknown_level'`, so `predict_interval`, `predict_bootstrapping` and `predict_quantiles` no longer raise a `KeyError` for unknown levels when `use_in_sample_residuals=False` and `use_binned_residuals=True`, and the residuals stored in each bin correspond to that bin.
-
-+ Fixed an issue in <code>[backtesting_forecaster]</code> and <code>[backtesting_forecaster_multiseries]</code> where, with `use_in_sample_residuals=False` and `use_binned_residuals=True`, the out-of-sample residuals set by the user were restored after each `fit()` but the binner was not. The residuals had been binned with the binner of the original forecaster while the predictions were assigned to bins with the binner refitted in each fold, so the residuals of a different bin could be used to build the intervals or, when the refitted binner learned more bins than the original one, a `KeyError` was raised. The binner and its intervals are now preserved together with the out-of-sample residuals in every fold. This did not affect `refit=False` when `initial_train_size` matches the training set of the forecaster.
-
-+ Fixed an issue in <code>[backtesting_forecaster_multiseries]</code> where <code>[ForecasterDirectMultiVariate]</code> raised `TypeError: 'NoneType' object is not subscriptable` with `use_in_sample_residuals=False`, because only one of `out_sample_residuals_` and `out_sample_residuals_by_bin_` was restored after each `fit()` depending on `use_binned_residuals`. Both attributes are now restored.
 
 + Fixed an issue in <code>[crps_from_quantiles]</code> where the integration bounds were derived by scaling the extreme predicted quantiles by fixed factors (`0.9` and `1.1`). This made the score depend on the level of the series, return negative values for negative quantiles, under-penalize true values far outside the predicted quantiles, and return `0` when all predicted quantiles were `0`. The area outside the predicted quantiles is now computed analytically, so the score is translation invariant, non-negative, grows linearly with the distance when `y_true` falls outside the predicted range, and reduces to the absolute error when the predictive distribution is a point mass.
 
