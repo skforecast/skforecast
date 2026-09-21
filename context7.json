@@ -1,4 +1,53 @@
 {
+  "$schema": "https://context7.com/schema/context7.json",
   "url": "https://context7.com/skforecast/skforecast",
-  "public_key": "pk_ZlCOQpj3scfwpZGnUggcE"
+  "public_key": "pk_ZlCOQpj3scfwpZGnUggcE",
+  "projectTitle": "skforecast",
+  "description": "Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models.",
+  "branch": "main",
+  "excludeFolders": [
+    ".github",
+    "benchmarks",
+    "dev",
+    "images",
+    "tests",
+    "tools",
+    "**/tests",
+    "docs/examples",
+    "docs/img",
+    "docs/javascripts",
+    "docs/more",
+    "docs/overrides",
+    "docs/releases",
+    "docs/skforecast-ai",
+    "docs/skforecast-studio",
+    "docs/stylesheets"
+  ],
+  "excludeFiles": [
+    "CLAUDE.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "CONTRIBUTOR_LICENSE_AGREEMENT.md",
+    "changelog.md",
+    "copilot-instructions.md",
+    "llms-full.txt",
+    "llms.txt"
+  ],
+  "rules": [
+    "Target skforecast >= 0.25. Older tutorials and blog posts use class names, import paths and arguments that no longer exist.",
+    "Default choice for one series: `ForecasterRecursive` with a gradient boosting estimator (e.g. `LGBMRegressor`) and `lags`. Use `ForecasterDirect` only when the relationship between predictors and target changes across the forecast horizon.",
+    "To forecast several series use `ForecasterRecursiveMultiSeries` (one global model for all series) instead of a loop of single-series forecasters. Use `ForecasterDirectMultiVariate` when other series are predictors of a single target series.",
+    "With little or no history (cold start, zero-shot) use `ForecasterFoundation(estimator=FoundationModel(model_id=...))` from `skforecast.foundation`; its `fit()` only stores the context and does not train a model.",
+    "Evaluate with backtesting (`backtesting_forecaster` and a `TimeSeriesFold`), not with a single train-test split, and compare against a `ForecasterEquivalentDate` baseline and, optionally, a statistical model with `ForecasterStats`.",
+    "Use current class names and imports: `from skforecast.recursive import ForecasterRecursive, ForecasterRecursiveMultiSeries, ForecasterStats`, `from skforecast.direct import ForecasterDirect`. `ForecasterAutoreg*` and `ForecasterSarimax` no longer exist.",
+    "The constructor argument for the model is `estimator=`, not `regressor=`.",
+    "The index must be a pandas DatetimeIndex with a frequency, or a RangeIndex. After loading data call `data = data.asfreq('D')` (or 'h', 'MS', ...); a DatetimeIndex without frequency raises an error.",
+    "`interval` is expressed as quantiles in (0, 1), e.g. `interval=[0.1, 0.9]` for 80% coverage. Percentiles such as `[10, 90]` raise a ValueError.",
+    "`predict_interval` (bootstrapping or conformal) uses in-sample residuals by default, so fit with `forecaster.fit(..., store_in_sample_residuals=True)` first.",
+    "Backtesting and search take a `cv` object: `TimeSeriesFold(steps=..., initial_train_size=...)`. Do not pass `steps` or `initial_train_size` directly to `backtesting_forecaster`.",
+    "Match the function to the forecaster: `backtesting_forecaster` (single series), `backtesting_forecaster_multiseries`, `backtesting_stats` (ForecasterStats), `backtesting_foundation` (ForecasterFoundation). Search functions use the same suffixes.",
+    "The `exog` passed to `predict()` must cover every step of the forecast horizon, with an index that continues the training index.",
+    "Statistical models (`Arima`, `Sarimax`, `Ets`, `Arar` from `skforecast.stats`) are used through `ForecasterStats(estimator=...)`, not on their own.",
+    "Complete API reference and workflow guides for agents in a single file: https://skforecast.org/latest/llms-full.txt"
+  ]
 }
