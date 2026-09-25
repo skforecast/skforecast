@@ -21,6 +21,7 @@ Replace the old version with the new one in:
 - `skforecast/__init__.py` (`__version__`)
 - `tests/test_skforecast_version.py`
 - `tools/ai/llms-base.txt` (`This document is for skforecast vX.Y.Z+` and `- Version:`)
+- `.claude-plugin/marketplace.json` (plugin `version`)
 - `llms.txt` (root)
 - `docs/quick-start/how-to-install.md` and `docs/quick-start/ai-assisted-forecasting.md`
 

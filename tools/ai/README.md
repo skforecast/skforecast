@@ -132,9 +132,11 @@ These are the only files you edit directly:
 | `tools/ai/ai_context_header.md` | ~40 | Dev-only context: testing commands, code style, dependencies |
 | `llms.txt` (root) | ~120 | Public index per [llmstxt.org](https://llmstxt.org) spec with links to docs |
 | `skills/*/SKILL.md` | 17 skills | Modular workflow guides, one per topic |
-| `skills/*/references/*.md` | 9 files | Supplementary reference tables for some skills |
+| `skills/*/references/*.md` | 12 files | Supplementary reference tables for some skills |
 | `.github/instructions/*.md` | 2 files | Pattern-matched coding conventions |
 | `.github/prompts/*.md` | 2 files | Reusable review checklists |
+| `context7.json` (root) | ~50 | Context7 indexing config: excluded folders and files, agent `rules` |
+| `.claude-plugin/marketplace.json` | ~25 | Claude Code plugin marketplace that publishes `skills/` as the `skforecast` plugin |
 
 ## Generated files (do not edit)
 
@@ -150,7 +152,7 @@ All marked with `<!-- AUTO-GENERATED -->` header and tracked in `.gitattributes`
 
 ## Skills
 
-16 self-contained workflow guides in `skills/`. Each has a `SKILL.md` with YAML frontmatter (`name`, `description`) and optional `references/` subfolder.
+17 self-contained workflow guides in `skills/`. Each has a `SKILL.md` with YAML frontmatter (`name`, `description`) and optional `references/` subfolder.
 
 | Skill | References | Topic |
 |-------|-----------|-------|
@@ -168,8 +170,49 @@ All marked with `<!-- AUTO-GENERATED -->` header and tracked in `.gitattributes`
 | `deep-learning-forecasting` | `architecture-options.md` | ForecasterRnn, LSTM/GRU |
 | `foundation-forecasting` | `adapter-parameters.md` | ForecasterFoundation, Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL |
 | `choosing-a-forecaster` | — | Decision guide for forecaster selection |
+| `baseline-forecasting` | — | ForecasterEquivalentDate and naive baselines |
 | `troubleshooting-common-errors` | — | Common mistakes and fixes |
-| `complete-api-reference` | `method-signatures.md` | All constructor and method signatures |
+| `complete-api-reference` | `forecaster-constructors.md`, `forecaster-methods.md`, `model-selection-signatures.md`, `preprocessing-signatures.md` | All constructor and method signatures |
+
+## Distribution to user agents
+
+The files above only reach someone working inside this repository. Three channels
+deliver the same content to a user working in their own project. None of them
+duplicates `skills/`: all read the folder at the repository root.
+
+| Channel | Config in this repo | What the user runs |
+|---------|---------------------|--------------------|
+| **Claude Code plugin** | `.claude-plugin/marketplace.json` | `/plugin marketplace add skforecast/skforecast`, then `/plugin install skforecast@skforecast` |
+| **Any Agent Skills client** (Cursor, Copilot, Codex, Gemini CLI, ...) | None: [`npx skills`](https://github.com/vercel-labs/skills) discovers `skills/*/SKILL.md` | `npx skills add skforecast/skforecast` |
+| **Context7** (MCP docs server) | `context7.json` | Nothing: agents with the Context7 MCP server query `/skforecast/skforecast` |
+
+Notes:
+
+- The plugin entry uses `"source": "./skills"` with `"strict": false` and `"skills": "."`,
+  so only the `skills/` folder (about 300 KB) is copied to the user plugin cache, not
+  the whole repository. Validate changes with `claude plugin validate . --strict`.
+- All three channels read the default branch (`main`), so users get the skills of the
+  latest release, and changes made in a release branch take effect at release time.
+- `context7.json` `rules` are injected into the agent together with the retrieved
+  snippets. Keep them short (max 255 characters each, max 50 rules) and limited to
+  two kinds: the default path (which forecaster to choose and how to evaluate it, from
+  `skills/choosing-a-forecaster`) and mistakes LLMs actually make (removed names and
+  arguments, from `skills/troubleshooting-common-errors`). Rules are prepended to every
+  query, so leave niche topics to the indexed docs.
+- `AGENTS.md` stays indexed on purpose: it is the only indexed copy of
+  `tools/ai/llms-base.txt` (the `tools/` folder and `llms-full.txt` are excluded).
+- `"branch": "main"` is explicit because the Context7 index was created when the
+  default branch was `master`, which no longer exists.
+- `.github/workflows/context7-refresh.yml` asks Context7 to re-index the library when
+  the indexed content changes in `main` (or on demand with "Run workflow"). Without it,
+  Context7 refreshes unpopular libraries every 45 days at most. It needs the repository
+  secret `CONTEXT7_API_KEY`, created at [context7.com/dashboard](https://context7.com/dashboard).
+  If the indexed paths in `context7.json` change, update the `paths` filter of the workflow.
+- Claiming the library at [context7.com](https://context7.com) (a manual step for a
+  maintainer) unlocks an admin panel, version management and faster refreshes.
+- There is no pip-based skills installer on purpose: it would require shipping a copy
+  of `skills/` inside the package and maintaining a per-agent directory mapping that
+  `npx skills` already maintains.
 
 ## Generation script
 
@@ -203,7 +246,8 @@ removed) still fails the check.
 | Check | What it verifies |
 |-------|-----------------|
 | **Skill structure** | Every `skills/*/SKILL.md` has valid YAML frontmatter, `name` matches directory, body ≤ 500 lines |
-| **Version consistency** | `Version:` in `llms-base.txt` matches `__version__` in `skforecast/__init__.py`. `CITATION.cff` has no version on purpose; if one is added, it must match too |
+| **Version consistency** | `Version:` in `llms-base.txt` and the plugin `version` in `.claude-plugin/marketplace.json` match `__version__` in `skforecast/__init__.py`. `CITATION.cff` has no version on purpose; if one is added, it must match too |
+| **Distribution manifests** | `context7.json` and `.claude-plugin/marketplace.json` are valid JSON, every non-glob `excludeFolders` entry and the plugin `source` exist, and each Context7 rule is at most 255 characters |
 | **Imports consistency** | Every public export in subpackage `__init__.py` files appears as an import in `llms-base.txt` |
 | **File freshness** | Each generated file matches what the script would produce right now |
 
@@ -218,6 +262,9 @@ skforecast/
 ├── llms.txt                              # Public index (human-maintained)
 ├── llms-full.txt                         # Complete reference (generated)
 ├── AGENTS.md                             # IDE context (generated)
+├── context7.json                         # Context7 indexing config (human-maintained)
+├── .claude-plugin/
+│   └── marketplace.json                  # Claude Code plugin marketplace (human-maintained)
 ├── .gitattributes                        # Marks generated files
 ├── .github/
 │   ├── copilot-instructions.md           # IDE context (generated)
@@ -228,14 +275,15 @@ skforecast/
 │   │   ├── review-llms-base.prompt.md    # Review checklist for llms-base.txt
 │   │   └── review-skill.prompt.md        # Review checklist for skills
 │   └── workflows/
-│       └── ai-context-check.yml          # CI: validates generated files
+│       ├── ai-context-check.yml          # CI: validates generated files
+│       └── context7-refresh.yml          # Re-index Context7 when main changes
 ├── skills/
 │   ├── forecasting-single-series/
 │   │   └── SKILL.md
 │   ├── complete-api-reference/
 │   │   ├── SKILL.md
 │   │   └── references/
-│   │       └── method-signatures.md
+│   │       └── forecaster-constructors.md (and 3 more)
 │   └── ... (15 more skills)
 ├── tools/ai/
 │   ├── README.md                         # This file
@@ -276,7 +324,8 @@ skforecast/
 
 1. Update `__version__` in `skforecast/__init__.py`
 2. Update `Version:` in `tools/ai/llms-base.txt`
-3. Regenerate — the `--check` validation will catch mismatches
+3. Update the plugin `version` in `.claude-plugin/marketplace.json`
+4. Regenerate — the `--check` validation will catch mismatches
 
 ## Claude Code harness
 
