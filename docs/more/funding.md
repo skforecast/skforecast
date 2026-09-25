@@ -1,64 +1,89 @@
-# Funding and Donations
+# Sponsorship and Funding
 
-**skforecast** is a critical piece of open-source digital infrastructure. To ensure its long-term stability, continuous maintenance, and the development of new features, the project is supported through professional service agreements and investments.
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/skforecast?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/skforecast) [![PyPI Downloads per month](https://static.pepy.tech/personalized-badge/skforecast?period=month&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=BLUE&left_text=downloads/month)](https://pepy.tech/projects/skforecast)
 
-## Institutional Investment
+**skforecast** is free, BSD-3 licensed software, widely used in industry and research. It is developed and maintained by a small core team, and it is a [NumFOCUS](https://numfocus.org/sponsored-projects/affiliated-projects) and [GC.OS](https://gc-os-ai.github.io/) affiliated project.
+
+Keeping a library like this reliable takes sustained, paid work: compatibility with every new release of Python, pandas, and scikit-learn, security and bug fixes, documentation, and answering users. This page explains how organizations can fund that work and what they get in return.
+
+
+## Why fund skforecast
+
+- **Reduce your dependency risk.** If your forecasts depend on skforecast, funding its maintenance is the most direct way to make sure it stays compatible, tested, and supported.
+- **Have a voice.** Sponsors and partners have a direct line to the core developers and can give input on the roadmap.
+- **Be visible.** Your logo is shown to the data scientists and machine learning engineers who read the repository and the documentation.
+- **Everything stays open.** All funded work is released under the same BSD-3 license, for everyone.
+
+
+## Corporate sponsorship
+
+Sponsorship is recurring funding for the general maintenance and development of the project.
+
+| | Bronze | Silver | Gold | Partner |
+|:--|:--:|:--:|:--:|:--:|
+| Indicative amount | 100 USD per month (1,200 USD per year) | 250 USD per month (3,000 USD per year) | 500 USD per month (6,000 USD per year) | from 15,000 USD per year, by agreement |
+| Name and link on this page | ✔️ | ✔️ | ✔️ | ✔️ |
+| Acknowledgement in release notes | ✔️ | ✔️ | ✔️ | ✔️ |
+| Logo on this page | | ✔️ | ✔️ | ✔️ |
+| Logo on the GitHub README and the documentation home page | | | ✔️ | ✔️ (top position) |
+| Priority triage of your issues and bug reports | | | ✔️ | ✔️ |
+| Roadmap call with the core developers | | | once a year | twice a year |
+| Announcement on the skforecast LinkedIn page | | | ✔️ | ✔️ |
+| Custom terms, direct invoice | | | | ✔️ |
+
+Bronze, Silver, and Gold sponsorships are managed through [Open Collective](https://opencollective.com/skforecast), which accepts card payments and bank transfers, provides a receipt for every payment, and publishes a transparent ledger of how the money is used. Partner sponsorships are agreed and invoiced directly. Priority triage means your reports are looked at first; it is not a support contract (see below).
+
+<a href="https://opencollective.com/skforecast" target="_blank" title="Sponsor skforecast on Open Collective" rel="noopener noreferrer">
+  <img style="margin-bottom: 1em; width: 240px;" src="../img/opencollective_button.png" alt="Sponsor skforecast on Open Collective">
+</a>
+
+### Current sponsors
+
+*Your organization could be the first one listed here.*
+
+
+## Partnerships and services
+
+For needs that go beyond sponsorship, the core development team works directly with companies. These engagements are scoped, agreed in writing, and invoiced.
+
+- **Feature sponsorship.** Fund a specific feature, forecaster, or integration that your team needs. The work is planned with you, reviewed to the same standard as the rest of the library, released as open source, and acknowledged in the release notes.
+- **Support agreement.** A private channel with the core developers, agreed response times on business days, help with upgrades and migrations, and review of your forecasting pipelines.
+- **Training and workshops.** Hands-on sessions on forecasting with skforecast, remote or on site, adapted to your data and use cases.
+- **Consulting.** See [Consulting & Professional services](./consulting.md).
+
+
+## Institutional funding
 
 ### The Sovereign Tech Fund
 
 <a href="https://sovereign.tech" target="_blank" rel="noopener noreferrer" title="Sovereign Tech Agency">
-  <img src="../img/STA-Logo-Default-Color-RGB.png" alt="Sovereign Tech Agency" style="width: 250px; margin-bottom: 1em;">
+  <img src="../img/STA-Logo-Default-Color-RGB.png" alt="Sovereign Tech Agency" style="width: 250px; margin-bottom: 1em; padding: 12px 16px; border-radius: 8px; background-color: #ffffff;">
 </a>
 
-skforecast has been awarded a [service agreement by the Sovereign Tech Fund](https://www.sovereign.tech/tech/skforecast), a program of the Sovereign Tech Agency, which invests globally in maintaining digital infrastructure via public procurement.
+skforecast has been awarded a [service agreement by the Sovereign Tech Fund](https://www.sovereign.tech/tech/skforecast), a program of the [Sovereign Tech Agency](https://sovereign.tech), which invests globally in maintaining open digital infrastructure via public procurement.
 
-Starting in June 2026, this 12-month investment allows the core maintainers to dedicate substantial time and resources to the project, ensuring that the library remains robust, secure, and ready for enterprise-level adoption.
+Starting in June 2026, this 12-month investment allows the core maintainers to dedicate substantial time to the project, so that the library remains robust, secure, and ready for enterprise-level adoption. We are very grateful for their support.
 
-We are incredibly grateful for their support in keeping open-source software sustainable. You can learn more about their mission by visiting the [Sovereign Tech Agency](https://sovereign.tech) website, the organization that runs the Sovereign Tech Fund.
-
----
-
-## Donations
-
-If you found **skforecast** useful, you can support us with a donation. Your contribution will help us **continue developing, maintaining, and improving** this project. Every contribution, no matter the size, makes a difference. **Thank you for your support!**
-
-<span style="font-size: 1.3em;">💙 Open Collective</span>
-
-<a href="https://opencollective.com/skforecast" target="_blank" title="Sponsor us on Open Collective" rel="noopener noreferrer">
-  <img style="margin-bottom: 1em; width: 240px;" src="../img/opencollective_button.png" alt="Sponsor us on Open Collective">
-</a>
+We welcome conversations with other public funders, foundations, and research programs interested in open-source forecasting infrastructure.
 
 
-<span style="font-size: 1.3em;">☕ Buy us a coffee</span>
+## Individual support
 
-<a href="https://www.buymeacoffee.com/skforecast" target="_blank" rel="noopener noreferrer" title="Buy me a coffee skforecast">
-    <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=skforecast&button_colour=f79939&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00" alt="Buy me a coffee skforecast">
-</a>
+If skforecast has been useful to you personally, you can support it through any of these channels:
 
+- [Open Collective](https://opencollective.com/skforecast)
+- GitHub Sponsors: [Joaquín Amat Rodrigo](https://github.com/sponsors/JoaquinAmatRodrigo) and [Javier Escobar Ortiz](https://github.com/sponsors/JavierEscobarOrtiz)
+- [Buy Me a Coffee](https://www.buymeacoffee.com/skforecast)
+- [PayPal](https://www.paypal.com/donate/?hosted_button_id=D2JZSWRLTZDL6)
 
-<span style="font-size: 1.3em;">❤️ Become a GitHub Sponsor</span>
-
-<a href="https://github.com/sponsors/JoaquinAmatRodrigo" target="_blank" rel="noopener noreferrer" title="Become a GitHub Sponsor">
-    <img style="margin-bottom: 1em; width: 240px;" src="../img/github_sponsor_button.png" alt="Become a GitHub Sponsor">
-</a>
-<a href="https://github.com/sponsors/JavierEscobarOrtiz" target="_blank" rel="noopener noreferrer" title="Become a GitHub Sponsor">
-    <img style="margin-bottom: 1em; width: 240px;" src="../img/github_sponsor_button.png" alt="Become a GitHub Sponsor">
-</a>
+Citing the project, starring the repository, and sharing your work with skforecast help just as much.
 
 
-<span style="font-size: 1.3em;">💳 Donate via PayPal</span>
-<br>
-
-[![paypal](https://www.paypalobjects.com/en_US/ES/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=D2JZSWRLTZDL6)
-
----
-
-## 🤝 Sponsor for Companies
+## Get in touch
 
 [![!linkedin](https://img.shields.io/static/v1?logo=linkedin&label=LinkedIn&message=news&color=lightblue)](https://www.linkedin.com/company/skforecast/) [![!discord](https://img.shields.io/static/v1?logo=discord&label=discord&message=chat&color=lightgreen)](https://discord.gg/3V52qpNkuj) [![Forecasting Python](https://img.shields.io/static/v1?logo=readme&logoColor=white&label=Blog&labelColor=%23333333&message=Forecasting%20Python&color=%23ffab40)](https://cienciadedatos.net/en/forecasting-python)
 
-
-If you’d like to sponsor **skforecast** in a unique way or explore potential partnerships, let’s talk!
+To discuss sponsorship, a partnership, or a service engagement, contact the core developers.
 
 
 <div class="profile-container">

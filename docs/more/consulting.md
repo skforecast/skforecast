@@ -9,6 +9,8 @@ If you need professional help with **Machine Learning**, our core development te
 - **Advisory & Strategy**: Not sure where to start? We help define the right AI approach, ensuring your data strategy aligns with your business goals.
 - **Workshops & Training**: Empower your team with hands-on training and customized workshops designed to enhance their ML skills and knowledge.
 
+If your team already uses **skforecast**, we also offer services built around the library: support agreements, feature sponsorship, and training on forecasting with skforecast. See [Sponsorship and Funding](./funding.md) for details.
+
 Interested in working with us? We'd love to hear from you! Let’s build something great together! 🚀
 
 
