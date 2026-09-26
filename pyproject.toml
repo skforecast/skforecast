@@ -196,3 +196,6 @@ exclude_lines = [
     "raise NotImplementedError",
     "if TYPE_CHECKING:",
 ]
+
+[tool.setuptools.package-data]
+skforecast = ["py.typed"]
