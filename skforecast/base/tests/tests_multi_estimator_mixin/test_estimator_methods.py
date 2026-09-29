@@ -2,6 +2,7 @@
 # ==============================================================================
 import re
 import pytest
+import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, clone
 from sklearn.linear_model import LinearRegression, Ridge
@@ -20,6 +21,28 @@ class CustomFitEstimator(BaseEstimator):
 
     def fit(self, X, y, custom_arg=None):
         return self
+
+
+class RequiredArgEstimator(BaseEstimator):
+    """
+    Minimal estimator with a required constructor argument, so it cannot be
+    instantiated without arguments. Used to verify that all its parameters are
+    displayed when the default values cannot be obtained.
+    """
+
+    def __init__(self, alpha, beta=1):
+        self.alpha = alpha
+        self.beta = beta
+
+
+class ArrayParamEstimator(BaseEstimator):
+    """
+    Minimal estimator with a parameter that can hold a numpy array, whose
+    comparison with the default value is not a single boolean.
+    """
+
+    def __init__(self, weights=None):
+        self.weights = weights
 
 
 class DummyForecaster(MultiEstimatorMixin):
@@ -397,7 +420,7 @@ def test_get_estimators_info_without_support_attributes():
     when the forecaster does not define `estimators_support_exog` or
     `estimators_support_interval`.
     """
-    estimators = [LinearRegression(), Ridge()]
+    estimators = [LinearRegression(), Ridge(alpha=2.0)]
     forecaster = DummyForecaster(estimators=estimators)
 
     results = forecaster.get_estimators_info()
@@ -406,10 +429,7 @@ def test_get_estimators_info_without_support_attributes():
         'id': ['sklearn.LinearRegression', 'sklearn.Ridge'],
         'name': ['name_0', 'name_1'],
         'type': ['type_0', 'type_1'],
-        'params': [
-            str(LinearRegression().get_params()),
-            str(Ridge().get_params()),
-        ],
+        'params': ["{}", "{'alpha': 2.0}"],
     })
 
     pd.testing.assert_frame_equal(results, expected)
@@ -433,10 +453,7 @@ def test_get_estimators_info_with_support_attributes():
         'type': ['type_0', 'type_1'],
         'supports_exog': [True, False],
         'supports_interval': [False, True],
-        'params': [
-            str(LinearRegression().get_params()),
-            str(Ridge().get_params()),
-        ],
+        'params': ["{}", "{}"],
     })
 
     pd.testing.assert_frame_equal(results, expected)
@@ -446,7 +463,11 @@ def test_get_estimators_info_after_remove_estimators():
     """
     Check that get_estimators_info stays consistent after removing an estimator.
     """
-    estimators = [LinearRegression(), Ridge(), RandomForestRegressor()]
+    estimators = [
+        LinearRegression(fit_intercept=False),
+        Ridge(),
+        RandomForestRegressor(n_estimators=10)
+    ]
     forecaster = DummyForecaster(estimators=estimators)
 
     forecaster.remove_estimators('sklearn.Ridge')
@@ -457,6 +478,29 @@ def test_get_estimators_info_after_remove_estimators():
     ]
     assert results['type'].to_list() == ['type_0', 'type_2']
     assert results['params'].to_list() == [
-        str(forecaster.estimator_params_['sklearn.LinearRegression']),
-        str(forecaster.estimator_params_['sklearn.RandomForestRegressor']),
+        "{'fit_intercept': False}", "{'n_estimators': 10}"
     ]
+
+
+def test_get_estimators_info_params_when_defaults_not_available_or_not_comparable():
+    """
+    Check that all the parameters are shown when the estimator class cannot be
+    instantiated without arguments, and that a parameter whose comparison with
+    the default value is not a single boolean (numpy array) is shown. The full
+    set of parameters is kept in `estimator_params_`.
+    """
+    estimators = [
+        RequiredArgEstimator(alpha=0.5),
+        ArrayParamEstimator(weights=np.array([1, 2])),
+        ArrayParamEstimator()
+    ]
+    forecaster = DummyForecaster(estimators=estimators)
+
+    results = forecaster.get_estimators_info()
+
+    assert results['params'].to_list() == [
+        "{'alpha': 0.5, 'beta': 1}", "{'weights': array([1, 2])}", "{}"
+    ]
+    assert forecaster.estimator_params_['skforecast.ArrayParamEstimator_2'] == {
+        'weights': None
+    }

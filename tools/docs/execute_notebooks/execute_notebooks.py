@@ -1,11 +1,14 @@
 # Execute and save all documentation notebooks, collecting warnings
 # ======================================================================================
 # Usage:
-#   python tools/execute_docs/execute_docs_notebooks.py                  # All docs/
-#   python tools/execute_docs/execute_docs_notebooks.py user_guides      # Only docs/user_guides/
-#   python tools/execute_docs/execute_docs_notebooks.py quick-start faq  # Multiple subdirs
-#   python tools/execute_docs/execute_docs_notebooks.py user_guides/hyperparameter-tuning-and-lags-selection.ipynb
-#   python tools/execute_docs/execute_docs_notebooks.py --include-slow   # Also run SLOW_NOTEBOOKS
+#   python tools/docs/execute_notebooks/execute_notebooks.py                  # All docs/
+#   python tools/docs/execute_notebooks/execute_notebooks.py user_guides      # Only docs/user_guides/
+#   python tools/docs/execute_notebooks/execute_notebooks.py quick-start faq  # Multiple subdirs
+#   python tools/docs/execute_notebooks/execute_notebooks.py user_guides/hyperparameter-tuning-and-lags-selection.ipynb
+#   python tools/docs/execute_notebooks/execute_notebooks.py --include-slow   # Also run SLOW_NOTEBOOKS
+#
+# After each notebook runs, its tqdm progress bar widgets are replaced with
+# static text (see static_widgets.py).
 # ======================================================================================
 import argparse
 import papermill as pm
@@ -19,10 +22,12 @@ from pathlib import Path
 from datetime import datetime
 import time
 
+from static_widgets import convert_notebook
+
 CONDA_ENV = "skforecast_py14"
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+REPO_ROOT = Path(__file__).resolve().parents[3]
 DOCS_DIR = REPO_ROOT / "docs"
-LOG_DIR = REPO_ROOT / "tools/execute_docs/logs"
+LOG_DIR = REPO_ROOT / "tools/docs/execute_notebooks/logs"
 EXECUTION_TIMEOUT = 600  # Max seconds per cell before aborting the notebook (10 min)
 
 # Skforecast custom warning categories (rendered as rich panels in notebooks).
@@ -383,6 +388,14 @@ def run_notebooks(targets=None, include_slow=False):
             # Atomically replace the original with the successfully executed file
             os.replace(temp_output_path, str(notebook))
 
+            # Progress bar widgets (tqdm) to static text, see static_widgets.py
+            n_converted, n_removed = convert_notebook(notebook)
+            if n_converted or n_removed:
+                log.info(
+                    f"  {C.INFO}Progress bars to text:{C.END} {n_converted} "
+                    f"converted, {n_removed} removed"
+                )
+
             # Extract warnings from the saved notebook outputs
             ext_warnings, skf_warnings = _extract_warnings(notebook)
             results["success"].append((notebook, elapsed))
@@ -524,11 +537,11 @@ if __name__ == "__main__":
         description="Execute documentation notebooks and collect warnings.",
         epilog=(
             "Examples:\n"
-            "  python tools/execute_docs/execute_docs_notebooks.py                  # All docs/\n"
-            "  python tools/execute_docs/execute_docs_notebooks.py user_guides      # Only docs/user_guides/\n"
-            "  python tools/execute_docs/execute_docs_notebooks.py quick-start faq  # Multiple subdirs\n"
-            "  python tools/execute_docs/execute_docs_notebooks.py user_guides/hyperparameter-tuning-and-lags-selection.ipynb\n"
-            "  python tools/execute_docs/execute_docs_notebooks.py --include-slow   # Also run SLOW_NOTEBOOKS\n"
+            "  python tools/docs/execute_notebooks/execute_notebooks.py                  # All docs/\n"
+            "  python tools/docs/execute_notebooks/execute_notebooks.py user_guides      # Only docs/user_guides/\n"
+            "  python tools/docs/execute_notebooks/execute_notebooks.py quick-start faq  # Multiple subdirs\n"
+            "  python tools/docs/execute_notebooks/execute_notebooks.py user_guides/hyperparameter-tuning-and-lags-selection.ipynb\n"
+            "  python tools/docs/execute_notebooks/execute_notebooks.py --include-slow   # Also run SLOW_NOTEBOOKS\n"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )

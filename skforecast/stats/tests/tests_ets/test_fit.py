@@ -1,5 +1,6 @@
 # Unit test fit method - Ets
 # ==============================================================================
+import re
 import platform
 import numpy as np
 import pandas as pd
@@ -55,6 +56,26 @@ def test_ets_fit_empty_series_raises():
     model = Ets()
     msg = "`y` is too short to fit ETS model."
     with pytest.raises(ValueError, match=msg):
+        model.fit(y)
+
+
+def test_ets_fit_ValueError_when_model_is_partial_automatic():
+    """
+    Test that Ets raises a clear ValueError, instead of a KeyError, when the
+    model string mixes automatic ('Z') and fixed components, and suggests how
+    to restrict the automatic search.
+    """
+    y = np.random.default_rng(123).normal(10, 1, 60)
+    model = Ets(model='ZZN')
+
+    err_msg = re.escape(
+        "Partial automatic model specifications such as 'ZZN' are not supported. "
+        "Use model='ZZZ' (or None) for automatic selection and restrict the search "
+        "with `seasonal`, `trend`, `damped`, `allow_multiplicative` and "
+        "`allow_multiplicative_trend` (for example, model='ZZZ' with seasonal=False "
+        "instead of 'ZZN'), or specify all three components."
+    )
+    with pytest.raises(ValueError, match=err_msg):
         model.fit(y)
 
 

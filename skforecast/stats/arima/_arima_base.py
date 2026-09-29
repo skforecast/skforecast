@@ -1148,6 +1148,8 @@ def _arima_kalman_core(
         [ssq, sumlog, nu] — sum of squares, log-determinant sum, count.
     residuals : np.ndarray
         Raw innovations v_t = y_t - Z'*a_{t|t-1} (if give_resid=True, else empty).
+        NaN for missing observations and for observations excluded from the
+        likelihood because of the diffuse initialization (F_t >= 1e4).
     a_final : np.ndarray
         Final filtered state vector.
     P_final : np.ndarray
@@ -1228,7 +1230,10 @@ def _arima_kalman_core(
                     P[i, j] = Pnew[i, j] - M[i] * M[j] * inv_F
 
             if give_resid:
-                std_residuals[t] = innovation
+                # Observations still dominated by the diffuse initialization
+                # are excluded from the likelihood and have no meaningful
+                # one-step-ahead prediction.
+                std_residuals[t] = innovation if F < 1e4 else np.nan
         else:
             for i in range(rd):
                 a[i] = anew[i]
@@ -1531,6 +1536,8 @@ def compute_arima_likelihood(
         - 'sumlog': Accumulated log-determinants.
         - 'nu': Number of innovations.
         - 'resid': Raw innovations v_t = y_t - Z'*a_{t|t-1} (only if give_resid=True).
+          NaN for missing observations and for observations dominated by the
+          diffuse initialization (F_t >= 1e4).
         - 'a': Final filtered state vector.
         - 'P': Final filtered state covariance.
     """
@@ -2294,6 +2301,10 @@ def _prepare_arima_config(
                 order[1], seasonal[1], m, Delta
             )
         )
+        # The initial values are in the rotated basis and _build_arima_result
+        # rotates the estimates back, so the optimizer must use the same basis.
+        if svd_transform is not None:
+            exog_matrix = exog_matrix @ svd_transform['V']
     else:
         init0 = np.zeros(n_arma_params)
         param_scale = np.ones(n_arma_params)
@@ -2724,6 +2735,18 @@ def _build_arima_result(config: _ArimaConfig, fit: _FitResult) -> ArimaResult:
     n_free = int(np.sum(c.free_param_mask))
     aic = neg_twice_loglik + 2 * n_free + 2 if c.method != "CSS" else np.nan
 
+    # BIC and AICc as in R's forecast::Arima, with n* = n - d - D*m (n_used)
+    # and k = number of free parameters + 1 (for σ²).
+    bic = None
+    aicc = None
+    if np.isfinite(aic):
+        n_params = n_free + 1
+        bic = aic + n_params * (np.log(c.n_used) - 2)
+        if c.n_used - n_params - 1 > 0:
+            aicc = aic + 2 * n_params * (n_params + 1) / (c.n_used - n_params - 1)
+        else:
+            aicc = np.inf
+
     params = fit.params
     param_covariance = fit.param_covariance
 
@@ -2757,8 +2780,8 @@ def _build_arima_result(config: _ArimaConfig, fit: _FitResult) -> ArimaResult:
         param_mask=c.free_param_mask,
         loglik=loglik,
         aic=aic,
-        bic=None,
-        aicc=None,
+        bic=bic,
+        aicc=aicc,
         ic=None,
         order=c.order_spec,
         residuals=fit.resid,

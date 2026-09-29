@@ -674,8 +674,72 @@ def test_predict_arima_with_exog(simple_ar1_series):
 
     newxreg = pd.DataFrame({'x1': np.random.randn(5)})
     result = predict_arima(model, n_ahead=5, new_exog=newxreg)
-    
+
     assert len(result['mean']) == 5
+
+
+@pytest.mark.parametrize(
+    "order, seasonal, m, exog_cols, method, expected_names, expected_coef, expected_pred",
+    [
+        ((1, 0, 0), (0, 0, 0), 1, ['x1'], 'CSS-ML',
+         ['ar1', 'intercept', 'x1'],
+         np.array([0.2477036411428992, 48.95151579903445, 3.046479474018892]),
+         np.array([114.2404779292814, 114.32507502286954, 88.40491046607404,
+                   81.29939101673133, 94.35117057645071])),
+        ((1, 0, 0), (0, 0, 0), 1, ['x1'], 'ML',
+         ['ar1', 'intercept', 'x1'],
+         np.array([0.2477046447944642, 48.951498007761174, 3.0464803035270207]),
+         np.array([114.24047992928953, 114.32507602563103, 88.40490378611513,
+                   81.29938215498886, 94.3511651844567])),
+        ((1, 0, 0), (1, 0, 0), 4, ['x1', 'x2'], 'CSS-ML',
+         ['ar1', 'sar1', 'intercept', 'x1', 'x2'],
+         np.array([0.4761885415188407, 0.0732028016028545, 49.68186064448469,
+                   3.0021217377012834, -1.9634123481480887]),
+         np.array([111.87121672591941, 115.93018932365435, 87.35201871063536,
+                   81.11679724719336, 94.78170038542271])),
+        ((1, 1, 0), (0, 0, 0), 1, ['x1', 'x2'], 'CSS',
+         ['ar1', 'x1', 'x2'],
+         np.array([-0.2126358295171016, 3.0005480686249575, -1.9455562953124355]),
+         np.array([112.71459758372171, 117.1284555646701, 88.8518288690039,
+                   82.67109484127522, 96.44394064272706])),
+    ],
+    ids=['intercept_1_exog_CSS-ML', 'intercept_1_exog_ML',
+         'seasonal_intercept_2_exog_CSS-ML', 'diff_2_exog_CSS']
+)
+def test_arima_and_predict_arima_recover_exog_coefficients_when_several_regressors(
+    order, seasonal, m, exog_cols, method, expected_names, expected_coef, expected_pred
+):
+    """
+    Test that regression coefficients are recovered in the original basis when
+    there are two or more regressors (including the intercept), which triggers
+    the SVD rotation of the regressors. Data follow y = 50 + 3*x1 - 2*x2 + AR(1).
+    """
+    rng = np.random.RandomState(123)
+    n = 150
+    steps = 5
+    exog = pd.DataFrame({
+        'x1': rng.normal(20, 5, n + steps),
+        'x2': rng.normal(0, 1, n + steps)
+    })
+    eps = rng.normal(0, 1, n + steps)
+    noise = np.zeros(n + steps)
+    for t in range(1, n + steps):
+        noise[t] = 0.6 * noise[t - 1] + eps[t]
+    y = 50 + 3 * exog['x1'].to_numpy() - 2 * exog['x2'].to_numpy() + noise
+
+    model = arima(
+        y[:n], m=m, order=order, seasonal=seasonal,
+        exog=exog[exog_cols].iloc[:n], method=method
+    )
+    pred = predict_arima(
+        model, n_ahead=steps, new_exog=exog[exog_cols].iloc[n:]
+    )['mean']
+
+    assert list(model['coef'].columns) == expected_names
+    np.testing.assert_array_almost_equal(
+        model['coef'].to_numpy().ravel(), expected_coef, decimal=4
+    )
+    np.testing.assert_array_almost_equal(pred, expected_pred, decimal=4)
 
 
 # =============================================================================

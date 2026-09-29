@@ -766,6 +766,27 @@ def ets(y: NDArray[np.float64],
     if len(model) != 3:
         raise ValueError(f"Model must be 3 characters (e.g., 'AAN', 'MAM'), got '{model}'")
 
+    if model != "ZZZ":
+        if (
+            model[0] not in ("A", "M", "Z")
+            or model[1] not in ("N", "A", "M", "Z")
+            or model[2] not in ("N", "A", "M", "Z")
+        ):
+            raise ValueError(
+                f"Invalid model '{model}'. The error component must be 'A' or 'M', "
+                f"and the trend and seasonal components must be 'N', 'A' or 'M' "
+                f"(uppercase), or use model='ZZZ' for automatic selection."
+            )
+        if "Z" in model:
+            raise ValueError(
+                f"Partial automatic model specifications such as '{model}' are not "
+                f"supported. Use model='ZZZ' (or None) for automatic selection and "
+                f"restrict the search with `seasonal`, `trend`, `damped`, "
+                f"`allow_multiplicative` and `allow_multiplicative_trend` (for "
+                f"example, model='ZZZ' with seasonal=False instead of 'ZZN'), or "
+                f"specify all three components."
+            )
+
     # Handle ZZZ with high frequency by calling auto_ets
     if model == "ZZZ" and m > 24:
         warnings.warn(

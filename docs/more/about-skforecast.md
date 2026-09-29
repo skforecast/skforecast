@@ -17,30 +17,7 @@
 Meet the core developers behind [skforecast](https://github.com/skforecast/skforecast).
 
 
-<div class="profile-container">
-
-  <div class="profile-card">
-    <div class="profile-avatar">
-      <img src="https://github.com/JoaquinAmatRodrigo.png" alt="Joaquín Amat Rodrigo">
-    </div>
-    <div class="profile-info">
-      <strong>Joaquín Amat Rodrigo</strong>
-      <a href="https://github.com/JoaquinAmatRodrigo" class="github-link" target="_blank" rel="noopener noreferrer">@JoaquinAmatRodrigo</a>
-      <a href="https://www.linkedin.com/in/joaquin-amat-rodrigo" class="linkedin-link" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-    </div>
-  </div>
-
-  <div class="profile-card">
-    <div class="profile-avatar">
-      <img src="https://github.com/JavierEscobarOrtiz.png" alt="Javier Escobar Ortiz">
-    </div>
-    <div class="profile-info">
-      <strong>Javier Escobar Ortiz</strong>
-      <a href="https://github.com/JavierEscobarOrtiz" class="github-link" target="_blank" rel="noopener noreferrer">@JavierEscobarOrtiz</a>
-      <a href="https://www.linkedin.com/in/javier-escobar-ortiz" class="linkedin-link" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-    </div>
-  </div>
-</div>
+--8<-- "team.html"
 
 
 ## Main Contributors
@@ -76,34 +53,25 @@ Thank you for helping us make **skforecast** better! 🎉
 
 [![DOI](https://zenodo.org/badge/337705968.svg)](https://zenodo.org/doi/10.5281/zenodo.8382787)
 
-If you use skforecast for a scientific publication, we would appreciate citations to the published software.
-
-**Zenodo**
+If you use skforecast in a scientific publication, please cite the version you used. Each version has its own DOI and ready-made citations (APA, BibTeX and others) on [Zenodo](https://doi.org/10.5281/zenodo.8382787). To cite skforecast in general, use the DOI that always resolves to the latest release:
 
 ```
-Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2026). skforecast (v0.25.0). Zenodo. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, J., & Escobar Ortiz, J. skforecast [Computer software]. https://doi.org/10.5281/zenodo.8382787
 ```
 
-**APA**:
-```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.25.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
-```
-
-**BibTeX**:
-```
+```bibtex
 @software{skforecast,
   author  = {Amat Rodrigo, Joaquin and Escobar Ortiz, Javier},
   title   = {skforecast},
-  version = {0.25.0},
-  month   = {9},
-  year    = {2026},
   license = {BSD-3-Clause},
   url     = {https://skforecast.org/},
   doi     = {10.5281/zenodo.8382787}
 }
 ```
 
-View the [citation file](https://github.com/skforecast/skforecast/blob/main/CITATION.cff).
+The citation metadata is in [CITATION.cff](https://github.com/skforecast/skforecast/blob/main/CITATION.cff), which GitHub also offers through its "Cite this repository" button.
+
+skforecast is used in 70+ scientific publications: [see them on Google Scholar](https://scholar.google.com/scholar?q=%22skforecast%22).
 
 
 ## License

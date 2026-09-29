@@ -2001,13 +2001,14 @@ def _backtesting_stats(
     forecaster = deepcopy_forecaster(forecaster)
     cv = deepcopy(cv)
 
-    # NOTE: Only skforecast.Sarimax allows refit=False, if other estimators are 
-    # present, refit must be True.
+    # NOTE: Only skforecast.Sarimax allows refit=False, if other estimators are
+    # present, refit must be True. An integer refit other than 1 (intermittent
+    # refit) also predicts some folds without refitting. True == 1 in Python.
     all_sarimax = all(
-        est_type == 'skforecast.stats._sarimax.Sarimax' 
+        est_type == 'skforecast.stats._sarimax.Sarimax'
         for est_type in forecaster.estimator_types
     )
-    if not all_sarimax and not cv.refit:
+    if not all_sarimax and cv.refit != 1:
         warnings.warn(
             "Estimators different from `skforecast.stats.Sarimax` require refitting "
             "since predictions must start from the end of the training set. "

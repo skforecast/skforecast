@@ -229,7 +229,7 @@ def validate_skill(skill_dir: Path) -> list[str]:
 
 
 def validate_version_consistency() -> list[str]:
-    """Check that llms-base.txt version matches skforecast/__init__.py."""
+    """Check that llms-base.txt (and CITATION.cff, if versioned) match __init__.py."""
     errors: list[str] = []
     init_path = ROOT / "skforecast" / "__init__.py"
     llms_path = AI_DIR / "llms-base.txt"
@@ -252,6 +252,22 @@ def validate_version_consistency() -> list[str]:
             f"  llms-base.txt does not contain 'Version: {pkg_version}'"
             f" (from skforecast/__init__.py)"
         )
+
+    # CITATION.cff has no version on purpose (Zenodo takes it from each GitHub
+    # release). If one is added, it must be the current one: a stale version
+    # would make GitHub's "Cite this repository" give an outdated citation.
+    cff_path = ROOT / "CITATION.cff"
+    if cff_path.exists():
+        m = re.search(
+            r"^version:\s*['\"]?([^'\"\s]+)",
+            cff_path.read_text(encoding="utf-8"),
+            re.MULTILINE,
+        )
+        if m and m.group(1) != pkg_version:
+            errors.append(
+                f"  CITATION.cff has version {m.group(1)}, expected {pkg_version}"
+                f" (from skforecast/__init__.py); also update 'date-released'"
+            )
     return errors
 
 

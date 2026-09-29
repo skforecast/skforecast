@@ -1,5 +1,6 @@
 # Unit tests for skforecast.stats.ets.ets_base
 # ==============================================================================
+import re
 import numpy as np
 import pytest
 from .._ets_base import (
@@ -710,6 +711,46 @@ def test_ets_invalid_model_string():
 
     with pytest.raises(ValueError, match="Model must be 3 characters"):
         ets(y, m=1, model="AANN")  # Too long
+
+
+@pytest.mark.parametrize(
+    "model",
+    ["XAN", "NAN", "AXN", "AAX", "aan"],
+    ids=lambda model: f'model: {model}'
+)
+def test_ets_ValueError_when_model_has_invalid_components(model):
+    """
+    Test that ets raises a ValueError when a component of the model string is
+    not valid. Before the fix, a KeyError was raised.
+    """
+    y = ar1_series(80)
+
+    err_msg = re.escape(
+        f"Invalid model '{model}'. The error component must be 'A' or 'M', "
+        f"and the trend and seasonal components must be 'N', 'A' or 'M' "
+        f"(uppercase), or use model='ZZZ' for automatic selection."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        ets(y, m=1, model=model)
+
+
+@pytest.mark.parametrize(
+    "model",
+    ["ZZN", "AZN", "ANZ", "ZAA"],
+    ids=lambda model: f'model: {model}'
+)
+def test_ets_ValueError_when_model_is_partial_automatic(model):
+    """
+    Test that ets raises a ValueError when the model string mixes automatic
+    ('Z') and fixed components. Before the fix, a KeyError: 'Z' was raised.
+    """
+    y = ar1_series(80)
+
+    err_msg = re.escape(
+        f"Partial automatic model specifications such as '{model}' are not supported."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        ets(y, m=1, model=model)
 
 
 def test_ets_empty_series_raises():

@@ -3,8 +3,10 @@
 import platform
 import numpy as np
 import pandas as pd
+import re
 import pytest
 from ..._arima import Arima
+from ....exceptions import IgnoredArgumentWarning
 from .fixtures_arima import air_passengers
 
 
@@ -211,7 +213,7 @@ def test_arima_fit_with_exog_numpy_array():
     model.fit(y, exog=exog)
     
     # Check exact coefficients (R-based implementation values)
-    expected_coef = np.array([0.9191476116026199, 0.09540882213644887, -0.6558371143545424, 0.7804171614239432, 0.769360295925672])
+    expected_coef = np.array([0.91914762, 0.09540883, 1.2651357, -0.03388803, -0.17137266])
     np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=5)
 
     assert model.n_exog_features_in_ == 2
@@ -232,7 +234,7 @@ def test_arima_fit_with_exog_pandas_series():
     model.fit(y, exog=exog)
     
     # Check exact coefficients (R-based implementation values)
-    expected_coef = np.array([0.981641142297704, 5.097382772193973, -0.2990921998764025])
+    expected_coef = np.array([0.98164047, -5.10581545, -0.04324747])
     np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=4)
 
     # Check exact sigma2 and aic
@@ -260,13 +262,7 @@ def test_arima_fit_with_exog_pandas_dataframe():
     model.fit(y, exog=exog)
     
     # Check exact coefficients
-    platform_name = platform.system()
-    if platform_name == 'Windows':
-        expected_coef = np.array([0.9825,  2.4476, -1.7752,  4.037 , -0.9354])
-    elif platform_name == 'Linux':
-        expected_coef = np.array([0.9825,  2.4476, -1.7752,  4.037 , -0.9354])
-    else:
-        expected_coef = np.array([0.9825,  2.4476, -1.7752,  4.037, -0.9354])
+    expected_coef = np.array([0.98247079, -5.12601875, -0.05494754, -0.14401306, -0.13991784])
     
     np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=4)
     
@@ -374,6 +370,131 @@ def test_arima_fit_without_mean():
     assert model.converged_ is True
     assert model.sigma2_ > 0
     assert model.n_exog_features_in_ == 0
+
+
+def test_arima_fit_include_drift_when_d_is_zero():
+    """
+    Test that `include_drift=True` with a manual order without differencing
+    fits both the intercept and the drift term.
+    """
+    rng = np.random.RandomState(123)
+    n = 100
+    x = rng.normal(0, 1, n)
+    y = np.cumsum(0.5 + rng.normal(0, 1, n)) + 2 * x
+
+    model = Arima(order=(1, 0, 0), include_drift=True)
+    model.fit(y)
+
+    assert model.coef_names_ == ['ar1', 'intercept', 'drift']
+    np.testing.assert_array_almost_equal(
+        model.coef_,
+        np.array([0.4899926283331951, 0.6798647372946346, 0.5287911842741932])
+    )
+    np.testing.assert_array_almost_equal(
+        model.predict(steps=3),
+        np.array([51.01508338572809, 53.110969612118886, 54.40762581492772])
+    )
+
+
+def test_arima_fit_IgnoredArgumentWarning_include_drift_when_two_differences():
+    """
+    Test that `include_drift=True` issues an IgnoredArgumentWarning and does not
+    fit a drift term when the order of differencing (d + D) is 2 or more.
+    """
+    y = np.cumsum(np.cumsum(np.random.RandomState(123).normal(0, 1, 100)))
+    model = Arima(order=(0, 2, 1), include_drift=True)
+
+    warn_msg = re.escape(
+        "No drift term is fitted because the order of differencing (d + D) "
+        "is 2 or more."
+    )
+    with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
+        model.fit(y)
+
+    assert model.coef_names_ == ['ma1']
+
+
+def test_arima_fit_box_cox_with_manual_order():
+    """
+    Test that `lambda_bc` is used with a manual order: the model is fitted on
+    the transformed series (same coefficients as fitting on log(y) when
+    lambda_bc=0) and fitted values and residuals are on the original scale
+    (NaN for the first d + D * m = 13 diffuse observations).
+    """
+    y = air_passengers.to_numpy()
+    model = Arima(order=(0, 1, 1), seasonal_order=(0, 1, 1), m=12, lambda_bc=0.0)
+    model.fit(y)
+
+    np.testing.assert_array_almost_equal(
+        model.coef_, np.array([-0.4018631534684879, -0.5568905302217602])
+    )
+    assert model.model_['lambda'] == 0.0
+    np.testing.assert_array_equal(model.y_train_, y)
+    assert np.all(np.isnan(model.fitted_values_[:13]))
+    np.testing.assert_array_almost_equal(
+        model.fitted_values_[13:16],
+        np.array([121.16522358924536, 139.05430341843623, 137.045465852081])
+    )
+    valid = ~np.isnan(model.fitted_values_)
+    np.testing.assert_array_almost_equal(
+        model.fitted_values_[valid] + model.in_sample_residuals_[valid], y[valid]
+    )
+    assert np.isclose(model.get_score(), 0.991228729747097)
+
+
+def test_arima_fit_box_cox_auto_lambda_with_manual_order():
+    """
+    Test that `lambda_bc='auto'` with a manual order selects and stores the
+    lambda used to transform the series.
+    """
+    model = Arima(order=(0, 1, 1), seasonal_order=(0, 1, 1), m=12, lambda_bc='auto')
+    model.fit(air_passengers.to_numpy())
+
+    assert np.isclose(model.model_['lambda'], 5.9608609865491405e-06)
+    np.testing.assert_array_almost_equal(
+        model.predict(steps=3),
+        np.array([450.423156148536, 425.7174062525917, 479.00548779015253])
+    )
+
+
+def test_arima_fit_box_cox_biasadj_fitted_values():
+    """
+    Test that, with `biasadj=True`, fitted values are bias adjusted when they
+    are back-transformed. For lambda_bc=0 the adjustment factor is
+    1 + sigma2 / 2.
+    """
+    y = air_passengers.to_numpy()
+    kwargs = {'order': (0, 1, 1), 'seasonal_order': (0, 1, 1), 'm': 12, 'lambda_bc': 0.0}
+    model = Arima(**kwargs).fit(y)
+    model_biasadj = Arima(**kwargs, biasadj=True).fit(y)
+
+    np.testing.assert_array_almost_equal(
+        model_biasadj.fitted_values_[13:] / model.fitted_values_[13:],
+        np.full(len(y) - 13, 1.0006740226534911)
+    )
+
+
+def test_arima_fit_box_cox_with_auto_arima():
+    """
+    Test that, with automatic order selection and `lambda_bc`, fitted values
+    and residuals are on the original scale (before the fix they were on the
+    transformed scale while `y_train_` was on the original one, so `get_score`
+    was meaningless), and that `best_params_` stores the lambda used.
+    """
+    y = air_passengers.to_numpy()
+    model = Arima(order=None, seasonal_order=None, m=12, lambda_bc=0.0)
+    model.fit(y)
+
+    fitted = model.fitted_values_
+    valid = ~np.isnan(fitted)
+
+    assert model.best_params_['lambda_bc'] == 0.0
+    np.testing.assert_array_equal(model.y_train_, y)
+    np.testing.assert_array_almost_equal(
+        fitted[valid] + model.in_sample_residuals_[valid], y[valid]
+    )
+    assert np.abs(np.mean(fitted[valid]) / np.mean(y[valid]) - 1) < 0.05
+    assert model.get_score() > 0.95
 
 
 def test_arima_fit_returns_self():

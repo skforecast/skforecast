@@ -1,0 +1,13 @@
+{
+  "name": "skforecast-animations-export",
+  "private": true,
+  "description": "Exports the documentation animations (docs/animations) to MP4 videos.",
+  "type": "module",
+  "scripts": {
+    "export": "node export_video.mjs"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0",
+    "puppeteer-core": "^24.0.0"
+  }
+}

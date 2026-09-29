@@ -12,6 +12,7 @@ Welcome to the skforecast user guides! This comprehensive collection of guides i
 
 <span style="font-size: 1.3em;">Global Forecasters (multiple series)</span>
 
+- [Global forecasting: local vs global models and which forecaster to use](../user_guides/global-forecasting-overview.md)
 - [Independent multi-time series forecasting](../user_guides/independent-multi-time-series-forecasting.ipynb)
 - [Series with different lengths and different exogenous variables](../user_guides/multi-series-with-different-length-and-different_exog.ipynb)
 - [Dependent multivariate series forecasting](../user_guides/dependent-multi-series-multivariate-forecasting.ipynb)

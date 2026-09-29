@@ -203,7 +203,7 @@ removed) still fails the check.
 | Check | What it verifies |
 |-------|-----------------|
 | **Skill structure** | Every `skills/*/SKILL.md` has valid YAML frontmatter, `name` matches directory, body ≤ 500 lines |
-| **Version consistency** | `Version:` in `llms-base.txt` matches `__version__` in `skforecast/__init__.py` |
+| **Version consistency** | `Version:` in `llms-base.txt` matches `__version__` in `skforecast/__init__.py`. `CITATION.cff` has no version on purpose; if one is added, it must match too |
 | **Imports consistency** | Every public export in subpackage `__init__.py` files appears as an import in `llms-base.txt` |
 | **File freshness** | Each generated file matches what the script would produce right now |
 

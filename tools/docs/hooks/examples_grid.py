@@ -9,12 +9,12 @@ from `examples.yml` sitting next to this file.
 Registered in `mkdocs.yml` as:
 
     hooks:
-      - tools/docs_hooks/examples_grid.py
+      - tools/docs/hooks/examples_grid.py
 
 Notes for maintainers:
 
 - The YAML is read in `on_config`, so editing it during `mkdocs serve` triggers a
-  rebuild with the new content (`watch: [tools/docs_hooks]` in `mkdocs.yml` makes
+  rebuild with the new content (`watch: [tools/docs/hooks]` in `mkdocs.yml` makes
   the server notice the change). Editing *this file* has no effect until the
   server is restarted, because MkDocs caches hook modules for the life of the
   process.
@@ -80,7 +80,7 @@ def _load_icon_index():
 
 def _require(condition, message):
     if not condition:
-        raise PluginError(f"tools/docs_hooks/examples.yml: {message}")
+        raise PluginError(f"tools/docs/hooks/examples.yml: {message}")
 
 
 def _validate(data):

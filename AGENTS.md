@@ -479,7 +479,7 @@ predictions = forecaster.predict(steps=10)
 # Auto ARIMA (automatic order selection) - set order=None and seasonal_order=None
 forecaster = ForecasterStats(estimator=Arima(order=None, seasonal_order=None, m=12))
 
-# ETS model (model string: 1st=Error, 2nd=Trend, 3rd=Seasonal; A=Add, M=Mult, N=None, Z=Auto)
+# ETS model (model string: 1st=Error, 2nd=Trend, 3rd=Seasonal; A=Add, M=Mult, N=None; 'ZZZ'=Auto)
 forecaster = ForecasterStats(estimator=Ets(m=12, model='AAA'))
 ```
 

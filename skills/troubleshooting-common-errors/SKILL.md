@@ -215,7 +215,8 @@ ets_model = Ets(error='add', trend='add', seasonal='add', seasonal_periods=12)
 # ✅ CORRECT (current API)
 ets_model = Ets(model='AAA', m=12)
 # Model string: 1st char=Error, 2nd=Trend, 3rd=Seasonal
-# A=Additive, M=Multiplicative, N=None, Z=Auto-select
+# A=Additive, M=Multiplicative, N=None. Automatic selection only as model='ZZZ'
+# (partial specs like 'ZZN' raise an error: use 'ZZZ' with seasonal=False, trend=...)
 ```
 
 ## Function Mapping Reference

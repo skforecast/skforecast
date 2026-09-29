@@ -15,37 +15,36 @@
 | Affiliation | [![NumFOCUS Affiliated](https://img.shields.io/badge/NumFOCUS-Affiliated%20Project-orange.svg?style=flat&colorA=E1523D&colorB=007D8A)](https://numfocus.org/sponsored-projects/affiliated-projects) [![GC.OS Affiliated](https://img.shields.io/badge/GC.OS-Affiliated%20Project-orange.svg?style=flat&colorA=0eac92&colorB=2077b4)](https://gc-os-ai.github.io/) |
 
 
-# Table of Contents
-
-- :information_source: [About The Project](#about-the-project)
-- :books: [Documentation](#documentation)
-- :computer: [Installation & Dependencies](#installation--dependencies)
-- :sparkles: [What is new in skforecast?](#what-is-new-in-skforecast)
-- :crystal_ball: [Forecasters](#forecasters)
-- :mortar_board: [Examples and tutorials](#examples-and-tutorials)
-- :handshake: [How to contribute](#how-to-contribute)
-- :memo: [Citation](#citation)
-- :money_with_wings: [Sponsorship and funding](#sponsorship-and-funding)
-- :scroll: [License](#license)
-
-
 # About The Project
 
-**Skforecast** is a Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. It works with any estimator compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others.
+**Time series forecasting, from prototype to production.** Skforecast is a Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. It works with any estimator compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others.
 
-### Why use skforecast?
+<p align="center">
+  <img src="https://github.com/skforecast/skforecast/blob/main/images/skforecast-backtesting-comparison.png?raw=true" alt="Backtesting of LightGBM, Chronos-2 and ARIMA with skforecast on daily electricity demand" width="100%">
+</p>
 
-Skforecast simplifies time series forecasting with machine learning by providing:
+<sub>Backtesting of LightGBM, Chronos-2 and ARIMA on daily electricity demand, with temperature and holidays as exogenous variables. Real skforecast outputs, from the animation on [skforecast.org](https://skforecast.org).</sub>
 
-- :jigsaw: **Seamless integration** with any scikit-learn compatible estimator (e.g., LightGBM, XGBoost, CatBoost, etc.).
-- :repeat: **Flexible workflows** that allow for both single and multi-series forecasting.
-- :hammer_and_wrench: **Comprehensive tools** for feature engineering, model selection, hyperparameter tuning, and more.
-- :building_construction: **Production-ready models** with interpretability and validation methods for backtesting and realistic performance evaluation.
+### One API for every kind of model
 
-Whether you're building quick prototypes or deploying models in production, skforecast ensures a fast, reliable, and scalable experience.
+- **Machine learning**: any scikit-learn compatible regressor, such as LightGBM, XGBoost or CatBoost, with lags, rolling and calendar features. Recursive or direct strategies, for one series or thousands.
+- **Foundation models**: zero-shot forecasting with pre-trained models such as Chronos-2, TimesFM, Moirai-2 or TabPFN-TS, without training them.
+- **Statistical models**: ARIMA, SARIMAX, ETS and ARAR, with automatic model selection.
+- **Deep learning**: recurrent neural networks (RNN, LSTM) built with Keras.
+
+Train, predict, tune and backtest the same way, whatever the model.
+
+### Built for production
+
+- **Backtesting** that reproduces how the model will be used: refits, gaps, fold strides, fixed or expanding windows.
+- **Probabilistic forecasting** with bootstrapping, conformal prediction and quantiles, evaluated with CRPS and coverage.
+- **Hyperparameter tuning** with grid, random and Bayesian search (Optuna), including the number of lags.
+- **Feature engineering**: rolling statistics, calendar features, exogenous and categorical variables, and differentiation.
+- **Global models** that forecast many series with one model, even with different lengths, exogenous variables and missing values ([global forecasting guide](https://skforecast.org/latest/user_guides/global-forecasting-overview.html)).
+- **Explainability and monitoring**: feature importances and SHAP values, feature selection and drift detection.
 
 > [!TIP]
-> :sparkles: **Try [skforecast-ai](https://ai.skforecast.org/)**, an **AI forecasting assistant** that pairs a deterministic engine, powered by [**skforecast**](https://skforecast.org/), with an **LLM reasoning layer**.
+> :sparkles: **Try [skforecast-ai](https://ai.skforecast.org/)**, an **AI forecasting assistant** that pairs a deterministic engine, powered by [**skforecast**](https://skforecast.org/), with an **LLM reasoning layer**: `pip install skforecast-ai`.
 
 > [!TIP]
 > :computer: **Try [Skforecast Studio](https://studio.skforecast.org/)**, an interactive, no-code application to build time series forecasting models visually, while automatically generating production-ready Python code using skforecast.
@@ -79,15 +78,35 @@ predictions.head()
 # Freq: MS, Name: pred, dtype: float64
 ```
 
-### Get Involved
+<details>
+<summary><b>Same workflow with a foundation model (Chronos-2, zero-shot)</b></summary>
 
-We value your input! Here are a few ways you can participate:
+```python
+# pip install chronos-forecasting
+from skforecast.foundation import FoundationModel, ForecasterFoundation
+from skforecast.datasets import load_demo_dataset
 
-- **Report bugs** and suggest new features on our [GitHub Issues page](https://github.com/skforecast/skforecast/issues).
-- **Contribute** to the project by [submitting code](https://github.com/skforecast/skforecast/blob/main/CONTRIBUTING.md), adding new features, or improving the documentation.
-- **Share your feedback** on LinkedIn to help spread the word about skforecast!
+# Download demo dataset
+y = load_demo_dataset()
 
-Together, we can make time series forecasting accessible to everyone.
+# Create the forecaster: fit only stores the context, there is no training
+forecaster = ForecasterFoundation(
+                 estimator = FoundationModel("autogluon/chronos-2-small")
+             )
+forecaster.fit(series=y)
+
+# Predict the next 12 months
+predictions = forecaster.predict(steps=12)
+predictions.head()
+#            level      pred
+# 2008-07-01     y  1.002536
+# 2008-08-01     y  1.030961
+# 2008-09-01     y  1.083664
+# 2008-10-01     y  1.184066
+# 2008-11-01     y  1.170530
+```
+
+</details>
 
 
 # Documentation
@@ -101,7 +120,7 @@ Explore the full capabilities of **skforecast** with our comprehensive documenta
 | :book: [Introduction to forecasting]    | Basics of forecasting concepts and methodologies |
 | :rocket: [Quick start]                  | Get started quickly with skforecast |
 | :hammer_and_wrench: [User guides]       | Detailed guides on skforecast features and functionalities |
-| :mortar_board: [Examples and tutorials] | Learn through practical examples and tutorials to master skforecast |
+| :mortar_board: [Examples and tutorials] | Practical examples and tutorials, in English, Spanish and Chinese |
 | :question: [FAQ and tips]               | Find answers and tips about forecasting |
 | :books: [API Reference]                 | Comprehensive reference for skforecast functions and classes |
 | :memo: [Releases]                       | Keep track of major updates and changes |
@@ -130,13 +149,6 @@ pip install skforecast
 ```
 
 For more installation options, including dependencies and additional features, check out our [Installation Guide](https://skforecast.org/latest/quick-start/how-to-install.html).
-
-
-# What is new in skforecast?
-
-All significant changes to this project are documented in the release file.
-
-- For updates to the **latest stable version**, see the [release notes here](https://skforecast.org/latest/releases/releases.html).
 
 
 # Forecasters
@@ -168,64 +180,41 @@ There are **several types of forecasters**, each suited to a different combinati
 [ForecasterEquivalentDate]: https://skforecast.org/latest/user_guides/forecasting-baseline.html
 
 
-# Examples and tutorials
-
-Explore our extensive list of examples and tutorials (English and Spanish) to get you started with skforecast. You can find them [here](https://skforecast.org/latest/examples/examples_english.html).
-
-
 # AI-assisted forecasting
 
 Skforecast includes machine-readable context files so AI assistants (ChatGPT, Claude, Copilot, and others) can generate accurate code. Paste `https://skforecast.org/latest/llms-full.txt` into any LLM, or let your IDE pick up context automatically. Learn more in [AI-assisted forecasting](https://skforecast.org/latest/quick-start/ai-assisted-forecasting.html).
 
-For an end-to-end workflow, try [**skforecast-ai**](https://ai.skforecast.org/), an **AI forecasting assistant** that pairs a deterministic engine, powered by **skforecast**, with an **LLM reasoning layer**. The source code is available on [GitHub](https://github.com/skforecast/skforecast-ai).
+For an end-to-end workflow, try [**skforecast-ai**](https://ai.skforecast.org/), an **AI forecasting assistant** that pairs a deterministic engine, powered by **skforecast**, with an **LLM reasoning layer**. Install it with `pip install skforecast-ai`; the source code is available on [GitHub](https://github.com/skforecast/skforecast-ai).
 
 
 # How to contribute
 
-Primarily, skforecast development consists of adding and creating new *Forecasters*, new validation strategies, or improving the performance of the current code. However, there are many other ways to contribute:
-
-- Submit a bug report or feature request on [GitHub Issues](https://github.com/skforecast/skforecast/issues).
-- Contribute a Jupyter notebook to our [examples](https://skforecast.org/latest/examples/examples_english).
-- Write [unit or integration tests](https://docs.pytest.org/en/latest/) for our project.
-- Answer questions on our issues, Stack Overflow, and elsewhere.
-- Translate our documentation into another language.
-- Write a blog post, tweet, or share our project with others.
-
-For more information on how to contribute to skforecast, see our [Contribution Guide](https://github.com/skforecast/skforecast/blob/main/CONTRIBUTING.md).
+Bug reports, feature requests, code, tests, documentation and examples are all welcome. Open an issue on [GitHub Issues](https://github.com/skforecast/skforecast/issues) or read the [Contribution Guide](https://github.com/skforecast/skforecast/blob/main/CONTRIBUTING.md) to get started.
 
 Visit our [About section](https://skforecast.org/latest/more/about-skforecast.html) to meet the people behind **skforecast**.
 
 
 # Citation
 
-If you use skforecast for a scientific publication, we would appreciate citations to the published software.
-
-**Zenodo**
+If you use skforecast in a scientific publication, please cite the version you used. Each version has its own DOI and ready-made citations (APA, BibTeX and others) on [Zenodo](https://doi.org/10.5281/zenodo.8382787). To cite skforecast in general, use the DOI that always resolves to the latest release:
 
 ```
-Amat Rodrigo, Joaquin, & Escobar Ortiz, Javier. (2026). skforecast (v0.25.0). Zenodo. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, J., & Escobar Ortiz, J. skforecast [Computer software]. https://doi.org/10.5281/zenodo.8382787
 ```
 
-**APA**:
-```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.25.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
-```
-
-**BibTeX**:
-```
+```bibtex
 @software{skforecast,
   author  = {Amat Rodrigo, Joaquin and Escobar Ortiz, Javier},
   title   = {skforecast},
-  version = {0.25.0},
-  month   = {9},
-  year    = {2026},
   license = {BSD-3-Clause},
   url     = {https://skforecast.org/},
   doi     = {10.5281/zenodo.8382787}
 }
 ```
 
-View the [citation file](https://github.com/skforecast/skforecast/blob/main/CITATION.cff).
+The citation metadata is in [CITATION.cff](https://github.com/skforecast/skforecast/blob/main/CITATION.cff), which GitHub also offers through its "Cite this repository" button.
+
+skforecast is used in 70+ scientific publications: [see them on Google Scholar](https://scholar.google.com/scholar?q=%22skforecast%22).
 
 
 # Sponsorship and funding

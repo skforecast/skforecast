@@ -167,7 +167,7 @@ def test_get_feature_importances_with_exog_exact_values():
 
     expected = pd.DataFrame({
         'feature': ['ar1', 'intercept', 'f1', 'f2'],
-        'importance': [0.73768179, 0.05372286, 0.05749417, 0.24147824]
+        'importance': [0.73768179, -0.15211521, -0.01263641, -0.20298983]
     })
 
     pd.testing.assert_frame_equal(

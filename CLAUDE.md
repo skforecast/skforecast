@@ -34,7 +34,7 @@ python tools/ai/generate_ai_context_files.py --check   # what CI runs
 Related gotchas:
 
 - Adding a skill: create `skills/<name>/SKILL.md`, add `<name>` to `SKILL_ORDER` in the generator, then regenerate. A skill body must stay at or below 500 lines.
-- Bumping the version: update `__version__` in `skforecast/__init__.py` and `Version:` in `tools/ai/llms-base.txt`. The `--check` run compares them.
+- Bumping the version: update `__version__` in `skforecast/__init__.py` and `Version:` in `tools/ai/llms-base.txt`. The `--check` run compares them. `CITATION.cff` has no version on purpose (Zenodo takes it from the GitHub release).
 - Adding a public export: it must also appear as an import in `tools/ai/llms-base.txt`, which `--check` verifies against each subpackage `__init__.py`.
 - Full description of the system: [tools/ai/README.md](tools/ai/README.md).
 
@@ -48,7 +48,7 @@ Related gotchas:
 ## Documentation
 
 - Sources live in [docs/](docs/) as Markdown and Jupyter notebooks, wired together by [mkdocs.yml](mkdocs.yml).
-- Notebooks are committed with their outputs. Re-execute them with `python tools/execute_docs/execute_docs_notebooks.py [subdir_or_notebook]`, which runs papermill and writes warning logs to `tools/execute_docs/logs/`. Notebooks listed in `SLOW_NOTEBOOKS` inside that script are skipped unless `--include-slow` is passed or the notebook is given explicitly.
+- Notebooks are committed with their outputs. Re-execute them with `python tools/docs/execute_notebooks/execute_notebooks.py [subdir_or_notebook]`, which runs papermill and writes warning logs to `tools/docs/execute_notebooks/logs/`. Notebooks listed in `SLOW_NOTEBOOKS` inside that script are skipped unless `--include-slow` is passed or the notebook is given explicitly.
 - Executing the whole `docs/` tree is slow, so pass the specific subdirectory or notebook that changed.
 
 ## Files NOT to use as context

@@ -1,6 +1,7 @@
 # Unit test __init__ ForecasterStats
 # ==============================================================================
 import re
+import inspect
 import pytest
 from sklearn.base import clone
 from sklearn.linear_model import LinearRegression
@@ -140,17 +141,44 @@ def test_fit_kwargs_is_ignored():
 
 @pytest.mark.parametrize(
     "estimator",
-    [Arima(order=(1, 1, 1)), Arar(), Ets(), Sarimax(order=(1, 0, 1))],
+    [
+        Arima(
+            order=None, seasonal_order=None, m=12, fit_intercept=False,
+            enforce_stationarity=False, method='ML', n_cond=3,
+            optim_method='L-BFGS-B', optim_kwargs={'maxiter': 50}, kappa=1e5,
+            include_drift=True,
+            max_p=1, max_q=2, max_P=0, max_Q=1, max_order=3, max_d=1, max_D=0,
+            start_p=0, start_q=0, start_P=0, start_Q=0, stationary=True,
+            seasonal=False, ic='bic', stepwise=False, nmodels=10, trace=True,
+            approximation=True, truncate=100, test='adf',
+            test_kwargs={'alpha': 0.01}, seasonal_test='ocsb',
+            seasonal_test_kwargs={'max_lag': 3}, allowdrift=False,
+            allowmean=False, lambda_bc=0.0, biasadj=True
+        ),
+        Arar(max_ar_depth=10, max_lag=20, safe=False),
+        Ets(
+            m=12, model='AAN', damped=True, alpha=0.3, beta=0.1, gamma=0.2,
+            phi=0.9, lambda_param=0.5, lambda_auto=True, bias_adjust=False,
+            bounds='usual', seasonal=False, trend=True, ic='bic',
+            allow_multiplicative=False, allow_multiplicative_trend=True
+        ),
+        Sarimax(order=(1, 0, 1), seasonal_order=(1, 0, 0, 12), trend='c', maxiter=20),
+    ],
     ids=lambda est: type(est).__name__,
 )
 def test_skforecast_stats_estimators_are_compatible_with_sklearn_clone(estimator):
     """
     Check that all skforecast stats estimators can be cloned with
-    sklearn.base.clone, which requires get_params() and set_params().
+    sklearn.base.clone without losing any constructor parameter. `get_params`
+    must return every argument of `__init__`, otherwise `clone` silently
+    resets the missing ones to their default values.
     """
 
+    init_params = set(inspect.signature(type(estimator).__init__).parameters) - {'self'}
     cloned = clone(estimator)
 
     assert type(cloned) is type(estimator)
-    assert cloned.get_params() == estimator.get_params()
+    assert set(estimator.get_params()) == init_params
+    for param in init_params:
+        assert getattr(cloned, param) == getattr(estimator, param), param
     assert not cloned.is_fitted

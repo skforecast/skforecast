@@ -1,30 +1,46 @@
-# This CITATION.cff file was generated with cffinit.
-# Visit https://bit.ly/cffinit to generate yours today!
+# Citation metadata of skforecast (https://citation-file-format.github.io).
+# GitHub builds its "Cite this repository" button from this file, and Zenodo
+# takes the metadata of each release (description, keywords, authors) from it.
+# There is no `version` or `date-released` on purpose, as in scikit-learn or
+# pandas: Zenodo takes both from each GitHub release, and the version to cite
+# is the one listed on Zenodo. If they are ever added back, keep them current:
+# `python tools/ai/generate_ai_context_files.py --check` verifies the version.
 
 cff-version: 1.2.0
 title: skforecast
 message: >-
-  If you use this software, please cite it using the
-  metadata from this file.
+  If you use skforecast in a scientific publication, please cite the version
+  you used. The DOI below always resolves to the latest release, and the DOI
+  of each version is listed on Zenodo.
 type: software
 authors:
   - given-names: Joaquin
     family-names: Amat Rodrigo
     email: j.amatrodrigo@gmail.com
+    orcid: 'https://orcid.org/0009-0001-9531-9828'
   - given-names: Javier
     family-names: Escobar Ortiz
     email: javier.escobar.ortiz@gmail.com
+    orcid: 'https://orcid.org/0009-0005-4399-7634'
+repository-code: 'https://github.com/skforecast/skforecast'
 url: 'https://skforecast.org/'
 abstract: >-
-  Skforecast is a Python library that eases using
-  scikit-learn estimators as single and multi-step
-  forecasters. It also works with any estimator compatible
-  with the scikit-learn API.
+  skforecast is a Python library for time series forecasting using
+  scikit-learn compatible models, statistical methods, and foundation models.
+  It covers single and multiple series, exogenous variables, backtesting,
+  hyperparameter tuning and probabilistic forecasting.
 keywords:
+  - time series
   - forecasting
+  - time series forecasting
   - machine learning
+  - scikit-learn
+  - statistical models
+  - foundation models
   - python
+license: BSD-3-Clause
 doi: 10.5281/zenodo.8382787
-license: bsd-3-clause
-version: 0.25.0
-date-released: '2026-09-11'
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.8382787
+    description: Concept DOI of skforecast, resolves to the latest release.
