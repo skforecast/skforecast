@@ -8,7 +8,7 @@
 #   python tools/docs/execute_notebooks/execute_notebooks.py --include-slow   # Also run SLOW_NOTEBOOKS
 #
 # After each notebook runs, its tqdm progress bar widgets are replaced with
-# static text (see static_widgets.py).
+# static progress bars (see static_widgets.py).
 # ======================================================================================
 import argparse
 import papermill as pm
@@ -388,11 +388,11 @@ def run_notebooks(targets=None, include_slow=False):
             # Atomically replace the original with the successfully executed file
             os.replace(temp_output_path, str(notebook))
 
-            # Progress bar widgets (tqdm) to static text, see static_widgets.py
+            # Progress bar widgets (tqdm) to static bars, see static_widgets.py
             n_converted, n_removed = convert_notebook(notebook)
             if n_converted or n_removed:
                 log.info(
-                    f"  {C.INFO}Progress bars to text:{C.END} {n_converted} "
+                    f"  {C.INFO}Static progress bars:{C.END} {n_converted} "
                     f"converted, {n_removed} removed"
                 )
 

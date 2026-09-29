@@ -277,7 +277,6 @@ def compute_hero() -> dict:
         "y": _round(y.iloc[-keep:]),
         "temp": _round(daily["temp_max"].iloc[-keep:], 1),
         "train_end": y.index[n_train - 1].strftime("%Y-%m-%d"),
-        "steps": HERO_STEPS,
         "fold": HERO_FOLD,
         "models": models,
     }

@@ -133,8 +133,7 @@ Components
 
 .sk-home h1,
 .sk-home h2,
-.sk-home h3,
-.sk-home h4 {
+.sk-home h3 {
   font-family: var(--display);
   color: var(--heading);
   margin: 0;
@@ -158,13 +157,6 @@ Components
 
 .sk-home .hero {
   padding-block: 40px 22px;
-}
-
-.sk-home .hero-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 32px;
-  align-items: end;
 }
 
 .sk-home .eyebrow {
@@ -767,12 +759,6 @@ Components
   font-weight: 600;
 }
 
-.sk-home .trust .sep {
-  width: 1px;
-  height: 18px;
-  background: var(--line);
-}
-
 .sk-home .families {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1339,18 +1325,6 @@ Components
   padding: 0 16px 16px;
 }
 
-.sk-home details ol {
-  margin: 0;
-  padding-left: 22px;
-  display: grid;
-  gap: 10px;
-  font-size: 13.5px;
-  color: var(--ink-2);
-  line-height: 1.5;
-  max-height: 380px;
-  overflow-y: auto;
-}
-
 .sk-home .community {
   display: flex;
   flex-wrap: wrap;
@@ -1517,10 +1491,6 @@ Components
   }
 
   .sk-home .wall .cell:nth-child(n+25) {
-    display: none;
-  }
-
-  .sk-home .trust .sep {
     display: none;
   }
 }

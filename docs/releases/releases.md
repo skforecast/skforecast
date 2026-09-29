@@ -48,7 +48,7 @@ The main changes in this release are:
 
 + The documentation site serves its fonts and other external assets (images, scripts) from its own domain, using the Material for MkDocs `privacy` plugin, so visitors no longer connect to Google Fonts or other third parties before accepting cookies. Math is now rendered with KaTeX instead of MathJax: it is about four times lighter, renders faster and is served from the site (`docs/vendor/katex`, updated with `tools/docs/vendor_katex.py`). Badges with live values (downloads, versions) are still loaded from their original sources.
 
-+ The tqdm progress bars saved in the documentation notebooks are now static text with their final values, instead of Jupyter widgets that needed require.js and a script from unpkg.com. `tools/docs/execute_notebooks/execute_notebooks.py` applies the conversion (`tools/docs/execute_notebooks/static_widgets.py`) after executing each notebook. The documentation search now also finds class names by any of their words (for example, "Recursive" finds `ForecasterRecursive`) and keeps version numbers such as 0.25.0 whole.
++ The tqdm progress bars saved in the documentation notebooks are now static HTML bars with their final values (with a plain text fallback), instead of Jupyter widgets that needed require.js and a script from unpkg.com. `tools/docs/execute_notebooks/execute_notebooks.py` applies the conversion (`tools/docs/execute_notebooks/static_widgets.py`) after executing each notebook. The documentation search now also finds class names by any of their words (for example, "Recursive" finds `ForecasterRecursive`) and keeps version numbers such as 0.25.0 whole.
 
 
 **Fixed**
