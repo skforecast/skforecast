@@ -228,3 +228,40 @@ def test_fit_estimator_names_updated_after_fit():
     assert names_before != names_after
     # The new name should contain error/trend/season config like 'Ets(AAN)'
     assert 'Ets(' in names_after[0]
+
+
+def test_fit_keeps_all_estimator_params_after_clone():
+    """
+    Test that the estimators fitted by the forecaster (clones of the ones passed
+    by the user) keep every constructor parameter, including the auto ARIMA and
+    auto ETS settings, after `fit` and after `set_params`. Before the fix these
+    parameters were silently reset to their default values by `clone`.
+    """
+    arima_params = {
+        'order': None, 'seasonal_order': None, 'max_p': 1, 'max_q': 0,
+        'ic': 'bic', 'stepwise': False, 'lambda_bc': 0.0, 'allowmean': False
+    }
+    ets_params = {
+        'ic': 'bic', 'lambda_param': 0.5, 'bounds': 'usual', 'bias_adjust': False
+    }
+    forecaster = ForecasterStats(
+                     estimator = [Arima(**arima_params), Ets(**ets_params)]
+                 )
+    forecaster.fit(y=y)
+
+    arima_fitted, ets_fitted = forecaster.estimators_
+    for param, value in arima_params.items():
+        assert getattr(arima_fitted, param) == value, param
+    for param, value in ets_params.items():
+        assert getattr(ets_fitted, param) == value, param
+
+    forecaster.set_params({
+        'skforecast.Arima': {'max_d': 1},
+        'skforecast.Ets': {'damped': False}
+    })
+
+    arima, ets = forecaster.estimators
+    for param, value in {**arima_params, 'max_d': 1}.items():
+        assert getattr(arima, param) == value, param
+    for param, value in {**ets_params, 'damped': False}.items():
+        assert getattr(ets, param) == value, param

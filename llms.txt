@@ -27,6 +27,7 @@ Skforecast supports recursive and direct multi-step forecasting strategies, glob
 
 - [Recursive multi-step forecasting](https://skforecast.org/latest/user_guides/autoregressive-forecaster.html): Complete guide to single series forecasting with ForecasterRecursive
 - [Direct multi-step forecasting](https://skforecast.org/latest/user_guides/direct-multi-step-forecasting.html): Direct strategy with one model per forecast step
+- [Global forecasting overview](https://skforecast.org/latest/user_guides/global-forecasting-overview.html): Local vs global models and which global forecaster to use
 - [Multi-series forecasting](https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html): Global model for multiple time series simultaneously
 - [Series with different lengths and exog](https://skforecast.org/latest/user_guides/multi-series-with-different-length-and-different_exog.html): Handling series with varying lengths and different exogenous variables
 - [Multivariate forecasting](https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting.html): Using multiple series as input features for dependent forecasting

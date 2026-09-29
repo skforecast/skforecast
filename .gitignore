@@ -156,4 +156,10 @@ dmypy.json
 .claude/settings.json
 
 # Docs execution logs
-tools/execute_docs/logs/
+tools/docs/execute_notebooks/logs/
+
+# Node dependencies (tools/docs/animations_to_video)
+node_modules/
+
+# Videos exported from the documentation animations
+tools/docs/animations_to_video/videos/

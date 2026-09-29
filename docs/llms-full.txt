@@ -434,7 +434,7 @@ predictions = forecaster.predict(steps=10)
 # Auto ARIMA (automatic order selection) - set order=None and seasonal_order=None
 forecaster = ForecasterStats(estimator=Arima(order=None, seasonal_order=None, m=12))
 
-# ETS model (model string: 1st=Error, 2nd=Trend, 3rd=Seasonal; A=Add, M=Mult, N=None, Z=Auto)
+# ETS model (model string: 1st=Error, 2nd=Trend, 3rd=Seasonal; A=Add, M=Mult, N=None; 'ZZZ'=Auto)
 forecaster = ForecasterStats(estimator=Ets(m=12, model='AAA'))
 ```
 
@@ -728,7 +728,7 @@ the chosen model adds value.
 | **General purpose** (start here) | `ForecasterRecursive` | Default choice. One model, recursive multi-step. Works with any sklearn-compatible estimator (LightGBM, XGBoost, CatBoost, RandomForest, etc.). Supports lags, window features, exog, differentiation, transformers, weight functions, and all probabilistic prediction methods (bootstrapping, conformal, quantiles, distributions) |
 | **Horizon-dependent patterns** (e.g., predicting at 1h vs 24h requires different relationships) | `ForecasterDirect` | Trains one independent model per step — no error propagation. Better when the predictive relationship changes significantly across the forecast horizon. Requires `steps` at init; parallelizable with `n_jobs` |
 | **Statistical baseline** | `ForecasterStats` | Wraps ARIMA, SARIMAX, ETS, ARAR. Use as a benchmark to compare against ML models, or when the series is very short (< 200 obs) and ML overfits |
-| **Zero-shot / cold-start / no training data** | `ForecasterFoundation` | Wraps pre-trained foundation models (Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL). `fit()` only stores context — no training. Good baseline and cold-start option. See the `foundation-forecasting` skill |
+| **Zero-shot / cold-start / no training data** | `ForecasterFoundation` | Wraps pre-trained foundation models (Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL). `fit()` only stores context, no training. Strong zero-shot accuracy, also for short or new series; needs more compute to predict. See the `foundation-forecasting` skill |
 | **Naive baseline** | `ForecasterEquivalentDate` | Predicts using equivalent past dates (e.g., same weekday last week). Use as a sanity-check baseline. See the `baseline-forecasting` skill |
 
 ## Step 2b — Multiple Series
@@ -738,7 +738,7 @@ the chosen model adds value.
 | **Forecast many series with a shared model** (start here) | `ForecasterRecursiveMultiSeries` | One global model learns cross-series patterns. Supports DataFrame or dict input (dict allows series with different date ranges). Encoding options: `'ordinal'` (default), `'ordinal_category'`, `'onehot'`, `None`. Supports per-series transformers, per-series differentiation, series_weights |
 | **Other series are features for one target** | `ForecasterDirectMultiVariate` | All series become input features to predict a single `level`. Per-series lags via dict (`{'sales': [1,7], 'price': [1]}`). One model per step — no error propagation |
 | **Deep learning / complex nonlinear patterns** | `ForecasterRnn` | Keras-based RNN/LSTM/GRU. Single model outputs all steps and levels simultaneously via 3D tensors. Only conformal intervals (no bootstrapping). Requires keras |
-| **Zero-shot / pre-trained generalist** | `ForecasterFoundation` | Global zero-shot forecasts via Chronos-2 / TimesFM 2.5/3.0 / Moirai-2 / TabICL / TabPFN-TS / TFC-T0 / Nori / TS-ICL. `fit()` only stores context. Native quantile intervals. Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, and Nori support exog; TimesFM 2.5 & Moirai-2 do not. See the `foundation-forecasting` skill |
+| **Zero-shot / pre-trained generalist** | `ForecasterFoundation` | Global zero-shot forecasts via Chronos-2 / TimesFM 2.5/3.0 / Moirai-2 / TabICL / TabPFN-TS / TFC-T0 / Nori / TS-ICL. `fit()` only stores context. Native quantile intervals. Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori and TS-ICL support exog; TimesFM 2.5 & Moirai-2 do not. See the `foundation-forecasting` skill |
 
 ## Decision Flowchart
 
@@ -771,7 +771,7 @@ How many series?
         └─► ForecasterRnn
 
 Zero-shot / no training data / cold-start (single or multi-series)?
-    └─► ForecasterFoundation (Chronos-2 / TimesFM 2.5/3.0 / Moirai-2 / TabICL / TabPFN-TS / TFC-T0 / Nori/ TS-ICL)
+    └─► ForecasterFoundation (Chronos-2 / TimesFM 2.5/3.0 / Moirai-2 / TabICL / TabPFN-TS / TFC-T0 / Nori / TS-ICL)
 ```
 
 ## Key Comparisons
@@ -2290,10 +2290,12 @@ exog_dict = reshape_exog_long_to_dict(exog_long, freq='D')
 ## When to Use
 
 Use `ForecasterFoundation` when:
-- You want a **zero-shot baseline** before investing in model training.
+- You want **accurate forecasts without training** a model. The best pre-trained models are among the top performers in public benchmarks (GIFT-Eval, fev-bench).
 - You have **very short histories** where ML models struggle.
 - You need to forecast **cold-start** series (new product, new sensor).
-- You want to compare against pre-trained generalist models.
+- You have **many heterogeneous series** (different lengths, exogenous variables or missing values).
+
+Trade-offs: prediction needs more computing resources (usually a GPU), and a forecaster trained on the user's data with well-designed features and exogenous variables can still be more accurate for a specific problem. Compare them with backtesting on the same folds.
 
 Foundation models are **pre-trained on massive corpora** — `fit()` does not train them; it only stores the recent context and metadata.
 
@@ -4946,9 +4948,10 @@ auto_arima = Arima(order=None, seasonal_order=None, m=12)
 forecaster = ForecasterStats(estimator=auto_arima)
 forecaster.fit(y=data['target'])
 
-# Check selected order
-print(forecaster.estimator.best_params_['order'])
-print(forecaster.estimator.best_params_['seasonal_order'])
+# Check the selected model (fitted estimators are stored in `estimators_`)
+print(forecaster.estimators_[0].best_params_)
+# {'order': ..., 'seasonal_order': ..., 'm': 12, 'fit_intercept': ...,
+#  'include_drift': ..., 'lambda_bc': ...}
 
 predictions = forecaster.predict(steps=12)
 ```
@@ -4959,7 +4962,8 @@ predictions = forecaster.predict(steps=12)
 from skforecast.stats import Ets
 
 # Model string: 1st=Error, 2nd=Trend, 3rd=Seasonal
-# A=Additive, M=Multiplicative, N=None, Z=Auto-select
+# A=Additive, M=Multiplicative, N=None. Automatic selection only as model='ZZZ'
+# (partial specs like 'ZZN' raise an error: use 'ZZZ' with seasonal=False, trend=...)
 ets_model = Ets(model='AAA', m=12)
 forecaster = ForecasterStats(estimator=ets_model)
 forecaster.fit(y=data['target'])
@@ -4976,7 +4980,7 @@ forecaster = ForecasterStats(estimator=auto_ets)
 forecaster.fit(y=data['target'])
 
 # Check the selected model configuration
-print(forecaster.estimator.best_params_)
+print(forecaster.estimators_[0].best_params_)
 
 predictions = forecaster.predict(steps=12)
 ```
@@ -5098,14 +5102,14 @@ Arima(
     order=(1, 0, 0),                  # tuple(p, d, q) | None → auto ARIMA
     seasonal_order=(0, 0, 0),         # tuple(P, D, Q) — 3 elements, NOT 4
     m=1,                              # int, seasonal period (1 = no seasonality)
-    include_mean=True,                # bool
-    transform_pars=True,              # bool
-    method='CSS-ML',                  # str, fitting method
+    fit_intercept=True,               # bool, only used when d + D = 0
+    enforce_stationarity=True,        # bool
+    method='CSS-ML',                  # 'CSS-ML' | 'ML' | 'CSS'
     n_cond=None,                      # int | None
-    SSinit='Gardner1980',             # str
     optim_method='BFGS',              # str
     optim_kwargs=None,                # dict | None
     kappa=1e6,                        # float
+    include_drift=False,              # bool, linear drift with a manual order (d + D <= 1)
 
     # --- Auto ARIMA (only used when order=None) ---
     max_p=5,                          # int
@@ -5134,9 +5138,9 @@ Arima(
     allowdrift=True,                  # bool
     allowmean=True,                   # bool
 
-    # --- Box-Cox transformation ---
-    lambda_bc=None,                   # float | str | None
-    biasadj=False,                    # bool
+    # --- Box-Cox transformation (manual and auto modes) ---
+    lambda_bc=None,                   # float | 'auto' | None, 0 = log
+    biasadj=False,                    # bool, mean instead of median forecasts
 )
 ```
 
@@ -5147,9 +5151,15 @@ Arima(
 | **Manual** | `order=(p,d,q)` | User specifies exact order |
 | **Auto** | `order=None` | Automatic order selection via stepwise algorithm |
 
-After fitting (auto mode), selected order available in:
-- `forecaster.estimator.best_params_['order']`
-- `forecaster.estimator.best_params_['seasonal_order']`
+After fitting (auto mode), the selected model is available in
+`forecaster.estimators_[0].best_params_`: `order`, `seasonal_order`, `m`,
+`fit_intercept`, `include_drift` and `lambda_bc` (the Box-Cox lambda used).
+Passing these values to a manual `Arima` fits the same model (this is what
+`freeze_params=True` does in backtesting).
+
+With `lambda_bc`, `fitted_values_` and `in_sample_residuals_` are on the original
+scale. For models with differencing, the first `d + D * m` fitted values and
+residuals are NaN (diffuse initialization of the Kalman filter).
 
 ## Sarimax
 
@@ -5227,7 +5237,7 @@ The `model` parameter is a 3-character string: `Error`, `Trend`, `Seasonal`.
 | `'ZZZ'` | Auto | Auto | Auto | Auto-ETS (selects best) |
 
 After fitting (auto mode), selected configuration available in:
-- `forecaster.estimator.best_params_`
+- `forecaster.estimators_[0].best_params_`
 
 ## Arar
 
@@ -5310,10 +5320,10 @@ backtesting_stats(
 
 | Model | Exog in fit/predict | Notes |
 |-------|:--:|------|
-| `Arima` | — | No exog support |
+| `Arima` | ✓ | Regression with ARIMA errors |
 | `Sarimax` | ✓ | Full exog support via statsmodels SARIMAX |
 | `Ets` | — | No exog support |
-| `Arar` | — | No exog support |
+| `Arar` | ✓ | Two-step: linear regression on exog, then ARAR on the residuals |
 
 For `Sarimax` with exog, pass `exog` to both `fit()` and `predict()`:
 
@@ -6174,7 +6184,8 @@ ets_model = Ets(error='add', trend='add', seasonal='add', seasonal_periods=12)
 # ✅ CORRECT (current API)
 ets_model = Ets(model='AAA', m=12)
 # Model string: 1st char=Error, 2nd=Trend, 3rd=Seasonal
-# A=Additive, M=Multiplicative, N=None, Z=Auto-select
+# A=Additive, M=Multiplicative, N=None. Automatic selection only as model='ZZZ'
+# (partial specs like 'ZZN' raise an error: use 'ZZZ' with seasonal=False, trend=...)
 ```
 
 ## Function Mapping Reference

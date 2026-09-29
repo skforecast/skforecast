@@ -1382,3 +1382,82 @@ def test_output_backtesting_stats_auto_arima_arar_freeze_params_False_gap_air_pa
 
     pd.testing.assert_frame_equal(expected_metric, metric, rtol=0.01)
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, rtol=0.01)
+
+
+@pytest.mark.parametrize(
+    "freeze_params",
+    [True, False],
+    ids=lambda freeze: f'freeze_params: {freeze}'
+)
+def test_output_backtesting_stats_auto_arima_with_drift_and_exog(freeze_params):
+    """
+    Test output of backtesting_stats with auto ARIMA when the selected model
+    includes a drift term and exogenous variables. Before the fix, prediction
+    failed because the future drift column was not added and, with
+    `freeze_params=True`, the frozen model lost the drift term. Both values of
+    `freeze_params` must give the same results because the same model is
+    selected in every fold. Data follow a random walk with drift 0.5 plus 2 * x.
+    """
+    rng = np.random.RandomState(123)
+    n = 150
+    idx = pd.date_range("2020-01-01", periods=n, freq="D")
+    x = rng.normal(0, 1, n)
+    y = pd.Series(np.cumsum(0.5 + rng.normal(0, 1, n)) + 2 * x, index=idx, name="y")
+    exog = pd.Series(x, index=idx, name="x")
+
+    forecaster = ForecasterStats(estimator=Arima(order=None, seasonal_order=None))
+    cv = TimeSeriesFold(steps=10, initial_train_size=120, refit=True, verbose=False)
+    metric, predictions = backtesting_stats(
+                              forecaster    = forecaster,
+                              y             = y,
+                              exog          = exog,
+                              cv            = cv,
+                              metric        = 'mean_absolute_error',
+                              freeze_params = freeze_params,
+                              show_progress = False
+                          )
+
+    expected_pred_first_fold = np.array([
+        53.05455301243655, 52.84403933832447, 54.62085697324249,
+        56.37693992373822, 58.51309599304228, 55.19445992985424,
+        57.79232775521178, 57.646267725872065, 58.028279498479925,
+        56.400873088166044
+    ])
+
+    assert np.isclose(metric.loc[0, 'mean_absolute_error'], 2.7797731527375893)
+    np.testing.assert_array_almost_equal(
+        predictions['pred'].to_numpy()[:10], expected_pred_first_fold
+    )
+
+
+def test_backtesting_stats_IgnoredArgumentWarning_integer_refit_with_non_Sarimax():
+    """
+    Test that an integer `refit` other than 1 (intermittent refit) with an
+    estimator different from Sarimax issues an IgnoredArgumentWarning and is
+    set to True, the same as `refit=False`. Before the fix, it raised a
+    NotImplementedError about `last_window` in the folds without refit.
+    """
+    forecaster = ForecasterStats(estimator=Arima(order=(1, 1, 1)))
+    cv = TimeSeriesFold(
+             steps              = 3,
+             initial_train_size = len(y_datetime) - 12,
+             refit              = 2,
+             verbose            = False
+         )
+
+    warn_msg = re.escape(
+        "Estimators different from `skforecast.stats.Sarimax` require refitting "
+        "since predictions must start from the end of the training set. `refit` "
+        "is set to `True`, regardless of the value provided."
+    )
+    with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
+        metric, predictions = backtesting_stats(
+                                  forecaster    = forecaster,
+                                  y             = y_datetime,
+                                  cv            = cv,
+                                  metric        = 'mean_squared_error',
+                                  show_progress = False
+                              )
+
+    assert np.isclose(metric.loc[0, 'mean_squared_error'], 0.01505251113240201)
+    assert len(predictions) == 12

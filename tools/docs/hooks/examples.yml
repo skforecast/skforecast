@@ -2,7 +2,7 @@
 #
 # The card grids on docs/examples/examples_english.md, examples_spanish.md and
 # examples_chinese.md are generated from this file at build time by the mkdocs
-# hook tools/docs_hooks/examples_grid.py. Never edit the generated grids in the
+# hook tools/docs/hooks/examples_grid.py. Never edit the generated grids in the
 # Markdown pages: edit this file instead.
 #
 # To add a tutorial:

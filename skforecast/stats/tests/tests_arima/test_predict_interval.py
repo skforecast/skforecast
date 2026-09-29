@@ -264,14 +264,9 @@ def test_predict_interval_with_exog():
     assert result.shape[0] == 10
     assert 'mean' in result.columns
     
-    if platform.system() == 'Darwin':
-        expected_mean = np.array([-0.74715307, -0.50854947, -0.46409710])
-        expected_lower_95 = np.array([-2.50886643, -2.62501611, -2.72004532])
-        expected_upper_95 = np.array([1.01456030, 1.60791717, 1.79185113])
-    else:
-        expected_mean = np.array([-0.69037816, -0.28696593, -0.09660924])
-        expected_lower_95 = np.array([-2.45209152, -2.40343258, -2.35255749])
-        expected_upper_95 = np.array([1.07133521, 1.82950073, 2.15933901])
+    expected_mean = np.array([-0.06405277, -0.26701348, -0.02394156])
+    expected_lower_95 = np.array([-1.82576614, -2.38348011, -2.27988977])
+    expected_upper_95 = np.array([1.6976606, 1.84945315, 2.23200665])
 
     np.testing.assert_array_almost_equal(result['mean'].iloc[:3], expected_mean, decimal=4)
     np.testing.assert_array_almost_equal(result['lower_0.95'].iloc[:3], expected_lower_95, decimal=4)
@@ -400,49 +395,20 @@ def test_predict_interval_fuel_consumption_data_with_exog():
         level=(0.95, 0.99),
     )
 
-    expected = {
-        'Linux':
-            pd.DataFrame({
-                'mean': np.array([1574719.88796327, 1449374.80320486, 1509201.84849718,
-                                  1484751.10902458, 1403989.16888583]),
-                'lower_0.95': np.array([1540585.1426525 , 1415232.19910491, 1472732.76680002,
-                                        1447317.00684114, 1365235.48780817]),
-                'upper_0.95': np.array([1608854.63327405, 1483517.40730482, 1545670.93019435,
-                                        1522185.21120802, 1442742.84996349]),
-                'lower_0.99': np.array([1529859.22831125, 1404503.81535314, 1461273.35080536,
-                                        1435554.35943289, 1353058.19866004]),
-                'upper_0.99': np.array([1619580.54761529, 1494245.79105659, 1557130.34618901,
-                                        1533947.85861628, 1454920.13911162])
-            }, index=[1, 2, 3, 4, 5]).rename_axis('step'),
-        'Darwin':
-            pd.DataFrame({
-                'mean': np.array([1574723.70415075, 1449374.84229687, 1509207.5498717,
-                                  1484745.24866416, 1403996.30903765]),
-                'lower_0.95': np.array([1540589.04180584, 1415232.21354456, 1472739.65288243,
-                                        1447311.84936564, 1365243.52152282]),
-                'upper_0.95': np.array([1608858.36649566, 1483517.47104918, 1545675.44686097,
-                                        1522178.64796267, 1442749.09655248]),
-                'lower_0.99': np.array([1529863.15353435, 1404503.82204645, 1461280.609150,
-                                        1435549.42281984, 1353066.51315249]),
-                'upper_0.99': np.array([1619584.25476714, 1494245.86254729, 1557134.49059342,
-                                        1533941.07450847, 1454926.10492282])
-            }, index=[1, 2, 3, 4, 5]).rename_axis('step'),
-        'Windows':
-            pd.DataFrame({
-                'mean': np.array([1574725.01852883, 1449374.78703   , 1509207.29257651,
-                                  1484746.32126999, 1403996.4394836 ]),
-                'lower_0.95': np.array([1540590.50961915, 1415232.25129223, 1472739.44949257,
-                                        1447312.6000913 , 1365243.11336475]),
-                'upper_0.95': np.array([1608859.52743851, 1483517.32276778, 1545675.13566045,
-                                        1522180.04244868, 1442749.76560244]),
-                'lower_0.99': np.array([1529864.66956051, 1404503.8890214 , 1461280.4226984 ,
-                                        1435550.07240342, 1353065.93575277]),
-                'upper_0.99': np.array([1619585.36749716, 1494245.68503861, 1557134.16245463,
-                                        1533942.57013657, 1454926.94321442])
-            }, index=[1, 2, 3, 4, 5]).rename_axis('step')
-    }
-    
-    pd.testing.assert_frame_equal(pred, expected[platform.system()], rtol=1e-4)
+    expected = pd.DataFrame({
+        'mean': np.array([702178.55298827, 670303.23645305, 639996.22102265,
+                          675010.52440616, 614773.51301366]),
+        'lower_0.95': np.array([668043.64202547, 636160.43726675, 603526.10999358,
+                                637575.08080037, 576018.01292393]),
+        'upper_0.95': np.array([736313.46395108, 704446.03563936, 676466.33205173,
+                                712445.96801195, 653529.01310338]),
+        'lower_0.99': np.array([657317.67563259, 625431.9922144, 592066.3705594,
+                                625812.01188667, 563840.15220079]),
+        'upper_0.99': np.array([747039.43034396, 715174.48069171, 687926.07148591,
+                                724209.03692565, 665706.87382652])
+    }, index=[1, 2, 3, 4, 5]).rename_axis('step')
+
+    pd.testing.assert_frame_equal(pred, expected, rtol=1e-4)
     
 
 def test_predict_interval_with_exog_dataframe():
@@ -482,13 +448,13 @@ def test_predict_interval_with_exog_dataframe():
     
     # Check exact predicted values for DataFrame exog
     expected_mean_df = np.array([
-        -0.18187, 0.20608757, -0.02945256, -0.22661237, -0.0109613
+        -0.03453459, 0.47554571, 0.18911951, -0.08577119, 0.18902427
     ])
     expected_lower_95_df = np.array([
-        -1.65126352, -1.50498276, -1.81869782, -2.04287589, -1.8367468
+        -1.50392811, -1.23552462, -1.60012574, -1.90203469, -1.63676122
     ])
     expected_upper_95_df = np.array([
-        1.28752353, 1.91715791, 1.7597927 , 1.58965114, 1.81482419
+        1.43485893, 2.18661604, 1.97836476, 1.73049231, 2.01480975
     ])
     np.testing.assert_array_almost_equal(result['mean'].values, expected_mean_df, decimal=5)
     np.testing.assert_array_almost_equal(result['lower_0.95'].values, expected_lower_95_df, decimal=5)
@@ -510,13 +476,13 @@ def test_predict_interval_with_exog_dataframe():
     
     # Check exact predicted values for Series exog
     expected_mean_series = np.array([
-        -0.00370962, 0.0191783, 0.09982658, -0.08205884, -0.11285304
+        0.15081644, 0.14658572, 0.17453836, 0.08650628, 0.06935746
     ])
     expected_lower_95_series = np.array([
-        -1.49667978, -1.72029709, -1.71968492, -1.92934068, -1.96996154
+        -1.34215372, -1.59288972, -1.64497323, -1.76077566, -1.78775115
     ])
     expected_upper_95_series = np.array([
-        1.48926054, 1.75865368, 1.91933809, 1.76522299, 1.74425545
+        1.6437866, 1.88606116, 1.99404996, 1.93378823, 1.92646607
     ])
     np.testing.assert_array_almost_equal(result2['mean'].values, expected_mean_series, decimal=5)
     np.testing.assert_array_almost_equal(result2['lower_0.95'].values, expected_lower_95_series, decimal=5)

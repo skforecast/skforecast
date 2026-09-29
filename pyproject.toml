@@ -1,7 +1,7 @@
 [project]
 name = "skforecast"
 version = "0.25.0"
-description = "Skforecast is a Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. It works with any estimator compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others."
+description = "Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models."
 readme = "README.md"
 authors = [
     {name = "Joaquin Amat Rodrigo", email = "j.amatrodrigo@gmail.com"},
@@ -34,7 +34,7 @@ classifiers = [
 ]
 
 license = "BSD-3-Clause"
-license-files = ["LICENSE", "CITATION.cff"]
+license-files = ["LICENSE"]
 
 keywords = [
     "data-science",
@@ -122,13 +122,14 @@ test = [
 ]
 
 [project.urls]
-Homepage = "https://www.skforecast.org"
+Homepage = "https://skforecast.org"
 Repository = "https://github.com/skforecast/skforecast"
-Documentation = "https://www.skforecast.org"
-"Release Notes" = "https://skforecast.org/latest/releases/releases"
+Documentation = "https://skforecast.org"
+"Release Notes" = "https://skforecast.org/latest/releases/releases.html"
 "LLM Context" = "https://skforecast.org/latest/llms.txt"
 Download = "https://pypi.org/project/skforecast/#files"
 Tracker = "https://github.com/skforecast/skforecast/issues"
+Funding = "https://skforecast.org/latest/more/funding.html"
 
 [build-system]
 requires = ["setuptools>=83.0.0"]

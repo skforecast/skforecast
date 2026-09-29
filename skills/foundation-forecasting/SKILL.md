@@ -7,8 +7,9 @@ description: >
   FoundationModel. Covers single and multi-series
   workflows, exogenous variables, prediction intervals / quantiles,
   backtesting, and inference-time parameter search (context_length tuning).
-  Use when the user wants forecasts without task-specific
-  training, cold-start baselines, or pre-trained generalist models.
+  Use when the user wants accurate forecasts without task-specific
+  training, forecasts for short or new (cold-start) series, or pre-trained
+  generalist models.
 ---
 
 # Foundation Model Forecasting (Zero-Shot)
@@ -16,10 +17,12 @@ description: >
 ## When to Use
 
 Use `ForecasterFoundation` when:
-- You want a **zero-shot baseline** before investing in model training.
+- You want **accurate forecasts without training** a model. The best pre-trained models are among the top performers in public benchmarks (GIFT-Eval, fev-bench).
 - You have **very short histories** where ML models struggle.
 - You need to forecast **cold-start** series (new product, new sensor).
-- You want to compare against pre-trained generalist models.
+- You have **many heterogeneous series** (different lengths, exogenous variables or missing values).
+
+Trade-offs: prediction needs more computing resources (usually a GPU), and a forecaster trained on the user's data with well-designed features and exogenous variables can still be more accurate for a specific problem. Compare them with backtesting on the same folds.
 
 Foundation models are **pre-trained on massive corpora** — `fit()` does not train them; it only stores the recent context and metadata.
 

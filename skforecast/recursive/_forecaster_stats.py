@@ -352,10 +352,11 @@ class ForecasterStats(MultiEstimatorMixin):
 
         """
         
-        # Format parameters for each estimator
+        # Format parameters for each estimator (only non-default values)
+        non_default_params = self._get_non_default_estimator_params()
         estimator_params = []
         for id in self.estimator_ids:
-            params = str(self.estimator_params_[id])
+            params = str(non_default_params[id])
             if len(params) > 58:
                 params = "\n        " + textwrap.fill(
                     params, width=76, subsequent_indent="        "

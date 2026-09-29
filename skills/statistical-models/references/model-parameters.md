@@ -33,14 +33,14 @@ Arima(
     order=(1, 0, 0),                  # tuple(p, d, q) | None → auto ARIMA
     seasonal_order=(0, 0, 0),         # tuple(P, D, Q) — 3 elements, NOT 4
     m=1,                              # int, seasonal period (1 = no seasonality)
-    include_mean=True,                # bool
-    transform_pars=True,              # bool
-    method='CSS-ML',                  # str, fitting method
+    fit_intercept=True,               # bool, only used when d + D = 0
+    enforce_stationarity=True,        # bool
+    method='CSS-ML',                  # 'CSS-ML' | 'ML' | 'CSS'
     n_cond=None,                      # int | None
-    SSinit='Gardner1980',             # str
     optim_method='BFGS',              # str
     optim_kwargs=None,                # dict | None
     kappa=1e6,                        # float
+    include_drift=False,              # bool, linear drift with a manual order (d + D <= 1)
 
     # --- Auto ARIMA (only used when order=None) ---
     max_p=5,                          # int
@@ -69,9 +69,9 @@ Arima(
     allowdrift=True,                  # bool
     allowmean=True,                   # bool
 
-    # --- Box-Cox transformation ---
-    lambda_bc=None,                   # float | str | None
-    biasadj=False,                    # bool
+    # --- Box-Cox transformation (manual and auto modes) ---
+    lambda_bc=None,                   # float | 'auto' | None, 0 = log
+    biasadj=False,                    # bool, mean instead of median forecasts
 )
 ```
 
@@ -82,9 +82,15 @@ Arima(
 | **Manual** | `order=(p,d,q)` | User specifies exact order |
 | **Auto** | `order=None` | Automatic order selection via stepwise algorithm |
 
-After fitting (auto mode), selected order available in:
-- `forecaster.estimator.best_params_['order']`
-- `forecaster.estimator.best_params_['seasonal_order']`
+After fitting (auto mode), the selected model is available in
+`forecaster.estimators_[0].best_params_`: `order`, `seasonal_order`, `m`,
+`fit_intercept`, `include_drift` and `lambda_bc` (the Box-Cox lambda used).
+Passing these values to a manual `Arima` fits the same model (this is what
+`freeze_params=True` does in backtesting).
+
+With `lambda_bc`, `fitted_values_` and `in_sample_residuals_` are on the original
+scale. For models with differencing, the first `d + D * m` fitted values and
+residuals are NaN (diffuse initialization of the Kalman filter).
 
 ## Sarimax
 
@@ -162,7 +168,7 @@ The `model` parameter is a 3-character string: `Error`, `Trend`, `Seasonal`.
 | `'ZZZ'` | Auto | Auto | Auto | Auto-ETS (selects best) |
 
 After fitting (auto mode), selected configuration available in:
-- `forecaster.estimator.best_params_`
+- `forecaster.estimators_[0].best_params_`
 
 ## Arar
 
@@ -245,10 +251,10 @@ backtesting_stats(
 
 | Model | Exog in fit/predict | Notes |
 |-------|:--:|------|
-| `Arima` | — | No exog support |
+| `Arima` | ✓ | Regression with ARIMA errors |
 | `Sarimax` | ✓ | Full exog support via statsmodels SARIMAX |
 | `Ets` | — | No exog support |
-| `Arar` | — | No exog support |
+| `Arar` | ✓ | Two-step: linear regression on exog, then ARAR on the residuals |
 
 For `Sarimax` with exog, pass `exog` to both `fit()` and `predict()`:
 

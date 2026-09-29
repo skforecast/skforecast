@@ -1,7 +1,7 @@
 // Live client-side filter for the Examples card grids.
 //
 // Progressive enhancement: the filter bar is rendered with the `hidden`
-// attribute by tools/docs_hooks/examples_grid.py and only unhidden here, so with
+// attribute by tools/docs/hooks/examples_grid.py and only unhidden here, so with
 // JavaScript disabled the pages are plain, complete card grids.
 //
 // The script is a no-op on every page without #ex-filter, and re-initialises on

@@ -4,6 +4,7 @@ import re
 import pytest
 import platform
 import numpy as np
+import pandas as pd
 from ..._arima import Arima
 from .fixtures_arima import air_passengers, multi_seasonal, fuel_consumption
 
@@ -188,10 +189,7 @@ def test_arima_predict_with_exog_numpy_array():
     model.fit(y, exog=exog_train)
     
     # Check exact coefficients (R-based implementation values)
-    if platform.system() == 'Darwin':
-        expected_coef = np.array([0.71943314, 0.04802214, 0.07733238, -0.0906819])
-    else:
-        expected_coef = np.array([0.71943314, -0.10608029, -0.03679128, -0.06247405])
+    expected_coef = np.array([0.71943317, -0.08436689, -0.05881312, 0.07702519])
     np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=5)
     assert model.n_exog_features_in_ == 2
 
@@ -199,10 +197,7 @@ def test_arima_predict_with_exog_numpy_array():
     pred = model.predict(steps=3, exog=exog_pred)
 
     # Check exact prediction values (R-based implementation)
-    if platform.system() == 'Darwin':
-        expected_pred = np.array([-0.10050243, -0.0419365, -0.1563397])
-    else:
-        expected_pred = np.array([-0.32577062, -0.31016259, -0.23927637])
+    expected_pred = np.array([-0.38481775, -0.31047103, -0.13680244])
     np.testing.assert_array_almost_equal(pred, expected_pred, decimal=5)
 
 
@@ -224,7 +219,7 @@ def test_arima_predict_with_exog_1d_array():
     assert pred.shape == (5,)
     assert model.n_exog_features_in_ == 1
     # Check exact prediction values (R-based implementation)
-    expected_pred = np.array([-0.79422883, -0.61079575, -0.4934413 , -0.41726503, -0.36097358])
+    expected_pred = np.array([-0.39764827, -0.11623889, -0.12015593, -0.17904368, 0.14837879])
     np.testing.assert_array_almost_equal(pred, expected_pred, decimal=5)
 
 
@@ -463,7 +458,7 @@ def test_arima_predict_with_exog_dataframe():
     
     # Check exact predicted values for DataFrame exog
     expected_pred_df = np.array([
-        -0.18187   ,  0.20608757, -0.02945256, -0.22661237, -0.0109613
+        -0.03453459, 0.47554571, 0.18911951, -0.08577119, 0.18902427
     ])
     np.testing.assert_array_almost_equal(pred_df, expected_pred_df, decimal=5)
     
@@ -485,7 +480,7 @@ def test_arima_predict_with_exog_dataframe():
     
     # Check exact predicted values for Series exog
     expected_pred_series = np.array([
-        -0.00370962,  0.0191783 ,  0.09982658, -0.08205884, -0.11285304
+        0.15081644, 0.14658572, 0.17453836, 0.08650628, 0.06935746
     ])
     np.testing.assert_array_almost_equal(pred_series, expected_pred_series, decimal=5)
 
@@ -516,17 +511,9 @@ def test_predict_fuel_consumption_data_with_exog():
         exog=fuel_consumption.loc['1989-09-01':].drop(columns=['y']),
     )
 
-    expected = {
-        'Linux': np.array([1574773.72985, 1449368.34742, 1509249.8998, 1484706.35242,
-                            1404055.23623]),
-        'Darwin':
-            np.array([1574722.366382, 1449374.7542, 1509204.251241, 1484748.945998,
-                      1403992.552417]),
-        'Windows':
-            np.array([1574766.35415552, 1449367.06186871, 1509255.77782939,
-                      1484690.16862425, 1404060.78688154])
-    }
-    np.testing.assert_allclose(pred, expected[platform.system()], rtol=1e-4)
+    expected = np.array([702178.55298827, 670303.23645305, 639996.22102265,
+                         675010.52440616, 614773.51301366])
+    np.testing.assert_allclose(pred, expected, rtol=1e-4)
 
 
 def test_arima_predict_auto_arima_air_passengers_data():
@@ -607,6 +594,165 @@ def test_arima_predict_auto_arima_air_passengers_data():
     assert model.best_params_['m'] == 12
     assert model.estimator_name_ == expected_estimator_name_[platform_name]
     np.testing.assert_allclose(pred, expected_pred[platform.system()], rtol=1e-4)
+
+
+@pytest.mark.parametrize(
+    "arima_kwargs, expected_name",
+    [({'order': None, 'seasonal_order': None}, 'AutoArima(0,1,0)'),
+     ({'order': (0, 1, 0), 'include_drift': True}, 'Arima(0,1,0)')],
+    ids=['auto_arima', 'manual_include_drift']
+)
+@pytest.mark.parametrize(
+    "exog_type, expected_coef_names",
+    [('ndarray', ['drift', 'exog1']),
+     ('DataFrame', ['drift', 'x'])],
+    ids=['exog_ndarray', 'exog_DataFrame']
+)
+def test_arima_predict_with_drift_and_exog(
+    arima_kwargs, expected_name, exog_type, expected_coef_names
+):
+    """
+    Test predict and predict_interval when the model includes a drift term and
+    exogenous variables, either selected by auto ARIMA or set manually with
+    `include_drift=True`. Both must give the same model. Before the fix, auto
+    ARIMA failed to predict because the future drift column was not added.
+    Data follow a random walk with drift 0.5 plus 2 * x.
+    """
+    rng = np.random.RandomState(123)
+    n = 100
+    steps = 5
+    x = rng.normal(0, 1, n + steps)
+    y = np.cumsum(0.5 + rng.normal(0, 1, n + steps)) + 2 * x
+    if exog_type == 'ndarray':
+        exog_train, exog_pred = x[:n], x[n:]
+    else:
+        exog_train, exog_pred = pd.DataFrame({'x': x[:n]}), pd.DataFrame({'x': x[n:]})
+
+    model = Arima(**arima_kwargs)
+    model.fit(y[:n], exog=exog_train)
+    pred = model.predict(steps=steps, exog=exog_pred)
+    pred_interval = model.predict_interval(steps=steps, exog=exog_pred, level=[0.95])
+
+    expected_pred = np.array([
+        50.77783587521633, 46.23795674516272, 51.8946026257248,
+        56.007178045793324, 51.461562680362405
+    ])
+    expected_interval = np.array([
+        [50.77783587521633, 48.939290412283285, 52.61638133814938],
+        [46.23795674516272, 43.637860816443286, 48.83805267388215]
+    ])
+
+    assert model.estimator_name_ == expected_name
+    assert model.coef_names_ == expected_coef_names
+    np.testing.assert_array_almost_equal(
+        model.coef_, np.array([0.4909742755025071, 1.9202151091518056])
+    )
+    np.testing.assert_array_almost_equal(pred, expected_pred)
+    np.testing.assert_array_almost_equal(
+        pred_interval.to_numpy()[:2], expected_interval
+    )
+
+
+def test_arima_predict_after_freezing_best_params_with_drift():
+    """
+    Test that freezing the parameters selected by auto ARIMA (as done by
+    `backtesting_stats` with `freeze_params=True`) keeps the drift term. The
+    predictions must be the same with the already fitted model (the prediction
+    path depends on the fitted model, not on the current parameters) and after
+    refitting with the frozen parameters.
+    """
+    rng = np.random.RandomState(123)
+    n = 100
+    x = rng.normal(0, 1, n)
+    y = np.cumsum(0.5 + rng.normal(0, 1, n)) + 2 * x
+
+    model = Arima(order=None, seasonal_order=None)
+    model.fit(y)
+    expected_pred = np.array(
+        [48.75149485301368, 49.23650349452236, 49.721512136031045]
+    )
+
+    assert model.best_params_ == {
+        'order': (0, 1, 1),
+        'seasonal_order': (0, 0, 0),
+        'm': 1,
+        'fit_intercept': False,
+        'include_drift': True,
+        'lambda_bc': None
+    }
+    np.testing.assert_array_almost_equal(model.predict(steps=3), expected_pred)
+
+    model._set_params(**model.best_params_)
+    np.testing.assert_array_almost_equal(model.predict(steps=3), expected_pred)
+
+    model_frozen = Arima(order=None, seasonal_order=None)
+    model_frozen.set_params(**model.best_params_)
+    model_frozen.fit(y)
+    assert model_frozen.coef_names_ == ['ma1', 'drift']
+    np.testing.assert_array_almost_equal(model_frozen.predict(steps=3), expected_pred)
+
+
+def test_arima_predict_auto_arima_with_drift_and_leading_missing_values():
+    """
+    Test that, when auto ARIMA selects a drift term and the series starts with
+    missing values (dropped before fitting), the drift continues from its last
+    training value. Before the fix, the future drift was computed from the
+    length of the series including the missing values, shifting the forecasts
+    by drift * number of leading missing values.
+    """
+    rng = np.random.RandomState(123)
+    y = np.cumsum(2.0 + rng.normal(0, 0.5, 120))
+    y[:10] = np.nan
+
+    model = Arima(order=None, seasonal_order=None)
+    model.fit(y)
+    pred = model.predict(steps=3)
+
+    assert model.coef_names_ == ['drift']
+    np.testing.assert_array_almost_equal(model.coef_, np.array([2.0243631214236544]))
+    np.testing.assert_array_almost_equal(
+        pred, np.array([242.9929197291593, 245.01728285058294, 247.0416459720066])
+    )
+
+
+def test_arima_predict_box_cox_with_manual_order():
+    """
+    Test that predictions of a manual order with `lambda_bc=0` are the
+    back-transformed predictions of the same model fitted on log(y). Before
+    the fix, `lambda_bc` was ignored when the order was set manually.
+    """
+    model = Arima(order=(0, 1, 1), seasonal_order=(0, 1, 1), m=12, lambda_bc=0.0)
+    model.fit(air_passengers.to_numpy())
+    pred = model.predict(steps=3)
+    pred_interval = model.predict_interval(steps=3, level=[0.95])
+
+    expected_pred = np.array([450.4227889244881, 425.7168169945266, 479.00433358066545])
+
+    np.testing.assert_array_almost_equal(pred, expected_pred)
+    np.testing.assert_array_almost_equal(pred_interval['mean'].to_numpy(), expected_pred)
+    assert np.all(pred_interval['lower_0.95'].to_numpy() < expected_pred)
+    assert np.all(pred_interval['upper_0.95'].to_numpy() > expected_pred)
+
+
+def test_arima_predict_after_freezing_best_params_with_box_cox():
+    """
+    Test that freezing the parameters selected by auto ARIMA with `lambda_bc`
+    (as done by `backtesting_stats` with `freeze_params=True`) keeps the Box-Cox
+    transformation, so refitting with the frozen parameters gives the same
+    predictions.
+    """
+    y = air_passengers.to_numpy()
+    model = Arima(order=None, seasonal_order=None, m=12, lambda_bc='auto')
+    model.fit(y)
+    pred = model.predict(steps=3)
+
+    model_frozen = Arima(order=None, seasonal_order=None, m=12, lambda_bc='auto')
+    model_frozen.set_params(**model.best_params_)
+    model_frozen.fit(y)
+
+    assert isinstance(model.best_params_['lambda_bc'], float)
+    assert model_frozen.lambda_bc == model.best_params_['lambda_bc']
+    np.testing.assert_array_almost_equal(model_frozen.predict(steps=3), pred)
 
 
 def test_arima_predict_auto_arima_multi_seasonal_data():

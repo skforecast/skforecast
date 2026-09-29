@@ -36,10 +36,13 @@ class Ets(BaseEstimator, RegressorMixin):
         Seasonal period (e.g., 12 for monthly data with yearly seasonality).
     model : str, None, default "ZZZ"
         Three-letter model specification (e.g., "ANN", "AAA", "MAM"):
-        - First letter: Error type (A=Additive, M=Multiplicative, Z=Auto)
-        - Second letter: Trend type (N=None, A=Additive, M=Multiplicative, Z=Auto)
-        - Third letter: Season type (N=None, A=Additive, M=Multiplicative, Z=Auto)
-        Use "ZZZ" or None for automatic model selection.
+        - First letter: Error type (A=Additive, M=Multiplicative)
+        - Second letter: Trend type (N=None, A=Additive, M=Multiplicative)
+        - Third letter: Season type (N=None, A=Additive, M=Multiplicative)
+        Use "ZZZ" or None for automatic model selection. Partial automatic
+        specifications (e.g., "ZZN") are not supported: use "ZZZ" and restrict
+        the search with `seasonal`, `trend`, `damped`, `allow_multiplicative`
+        and `allow_multiplicative_trend`.
     damped : bool or None, default None
         Whether to use damped trend. If None, both damped and non-damped
         models are tried (only when model="ZZZ" or model=None).
@@ -543,8 +546,13 @@ class Ets(BaseEstimator, RegressorMixin):
             "beta": self.beta,
             "gamma": self.gamma,
             "phi": self.phi,
+            "lambda_param": self.lambda_param,
+            "lambda_auto": self.lambda_auto,
+            "bias_adjust": self.bias_adjust,
+            "bounds": self.bounds,
             "seasonal": self.seasonal,
             "trend": self.trend,
+            "ic": self.ic,
             "allow_multiplicative": self.allow_multiplicative,
             "allow_multiplicative_trend": self.allow_multiplicative_trend,
         }
@@ -657,12 +665,7 @@ class Ets(BaseEstimator, RegressorMixin):
         
         """
 
-        valid_params = {
-            'm', 'model', 'damped', 'alpha', 'beta', 'gamma', 'phi',
-            'lambda_param', 'lambda_auto', 'bias_adjust', 'bounds',
-            'seasonal', 'trend', 'ic', 'allow_multiplicative',
-            'allow_multiplicative_trend'
-        }
+        valid_params = set(self.get_params())
         for key in params.keys():
             if key not in valid_params:
                 raise ValueError(

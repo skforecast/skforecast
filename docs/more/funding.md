@@ -86,27 +86,6 @@ Citing the project, starring the repository, and sharing your work with skforeca
 To discuss sponsorship, a partnership, or a service engagement, contact the core developers.
 
 
-<div class="profile-container">
-
-  <div class="profile-card">
-    <div class="profile-avatar">
-      <img src="https://github.com/JoaquinAmatRodrigo.png" alt="Joaquín Amat Rodrigo">
-    </div>
-    <div class="profile-info">
-      <strong>Joaquín Amat Rodrigo</strong>
-      <div class="email-info">j.amatrodrigo@gmail.com</div>
-      <a href="https://www.linkedin.com/in/joaquin-amat-rodrigo" class="linkedin-link" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-    </div>
-  </div>
-
-  <div class="profile-card">
-    <div class="profile-avatar">
-      <img src="https://github.com/JavierEscobarOrtiz.png" alt="Javier Escobar Ortiz">
-    </div>
-    <div class="profile-info">
-      <strong>Javier Escobar Ortiz</strong>
-      <div class="email-info">javier.escobar.ortiz@gmail.com</div>
-      <a href="https://www.linkedin.com/in/javier-escobar-ortiz" class="linkedin-link" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-    </div>
-  </div>
+<div class="sk-team-contact">
+--8<-- "team.html"
 </div>

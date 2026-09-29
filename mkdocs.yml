@@ -2,10 +2,26 @@ site_name: Skforecast Docs
 repo_url: https://github.com/skforecast/skforecast
 site_url: https://skforecast.org
 remote_branch: docs_dev
-site_description: Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. It works with any estimator compatible with the scikit-learn API, including popular options like LightGBM, XGBoost, CatBoost, Keras, and many others.
+site_description: Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models.
 site_author: Joaquin Amat Rodrigo and Javier Escobar Ortiz
 use_directory_urls: false
-copyright: Copyright &copy; 2021 - 2030 Joaquín Amat Rodrigo, Javier Escobar Ortiz
+
+# The theme overrides (custom_dir) live inside docs_dir, so without this MkDocs
+# would also publish the raw templates and their data as static files.
+# rolling_skewness.py is imported when save-load-forecaster.ipynb is executed,
+# but it is not part of the site.
+exclude_docs: |
+  /overrides/
+  /user_guides/rolling_skewness.py
+
+# Report broken links and missing anchors as warnings (the default is INFO,
+# which hides them in the build output).
+validation:
+  links:
+    unrecognized_links: warn
+    anchors: warn
+
+copyright: Copyright &copy; 2021-present Joaquín Amat Rodrigo and Javier Escobar Ortiz
 
 nav:
   - Home: 
@@ -30,6 +46,7 @@ nav:
       - Forecasting baseline: user_guides/forecasting-baseline.ipynb
       - Autoregressive classification: user_guides/autoregressive-classification-forecasting.ipynb
     - Global Forecasters (multiple series):
+      - Global forecasting: user_guides/global-forecasting-overview.md
       - Independent multi-time series forecasting: user_guides/independent-multi-time-series-forecasting.ipynb
       - Series with different lengths and different exogenous variables: user_guides/multi-series-with-different-length-and-different_exog.ipynb
       - Dependent multivariate series forecasting: user_guides/dependent-multi-series-multivariate-forecasting.ipynb
@@ -59,7 +76,7 @@ nav:
       - Hyperparameter tuning and lags selection: user_guides/hyperparameter-tuning-and-lags-selection.ipynb
       - Feature selection: user_guides/feature-selection.ipynb
     - Probabilistic Forecasting: 
-      - Overview: user_guides/probabilistic-forecasting-overview.ipynb
+      - Probabilistic forecasting: user_guides/probabilistic-forecasting-overview.ipynb
       - Bootstrapped residuals: user_guides/probabilistic-forecasting-bootstrapped-residuals.ipynb
       - Conformal predictions: user_guides/probabilistic-forecasting-conformal-prediction.ipynb
       - Conformal calibration: user_guides/probabilistic-forecasting-conformal-calibration.ipynb
@@ -152,21 +169,28 @@ nav:
 
 extra_css:
   - stylesheets/extra.css
+  - vendor/katex/katex.min.css
 extra_javascript:
   - javascripts/version-switcher.js
   - javascripts/examples-filter.js
-  - javascripts/mathjax.js
-  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+  - javascripts/home.js
+  # Math rendering with KaTeX, served from docs/vendor/katex (update it with
+  # tools/docs/vendor_katex.py)
+  - vendor/katex/katex.min.js
+  - vendor/katex/auto-render.min.js
+  - javascripts/katex.js
 
 hooks:
-  # Renders the Examples pages from tools/docs_hooks/examples.yml
-  - tools/docs_hooks/examples_grid.py
+  # Renders the Examples pages from tools/docs/hooks/examples.yml
+  - tools/docs/hooks/examples_grid.py
+  # Warns about notebooks saved with Jupyter widgets (see the file)
+  - tools/docs/hooks/notebook_widgets.py
 
 # `mkdocs serve` only watches docs_dir and mkdocs.yml, so the examples data needs
 # to be watched explicitly. Note that edits to the hook module itself require a
 # server restart (MkDocs caches hook modules for the process lifetime).
 watch:
-  - tools/docs_hooks
+  - tools/docs/hooks
 
 plugins:
   # - git-revision-date-localized: Incluir última fecha de modificación al final de las páginas
@@ -194,19 +218,34 @@ plugins:
       allow_errors: False
       execute: False
       ignore_h1_titles: True
-      include_requirejs: True
+      # require.js was only needed by the Jupyter widget manager. The notebooks no
+      # longer contain widgets (see tools/docs/execute_notebooks/static_widgets.py).
+      include_requirejs: False
       include_source: True
   - mike:
       alias_type: copy
       canonical_version: latest
-      css_dir: css
-      deploy_prefix: ''
-      javascript_dir: js
-      redirect_template: null
-      version_selector: true
   - search:
       lang: en
-      separator: '[\s\-\._]+'
+      # Splits words at spaces, punctuation and underscores, at case changes
+      # (ForecasterRecursive -> Forecaster, Recursive) and at dots except in
+      # version strings (0.25.0 stays whole). Based on Material's recommendation.
+      separator: '[\s\-_,:!=\[\]()"/]+|(?!\b)(?=[A-Z][a-z])|\.(?!\d)|&[lg]t;'
+  # Serves external assets (Google Fonts, images, scripts) from the site itself,
+  # downloaded at build time, so visitors do not connect to third parties
+  # before accepting cookies (GDPR). Excluded:
+  # - Badges with live values (downloads, versions): a local copy would freeze them.
+  # - Plotly and the MathJax 2 it brings (outputs of faq/skforecast-benchmark):
+  #   Plotly's script tag has an integrity hash that the rewritten local copy
+  #   would fail, and MathJax 2 loads its extensions from its CDN at runtime.
+  - privacy:
+      assets_exclude:
+        - cdn.plot.ly/*
+        - cdnjs.cloudflare.com/ajax/libs/mathjax/*
+        - img.shields.io/*
+        - static.pepy.tech/*
+        - zenodo.org/badge/*
+        - www.repostatus.org/*
 
 theme:
   name: material
@@ -246,8 +285,13 @@ theme:
     #     name: Switch to light mode
 
     # Palette toggle for light mode
+    # primary and accent are "custom": the brand colors are defined in
+    # stylesheets/extra.css. Without it, Material applies "indigo", whose rules
+    # are more specific and override some of them (for example, links in dark mode).
     - media: "(prefers-color-scheme: light)"
-      scheme: light
+      scheme: default
+      primary: custom
+      accent: custom
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
@@ -255,6 +299,8 @@ theme:
     # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
+      primary: custom
+      accent: custom
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
@@ -285,7 +331,11 @@ markdown_extensions:
   - pymdownx.magiclink
   - pymdownx.mark
   - pymdownx.smartsymbols
-  - pymdownx.snippets
+  - pymdownx.snippets:
+      # Reusable HTML components shared by the Markdown pages and the theme
+      # templates (for example, the team cards: --8<-- "team.html")
+      base_path: [docs/overrides/partials]
+      check_paths: true
   - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true

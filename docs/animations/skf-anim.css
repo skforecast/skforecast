@@ -1,0 +1,62 @@
+/*!
+ * Copyright (c) 2021-present Joaquín Amat Rodrigo and Javier Escobar Ortiz.
+ * Part of the skforecast documentation, licensed under CC BY-NC-SA 4.0
+ * (https://creativecommons.org/licenses/by-nc-sa/4.0/). It is not covered by the
+ * BSD-3-Clause license of the skforecast software.
+ * The skforecast trademark and logo are registered with the EUIPO (application
+ * number 019109684) and may not be used without permission.
+ */
+/* Shared styles for the skforecast documentation animations.
+   Each animation is a standalone page (embedded with an iframe) that loads
+   this file, the fonts in ./fonts and the engine in skf-anim.js. */
+
+@font-face{font-family:'Work Sans';font-weight:400;font-style:normal;font-display:block;src:url(fonts/work-sans-400.woff) format('woff');}
+@font-face{font-family:'Work Sans';font-weight:700;font-style:normal;font-display:block;src:url(fonts/work-sans-700.woff) format('woff');}
+@font-face{font-family:'Work Sans';font-weight:400;font-style:italic;font-display:block;src:url(fonts/work-sans-400-italic.woff) format('woff');}
+@font-face{font-family:'JetBrains Mono';font-weight:400;font-style:normal;font-display:block;src:url(fonts/jetbrains-mono-400.woff) format('woff');}
+@font-face{font-family:'JetBrains Mono';font-weight:700;font-style:normal;font-display:block;src:url(fonts/jetbrains-mono-700.woff) format('woff');}
+
+/* Design tokens. Role colors keep the same meaning in every animation:
+   lag (past values used as features), target (value to predict), roll,
+   dow (calendar), exog (exogenous variables) and s1..s3 (series identity). */
+:root{
+  --bg:#ffffff; --fg:#1d2330; --title:#001633; --muted:#687182; --faint:#b3b9c4;
+  --grid:#e8ebf0; --panel:#f4f5f8; --border:#d6dae2; --series:#3b4458; --chip:#ffffff;
+  --lag:#2f6db5; --target:#f79939; --targetText:#c2660a; --roll:#0f9488; --dow:#7c5acb; --exog:#d0466c;
+  --s1:#0f9488; --s2:#7c5acb; --s3:#5f8f1f;
+}
+:root[data-theme="dark"]{
+  --bg:#1e2029; --fg:#e4e7ee; --title:#ffffff; --muted:#9aa2b1; --faint:#596070;
+  --grid:#2e3240; --panel:#262a36; --border:#3d4252; --series:#c3c9d5; --chip:#12141b;
+  --lag:#6fa3ea; --target:#f79939; --targetText:#f9a852; --roll:#35c0b2; --dow:#a78bf0; --exog:#f0789a;
+  --s1:#35c0b2; --s2:#a78bf0; --s3:#9ccc5a;
+}
+
+html,body{margin:0;background:var(--bg);color:var(--fg);}
+.skf-anim{max-width:1280px;margin:0 auto;font-family:'Work Sans','Roboto','Helvetica Neue',Arial,sans-serif;}
+.skf-anim svg{display:block;width:100%;height:auto;}
+.skf-anim svg text{white-space:pre;}
+.skf-anim .s{font-family:'Work Sans','Roboto','Helvetica Neue',Arial,sans-serif;}
+.skf-anim .m{font-family:'JetBrains Mono','Roboto Mono',Menlo,Consolas,monospace;}
+.skf-anim .i{font-family:'Work Sans','Roboto','Helvetica Neue',Arial,sans-serif;font-style:italic;}
+
+.skf-controls{display:flex;align-items:center;gap:12px;padding:6px 16px 10px;}
+.skf-controls button{appearance:none;border:1px solid var(--border);background:var(--panel);color:var(--fg);
+  border-radius:8px;width:36px;height:32px;display:grid;place-items:center;cursor:pointer;padding:0;}
+.skf-controls button:hover{border-color:var(--target);}
+.skf-controls button:focus-visible{outline:2px solid var(--target);outline-offset:2px;}
+.skf-controls svg{width:16px;height:16px;fill:currentColor;}
+.skf-controls input[type=range]{flex:1;accent-color:#f79939;min-width:0;}
+.skf-controls .time{font:12px 'JetBrains Mono',Menlo,monospace;color:var(--muted);min-width:78px;text-align:right;}
+
+/* Logo of the brand mark (see brand() in skf-anim.js), one per theme. */
+:root[data-theme="dark"] .skf-logo-light,
+:root:not([data-theme="dark"]) .skf-logo-dark{display:none;}
+
+/* Full screen: the stage fills the screen, keeping its aspect ratio. */
+.skf-anim:fullscreen{max-width:none;background:var(--bg);display:flex;flex-direction:column;justify-content:center;}
+.skf-anim:fullscreen #skf-stage{max-height:calc(100vh - 48px);}
+
+/* ?export=1 hides the controls so frames can be captured (GIF / MP4). */
+html.export .skf-controls{display:none;}
+html.export,html.export body{overflow:hidden;}
