@@ -27,7 +27,7 @@ The main changes in this release are:
 
 **Added**
 
-+ New functions <code>[get_model_info]</code> and <code>[list_adapters]</code> in `skforecast.foundation`. They return <code>[FoundationModelInfo]</code>, a frozen dataclass with the capabilities and requirements of a foundation model (`adapter`, `model_id_prefixes`, `default_model_id`, `default_context_length`, `backend_package`, `allow_exog`, `supports_past_only_covariates`, `supports_categorical_covariates`, `supports_heterogeneous_covariates`, `supports_nan_in_series`, `supported_quantiles`, `requires_hf_auth`, `license_restriction` and `license_url`). Everything is read from the adapter classes and from the same license registry used by `LicenseWarning`, so tools built on skforecast do not need to keep their own copy.
++ New functions <code>[get_model_info]</code> and <code>[list_adapters]</code> in `skforecast.foundation`. They return <code>[FoundationModelInfo]</code>, a frozen dataclass with the capabilities and requirements of a foundation model (`adapter`, `model_id_prefixes`, `default_model_id`, `default_context_length`, `backend_package`, `allow_exog`, `supports_past_only_covariates`, `supports_categorical_covariates`, `supports_heterogeneous_covariates`, `supports_nan_in_series`, `supported_quantiles`, `requires_hf_auth`, `license_restriction` and `license_url`). `list_adapters(as_frame=True)` returns the same information as a pandas DataFrame with one row per adapter. Everything is read from the adapter classes and from the same license registry used by `LicenseWarning`, so tools built on skforecast do not need to keep their own copy.
 
 + New class attributes in every foundation model adapter: `supports_categorical_covariates`, `requires_hf_auth`, `backend_package`, `default_model_id` and `SUPPORTED_QUANTILES` (`None` when any quantile level in `(0, 1)` is accepted). The installation hints of the `ImportError` raised when a backend is missing are built from `backend_package`.
 
@@ -58,6 +58,12 @@ The main changes in this release are:
 
 
 **Fixed**
+
++ <code>[FoundationModel]</code> only routes Chronos-2 checkpoints (`amazon/chronos-2*` and `autogluon/chronos-2*`) to `ChronosAdapter`. Chronos (T5) and Chronos-Bolt checkpoints were accepted when the model was created but failed at predict time, because their pipelines do not accept the input format and the `cross_learning` argument used by the adapter. They now raise a `ValueError` when the model is created.
+
++ <code>[FoundationModel]</code> only routes Moirai-2 checkpoints (`Salesforce/moirai-2*`) to `MoiraiAdapter`. Moirai 1.x and Moirai-MoE checkpoints were accepted when the model was created but failed when the weights were loaded, because their configurations lack arguments required by `Moirai2Module`. They now raise a `ValueError` when the model is created.
+
++ The `supports_categorical_features` tag of <code>[ForecasterFoundation]</code> was always `True`. It is now read from the adapter, and is only `True` for Chronos-2, the only backend that handles non-numeric covariates natively.
 
 + Fixed an issue in <code>[backtesting_forecaster]</code> and <code>[backtesting_forecaster_multiseries]</code> where, with `refit`, `use_in_sample_residuals=False` and `use_binned_residuals=True`, the out-of-sample residuals set by the user were restored after each `fit()` but the binner that created them was not, so the intervals could be built with the residuals of a different bin. The binner and its intervals are now restored together with the residuals in every fold.
 

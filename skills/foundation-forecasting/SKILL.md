@@ -172,6 +172,19 @@ For TimesFM (2.5 and 3.0) and Moirai-2, requested quantiles must be a subset of 
 
 The adapter is resolved automatically from the `model_id` prefix — no need to import adapter classes directly.
 
+To check what a model supports before installing its backend or loading its weights, use `get_model_info` (one `model_id`) or `list_adapters` (one entry per adapter, or a DataFrame with `as_frame=True`). Both return a frozen `FoundationModelInfo` read from the adapter classes, so it always matches the installed skforecast version; prefer it over hard-coding the table above.
+
+```python
+from skforecast.foundation import get_model_info, list_adapters
+
+info = get_model_info('google/timesfm-3.0-pytorch')
+info.allow_exog, info.supported_quantiles  # supported_quantiles None = any level in (0, 1)
+info.backend_package                       # 'timesfm[torch]', as passed to pip install
+info.license_restriction, info.requires_hf_auth
+
+list_adapters(as_frame=True)  # DataFrame, one row per adapter; default: list of FoundationModelInfo
+```
+
 TimesFM 3.0, Moirai-2, TabPFN-TS, and TS-ICL weights are released under known non-commercial licenses; loading them raises a `LicenseWarning` naming the license and a link to the model card. Terms vary by provider (e.g. TabPFN-TS permits commercial use under an enterprise license), so review the linked license rather than the warning text alone. A model id not covered by this warning is not confirmed to be unrestricted.
 
 ## Backtesting

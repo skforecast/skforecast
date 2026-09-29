@@ -9,8 +9,9 @@
 # imported.
 
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 import inspect
+import pandas as pd
 
 from ._adapters import _ADAPTER_REGISTRY, _resolve_adapter
 from ._utils import _get_non_commercial_license
@@ -45,8 +46,10 @@ class FoundationModelInfo:
         Whether covariates without future values are used as past-only
         covariates. When `False`, they are ignored with a warning.
     supports_categorical_covariates : bool
-        Whether non-numeric covariates are forwarded to the backend as
-        categorical values instead of having to be encoded as numbers.
+        Whether the backend supports non-numeric covariates natively, so
+        they do not have to be encoded as numbers. `False` also when the
+        adapter forwards them unchanged but skforecast does not verify how
+        the backend handles them.
     supports_heterogeneous_covariates : bool
         Whether series with different covariate columns can be forecast in
         the same backend call. When `False`, the series are grouped by their
@@ -57,8 +60,10 @@ class FoundationModelInfo:
         Quantile levels accepted by the backend. `None` means any level in
         `(0, 1)`.
     requires_hf_auth : bool
-        Whether the weights are gated on the Hugging Face Hub, so an
-        authenticated account that has accepted the model license is needed.
+        Whether the checkpoints served by `adapter` are gated on the Hugging
+        Face Hub, so an authenticated account that has accepted the model
+        license is needed. Unlike the license fields, it is declared per
+        adapter, not resolved for `model_id`.
     license_restriction : str, None
         Name of the license that restricts commercial use of the weights, as
         also reported by `LicenseWarning` when they are loaded. `None` only
@@ -174,7 +179,9 @@ def get_model_info(model_id: str) -> FoundationModelInfo:
     return _build_model_info(model_id=model_id, adapter_cls=adapter_cls)
 
 
-def list_adapters() -> list[FoundationModelInfo]:
+def list_adapters(
+    as_frame: bool = False
+) -> list[FoundationModelInfo] | pd.DataFrame:
     """
     Return the capabilities and requirements of every foundation model
     adapter supported by skforecast.
@@ -183,10 +190,19 @@ def list_adapters() -> list[FoundationModelInfo]:
     fields refer to that model ID. Use `get_model_info` to resolve them for a
     different checkpoint.
 
+    Parameters
+    ----------
+    as_frame : bool, default False
+        If `True`, return a pandas DataFrame with one row per adapter, indexed
+        by the adapter name, instead of a list of `FoundationModelInfo`.
+
     Returns
     -------
-    adapters : list
-        One `FoundationModelInfo` per adapter, in registration order.
+    adapters : list, pandas DataFrame
+        One `FoundationModelInfo` per adapter, in registration order. If
+        `as_frame=True`, a DataFrame with one row per adapter (index
+        `adapter`) and one column per remaining field of
+        `FoundationModelInfo`.
 
     """
 
@@ -195,5 +211,10 @@ def list_adapters() -> list[FoundationModelInfo]:
         _build_model_info(model_id=cls.default_model_id, adapter_cls=cls)
         for cls in adapter_classes
     ]
+
+    if as_frame:
+        adapters = pd.DataFrame(
+            [asdict(adapter) for adapter in adapters]
+        ).set_index("adapter")
 
     return adapters

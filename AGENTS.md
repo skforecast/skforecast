@@ -515,10 +515,10 @@ Supported adapters (selected automatically from `model_id`). Query them programm
 
 | Adapter | `model_id` prefix | Exog | Default `context_length` | Quantiles |
 |---------|-------------------|------|--------------------------|-----------|
-| ChronosAdapter (Amazon) | `autogluon/chronos` | Yes (past & future covariates) | 8192 | Any in `(0, 1)` |
+| ChronosAdapter (Amazon) | `autogluon/chronos-2` | Yes (past & future covariates) | 8192 | Any in `(0, 1)` |
 | TimesFM25Adapter (Google, v2.5) | `google/timesfm-2.5` | No | 512 | `[0.1, 0.2, ..., 0.9]` |
 | TimesFM3Adapter (Google, v3.0) | `google/timesfm-3.0` | Yes (past & known-future covariates) | 2048 | `[0.1, 0.2, ..., 0.9]` |
-| MoiraiAdapter (Salesforce) | `Salesforce/moirai` | No | 2048 | `[0.1, 0.2, ..., 0.9]` |
+| MoiraiAdapter (Salesforce) | `Salesforce/moirai-2` | No | 2048 | `[0.1, 0.2, ..., 0.9]` |
 | TabICLAdapter (Soda-INRIA) | `soda-inria/tabicl` | Yes (known-future covariates) | 4096 | Any in `(0, 1)` |
 | TabPFNAdapter (Prior Labs) | `priorlabs/tabpfn` | Yes (known-future covariates) | 32768 | Any in `(0, 1)` |
 | T0Adapter (The Forecasting Company) | `theforecastingcompany/t0` | Yes (future-known covariates) | 8192 | Any in `(0, 1)` |
@@ -539,6 +539,9 @@ info.requires_hf_auth         # True if the weights are gated on the Hugging Fac
 
 # One FoundationModelInfo per adapter (described by its default_model_id)
 [(i.adapter, i.default_model_id) for i in list_adapters()]
+
+# Same information as a DataFrame, one row per adapter (index 'adapter')
+list_adapters(as_frame=True)
 ```
 
 Key points:

@@ -1,7 +1,9 @@
 # Unit test list_adapters
 # ==============================================================================
 import inspect
+import dataclasses
 import pytest
+import pandas as pd
 from skforecast.foundation import FoundationModelInfo, get_model_info, list_adapters
 from skforecast.foundation._adapters import _ADAPTER_REGISTRY
 
@@ -28,6 +30,30 @@ def test_list_adapters_output():
     assert all(isinstance(info, FoundationModelInfo) for info in adapters)
     assert [(info.adapter, info.model_id) for info in adapters] == expected
     assert all(info.model_id == info.default_model_id for info in adapters)
+
+
+def test_list_adapters_output_as_frame():
+    """
+    Test that list_adapters with `as_frame=True` returns a DataFrame with one
+    row per adapter, indexed by the adapter name, and the same values as the
+    list of FoundationModelInfo.
+    """
+    adapters = list_adapters()
+    results = list_adapters(as_frame=True)
+
+    expected_columns = [
+        field.name for field in dataclasses.fields(FoundationModelInfo)
+        if field.name != "adapter"
+    ]
+
+    assert isinstance(results, pd.DataFrame)
+    assert results.index.name == "adapter"
+    assert results.index.tolist() == [info.adapter for info in adapters]
+    assert results.columns.tolist() == expected_columns
+    for info in adapters:
+        expected = dataclasses.asdict(info)
+        expected.pop("adapter")
+        assert results.loc[info.adapter].to_dict() == expected
 
 
 def test_list_adapters_output_equals_get_model_info_of_default_model_id():

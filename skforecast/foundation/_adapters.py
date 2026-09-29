@@ -62,7 +62,7 @@ def _resolve_torch_device(device: str) -> str:
 
 class ChronosAdapter:
     """
-    Adapter for Amazon Chronos foundation models.
+    Adapter for Amazon Chronos-2 foundation models.
 
     Parameters
     ----------
@@ -122,14 +122,17 @@ class ChronosAdapter:
         Whether the backend accepts NaN values in the series used as
         context. `True` for Chronos, which treats them as missing values.
     supports_categorical_covariates : bool
-        Whether non-numeric covariates are forwarded to the backend as
-        categorical values instead of having to be encoded as numbers.
+        Whether the backend supports non-numeric covariates natively, so
+        they do not have to be encoded as numbers. `False` also when the
+        adapter forwards them unchanged but skforecast does not verify how
+        the backend handles them.
     SUPPORTED_QUANTILES : list, None
         Quantile levels accepted by the backend. `None` means any level in
         `(0, 1)`.
     requires_hf_auth : bool
-        Whether the weights are gated on the Hugging Face Hub, so an
-        authenticated account that has accepted the model license is needed.
+        Whether the checkpoints served by this adapter are gated on the
+        Hugging Face Hub, so an authenticated account that has accepted the
+        model license is needed. Declared per adapter, not per checkpoint.
     backend_package : str
         Package that provides the backend, as passed to `pip install`.
     default_model_id : str
@@ -611,14 +614,17 @@ class TimesFM25Adapter:
         Whether the backend accepts NaN values in the series used as
         context. Always `True`.
     supports_categorical_covariates : bool
-        Whether non-numeric covariates are forwarded to the backend as
-        categorical values instead of having to be encoded as numbers.
+        Whether the backend supports non-numeric covariates natively, so
+        they do not have to be encoded as numbers. `False` also when the
+        adapter forwards them unchanged but skforecast does not verify how
+        the backend handles them.
     SUPPORTED_QUANTILES : list, None
         Quantile levels accepted by the backend. `None` means any level in
         `(0, 1)`.
     requires_hf_auth : bool
-        Whether the weights are gated on the Hugging Face Hub, so an
-        authenticated account that has accepted the model license is needed.
+        Whether the checkpoints served by this adapter are gated on the
+        Hugging Face Hub, so an authenticated account that has accepted the
+        model license is needed. Declared per adapter, not per checkpoint.
     backend_package : str
         Package that provides the backend, as passed to `pip install`.
     default_model_id : str
@@ -1058,14 +1064,17 @@ class TimesFM3Adapter:
         Whether the backend accepts NaN values in the series used as
         context. Always `True`.
     supports_categorical_covariates : bool
-        Whether non-numeric covariates are forwarded to the backend as
-        categorical values instead of having to be encoded as numbers.
+        Whether the backend supports non-numeric covariates natively, so
+        they do not have to be encoded as numbers. `False` also when the
+        adapter forwards them unchanged but skforecast does not verify how
+        the backend handles them.
     SUPPORTED_QUANTILES : list, None
         Quantile levels accepted by the backend. `None` means any level in
         `(0, 1)`.
     requires_hf_auth : bool
-        Whether the weights are gated on the Hugging Face Hub, so an
-        authenticated account that has accepted the model license is needed.
+        Whether the checkpoints served by this adapter are gated on the
+        Hugging Face Hub, so an authenticated account that has accepted the
+        model license is needed. Declared per adapter, not per checkpoint.
     backend_package : str
         Package that provides the backend, as passed to `pip install`.
     default_model_id : str
@@ -1725,14 +1734,17 @@ class MoiraiAdapter:
         Whether the backend accepts NaN values in the series used as
         context.
     supports_categorical_covariates : bool
-        Whether non-numeric covariates are forwarded to the backend as
-        categorical values instead of having to be encoded as numbers.
+        Whether the backend supports non-numeric covariates natively, so
+        they do not have to be encoded as numbers. `False` also when the
+        adapter forwards them unchanged but skforecast does not verify how
+        the backend handles them.
     SUPPORTED_QUANTILES : list, None
         Quantile levels accepted by the backend. `None` means any level in
         `(0, 1)`.
     requires_hf_auth : bool
-        Whether the weights are gated on the Hugging Face Hub, so an
-        authenticated account that has accepted the model license is needed.
+        Whether the checkpoints served by this adapter are gated on the
+        Hugging Face Hub, so an authenticated account that has accepted the
+        model license is needed. Declared per adapter, not per checkpoint.
     backend_package : str
         Package that provides the backend, as passed to `pip install`.
     default_model_id : str
@@ -2134,14 +2146,17 @@ class TabICLAdapter:
         Whether the backend accepts NaN values in the series used as
         context. `True`: TabICL drops the rows whose target is NaN.
     supports_categorical_covariates : bool
-        Whether non-numeric covariates are forwarded to the backend as
-        categorical values instead of having to be encoded as numbers.
+        Whether the backend supports non-numeric covariates natively, so
+        they do not have to be encoded as numbers. `False` also when the
+        adapter forwards them unchanged but skforecast does not verify how
+        the backend handles them.
     SUPPORTED_QUANTILES : list, None
         Quantile levels accepted by the backend. `None` means any level in
         `(0, 1)`.
     requires_hf_auth : bool
-        Whether the weights are gated on the Hugging Face Hub, so an
-        authenticated account that has accepted the model license is needed.
+        Whether the checkpoints served by this adapter are gated on the
+        Hugging Face Hub, so an authenticated account that has accepted the
+        model license is needed. Declared per adapter, not per checkpoint.
     backend_package : str
         Package that provides the backend, as passed to `pip install`.
     default_model_id : str
@@ -2756,14 +2771,17 @@ class TabPFNAdapter:
         Whether the backend accepts NaN values in the series used as
         context.
     supports_categorical_covariates : bool
-        Whether non-numeric covariates are forwarded to the backend as
-        categorical values instead of having to be encoded as numbers.
+        Whether the backend supports non-numeric covariates natively, so
+        they do not have to be encoded as numbers. `False` also when the
+        adapter forwards them unchanged but skforecast does not verify how
+        the backend handles them.
     SUPPORTED_QUANTILES : list, None
         Quantile levels accepted by the backend. `None` means any level in
         `(0, 1)`.
     requires_hf_auth : bool
-        Whether the weights are gated on the Hugging Face Hub, so an
-        authenticated account that has accepted the model license is needed.
+        Whether the checkpoints served by this adapter are gated on the
+        Hugging Face Hub, so an authenticated account that has accepted the
+        model license is needed. Declared per adapter, not per checkpoint.
     backend_package : str
         Package that provides the backend, as passed to `pip install`.
     default_model_id : str
@@ -3375,14 +3393,17 @@ class T0Adapter:
         Whether the backend accepts NaN values in the series used as
         context.
     supports_categorical_covariates : bool
-        Whether non-numeric covariates are forwarded to the backend as
-        categorical values instead of having to be encoded as numbers.
+        Whether the backend supports non-numeric covariates natively, so
+        they do not have to be encoded as numbers. `False` also when the
+        adapter forwards them unchanged but skforecast does not verify how
+        the backend handles them.
     SUPPORTED_QUANTILES : list, None
         Quantile levels accepted by the backend. `None` means any level in
         `(0, 1)`.
     requires_hf_auth : bool
-        Whether the weights are gated on the Hugging Face Hub, so an
-        authenticated account that has accepted the model license is needed.
+        Whether the checkpoints served by this adapter are gated on the
+        Hugging Face Hub, so an authenticated account that has accepted the
+        model license is needed. Declared per adapter, not per checkpoint.
     backend_package : str
         Package that provides the backend, as passed to `pip install`.
     default_model_id : str
@@ -3873,14 +3894,17 @@ class TSICLAdapter:
         Whether the backend accepts NaN values in the series used as
         context.
     supports_categorical_covariates : bool
-        Whether non-numeric covariates are forwarded to the backend as
-        categorical values instead of having to be encoded as numbers.
+        Whether the backend supports non-numeric covariates natively, so
+        they do not have to be encoded as numbers. `False` also when the
+        adapter forwards them unchanged but skforecast does not verify how
+        the backend handles them.
     SUPPORTED_QUANTILES : list, None
         Quantile levels accepted by the backend. `None` means any level in
         `(0, 1)`.
     requires_hf_auth : bool
-        Whether the weights are gated on the Hugging Face Hub, so an
-        authenticated account that has accepted the model license is needed.
+        Whether the checkpoints served by this adapter are gated on the
+        Hugging Face Hub, so an authenticated account that has accepted the
+        model license is needed. Declared per adapter, not per checkpoint.
     backend_package : str
         Package that provides the backend, as passed to `pip install`.
     default_model_id : str
@@ -4353,14 +4377,17 @@ class NoriAdapter:
         the context rows whose target (or any feature) is NaN before the
         in-context fit.
     supports_categorical_covariates : bool
-        Whether non-numeric covariates are forwarded to the backend as
-        categorical values instead of having to be encoded as numbers.
+        Whether the backend supports non-numeric covariates natively, so
+        they do not have to be encoded as numbers. `False` also when the
+        adapter forwards them unchanged but skforecast does not verify how
+        the backend handles them.
     SUPPORTED_QUANTILES : list, None
         Quantile levels accepted by the backend. `None` means any level in
         `(0, 1)`.
     requires_hf_auth : bool
-        Whether the weights are gated on the Hugging Face Hub, so an
-        authenticated account that has accepted the model license is needed.
+        Whether the checkpoints served by this adapter are gated on the
+        Hugging Face Hub, so an authenticated account that has accepted the
+        model license is needed. Declared per adapter, not per checkpoint.
     backend_package : str
         Package that provides the backend, as passed to `pip install`.
     default_model_id : str
@@ -4971,11 +4998,15 @@ class NoriAdapter:
 
 
 _ADAPTER_REGISTRY: dict[str, type] = {
-    "amazon/chronos":     ChronosAdapter,
-    "autogluon/chronos":  ChronosAdapter,
+    # Only Chronos-2 checkpoints: Chronos and Chronos-Bolt pipelines take a
+    # different input format and do not accept `cross_learning`.
+    "amazon/chronos-2":    ChronosAdapter,
+    "autogluon/chronos-2": ChronosAdapter,
     "google/timesfm-2.5": TimesFM25Adapter,
     "google/timesfm-3.0": TimesFM3Adapter,
-    "Salesforce/moirai":  MoiraiAdapter,
+    # Only Moirai-2 checkpoints: the configs of Moirai 1.x and Moirai-MoE lack
+    # arguments required by `Moirai2Module` (`patch_size`, `d_ff`).
+    "Salesforce/moirai-2": MoiraiAdapter,
     "soda-inria/tabicl":  TabICLAdapter,
     "priorlabs/tabpfn":   TabPFNAdapter,
     "theforecastingcompany/t0": T0Adapter,

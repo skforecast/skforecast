@@ -39,7 +39,7 @@ def test_get_model_info_output_Chronos():
     expected = FoundationModelInfo(
         model_id                          = "autogluon/chronos-2-synth",
         adapter                           = "ChronosAdapter",
-        model_id_prefixes                 = ("amazon/chronos", "autogluon/chronos"),
+        model_id_prefixes                 = ("amazon/chronos-2", "autogluon/chronos-2"),
         default_model_id                  = "autogluon/chronos-2-small",
         default_context_length            = 8192,
         backend_package                   = "chronos-forecasting",

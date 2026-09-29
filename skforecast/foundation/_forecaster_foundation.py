@@ -190,7 +190,9 @@ class ForecasterFoundation:
             "supports_calendar_features": False,
             "supports_transformer_series": False,
             "supports_transformer_exog": False,
-            "supports_categorical_features": True,
+            "supports_categorical_features": (
+                self.estimator.adapter.supports_categorical_covariates
+            ),
             "supports_weight_func": False,
             "supports_differentiation": False,
 
