@@ -41,7 +41,7 @@ skforecast/
 │                            # ForecasterRecursiveClassifier, ForecasterStats, ForecasterEquivalentDate
 ├── direct/                  # ForecasterDirect, ForecasterDirectMultiVariate
 ├── deep_learning/           # ForecasterRnn, create_and_compile_model
-├── foundation/              # FoundationModel, ForecasterFoundation
+├── foundation/              # FoundationModel, ForecasterFoundation, get_model_info, list_adapters
 │                            # (zero-shot: Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL)
 ├── stats/                   # Arima, Sarimax, Ets, Arar, acf, pacf, calculate_lag_autocorrelation
 ├── preprocessing/           # TimeSeriesDifferentiator, RollingFeatures, CalendarFeatures,
@@ -466,7 +466,7 @@ forecaster.fit(series=series_df)
 predictions = forecaster.predict(steps=24, levels=['series_1', 'series_2'])
 ```
 
-Supported adapters (selected automatically from `model_id`):
+Supported adapters (selected automatically from `model_id`). Query them programmatically with `get_model_info` and `list_adapters` (see below):
 
 | Adapter | `model_id` prefix | Exog | Default `context_length` | Quantiles |
 |---------|-------------------|------|--------------------------|-----------|
@@ -479,6 +479,22 @@ Supported adapters (selected automatically from `model_id`):
 | T0Adapter (The Forecasting Company) | `theforecastingcompany/t0` | Yes (future-known covariates) | 8192 | Any in `(0, 1)` |
 | NoriAdapter (Synthefy) | `Synthefy/Nori` | Yes (known-future covariates) | 4096 | Any in `(0, 1)` |
 | TSICLAdapter (EDF Lab) | `taharnbl/TS-ICL` | Yes (past & future covariates) | 4096 | Subset of `[0.01, 0.02, ..., 0.99]` |
+
+```python
+from skforecast.foundation import get_model_info, list_adapters
+
+# Capabilities of a model without installing its backend or loading weights
+info = get_model_info('google/timesfm-3.0-pytorch')
+info.adapter                  # 'TimesFM3Adapter'
+info.allow_exog               # True
+info.supported_quantiles      # (0.1, 0.2, ..., 0.9); None means any level in (0, 1)
+info.backend_package          # 'timesfm[torch]'
+info.license_restriction      # license name, or None if no restriction is registered
+info.requires_hf_auth         # True if the weights are gated on the Hugging Face Hub
+
+# One FoundationModelInfo per adapter (described by its default_model_id)
+[(i.adapter, i.default_model_id) for i in list_adapters()]
+```
 
 Key points:
 - `fit()` only stores the last `context_length` observations and metadata. It does **not** train the model.
@@ -551,6 +567,9 @@ from skforecast.deep_learning import ForecasterRnn
 from skforecast.deep_learning import create_and_compile_model
 from skforecast.foundation import FoundationModel
 from skforecast.foundation import ForecasterFoundation
+from skforecast.foundation import FoundationModelInfo
+from skforecast.foundation import get_model_info
+from skforecast.foundation import list_adapters
 
 # Model Selection
 from skforecast.model_selection import backtesting_forecaster

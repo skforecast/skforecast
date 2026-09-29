@@ -224,15 +224,48 @@ _NON_COMMERCIAL_LICENSES: dict[str, tuple[str, str]] = {
 }
 
 
+def _get_non_commercial_license(model_id: str) -> tuple[str, str] | None:
+    """
+    Return the non-commercial license registered for `model_id`, if any.
+
+    Looks up `model_id` in `_NON_COMMERCIAL_LICENSES` using longest-prefix
+    matching. `None` only means the id is not in this registry, it does not
+    confirm that the license permits commercial use.
+
+    Parameters
+    ----------
+    model_id : str
+        Model ID to look up.
+
+    Returns
+    -------
+    license_info : tuple, None
+        Tuple `(license_name, license_url)`, or `None` when no registered
+        prefix matches `model_id`.
+
+    """
+
+    best_prefix = None
+    for prefix in _NON_COMMERCIAL_LICENSES:
+        if model_id.startswith(prefix):
+            if best_prefix is None or len(prefix) > len(best_prefix):
+                best_prefix = prefix
+
+    if best_prefix is None:
+        return None
+
+    return _NON_COMMERCIAL_LICENSES[best_prefix]
+
+
 def _warn_if_non_commercial(model_id: str) -> None:
     """
     Warn when `model_id` matches a prefix known to carry a non-commercial
     license.
 
-    Looks up `model_id` in `_NON_COMMERCIAL_LICENSES` using longest-prefix
-    matching. Model ids that do not match any registered prefix do not raise
-    a warning; this only means the id is not in this registry, it does not
-    confirm that the license permits commercial use.
+    Looks up `model_id` with `_get_non_commercial_license`. Model ids that do
+    not match any registered prefix do not raise a warning; this only means
+    the id is not in this registry, it does not confirm that the license
+    permits commercial use.
 
     Parameters
     ----------
@@ -245,16 +278,11 @@ def _warn_if_non_commercial(model_id: str) -> None:
 
     """
 
-    best_prefix = None
-    for prefix in _NON_COMMERCIAL_LICENSES:
-        if model_id.startswith(prefix):
-            if best_prefix is None or len(prefix) > len(best_prefix):
-                best_prefix = prefix
-
-    if best_prefix is None:
+    license_info = _get_non_commercial_license(model_id)
+    if license_info is None:
         return
 
-    license_name, license_url = _NON_COMMERCIAL_LICENSES[best_prefix]
+    license_name, license_url = license_info
     warnings.warn(
         f"The weights for '{model_id}' are released under {license_name}. "
         "Review the license terms before commercial or production use. "

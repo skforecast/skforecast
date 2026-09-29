@@ -18,12 +18,18 @@ The main changes in this release are:
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Faster import of the forecaster modules. `numba` is no longer imported when `skforecast.recursive`, `skforecast.direct`, `skforecast.preprocessing` or `skforecast.model_selection` are imported. It is loaded on the first use of <code>[RollingFeatures]</code> or <code>[RollingFeaturesClassification]</code>.
 
++ <span class="badge text-bg-feature">Feature</span> New functions <code>[get_model_info]</code> and <code>[list_adapters]</code> in `skforecast.foundation` to query, without installing the backend or loading the weights, the capabilities and requirements of the foundation models: adapter, default `context_length`, exogenous variable support, supported quantiles, backend package, license restriction and Hugging Face gating.
+
 + <span class="badge text-bg-docs">Docs</span> The examples and tutorials pages are now a filterable card grid: every tutorial shows an icon, a one line summary and topic tags, and can be narrowed down with a search box and level/topic filters. [Examples](../examples/examples_english.md)
 
 + <span class="badge text-bg-docs">Docs</span> New home page of the documentation: what skforecast does in one screen, with an animation of real forecasts from LightGBM, Chronos-2 and ARIMA, and sections on model families, global models, production features and AI assistants. [Home](../README.md)
 
 
 **Added**
+
++ New functions <code>[get_model_info]</code> and <code>[list_adapters]</code> in `skforecast.foundation`. They return <code>[FoundationModelInfo]</code>, a frozen dataclass with the capabilities and requirements of a foundation model (`adapter`, `model_id_prefixes`, `default_model_id`, `default_context_length`, `backend_package`, `allow_exog`, `supports_past_only_covariates`, `supports_categorical_covariates`, `supports_heterogeneous_covariates`, `supports_nan_in_series`, `supported_quantiles`, `requires_hf_auth`, `license_restriction` and `license_url`). Everything is read from the adapter classes and from the same license registry used by `LicenseWarning`, so tools built on skforecast do not need to keep their own copy.
+
++ New class attributes in every foundation model adapter: `supports_categorical_covariates`, `requires_hf_auth`, `backend_package`, `default_model_id` and `SUPPORTED_QUANTILES` (`None` when any quantile level in `(0, 1)` is accepted). The installation hints of the `ImportError` raised when a backend is missing are built from `backend_package`.
 
 + New argument `include_drift` in <code>[Arima]</code> to include a linear drift term when the order is specified manually (`d + D <= 1`), equivalent to `include.drift` in R's `forecast::Arima`. The `best_params_` attribute found by the automatic model selection now also includes `fit_intercept` and `include_drift`, so passing them to `set_params` fits exactly the selected model.
 
@@ -1758,6 +1764,9 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 <!-- foundation -->
 [FoundationModel]: ../api/FoundationModel.md#skforecast.foundation._foundation_model.FoundationModel
+[FoundationModelInfo]: ../api/FoundationModel.md#skforecast.foundation._model_info.FoundationModelInfo
+[get_model_info]: ../api/FoundationModel.md#skforecast.foundation._model_info.get_model_info
+[list_adapters]: ../api/FoundationModel.md#skforecast.foundation._model_info.list_adapters
 [ChronosAdapter]: ../api/FoundationModel.md#skforecast.foundation._adapters.ChronosAdapter
 [TimesFM25Adapter]: ../api/FoundationModel.md#skforecast.foundation._adapters.TimesFM25Adapter
 [TimesFM3Adapter]: ../api/FoundationModel.md#skforecast.foundation._adapters.TimesFM3Adapter
