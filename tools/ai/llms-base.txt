@@ -470,7 +470,7 @@ Supported adapters (selected automatically from `model_id`). Query them programm
 | TimesFM25Adapter (Google, v2.5) | `google/timesfm-2.5` | No | 512 | `[0.1, 0.2, ..., 0.9]` |
 | TimesFM3Adapter (Google, v3.0) | `google/timesfm-3.0` | Yes (past & known-future covariates) | 2048 | `[0.1, 0.2, ..., 0.9]` |
 | MoiraiAdapter (Salesforce) | `Salesforce/moirai` | No | 2048 | `[0.1, 0.2, ..., 0.9]` |
-| TabICLAdapter (Soda-INRIA) | `soda-inria/tabicl` | Yes (past & future covariates) | 4096 | Any in `(0, 1)` |
+| TabICLAdapter (Soda-INRIA) | `soda-inria/tabicl` | Yes (known-future covariates) | 4096 | Any in `(0, 1)` |
 | TabPFNAdapter (Prior Labs) | `priorlabs/tabpfn` | Yes (known-future covariates) | 32768 | Any in `(0, 1)` |
 | T0Adapter (The Forecasting Company) | `theforecastingcompany/t0` | Yes (future-known covariates) | 8192 | Any in `(0, 1)` |
 | NoriAdapter (Synthefy) | `Synthefy/Nori` | Yes (known-future covariates) | 4096 | Any in `(0, 1)` |
