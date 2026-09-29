@@ -8,7 +8,7 @@
 
 | | |
 | --- | --- |
-| Package | ![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue) [![PyPI](https://img.shields.io/pypi/v/skforecast)](https://pypi.org/project/skforecast/) [![Conda](https://img.shields.io/conda/v/conda-forge/skforecast?logo=Anaconda)](https://anaconda.org/conda-forge/skforecast) [![PyPI Downloads](https://static.pepy.tech/personalized-badge/skforecast?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/skforecast) |
+| Package | ![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue) [![PyPI](https://img.shields.io/pypi/v/skforecast)](https://pypi.org/project/skforecast/) [![Conda](https://img.shields.io/conda/v/conda-forge/skforecast?logo=Anaconda)](https://anaconda.org/conda-forge/skforecast) [![Total downloads](https://static.pepy.tech/personalized-badge/skforecast?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=total%20downloads)](https://pepy.tech/projects/skforecast) [![PyPI monthly downloads](https://img.shields.io/pypi/dm/skforecast?color=blue&label=pypi%20downloads)](https://pypistats.org/packages/skforecast) |
 | Meta | [![License](https://img.shields.io/github/license/skforecast/skforecast)](https://github.com/skforecast/skforecast/blob/main/LICENSE) [![DOI](https://zenodo.org/badge/337705968.svg)](https://zenodo.org/doi/10.5281/zenodo.8382787) [![NumFOCUS Affiliated](https://img.shields.io/badge/NumFOCUS-Affiliated%20Project-orange.svg?style=flat&colorA=E1523D&colorB=007D8A)](https://numfocus.org/sponsored-projects/affiliated-projects) [![GC.OS Affiliated](https://img.shields.io/badge/GC.OS-Affiliated%20Project-orange.svg?style=flat&colorA=0eac92&colorB=2077b4)](https://gc-os-ai.github.io/) |
 | Testing | [![Build status](https://github.com/skforecast/skforecast/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/skforecast/skforecast/actions/workflows/unit-tests.yml) [![codecov](https://codecov.io/gh/skforecast/skforecast/branch/main/graph/badge.svg)](https://codecov.io/gh/skforecast/skforecast) |
 | Community | [![!discord](https://img.shields.io/static/v1?logo=discord&label=discord&message=chat&color=lightgreen)](https://discord.gg/3V52qpNkuj) [![!linkedin](https://img.shields.io/static/v1?logo=linkedin&label=LinkedIn&message=news&color=lightblue)](https://www.linkedin.com/company/skforecast/) [![Forecasting Python](https://img.shields.io/static/v1?logo=readme&logoColor=white&label=Blog&labelColor=%23333333&message=Forecasting%20Python&color=%23ffab40)](https://cienciadedatos.net/en/forecasting-python) |
@@ -186,11 +186,15 @@ skforecast is created and maintained by [Joaquín Amat Rodrigo](https://github.c
 
 ## Citation
 
-If you use skforecast in a scientific publication, please cite the version you used: each version has its own DOI and ready-made citations on [Zenodo](https://doi.org/10.5281/zenodo.8382787). To cite skforecast in general, use the DOI that always resolves to the latest release:
+If you use skforecast in a scientific publication, please cite the version you used: each version has its own DOI and ready-made citations on [Zenodo](https://doi.org/10.5281/zenodo.8382787). To cite skforecast in general, use the DOI that always resolves to the latest release.
+
+**APA**:
 
 ```
 Amat Rodrigo, J., & Escobar Ortiz, J. skforecast [Computer software]. https://doi.org/10.5281/zenodo.8382787
 ```
+
+**BibTeX**:
 
 ```bibtex
 @software{skforecast,
