@@ -1,5 +1,8 @@
 <h1 align="left">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://github.com/skforecast/skforecast/blob/main/images/banner-landing-page-skforecast-dark.png?raw=true">
     <img src="https://github.com/skforecast/skforecast/blob/main/images/banner-landing-page-skforecast.png?raw=true" alt="skforecast">
+  </picture>
 </h1>
 
 
@@ -94,21 +97,21 @@ predictions.head()
 
 ### One API for every kind of model
 
-- **Machine learning**: any scikit-learn compatible regressor, such as LightGBM, XGBoost or CatBoost, with lags, rolling and calendar features. Recursive or direct strategies, for one series or thousands.
-- **Foundation models**: zero-shot forecasting with pre-trained models such as Chronos-2, TimesFM, Moirai-2 or TabPFN-TS, without training them.
-- **Statistical models**: ARIMA, SARIMAX, ETS and ARAR, with automatic model selection.
-- **Deep learning**: recurrent neural networks (RNN, LSTM) built with Keras.
+- **[Machine learning](https://skforecast.org/latest/user_guides/autoregressive-forecaster.html)**: any scikit-learn compatible regressor, such as LightGBM, XGBoost or CatBoost, with lags, rolling and calendar features. Recursive or direct strategies, for one series or thousands.
+- **[Foundation models](https://skforecast.org/latest/user_guides/foundation-forecasting-models.html)**: zero-shot forecasting with pre-trained models such as Chronos-2, TimesFM, Moirai-2 or TabPFN-TS, without training them.
+- **[Statistical models](https://skforecast.org/latest/user_guides/forecasting-statistical-models.html)**: ARIMA, SARIMAX, ETS and ARAR, with automatic model selection.
+- **[Deep learning](https://skforecast.org/latest/user_guides/forecasting-with-deep-learning-rnn-lstm.html)**: recurrent neural networks (RNN, LSTM) built with Keras.
 
 Train, predict, tune and backtest the same way, whatever the model.
 
 ### Built for production
 
-- **Backtesting** that reproduces how the model will be used: refits, gaps, fold strides, fixed or expanding windows.
-- **Probabilistic forecasting** with bootstrapping, conformal prediction and quantiles, evaluated with CRPS and coverage.
-- **Hyperparameter tuning** with grid, random and Bayesian search (Optuna), including the number of lags.
-- **Feature engineering**: rolling statistics, calendar features, exogenous and categorical variables, and differentiation.
-- **Global models** that forecast many series with one model, even with different lengths, exogenous variables and missing values ([global forecasting guide](https://skforecast.org/latest/user_guides/global-forecasting-overview.html)).
-- **Explainability and monitoring**: feature importances and SHAP values, feature selection and drift detection.
+- **[Backtesting](https://skforecast.org/latest/user_guides/backtesting.html)** that reproduces how the model will be used: refits, gaps, fold strides, fixed or expanding windows.
+- **[Probabilistic forecasting](https://skforecast.org/latest/user_guides/probabilistic-forecasting-overview.html)** with bootstrapping, conformal prediction and quantiles, evaluated with CRPS and coverage.
+- **[Hyperparameter tuning](https://skforecast.org/latest/user_guides/hyperparameter-tuning-and-lags-selection.html)** with grid, random and Bayesian search (Optuna), including the number of lags.
+- **[Feature engineering](https://skforecast.org/latest/user_guides/window-features-and-custom-features.html)**: rolling statistics, calendar features, exogenous and categorical variables, and differentiation.
+- **[Global models](https://skforecast.org/latest/user_guides/global-forecasting-overview.html)** that forecast many series with one model, even with different lengths, exogenous variables and missing values.
+- **[Explainability](https://skforecast.org/latest/user_guides/explainability.html) and [monitoring](https://skforecast.org/latest/user_guides/drift-detection.html)**: feature importances and SHAP values, feature selection and drift detection.
 
 
 ## Forecasters
@@ -132,7 +135,7 @@ All forecasters share the same API for training, prediction, backtesting and pro
 [ForecasterRecursiveMultiSeries]: https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html
 [ForecasterDirectMultiVariate]: https://skforecast.org/latest/user_guides/dependent-multi-series-multivariate-forecasting.html
 [ForecasterFoundation]: https://skforecast.org/latest/user_guides/foundation-forecasting-models.html
-[ForecasterStats]: https://skforecast.org/latest/user_guides/forecasting-sarimax-arima.html
+[ForecasterStats]: https://skforecast.org/latest/user_guides/forecasting-statistical-models.html
 [ForecasterRnn]: https://skforecast.org/latest/user_guides/forecasting-with-deep-learning-rnn-lstm.html
 [ForecasterRecursiveClassifier]: https://skforecast.org/latest/user_guides/autoregressive-classification-forecasting.html
 [ForecasterEquivalentDate]: https://skforecast.org/latest/user_guides/forecasting-baseline.html
@@ -163,8 +166,10 @@ The full documentation is available at **https://skforecast.org**.
 
 ## AI and tools
 
+[![Skforecast AI](https://img.shields.io/badge/Skforecast%20AI-Documentation-f79939?logo=readthedocs)](https://ai.skforecast.org/) [![PyPI](https://img.shields.io/pypi/v/skforecast-ai)](https://pypi.org/project/skforecast-ai/) [![GitHub](https://img.shields.io/badge/GitHub-skforecast--ai-181717?logo=github)](https://github.com/skforecast/skforecast-ai) [![Skforecast Studio](https://img.shields.io/badge/Skforecast%20Studio-Launch%20App-f79939?logo=rocket)](https://studio.skforecast.org/) [![llms.txt](https://img.shields.io/badge/llms.txt-available-blue)](https://skforecast.org/latest/llms-full.txt)
+
 - **AI-assisted coding**: skforecast publishes machine-readable context files so AI assistants (ChatGPT, Claude, Copilot and others) generate accurate code. Paste `https://skforecast.org/latest/llms-full.txt` into any LLM, or read [AI-assisted forecasting](https://skforecast.org/latest/quick-start/ai-assisted-forecasting.html).
-- **[skforecast-ai](https://ai.skforecast.org/)**: an AI forecasting assistant that pairs a deterministic engine, powered by skforecast, with an LLM reasoning layer. Install it with `pip install skforecast-ai` ([GitHub](https://github.com/skforecast/skforecast-ai)).
+- **[skforecast-ai](https://ai.skforecast.org/)**: an AI forecasting assistant that pairs a deterministic engine, powered by skforecast, with an LLM reasoning layer. Install it with `pip install skforecast-ai`.
 - **[Skforecast Studio](https://studio.skforecast.org/)**: a no-code application to build forecasting models visually, which generates production-ready Python code.
 
 
@@ -187,9 +192,6 @@ If you use skforecast in a scientific publication, please cite the version you u
 Amat Rodrigo, J., & Escobar Ortiz, J. skforecast [Computer software]. https://doi.org/10.5281/zenodo.8382787
 ```
 
-<details>
-<summary><b>BibTeX</b></summary>
-
 ```bibtex
 @software{skforecast,
   author  = {Amat Rodrigo, Joaquin and Escobar Ortiz, Javier},
@@ -200,8 +202,6 @@ Amat Rodrigo, J., & Escobar Ortiz, J. skforecast [Computer software]. https://do
 }
 ```
 
-</details>
-
 The citation metadata is also in [CITATION.cff](https://github.com/skforecast/skforecast/blob/main/CITATION.cff) (GitHub's "Cite this repository" button). skforecast is used in 70+ scientific publications: [see them on Google Scholar](https://scholar.google.com/scholar?q=%22skforecast%22).
 
 
@@ -209,7 +209,13 @@ The citation metadata is also in [CITATION.cff](https://github.com/skforecast/sk
 
 skforecast is free, open-source software supported by the [Sovereign Tech Fund](https://www.sovereign.tech/tech/skforecast) and by the organizations that sponsor it. If your company relies on skforecast, see **[Sponsorship and funding](https://skforecast.org/latest/more/funding.html)** for sponsorship tiers, support agreements, feature sponsorship and training.
 
-Individuals can support the project through [Open Collective](https://opencollective.com/skforecast), GitHub Sponsors ([Joaquín Amat Rodrigo](https://github.com/sponsors/JoaquinAmatRodrigo), [Javier Escobar Ortiz](https://github.com/sponsors/JavierEscobarOrtiz)), [Buy Me a Coffee](https://www.buymeacoffee.com/skforecast) or [PayPal](https://www.paypal.com/donate/?hosted_button_id=D2JZSWRLTZDL6).
+Individuals can support the project through Open Collective, Buy Me a Coffee, GitHub Sponsors ([Joaquín Amat Rodrigo](https://github.com/sponsors/JoaquinAmatRodrigo), [Javier Escobar Ortiz](https://github.com/sponsors/JavierEscobarOrtiz)) or [PayPal](https://www.paypal.com/donate/?hosted_button_id=D2JZSWRLTZDL6).
+
+<p>
+  <a href="https://opencollective.com/skforecast"><img src="https://github.com/skforecast/skforecast/blob/main/images/opencollective_button.png?raw=true" alt="Support skforecast on Open Collective" height="40"></a>&nbsp;
+  <a href="https://www.buymeacoffee.com/skforecast"><img src="https://github.com/skforecast/skforecast/blob/main/images/buymeacoffee_button.png?raw=true" alt="Buy Me a Coffee" height="40"></a>&nbsp;
+  <a href="https://skforecast.org/latest/more/funding.html"><img src="https://github.com/skforecast/skforecast/blob/main/images/github_sponsor_button.png?raw=true" alt="Sponsor skforecast on GitHub" height="40"></a>
+</p>
 
 
 ## License
