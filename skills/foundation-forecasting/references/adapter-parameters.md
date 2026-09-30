@@ -98,7 +98,7 @@ There is no compile step and no horizon ceiling. For each series, columns presen
 ## TabICLAdapter — Soda-INRIA TabICL
 
 - **`model_id` prefix**: `soda-inria/tabicl`
-- **`allow_exog`**: `True` (past and future covariates)
+- **`allow_exog`**: `True` (known-future covariates; covariates without future values are ignored with an `IgnoredArgumentWarning`)
 - **Quantiles**: any value in `(0, 1)`
 
 | Parameter            | Type  | Default  | Description                                                                      |
@@ -109,6 +109,7 @@ There is no compile step and no horizon ceiling. For each series, columns presen
 | `point_estimate`     | str   | `'mean'` | Point forecast method: `'mean'` or `'median'`.                                   |
 | `tabicl_config`      | dict  | `None`   | Extra kwargs forwarded to `TabICLRegressor` at inference time.                   |
 | `temporal_features`  | list  | `None`   | `TimeTransform` instances applied before inference. `None` = TabICL defaults; `[]` = disable all. |
+| `show_progress`      | bool  | `False`  | Show the backend progress bar during inference.                                  |
 
 ## TabPFNAdapter — Prior Labs TabPFN-TS
 
@@ -125,6 +126,7 @@ There is no compile step and no horizon ceiling. For each series, columns presen
 | `point_estimate`      | str   | `'median'` | Ensemble aggregation for the point forecast: `'mean'`, `'median'` or `'mode'`.   |
 | `tabpfn_model_config` | dict  | `None`     | Extra config forwarded to the underlying TabPFN regressor (e.g. `model_path`, `device`). |
 | `temporal_features`   | list  | `None`     | `FeatureGenerator` instances applied before inference. `None` = TabPFN-TS defaults; `[]` = disable all. |
+| `show_progress`       | bool  | `False`    | Show the backend progress bar during inference.                                  |
 
 ## T0Adapter — The Forecasting Company T0
 

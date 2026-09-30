@@ -8,8 +8,9 @@ forecaster:
   automatically during **training and prediction**. No manual `exog`.
 - **Manual** — build the features yourself with `CalendarFeatures`
   (`fit_transform`) or `create_calendar_features` and pass the result as `exog`
-  (or wire `CalendarFeatures` as `transformer_exog`). Required for forecasters
-  that do not support the `calendar_features` parameter.
+  (or wire `CalendarFeatures` as `transformer_exog` on forecasters that have
+  it). Required for forecasters that do not support the `calendar_features`
+  parameter.
 
 Both paths use the same `CalendarFeatures` class, so the constructor and
 encoding options below apply to either workflow.
@@ -43,8 +44,8 @@ encoding options below apply to either workflow.
 | `ForecasterRecursiveClassifier` | ✗ | Manual only |
 | `ForecasterRnn` | ✗ | Manual only |
 | `ForecasterStats` | ✗ | Manual only |
-| `ForecasterFoundation` | ✗ | Manual only |
-| `ForecasterEquivalentDate` | ✗ | Manual only |
+| `ForecasterFoundation` | ✗ | Manual only, as `exog` (exog-capable models; no `transformer_exog`) |
+| `ForecasterEquivalentDate` | ✗ | Not supported (`exog` is ignored) |
 
 > All calendar tools are built into skforecast — no `feature_engine` (or any
 > other extra) dependency is required.

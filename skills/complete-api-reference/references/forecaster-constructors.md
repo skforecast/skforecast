@@ -164,10 +164,11 @@ FoundationModel(
                                #   cross_learning : bool (Chronos-2 only)
                                #   max_horizon, forecast_config_kwargs (TimesFM 2.5 only)
                                #   predict_kwargs (TimesFM 3.0 only)
-                               #   point_estimate, tabicl_config, temporal_features (TabICL)
-                               #   mode, point_estimate, tabpfn_model_config, temporal_features (TabPFN-TS)
+                               #   point_estimate, tabicl_config, temporal_features, show_progress (TabICL)
+                               #   mode, point_estimate, tabpfn_model_config, temporal_features, show_progress (TabPFN-TS)
                                #   (T0 uses only context_length, device_map, torch_dtype)
                                #   point_estimate, add_calendar_features, n_fourier_terms, nori_config (Nori)
+                               #   checkpoint_version, allow_auto_download (TS-ICL)
 )
 
 ForecasterFoundation(

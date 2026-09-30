@@ -1083,7 +1083,7 @@ Both use the `CalendarFeatures` class; they differ in who builds the features.
 | Workflow | How | When to use |
 |----------|-----|-------------|
 | **Delegated** | Pass a `CalendarFeatures` instance to the forecaster's `calendar_features` parameter. The forecaster generates the features at train **and** predict — no manual exog. | The 4 supported forecasters: `ForecasterRecursive`, `ForecasterRecursiveMultiSeries`, `ForecasterDirect`, `ForecasterDirectMultiVariate`. |
-| **Manual** | Build features with `CalendarFeatures.fit_transform` / `create_calendar_features` and pass them as `exog` (or wire `CalendarFeatures` as `transformer_exog`). | Forecasters without `calendar_features` support (`ForecasterRecursiveClassifier`, `ForecasterRnn`, `ForecasterStats`, `ForecasterFoundation`, `ForecasterEquivalentDate`), or when the features live inside a `Pipeline` / `ColumnTransformer`. |
+| **Manual** | Build features with `CalendarFeatures.fit_transform` / `create_calendar_features` and pass them as `exog` (or wire `CalendarFeatures` as `transformer_exog` on forecasters that have it). | Forecasters without `calendar_features` support (`ForecasterRecursiveClassifier`, `ForecasterRnn`, `ForecasterStats`, and `ForecasterFoundation` with an exog-capable model, which has no `transformer_exog`), or when the features live inside a `Pipeline` / `ColumnTransformer`. |
 
 > Full constructor, all features/encodings, per-forecaster support, and gotchas:
 > [references/calendar-features-reference.md](references/calendar-features-reference.md).
@@ -1447,7 +1447,7 @@ predictions = forecaster.predict(steps=10, exog=exog.loc[forecast_index])
 2. **Forgetting frequency on index**: `CalendarFeatures` (and the `calendar_features` parameter) requires a `DatetimeIndex`; `calculate_distance_from_holiday` (index mode) infers the time unit from the frequency. Always set `data.asfreq('h')` (or similar) first.
 3. **Not covering forecast horizon with calendar/holiday exog (manual path only)**: When building calendar features manually as `exog`, the `predict()` exog must include future dates covering the entire forecast horizon. With the delegated `calendar_features` parameter this is handled automatically.
 4. **Mixing the delegated and manual calendar paths for the same features**: Passing `calendar_features=` *and* also adding manually-built calendar columns with the same names to `exog` raises `ValueError: Duplicated feature names detected in X_train`. Pick one path per feature.
-5. **Using `calendar_features` on an unsupported forecaster**: Only `ForecasterRecursive`, `ForecasterRecursiveMultiSeries`, `ForecasterDirect`, and `ForecasterDirectMultiVariate` accept it. For `ForecasterRecursiveClassifier`, `ForecasterRnn`, `ForecasterStats`, `ForecasterFoundation`, and `ForecasterEquivalentDate`, build calendar features manually as `exog`.
+5. **Using `calendar_features` on an unsupported forecaster**: Only `ForecasterRecursive`, `ForecasterRecursiveMultiSeries`, `ForecasterDirect`, and `ForecasterDirectMultiVariate` accept it. For `ForecasterRecursiveClassifier`, `ForecasterRnn`, `ForecasterStats`, and `ForecasterFoundation` (exog-capable models only), build calendar features manually as `exog`. `ForecasterEquivalentDate` ignores `exog`, so it cannot use calendar features.
 6. **Overriding `max_values` for `'week'` or `'day_of_year'`**: The defaults (53, 366) are intentional — they handle ISO week 53 and leap years correctly. Use the smaller value (52 / 365) only if you have verified your data never reaches the maximum.
 7. **Over-engineering features**: Start with lags only, then add rolling features and calendar features incrementally. Validate each addition with backtesting.
 8. **Rolling window larger than lags without checking training size**: The forecaster's `window_size` is `max(max_lag, max_size_window_features) (+ differentiation)`. A 30-step rolling window with `lags=7` drops the first 30 rows of training data and requires `last_window` of length ≥ 30 at predict time.
@@ -1478,8 +1478,9 @@ forecaster:
   automatically during **training and prediction**. No manual `exog`.
 - **Manual** — build the features yourself with `CalendarFeatures`
   (`fit_transform`) or `create_calendar_features` and pass the result as `exog`
-  (or wire `CalendarFeatures` as `transformer_exog`). Required for forecasters
-  that do not support the `calendar_features` parameter.
+  (or wire `CalendarFeatures` as `transformer_exog` on forecasters that have
+  it). Required for forecasters that do not support the `calendar_features`
+  parameter.
 
 Both paths use the same `CalendarFeatures` class, so the constructor and
 encoding options below apply to either workflow.
@@ -1513,8 +1514,8 @@ encoding options below apply to either workflow.
 | `ForecasterRecursiveClassifier` | ✗ | Manual only |
 | `ForecasterRnn` | ✗ | Manual only |
 | `ForecasterStats` | ✗ | Manual only |
-| `ForecasterFoundation` | ✗ | Manual only |
-| `ForecasterEquivalentDate` | ✗ | Manual only |
+| `ForecasterFoundation` | ✗ | Manual only, as `exog` (exog-capable models; no `transformer_exog`) |
+| `ForecasterEquivalentDate` | ✗ | Not supported (`exog` is ignored) |
 
 > All calendar tools are built into skforecast — no `feature_engine` (or any
 > other extra) dependency is required.
@@ -2336,7 +2337,7 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 |------|---------|----------|
 | `fit()` stores context only; it never trains the model | Expecting training to happen or weights to update | Treat the model as pre-trained; evaluate with `backtesting_foundation` |
 | `cv.refit` and `cv.fixed_train_size` are overridden by `backtesting_foundation` | `IgnoredArgumentWarning` when `refit=True` or `fixed_train_size=False` | Leave them at their defaults; the context window expands per fold either way |
-| Only Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, T0, Nori, and TS-ICL use `exog`; TimesFM 2.5 and Moirai-2 ignore it | `exog` silently dropped, no error raised | Pick an exog-capable adapter when covariates matter |
+| Only Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, T0, Nori, and TS-ICL use `exog`; TimesFM 2.5 and Moirai-2 ignore it | `IgnoredArgumentWarning`, forecast made without `exog` | Pick an exog-capable adapter when covariates matter |
 | TimesFM (2.5 and 3.0) and Moirai-2 restrict quantiles to `[0.1, 0.2, ..., 0.9]` | Requested quantile rejected or unsupported | Request only supported quantiles, or use an adapter allowing any quantile in (0, 1) |
 | Each backend library must be installed separately | `ModuleNotFoundError` / `ImportError` on first use | `pip install` the matching backend (see Installation) |
 | Tuning uses `bayesian_search_foundation`, never `bayesian_search_forecaster*` | `TypeError` on the forecaster type or on `OneStepAheadFold` | Call `bayesian_search_foundation` with a `TimeSeriesFold` |
@@ -2557,12 +2558,12 @@ automatically to the last `context_length` observations.
 
 1. **Expecting `fit()` to train the model**: it only stores context. The weights come from HuggingFace.
 2. **Index without frequency**: call `series.asfreq('h')` (or similar) before `fit` — skforecast requires a frequency.
-3. **Passing `exog` to TimesFM 2.5 / Moirai-2**: ignored. Only Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL support exogenous variables.
+3. **Passing `exog` to TimesFM 2.5 / Moirai-2**: ignored with an `IgnoredArgumentWarning`. Only Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL support exogenous variables.
 4. **Requesting unsupported quantiles**: TimesFM (2.5 and 3.0) and Moirai-2 are restricted to the nine deciles `0.1 … 0.9` ; TS-ICL is restricted to a 0.01 grid in `[0.01, 0.99]`.
 5. **Large model downloads**: first call can be slow; consider using smaller variants (`*-small`) for experimentation.
 6. **Forgetting to install the backend**: each foundation model requires its own library (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`). Install only the one(s) you need.
 7. **Tuning a parameter that forces a model reload**: `model_id` and device/dtype arguments reload the model on every trial, and `context_length` does the same on TimesFM 2.5 (but **not** TimesFM 3.0), Moirai-2, TabICL and TabPFN-TS.
-8. **Assuming TimesFM 3.0 accepts categorical covariates**: it does not; encode categoricals as numeric (e.g. via `transformer_exog`) before passing them, same as Nori, T0, and TS-ICL.
+8. **Assuming TimesFM 3.0 accepts categorical covariates**: it does not, and neither do Nori, T0, and TS-ICL (`ValueError`). Only Chronos-2 accepts them natively. `ForecasterFoundation` has no `transformer_exog`, so encode categoricals as numbers in `exog` before passing it to `fit` and `predict`.
 9. **Passing a future `exog` column that was not in the historical exog** (`fit` without that column, or `context` without `context_exog`): `ValueError` on every adapter. Pass the same columns to `fit` (or `context_exog`) and to `predict`.
 10. **Predicting without `exog` after fitting with exog on TabICL, TabPFN-TS, T0 or Nori**: the historical columns are ignored (`IgnoredArgumentWarning`) and the forecast uses no covariates. Only Chronos-2, TS-ICL and TimesFM 3.0 use them as past-only covariates.
 
@@ -2675,7 +2676,7 @@ There is no compile step and no horizon ceiling. For each series, columns presen
 ## TabICLAdapter — Soda-INRIA TabICL
 
 - **`model_id` prefix**: `soda-inria/tabicl`
-- **`allow_exog`**: `True` (past and future covariates)
+- **`allow_exog`**: `True` (known-future covariates; covariates without future values are ignored with an `IgnoredArgumentWarning`)
 - **Quantiles**: any value in `(0, 1)`
 
 | Parameter            | Type  | Default  | Description                                                                      |
@@ -2686,6 +2687,7 @@ There is no compile step and no horizon ceiling. For each series, columns presen
 | `point_estimate`     | str   | `'mean'` | Point forecast method: `'mean'` or `'median'`.                                   |
 | `tabicl_config`      | dict  | `None`   | Extra kwargs forwarded to `TabICLRegressor` at inference time.                   |
 | `temporal_features`  | list  | `None`   | `TimeTransform` instances applied before inference. `None` = TabICL defaults; `[]` = disable all. |
+| `show_progress`      | bool  | `False`  | Show the backend progress bar during inference.                                  |
 
 ## TabPFNAdapter — Prior Labs TabPFN-TS
 
@@ -2702,6 +2704,7 @@ There is no compile step and no horizon ceiling. For each series, columns presen
 | `point_estimate`      | str   | `'median'` | Ensemble aggregation for the point forecast: `'mean'`, `'median'` or `'mode'`.   |
 | `tabpfn_model_config` | dict  | `None`     | Extra config forwarded to the underlying TabPFN regressor (e.g. `model_path`, `device`). |
 | `temporal_features`   | list  | `None`     | `FeatureGenerator` instances applied before inference. `None` = TabPFN-TS defaults; `[]` = disable all. |
+| `show_progress`       | bool  | `False`    | Show the backend progress bar during inference.                                  |
 
 ## T0Adapter — The Forecasting Company T0
 
@@ -6500,10 +6503,11 @@ FoundationModel(
                                #   cross_learning : bool (Chronos-2 only)
                                #   max_horizon, forecast_config_kwargs (TimesFM 2.5 only)
                                #   predict_kwargs (TimesFM 3.0 only)
-                               #   point_estimate, tabicl_config, temporal_features (TabICL)
-                               #   mode, point_estimate, tabpfn_model_config, temporal_features (TabPFN-TS)
+                               #   point_estimate, tabicl_config, temporal_features, show_progress (TabICL)
+                               #   mode, point_estimate, tabpfn_model_config, temporal_features, show_progress (TabPFN-TS)
                                #   (T0 uses only context_length, device_map, torch_dtype)
                                #   point_estimate, add_calendar_features, n_fourier_terms, nori_config (Nori)
+                               #   checkpoint_version, allow_auto_download (TS-ICL)
 )
 
 ForecasterFoundation(
@@ -6587,12 +6591,12 @@ forecaster.fit(
     random_state=123,                 # int
     suppress_warnings=False           # bool
 )
-# NOTE: No exog parameter (uses date offsets, not exogenous variables).
+# NOTE: `exog` is accepted for API compatibility but ignored (uses date offsets).
 
 # ForecasterFoundation
 forecaster.fit(
     series,                           # pd.Series | pd.DataFrame | dict[str, pd.Series] (required)
-    exog=None,                        # pd.Series | pd.DataFrame | dict | None (Chronos-2 only)
+    exog=None,                        # pd.Series | pd.DataFrame | dict | None (ignored if not forecaster.allow_exog)
 )
 # NOTE: "fit" does not train the model — it only stores the last
 # context_length observations and metadata. Foundation models are
@@ -6680,7 +6684,7 @@ forecaster.predict(
     levels=None,              # str | list[str] | None, subset of series
     context=None,             # pd.Series | pd.DataFrame | dict | None, override stored context
     context_exog=None,        # pd.Series | pd.DataFrame | dict | None, historical exog
-    exog=None,                # pd.Series | pd.DataFrame | dict | None, future exog (Chronos-2 only)
+    exog=None,                # pd.Series | pd.DataFrame | dict | None, future exog (ignored if not forecaster.allow_exog)
     check_inputs=True         # bool
 ) -> pd.DataFrame             # Long-format: columns ['level', 'pred']
 # Also:

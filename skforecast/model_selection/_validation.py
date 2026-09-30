@@ -2368,9 +2368,10 @@ def _backtesting_foundation(
     Backtesting of ForecasterFoundation.
 
     The original forecaster is used directly (no copy) and is not modified:
-    refit is always disabled for foundation models, `fit` is never called,
-    and every fold passes `context` explicitly, so neither the fit state nor
-    `context_` change during the fold loop.
+    `fit` is never called (`cv` is forced to `refit=True` only so that the
+    training span of each fold expands) and every fold passes `context`
+    explicitly, so neither the fit state nor `context_` change during the
+    fold loop.
 
     Parameters
     ----------
@@ -2723,10 +2724,11 @@ def backtesting_foundation(
 
     The original forecaster is used directly (no copy) and is not modified:
     its loaded model weights are reused across the entire backtesting run
-    and `fit` is never called. Since foundation models are zero-shot, refit
-    is always disabled and per-fold predictions receive `context`
-    explicitly, so neither the fit state nor the stored context change
-    during the fold loop.
+    and `fit` is never called. Since foundation models are zero-shot, `cv`
+    is forced to `refit=True` and `fixed_train_size=False` only so that the
+    context expands with each fold, and per-fold predictions receive
+    `context` explicitly, so neither the fit state nor the stored context
+    change during the fold loop.
 
     Parameters
     ----------

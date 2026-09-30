@@ -1099,10 +1099,10 @@ class TimesFM3Adapter:
     the same set of past-only and known-future columns and calls `predict`
     once per group, so the prediction of a series never depends on the
     covariates of the other series in the batch. Covariates must be numeric;
-    encode categoricals as numbers (e.g. via `transformer_exog`) before
-    passing them. NaN values inside covariates and inside the target series
-    are linearly interpolated by the backend, and leading NaNs in the target
-    trim the context and its covariates accordingly.
+    encode categoricals as numbers before passing them. NaN values inside
+    covariates and inside the target series are linearly interpolated by the
+    backend, and leading NaNs in the target trim the context and its
+    covariates accordingly.
 
     There is no compile step and no horizon ceiling: context length and
     horizon are handled internally by `predict_batch`.
@@ -1463,7 +1463,7 @@ class TimesFM3Adapter:
         the offending column is raised otherwise. `predict_batch` casts
         covariates to `float32` internally and has no native categorical
         support, unlike Chronos. Encode categorical covariates as numeric
-        values (e.g. via `transformer_exog`) before passing them.
+        values before passing them.
 
         """
 
