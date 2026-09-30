@@ -196,11 +196,11 @@ the dataset card and the note under the stage in `home.html`.
 
 ### Logos
 
-- Sovereign Tech Agency and GC.OS logos are the official files, used unmodified.
-  GC.OS publishes no brand guidelines.
-- NumFOCUS is shown as text. Its [trademark guidelines](https://numfocus.org/trademark-guidelines)
-  reserve the logo and require prior authorization. Ask NumFOCUS before
-  replacing the text with the logo.
+- Sovereign Tech Agency, NumFOCUS and GC.OS logos are the official files, used
+  unmodified. GC.OS publishes no brand guidelines.
+- The NumFOCUS logo (`docs/img/logo-numfocus-affiliated.png`) is the "Affiliated
+  Project" version provided by NumFOCUS, whose [trademark guidelines](https://numfocus.org/trademark-guidelines)
+  require prior authorization. That authorization was granted in September 2026.
 
 
 ## Verification
