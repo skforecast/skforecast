@@ -41,7 +41,7 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 |------|---------|----------|
 | `fit()` stores context only; it never trains the model | Expecting training to happen or weights to update | Treat the model as pre-trained; evaluate with `backtesting_foundation` |
 | `cv.refit` and `cv.fixed_train_size` are overridden by `backtesting_foundation` | `IgnoredArgumentWarning` when `refit=True` or `fixed_train_size=False` | Leave them at their defaults; the context window expands per fold either way |
-| Only Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, T0, Nori, and TS-ICL use `exog`; TimesFM 2.5 and Moirai-2 ignore it | `exog` silently dropped, no error raised | Pick an exog-capable adapter when covariates matter |
+| Only Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, T0, Nori, and TS-ICL use `exog`; TimesFM 2.5 and Moirai-2 ignore it | `IgnoredArgumentWarning`, forecast made without `exog` | Pick an exog-capable adapter when covariates matter |
 | TimesFM (2.5 and 3.0) and Moirai-2 restrict quantiles to `[0.1, 0.2, ..., 0.9]` | Requested quantile rejected or unsupported | Request only supported quantiles, or use an adapter allowing any quantile in (0, 1) |
 | Each backend library must be installed separately | `ModuleNotFoundError` / `ImportError` on first use | `pip install` the matching backend (see Installation) |
 | Tuning uses `bayesian_search_foundation`, never `bayesian_search_forecaster*` | `TypeError` on the forecaster type or on `OneStepAheadFold` | Call `bayesian_search_foundation` with a `TimeSeriesFold` |
@@ -172,6 +172,19 @@ For TimesFM (2.5 and 3.0) and Moirai-2, requested quantiles must be a subset of 
 
 The adapter is resolved automatically from the `model_id` prefix — no need to import adapter classes directly.
 
+To check what a model supports before installing its backend or loading its weights, use `get_model_info` (one `model_id`) or `list_adapters` (one entry per adapter, or a DataFrame with `as_frame=True`). Both return a frozen `FoundationModelInfo` read from the adapter classes, so it always matches the installed skforecast version; prefer it over hard-coding the table above.
+
+```python
+from skforecast.foundation import get_model_info, list_adapters
+
+info = get_model_info('google/timesfm-3.0-pytorch')
+info.allow_exog, info.supported_quantiles  # supported_quantiles None = any level in (0, 1)
+info.backend_package                       # 'timesfm[torch]', as passed to pip install
+info.license_restriction, info.requires_hf_auth
+
+list_adapters(as_frame=True)  # DataFrame, one row per adapter; default: list of FoundationModelInfo
+```
+
 TimesFM 3.0, Moirai-2, TabPFN-TS, and TS-ICL weights are released under known non-commercial licenses; loading them raises a `LicenseWarning` naming the license and a link to the model card. Terms vary by provider (e.g. TabPFN-TS permits commercial use under an enterprise license), so review the linked license rather than the warning text alone. A model id not covered by this warning is not confirmed to be unrestricted.
 
 ## Backtesting
@@ -249,12 +262,12 @@ automatically to the last `context_length` observations.
 
 1. **Expecting `fit()` to train the model**: it only stores context. The weights come from HuggingFace.
 2. **Index without frequency**: call `series.asfreq('h')` (or similar) before `fit` — skforecast requires a frequency.
-3. **Passing `exog` to TimesFM 2.5 / Moirai-2**: ignored. Only Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL support exogenous variables.
+3. **Passing `exog` to TimesFM 2.5 / Moirai-2**: ignored with an `IgnoredArgumentWarning`. Only Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL support exogenous variables.
 4. **Requesting unsupported quantiles**: TimesFM (2.5 and 3.0) and Moirai-2 are restricted to the nine deciles `0.1 … 0.9` ; TS-ICL is restricted to a 0.01 grid in `[0.01, 0.99]`.
 5. **Large model downloads**: first call can be slow; consider using smaller variants (`*-small`) for experimentation.
 6. **Forgetting to install the backend**: each foundation model requires its own library (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`). Install only the one(s) you need.
 7. **Tuning a parameter that forces a model reload**: `model_id` and device/dtype arguments reload the model on every trial, and `context_length` does the same on TimesFM 2.5 (but **not** TimesFM 3.0), Moirai-2, TabICL and TabPFN-TS.
-8. **Assuming TimesFM 3.0 accepts categorical covariates**: it does not; encode categoricals as numeric (e.g. via `transformer_exog`) before passing them, same as Nori, T0, and TS-ICL.
+8. **Assuming TimesFM 3.0 accepts categorical covariates**: it does not, and neither do Nori, T0, and TS-ICL (`ValueError`). Only Chronos-2 accepts them natively. `ForecasterFoundation` has no `transformer_exog`, so encode categoricals as numbers in `exog` before passing it to `fit` and `predict`.
 9. **Passing a future `exog` column that was not in the historical exog** (`fit` without that column, or `context` without `context_exog`): `ValueError` on every adapter. Pass the same columns to `fit` (or `context_exog`) and to `predict`.
 10. **Predicting without `exog` after fitting with exog on TabICL, TabPFN-TS, T0 or Nori**: the historical columns are ignored (`IgnoredArgumentWarning`) and the forecast uses no covariates. Only Chronos-2, TS-ICL and TimesFM 3.0 use them as past-only covariates.
 

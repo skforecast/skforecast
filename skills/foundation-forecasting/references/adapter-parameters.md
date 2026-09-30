@@ -28,7 +28,7 @@ model = FoundationModel(
 
 ## ChronosAdapter — Amazon Chronos-2
 
-- **`model_id` prefix**: `autogluon/chronos`
+- **`model_id` prefix**: `autogluon/chronos-2` or `amazon/chronos-2` (Chronos and Chronos-Bolt checkpoints are not supported)
 - **`allow_exog`**: `True` (past and future covariates)
 - **Quantiles**: any value in `(0, 1)`
 
@@ -84,7 +84,7 @@ There is no compile step and no horizon ceiling. For each series, columns presen
 
 ## MoiraiAdapter — Salesforce Moirai-2
 
-- **`model_id` prefix**: `Salesforce/moirai`
+- **`model_id` prefix**: `Salesforce/moirai-2` (Moirai 1.x and Moirai-MoE checkpoints are not supported)
 - **`allow_exog`**: `False`
 - **Supported quantiles**: `[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]`
 
@@ -98,7 +98,7 @@ There is no compile step and no horizon ceiling. For each series, columns presen
 ## TabICLAdapter — Soda-INRIA TabICL
 
 - **`model_id` prefix**: `soda-inria/tabicl`
-- **`allow_exog`**: `True` (past and future covariates)
+- **`allow_exog`**: `True` (known-future covariates; covariates without future values are ignored with an `IgnoredArgumentWarning`)
 - **Quantiles**: any value in `(0, 1)`
 
 | Parameter            | Type  | Default  | Description                                                                      |
@@ -109,6 +109,7 @@ There is no compile step and no horizon ceiling. For each series, columns presen
 | `point_estimate`     | str   | `'mean'` | Point forecast method: `'mean'` or `'median'`.                                   |
 | `tabicl_config`      | dict  | `None`   | Extra kwargs forwarded to `TabICLRegressor` at inference time.                   |
 | `temporal_features`  | list  | `None`   | `TimeTransform` instances applied before inference. `None` = TabICL defaults; `[]` = disable all. |
+| `show_progress`      | bool  | `False`  | Show the backend progress bar during inference.                                  |
 
 ## TabPFNAdapter — Prior Labs TabPFN-TS
 
@@ -125,6 +126,7 @@ There is no compile step and no horizon ceiling. For each series, columns presen
 | `point_estimate`      | str   | `'median'` | Ensemble aggregation for the point forecast: `'mean'`, `'median'` or `'mode'`.   |
 | `tabpfn_model_config` | dict  | `None`     | Extra config forwarded to the underlying TabPFN regressor (e.g. `model_path`, `device`). |
 | `temporal_features`   | list  | `None`     | `FeatureGenerator` instances applied before inference. `None` = TabPFN-TS defaults; `[]` = disable all. |
+| `show_progress`       | bool  | `False`    | Show the backend progress bar during inference.                                  |
 
 ## T0Adapter — The Forecasting Company T0
 
@@ -214,6 +216,7 @@ All adapters implement the same minimal interface:
 - `predict(steps, context, context_exog, exog, quantiles)` — returns a   `dict[str, np.ndarray]` of shape `(steps, n_quantiles)` keyed by series name.
 - `get_params()` / `set_params(**kwargs)` — sklearn-style parameter access.
 - `allow_exog` / `supports_past_only_covariates` / `supports_heterogeneous_covariates` / `supports_nan_in_series` — class attributes read by `FoundationModel` to decide how exog and NaN are handled. When `supports_heterogeneous_covariates` is `False` (Chronos-2, TS-ICL, TabICL, TimesFM 3.0), `FoundationModel.predict` groups the series by their (past-only, future) exog columns and calls `adapter.predict` once per group; adapters never receive a batch with mixed covariate columns. When `supports_nan_in_series` is `False`, a context with NaN raises `ValueError` before the adapter is called (all current adapters accept NaN; Nori drops the NaN rows itself).
+- `supports_categorical_covariates` / `requires_hf_auth` / `backend_package` / `default_model_id` / `SUPPORTED_QUANTILES`: descriptive class attributes. They are exposed, together with the ones above and the default `context_length`, through `get_model_info` and `list_adapters`. `supports_categorical_covariates` is `True` only for Chronos-2 (non-numeric covariates are passed natively); `requires_hf_auth` is `True` only for TFC-T0 (gated weights); `SUPPORTED_QUANTILES` is `None` when any level in `(0, 1)` is accepted.
 
 ### Exog column validation at predict time
 

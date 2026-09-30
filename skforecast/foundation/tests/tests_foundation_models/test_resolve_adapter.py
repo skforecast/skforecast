@@ -22,11 +22,13 @@ from skforecast.foundation._adapters import (
 @pytest.mark.parametrize(
     "model_id, expected_cls",
     [
+        ("amazon/chronos-2", ChronosAdapter),
         ("autogluon/chronos-2-small", ChronosAdapter),
         ("autogluon/chronos-2-large", ChronosAdapter),
         ("google/timesfm-2.5-200m-pytorch", TimesFM25Adapter),
         ("google/timesfm-2.5-200m-flax", TimesFM25Adapter),
         ("google/timesfm-3.0-pytorch", TimesFM3Adapter),
+        ("Salesforce/moirai-2.0-R-small", MoiraiAdapter),
         ("Salesforce/moirai-2-base", MoiraiAdapter),
         ("soda-inria/tabicl", TabICLAdapter),
         ("priorlabs/tabpfn-ts", TabPFNAdapter),
@@ -68,6 +70,46 @@ def test_resolve_adapter_ValueError_when_unknown_prefix(model_id):
     assert "'google/timesfm-3.0'" in str(exc_info.value)
 
 
+@pytest.mark.parametrize(
+    "model_id",
+    [
+        "amazon/chronos-t5-small",
+        "amazon/chronos-bolt-small",
+        "autogluon/chronos-bolt-base",
+    ],
+    ids=lambda x: str(x),
+)
+def test_resolve_adapter_ValueError_when_chronos_model_is_not_chronos_2(model_id):
+    """
+    Test that _resolve_adapter raises ValueError for Chronos and Chronos-Bolt
+    checkpoints, which ChronosAdapter does not support (their pipelines take
+    a different input format and do not accept `cross_learning`).
+    """
+    err_msg = re.escape(f"No adapter found for model '{model_id}'.")
+    with pytest.raises(ValueError, match=err_msg):
+        _resolve_adapter(model_id)
+
+
+@pytest.mark.parametrize(
+    "model_id",
+    [
+        "Salesforce/moirai-1.0-R-small",
+        "Salesforce/moirai-1.1-R-base",
+        "Salesforce/moirai-moe-1.0-R-small",
+    ],
+    ids=lambda x: str(x),
+)
+def test_resolve_adapter_ValueError_when_moirai_model_is_not_moirai_2(model_id):
+    """
+    Test that _resolve_adapter raises ValueError for Moirai 1.x and
+    Moirai-MoE checkpoints, which MoiraiAdapter cannot load (their configs
+    lack arguments required by `Moirai2Module`).
+    """
+    err_msg = re.escape(f"No adapter found for model '{model_id}'.")
+    with pytest.raises(ValueError, match=err_msg):
+        _resolve_adapter(model_id)
+
+
 # Tests _ADAPTER_REGISTRY
 # ==============================================================================
 def test_ADAPTER_REGISTRY_contains_all_expected_entries():
@@ -75,10 +117,11 @@ def test_ADAPTER_REGISTRY_contains_all_expected_entries():
     Test that _ADAPTER_REGISTRY maps each expected prefix to its adapter.
     """
     expected = {
-        "autogluon/chronos": ChronosAdapter,
+        "amazon/chronos-2": ChronosAdapter,
+        "autogluon/chronos-2": ChronosAdapter,
         "google/timesfm-2.5": TimesFM25Adapter,
         "google/timesfm-3.0": TimesFM3Adapter,
-        "Salesforce/moirai": MoiraiAdapter,
+        "Salesforce/moirai-2": MoiraiAdapter,
         "soda-inria/tabicl": TabICLAdapter,
         "priorlabs/tabpfn": TabPFNAdapter,
         "theforecastingcompany/t0": T0Adapter,

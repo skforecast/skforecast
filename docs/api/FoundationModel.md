@@ -10,3 +10,6 @@
 ::: skforecast.foundation._adapters.T0Adapter
 ::: skforecast.foundation._adapters.NoriAdapter
 ::: skforecast.foundation._adapters.TSICLAdapter
+::: skforecast.foundation._model_info.get_model_info
+::: skforecast.foundation._model_info.list_adapters
+::: skforecast.foundation._model_info.FoundationModelInfo
