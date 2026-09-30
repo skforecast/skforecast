@@ -1,6 +1,6 @@
 [project]
 name = "skforecast"
-version = "0.25.0"
+version = "0.26.0"
 description = "Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models."
 readme = "README.md"
 authors = [

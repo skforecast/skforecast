@@ -31,8 +31,7 @@ def test_check_level_output_when_valid_coverage_proportions(level, expected):
 def test_check_level_ValueError_when_level_is_out_of_range(level):
     """
     Test ValueError is raised when `level` is outside the (0, 1] range, for
-    example when given as percentiles. Support for percentiles was removed in
-    skforecast 0.25.0.
+    example when given as percentiles.
     """
     err_msg = re.escape(
         f"All values in `level` must be coverage proportions in the (0, 1] "

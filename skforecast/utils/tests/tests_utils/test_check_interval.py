@@ -201,8 +201,7 @@ def test_check_interval_quantile_scale_ValueError_when_not_symmetric():
                          ids = lambda value: f'interval: {value}')
 def test_check_interval_ValueError_when_interval_is_a_percentile(interval):
     """
-    Check `ValueError` is raised when `interval` is given as percentiles. Support
-    for percentiles was removed in skforecast 0.25.0.
+    Check `ValueError` is raised when `interval` is given as percentiles.
     """
     with pytest.raises(ValueError, match = 'interval bound'):
         check_interval(interval=interval)
