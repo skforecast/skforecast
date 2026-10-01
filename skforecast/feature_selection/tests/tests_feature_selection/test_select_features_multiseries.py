@@ -18,6 +18,7 @@ from .fixtures_feature_selection import (
     series_dict_datetime,
     exog_multiseries as exog,
     exog_feature_selection as exog_datetime,
+    SelectorAllFeatures,
 )
 
 
@@ -147,6 +148,60 @@ def test_ValueError_select_features_multiseries_when_subsample_not_greater_0_les
             subsample  = subsample,
         )
 
+
+
+@pytest.mark.parametrize("subsample, expected_n_records", 
+                         [(1, 90), (1.0, 90), (0.5, 45)], 
+                         ids=lambda ss: f'subsample, expected_n_records: {ss}')
+def test_select_features_multiseries_subsample_without_replacement(subsample, expected_n_records):
+    """
+    Test that select_features_multiseries samples `subsample` proportion of
+    the records without replacement. `subsample=1` uses all the records.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator = LinearRegression(),
+                     lags      = 5,
+                 )
+    selector = SelectorAllFeatures()
+
+    select_features_multiseries(
+        selector   = selector,
+        forecaster = forecaster,
+        series     = series_dict_range,
+        exog       = exog,
+        subsample  = subsample,
+        verbose    = False,
+    )
+
+    assert len(selector.X_fit_) == expected_n_records
+    assert not selector.X_fit_.duplicated().any()
+
+
+def test_select_features_multiseries_output_is_str_when_selector_returns_np_str():
+    """
+    Test that select_features_multiseries returns the selected window features
+    and exog as Python `str` when the selector returns the feature names as
+    `np.str_`.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator       = LinearRegression(),
+                     lags            = 3,
+                     window_features = RollingFeatures(stats='mean', window_sizes=3),
+                 )
+
+    selected_lags, selected_window_features, selected_exog, selected_calendar_features = select_features_multiseries(
+        selector   = SelectorAllFeatures(),
+        forecaster = forecaster,
+        series     = series_dict_range,
+        exog       = exog,
+        verbose    = False,
+    )
+
+    assert selected_lags == [1, 2, 3]
+    assert selected_window_features == ['roll_mean_3']
+    assert selected_exog == ['exog1', 'exog2', 'exog3', 'exog4']
+    assert selected_calendar_features == []
+    assert all(type(feature) is str for feature in selected_window_features + selected_exog)
 
 def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_exog_estimator():
     """
@@ -293,8 +348,8 @@ def test_select_features_multiseries_when_selector_is_RFE_and_select_only_is_aut
         verbose     = False,
     )
 
-    assert selected_lags == [3, 4, 5]
-    assert selected_window_features == ['roll_std_5']
+    assert selected_lags == [4, 5]
+    assert selected_window_features == ['roll_mean_3', 'roll_std_5']
     assert selected_exog == ['exog1', 'exog2', 'exog3', 'exog4']
     assert selected_calendar_features == []
 
@@ -424,9 +479,9 @@ def test_select_features_multiseries_when_selector_is_RFE_select_only_exog_is_Fa
         verbose         = True,
     )
 
-    assert selected_lags == [1, 4]
+    assert selected_lags == [1]
     assert selected_window_features == []
-    assert selected_exog == ['exog1', 'exog4']
+    assert selected_exog == ['exog1', 'exog2', 'exog4']
     assert selected_calendar_features == []
 
 
@@ -456,7 +511,7 @@ def test_select_features_when_RFE_select_only_exog_ForecasterDirectMultiVariate_
         verbose     = False,
     )
 
-    assert selected_lags == {'l1': [], 'l2': [2, 3, 4]}
+    assert selected_lags == {'l1': [], 'l2': [1, 4, 5]}
     assert selected_window_features == []
     assert selected_exog == ['exog1', 'exog2', 'exog3', 'exog4']
     assert selected_calendar_features == []
@@ -485,7 +540,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterDire
         verbose     = False,
     )
 
-    assert selected_lags == {'l1': [3, 5], 'l2': [3]}
+    assert selected_lags == {'l1': [1], 'l2': [1, 4]}
     assert selected_window_features == []
     assert selected_exog == ['exog1', 'exog2', 'exog3', 'exog4']
     assert selected_calendar_features == []
@@ -519,8 +574,8 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterDire
         verbose     = False,
     )
 
-    assert selected_lags == {'l1': [3, 5], 'l2': [3]}
-    assert selected_window_features == []
+    assert selected_lags == {'l1': [1], 'l2': [1]}
+    assert selected_window_features == ['l1_roll_std_5']
     assert selected_exog == ['exog1', 'exog2', 'exog3', 'exog4']
     assert selected_calendar_features == []
 
@@ -627,7 +682,7 @@ def test_select_features_multiseries_when_selector_is_RFE_select_only_is_list_au
     assert selected_lags == [1]
     assert selected_window_features == []
     assert selected_exog == ['exog_0', 'exog_1', 'exog_2', 'exog_3', 'exog_4']
-    assert selected_calendar_features == ['week', 'hour']
+    assert selected_calendar_features == ['week', 'day_of_week']
 
 
 def test_select_features_multiseries_when_selector_is_RFE_select_only_is_calendar_and_force_inclusion_is_list():
@@ -694,10 +749,10 @@ def test_select_features_multiseries_when_selector_is_RFE_select_only_is_None_Fo
         verbose     = False,
     )
 
-    assert selected_lags == {'l1': [], 'l2': [4]}
+    assert selected_lags == {'l1': [2], 'l2': [1]}
     assert selected_window_features == []
     assert selected_exog == ['exog_1', 'exog_2', 'exog_4']
-    assert selected_calendar_features == ['week', 'day_of_week', 'hour']
+    assert selected_calendar_features == ['week', 'hour']
 
 
 def test_select_features_multiseries_when_selector_is_RFE_select_only_is_calendar_ForecasterDirectMultiVariate():
@@ -732,4 +787,4 @@ def test_select_features_multiseries_when_selector_is_RFE_select_only_is_calenda
     assert selected_lags == {'l1': [1, 2, 3, 4, 5], 'l2': [1, 2, 3, 4, 5]}
     assert selected_window_features == []
     assert selected_exog == ['exog_0', 'exog_1', 'exog_2', 'exog_3', 'exog_4']
-    assert selected_calendar_features == ['week', 'day_of_week', 'hour']
+    assert selected_calendar_features == ['week', 'hour']
