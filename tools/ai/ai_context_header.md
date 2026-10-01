@@ -7,11 +7,11 @@
 ```bash
 pytest path/to/test_file.py -x -q                 # Iterate on the touched test file
 pytest path/to/tests/ -q --lf                     # Rerun only the last failures
-pytest skforecast/recursive/tests -q              # Touched subpackage, once before a PR
+pytest skforecast/<pkg>/tests/tests_<module>/ -q  # Touched module, once when done
 ```
 
-The full suite (6000+ tests) runs in CI on every pull request to `main` and to
-release branches (`*.x`); do not run it locally. Run tests sequentially: do not
+Do not run the full suite (6000+ tests) unless the user asks for it; it runs in
+CI on the pull request of each release to `main`. Run tests sequentially: do not
 use `-n` (pytest-xdist), it saturates the machine and some search tests write
 output files that collide in parallel runs.
 

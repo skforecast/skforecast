@@ -1,6 +1,6 @@
 ---
 name: open-pr
-description: Prepares and opens a skforecast pull request against the current release branch, after running the checks CI does not run on release branches.
+description: Prepares and opens a skforecast pull request against the current release branch, after running the tests and checks that CI does not run on release branches.
 disable-model-invocation: true
 argument-hint: "[short PR title]"
 ---
@@ -17,10 +17,10 @@ Title hint from the user: $ARGUMENTS
 
 ## 2. Checks
 
-CI runs the full test suite on the PR (3 operating systems, 5 Python versions), so locally only run what the change touches.
+CI does not run unit tests on pull requests to release branches (only the AI context check), so the tests run here are the only ones before merge.
 
 1. Run the `verify` skill on the whole branch (scope: `git diff --name-only <release-branch>...HEAD` plus the working tree) and stop on failures.
-2. Always run `python tools/ai/generate_ai_context_files.py --check`, even if no AI context source changed (CI runs it on every PR).
+2. Always run `python tools/ai/generate_ai_context_files.py --check`, even if no AI context source changed (CI runs it on every PR and fails if a generated file is stale).
 3. User-facing changes are described in `docs/releases/releases.md`, in the section of the version in development, with the right badge (Feature, Enhancement, API Change, Fix, Docs) and under Added, Changed or Fixed. If missing, draft the entry and show it to the user.
 4. No `dev/handoff_*.md` file is part of the diff (delete it first, asking the user).
 

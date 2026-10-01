@@ -1,6 +1,6 @@
 ---
 name: verify
-description: Definition of done for skforecast changes. Lints the changed files, runs only the tests affected by the change, and checks the AI context files, release notes and hooks when those areas changed. Use before reporting any code, test or docs change as finished, and before opening a pull request. Never runs the full test suite (CI does).
+description: Definition of done for skforecast changes. Lints the changed files, runs only the tests affected by the change, and checks the AI context files, release notes and hooks when those areas changed. Use before reporting any code, test or docs change as finished, and before opening a pull request. Never runs the full test suite.
 ---
 
 # Verify the current change
@@ -37,7 +37,7 @@ Fix the issues introduced by the change. Pre-existing findings in touched files 
 Map each changed module to its tests and run them sequentially with `-q` (never `-n`, never the full suite):
 
 - `skforecast/<pkg>/_<module>.py` → `skforecast/<pkg>/tests/tests_<module>/` (for example `recursive/_forecaster_recursive.py` → `recursive/tests/tests_forecaster_recursive/`). Run first the `test_<method>.py` files of the methods touched, with `-x`, then the whole `tests_<module>/` folder once.
-- A shared helper (`skforecast/utils/`, `skforecast/model_selection/_utils.py`, `base/`) is used by many forecasters: run its own tests plus the tests of the main callers you changed behavior for; leave the rest to CI.
+- A shared helper (`skforecast/utils/`, `skforecast/base/`, `skforecast/model_selection/_utils.py`, `skforecast/preprocessing/`) is used by many forecasters: run its own tests plus the test folders of the callers whose behavior you changed, and list in the report the packages you did not run. If the change is broad enough to need the full suite, say so and let the user decide; do not launch it.
 - Changed test files → those files.
 
 ```bash
@@ -53,4 +53,4 @@ pytest <paths> -q
 
 ## 5. Report
 
-A short list: each step, the command, pass or fail, and the number of tests run. Mention anything skipped and why, and remind that the full suite runs in CI on the pull request.
+A short list: each step, the command, pass or fail, and the number of tests run. Mention anything skipped and why, including the packages not covered by the tests you ran.

@@ -9,15 +9,16 @@ Before writing or updating tests, read `.github/instructions/testing.instruction
 
 ## How much to run
 
-The suite has more than 6000 tests; collecting all of them alone takes about 30 seconds, while a single test file usually runs in a few seconds. Never run the whole suite locally: CI runs it on every pull request to `main` and to release branches (`*.x`), on 3 operating systems and 5 Python versions.
+The suite has more than 6000 tests; collecting all of them alone takes about 30 seconds, while a single test file usually runs in a few seconds. CI runs the full suite only on the pull request of each release to `main`, so on feature branches the tests you run are the safety net: run the right ones, once, and say what you did not cover.
 
-1. While iterating: only the test files of the code you changed, stopping at the first failure. After a fix, rerun only what failed.
+1. While iterating: only the test files of the methods you changed, stopping at the first failure. After a fix, rerun only what failed.
    ```bash
    pytest skforecast/recursive/tests/tests_forecaster_recursive/test_predict.py -x -q
    pytest skforecast/recursive/tests/tests_forecaster_recursive/ -q --lf
    ```
-2. Once, before opening a pull request: the test package of each subpackage you touched (e.g. `pytest skforecast/recursive/tests -q`).
-3. To run the full suite on a branch without opening a PR, trigger CI instead: `gh workflow run unit-tests.yml --ref <branch>`.
+2. Once, when the change is done (`verify` skill): the test folder of each module you touched (`skforecast/<pkg>/tests/tests_<module>/`).
+3. Shared code (`skforecast/utils/`, `skforecast/base/`, `skforecast/model_selection/_utils.py`, `skforecast/preprocessing/`): also run the test folders of the callers whose behavior you changed, and list the packages you did not run in the report.
+4. Never launch the full suite on your own. If you think it is needed (broad refactor, dependency change), say so and let the user decide.
 
 ## Rules
 
