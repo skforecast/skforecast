@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
     - main
+    - '*.x'
   workflow_dispatch:
 
 concurrency:
@@ -72,7 +73,7 @@ jobs:
       run: |
         if [[ "$RUNNER_OS" == "macOS" ]]; then
           echo "Skipping deep_learning tests on macOS due to MPS issues"
-          pytest --ignore=skforecast/deep_learning
+          pytest -vv --ignore=skforecast/deep_learning
         else
-          pytest
+          pytest -vv
         fi

@@ -90,6 +90,17 @@ AUTOGEN_NOTICE_IDE = textwrap.dedent("""\
 
 """)
 
+# Separator between the contributor header and the API reference in the IDE
+# files. Kept out of ai_context_header.md so CLAUDE.md can import the header alone.
+IDE_API_SEPARATOR = textwrap.dedent("""\
+    ---
+
+    # Skforecast: Complete API & Workflow Reference
+
+    (The content below is the full `llms-base.txt` and applies to any user of skforecast)
+
+""")
+
 AUTOGEN_NOTICE_FULL = textwrap.dedent("""\
     <!-- AUTO-GENERATED FILE. DO NOT EDIT MANUALLY. -->
     <!-- Source: tools/ai/llms-base.txt + skills/ -->
@@ -710,8 +721,13 @@ def build_llms_full(llms_base_txt: str) -> str:
 
 
 def build_ide_content(header: str, llms_base_txt: str) -> str:
-    """Build IDE context file = notice + header + llms-base.txt."""
-    return AUTOGEN_NOTICE_IDE + header.rstrip("\n") + "\n\n" + llms_base_txt.rstrip("\n") + "\n"
+    """Build IDE context file = notice + header + separator + llms-base.txt."""
+    return (
+        AUTOGEN_NOTICE_IDE
+        + header.rstrip("\n") + "\n\n"
+        + IDE_API_SEPARATOR
+        + llms_base_txt.rstrip("\n") + "\n"
+    )
 
 
 # ---------------------------------------------------------------------------

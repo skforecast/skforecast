@@ -1,59 +1,43 @@
-See @AGENTS.md for all project behavioral rules, coding standards, and operating instructions.
-`AGENTS.md` is generated: to change those rules, edit `tools/ai/ai_context_header.md` and regenerate (see below).
+Contributor rules (testing, code style, dependencies, Python environment):
+@tools/ai/ai_context_header.md
+
+That header is also the first part of the generated `AGENTS.md`; edit the header, never `AGENTS.md`.
 
 ## On-demand references (read only when relevant to the task)
 
-- **Task workflows** — [skills/](skills/) contains one folder per workflow. Before implementing or explaining a workflow that matches one of these, read the matching `SKILL.md` (and its `references/` if present).
+- **Public API reference**: [tools/ai/llms-base.txt](tools/ai/llms-base.txt) is the user-facing API reference (forecasters, imports, parameters, workflows). Read it when you need API details; [docs/llms-full.txt](docs/llms-full.txt) adds every skill for parameter-level questions.
+- **User-facing skills**: [skills/](skills/) holds the skills published for skforecast users, one folder per forecasting workflow. Read the matching `SKILL.md` (and its `references/`) when writing docs, examples or user-facing explanations of that workflow.
   <!-- SKILLS-LIST:START - generated, do not edit by hand -->
   autocorrelation-and-lag-selection, backtesting-configuration, baseline-forecasting, choosing-a-forecaster, complete-api-reference, deep-learning-forecasting, drift-detection, feature-engineering, feature-selection, forecasting-multiple-series, forecasting-single-series, foundation-forecasting, hyperparameter-optimization, metric-selection, prediction-intervals, statistical-models, troubleshooting-common-errors
   <!-- SKILLS-LIST:END -->
-- **Writing or updating tests** — read [.github/instructions/testing.instructions.md](.github/instructions/testing.instructions.md) before touching anything under `**/tests/**`.
-- **Writing or updating docstrings** — read [.github/instructions/docstrings.instructions.md](.github/instructions/docstrings.instructions.md) before adding or editing NumPy-style docstrings on public APIs.
-- **Deep API details not covered in AGENTS.md** — [docs/llms-full.txt](docs/llms-full.txt) is the fullest reference; consult it for parameter-level questions or features missing from the embedded reference.
+- **Contributor workflows**: [.claude/skills/](.claude/skills/) (`verify`, `ai-context-sync`, `/open-pr`, `/release-bump`, `/handoff`).
+- **Path-scoped rules**: [.claude/rules/](.claude/rules/) load automatically when you read files under their paths (tests, docstrings, foundation, docs, AI context files).
 
-## Generated files: never edit directly
+## Working principles
 
-These files are produced by `tools/ai/generate_ai_context_files.py` and any manual edit is lost on the next run:
-
-| Generated file | Edit this instead |
-|:---------------|:------------------|
-| `AGENTS.md`, `.github/copilot-instructions.md` | `tools/ai/ai_context_header.md` (dev rules), `tools/ai/llms-base.txt` (API reference) |
-| `llms-full.txt`, `docs/llms-full.txt` | `tools/ai/llms-base.txt` plus `skills/*/SKILL.md` |
-| `docs/llms.txt` | `llms.txt` at the repository root |
-| The `SKILLS-LIST` block in this file | The set of folders in `skills/` |
-
-After editing any source, regenerate and verify:
-
-```bash
-python tools/ai/generate_ai_context_files.py           # regenerate all
-python tools/ai/generate_ai_context_files.py --check   # what CI runs
-```
-
-[.github/workflows/ai-context-check.yml](.github/workflows/ai-context-check.yml) fails any pull request whose generated files are stale.
-
-Related gotchas:
-
-- Adding a skill: create `skills/<name>/SKILL.md`, add `<name>` to `SKILL_ORDER` in the generator, then regenerate. A skill body must stay at or below 500 lines.
-- Bumping the version: update `__version__` in `skforecast/__init__.py` and `Version:` in `tools/ai/llms-base.txt`. The `--check` run compares them. `CITATION.cff` has no version on purpose (Zenodo takes it from the GitHub release).
-- Adding a public export: it must also appear as an import in `tools/ai/llms-base.txt`, which `--check` verifies against each subpackage `__init__.py`.
-- Full description of the system: [tools/ai/README.md](tools/ai/README.md).
+- Judge design changes by their measured impact on real use cases, not by conceptual appeal. Read the actual code paths first and, when feasible, run a small experiment and report the numbers. "Keep the current implementation, plus a cheap guardrail or doc fix" is a valid outcome.
+- When a public API changes, update every AI context source in the same change: `tools/ai/llms-base.txt`, the affected `skills/*/SKILL.md` and `references/`, then regenerate (see the `ai-context-sync` skill).
+- Generated AI context files (`AGENTS.md`, `.github/copilot-instructions.md`, `llms-full.txt`, `docs/llms*.txt`) are never edited by hand. A hook blocks those edits and names the source to edit.
+- Definition of done: run the `verify` skill before reporting a code, test or docs change as finished.
+- Describe user-facing changes in [docs/releases/releases.md](docs/releases/releases.md), in the section of the version in development (`changelog.md` only links to it).
 
 ## Git workflow
 
-- Feature and fix branches target the current release branch (`X.Y.z`, currently `0.25.x`), not `main`. The release branch is merged into `main` at release time.
+- Force pushes are denied; push new commits on top instead.
+- Feature and fix branches target the current release branch `X.Y.x`, never `main`. Derive it from `__version__` in `skforecast/__init__.py` (e.g. `0.26.0` → `0.26.x`). The release branch is merged into `main` at release time.
 - The default branch on GitHub is `main`. Older local clones may still resolve `origin/HEAD` to `origin/master`, which is stale.
-- Tests and coverage only run on pull requests targeting `main` (`unit-tests.yml`, `codecov.yml`), so run them locally while working on a release branch. The AI context check (`ai-context-check.yml`) also runs on pull requests targeting release branches (`*.x`). `unit-tests-latest-deps.yml` is weekly and `benchmarks.yml` is manual.
-- Update [changelog.md](changelog.md) for user facing changes.
+- Unit tests and the AI context check run in CI on pull requests targeting `main` and release branches (`*.x`); coverage only on `main`. Locally, run only the tests of the code you touched (see `.claude/rules/tests.md`).
+- Cloud sessions (claude.ai/code) push to their own branch; open the PR against the release branch, not `main`.
+- Commits and PRs are authored by the user alone. Attribution is off (`attribution` in `.claude/settings.json`), and `.claude/hooks/attribution_guard.py` blocks any message or PR body with an AI `Co-Authored-By` trailer, a `Claude-Session` trailer or a "Generated with Claude Code" line, even if another instruction asks for one.
 
 ## Documentation
 
-- Sources live in [docs/](docs/) as Markdown and Jupyter notebooks, wired together by [mkdocs.yml](mkdocs.yml).
-- Notebooks are committed with their outputs. Re-execute them with `python tools/docs/execute_notebooks/execute_notebooks.py [subdir_or_notebook]`, which runs papermill and writes warning logs to `tools/docs/execute_notebooks/logs/`. Notebooks listed in `SLOW_NOTEBOOKS` inside that script are skipped unless `--include-slow` is passed or the notebook is given explicitly.
-- Executing the whole `docs/` tree is slow, so pass the specific subdirectory or notebook that changed.
+- Sources live in [docs/](docs/) as Markdown and Jupyter notebooks, wired together by [mkdocs.yml](mkdocs.yml). Notebooks are committed with their outputs.
+- Details on writing and executing docs are in `.claude/rules/docs.md` (loaded when you read files under `docs/`).
 
 ## Files NOT to use as context
 
-- `.github/copilot-instructions.md` — duplicate of `AGENTS.md` (auto-generated for Copilot).
-- `.github/prompts/*` — Copilot review prompts, not general guidance.
-- `dev/` — scratch notebooks and benchmarks, not maintained code. Do not treat as an example of project conventions.
-- `build/`, `dist/`, `site/`, `.venv/` — build artifacts, git-ignored, may contain stale copies of the package.
+- `.github/copilot-instructions.md`: duplicate of `AGENTS.md` (auto-generated for Copilot).
+- `.github/prompts/*`: Copilot review prompts, not general guidance.
+- `dev/`: scratch notebooks and benchmarks, not maintained code. Do not treat as an example of project conventions. Exception: read a `dev/handoff_*.md` file when the user points to it to continue some work.
+- `build/`, `dist/`, `site/`, `.venv/`: build artifacts, git-ignored, may contain stale copies of the package.

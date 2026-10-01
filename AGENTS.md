@@ -9,10 +9,15 @@
 ### Testing
 
 ```bash
-pytest skforecast/recursive/tests/ -vv            # Run a specific module's tests
-pytest --cov=skforecast --cov-report=html         # Coverage report
-pytest -n auto                                    # Parallel execution (pytest-xdist)
+pytest path/to/test_file.py -x -q                 # Iterate on the touched test file
+pytest path/to/tests/ -q --lf                     # Rerun only the last failures
+pytest skforecast/recursive/tests -q              # Touched subpackage, once before a PR
 ```
+
+The full suite (6000+ tests) runs in CI on every pull request to `main` and to
+release branches (`*.x`); do not run it locally. Run tests sequentially: do not
+use `-n` (pytest-xdist), it saturates the machine and some search tests write
+output files that collide in parallel runs.
 
 Markers: `@pytest.mark.slow` for long-running tests (skip with `-m "not slow"`).
 
@@ -25,6 +30,14 @@ Markers: `@pytest.mark.slow` for long-running tests (skip with `-m "not slow"`).
 - Relative imports within package
 - When generating code comments, docstrings, and documentation, do not use en dashes (–), or em dashes (—). Use commas, colons, semicolons, or parentheses for punctuation instead.
 
+### Commits and pull requests
+
+Commits and pull requests carry only the author's identity: no
+`Co-Authored-By` trailer for an AI agent, no session link trailer, no
+"Generated with" line and no mention of the AI assistant in the message. The
+author identity comes from git config or `GIT_AUTHOR_*` and `GIT_COMMITTER_*`;
+do not override it.
+
 ### Dependencies
 
 Core: numpy>=1.26, pandas>=2.1,<3.0, scikit-learn>=1.4, scipy>=1.12, optuna>=4.0, joblib>=1.3, numba>=0.59, tqdm>=4.66, rich>=13.9
@@ -32,14 +45,17 @@ Optional: statsmodels>=0.13,<0.15 (stats), matplotlib>=3.7,<3.11 (plotting), ker
 
 ### Python environment
 
-Environments are managed with conda. Run every Python command (tests, scripts,
-notebooks, `pip install`, etc.) in the conda environment that is currently
-active. Do not run `conda env list` to ask which environment to use, and do not
-use the `.venv` directory at the repository root.
+Local machines: environments are managed with conda. Run every Python command
+(tests, scripts, notebooks, `pip install`, etc.) in the conda environment that
+is currently active. Do not run `conda env list` to ask which environment to
+use, and do not use the `.venv` directory at the repository root. If the shell
+does not inherit the active environment (`$CONDA_DEFAULT_ENV` is empty), source
+your shell profile first, or call the interpreter through `conda run -n <env>`.
 
-If the shell does not inherit the active environment (`$CONDA_DEFAULT_ENV` is
-empty), source the user profile first (`source ~/.zshrc`), or call the
-interpreter through `conda run -n <env>`.
+Cloud sessions (`CLAUDE_CODE_REMOTE=true`, e.g. claude.ai/code): there is no
+conda. A SessionStart hook installs the package with the `test` extras into a
+virtual environment outside the repository and puts it on `PATH`, so call
+`python` and `pytest` directly.
 
 ---
 
@@ -51,13 +67,13 @@ interpreter through `conda run -n <env>`.
 
 > Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models
 
-This document is for skforecast v0.25.0+. If you are using an older version, check the documentation at skforecast.org.
+This document is for skforecast v0.26.0+. If you are using an older version, check the documentation at skforecast.org.
 
 Skforecast is a Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. It works with any estimator compatible with the scikit-learn API (LightGBM, XGBoost, CatBoost, Keras, etc.).
 
 ## Quick Info
 
-- Version: 0.25.0
+- Version: 0.26.0
 - License: BSD-3-Clause
 - Python: 3.10, 3.11, 3.12, 3.13, 3.14
 - Repository: https://github.com/skforecast/skforecast
@@ -748,5 +764,5 @@ show_datasets_info()
 ## Citation
 
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.25.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, J., & Escobar Ortiz, J. skforecast [Computer software]. https://doi.org/10.5281/zenodo.8382787
 ```

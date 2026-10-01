@@ -53,4 +53,4 @@ jobs:
       env:
         KERAS_BACKEND: torch
       run: |
-        pytest
+        pytest -vv
