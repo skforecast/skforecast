@@ -17,6 +17,8 @@ python tools/docs/execute_notebooks/execute_notebooks.py [subdir_or_notebook]
 
 It runs papermill and writes warning logs to `tools/docs/execute_notebooks/logs/`. Notebooks listed in `SLOW_NOTEBOOKS` inside that script are skipped unless `--include-slow` is passed or the notebook is given explicitly. Executing the whole `docs/` tree is slow, so pass the specific subdirectory or notebook that changed.
 
+The kernel runs from the notebook's folder, where the repo is not on the path: if the environment has a regular (non-editable) install of skforecast, the notebook silently runs that version instead of the repo code. Check it with `cd docs/user_guides && python -c "import skforecast; print(skforecast.__file__)"`; if it points to `site-packages`, run `pip install -e .` or prefix the command with `PYTHONPATH=<repo root>`.
+
 ## Keep user guides simple
 
 - Write example code for the result the notebook actually produces (outputs are committed). If RFECV keeps `roll_mean_24` and `roll_mean_48`, write `RollingFeatures(stats=['mean', 'mean'], window_sizes=[24, 48])`, not a parser that handles any name.

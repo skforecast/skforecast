@@ -10,7 +10,7 @@ That header is also the first part of the generated `AGENTS.md`; edit the header
   <!-- SKILLS-LIST:START - generated, do not edit by hand -->
   autocorrelation-and-lag-selection, backtesting-configuration, baseline-forecasting, choosing-a-forecaster, complete-api-reference, deep-learning-forecasting, drift-detection, feature-engineering, feature-selection, forecasting-multiple-series, forecasting-single-series, foundation-forecasting, hyperparameter-optimization, metric-selection, prediction-intervals, statistical-models, troubleshooting-common-errors
   <!-- SKILLS-LIST:END -->
-- **Contributor workflows**: [.claude/skills/](.claude/skills/) (`verify`, `ai-context-sync`, `/open-pr`, `/release-bump`, `/handoff`).
+- **Contributor workflows**: [.claude/skills/](.claude/skills/) (`verify`, `ai-context-sync`, `/open-pr`, `/release-bump`, `/handoff`, `/review-user-guide`).
 - **Path-scoped rules**: [.claude/rules/](.claude/rules/) load automatically when you read files under their paths (tests, docstrings, foundation, docs, AI context files).
 
 ## Working principles
