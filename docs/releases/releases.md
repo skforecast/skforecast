@@ -58,6 +58,8 @@ The main changes in this release are:
 
 + <code>[select_features]</code> and <code>[select_features_multiseries]</code> now sample the records without replacement and keep them in their original order. Previously they were sampled with replacement (around 22% of the sampled rows were duplicates with `subsample=0.5`), so selectors with internal cross-validation, such as `RFECV` or `SequentialFeatureSelector`, could see the same record in train and validation. In <code>[select_features]</code>, because of the time order, a `TimeSeriesSplit` can now be used as the `cv` of the selector (in <code>[select_features_multiseries]</code> the series are stacked one after another, so it does not give a temporal validation). The selected features for a given `random_state` may differ from previous versions.
 
++ The foundation model adapters share a private base class, `_AdapterBase` (`skforecast/foundation/_adapter_base.py`), that declares the contract <code>[FoundationModel]</code> relies on: the capability class attributes and the `fit`, `predict`, `get_params` and `set_params` methods. An adapter that does not declare one of the capability attributes in its own class body now raises a `TypeError` when the class is defined, instead of failing later in `get_model_info` or at predict time. Behavior is unchanged.
+
 
 **Fixed**
 

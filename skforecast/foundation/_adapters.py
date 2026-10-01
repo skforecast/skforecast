@@ -17,6 +17,7 @@ import pandas as pd
 import warnings
 
 from ..utils import expand_index
+from ._adapter_base import _AdapterBase
 from ._utils import (
     _validate_positive_int,
     _validate_model_id_prefix,
@@ -60,7 +61,7 @@ def _resolve_torch_device(device: str) -> str:
     return "cpu"
 
 
-class ChronosAdapter:
+class ChronosAdapter(_AdapterBase):
     """
     Adapter for Amazon Chronos-2 foundation models.
 
@@ -310,11 +311,7 @@ class ChronosAdapter:
 
         """
 
-        self.context_ = context
-        self.context_exog_ = context_exog
-        self.is_fitted = True
-
-        return self
+        return self._fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
@@ -553,7 +550,7 @@ def _import_timesfm(adapter_cls: type) -> Any:
     return timesfm
 
 
-class TimesFM25Adapter:
+class TimesFM25Adapter(_AdapterBase):
     """
     Adapter for Google TimesFM 2.5 foundation models.
 
@@ -823,11 +820,7 @@ class TimesFM25Adapter:
 
         """
 
-        self.context_ = context
-        self.context_exog_ = context_exog
-        self.is_fitted = True
-
-        return self
+        return self._fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
@@ -1003,7 +996,7 @@ class TimesFM25Adapter:
         )
 
 
-class TimesFM3Adapter:
+class TimesFM3Adapter(_AdapterBase):
     """
     Adapter for Google TimesFM 3.0 foundation models.
 
@@ -1310,11 +1303,7 @@ class TimesFM3Adapter:
 
         """
 
-        self.context_ = context
-        self.context_exog_ = context_exog
-        self.is_fitted = True
-
-        return self
+        return self._fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
@@ -1689,7 +1678,7 @@ class TimesFM3Adapter:
         )
 
 
-class MoiraiAdapter:
+class MoiraiAdapter(_AdapterBase):
     """
     Adapter for Salesforce Moirai foundation models.
 
@@ -1902,10 +1891,9 @@ class MoiraiAdapter:
 
         """
 
-        self.context_ = context
-        self.is_fitted = True
-
-        return self
+        # Moirai ignores covariates: `context_exog_` stays None so that
+        # `predict` does not warn about exog that was never used.
+        return self._fit(context=context, context_exog=None)
 
     def predict(
         self,
@@ -2084,7 +2072,7 @@ class MoiraiAdapter:
         return raw
 
 
-class TabICLAdapter:
+class TabICLAdapter(_AdapterBase):
     """
     Adapter for TabICL zero-shot time-series foundation models.
 
@@ -2368,11 +2356,7 @@ class TabICLAdapter:
 
         """
 
-        self.context_      = context
-        self.context_exog_ = context_exog
-        self.is_fitted     = True
-
-        return self
+        return self._fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
@@ -2693,7 +2677,7 @@ class TabICLAdapter:
         return future_df
 
 
-class TabPFNAdapter:
+class TabPFNAdapter(_AdapterBase):
     """
     Adapter for Prior Labs TabPFN-TS zero-shot time-series foundation models.
 
@@ -3011,11 +2995,7 @@ class TabPFNAdapter:
 
         """
 
-        self.context_      = context
-        self.context_exog_ = context_exog
-        self.is_fitted     = True
-
-        return self
+        return self._fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
@@ -3345,7 +3325,7 @@ class TabPFNAdapter:
         return future_df
 
 
-class T0Adapter:
+class T0Adapter(_AdapterBase):
     """
     Adapter for The Forecasting Company T0 foundation models.
 
@@ -3570,11 +3550,7 @@ class T0Adapter:
 
         """
 
-        self.context_ = context
-        self.context_exog_ = context_exog
-        self.is_fitted = True
-
-        return self
+        return self._fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
@@ -3836,7 +3812,7 @@ class T0Adapter:
         )
 
 
-class TSICLAdapter:
+class TSICLAdapter(_AdapterBase):
     """
     Adapter for EDF Lab TS-ICL foundation model.
 
@@ -4079,11 +4055,7 @@ class TSICLAdapter:
 
         """
 
-        self.context_ = context
-        self.context_exog_ = context_exog
-        self.is_fitted = True
-
-        return self
+        return self._fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
@@ -4303,7 +4275,7 @@ class TSICLAdapter:
         return input_dict
 
 
-class NoriAdapter:
+class NoriAdapter(_AdapterBase):
     """
     Adapter for Synthefy Nori zero-shot tabular foundation models.
 
@@ -4614,11 +4586,7 @@ class NoriAdapter:
 
         """
 
-        self.context_      = context
-        self.context_exog_ = context_exog
-        self.is_fitted     = True
-
-        return self
+        return self._fit(context=context, context_exog=context_exog)
 
     def predict(
         self,

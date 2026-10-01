@@ -103,6 +103,7 @@ def test_list_adapters_every_adapter_declares_its_capabilities(adapter_cls):
     assert "SUPPORTED_QUANTILES" in vars(adapter_cls)
     quantiles = adapter_cls.SUPPORTED_QUANTILES
     assert quantiles is None or all(0 < q < 1 for q in quantiles)
+    assert quantiles is None or list(quantiles) == sorted(set(quantiles))
 
     context_length = inspect.signature(adapter_cls).parameters["context_length"]
     assert isinstance(context_length.default, int)

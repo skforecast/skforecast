@@ -211,13 +211,16 @@ def test_MoiraiAdapter_fit_output_multi_series(series_input):
 def test_MoiraiAdapter_fit_exog_ignored_silently():
     """
     Test that passing exog to fit completes successfully (exog handling is
-    done upstream by FoundationModel).
+    done upstream by FoundationModel) and that `context_exog_` is not stored,
+    so a later predict without exog does not warn about ignored covariates.
     """
     exog_df = pd.DataFrame({"feat": np.arange(50, dtype=float)}, index=y.index)
     adapter = make_adapter()
     ctx, ctx_exog = prepare_fit_args(y, exog=exog_df)
     adapter.fit(context=ctx, context_exog=ctx_exog)
     assert adapter.is_fitted is True
+    assert ctx_exog is not None
+    assert adapter.context_exog_ is None
 
 
 # ==============================================================================
