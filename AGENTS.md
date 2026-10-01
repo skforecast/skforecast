@@ -574,20 +574,20 @@ Key points:
 
 ## Feature Selection
 
-Use sklearn selectors (RFECV, SelectFromModel, etc.) to identify relevant lags, window features, and exogenous variables. Multi-series variant: `select_features_multiseries`.
+Use any selector compatible with the scikit-learn API (RFECV, SelectFromModel, etc.) to identify relevant lags, window features, exogenous variables and calendar features. Multi-series variant: `select_features_multiseries`.
 
 ```python
 from sklearn.feature_selection import RFECV
 from skforecast.feature_selection import select_features
 
-selected_lags, selected_window_features, selected_exog = select_features(
+selected_lags, selected_window_features, selected_exog, selected_calendar_features = select_features(
     forecaster=forecaster,
     selector=RFECV(estimator=RandomForestRegressor(), step=1, cv=3),
     y=y_train,
     exog=exog_train,
-    select_only=None,              # 'autoreg', 'exog', or None (all features)
+    select_only=None,              # 'autoreg', 'exog', 'calendar', a list of them, or None (all features)
     force_inclusion=None,          # Features to always include (list or regex str)
-    subsample=0.5,
+    subsample=0.5,                 # Proportion of records in (0, 1], sampled without replacement
     random_state=123,
     verbose=True
 )

@@ -288,7 +288,7 @@ Claude Code (VS Code extension, CLI and cloud sessions on claude.ai/code) reads 
 | Path-scoped rules (tests, docstrings, foundation, docs, AI context files) | `.claude/rules/*.md`, loaded when Claude reads a file matching their `paths` | Yes |
 | Permissions, env, hooks and attribution (off: commits and PRs are authored by the user alone) | `.claude/settings.json` | Yes |
 | Hooks (standard library Python) | `.claude/hooks/`: `protect_generated.py` blocks edits to generated files, `ruff_check.py` reports new ruff findings after an edit, `session_start_remote.py` installs the environment in cloud sessions, `attribution_guard.py` blocks AI attribution in commits and PRs. Tests: `python -m pytest .claude/hooks -q -p no:cacheprovider` | Yes |
-| Contributor workflows | `.claude/skills/`: `verify` (definition of done: lint, affected tests, conditional checks), `ai-context-sync`, `/open-pr`, `/release-bump`, `/handoff` (writes `dev/handoff_<slug>.md` to continue in another session) | Yes |
+| Contributor workflows | `.claude/skills/`: `verify` (definition of done: lint, affected tests, conditional checks), `ai-context-sync`, `/open-pr`, `/release-bump`, `/handoff` (writes `dev/handoff_<slug>.md` to continue in another session), `/review-user-guide` (reviews a user guide against the code and reports before editing) | Yes |
 | Machine-specific permissions | `.claude/settings.local.json` (git-ignored) | No |
 | Personal instructions for this repo | `CLAUDE.local.md` (git-ignored) | No |
 | Model, effort, attribution, permission mode | `~/.claude/settings.json` | No |

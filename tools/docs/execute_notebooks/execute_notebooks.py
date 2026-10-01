@@ -52,7 +52,6 @@ SKFORECAST_WARNING_CATEGORIES = {
 
 # Notebooks to exclude (by name or relative path within docs/)
 EXCLUDE_NOTEBOOKS = [
-    "user_guides/feature-selection.ipynb",  # Too long
     "user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb", 
     "user_guides/foundation-forecasting-models.ipynb",  # Specific environment
     "user_guides/foundation-forecasting-with-heterogeneous-series.ipynb",  # Specific environment
@@ -67,6 +66,7 @@ EXCLUDE_NOTEBOOKS = [
 # They are skipped when scanning directories unless ``--include-slow`` is passed.
 # A slow notebook given explicitly as a file target is always executed.
 SLOW_NOTEBOOKS = [
+    "user_guides/feature-selection.ipynb",  # ~7 min
     "user_guides/probabilistic-forecasting-quantile-regression.ipynb",  # ~9 min
     "user_guides/stacking-ensemble-models-forecasting.ipynb",  # ~3 min
 

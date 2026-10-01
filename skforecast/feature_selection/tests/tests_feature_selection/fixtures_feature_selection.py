@@ -780,3 +780,17 @@ series_wide_datetime = pd.DataFrame(
     index = pd.date_range(start='2020-01-01', periods=500, freq=freq)
 )
 series_dict_datetime = series_wide_datetime.copy().to_dict(orient='series')
+
+
+class SelectorAllFeatures:
+    """
+    Selector compatible with the scikit-learn API that keeps every feature. It
+    stores the matrix passed to `fit` and returns the feature names as `np.str_`.
+    """
+
+    def fit(self, X, y):
+        self.X_fit_ = X
+        return self
+
+    def get_feature_names_out(self):
+        return np.array(self.X_fit_.columns, dtype=str)

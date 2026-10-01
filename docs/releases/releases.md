@@ -56,6 +56,8 @@ The main changes in this release are:
 
 + The tqdm progress bars saved in the documentation notebooks are now static HTML bars with their final values (with a plain text fallback), instead of Jupyter widgets that needed require.js and a script from unpkg.com. `tools/docs/execute_notebooks/execute_notebooks.py` applies the conversion (`tools/docs/execute_notebooks/static_widgets.py`) after executing each notebook. The documentation search now also finds class names by any of their words (for example, "Recursive" finds `ForecasterRecursive`) and keeps version numbers such as 0.25.0 whole.
 
++ <code>[select_features]</code> and <code>[select_features_multiseries]</code> now sample the records without replacement and keep them in their original order. Previously they were sampled with replacement (around 22% of the sampled rows were duplicates with `subsample=0.5`), so selectors with internal cross-validation, such as `RFECV` or `SequentialFeatureSelector`, could see the same record in train and validation. In <code>[select_features]</code>, because of the time order, a `TimeSeriesSplit` can now be used as the `cv` of the selector (in <code>[select_features_multiseries]</code> the series are stacked one after another, so it does not give a temporal validation). The selected features for a given `random_state` may differ from previous versions.
+
 
 **Fixed**
 
@@ -70,6 +72,10 @@ The main changes in this release are:
 + Fixed an issue in <code>[backtesting_forecaster_multiseries]</code> where <code>[ForecasterDirectMultiVariate]</code> raised `TypeError: 'NoneType' object is not subscriptable` with `use_in_sample_residuals=False`, because only one of `out_sample_residuals_` and `out_sample_residuals_by_bin_` was restored after each `fit()` depending on `use_binned_residuals`. Both attributes are now restored.
 
 + <code>[RollingFeatures]</code> raised `TypeError: argument of type 'NoneType' is not iterable` when `kwargs_stats=None`, although `None` is accepted by the parameter validation and by the type hint. The default value of `kwargs_stats` is now `None`, which is replaced by the documented default `{'ewm': {'alpha': 0.3}}`.
+
++ The `verbose` header of <code>[select_features]</code> and <code>[select_features_multiseries]</code> is now `Feature selection (<selector name>)` instead of `Recursive feature elimination (<selector name>)`, which was wrong for selectors other than `RFE` and `RFECV`.
+
++ <code>[select_features]</code> and <code>[select_features_multiseries]</code> fitted the selector with a single record when `subsample=1` was passed as an integer. `subsample` is now always a proportion (type hint `float`), so `subsample=1` uses all the records.
 
 + Fixed an issue in <code>[Arima]</code> where the regression coefficients of the exogenous variables, the intercept and the drift were wrong whenever the model had two or more of them, for example, one exogenous variable plus the intercept (the default with `d + D = 0`) or two exogenous variables. The optimizer estimated the coefficients in the basis of the original regressors, but they were then transformed as if they had been estimated in the rotated basis used to improve numerical conditioning. In-sample fitted values were correct, but `coef_` and the predictions of `predict` and `predict_interval` were not, and could be far from the data (even negative for a positive series). The coefficients also depended on the platform, because the sign of the rotation depends on the linear algebra library. This affected <code>[ForecasterStats]</code> with an `Arima` estimator and exogenous variables, including automatic order selection (`order=None`). The coefficients now match those of `statsmodels` SARIMAX.
 
