@@ -1349,29 +1349,29 @@ def test_output_backtesting_stats_auto_arima_arar_freeze_params_False_gap_air_pa
                              'skforecast.Arar'],
             'pred': pred,
             'estimator_params': [
-                'AutoArima(1,1,0)(0,1,0)[12]', 'AutoArima(1,1,0)(0,1,0)[12]',
-                'AutoArima(1,1,0)(0,1,0)[12]', 'AutoArima(1,1,0)(0,1,0)[12]',
-                'Arar(lags=(1, 2, 12, 13))', 'Arar(lags=(1, 2, 12, 13))',
-                'Arar(lags=(1, 2, 12, 13))', 'Arar(lags=(1, 2, 12, 13))',
-                'AutoArima(1,0,0)(0,1,0)[12]', 'AutoArima(1,0,0)(0,1,0)[12]',
-                'AutoArima(1,0,0)(0,1,0)[12]', 'AutoArima(1,0,0)(0,1,0)[12]',
-                'Arar(lags=(1, 2, 12, 13))', 'Arar(lags=(1, 2, 12, 13))',
-                'Arar(lags=(1, 2, 12, 13))', 'Arar(lags=(1, 2, 12, 13))',
-                'AutoArima(3,0,0)(0,1,0)[12]', 'AutoArima(3,0,0)(0,1,0)[12]',
-                'AutoArima(3,0,0)(0,1,0)[12]', 'AutoArima(3,0,0)(0,1,0)[12]',
-                'Arar(lags=(1, 2, 9, 10))', 'Arar(lags=(1, 2, 9, 10))',
-                'Arar(lags=(1, 2, 9, 10))', 'Arar(lags=(1, 2, 9, 10))',
-                'AutoArima(3,0,0)(0,1,0)[12]', 'AutoArima(3,0,0)(0,1,0)[12]',
-                'AutoArima(3,0,0)(0,1,0)[12]', 'AutoArima(3,0,0)(0,1,0)[12]',
-                'Arar(lags=(1, 2, 10, 13))', 'Arar(lags=(1, 2, 10, 13))',
-                'Arar(lags=(1, 2, 10, 13))', 'Arar(lags=(1, 2, 10, 13))',
-                'AutoArima(1,0,0)(1,1,0)[12]', 'AutoArima(1,0,0)(1,1,0)[12]',
-                'AutoArima(1,0,0)(1,1,0)[12]', 'AutoArima(1,0,0)(1,1,0)[12]',
-                'Arar(lags=(1, 2, 9, 10))', 'Arar(lags=(1, 2, 9, 10))',
-                'Arar(lags=(1, 2, 9, 10))', 'Arar(lags=(1, 2, 9, 10))',
-                'AutoArima(1,1,0)(0,1,0)[12]', 'AutoArima(1,1,0)(0,1,0)[12]',
+                'AutoArima(1,1,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 12, 13))',
+                'AutoArima(1,1,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 12, 13))',
+                'AutoArima(1,1,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 12, 13))',
+                'AutoArima(1,1,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 12, 13))',
+                'AutoArima(1,0,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 12, 13))',
+                'AutoArima(1,0,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 12, 13))',
+                'AutoArima(1,0,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 12, 13))',
+                'AutoArima(1,0,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 12, 13))',
+                'AutoArima(3,0,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 9, 10))',
+                'AutoArima(3,0,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 9, 10))',
+                'AutoArima(3,0,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 9, 10))',
+                'AutoArima(3,0,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 9, 10))',
+                'AutoArima(3,0,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 10, 13))',
+                'AutoArima(3,0,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 10, 13))',
+                'AutoArima(3,0,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 10, 13))',
+                'AutoArima(3,0,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 10, 13))',
+                'AutoArima(1,0,0)(1,1,0)[12]', 'Arar(lags=(1, 2, 9, 10))',
+                'AutoArima(1,0,0)(1,1,0)[12]', 'Arar(lags=(1, 2, 9, 10))',
+                'AutoArima(1,0,0)(1,1,0)[12]', 'Arar(lags=(1, 2, 9, 10))',
+                'AutoArima(1,0,0)(1,1,0)[12]', 'Arar(lags=(1, 2, 9, 10))',
                 'AutoArima(1,1,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 9, 10))',
-                'Arar(lags=(1, 2, 9, 10))', 'Arar(lags=(1, 2, 9, 10))'
+                'AutoArima(1,1,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 9, 10))',
+                'AutoArima(1,1,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 9, 10))'
             ]
         },
         index = pd.Index([121, 121, 122, 122, 123, 123, 124, 124, 125, 125, 126, 126, 127, 127,
@@ -1382,6 +1382,64 @@ def test_output_backtesting_stats_auto_arima_arar_freeze_params_False_gap_air_pa
 
     pd.testing.assert_frame_equal(expected_metric, metric, rtol=0.01)
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, rtol=0.01)
+
+
+@pytest.mark.parametrize(
+    "freeze_params",
+    [True, False],
+    ids=lambda freeze: f'freeze_params: {freeze}'
+)
+def test_output_backtesting_stats_single_estimator_gap_no_interval(freeze_params):
+    """
+    Test output of backtesting_stats with a single estimator, gap > 0 and no
+    interval. In this case `predict` returns a pandas Series, so the gap must
+    be removed without column indexing. Predictions are compared with a
+    manual fit and predict of each fold.
+    """
+    forecaster = ForecasterStats(estimator=Arima(order=(1, 1, 0)))
+    cv = TimeSeriesFold(
+             steps                 = 4,
+             initial_train_size    = len(air_passengers) - 25,
+             refit                 = True,
+             gap                   = 2,
+             allow_incomplete_fold = True
+         )
+
+    metric, backtest_predictions = backtesting_stats(
+                                        forecaster        = forecaster,
+                                        y                 = air_passengers,
+                                        cv                = cv,
+                                        metric            = 'mean_absolute_error',
+                                        freeze_params     = freeze_params,
+                                        n_jobs            = 1,
+                                        show_progress     = False,
+                                        suppress_warnings = True
+                                   )
+
+    cv.set_params({'window_size': 1, 'verbose': False})
+    expected_preds = []
+    for fold in cv.split(X=air_passengers, as_pandas=False):
+        train_iloc_start, train_iloc_end = fold[1]
+        test_iloc_start, test_iloc_end = fold[3]
+        forecaster_fold = ForecasterStats(estimator=Arima(order=(1, 1, 0)))
+        forecaster_fold.fit(y=air_passengers.iloc[train_iloc_start:train_iloc_end])
+        pred = forecaster_fold.predict(steps=test_iloc_end - test_iloc_start)
+        expected_preds.append(pred.iloc[2:].to_frame().assign(fold=fold[0]))
+    expected_preds = pd.concat(expected_preds)[['fold', 'pred']]
+    if not freeze_params:
+        expected_preds['estimator_params'] = 'Arima(1,1,0)'
+
+    expected_metric = pd.DataFrame({
+        'mean_absolute_error': [
+            np.mean(np.abs(
+                air_passengers.loc[expected_preds.index] - expected_preds['pred']
+            ))
+        ]
+    })
+
+    assert backtest_predictions.shape[0] == 23
+    pd.testing.assert_frame_equal(expected_preds, backtest_predictions)
+    pd.testing.assert_frame_equal(expected_metric, metric)
 
 
 @pytest.mark.parametrize(
