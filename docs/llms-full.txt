@@ -3687,7 +3687,7 @@ cv = TimeSeriesFold(
     refit=False,
 )
 
-# Define search space as a function — lags CAN be included here
+# Define search space as a function: lags CAN be included here
 def search_space(trial):
     return {
         'lags': trial.suggest_categorical('lags', [12, 24, [1, 2, 3, 23, 24]]),
@@ -3848,7 +3848,7 @@ forecaster = ForecasterFoundation(
     estimator=FoundationModel(model_id='autogluon/chronos-2-small', device_map='auto')
 )
 
-# TimeSeriesFold only — OneStepAheadFold raises TypeError
+# TimeSeriesFold only: OneStepAheadFold raises TypeError
 cv = TimeSeriesFold(steps=24, initial_train_size=len(series) - 200, refit=False)
 
 def search_space(trial):
@@ -3881,7 +3881,7 @@ skill (`references/adapter-parameters.md`).
 ```python
 from skforecast.model_selection import OneStepAheadFold
 
-# Much faster than TimeSeriesFold — no recursive predictions needed
+# Much faster than TimeSeriesFold: no recursive predictions needed
 cv_fast = OneStepAheadFold(
     initial_train_size=len(data) - 100,
 )
@@ -3901,10 +3901,11 @@ results, study = bayesian_search_forecaster(
 ## Common Mistakes
 
 1. **Not setting `return_best=True`**: The forecaster is not updated with the best parameters unless this is True.
-2. **Too few trials in Bayesian search**: Start with at least 20-50 trials for meaningful exploration.
+2. **Too few trials in Bayesian search**: Start with at least 20-50 trials for meaningful exploration. A small search may not beat the default configuration on the test set, because the configuration is chosen on the validation period, which can differ from the test period.
 3. **Using TimeSeriesFold for initial tuning**: Use `OneStepAheadFold` first for fast screening, then validate the top candidates with `TimeSeriesFold`.
-4. **Forgetting to include lags in search space**: For Bayesian search, lags can be included in `search_space()` — this is often the most impactful parameter.
+4. **Forgetting to include lags in search space**: For Bayesian search, lags can be included in `search_space()`; this is often the most impactful parameter.
 5. **Putting `lags` in a foundation `search_space`**: `bayesian_search_foundation` has no lag concept; any key that is not an adapter parameter raises `ValueError`.
+6. **Passing the test set to the search**: give the search only the training and validation data (e.g. `y=data.loc[:end_validation]`). With `return_best=True` the forecaster is refitted on everything the search receives, so keep the test set out and evaluate the refitted forecaster with `backtesting_forecaster` on it.
 
 ## References
 
@@ -4549,7 +4550,7 @@ forecaster = ForecasterStats(
 )
 forecaster.fit(y=y_train)
 
-# Uses parametric intervals from statsmodels — different interface
+# Uses parametric intervals from statsmodels: different interface
 predictions = forecaster.predict_interval(
     steps=12,
     interval=[0.1, 0.9],       # Quantiles → 80% interval. Equivalently, alpha=0.2
@@ -4558,7 +4559,7 @@ predictions = forecaster.predict_interval(
 
 ## Foundation Model Intervals
 
-`ForecasterFoundation` returns intervals and quantiles directly from the underlying foundation model's native quantile output — no bootstrapping or conformal calibration required.
+`ForecasterFoundation` returns intervals and quantiles directly from the underlying foundation model's native quantile output, so no bootstrapping or conformal calibration is required.
 
 ```python
 from skforecast.foundation import FoundationModel, ForecasterFoundation
@@ -4662,7 +4663,7 @@ DirectMultiVariate), two richer probabilistic outputs build on the same residual
 resampling:
 
 ```python
-# Arbitrary quantiles — returns one column per quantile (q_0.05, q_0.5, q_0.95)
+# Arbitrary quantiles: returns one column per quantile (q_0.05, q_0.5, q_0.95)
 predictions = forecaster.predict_quantiles(
     steps=10,
     quantiles=[0.05, 0.5, 0.95],
@@ -4688,6 +4689,7 @@ See [references/interval-compatibility.md](references/interval-compatibility.md)
 3. **Wrong default method for multi-series**: `ForecasterRecursiveMultiSeries` and `ForecasterDirectMultiVariate` default to `method='conformal'`, not `'bootstrapping'`.
 4. **Mixing `alpha` and `interval`**: `ForecasterStats` supports both `alpha` (e.g., `alpha=0.05` for 95% interval) and `interval=[lo, hi]` (quantiles). ML forecasters only support `interval`.
 5. **Not evaluating coverage**: Always check if actual coverage matches nominal interval width.
+6. **Ignoring physical bounds**: neither the model nor the intervals know that a series cannot be negative (counts, sales, demand), so predictions and lower bounds can fall below zero. Clip them after predicting, e.g. `predictions.clip(lower=0)`. See the FAQ [Non-negative predictions](https://skforecast.org/latest/faq/non-negative-predictions.html).
 
 ## References
 
