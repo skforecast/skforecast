@@ -122,7 +122,7 @@ forecaster = ForecasterStats(
 )
 forecaster.fit(y=y_train)
 
-# Uses parametric intervals from statsmodels — different interface
+# Uses parametric intervals from statsmodels: different interface
 predictions = forecaster.predict_interval(
     steps=12,
     interval=[0.1, 0.9],       # Quantiles → 80% interval. Equivalently, alpha=0.2
@@ -131,7 +131,7 @@ predictions = forecaster.predict_interval(
 
 ## Foundation Model Intervals
 
-`ForecasterFoundation` returns intervals and quantiles directly from the underlying foundation model's native quantile output — no bootstrapping or conformal calibration required.
+`ForecasterFoundation` returns intervals and quantiles directly from the underlying foundation model's native quantile output, so no bootstrapping or conformal calibration is required.
 
 ```python
 from skforecast.foundation import FoundationModel, ForecasterFoundation
@@ -235,7 +235,7 @@ DirectMultiVariate), two richer probabilistic outputs build on the same residual
 resampling:
 
 ```python
-# Arbitrary quantiles — returns one column per quantile (q_0.05, q_0.5, q_0.95)
+# Arbitrary quantiles: returns one column per quantile (q_0.05, q_0.5, q_0.95)
 predictions = forecaster.predict_quantiles(
     steps=10,
     quantiles=[0.05, 0.5, 0.95],
@@ -261,6 +261,7 @@ See [references/interval-compatibility.md](references/interval-compatibility.md)
 3. **Wrong default method for multi-series**: `ForecasterRecursiveMultiSeries` and `ForecasterDirectMultiVariate` default to `method='conformal'`, not `'bootstrapping'`.
 4. **Mixing `alpha` and `interval`**: `ForecasterStats` supports both `alpha` (e.g., `alpha=0.05` for 95% interval) and `interval=[lo, hi]` (quantiles). ML forecasters only support `interval`.
 5. **Not evaluating coverage**: Always check if actual coverage matches nominal interval width.
+6. **Ignoring physical bounds**: neither the model nor the intervals know that a series cannot be negative (counts, sales, demand), so predictions and lower bounds can fall below zero. Clip them after predicting, e.g. `predictions.clip(lower=0)`. See the FAQ [Non-negative predictions](https://skforecast.org/latest/faq/non-negative-predictions.html).
 
 ## References
 
