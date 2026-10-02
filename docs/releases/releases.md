@@ -58,6 +58,8 @@ The main changes in this release are:
 
 + <code>[select_features]</code> and <code>[select_features_multiseries]</code> now sample the records without replacement and keep them in their original order. Previously they were sampled with replacement (around 22% of the sampled rows were duplicates with `subsample=0.5`), so selectors with internal cross-validation, such as `RFECV` or `SequentialFeatureSelector`, could see the same record in train and validation. In <code>[select_features]</code>, because of the time order, a `TimeSeriesSplit` can now be used as the `cv` of the selector (in <code>[select_features_multiseries]</code> the series are stacked one after another, so it does not give a temporal validation). The selected features for a given `random_state` may differ from previous versions.
 
++ The foundation model adapters share a private base class, `_AdapterBase` (`skforecast/foundation/_adapter_base.py`), that declares the contract <code>[FoundationModel]</code> relies on: the capability class attributes and the `fit`, `predict`, `get_params` and `set_params` methods. An adapter that does not declare one of the capability attributes in its own class body now raises a `TypeError` when the class is defined, instead of failing later in `get_model_info` or at predict time. Behavior is unchanged.
+
 
 **Fixed**
 
@@ -66,6 +68,8 @@ The main changes in this release are:
 + <code>[FoundationModel]</code> only routes Moirai-2 checkpoints (`Salesforce/moirai-2*`) to `MoiraiAdapter`. Moirai 1.x and Moirai-MoE checkpoints were accepted when the model was created but failed when the weights were loaded, because their configurations lack arguments required by `Moirai2Module`. They now raise a `ValueError` when the model is created.
 
 + The `supports_categorical_features` tag of <code>[ForecasterFoundation]</code> was always `True`. It is now read from the adapter, and is only `True` for Chronos-2, the only backend that handles non-numeric covariates natively.
+
++ <code>[FoundationModel]</code> `fit` now ignores `exog`, with an `IgnoredArgumentWarning`, when the model does not support exogenous variables (TimesFM 2.5 and Moirai-2), as <code>[ForecasterFoundation]</code> `fit` already did. Previously, when `FoundationModel` was used directly, the exog was stored: `exog_in_` and `exog_names_in_` reported it, `context_exog_` was not `None` as documented, and with TimesFM 2.5 every later `predict` warned that the covariates were ignored. Nothing changes when using <code>[ForecasterFoundation]</code>.
 
 + Fixed an issue in <code>[backtesting_forecaster]</code> and <code>[backtesting_forecaster_multiseries]</code> where, with `refit`, `use_in_sample_residuals=False` and `use_binned_residuals=True`, the out-of-sample residuals set by the user were restored after each `fit()` but the binner that created them was not, so the intervals could be built with the residuals of a different bin. The binner and its intervals are now restored together with the residuals in every fold.
 

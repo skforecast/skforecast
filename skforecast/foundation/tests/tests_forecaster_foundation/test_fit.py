@@ -93,8 +93,9 @@ def test_fit_MissingValuesWarning_when_short_DatetimeIndex_exog_reindexed():
 
 def test_fit_issues_IgnoredArgumentWarning_when_adapter_does_not_support_exog():
     """
-    fit() issues IgnoredArgumentWarning and sets exog_in_=False when the
-    underlying adapter has allow_exog=False.
+    fit() issues IgnoredArgumentWarning, only once (the estimator does not
+    warn again), and sets exog_in_=False when the underlying adapter has
+    allow_exog=False.
     """
     forecaster = make_forecaster()
     forecaster.estimator.adapter.allow_exog = False
@@ -102,9 +103,11 @@ def test_fit_issues_IgnoredArgumentWarning_when_adapter_does_not_support_exog():
     with pytest.warns(
         IgnoredArgumentWarning,
         match="does not support exogenous variables",
-    ):
+    ) as record:
         forecaster.fit(series=y, exog=exog)
 
+    ignored = [w for w in record if issubclass(w.category, IgnoredArgumentWarning)]
+    assert len(ignored) == 1
     assert forecaster.exog_in_ is False
     assert forecaster.exog_names_in_ is None
     assert forecaster.exog_type_in_ is None

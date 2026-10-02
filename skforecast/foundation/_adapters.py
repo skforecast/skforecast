@@ -17,6 +17,7 @@ import pandas as pd
 import warnings
 
 from ..utils import expand_index
+from ._adapter_base import _AdapterBase
 from ._utils import (
     _validate_positive_int,
     _validate_model_id_prefix,
@@ -60,7 +61,7 @@ def _resolve_torch_device(device: str) -> str:
     return "cpu"
 
 
-class ChronosAdapter:
+class ChronosAdapter(_AdapterBase):
     """
     Adapter for Amazon Chronos-2 foundation models.
 
@@ -288,7 +289,7 @@ class ChronosAdapter:
     def fit(
         self,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
     ) -> ChronosAdapter:
         """
         Store the training series and optional historical exogenous variables.
@@ -310,18 +311,14 @@ class ChronosAdapter:
 
         """
 
-        self.context_ = context
-        self.context_exog_ = context_exog
-        self.is_fitted = True
-
-        return self
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
         steps: int,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None],
-        exog: dict[str, pd.DataFrame | pd.Series | None],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
         quantiles: list[float] | tuple[float] | None
     ) -> dict[str, np.ndarray]:
         """
@@ -553,7 +550,7 @@ def _import_timesfm(adapter_cls: type) -> Any:
     return timesfm
 
 
-class TimesFM25Adapter:
+class TimesFM25Adapter(_AdapterBase):
     """
     Adapter for Google TimesFM 2.5 foundation models.
 
@@ -813,9 +810,8 @@ class TimesFM25Adapter:
         context : dict pandas Series
             Normalized training series, one entry per series.
         context_exog : dict pandas DataFrame, pandas Series, or None
-            Per-series historical exogenous variables. Stored for API
-            consistency but never used, since TimesFM 2.5 does not support
-            covariates.
+            Per-series historical exogenous variables. `FoundationModel`
+            passes `None`, since TimesFM 2.5 does not support covariates.
 
         Returns
         -------
@@ -823,11 +819,7 @@ class TimesFM25Adapter:
 
         """
 
-        self.context_ = context
-        self.context_exog_ = context_exog
-        self.is_fitted = True
-
-        return self
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
@@ -1003,7 +995,7 @@ class TimesFM25Adapter:
         )
 
 
-class TimesFM3Adapter:
+class TimesFM3Adapter(_AdapterBase):
     """
     Adapter for Google TimesFM 3.0 foundation models.
 
@@ -1310,11 +1302,7 @@ class TimesFM3Adapter:
 
         """
 
-        self.context_ = context
-        self.context_exog_ = context_exog
-        self.is_fitted = True
-
-        return self
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
@@ -1689,7 +1677,7 @@ class TimesFM3Adapter:
         )
 
 
-class MoiraiAdapter:
+class MoiraiAdapter(_AdapterBase):
     """
     Adapter for Salesforce Moirai foundation models.
 
@@ -1880,10 +1868,10 @@ class MoiraiAdapter:
     def fit(
         self,
         context: dict[str, pd.Series],
-        context_exog: Any,
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
     ) -> MoiraiAdapter:
         """
-        Store the training series.
+        Store the training series and optional historical exogenous variables.
         No model training occurs since Moirai is a zero-shot inference model.
 
         All input normalization and validation is performed upstream by
@@ -1893,8 +1881,9 @@ class MoiraiAdapter:
         ----------
         context : dict pandas Series
             Normalized training series, one entry per series.
-        context_exog : Any
-            Not used, present here for API consistency by convention.
+        context_exog : dict pandas DataFrame, pandas Series, or None
+            Per-series historical exogenous variables. `FoundationModel`
+            passes `None`, since Moirai does not support covariates.
 
         Returns
         -------
@@ -1902,10 +1891,7 @@ class MoiraiAdapter:
 
         """
 
-        self.context_ = context
-        self.is_fitted = True
-
-        return self
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
@@ -2084,7 +2070,7 @@ class MoiraiAdapter:
         return raw
 
 
-class TabICLAdapter:
+class TabICLAdapter(_AdapterBase):
     """
     Adapter for TabICL zero-shot time-series foundation models.
 
@@ -2368,11 +2354,7 @@ class TabICLAdapter:
 
         """
 
-        self.context_      = context
-        self.context_exog_ = context_exog
-        self.is_fitted     = True
-
-        return self
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
@@ -2693,7 +2675,7 @@ class TabICLAdapter:
         return future_df
 
 
-class TabPFNAdapter:
+class TabPFNAdapter(_AdapterBase):
     """
     Adapter for Prior Labs TabPFN-TS zero-shot time-series foundation models.
 
@@ -3011,11 +2993,7 @@ class TabPFNAdapter:
 
         """
 
-        self.context_      = context
-        self.context_exog_ = context_exog
-        self.is_fitted     = True
-
-        return self
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
@@ -3345,7 +3323,7 @@ class TabPFNAdapter:
         return future_df
 
 
-class T0Adapter:
+class T0Adapter(_AdapterBase):
     """
     Adapter for The Forecasting Company T0 foundation models.
 
@@ -3548,7 +3526,7 @@ class T0Adapter:
     def fit(
         self,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
     ) -> T0Adapter:
         """
         Store the training series and optional historical exogenous variables.
@@ -3570,18 +3548,14 @@ class T0Adapter:
 
         """
 
-        self.context_ = context
-        self.context_exog_ = context_exog
-        self.is_fitted = True
-
-        return self
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
         steps: int,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None],
-        exog: dict[str, pd.DataFrame | pd.Series | None],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
         quantiles: list[float] | tuple[float] | None
     ) -> dict[str, np.ndarray]:
         """
@@ -3836,7 +3810,7 @@ class T0Adapter:
         )
 
 
-class TSICLAdapter:
+class TSICLAdapter(_AdapterBase):
     """
     Adapter for EDF Lab TS-ICL foundation model.
 
@@ -4057,7 +4031,7 @@ class TSICLAdapter:
     def fit(
         self,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
     ) -> TSICLAdapter:
         """
         Store the training series and optional historical exogenous variables.
@@ -4079,18 +4053,14 @@ class TSICLAdapter:
 
         """
 
-        self.context_ = context
-        self.context_exog_ = context_exog
-        self.is_fitted = True
-
-        return self
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
         steps: int,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None],
-        exog: dict[str, pd.DataFrame | pd.Series | None],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
         quantiles: list[float] | tuple[float] | None
     ) -> dict[str, np.ndarray]:
         """
@@ -4303,7 +4273,7 @@ class TSICLAdapter:
         return input_dict
 
 
-class NoriAdapter:
+class NoriAdapter(_AdapterBase):
     """
     Adapter for Synthefy Nori zero-shot tabular foundation models.
 
@@ -4614,11 +4584,7 @@ class NoriAdapter:
 
         """
 
-        self.context_      = context
-        self.context_exog_ = context_exog
-        self.is_fitted     = True
-
-        return self
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,

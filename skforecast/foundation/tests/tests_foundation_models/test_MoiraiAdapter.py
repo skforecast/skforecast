@@ -211,7 +211,7 @@ def test_MoiraiAdapter_fit_output_multi_series(series_input):
 def test_MoiraiAdapter_fit_exog_ignored_silently():
     """
     Test that passing exog to fit completes successfully (exog handling is
-    done upstream by FoundationModel).
+    done upstream by FoundationModel, which passes None to Moirai).
     """
     exog_df = pd.DataFrame({"feat": np.arange(50, dtype=float)}, index=y.index)
     adapter = make_adapter()
