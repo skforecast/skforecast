@@ -69,7 +69,7 @@ The main changes in this release are:
 
 + The `supports_categorical_features` tag of <code>[ForecasterFoundation]</code> was always `True`. It is now read from the adapter, and is only `True` for Chronos-2, the only backend that handles non-numeric covariates natively.
 
-+ <code>[FoundationModel]</code> `fit` now ignores `exog`, with an `IgnoredArgumentWarning`, when the model does not support exogenous variables (TimesFM 2.5 and Moirai-2), as <code>[ForecasterFoundation]</code> `fit` already did. Previously the exog was stored: `exog_in_` and `exog_names_in_` reported it, `context_exog_` was not `None` as documented, and with TimesFM 2.5 every later `predict` warned that the covariates were ignored, while Moirai-2 never warned.
++ <code>[FoundationModel]</code> `fit` now ignores `exog`, with an `IgnoredArgumentWarning`, when the model does not support exogenous variables (TimesFM 2.5 and Moirai-2), as <code>[ForecasterFoundation]</code> `fit` already did. Previously, when `FoundationModel` was used directly, the exog was stored: `exog_in_` and `exog_names_in_` reported it, `context_exog_` was not `None` as documented, and with TimesFM 2.5 every later `predict` warned that the covariates were ignored. Nothing changes when using <code>[ForecasterFoundation]</code>.
 
 + Fixed an issue in <code>[backtesting_forecaster]</code> and <code>[backtesting_forecaster_multiseries]</code> where, with `refit`, `use_in_sample_residuals=False` and `use_binned_residuals=True`, the out-of-sample residuals set by the user were restored after each `fit()` but the binner that created them was not, so the intervals could be built with the residuals of a different bin. The binner and its intervals are now restored together with the residuals in every fold.
 
