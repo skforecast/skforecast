@@ -49,7 +49,7 @@ pytest <paths> -q
 - Public API or AI context sources changed: follow the `ai-context-sync` skill and run `python tools/ai/generate_ai_context_files.py --check`.
 - Harness changed (`.claude/hooks/`): `python -m pytest .claude/hooks -q -p no:cacheprovider` (outside `testpaths`).
 - A documentation notebook's code changed: re-execute only that notebook with `python tools/docs/execute_notebooks/execute_notebooks.py <notebook>` and check its log in `tools/docs/execute_notebooks/logs/`.
-- User-facing change with no entry in `docs/releases/releases.md` (section of the version in development): draft one and show it to the user.
+- User-facing change with no entry in `docs/releases/releases.md` (section of the version in development): follow the `release-note` skill.
 
 ## 5. Report
 

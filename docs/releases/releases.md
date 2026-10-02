@@ -376,7 +376,7 @@ The main changes in this release are:
 
 + Fixed an issue where `out_sample_residuals_` and `out_sample_residuals_by_bin_` were not reset during `fit()`, causing stale residuals from a previous model to silently persist after refitting. ([#1123](https://github.com/skforecast/skforecast/pull/1123))
 
-+ Fixed an issue in <code>[expand_index]</code> where the original `RangeIndex.step` was not preserved when creating future indices. Previously, `step=1` was always assumed, which could lead to incorrect prediction indices. ([#1150](https://github.com/skforecast/skforecast/pull/1150))
++ Fixed an issue in <code>expand_index</code> where the original `RangeIndex.step` was not preserved when creating future indices. Previously, `step=1` was always assumed, which could lead to incorrect prediction indices. ([#1150](https://github.com/skforecast/skforecast/pull/1150))
 
 
 ## 0.20.1 <small>Feb 11, 2026</small> { id="0.20.1" }
@@ -993,7 +993,7 @@ The main changes in this release are:
 
 + New argument `aggregate_metric` in <code>[grid_search_forecaster_multiseries]</code>, <code>[random_search_forecaster_multiseries]</code> and <code>[bayesian_search_forecaster_multiseries]</code> to select the aggregation method used to combine the metric(s) of all levels during the hyperparameter search. The available methods are: mean (arithmetic mean), weighted (weighted by the number of predicted values of each level) and pool (the values of all levels are pooled and then the metric is calculated). If more than one metric and/or aggregation method is used, all are reported in the results, but the first of each is used to select the best model.
 
-+ New class <code>[DateTimeFeatureTransformer]</code> and function <code>[create_datetime_features]</code> in the <code>[preprocessing]</code> module to create datetime and calendar features from a datetime index.
++ New class <code>DateTimeFeatureTransformer</code> and function <code>create_datetime_features</code> in the <code>[preprocessing]</code> module to create datetime and calendar features from a datetime index.
 
 **Changed**
 
