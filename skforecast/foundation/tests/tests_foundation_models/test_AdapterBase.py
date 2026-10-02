@@ -49,7 +49,8 @@ def test_AdapterBase_every_registered_adapter_honors_the_contract(adapter_cls):
     created from its default model ID without the backend installed, exposes
     every constructor parameter (except the injected backend object) through
     `get_params`, survives a `set_params(**get_params())` round trip without
-    any change, and `fit` stores the context and returns the adapter.
+    any change, and `fit` stores the context and historical exog it receives
+    (FoundationModel decides what to pass) and returns the adapter.
     """
     assert issubclass(adapter_cls, _AdapterBase)
 
@@ -67,15 +68,17 @@ def test_AdapterBase_every_registered_adapter_honors_the_contract(adapter_cls):
     for name, value in state_before.items():
         assert vars(adapter)[name] is value, name
 
-    context = {
-        "s1": pd.Series(
-            np.arange(10, dtype=float),
-            index=pd.date_range("2020-01-01", periods=10, freq="D"),
-            name="s1",
-        )
+    index = pd.date_range("2020-01-01", periods=10, freq="D")
+    context = {"s1": pd.Series(np.arange(10, dtype=float), index=index, name="s1")}
+    context_exog = {
+        "s1": pd.DataFrame({"feat": np.arange(10, dtype=float)}, index=index)
     }
+
     returned = adapter.fit(context=context, context_exog=None)
     assert returned is adapter
     assert adapter.is_fitted is True
     assert adapter.context_ is context
     assert adapter.context_exog_ is None
+
+    adapter.fit(context=context, context_exog=context_exog)
+    assert adapter.context_exog_ is context_exog

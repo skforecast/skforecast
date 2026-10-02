@@ -289,7 +289,7 @@ class ChronosAdapter(_AdapterBase):
     def fit(
         self,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
     ) -> ChronosAdapter:
         """
         Store the training series and optional historical exogenous variables.
@@ -311,14 +311,14 @@ class ChronosAdapter(_AdapterBase):
 
         """
 
-        return self._fit(context=context, context_exog=context_exog)
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
         steps: int,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None],
-        exog: dict[str, pd.DataFrame | pd.Series | None],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
         quantiles: list[float] | tuple[float] | None
     ) -> dict[str, np.ndarray]:
         """
@@ -810,9 +810,8 @@ class TimesFM25Adapter(_AdapterBase):
         context : dict pandas Series
             Normalized training series, one entry per series.
         context_exog : dict pandas DataFrame, pandas Series, or None
-            Per-series historical exogenous variables. Stored for API
-            consistency but never used, since TimesFM 2.5 does not support
-            covariates.
+            Per-series historical exogenous variables. `FoundationModel`
+            passes `None`, since TimesFM 2.5 does not support covariates.
 
         Returns
         -------
@@ -820,7 +819,7 @@ class TimesFM25Adapter(_AdapterBase):
 
         """
 
-        return self._fit(context=context, context_exog=context_exog)
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
@@ -1303,7 +1302,7 @@ class TimesFM3Adapter(_AdapterBase):
 
         """
 
-        return self._fit(context=context, context_exog=context_exog)
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
@@ -1869,10 +1868,10 @@ class MoiraiAdapter(_AdapterBase):
     def fit(
         self,
         context: dict[str, pd.Series],
-        context_exog: Any,
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
     ) -> MoiraiAdapter:
         """
-        Store the training series.
+        Store the training series and optional historical exogenous variables.
         No model training occurs since Moirai is a zero-shot inference model.
 
         All input normalization and validation is performed upstream by
@@ -1882,8 +1881,9 @@ class MoiraiAdapter(_AdapterBase):
         ----------
         context : dict pandas Series
             Normalized training series, one entry per series.
-        context_exog : Any
-            Not used, present here for API consistency by convention.
+        context_exog : dict pandas DataFrame, pandas Series, or None
+            Per-series historical exogenous variables. `FoundationModel`
+            passes `None`, since Moirai does not support covariates.
 
         Returns
         -------
@@ -1891,9 +1891,7 @@ class MoiraiAdapter(_AdapterBase):
 
         """
 
-        # Moirai ignores covariates: `context_exog_` stays None so that
-        # `predict` does not warn about exog that was never used.
-        return self._fit(context=context, context_exog=None)
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
@@ -2356,7 +2354,7 @@ class TabICLAdapter(_AdapterBase):
 
         """
 
-        return self._fit(context=context, context_exog=context_exog)
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
@@ -2995,7 +2993,7 @@ class TabPFNAdapter(_AdapterBase):
 
         """
 
-        return self._fit(context=context, context_exog=context_exog)
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
@@ -3528,7 +3526,7 @@ class T0Adapter(_AdapterBase):
     def fit(
         self,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
     ) -> T0Adapter:
         """
         Store the training series and optional historical exogenous variables.
@@ -3550,14 +3548,14 @@ class T0Adapter(_AdapterBase):
 
         """
 
-        return self._fit(context=context, context_exog=context_exog)
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
         steps: int,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None],
-        exog: dict[str, pd.DataFrame | pd.Series | None],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
         quantiles: list[float] | tuple[float] | None
     ) -> dict[str, np.ndarray]:
         """
@@ -4033,7 +4031,7 @@ class TSICLAdapter(_AdapterBase):
     def fit(
         self,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
     ) -> TSICLAdapter:
         """
         Store the training series and optional historical exogenous variables.
@@ -4055,14 +4053,14 @@ class TSICLAdapter(_AdapterBase):
 
         """
 
-        return self._fit(context=context, context_exog=context_exog)
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
         steps: int,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None],
-        exog: dict[str, pd.DataFrame | pd.Series | None],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
         quantiles: list[float] | tuple[float] | None
     ) -> dict[str, np.ndarray]:
         """
@@ -4586,7 +4584,7 @@ class NoriAdapter(_AdapterBase):
 
         """
 
-        return self._fit(context=context, context_exog=context_exog)
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,

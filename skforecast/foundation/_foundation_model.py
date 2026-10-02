@@ -611,7 +611,9 @@ class FoundationModel:
             - If `dict[str, pandas Series]`: multi-series mode; keys are
             series names.
         exog : pandas Series, pandas DataFrame, dict, default None
-            Historical exogenous variables aligned to `series`.
+            Historical exogenous variables aligned to `series`. If the adapter
+            does not support exogenous variables (`allow_exog=False`), `exog`
+            is ignored and an `IgnoredArgumentWarning` is issued.
 
             - If `pandas Series` or `pandas DataFrame`: broadcast to all
             series.
@@ -622,6 +624,15 @@ class FoundationModel:
         self : FoundationModel
 
         """
+
+        if exog is not None and not self.allow_exog:
+            warnings.warn(
+                f"The model '{self.model_id}' does not support exogenous "
+                f"variables. `exog` will be ignored.",
+                IgnoredArgumentWarning,
+                stacklevel=2,
+            )
+            exog = None
 
         self.index_type_                = None
         self.index_freq_                = None

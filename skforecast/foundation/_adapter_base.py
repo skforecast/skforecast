@@ -20,8 +20,8 @@ class _AdapterBase(ABC):
     Base class for all foundation model adapters. It declares the contract
     that `FoundationModel` relies on: the class attributes listed in
     `_REQUIRED_CLASS_ATTRIBUTES`, which every adapter must define in its own
-    class body (checked when the subclass is defined), and the methods `fit`,
-    `predict`, `get_params` and `set_params`.
+    class body (checked when the subclass is defined), the abstract methods
+    `predict`, `get_params` and `set_params`, and the shared `fit`.
 
     Adapters only translate already-normalized per-series inputs into the
     backend call. Generic handling of the inputs belongs to `FoundationModel`,
@@ -58,15 +58,16 @@ class _AdapterBase(ABC):
                 f"{missing} in its class body."
             )
 
-    def _fit(
+    def fit(
         self,
         context: dict[str, pd.Series],
         context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
     ) -> _AdapterBase:
         """
         Store the training series and historical exogenous variables, and
-        mark the adapter as fitted. Shared implementation of `fit` for
-        zero-shot adapters.
+        mark the adapter as fitted. Zero-shot adapters do no training, so
+        they override `fit` only to document it and delegate here with
+        `super().fit(...)`.
 
         Parameters
         ----------
@@ -74,6 +75,8 @@ class _AdapterBase(ABC):
             Normalized training series, one entry per series.
         context_exog : dict pandas DataFrame, pandas Series, or None
             Per-series historical exogenous variables (past covariates).
+            `FoundationModel` passes `None` when no exog was given or the
+            adapter does not support exogenous variables (`allow_exog=False`).
 
         Returns
         -------
@@ -86,30 +89,6 @@ class _AdapterBase(ABC):
         self.is_fitted = True
 
         return self
-
-    @abstractmethod
-    def fit(
-        self,
-        context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-    ) -> _AdapterBase:
-        """
-        Store the training series and historical exogenous variables.
-
-        Parameters
-        ----------
-        context : dict pandas Series
-            Normalized training series, one entry per series.
-        context_exog : dict pandas DataFrame, pandas Series, or None
-            Per-series historical exogenous variables (past covariates).
-
-        Returns
-        -------
-        self : _AdapterBase
-
-        """
-
-        pass
 
     @abstractmethod
     def predict(
