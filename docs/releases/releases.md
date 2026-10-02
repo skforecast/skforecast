@@ -97,6 +97,10 @@ The main changes in this release are:
 
 + Fixed a confusing `NotImplementedError` about `last_window` raised by <code>[backtesting_stats]</code> when `refit` was an integer other than 1 (intermittent refit) and the forecaster contained estimators other than <code>[Sarimax]</code>. As with `refit=False`, `refit` is now set to `True` and an `IgnoredArgumentWarning` is issued.
 
++ Fixed an issue in <code>[backtesting_stats]</code> where a <code>[ForecasterStats]</code> with a single estimator raised `IndexingError: Too many indexers` when `gap > 0` and no prediction interval was requested (`interval=None` and `alpha=None`). In this case the predictions are a pandas Series, and the first `gap` steps were removed with DataFrame indexing. This also affected <code>[grid_search_stats]</code> and <code>[random_search_stats]</code> with a `gap`.
+
++ Fixed an issue in <code>[backtesting_stats]</code> with several estimators and `freeze_params=False`, where the `estimator_params` column was not aligned with the `estimator_id` column: the predictions alternate between estimators at every step, but the parameters were grouped by estimator, so many rows showed the parameters of another estimator. Predictions and metrics were not affected.
+
 + <code>[Ets]</code> now raises a descriptive `ValueError` when `model` is not valid, instead of `KeyError`. This includes partial automatic specifications such as `'ZZN'`, which are not supported: use `model='ZZZ'` and restrict the search with `seasonal`, `trend`, `damped`, `allow_multiplicative` and `allow_multiplicative_trend`.
 
 
