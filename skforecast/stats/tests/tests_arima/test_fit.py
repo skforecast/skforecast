@@ -1,13 +1,12 @@
 # Unit test fit method - Arima
 # ==============================================================================
-import platform
 import numpy as np
 import pandas as pd
 import re
 import pytest
 from ..._arima import Arima
 from ....exceptions import IgnoredArgumentWarning
-from .fixtures_arima import air_passengers
+from .fixtures_arima import air_passengers, tol_coef, tol_pred
 
 
 # Fixture functions
@@ -55,6 +54,23 @@ def test_arima_fit_multidimensional_y_raises():
     y = np.random.randn(50, 2)
     model = Arima(order=(1, 0, 0))
     msg = "`y` must be 1-dimensional."
+    with pytest.raises(ValueError, match=msg):
+        model.fit(y)
+
+
+@pytest.mark.parametrize(
+    "order, fit_intercept",
+    [((1, 0, 0), True), ((1, 0, 0), False), ((0, 1, 0), True)],
+    ids=lambda x: f"{x}"
+)
+def test_arima_fit_ValueError_when_y_is_empty(order, fit_intercept):
+    """
+    Test that fit raises the same ValueError for an empty series with and
+    without intercept (it used to raise an unrelated TypeError with intercept).
+    """
+    y = np.array([], dtype=float)
+    model = Arima(order=order, fit_intercept=fit_intercept)
+    msg = "Too few non-missing observations"
     with pytest.raises(ValueError, match=msg):
         model.fit(y)
 
@@ -313,17 +329,11 @@ def test_arima_fit_method_css():
     model = Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0), method="CSS")
     model.fit(y)
     
-    # Check exact coefficients
-    if platform.system() == 'Darwin':
-        expected_coef = np.array([0.66519091, 0.10578615, -0.17749671])
-        expected_sigma2 = 0.597459948833307
-    else:
-        expected_coef = np.array([0.6651909069893525, 0.10578612974450272, -0.17749673261063734])
-        expected_sigma2 = 0.597459948833387
-    np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=5)
-    
-    # Check exact sigma2 (aic is nan for CSS method)
-    np.testing.assert_almost_equal(model.sigma2_, expected_sigma2, decimal=5)
+    # Check coefficients and sigma2 (aic is nan for CSS method)
+    expected_coef = np.array([0.6651909069893525, 0.10578612974450272, -0.17749673261063734])
+    expected_sigma2 = 0.597459948833387
+    np.testing.assert_allclose(model.coef_, expected_coef, **tol_coef)
+    np.testing.assert_allclose(model.sigma2_, expected_sigma2, **tol_coef)
     
     assert "CSS" in model.model_['method'] or "ARIMA" in model.model_['method']
     assert model.converged_ is True
@@ -386,13 +396,15 @@ def test_arima_fit_include_drift_when_d_is_zero():
     model.fit(y)
 
     assert model.coef_names_ == ['ar1', 'intercept', 'drift']
-    np.testing.assert_array_almost_equal(
+    np.testing.assert_allclose(
         model.coef_,
-        np.array([0.4899926283331951, 0.6798647372946346, 0.5287911842741932])
+        np.array([0.4899926283331951, 0.6798647372946346, 0.5287911842741932]),
+        **tol_coef
     )
-    np.testing.assert_array_almost_equal(
+    np.testing.assert_allclose(
         model.predict(steps=3),
-        np.array([51.01508338572809, 53.110969612118886, 54.40762581492772])
+        np.array([51.01508338572809, 53.110969612118886, 54.40762581492772]),
+        **tol_pred
     )
 
 
@@ -425,21 +437,22 @@ def test_arima_fit_box_cox_with_manual_order():
     model = Arima(order=(0, 1, 1), seasonal_order=(0, 1, 1), m=12, lambda_bc=0.0)
     model.fit(y)
 
-    np.testing.assert_array_almost_equal(
-        model.coef_, np.array([-0.4018631534684879, -0.5568905302217602])
+    np.testing.assert_allclose(
+        model.coef_, np.array([-0.4018631534684879, -0.5568905302217602]), **tol_coef
     )
     assert model.model_['lambda'] == 0.0
     np.testing.assert_array_equal(model.y_train_, y)
     assert np.all(np.isnan(model.fitted_values_[:13]))
-    np.testing.assert_array_almost_equal(
+    np.testing.assert_allclose(
         model.fitted_values_[13:16],
-        np.array([121.16522358924536, 139.05430341843623, 137.045465852081])
+        np.array([121.16522358924536, 139.05430341843623, 137.045465852081]),
+        **tol_pred
     )
     valid = ~np.isnan(model.fitted_values_)
     np.testing.assert_array_almost_equal(
         model.fitted_values_[valid] + model.in_sample_residuals_[valid], y[valid]
     )
-    assert np.isclose(model.get_score(), 0.991228729747097)
+    np.testing.assert_allclose(model.get_score(), 0.991228729747097, **tol_pred)
 
 
 def test_arima_fit_box_cox_auto_lambda_with_manual_order():
@@ -451,9 +464,10 @@ def test_arima_fit_box_cox_auto_lambda_with_manual_order():
     model.fit(air_passengers.to_numpy())
 
     assert np.isclose(model.model_['lambda'], 5.9608609865491405e-06)
-    np.testing.assert_array_almost_equal(
+    np.testing.assert_allclose(
         model.predict(steps=3),
-        np.array([450.423156148536, 425.7174062525917, 479.00548779015253])
+        np.array([450.423156148536, 425.7174062525917, 479.00548779015253]),
+        **tol_pred
     )
 
 
@@ -542,25 +556,8 @@ def test_arima_fit_auto_arima_air_passengers_data():
     )
     model.fit(air_passengers, suppress_warnings=True)
 
-    expected_order = {
-        'Linux': (0, 1, 1),
-        'Darwin': (0, 1, 1),
-        'Windows': (0, 1, 1)
-    }
-    expected_seasonal_order = {
-        'Linux': (2, 1, 0),
-        'Darwin': (2, 1, 0),
-        'Windows': (2, 1, 0)
-    }
-    expected_estimator_name_ = {
-        'Linux': "AutoArima(0,1,1)(2,1,0)[12]",
-        'Darwin': "AutoArima(0,1,1)(2,1,0)[12]",
-        'Windows': "AutoArima(0,1,1)(2,1,0)[12]"
-    }
-    
-    platform_name = platform.system()
     assert model.is_auto is True
-    assert model.best_params_['order'] == expected_order[platform_name]
-    assert model.best_params_['seasonal_order'] == expected_seasonal_order[platform_name]
+    assert model.best_params_['order'] == (0, 1, 1)
+    assert model.best_params_['seasonal_order'] == (2, 1, 0)
     assert model.best_params_['m'] == 12
-    assert model.estimator_name_ == expected_estimator_name_[platform_name]
+    assert model.estimator_name_ == "AutoArima(0,1,1)(2,1,0)[12]"
