@@ -4,6 +4,10 @@ import re
 import numpy as np
 import pytest
 from .._ets_base import (
+    PARAM_LOWER,
+    PARAM_UPPER,
+    _forecast_ets,
+    initial_smoothing_params,
     ets,
     forecast_ets,
     auto_ets,
@@ -825,4 +829,250 @@ def test_ets_multiplicative_trend():
 
     assert model.config.error == "M"
     assert model.config.trend == "M"
+
+
+# Regression tests of the estimation
+# ------------------------------------------------------------------------------
+def r_admissible(alpha, beta, gamma, phi, m):
+    """
+    Reference implementation of `admissible` of R's forecast::ets (seasonal
+    case), with the roots computed by numpy.
+    """
+    if gamma < max(1 - 1 / phi - alpha, 0) or gamma > 1 + 1 / phi - alpha:
+        return False
+    if alpha < 1 - 1 / phi - gamma * (1 - m + phi + phi * m) / (2 * phi * m):
+        return False
+    if beta < -(1 - phi) * (gamma / m + alpha):
+        return False
+    P = np.r_[
+        phi * (1 - alpha - gamma),
+        alpha + beta - alpha * phi + gamma - 1,
+        np.repeat(alpha + beta - alpha * phi, m - 2),
+        alpha + beta - phi,
+        1.0,
+    ]
+    return np.max(np.abs(np.roots(P[::-1]))) <= 1 + 1e-10
+
+
+@pytest.mark.parametrize("m", [2, 4, 7, 12])
+def test_admissible_seasonal_matches_R_characteristic_polynomial(m):
+    """
+    Test that the admissibility of seasonal models matches the characteristic
+    polynomial of R's forecast::ets (the polynomial used before had the wrong
+    degree and coefficients, and its root finding failed on complex roots).
+    """
+    rng = np.random.default_rng(m)
+    n_admissible = 0
+    for _ in range(500):
+        alpha, beta, gamma = rng.uniform(0, 1.2, 3)
+        phi = rng.uniform(0.75, 1.0)
+        expected = r_admissible(alpha, beta, gamma, phi, m)
+        assert admissible(alpha, beta, gamma, phi, m) == expected
+        n_admissible += expected
+
+    assert 0 < n_admissible < 500
+
+
+def test_check_param_trend_and_season_without_damping():
+    """
+    Test that the usual bounds of beta and gamma are read from their own
+    positions, and that a model without damping is checked with phi = 1.
+    """
+    assert check_param(0.5, 0.3, None, None, PARAM_LOWER, PARAM_UPPER, "both", 1)
+    assert check_param(0.3, 0.05, 0.1, None, PARAM_LOWER, PARAM_UPPER, "both", 12)
+    assert not check_param(0.5, 0.6, None, None, PARAM_LOWER, PARAM_UPPER, "both", 1)
+    assert not check_param(0.5, 0.3, 0.6, None, PARAM_LOWER, PARAM_UPPER, "both", 12)
+
+
+def test_initial_smoothing_params_inside_usual_bounds():
+    """
+    Test that the starting values follow R's initparam and are strictly inside
+    the usual bounds (phi used to start at its upper bound).
+    """
+    config = ETSConfig("A", "A", "A", True, 12)
+    alpha, beta, gamma, phi = initial_smoothing_params(config)
+
+    np.testing.assert_allclose(alpha, 1e-4 + 0.2 * (0.9999 - 1e-4) / 12)
+    np.testing.assert_allclose(beta, 1e-4 + 0.1 * (alpha - 1e-4))
+    np.testing.assert_allclose(gamma, 1e-4 + 0.05 * (1 - alpha - 1e-4))
+    np.testing.assert_allclose(phi, 0.8 + 0.99 * 0.18)
+    assert phi < PARAM_UPPER[3]
+
+
+@pytest.mark.parametrize(
+    "model, damped",
+    [("ANN", False), ("AAN", False), ("AAN", True), ("ANA", False), ("AAA", False)],
+    ids=lambda x: str(x),
+)
+def test_ets_estimates_do_not_stay_at_starting_values(model, damped):
+    """
+    Test that the smoothing parameters are estimated (they used to stay at
+    their starting values because the parameter checks rejected every
+    candidate) and that the likelihood improves on the starting values.
+    """
+    rng = np.random.default_rng(0)
+    t = np.arange(96)
+    y = 50 + 0.2 * t + 5 * np.sin(2 * np.pi * t / 4) + np.cumsum(rng.normal(0, 1, 96))
+    m = 4 if model[2] != "N" else 1
+    config = ETSConfig(model[0], model[1], model[2], damped, m)
+    start = initial_smoothing_params(config)
+
+    fitted = ets(y, m=m, model=model, damped=damped)
+    at_start = ets(
+        y, m=m, model=model, damped=damped,
+        alpha=start[0],
+        beta=start[1] if model[1] != "N" else None,
+        gamma=start[2] if model[2] != "N" else None,
+        phi=start[3] if damped else None,
+    )
+
+    assert fitted.params.alpha != pytest.approx(start[0], abs=1e-3)
+    assert fitted.loglik > at_start.loglik + 0.1
+
+
+def test_ets_fixed_parameters_are_not_estimated():
+    """
+    Test that fixed smoothing parameters keep their values and constrain the
+    estimated ones (beta <= alpha <= 1 - gamma).
+    """
+    y = trend_series(100) + 3 * np.sin(2 * np.pi * np.arange(100) / 4)
+
+    model = ets(y, m=4, model="AAA", beta=0.3, gamma=0.5)
+
+    assert model.params.beta == 0.3
+    assert model.params.gamma == 0.5
+    assert 0.3 <= model.params.alpha <= 0.5
+
+    model = ets(y, m=1, model="AAN", alpha=0.4, damped=True, phi=0.9)
+    assert model.params.alpha == 0.4
+    assert model.params.phi == 0.9
+    assert model.params.beta <= 0.4
+
+
+def test_ets_fixed_parameters_out_of_bounds_raises():
+    """
+    Test that fixed smoothing parameters outside the usual bounds raise an
+    error instead of being silently replaced.
+    """
+    y = trend_series(100)
+    err_msg = re.escape(
+        "The fixed smoothing parameters are out of range for the 'both' bounds"
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        ets(y, m=1, model="AAN", alpha=0.2, beta=0.5)
+
+
+@pytest.mark.parametrize("model_spec", ["ANN", "AAN"])
+@pytest.mark.parametrize("shift", [-2e5, 5e6], ids=lambda x: f"shift: {x}")
+def test_ets_additive_model_invariant_to_level_shift(shift, model_spec):
+    """
+    Test that an additive model of a shifted series gives the same estimates
+    and likelihood. Series around -200000 collided with the -99999 sentinel
+    of the likelihood, and series above 1e6 with the bounds of the initial
+    states.
+    """
+    rng = np.random.default_rng(1)
+    y = (
+        50 + 0.3 * np.arange(100) + np.cumsum(rng.normal(0, 1, 100))
+        + rng.normal(0, 1, 100)
+    )
+
+    model = ets(y, m=1, model=model_spec)
+    model_shift = ets(y + shift, m=1, model=model_spec)
+
+    np.testing.assert_allclose(model_shift.params.alpha, model.params.alpha, atol=1e-5)
+    np.testing.assert_allclose(model_shift.params.beta, model.params.beta, atol=1e-5)
+    np.testing.assert_allclose(model_shift.loglik, model.loglik, rtol=1e-6)
+    assert np.isfinite(model_shift.aic)
+
+
+def test_ets_multiplicative_model_non_positive_series_raises():
+    """
+    Test that multiplicative models are rejected for series with non-positive
+    values, and that the automatic selection only considers additive models.
+    """
+    y = ar1_series(100)
+    err_msg = re.escape("Inappropriate model 'MNN' for data with negative or zero values")
+    with pytest.raises(ValueError, match=err_msg):
+        ets(y, m=1, model="MNN")
+
+    model = auto_ets(y - y.mean(), m=1)
+    assert model.config.error == "A"
+    assert model.config.trend != "M"
+
+
+def test_forecast_ets_multiplicative_trend_non_positive_state_is_nan():
+    """
+    Test that a multiplicative trend with a non-positive state forecasts NaN
+    (it used to return the -99999 sentinel).
+    """
+    forecasts = _forecast_ets(10.0, -0.5, np.zeros(1), 3, 1, 2, 0, 1.0)
+    assert np.all(np.isnan(forecasts))
+
+
+def test_simulate_ets_reproducible():
+    """
+    Test that simulated paths, and the intervals of models without an
+    analytical variance, are reproducible.
+    """
+    y = positive_series(100)
+    model = ets(y, m=1, model="MAN")
+
+    sim_1 = simulate_ets(model, h=6, n_sim=200)
+    sim_2 = simulate_ets(model, h=6, n_sim=200)
+    sim_3 = simulate_ets(model, h=6, n_sim=200, random_state=456)
+
+    assert sim_1.shape == (200, 6)
+    np.testing.assert_array_equal(sim_1, sim_2)
+    assert not np.allclose(sim_1, sim_3)
+
+    out_1 = forecast_ets(model, h=6, level=[80, 95])
+    out_2 = forecast_ets(model, h=6, level=[80, 95])
+    for key in out_1:
+        np.testing.assert_array_equal(out_1[key], out_2[key])
+
+
+def test_box_cox_find_lambda_guerrero():
+    """
+    Test that the automatic Box-Cox lambda uses Guerrero's method as R's
+    forecast::BoxCox.lambda (it always returned the lower bound -1).
+    BoxCox.lambda(AirPassengers) = -0.2947156 in R (whose optimizer stops at
+    a tolerance of about 1.2e-4).
+    """
+    from ...tests.tests_arima.fixtures_arima import air_passengers
+
+    lam = BoxCoxTransform.find_lambda(air_passengers.to_numpy(dtype=float), m=12)
+
+    np.testing.assert_allclose(lam, -0.2947156, atol=1e-4)
+
+
+def test_box_cox_bias_adjustment_formula():
+    """
+    Test the bias-adjusted back-transformation of R's forecast::InvBoxCox:
+    y * (1 + 0.5 * variance * (1 - lambda) / y^(2 * lambda)).
+    """
+    transform = BoxCoxTransform(lambda_param=0.5, shift=0.0)
+    y = np.array([4.0, 9.0, 16.0])
+    variance = 0.3
+
+    y_back = transform.inverse_transform(transform.transform(y), True, variance)
+
+    np.testing.assert_allclose(y_back, y * (1 + 0.5 * variance * 0.5 / y))
+
+
+def test_forecast_ets_box_cox_intervals_on_original_scale():
+    """
+    Test that the prediction intervals of a Box-Cox model are back-transformed
+    (they mixed the forecast on the original scale with the standard
+    deviation on the transformed scale).
+    """
+    y = positive_series(100)
+
+    model_log = ets(y, m=1, model="ANN", lambda_param=0.0)
+    model_on_log = ets(np.log(y), m=1, model="ANN")
+    out_log = forecast_ets(model_log, h=5, bias_adjust=False, level=[80, 95])
+    out_on_log = forecast_ets(model_on_log, h=5, level=[80, 95])
+
+    for key in out_log:
+        np.testing.assert_allclose(out_log[key], np.exp(out_on_log[key]), rtol=1e-10)
 
