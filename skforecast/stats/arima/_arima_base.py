@@ -1185,6 +1185,17 @@ def _arima_kalman_core(
     n_both = min(p, r - 1)
     n_v = min(q + 1, r)
 
+    # Seasonal models have many exact zeros in phi and delta (e.g. phi of an
+    # ARIMA(1,d,q)(1,D,Q)[12] has 3 non-zero values out of 13). Their terms
+    # are skipped in the O(rd²) loops: adding the product of an exact zero and
+    # a finite number does not change the accumulated value.
+    delta_nz = np.empty(d, dtype=np.int64)
+    n_delta_nz = 0
+    for k in range(d):
+        if delta[k] != 0.0:
+            delta_nz[n_delta_nz] = k
+            n_delta_nz += 1
+
     for t in range(n):
         # --- State prediction: anew = T @ a ---
         # Companion structure: T[i,0] = phi[i], T[i-1,i] = 1 for ARMA block
@@ -1211,7 +1222,8 @@ def _arima_kalman_core(
             # --- M = Pnew @ Z ---
             for i in range(rd):
                 tmp = Pnew[i, 0]
-                for j in range(d):
+                for k in range(n_delta_nz):
+                    j = delta_nz[k]
                     tmp += Pnew[i, r + j] * delta[j]
                 M[i] = tmp
 
@@ -1254,8 +1266,12 @@ def _arima_kalman_core(
             # mm[i, :] = phi[i] * P[0, :] + P[i + 1, :]
             for i in range(n_both):
                 phi_i = phi[i]
-                for j in range(rd):
-                    mm[i, j] = (0.0 + phi_i * P[0, j]) + P[i + 1, j]
+                if phi_i != 0.0:
+                    for j in range(rd):
+                        mm[i, j] = (0.0 + phi_i * P[0, j]) + P[i + 1, j]
+                else:
+                    for j in range(rd):
+                        mm[i, j] = 0.0 + P[i + 1, j]
             for i in range(n_both, r):
                 if i < p:
                     phi_i = phi[i]
@@ -1270,7 +1286,8 @@ def _arima_kalman_core(
             if d > 0:
                 for j in range(rd):
                     mm[r, j] = P[0, j]
-                for k in range(d):
+                for kk in range(n_delta_nz):
+                    k = delta_nz[kk]
                     delta_k = delta[k]
                     for j in range(rd):
                         mm[r, j] += delta_k * P[r + k, j]
@@ -1283,7 +1300,10 @@ def _arima_kalman_core(
             for i in range(rd):
                 mm_i0 = mm[i, 0]
                 for j in range(n_both):
-                    Pnew[i, j] = (0.0 + phi[j] * mm_i0) + mm[i, j + 1]
+                    if phi[j] != 0.0:
+                        Pnew[i, j] = (0.0 + phi[j] * mm_i0) + mm[i, j + 1]
+                    else:
+                        Pnew[i, j] = 0.0 + mm[i, j + 1]
                 for j in range(n_both, r):
                     if j < p:
                         Pnew[i, j] = 0.0 + phi[j] * mm_i0
@@ -1293,7 +1313,8 @@ def _arima_kalman_core(
                         Pnew[i, j] = 0.0
                 if d > 0:
                     tmp = mm_i0
-                    for k in range(d):
+                    for kk in range(n_delta_nz):
+                        k = delta_nz[kk]
                         tmp += delta[k] * mm[i, r + k]
                     Pnew[i, r] = tmp
                     for j in range(1, d):
