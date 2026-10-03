@@ -1759,7 +1759,9 @@ def forecast_arima(
     lower = None
     upper = None
     if levels:
-        z_values = [norm.ppf(0.5 + l / 200) for l in levels]
+        # A single vectorized call: same quantiles as one call per level,
+        # without repeating the argument checks of `norm.ppf`.
+        z_values = norm.ppf(0.5 + np.asarray(levels, dtype=np.float64) / 200)
         lower = np.column_stack([mean - z * se for z in z_values])
         upper = np.column_stack([mean + z * se for z in z_values])
 
