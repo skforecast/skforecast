@@ -180,3 +180,15 @@ fuel_consumption = pd.DataFrame({
 )
 fuel_consumption['month'] = fuel_consumption.index.month
 fuel_consumption = pd.get_dummies(fuel_consumption, columns=['month'], prefix='month', drop_first=False, dtype=float)
+
+# Tolerances for the values that depend on where the optimizer stops
+# ==============================================================================
+# BFGS with finite-difference gradients stops within its convergence tolerance
+# of the optimum, and differences in the last bit of the linear algebra and
+# math libraries (operating system, BLAS, CPU) move that point. Measured with
+# 1-ULP perturbations of the likelihood: coefficients and sigma2 change up to
+# ~1e-2 (relative), predictions, intervals and log-likelihood up to ~1e-4.
+# Values that do not depend on the optimizer (shapes, names, selected orders,
+# exact relationships such as fitted + residuals = y) are compared exactly.
+tol_coef = {'rtol': 1e-2, 'atol': 1e-3}
+tol_pred = {'rtol': 1e-3, 'atol': 0}
