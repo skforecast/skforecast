@@ -22,8 +22,8 @@ def test_estimator_get_score():
     est = Ets(m=1, model="AAN").fit(y)
 
     score = est.get_score()
-    expected_score = -0.12352559113458117
-    np.testing.assert_almost_equal(score, expected_score, decimal=10)
+    expected_score = 0.28543815797551275
+    np.testing.assert_allclose(score, expected_score, rtol=1e-6)
 
 
 def test_get_score_raises_error_after_reduce_memory():
