@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from ..._arima import Arima
 from .fixtures_arima import (
-    air_passengers, multi_seasonal, fuel_consumption, tol_pred
+    air_passengers, multi_seasonal, fuel_consumption, tol_coef, tol_pred
 )
 
 
@@ -332,62 +332,67 @@ def test_arima_predict_ma_model():
 
 def test_arima_predict_air_passengers_data():
     """
-    Test predict works correctly with Air Passengers dataset and returns exact values.
+    Test predict works correctly with Air Passengers dataset and returns the
+    expected coefficients, log-likelihood and predictions. The order is chosen
+    so that the coefficients are well identified: they agree with statsmodels
+    SARIMAX and are stable across platforms (see `tol_coef`).
     """
    
     model = Arima(
-        order=(2, 1, 1),
-        seasonal_order=(1, 1, 1),
+        order=(1, 1, 0),
+        seasonal_order=(0, 1, 1),
         m=12,
         optim_method="BFGS"
     )
     model.fit(air_passengers, suppress_warnings=False)
     pred = model.predict(steps=10)
 
-    # The coefficients of this model are weakly identified (near-cancelling
-    # seasonal AR and MA roots): 1-ULP perturbations of the likelihood move
-    # them by up to 0.1 while the log-likelihood and the predictions barely
-    # change, so only the latter are compared, the predictions with a looser
-    # tolerance than `tol_pred`.
+    expected_coef = np.array([-0.29668317465945526, -0.10307940547279504])
     expected_pred = np.array([
-        448.15134639, 423.94754801, 458.77487091, 497.6941214 ,
-        510.03106867, 569.15507525, 656.8192311 , 642.51146838,
-        547.66285933, 498.20993537
+        444.7586275589639, 419.60326309961613, 451.0961953633433,
+        487.7053097651464, 499.93930155366525, 562.0114799187572,
+        647.6503884546054, 634.4510795620448, 536.6473639364772,
+        488.82442978230483
     ])
 
-    assert model.coef_names_ == ['ar1', 'ar2', 'ma1', 'sar1', 'sma1']
-    np.testing.assert_allclose(model.loglik_, -503.12458724226894, **tol_pred)
-    np.testing.assert_allclose(pred, expected_pred, rtol=1e-2)
+    assert model.coef_names_ == ['ar1', 'sma1']
+    np.testing.assert_allclose(model.coef_, expected_coef, **tol_coef)
+    np.testing.assert_allclose(model.loglik_, -507.4570092752544, **tol_pred)
+    np.testing.assert_allclose(pred, expected_pred, **tol_pred)
 
 
 def test_arima_predict_multi_seasonal_data():
     """
-    Test predict works correctly with multi_seasonal dataset and returns exact values.
+    Test predict works correctly with multi_seasonal dataset and the L-BFGS-B
+    optimizer, and returns the expected coefficients, log-likelihood and
+    predictions. The order is chosen so that the coefficients are well
+    identified: they agree with statsmodels SARIMAX and are stable across
+    platforms (see `tol_coef`).
     """
 
     model = Arima(
-        order=(5, 1, 2),
-        seasonal_order=(1, 1, 1),
+        order=(2, 1, 0),
+        seasonal_order=(1, 1, 0),
         m=7,
         optim_method="L-BFGS-B"
     )
     model.fit(multi_seasonal, suppress_warnings=False)
     pred = model.predict(steps=10)
 
-    # The coefficients of this model are weakly identified (near-cancelling AR
-    # and MA roots): 1-ULP perturbations of the likelihood move them by more
-    # than 0.1 while the log-likelihood and the predictions barely change, so
-    # only the latter are compared, the predictions with a looser tolerance
-    # than `tol_pred`.
+    expected_coef = np.array(
+        [-0.6448976718938015, -0.32511440344751596, -0.5317145058403524]
+    )
     expected_pred = np.array([
-        174.58287008, 168.87668826, 173.52439196, 172.05375924,
-        173.79383314, 171.87072619, 175.36589749, 173.55553196,
-        172.87120721, 173.38014803
+        178.91859780849518, 186.81187862890437, 186.39100386446563,
+        196.62281470289562, 189.25502899224782, 176.77825686277995,
+        193.45182991609806, 181.7607391833238, 196.42729655486005,
+        186.09759006592236
     ])
 
-    assert model.coef_names_ == ['ar1', 'ar2', 'ar3', 'ar4', 'ar5', 'ma1', 'ma2', 'sar1', 'sma1']
-    np.testing.assert_allclose(model.loglik_, -2732.5297717066032, **tol_pred)
-    np.testing.assert_allclose(pred, expected_pred, rtol=1e-2)
+    assert model.coef_names_ == ['ar1', 'ar2', 'sar1']
+    np.testing.assert_allclose(model.coef_, expected_coef, **tol_coef)
+    np.testing.assert_allclose(model.loglik_, -2972.6403887862007, **tol_pred)
+    np.testing.assert_allclose(pred, expected_pred, **tol_pred)
 
 
 def test_arima_predict_with_exog_dataframe():
