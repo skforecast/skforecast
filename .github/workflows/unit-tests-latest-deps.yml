@@ -53,4 +53,7 @@ jobs:
       env:
         KERAS_BACKEND: torch
       run: |
-        pytest -vv
+        # -q keeps the log short so failures are easy to find; -ra lists them at the end;
+        # verbosity_assertions=2 keeps the full assertion diffs of -vv. Failed tests are
+        # also shown as annotations (pytest-github-actions-annotate-failures).
+        pytest -q -ra -o verbosity_assertions=2 --exclude-warning-annotations
