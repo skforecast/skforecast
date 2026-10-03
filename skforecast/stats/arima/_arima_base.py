@@ -2017,10 +2017,7 @@ def _initialize_regressor_params(
             ols_coef = beta
 
     # Effective sample size
-    # With zero rows the mask is a float array, as with the former row-wise
-    # loop, so an empty series keeps raising the same error.
-    exog_row_nan = np.any(np.isnan(exog), axis=1) if len(exog) > 0 else np.array([])
-    isna = np.isnan(x) | exog_row_nan
+    isna = np.isnan(x) | np.any(np.isnan(exog), axis=1)
     n_used = int(np.sum(~isna)) - len(Delta)
 
     if ols_coef is not None:
