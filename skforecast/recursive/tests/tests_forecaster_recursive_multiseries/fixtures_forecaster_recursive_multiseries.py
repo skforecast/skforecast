@@ -28,6 +28,8 @@ from skforecast.preprocessing import reshape_series_wide_to_long
 # series_dict_nans_test: Dictionary with test time series containing NaN values and datetime index.
 # exog_dict_nans_train: Dictionary with training exogenous variables containing NaN values and datetime index.
 # exog_dict_nans_test: Dictionary with test exogenous variables containing NaN values and datetime index.
+# series_dict_unordered: Dictionary with four series in non-alphabetical order, different lengths and an interspersed NaN.
+# exog_dict_unordered: Dictionary with exogenous variables for series_dict_unordered ('d' has no exog).
 
 # Code to generate fixtures values:
 # np.random.seed(123)
@@ -147,6 +149,46 @@ series_dict_nans_train = {k: v.loc[:end_train,] for k, v in series_dict_nans.ite
 exog_dict_nans_train = {k: v.loc[:end_train,] for k, v in exog_dict_nans.items()}
 series_dict_nans_test = {k: v.loc[end_train:,] for k, v in series_dict_nans.items()}
 exog_dict_nans_test = {k: v.loc[end_train:,] for k, v in exog_dict_nans.items()}
+
+# Series in non-alphabetical order ('c', 'a', 'd', 'b') with different start dates
+# and the same end date. 'b' has an interspersed NaN and 'd' has no exog, so with
+# `dropna_from_series=True` all the rows of 'd' are removed from X_train.
+# rng = np.random.default_rng(7)
+# series values: np.round(rng.normal(10, 3, n), 2) for n in (8, 9, 7, 9)
+# exog values: np.round(rng.normal(0, 1, 10), 2) for 'c', 'a', 'b'
+series_dict_unordered = {
+    'c': pd.Series(
+             np.array([10., 10.9, 9.18, 7.33, 8.64, 7.03, 10.18, 14.02]),
+             index=pd.date_range(start='2020-01-03', periods=8, freq='D'), name='c'
+         ),
+    'a': pd.Series(
+             np.array([8.52, 8.14, 11.47, 11.07, 10.32, 7.21, 9.91, 12.09, 5.97]),
+             index=pd.date_range(start='2020-01-02', periods=9, freq='D'), name='a'
+         ),
+    'd': pd.Series(
+             np.array([8.63, 4.3, 6.13, 4.47, 9.29, 6.2, 10.81]),
+             index=pd.date_range(start='2020-01-04', periods=7, freq='D'), name='d'
+         ),
+    'b': pd.Series(
+             np.array([10.47, 9.44, 2.45, 8.38, 9.85, np.nan, 5.41, 8.57, 7.06]),
+             index=pd.date_range(start='2020-01-02', periods=9, freq='D'), name='b'
+         ),
+}
+exog_dict_unordered = {
+    'c': pd.DataFrame(
+             {'exog_1': [-0.81, 1.06, -0.81, -0.03, 0.88, -0.58, -0.11, 0.11, 0.06, -1.23]},
+             index=pd.date_range(start='2020-01-01', periods=10, freq='D')
+         ),
+    'a': pd.DataFrame(
+             {'exog_1': [0.08, 1.36, -1.55, 0.86, 0.12, -0.64, 2., 0.76, -1.2, 0.07]},
+             index=pd.date_range(start='2020-01-01', periods=10, freq='D')
+         ),
+    'd': None,
+    'b': pd.DataFrame(
+             {'exog_1': [0.58, -0.19, 0.68, -0.07, 0.67, 1.44, -0.68, 0.2, -0.46, 0.13]},
+             index=pd.date_range(start='2020-01-01', periods=10, freq='D')
+         ),
+}
 
 # 'l1' is intermittent, so the predictions of a forecaster fitted on it are
 # highly concentrated and its binner ends up with fewer bins than 'l2'.

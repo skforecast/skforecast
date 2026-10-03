@@ -15,6 +15,12 @@ from lightgbm import LGBMRegressor
 from skforecast.preprocessing import RollingFeatures, CalendarFeatures, reshape_series_wide_to_long
 from ....recursive import ForecasterRecursiveMultiSeries
 
+# Fixtures
+from .fixtures_forecaster_recursive_multiseries import (
+    series_dict_unordered,
+    exog_dict_unordered
+)
+
 
 def test_create_train_X_y_TypeError_when_exog_is_categorical_of_no_int():
     """
@@ -168,6 +174,47 @@ def test_create_train_X_y_ValueError_when_Forecaster_fitted_and_different_exog_c
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster._create_train_X_y(series=series, exog=new_exog)
+
+
+@pytest.mark.parametrize(
+    "forecaster_kwargs, exog, window_sizes",
+    [
+        ({'lags': 5}, None, (5, 5, None)),
+        ({'lags': 2,
+          'window_features': RollingFeatures(stats=['mean', 'median'], window_sizes=6)},
+         None, (6, 2, 6)),
+        ({'lags': 5},
+         {'l1': pd.DataFrame({'exog': pd.Categorical([0, 1, 2, 0, 1])})},
+         (5, 5, None)),
+        ({'lags': 5, 'transformer_exog': StandardScaler()},
+         {'l1': pd.DataFrame({'exog': np.arange(5, dtype=float)})},
+         (5, 5, None)),
+    ],
+    ids=['lags', 'window_features', 'exog_categorical', 'exog_transformer']
+)
+def test_create_train_X_y_ValueError_when_len_series_less_than_window_size(
+    forecaster_kwargs, exog, window_sizes
+):
+    """
+    Test ValueError is raised when the length of a series is less than or
+    equal to window_size. The length is checked before processing `exog`, so
+    the error is the same when the categorical encoder or `transformer_exog`
+    would have to be fitted without rows.
+    """
+    series = {'l1': pd.Series(np.arange(5, dtype=float), name='l1')}
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), **forecaster_kwargs)
+
+    max_window_size, lags_window_size, window_features_window_size = window_sizes
+    err_msg = re.escape(
+        f"Length of 'l1' must be greater than the maximum window size "
+        f"needed by the forecaster.\n"
+        f"    Length 'l1': 5.\n"
+        f"    Max window size: {max_window_size}.\n"
+        f"    Lags window size: {lags_window_size}.\n"
+        f"    Window features window size: {window_features_window_size}."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster._create_train_X_y(series=series, exog=exog)
 
 
 def test_create_train_X_y_output_when_series_and_exog_is_None():
@@ -3922,4 +3969,240 @@ def test_create_train_X_y_output_when_categorical_features_and_already_trained(
     np.testing.assert_array_equal(
         forecaster.categorical_encoder.categories_[0],
         np.array(['f', 'g', 'h', 'i', 'j'], dtype=object)
+    )
+
+
+@pytest.mark.parametrize(
+    "encoding, expected_X_train_series_names_in_",
+    [
+        ('ordinal', ['a', 'b', 'c']),
+        ('ordinal_category', ['a', 'b', 'c']),
+        ('onehot', ['c', 'a', 'b']),
+        (None, ['a', 'b', 'c'])
+    ],
+    ids=lambda value: f'encoding, X_train_series_names_in_: {value}'
+)
+def test_create_train_X_y_X_train_series_names_in_when_series_unordered_and_one_series_dropped(
+    encoding, expected_X_train_series_names_in_
+):
+    """
+    Test `X_train_series_names_in_` when the series are not in alphabetical order
+    ('c', 'a', 'd', 'b') and all the rows of series 'd' are removed because it
+    has no exog and `dropna_from_series=True`. With 'onehot' the names follow the
+    order of the series and with the other encodings the alphabetical order of
+    `encoding_mapping_`. The column of 'd' is kept in the one-hot block.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=2, encoding=encoding, dropna_from_series=True
+    )
+    results = forecaster._create_train_X_y(
+        series=series_dict_unordered, exog=exog_dict_unordered
+    )
+
+    expected_columns = (
+        ['lag_1', 'lag_2', 'a', 'b', 'c', 'd', 'exog_1']
+        if encoding == 'onehot'
+        else ['lag_1', 'lag_2', '_level_skforecast', 'exog_1']
+    )
+
+    assert results[3] == ['c', 'a', 'd', 'b']
+    assert results[4] == expected_X_train_series_names_in_
+    assert results[0].columns.to_list() == expected_columns
+    assert len(results[0]) == 17
+
+
+def test_create_train_X_y_output_when_exog_dict_float_int_category_int_and_categorical_features_None():
+    """
+    Test the output of _create_train_X_y when exog is a dict of DataFrames with
+    columns of dtypes float, int, category and int, and `categorical_features=None`.
+    The category column keeps its dtype and every column keeps its position and
+    dtype in X_train.
+    """
+    series = {
+        'l1': pd.Series(np.arange(6, dtype=float), name='l1'),
+        'l2': pd.Series(np.arange(10, 16, dtype=float), name='l2')
+    }
+    exog = {
+        'l1': pd.DataFrame({
+                  'exog_float': np.arange(100, 106, dtype=float),
+                  'exog_int': np.arange(200, 206, dtype=int),
+                  'exog_cat': pd.Categorical([0, 1, 2, 0, 1, 2], categories=[0, 1, 2]),
+                  'exog_int_2': np.arange(300, 306, dtype=int)
+              }),
+        'l2': pd.DataFrame({
+                  'exog_float': np.arange(110, 116, dtype=float),
+                  'exog_int': np.arange(210, 216, dtype=int),
+                  'exog_cat': pd.Categorical([2, 2, 1, 1, 0, 0], categories=[0, 1, 2]),
+                  'exog_int_2': np.arange(310, 316, dtype=int)
+              })
+    }
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=2, encoding='ordinal', categorical_features=None
+    )
+    results = forecaster._create_train_X_y(series=series, exog=exog)
+
+    expected_dtypes = {
+        'exog_float': np.dtype(float),
+        'exog_int': np.dtype(int),
+        'exog_cat': pd.CategoricalDtype(categories=[0, 1, 2]),
+        'exog_int_2': np.dtype(int)
+    }
+    expected = (
+        pd.DataFrame(
+            data = np.array([[1., 0., 0., 102.],
+                             [2., 1., 0., 103.],
+                             [3., 2., 0., 104.],
+                             [4., 3., 0., 105.],
+                             [11., 10., 1., 112.],
+                             [12., 11., 1., 113.],
+                             [13., 12., 1., 114.],
+                             [14., 13., 1., 115.]]),
+            index   = pd.Index([2, 3, 4, 5, 2, 3, 4, 5]),
+            columns = ['lag_1', 'lag_2', '_level_skforecast', 'exog_float']
+        ).assign(
+            exog_int   = np.array([202, 203, 204, 205, 212, 213, 214, 215], dtype=int),
+            exog_cat   = pd.Categorical([2, 0, 1, 2, 1, 1, 0, 0], categories=[0, 1, 2]),
+            exog_int_2 = np.array([302, 303, 304, 305, 312, 313, 314, 315], dtype=int)
+        ),
+        pd.Series(
+            data  = np.array([2., 3., 4., 5., 12., 13., 14., 15.]),
+            index = pd.Index([2, 3, 4, 5, 2, 3, 4, 5]),
+            name  = 'y',
+            dtype = float
+        )
+    )
+
+    pd.testing.assert_frame_equal(results[0], expected[0])
+    pd.testing.assert_series_equal(results[1], expected[1])
+    assert results[5] == ['exog_float', 'exog_int', 'exog_cat', 'exog_int_2']
+    assert results[6] is None
+    assert results[9] == ['exog_float', 'exog_int', 'exog_cat', 'exog_int_2']
+    assert results[10] == expected_dtypes
+    assert results[11] == expected_dtypes
+    assert list(results[11]) == ['exog_float', 'exog_int', 'exog_cat', 'exog_int_2']
+
+
+def test_create_train_X_y_output_when_dropna_from_series_and_nan_in_lags_and_category_exog():
+    """
+    Test the output of _create_train_X_y when `dropna_from_series=True`, series
+    'l1' has an interspersed NaN (it appears in y and in the lags) and series
+    'l2' has a NaN in a category exog kept as category (`categorical_features=None`).
+    All the affected rows are dropped and the category column keeps its dtype.
+    """
+    series = {
+        'l1': pd.Series([0., 1., 2., np.nan, 4., 5., 6., 7.], name='l1'),
+        'l2': pd.Series(np.arange(10, 18, dtype=float), name='l2')
+    }
+    exog = {
+        'l1': pd.DataFrame({
+                  'exog_float': np.arange(100, 108, dtype=float),
+                  'exog_cat': pd.Categorical([0, 1, 2, 0, 1, 2, 0, 1], categories=[0, 1, 2])
+              }),
+        'l2': pd.DataFrame({
+                  'exog_float': np.arange(110, 118, dtype=float),
+                  'exog_cat': pd.Categorical(
+                                  [2, 2, 1, np.nan, 0, 0, 1, 1], categories=[0, 1, 2]
+                              )
+              })
+    }
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=2, encoding='ordinal', categorical_features=None,
+        dropna_from_series=True
+    )
+
+    warn_msg = re.escape(
+        "NaNs detected in `X_train`. They have been dropped. If "
+        "you want to keep them, set `forecaster.dropna_from_series = False`. "
+        "Same rows have been removed from `y_train` to maintain alignment. "
+        "This is caused by interspersed NaNs in `series` or `exog`."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        results = forecaster._create_train_X_y(series=series, exog=exog)
+
+    expected = (
+        pd.DataFrame(
+            data = np.array([[1., 0., 0., 102.],
+                             [5., 4., 0., 106.],
+                             [6., 5., 0., 107.],
+                             [11., 10., 1., 112.],
+                             [13., 12., 1., 114.],
+                             [14., 13., 1., 115.],
+                             [15., 14., 1., 116.],
+                             [16., 15., 1., 117.]]),
+            index   = pd.Index([2, 6, 7, 2, 4, 5, 6, 7]),
+            columns = ['lag_1', 'lag_2', '_level_skforecast', 'exog_float']
+        ).assign(
+            exog_cat = pd.Categorical([2, 0, 1, 1, 0, 0, 1, 1], categories=[0, 1, 2])
+        ),
+        pd.Series(
+            data  = np.array([2., 6., 7., 12., 14., 15., 16., 17.]),
+            index = pd.Index([2, 6, 7, 2, 4, 5, 6, 7]),
+            name  = 'y',
+            dtype = float
+        )
+    )
+
+    pd.testing.assert_frame_equal(results[0], expected[0])
+    pd.testing.assert_series_equal(results[1], expected[1])
+    assert results[4] == ['l1', 'l2']
+
+
+def test_create_train_X_y_output_when_exog_dict_object_column_with_different_values_by_series():
+    """
+    Test the output of _create_train_X_y when exog is a dict, the object column
+    'exog_2' has different values in 'l1' and 'l2' and is missing in 'l3', and
+    `categorical_features='auto'`. The column is encoded with the categories of
+    all the series and is NaN for 'l3'.
+    """
+    series = {
+        'l1': pd.Series(np.arange(5, dtype=float), name='l1'),
+        'l2': pd.Series(np.arange(10, 15, dtype=float), name='l2'),
+        'l3': pd.Series(np.arange(20, 25, dtype=float), name='l3')
+    }
+    exog = {
+        'l1': pd.DataFrame({
+                  'exog_1': np.arange(100, 105, dtype=float),
+                  'exog_2': ['a', 'b', 'a', 'b', 'a']
+              }),
+        'l2': pd.DataFrame({
+                  'exog_1': np.arange(110, 115, dtype=float),
+                  'exog_2': ['c', 'd', 'c', 'd', 'c']
+              }),
+        'l3': pd.DataFrame({'exog_1': np.arange(120, 125, dtype=float)})
+    }
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=2, encoding='ordinal', categorical_features='auto'
+    )
+    results = forecaster._create_train_X_y(series=series, exog=exog)
+
+    expected = (
+        pd.DataFrame(
+            data = np.array([[1., 0., 0., 102., 0.],
+                             [2., 1., 0., 103., 1.],
+                             [3., 2., 0., 104., 0.],
+                             [11., 10., 1., 112., 2.],
+                             [12., 11., 1., 113., 3.],
+                             [13., 12., 1., 114., 2.],
+                             [21., 20., 2., 122., np.nan],
+                             [22., 21., 2., 123., np.nan],
+                             [23., 22., 2., 124., np.nan]]),
+            index   = pd.Index([2, 3, 4, 2, 3, 4, 2, 3, 4]),
+            columns = ['lag_1', 'lag_2', '_level_skforecast', 'exog_1', 'exog_2']
+        ),
+        pd.Series(
+            data  = np.array([2., 3., 4., 12., 13., 14., 22., 23., 24.]),
+            index = pd.Index([2, 3, 4, 2, 3, 4, 2, 3, 4]),
+            name  = 'y',
+            dtype = float
+        )
+    )
+
+    pd.testing.assert_frame_equal(results[0], expected[0])
+    pd.testing.assert_series_equal(results[1], expected[1])
+    assert results[6] == ['exog_2']
+    assert results[10] == {'exog_1': np.dtype(float), 'exog_2': np.dtype(object)}
+    assert results[11] == {'exog_1': np.dtype(float), 'exog_2': np.dtype(float)}
+    pd.testing.assert_index_equal(
+        pd.Index(forecaster.categorical_encoder.categories_[0]),
+        pd.Index(['a', 'b', 'c', 'd', np.nan], dtype=object)
     )

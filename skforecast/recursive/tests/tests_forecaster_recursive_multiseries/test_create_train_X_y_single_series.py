@@ -1,114 +1,56 @@
 # Unit test _create_train_X_y_single_series ForecasterRecursiveMultiSeries
 # ==============================================================================
-import re
 import pytest
 import numpy as np
 import pandas as pd
 from sklearn.base import clone
 from sklearn.linear_model import LinearRegression
-from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
-from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import MinMaxScaler
 from skforecast.preprocessing import RollingFeatures
 from ....recursive import ForecasterRecursiveMultiSeries
 
 
-def test_create_train_X_y_single_series_ValueError_when_len_y_less_than_window_size():
+def test_create_train_X_y_single_series_output_when_transformer_series():
     """
-    Test ValueError is raised when len(y) <= window_size.
-    """
-    y = pd.Series(np.arange(5), name='l1')
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5)
-
-    err_msg = re.escape(
-        "Length of 'l1' must be greater than the maximum window size "
-        "needed by the forecaster.\n"
-        "    Length 'l1': 5.\n"
-        "    Max window size: 5.\n"
-        "    Lags window size: 5.\n"
-        "    Window features window size: None."
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        forecaster._create_train_X_y_single_series(y=y, ignore_exog=True)
-
-    rolling = RollingFeatures(stats=['mean', 'median'], window_sizes=6)
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=2, window_features=rolling)
-    err_msg = re.escape(
-        "Length of 'l1' must be greater than the maximum window size "
-        "needed by the forecaster.\n"
-        "    Length 'l1': 5.\n"
-        "    Max window size: 6.\n"
-        "    Lags window size: 2.\n"
-        "    Window features window size: 6."
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        forecaster._create_train_X_y_single_series(y=y, ignore_exog=True)
-
-
-@pytest.mark.parametrize("ignore_exog", 
-                         [True, False], 
-                         ids = lambda ie: f'ignore_exog: {ie}')
-def test_create_train_X_y_single_series_output_when_series_and_exog_is_None(ignore_exog):
-    """
-    Test the output of _create_train_X_y_single_series when exog is None. 
-    Check cases `ignore_exog` True and False.
+    Test the output of _create_train_X_y_single_series when the series is
+    transformed with StandardScaler.
     """
     y = pd.Series(np.arange(7, dtype=float), name='l1')
-    
+
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
     forecaster.transformer_series_ = {'l1': StandardScaler()}
     forecaster.differentiator_ = {'l1': None}
-    results = forecaster._create_train_X_y_single_series(
-                  y           = y,
-                  ignore_exog = ignore_exog,
-                  exog        = None
-              )
-    
+    results = forecaster._create_train_X_y_single_series(y=y)
+
     expected = (
         np.array([[-0.5, -1. , -1.5],
                   [ 0. , -0.5, -1. ],
                   [ 0.5,  0. , -0.5],
                   [ 1. ,  0.5,  0. ]]),
         'l1',
-        pd.RangeIndex(start=3, stop=7, step=1),
         None,
-        pd.Series(
-            data  = np.nan,
-            name  = '_dummy_exog_col_to_keep_shape',
-            index = pd.RangeIndex(start=3, stop=7, step=1)
-        ),
         np.array([0., 0.5, 1., 1.5])
     )
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
     assert results[1] == expected[1]
-    pd.testing.assert_index_equal(results[2], expected[2])
-    assert results[3] is None
-    if ignore_exog:
-        assert results[4] is None
-    else:
-        pd.testing.assert_series_equal(results[4], expected[4])
-    np.testing.assert_array_almost_equal(results[5], expected[5])
+    assert results[2] is None
+    np.testing.assert_array_almost_equal(results[3], expected[3])
 
 
-def test_create_train_X_y_single_series_output_when_series_and_exog():
+def test_create_train_X_y_single_series_output_when_series_10():
     """
-    Test the output of _create_train_X_y_single_series when exog is a 
-    pandas DataFrame with one column.
+    Test the output of _create_train_X_y_single_series when the series has
+    10 values and no transformer.
     """
     y = pd.Series(np.arange(10, dtype=float), name='l1')
-    exog = pd.DataFrame(np.arange(100, 110, dtype=float), columns=['exog'])
-    
+
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5,
                                                 transformer_series=None)
     forecaster.transformer_series_ = {'l1': None}
     forecaster.differentiator_ = {'l1': None}
-    results = forecaster._create_train_X_y_single_series(
-                  y           = y,
-                  ignore_exog = False,
-                  exog        = exog
-              )
+    results = forecaster._create_train_X_y_single_series(y=y)
 
     expected = (
         np.array([[4., 3., 2., 1., 0.],
@@ -117,140 +59,59 @@ def test_create_train_X_y_single_series_output_when_series_and_exog():
                   [7., 6., 5., 4., 3.],
                   [8., 7., 6., 5., 4.]]),
         'l1',
-        pd.RangeIndex(start=5, stop=10, step=1),
         None,
-        pd.DataFrame(
-            data  = np.array([105., 106., 107., 108., 109.], dtype=float),
-            index = pd.RangeIndex(start=5, stop=10, step=1),
-            columns = ['exog']
-        ),
         np.array([5., 6., 7., 8., 9.])
     )
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
     assert results[1] == expected[1]
-    pd.testing.assert_index_equal(results[2], expected[2])
-    assert results[3] is None
-    pd.testing.assert_frame_equal(results[4], expected[4])
-    np.testing.assert_array_almost_equal(results[5], expected[5])
+    assert results[2] is None
+    np.testing.assert_array_almost_equal(results[3], expected[3])
 
 
-def test_create_train_X_y_single_series_output_when_series_10_and_exog_is_dataframe_of_category():
+def test_create_train_X_y_single_series_output_when_series_datetime_index():
     """
-    Test the output of _create_train_X_y_single_series when exog is a 
-    pandas DataFrame with one column float and one column of cateogry.
-    """
-    y = pd.Series(np.arange(10, dtype=float), name='l1')
-    exog = pd.DataFrame({'exog_1': np.arange(10, 20, dtype=float),
-                         'exog_2': pd.Categorical(range(100, 110))})
-
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5,
-                                                transformer_series=None)
-    forecaster.transformer_series_ = {'l1': None}
-    forecaster.differentiator_ = {'l1': None}
-    results = forecaster._create_train_X_y_single_series(
-                  y           = y,
-                  ignore_exog = False,
-                  exog        = exog
-              )
-
-    expected = (
-        np.array([[4., 3., 2., 1., 0.],
-                  [5., 4., 3., 2., 1.],
-                  [6., 5., 4., 3., 2.],
-                  [7., 6., 5., 4., 3.],
-                  [8., 7., 6., 5., 4.]]),
-        'l1',
-        pd.RangeIndex(start=5, stop=10, step=1),
-        None,
-        pd.DataFrame(
-            data  = np.array([15., 16., 17., 18., 19.], dtype=float),
-            index = pd.RangeIndex(start=5, stop=10, step=1),
-            columns = ['exog_1']
-        ).assign(exog_2 = pd.Categorical([105, 106, 107, 108, 109], categories=range(100, 110))),
-        np.array([5., 6., 7., 8., 9.])
-    )
-
-    np.testing.assert_array_almost_equal(results[0], expected[0])
-    assert results[1] == expected[1]
-    pd.testing.assert_index_equal(results[2], expected[2])
-    assert results[3] is None
-    pd.testing.assert_frame_equal(results[4], expected[4])
-    np.testing.assert_array_almost_equal(results[5], expected[5])
-
-
-def test_create_train_X_y_single_series_output_when_series_and_exog_is_DataFrame_datetime_index():
-    """
-    Test the output of _create_train_X_y_single_series when series and 
-    exog is a pandas dataframe with two columns and datetime index.
+    Test the output of _create_train_X_y_single_series when the series has
+    a datetime index.
     """
     y = pd.Series(np.arange(7, dtype=float), name='l1')
     y.index = pd.date_range("1990-01-01", periods=7, freq='D')
-    exog = pd.DataFrame({
-               'exog_1': np.arange(100, 107, dtype=float),
-               'exog_2': np.arange(1000, 1007, dtype=float)},
-               index = pd.date_range("1990-01-01", periods=7, freq='D')
-           )
 
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3,
                                                 transformer_series=None)
     forecaster.transformer_series_ = {'l1': None}
     forecaster.differentiator_ = {'l1': None}
-    results = forecaster._create_train_X_y_single_series(
-                  y           = y,
-                  ignore_exog = False,
-                  exog        = exog
-              )
-    
+    results = forecaster._create_train_X_y_single_series(y=y)
+
     expected = (
         np.array([[2.0, 1.0, 0.0],
                   [3.0, 2.0, 1.0],
                   [4.0, 3.0, 2.0],
                   [5.0, 4.0, 3.0]]),
         'l1',
-        pd.date_range("1990-01-04", periods=4, freq='D'),
         None,
-        pd.DataFrame(
-            data = np.array([[103., 1003.],
-                             [104., 1004.],
-                             [105., 1005.],
-                             [106., 1006.]]),
-            index   = pd.date_range("1990-01-04", periods=4, freq='D'),
-            columns = ['exog_1', 'exog_2']
-        ),
         np.array([3., 4., 5., 6.])
     )
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
     assert results[1] == expected[1]
-    pd.testing.assert_index_equal(results[2], expected[2])
-    assert results[3] is None
-    pd.testing.assert_frame_equal(results[4], expected[4])
-    np.testing.assert_array_almost_equal(results[5], expected[5])
+    assert results[2] is None
+    np.testing.assert_array_almost_equal(results[3], expected[3])
 
 
-def test_create_train_X_y_single_series_output_when_series_and_exog_is_DataFrame_with_NaNs():
+def test_create_train_X_y_single_series_output_when_series_with_NaNs():
     """
-    Test the output of _create_train_X_y_single_series when series and 
-    exog is a pandas dataframe with two columns and NaNs in between.
+    Test the output of _create_train_X_y_single_series when the series has
+    NaNs in between.
     """
     y = pd.Series(np.arange(10, dtype=float), name='l1')
     y.iloc[6:8] = np.nan
-    exog = pd.DataFrame({
-               'exog_1': np.arange(100, 110, dtype=float),
-               'exog_2': np.arange(1000, 1010, dtype=float)}
-           )
-    exog.iloc[2:7, 0] = np.nan
 
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5,
                                                 transformer_series=None)
     forecaster.transformer_series_ = {'l1': None}
     forecaster.differentiator_ = {'l1': None}
-    results = forecaster._create_train_X_y_single_series(
-                  y           = y,
-                  ignore_exog = False,
-                  exog        = exog
-              )
+    results = forecaster._create_train_X_y_single_series(y=y)
 
     expected = (
         np.array([[4., 3., 2., 1., 0.],
@@ -259,32 +120,20 @@ def test_create_train_X_y_single_series_output_when_series_and_exog_is_DataFrame
                   [np.nan, np.nan, 5., 4., 3.],
                   [8., np.nan, np.nan, 5., 4.]]),
         'l1',
-        pd.RangeIndex(start=5, stop=10, step=1),
         None,
-        pd.DataFrame(
-            data = np.array([[np.nan, 1005.],
-                             [np.nan, 1006.],
-                             [107., 1007.],
-                             [108., 1008.],
-                             [109., 1009.]]),
-            index = pd.RangeIndex(start=5, stop=10, step=1),
-            columns = ['exog_1', 'exog_2']
-        ),
         np.array([5., np.nan, np.nan, 8., 9.])
     )
 
     np.testing.assert_array_equal(results[0], expected[0])
     assert results[1] == expected[1]
-    pd.testing.assert_index_equal(results[2], expected[2])
-    assert results[3] is None
-    pd.testing.assert_frame_equal(results[4], expected[4])
-    np.testing.assert_array_equal(results[5], expected[5])
+    assert results[2] is None
+    np.testing.assert_array_equal(results[3], expected[3])
 
 
 def test_create_train_X_y_single_series_output_when_transformer_and_fitted():
     """
     Test the output of _create_train_X_y_single_series when Forecaster as
-    already been fitted, transformer is MinMaxScaler() and has a different 
+    already been fitted, transformer is MinMaxScaler() and has a different
     series as input.
     """
     y = pd.Series(np.arange(9, dtype=float), name='l1')
@@ -298,8 +147,8 @@ def test_create_train_X_y_single_series_output_when_transformer_and_fitted():
     forecaster.is_fitted = True
 
     new_y = pd.Series(np.arange(10, 19, dtype=float), name='l1')
-    results = forecaster._create_train_X_y_single_series(y=new_y, ignore_exog=True)
-    
+    results = forecaster._create_train_X_y_single_series(y=new_y)
+
     expected = (
         np.array([[1.5  , 1.375, 1.25 ],
                   [1.625, 1.5  , 1.375],
@@ -308,31 +157,25 @@ def test_create_train_X_y_single_series_output_when_transformer_and_fitted():
                   [2.   , 1.875, 1.75 ],
                   [2.125, 2.   , 1.875]]),
         'l1',
-        pd.RangeIndex(start=3, stop=9, step=1),
-        None,
         None,
         np.array([1.625, 1.75, 1.875, 2., 2.125, 2.25])
     )
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
     assert results[1] == expected[1]
-    pd.testing.assert_index_equal(results[2], expected[2])
-    assert results[3] is None
-    assert results[4] is None
-    np.testing.assert_array_almost_equal(results[5], expected[5])
+    assert results[2] is None
+    np.testing.assert_array_almost_equal(results[3], expected[3])
 
 
-@pytest.mark.parametrize("is_fitted", 
-                         [True, False], 
+@pytest.mark.parametrize("is_fitted",
+                         [True, False],
                          ids = lambda is_fitted: f'is_fitted: {is_fitted}')
-def test_create_train_X_y_single_series_output_when_series_and_exog_and_differentitation_1(is_fitted):
+def test_create_train_X_y_single_series_output_when_differentiation_1(is_fitted):
     """
-    Test the output of _create_train_X_y_single_series when exog is a 
-    pandas DataFrame with one column and differentiation=1.
+    Test the output of _create_train_X_y_single_series when differentiation=1.
     """
     y = pd.Series(np.arange(10, dtype=float), name='l1')
-    exog = pd.DataFrame(np.arange(100, 110, dtype=float), columns=['exog'])
-    
+
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5,
                                                 transformer_series = None,
                                                 differentiation    = 1)
@@ -340,11 +183,7 @@ def test_create_train_X_y_single_series_output_when_series_and_exog_and_differen
     forecaster.differentiator_ = {'l1': clone(forecaster.differentiator)}
     forecaster.is_fitted = is_fitted
 
-    results = forecaster._create_train_X_y_single_series(
-                  y           = y,
-                  ignore_exog = False,
-                  exog        = exog
-              )
+    results = forecaster._create_train_X_y_single_series(y=y)
 
     expected = (
         np.array([[1., 1., 1., 1., 1.],
@@ -352,35 +191,25 @@ def test_create_train_X_y_single_series_output_when_series_and_exog_and_differen
                   [1., 1., 1., 1., 1.],
                   [1., 1., 1., 1., 1.]]),
         'l1',
-        pd.RangeIndex(start=6, stop=10, step=1),
         None,
-        pd.DataFrame(
-            data  = np.array([106., 107., 108., 109.], dtype=float),
-            index = pd.RangeIndex(start=6, stop=10, step=1),
-            columns = ['exog']
-        ),
         np.array([1., 1., 1., 1.])
     )
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
     assert results[1] == expected[1]
-    pd.testing.assert_index_equal(results[2], expected[2])
-    assert results[3] is None
-    pd.testing.assert_frame_equal(results[4], expected[4])
-    np.testing.assert_array_almost_equal(results[5], expected[5])
+    assert results[2] is None
+    np.testing.assert_array_almost_equal(results[3], expected[3])
 
 
-@pytest.mark.parametrize("is_fitted", 
-                         [True, False], 
+@pytest.mark.parametrize("is_fitted",
+                         [True, False],
                          ids = lambda is_fitted: f'is_fitted: {is_fitted}')
-def test_create_train_X_y_single_series_output_when_series_and_exog_and_differentitation_2(is_fitted):
+def test_create_train_X_y_single_series_output_when_differentiation_2(is_fitted):
     """
-    Test the output of _create_train_X_y_single_series when exog is a 
-    pandas DataFrame with one column and differentiation=2.
+    Test the output of _create_train_X_y_single_series when differentiation=2.
     """
     y = pd.Series(np.arange(10, dtype=float), name='l1')
-    exog = pd.DataFrame(np.arange(100, 110, dtype=float), columns=['exog'])
-    
+
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5,
                                                 transformer_series = None,
                                                 differentiation    = 2)
@@ -388,48 +217,31 @@ def test_create_train_X_y_single_series_output_when_series_and_exog_and_differen
     forecaster.differentiator_ = {'l1': clone(forecaster.differentiator)}
     forecaster.is_fitted = is_fitted
 
-    results = forecaster._create_train_X_y_single_series(
-                  y           = y,
-                  ignore_exog = False,
-                  exog        = exog
-              )
+    results = forecaster._create_train_X_y_single_series(y=y)
 
     expected = (
         np.array([[0., 0., 0., 0., 0.],
                   [0., 0., 0., 0., 0.],
                   [0., 0., 0., 0., 0.]]),
         'l1',
-        pd.RangeIndex(start=7, stop=10, step=1),
         None,
-        pd.DataFrame(
-            data  = np.array([107., 108., 109.], dtype=float),
-            index = pd.RangeIndex(start=7, stop=10, step=1),
-            columns = ['exog']
-        ),
         np.array([0., 0., 0.])
     )
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
     assert results[1] == expected[1]
-    pd.testing.assert_index_equal(results[2], expected[2])
-    assert results[3] is None
-    pd.testing.assert_frame_equal(results[4], expected[4])
-    np.testing.assert_array_almost_equal(results[5], expected[5])
+    assert results[2] is None
+    np.testing.assert_array_almost_equal(results[3], expected[3])
 
 
-def test_create_train_X_y_single_series_output_when_window_features_and_exog():
+def test_create_train_X_y_single_series_output_when_window_features():
     """
-    Test the output of _create_train_X_y_single_series when using window_features 
-    and exog with datetime index.
+    Test the output of _create_train_X_y_single_series when using window_features
+    and a datetime index.
     """
     y_datetime = pd.Series(
         np.arange(15), index=pd.date_range('2000-01-01', periods=15, freq='D'),
         name='l1', dtype=float
-    )
-    exog_datetime = pd.DataFrame(
-        np.arange(100, 115, dtype=float), 
-        index   = pd.date_range('2000-01-01', periods=15, freq='D'),
-        columns = ['exog']
     )
     rolling = RollingFeatures(
         stats=['mean', 'median', 'sum'], window_sizes=[5, 5, 6]
@@ -440,12 +252,8 @@ def test_create_train_X_y_single_series_output_when_window_features_and_exog():
     )
     forecaster.transformer_series_ = {'l1': None}
     forecaster.differentiator_ = {'l1': None}
-    results = forecaster._create_train_X_y_single_series(
-                  y           = y_datetime,
-                  ignore_exog = False,
-                  exog        = exog_datetime
-              )
-    
+    results = forecaster._create_train_X_y_single_series(y=y_datetime)
+
     expected = (
         np.array([[5., 4., 3., 2., 1., 3., 3., 15.],
                   [6., 5., 4., 3., 2., 4., 4., 21.],
@@ -457,37 +265,24 @@ def test_create_train_X_y_single_series_output_when_window_features_and_exog():
                   [12., 11., 10., 9., 8., 10., 10., 57.],
                   [13., 12., 11., 10., 9., 11., 11., 63.]]),
         'l1',
-        pd.date_range('2000-01-07', periods=9, freq='D'),
         ['roll_mean_5', 'roll_median_5', 'roll_sum_6'],
-        pd.DataFrame(
-            data  = np.arange(106, 115, dtype=float),
-            index = pd.date_range('2000-01-07', periods=9, freq='D'),
-            columns = ['exog']
-        ),
         np.array([6., 7., 8., 9., 10., 11., 12., 13., 14.]),
     )
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
     assert results[1] == expected[1]
-    pd.testing.assert_index_equal(results[2], expected[2])
-    assert results[3] == expected[3]
-    pd.testing.assert_frame_equal(results[4], expected[4])
-    np.testing.assert_array_almost_equal(results[5], expected[5])
+    assert results[2] == expected[2]
+    np.testing.assert_array_almost_equal(results[3], expected[3])
 
 
-def test_create_train_X_y_single_series_output_when_two_window_features_and_exog():
+def test_create_train_X_y_single_series_output_when_two_window_features():
     """
-    Test the output of _create_train_X_y_single_series when using 2 window_features 
-    and exog with datetime index.
+    Test the output of _create_train_X_y_single_series when using 2 window_features
+    and a datetime index.
     """
     y_datetime = pd.Series(
         np.arange(15), index=pd.date_range('2000-01-01', periods=15, freq='D'),
         name='l1', dtype=float
-    )
-    exog_datetime = pd.DataFrame(
-        np.arange(100, 115, dtype=float), 
-        index   = pd.date_range('2000-01-01', periods=15, freq='D'),
-        columns = ['exog']
     )
     rolling = RollingFeatures(stats=['mean', 'median'], window_sizes=[5, 5])
     rolling_2 = RollingFeatures(stats='sum', window_sizes=[6])
@@ -497,12 +292,8 @@ def test_create_train_X_y_single_series_output_when_two_window_features_and_exog
     )
     forecaster.transformer_series_ = {'l1': None}
     forecaster.differentiator_ = {'l1': None}
-    results = forecaster._create_train_X_y_single_series(
-                  y           = y_datetime,
-                  ignore_exog = False,
-                  exog        = exog_datetime
-              )
-    
+    results = forecaster._create_train_X_y_single_series(y=y_datetime)
+
     expected = (
         np.array([[5., 4., 3., 2., 1., 3., 3., 15.],
                   [6., 5., 4., 3., 2., 4., 4., 21.],
@@ -514,37 +305,24 @@ def test_create_train_X_y_single_series_output_when_two_window_features_and_exog
                   [12., 11., 10., 9., 8., 10., 10., 57.],
                   [13., 12., 11., 10., 9., 11., 11., 63.]]),
         'l1',
-        pd.date_range('2000-01-07', periods=9, freq='D'),
         ['roll_mean_5', 'roll_median_5', 'roll_sum_6'],
-        pd.DataFrame(
-            data  = np.arange(106, 115, dtype=float),
-            index = pd.date_range('2000-01-07', periods=9, freq='D'),
-            columns = ['exog']
-        ),
         np.array([6., 7., 8., 9., 10., 11., 12., 13., 14.]),
     )
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
     assert results[1] == expected[1]
-    pd.testing.assert_index_equal(results[2], expected[2])
-    assert results[3] == expected[3]
-    pd.testing.assert_frame_equal(results[4], expected[4])
-    np.testing.assert_array_almost_equal(results[5], expected[5])
+    assert results[2] == expected[2]
+    np.testing.assert_array_almost_equal(results[3], expected[3])
 
 
-def test__create_train_X_y_single_series_output_when_window_features_lags_None_and_exog():
+def test_create_train_X_y_single_series_output_when_window_features_and_lags_None():
     """
-    Test the output of _create_train_X_y_single_series when using window_features 
-    and exog with datetime index and lags=None.
+    Test the output of _create_train_X_y_single_series when using window_features
+    with a datetime index and lags=None.
     """
     y_datetime = pd.Series(
         np.arange(15), index=pd.date_range('2000-01-01', periods=15, freq='D'),
         name='l1', dtype=float
-    )
-    exog_datetime = pd.DataFrame(
-        np.arange(100, 115, dtype=float), 
-        index   = pd.date_range('2000-01-01', periods=15, freq='D'),
-        columns = ['exog']
     )
     rolling = RollingFeatures(
         stats=['mean', 'median', 'sum'], window_sizes=[5, 5, 6]
@@ -555,12 +333,8 @@ def test__create_train_X_y_single_series_output_when_window_features_lags_None_a
     )
     forecaster.transformer_series_ = {'l1': None}
     forecaster.differentiator_ = {'l1': None}
-    results = forecaster._create_train_X_y_single_series(
-                  y           = y_datetime,
-                  ignore_exog = False,
-                  exog        = exog_datetime
-              )
-    
+    results = forecaster._create_train_X_y_single_series(y=y_datetime)
+
     expected = (
         np.array([[3., 3., 15.],
                   [4., 4., 21.],
@@ -572,90 +346,54 @@ def test__create_train_X_y_single_series_output_when_window_features_lags_None_a
                   [10., 10., 57.],
                   [11., 11., 63.]]),
         'l1',
-        pd.date_range('2000-01-07', periods=9, freq='D'),
         ['roll_mean_5', 'roll_median_5', 'roll_sum_6'],
-        pd.DataFrame(
-            data  = np.arange(106, 115, dtype=float),
-            index = pd.date_range('2000-01-07', periods=9, freq='D'),
-            columns = ['exog']
-        ),
         np.array([6., 7., 8., 9., 10., 11., 12., 13., 14.]),
     )
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
     assert results[1] == expected[1]
-    pd.testing.assert_index_equal(results[2], expected[2])
-    assert results[3] == expected[3]
-    pd.testing.assert_frame_equal(results[4], expected[4])
-    np.testing.assert_array_almost_equal(results[5], expected[5])
+    assert results[2] == expected[2]
+    np.testing.assert_array_almost_equal(results[3], expected[3])
 
 
-def test_create_train_X_y_single_series_output_when_window_features_and_exog_transformers_diff():
+def test_create_train_X_y_single_series_output_when_window_features_transformer_series_and_differentiation():
     """
-    Test the output of _create_train_X_y_single_series when using window_features, 
-    exog, transformers and differentiation.
+    Test the output of _create_train_X_y_single_series when using window_features,
+    transformer_series and differentiation.
     """
     y_datetime = pd.Series(
         [25.3, 29.1, 27.5, 24.3, 2.1, 46.5, 31.3, 87.1, 133.5, 4.3],
         index=pd.date_range('2000-01-01', periods=10, freq='D'),
         name='l1', dtype=float
     )
-    exog = pd.DataFrame({
-               'col_1': [7.5, 24.4, 60.3, 57.3, 50.7, 41.4, 87.2, 47.4, 14.6, 73.5],
-               'col_2': ['a', 'a', 'a', 'a', 'a', 'b', 'b', 'b', 'b', 'b']},
-               index = pd.date_range('2000-01-01', periods=10, freq='D')
-           )
 
     transformer_series = StandardScaler()
-    transformer_exog = ColumnTransformer(
-                            [('scale', StandardScaler(), ['col_1']),
-                             ('onehot', OneHotEncoder(), ['col_2'])],
-                            remainder = 'passthrough',
-                            verbose_feature_names_out = False
-                        )
     rolling = RollingFeatures(
         stats=['ratio_min_max', 'median'], window_sizes=4
     )
-    # Exog is not transformed as it is done in _create_train_X_y
     forecaster = ForecasterRecursiveMultiSeries(
-                     LinearRegression(), 
-                     lags               = [1, 5], 
+                     LinearRegression(),
+                     lags               = [1, 5],
                      window_features    = rolling,
                      encoding           = 'onehot',
                      transformer_series = transformer_series,
-                     transformer_exog   = transformer_exog,
                      differentiation    = 2
                  )
     forecaster.transformer_series_ = {'l1': transformer_series}
     forecaster.differentiator_ = {'l1': clone(forecaster.differentiator)}
 
-    results = forecaster._create_train_X_y_single_series(
-                  y           = y_datetime,
-                  ignore_exog = False,
-                  exog        = exog
-              )
-    
+    results = forecaster._create_train_X_y_single_series(y=y_datetime)
+
     expected = (
         np.array([[-1.56436158, -0.14173746, -0.89489489, -0.27035108],
                   [ 1.8635851 , -0.04199628, -0.83943662,  0.62469472],
                   [-0.24672817, -0.49870587, -0.83943662,  0.75068358]]),
         'l1',
-        pd.date_range('2000-01-08', periods=3, freq='D'),
         ['roll_ratio_min_max_4', 'roll_median_4'],
-        pd.DataFrame(
-            data  = np.array([[47.4, 'b'],
-                              [14.6, 'b'],
-                              [73.5, 'b']]),
-            index = pd.date_range('2000-01-08', periods=3, freq='D'),
-            columns = ['col_1', 'col_2']
-        ).astype({'col_1': float}
-        ),
         np.array([1.8635851, -0.24672817, -4.60909217]),
     )
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
     assert results[1] == expected[1]
-    pd.testing.assert_index_equal(results[2], expected[2])
-    assert results[3] == expected[3]
-    pd.testing.assert_frame_equal(results[4], expected[4])
-    np.testing.assert_array_almost_equal(results[5], expected[5])
+    assert results[2] == expected[2]
+    np.testing.assert_array_almost_equal(results[3], expected[3])

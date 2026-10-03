@@ -934,53 +934,35 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
     def _create_train_X_y_single_series(
         self,
-        y: pd.Series,
-        ignore_exog: bool,
-        exog: pd.DataFrame | None = None
-    ) -> tuple[np.ndarray, str, pd.Index, list[str], pd.DataFrame | None, np.ndarray]:
+        y: pd.Series
+    ) -> tuple[np.ndarray, str, list[str], np.ndarray]:
         """
-        Create training matrices from univariate time series and exogenous
-        variables. This method does not transform the exog variables.
-        
+        Create the autoregressive training matrix (lags and window features)
+        from a univariate time series. Exogenous variables are processed for
+        all series at once in `_create_train_X_y`.
+
         Parameters
         ----------
         y : pandas Series
-            Training time series.
-        ignore_exog : bool
-            If `True`, `exog` is ignored.
-        exog : pandas DataFrame, default None
-            Exogenous variable/s included as predictor/s.
+            Training time series. Its length must be greater than `window_size`,
+            which is checked in `_create_train_X_y`.
 
         Returns
         -------
         X_train_autoreg : numpy ndarray
-            Training values of the autoregressive predictors (lags and 
+            Training values of the autoregressive predictors (lags and
             window features). Shape (n_rows, n_autoreg_cols).
         series_name : str
             Name of the series (level).
-        train_index : pandas Index
-            Index corresponding to the training rows.
         X_train_window_features_names_out_ : list
             Names of the window features.
-        X_train_exog : pandas DataFrame
-            Training values of exogenous variables.
         y_train : numpy ndarray
-            Values (target) of the time series related to each row of 
+            Values (target) of the time series related to each row of
             `X_train_autoreg`.
         
         """
 
         series_name = y.name
-        if len(y) <= self.window_size:
-            raise ValueError(
-                f"Length of '{series_name}' must be greater than the maximum window size "
-                f"needed by the forecaster.\n"
-                f"    Length '{series_name}': {len(y)}.\n"
-                f"    Max window size: {self.window_size}.\n"
-                f"    Lags window size: {self.max_lag}.\n"
-                f"    Window features window size: {self.max_size_window_features}."
-            )
-
         if self.encoding is None:
             fit_transformer = False
             transformer_series = self.transformer_series_['_unknown_level']
@@ -1036,27 +1018,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         else:
             X_train_autoreg = np.concatenate(X_train_autoreg, axis=1)
 
-        if ignore_exog:
-            X_train_exog = None
-        else:
-            if exog is not None:
-                # The first `self.window_size` positions have to be removed from exog
-                # since they are not in X_train_autoreg.
-                X_train_exog = exog.iloc[self.window_size:, ]
-            else:
-                # NOTE: This is faster than creating a pandas Series without values.
-                X_train_exog = pd.Series(
-                                   data  = np.nan,
-                                   index = train_index,
-                                   name  = '_dummy_exog_col_to_keep_shape'
-                               )
-
         return (
             X_train_autoreg,
             series_name,
-            train_index,
             X_train_window_features_names_out_,
-            X_train_exog,
             y_train
         )
 
@@ -1232,101 +1197,48 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 np.concatenate(list(series_dict.values())).reshape(-1, 1)
             )
 
-        ignore_exog = True if exog is None else False
+        for series_name, y in series_dict.items():
+            if len(y) <= self.window_size:
+                raise ValueError(
+                    f"Length of '{series_name}' must be greater than the maximum window size "
+                    f"needed by the forecaster.\n"
+                    f"    Length '{series_name}': {len(y)}.\n"
+                    f"    Max window size: {self.window_size}.\n"
+                    f"    Lags window size: {self.max_lag}.\n"
+                    f"    Window features window size: {self.max_size_window_features}."
+                )
 
-        # Compute number of autoreg columns and total rows for pre-allocation
-        n_autoreg_cols = 0
-        if self.lags is not None:
-            n_autoreg_cols += len(self.lags)
-        if self.window_features_names is not None:
-            n_autoreg_cols += len(self.window_features_names)
-
-        total_rows = 0
-        for k, v in series_dict.items():
-            n = len(v) - self.window_size
-            if n > 0:
-                total_rows += n
+        # Training rows of each series, in the order of `series_dict`. The first
+        # `self.window_size` positions are not in X_train.
+        index_parts = [v.index[self.window_size:] for v in series_dict.values()]
+        train_index = index_parts[0].append(index_parts[1:])
+        total_rows = len(train_index)
 
         # Build encoding mapping (sorted alphabetically for consistency)
         if not self.is_fitted:
             for i, level in enumerate(sorted(series_names_in_)):
                 self.encoding_mapping_[str(level)] = i
 
-        X_train = np.empty((total_rows, n_autoreg_cols), order='C', dtype=float)
-        y_train = np.empty(total_rows, dtype=float)
-        if self.encoding in {'onehot', 'ordinal_category'}:
-            encoded_values = np.empty(total_rows, dtype=int)
-        else:
-            encoded_values = np.empty(total_rows, dtype=float)
-
-        offset = 0
-        train_index = []
-        X_train_exog_buffer = []
-        for k in series_dict.keys():
-
-            (
-                X_train_autoreg_k,
-                series_name_k,
-                train_index_k,
-                X_train_window_features_names_out_, 
-                X_train_exog,
-                y_train_k
-            ) = self._create_train_X_y_single_series(
-                    y           = series_dict[k],
-                    exog        = exog_dict[k],
-                    ignore_exog = ignore_exog,
-                )
-
-            n = len(y_train_k)
-            X_train[offset:offset + n, :] = X_train_autoreg_k
-            y_train[offset:offset + n] = y_train_k
-            encoded_values[offset:offset + n] = self.encoding_mapping_[series_name_k]
-
-            offset += n
-            train_index.append(train_index_k)
-            X_train_exog_buffer.append(X_train_exog)
-
-        train_index = train_index[0].append(train_index[1:])
-
-        autoreg_col_names = []
-        if self.lags is not None:
-            autoreg_col_names.extend(self.lags_names)
-        if X_train_window_features_names_out_ is not None:
-            autoreg_col_names.extend(X_train_window_features_names_out_)
-
-        X_train = pd.DataFrame(
-                      data    = X_train,
-                      columns = autoreg_col_names,
-                      index   = train_index,
-                      copy    = False
-                  )
-
-        if self.encoding == 'onehot':
-            n_levels = len(self.encoding_mapping_)
-            encoding_col_names = list(self.encoding_mapping_.keys())
-            encoded_values = pd.DataFrame(
-                                 data    = np.eye(n_levels, dtype=int)[encoded_values],
-                                 columns = encoding_col_names,
-                                 index   = train_index,
-                                 copy    = False
-                             )
-            X_train = [X_train, encoded_values]
-        else:
-            if self.encoding == 'ordinal_category':
-                X_train['_level_skforecast'] = pd.Categorical(encoded_values)
-            else:
-                X_train['_level_skforecast'] = encoded_values
-            X_train = [X_train]
-
-        y_train = pd.Series(
-            data=y_train, index=train_index, name='y', copy=False
-        )
-
         exog_dtypes_in_ = None
         exog_dtypes_out_ = None
+        X_train_exog = None
         X_train_exog_names_out_ = None
         categorical_features_names_in_ = None
         if exog is not None:
+
+            X_train_exog_buffer = []
+            for k, train_index_k in zip(series_dict.keys(), index_parts):
+                if exog_dict[k] is not None:
+                    X_train_exog_buffer.append(exog_dict[k].iloc[self.window_size:, ])
+                else:
+                    # NOTE: This is faster than creating a pandas Series without values.
+                    X_train_exog_buffer.append(
+                        pd.Series(
+                            data  = np.nan,
+                            index = train_index_k,
+                            name  = '_dummy_exog_col_to_keep_shape'
+                        )
+                    )
 
             X_train_exog = pd.concat(X_train_exog_buffer, axis=0, copy=False)
 
@@ -1340,6 +1252,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     f"trained without exogenous variables.",
                     MissingExogWarning
                 )
+                X_train_exog = None
             else:
                 if '_dummy_exog_col_to_keep_shape' in X_train_exog.columns:
                     X_train_exog = (
@@ -1396,10 +1309,77 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
                 if self.categorical_features is None:
                     check_exog_dtypes(X_train_exog, call_check_exog=False)
-                
-                X_train.append(X_train_exog)
+
                 X_train_exog_names_out_ = X_train_exog.columns.to_list()
                 exog_dtypes_out_ = get_exog_dtypes(exog=X_train_exog)
+
+        # Compute number of autoreg columns for pre-allocation
+        n_autoreg_cols = 0
+        if self.lags is not None:
+            n_autoreg_cols += len(self.lags)
+        if self.window_features_names is not None:
+            n_autoreg_cols += len(self.window_features_names)
+
+        X_train = np.empty((total_rows, n_autoreg_cols), order='C', dtype=float)
+        y_train = np.empty(total_rows, dtype=float)
+        if self.encoding in {'onehot', 'ordinal_category'}:
+            encoded_values = np.empty(total_rows, dtype=int)
+        else:
+            encoded_values = np.empty(total_rows, dtype=float)
+
+        offset = 0
+        for k in series_dict.keys():
+
+            (
+                X_train_autoreg_k,
+                series_name_k,
+                X_train_window_features_names_out_,
+                y_train_k
+            ) = self._create_train_X_y_single_series(y=series_dict[k])
+
+            n = len(y_train_k)
+            X_train[offset:offset + n, :] = X_train_autoreg_k
+            y_train[offset:offset + n] = y_train_k
+            encoded_values[offset:offset + n] = self.encoding_mapping_[series_name_k]
+
+            offset += n
+
+        autoreg_col_names = []
+        if self.lags is not None:
+            autoreg_col_names.extend(self.lags_names)
+        if X_train_window_features_names_out_ is not None:
+            autoreg_col_names.extend(X_train_window_features_names_out_)
+
+        X_train = pd.DataFrame(
+                      data    = X_train,
+                      columns = autoreg_col_names,
+                      index   = train_index,
+                      copy    = False
+                  )
+
+        if self.encoding == 'onehot':
+            n_levels = len(self.encoding_mapping_)
+            encoding_col_names = list(self.encoding_mapping_.keys())
+            encoded_values = pd.DataFrame(
+                                 data    = np.eye(n_levels, dtype=int)[encoded_values],
+                                 columns = encoding_col_names,
+                                 index   = train_index,
+                                 copy    = False
+                             )
+            X_train = [X_train, encoded_values]
+        else:
+            if self.encoding == 'ordinal_category':
+                X_train['_level_skforecast'] = pd.Categorical(encoded_values)
+            else:
+                X_train['_level_skforecast'] = encoded_values
+            X_train = [X_train]
+
+        y_train = pd.Series(
+            data=y_train, index=train_index, name='y', copy=False
+        )
+
+        if X_train_exog is not None:
+            X_train.append(X_train_exog)
 
         X_train_calendar_features_names_out_ = None
         if self.calendar_features is not None:
@@ -1816,6 +1796,61 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         return weights
 
+    def _get_level_row_slices(
+        self,
+        X_train: pd.DataFrame
+    ) -> dict[str, slice]:
+        """
+        Get the block of rows of each level (series) in `X_train`. The training
+        matrix is filled series by series and the rows dropped later (NaNs) keep
+        the order, so the rows of each level are contiguous. Reading the
+        encoding once and slicing avoids one boolean mask of all the rows per
+        level, which made the cost grow with `n_levels x n_rows`.
+
+        Parameters
+        ----------
+        X_train : pandas DataFrame
+            Dataframe created with the `_create_train_X_y` method, first return.
+
+        Returns
+        -------
+        level_slices : dict
+            Slice of rows of each level present in `X_train`, in the order of the
+            rows, in the form `{level: slice(start, stop)}`. Levels without rows
+            are not included.
+
+        """
+
+        if self.encoding == "onehot":
+            # Dot product with range recovers the column index of the active
+            # one-hot column, which is the value in `encoding_mapping_`.
+            encoding_keys = list(self.encoding_mapping_.keys())
+            codes = X_train[encoding_keys].to_numpy() @ np.arange(len(encoding_keys))
+        else:
+            codes = X_train["_level_skforecast"].to_numpy()
+
+        n_rows = len(codes)
+        if n_rows == 0:
+            return {}
+
+        cuts = np.flatnonzero(codes[1:] != codes[:-1]) + 1
+        starts = np.concatenate(([0], cuts))
+        stops = np.concatenate((cuts, [n_rows]))
+
+        reverse_mapping = {v: k for k, v in self.encoding_mapping_.items()}
+        level_slices = {}
+        for start, stop in zip(starts, stops):
+            level = reverse_mapping[codes[start]]
+            if level in level_slices:
+                raise ValueError(
+                    f"The rows of each series in `X_train` must be contiguous, as "
+                    f"returned by `create_train_X_y`. Rows of series '{level}' "
+                    f"are not."
+                )
+            level_slices[level] = slice(int(start), int(stop))
+
+        return level_slices
+
     def create_sample_weights(
         self,
         series_names_in_: list,
@@ -1844,6 +1879,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         weights_samples = None
         series_weights = None
 
+        if self.series_weights is not None or self.weight_func is not None:
+            level_slices = self._get_level_row_slices(X_train=X_train)
+
         if self.series_weights is not None:
             # Series not present in series_weights have a weight of 1 in all their samples.
             # Keys in series_weights not present in series are ignored.
@@ -1865,19 +1903,16 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 }
             )
 
-            if self.encoding == "onehot":
-                series_weights = [
-                    np.repeat(self.series_weights_[serie], sum(X_train[serie]))
-                    for serie in series_names_in_
-                ]
-            else:
-                series_weights = [
-                    np.repeat(
-                        self.series_weights_[serie],
-                        sum(X_train["_level_skforecast"] == self.encoding_mapping_[serie]),
-                    )
-                    for serie in series_names_in_
-                ]
+            # Series without rows in X_train (all dropped because of NaNs) get
+            # no weights.
+            series_weights = [
+                np.repeat(
+                    self.series_weights_[serie],
+                    level_slices[serie].stop - level_slices[serie].start
+                    if serie in level_slices else 0
+                )
+                for serie in series_names_in_
+            ]
 
             series_weights = np.concatenate(series_weights)
 
@@ -1910,12 +1945,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
             weights_samples = []
             for key in self.weight_func_.keys():
-                if self.encoding == "onehot":
-                    idx = X_train.index[X_train[key] == 1.0]
-                else:
-                    idx = X_train.index[
-                        X_train["_level_skforecast"] == self.encoding_mapping_[key]
-                    ]
+                idx = X_train.index[level_slices.get(key, slice(0, 0))]
                 weights_samples.append(self.weight_func_[key](idx))
             weights_samples = np.concatenate(weights_samples)
 
@@ -2140,17 +2170,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             y_train = y_train.to_numpy()
             y_pred = self.estimator.predict(X_train_estimator)
             if self.encoding is not None:
+                level_slices = self._get_level_row_slices(X_train=X_train)
                 for level in X_train_series_names_in_:
-                    if self.encoding == 'onehot':
-                        mask = X_train[level].to_numpy() == 1.
-                    else:
-                        encoded_value = self.encoding_mapping_[level]
-                        mask = X_train['_level_skforecast'].to_numpy() == encoded_value
-
+                    level_slice = level_slices[level]
                     self._binning_in_sample_residuals(
                         level                     = level,
-                        y_true                    = y_train[mask],
-                        y_pred                    = y_pred[mask],
+                        y_true                    = y_train[level_slice],
+                        y_pred                    = y_pred[level_slice],
                         store_in_sample_residuals = store_in_sample_residuals,
                         random_state              = random_state
                     )
@@ -4108,19 +4134,16 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         
         self.in_sample_residuals_ = {}
         self.in_sample_residuals_by_bin_ = {}
+        y_train = y_train.to_numpy()
         y_pred = self.estimator.predict(X_train_estimator)
         if self.encoding is not None:
+            level_slices = self._get_level_row_slices(X_train=X_train)
             for level in X_train_series_names_in_:
-                if self.encoding == 'onehot':
-                    mask = X_train[level].to_numpy() == 1.
-                else:
-                    encoded_value = self.encoding_mapping_[level]
-                    mask = X_train['_level_skforecast'].to_numpy() == encoded_value
-
+                level_slice = level_slices[level]
                 self._binning_in_sample_residuals(
                     level                     = level,
-                    y_true                    = y_train[mask],
-                    y_pred                    = y_pred[mask],
+                    y_true                    = y_train[level_slice],
+                    y_pred                    = y_pred[level_slice],
                     store_in_sample_residuals = True,
                     random_state              = random_state
                 )

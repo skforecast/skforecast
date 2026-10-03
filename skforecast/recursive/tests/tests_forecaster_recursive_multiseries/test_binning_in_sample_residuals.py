@@ -260,7 +260,8 @@ def test_binning_in_sample_residuals_probabilistic_mode_no_binned():
     # In-sample residuals
     assert isinstance(results_residuals, dict)
     assert results_residuals.keys() == expected_residuals.keys()
-    assert np.all(results_residuals[k] == expected_residuals[k] for k in results_residuals.keys())
+    for k in results_residuals.keys():
+        np.testing.assert_array_almost_equal(results_residuals[k], expected_residuals[k])
 
     assert forecaster.in_sample_residuals_by_bin_ == {'level_1': None}
     assert forecaster.binner_intervals_ == {}

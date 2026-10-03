@@ -18,6 +18,8 @@ The main changes in this release are:
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Faster import of the forecaster modules. `numba` is no longer imported when `skforecast.recursive`, `skforecast.direct`, `skforecast.preprocessing` or `skforecast.model_selection` are imported. It is loaded on the first use of <code>[RollingFeatures]</code> or <code>[RollingFeaturesClassification]</code>.
 
++ <span class="badge text-bg-enhancement">Enhancement</span> Faster `fit` of <code>[ForecasterRecursiveMultiSeries]</code> with many series: the in-sample residuals and the sample weights no longer go through all the training rows once per series. With `series_weights` and 500 series, `fit` goes from 27 to 2.7 seconds.
+
 + <span class="badge text-bg-feature">Feature</span> New functions <code>[get_model_info]</code> and <code>[list_adapters]</code> in `skforecast.foundation` to query, without installing the backend or loading the weights, the capabilities and requirements of the foundation models: adapter, default `context_length`, exogenous variable support, supported quantiles, backend package, license restriction and Hugging Face gating.
 
 + <span class="badge text-bg-docs">Docs</span> The examples and tutorials pages are now a filterable card grid: every tutorial shows an icon, a one line summary and topic tags, and can be narrowed down with a search box and level/topic filters. [Examples](../examples/examples_english.md)
@@ -37,6 +39,8 @@ The main changes in this release are:
 **Changed**
 
 + `numba` is imported and the rolling statistics of <code>[RollingFeatures]</code> and <code>[RollingFeaturesClassification]</code> are JIT compiled on their first use instead of when `skforecast.preprocessing` is imported. This removes around 0.3 seconds from the import of every forecaster module (about 65% of the time spent by skforecast itself once numpy, pandas and scikit-learn are loaded). Behavior is unchanged.
+
++ `fit`, `set_in_sample_residuals` and `create_sample_weights` of <code>[ForecasterRecursiveMultiSeries]</code> locate the rows of each series in the training matrix once, instead of comparing all the rows once per series. With 500 series of 2,000 observations and a LightGBM of 25 trees, `fit` is 4 to 10% faster, and with `series_weights` it goes from 27 to 2.7 seconds (`create_sample_weights` counted the rows of each series with a Python loop; with `weight_func` it goes from 0.5 to 0.02 seconds). The gain grows with the number of series (the binning of the in-sample residuals goes from 1.6 to 0.15 seconds with 1,000 series) and is proportionally smaller with heavier estimators. Results are unchanged.
 
 + The examples and tutorials pages (English, Spanish and Chinese) are rendered as Material card grids with a search box and level/topic filter chips. Each tutorial now carries a one line summary and tags, and a language switcher links the three pages. The page URLs are unchanged. The three pages are generated at build time from a single source of truth, `tools/docs/hooks/examples.yml`, so the languages can no longer drift apart; add or edit a tutorial there rather than in the Markdown pages.
 
@@ -98,6 +102,8 @@ The main changes in this release are:
 + Fixed a confusing `NotImplementedError` about `last_window` raised by <code>[backtesting_stats]</code> when `refit` was an integer other than 1 (intermittent refit) and the forecaster contained estimators other than <code>[Sarimax]</code>. As with `refit=False`, `refit` is now set to `True` and an `IgnoredArgumentWarning` is issued.
 
 + <code>[Ets]</code> now raises a descriptive `ValueError` when `model` is not valid, instead of `KeyError`. This includes partial automatic specifications such as `'ZZN'`, which are not supported: use `model='ZZZ'` and restrict the search with `seasonal`, `trend`, `damped`, `allow_multiplicative` and `allow_multiplicative_trend`.
+
++ Fixed an issue in the `set_in_sample_residuals` method of <code>[ForecasterRecursiveMultiSeries]</code>, which raised `KeyError: '[...] not in index'` when the series had a `RangeIndex` and there were more than 10,000 training residuals (or more than `10_000 // n_bins` in a bin), for example 10 series of 1,200 observations with the default settings. With a `DatetimeIndex` it worked but emitted the pandas `FutureWarning: Series.__getitem__ treating keys as positions is deprecated`. The training target was kept as a pandas Series, so the residuals were sampled by label instead of by position. The residuals are now stored as numpy arrays, as `fit` does with `store_in_sample_residuals=True`, with the same values.
 
 
 ## 0.25.0 <small>Sep 11, 2026</small> { id="0.25.0" }

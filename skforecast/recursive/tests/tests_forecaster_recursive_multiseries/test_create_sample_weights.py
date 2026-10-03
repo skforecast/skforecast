@@ -9,6 +9,12 @@ from sklearn.linear_model import LinearRegression
 from ....recursive import ForecasterRecursiveMultiSeries
 from ....preprocessing import reshape_series_wide_to_long
 
+# Fixtures
+from .fixtures_forecaster_recursive_multiseries import (
+    series_dict_unordered,
+    exog_dict_unordered
+)
+
 
 def custom_weights(index):  # pragma: no cover
     """
@@ -24,6 +30,15 @@ def custom_weights_2(index):  # pragma: no cover
     Return 2 if index is between '2022-01-11' and '2022-01-13', 3 otherwise.
     """
     weights = np.where((index >= "2022-01-11") & (index <= "2022-01-13"), 2, 3)
+
+    return weights
+
+
+def custom_weights_3(index):  # pragma: no cover
+    """
+    Return 2 if index is after '2020-01-06', 1 otherwise.
+    """
+    weights = np.where(index > "2020-01-06", 2., 1.)
 
     return weights
 
@@ -457,6 +472,56 @@ def test_create_sample_weights_output_using_series_weights_and_weight_func_diffe
     expected = np.array([1, 0, 0, 0, 1, 1, 1, 0, 2, 2, 2], dtype=float)
 
     assert np.array_equal(results, expected)
+
+
+@pytest.mark.parametrize(
+    "encoding",
+    ["ordinal", "ordinal_category", "onehot", None],
+    ids=lambda encoding: f"encoding: {encoding}",
+)
+@pytest.mark.parametrize(
+    "series_weights, weight_func, expected",
+    [
+        ({"c": 1.5, "a": 3., "d": 5., "b": 0.5}, None,
+         np.array([1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 3., 3., 3., 3., 3., 3., 3.,
+                   0.5, 0.5, 0.5, 0.5])),
+        (None, custom_weights_3,
+         np.array([1., 1., 2., 2., 2., 2., 1., 1., 1., 2., 2., 2., 2.,
+                   1., 1., 1., 2.])),
+        ({"c": 1.5, "a": 3., "d": 5., "b": 0.5}, custom_weights_3,
+         np.array([1.5, 1.5, 3., 3., 3., 3., 3., 3., 3., 6., 6., 6., 6.,
+                   0.5, 0.5, 0.5, 1.])),
+    ],
+    ids=["series_weights", "weight_func", "series_weights and weight_func"],
+)
+def test_create_sample_weights_output_when_series_unordered_different_lengths_and_dropped(
+    encoding, series_weights, weight_func, expected
+):
+    """
+    Test `sample_weights` creation with the X_train created by `_create_train_X_y`
+    when the series are not in alphabetical order ('c', 'a', 'd', 'b'), have
+    different lengths and an interspersed NaN, and one series ('d') has no rows
+    in X_train because it has no exog and `dropna_from_series=True`. The rows of
+    'c' (6), 'a' (7) and 'b' (4) follow the order of the series, not the
+    alphabetical order of `encoding_mapping_`, and 'd' gets no weights.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = LinearRegression(),
+                     lags               = 2,
+                     encoding           = encoding,
+                     dropna_from_series = True,
+                     series_weights     = series_weights,
+                     weight_func        = weight_func
+                 )
+    X_train, _, _, series_names_in_, *_ = forecaster._create_train_X_y(
+        series=series_dict_unordered, exog=exog_dict_unordered
+    )
+    results = forecaster.create_sample_weights(
+        series_names_in_=series_names_in_, X_train=X_train
+    )
+
+    assert series_names_in_ == ["c", "a", "d", "b"]
+    np.testing.assert_array_equal(results, expected)
 
 
 @pytest.mark.parametrize(
