@@ -1972,7 +1972,7 @@ def _initialize_regressor_params(
     svd_rotation = None
 
     if not use_orig_exog:
-        rows_good = np.array([np.all(np.isfinite(row)) for row in exog])
+        rows_good = np.all(np.isfinite(exog), axis=1)
         if np.sum(rows_good) > 0:
             _, _, Vt = np.linalg.svd(exog[rows_good, :], full_matrices=False)
             svd_rotation = {'V': Vt.T}
@@ -2012,7 +2012,10 @@ def _initialize_regressor_params(
             ols_coef = beta
 
     # Effective sample size
-    isna = np.isnan(x) | np.array([np.any(np.isnan(row)) for row in exog])
+    # With zero rows the mask is a float array, as with the former row-wise
+    # loop, so an empty series keeps raising the same error.
+    exog_row_nan = np.any(np.isnan(exog), axis=1) if len(exog) > 0 else np.array([])
+    isna = np.isnan(x) | exog_row_nan
     n_used = int(np.sum(~isna)) - len(Delta)
 
     if ols_coef is not None:
