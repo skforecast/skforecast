@@ -22,8 +22,9 @@ def test_AdapterBase_TypeError_when_subclass_misses_required_class_attributes():
     """
     err_msg = re.escape(
         "`IncompleteAdapter` must define the class attribute(s) "
-        "['supports_nan_in_series', 'requires_hf_auth', 'backend_package', "
-        "'default_model_id'] in its class body."
+        "['supports_nan_in_series', 'requires_hf_auth', "
+        "'requires_provider_auth', 'weights_repo_id', 'weights_in_hf_cache', "
+        "'backend_package', 'default_model_id'] in its class body."
     )
     with pytest.raises(TypeError, match=err_msg):
 

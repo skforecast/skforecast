@@ -56,7 +56,7 @@ pip install chronos-forecasting    # For Chronos-2
 pip install "timesfm[torch]"       # For TimesFM 2.5 and 3.0
 pip install uni2ts                 # For Moirai-2
 pip install tabicl[forecast]       # For TabICL
-pip install tabpfn-time-series     # For TabPFN-TS
+pip install "tabpfn-time-series>=1.3"  # For TabPFN-TS
 pip install tfc-t0                 # For T0
 pip install tsicl                  # For TS-ICL
 pip install synthefy-nori          # For Nori
@@ -180,7 +180,12 @@ from skforecast.foundation import get_model_info, list_adapters
 info = get_model_info('google/timesfm-3.0-pytorch')
 info.allow_exog, info.supported_quantiles  # supported_quantiles None = any level in (0, 1)
 info.backend_package                       # 'timesfm[torch]', as passed to pip install
-info.license_restriction, info.requires_hf_auth
+info.license, info.license_url             # SPDX id (or model card license name) and link, always informed
+info.commercial_use_restricted             # True if the license restricts commercial use
+info.requires_hf_auth                      # gated on the Hugging Face Hub
+info.requires_provider_auth                # provider account/license acceptance (TabPFN, Prior Labs)
+info.weights_repo_id                       # HF repo the weights come from, e.g. 'jingang/TabICL' for TabICL
+info.weights_in_hf_cache                   # False when the weights are not in the HF Hub cache (TabPFN)
 
 list_adapters(as_frame=True)  # DataFrame, one row per adapter; default: list of FoundationModelInfo
 ```
