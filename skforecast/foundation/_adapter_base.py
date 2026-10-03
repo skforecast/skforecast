@@ -36,6 +36,9 @@ class _AdapterBase(ABC):
         "supports_heterogeneous_covariates",
         "supports_nan_in_series",
         "requires_hf_auth",
+        "requires_provider_auth",
+        "weights_repo_id",
+        "weights_in_hf_cache",
         "backend_package",
         "default_model_id",
     )

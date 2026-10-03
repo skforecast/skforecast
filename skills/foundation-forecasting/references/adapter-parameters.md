@@ -103,7 +103,7 @@ There is no compile step and no horizon ceiling. For each series, columns presen
 
 | Parameter            | Type  | Default  | Description                                                                      |
 |----------------------|-------|----------|----------------------------------------------------------------------------------|
-| `model_id`           | str   | —        | HuggingFace model ID (e.g. `soda-inria/tabicl`).                                 |
+| `model_id`           | str   | —        | Model ID (e.g. `soda-inria/tabicl`). Used only for adapter resolution; the weights are downloaded from the `jingang/TabICL` Hugging Face repository. |
 | `model`              | obj   | `None`   | Pre-instantiated `TabICLForecaster`. If `None`, created lazily on first predict. |
 | `context_length`     | int   | `4096`   | Max historical observations kept as context.                                     |
 | `point_estimate`     | str   | `'mean'` | Point forecast method: `'mean'` or `'median'`.                                   |
@@ -119,7 +119,7 @@ There is no compile step and no horizon ceiling. For each series, columns presen
 
 | Parameter             | Type  | Default    | Description                                                                      |
 |-----------------------|-------|------------|----------------------------------------------------------------------------------|
-| `model_id`            | str   | —          | Model ID (e.g. `priorlabs/tabpfn-ts`). Used only for adapter resolution.         |
+| `model_id`            | str   | —          | Model ID (e.g. `priorlabs/tabpfn-ts`). Used only for adapter resolution; the weights are those of the TabPFN version pinned by `tabpfn-time-series` (`Prior-Labs/tabpfn_3_5` with 1.3, the minimum supported version), stored in the TabPFN cache directory. Prior Labs requires an account token and accepting the license in a browser before the first download. |
 | `model`               | obj   | `None`     | Pre-instantiated `TabPFNTSPipeline`. If `None`, created lazily on first predict. |
 | `context_length`      | int   | `32768`    | Max historical observations kept as context. Lower (e.g. 4096) for faster inference. |
 | `mode`                | str   | `'local'`  | `'local'` (on-device inference, CUDA > MPS > CPU) or `'client'` (Prior Labs cloud API, no GPU needed). |
@@ -143,8 +143,6 @@ There is no compile step and no horizon ceiling. For each series, columns presen
 | `torch_dtype`    | object | `None`   | Torch dtype the loaded model is cast to (e.g. `torch.bfloat16`).           |
 
 Point forecasts use the median (quantile `0.5`). Covariates must be numeric; encode categoricals as numbers before passing them. A series with no future exog is forecast without covariates.
-
-**Gated checkpoints**: `theforecastingcompany/t0*` repos are gated on the Hugging Face Hub. Before first use, log in at the model page (e.g. `https://huggingface.co/theforecastingcompany/t0-alpha`) to accept its license, then authenticate locally (`hf auth login` or the `HF_TOKEN` environment variable). Skipping this step surfaces as a confusing `TypeError` about missing `T0Forecaster` constructor arguments rather than an authentication error.
 
 ## TSICLAdapter — EDF Lab TS-ICL
 
@@ -171,7 +169,7 @@ Covariates must be numeric; encode categoricals as numbers before passing them.
 
 | Parameter                | Type | Default  | Description                                                                                       |
 |--------------------------|------|----------|-----------------------------------------------------------------------------------------------------|
-| `model_id`               | str  | —        | Model ID (e.g. `Synthefy/Nori`). Used only for adapter resolution.                                 |
+| `model_id`               | str  | —        | Model ID (e.g. `Synthefy/Nori`). Selects the adapter and is forwarded to `NoriRegressor` as the checkpoint to load (its `model` argument), unless `nori_config` sets `model` or `model_path`. |
 | `model`                  | obj  | `None`   | Pre-instantiated `NoriRegressor`. If `None`, created lazily on first `predict`.                    |
 | `context_length`         | int  | `4096`   | Max historical observations kept as context.                                                        |
 | `point_estimate`         | str  | `'mean'` | Point forecast method: `'mean'`, `'median'` or `'mode'`.                                            |
@@ -216,7 +214,7 @@ All adapters implement the same minimal interface:
 - `predict(steps, context, context_exog, exog, quantiles)` — returns a   `dict[str, np.ndarray]` of shape `(steps, n_quantiles)` keyed by series name.
 - `get_params()` / `set_params(**kwargs)` — sklearn-style parameter access.
 - `allow_exog` / `supports_past_only_covariates` / `supports_heterogeneous_covariates` / `supports_nan_in_series` — class attributes read by `FoundationModel` to decide how exog and NaN are handled. When `supports_heterogeneous_covariates` is `False` (Chronos-2, TS-ICL, TabICL, TimesFM 3.0), `FoundationModel.predict` groups the series by their (past-only, future) exog columns and calls `adapter.predict` once per group; adapters never receive a batch with mixed covariate columns. When `supports_nan_in_series` is `False`, a context with NaN raises `ValueError` before the adapter is called (all current adapters accept NaN; Nori drops the NaN rows itself).
-- `supports_categorical_covariates` / `requires_hf_auth` / `backend_package` / `default_model_id` / `SUPPORTED_QUANTILES`: descriptive class attributes. They are exposed, together with the ones above and the default `context_length`, through `get_model_info` and `list_adapters`. `supports_categorical_covariates` is `True` only for Chronos-2 (non-numeric covariates are passed natively); `requires_hf_auth` is `True` only for TFC-T0 (gated weights); `SUPPORTED_QUANTILES` is `None` when any level in `(0, 1)` is accepted.
+- `supports_categorical_covariates` / `requires_hf_auth` / `requires_provider_auth` / `weights_repo_id` / `weights_in_hf_cache` / `backend_package` / `default_model_id` / `SUPPORTED_QUANTILES`: descriptive class attributes. They are exposed, together with the ones above and the default `context_length`, through `get_model_info` and `list_adapters`. `supports_categorical_covariates` is `True` only for Chronos-2 (non-numeric covariates are passed natively); `requires_hf_auth` is `True` when the weights are gated on the Hugging Face Hub (currently none of the supported models); `requires_provider_auth` is `True` only for TabPFN-TS (Prior Labs token and license acceptance, outside the Hugging Face Hub); `weights_repo_id` is the fixed Hugging Face repository of the backends that ignore `model_id` (`jingang/TabICL`, `Prior-Labs/tabpfn_3_5`, `taharnbl/TS-ICL`) and `None` when the weights are downloaded from `model_id`; `weights_in_hf_cache` is `False` only for TabPFN-TS, which keeps the weights in its own cache directory; `SUPPORTED_QUANTILES` is `None` when any level in `(0, 1)` is accepted.
 
 ### Exog column validation at predict time
 
