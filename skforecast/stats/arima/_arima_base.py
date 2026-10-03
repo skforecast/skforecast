@@ -1255,8 +1255,13 @@ def _arima_kalman_core(
                 # one-step-ahead prediction.
                 std_residuals[t] = innovation if F < 1e4 else np.nan
         else:
+            # Missing observation: no update step, the filtered state and
+            # covariance are the predicted ones, so the uncertainty keeps
+            # growing over the gap (as R's ARIMA_Like).
             for i in range(rd):
                 a[i] = anew[i]
+                for j in range(rd):
+                    P[i, j] = Pnew[i, j]
             if give_resid:
                 std_residuals[t] = np.nan
 
