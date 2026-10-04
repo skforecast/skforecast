@@ -190,5 +190,8 @@ fuel_consumption = pd.get_dummies(fuel_consumption, columns=['month'], prefix='m
 # ~1e-2 (relative), predictions, intervals and log-likelihood up to ~1e-4.
 # Values that do not depend on the optimizer (shapes, names, selected orders,
 # exact relationships such as fitted + residuals = y) are compared exactly.
+# Values much less sensitive than these defaults (CSS estimates, log-likelihood,
+# in-sample values) are compared at the call site with a tighter tolerance, at
+# least 20 times the largest deviation measured with 16-ULP perturbations.
 tol_coef = {'rtol': 1e-2, 'atol': 1e-3}
 tol_pred = {'rtol': 1e-3, 'atol': 0}

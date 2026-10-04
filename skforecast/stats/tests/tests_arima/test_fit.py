@@ -59,20 +59,23 @@ def test_arima_fit_multidimensional_y_raises():
 
 
 @pytest.mark.parametrize(
-    "order, fit_intercept",
-    [((1, 0, 0), True), ((1, 0, 0), False), ((0, 1, 0), True)],
+    "order, fit_intercept, n_exog",
+    [((1, 0, 0), True, 0), ((1, 0, 0), False, 0), ((0, 1, 0), True, 0),
+     ((1, 0, 0), False, 1), ((1, 0, 0), True, 2)],
     ids=lambda x: f"{x}"
 )
-def test_arima_fit_ValueError_when_y_is_empty(order, fit_intercept):
+def test_arima_fit_ValueError_when_y_is_empty(order, fit_intercept, n_exog):
     """
     Test that fit raises the same ValueError for an empty series with and
-    without intercept (it used to raise an unrelated TypeError with intercept).
+    without intercept or exogenous variables (it used to raise an unrelated
+    TypeError with an intercept or exogenous variables).
     """
     y = np.array([], dtype=float)
+    exog = np.empty((0, n_exog)) if n_exog > 0 else None
     model = Arima(order=order, fit_intercept=fit_intercept)
     msg = "Too few non-missing observations"
     with pytest.raises(ValueError, match=msg):
-        model.fit(y)
+        model.fit(y, exog=exog)
 
 
 def test_arima_fit_with_exog_length_mismatch():
@@ -332,8 +335,10 @@ def test_arima_fit_method_css():
     # Check coefficients and sigma2 (aic is nan for CSS method)
     expected_coef = np.array([0.6651909069893525, 0.10578612974450272, -0.17749673261063734])
     expected_sigma2 = 0.597459948833387
-    np.testing.assert_allclose(model.coef_, expected_coef, **tol_coef)
-    np.testing.assert_allclose(model.sigma2_, expected_sigma2, **tol_coef)
+    # The CSS objective is a smooth sum of squares: the estimates move less
+    # than 5e-6 (relative) under perturbations, far less than `tol_coef`.
+    np.testing.assert_allclose(model.coef_, expected_coef, rtol=1e-4)
+    np.testing.assert_allclose(model.sigma2_, expected_sigma2, rtol=1e-4)
     
     assert "CSS" in model.model_['method'] or "ARIMA" in model.model_['method']
     assert model.converged_ is True
@@ -396,15 +401,16 @@ def test_arima_fit_include_drift_when_d_is_zero():
     model.fit(y)
 
     assert model.coef_names_ == ['ar1', 'intercept', 'drift']
+    # Measured sensitivity: coefficients 3e-5, predictions 2e-7 (relative).
     np.testing.assert_allclose(
         model.coef_,
         np.array([0.4899926283331951, 0.6798647372946346, 0.5287911842741932]),
-        **tol_coef
+        rtol=1e-3
     )
     np.testing.assert_allclose(
         model.predict(steps=3),
         np.array([51.01508338572809, 53.110969612118886, 54.40762581492772]),
-        **tol_pred
+        rtol=1e-5
     )
 
 
@@ -443,16 +449,17 @@ def test_arima_fit_box_cox_with_manual_order():
     assert model.model_['lambda'] == 0.0
     np.testing.assert_array_equal(model.y_train_, y)
     assert np.all(np.isnan(model.fitted_values_[:13]))
+    # Measured sensitivity: fitted values 4e-6, score 3e-7 (relative).
     np.testing.assert_allclose(
         model.fitted_values_[13:16],
         np.array([121.16522358924536, 139.05430341843623, 137.045465852081]),
-        **tol_pred
+        rtol=1e-4
     )
     valid = ~np.isnan(model.fitted_values_)
     np.testing.assert_array_almost_equal(
         model.fitted_values_[valid] + model.in_sample_residuals_[valid], y[valid]
     )
-    np.testing.assert_allclose(model.get_score(), 0.991228729747097, **tol_pred)
+    np.testing.assert_allclose(model.get_score(), 0.991228729747097, rtol=1e-5)
 
 
 def test_arima_fit_box_cox_auto_lambda_with_manual_order():
