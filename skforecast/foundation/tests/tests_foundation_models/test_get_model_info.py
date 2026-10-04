@@ -123,7 +123,7 @@ def test_get_model_info_output_TimesFM3():
         ("google/timesfm-3.0-pytorch",
          ("TimesFM3Adapter", 2048, "timesfm[torch]", True, False, False)),
         ("NX-AI/TiRex-2",
-         ("TiRex2Adapter", 512, "tirex-2", True, False, False)),
+         ("TiRex2Adapter", 2048, "tirex-2", True, False, False)),
         ("Salesforce/moirai-2.0-R-small",
          ("MoiraiAdapter", 2048, "uni2ts", False, False, False)),
         ("soda-inria/tabicl",
@@ -163,6 +163,7 @@ def test_get_model_info_output_for_each_adapter(model_id, expected):
         ("soda-inria/tabicl", None),
         ("google/timesfm-2.5-200m-pytorch", (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)),
         ("Salesforce/moirai-2.0-R-small", (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)),
+        ("NX-AI/TiRex-2", (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)),
         ("taharnbl/TS-ICL", tuple(round(0.01 * i, 2) for i in range(1, 100))),
     ],
     ids=lambda x: str(x)[:40],
@@ -192,6 +193,7 @@ def test_get_model_info_supported_quantiles(model_id, expected):
         ("soda-inria/tabicl", "soda-inria/tabicl", False),
         ("theforecastingcompany/t0-alpha", "theforecastingcompany/t0", False),
         ("Synthefy/Nori", "Synthefy/Nori", False),
+        ("NX-AI/TiRex-2", "NX-AI/TiRex-2", False),
     ],
     ids=lambda x: str(x),
 )
@@ -254,6 +256,7 @@ def test_get_model_info_license_url(model_id, expected):
          ("theforecastingcompany/t0-alpha", True, False)),
         ("Synthefy/Nori", ("Synthefy/Nori", True, False)),
         ("taharnbl/TS-ICL", ("taharnbl/TS-ICL", True, False)),
+        ("NX-AI/TiRex-2", ("NX-AI/TiRex-2", True, False)),
     ],
     ids=lambda x: str(x),
 )
@@ -296,7 +299,7 @@ def test_get_model_info_does_not_import_backend_libraries():
     """
     backends = [
         "chronos", "timesfm", "uni2ts", "tabicl", "tabpfn_time_series",
-        "t0", "tsicl", "synthefy_nori",
+        "t0", "tsicl", "synthefy_nori", "tirex2",
     ]
     code = (
         "import sys\n"
