@@ -800,3 +800,53 @@ def test_consolidate_dtypes_when_multiindex():
         exog_dict['series_1'].dtypes,
         exog_dict['series_2'].dtypes
     )
+
+
+@pytest.mark.parametrize(
+    "start", ["2025-10-01", "2026-03-01"], ids=lambda start: f"start: {start}"
+)
+@pytest.mark.parametrize(
+    "multiindex", [True, False], ids=lambda multiindex: f"MultiIndex: {multiindex}"
+)
+def test_reshape_exog_long_to_dict_output_when_index_is_tz_aware_and_utc_anchored(
+    start, multiindex
+):
+    """
+    Test reshape_exog_long_to_dict when the timestamps are timezone-aware and
+    advance in fixed UTC steps (created in UTC and converted to a local
+    timezone) across a daylight saving change. The values must be preserved and
+    only the missing dates filled with NaN.
+    """
+    index = pd.date_range(
+        start=start, periods=60, freq="D", tz="UTC"
+    ).tz_convert("Europe/Madrid")
+    values = np.arange(60, dtype=float)
+    data = pd.concat(
+        [
+            pd.DataFrame({"series_id": "A", "datetime": index, "exog_1": values}),
+            pd.DataFrame(
+                {"series_id": "B", "datetime": index, "exog_1": values}
+            ).drop(index=[10, 40]),
+        ]
+    )
+    if multiindex:
+        data = data.set_index(["series_id", "datetime"])
+        results = reshape_exog_long_to_dict(
+            data=data, freq="D", suppress_warnings=True
+        )
+    else:
+        results = reshape_exog_long_to_dict(
+            data=data, series_id="series_id", index="datetime", freq="D",
+            suppress_warnings=True
+        )
+
+    values_with_gaps = values.copy()
+    values_with_gaps[[10, 40]] = np.nan
+    expected = {
+        "A": pd.DataFrame({"exog_1": values}, index=index),
+        "B": pd.DataFrame({"exog_1": values_with_gaps}, index=index),
+    }
+
+    assert list(results.keys()) == ["A", "B"]
+    for k in expected:
+        pd.testing.assert_frame_equal(results[k], expected[k])

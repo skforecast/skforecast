@@ -277,3 +277,53 @@ def test_check_output_reshape_series_long_to_dict_with_fill_value_when_multiinde
 
     for k in expected.keys():
         pd.testing.assert_series_equal(results[k], expected[k])
+
+
+@pytest.mark.parametrize(
+    "start", ["2025-10-01", "2026-03-01"], ids=lambda start: f"start: {start}"
+)
+@pytest.mark.parametrize(
+    "multiindex", [True, False], ids=lambda multiindex: f"MultiIndex: {multiindex}"
+)
+def test_reshape_series_long_to_dict_output_when_index_is_tz_aware_and_utc_anchored(
+    start, multiindex
+):
+    """
+    Test reshape_series_long_to_dict when the timestamps are timezone-aware and
+    advance in fixed UTC steps (created in UTC and converted to a local
+    timezone) across a daylight saving change. The values must be preserved and
+    only the missing dates filled with NaN.
+    """
+    index = pd.date_range(
+        start=start, periods=60, freq="D", tz="UTC"
+    ).tz_convert("Europe/Madrid")
+    values = np.arange(60, dtype=float)
+    data = pd.concat(
+        [
+            pd.DataFrame({"series_id": "A", "datetime": index, "value": values}),
+            pd.DataFrame(
+                {"series_id": "B", "datetime": index, "value": values}
+            ).drop(index=[10, 40]),
+        ]
+    )
+    if multiindex:
+        data = data.set_index(["series_id", "datetime"])
+        results = reshape_series_long_to_dict(
+            data=data, freq="D", suppress_warnings=True
+        )
+    else:
+        results = reshape_series_long_to_dict(
+            data=data, series_id="series_id", index="datetime", values="value",
+            freq="D", suppress_warnings=True
+        )
+
+    values_with_gaps = values.copy()
+    values_with_gaps[[10, 40]] = np.nan
+    expected = {
+        "A": pd.Series(values, index=index, name="A"),
+        "B": pd.Series(values_with_gaps, index=index, name="B"),
+    }
+
+    assert list(results.keys()) == ["A", "B"]
+    for k in expected:
+        pd.testing.assert_series_equal(results[k], expected[k])

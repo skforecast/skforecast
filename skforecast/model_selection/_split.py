@@ -13,7 +13,11 @@ import pandas as pd
 import itertools
 
 from .. import __version__
-from ..utils import date_to_index_position, get_style_repr_html
+from ..utils import (
+    _date_range_from_index,
+    date_to_index_position,
+    get_style_repr_html
+)
 from ..exceptions import IgnoredArgumentWarning
 
 
@@ -284,11 +288,16 @@ class BaseFold():
             not_valid_index = []
             min_index = []
             max_index = []
+            # NOTE: The longest index is the most likely to contain a daylight saving
+            # change, used to identify the convention of timezone-aware indexes.
+            longest_index = None
             for k, v in X.items():
                 if v is None:
                     continue
 
                 idx = v.index
+                if longest_index is None or len(idx) > len(longest_index):
+                    longest_index = idx
                 if isinstance(idx, pd.DatetimeIndex):
                     indexes_freq.add(idx.freq)
                 elif isinstance(idx, pd.RangeIndex):
@@ -320,9 +329,12 @@ class BaseFold():
                 )
             
             if isinstance(idx, pd.DatetimeIndex):
-                idx = pd.date_range(
-                    start=min(min_index), end=max(max_index), freq=indexes_freq.pop()
-                )
+                idx = _date_range_from_index(
+                          index = longest_index, 
+                          start = min(min_index), 
+                          end   = max(max_index),
+                          freq  = indexes_freq.pop()
+                      )
             else:
                 idx = pd.RangeIndex(
                     start=min(min_index), stop=max(max_index) + 1, step=indexes_freq.pop()

@@ -100,6 +100,70 @@ def test_output_expand_index_when_index_is_DatetimeIndex_with_no_freq_but_infera
     pd.testing.assert_index_equal(results, expected)
 
 
+@pytest.mark.parametrize(
+    'freq, start, tz, n_index, steps',
+    [
+        ('D',  '2025-10-15', 'Europe/Madrid', 7, 10),
+        ('D',  '2026-03-20', 'Europe/Madrid', 7, 14),
+        ('D',  '2025-10-25', 'America/New_York', 5, 14),
+        ('D',  '2025-10-20 06:00', 'Europe/Madrid', 10, 170),
+        ('2D', '2025-10-15', 'Europe/Madrid', 4, 8),
+        ('W',  '2025-09-07', 'Europe/Madrid', 5, 6),
+        ('MS', '2025-06-01', 'America/New_York', 4, 8),
+    ],
+    ids=lambda x: f'{x}'
+)
+def test_output_expand_index_when_index_is_tz_aware_and_utc_anchored(
+    freq, start, tz, n_index, steps
+):
+    """
+    Test expand_index when the index is timezone-aware and advances in fixed
+    UTC steps (timestamps created in UTC and converted to a local timezone).
+    The new index must keep the same convention when it crosses a daylight
+    saving change, where the local time of day shifts one hour.
+    """
+    full_index = pd.date_range(
+        start=start, periods=n_index + steps, freq=freq, tz='UTC'
+    ).tz_convert(tz)
+    index = full_index[:n_index]
+    expected = full_index[n_index:]
+    results = expand_index(index, steps=steps)
+
+    pd.testing.assert_index_equal(results, expected)
+
+
+@pytest.mark.parametrize(
+    'freq, start, tz, n_index, steps',
+    [
+        ('D',  '2025-10-15', 'Europe/Madrid', 7, 10),
+        ('D',  '2026-03-20', 'Europe/Madrid', 7, 14),
+        ('D',  '2025-10-15 08:00', 'Europe/Madrid', 7, 10),
+        ('D',  '2025-10-20', 'Europe/Madrid', 10, 170),
+        ('D',  '2026-03-20', 'Europe/London', 7, 14),
+        ('D',  '2025-10-15', 'UTC', 7, 10),
+        ('h',  '2025-10-25', 'Europe/Madrid', 24, 48),
+        ('MS', '2025-06-01', 'Europe/Madrid', 4, 8),
+    ],
+    ids=lambda x: f'{x}'
+)
+def test_output_expand_index_when_index_is_tz_aware_and_follows_local_calendar(
+    freq, start, tz, n_index, steps
+):
+    """
+    Test expand_index when the index is timezone-aware and created directly in
+    the local timezone. The local time of day must be preserved when the new
+    index crosses a daylight saving change.
+    """
+    full_index = pd.date_range(
+        start=start, periods=n_index + steps, freq=freq, tz=tz
+    )
+    index = full_index[:n_index]
+    expected = full_index[n_index:]
+    results = expand_index(index, steps=steps)
+
+    pd.testing.assert_index_equal(results, expected)
+
+
 def test_output_expand_index_when_index_is_RangeIndex():
     """
     Test values returned by expand_index when input is RangeIndex.

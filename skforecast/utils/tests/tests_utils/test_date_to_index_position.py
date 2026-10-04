@@ -143,3 +143,37 @@ def test_output_date_to_index_position_when_date_is_first_date_and_method_is_val
     )
 
     assert results == 1  # iloc position within the range
+
+
+@pytest.mark.parametrize(
+    'start, utc_anchored',
+    [('2025-10-01', True), ('2026-03-01', True),
+     ('2025-10-01', False), ('2026-03-01', False)],
+    ids=lambda x: f'{x}'
+)
+def test_output_date_to_index_position_when_index_is_tz_aware_and_crosses_dst_change(
+    start, utc_anchored
+):
+    """
+    Test it returns the correct position when the index is timezone-aware and
+    the range between the index and `date_input` crosses a daylight saving
+    change, both when the index advances in fixed UTC steps (created in UTC
+    and converted to a local timezone) and in local calendar steps.
+    """
+    if utc_anchored:
+        index = pd.date_range(
+            start=start, periods=50, freq='D', tz='UTC'
+        ).tz_convert('Europe/Madrid')
+    else:
+        index = pd.date_range(start=start, periods=50, freq='D', tz='Europe/Madrid')
+
+    results_prediction = date_to_index_position(
+        index=index[:20], date_input=index[45], method='prediction'
+    )
+    results_validation = date_to_index_position(
+        index=index, date_input=index[45], method='validation',
+        date_literal='initial_train_size'
+    )
+
+    assert results_prediction == 26
+    assert results_validation == 46

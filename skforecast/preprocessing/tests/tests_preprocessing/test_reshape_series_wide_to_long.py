@@ -61,3 +61,30 @@ def test_check_output_reshape_series_wide_to_long(return_multi_index):
     if return_multi_index:
         assert results.loc['series_1'].index.freq == expected.loc['series_1'].index.freq
         assert results.loc['series_2'].index.freq == expected.loc['series_2'].index.freq
+
+
+@pytest.mark.parametrize(
+    "start", ["2025-10-01", "2026-03-01"], ids=lambda start: f"start: {start}"
+)
+def test_reshape_series_wide_to_long_output_when_index_is_tz_aware_and_utc_anchored(start):
+    """
+    Test reshape_series_wide_to_long when the index is timezone-aware and
+    advances in fixed UTC steps (created in UTC and converted to a local
+    timezone) across a daylight saving change.
+    """
+    index = pd.date_range(
+        start=start, periods=60, freq="D", tz="UTC"
+    ).tz_convert("Europe/Madrid")
+    values = np.arange(60, dtype=float)
+    data = pd.DataFrame({"A": values, "B": values * 2}, index=index)
+    results = reshape_series_wide_to_long(data=data)
+
+    assert len(results) == 120
+    assert results["value"].notna().all()
+    for k, factor in (("A", 1), ("B", 2)):
+        pd.testing.assert_index_equal(
+            results.loc[k].index, index, check_names=False
+        )
+        np.testing.assert_array_equal(
+            results.loc[k, "value"].to_numpy(), values * factor
+        )
