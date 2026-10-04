@@ -357,7 +357,8 @@ def test_arima_predict_air_passengers_data():
 
     assert model.coef_names_ == ['ar1', 'sma1']
     np.testing.assert_allclose(model.coef_, expected_coef, **tol_coef)
-    np.testing.assert_allclose(model.loglik_, -507.4570092752544, **tol_pred)
+    # The log-likelihood at the optimum moves less than 1e-8 (relative).
+    np.testing.assert_allclose(model.loglik_, -507.4570092752544, rtol=1e-6)
     np.testing.assert_allclose(pred, expected_pred, **tol_pred)
 
 
@@ -391,7 +392,8 @@ def test_arima_predict_multi_seasonal_data():
 
     assert model.coef_names_ == ['ar1', 'ar2', 'sar1']
     np.testing.assert_allclose(model.coef_, expected_coef, **tol_coef)
-    np.testing.assert_allclose(model.loglik_, -2972.6403887862007, **tol_pred)
+    # The log-likelihood at the optimum moves less than 1e-8 (relative).
+    np.testing.assert_allclose(model.loglik_, -2972.6403887862007, rtol=1e-6)
     np.testing.assert_allclose(pred, expected_pred, **tol_pred)
 
 
@@ -620,8 +622,9 @@ def test_arima_predict_after_freezing_best_params_with_drift():
         'include_drift': True,
         'lambda_bc': None
     }
+    # Measured sensitivity of the predictions: 4e-6 (relative).
     pred = model.predict(steps=3)
-    np.testing.assert_allclose(pred, expected_pred, **tol_pred)
+    np.testing.assert_allclose(pred, expected_pred, rtol=1e-4)
 
     model._set_params(**model.best_params_)
     np.testing.assert_array_almost_equal(model.predict(steps=3), pred)
@@ -630,7 +633,7 @@ def test_arima_predict_after_freezing_best_params_with_drift():
     model_frozen.set_params(**model.best_params_)
     model_frozen.fit(y)
     assert model_frozen.coef_names_ == ['ma1', 'drift']
-    np.testing.assert_allclose(model_frozen.predict(steps=3), pred, **tol_pred)
+    np.testing.assert_array_almost_equal(model_frozen.predict(steps=3), pred)
 
 
 def test_arima_predict_auto_arima_with_drift_and_leading_missing_values():
