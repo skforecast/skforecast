@@ -14,7 +14,7 @@ from skforecast.model_selection import backtesting_stats
 from skforecast.exceptions import IgnoredArgumentWarning
 
 # Fixtures
-from ....stats.tests.tests_arima.fixtures_arima import air_passengers
+from ....stats.tests.tests_arima.fixtures_arima import air_passengers, tol_pred
 from ....recursive.tests.tests_forecaster_stats.fixtures_forecaster_stats import y_datetime
 from ....recursive.tests.tests_forecaster_stats.fixtures_forecaster_stats import exog_datetime
 
@@ -1482,9 +1482,14 @@ def test_output_backtesting_stats_auto_arima_with_drift_and_exog(freeze_params):
         56.400873088166044
     ])
 
-    assert np.isclose(metric.loc[0, 'mean_absolute_error'], 2.7797731527375893)
-    np.testing.assert_array_almost_equal(
-        predictions['pred'].to_numpy()[:10], expected_pred_first_fold
+    # Values that depend on where the optimizer stops, see `tol_pred`
+    np.testing.assert_allclose(
+        metric.loc[0, 'mean_absolute_error'], 2.7797731527375893, **tol_pred
+    )
+    # The predictions differ by up to 5e-7 (relative) between the CI runners
+    # and by up to 1e-6 under perturbations, far less than `tol_pred`.
+    np.testing.assert_allclose(
+        predictions['pred'].to_numpy()[:10], expected_pred_first_fold, rtol=1e-4
     )
 
 
@@ -1517,5 +1522,10 @@ def test_backtesting_stats_IgnoredArgumentWarning_integer_refit_with_non_Sarimax
                                   show_progress = False
                               )
 
-    assert np.isclose(metric.loc[0, 'mean_squared_error'], 0.01505251113240201)
+    # The squared error of small residuals amplifies the platform differences
+    # of the predictions (see `tol_pred`), so the metric is compared with a
+    # looser tolerance.
+    np.testing.assert_allclose(
+        metric.loc[0, 'mean_squared_error'], 0.01505251113240201, rtol=1e-2
+    )
     assert len(predictions) == 12
