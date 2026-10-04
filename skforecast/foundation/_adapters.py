@@ -5121,6 +5121,13 @@ class TiRex2Adapter(_AdapterBase):
     backend_package: str = "tirex-2"
     default_model_id: str = "NX-AI/TiRex-2"
     _MODEL_ID_PREFIX: str = "NX-AI/TiRex-2"
+    _RESERVED_PREDICT_KWARGS = {
+        "timeseries",
+        "prediction_length",
+        "output_type",
+        "yield_per_batch",
+        "return_inference_time",
+    }
 
     def __init__(
         self,
@@ -5133,11 +5140,13 @@ class TiRex2Adapter(_AdapterBase):
     ) -> None:
         _validate_model_id_prefix(model_id, self._MODEL_ID_PREFIX, type(self).__name__)
         _validate_positive_int("context_length", context_length)
+        predict_kwargs = predict_kwargs or {}
+        self._validate_predict_kwargs(predict_kwargs)
         self.model_id = model_id
         self._model = model
         self.context_length = context_length
         self.device = device
-        self.predict_kwargs = predict_kwargs or {}
+        self.predict_kwargs = predict_kwargs
         self.context_ = None
         self.context_exog_ = None
         self.is_fitted = False
@@ -5166,6 +5175,7 @@ class TiRex2Adapter(_AdapterBase):
                 candidate_params["predict_kwargs"] = (
                     candidate_params["predict_kwargs"] or {}
                 )
+                self._validate_predict_kwargs(candidate_params["predict_kwargs"])
             return candidate_params
 
         return _apply_set_params(
@@ -5174,6 +5184,15 @@ class TiRex2Adapter(_AdapterBase):
             validate=validate,
             resets=(({"model_id", "device"}, lambda: setattr(self, "_model", None)),),
         )
+
+    @classmethod
+    def _validate_predict_kwargs(cls, predict_kwargs: dict[str, Any]) -> None:
+        reserved = cls._RESERVED_PREDICT_KWARGS & set(predict_kwargs)
+        if reserved:
+            raise ValueError(
+                "TiRex2Adapter predict_kwargs cannot include adapter-managed "
+                f"arguments: {sorted(reserved)}."
+            )
 
     def fit(
         self,
@@ -5194,6 +5213,7 @@ class TiRex2Adapter(_AdapterBase):
             quantiles, self.SUPPORTED_QUANTILES, "TiRex-2"
         )
         self._load_model()
+        import torch
         from tirex2 import TimeseriesType
 
         names = list(context)
@@ -5209,7 +5229,14 @@ class TiRex2Adapter(_AdapterBase):
                 past_cols,
                 future_cols,
             )
-            target = context[name].to_numpy(dtype=np.float32)[None, :]
+            target = torch.as_tensor(
+                context[name].to_numpy(dtype=np.float32)[None, :],
+                dtype=torch.float32,
+            )
+            if past is not None:
+                past = torch.as_tensor(past, dtype=torch.float32)
+            if future is not None:
+                future = torch.as_tensor(future, dtype=torch.float32)
             timeseries.append(
                 TimeseriesType(
                     target=target,
@@ -5224,19 +5251,30 @@ class TiRex2Adapter(_AdapterBase):
             output_type="numpy",
             **self.predict_kwargs,
         )
+        if len(forecasts) != len(names):
+            raise ValueError(
+                "TiRex-2 returned an unexpected number of forecasts: "
+                f"{len(forecasts)}. Expected {len(names)}."
+            )
         predictions = {}
         for name, forecast in zip(names, forecasts):
             values = np.asarray(forecast)
-            if values.ndim != 3 or values.shape[0] != 1:
+            if values.ndim != 3 or values.shape != (1, 9, steps):
                 raise ValueError(
                     "TiRex-2 returned an unexpected forecast shape: "
-                    f"{values.shape!r}. Expected (1, 9, steps)."
+                    f"{values.shape!r}. Expected (1, 9, {steps})."
                 )
             values = values[0]
             if quantile_list is None:
                 predictions[name] = values[4, :].reshape(-1, 1)
             else:
-                indices = [self.SUPPORTED_QUANTILES.index(q) for q in quantile_list]
+                indices = [
+                    min(
+                        range(len(self.SUPPORTED_QUANTILES)),
+                        key=lambda i: abs(self.SUPPORTED_QUANTILES[i] - q),
+                    )
+                    for q in quantile_list
+                ]
                 predictions[name] = values[indices, :].T
         return predictions
 
