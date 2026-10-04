@@ -6,8 +6,9 @@ las líneas citadas siguen valiendo en `0.25.x` @ `fe51990e4` y en `0.26.x` @ `6
 `utils/utils.py`), los archivos perfilados no han cambiado) y el análisis independiente de un compañero (2026-09-16) sobre la creación de las
 matrices de entrenamiento, cuyo diseño de bloque único con exógenas se ha verificado en
 `dev/profiling_multiseries_fit/proto_xtrain_full_block.py` y sustituye a la versión anterior
-de la sección 2. Solo se implementan los tres cambios con veredicto GO. Los tres son internos,
-no cambian la API pública, y tienen que dejar `X_train`, `y_train`, las predicciones,
+de la sección 2. Se implementan los cambios 1 y 2; el cambio 3 (window features por lotes),
+que tenía un GO condicionado, se descartó el 2026-10-03 tras medirlo sobre el código real
+(sección 3). Los dos son internos, no cambian la API pública, y tienen que dejar `X_train`, `y_train`, las predicciones,
 `binner_intervals_` e `in_sample_residuals_` bit a bit idénticos a los actuales. Fuera del
 plan: el encoder de categóricas (en el stash "FastOrdinalEncoder categorical exog", SHA
 `165f091e`), hacer opcional la etapa de residuos (cambio de API,
@@ -43,7 +44,6 @@ del informe.
   $env:PYTHONIOENCODING = "utf-8"
   C:\Users\Joaquin\miniconda3\envs\skforecast_24_py13\python.exe dev\profiling_multiseries_fit\proto_xtrain_full_block.py --scenarios A B C --reps 5
   C:\Users\Joaquin\miniconda3\envs\skforecast_24_py13\python.exe dev\profiling_multiseries_fit\proto_residual_slices.py
-  C:\Users\Joaquin\miniconda3\envs\skforecast_24_py13\python.exe dev\profiling_multiseries_fit\proto_window_features.py
   C:\Users\Joaquin\miniconda3\envs\skforecast_24_py13\python.exe dev\profiling_multiseries_fit\01_stage_budget.py --scenarios A B C --reps 5
   ```
 
@@ -69,12 +69,11 @@ A/B en el mismo proceso, estado ajustado idéntico:
 |---|---|---|---|
 | 1. Slices contiguos por nivel en los residuos | -0.15 s (5%) | -0.17 s (5%) | quita el único término O(niveles x filas): -3 s a 1000 x 4000 (20-25%) |
 | 2. `X_train` de un solo bloque (autoreg + nivel + exógenas float) | -0.51 s (11%) | B -0.74 s (14%), C -0.25 s (6.5%) | lineal; pico de memoria de `create_train_X_y` -450 MB con exógenas |
-| 3. Window features por lotes | -0.2 s (8%) | -0.16 s (4.5%) | lineal, quita el overhead por serie |
 
-Orden y reparto: una sola rama desde `0.26.x` con cinco commits, cada uno verde y
+Orden y reparto: una sola rama desde `0.26.x` con cuatro commits, cada uno verde y
 bit-idéntico por sí mismo (sección C). El cambio 1 es el más pequeño. El cambio 2 exige
 columnas contiguas (orden F) en cualquier caso, así que el cambio 1 no es un requisito previo
-suyo. El cambio 3 es el de más superficie y va el último.
+suyo.
 
 Dónde actúa cada cambio dentro de `fit()` (los diagramas son Mermaid; se renderizan en
 GitHub y en la vista previa de VS Code):
@@ -91,13 +90,12 @@ flowchart TD
     D --> E["por nivel: máscara booleana +<br/>_binning_in_sample_residuals"]
     E --> F["last_window_, training_range_"]
 
-    C3["Cambio 3: window features por lotes<br/>(-8% A, -4.5% C)"] -.-> B2
     C2["Cambio 2: bloque único pre-asignado<br/>(-11% A, -14% B, -6.5% C; memoria a la mitad)"] -.-> B4
     C1["Cambio 1: slices contiguos por nivel<br/>(-5% a 500 series; quita el término O(niveles x filas))"] -.-> E
 
     classDef cambio fill:#fff3cd,stroke:#b8860b,color:#000;
     classDef lgbm fill:#e2e3e5,stroke:#6c757d,color:#000;
-    class C1,C2,C3 cambio;
+    class C1,C2 cambio;
     class C,D lgbm;
 ```
 
@@ -109,6 +107,10 @@ Los nodos grises son LightGBM (u otro estimador): no se tocan. Con 25 árboles s
 Stash `3de6e1b6` aplicado sobre `0.26.x` @ `67bf980ac` sin conflictos (solo archivos nuevos
 en `dev/`; los archivos de `skforecast/` que toca el plan no han cambiado desde `7d849ed2b`).
 Los tres prototipos se re-ejecutaron y siguen siendo bit-idénticos al método real.
+
+Nota (2026-10-03): el cambio 3 (window features por lotes) se descartó después (sección 3).
+Las medidas de "los tres cambios" de esta sección lo incluyen: aporta entre 0.1 y 0.2 s de
+cada ahorro. Se conservan como referencia histórica.
 
 `12_revalidate_026.py` mide lo que faltaba: los **tres cambios juntos** (réplicas de los tres
 prototipos apiladas en un mismo forecaster) frente al `fit()` real, con estimadores más
@@ -168,7 +170,7 @@ componentes son estables):
 - **`'ordinal_category'`**: -5 a -8%, sin regresión.
 - **Cambio 3 por sí solo** apenas se ve en `fit()` (0.2 s dentro de un ruido de ±0.5 s),
   pero su componente es estable y aporta dentro del conjunto. Sigue siendo el último por
-  superficie; su prioridad baja si hay que elegir.
+  superficie; su prioridad baja si hay que elegir. Descartado el 2026-10-03 (sección 3).
 
 ### R.2 Veredicto por cambio
 
@@ -176,7 +178,7 @@ componentes son estables):
 |---|---|---|
 | 1. slices | **GO** | bit-idéntico, -0.2 s estable a 500 series, quita el único término O(niveles x filas); solo ayuda con la etapa de residuos activa (`fit()` normal, backtesting con intervalos) |
 | 2. bloque único | **GO** | la mayor ganancia individual, memoria pico a la mitad con exógenas; nulo con `encoding=None` sin exógenas |
-| 3. window features por lotes | **GO condicionado** | componente x2.5 estable, efecto en `fit()` pequeño por sí solo; último en prioridad |
+| 3. window features por lotes | GO condicionado, **descartado** el 2026-10-03 | componente x2.5 estable, efecto en `fit()` pequeño por sí solo; medido sobre el código real, ahorra 0.1 s por `fit()` (sección 3) |
 
 ### R.3 Hallazgo nuevo: `create_sample_weights` con `series_weights`
 
@@ -192,12 +194,23 @@ commit 2. El orden de concatenación de los pesos (`series_names_in_`) coincide 
 filas (`series_names_in_ = list(series_dict.keys())`, 1170), así que no hay bug de
 alineación, solo coste.
 
-## E. Estado (2026-10-02): commits 1 a 3 implementados, sin commit
+## E. Estado (2026-10-03): commits 1 a 3 en `b81622fd6`, commit 4 implementado sin commit
+
+Resumen del estado en `refactor/optimize_multiseries_fit`:
+
+- Commits 1 a 3 del plan: en el commit `b81622fd6` ("Speed up ForecasterRecursiveMultiSeries
+  fit").
+- Fix posterior, fuera del plan: `_create_train_X_y` reconstruye `encoding_mapping_` en lugar
+  de actualizarlo, con su test y su release note. Forma parte de la base del commit 4.
+- Commit 4 (`X_train` en un único bloque): implementado el 2026-10-03 en el working tree, sin
+  commit (E.4).
+- Commit 5 (window features por lotes): descartado el 2026-10-03 (sección 3).
+- Siguiente paso: el cierre (E.5, C.5 y sección 4).
 
 Los commits 1 y 2, más un fix encontrado en la revisión, se implementaron como **un único
 cambio** en `refactor/optimize_multiseries_fit` (decisión del usuario). La tabla y las
 secciones C.1 y C.2 de abajo quedan como referencia histórica; lo que se hizo y en qué se
-apartó del plan (el commit 3, en E.2; el siguiente paso, en E.3):
+apartó del plan (el commit 3, en E.2; el commit 4, en E.3 y E.4; el siguiente paso, en E.5):
 
 - **Archivos citados que no están en el repo.** De la carpeta del estudio solo se versionan
   `common.py`, `proto_residual_slices.py` y `11_snapshot_outputs.py`. `REPORT.md`,
@@ -291,8 +304,7 @@ sin cambios de API pública ni de contexto de IA.
     Va después de `align_series_and_exog_multiseries` (que recorta los NaN de los
     extremos) y del ajuste del transformador `_unknown_level`, igual que antes del commit,
     y antes de cualquier trabajo por serie.
-  - El orden de errores queda como antes del commit: longitud antes que exógenas. El
-    commit 5 también lo necesita, porque su lote de window features corre antes del bucle.
+  - El orden de errores queda como antes del commit: longitud antes que exógenas.
 - **Desviación 2: se elimina la rama muerta.**
   - Con el bucle llamando siempre con `exog=None, ignore_exog=True`, la rama de exógenas
     de `_create_train_X_y_single_series` quedaba muerta.
@@ -300,7 +312,7 @@ sin cambios de API pública ni de contexto de IA.
     devuelto. La firma es ahora `_create_train_X_y_single_series(y)` y devuelve 4 valores:
     `X_train_autoreg, series_name, X_train_window_features_names_out_, y_train`.
   - En la revisión final también se quitó `train_index` de la tupla: `_create_train_X_y`
-    lo calcula antes del bucle y ni el commit 4 ni el 5 lo necesitan. La función lo sigue
+    lo calcula antes del bucle y el commit 4 no lo necesita. La función lo sigue
     calculando para `_create_lags` y `_create_window_features`.
 - **Revisión final.** Además, `n_autoreg_cols` baja junto al `np.empty` (había quedado a
   100 líneas, al otro lado del bloque de exógenas) y la dummy vuelve a comillas simples,
@@ -352,15 +364,17 @@ sin cambios de API pública ni de contexto de IA.
 
 ### E.3 Para empezar el commit 4
 
-Siguiente paso: commit 4, `X_train` en un único bloque (C.4 y pasos 3 a 10 de 2.2).
+Checklist con la que se hizo el commit 4 (hecho el 2026-10-03, resultado en E.4). Se conserva
+porque C y 4 remiten a su lista de tests (punto 5) y a su A/B (punto 4).
 
-1. **Partida.** Los commits 1 a 3 en el stage, sin commit (o ya commiteados).
+1. **Partida.** Los commits 1 a 3 en `b81622fd6`, más el fix de `encoding_mapping_`.
    - Las snapshots de `results/snapshot/` no se regeneran: se valida con `--check`, que solo
      lee los `<caso>.json` de esa carpeta. La carpeta está en `.gitignore` y guarda también,
      desde el 2026-10-02, los tres archivos de apoyo de este commit: `before_commit4.py`,
      `ab_commit4.py` y `proto_xtrain_full_block.py` (puntos 2 y 4).
-   - Hecho el 2026-10-02: el módulo del commit 3 está guardado como "antes" del A/B en
-     `dev/profiling_multiseries_fit/results/snapshot/before_commit4.py` (blob `ee3524ba`).
+   - `before_commit4.py` es el "antes" del A/B. El 2026-10-02 se guardó el módulo del
+     commit 3 (blob `ee3524ba`); el 2026-10-03 se volvió a copiar desde el working tree
+     para incluir el fix de `encoding_mapping_` (blob `7de1458c`).
      Antes de tocar el código, comprobar que su blob coincide con el del stage (o, si ya hay
      commit, con `git rev-parse HEAD:<ruta>`):
 
@@ -391,20 +405,21 @@ Siguiente paso: commit 4, `X_train` en un único bloque (C.4 y pasos 3 a 10 de 2
    - `12_revalidate_026.py` no hace falta para el commit 4: además de usar la firma
      anterior, importa `proto_window_features.py` y las réplicas del camino viejo. Sus
      números están en R.
-3. **Dónde**, en `skforecast/recursive/_forecaster_recursive_multiseries.py` tras el
-   commit 3:
+3. **Dónde**, en `skforecast/recursive/_forecaster_recursive_multiseries.py` antes del
+   commit 4 (blob `7de1458c`: commit 3 más el fix de `encoding_mapping_`, que desplaza 2
+   líneas todo lo que va después de la 1217):
 
    | Qué | Línea |
    |---|---|
    | Inicio de `_create_train_X_y` | 1028 |
    | Comprobación de longitud | 1200 |
    | `index_parts` | 1213 |
-   | Bloque de exógenas | 1222-1314 |
-   | `n_autoreg_cols` y `np.empty(..., order='C')` | 1316-1323 |
-   | Bucle | 1331 |
-   | `pd.DataFrame` | 1353 |
-   | `append` de exógenas | 1382 |
-   | `pd.concat(axis=1)` | 1396 |
+   | Bloque de exógenas | 1224-1316 |
+   | `n_autoreg_cols` y `np.empty(..., order='C')` | 1318-1325 |
+   | Bucle | 1333 |
+   | `pd.DataFrame` | 1355 |
+   | `append` de exógenas | 1384 |
+   | `pd.concat(axis=1)` | 1398 |
 4. **A/B.** El baseline es el código real anterior, no una réplica, como en el A/B del
    commit 3. El script `dev/profiling_multiseries_fit/results/snapshot/ab_commit4.py`
    (ignorado) carga `before_commit4.py` con `exec` y, contra la clase del working tree, en
@@ -447,21 +462,272 @@ Siguiente paso: commit 4, `X_train` en un único bloque (C.4 y pasos 3 a 10 de 2
 7. **Release note:** extender las dos entradas de rendimiento de `fit` del commit 2 en
    `docs/releases/releases.md` (sección 0.26.0), el highlight `Enhancement` y la de
    **Changed**, con lo medido y sin prometer más (2.5). No crear entradas nuevas.
-8. **Al terminar:** skill `verify`, actualizar esta sección (estado del commit 4) y preparar
-   la del commit 5.
+8. **Al terminar:** skill `verify` y actualizar esta sección (estado del commit 4).
+
+### E.4 Commit 4 implementado (2026-10-03)
+
+Sin commit: cambios en el working tree sobre `b81622fd6` más el fix de `encoding_mapping_`.
+Sin cambio de API pública ni de contexto de IA.
+
+- **Validación previa (antes de editar `skforecast/`).**
+  - El diseño de 2.2 se aplicó a una copia del módulo fuera del repositorio y se comparó con
+    el módulo actual, los dos cargados con `exec`.
+  - 2 040 configuraciones pequeñas, todas idénticas. Se compara la tupla completa de
+    `_create_train_X_y`, los dtypes, el orden y el tipo de las columnas, el índice, los
+    warnings, `create_train_X_y`, el camino con el forecaster ya ajustado y el
+    `LinearRegression` ajustado (coeficientes y residuos).
+  - Cubren los 4 `encoding`; exógenas `None`, float, int, float32, bool, object, category e
+    `Int64`; exógenas ausentes en una serie o en una columna; exógenas anchas;
+    `transformer_exog`; `categorical_features` `'auto'` y `None`; `calendar_features`; window
+    features con y sin lags; `differentiation`; `transformer_series`; y `dropna_from_series`
+    en los dos valores con NaN en series y en exógenas.
+  - De ahí salen las tres desviaciones de abajo.
+- **`_create_train_X_y`.**
+  - Tras el bloque de exógenas se decide `single_block`.
+  - Con `single_block`, `np.empty((total_rows, n_block_cols), order='F')` reserva las
+    columnas de lags, window features, nivel (`'ordinal'` y `None`) y exógenas float64.
+  - El bucle escribe `X_train[offset:offset + n, :n_autoreg_cols]`. `encoded_values` es una
+    vista de la columna de nivel del bloque, así que la línea del bucle que escribe el
+    código no cambia.
+  - Después del bucle se copian las exógenas float64 columna a columna, se crea el DataFrame
+    con `copy=False` y se insertan en su posición final el nivel `Categorical`
+    (`'ordinal_category'`) y las exógenas que no son float64.
+  - Sin `single_block` se ejecuta el ensamblado anterior, sin cambios (`order='C'`,
+    `X_train['_level_skforecast'] = ...` y `pd.concat`).
+- **Desviación 1: `encoding=None` sin exógenas sigue por el camino anterior.**
+  - Problema: `X_train` sale idéntico, pero `fit` quita la columna de nivel y el estimador
+    recibe un array contiguo por columnas en lugar del contiguo por filas de hoy. Los
+    coeficientes de `LinearRegression` cambian en el último bit (diferencia máxima de 2e-16
+    a 8e-16) en los 18 casos de ese tipo.
+  - Es la única configuración en la que cambia el layout que recibe el estimador (comprobado
+    en las 2 040 configuraciones). R.1 ya medía ganancia nula ahí.
+  - Coste de mantenerlo: unos 45 ms de `_create_train_X_y` en A con `encoding=None` (505 a
+    463 ms) y un `fit()` dentro del ruido (-3% / -1%, mediana / mínimo).
+  - `encoding=None` con exógenas sí usa el bloque único (-10% / -9% en B).
+- **Desviación 2: las columnas fuera del bloque se insertan como `Series`.**
+  - Problema: con `.to_numpy()` (paso 8 de 2.2), una columna `object` con valores
+    `Timestamp` pasa a `datetime64[ns]` al hacer `insert`, porque pandas infiere el dtype
+    de un array `object`.
+  - Con la `Series` (su índice ya se ha comprobado igual a `train_index`) pandas copia los
+    valores sin inferir nada. Comprobado con int, int32, float32, bool, category, `Int64`,
+    `Float64`, `boolean`, `string`, object, datetime con y sin zona horaria, timedelta y
+    `Sparse`.
+- **Desviación 3: límites de columnas insertadas y nombres duplicados.**
+  - El camino de bloque único exige menos de 100 columnas insertadas (2.2 decía más de 100
+    para caer al `pd.concat`). Con exactamente 100 columnas int, pandas emite el
+    `PerformanceWarning` de fragmentación en la inserción número 100. La condición de
+    pandas (más de 100 bloques que no son de extensión) es la misma línea en 2.1.0, 2.2.0
+    y 2.3.3.
+  - Además exige que las columnas insertadas no superen a las del bloque float
+    (`n_inserted_cols <= n_block_cols`). El límite de 100 solo evita el warning; no es un
+    límite de rendimiento. Ver "Revisión final".
+  - El `insert` de las exógenas se llama con `allow_duplicates=True` y se leen por posición. Sin
+    eso, una exógena que no es float y se llama como otra columna (por ejemplo `lag_1`)
+    lanzaba el `ValueError` de pandas ("cannot insert lag_1, already exists") en lugar del
+    de skforecast ("Duplicated feature names detected in X_train"), que sigue saltando
+    después, como antes.
+- **Tests** (`test_create_train_X_y.py`, 28 casos nuevos, ningún valor esperado cambiado).
+  Solo usan API pública de pandas y numpy (sin `_mgr`).
+  - `..._ValueError_when_exog_name_duplicated_with_lag`: exógena float e int llamada `lag_1`.
+  - `..._X_train_layout_when_encoding_ordinal_or_None`: la conversión de `X_train` a numpy
+    no copia (`np.shares_memory` con cada columna), strides `(8,)` y array contiguo por
+    columnas con `'ordinal'` (con y sin exógenas) y `None` con exógenas; con `None` sin
+    exógenas la conversión copia y el array que recibe el estimador es contiguo por filas.
+  - `..._X_train_layout_when_exog_has_non_float_columns`: exógenas float, int, category,
+    float, float32 y object con `Timestamp`, con `'ordinal'` y `'ordinal_category'`. Fija
+    orden, dtypes y que las columnas float64 están seguidas en memoria (las direcciones
+    `ctypes.data` de cada columna distan `filas * 8` bytes).
+  - `..._output_when_int_exog_columns_are_inserted_or_concatenated`: a los dos lados de
+    cada límite (3 y 4 columnas int con un bloque de 3; 99 y 100 con un bloque de 101), sin
+    `PerformanceWarning` y con la salida esperada. Qué camino se usa no se puede observar
+    con API pública; el caso de 100 falla si se quita el límite de pandas.
+  - `..._index_names_when_series_and_exog_index_have_names`: el índice de `X_train` y el de
+    `y_train` llevan el nombre del índice de las series, con los 4 `encoding`.
+- **Validación** (repetida tras la revisión final).
+  - Tests de E.3 punto 5, secuenciales y todos verdes: archivo tocado 120; carpeta
+    multiserie 612; backtesting multiserie 89; `tests_search -k multiseries` 85;
+    one-step-ahead 20; `select_features_multiseries` 35;
+    `check_preprocess_exog_multiseries` 16.
+  - `11_snapshot_outputs.py --check`: los 19 casos idénticos.
+  - `ruff check` limpio en los dos archivos tocados.
+  - Las 2 040 configuraciones de la validación previa, repetidas contra el módulo real:
+    idénticas, sin cambios de layout hacia el estimador. Más 240 casos con índices con
+    nombre (ver "Revisión final").
+- **Medidas.** `ab_commit4.py --scenarios A B C --reps 7`, 500 x 2000, LightGBM de 25
+  árboles. "Antes" es `before_commit4.py` (blob `7de1458c`). Mediana / mínimo.
+
+  | Escenario | `_create_train_X_y` antes | después | después / antes | `fit()` antes | después | después / antes | Bloques | Pico tracemalloc |
+  |---|---|---|---|---|---|---|---|---|
+  | A | 507 / 493 ms | 472 / 456 ms | 0.93 / 0.92 | 2.84 / 2.67 s | 2.41 / 2.23 s | 0.85 / 0.83 | 2 -> 1 | 286 -> 260 MB |
+  | B | 906 / 889 ms | 649 / 633 ms | 0.72 / 0.71 | 3.27 / 3.17 s | 3.06 / 2.92 s | 0.94 / 0.92 | 1 -> 1 | 954 -> 500 MB |
+  | C | 1.69 / 1.60 s | 1.42 / 1.38 s | 0.84 / 0.86 | 3.92 / 3.84 s | 3.90 / 3.61 s | 0.99 / 0.94 | 1 -> 1 | 925 -> 471 MB |
+
+  - Repetición de B y C con 11 repeticiones: `_create_train_X_y` 0.72 / 0.72 en B y
+    0.87 / 0.89 en C; `fit()` 0.95 / 0.90 en B y 0.93 / 1.01 en C.
+  - Ruido del día: con el mismo código en los dos lados, el `fit()` dio ratios de 0.88 a
+    1.14 (5 repeticiones). Los ratios de `_create_train_X_y` son estables (0.97 a 1.02).
+  - Dónde estaba el coste (medido antes de editar):
+    - A: los dos bloques float llegaban al estimador. Intercalarlos cuesta 177 ms por
+      `to_numpy()`; `predict(X_train)` 477 frente a 298 ms; `isnull` 52 frente a 16 ms.
+    - B y C: el `pd.concat(axis=1)` final copiaba 278 MB en unos 255 ms (29% y 16% del
+      método).
+  - Columnas insertadas (exógenas int sin transformador): ver la tabla de "Revisión
+    final". La medida inicial (0.71 con 3 columnas, 0.74 con 30 y 0.98 con 99) solo usaba
+    24 lags más window features y no veía la regresión con pocos lags.
+- **Frente a los objetivos.**
+  - A cumple 2.1 y R: `fit()` -15% / -17% (2.1: -10.9%; R: -12% a -23%).
+  - B cumple R y no llega a 2.1: `_create_train_X_y` x1.40 (R: x1.42; 2.1: x1.77) y `fit()`
+    -5% a -10% (R: -8% y -11%; 2.1: -13.6%). El pico de memoria sí coincide con 2.1.
+  - C: `_create_train_X_y` x1.12 a x1.19 (R: x1.23; 2.1: x1.24). El `fit()` queda entre
+    +1% y -7% según la tanda; el ahorro del componente (0.17 a 0.27 s, un 4% a 7% del
+    `fit()`) es menor que el ruido del día.
+  - No se ha añadido complejidad para acercarse a 2.1: el ahorro absoluto de B y C es la
+    copia del `pd.concat` (unos 0.25 s), que ya no existe.
+- **Revisión final (2026-10-03).** Dos revisiones del diff (la propia y una independiente,
+  sin las conclusiones de la primera) más comparaciones en memoria contra
+  `before_commit4.py`.
+  - **Cambio de comportamiento decidido por el usuario: nombre del índice de `X_train`.**
+    `pd.concat(axis=1)` solo conserva el nombre del índice si series y exógenas lo
+    comparten, así que antes `X_train` salía con `None` cuando las exógenas no tenían
+    nombre o tenían otro, mientras `y_train` llevaba el de las series. El bloque único
+    usaba siempre el de las series, y la revisión lo detectó como diferencia. Decisión:
+    domina el nombre del índice de las series en los dos caminos (si no tiene nombre,
+    `X_train` queda sin nombre). Es lo que ya hacen `ForecasterRecursive`,
+    `ForecasterDirect` y `ForecasterDirectMultiVariate`. El bloque único usa `train_index`
+    y el camino de `pd.concat` hace `X_train.index = train_index` tras concatenar.
+    Comprobado en 240 casos (5 combinaciones de nombres, `DatetimeIndex` y `RangeIndex`,
+    4 `encoding`, exógenas float, mixtas, parciales y ausentes, con y sin
+    `calendar_features`): valores, dtypes, columnas y `y_train` idénticos al módulo
+    anterior; el nombre del índice de `X_train` cambia en 72. Ningún test existente
+    dependía del nombre. Va en la release note como excepción a "Results are unchanged".
+    Las 2 040 configuraciones no lo veían porque ningún índice tenía nombre.
+  - **Corregido: regresión con pocos lags y muchas exógenas no float.** El bloque ahorra
+    una copia de las columnas float, pero `insert` copia cada columna insertada (el
+    `pd.concat` anterior no las copiaba). `_create_train_X_y`, 500 x 2000, exógenas int,
+    nuevo / anterior (mediana de 5), antes de la corrección:
+
+    | Columnas int | 3 lags (bloque de 4) | 24 lags (bloque de 25) |
+    |---|---|---|
+    | 5 | 0.94 | 0.53 |
+    | 15 | 1.10 | 0.65 |
+    | 30 | 1.20 | 0.71 |
+    | 60 | 1.29 | 0.94 |
+    | 99 | 1.39 (+306 ms) | 1.03 |
+
+    El punto de equilibrio está entre 2 y 3.5 columnas insertadas por columna float. Con la
+    regla `n_inserted_cols <= n_block_cols` (una como máximo), los casos que usan el bloque
+    ganan (0.92 con 4 columnas int y 3 lags; 0.49, 0.52, 0.58 y 0.72 con 4, 5, 15 y 25 y 24
+    lags) y los demás quedan en 0.97 a 1.03 (mismo camino que antes). Se renuncia a
+    ganancias del 5% o menos entre 1 y 2 columnas insertadas por columna float.
+  - **A/B repetido tras las correcciones** (`ab_commit4.py --scenarios A B C --reps 7`,
+    mediana / mínimo): `_create_train_X_y` 0.91 / 0.91 en A, 0.71 / 0.71 en B y 0.82 / 0.85
+    en C; `fit()` 0.85 / 0.82, 0.91 / 0.88 y 0.94 / 0.95; picos sin cambios.
+  - **Diferencias conocidas y aceptadas** (decisión del usuario, sin cambio de código):
+    - `encoding='ordinal_category'` con una exógena float64 llamada `_level_skforecast`:
+      el `insert` del nivel lanza el `ValueError` de pandas ("cannot insert
+      _level_skforecast, already exists") en lugar del de skforecast ("Duplicated feature
+      names detected in X_train"). Con exógena int y con los demás `encoding` el mensaje
+      es el de antes.
+    - Estimadores que modifican `X` (`LinearRegression(copy_X=False)`): con
+      `encoding='ordinal'` sin exógenas, `fit` falla ahora con `KeyError: -0.5`. El
+      estimador centra el bloque compartido, columna de nivel incluida, y la etapa de
+      residuos no encuentra los niveles. Con exógenas float ya fallaba igual antes del
+      cambio (el `pd.concat` dejaba un solo bloque). Evitarlo exigiría mantener dos bloques
+      sin exógenas y perder la ganancia de A. `'ordinal_category'` y `None` no fallan.
+    - Una window feature llamada `_level_skforecast`: antes la columna de nivel la
+      sobrescribía en silencio; ahora salta un error.
+  - **Tests.** Los tests de layout ya no leen `X_train._mgr.blocks` (decisión del usuario:
+    solo API pública). El dtype esperado del nivel con `'ordinal_category'` se construye con
+    `dtype=int` (int32 en Windows con numpy 1.x).
+  - **Release note.** El bloque contiene la codificación de las series "cuando es
+    numérica" (con `'ordinal_category'` es una columna categórica aparte) y "la matriz de
+    entrenamiento" va en singular.
+  - **Fallo del script de identidad.** `edge_identity.py --after real` importaba
+    `skforecast` del `site-packages` del entorno (0.25.0, instalación no editable), no del
+    working tree: se ejecuta desde fuera del repositorio y no importa `common.py`, que es
+    quien pone la raíz del repositorio en `sys.path`. La comprobación "contra el módulo
+    real" de la primera pasada no comparaba el código nuevo. Corregido (inserta la raíz y
+    comprueba la ruta del módulo) y repetido: 2 040 idénticas. `ab_commit4.py`,
+    `11_snapshot_outputs.py`, pytest y los scripts por stdin sí usaban el working tree.
+
+### E.5 Commit 5 descartado; siguiente paso: cierre
+
+El commit 5 (window features por lotes) se descartó el 2026-10-03: ahorra alrededor de 0.1 s
+por `fit()` a 500 x 2000 (medidas y motivos en la sección 3). El plan termina en el commit 4.
+
+Siguiente paso: el commit del commit 4, que hace el usuario, y el cierre (C.5 y sección 4).
+
+Lecciones del commit 4 para cualquier comparación de identidad futura:
+
+- incluir índices con nombre en series y exógenas (iguales, distintos y sin nombre);
+- un script fuera del repositorio debe insertar la raíz en `sys.path` (o importar
+  `common.py` antes que `skforecast`) e imprimir la ruta del módulo: en el entorno hay un
+  skforecast 0.25.0 instalado que se importa en silencio si no.
+
+### E.6 Después del commit 4: `'onehot'` en el bloque y fix de `predict` (2026-10-03)
+
+Dos cambios más, fuera del plan original, en el working tree sin commit:
+
+- **Fix (bug desde la 0.22.0, commit `a403d258f`).** Con `encoding='onehot'`, `predict`
+  colocaba el 1 según la posición de la serie en `X_train_series_names_in_` (orden de
+  entrada), mientras el entrenamiento ordena las columnas por `encoding_mapping_`
+  (alfabético).
+  - Síntomas: con series en orden no alfabético, cada serie se predecía con la columna de
+    otra; si una serie perdía todas sus filas por NaN, la matriz de predicción tenía menos
+    columnas y fallaba con `ValueError`.
+  - Arreglo: helper `_encode_levels_onehot`, usado por `_recursive_predict`,
+    `_recursive_predict_bootstrapping` y `create_predict_X`. `create_predict_X` codifica
+    ahora un nivel desconocido con ceros, como `predict`, en lugar de lanzar `ValueError`.
+  - `select_features_multiseries` usaba `X_train_series_names_in_` como columnas de
+    codificación, así que la columna de una serie sin filas llegaba al selector. Ahora usa
+    `encoding_mapping_`.
+  - Ningún test existente tenía valores calculados con el bug: todas las fixtures de
+    predicción usan nombres en orden alfabético.
+- **`'onehot'` en el bloque único.** Las columnas de serie pasan al bloque como `float64`
+  (antes `int64`, por `pd.concat`). El bloque se crea con `np.zeros` y una escritura pone
+  los unos. En el camino de `pd.concat` (calendario, muchas exógenas no float) también son
+  float.
+  - `_train_test_split_one_step_ahead` convierte a entero el producto de las columnas
+    onehot antes de usarlo como índice.
+  - Medido (`results/snapshot/ab_onehot.py`, LightGBM 25, series de 2,000 observaciones):
+
+    | Series | Exógenas | `_create_train_X_y` | `fit()` | Pico |
+    |---|---|---|---|---|
+    | 100 | no | 0.27 a 0.15 s | 1.52 a 1.07 s | 242 a 220 MB |
+    | 100 | 10 float | 0.35 a 0.18 s | 1.66 a 1.25 s | 336 a 269 MB |
+    | 300 | no | 3.02 a 0.79 s | 9.14 a 3.39 s | 1,854 a 1,675 MB |
+    | 300 | 10 float | 3.26 a 0.89 s | 9.37 a 3.85 s | 2,008 a 1,823 MB |
+
+  - Identidad: 15 configuraciones contra `before_onehot.py`; matrices iguales salvo el
+    dtype de las columnas de serie, y predicciones, residuos e intervalos idénticos.
+  - Snapshots: los 16 casos sin onehot, idénticos. Los 3 de onehot solo diferían en el
+    dtype y la huella de esas columnas (en `X_train` y en las matrices de
+    `train_test_split_one_step_ahead`) y se regeneraron; después, `--check` da los 19
+    idénticos.
+  - Tests existentes: solo se cambió el dtype esperado de las columnas onehot.
+  - Diferencia conocida: con `LinearRegression(copy_X=False)` y `'onehot'`, `fit` falla
+    ahora con `KeyError` (antes funcionaba, porque las columnas enteras forzaban una copia).
+    Es la misma limitación ya aceptada para `'ordinal'`.
+- **Descartado:** llevar `encoding=None` sin exógenas al bloque. Medido: 35 ms menos en
+  `_create_train_X_y`, sin cambio de memoria, y las predicciones de `Ridge` cambian en
+  torno a 1e-11.
+- **Pendiente de decidir:** `calendar_features` al bloque como float. Estimado sin
+  implementar: 0.4 a 0.9 s menos por `_create_train_X_y` a 500 x 2000 y el pico de memoria a
+  menos de la mitad.
 
 ## C. Reparto en commits
 
-Una rama desde `0.26.x` y un PR con cinco commits. Rama real:
+Una rama desde `0.26.x` y un PR con cuatro commits (el quinto, window features por lotes, se
+descartó: sección 3). Rama real:
 `refactor/optimize_multiseries_fit`; los commits 1 y 2 se hicieron como uno solo (sección E).
 Reglas para cada commit:
 
 - deja `skforecast/` en un estado verde, con los tests secuenciales (nunca `-n`, regla del
-  repo) de la lista de E.3 punto 5 (más `skforecast/preprocessing` en el 5);
+  repo) de la lista de E.3 punto 5;
 - es bit-idéntico al commit anterior: los tests del commit 1 pasan sin tocar valores
   esperados y `11_snapshot_outputs.py --check` pasa contra las snapshots generadas en la base;
 - trae su release note en `docs/releases/releases.md` (sección 0.26.0, no `changelog.md`) si
-  cambia el rendimiento (commits 2, 4 y 5);
+  cambia el rendimiento (commits 2 y 4);
 - el A/B se mide en el mismo proceso contra el camino anterior. En el commit 2 fue la
   réplica `proto_residual_slices.fit_replica(mode='mask')`; desde el commit 3 es el módulo
   real del commit anterior cargado con `exec` (E.2 y E.3 punto 4), porque las réplicas de
@@ -469,7 +735,7 @@ Reglas para cada commit:
   commit 3.
 
 Así el PR se puede revisar commit a commit y, si algo falla después, `git bisect` apunta a un
-cambio concreto. Si se prefiere, los commits 2, 4 y 5 pueden salir como PR separados sin
+cambio concreto. Si se prefiere, los commits 2 y 4 pueden salir como PR separados sin
 reordenar nada.
 
 | # | Commit | Archivos principales | Cambia rendimiento | Riesgo |
@@ -478,12 +744,11 @@ reordenar nada.
 | 2 | Slices contiguos por nivel (residuos, pesos, onehot) | `_forecaster_recursive_multiseries.py`, test nuevo | sí: -0.2 s a 500 series; `series_weights` 24 s -> ~3 s | muy bajo |
 | 3 | Reordenar `_create_train_X_y`: exógenas antes del bucle | `_forecaster_recursive_multiseries.py` | no (refactor) | bajo |
 | 4 | `X_train` en un único bloque float pre-asignado | `_forecaster_recursive_multiseries.py`, tests de layout | sí: -12 a -23% A, -7 a -8% B | bajo-medio |
-| 5 | Window features por lotes | `_preprocessing.py`, `_forecaster_recursive_multiseries.py`, tests | sí: componente x2.5 | medio |
 
 ### C.1 Commit 1: tests que fijan el comportamiento actual
 
 Sin tocar código de `skforecast/`. Todos estos tests pasan en la base y son la red de
-seguridad de los cuatro commits siguientes (valores esperados hardcodeados, leer antes
+seguridad de los commits siguientes (valores esperados hardcodeados, leer antes
 `.github/instructions/testing.instructions.md`):
 
 - `test_create_train_X_y.py`: exógenas `[float, int, category, int]` con
@@ -537,22 +802,16 @@ de `ExtensionDtype`, y caída al `pd.concat` para `'onehot'`, `calendar_features
 columnas no float. Tests de layout de 2.5 (un bloque, strides `(8,)`, `np.shares_memory`).
 Changelog con los números de R (no prometer más de lo medido: con LightGBM de 25 árboles
 -12 a -23% en A; nada con `encoding=None` sin exógenas). Medida: el A/B de E.3 punto 4
-(`ab_commit4.py`).
+(`ab_commit4.py`). Hecho el 2026-10-03 (E.4), con tres desviaciones: `encoding=None` sin
+exógenas sigue por el camino anterior, las columnas fuera del bloque se insertan como
+`Series`, y el bloque solo se usa con menos de 100 columnas insertadas y no más que las
+columnas del bloque float (las exógenas, con `allow_duplicates=True`).
 
-### C.5 Commit 5: window features por lotes
-
-Sección 3 completa: `RollingFeatures._transform_batch_wide` (con sus tests en
-`test_RollingFeatures.py`), `_create_window_features_batch`, el parámetro nuevo de
-`_create_train_X_y_single_series` y su uso en el bucle. Si el diff resulta grande, se parte en
-5a (`RollingFeatures`, sin uso) y 5b (integración en el forecaster), que serían el sexto
-commit. Medida: `proto_window_features.py` con el objetivo de 3.3 (componente <= 0.06 s con
-índices iguales).
-
-### C.6 Después de los cinco commits
+### C.5 Después de los cuatro commits
 
 Sección 4 (cierre): snapshot `--check`, `01_stage_budget.py`, `06_scaling.py`,
 `benchmarks/run_benchmarks.py`, suites completas y actualización del informe. El estudio de
-`dev/` (informe, prototipos, resultados) puede ir en un commit propio, separado de los cinco,
+`dev/` (informe, prototipos, resultados) puede ir en un commit propio, separado de los cuatro,
 o quedarse fuera del PR: no afecta al paquete.
 
 ## 0. Preparación común (antes de tocar `skforecast/`)
@@ -587,13 +846,13 @@ Nuevo script `dev/profiling_multiseries_fit/11_snapshot_outputs.py` (reutiliza
   se comparan como ratios entre etapas, no como totales entre procesos) y el prototipo
   correspondiente convertido en A/B contra el código nuevo (ver cada sección).
 - `benchmarks/run_benchmarks.py` (bench `ForecasterRecursiveMultiSeries`) al final de los
-  tres cambios, para el histórico del repositorio.
+  dos cambios, para el histórico del repositorio.
 
 ### 0.3 Tests de regresión existentes
 
 Actualizado el 2026-10-02: sin `-n` (regla del repo) y solo los archivos que llaman al
-camino multiserie; la lista concreta está en E.3 punto 5, más `skforecast/preprocessing`
-para el cambio 3 (window features). Los valores esperados hardcodeados de estos tests son la
+camino multiserie; la lista concreta está en E.3 punto 5. Los valores esperados hardcodeados
+de estos tests son la
 primera comprobación de identidad.
 
 ## 1. Slices contiguos por nivel en la etapa de residuos
@@ -850,7 +1109,8 @@ líneas tras el commit 3 están en E.3). Todo lo anterior
 `last_window_`, tupla de retorno) no cambia. Nuevo orden de operaciones, tal como está
 implementado en `create_train_X_y_full_block` de `proto_xtrain_full_block.py` (el prototipo
 lanza `NotImplementedError` con `'onehot'` y con `calendar_features`; la implementación real
-tiene que ramificar al camino actual en esos dos casos, paso 3):
+tiene que ramificar al camino actual en esos dos casos, paso 3). Implementado el 2026-10-03
+con tres ajustes sobre los pasos 3 y 8, descritos en E.4:
 
 1. **Filas primero** (hecho en el commit 3). `index_parts = [series_dict[k].index[window_size:] ...]` en el orden
    del dict, `total_rows` y `train_index = index_parts[0].append(index_parts[1:])`. Es
@@ -1003,128 +1263,53 @@ están cubiertos, sección E y E.3 punto 5):
   ramificación entre camino nuevo y `pd.concat` para `'onehot'` / calendario debe quedar
   cubierta por tests).
 
-## 3. Window features por lotes (`RollingFeatures`)
+## 3. Window features por lotes (`RollingFeatures`): descartado
 
-### 3.1 Alcance
+Descartado el 2026-10-03 por decisión del usuario: ahorra alrededor de 0.1 s por `fit()` a
+500 x 2000 y no compensa su coste. El plan termina en el commit 4.
 
-Fase 3a (este plan): camino por lotes solo cuando se cumplen todas estas condiciones, y si
-no, el camino actual serie a serie sin ningún cambio:
+Medido sobre el código del commit 4 (LightGBM, mediana de 7 repeticiones, 3 con 500
+árboles). El ahorro es una estimación: el coste actual de `_create_window_features` menos el
+de calcular los mismos estadísticos sobre un DataFrame ancho, sin implementar el cambio.
 
-- todas las `window_features` son instancias de `RollingFeatures` (no clases de usuario ni
-  `RollingFeaturesClassification`);
-- `fillna is None` en todas, y ningún `stat` es `'ewm'` (los demás estadísticos usan
-  `rolling.<stat>()` de pandas, que ejecuta el mismo kernel columna a columna y da valores
-  bit-idénticos, comprobado en `proto_window_features.py` para `mean` y `std` con y sin
-  relleno por longitudes distintas);
-- no hay `transformer_series` ni `differentiation` para ninguna serie
-  (`all(v is None for v in self.transformer_series_.values())` y lo mismo con
-  `differentiator_`). Es la configuración por defecto; con transformación o diferenciación
-  las series se transforman dentro de `_create_train_X_y_single_series` (994-1007) y el lote
-  tendría que reproducir ese paso (fase 3b, fuera de este plan: extraer esas líneas a un
-  método nuevo, por ejemplo `_preprocess_series_values`, y aplicarlo antes del lote).
+| Escenario | Árboles | `fit()` | Window features hoy | Ahorro estimado |
+|---|---|---|---|---|
+| A | 25 | 2.18 s | 0.27 s (12.5%) | 0.12 s (5.4%) |
+| A | 100 | 5.27 s | 0.28 s (5.4%) | 0.13 s (2.4%) |
+| A | 500 | 15.93 s | 0.28 s (1.8%) | 0.13 s (0.8%) |
+| C | 25 | 3.82 s | 0.29 s (7.6%) | 0.12 s (3.0%) |
+| C | 100 | 7.62 s | 0.30 s (3.9%) | 0.12 s (1.6%) |
+| C | 500 | 22.17 s | 0.28 s (1.3%) | 0.11 s (0.5%) |
 
-### 3.2 Diseño
+Motivos:
 
-1. `RollingFeatures._transform_batch_wide(self, X: pd.DataFrame) -> np.ndarray`
-   (`_preprocessing.py`, junto a `transform_batch`): para cada `stat` construye
-   `X.rolling(**self.unique_rolling_windows[key]['params'])`, aplica `_apply_stat_pandas`
-   (ya acepta un `Rolling` de DataFrame) y devuelve un array `(n_obs, n_series, n_stats)`
-   en el orden de `self.stats` / `self.features_names`. Privado, sin `fillna`.
-2. `ForecasterRecursiveMultiSeries._create_window_features_batch(self, series_dict) -> dict[str, np.ndarray] | None`:
-   - devuelve `None` si no se cumplen las condiciones de 3.1;
-   - construye el DataFrame ancho: si todos los índices son iguales (`index.equals` contra el
-     primero, el caso habitual), `pd.DataFrame(np.column_stack(values), index=idx)` sin unión;
-     si no, `pd.concat(series_dict, axis=1)` (unión, NaN de relleno) y posiciones por serie con
-     `wide.index.get_indexer(y.index)`;
-   - llama a `_transform_batch_wide` de cada `RollingFeatures` y devuelve, por serie, la
-     matriz `(len(y) - window_size, n_features)` con las últimas `len(y) - window_size` filas
-     de esa serie, concatenando las window features en el orden de `self.window_features`
-     (igual que 1027-1032). Las filas contaminadas por el relleno son las primeras
-     `window_size >= max_window_size` de cada serie, que se descartan.
-3. `_create_train_X_y_single_series` recibe un parámetro nuevo opcional
-   `X_train_window_features: np.ndarray | None = None`; si viene, lo usa en lugar de llamar
-   a `_create_window_features` (y toma los nombres de `self.window_features_names`). Sin él,
-   comportamiento actual (tests y benchmark `..._single_series` siguen valiendo).
-4. `_create_train_X_y`: antes del bucle (después de `align_series_and_exog_multiseries`,
-   que recorta NaN iniciales y finales), `wf_batch = self._create_window_features_batch(series_dict)`
-   si `self.window_features is not None`; en el bucle pasa `wf_batch[k]` si existe. La
-   comprobación de longitud del commit 3 corre antes, así que `len(y_k) - window_size > 0`
-   para todas las series (sin ella, `[-0:]` devolvería la serie entera).
-5. `X_train_window_features_names_out_` se obtiene igual que hoy (`features_names` de cada
-   `RollingFeatures`).
+- **El lote no acelera el `rolling`.** pandas tarda lo mismo por columna en un DataFrame
+  ancho (0.08 ms por columna y estadístico) que en una serie suelta (0.09 ms). Con 4
+  estadísticos y 500 series son 0.16 s que se pagan igual; solo desaparece el overhead por
+  serie (`concat`, `iloc`, comparación de índices).
+- **El objetivo del plan no era alcanzable.** Se pedía dejar el componente en 0.06 s o menos;
+  con `rolling` de pandas el suelo es ese 0.16 s.
+- **Alcance limitado.** Solo aplicaba si todas las window features eran `RollingFeatures`,
+  sin `'ewm'` ni `fillna`, y sin `transformer_series` ni `differentiation`.
+- **Coste.** 1 a 2 días, un método privado nuevo en `RollingFeatures`, otro en el forecaster,
+  un parámetro nuevo en `_create_train_X_y_single_series` y tres archivos de tests, con
+  riesgo medio.
 
-```mermaid
-flowchart TB
-    subgraph Hoy["Hoy: _create_window_features por serie (500 veces)"]
-        direction TB
-        H1["Series y_k"] --> H2["RollingFeatures.transform_batch:<br/>rolling(7).mean(), rolling(7).std(),<br/>rolling(28).mean(), rolling(28).std()"]
-        H2 --> H3["pd.concat(axis=1), iloc,<br/>comparación de índice (921)"] --> H4["matriz (n_k, 4) -> np.concatenate con los lags"]
-    end
+Bajar de ese suelo exigiría sustituir el `rolling` de pandas por kernels propios (numba), sin
+garantía de resultados bit-idénticos (no comprobado).
 
-    subgraph Nuevo["Cambio 3: _create_window_features_batch (1 vez, antes del bucle)"]
-        direction TB
-        N0{"todas RollingFeatures,<br/>fillna None, sin 'ewm',<br/>sin transformer_series<br/>ni differentiation?"}
-        N0 -->|no| NF["devuelve None:<br/>camino actual sin cambios"]
-        N0 -->|sí| N1["DataFrame ancho (n_obs x n_series):<br/>column_stack si los índices son iguales,<br/>pd.concat(axis=1) con unión y NaN si no"]
-        N1 --> N2["_transform_batch_wide: un rolling por stat<br/>sobre todas las columnas a la vez<br/>(mismo kernel cython, valores bit-idénticos)"]
-        N2 --> N3["array (n_obs, n_series, n_stats)"]
-        N3 --> N4["por serie: últimas len(y_k) - window_size filas<br/>-> _create_train_X_y_single_series(..., X_train_window_features=...)"]
-    end
-
-    classDef bueno fill:#d1e7dd,stroke:#0f5132,color:#000;
-    class N2 bueno;
-```
-
-El overhead que desaparece es el de pandas por serie (4 `rolling`, un `concat`, un `iloc` y
-una comparación de índices, 500 veces); la aritmética es la misma y por eso el resultado es
-bit-idéntico (`proto_window_features.py`, también con longitudes distintas).
-
-### 3.3 Prototipo y medida
-
-`dev/profiling_multiseries_fit/proto_window_features.py` es la referencia (componente
-0.31 -> 0.12 s, `fit()` -8% en A y -4.5% en C, -3.3% con longitudes distintas). Objetivo
-de la implementación: componente <= 0.06 s con índices iguales (sin `concat` ancho ni
-`get_indexer`; el prototipo los pagaba siempre). A/B final en el mismo proceso contra una
-copia de `_create_train_X_y` actual, con `assert_identical_fits`, en A y C, con y sin
-longitudes distintas.
-
-### 3.4 Riesgos y tests
-
-- NaN interiores: pandas trata igual un NaN dentro de una columna que dentro de una Series
-  (mismo kernel, `min_periods` por ventana); test con NaN interiores en varias series y
-  `dropna_from_series` en ambos valores.
-- `min_periods < window_size`: los valores parciales solo aparecen en filas que se
-  descartan (`window_size >= max_window_size`); test explícito.
-- Series de distinta longitud y `RangeIndex` (no solo `DatetimeIndex`): la unión de índices
-  y `get_indexer` funcionan igual; test con ambos tipos.
-- `encoding` no interviene. `differentiation` y `transformer_series` fuerzan el camino
-  actual (test que compruebe que `_create_window_features_batch` devuelve `None` y que el
-  resultado es idéntico).
-- `set_window_features` (3951-3980) no cambia.
-- Coste de memoria: el ancho `(n_obs, n_series)` y `(n_obs, n_series, n_stats)`: 500 x 2000 x
-  (1 + 2) floats = 24 MB; con 1000 x 4000 x 2 stats, 96 MB. Aceptable frente a los 300 MB
-  de `X_train`; documentarlo en el docstring.
-- Tests nuevos: `preprocessing/tests/tests_preprocessing/test_RollingFeatures.py`
-  (`_transform_batch_wide` frente a `transform_batch` columna a columna para todos los
-  `stats` soportados, `assert_array_equal`); `test_create_window_features_batch.py` en
-  multiseries (condiciones de fallback, índices iguales y distintos, NaN, `RangeIndex`,
-  igualdad con el bucle serie a serie); `test_create_train_X_y_single_series.py`
-  (parámetro nuevo); `test_create_train_X_y.py` y `test_fit.py` sin cambios de valores.
-- `docs/releases/releases.md` (no `changelog.md`), sección 0.26.0, extendiendo la entrada de
-  rendimiento de `fit` del commit 2: "las window features de `RollingFeatures` se
-  calculan para todas las series a la vez en `ForecasterRecursiveMultiSeries` cuando no hay
-  `transformer_series` ni `differentiation`".
-- Esfuerzo: 1 a 2 días. Riesgo: medio (superficie de tests), sin cambio de API.
+El diseño detallado que se descarta (alcance, `_transform_batch_wide`,
+`_create_window_features_batch`, riesgos y tests) está en la versión de este archivo del
+commit `b81622fd6`, y el prototipo `proto_window_features.py` en el stash `19b7d53f`.
 
 ## 4. Cierre
 
-1. Ejecutar `11_snapshot_outputs.py --check` con los tres cambios aplicados.
+1. Ejecutar `11_snapshot_outputs.py --check` con los dos cambios aplicados.
 2. `01_stage_budget.py --scenarios A B C --reps 5 --tag after` y comparar con
    `results/stage_budget.json` (etapas S1.6b, S1.r, S6a, S6.r, LightGBM en A).
 3. `06_scaling.py --scenarios A C --reps 3` para confirmar que S6.r pasa a ser lineal.
 4. `benchmarks/run_benchmarks.py` para el histórico.
-5. Tests secuenciales (sin `-n`): la lista de E.3 punto 5 más `skforecast/preprocessing`.
-   La suite completa corre en CI en el PR de la release a `main`; lanzarla en local solo si
+5. Tests secuenciales (sin `-n`): la lista de E.3 punto 5. La suite completa corre en CI en el PR de la release a `main`; lanzarla en local solo si
    se decide expresamente.
 6. `python tools/ai/generate_ai_context_files.py --check` (no debería cambiar nada: sin
    docs ni API nuevas).
@@ -1135,4 +1320,6 @@ Resultado esperado global a 500 x 2000: la estimación original (suma de porcent
 por separado: -24% en A y B, -16% en C) queda sustituida por la medida conjunta de la sección
 R (2026-09-28): -28% en A, -15 a -20% en B, -16% en C con LightGBM de 25 árboles; el pico de
 memoria de `create_train_X_y` baja a la mitad con exógenas; a 1000 x 4000, unos 3 s menos
-por el cambio 1 (no re-medido).
+por el cambio 1 (no re-medido). Esa medida conjunta incluía el cambio 3, descartado después
+(sección 3): sin él hay que esperar entre 0.1 y 0.2 s menos de ahorro por `fit()`. Los
+números finales salen del punto 2.

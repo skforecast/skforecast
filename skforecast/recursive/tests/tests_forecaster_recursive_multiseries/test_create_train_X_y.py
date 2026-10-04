@@ -1,11 +1,12 @@
 ﻿# Unit test _create_train_X_y ForecasterRecursiveMultiSeries
 # ==============================================================================
 import re
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
 from skforecast.exceptions import MissingValuesWarning, MissingExogWarning
-from skforecast.exceptions import IgnoredArgumentWarning
+from skforecast.exceptions import IgnoredArgumentWarning, DataTypeWarning
 from sklearn.linear_model import LinearRegression
 from sklearn.compose import ColumnTransformer
 from sklearn.compose import make_column_transformer
@@ -115,6 +116,34 @@ def test_create_train_X_y_ValueError_when_calendar_feature_name_duplicated_with_
     )
     err_msg = re.escape(
         "Duplicated feature names detected in X_train: ['day_of_week']."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster._create_train_X_y(series=series, exog=exog)
+
+
+@pytest.mark.parametrize(
+    "exog_dtype",
+    [float, int],
+    ids=lambda dtype: f'exog_dtype: {dtype}'
+)
+def test_create_train_X_y_ValueError_when_exog_name_duplicated_with_lag(exog_dtype):
+    """
+    Test ValueError is raised when an exogenous variable has the same name as a
+    lag, producing duplicated feature names. Both a float exog (written in the
+    float block of X_train) and an int exog (inserted as its own column) are
+    checked.
+    """
+    series = pd.DataFrame({
+        'l1': pd.Series(np.arange(10, dtype=float)),
+        'l2': pd.Series(np.arange(10, dtype=float))
+    })
+    exog = pd.Series(np.arange(100, 110, dtype=exog_dtype), name='lag_1')
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=LinearRegression(), lags=2, encoding='ordinal'
+    )
+    err_msg = re.escape(
+        "Duplicated feature names detected in X_train: ['lag_1']."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster._create_train_X_y(series=series, exog=exog)
@@ -250,7 +279,7 @@ def test_create_train_X_y_output_when_series_and_exog_is_None():
                 "2000-01-04", "2000-01-05", "2000-01-06", "2000-01-07"
             ]),
             columns = ['lag_1', 'lag_2', 'lag_3', '1', '2']
-        ).astype({'1': int, '2': int}),
+        ),
         pd.Series(
             data  = np.array([0., 0.5, 1., 1.5, 0., 0.5, 1., 1.5]),
             index   = pd.DatetimeIndex([
@@ -422,7 +451,7 @@ def test_create_train_X_y_output_when_series_10_and_exog_is_series_of_float_int(
             index   = pd.Index([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                        '1', '2', 'exog']
-        ).astype({'1': int, '2': int, 'exog': dtype}),
+        ).astype({'exog': dtype}),
         pd.Series(
             data  = np.array([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
             index = pd.Index([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
@@ -750,8 +779,8 @@ def test_create_train_X_y_output_when_series_10_and_exog_is_series_of_bool_str(e
             ]),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5']
         ).assign(
-            l1   = [1] * 5 + [0] * 5, 
-            l2   = [0] * 5 + [1] * 5,
+            l1   = [1.] * 5 + [0.] * 5, 
+            l2   = [0.] * 5 + [1.] * 5,
             **exog_assign
         ).astype(exog_astype),
         pd.Series(
@@ -930,8 +959,8 @@ def test_create_train_X_y_output_when_series_10_and_exog_is_series_of_category(c
             index   = pd.Index([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5']
         ).assign(
-            l1   = [1] * 5 + [0] * 5, 
-            l2   = [0] * 5 + [1] * 5,
+            l1   = [1.] * 5 + [0.] * 5, 
+            l2   = [0.] * 5 + [1.] * 5,
             exog = exog_values
         ),
         pd.Series(
@@ -1039,8 +1068,8 @@ def test_create_train_X_y_output_when_series_10_and_exog_is_dataframe_of_categor
             ]),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5']
         ).assign(
-            l1     = [1] * 5 + [0] * 5, 
-            l2     = [0] * 5 + [1] * 5,
+            l1     = [1.] * 5 + [0.] * 5, 
+            l2     = [0.] * 5 + [1.] * 5,
             exog_1 = exog_1_values,
             exog_2 = exog_2_values
         ),
@@ -1149,7 +1178,7 @@ def test_create_train_X_y_output_when_series_10_and_exog_is_dataframe_of_float_i
                        'l1', 'l2', 'exog_1', 'exog_2']
         ).assign(
             exog_3 = exog_3_values, 
-        ).astype({'l1': int, 'l2': int, 'exog_1': float, 'exog_2': int}),
+        ).astype({'exog_1': float, 'exog_2': int}),
         pd.Series(
             data  = np.array([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
             index = pd.Index([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
@@ -1235,8 +1264,8 @@ def test_create_train_X_y_output_when_exog_is_series_of_string_category(categori
             index   = pd.Index([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5']
         ).assign(
-            l1   = [1] * 5 + [0] * 5,
-            l2   = [0] * 5 + [1] * 5,
+            l1   = [1.] * 5 + [0.] * 5,
+            l2   = [0.] * 5 + [1.] * 5,
             exog = [0.0, 1.0, 2.0, 3.0, 4.0] * 2
         ),
         pd.Series(
@@ -1325,8 +1354,8 @@ def test_create_train_X_y_output_when_exog_is_dataframe_of_string_category(categ
             index   = pd.Index([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5']
         ).assign(
-            l1     = [1] * 5 + [0] * 5,
-            l2     = [0] * 5 + [1] * 5,
+            l1     = [1.] * 5 + [0.] * 5,
+            l2     = [0.] * 5 + [1.] * 5,
             exog_1 = [0.0, 1.0, 2.0, 3.0, 4.0] * 2,
             exog_2 = [0.0, 1.0, 2.0, 3.0, 4.0] * 2
         ),
@@ -1424,7 +1453,7 @@ def test_create_train_X_y_output_when_exog_is_dataframe_of_float_int_string_cate
                        'l1', 'l2', 'exog_1', 'exog_2']
         ).assign(
             exog_3 = [0.0, 1.0, 2.0, 3.0, 4.0] * 2,
-        ).astype({'l1': int, 'l2': int, 'exog_1': float, 'exog_2': int}),
+        ).astype({'exog_1': float, 'exog_2': int}),
         pd.Series(
             data  = np.array([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
             index = pd.Index([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
@@ -1608,7 +1637,7 @@ def test_create_train_X_y_output_when_series_10_and_transformer_series_is_Standa
                        [ 1.21854359,  0.87038828,  0.52223297,  0.17407766, -0.17407766, 0.,  1.]]),
             index   = pd.Index([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 'l1', 'l2']
-        ).astype({'l1': int, 'l2': int}),
+        ),
         pd.Series(
             data  = np.array([0.17407766, 0.52223297, 0.87038828, 1.21854359, 1.5666989 ,
                               0.17407766, 0.52223297, 0.87038828, 1.21854359, 1.5666989 ]),
@@ -1689,7 +1718,7 @@ def test_create_train_X_y_output_when_exog_is_None_and_transformer_exog_is_not_N
                              [5.0, 4.0, 3.0, 0., 1.]]),
             index   = pd.Index([3, 4, 5, 6, 3, 4, 5, 6]),
             columns = ['lag_1', 'lag_2', 'lag_3', '1', '2']
-        ).astype({'1': int, '2': int}),
+        ),
         pd.Series(
             data  = np.array([3., 4., 5., 6., 3., 4., 5., 6.]),
             index = pd.Index([3, 4, 5, 6, 3, 4, 5, 6]),
@@ -1793,7 +1822,7 @@ def test_create_train_X_y_output_when_transformer_series_and_transformer_exog(tr
                       ),
             columns = ['lag_1', 'lag_2', 'lag_3', '1', '2', 
                        'exog_1', 'exog_2_a', 'exog_2_b']
-        ).astype({'1': int, '2': int}),
+        ),
         pd.Series(
             data  = np.array([-0.52223297, -0.17407766,  0.17407766,  0.52223297,  0.87038828,
                                1.21854359,  1.5666989 , -0.52223297, -0.17407766,  0.17407766,
@@ -1898,7 +1927,7 @@ def test_create_train_X_y_output_when_series_different_length_and_exog_is_datafr
                        'l1', 'l2', 'exog_1', 'exog_2']
         ).assign(exog_3 = [0.0, 1.0, 2.0, 3.0, 4.0, 
                           2.0, 3.0, 4.0]
-        ).astype({'l1': int, 'l2': int, 'exog_1': float, 'exog_2': int}),
+        ).astype({'exog_1': float, 'exog_2': int}),
         pd.Series(
             data  = np.array([5, 6, 7, 8, 9, 7, 8, 9]),
             index   = pd.Index(
@@ -2026,7 +2055,7 @@ def test_create_train_X_y_output_when_transformer_series_and_transformer_exog_wi
                       ),
             columns = ['lag_1', 'lag_2', 'lag_3', 'l1', 'l2', 'l3',
                        'exog_1', 'exog_2_a', 'exog_2_b']
-        ).astype({'l1': int, 'l2': int, 'l3': int}),
+        ),
         pd.Series(
             data  = np.array([-0.5222329678670935, -0.17407765595569785, 0.17407765595569785, 0.5222329678670935, 0.8703882797784892, 1.2185435916898848, 1.5666989036012806, 
                               -0.2182178902359924, 0.2182178902359924, 0.6546536707079772, 1.091089451179962, 1.5275252316519468, 
@@ -2114,7 +2143,7 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_y_train():
             index   = pd.Index([6, 7, 8, 9, 5, 6, 7, 8, 9]),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                        'l1', 'l2', 'exog']
-        ).astype({'l1': int, 'l2': int}),
+        ),
         pd.Series(
             data  = np.array([6, 7, 8, 9, 5, 6, 7, 8, 9]),
             index = pd.Index([6, 7, 8, 9, 5, 6, 7, 8, 9]),
@@ -2214,7 +2243,7 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_y_train_datetime()
                       ),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                        'l1', 'l2', 'exog']
-        ).astype({'l1': int, 'l2': int}),
+        ),
         pd.Series(
             data  = np.array([6, 7, 8, 9, 5, 6, 7, 8, 9]),
             index = pd.Index(
@@ -2308,7 +2337,7 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_X_train_drop_nan_T
             index   = pd.Index([9, 5, 6, 7, 8, 9]),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                        'l1', 'l2', 'exog']
-        ).astype({'l1': int, 'l2': int}),
+        ),
         pd.Series(
             data  = np.array([9, 5, 6, 7, 8, 9]),
             index = pd.Index([9, 5, 6, 7, 8, 9]),
@@ -2416,7 +2445,7 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_X_train_drop_nan_T
                       ),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                        'l1', 'l2', 'exog']
-        ).astype({'l1': int, 'l2': int}),
+        ),
         pd.Series(
             data  = np.array([9, 5, 6, 7, 8, 9]),
             index = pd.Index(
@@ -2513,7 +2542,7 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_X_train_drop_nan_F
             index   = pd.Index([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                        'l1', 'l2', 'exog']
-        ).astype({'l1': int, 'l2': int}),
+        ),
         pd.Series(
             data  = np.array([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
             index = pd.Index([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
@@ -2614,7 +2643,7 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_X_train_drop_nan_F
                       ),
             columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                        'l1', 'l2', 'exog']
-        ).astype({'l1': int, 'l2': int}),
+        ),
         pd.Series(
             data  = np.array([5, 6, 7, 8, 9, 5, 6, 7, 8, 9]),
             index = pd.Index(
@@ -2757,7 +2786,7 @@ def test_create_train_X_y_output_series_dict_and_exog_dict():
                       ),
             columns = ['lag_1', 'lag_2', 'lag_3', 'l1', 'l2', 'l3', 
                        'exog_1', 'exog_2']
-        ).astype({'l1': int, 'l2': int, 'l3': int, 'exog_1': float, 'exog_2': float}
+        ).astype({'exog_1': float, 'exog_2': float}
         ),
         pd.Series(
             data  = np.array([4., 5., 6., 7., 8., 9., 18., 19., 23., 24.]),
@@ -3421,7 +3450,7 @@ def test_create_train_X_y_output_series_dict_and_exog_dict_window_and_calendar_f
             columns = ['lag_1', 'lag_2', 'lag_3', 'roll_mean_3', 'roll_median_3', 'roll_sum_4',
                        'l1', 'l2', 'l3', 'exog_1', 'exog_2',
                        'weekend', 'day_of_week_sin', 'day_of_week_cos']
-        ).astype({'l1': int, 'l2': int, 'l3': int, 'exog_1': float, 'exog_2': float, 'weekend': int}
+        ).astype({'exog_1': float, 'exog_2': float, 'weekend': int}
         ),
         pd.Series(
             data  = np.array([4., 5., 6., 7., 8., 9., 19., 24.]),
@@ -4206,3 +4235,330 @@ def test_create_train_X_y_output_when_exog_dict_object_column_with_different_val
         pd.Index(forecaster.categorical_encoder.categories_[0]),
         pd.Index(['a', 'b', 'c', 'd', np.nan], dtype=object)
     )
+
+
+@pytest.mark.parametrize(
+    "encoding, use_exog, expected_no_copy, expected_order",
+    [
+        ('ordinal', False, True, 'F'),
+        ('ordinal', True, True, 'F'),
+        (None, True, True, 'F'),
+        (None, False, False, 'C')
+    ],
+    ids=lambda value: f'encoding, exog, no_copy, order: {value}'
+)
+def test_create_train_X_y_X_train_layout_when_encoding_ordinal_or_None(
+    encoding, use_exog, expected_no_copy, expected_order
+):
+    """
+    Test the memory layout of X_train. With `encoding='ordinal'`, and with
+    `encoding=None` and float exog, lags, window features, level and exog are
+    stored in a single array with contiguous columns, so X_train is not copied
+    when it is converted to numpy. With `encoding=None` and no exog, the level
+    is stored apart (the conversion to numpy copies) and the array passed to
+    the estimator, once the level column is dropped, is row-contiguous.
+    """
+    series = {
+        'l1': pd.Series(np.arange(8, dtype=float), name='l1'),
+        'l2': pd.Series(np.arange(10, 18, dtype=float), name='l2')
+    }
+    exog = None
+    expected_columns = ['lag_1', 'lag_2', 'roll_mean_3', '_level_skforecast']
+    if use_exog:
+        exog = {
+            'l1': pd.DataFrame({
+                      'exog_1': np.arange(100, 108, dtype=float),
+                      'exog_2': np.arange(200, 208, dtype=float)
+                  }),
+            'l2': pd.DataFrame({
+                      'exog_1': np.arange(110, 118, dtype=float),
+                      'exog_2': np.arange(210, 218, dtype=float)
+                  })
+        }
+        expected_columns = expected_columns + ['exog_1', 'exog_2']
+
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator       = LinearRegression(),
+                     lags            = 2,
+                     window_features = RollingFeatures(stats='mean', window_sizes=3),
+                     encoding        = encoding
+                 )
+    X_train = forecaster._create_train_X_y(series=series, exog=exog)[0]
+    X_train_numpy = X_train.to_numpy()
+
+    assert X_train.columns.to_list() == expected_columns
+    assert (X_train.dtypes == np.dtype(float)).all()
+    assert X_train['_level_skforecast'].to_numpy().strides == (8,)
+    for col in expected_columns:
+        col_values = X_train[col].to_numpy()
+        assert np.shares_memory(X_train_numpy, col_values) == expected_no_copy
+        if expected_no_copy:
+            assert col_values.strides == (8,)
+
+    X_train_estimator = (
+        X_train if encoding is not None else X_train.drop(columns='_level_skforecast')
+    )
+    X_train_estimator = X_train_estimator.to_numpy()
+    if expected_order == 'F':
+        assert X_train_estimator.flags.f_contiguous
+    else:
+        assert X_train_estimator.flags.c_contiguous
+
+
+@pytest.mark.parametrize(
+    "use_exog", [False, True], ids=lambda value: f'use_exog: {value}'
+)
+def test_create_train_X_y_X_train_layout_when_encoding_onehot(use_exog):
+    """
+    Test the memory layout of X_train with `encoding='onehot'`. Lags, window
+    features, the one-hot columns of the series and float exog are stored in
+    a single float array with contiguous columns, so X_train is not copied
+    when it is converted to numpy.
+    """
+    series = {
+        'l1': pd.Series(np.arange(8, dtype=float), name='l1'),
+        'l2': pd.Series(np.arange(10, 18, dtype=float), name='l2')
+    }
+    exog = None
+    expected_columns = ['lag_1', 'lag_2', 'roll_mean_3', 'l1', 'l2']
+    if use_exog:
+        exog = {
+            'l1': pd.DataFrame({'exog_1': np.arange(100, 108, dtype=float)}),
+            'l2': pd.DataFrame({'exog_1': np.arange(110, 118, dtype=float)})
+        }
+        expected_columns = expected_columns + ['exog_1']
+
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator       = LinearRegression(),
+                     lags            = 2,
+                     window_features = RollingFeatures(stats='mean', window_sizes=3),
+                     encoding        = 'onehot'
+                 )
+    X_train = forecaster._create_train_X_y(series=series, exog=exog)[0]
+    X_train_numpy = X_train.to_numpy()
+
+    assert X_train.columns.to_list() == expected_columns
+    assert (X_train.dtypes == np.dtype(float)).all()
+    assert X_train_numpy.flags.f_contiguous
+    for col in expected_columns:
+        col_values = X_train[col].to_numpy()
+        assert np.shares_memory(X_train_numpy, col_values)
+        assert col_values.strides == (8,)
+    np.testing.assert_array_equal(
+        X_train['l1'].to_numpy(), np.array([1.] * 5 + [0.] * 5)
+    )
+    np.testing.assert_array_equal(
+        X_train['l2'].to_numpy(), np.array([0.] * 5 + [1.] * 5)
+    )
+
+
+@pytest.mark.parametrize(
+    "encoding, expected_level_dtype",
+    [
+        ('ordinal', np.dtype(float)),
+        (
+            'ordinal_category',
+            pd.CategoricalDtype(categories=np.array([0, 1], dtype=int))
+        )
+    ],
+    ids=lambda value: f'encoding, level dtype: {value}'
+)
+def test_create_train_X_y_X_train_layout_when_exog_has_non_float_columns(
+    encoding, expected_level_dtype
+):
+    """
+    Test the memory layout, column order and dtypes of X_train when exog has
+    columns that are not float64 (int, category, float32 and object with
+    datetime values) between float columns, and `categorical_features=None`.
+    The float64 columns are stored one after another in a single array and the
+    other columns, including the level when `encoding='ordinal_category'`, are
+    inserted in their position with their dtype.
+    """
+    series = {
+        'l1': pd.Series(np.arange(6, dtype=float), name='l1'),
+        'l2': pd.Series(np.arange(10, 16, dtype=float), name='l2')
+    }
+    exog = {
+        'l1': pd.DataFrame({
+                  'exog_float': np.arange(100, 106, dtype=float),
+                  'exog_int': np.arange(200, 206, dtype=int),
+                  'exog_cat': pd.Categorical([0, 1, 2, 0, 1, 2], categories=[0, 1, 2]),
+                  'exog_float_2': np.arange(300, 306, dtype=float),
+                  'exog_float32': np.arange(400, 406, dtype='float32'),
+                  'exog_object': pd.Series(
+                                     [pd.Timestamp('2020-01-01')] * 6, dtype=object
+                                 )
+              }),
+        'l2': pd.DataFrame({
+                  'exog_float': np.arange(110, 116, dtype=float),
+                  'exog_int': np.arange(210, 216, dtype=int),
+                  'exog_cat': pd.Categorical([2, 2, 1, 1, 0, 0], categories=[0, 1, 2]),
+                  'exog_float_2': np.arange(310, 316, dtype=float),
+                  'exog_float32': np.arange(410, 416, dtype='float32'),
+                  'exog_object': pd.Series(
+                                     [pd.Timestamp('2020-01-02')] * 6, dtype=object
+                                 )
+              })
+    }
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, encoding=encoding, categorical_features=None
+    )
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', category=DataTypeWarning)
+        X_train = forecaster._create_train_X_y(series=series, exog=exog)[0]
+
+    expected_dtypes = pd.Series({
+        'lag_1': np.dtype(float),
+        'lag_2': np.dtype(float),
+        'lag_3': np.dtype(float),
+        '_level_skforecast': expected_level_dtype,
+        'exog_float': np.dtype(float),
+        'exog_int': np.dtype(int),
+        'exog_cat': pd.CategoricalDtype(categories=[0, 1, 2]),
+        'exog_float_2': np.dtype(float),
+        'exog_float32': np.dtype('float32'),
+        'exog_object': np.dtype(object)
+    })
+    expected_float_columns = ['lag_1', 'lag_2', 'lag_3', 'exog_float', 'exog_float_2']
+    if encoding == 'ordinal':
+        expected_float_columns.insert(3, '_level_skforecast')
+    expected_float_2 = np.array([303., 304., 305., 313., 314., 315.])
+    expected_int = np.array([203, 204, 205, 213, 214, 215], dtype=int)
+    expected_object = np.array(
+        [pd.Timestamp('2020-01-01')] * 3 + [pd.Timestamp('2020-01-02')] * 3,
+        dtype=object
+    )
+
+    pd.testing.assert_series_equal(X_train.dtypes, expected_dtypes)
+    np.testing.assert_array_equal(X_train['exog_float_2'].to_numpy(), expected_float_2)
+    np.testing.assert_array_equal(X_train['exog_int'].to_numpy(), expected_int)
+    np.testing.assert_array_equal(X_train['exog_object'].to_numpy(), expected_object)
+
+    # Each float64 column starts where the previous one ends.
+    float_columns_values = [X_train[col].to_numpy() for col in expected_float_columns]
+    float_columns_addresses = [values.ctypes.data for values in float_columns_values]
+    assert all(values.strides == (8,) for values in float_columns_values)
+    assert np.diff(float_columns_addresses).tolist() == (
+        [len(X_train) * 8] * (len(expected_float_columns) - 1)
+    )
+
+
+@pytest.mark.parametrize(
+    "n_float_exog, n_int_exog",
+    [(0, 3), (0, 4), (98, 99), (98, 100)],
+    ids=lambda value: f'n_float_exog, n_int_exog: {value}'
+)
+def test_create_train_X_y_output_when_int_exog_columns_are_inserted_or_concatenated(
+    n_float_exog, n_int_exog
+):
+    """
+    Test the output of _create_train_X_y at both sides of the limits that
+    decide how the int exog columns are added to X_train. They are inserted one
+    by one when they are no more than the float columns (2 lags, the level and
+    the float exog) and fewer than 100. Otherwise, X_train is assembled with
+    `pd.concat`. The output is the same and pandas does not warn about a
+    fragmented DataFrame.
+    """
+    series = {
+        'l1': pd.Series(np.arange(5, dtype=float), name='l1'),
+        'l2': pd.Series(np.arange(10, 15, dtype=float), name='l2')
+    }
+    float_cols = [f'exog_float_{i}' for i in range(n_float_exog)]
+    int_cols = [f'exog_int_{i}' for i in range(n_int_exog)]
+    exog_float = np.arange(5 * n_float_exog, dtype=float).reshape(5, n_float_exog)
+    exog_int = np.arange(5 * n_int_exog, dtype=int).reshape(5, n_int_exog)
+    exog = {
+        'l1': pd.concat(
+                  [pd.DataFrame(exog_float, columns=float_cols),
+                   pd.DataFrame(exog_int, columns=int_cols)],
+                  axis=1
+              ),
+        'l2': pd.concat(
+                  [pd.DataFrame(exog_float + 1000, columns=float_cols),
+                   pd.DataFrame(exog_int + 1000, columns=int_cols)],
+                  axis=1
+              )
+    }
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=2, encoding='ordinal'
+    )
+    with warnings.catch_warnings():
+        warnings.simplefilter('error', category=pd.errors.PerformanceWarning)
+        results = forecaster._create_train_X_y(series=series, exog=exog)
+
+    expected_index = pd.Index([2, 3, 4, 2, 3, 4])
+    expected_autoreg = pd.DataFrame(
+        data = np.array([[1., 0., 0.],
+                         [2., 1., 0.],
+                         [3., 2., 0.],
+                         [11., 10., 1.],
+                         [12., 11., 1.],
+                         [13., 12., 1.]]),
+        index   = expected_index,
+        columns = ['lag_1', 'lag_2', '_level_skforecast']
+    )
+    expected_exog_float = pd.DataFrame(
+        data    = np.vstack([exog_float[2:], exog_float[2:] + 1000]),
+        index   = expected_index,
+        columns = float_cols
+    )
+    expected_exog_int = pd.DataFrame(
+        data    = np.vstack([exog_int[2:], exog_int[2:] + 1000]),
+        index   = expected_index,
+        columns = int_cols
+    )
+    n_float_cols = 3 + n_float_exog
+
+    assert results[0].columns.to_list() == (
+        ['lag_1', 'lag_2', '_level_skforecast'] + float_cols + int_cols
+    )
+    pd.testing.assert_frame_equal(results[0].iloc[:, :3], expected_autoreg)
+    pd.testing.assert_frame_equal(
+        results[0].iloc[:, 3:n_float_cols], expected_exog_float
+    )
+    pd.testing.assert_frame_equal(results[0].iloc[:, n_float_cols:], expected_exog_int)
+    assert results[9] == float_cols + int_cols
+
+
+@pytest.mark.parametrize(
+    "encoding",
+    ['ordinal', 'ordinal_category', 'onehot', None],
+    ids=lambda encoding: f'encoding: {encoding}'
+)
+@pytest.mark.parametrize(
+    "series_index_name, exog_index_name",
+    [
+        ('date', None),
+        ('date', 'other'),
+        ('date', 'date'),
+        (None, 'date')
+    ],
+    ids=lambda value: f'index names: {value}'
+)
+def test_create_train_X_y_index_names_when_series_and_exog_index_have_names(
+    encoding, series_index_name, exog_index_name
+):
+    """
+    Test the name of the index of X_train and y_train when the indexes of
+    series and exog have names. Both have the name of the index of series,
+    whatever the name of the index of exog. If the index of series has no
+    name, they have no name.
+    """
+    index = pd.date_range('2020-01-01', periods=6, freq='D')
+    series_index = index.rename(series_index_name)
+    exog_index = index.rename(exog_index_name)
+    series = {
+        'l1': pd.Series(np.arange(6, dtype=float), index=series_index, name='l1'),
+        'l2': pd.Series(np.arange(10, 16, dtype=float), index=series_index, name='l2')
+    }
+    exog = {
+        'l1': pd.DataFrame({'exog': np.arange(100, 106, dtype=float)}, index=exog_index),
+        'l2': pd.DataFrame({'exog': np.arange(110, 116, dtype=float)}, index=exog_index)
+    }
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=2, encoding=encoding
+    )
+    results = forecaster._create_train_X_y(series=series, exog=exog)
+
+    assert results[0].index.name == series_index_name
+    assert results[1].index.name == series_index_name

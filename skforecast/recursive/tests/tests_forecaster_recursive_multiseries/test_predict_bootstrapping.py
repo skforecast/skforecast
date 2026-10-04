@@ -22,6 +22,7 @@ from .fixtures_forecaster_recursive_multiseries import (
     series_dict_range,
     exog_wide_range,
     exog_pred_wide_range,
+    series_dict_unordered,
     expected_df_to_long_format
 )
 
@@ -1124,5 +1125,48 @@ def test_predict_bootstrapping_output_when_differentiation_binned_residuals(diff
 
     expected = {'l1': expected_1, 'l2': expected_2}
     expected = expected_df_to_long_format(expected, method='bootstrapping')
+
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_predict_bootstrapping_output_when_encoding_onehot_and_series_not_in_alphabetical_order():
+    """
+    Test predict_bootstrapping output when `encoding='onehot'` and the series
+    are not in alphabetical order ('c', 'a', 'd', 'b'). In-sample residuals
+    are fixed to 0, so every bootstrapping iteration must be equal to the
+    point prediction of its series.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = LinearRegression(),
+                     lags               = 2,
+                     encoding           = 'onehot',
+                     transformer_series = None,
+                     dropna_from_series = True
+                 )
+    forecaster.fit(
+        series=series_dict_unordered, store_in_sample_residuals=True,
+        suppress_warnings=True
+    )
+    for level in forecaster.in_sample_residuals_.keys():
+        forecaster.in_sample_residuals_[level] = np.full_like(
+            forecaster.in_sample_residuals_[level], fill_value=0
+        )
+    results = forecaster.predict_bootstrapping(
+                  steps                   = 2,
+                  n_boot                  = 3,
+                  use_in_sample_residuals = True,
+                  use_binned_residuals    = False,
+                  suppress_warnings       = True
+              )
+
+    expected_pred = np.array([6.7285487893, 10.1655085063, 5.6544730032, 6.2489071323,
+                              7.8841648026, 11.2932023086, 5.6029193510, 7.2654898680])
+    expected = pd.DataFrame(
+        {'level': ['c', 'a', 'd', 'b', 'c', 'a', 'd', 'b'],
+         'pred_boot_0': expected_pred,
+         'pred_boot_1': expected_pred,
+         'pred_boot_2': expected_pred},
+        index=pd.DatetimeIndex(['2020-01-11'] * 4 + ['2020-01-12'] * 4)
+    )
 
     pd.testing.assert_frame_equal(results, expected)

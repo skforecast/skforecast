@@ -2,6 +2,7 @@
 # ==============================================================================
 import re
 import pytest
+import pandas as pd
 from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.feature_selection import RFE
 from sklearn.preprocessing import StandardScaler
@@ -788,3 +789,49 @@ def test_select_features_multiseries_when_selector_is_RFE_select_only_is_calenda
     assert selected_window_features == []
     assert selected_exog == ['exog_0', 'exog_1', 'exog_2', 'exog_3', 'exog_4']
     assert selected_calendar_features == ['week', 'hour']
+
+
+def test_select_features_multiseries_when_encoding_onehot_and_series_without_rows_in_X_train():
+    """
+    Test that select_features_multiseries does not pass to the selector, nor
+    returns as exogenous variable, the one-hot column of a series without rows
+    in the training matrix. Series 'c' has no exog, so with
+    `dropna_from_series=True` all its rows are dropped.
+    """
+    index = pd.date_range(start='2020-01-01', periods=8, freq='D')
+    series = {
+        'a': pd.Series([8.5, 8.1, 11.5, 11.1, 10.3, 7.2, 9.9, 12.1], index=index, name='a'),
+        'b': pd.Series([10.5, 9.4, 2.5, 8.4, 9.9, 6.2, 5.4, 8.6], index=index, name='b'),
+        'c': pd.Series([8.6, 4.3, 6.1, 4.5, 9.3, 6.2, 10.8, 7.7], index=index, name='c')
+    }
+    exog = {
+        'a': pd.DataFrame(
+                 {'exog_1': [0.1, 1.4, -1.6, 0.9, 0.1, -0.6, 2., 0.8]}, index=index
+             ),
+        'b': pd.DataFrame(
+                 {'exog_1': [0.6, -0.2, 0.7, -0.1, 0.7, 1.4, -0.7, 0.2]}, index=index
+             ),
+        'c': None
+    }
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = LinearRegression(),
+                     lags               = 2,
+                     encoding           = 'onehot',
+                     dropna_from_series = True
+                 )
+    selector = SelectorAllFeatures()
+
+    selected_lags, selected_window_features, selected_exog, selected_calendar_features = select_features_multiseries(
+        selector   = selector,
+        forecaster = forecaster,
+        series     = series,
+        exog       = exog,
+        subsample  = 1.,
+        verbose    = False,
+    )
+
+    assert selector.X_fit_.columns.to_list() == ['lag_1', 'lag_2', 'exog_1']
+    assert selected_lags == [1, 2]
+    assert selected_window_features == []
+    assert selected_exog == ['exog_1']
+    assert selected_calendar_features == []
