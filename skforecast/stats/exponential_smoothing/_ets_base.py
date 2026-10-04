@@ -1163,16 +1163,18 @@ def ets(y: NDArray[np.float64],
             )
 
     # Handle ZZZ with high frequency by calling auto_ets
-    if model == "ZZZ" and m > 24:
-        warnings.warn(
-            f"Frequency too high (m={m} > 24). Using auto_ets to select non-seasonal model. "
-            f"Try stlf() if you need seasonal forecasts."
-        )
+    if model == "ZZZ":
+        if m > 24:
+            warnings.warn(
+                f"Frequency too high (m={m} > 24). Using auto_ets to select non-seasonal model. "
+                f"Try stlf() if you need seasonal forecasts."
+            )
         return auto_ets(
-            y_original, m=m, seasonal=False, trend=None, damped=damped,
-            ic="aicc", allow_multiplicative=True, 
+            y_original, m=m, seasonal=m <= 24, trend=None, damped=damped,
+            ic="aicc", allow_multiplicative=True,
             allow_multiplicative_trend=False,
-            lambda_auto=lambda_auto, verbose=False
+            lambda_param=lambda_param, lambda_auto=lambda_auto,
+            bias_adjust=bias_adjust, verbose=False
         )
 
     season_type = model[2]
@@ -1792,7 +1794,9 @@ def auto_ets(
     allow_multiplicative_trend: bool = False,
     lambda_auto: bool = False,
     max_models: Optional[int] = None,
-    verbose: bool = False
+    verbose: bool = False,
+    lambda_param: Optional[float] = None,
+    bias_adjust: bool = False
 ) -> ETSModel:
     """
     Automatic ETS model selection
@@ -1822,6 +1826,11 @@ def auto_ets(
         Maximum number of models to try (None = try all)
     verbose : bool
         Print progress
+    lambda_param : float, optional
+        Box-Cox transformation parameter. If None, no transformation unless
+        `lambda_auto` is True.
+    bias_adjust : bool
+        Apply bias adjustment when back-transforming the fitted values.
 
     Returns
     -------
@@ -1834,7 +1843,7 @@ def auto_ets(
 
     # Multiplicative components need a positive series, and only additive
     # models are considered on the Box-Cox scale (as in R)
-    if np.min(y) <= 0 or lambda_auto:
+    if np.min(y) <= 0 or lambda_auto or lambda_param is not None:
         allow_multiplicative = False
         allow_multiplicative_trend = False
 
@@ -1925,7 +1934,11 @@ def auto_ets(
 
     for model_spec, damped_flag in models_to_try:
         try:
-            model = ets(y, m=m, model=model_spec, damped=damped_flag, lambda_auto=lambda_auto, bounds="both")
+            model = ets(
+                y, m=m, model=model_spec, damped=damped_flag,
+                lambda_param=lambda_param, lambda_auto=lambda_auto,
+                bias_adjust=bias_adjust, bounds="both"
+            )
 
             if ic == "aic":
                 ic_value = model.aic

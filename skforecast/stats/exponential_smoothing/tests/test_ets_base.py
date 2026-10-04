@@ -1211,3 +1211,22 @@ def test_forecast_ets_box_cox_bias_adjustment_uses_forecast_variance(lambda_para
         expected = mean * (1 + (1 - lambda_param) * var / (2 * mean ** (2 * lambda_param)))
     assert np.all(np.diff(var) > 0)
     np.testing.assert_allclose(mean_adjusted, expected, rtol=1e-12)
+
+
+def test_ets_ZZZ_runs_automatic_selection():
+    """
+    Test that ets() with model='ZZZ' runs the automatic selection for any
+    seasonal period, passing the Box-Cox options (it raised KeyError: 'Z'
+    when m <= 24).
+    """
+    from ...tests.tests_arima.fixtures_arima import air_passengers
+
+    y = air_passengers.to_numpy(dtype=float)
+
+    model = ets(y, m=12, model="ZZZ", lambda_param=0.0)
+    expected = auto_ets(y, m=12, damped=False, lambda_param=0.0)
+
+    assert model.config == expected.config
+    assert model.config.error == "A"
+    assert model.transform.lambda_param == 0.0
+    np.testing.assert_allclose(model.loglik, expected.loglik)

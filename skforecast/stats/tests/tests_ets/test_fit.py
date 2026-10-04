@@ -405,3 +405,29 @@ def test_ets_fit_fixed_gamma():
     
     assert model.params_['gamma'] == fixed_gamma
 
+
+def test_fit_ets_auto_selection_with_lambda_param():
+    """
+    Test that the automatic selection (model='ZZZ') applies the Box-Cox
+    transformation of `lambda_param` and only considers additive models, as
+    R's forecast::ets (`lambda_param` was ignored).
+    """
+    from ...tests.tests_arima.fixtures_arima import air_passengers
+
+    y = air_passengers.to_numpy(dtype=float)
+    model = Ets(m=12, model='ZZZ', lambda_param=0.0)
+    model.fit(y)
+
+    assert model.model_.transform is not None
+    assert model.model_.transform.lambda_param == 0.0
+    assert model.model_config_['error'] == 'A'
+    assert model.model_config_['trend'] != 'M'
+    assert model.model_config_['season'] != 'M'
+
+    selected = Ets(
+        m=12,
+        model=f"{model.model_config_['error']}{model.model_config_['trend']}{model.model_config_['season']}",
+        damped=model.model_config_['damped'],
+        lambda_param=0.0,
+    ).fit(y)
+    np.testing.assert_allclose(model.predict(steps=12), selected.predict(steps=12))

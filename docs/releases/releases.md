@@ -124,6 +124,8 @@ The main changes in this release are:
 
 + The prediction intervals of <code>[Ets]</code> models without an analytical variance (multiplicative errors) were simulated without a seed, so `predict_interval` returned different values on every call. The simulation now uses a fixed seed (new argument `random_state=123` of `simulate_ets`) and is compiled with numba: about 4 ms instead of 70 ms for 1000 paths of 12 steps.
 
++ The automatic model selection of <code>[Ets]</code> (`model='ZZZ'`) ignored `lambda_param` (and fitted the model without the Box-Cox transformation) and `bias_adjust` (for the fitted values). Both are now applied and, as in R's `forecast::ets`, only additive models are considered when `lambda_param` is given. The internal function `ets(model='ZZZ')` raised `KeyError: 'Z'` when `m <= 24`; it now runs the automatic selection.
+
 + <code>[Ets]</code> now raises a descriptive `ValueError` when `model` is not valid, instead of `KeyError`. This includes partial automatic specifications such as `'ZZN'`, which are not supported: use `model='ZZZ'` and restrict the search with `seasonal`, `trend`, `damped`, `allow_multiplicative` and `allow_multiplicative_trend`.
 
 
