@@ -1,7 +1,7 @@
 """
 Bit-identity snapshots of `ForecasterRecursiveMultiSeries` outputs, used as the safety net
 of the internal `fit()` optimizations (`dev/PLAN_multiseries_fit_optimizations.md`,
-section 0.1).
+section 4.1).
 
 For every case the script computes the training matrices, the fitted state, the
 predictions (point, intervals, bootstrapping), the sample weights, the residuals set
