@@ -3450,7 +3450,7 @@ def test_create_train_X_y_output_series_dict_and_exog_dict_window_and_calendar_f
             columns = ['lag_1', 'lag_2', 'lag_3', 'roll_mean_3', 'roll_median_3', 'roll_sum_4',
                        'l1', 'l2', 'l3', 'exog_1', 'exog_2',
                        'weekend', 'day_of_week_sin', 'day_of_week_cos']
-        ).astype({'exog_1': float, 'exog_2': float, 'weekend': int}
+        ).astype({'exog_1': float, 'exog_2': float}
         ),
         pd.Series(
             data  = np.array([4., 5., 6., 7., 8., 9., 19., 24.]),
@@ -4353,6 +4353,91 @@ def test_create_train_X_y_X_train_layout_when_encoding_onehot(use_exog):
 
 
 @pytest.mark.parametrize(
+    "calendar_encoding",
+    ['cyclical', 'onehot'],
+    ids=lambda value: f'calendar encoding: {value}'
+)
+@pytest.mark.parametrize(
+    "encoding",
+    ['ordinal', 'onehot', None],
+    ids=lambda value: f'encoding: {value}'
+)
+def test_create_train_X_y_X_train_layout_when_calendar_features(
+    encoding, calendar_encoding
+):
+    """
+    Test the memory layout and the calendar columns of X_train when
+    `calendar_features` is used, also with `encoding=None` and no exog. The
+    calendar features are written as float, also the integer ones (`weekend`
+    and the one-hot columns of `quarter`), at the end of the single float
+    block, so X_train is not copied when it is converted to numpy.
+    """
+    index = pd.date_range(start='2020-01-01', periods=8, freq='D')
+    series = {
+        'l1': pd.Series(np.arange(8, dtype=float), index=index, name='l1'),
+        'l2': pd.Series(np.arange(10, 18, dtype=float), index=index, name='l2')
+    }
+    if calendar_encoding == 'cyclical':
+        calendar = CalendarFeatures(
+            features=['weekend', 'day_of_week'], encoding='cyclical'
+        )
+        expected_calendar = {
+            'weekend': [1., 1., 0., 0., 0.],
+            'day_of_week_sin': [-0.9749279121818236, -0.7818314824680299, 0.0,
+                                0.7818314824680298, 0.9749279121818236],
+            'day_of_week_cos': [-0.2225209339563146, 0.6234898018587334, 1.0,
+                                0.6234898018587336, -0.22252093395631434]
+        }
+    else:
+        calendar = CalendarFeatures(features=['weekend', 'quarter'], encoding='onehot')
+        expected_calendar = {
+            'weekend': [1., 1., 0., 0., 0.],
+            'quarter_1': [1., 1., 1., 1., 1.],
+            'quarter_2': [0., 0., 0., 0., 0.],
+            'quarter_3': [0., 0., 0., 0., 0.],
+            'quarter_4': [0., 0., 0., 0., 0.]
+        }
+    expected_calendar = pd.DataFrame(
+        data  = {col: values * 2 for col, values in expected_calendar.items()},
+        index = pd.DatetimeIndex(
+                    ['2020-01-04', '2020-01-05', '2020-01-06',
+                     '2020-01-07', '2020-01-08'] * 2
+                )
+    )
+    level_columns = ['l1', 'l2'] if encoding == 'onehot' else ['_level_skforecast']
+    expected_columns = (
+        ['lag_1', 'lag_2', 'roll_mean_3'] + level_columns
+        + expected_calendar.columns.to_list()
+    )
+
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator         = LinearRegression(),
+                     lags              = 2,
+                     window_features   = RollingFeatures(stats='mean', window_sizes=3),
+                     encoding          = encoding,
+                     calendar_features = calendar
+                 )
+    X_train = forecaster._create_train_X_y(series=series)[0]
+    X_train_numpy = X_train.to_numpy()
+
+    assert X_train.columns.to_list() == expected_columns
+    assert (X_train.dtypes == np.dtype(float)).all()
+    assert X_train_numpy.flags.f_contiguous
+    for col in expected_columns:
+        col_values = X_train[col].to_numpy()
+        assert np.shares_memory(X_train_numpy, col_values)
+        assert col_values.strides == (8,)
+    pd.testing.assert_frame_equal(
+        X_train[expected_calendar.columns.to_list()], expected_calendar
+    )
+
+    X_train_estimator = (
+        X_train if encoding is not None else X_train.drop(columns='_level_skforecast')
+    )
+    assert X_train_estimator.to_numpy().flags.f_contiguous
+
+
+@pytest.mark.parametrize(
     "encoding, expected_level_dtype",
     [
         ('ordinal', np.dtype(float)),
@@ -4518,6 +4603,100 @@ def test_create_train_X_y_output_when_int_exog_columns_are_inserted_or_concatena
     )
     pd.testing.assert_frame_equal(results[0].iloc[:, n_float_cols:], expected_exog_int)
     assert results[9] == float_cols + int_cols
+
+
+@pytest.mark.parametrize(
+    "n_int_exog",
+    [6, 7],
+    ids=lambda value: f'n_int_exog: {value}'
+)
+def test_create_train_X_y_calendar_features_when_X_train_assembled_with_block_or_concat(
+    n_int_exog
+):
+    """
+    Test the calendar columns of X_train at both sides of the limit that
+    decides how the int exog columns are added to X_train. With 6 int exog
+    columns they are inserted next to the single float block (2 lags, the
+    level and 3 calendar columns). With 7, X_train is assembled with
+    `pd.concat`. The calendar columns are float and have the same values in
+    both cases.
+    """
+    index = pd.date_range(start='2020-01-01', periods=8, freq='D')
+    series = {
+        'l1': pd.Series(np.arange(8, dtype=float), index=index, name='l1'),
+        'l2': pd.Series(np.arange(10, 18, dtype=float), index=index, name='l2')
+    }
+    int_cols = [f'exog_int_{i}' for i in range(n_int_exog)]
+    exog_int = np.arange(8 * n_int_exog, dtype=int).reshape(8, n_int_exog)
+    exog = {
+        'l1': pd.DataFrame(exog_int, index=index, columns=int_cols),
+        'l2': pd.DataFrame(exog_int + 1000, index=index, columns=int_cols)
+    }
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator         = LinearRegression(),
+                     lags              = 2,
+                     encoding          = 'ordinal',
+                     calendar_features = CalendarFeatures(
+                                             features=['weekend', 'day_of_week'],
+                                             encoding='cyclical'
+                                         )
+                 )
+    X_train = forecaster._create_train_X_y(series=series, exog=exog)[0]
+
+    expected_calendar = pd.DataFrame(
+        data  = {
+            'weekend': [0., 1., 1., 0., 0., 0.] * 2,
+            'day_of_week_sin': [-0.433883739117558, -0.9749279121818236,
+                                -0.7818314824680299, 0.0, 0.7818314824680298,
+                                0.9749279121818236] * 2,
+            'day_of_week_cos': [-0.9009688679024191, -0.2225209339563146,
+                                0.6234898018587334, 1.0, 0.6234898018587336,
+                                -0.22252093395631434] * 2
+        },
+        index = pd.DatetimeIndex(
+                    ['2020-01-03', '2020-01-04', '2020-01-05',
+                     '2020-01-06', '2020-01-07', '2020-01-08'] * 2
+                )
+    )
+    assert X_train.columns.to_list() == (
+        ['lag_1', 'lag_2', '_level_skforecast'] + int_cols
+        + ['weekend', 'day_of_week_sin', 'day_of_week_cos']
+    )
+    pd.testing.assert_frame_equal(X_train.iloc[:, -3:], expected_calendar)
+
+
+def test_create_train_X_y_calendar_features_same_dtype_as_create_predict_X():
+    """
+    Test that the calendar columns of the matrix returned by create_train_X_y
+    have the same dtype as those of the matrix returned by create_predict_X,
+    float, also for the integer ones (`weekend` and the one-hot columns of
+    `quarter`).
+    """
+    index = pd.date_range(start='2020-01-01', periods=8, freq='D')
+    series = {
+        'l1': pd.Series(np.arange(8, dtype=float), index=index, name='l1'),
+        'l2': pd.Series(np.arange(10, 18, dtype=float), index=index, name='l2')
+    }
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator         = LinearRegression(),
+                     lags              = 2,
+                     calendar_features = CalendarFeatures(
+                                             features=['weekend', 'quarter'],
+                                             encoding='onehot'
+                                         )
+                 )
+    forecaster.fit(series=series)
+    X_train, _ = forecaster.create_train_X_y(series=series)
+    X_predict = forecaster.create_predict_X(steps=2, suppress_warnings=True)
+
+    calendar_columns = ['weekend', 'quarter_1', 'quarter_2', 'quarter_3', 'quarter_4']
+    expected_dtypes = pd.Series(
+        data  = [np.dtype(float)] * len(calendar_columns),
+        index = calendar_columns
+    )
+
+    pd.testing.assert_series_equal(X_train.dtypes[calendar_columns], expected_dtypes)
+    pd.testing.assert_series_equal(X_predict.dtypes[calendar_columns], expected_dtypes)
 
 
 @pytest.mark.parametrize(

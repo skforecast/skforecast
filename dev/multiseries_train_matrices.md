@@ -2,9 +2,9 @@
 
 Describe cómo se construyen `X_train` e `y_train` en
 `skforecast/recursive/_forecaster_recursive_multiseries.py`, tal como queda el código tras el
-cambio de bloque único y el paso de `'onehot'` al bloque (2026-10-03, rama
-`refactor/optimize_multiseries_fit`). El código se cita por nombre de método, no por número
-de línea.
+cambio de bloque único y el paso de `'onehot'` (2026-10-03) y de las variables de calendario
+(2026-10-04) al bloque, en la rama `refactor/optimize_multiseries_fit`. El código se cita por
+nombre de método, no por número de línea.
 
 Alcance: solo `ForecasterRecursiveMultiSeries`. El resto de forecasters tienen su propio
 `_create_train_X_y`.
@@ -79,7 +79,7 @@ flowchart TD
     D --> E["4. comprobación de longitud > window_size"]
     E --> F["5. index_parts, train_index, total_rows<br/>encoding_mapping_"]
     F --> G["6. bloque de exógenas (todas las series a la vez):<br/>concat por filas, transformer_exog,<br/>categorical_encoder"]
-    G --> H["7. decisión single_block<br/>y pre-asignación con np.empty<br/>(np.zeros con 'onehot')"]
+    G --> H["7. calendario (una vez por fecha única)<br/>decisión single_block<br/>y pre-asignación con np.empty<br/>(np.zeros con 'onehot')"]
     H --> I["8. bucle por serie:<br/>_create_train_X_y_single_series<br/>escribe lags, window features, y, código"]
     I --> J{"single_block?"}
     J -->|sí| K["9a. exógenas float al bloque<br/>DataFrame sin copia<br/>insert del resto de columnas"]
@@ -116,7 +116,9 @@ flowchart TD
    - `encoding_mapping_ = {nombre: código}` con los nombres ordenados alfabéticamente. Se
      reconstruye en cada entrenamiento, para no arrastrar series de un `fit` anterior.
 6. **Exógenas** (sección 5).
-7. **Decisión de ensamblado y pre-asignación** (sección 7).
+7. **Calendario, decisión de ensamblado y pre-asignación** (sección 7). Las variables de
+   calendario se calculan antes de reservar la matriz, porque sus columnas forman parte del
+   bloque.
 8. **Bucle por serie** (sección 4). Cada serie escribe en su tramo de filas
    `[offset, offset + n)` del array pre-asignado.
 9. **Ensamblado** del DataFrame (sección 7).
@@ -216,14 +218,20 @@ X_train = allocate((total_rows, n_block_cols), order='F', dtype=float)
 ```
 
 - **Qué entra en el bloque:** lags, window features, el nivel (con `'ordinal'`, `'onehot'`
-  y `None`) y las exógenas cuyo dtype es exactamente `float64`. Las categóricas codificadas
-  entran, porque el encoder las deja en `float64`.
+  y `None`), las exógenas cuyo dtype es exactamente `float64` y las variables de calendario.
+  Las categóricas codificadas entran, porque el encoder las deja en `float64`. Las de
+  calendario entran convertidas a `float64`, también las que `CalendarFeatures` devuelve
+  como enteros (`year`, `weekend`, las no codificadas y las dummies de `'onehot'`).
+- **Calendario:** `train_index.factorize()` da las fechas únicas y la posición de cada fila;
+  `CalendarFeatures` se calcula una vez sobre las fechas únicas y cada columna se escribe en
+  las últimas columnas del bloque con `calendar_values[calendar_rows, i]`.
 - **Con `'onehot'`** el bloque nace a ceros, así que tras el bucle basta una sola escritura
   para poner los unos de las columnas de serie
   (`X_train[np.arange(total_rows), n_autoreg_cols + encoded_values] = 1.`).
 - **Orden `'F'`:** las columnas son contiguas en memoria, que es el layout de un bloque de
   pandas. `pd.DataFrame(data=X_train, copy=False)` envuelve el array sin copiarlo.
 - **Escritura:**
+  - justo después de reservar el bloque, se escriben las columnas de calendario, una a una;
   - el bucle escribe los autorregresivos en `X_train[offset:offset + n, :n_autoreg_cols]`;
   - con `'ordinal'` y `None`, el nivel se escribe a través de `encoded_values`, que es una
     vista de la columna `n_autoreg_cols` del bloque;
@@ -249,9 +257,8 @@ Es el ensamblado anterior:
    columnas `'onehot'` (`np.eye(n_series, dtype=float)[encoded_values]`, float como en el
    bloque único);
 3. `X_train_exog`, si hay exógenas;
-4. las variables de calendario: se calculan una vez por fecha única
-   (`calendar_features.fit_transform(train_index.unique())`) y se expanden con
-   `reindex(train_index)`;
+4. las variables de calendario: el mismo cálculo que en el bloque, escrito en su propio array
+   `float64` (así tienen el mismo dtype en los dos caminos);
 5. `pd.concat(axis=1, copy=False)` de las piezas y reasignación de `train_index` como índice.
 
 ### 7.3 Cuándo se usa cada uno
@@ -260,16 +267,17 @@ El bloque único se usa salvo en estos casos:
 
 | Caso | Motivo |
 |---|---|
-| `calendar_features` no es `None` | las variables de calendario se calculan aparte y se expanden con `reindex` |
 | se insertarían más columnas que las que tiene el bloque | `insert` copia cada columna insertada (`pd.concat` no las copiaba), así que el bloque solo gana cuando son pocas |
 | se insertarían 100 columnas o más | pandas emite `PerformanceWarning` por DataFrame fragmentado con más de 100 bloques |
-| `encoding=None` sin exógenas | ver abajo |
+| `encoding=None` sin exógenas ni calendario | ver abajo |
 
-Con `encoding=None` y sin exógenas se mantiene el camino anterior porque el nivel se elimina
-antes de entrenar. En ese camino, el estimador recibe los autorregresivos como un array
-contiguo por filas; con el bloque único lo recibiría contiguo por columnas. Los valores son
-los mismos, pero algunos estimadores (`LinearRegression`) dan resultados que difieren en los
-últimos bits según el layout, y el cambio debía dejar los resultados idénticos.
+Con `encoding=None`, sin exógenas ni calendario, se mantiene el camino anterior porque el
+nivel se elimina antes de entrenar. En ese camino, el estimador recibe los autorregresivos
+como un array contiguo por filas; con el bloque único lo recibiría contiguo por columnas. Los
+valores son los mismos, pero algunos estimadores (`LinearRegression`) dan resultados que
+difieren en los últimos bits según el layout, y el cambio debía dejar los resultados
+idénticos. Con calendario no hace falta: el camino anterior ya entregaba al estimador una
+matriz contigua por columnas, la misma que da el bloque.
 
 Regla de las columnas insertadas, medida con 500 series de 2,000 observaciones y exógenas
 `int` (tiempo nuevo / anterior de `_create_train_X_y`, antes de añadir la regla):
@@ -291,11 +299,11 @@ regla `n_inserted_cols <= n_block_cols` queda del lado seguro.
 |---|---|---|
 | `'ordinal'`, sin exógenas o con exógenas float | bloque único | un bloque float de columnas contiguas; la conversión a numpy no copia |
 | `None` con exógenas float | bloque único | lo mismo, tras eliminar la columna del nivel |
-| `None` sin exógenas | `pd.concat` | array contiguo por filas, como antes del cambio |
+| `None` sin exógenas ni calendario | `pd.concat` | array contiguo por filas, como antes del cambio |
 | `'onehot'`, sin exógenas o con exógenas float | bloque único | un bloque float de columnas contiguas, con una columna por serie |
 | `'ordinal_category'` | bloque único | bloque float más el nivel categórico |
 | exógenas no float, pocas | bloque único | bloque float más un bloque por columna insertada |
-| `calendar_features` | `pd.concat` | como antes del cambio |
+| con `calendar_features` | bloque único | las variables de calendario al final del bloque, en `float64` |
 
 Restricción que no se debe romper: el bloque nunca se construye en orden `'C'`. Con filas
 contiguas, leer una columna (por ejemplo `_level_skforecast`) recorre la memoria a saltos y
@@ -325,6 +333,19 @@ anterior y nuevo, mediana de 7; 3 en el `fit()` de 300 series):
 
 Las matrices son iguales salvo el dtype de las columnas de serie (`int64` antes, `float64`
 ahora), y las predicciones, los residuos y los intervalos son idénticos.
+
+Con `calendar_features`, 500 series de 2,000 observaciones y la misma configuración (tiempos
+anterior y nuevo, mediana de 7; 5 en el `fit()`):
+
+| Exógenas | Calendario | `_create_train_X_y` | `fit()` | Pico de memoria |
+|---|---|---|---|---|
+| no | por defecto (`cyclical`, 20 columnas) | 1.23 a 0.63 s | 4.30 a 3.44 s | 1,095 a 430 MB |
+| no | `onehot` de `month` y `day_of_week` (19) | 0.93 a 0.65 s | 3.29 a 2.86 s | 899 a 422 MB |
+| 10 float | por defecto | 1.09 a 0.81 s | 4.41 a 3.85 s | 1,407 a 677 MB |
+| 10 float | `onehot` | 1.12 a 0.82 s | 4.09 a 3.84 s | 1,137 a 668 MB |
+
+Las matrices son iguales salvo el dtype de las columnas de calendario enteras (`int64` antes,
+`float64` ahora), y las predicciones, los residuos y los intervalos son idénticos.
 
 ## 8. Cierre: nombres, NaN y series presentes
 
@@ -402,13 +423,18 @@ Con `is_fitted=True` (`set_in_sample_residuals` y el conjunto de test de
   lugar del mensaje de nombres duplicados de skforecast. Se mantiene así por decisión.
 - **Una window feature llamada `_level_skforecast`:** antes la columna del nivel la
   sobrescribía en silencio; con el bloque único se lanza un error.
+- **`copy_on_write` de pandas activado, `CalendarFeatures(features=[])`, `encoding=None` y
+  sin exógenas:** el camino anterior entregaba al estimador una matriz contigua por filas y
+  el bloque la entrega por columnas, así que `LinearRegression` puede diferir en los últimos
+  bits. Es una opción de pandas que hay que activar a mano; se acepta.
 
 ## 12. Tests y comprobaciones
 
 - `skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py`:
   valores, dtypes y orden de columnas de las matrices, los dos caminos de ensamblado, el
-  layout en memoria (con API pública: `np.shares_memory`, `strides`, `ctypes.data`) y el
-  nombre del índice.
+  layout en memoria (con API pública: `np.shares_memory`, `strides`, `ctypes.data`), el
+  nombre del índice y las variables de calendario (layout en el bloque, los dos caminos de
+  ensamblado y el mismo dtype que `create_predict_X`).
 - `test_create_train_X_y_single_series.py`: la parte autorregresiva por serie.
 - `test_get_level_row_slices.py`: los tramos de filas por serie.
 - `test_predict.py`, `test_predict_bootstrapping.py` y `test_create_predict_X.py`: columnas

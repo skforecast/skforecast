@@ -194,7 +194,7 @@ commit 2. El orden de concatenación de los pesos (`series_names_in_`) coincide 
 filas (`series_names_in_ = list(series_dict.keys())`, 1170), así que no hay bug de
 alineación, solo coste.
 
-## E. Estado (2026-10-03): commits 1 a 3 en `b81622fd6`, commit 4 implementado sin commit
+## E. Estado (2026-10-04): commits 1 a 3 en `b81622fd6`; commit 4, `'onehot'` y fix en `cdd51597f`
 
 Resumen del estado en `refactor/optimize_multiseries_fit`:
 
@@ -202,9 +202,11 @@ Resumen del estado en `refactor/optimize_multiseries_fit`:
   fit").
 - Fix posterior, fuera del plan: `_create_train_X_y` reconstruye `encoding_mapping_` en lugar
   de actualizarlo, con su test y su release note. Forma parte de la base del commit 4.
-- Commit 4 (`X_train` en un único bloque): implementado el 2026-10-03 en el working tree, sin
-  commit (E.4).
+- Commit 4 (`X_train` en un único bloque), `'onehot'` en el bloque y fix de `predict` con
+  `'onehot'`: en el commit `cdd51597f` (E.4 y E.6).
 - Commit 5 (window features por lotes): descartado el 2026-10-03 (sección 3).
+- Variables de calendario en el bloque: implementado el 2026-10-04 en el working tree, sin
+  commit (E.7).
 - Siguiente paso: el cierre (E.5, C.5 y sección 4).
 
 Los commits 1 y 2, más un fix encontrado en la revisión, se implementaron como **un único
@@ -666,7 +668,7 @@ Lecciones del commit 4 para cualquier comparación de identidad futura:
 
 ### E.6 Después del commit 4: `'onehot'` en el bloque y fix de `predict` (2026-10-03)
 
-Dos cambios más, fuera del plan original, en el working tree sin commit:
+Dos cambios más, fuera del plan original, en el commit `cdd51597f`:
 
 - **Fix (bug desde la 0.22.0, commit `a403d258f`).** Con `encoding='onehot'`, `predict`
   colocaba el 1 según la posición de la serie en `X_train_series_names_in_` (orden de
@@ -711,9 +713,44 @@ Dos cambios más, fuera del plan original, en el working tree sin commit:
 - **Descartado:** llevar `encoding=None` sin exógenas al bloque. Medido: 35 ms menos en
   `_create_train_X_y`, sin cambio de memoria, y las predicciones de `Ridge` cambian en
   torno a 1e-11.
-- **Pendiente de decidir:** `calendar_features` al bloque como float. Estimado sin
-  implementar: 0.4 a 0.9 s menos por `_create_train_X_y` a 500 x 2000 y el pico de memoria a
-  menos de la mitad.
+- **`calendar_features` al bloque como float:** implementado después (E.7).
+
+### E.7 Variables de calendario en el bloque (2026-10-04)
+
+En el working tree, sin commit, encima de `cdd51597f`:
+
+- **Cambio.** `CalendarFeatures` se calcula una vez por fecha única
+  (`train_index.factorize()`), antes de decidir el ensamblado, y sus columnas se escriben
+  como `float64` al final del bloque, una a una. En el camino de `pd.concat` (muchas
+  exógenas no float) van a su propio array float, así que el dtype es el mismo en los dos
+  caminos. La excepción de `encoding=None` sin exógenas pasa a exigir también que no haya
+  calendario: con calendario, el camino anterior ya entregaba al estimador una matriz
+  contigua por columnas.
+- **Dtype:** las columnas de calendario enteras (`year`, `weekend`, las no codificadas y las
+  dummies de `'onehot'`) pasan a `float64` en `create_train_X_y`, como ya las devuelven
+  `ForecasterRecursive`, `ForecasterDirect` y `ForecasterDirectMultiVariate`, y como
+  `create_predict_X`. Solo un test existente cambió (el dtype de `weekend`).
+- **Medido** (`results/snapshot/ab_calendar.py`, 500 series de 2,000 observaciones,
+  LightGBM 25, mediana de 7; 5 en `fit()`):
+
+  | Exógenas | Calendario | `_create_train_X_y` | `fit()` | Pico de memoria |
+  |---|---|---|---|---|
+  | no | por defecto (`cyclical`, 20 columnas) | 1.23 a 0.63 s | 4.30 a 3.44 s | 1,095 a 430 MB |
+  | no | `onehot` de `month` y `day_of_week` (19) | 0.93 a 0.65 s | 3.29 a 2.86 s | 899 a 422 MB |
+  | 10 float | por defecto | 1.09 a 0.81 s | 4.41 a 3.85 s | 1,407 a 677 MB |
+  | 10 float | `onehot` | 1.12 a 0.82 s | 4.09 a 3.84 s | 1,137 a 668 MB |
+
+- **Identidad:** 54 configuraciones contra `before_calendar.py`.
+  - Casos: las cuatro codificaciones con calendario `cyclical`, `onehot`, `spline` y sin
+    codificar; `LinearRegression` y XGBoost; exógenas no float y el camino de `pd.concat`;
+    NaN, longitudes distintas, orden inverso y pesos.
+  - Resultado: matrices iguales salvo el dtype, y residuos, predicciones, bootstrapping,
+    `set_in_sample_residuals` y matrices de one-step-ahead idénticos. El error de nombre
+    duplicado es el mismo.
+- **Snapshots:** los 19 idénticos (ninguno usa calendario).
+- **Detalle de pandas 2.3:** `pd.concat(axis=1)` consolida las columnas float en un bloque
+  nuevo, así que los tests no pueden distinguir los dos caminos por direcciones de memoria.
+  El test de los dos caminos solo comprueba que la salida es la misma.
 
 ## C. Reparto en commits
 

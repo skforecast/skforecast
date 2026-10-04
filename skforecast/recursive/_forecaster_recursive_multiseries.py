@@ -1322,22 +1322,39 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         if self.window_features_names is not None:
             n_autoreg_cols += len(self.window_features_names)
 
+        # Calendar features are computed once per unique date and then expanded
+        # to the train index by position. Since series can share dates, this
+        # avoids recomputing identical calendar values for duplicated timestamps.
+        n_calendar_cols = 0
+        X_train_calendar_features_names_out_ = None
+        if self.calendar_features is not None:
+            calendar_rows, unique_index = train_index.factorize()
+            calendar_values = (
+                self.calendar_features.fit_transform(unique_index).to_numpy(dtype=float)
+            )
+            X_train_calendar_features_names_out_ = (
+                self.calendar_features.feature_names_out_
+            )
+            n_calendar_cols = len(X_train_calendar_features_names_out_)
+
         # NOTE: When possible, X_train is built as a single float block: lags,
-        # window features, the level ('ordinal', 'onehot' and None encodings)
-        # and the float64 exogenous variables are written into one
-        # pre-allocated array with contiguous columns (order='F', the layout of
-        # a pandas block). This avoids the full copy that `pd.concat` or the
-        # estimator make to merge several float blocks. Columns of any other
-        # dtype are inserted afterwards, each one as its own block. The
-        # assembly with `pd.concat` is kept when:
-        # - Calendar features are used.
+        # window features, the level ('ordinal', 'onehot' and None encodings),
+        # the float64 exogenous variables and the calendar features (also the
+        # integer ones) are written into one pre-allocated array with contiguous
+        # columns (order='F', the layout of a pandas block). This avoids the full
+        # copy that `pd.concat` or the estimator make to merge several blocks.
+        # Columns of any other dtype are inserted afterwards, each one as its own
+        # block. The assembly with `pd.concat` is kept when:
         # - More columns have to be inserted than the block has. Each inserted
         #   column is copied, so the block is only faster when they are few.
         # - 100 or more columns have to be inserted (pandas warns about
         #   fragmented DataFrames).
-        # - `encoding` is None and there is no exog. The level column is dropped
-        #   before training, and the remaining block keeps its row-contiguous
-        #   memory layout, so estimators sensitive to it return the same results.
+        # - `encoding` is None and there are neither exog nor calendar features.
+        #   The block brings no gain here: the level column is dropped before
+        #   training, so the lags and window features already reach the estimator
+        #   as one array, without copies. That array keeps its row order
+        #   (order='C'), because estimators such as LinearRegression can change in
+        #   the last decimals when the same values are stored by columns.
         n_level_cols = len(self.encoding_mapping_) if self.encoding == 'onehot' else 1
         level_in_block = self.encoding != 'ordinal_category'
         exog_cols_in_block = []
@@ -1348,15 +1365,19 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         n_exog_cols_in_block = sum(exog_cols_in_block)
         n_block_cols = (
             n_autoreg_cols + n_level_cols * level_in_block + n_exog_cols_in_block
+            + n_calendar_cols
         )
         n_inserted_cols = (
             len(exog_cols_in_block) - n_exog_cols_in_block + (not level_in_block)
         )
         single_block = (
-            self.calendar_features is None
-            and n_inserted_cols <= n_block_cols
+            n_inserted_cols <= n_block_cols
             and n_inserted_cols < 100
-            and not (self.encoding is None and X_train_exog is None)
+            and not (
+                self.encoding is None
+                and X_train_exog is None
+                and self.calendar_features is None
+            )
         )
 
         if single_block:
@@ -1366,6 +1387,18 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             X_train = allocate((total_rows, n_block_cols), order='F', dtype=float)
         else:
             X_train = np.empty((total_rows, n_autoreg_cols), order='C', dtype=float)
+
+        if self.calendar_features is not None:
+            # Calendar columns go at the end of the block, or to their own array
+            # when the block is not used. They are written one at a time.
+            if single_block:
+                X_train_calendar = X_train[:, n_block_cols - n_calendar_cols:]
+            else:
+                X_train_calendar = np.empty(
+                    (total_rows, n_calendar_cols), order='F', dtype=float
+                )
+            for i in range(n_calendar_cols):
+                X_train_calendar[:, i] = calendar_values[calendar_rows, i]
 
         y_train = np.empty(total_rows, dtype=float)
         if single_block and self.encoding in {None, 'ordinal'}:
@@ -1403,7 +1436,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             data=y_train, index=train_index, name='y', copy=False
         )
 
-        X_train_calendar_features_names_out_ = None
         if single_block:
 
             block_col_names = list(autoreg_col_names)
@@ -1419,6 +1451,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         X_train_exog.iloc[:, i].to_numpy()
                     )
                     block_col_names.append(X_train_exog_names_out_[i])
+            if self.calendar_features is not None:
+                block_col_names.extend(X_train_calendar_features_names_out_)
 
             X_train = pd.DataFrame(
                           data    = X_train,
@@ -1474,16 +1508,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 X_train.append(X_train_exog)
 
             if self.calendar_features is not None:
-                # Calendar features are computed once per unique date and then
-                # expanded back to the full train index. Since series can share
-                # dates, this avoids recomputing identical calendar values for
-                # duplicated timestamps.
-                unique_index = train_index.unique()
-                X_train_calendar = self.calendar_features.fit_transform(unique_index)
-                X_train_calendar = X_train_calendar.reindex(train_index)
-                X_train.append(X_train_calendar)
-                X_train_calendar_features_names_out_ = (
-                    self.calendar_features.feature_names_out_
+                X_train.append(
+                    pd.DataFrame(
+                        data    = X_train_calendar,
+                        columns = X_train_calendar_features_names_out_,
+                        index   = train_index,
+                        copy    = False
+                    )
                 )
 
             if len(X_train) > 1:
