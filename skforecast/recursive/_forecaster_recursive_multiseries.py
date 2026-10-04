@@ -1576,8 +1576,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             )
         
         if self.encoding == 'onehot':
+            level_slices = self._get_level_row_slices(X_train=X_train)
             X_train_series_names_in_ = [
-                col for col in series_names_in_ if X_train[col].sum() > 0
+                col for col in series_names_in_ if col in level_slices
             ]
         else:
             unique_levels = X_train['_level_skforecast'].unique()
@@ -1952,9 +1953,16 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         if self.encoding == "onehot":
             # Dot product with range recovers the column index of the active
-            # one-hot column, which is the value in `encoding_mapping_`.
+            # one-hot column, which is the value in `encoding_mapping_`. In the
+            # matrices created by `_create_train_X_y` the one-hot columns are
+            # contiguous and in the order of `encoding_mapping_`, so they are
+            # read as a slice (a view). Selecting them by name copies them all.
             encoding_keys = list(self.encoding_mapping_.keys())
-            codes = X_train[encoding_keys].to_numpy() @ np.arange(len(encoding_keys))
+            start = X_train.columns.get_loc(encoding_keys[0])
+            X_onehot = X_train.iloc[:, start:start + len(encoding_keys)]
+            if X_onehot.columns.to_list() != encoding_keys:
+                X_onehot = X_train[encoding_keys]
+            codes = X_onehot.to_numpy() @ np.arange(len(encoding_keys))
         else:
             codes = X_train["_level_skforecast"].to_numpy()
 

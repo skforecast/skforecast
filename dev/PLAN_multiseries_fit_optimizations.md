@@ -1,12 +1,13 @@
 # Optimización del `fit()` de `ForecasterRecursiveMultiSeries`: informe de cierre
 
-Rama `refactor/optimize_multiseries_fit`, tres commits sobre `082aa0966` (`0.26.x`):
+Rama `refactor/optimize_multiseries_fit`, commits sobre `082aa0966` (`0.26.x`):
 
 | Commit | Contenido |
 |---|---|
 | `b81622fd6` | Filas de cada serie por tramos (residuos y pesos) y exógenas antes del bucle por serie |
 | `cdd51597f` | `X_train` en un único bloque float; columnas `'onehot'` en el bloque; fix de `predict` con `'onehot'` |
 | `641010ae8` | Variables de calendario en el bloque |
+| posterior a `b6e4b4d0d` | Columnas `'onehot'` leídas como vista al localizar las filas de cada serie |
 
 Este archivo empezó como plan y se ha reescrito al terminar: cuenta qué se ha mejorado, por
 qué, con qué datos y cómo se ha comprobado que los resultados no cambian. El plan completo,
@@ -49,7 +50,8 @@ completa en la 3):
 | A con `encoding=None` | 2.34 s | 2.46 s | sin cambio (ruido, ver 3.2) |
 
 La ganancia absoluta no baja con estimadores más pesados (0.6 s con 25 árboles, 0.9 s con
-100), pero sí su peso relativo.
+100), pero sí su peso relativo. Con `'onehot'`, un cambio posterior a la tabla (2.4) reduce
+además el `fit()` un 11% y su pico de memoria de 2,845 a 1,675 MB.
 
 ## 2. Qué se ha mejorado y por qué
 
@@ -141,6 +143,15 @@ medido:
   bloque se reserva con ceros y una sola escritura pone los unos. Con 300 series,
   `_create_train_X_y` pasa de 3.02 a 0.79 s y el `fit()` de 9.14 a 3.39 s. Las columnas pasan
   a ser `float64`, como en `create_predict_X`.
+- **`'onehot'` como vista** (después de `b6e4b4d0d`). Con las columnas `'onehot'` ya en el
+  bloque, `predict(X_train)` dejó de copiar la matriz, y el pico de memoria del `fit()` pasó a
+  ser la copia que hacía `_get_level_row_slices` al seleccionarlas por nombre (filas x series:
+  1.36 GB y 418 ms con 300 series). Ahora se leen como un tramo de columnas, una vista del
+  bloque (25 ms, 5 MB), y si no son contiguas o están en otro orden (una matriz reordenada por
+  el usuario) se seleccionan por nombre como antes. `X_train_series_names_in_` usa los mismos
+  tramos en lugar de sumar una columna por serie (191 ms). Medido en el mismo proceso contra
+  `b6e4b4d0d`: `_create_train_X_y` 0.78 / 0.72, `fit()` 0.89 / 0.86, pico de memoria del
+  `fit()` de 2,845 a 1,675 MB (2,958 MB en `082aa0966`). Huellas de 4.1 idénticas.
 - **`calendar_features`.** Antes las variables se calculaban por fecha única, se expandían
   con `reindex` a todas las filas (un DataFrame más, con columnas enteras y float) y se unían
   con `pd.concat`. Ahora se calculan una vez por fecha única (`train_index.factorize()`) y
@@ -218,7 +229,9 @@ Tiempos mediana / mínimo; "después / antes" menor que 1 es mejora.
 - **C:** el `fit()` (0.90 / 0.88) está en el borde del ruido; la ganancia del componente
   (0.82 / 0.84) sí es estable.
 - **`'onehot'`:** la memoria pico solo baja un 10% porque la propia matriz de columnas por
-  serie (filas x series) domina.
+  serie (filas x series) domina. La fila es anterior a la lectura de esas columnas como vista
+  (2.4), que por sí sola da 0.89 en el `fit()`. No se repitió contra `082aa0966`: ese día el
+  lado "antes" dio tiempos erráticos (`fit()` de 15 a 19 s frente a los 9.8 s de la tabla).
 
 ### 3.3 Medidas por cambio
 
@@ -266,7 +279,7 @@ siempre pasaba (al final de esta sección). Tests nuevos, en
 | Archivo | Qué fija |
 |---|---|
 | `test_create_train_X_y.py` | orden de columnas y dtypes con exógenas mezcladas (float, int, category); NaN en lags y en una exógena category con `dropna_from_series`; exógena `object` distinta por serie; layout en memoria (`np.shares_memory`, `strides`, `ctypes.data`) por codificación, con exógenas no float y con calendario; los dos lados de cada límite del camino `pd.concat` (3 y 4 columnas, 99 y 100) sin `PerformanceWarning`; calendario igual por los dos caminos y con el mismo dtype que `create_predict_X`; nombre del índice; error de nombre duplicado; error de longitud antes que el de exógenas; `X_train_series_names_in_` con series desordenadas y una descartada |
-| `test_get_level_row_slices.py` | tramos con series desordenadas, de distinta longitud y una descartada; `'onehot'` con columnas int y float; matriz vacía; `ValueError` si no son contiguas |
+| `test_get_level_row_slices.py` | tramos con series desordenadas, de distinta longitud y una descartada; `'onehot'` con columnas int y float, no contiguas o desordenadas; matriz vacía; `ValueError` si no son contiguas |
 | `test_fit.py`, `test_set_in_sample_residuals.py` | residuos por serie iguales al cálculo con máscaras escrito en el test; `set_in_sample_residuals` igual que `fit` y con más de 10,000 residuos |
 | `test_create_sample_weights.py` | `series_weights` y `weight_func` con series desordenadas, de distinta longitud y una descartada |
 | `test_predict.py`, `test_predict_bootstrapping.py`, `test_create_predict_X.py` | `'onehot'` con series en orden no alfabético, con una serie sin filas y con un nivel desconocido |
@@ -286,7 +299,6 @@ En la revisión final pasaron, en secuencia, 714 tests (carpeta del forecaster,
 |---|---|
 | Window features por lotes (`rolling` sobre un DataFrame ancho) | pandas tarda lo mismo por columna que por serie suelta: ahorra unos 0.1 s por `fit()` (5% con 25 árboles, menos del 1% con 500) por 1 a 2 días de trabajo y riesgo medio |
 | `encoding=None` sin exógenas en el bloque | 35 ms menos y las predicciones de `Ridge` cambian en torno a 1e-11 |
-| `X_train_series_names_in_` con `'onehot'` sin recorrer cada columna | no es un punto caliente y añadiría memoria transitoria al pico de `create_train_X_y` |
 | Columnas int y bool de las exógenas dentro del bloque float | cambiaría los dtypes de `X_train` y de `exog_dtypes_out_` |
 | `pd.concat(copy=True)` o copy-on-write | la copia se desplaza a `estimator.fit` |
 | Comprobaciones de NaN sobre numpy en lugar del DataFrame | sin ganancia con un bloque (15 frente a 16 ms) |
@@ -301,9 +313,10 @@ En la revisión final pasaron, en secuencia, 714 tests (carpeta del forecaster,
   `pd.DataFrame(X, copy=False)` no copie. Al levantar el pin, repetir los tests de layout.
 - **Siguientes costes del `fit()`**, fuera de este trabajo: el estimador (45 a 55% con 25
   árboles), el codificador de categóricas de sklearn en el escenario C (prototipo en el stash
-  "FastOrdinalEncoder categorical exog"), el ajuste de `transformer_series` por serie y
-  `X_train_series_names_in_` con `'onehot'` (todavía recorre una columna por serie).
-  `predict()` no se ha tocado.
+  "FastOrdinalEncoder categorical exog") y el ajuste de `transformer_series` por serie.
+  `_train_test_split_one_step_ahead` (`OneStepAheadFold`) todavía selecciona por nombre las
+  columnas `'onehot'` de `X_train` y `X_test` (código anterior a esta rama). `predict()` no se
+  ha tocado.
 
 ## 7. Cómo reproducirlo
 

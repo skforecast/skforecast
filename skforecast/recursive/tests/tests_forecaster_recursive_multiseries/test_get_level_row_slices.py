@@ -88,7 +88,7 @@ def test_get_level_row_slices_output_when_series_unordered_different_lengths_and
 def test_get_level_row_slices_output_when_onehot_columns_int_or_float(dtype):
     """
     Test the slice of rows of each level with `encoding='onehot'` when the
-    one-hot columns are int (as created by `_create_train_X_y`) or float.
+    one-hot columns are int or float (as created by `_create_train_X_y`).
     """
     X_train = pd.DataFrame({
         'lag_1': [1., 2., 3., 4., 5., 6.],
@@ -96,6 +96,39 @@ def test_get_level_row_slices_output_when_onehot_columns_int_or_float(dtype):
         'l2': np.array([0, 0, 0, 0, 0, 1], dtype=dtype),
         'l3': np.array([1, 1, 1, 0, 0, 0], dtype=dtype)
     })
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=1, encoding='onehot'
+    )
+    forecaster.encoding_mapping_ = {'l1': 0, 'l2': 1, 'l3': 2}
+    results = forecaster._get_level_row_slices(X_train=X_train)
+
+    expected = {'l3': slice(0, 3), 'l1': slice(3, 5), 'l2': slice(5, 6)}
+
+    assert list(results) == list(expected)
+    assert results == expected
+
+
+@pytest.mark.parametrize(
+    "columns",
+    [['l1', 'lag_1', 'l2', 'l3'],
+     ['lag_1', 'l3', 'l1', 'l2']],
+    ids=['onehot columns not contiguous', 'onehot columns not in order']
+)
+def test_get_level_row_slices_output_when_onehot_columns_not_contiguous_or_unordered(
+    columns
+):
+    """
+    Test the slice of rows of each level with `encoding='onehot'` when the
+    one-hot columns are not contiguous or not in the order of
+    `encoding_mapping_` (for example, a matrix reordered by the user). The
+    columns are then selected by name.
+    """
+    X_train = pd.DataFrame({
+        'lag_1': [1., 2., 3., 4., 5., 6.],
+        'l1': [0., 0., 0., 1., 1., 0.],
+        'l2': [0., 0., 0., 0., 0., 1.],
+        'l3': [1., 1., 1., 0., 0., 0.]
+    })[columns]
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=1, encoding='onehot'
     )
