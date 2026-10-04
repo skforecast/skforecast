@@ -988,6 +988,32 @@ def test_ets_ValueError_when_fixed_parameters_leave_empty_range(model_spec, fixe
         ets(y, m=4, model=model_spec, **fixed)
 
 
+@pytest.mark.parametrize(
+    "fixed, fixed_msg",
+    [
+        ({"beta": 0.3, "gamma": 0.5}, "beta=0.3, gamma=0.5"),
+        ({"beta": 0.9999}, "beta=0.9999"),
+    ],
+    ids=lambda x: str(x),
+)
+def test_ets_ValueError_when_fixed_parameters_leave_no_admissible_value(fixed, fixed_msg):
+    """
+    Test that fixed smoothing parameters that leave no admissible value of the
+    estimated ones raise a ValueError, as R's check.param, instead of
+    returning the penalized starting point as a fitted model. With m=12,
+    beta=0.3 and gamma=0.5 no alpha in [0.3, 0.5] is admissible; with
+    beta=0.9999, alpha=0.9999 leaves no gamma >= 1e-4 below 1 - alpha.
+    """
+    t = np.arange(120)
+    y = trend_series(120) + 3 * np.sin(2 * np.pi * t / 12)
+    err_msg = re.escape(
+        f"No value of the estimated smoothing parameters satisfies the 'both' "
+        f"bounds with the fixed {fixed_msg}."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        ets(y, m=12, model="AAA", **fixed)
+
+
 @pytest.mark.parametrize("model_spec", ["ANN", "AAN"])
 @pytest.mark.parametrize("shift", [-2e5, 5e6], ids=lambda x: f"shift: {x}")
 def test_ets_additive_model_invariant_to_level_shift(shift, model_spec):

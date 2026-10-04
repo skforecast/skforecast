@@ -113,7 +113,7 @@ The main changes in this release are:
     + The usual bounds of beta, gamma and phi were read from the wrong positions of the bounds vector.
     + The admissibility check of seasonal models used a characteristic polynomial of the wrong degree with the reciprocal roots, and its root finding failed whenever a root was complex, which rejected the candidate. It now uses the polynomial of R's `forecast::ets`, evaluated with a Schur-Cohn stability test (about 50 times faster than computing the roots).
     + Models without damping were checked for admissibility with `phi=NaN` instead of `phi=1`.
-    + Fixed smoothing parameters (`alpha`, `beta`, `gamma` and `phi`) were estimated anyway. They now keep their values, constrain the estimated ones (`beta <= alpha <= 1 - gamma` with the usual bounds) and raise a `ValueError` when they are out of range.
+    + Fixed smoothing parameters (`alpha`, `beta`, `gamma` and `phi`) were estimated anyway. They now keep their values, constrain the estimated ones (`beta <= alpha <= 1 - gamma` with the usual bounds) and raise a `ValueError` when they are out of range or leave no admissible value for the estimated ones (as R's `forecast::ets`).
     + The optimization started with `phi` at its upper bound. The starting values now follow R's `initparam`.
     + A trend that became non-positive in a multiplicative trend model was flagged with the value -99999, which collided with real values: an additive model of a series around -200000 got an infinite AIC. The point forecasts used the same flag; they are now NaN.
     + The initial states were bounded to [-1e6, 1e6], so series of larger magnitude could not be fitted properly. They are now unbounded, as in R.

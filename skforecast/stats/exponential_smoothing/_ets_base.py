@@ -1361,6 +1361,26 @@ def ets(y: NDArray[np.float64],
 
     values = par_values.copy()
     values[par_free] = x_opt[:n_free]
+    # With fixed parameters, the bounds may leave no value of the estimated
+    # ones (for example, no admissible alpha for the fixed beta and gamma):
+    # the optimizer only sees the penalty and returns a point out of range.
+    # As R's check.param, the fit is refused.
+    if (present & ~par_free).any() and not check_param(
+        values[0],
+        values[1] if has_trend else None,
+        values[2] if has_season else None,
+        values[3] if config.damped else None,
+        PARAM_LOWER, PARAM_UPPER, bounds, config.m
+    ):
+        fixed = ", ".join(
+            f"{name}={value}"
+            for name, value, used in zip(("alpha", "beta", "gamma", "phi"), given, present)
+            if used and value is not None
+        )
+        raise ValueError(
+            f"No value of the estimated smoothing parameters satisfies the "
+            f"'{bounds}' bounds with the fixed {fixed}."
+        )
     full_x = np.concatenate([values[present], x_opt[n_free:]])
     fitted_params = ETSParams.from_vector(full_x, config)
 
