@@ -962,6 +962,32 @@ def test_ets_fixed_parameters_out_of_bounds_raises():
         ets(y, m=1, model="AAN", alpha=0.2, beta=0.5)
 
 
+@pytest.mark.parametrize(
+    "model_spec, fixed, fixed_msg",
+    [
+        ("AAA", {"alpha": 0.9999}, "alpha=0.9999"),
+        ("ANA", {"gamma": 0.9999}, "gamma=0.9999"),
+        ("AAA", {"beta": 0.6, "gamma": 0.5}, "beta=0.6, gamma=0.5"),
+    ],
+    ids=lambda x: str(x),
+)
+def test_ets_ValueError_when_fixed_parameters_leave_empty_range(model_spec, fixed, fixed_msg):
+    """
+    Test that fixed smoothing parameters that leave no value within the usual
+    bounds for an estimated one raise a ValueError that names only the fixed
+    parameters (a fixed alpha raised the error of scipy, and the message
+    named the starting values of the estimated beta and gamma).
+    """
+    y = trend_series(100) + 3 * np.sin(2 * np.pi * np.arange(100) / 4)
+    err_msg = re.escape(
+        f"No value of the estimated smoothing parameters satisfies the usual "
+        f"bounds with the fixed {fixed_msg} (1e-4 <= beta <= alpha and "
+        f"1e-4 <= gamma <= 1 - alpha)."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        ets(y, m=4, model=model_spec, **fixed)
+
+
 @pytest.mark.parametrize("model_spec", ["ANN", "AAN"])
 @pytest.mark.parametrize("shift", [-2e5, 5e6], ids=lambda x: f"shift: {x}")
 def test_ets_additive_model_invariant_to_level_shift(shift, model_spec):

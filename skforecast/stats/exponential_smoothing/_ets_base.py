@@ -1327,13 +1327,6 @@ def ets(y: NDArray[np.float64],
                 lower[0] = max(lower[0], par_values[1])
             if has_season and not par_free[2]:
                 upper[0] = min(upper[0], 1.0 - par_values[2])
-            if lower[0] > upper[0]:
-                raise ValueError(
-                    "No value of alpha satisfies the usual bounds with the "
-                    f"fixed beta={par_values[1]} and gamma={par_values[2]} "
-                    "(beta <= alpha <= 1 - gamma)."
-                )
-            par_values[0] = min(max(par_values[0], lower[0]), upper[0])
         else:
             if "beta" in free_names:
                 i = free_names.index("beta")
@@ -1341,6 +1334,19 @@ def ets(y: NDArray[np.float64],
             if "gamma" in free_names:
                 i = free_names.index("gamma")
                 upper[i] = min(upper[i], 1.0 - par_values[0])
+        if np.any(lower[:n_free] > upper[:n_free]):
+            fixed = ", ".join(
+                f"{name}={value}"
+                for name, value, used in zip(("alpha", "beta", "gamma"), given, present)
+                if used and value is not None
+            )
+            raise ValueError(
+                "No value of the estimated smoothing parameters satisfies the "
+                f"usual bounds with the fixed {fixed} (1e-4 <= beta <= alpha "
+                "and 1e-4 <= gamma <= 1 - alpha)."
+            )
+        if par_free[0]:
+            par_values[0] = min(max(par_values[0], lower[0]), upper[0])
 
     obj_args = (
         y, lower, upper, par_values, par_free, config.m,
