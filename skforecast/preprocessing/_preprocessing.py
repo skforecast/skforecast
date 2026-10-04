@@ -21,6 +21,7 @@ from .. import __version__
 from ..exceptions import IgnoredArgumentWarning, MissingValuesWarning
 from ..metrics import calculate_coverage
 from ..utils import get_style_repr_html
+from ..utils.utils import _date_range_from_index, _is_utc_anchored_index
 
 
 def _check_X_numpy_ndarray_1d(ensure_1d=True):
@@ -378,6 +379,55 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
             setattr(self, param, value)
 
 
+def _asfreq_from_index(
+    data: pd.Series | pd.DataFrame,
+    freq: str | pd.DateOffset,
+    fill_value: object = None
+) -> pd.Series | pd.DataFrame:
+    """
+    Convert `data` to the specified frequency. It behaves as pandas `asfreq`
+    unless `data` has a timezone-aware index that advances in fixed UTC steps
+    (timestamps created in UTC and converted to a local timezone), in which
+    case the new index is generated in UTC to keep the same convention when it
+    crosses a daylight saving change.
+
+    Parameters
+    ----------
+    data : pandas Series, pandas DataFrame
+        Data with a pandas DatetimeIndex.
+    freq : str, pandas DateOffset
+        Frequency of the new index.
+    fill_value : object, default None
+        Value used to fill the rows added by the new index.
+
+    Returns
+    -------
+    data : pandas Series, pandas DataFrame
+        Data converted to the specified frequency.
+
+    """
+
+    index = data.index
+    offset = pd.tseries.frequencies.to_offset(freq)
+    if (
+        isinstance(index, pd.DatetimeIndex)
+        and offset is not None
+        and _is_utc_anchored_index(index=index, freq=offset)
+    ):
+        new_index = _date_range_from_index(
+                        index = index,
+                        start = index.min(),
+                        end   = index.max(),
+                        freq  = offset
+                    )
+        new_index.name = index.name
+        data = data.reindex(new_index, fill_value=fill_value)
+    else:
+        data = data.asfreq(freq, fill_value=fill_value)
+
+    return data
+
+
 def reshape_series_wide_to_long(
     data: pd.DataFrame,
     return_multi_index: bool = True
@@ -422,7 +472,8 @@ def reshape_series_wide_to_long(
     data = data.reset_index()
     data = pd.melt(data, id_vars="datetime", var_name="series_id", value_name="value")
     data = data.groupby("series_id", sort=False).apply(
-        lambda x: x.set_index("datetime").asfreq(freq), include_groups=False
+        lambda x: _asfreq_from_index(x.set_index("datetime"), freq),
+        include_groups=False
     )
 
     if not return_multi_index:
@@ -491,7 +542,9 @@ def reshape_series_long_to_dict(
         for k, group in data.groupby(level=0, sort=True, observed=True):
             group = group.droplevel(0)
             original_size = len(group)
-            series_dict[k] = group[first_col].rename(k).asfreq(freq, fill_value=fill_value)
+            series_dict[k] = _asfreq_from_index(
+                group[first_col].rename(k), freq, fill_value=fill_value
+            )
             if not suppress_warnings and len(series_dict[k]) != original_size:
                 fill_msg = (
                     "NaNs have been introduced"
@@ -520,7 +573,9 @@ def reshape_series_long_to_dict(
         original_sizes = data_grouped.size()
         series_dict = {}
         for k, v in data_grouped:
-            series_dict[k] = v.set_index(index)[values].asfreq(freq, fill_value=fill_value).rename(k)
+            series_dict[k] = _asfreq_from_index(
+                v.set_index(index)[values], freq, fill_value=fill_value
+            ).rename(k)
             series_dict[k].index.name = None
             if not suppress_warnings and len(series_dict[k]) != original_sizes[k]:
                 fill_msg = (
@@ -607,7 +662,7 @@ def reshape_exog_long_to_dict(
             group = group.droplevel(0)
             original_index = group.index
             original_size = len(group)
-            exog_dict[k] = group.asfreq(freq)
+            exog_dict[k] = _asfreq_from_index(group, freq)
             if len(exog_dict[k]) != original_size:
                 nans_introduced = True
                 non_numeric_cols = []
@@ -669,7 +724,7 @@ def reshape_exog_long_to_dict(
             k: set(v[index]) for k, v in exog_dict.items()
         }
         exog_dict = {
-            k: v.set_index(index).drop(columns=series_id).asfreq(freq)
+            k: _asfreq_from_index(v.set_index(index).drop(columns=series_id), freq)
             for k, v in exog_dict.items()
         }
 

@@ -31,6 +31,7 @@ from ..exceptions import (
     UnknownLevelWarning
 )
 from ..utils import (
+    _date_range_from_index,
     initialize_lags,
     initialize_window_features,
     initialize_weights,
@@ -1650,15 +1651,23 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         # they have gone through the `check_one_step_ahead_input` function.
         min_index = []
         max_index = []
+        # NOTE: The longest index is the most likely to contain a daylight saving
+        # change, used to identify the convention of timezone-aware indexes.
+        longest_index = None
         for v in series.values():
             idx = v.index
             min_index.append(idx[0])
             max_index.append(idx[-1])
+            if longest_index is None or len(idx) > len(longest_index):
+                longest_index = idx
         
         if isinstance(idx, pd.DatetimeIndex):
-            span_index = pd.date_range(
-                start=min(min_index), end=max(max_index), freq=idx.freq
-            )
+            span_index = _date_range_from_index(
+                             index = longest_index, 
+                             start = min(min_index), 
+                             end   = max(max_index),
+                             freq  = idx.freq
+                         )
         else:
             span_index = pd.RangeIndex(
                 start=min(min_index), stop=max(max_index) + 1, step=idx.step

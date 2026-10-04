@@ -867,9 +867,7 @@ class FoundationModel:
             # DatetimeIndex: reindex to the exact expected date range,
             # filling gaps with NaN.
             if is_datetime_ctx and isinstance(series_exog.index, pd.DatetimeIndex):
-                expected_idx = pd.date_range(
-                    start=ref_end + freq, periods=steps, freq=freq
-                )
+                expected_idx = expand_index(ctx.index, steps=steps)
                 # Fast path: exog already aligned, no reindex needed.
                 series_exog_aligned = (
                     series_exog

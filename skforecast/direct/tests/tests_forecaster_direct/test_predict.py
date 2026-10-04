@@ -875,3 +875,27 @@ def test_predict_with_exog_window_features_and_calendar():
     predictions_no_cal = forecaster_no_cal.predict(steps=10, exog=exog_predict_calendar)
 
     pd.testing.assert_series_equal(predictions, predictions_no_cal)
+
+
+@pytest.mark.parametrize(
+    "steps", [None, [1, 5, 10]], ids=lambda steps: f"steps: {steps}"
+)
+def test_predict_output_index_when_index_is_tz_aware_and_utc_anchored(steps):
+    """
+    Test the index of the predictions when the series has a timezone-aware
+    index that advances in fixed UTC steps (created in UTC and converted to a
+    local timezone) and the forecast horizon crosses a daylight saving change.
+    """
+    index = pd.date_range(
+        start="2025-09-01", periods=60, freq="D", tz="UTC"
+    ).tz_convert("Europe/Madrid")
+    y_tz = pd.Series(np.arange(60, dtype=float), index=index, name="y")
+
+    forecaster = ForecasterDirect(LinearRegression(), steps=10, lags=3)
+    forecaster.fit(y=y_tz.iloc[:50])
+    predictions = forecaster.predict(steps=steps)
+
+    expected_index = index[50:] if steps is None else index[50:][[0, 4, 9]]
+
+    pd.testing.assert_index_equal(predictions.index, expected_index)
+    assert predictions.index.freq == expected_index.freq

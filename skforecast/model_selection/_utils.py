@@ -19,6 +19,7 @@ from tqdm.auto import tqdm
 from ..exceptions import IgnoredArgumentWarning, OneStepAheadValidationWarning
 from ..metrics import add_y_train_argument, _any_metric_needs_y_train, _get_metric
 from ..utils import (
+    _date_range_from_index,
     check_interval,
     date_to_index_position,
     cast_catboost_categorical_columns_dataframe,
@@ -1494,7 +1495,14 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
             predictions = pd.DataFrame({level: y_pred}, index=test_index)
             predictions.index.name = None
             if isinstance(test_index, pd.DatetimeIndex):
-                predictions = predictions.asfreq(freq)
+                predictions = predictions.reindex(
+                    _date_range_from_index(
+                        index = predictions.index,
+                        start = predictions.index[0],
+                        end   = predictions.index[-1],
+                        freq  = freq
+                    )
+                )
             else:
                 predictions = predictions.reindex(
                     pd.RangeIndex(
@@ -1555,7 +1563,15 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         # NOTE: Interleaved Nan values were excluded fom y_train. They are restored
         if isinstance(series[levels[0]].index, pd.DatetimeIndex):
             y_train_per_level = {
-                key: group.asfreq(freq) for key, group in y_train_per_level
+                key: group.reindex(
+                    _date_range_from_index(
+                        index = group.index,
+                        start = group.index[0],
+                        end   = group.index[-1],
+                        freq  = freq
+                    )
+                )
+                for key, group in y_train_per_level
             }
         else:
             y_train_per_level = {
@@ -1708,7 +1724,14 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
             .rename_axis(columns=None, index=None)
         )
         if isinstance(X_test.index, pd.DatetimeIndex):
-            predictions = predictions.asfreq(freq)
+            predictions = predictions.reindex(
+                _date_range_from_index(
+                    index = predictions.index,
+                    start = predictions.index[0],
+                    end   = predictions.index[-1],
+                    freq  = freq
+                )
+            )
         else:
             predictions = predictions.reindex(
                 pd.RangeIndex(
