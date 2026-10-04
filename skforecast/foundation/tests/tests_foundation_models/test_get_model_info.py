@@ -122,6 +122,8 @@ def test_get_model_info_output_TimesFM3():
          ("TimesFM25Adapter", 512, "timesfm[torch]", False, False, False)),
         ("google/timesfm-3.0-pytorch",
          ("TimesFM3Adapter", 2048, "timesfm[torch]", True, False, False)),
+        ("NX-AI/TiRex-2",
+         ("TiRex2Adapter", 512, "tirex-2", True, False, False)),
         ("Salesforce/moirai-2.0-R-small",
          ("MoiraiAdapter", 2048, "uni2ts", False, False, False)),
         ("soda-inria/tabicl",

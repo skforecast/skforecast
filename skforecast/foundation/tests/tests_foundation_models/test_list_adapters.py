@@ -19,6 +19,7 @@ def test_list_adapters_output():
         ("ChronosAdapter", "autogluon/chronos-2-small"),
         ("TimesFM25Adapter", "google/timesfm-2.5-200m-pytorch"),
         ("TimesFM3Adapter", "google/timesfm-3.0-pytorch"),
+        ("TiRex2Adapter", "NX-AI/TiRex-2"),
         ("MoiraiAdapter", "Salesforce/moirai-2.0-R-small"),
         ("TabICLAdapter", "soda-inria/tabicl"),
         ("TabPFNAdapter", "priorlabs/tabpfn-ts"),

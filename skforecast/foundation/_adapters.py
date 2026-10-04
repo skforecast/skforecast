@@ -5095,6 +5095,206 @@ class NoriAdapter(_AdapterBase):
         return expand_index(series.index, steps=n)
 
 
+
+class TiRex2Adapter(_AdapterBase):
+    """Adapter for the NX-AI TiRex-2 zero-shot forecaster.
+
+    TiRex-2 accepts one or more target variates and optional past and
+    future-known covariates.  ``FoundationModel`` supplies one independent
+    series per adapter call; this adapter keeps the backend representation
+    explicit and maps the native nine-quantile output to skforecast's
+    ``(steps, n_quantiles)`` contract.
+    """
+
+    SUPPORTED_QUANTILES: list[float] = [
+        0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9
+    ]
+    allow_exog: bool = True
+    supports_past_only_covariates: bool = True
+    supports_categorical_covariates: bool = False
+    supports_heterogeneous_covariates: bool = False
+    supports_nan_in_series: bool = False
+    requires_hf_auth: bool = False
+    requires_provider_auth: bool = False
+    weights_repo_id: str | None = "NX-AI/TiRex-2"
+    weights_in_hf_cache: bool = True
+    backend_package: str = "tirex-2"
+    default_model_id: str = "NX-AI/TiRex-2"
+    _MODEL_ID_PREFIX: str = "NX-AI/TiRex-2"
+
+    def __init__(
+        self,
+        model_id: str,
+        *,
+        model: Any | None = None,
+        context_length: int = 512,
+        device: str = "auto",
+        predict_kwargs: dict[str, Any] | None = None,
+    ) -> None:
+        _validate_model_id_prefix(model_id, self._MODEL_ID_PREFIX, type(self).__name__)
+        _validate_positive_int("context_length", context_length)
+        self.model_id = model_id
+        self._model = model
+        self.context_length = context_length
+        self.device = device
+        self.predict_kwargs = predict_kwargs or {}
+        self.context_ = None
+        self.context_exog_ = None
+        self.is_fitted = False
+
+    def get_params(self) -> dict:
+        return {
+            "model_id": self.model_id,
+            "context_length": self.context_length,
+            "device": self.device,
+            "predict_kwargs": self.predict_kwargs or None,
+        }
+
+    def set_params(self, **params) -> TiRex2Adapter:
+        def validate(candidate_params: dict) -> dict:
+            if "model_id" in candidate_params:
+                _validate_model_id_prefix(
+                    candidate_params["model_id"],
+                    self._MODEL_ID_PREFIX,
+                    type(self).__name__,
+                )
+            if "context_length" in candidate_params:
+                _validate_positive_int(
+                    "context_length", candidate_params["context_length"]
+                )
+            if "predict_kwargs" in candidate_params:
+                candidate_params["predict_kwargs"] = (
+                    candidate_params["predict_kwargs"] or {}
+                )
+            return candidate_params
+
+        return _apply_set_params(
+            self,
+            params,
+            validate=validate,
+            resets=(({"model_id", "device"}, lambda: setattr(self, "_model", None)),),
+        )
+
+    def fit(
+        self,
+        context: dict[str, pd.Series],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+    ) -> TiRex2Adapter:
+        return super().fit(context=context, context_exog=context_exog)
+
+    def predict(
+        self,
+        steps: int,
+        context: dict[str, pd.Series],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        quantiles: list[float] | tuple[float] | None,
+    ) -> dict[str, np.ndarray]:
+        quantile_list = _validate_supported_quantiles(
+            quantiles, self.SUPPORTED_QUANTILES, "TiRex-2"
+        )
+        self._load_model()
+        from tirex2 import TimeseriesType
+
+        names = list(context)
+        timeseries = []
+        for name in names:
+            past_cols, future_cols = get_exog_signature(
+                context_exog=(context_exog or {}).get(name),
+                exog=(exog or {}).get(name),
+            )
+            past, future = self._build_covariates(
+                (context_exog or {}).get(name),
+                (exog or {}).get(name),
+                past_cols,
+                future_cols,
+            )
+            target = context[name].to_numpy(dtype=np.float32)[None, :]
+            timeseries.append(
+                TimeseriesType(
+                    target=target,
+                    past_covariates=past,
+                    future_covariates=future,
+                )
+            )
+
+        forecasts = self._model.forecast(
+            timeseries,
+            prediction_length=steps,
+            output_type="numpy",
+            **self.predict_kwargs,
+        )
+        predictions = {}
+        for name, forecast in zip(names, forecasts):
+            values = np.asarray(forecast)
+            if values.ndim != 3 or values.shape[0] != 1:
+                raise ValueError(
+                    "TiRex-2 returned an unexpected forecast shape: "
+                    f"{values.shape!r}. Expected (1, 9, steps)."
+                )
+            values = values[0]
+            if quantile_list is None:
+                predictions[name] = values[4, :].reshape(-1, 1)
+            else:
+                indices = [self.SUPPORTED_QUANTILES.index(q) for q in quantile_list]
+                predictions[name] = values[indices, :].T
+        return predictions
+
+    @staticmethod
+    def _to_covariate_array(values: Any) -> np.ndarray:
+        if isinstance(values, pd.Series):
+            if not (
+                pd.api.types.is_numeric_dtype(values)
+                or pd.api.types.is_bool_dtype(values)
+            ):
+                raise ValueError(
+                    "TiRex2Adapter supports only numeric covariates. "
+                    f"Column {values.name!r} has dtype {values.dtype}."
+                )
+            return values.astype(np.float32).to_numpy()
+        array = np.asarray(values)
+        if array.dtype.kind not in "iufb":
+            raise ValueError(
+                "TiRex2Adapter supports only numeric covariates. "
+                f"Got dtype {array.dtype}."
+            )
+        return array.astype(np.float32)
+
+    @classmethod
+    def _build_covariates(
+        cls,
+        context_exog: pd.DataFrame | pd.Series | None,
+        exog: pd.DataFrame | pd.Series | None,
+        past_cols: tuple,
+        future_cols: tuple,
+    ) -> tuple[np.ndarray | None, np.ndarray | None]:
+        ctx = context_exog.to_frame() if isinstance(context_exog, pd.Series) else context_exog
+        fut = exog.to_frame() if isinstance(exog, pd.Series) else exog
+        past = (
+            np.stack([cls._to_covariate_array(ctx[col]) for col in past_cols])
+            if past_cols else None
+        )
+        future = (
+            np.stack([
+                np.concatenate([
+                    cls._to_covariate_array(ctx[col]),
+                    cls._to_covariate_array(fut[col]),
+                ])
+                for col in future_cols
+            ])
+            if future_cols else None
+        )
+        return past, future
+
+    def _load_model(self) -> None:
+        if self._model is not None:
+            return
+        from tirex2 import load_model
+        self._model = load_model(
+            self.model_id, device=_resolve_torch_device(self.device)
+        )
+
+
 _ADAPTER_REGISTRY: dict[str, type] = {
     # Only Chronos-2 checkpoints: Chronos and Chronos-Bolt pipelines take a
     # different input format and do not accept `cross_learning`.
@@ -5102,6 +5302,7 @@ _ADAPTER_REGISTRY: dict[str, type] = {
     "autogluon/chronos-2": ChronosAdapter,
     "google/timesfm-2.5": TimesFM25Adapter,
     "google/timesfm-3.0": TimesFM3Adapter,
+    "NX-AI/TiRex-2":      TiRex2Adapter,
     # Only Moirai-2 checkpoints: the configs of Moirai 1.x and Moirai-MoE lack
     # arguments required by `Moirai2Module` (`patch_size`, `d_ff`).
     "Salesforce/moirai-2": MoiraiAdapter,
