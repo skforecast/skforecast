@@ -322,13 +322,20 @@ class BoxCoxTransform:
 
     def inverse_transform(self, y_trans: NDArray[np.float64],
                          bias_adjust: bool = False,
-                         variance: Optional[float] = None) -> NDArray[np.float64]:
+                         variance: Optional[float | NDArray[np.float64]] = None) -> NDArray[np.float64]:
         if abs(self.lambda_param) < 1e-10:
             y_back = np.exp(y_trans)
             if bias_adjust and variance is not None:
-                y_back *= np.exp(variance / 2)
+                # R's InvBoxCox with lambda = 0
+                y_back = y_back * (1 + variance / 2)
         else:
-            y_back = (self.lambda_param * y_trans + 1) ** (1 / self.lambda_param)
+            # As R's InvBoxCox, values outside the range of the transformation
+            # (lambda * y + 1 < 0) are NaN when lambda < 0 and keep their sign
+            # otherwise, so the inverse is monotonic (interval bounds included).
+            xx = self.lambda_param * np.asarray(y_trans, dtype=np.float64) + 1
+            if self.lambda_param < 0:
+                xx = np.where(xx < 0, np.nan, xx)
+            y_back = np.sign(xx) * np.abs(xx) ** (1 / self.lambda_param)
             if bias_adjust and variance is not None:
                 y_back = y_back * (
                     1 + (1 - self.lambda_param) * variance
@@ -805,7 +812,10 @@ def _ets_objective_jit(x: NDArray[np.float64],
 # Nelder-Mead. Besides R's starting values, the starts set alpha and, when
 # they are estimated, the fractions of beta and gamma (None keeps R's value).
 # The likelihood often has a local optimum at each end of the range of beta
-# (or gamma), so one start begins near the upper end.
+# (or gamma), so one start begins near the upper end. Known limitations: an
+# optimum very close to the corner alpha = beta = 1e-4 can end at the corner,
+# and a few series still end at a local optimum (MNA on the fuel consumption
+# series: -2 log-likelihood 1.13 above the best of 24 random starts).
 
 ETS_STARTS = ((0.5, None), (0.9, None), (0.5, 0.9))
 
@@ -1153,16 +1163,18 @@ def ets(y: NDArray[np.float64],
             )
 
     # Handle ZZZ with high frequency by calling auto_ets
-    if model == "ZZZ" and m > 24:
-        warnings.warn(
-            f"Frequency too high (m={m} > 24). Using auto_ets to select non-seasonal model. "
-            f"Try stlf() if you need seasonal forecasts."
-        )
+    if model == "ZZZ":
+        if m > 24:
+            warnings.warn(
+                f"Frequency too high (m={m} > 24). Using auto_ets to select non-seasonal model. "
+                f"Try stlf() if you need seasonal forecasts."
+            )
         return auto_ets(
-            y_original, m=m, seasonal=False, trend=None, damped=damped,
-            ic="aicc", allow_multiplicative=True, 
+            y_original, m=m, seasonal=m <= 24, trend=None, damped=damped,
+            ic="aicc", allow_multiplicative=True,
             allow_multiplicative_trend=False,
-            lambda_auto=lambda_auto, verbose=False
+            lambda_param=lambda_param, lambda_auto=lambda_auto,
+            bias_adjust=bias_adjust, verbose=False
         )
 
     season_type = model[2]
@@ -1327,13 +1339,6 @@ def ets(y: NDArray[np.float64],
                 lower[0] = max(lower[0], par_values[1])
             if has_season and not par_free[2]:
                 upper[0] = min(upper[0], 1.0 - par_values[2])
-            if lower[0] > upper[0]:
-                raise ValueError(
-                    "No value of alpha satisfies the usual bounds with the "
-                    f"fixed beta={par_values[1]} and gamma={par_values[2]} "
-                    "(beta <= alpha <= 1 - gamma)."
-                )
-            par_values[0] = min(max(par_values[0], lower[0]), upper[0])
         else:
             if "beta" in free_names:
                 i = free_names.index("beta")
@@ -1341,6 +1346,19 @@ def ets(y: NDArray[np.float64],
             if "gamma" in free_names:
                 i = free_names.index("gamma")
                 upper[i] = min(upper[i], 1.0 - par_values[0])
+        if np.any(lower[:n_free] > upper[:n_free]):
+            fixed = ", ".join(
+                f"{name}={value}"
+                for name, value, used in zip(("alpha", "beta", "gamma"), given, present)
+                if used and value is not None
+            )
+            raise ValueError(
+                "No value of the estimated smoothing parameters satisfies the "
+                f"usual bounds with the fixed {fixed} (1e-4 <= beta <= alpha "
+                "and 1e-4 <= gamma <= 1 - alpha)."
+            )
+        if par_free[0]:
+            par_values[0] = min(max(par_values[0], lower[0]), upper[0])
 
     obj_args = (
         y, lower, upper, par_values, par_free, config.m,
@@ -1355,6 +1373,26 @@ def ets(y: NDArray[np.float64],
 
     values = par_values.copy()
     values[par_free] = x_opt[:n_free]
+    # With fixed parameters, the bounds may leave no value of the estimated
+    # ones (for example, no admissible alpha for the fixed beta and gamma):
+    # the optimizer only sees the penalty and returns a point out of range.
+    # As R's check.param, the fit is refused.
+    if (present & ~par_free).any() and not check_param(
+        values[0],
+        values[1] if has_trend else None,
+        values[2] if has_season else None,
+        values[3] if config.damped else None,
+        PARAM_LOWER, PARAM_UPPER, bounds, config.m
+    ):
+        fixed = ", ".join(
+            f"{name}={value}"
+            for name, value, used in zip(("alpha", "beta", "gamma", "phi"), given, present)
+            if used and value is not None
+        )
+        raise ValueError(
+            f"No value of the estimated smoothing parameters satisfies the "
+            f"'{bounds}' bounds with the fixed {fixed}."
+        )
     full_x = np.concatenate([values[present], x_opt[n_free:]])
     fitted_params = ETSParams.from_vector(full_x, config)
 
@@ -1539,13 +1577,50 @@ def forecast_ets(model: ETSModel, h: int = 10, bias_adjust: bool = True,
         model.params.phi
     )
 
+    # The variance of the forecasts on the scale of the model is needed for
+    # the intervals and, with a Box-Cox transformation, for the bias
+    # adjustment of the point forecasts. It is analytical when available
+    # and estimated from simulated paths otherwise.
+    var = None
+    simulations = None
+    simulation_error = None
+    need_var = level is not None or (model.transform is not None and bias_adjust)
+    if need_var and model.sigma2 > 0:
+        var = _compute_prediction_variance(model, h)
+        if var is None:
+            try:
+                simulations = simulate_ets(model, h=h, n_sim=1000)
+            except ValueError as e:
+                simulation_error = e
+
+    # As R's forecast.ets, the bias adjustment uses the variance of each
+    # horizon (InvBoxCox with the forecast variance). Without an analytical
+    # variance, it is the one implied by the 95% simulated interval, as R
+    # derives it from the interval bounds (R uses the widest requested level;
+    # a fixed level keeps the point forecasts independent of `level`).
+    forecasts_model_scale = forecasts
+    if model.transform is not None:
+        fvar = None
+        if bias_adjust:
+            if var is not None:
+                fvar = var
+            elif simulations is not None:
+                lv = 95.0
+                z = norm.ppf(0.5 + lv / 200)
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", RuntimeWarning)
+                    width = (
+                        np.nanpercentile(simulations, 50 + lv / 2, axis=0)
+                        - np.nanpercentile(simulations, 50 - lv / 2, axis=0)
+                    )
+                fvar = (width / (2 * z)) ** 2
+                # Horizons where every simulated path is invalid are not adjusted
+                fvar = np.where(np.isfinite(fvar), fvar, 0.0)
+        forecasts = model.transform.inverse_transform(forecasts, bias_adjust, fvar)
+
     # Prediction intervals are computed on the scale of the model and their
     # bounds are back-transformed (quantiles are preserved by the monotonic
     # Box-Cox transformation, so no bias adjustment applies to them).
-    forecasts_model_scale = forecasts
-    if model.transform is not None:
-        forecasts = model.transform.inverse_transform(forecasts, bias_adjust, model.sigma2)
-
     def to_original_scale(values):
         if model.transform is None:
             return values
@@ -1555,7 +1630,6 @@ def forecast_ets(model: ETSModel, h: int = 10, bias_adjust: bool = True,
 
     if level is not None:
         if model.sigma2 <= 0:
-            import warnings
             warnings.warn(
                 f"Cannot compute prediction intervals: model has invalid residual variance "
                 f"(sigma2={model.sigma2:.2e}). This usually means the model is overfit or "
@@ -1564,31 +1638,26 @@ def forecast_ets(model: ETSModel, h: int = 10, bias_adjust: bool = True,
             )
             return result
 
-        var = _compute_prediction_variance(model, h)
-
         if var is not None:
             for lv in level:
                 z = norm.ppf(0.5 + lv / 200)
                 std = np.sqrt(var)
                 result[f'lower_{int(lv)}'] = to_original_scale(forecasts_model_scale - z * std)
                 result[f'upper_{int(lv)}'] = to_original_scale(forecasts_model_scale + z * std)
-        else:
-            try:
-                simulations = simulate_ets(model, h=h, n_sim=1000)
-                for lv in level:
-                    result[f'lower_{int(lv)}'] = to_original_scale(
-                        np.nanpercentile(simulations, 50 - lv / 2, axis=0)
-                    )
-                    result[f'upper_{int(lv)}'] = to_original_scale(
-                        np.nanpercentile(simulations, 50 + lv / 2, axis=0)
-                    )
-            except ValueError as e:
-                import warnings
-                warnings.warn(
-                    f"Cannot compute prediction intervals via simulation: {str(e)}. "
-                    f"Returning point forecasts only.",
-                    UserWarning
+        elif simulations is not None:
+            for lv in level:
+                result[f'lower_{int(lv)}'] = to_original_scale(
+                    np.nanpercentile(simulations, 50 - lv / 2, axis=0)
                 )
+                result[f'upper_{int(lv)}'] = to_original_scale(
+                    np.nanpercentile(simulations, 50 + lv / 2, axis=0)
+                )
+        else:
+            warnings.warn(
+                f"Cannot compute prediction intervals via simulation: {str(simulation_error)}. "
+                f"Returning point forecasts only.",
+                UserWarning
+            )
 
     return result
 
@@ -1725,7 +1794,9 @@ def auto_ets(
     allow_multiplicative_trend: bool = False,
     lambda_auto: bool = False,
     max_models: Optional[int] = None,
-    verbose: bool = False
+    verbose: bool = False,
+    lambda_param: Optional[float] = None,
+    bias_adjust: bool = False
 ) -> ETSModel:
     """
     Automatic ETS model selection
@@ -1755,6 +1826,11 @@ def auto_ets(
         Maximum number of models to try (None = try all)
     verbose : bool
         Print progress
+    lambda_param : float, optional
+        Box-Cox transformation parameter. If None, no transformation unless
+        `lambda_auto` is True.
+    bias_adjust : bool
+        Apply bias adjustment when back-transforming the fitted values.
 
     Returns
     -------
@@ -1767,7 +1843,7 @@ def auto_ets(
 
     # Multiplicative components need a positive series, and only additive
     # models are considered on the Box-Cox scale (as in R)
-    if np.min(y) <= 0 or lambda_auto:
+    if np.min(y) <= 0 or lambda_auto or lambda_param is not None:
         allow_multiplicative = False
         allow_multiplicative_trend = False
 
@@ -1858,7 +1934,11 @@ def auto_ets(
 
     for model_spec, damped_flag in models_to_try:
         try:
-            model = ets(y, m=m, model=model_spec, damped=damped_flag, lambda_auto=lambda_auto, bounds="both")
+            model = ets(
+                y, m=m, model=model_spec, damped=damped_flag,
+                lambda_param=lambda_param, lambda_auto=lambda_auto,
+                bias_adjust=bias_adjust, bounds="both"
+            )
 
             if ic == "aic":
                 ic_value = model.aic

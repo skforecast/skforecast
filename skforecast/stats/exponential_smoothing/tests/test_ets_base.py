@@ -6,6 +6,7 @@ import pytest
 from .._ets_base import (
     PARAM_LOWER,
     PARAM_UPPER,
+    _compute_prediction_variance,
     _forecast_ets,
     initial_smoothing_params,
     ets,
@@ -962,6 +963,58 @@ def test_ets_fixed_parameters_out_of_bounds_raises():
         ets(y, m=1, model="AAN", alpha=0.2, beta=0.5)
 
 
+@pytest.mark.parametrize(
+    "model_spec, fixed, fixed_msg",
+    [
+        ("AAA", {"alpha": 0.9999}, "alpha=0.9999"),
+        ("ANA", {"gamma": 0.9999}, "gamma=0.9999"),
+        ("AAA", {"beta": 0.6, "gamma": 0.5}, "beta=0.6, gamma=0.5"),
+    ],
+    ids=lambda x: str(x),
+)
+def test_ets_ValueError_when_fixed_parameters_leave_empty_range(model_spec, fixed, fixed_msg):
+    """
+    Test that fixed smoothing parameters that leave no value within the usual
+    bounds for an estimated one raise a ValueError that names only the fixed
+    parameters (a fixed alpha raised the error of scipy, and the message
+    named the starting values of the estimated beta and gamma).
+    """
+    y = trend_series(100) + 3 * np.sin(2 * np.pi * np.arange(100) / 4)
+    err_msg = re.escape(
+        f"No value of the estimated smoothing parameters satisfies the usual "
+        f"bounds with the fixed {fixed_msg} (1e-4 <= beta <= alpha and "
+        f"1e-4 <= gamma <= 1 - alpha)."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        ets(y, m=4, model=model_spec, **fixed)
+
+
+@pytest.mark.parametrize(
+    "fixed, fixed_msg",
+    [
+        ({"beta": 0.3, "gamma": 0.5}, "beta=0.3, gamma=0.5"),
+        ({"beta": 0.9999}, "beta=0.9999"),
+    ],
+    ids=lambda x: str(x),
+)
+def test_ets_ValueError_when_fixed_parameters_leave_no_admissible_value(fixed, fixed_msg):
+    """
+    Test that fixed smoothing parameters that leave no admissible value of the
+    estimated ones raise a ValueError, as R's check.param, instead of
+    returning the penalized starting point as a fitted model. With m=12,
+    beta=0.3 and gamma=0.5 no alpha in [0.3, 0.5] is admissible; with
+    beta=0.9999, alpha=0.9999 leaves no gamma >= 1e-4 below 1 - alpha.
+    """
+    t = np.arange(120)
+    y = trend_series(120) + 3 * np.sin(2 * np.pi * t / 12)
+    err_msg = re.escape(
+        f"No value of the estimated smoothing parameters satisfies the 'both' "
+        f"bounds with the fixed {fixed_msg}."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        ets(y, m=12, model="AAA", **fixed)
+
+
 @pytest.mark.parametrize("model_spec", ["ANN", "AAN"])
 @pytest.mark.parametrize("shift", [-2e5, 5e6], ids=lambda x: f"shift: {x}")
 def test_ets_additive_model_invariant_to_level_shift(shift, model_spec):
@@ -1076,3 +1129,104 @@ def test_forecast_ets_box_cox_intervals_on_original_scale():
     for key in out_log:
         np.testing.assert_allclose(out_log[key], np.exp(out_on_log[key]), rtol=1e-10)
 
+
+@pytest.mark.parametrize(
+    "lambda_param, y_trans, expected",
+    [
+        (0.5, [-1.0, -2.0, -3.0, -4.0], [0.25, 0.0, -0.25, -1.0]),
+        (-0.5, [1.0, 1.9, 2.1, 3.0], [4.0, 400.0, np.nan, np.nan]),
+    ],
+    ids=lambda x: str(x),
+)
+def test_box_cox_inverse_transform_out_of_range_as_R(lambda_param, y_trans, expected):
+    """
+    Test that values outside the range of the Box-Cox transformation
+    (lambda * y + 1 < 0) are back-transformed as R's forecast::InvBoxCox:
+    NaN when lambda < 0, and with their sign otherwise, so the inverse is
+    monotonic. With even powers they were positive (0.25 for y = -3 and
+    lambda = 0.5, 4 for y = 3 and lambda = -0.5).
+    """
+    transform = BoxCoxTransform(lambda_param=lambda_param, shift=0.0)
+
+    y_back = transform.inverse_transform(np.array(y_trans))
+
+    np.testing.assert_allclose(y_back, expected)
+
+
+def test_forecast_ets_box_cox_negative_lambda_upper_bounds_out_of_range():
+    """
+    Test that the upper bounds of a Box-Cox model with lambda < 0 that fall
+    outside the range of the transformation are NaN, as in R, instead of
+    finite values below the mean (the 95% upper bound was 0.56, below the
+    mean, 1.24, and below the 80% upper bound, 11.8).
+    """
+    rng = np.random.default_rng(7)
+    y = rng.exponential(1.0, 120) + 0.01
+    model = ets(y, m=1, model="ANN", lambda_param=-0.5)
+
+    out = forecast_ets(model, h=3, level=[80, 95])
+
+    assert np.all(np.isnan(out["upper_80"]))
+    assert np.all(np.isnan(out["upper_95"]))
+    assert np.all(out["lower_95"] < out["lower_80"])
+    assert np.all(out["lower_80"] < out["mean"])
+
+
+def test_ets_multistart_finds_global_optimum_air_passengers():
+    """
+    Test that the starting points of the optimizer find the best optimum of
+    an ANA model of AirPassengers (m=12). From R's starting values alone,
+    L-BFGS-B and Nelder-Mead stop at a local optimum with a -2 log-likelihood
+    51.8 higher (815.20 instead of 763.42). The value changes by about 1e-8
+    under 1-ULP perturbations of the series.
+    """
+    from ...tests.tests_arima.fixtures_arima import air_passengers
+
+    y = air_passengers.to_numpy(dtype=float)
+    model = ets(y, m=12, model="ANA")
+
+    np.testing.assert_allclose(-2 * model.loglik, 763.4188655657, atol=1e-2)
+
+
+@pytest.mark.parametrize("lambda_param", [0.0, 0.5], ids=lambda x: f"lambda: {x}")
+def test_forecast_ets_box_cox_bias_adjustment_uses_forecast_variance(lambda_param):
+    """
+    Test that the bias-adjusted point forecasts of a Box-Cox model use the
+    forecast variance of each horizon, as R's forecast.ets (InvBoxCox with
+    the forecast variance), and R's formula y * (1 + variance / 2) when
+    lambda = 0. They used the one-step variance for every horizon, and
+    exp(variance / 2) when lambda = 0.
+    """
+    y = positive_series(100) + 0.5 * np.arange(100)
+    model = ets(y, m=1, model="AAN", lambda_param=lambda_param)
+    h = 12
+
+    mean_adjusted = forecast_ets(model, h=h, bias_adjust=True)["mean"]
+    mean = forecast_ets(model, h=h, bias_adjust=False)["mean"]
+
+    var = _compute_prediction_variance(model, h)
+    if lambda_param == 0.0:
+        expected = mean * (1 + var / 2)
+    else:
+        expected = mean * (1 + (1 - lambda_param) * var / (2 * mean ** (2 * lambda_param)))
+    assert np.all(np.diff(var) > 0)
+    np.testing.assert_allclose(mean_adjusted, expected, rtol=1e-12)
+
+
+def test_ets_ZZZ_runs_automatic_selection():
+    """
+    Test that ets() with model='ZZZ' runs the automatic selection for any
+    seasonal period, passing the Box-Cox options (it raised KeyError: 'Z'
+    when m <= 24).
+    """
+    from ...tests.tests_arima.fixtures_arima import air_passengers
+
+    y = air_passengers.to_numpy(dtype=float)
+
+    model = ets(y, m=12, model="ZZZ", lambda_param=0.0)
+    expected = auto_ets(y, m=12, damped=False, lambda_param=0.0)
+
+    assert model.config == expected.config
+    assert model.config.error == "A"
+    assert model.transform.lambda_param == 0.0
+    np.testing.assert_allclose(model.loglik, expected.loglik)
