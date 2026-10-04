@@ -59,20 +59,23 @@ def test_arima_fit_multidimensional_y_raises():
 
 
 @pytest.mark.parametrize(
-    "order, fit_intercept",
-    [((1, 0, 0), True), ((1, 0, 0), False), ((0, 1, 0), True)],
+    "order, fit_intercept, n_exog",
+    [((1, 0, 0), True, 0), ((1, 0, 0), False, 0), ((0, 1, 0), True, 0),
+     ((1, 0, 0), False, 1), ((1, 0, 0), True, 2)],
     ids=lambda x: f"{x}"
 )
-def test_arima_fit_ValueError_when_y_is_empty(order, fit_intercept):
+def test_arima_fit_ValueError_when_y_is_empty(order, fit_intercept, n_exog):
     """
     Test that fit raises the same ValueError for an empty series with and
-    without intercept (it used to raise an unrelated TypeError with intercept).
+    without intercept or exogenous variables (it used to raise an unrelated
+    TypeError with an intercept or exogenous variables).
     """
     y = np.array([], dtype=float)
+    exog = np.empty((0, n_exog)) if n_exog > 0 else None
     model = Arima(order=order, fit_intercept=fit_intercept)
     msg = "Too few non-missing observations"
     with pytest.raises(ValueError, match=msg):
-        model.fit(y)
+        model.fit(y, exog=exog)
 
 
 def test_arima_fit_with_exog_length_mismatch():
