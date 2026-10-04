@@ -1128,3 +1128,44 @@ def test_forecast_ets_box_cox_intervals_on_original_scale():
     for key in out_log:
         np.testing.assert_allclose(out_log[key], np.exp(out_on_log[key]), rtol=1e-10)
 
+
+@pytest.mark.parametrize(
+    "lambda_param, y_trans, expected",
+    [
+        (0.5, [-1.0, -2.0, -3.0, -4.0], [0.25, 0.0, -0.25, -1.0]),
+        (-0.5, [1.0, 1.9, 2.1, 3.0], [4.0, 400.0, np.nan, np.nan]),
+    ],
+    ids=lambda x: str(x),
+)
+def test_box_cox_inverse_transform_out_of_range_as_R(lambda_param, y_trans, expected):
+    """
+    Test that values outside the range of the Box-Cox transformation
+    (lambda * y + 1 < 0) are back-transformed as R's forecast::InvBoxCox:
+    NaN when lambda < 0, and with their sign otherwise, so the inverse is
+    monotonic. With even powers they were positive (0.25 for y = -3 and
+    lambda = 0.5, 4 for y = 3 and lambda = -0.5).
+    """
+    transform = BoxCoxTransform(lambda_param=lambda_param, shift=0.0)
+
+    y_back = transform.inverse_transform(np.array(y_trans))
+
+    np.testing.assert_allclose(y_back, expected)
+
+
+def test_forecast_ets_box_cox_negative_lambda_upper_bounds_out_of_range():
+    """
+    Test that the upper bounds of a Box-Cox model with lambda < 0 that fall
+    outside the range of the transformation are NaN, as in R, instead of
+    finite values below the mean (the 95% upper bound was 0.56, below the
+    mean, 1.24, and below the 80% upper bound, 11.8).
+    """
+    rng = np.random.default_rng(7)
+    y = rng.exponential(1.0, 120) + 0.01
+    model = ets(y, m=1, model="ANN", lambda_param=-0.5)
+
+    out = forecast_ets(model, h=3, level=[80, 95])
+
+    assert np.all(np.isnan(out["upper_80"]))
+    assert np.all(np.isnan(out["upper_95"]))
+    assert np.all(out["lower_95"] < out["lower_80"])
+    assert np.all(out["lower_80"] < out["mean"])

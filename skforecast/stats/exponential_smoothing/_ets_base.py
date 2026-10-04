@@ -328,7 +328,13 @@ class BoxCoxTransform:
             if bias_adjust and variance is not None:
                 y_back *= np.exp(variance / 2)
         else:
-            y_back = (self.lambda_param * y_trans + 1) ** (1 / self.lambda_param)
+            # As R's InvBoxCox, values outside the range of the transformation
+            # (lambda * y + 1 < 0) are NaN when lambda < 0 and keep their sign
+            # otherwise, so the inverse is monotonic (interval bounds included).
+            xx = self.lambda_param * np.asarray(y_trans, dtype=np.float64) + 1
+            if self.lambda_param < 0:
+                xx = np.where(xx < 0, np.nan, xx)
+            y_back = np.sign(xx) * np.abs(xx) ** (1 / self.lambda_param)
             if bias_adjust and variance is not None:
                 y_back = y_back * (
                     1 + (1 - self.lambda_param) * variance
