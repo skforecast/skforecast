@@ -7,6 +7,7 @@ Development scripts and notebooks. They are not part of the skforecast package.
 | [`ai/`](ai/) | Generates the AI context files (`AGENTS.md`, `llms-full.txt`, ...). See its README. |
 | [`docs/`](docs/) | Scripts and notebooks used to build and maintain the documentation (see below). |
 | `check_case_in_file_names.py` | Detects test and fixture files whose names break the lowercase convention. |
+| `check_foundation_models_metadata.py` | Compares the license, weights repository and gating declared for each foundation model with the Hugging Face Hub. Runs weekly in CI. |
 
 ## docs/
 

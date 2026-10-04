@@ -134,6 +134,17 @@ class ChronosAdapter(_AdapterBase):
         Whether the checkpoints served by this adapter are gated on the
         Hugging Face Hub, so an authenticated account that has accepted the
         model license is needed. Declared per adapter, not per checkpoint.
+    requires_provider_auth : bool
+        Whether the model provider requires its own account or license
+        acceptance, outside the Hugging Face Hub, before the weights can be
+        used.
+    weights_repo_id : str, None
+        Hugging Face repository the backend downloads the weights from when
+        it is not `model_id`. `None` means the repository is `model_id`.
+        `None` for Chronos: the weights are downloaded from `model_id`.
+    weights_in_hf_cache : bool
+        Whether the downloaded weights are stored in the Hugging Face Hub
+        cache, under `weights_repo_id`.
     backend_package : str
         Package that provides the backend, as passed to `pip install`.
     default_model_id : str
@@ -161,6 +172,9 @@ class ChronosAdapter(_AdapterBase):
     supports_heterogeneous_covariates: bool = False
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
+    requires_provider_auth: bool = False
+    weights_repo_id: str | None = None
+    weights_in_hf_cache: bool = True
     backend_package: str = "chronos-forecasting"
     default_model_id: str = "autogluon/chronos-2-small"
 
@@ -622,6 +636,17 @@ class TimesFM25Adapter(_AdapterBase):
         Whether the checkpoints served by this adapter are gated on the
         Hugging Face Hub, so an authenticated account that has accepted the
         model license is needed. Declared per adapter, not per checkpoint.
+    requires_provider_auth : bool
+        Whether the model provider requires its own account or license
+        acceptance, outside the Hugging Face Hub, before the weights can be
+        used.
+    weights_repo_id : str, None
+        Hugging Face repository the backend downloads the weights from when
+        it is not `model_id`. `None` means the repository is `model_id`.
+        `None` for TimesFM 2.5: the weights are downloaded from `model_id`.
+    weights_in_hf_cache : bool
+        Whether the downloaded weights are stored in the Hugging Face Hub
+        cache, under `weights_repo_id`.
     backend_package : str
         Package that provides the backend, as passed to `pip install`.
     default_model_id : str
@@ -663,6 +688,9 @@ class TimesFM25Adapter(_AdapterBase):
     supports_heterogeneous_covariates: bool = True
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
+    requires_provider_auth: bool = False
+    weights_repo_id: str | None = None
+    weights_in_hf_cache: bool = True
     backend_package: str = "timesfm[torch]"
     default_model_id: str = "google/timesfm-2.5-200m-pytorch"
 
@@ -1067,6 +1095,17 @@ class TimesFM3Adapter(_AdapterBase):
         Whether the checkpoints served by this adapter are gated on the
         Hugging Face Hub, so an authenticated account that has accepted the
         model license is needed. Declared per adapter, not per checkpoint.
+    requires_provider_auth : bool
+        Whether the model provider requires its own account or license
+        acceptance, outside the Hugging Face Hub, before the weights can be
+        used.
+    weights_repo_id : str, None
+        Hugging Face repository the backend downloads the weights from when
+        it is not `model_id`. `None` means the repository is `model_id`.
+        `None` for TimesFM 3.0: the weights are downloaded from `model_id`.
+    weights_in_hf_cache : bool
+        Whether the downloaded weights are stored in the Hugging Face Hub
+        cache, under `weights_repo_id`.
     backend_package : str
         Package that provides the backend, as passed to `pip install`.
     default_model_id : str
@@ -1117,6 +1156,9 @@ class TimesFM3Adapter(_AdapterBase):
     supports_heterogeneous_covariates: bool = False
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
+    requires_provider_auth: bool = False
+    weights_repo_id: str | None = None
+    weights_in_hf_cache: bool = True
     backend_package: str = "timesfm[torch]"
     default_model_id: str = "google/timesfm-3.0-pytorch"
 
@@ -1733,6 +1775,17 @@ class MoiraiAdapter(_AdapterBase):
         Whether the checkpoints served by this adapter are gated on the
         Hugging Face Hub, so an authenticated account that has accepted the
         model license is needed. Declared per adapter, not per checkpoint.
+    requires_provider_auth : bool
+        Whether the model provider requires its own account or license
+        acceptance, outside the Hugging Face Hub, before the weights can be
+        used.
+    weights_repo_id : str, None
+        Hugging Face repository the backend downloads the weights from when
+        it is not `model_id`. `None` means the repository is `model_id`.
+        `None` for Moirai: the weights are downloaded from `model_id`.
+    weights_in_hf_cache : bool
+        Whether the downloaded weights are stored in the Hugging Face Hub
+        cache, under `weights_repo_id`.
     backend_package : str
         Package that provides the backend, as passed to `pip install`.
     default_model_id : str
@@ -1769,6 +1822,9 @@ class MoiraiAdapter(_AdapterBase):
     supports_heterogeneous_covariates: bool = True
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
+    requires_provider_auth: bool = False
+    weights_repo_id: str | None = None
+    weights_in_hf_cache: bool = True
     backend_package: str = "uni2ts"
     default_model_id: str = "Salesforce/moirai-2.0-R-small"
 
@@ -2143,6 +2199,18 @@ class TabICLAdapter(_AdapterBase):
         Whether the checkpoints served by this adapter are gated on the
         Hugging Face Hub, so an authenticated account that has accepted the
         model license is needed. Declared per adapter, not per checkpoint.
+    requires_provider_auth : bool
+        Whether the model provider requires its own account or license
+        acceptance, outside the Hugging Face Hub, before the weights can be
+        used.
+    weights_repo_id : str, None
+        Hugging Face repository the backend downloads the weights from when
+        it is not `model_id`. `None` means the repository is `model_id`.
+        `'jingang/TabICL'` for TabICL: the backend downloads its checkpoints
+        from that repository whatever the `model_id`.
+    weights_in_hf_cache : bool
+        Whether the downloaded weights are stored in the Hugging Face Hub
+        cache, under `weights_repo_id`.
     backend_package : str
         Package that provides the backend, as passed to `pip install`.
     default_model_id : str
@@ -2186,6 +2254,9 @@ class TabICLAdapter(_AdapterBase):
     supports_heterogeneous_covariates: bool = False
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
+    requires_provider_auth: bool = False
+    weights_repo_id: str | None = "jingang/TabICL"
+    weights_in_hf_cache: bool = True
     backend_package: str = "tabicl[forecast]"
     default_model_id: str = "soda-inria/tabicl"
 
@@ -2764,6 +2835,24 @@ class TabPFNAdapter(_AdapterBase):
         Whether the checkpoints served by this adapter are gated on the
         Hugging Face Hub, so an authenticated account that has accepted the
         model license is needed. Declared per adapter, not per checkpoint.
+    requires_provider_auth : bool
+        Whether the model provider requires its own account or license
+        acceptance, outside the Hugging Face Hub, before the weights can be
+        used. `True` for TabPFN: Prior Labs
+        requires an account token and accepting the license in a browser
+        before the weights are downloaded (`mode='local'`) or the API is
+        called (`mode='client'`).
+    weights_repo_id : str, None
+        Hugging Face repository the backend downloads the weights from when
+        it is not `model_id`. `None` means the repository is `model_id`.
+        `'Prior-Labs/tabpfn_3_5'` for TabPFN: the repository of the TabPFN
+        version pinned by tabpfn-time-series 1.3, whatever the `model_id`.
+        Earlier versions of the backend download other weights, with a
+        different license, hence the minimum version in `backend_package`.
+    weights_in_hf_cache : bool
+        Whether the downloaded weights are stored in the Hugging Face Hub
+        cache, under `weights_repo_id`. `False` for
+        TabPFN, which keeps them in its own cache directory.
     backend_package : str
         Package that provides the backend, as passed to `pip install`.
     default_model_id : str
@@ -2806,7 +2895,10 @@ class TabPFNAdapter(_AdapterBase):
     supports_heterogeneous_covariates: bool = True
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
-    backend_package: str = "tabpfn-time-series"
+    requires_provider_auth: bool = True
+    weights_repo_id: str | None = "Prior-Labs/tabpfn_3_5"
+    weights_in_hf_cache: bool = False
+    backend_package: str = "tabpfn-time-series>=1.3"
     default_model_id: str = "priorlabs/tabpfn-ts"
 
     def __init__(
@@ -3125,7 +3217,7 @@ class TabPFNAdapter(_AdapterBase):
         except ImportError as exc:
             raise ImportError(
                 f"{self.backend_package} is required for TabPFNAdapter. "
-                f"Install it with `pip install {self.backend_package}`."
+                f'Install it with `pip install "{self.backend_package}"`.'
             ) from exc
         _warn_if_non_commercial(self.model_id)
 
@@ -3382,6 +3474,17 @@ class T0Adapter(_AdapterBase):
         Whether the checkpoints served by this adapter are gated on the
         Hugging Face Hub, so an authenticated account that has accepted the
         model license is needed. Declared per adapter, not per checkpoint.
+    requires_provider_auth : bool
+        Whether the model provider requires its own account or license
+        acceptance, outside the Hugging Face Hub, before the weights can be
+        used.
+    weights_repo_id : str, None
+        Hugging Face repository the backend downloads the weights from when
+        it is not `model_id`. `None` means the repository is `model_id`.
+        `None` for T0: the weights are downloaded from `model_id`.
+    weights_in_hf_cache : bool
+        Whether the downloaded weights are stored in the Hugging Face Hub
+        cache, under `weights_repo_id`.
     backend_package : str
         Package that provides the backend, as passed to `pip install`.
     default_model_id : str
@@ -3401,11 +3504,6 @@ class T0Adapter(_AdapterBase):
     before passing them. A series with no future exog is forecast without
     covariates.
 
-    T0 checkpoints (e.g. `theforecastingcompany/t0-alpha`) are gated on the
-    Hugging Face Hub: visit the model page while logged in to accept its
-    license, then authenticate locally (`hf auth login` or the `HF_TOKEN`
-    environment variable) before first use.
-
     References
     ----------
     .. [1] https://github.com/theforecastingcompany/tfc-t0
@@ -3420,7 +3518,10 @@ class T0Adapter(_AdapterBase):
     supports_categorical_covariates: bool = False
     supports_heterogeneous_covariates: bool = True
     supports_nan_in_series: bool = True
-    requires_hf_auth: bool = True
+    requires_hf_auth: bool = False
+    requires_provider_auth: bool = False
+    weights_repo_id: str | None = None
+    weights_in_hf_cache: bool = True
     backend_package: str = "tfc-t0"
     default_model_id: str = "theforecastingcompany/t0-alpha"
 
@@ -3650,13 +3751,12 @@ class T0Adapter(_AdapterBase):
         switched to eval mode. This method is a no-op when `self._model` is
         already populated. `tfc-t0` must be installed; an `ImportError` is
         raised otherwise. An `OSError` is raised if
-        `T0Forecaster.from_pretrained` fails to build the model, most
-        commonly because the repository is gated on the Hugging Face Hub and
-        the active credentials have not accepted its license.
+        `T0Forecaster.from_pretrained` fails to build the model because the
+        configuration of the checkpoint could not be downloaded.
 
-        T0 checkpoints are gated on the Hugging Face Hub. When the
-        repository's `config.json` cannot be downloaded (e.g. the license
-        has not been accepted, or no valid token is available),
+        When the repository's `config.json` cannot be downloaded (e.g. a
+        wrong model ID, no network connection, or a gated repository whose
+        license has not been accepted),
         `huggingface_hub`'s `from_pretrained` silently swallows the download
         failure and falls back to instantiating the model with no
         constructor arguments, raising a confusing `TypeError` about missing
@@ -3680,11 +3780,13 @@ class T0Adapter(_AdapterBase):
         except TypeError as exc:
             raise OSError(
                 f"Could not load model '{self.model_id}' from the Hugging "
-                f"Face Hub. This is often caused by a gated repository "
-                f"whose license has not been accepted: visit "
+                f"Face Hub. Its configuration could not be downloaded: "
+                f"check the model ID and the network connection. If the "
+                f"repository is gated, visit "
                 f"https://huggingface.co/{self.model_id} while logged in "
-                f"to accept it, then authenticate locally (`hf auth login` "
-                f"or the `HF_TOKEN` environment variable) before retrying."
+                f"to accept its license, then authenticate locally (`hf "
+                f"auth login` or the `HF_TOKEN` environment variable) "
+                f"before retrying."
             ) from exc
 
         device = _resolve_torch_device(self.device_map)
@@ -3879,6 +3981,18 @@ class TSICLAdapter(_AdapterBase):
         Whether the checkpoints served by this adapter are gated on the
         Hugging Face Hub, so an authenticated account that has accepted the
         model license is needed. Declared per adapter, not per checkpoint.
+    requires_provider_auth : bool
+        Whether the model provider requires its own account or license
+        acceptance, outside the Hugging Face Hub, before the weights can be
+        used.
+    weights_repo_id : str, None
+        Hugging Face repository the backend downloads the weights from when
+        it is not `model_id`. `None` means the repository is `model_id`.
+        `'taharnbl/TS-ICL'` for TS-ICL: the backend downloads its
+        checkpoints from that repository whatever the `model_id`.
+    weights_in_hf_cache : bool
+        Whether the downloaded weights are stored in the Hugging Face Hub
+        cache, under `weights_repo_id`.
     backend_package : str
         Package that provides the backend, as passed to `pip install`.
     default_model_id : str
@@ -3916,6 +4030,9 @@ class TSICLAdapter(_AdapterBase):
     supports_heterogeneous_covariates: bool = False
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
+    requires_provider_auth: bool = False
+    weights_repo_id: str | None = "taharnbl/TS-ICL"
+    weights_in_hf_cache: bool = True
     backend_package: str = "tsicl"
     default_model_id: str = "taharnbl/TS-ICL"
 
@@ -4358,6 +4475,18 @@ class NoriAdapter(_AdapterBase):
         Whether the checkpoints served by this adapter are gated on the
         Hugging Face Hub, so an authenticated account that has accepted the
         model license is needed. Declared per adapter, not per checkpoint.
+    requires_provider_auth : bool
+        Whether the model provider requires its own account or license
+        acceptance, outside the Hugging Face Hub, before the weights can be
+        used.
+    weights_repo_id : str, None
+        Hugging Face repository the backend downloads the weights from when
+        it is not `model_id`. `None` means the repository is `model_id`.
+        `None` for Nori: `model_id` is forwarded to the backend as the
+        checkpoint to load.
+    weights_in_hf_cache : bool
+        Whether the downloaded weights are stored in the Hugging Face Hub
+        cache, under `weights_repo_id`.
     backend_package : str
         Package that provides the backend, as passed to `pip install`.
     default_model_id : str
@@ -4400,6 +4529,9 @@ class NoriAdapter(_AdapterBase):
     supports_heterogeneous_covariates: bool = True
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
+    requires_provider_auth: bool = False
+    weights_repo_id: str | None = None
+    weights_in_hf_cache: bool = True
     backend_package: str = "synthefy-nori"
     default_model_id: str = "Synthefy/Nori"
 

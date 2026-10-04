@@ -1873,12 +1873,15 @@ def _fit_predict_forecaster_stats(
                    suppress_warnings = suppress_warnings
                )
 
+    # NOTE: With a single estimator and no interval, `pred` is a pandas Series.
     if gap > 0:
-        pred = pred.iloc[forecaster.n_estimators * gap:, :]
+        pred = pred.iloc[forecaster.n_estimators * gap:]
 
+    # NOTE: Predictions are in long format with estimators interleaved per step,
+    # so names are tiled (not repeated) to stay aligned with `estimator_id`.
     estimator_names_ = None
     if not freeze_params:
-        estimator_names_ = np.repeat(forecaster.estimator_names_, steps - gap)
+        estimator_names_ = np.tile(forecaster.estimator_names_, steps - gap)
 
     return pred, estimator_names_
 

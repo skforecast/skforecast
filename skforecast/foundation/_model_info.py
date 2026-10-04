@@ -14,7 +14,7 @@ import inspect
 import pandas as pd
 
 from ._adapters import _ADAPTER_REGISTRY, _resolve_adapter
-from ._utils import _get_non_commercial_license
+from ._utils import _get_license_url, _get_model_license
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -25,6 +25,14 @@ class FoundationModelInfo:
 
     Instances are created by `get_model_info` and `list_adapters`; they are
     immutable and can be converted to a `dict` with `dataclasses.asdict`.
+
+    The weights and license fields (`weights_repo_id`, `weights_in_hf_cache`,
+    `license`, `license_url` and `commercial_use_restricted`) describe the
+    default configuration of the adapter. They do not reflect the backend
+    configuration passed to it (`tabicl_config`, `nori_config`,
+    `tabpfn_model_config`), which can select other weights or a local file,
+    nor the cloud API of TabPFN (`mode='client'`), which downloads no weights
+    and is subject to the terms of the provider.
 
     Attributes
     ----------
@@ -64,14 +72,34 @@ class FoundationModelInfo:
         Face Hub, so an authenticated account that has accepted the model
         license is needed. Unlike the license fields, it is declared per
         adapter, not resolved for `model_id`.
-    license_restriction : str, None
-        Name of the license that restricts commercial use of the weights, as
-        also reported by `LicenseWarning` when they are loaded. `None` only
-        means that no restriction is registered in skforecast, it does not
-        confirm that the license permits commercial use.
-    license_url : str, None
-        Link to the terms of `license_restriction`. `None` when
-        `license_restriction` is `None`.
+    requires_provider_auth : bool
+        Whether the model provider requires its own account or license
+        acceptance, outside the Hugging Face Hub, before the weights can be
+        used (e.g. the Prior Labs token and license acceptance of TabPFN).
+        Declared per adapter, not resolved for `model_id`.
+    weights_repo_id : str
+        Hugging Face repository the backend downloads the weights from by
+        default. It is `model_id` unless the backend takes the weights from
+        a fixed repository (e.g. `'jingang/TabICL'` for TabICL). The backend
+        configuration of the adapter (e.g. a local `model_path`) can
+        override it.
+    weights_in_hf_cache : bool
+        Whether the downloaded weights are stored in the Hugging Face Hub
+        cache, under `weights_repo_id`. When `False` (TabPFN keeps them in
+        its own cache directory), the Hugging Face Hub cache does not tell
+        whether the weights are already downloaded.
+    license : str
+        License of the weights registered in skforecast: an SPDX identifier
+        (e.g. `'Apache-2.0'`), or the license name of the Hugging Face model
+        card when it is not a standard license (e.g.
+        `'timesfm-non-commercial-license-v1.0'`). Providers can change their
+        terms, so check `license_url` before relying on it.
+    license_url : str
+        Link to the terms of `license`: the license file of the provider,
+        or the model card of `weights_repo_id` for standard licenses.
+    commercial_use_restricted : bool
+        Whether `license` restricts commercial use of the weights. When
+        `True`, a `LicenseWarning` is raised when they are loaded.
 
     """
 
@@ -88,8 +116,12 @@ class FoundationModelInfo:
     supports_nan_in_series: bool
     supported_quantiles: tuple[float, ...] | None
     requires_hf_auth: bool
-    license_restriction: str | None
-    license_url: str | None
+    requires_provider_auth: bool
+    weights_repo_id: str
+    weights_in_hf_cache: bool
+    license: str
+    license_url: str
+    commercial_use_restricted: bool
 
 
 def _build_model_info(model_id: str, adapter_cls: type) -> FoundationModelInfo:
@@ -116,10 +148,15 @@ def _build_model_info(model_id: str, adapter_cls: type) -> FoundationModelInfo:
         inspect.signature(adapter_cls).parameters["context_length"].default
     )
     supported_quantiles = adapter_cls.SUPPORTED_QUANTILES
-    license_info = _get_non_commercial_license(model_id)
-    license_restriction, license_url = (
-        license_info if license_info is not None else (None, None)
-    )
+    license_info = _get_model_license(model_id)
+    if license_info is None:
+        raise ValueError(
+            f"No license is registered for model '{model_id}'. Add its "
+            f"prefix to `_MODEL_LICENSES`."
+        )
+    license_name, license_url, commercial_use_restricted, _ = license_info
+    weights_repo_id = adapter_cls.weights_repo_id or model_id
+    license_url = _get_license_url(license_url, weights_repo_id=weights_repo_id)
 
     prefixes = tuple(
         prefix for prefix, cls in _ADAPTER_REGISTRY.items() if cls is adapter_cls
@@ -141,8 +178,12 @@ def _build_model_info(model_id: str, adapter_cls: type) -> FoundationModelInfo:
         supports_nan_in_series            = adapter_cls.supports_nan_in_series,
         supported_quantiles               = supported_quantiles,
         requires_hf_auth                  = adapter_cls.requires_hf_auth,
-        license_restriction               = license_restriction,
+        requires_provider_auth            = adapter_cls.requires_provider_auth,
+        weights_repo_id                   = weights_repo_id,
+        weights_in_hf_cache               = adapter_cls.weights_in_hf_cache,
+        license                           = license_name,
         license_url                       = license_url,
+        commercial_use_restricted         = commercial_use_restricted,
     )
 
     return info
@@ -164,8 +205,8 @@ def get_model_info(model_id: str) -> FoundationModelInfo:
     Returns
     -------
     info : FoundationModelInfo
-        Capabilities and requirements of `model_id`. The license fields are
-        resolved for this specific `model_id`.
+        Capabilities and requirements of `model_id`. The license fields and
+        `weights_repo_id` are resolved for this specific `model_id`.
 
     """
 
@@ -187,7 +228,7 @@ def list_adapters(
     adapter supported by skforecast.
 
     Each adapter is described by its `default_model_id`, so the license
-    fields refer to that model ID. Use `get_model_info` to resolve them for a
+    fields and `weights_repo_id` refer to that model ID. Use `get_model_info` to resolve them for a
     different checkpoint.
 
     Parameters
