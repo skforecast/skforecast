@@ -1,7 +1,6 @@
 # Unit test fit method - Ets
 # ==============================================================================
 import re
-import platform
 import numpy as np
 import pandas as pd
 import pytest
@@ -131,7 +130,7 @@ def test_fit_ets_ann():
     
     expected_config = {'error': 'A', 'trend': 'N', 'season': 'N', 'damped': False, 'm': 1}
     assert model.model_config_ == expected_config
-    assert model.params_['alpha'] == 0.1
+    np.testing.assert_allclose(model.params_['alpha'], 0.9472238981, atol=1e-6)
     assert model.params_['beta'] == 0.0
     assert model.params_['gamma'] == 0.0
     assert model.params_['phi'] == 1.0
@@ -141,13 +140,11 @@ def test_fit_ets_ann():
 
     # Check the first 10 fitted values
     expected_fitted = np.array([
-        12.29444152, 12.0155413, 11.84559784, 11.82543432, 11.80258961,
-        11.86834219, 11.96036316, 12.03250366, 12.20635091, 12.36988604
+        9.5519216568, 9.5078924811, 10.2734522797, 11.5716324368, 11.5956490835,
+        12.4144922848, 12.7688104875, 12.6863619307, 13.7137344018, 13.8349486289
     ])
-    np.testing.assert_array_almost_equal(
-        model.fitted_values_[:10],
-        expected_fitted,
-        decimal=8
+    np.testing.assert_allclose(
+        model.fitted_values_[:10], expected_fitted, rtol=1e-5, atol=1e-6
     )
     np.testing.assert_array_almost_equal(
         model.in_sample_residuals_,
@@ -167,8 +164,9 @@ def test_fit_ets_aan():
     
     expected_config = {'error': 'A', 'trend': 'A', 'season': 'N', 'damped': False, 'm': 1}
     assert model.model_config_ == expected_config
-    assert model.params_['alpha'] == 0.1
-    assert model.params_['beta'] > 0.0  # Beta should be estimated for trend model
+    # A straight line with noise: alpha and beta at their lower bound (1e-4)
+    np.testing.assert_allclose(model.params_['alpha'], 1e-4, atol=1e-6)
+    np.testing.assert_allclose(model.params_['beta'], 1e-4, atol=1e-6)
     assert model.params_['gamma'] == 0.0
     assert model.params_['phi'] == 1.0
     assert 'init_states' in model.params_
@@ -177,13 +175,11 @@ def test_fit_ets_aan():
 
     # Check the first 10 fitted values
     expected_fitted = np.array([
-        10.04724213, 10.48702146, 10.96218045, 11.52942696, 12.03592687,
-        12.58233151, 13.10900153, 13.56805384, 14.09215094, 14.56840645
+        10.0622024871, 10.5627587088, 11.0633212763, 11.5640246374, 12.0646765268,
+        12.5654042077, 13.0661369743, 13.5667705524, 14.0674834084, 14.5681306877
     ])
-    np.testing.assert_array_almost_equal(
-        model.fitted_values_[:10],
-        expected_fitted,
-        decimal=8
+    np.testing.assert_allclose(
+        model.fitted_values_[:10], expected_fitted, rtol=1e-5, atol=1e-6
     )
     np.testing.assert_array_almost_equal(
         model.in_sample_residuals_,
@@ -204,9 +200,11 @@ def test_fit_ets_aaa():
     
     expected_config = {'error': 'A', 'trend': 'A', 'season': 'A', 'damped': False, 'm': 12}
     assert model.model_config_ == expected_config
-    assert model.params_['alpha'] == 0.1
-    assert model.params_['beta'] > 0.0  # Beta should be estimated for trend model
-    assert model.params_['gamma'] > 0.0  # Gamma should be estimated for seasonal model
+    # Deterministic trend and seasonality: smoothing parameters at their
+    # lower bound (1e-4)
+    np.testing.assert_allclose(model.params_['alpha'], 1e-4, atol=1e-6)
+    np.testing.assert_allclose(model.params_['beta'], 1e-4, atol=1e-6)
+    np.testing.assert_allclose(model.params_['gamma'], 1e-4, atol=1e-6)
     assert model.params_['phi'] == 1.0
     assert 'init_states' in model.params_
     
@@ -214,13 +212,11 @@ def test_fit_ets_aaa():
 
     # Check the first 10 fitted values
     expected_fitted = np.array([
-        10.12450248, 10.93641956, 12.06930232, 12.26870937, 12.27042302,
-        11.36429999, 10.57106752,  9.61916466,  8.92864668,  8.7293051
+        10.2551109638, 11.1000627964, 12.2162820972, 12.3768765537, 12.3564951345,
+        11.4312810673, 10.5866192378, 9.6428324171, 8.9061797058, 8.680621917
     ])
-    np.testing.assert_array_almost_equal(
-        model.fitted_values_[:10],
-        expected_fitted,
-        decimal=8
+    np.testing.assert_allclose(
+        model.fitted_values_[:10], expected_fitted, rtol=1e-5, atol=1e-6
     )
     np.testing.assert_array_almost_equal(
         model.in_sample_residuals_,
@@ -241,9 +237,9 @@ def test_fit_ets_ana():
     
     expected_config = {'error': 'A', 'trend': 'N', 'season': 'A', 'damped': False, 'm': 12}
     assert model.model_config_ == expected_config
-    assert model.params_['alpha'] == 0.1
+    np.testing.assert_allclose(model.params_['alpha'], 1e-4, atol=1e-6)
     assert model.params_['beta'] == 0.0
-    assert model.params_['gamma'] > 0.0  # Gamma should be estimated for seasonal model
+    np.testing.assert_allclose(model.params_['gamma'], 1e-4, atol=1e-6)
     assert model.params_['phi'] == 1.0
     assert 'init_states' in model.params_
     
@@ -251,13 +247,11 @@ def test_fit_ets_ana():
 
     # Check the first 10 fitted values
     expected_fitted = np.array([
-        14.95208798, 16.37390343, 17.64039636, 18.07740199, 17.54573306,
-        16.28827869, 15.14573767, 13.33657389, 12.24391   , 11.71337189
+        14.9828470269, 16.3895103848, 17.6906381526, 18.1097347498, 17.5554769344,
+        16.3712480123, 15.248160397, 13.4458555259, 12.3420922532, 11.7869900486
     ])
-    np.testing.assert_array_almost_equal(
-        model.fitted_values_[:10],
-        expected_fitted,
-        decimal=8
+    np.testing.assert_allclose(
+        model.fitted_values_[:10], expected_fitted, rtol=1e-5, atol=1e-6
     )
     np.testing.assert_array_almost_equal(
         model.in_sample_residuals_,
@@ -280,8 +274,8 @@ def test_fit_ets_man():
     
     expected_config = {'error': 'M', 'trend': 'A', 'season': 'N', 'damped': False, 'm': 1}
     assert model.model_config_ == expected_config
-    assert model.params_['alpha'] == 0.1
-    assert model.params_['beta'] > 0.0  # Beta should be estimated for trend model
+    np.testing.assert_allclose(model.params_['alpha'], 1e-4, atol=1e-6)
+    np.testing.assert_allclose(model.params_['beta'], 1e-4, atol=1e-6)
     assert model.params_['gamma'] == 0.0
     assert model.params_['phi'] == 1.0
     assert 'init_states' in model.params_
@@ -290,13 +284,11 @@ def test_fit_ets_man():
 
     # Check the first 10 fitted values
     expected_fitted = np.array([
-        5.84235831, 6.21201906, 6.47862205, 6.8676237 , 7.19767769,
-        7.43991747, 7.76034491, 8.06291247, 8.37183227, 8.68293215
+        6.0134677225, 6.3147699642, 6.6159162805, 6.9172230212, 7.2184765844,
+        7.5195730679, 7.8207341635, 8.121858925, 8.4229764291, 8.7240864183
     ])
-    np.testing.assert_array_almost_equal(
-        model.fitted_values_[:10],
-        expected_fitted,
-        decimal=8
+    np.testing.assert_allclose(
+        model.fitted_values_[:10], expected_fitted, rtol=1e-5, atol=1e-6
     )
     np.testing.assert_array_almost_equal(
         model.in_sample_residuals_,
@@ -319,8 +311,8 @@ def test_fit_ets_auto_selection():
     
     expected_config = {'error': 'A', 'trend': 'A', 'season': 'N', 'damped': False, 'm': 1}
     assert model.model_config_ == expected_config
-    assert model.params_['alpha'] == 0.1
-    assert model.params_['beta'] == 0.01
+    np.testing.assert_allclose(model.params_['alpha'], 1e-4, atol=1e-6)
+    np.testing.assert_allclose(model.params_['beta'], 1e-4, atol=1e-6)
     assert model.params_['gamma'] == 0.0
     assert model.params_['phi'] == 1.0
     assert 'init_states' in model.params_
@@ -329,13 +321,11 @@ def test_fit_ets_auto_selection():
 
     # Check the first 10 fitted values
     expected_fitted = np.array([
-        5.84235831, 6.21201906, 6.47862205, 6.8676237 , 7.19767769,
-        7.43991747, 7.76034491, 8.06291247, 8.37183227, 8.68293215
+        6.0649963013, 6.3640691507, 6.6629813678, 6.9620495262, 7.2610602482,
+        7.5599098565, 7.8588202679, 8.1576907616, 8.4565506403, 8.7553998723
     ])
-    np.testing.assert_array_almost_equal(
-        model.fitted_values_[:10],
-        expected_fitted,
-        decimal=8
+    np.testing.assert_allclose(
+        model.fitted_values_[:10], expected_fitted, rtol=1e-5, atol=1e-6
     )
     np.testing.assert_array_almost_equal(
         model.in_sample_residuals_,
@@ -344,10 +334,6 @@ def test_fit_ets_auto_selection():
     )
 
 
-@pytest.mark.skipif(
-    platform.system() == 'Darwin',
-    reason="Ets optimizer converges to different local minima on macOS"
-)
 def test_fit_ets_aan_damped_trend():
     """
     Test that damped trend model includes phi parameter.
@@ -360,9 +346,10 @@ def test_fit_ets_aan_damped_trend():
     
     expected_config = {'error': 'A', 'trend': 'A', 'season': 'N', 'damped': True, 'm': 1}
     assert model.model_config_ == expected_config
-    assert 0.0 < model.params_['phi'] <= 1.0  # Damping parameter should be estimated
-    assert 'alpha' in model.params_
-    assert 'beta' in model.params_
+    # Same estimates as statsmodels' ETSModel
+    np.testing.assert_allclose(model.params_['alpha'], 0.3255037610, atol=1e-6)
+    np.testing.assert_allclose(model.params_['beta'], 0.1285965468, atol=1e-6)
+    np.testing.assert_allclose(model.params_['phi'], 0.8753188574, atol=1e-6)
     assert model.params_['gamma'] == 0.0
     assert 'init_states' in model.params_
     
@@ -373,15 +360,13 @@ def test_fit_ets_aan_damped_trend():
         19.61183632, 22.0867558 , 23.58093134, 25.19210652, 26.6835265 ,
         27.86936012, 29.32280836, 30.34063813, 31.31531167, 31.94853773
     ])
-    np.testing.assert_array_almost_equal(
-        model.fitted_values_[:10],
-        expected_fitted,
-        decimal=6
+    np.testing.assert_allclose(
+        model.fitted_values_[:10], expected_fitted, rtol=1e-5, atol=1e-6
     )
     np.testing.assert_array_almost_equal(
         model.in_sample_residuals_,
         y - model.fitted_values_,
-        decimal=6
+        decimal=8
     )
 
 
@@ -420,3 +405,29 @@ def test_ets_fit_fixed_gamma():
     
     assert model.params_['gamma'] == fixed_gamma
 
+
+def test_fit_ets_auto_selection_with_lambda_param():
+    """
+    Test that the automatic selection (model='ZZZ') applies the Box-Cox
+    transformation of `lambda_param` and only considers additive models, as
+    R's forecast::ets (`lambda_param` was ignored).
+    """
+    from ...tests.tests_arima.fixtures_arima import air_passengers
+
+    y = air_passengers.to_numpy(dtype=float)
+    model = Ets(m=12, model='ZZZ', lambda_param=0.0)
+    model.fit(y)
+
+    assert model.model_.transform is not None
+    assert model.model_.transform.lambda_param == 0.0
+    assert model.model_config_['error'] == 'A'
+    assert model.model_config_['trend'] != 'M'
+    assert model.model_config_['season'] != 'M'
+
+    selected = Ets(
+        m=12,
+        model=f"{model.model_config_['error']}{model.model_config_['trend']}{model.model_config_['season']}",
+        damped=model.model_config_['damped'],
+        lambda_param=0.0,
+    ).fit(y)
+    np.testing.assert_allclose(model.predict(steps=12), selected.predict(steps=12))
