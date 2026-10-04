@@ -6,6 +6,7 @@ import pytest
 from .._ets_base import (
     PARAM_LOWER,
     PARAM_UPPER,
+    _compute_prediction_variance,
     _forecast_ets,
     initial_smoothing_params,
     ets,
@@ -1185,3 +1186,28 @@ def test_ets_multistart_finds_global_optimum_air_passengers():
     model = ets(y, m=12, model="ANA")
 
     np.testing.assert_allclose(-2 * model.loglik, 763.4188655657, atol=1e-2)
+
+
+@pytest.mark.parametrize("lambda_param", [0.0, 0.5], ids=lambda x: f"lambda: {x}")
+def test_forecast_ets_box_cox_bias_adjustment_uses_forecast_variance(lambda_param):
+    """
+    Test that the bias-adjusted point forecasts of a Box-Cox model use the
+    forecast variance of each horizon, as R's forecast.ets (InvBoxCox with
+    the forecast variance), and R's formula y * (1 + variance / 2) when
+    lambda = 0. They used the one-step variance for every horizon, and
+    exp(variance / 2) when lambda = 0.
+    """
+    y = positive_series(100) + 0.5 * np.arange(100)
+    model = ets(y, m=1, model="AAN", lambda_param=lambda_param)
+    h = 12
+
+    mean_adjusted = forecast_ets(model, h=h, bias_adjust=True)["mean"]
+    mean = forecast_ets(model, h=h, bias_adjust=False)["mean"]
+
+    var = _compute_prediction_variance(model, h)
+    if lambda_param == 0.0:
+        expected = mean * (1 + var / 2)
+    else:
+        expected = mean * (1 + (1 - lambda_param) * var / (2 * mean ** (2 * lambda_param)))
+    assert np.all(np.diff(var) > 0)
+    np.testing.assert_allclose(mean_adjusted, expected, rtol=1e-12)
