@@ -1169,3 +1169,19 @@ def test_forecast_ets_box_cox_negative_lambda_upper_bounds_out_of_range():
     assert np.all(np.isnan(out["upper_95"]))
     assert np.all(out["lower_95"] < out["lower_80"])
     assert np.all(out["lower_80"] < out["mean"])
+
+
+def test_ets_multistart_finds_global_optimum_air_passengers():
+    """
+    Test that the starting points of the optimizer find the best optimum of
+    an ANA model of AirPassengers (m=12). From R's starting values alone,
+    L-BFGS-B and Nelder-Mead stop at a local optimum with a -2 log-likelihood
+    51.8 higher (815.20 instead of 763.42). The value changes by about 1e-8
+    under 1-ULP perturbations of the series.
+    """
+    from ...tests.tests_arima.fixtures_arima import air_passengers
+
+    y = air_passengers.to_numpy(dtype=float)
+    model = ets(y, m=12, model="ANA")
+
+    np.testing.assert_allclose(-2 * model.loglik, 763.4188655657, atol=1e-2)

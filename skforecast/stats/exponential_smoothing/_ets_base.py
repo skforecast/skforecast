@@ -811,7 +811,10 @@ def _ets_objective_jit(x: NDArray[np.float64],
 # Nelder-Mead. Besides R's starting values, the starts set alpha and, when
 # they are estimated, the fractions of beta and gamma (None keeps R's value).
 # The likelihood often has a local optimum at each end of the range of beta
-# (or gamma), so one start begins near the upper end.
+# (or gamma), so one start begins near the upper end. Known limitations: an
+# optimum very close to the corner alpha = beta = 1e-4 can end at the corner,
+# and a few series still end at a local optimum (MNA on the fuel consumption
+# series: -2 log-likelihood 1.13 above the best of 24 random starts).
 
 ETS_STARTS = ((0.5, None), (0.9, None), (0.5, 0.9))
 
