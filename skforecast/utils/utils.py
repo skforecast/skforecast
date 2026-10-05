@@ -1870,51 +1870,6 @@ def input_to_frame(
     return data
 
 
-def cast_exog_dtypes(
-    exog: pd.Series | pd.DataFrame,
-    exog_dtypes: dict[str, type],
-) -> pd.Series | pd.DataFrame:  # pragma: no cover
-    """
-    Cast `exog` to a specified types. This is done because, for a forecaster to 
-    accept a categorical exog, it must contain only integer values. Due to the 
-    internal modifications of numpy, the values may be casted to `float`, so 
-    they have to be re-converted to `int`.
-
-    - If `exog` is a pandas Series, `exog_dtypes` must be a dict with a 
-    single value.
-    - If `exog_dtypes` is `category` but the current type of `exog` is `float`, 
-    then the type is cast to `int` and then to `category`. 
-
-    Parameters
-    ----------
-    exog : pandas Series, pandas DataFrame
-        Exogenous variables.
-    exog_dtypes: dict
-        Dictionary with name and type of the series or data frame columns.
-
-    Returns
-    -------
-    exog : pandas Series, pandas DataFrame
-        Exogenous variables casted to the indicated dtypes.
-
-    """
-
-    # Remove keys from exog_dtypes not in exog.columns
-    exog_dtypes = {k: v for k, v in exog_dtypes.items() if k in exog.columns}
-    
-    if isinstance(exog, pd.Series) and exog.dtypes != list(exog_dtypes.values())[0]:
-        exog = exog.astype(list(exog_dtypes.values())[0])
-    elif isinstance(exog, pd.DataFrame):
-        for col, initial_dtype in exog_dtypes.items():
-            if exog[col].dtypes != initial_dtype:
-                if initial_dtype == "category" and exog[col].dtypes == float:
-                    exog[col] = exog[col].astype(int).astype("category")
-                else:
-                    exog[col] = exog[col].astype(initial_dtype)
-
-    return exog
-
-
 def exog_to_direct(
     exog: pd.Series | pd.DataFrame,
     steps: int
