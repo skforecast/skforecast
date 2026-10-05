@@ -164,6 +164,33 @@ def test_output_expand_index_when_index_is_tz_aware_and_follows_local_calendar(
     pd.testing.assert_index_equal(results, expected)
 
 
+@pytest.mark.parametrize(
+    'freq, end, expected_dates',
+    [
+        ('D',  '2024-03-31',       ['2024-04-01', '2024-04-02', '2024-04-03']),
+        ('D',  '2024-10-27',       ['2024-10-28', '2024-10-29', '2024-10-30']),
+        ('D',  '2024-03-30 08:00', ['2024-03-31 08:00', '2024-04-01 08:00',
+                                    '2024-04-02 08:00']),
+        ('2D', '2024-10-27',       ['2024-10-29', '2024-10-31', '2024-11-02']),
+    ],
+    ids=['D_spring', 'D_autumn', 'D_spring_08:00', '2D_autumn']
+)
+def test_output_expand_index_when_index_is_tz_aware_and_first_step_crosses_dst(
+    freq, end, expected_dates
+):
+    """
+    Test expand_index when the index is timezone-aware, follows the local
+    calendar and a daylight saving change (Europe/Madrid) falls between its
+    last date and the first step of the new index. That step is 23 or 25
+    hours ahead, and the local time of day must be preserved.
+    """
+    index = pd.date_range(end=end, periods=5, freq=freq, tz='Europe/Madrid')
+    expected = pd.DatetimeIndex(expected_dates, freq=freq, tz='Europe/Madrid')
+    results = expand_index(index, steps=3)
+
+    pd.testing.assert_index_equal(results, expected)
+
+
 def test_output_expand_index_when_index_is_RangeIndex():
     """
     Test values returned by expand_index when input is RangeIndex.

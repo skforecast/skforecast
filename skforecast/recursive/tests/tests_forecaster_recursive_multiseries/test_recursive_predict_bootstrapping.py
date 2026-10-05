@@ -299,10 +299,11 @@ def test_recursive_predict_bootstrapping_with_exog():
     
     forecaster.fit(series=series_dict_range, exog=exog_train)
 
-    exog_pred = pd.DataFrame({
-        'exog_1': np.arange(100, 103, dtype=float),
-        'exog_2': np.arange(200, 203, dtype=float)
-    })
+    exog_pred = pd.DataFrame(
+        data  = {'exog_1': np.arange(100, 103, dtype=float),
+                 'exog_2': np.arange(200, 203, dtype=float)},
+        index = pd.RangeIndex(start=100, stop=103)
+    )
     
     last_window, exog_values_dict, _, levels, _, _ = (
         forecaster._create_predict_inputs(steps=3, exog=exog_pred)

@@ -103,6 +103,37 @@ def test_predict_NotFittedError_when_fitted_is_False():
         forecaster.predict(steps=5)
 
 
+def test_predict_ValueError_when_exog_index_does_not_follow_freq():
+    """
+    Test ValueError is raised when `exog` starts one step ahead of
+    `last_window`, but it has gaps (one value every two days with a daily
+    series), and the steps predicted are not consecutive from 1. `exog` is
+    used by position up to the last step, so the predictions would use the
+    values of other dates.
+    """
+    index = pd.date_range(start='2020-01-01', periods=50, freq='D')
+    y = pd.Series(np.arange(50, dtype=float) * 2, index=index, name='y')
+    exog = pd.Series(np.arange(50, dtype=float), index=index, name='exog')
+    exog_pred = pd.Series(
+        data  = np.arange(50, 60, 2, dtype=float),
+        index = pd.DatetimeIndex(['2020-02-20', '2020-02-22', '2020-02-24',
+                                  '2020-02-26', '2020-02-28']),
+        name  = 'exog'
+    )
+
+    forecaster = ForecasterDirect(LinearRegression(), steps=5, lags=3)
+    forecaster.fit(y=y, exog=exog)
+
+    err_msg = re.escape(
+        "`exog` must have consecutive values following the frequency of "
+        "`last_window` for the 5 steps predicted.\n"
+        "    Expected index at position 1 : 2020-02-21 00:00:00.\n"
+        "    `exog` index at position 1 : 2020-02-22 00:00:00.\n"
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster.predict(steps=[3, 4, 5], exog=exog_pred)
+
+
 @pytest.mark.parametrize("steps", [3, [1, 2, 3], None], 
                          ids=lambda steps: f'steps: {steps}')
 def test_predict_output_when_estimator_is_LinearRegression(steps):

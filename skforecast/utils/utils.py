@@ -1132,6 +1132,101 @@ def check_interval(
             )
 
 
+def _check_exog_alignment(
+    exog_name: str,
+    exog_index: pd.Index,
+    expected_index: pd.Index,
+    align_by_index: bool
+) -> None:
+    """
+    Check that `exog` has a value for each of the steps predicted.
+
+    - If `align_by_index` is `False`, `exog` is used by position, so its first
+    values must follow the dates of the steps predicted without gaps. A
+    `ValueError` is raised otherwise. The first date must have already been
+    checked.
+    - If `align_by_index` is `True` (`ForecasterRecursiveMultiSeries`), `exog`
+    is aligned with the predictions by its index, so it only has to contain
+    the dates of the steps predicted. A `MissingValuesWarning` is issued if
+    some of them are missing, since their values are filled with NaN, and a
+    `ValueError` is raised if its index has duplicated dates, since it cannot
+    be aligned.
+
+    Parameters
+    ----------
+    exog_name : str
+        Name of `exog` used in the error and warning messages.
+    exog_index : pandas Index
+        Index of `exog`.
+    expected_index : pandas Index
+        Index of the steps predicted, from 1 to the last step. It is created
+        with `expand_index` from the index of `last_window`.
+    align_by_index : bool
+        If `True`, `exog` is aligned with the predictions by its index, so
+        missing dates issue a warning instead of an error. If `False`, `exog`
+        is used by position.
+
+    Returns
+    -------
+    None
+
+    """
+
+    # NOTE: An index with the same frequency (or step) as the steps predicted
+    # that starts at the first step has no gaps.
+    if len(exog_index) > 0 and exog_index[0] == expected_index[0]:
+        if isinstance(expected_index, pd.RangeIndex):
+            if exog_index.step == expected_index.step:
+                return
+        elif exog_index.freq == expected_index.freq:
+            return
+
+    last_step = len(expected_index)
+    # NOTE: If `exog` has fewer values than steps, a warning or an error has
+    # already been issued, so only the first `len(exog)` steps are checked.
+    n_steps = min(len(exog_index), last_step)
+    expected_index = expected_index[:n_steps]
+    if align_by_index:
+        if exog_index.has_duplicates:
+            raise ValueError(
+                f"The index of {exog_name} has duplicated values, for example "
+                f"{exog_index[exog_index.duplicated()][0]}. Each date must "
+                f"appear only once."
+            )
+        is_misaligned = ~expected_index.isin(exog_index)
+    else:
+        exog_index = exog_index[:n_steps]
+        is_misaligned = exog_index != expected_index
+
+    if is_misaligned.any():
+        position = np.flatnonzero(is_misaligned)[0]
+        if align_by_index:
+            warnings.warn(
+                f"{exog_name} has no value for some of the {last_step} steps "
+                f"predicted. The first one is {expected_index[position]} "
+                f"(position {position}). Missing values are filled with NaN. "
+                f"Most of machine learning models do not allow missing values. "
+                f"Prediction method may fail.",
+                MissingValuesWarning
+            )
+        else:
+            raise ValueError(
+                f"{exog_name} must have consecutive values following the "
+                f"frequency of `last_window` for the {last_step} steps predicted.\n"
+                f"    Expected index at position {position} : "
+                f"{expected_index[position]}.\n"
+                f"    {exog_name} index at position {position} : "
+                f"{exog_index[position]}.\n"
+                f"If there is no data for some steps, add them to {exog_name} "
+                f"explicitly as NaN, for example:\n"
+                f"    exog = exog.reindex(expand_index(last_window.index, "
+                f"steps={last_step}))\n"
+                f"where `expand_index` is in `skforecast.utils`, and `last_window` "
+                f"is the window used to predict (by default, the last window "
+                f"stored in the forecaster)."
+            )
+
+
 def check_predict_input(
     forecaster_name: str,
     steps: int | list[int],
@@ -1327,6 +1422,11 @@ def check_predict_input(
                 f"`last_window` must be a pandas Series or DataFrame. "
                 f"Got {type(last_window)}."
             )
+        if isinstance(last_window, pd.DataFrame) and last_window.shape[1] != 1:
+            raise ValueError(
+                f"`last_window` must be a pandas Series or a DataFrame with a "
+                f"single column. Got {last_window.shape[1]} columns."
+            )
 
     # Check last_window len, nulls and index (type and freq)
     if len(last_window) < window_size:
@@ -1396,7 +1496,11 @@ def check_predict_input(
             exogs_to_check = [('`exog`', exog)]
 
         last_step = max(steps) if isinstance(steps, list) else steps
-        expected_index = expand_index(last_window_index, 1)[0]
+        expected_index = expand_index(last_window_index, last_step)
+        # NOTE: ForecasterRecursiveMultiSeries aligns `exog` with the predictions
+        # by index and column, so missing values are filled with NaN and only a
+        # warning is issued. The rest of forecasters use `exog` by position.
+        align_by_index = forecaster_name in ['ForecasterRecursiveMultiSeries']
         for exog_name, exog_to_check in exogs_to_check:
 
             if not isinstance(exog_to_check, (pd.Series, pd.DataFrame)):
@@ -1413,7 +1517,7 @@ def check_predict_input(
 
             # Check exog has many values as distance to max step predicted
             if len(exog_to_check) < last_step:
-                if forecaster_name in ['ForecasterRecursiveMultiSeries']:
+                if align_by_index:
                     warnings.warn(
                         f"{exog_name} doesn't have as many values as steps "
                         f"predicted, {last_step}. Missing values are filled "
@@ -1431,7 +1535,7 @@ def check_predict_input(
             if isinstance(exog_to_check, pd.DataFrame):
                 col_missing = set(exog_names_in_).difference(set(exog_to_check.columns))
                 if col_missing:
-                    if forecaster_name in ['ForecasterRecursiveMultiSeries']:
+                    if align_by_index:
                         warnings.warn(
                             f"{col_missing} not present in {exog_name}. All "
                             f"values will be NaN.",
@@ -1449,7 +1553,7 @@ def check_predict_input(
                     )
 
                 if exog_to_check.name not in exog_names_in_:
-                    if forecaster_name in ['ForecasterRecursiveMultiSeries']:
+                    if align_by_index:
                         warnings.warn(
                             f"'{exog_to_check.name}' was not observed during training. "
                             f"{exog_name} is ignored. Exogenous variables must be one "
@@ -1473,25 +1577,21 @@ def check_predict_input(
                 )
 
             # Check exog starts one step ahead of last_window end.
-            if expected_index != exog_index[0]:
-                if forecaster_name in ['ForecasterRecursiveMultiSeries']:
-                    warnings.warn(
-                        f"To make predictions {exog_name} must start one step "
-                        f"ahead of `last_window`. Missing values are filled "
-                        f"with NaN.\n"
-                        f"    `last_window` ends at : {last_window.index[-1]}.\n"
-                        f"    {exog_name} starts at : {exog_index[0]}.\n"
-                        f"    Expected index : {expected_index}.",
-                        MissingValuesWarning
-                    )  
-                else:
-                    raise ValueError(
-                        f"To make predictions {exog_name} must start one step "
-                        f"ahead of `last_window`.\n"
-                        f"    `last_window` ends at : {last_window.index[-1]}.\n"
-                        f"    {exog_name} starts at : {exog_index[0]}.\n"
-                        f"    Expected index : {expected_index}."
-                    )
+            if not align_by_index and expected_index[0] != exog_index[0]:
+                raise ValueError(
+                    f"To make predictions {exog_name} must start one step "
+                    f"ahead of `last_window`.\n"
+                    f"    `last_window` ends at : {last_window.index[-1]}.\n"
+                    f"    {exog_name} starts at : {exog_index[0]}.\n"
+                    f"    Expected index : {expected_index[0]}."
+                )
+
+            _check_exog_alignment(
+                exog_name      = exog_name,
+                exog_index     = exog_index,
+                expected_index = expected_index,
+                align_by_index = align_by_index
+            )
 
     # Checks ForecasterStats
     if forecaster_name == 'ForecasterStats':
@@ -2166,11 +2266,14 @@ def expand_index(
                                 freq    = freq
                             ).tz_convert(index.tz)
             else:
+                # NOTE: The range starts at the last date and drops it. Adding
+                # `freq` to it would add a fixed 24 hours with daily frequencies,
+                # which shifts the local time of day at a daylight saving change.
                 new_index = pd.date_range(
-                                start   = index[-1] + freq,
-                                periods = steps,
+                                start   = index[-1],
+                                periods = steps + 1,
                                 freq    = freq
-                            )
+                            )[1:]
         elif isinstance(index, pd.RangeIndex):
             new_index = pd.RangeIndex(
                             start = index[-1] + index.step,
