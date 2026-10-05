@@ -2065,7 +2065,10 @@ class ForecasterDirect(ForecasterBase):
         Returns
         -------
         Xs : list
-            List of numpy arrays with the predictors for each step.
+            List of numpy arrays with the predictors for each step. If
+            differentiation is applied, the predictors of all the steps from 1
+            to `max(steps)`, since their predictions are needed to revert the
+            differentiation.
         Xs_col_names : list
             Names of the columns of the matrix created internally for prediction.
         steps : list
@@ -2182,40 +2185,51 @@ class ForecasterDirect(ForecasterBase):
             exog_values = exog.to_numpy()[:max(steps), :]
             Xs_col_names = Xs_col_names + self.X_train_exog_names_out_
 
-        prediction_index = expand_index(
-                               index = last_window.index,
-                               steps = max(steps)
-                           )
+        index_all_steps = expand_index(
+                              index = last_window.index,
+                              steps = max(steps)
+                          )
         if isinstance(last_window.index, pd.DatetimeIndex) and np.array_equal(
             steps, np.arange(min(steps), max(steps) + 1)
         ):
             # NOTE: Consecutive steps are selected with a slice to keep the freq.
-            prediction_index = prediction_index[min(steps) - 1:]
+            prediction_index = index_all_steps[min(steps) - 1:]
         else:
-            prediction_index = prediction_index[np.array(steps) - 1]
+            prediction_index = index_all_steps[np.array(steps) - 1]
+
+        # NOTE: Reverting the differentiation is a cumulative sum over the
+        # predictions of all the steps from 1 to `max(steps)`, so the predictors
+        # of all of them are created. The requested steps are selected after
+        # reverting the differentiation.
+        if differentiator is None:
+            Xs_steps = steps
+            Xs_index = prediction_index
+        else:
+            Xs_steps = list(range(1, max(steps) + 1))
+            Xs_index = index_all_steps
 
         calendar_values = None
         if self.calendar_features is not None:
             # NOTE: Calendar features depend only on the predicted timestamp, so
-            # they are computed directly on `prediction_index`. Row `i` already
-            # corresponds to `steps[i]`, no per-step offset is needed.
+            # they are computed directly on `Xs_index`. Row `i` already
+            # corresponds to `Xs_steps[i]`, no per-step offset is needed.
             calendar_values = self.calendar_features.transform(
-                prediction_index
+                Xs_index
             ).to_numpy()
             Xs_col_names = Xs_col_names + self.X_train_calendar_features_names_out_
 
         if exog_values is None and calendar_values is None:
-            Xs = [X_autoreg] * len(steps)
+            Xs = [X_autoreg] * len(Xs_steps)
         else:
             n_features_autoreg = X_autoreg.shape[1]
             n_exog = exog_values.shape[1] if exog_values is not None else 0
             n_calendar = calendar_values.shape[1] if calendar_values is not None else 0
 
             Xs_array = np.empty(
-                (len(steps), n_features_autoreg + n_exog + n_calendar), dtype=float
+                (len(Xs_steps), n_features_autoreg + n_exog + n_calendar), dtype=float
             )
             Xs_array[:, :n_features_autoreg] = X_autoreg
-            for i, step in enumerate(steps):
+            for i, step in enumerate(Xs_steps):
                 offset = n_features_autoreg
                 if exog_values is not None:
                     Xs_array[i, offset:offset + n_exog] = exog_values[step - 1, :]
@@ -2223,7 +2237,7 @@ class ForecasterDirect(ForecasterBase):
                 if calendar_values is not None:
                     Xs_array[i, offset:offset + n_calendar] = calendar_values[i, :]
 
-            Xs = [Xs_array[i:i + 1] for i in range(len(steps))]
+            Xs = [Xs_array[i:i + 1] for i in range(len(Xs_steps))]
 
         return Xs, Xs_col_names, steps, prediction_index, differentiator
 
@@ -2325,13 +2339,18 @@ class ForecasterDirect(ForecasterBase):
             Xs_col_names,
             steps,
             prediction_index,
-            _
+            differentiator
         ) = self._create_predict_inputs(
                 steps        = steps,
                 last_window  = last_window,
                 exog         = exog,
                 check_inputs = check_inputs
             )
+
+        if differentiator is not None:
+            # NOTE: With differentiation, `Xs` has the predictors of all the
+            # steps from 1 to `max(steps)`. Only the requested steps are returned.
+            Xs = [Xs[step - 1] for step in steps]
 
         X_predict = pd.DataFrame(
                         data    = np.concatenate(Xs, axis=0), 
@@ -2417,10 +2436,14 @@ class ForecasterDirect(ForecasterBase):
                 check_inputs = check_inputs,
             )
 
-        predictions = self._direct_predict(steps=steps, Xs=Xs)
+        # NOTE: With differentiation, `Xs` has the predictors of all the steps
+        # from 1 to `max(steps)`.
+        Xs_steps = steps if differentiator is None else list(range(1, max(steps) + 1))
+        predictions = self._direct_predict(steps=Xs_steps, Xs=Xs)
 
         if differentiator is not None:
             predictions = differentiator.inverse_transform_next_window(predictions)
+            predictions = predictions[np.array(steps) - 1]
 
         predictions = transform_numpy(
                           array             = predictions,
@@ -2529,13 +2552,16 @@ class ForecasterDirect(ForecasterBase):
             residuals = self.out_sample_residuals_
             residuals_by_bin = self.out_sample_residuals_by_bin_
 
-        # NOTE: Predictors and residuals are transformed and differentiated
-        predictions = self._direct_predict(steps=steps, Xs=Xs)
+        # NOTE: Predictors and residuals are transformed and differentiated.
+        # With differentiation, `Xs` has the predictors of all the steps from 1
+        # to `max(steps)`.
+        Xs_steps = steps if differentiator is None else list(range(1, max(steps) + 1))
+        predictions = self._direct_predict(steps=Xs_steps, Xs=Xs)
         
         rng = np.random.default_rng(seed=random_state)
         if not use_binned_residuals:
             sampled_residuals = residuals[
-                rng.integers(low=0, high=residuals.size, size=(len(steps), n_boot))
+                rng.integers(low=0, high=residuals.size, size=(len(Xs_steps), n_boot))
             ]
         else:
             predicted_bins = self.binner.transform(predictions)
@@ -2558,6 +2584,7 @@ class ForecasterDirect(ForecasterBase):
             boot_predictions = (
                 differentiator.inverse_transform_next_window(boot_predictions)
             )
+            boot_predictions = boot_predictions[np.array(steps) - 1]
 
         if self.transformer_y:
             boot_predictions = transform_numpy(
@@ -2659,8 +2686,11 @@ class ForecasterDirect(ForecasterBase):
             residuals = self.out_sample_residuals_
             residuals_by_bin = self.out_sample_residuals_by_bin_
 
-        # NOTE: Predictors and residuals are transformed and differentiated
-        predictions = self._direct_predict(steps=steps, Xs=Xs)
+        # NOTE: Predictors and residuals are transformed and differentiated.
+        # With differentiation, `Xs` has the predictors of all the steps from 1
+        # to `max(steps)`.
+        Xs_steps = steps if differentiator is None else list(range(1, max(steps) + 1))
+        predictions = self._direct_predict(steps=Xs_steps, Xs=Xs)
         
         if use_binned_residuals:
             correction_factor_by_bin = {
@@ -2680,6 +2710,8 @@ class ForecasterDirect(ForecasterBase):
                 steps                 = len(predictions),
                 differentiation_order = self.differentiation
             )
+            predictions = predictions[np.array(steps) - 1]
+            correction_factor = correction_factor[np.array(steps) - 1]
 
         lower_bound = predictions - correction_factor
         upper_bound = predictions + correction_factor
