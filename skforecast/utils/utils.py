@@ -4218,11 +4218,20 @@ def show_versions(
         "pandas",
         "tqdm",
         "scikit-learn",
+        "scipy",
         "optuna",
         "joblib",
         "numba",
         "rich",
+        "statsmodels",
+        "matplotlib",
         "keras",
+        "torch",
+        "lightgbm",
+        "xgboost",
+        "catboost",
+        "skops",
+        "cloudpickle",
     ]
     
     sys_info = {
