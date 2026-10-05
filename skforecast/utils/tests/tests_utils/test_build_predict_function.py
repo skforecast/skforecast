@@ -88,6 +88,51 @@ def test_build_predict_function(estimator, regression_data):
     np.testing.assert_allclose(result_single, expected_single)
 
 
+@pytest.mark.parametrize(
+    "estimator_kwargs, missing_value, use_eval_set",
+    [
+        (
+            {"n_estimators": 200, "learning_rate": 0.3, "early_stopping_rounds": 3},
+            None,
+            True,
+        ),
+        ({"n_estimators": 10, "missing": -999.0}, -999.0, False),
+        ({"n_estimators": 10, "booster": "gblinear"}, None, False),
+    ],
+    ids=["early_stopping", "missing", "gblinear"],
+)
+def test_build_predict_function_xgboost_output_equals_estimator_predict(
+    estimator_kwargs, missing_value, use_eval_set, regression_data
+):
+    """
+    Test that the predict function of an XGBRegressor returns the same
+    predictions as `estimator.predict` when early stopping is used (only the
+    trees up to `best_iteration`), when `missing` is not NaN, and with the
+    'gblinear' booster, which does not support `inplace_predict`.
+    """
+    X, y = regression_data
+    X = X.copy()
+    if missing_value is not None:
+        X[::7, 0] = missing_value
+
+    estimator = XGBRegressor(verbosity=0, **estimator_kwargs)
+    if use_eval_set:
+        estimator.fit(X[:70], y[:70], eval_set=[(X[70:], y[70:])], verbose=False)
+        n_trees = estimator.get_booster().num_boosted_rounds()
+        assert estimator.best_iteration + 1 < n_trees
+    else:
+        estimator.fit(X, y)
+
+    predict_fn = _build_predict_function(estimator)
+    result = predict_fn(X)
+    expected = estimator.predict(X).ravel()
+
+    assert isinstance(result, np.ndarray)
+    assert result.ndim == 1
+    np.testing.assert_allclose(result, expected)
+    np.testing.assert_allclose(predict_fn(X[:1]), expected[:1])
+
+
 def test_build_predict_function_catboost_with_cat_features():
     """
     Test that _build_predict_function returns a callable that converts categorical
