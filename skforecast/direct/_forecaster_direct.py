@@ -2202,9 +2202,11 @@ class ForecasterDirect(ForecasterBase):
         # of all of them are created. The requested steps are selected after
         # reverting the differentiation.
         if self.differentiation is None:
-            Xs_steps, Xs_index = steps, prediction_index
+            Xs_steps = steps
+            Xs_index = prediction_index
         else:
-            Xs_steps, Xs_index = list(range(1, max(steps) + 1)), index_all_steps
+            Xs_steps = list(range(1, max(steps) + 1))
+            Xs_index = index_all_steps
 
         calendar_values = None
         if self.calendar_features is not None:
