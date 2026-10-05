@@ -1419,6 +1419,11 @@ def check_predict_input(
                 f"`last_window` must be a pandas Series or DataFrame. "
                 f"Got {type(last_window)}."
             )
+        if isinstance(last_window, pd.DataFrame) and last_window.shape[1] != 1:
+            raise ValueError(
+                f"`last_window` must be a pandas Series or a DataFrame with a "
+                f"single column. Got {last_window.shape[1]} columns."
+            )
 
     # Check last_window len, nulls and index (type and freq)
     if len(last_window) < window_size:

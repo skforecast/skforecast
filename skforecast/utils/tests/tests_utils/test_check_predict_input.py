@@ -489,6 +489,42 @@ def test_check_predict_input_TypeError_when_last_window_is_not_pandas_series():
         )
 
 
+@pytest.mark.parametrize(
+    'forecaster_name',
+    ['ForecasterRecursive', 'ForecasterDirect', 'ForecasterRecursiveClassifier',
+     'ForecasterStats', 'ForecasterEquivalentDate'],
+    ids=lambda name: f'forecaster: {name}'
+)
+def test_check_predict_input_ValueError_when_last_window_has_several_columns(
+    forecaster_name
+):
+    """
+    Test ValueError is raised in single series forecasters when `last_window`
+    is a DataFrame with more than one column, since its values would be
+    interleaved when converted to a 1D array.
+    """
+    last_window = pd.DataFrame(
+        data  = {'y': np.arange(10, dtype=float), 'other': np.arange(10, dtype=float)},
+        index = pd.RangeIndex(start=0, stop=10)
+    )
+
+    err_msg = re.escape(
+        "`last_window` must be a pandas Series or a DataFrame with a single "
+        "column. Got 2 columns."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_predict_input(
+            forecaster_name = forecaster_name,
+            steps           = 5,
+            is_fitted       = True,
+            exog_in_        = False,
+            index_type_     = pd.RangeIndex,
+            index_freq_     = 1,
+            window_size     = 5,
+            last_window     = last_window
+        )
+
+
 def test_check_predict_input_ValueError_when_length_last_window_is_lower_than_window_size():
     """
     """
