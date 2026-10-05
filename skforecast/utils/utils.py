@@ -48,8 +48,9 @@ P = ParamSpec('P')
 R = TypeVar('R')
 
 # sklearn estimators that natively support NaN values in the input features.
-# Tree-based models gained this support in scikit-learn 1.3 (single trees) and
-# 1.4 (forests), both at or below the minimum version required by skforecast.
+# Tree-based models gained this support in scikit-learn 1.3 (decision trees),
+# 1.4 (random forests) and 1.6 (extra trees), all at or below the minimum
+# version required by skforecast.
 _SKLEARN_NAN_TOLERANT_ESTIMATORS = frozenset({
     'DecisionTreeClassifier',
     'DecisionTreeRegressor',
