@@ -644,3 +644,37 @@ def test_predict_output_when_last_window_argument_has_NaN():
                )
 
     pd.testing.assert_series_equal(predictions, expected)
+
+
+def test_predict_output_when_index_is_tz_aware_and_last_window_ends_on_dst_day():
+    """
+    Test predict output when the series has a timezone-aware index that
+    follows the local calendar and `last_window` ends on the day of a
+    daylight saving change (Europe/Madrid). The predictions must start at the
+    local midnight of the next day, so an `exog` with that index is accepted.
+    """
+    index = pd.date_range(start='2024-03-20', periods=12, freq='D', tz='Europe/Madrid')
+    y = pd.Series(np.arange(12, dtype=float) * 2, index=index, name='y')
+    exog = pd.Series(np.arange(12, dtype=float), index=index, name='exog')
+    exog_pred = pd.Series(
+        data  = np.arange(12, 15, dtype=float),
+        index = pd.date_range(
+                    start='2024-04-01', periods=3, freq='D', tz='Europe/Madrid'
+                ),
+        name  = 'exog'
+    )
+
+    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    forecaster.fit(y=y, exog=exog)
+    predictions = forecaster.predict(steps=3, exog=exog_pred)
+
+    expected = pd.Series(
+                   data  = np.array([24., 26., 28.]),
+                   index = pd.DatetimeIndex(
+                               ['2024-04-01', '2024-04-02', '2024-04-03'],
+                               freq='D', tz='Europe/Madrid'
+                           ),
+                   name  = 'pred'
+               )
+
+    pd.testing.assert_series_equal(predictions, expected)

@@ -2166,11 +2166,14 @@ def expand_index(
                                 freq    = freq
                             ).tz_convert(index.tz)
             else:
+                # NOTE: The range starts at the last date and drops it. Adding
+                # `freq` to it would add a fixed 24 hours with daily frequencies,
+                # which shifts the local time of day at a daylight saving change.
                 new_index = pd.date_range(
-                                start   = index[-1] + freq,
-                                periods = steps,
+                                start   = index[-1],
+                                periods = steps + 1,
                                 freq    = freq
-                            )
+                            )[1:]
         elif isinstance(index, pd.RangeIndex):
             new_index = pd.RangeIndex(
                             start = index[-1] + index.step,
