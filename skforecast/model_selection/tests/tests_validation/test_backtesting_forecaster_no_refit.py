@@ -1594,7 +1594,6 @@ def test_output_backtesting_forecaster_interval_yes_exog_not_allow_remainder_gap
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-
 def test_output_backtesting_forecaster_ForecasterDirect_differentiation_gap_with_mocked():
     """
     Test output of _backtesting_forecaster with backtesting mocked, interval no.
@@ -1658,6 +1657,7 @@ def test_output_backtesting_forecaster_ForecasterDirect_differentiation_gap_with
 
     pd.testing.assert_frame_equal(expected_metric, metric)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
 
 # ******************************************************************************
 # * Return predictors                                                          *

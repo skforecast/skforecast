@@ -4577,7 +4577,6 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-
 def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_no_refit_differentiation_gap_with_mocked():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterDirectMultiVariate
@@ -4630,6 +4629,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
 
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
 
 def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_refit_int_interval_yes_exog_yes_remainder_with_mocked():
     """

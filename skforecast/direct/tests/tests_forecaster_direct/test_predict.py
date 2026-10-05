@@ -686,32 +686,47 @@ def test_predict_output_when_with_exog_and_differentiation_is_2_steps_10():
     pd.testing.assert_series_equal(predictions_1.asfreq('MS'), predictions_2, check_names=False)
 
 
-
 @pytest.mark.parametrize(
-    "steps, expected_pred, expected_index",
+    "differentiation, steps, expected_pred, expected_index",
     [
         (
+            1,
             [3, 4, 5],
             np.array([2.18981727, 2.33891198, 2.36338658]),
             pd.date_range(start='2003-06-01', periods=3, freq='MS')
         ),
         (
+            1,
             [1, 3, 5],
             np.array([2.05562694, 2.18981727, 2.36338658]),
             pd.DatetimeIndex(['2003-04-01', '2003-06-01', '2003-08-01'])
         ),
+        (
+            1,
+            [4, 2],
+            np.array([2.33891198, 2.21299169]),
+            pd.DatetimeIndex(['2003-07-01', '2003-05-01'])
+        ),
+        (
+            2,
+            [3, 4, 5],
+            np.array([2.1398422, 2.26119262, 2.22563129]),
+            pd.date_range(start='2003-06-01', periods=3, freq='MS')
+        ),
     ],
-    ids=['steps_3_4_5', 'steps_1_3_5']
+    ids=['diff_1_steps_3_4_5', 'diff_1_steps_1_3_5', 'diff_1_steps_4_2',
+         'diff_2_steps_3_4_5']
 )
 def test_predict_output_when_differentiation_and_steps_not_consecutive_from_1(
-    steps, expected_pred, expected_index
+    differentiation, steps, expected_pred, expected_index
 ):
     """
     Test predict output with differentiation when `steps` are not consecutive
-    from 1 (e.g. backtesting with `gap`). The differentiation is reverted with
-    the predictions of all the steps from 1 to `max(steps)`, so the predictions
-    are the same as those of `predict(steps=max(steps))` for the requested steps.
-    Exog and calendar features check that each step uses its own predictors.
+    from 1 (e.g. backtesting with `gap`) or not sorted. The differentiation is
+    reverted with the predictions of all the steps from 1 to `max(steps)`, so
+    the predictions are the same as those of `predict(steps=max(steps))` for the
+    requested steps. Exog and calendar features check that each step uses its
+    own predictors.
     """
     end_train = '2003-03-01 23:59:00'
 
@@ -727,7 +742,7 @@ def test_predict_output_when_differentiation_and_steps_not_consecutive_from_1(
                      steps             = 5,
                      lags              = 15,
                      calendar_features = calendar,
-                     differentiation   = 1
+                     differentiation   = differentiation
                  )
     forecaster.fit(y=data.loc[:end_train], exog=exog.loc[:end_train])
     results = forecaster.predict(steps=steps, exog=exog.loc[end_train:])
@@ -739,6 +754,7 @@ def test_predict_output_when_differentiation_and_steps_not_consecutive_from_1(
     np.testing.assert_array_almost_equal(
         results.to_numpy(), predictions_all_steps.to_numpy()[np.array(steps) - 1]
     )
+
 
 def test_predict_output_when_window_features_steps_1():
     """

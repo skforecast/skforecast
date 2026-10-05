@@ -260,27 +260,35 @@ def test_predict_interval_conformal_output_when_binned_residuals(interval):
     pd.testing.assert_frame_equal(results, expected)
 
 
-
 @pytest.mark.parametrize(
-    "method, expected_values",
+    "method, use_binned_residuals, expected_values",
     [
         (
             'bootstrapping',
+            True,
             np.array([[ 0.60969863, -0.12448806,  1.57516311],
                       [ 0.62481536, -0.19814162,  1.70919653],
                       [ 0.623516  , -0.26307983,  1.82803249]])
         ),
         (
             'conformal',
+            True,
             np.array([[ 0.60969863, -0.2679562 ,  1.48735345],
                       [ 0.62481536, -0.25618318,  1.5058139 ],
                       [ 0.623516  , -0.36147032,  1.60850231]])
         ),
+        (
+            'bootstrapping',
+            False,
+            np.array([[ 0.60969863, -0.07162757,  1.34860498],
+                      [ 0.62481536, -0.17905137,  1.54137396],
+                      [ 0.623516  , -0.32764912,  1.66249878]])
+        ),
     ],
-    ids=['bootstrapping', 'conformal']
+    ids=['bootstrapping_binned', 'conformal_binned', 'bootstrapping_no_binned']
 )
 def test_predict_interval_output_when_differentiation_and_steps_not_consecutive_from_1(
-    method, expected_values
+    method, use_binned_residuals, expected_values
 ):
     """
     Test predict_interval output with differentiation when `steps` are not
@@ -296,8 +304,12 @@ def test_predict_interval_output_when_differentiation_and_steps_not_consecutive_
                      differentiation = 1
                  )
     forecaster.fit(series=series, store_in_sample_residuals=True)
-    results = forecaster.predict_interval(steps=[3, 4, 5], method=method)
-    results_all_steps = forecaster.predict_interval(steps=5, method=method)
+    results = forecaster.predict_interval(
+        steps=[3, 4, 5], method=method, use_binned_residuals=use_binned_residuals
+    )
+    results_all_steps = forecaster.predict_interval(
+        steps=5, method=method, use_binned_residuals=use_binned_residuals
+    )
 
     expected = pd.DataFrame(
                    data    = expected_values,
@@ -311,6 +323,7 @@ def test_predict_interval_output_when_differentiation_and_steps_not_consecutive_
         results.drop(columns='level').to_numpy(),
         results_all_steps.drop(columns='level').to_numpy()[2:]
     )
+
 
 def test_predict_interval_bootstrapping_binned_residuals_when_binner_reduces_n_bins():
     """

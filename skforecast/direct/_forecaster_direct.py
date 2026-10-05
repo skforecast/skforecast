@@ -2201,7 +2201,7 @@ class ForecasterDirect(ForecasterBase):
         # predictions of all the steps from 1 to `max(steps)`, so the predictors
         # of all of them are created. The requested steps are selected after
         # reverting the differentiation.
-        if self.differentiation is None:
+        if differentiator is None:
             Xs_steps = steps
             Xs_index = prediction_index
         else:
@@ -2339,7 +2339,7 @@ class ForecasterDirect(ForecasterBase):
             Xs_col_names,
             steps,
             prediction_index,
-            _
+            differentiator
         ) = self._create_predict_inputs(
                 steps        = steps,
                 last_window  = last_window,
@@ -2347,7 +2347,7 @@ class ForecasterDirect(ForecasterBase):
                 check_inputs = check_inputs
             )
 
-        if self.differentiation is not None:
+        if differentiator is not None:
             # NOTE: With differentiation, `Xs` has the predictors of all the
             # steps from 1 to `max(steps)`. Only the requested steps are returned.
             Xs = [Xs[step - 1] for step in steps]

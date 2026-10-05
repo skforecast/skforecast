@@ -588,7 +588,6 @@ def test_create_predict_X_when_with_exog_differentiation_is_1_and_transformer_y_
     pd.testing.assert_frame_equal(results, expected)
 
 
-
 def test_create_predict_X_output_when_differentiation_and_steps_not_consecutive_from_1():
     """
     Test create_predict_X when using LinearRegression as estimator and
@@ -625,6 +624,7 @@ def test_create_predict_X_output_when_differentiation_and_steps_not_consecutive_
     )
 
     pd.testing.assert_frame_equal(results, expected)
+
 
 def test_create_predict_X_when_window_features_steps_1():
     """
