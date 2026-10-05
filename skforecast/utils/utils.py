@@ -1132,6 +1132,88 @@ def check_interval(
             )
 
 
+def _check_exog_alignment(
+    exog_name: str,
+    exog_index: pd.Index,
+    last_window_index: pd.Index,
+    last_step: int,
+    lenient: bool
+) -> None:
+    """
+    Check that `exog` has a value for each of the steps predicted, following
+    the frequency of `last_window` without gaps. The first value of `exog` must
+    have already been checked to be one step ahead of `last_window`.
+
+    Parameters
+    ----------
+    exog_name : str
+        Name of `exog` used in the error and warning messages.
+    exog_index : pandas Index
+        Index of `exog`.
+    last_window_index : pandas Index
+        Index of `last_window`.
+    last_step : int
+        Last step predicted.
+    lenient : bool
+        If `True`, `exog` is aligned with the predictions by its index (`exog`
+        dict in `ForecasterRecursiveMultiSeries`), so a `MissingValuesWarning`
+        is issued if the date of some step is not in `exog`. If `False`, `exog`
+        is used by position, so a `ValueError` is raised if its index does not
+        follow the frequency of `last_window`.
+
+    Returns
+    -------
+    None
+
+    """
+
+    # NOTE: An index with the same frequency (or step) as `last_window` that
+    # starts one step ahead of it has no gaps.
+    if isinstance(last_window_index, pd.RangeIndex):
+        if exog_index.step == last_window_index.step:
+            return
+    elif exog_index.freq == last_window_index.freq:
+        return
+
+    # NOTE: If `exog` has fewer values than steps, a warning or an error has
+    # already been issued, so only its values are checked.
+    n_steps = min(len(exog_index), last_step)
+    expected_index = expand_index(index=last_window_index, steps=n_steps)
+    if lenient:
+        is_misaligned = ~expected_index.isin(exog_index)
+    else:
+        exog_index = exog_index[:n_steps]
+        is_misaligned = exog_index != expected_index
+
+    if is_misaligned.any():
+        position = np.flatnonzero(is_misaligned)[0]
+        if lenient:
+            warnings.warn(
+                f"{exog_name} has no value for some of the {last_step} steps "
+                f"predicted. The first one is {expected_index[position]} "
+                f"(position {position}). Missing values are filled with NaN. "
+                f"Most of machine learning models do not allow missing values. "
+                f"Prediction method may fail.",
+                MissingValuesWarning
+            )
+        else:
+            raise ValueError(
+                f"{exog_name} must have consecutive values following the "
+                f"frequency of `last_window` for the {last_step} steps predicted.\n"
+                f"    Expected index at position {position} : "
+                f"{expected_index[position]}.\n"
+                f"    {exog_name} index at position {position} : "
+                f"{exog_index[position]}.\n"
+                f"If there is no data for some steps, add them to {exog_name} "
+                f"explicitly as NaN, for example:\n"
+                f"    exog = exog.reindex(expand_index(last_window.index, "
+                f"steps={last_step}))\n"
+                f"where `expand_index` is in `skforecast.utils`, and `last_window` "
+                f"is the window used to predict (by default, the last window "
+                f"stored in the forecaster)."
+            )
+
+
 def check_predict_input(
     forecaster_name: str,
     steps: int | list[int],
@@ -1397,6 +1479,7 @@ def check_predict_input(
 
         last_step = max(steps) if isinstance(steps, list) else steps
         expected_index = expand_index(last_window_index, 1)[0]
+        lenient = isinstance(exog, dict)
         for exog_name, exog_to_check in exogs_to_check:
 
             if not isinstance(exog_to_check, (pd.Series, pd.DataFrame)):
@@ -1492,6 +1575,16 @@ def check_predict_input(
                         f"    {exog_name} starts at : {exog_index[0]}.\n"
                         f"    Expected index : {expected_index}."
                     )
+            else:
+                # NOTE: Once the first value is aligned, check the values of the
+                # rest of the steps predicted.
+                _check_exog_alignment(
+                    exog_name         = exog_name,
+                    exog_index        = exog_index,
+                    last_window_index = last_window_index,
+                    last_step         = last_step,
+                    lenient           = lenient
+                )
 
     # Checks ForecasterStats
     if forecaster_name == 'ForecasterStats':
