@@ -15,6 +15,49 @@ from .fixtures_forecaster_recursive_multiseries import (
 
 
 @pytest.mark.parametrize(
+    "encoding",
+    ['ordinal', 'ordinal_category', 'onehot', None],
+    ids=lambda encoding: f'encoding: {encoding}'
+)
+def test_get_level_row_slices_ValueError_when_encoding_mapping_is_empty(encoding):
+    """
+    Test ValueError is raised when the forecaster has no `encoding_mapping_`,
+    for example when `X_train` has been created with another forecaster.
+    """
+    X_train = pd.DataFrame({'lag_1': [1., 2.], 'l1': [1., 1.]})
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=1, encoding=encoding
+    )
+
+    err_msg = re.escape(
+        "The encoding of the series (`encoding_mapping_`) has not been "
+        "created yet. `X_train` must be the matrix returned by the "
+        "`create_train_X_y` method of this forecaster."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        forecaster._get_level_row_slices(X_train=X_train)
+
+
+def test_get_level_row_slices_ValueError_when_onehot_columns_are_missing():
+    """
+    Test ValueError is raised with `encoding='onehot'` when `X_train` does not
+    have the one-hot column of every series in `encoding_mapping_`.
+    """
+    X_train = pd.DataFrame({'lag_1': [1., 2., 3.], 'l2': [1., 1., 1.]})
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=1, encoding='onehot'
+    )
+    forecaster.encoding_mapping_ = {'l1': 0, 'l2': 1, 'l3': 2}
+
+    err_msg = re.escape(
+        "`X_train` must have the one-hot column of every series, as "
+        "returned by `create_train_X_y`. Missing columns: ['l1', 'l3']."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        forecaster._get_level_row_slices(X_train=X_train)
+
+
+@pytest.mark.parametrize(
     "encoding, X_train",
     [
         ('ordinal',

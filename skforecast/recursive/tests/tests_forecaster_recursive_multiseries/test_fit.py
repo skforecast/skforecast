@@ -8,6 +8,7 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
 from catboost import CatBoostRegressor
@@ -36,6 +37,70 @@ transformer_exog = ColumnTransformer(
                        remainder = 'passthrough',
                        verbose_feature_names_out = False
                    )
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    [LinearRegression(copy_X=False),
+     make_pipeline(StandardScaler(copy=False), LinearRegression())],
+    ids=['LinearRegression(copy_X=False)', 'pipeline StandardScaler(copy=False)']
+)
+@pytest.mark.parametrize(
+    "encoding",
+    ['ordinal', 'onehot', None],
+    ids=lambda encoding: f'encoding: {encoding}'
+)
+def test_fit_ValueError_when_estimator_modifies_X_train_in_place(estimator, encoding):
+    """
+    Test ValueError is raised when the estimator modifies the training matrix
+    in place, because the in-sample residuals are calculated afterwards with
+    the same matrix.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=estimator, lags=3, encoding=encoding
+    )
+
+    err_msg = re.escape(
+        "The estimator has modified the training matrix in place during "
+        "`fit`, so the in-sample residuals cannot be calculated. This "
+        "happens with estimators that do not copy their input, such as "
+        "`LinearRegression(copy_X=False)` or a pipeline with "
+        "`StandardScaler(copy=False)`. Use the default copy behavior of "
+        "the estimator (`copy_X=True`, `copy=True`)."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        forecaster.fit(series=series_wide_range)
+
+
+@pytest.mark.parametrize(
+    "encoding",
+    ['ordinal', 'onehot', None],
+    ids=lambda encoding: f'encoding: {encoding}'
+)
+def test_fit_when_estimator_modifies_X_train_in_place_and_probabilistic_mode_False(
+    encoding
+):
+    """
+    Test that an estimator that modifies the training matrix in place can be
+    fitted when `_probabilistic_mode` is `False`: the in-sample residuals are
+    not calculated, so the matrix is not used after training. Predictions are
+    the same as with the default copy behavior of the estimator.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=LinearRegression(copy_X=False), lags=3, encoding=encoding
+    )
+    forecaster._probabilistic_mode = False
+    forecaster.fit(series=series_wide_range)
+
+    forecaster_copy = ForecasterRecursiveMultiSeries(
+        estimator=LinearRegression(), lags=3, encoding=encoding
+    )
+    forecaster_copy.fit(series=series_wide_range)
+
+    assert forecaster.is_fitted
+    pd.testing.assert_frame_equal(
+        forecaster.predict(steps=3), forecaster_copy.predict(steps=3)
+    )
 
 
 @pytest.mark.parametrize(

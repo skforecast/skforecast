@@ -4529,20 +4529,27 @@ def test_create_train_X_y_X_train_layout_when_exog_has_non_float_columns(
 
 
 @pytest.mark.parametrize(
-    "n_float_exog, n_int_exog",
-    [(0, 3), (0, 4), (98, 99), (98, 100)],
-    ids=lambda value: f'n_float_exog, n_int_exog: {value}'
+    "encoding, n_float_exog, n_int_exog",
+    [('ordinal', 0, 3), ('ordinal', 0, 4),
+     ('ordinal', 98, 99), ('ordinal', 98, 100),
+     ('ordinal_category', 0, 1), ('ordinal_category', 0, 2),
+     ('ordinal_category', 98, 98), ('ordinal_category', 98, 99),
+     ('onehot', 0, 4), ('onehot', 0, 5),
+     ('onehot', 98, 99), ('onehot', 98, 100)],
+    ids=lambda value: f'encoding, n_float_exog, n_int_exog: {value}'
 )
 def test_create_train_X_y_output_when_int_exog_columns_are_inserted_or_concatenated(
-    n_float_exog, n_int_exog
+    encoding, n_float_exog, n_int_exog
 ):
     """
     Test the output of _create_train_X_y at both sides of the limits that
-    decide how the int exog columns are added to X_train. They are inserted one
-    by one when they are no more than the float columns (2 lags, the level and
-    the float exog) and fewer than 100. Otherwise, X_train is assembled with
-    `pd.concat`. The output is the same and pandas does not warn about a
-    fragmented DataFrame.
+    decide how the columns that are not float are added to X_train. They are
+    inserted one by one when they are no more than the float columns (2 lags,
+    the float exog and the level: one column with `encoding='ordinal'` and one
+    per series with `'onehot'`) and fewer than 100. Otherwise, X_train is
+    assembled with `pd.concat`. With `encoding='ordinal_category'` the level is
+    not float, so it counts as one more inserted column. The output is the same
+    and pandas does not warn about a fragmented DataFrame.
     """
     series = {
         'l1': pd.Series(np.arange(5, dtype=float), name='l1'),
@@ -4565,23 +4572,41 @@ def test_create_train_X_y_output_when_int_exog_columns_are_inserted_or_concatena
               )
     }
     forecaster = ForecasterRecursiveMultiSeries(
-        LinearRegression(), lags=2, encoding='ordinal'
+        LinearRegression(), lags=2, encoding=encoding
     )
     with warnings.catch_warnings():
         warnings.simplefilter('error', category=pd.errors.PerformanceWarning)
         results = forecaster._create_train_X_y(series=series, exog=exog)
 
     expected_index = pd.Index([2, 3, 4, 2, 3, 4])
-    expected_autoreg = pd.DataFrame(
-        data = np.array([[1., 0., 0.],
-                         [2., 1., 0.],
-                         [3., 2., 0.],
-                         [11., 10., 1.],
-                         [12., 11., 1.],
-                         [13., 12., 1.]]),
+    expected_lags = pd.DataFrame(
+        data = np.array([[1., 0.],
+                         [2., 1.],
+                         [3., 2.],
+                         [11., 10.],
+                         [12., 11.],
+                         [13., 12.]]),
         index   = expected_index,
-        columns = ['lag_1', 'lag_2', '_level_skforecast']
+        columns = ['lag_1', 'lag_2']
     )
+    if encoding == 'onehot':
+        expected_level = pd.DataFrame(
+            data    = {'l1': [1., 1., 1., 0., 0., 0.],
+                       'l2': [0., 0., 0., 1., 1., 1.]},
+            index   = expected_index
+        )
+    else:
+        expected_level = pd.DataFrame(
+            data    = {'_level_skforecast': [0., 0., 0., 1., 1., 1.]},
+            index   = expected_index
+        )
+        if encoding == 'ordinal_category':
+            expected_level = expected_level.astype(
+                {'_level_skforecast': int}
+            ).astype(
+                {'_level_skforecast': 'category'}
+            )
+    level_cols = expected_level.columns.to_list()
     expected_exog_float = pd.DataFrame(
         data    = np.vstack([exog_float[2:], exog_float[2:] + 1000]),
         index   = expected_index,
@@ -4592,14 +4617,18 @@ def test_create_train_X_y_output_when_int_exog_columns_are_inserted_or_concatena
         index   = expected_index,
         columns = int_cols
     )
-    n_float_cols = 3 + n_float_exog
+    n_autoreg_level_cols = 2 + len(level_cols)
+    n_float_cols = n_autoreg_level_cols + n_float_exog
 
     assert results[0].columns.to_list() == (
-        ['lag_1', 'lag_2', '_level_skforecast'] + float_cols + int_cols
+        ['lag_1', 'lag_2'] + level_cols + float_cols + int_cols
     )
-    pd.testing.assert_frame_equal(results[0].iloc[:, :3], expected_autoreg)
+    pd.testing.assert_frame_equal(results[0].iloc[:, :2], expected_lags)
     pd.testing.assert_frame_equal(
-        results[0].iloc[:, 3:n_float_cols], expected_exog_float
+        results[0].iloc[:, 2:n_autoreg_level_cols], expected_level
+    )
+    pd.testing.assert_frame_equal(
+        results[0].iloc[:, n_autoreg_level_cols:n_float_cols], expected_exog_float
     )
     pd.testing.assert_frame_equal(results[0].iloc[:, n_float_cols:], expected_exog_int)
     assert results[9] == float_cols + int_cols

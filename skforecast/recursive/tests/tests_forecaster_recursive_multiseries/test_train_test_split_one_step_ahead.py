@@ -1600,9 +1600,10 @@ def test_train_test_split_one_step_ahead_when_forecaster_fitted_with_other_serie
     """
     Test _train_test_split_one_step_ahead when the forecaster was already fitted
     with a different set of series ('b', 'c') than the one used in the split
-    ('a', 'b'). `encoding_mapping_` is rebuilt with the new series, so no level
-    of the previous fit is kept, and the sample weights and the series of each
-    row match the new series.
+    ('a', 'b'). The split uses an encoding built only with the new series, so
+    no level of the previous fit is kept, and the sample weights and the series
+    of each row match the new series. The forecaster keeps the
+    `encoding_mapping_` of its fit and its predictions do not change.
     """
     index = pd.date_range('2020-01-01', periods=15)
     series_fit = {
@@ -1619,6 +1620,7 @@ def test_train_test_split_one_step_ahead_when_forecaster_fitted_with_other_serie
         series_weights={'a': 2., 'b': 3., 'c': 4.}
     )
     forecaster.fit(series=series_fit)
+    predictions_before_split = forecaster.predict(steps=3)
 
     (
         X_train, y_train, X_test, y_test,
@@ -1628,7 +1630,10 @@ def test_train_test_split_one_step_ahead_when_forecaster_fitted_with_other_serie
             series=series_split, initial_train_size=10
         )
 
-    assert forecaster.encoding_mapping_ == {'a': 0, 'b': 1}
+    assert forecaster.encoding_mapping_ == {'b': 0, 'c': 1}
+    pd.testing.assert_frame_equal(
+        forecaster.predict(steps=3), predictions_before_split
+    )
     assert len(X_train) == 16
     np.testing.assert_array_equal(
         sample_weight, np.array([2.] * 8 + [3.] * 8)

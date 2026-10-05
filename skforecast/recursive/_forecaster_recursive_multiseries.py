@@ -1809,6 +1809,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         }
        
         forecaster_state = (self.is_fitted, self.series_names_in_, self.exog_names_in_)
+        # NOTE: `encoding_mapping_` is rebuilt with the series of the train set.
+        # The one of the forecaster is restored at the end, once the weights
+        # and the series of each row have been obtained with the new one.
+        encoding_mapping_ = self.encoding_mapping_
 
         self.is_fitted = False
         (
@@ -1892,6 +1896,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         else:
             fit_kwargs = {**self.fit_kwargs}
 
+        self.encoding_mapping_ = encoding_mapping_
+
         return (
             X_train, 
             y_train, 
@@ -1951,6 +1957,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         """
 
+        if not self.encoding_mapping_:
+            raise ValueError(
+                "The encoding of the series (`encoding_mapping_`) has not been "
+                "created yet. `X_train` must be the matrix returned by the "
+                "`create_train_X_y` method of this forecaster."
+            )
+
         if self.encoding == "onehot":
             # Dot product with range recovers the column index of the active
             # one-hot column, which is the value in `encoding_mapping_`. In the
@@ -1958,6 +1971,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             # contiguous and in the order of `encoding_mapping_`, so they are
             # read as a slice (a view). Selecting them by name copies them all.
             encoding_keys = list(self.encoding_mapping_.keys())
+            missing_cols = [col for col in encoding_keys if col not in X_train.columns]
+            if missing_cols:
+                raise ValueError(
+                    f"`X_train` must have the one-hot column of every series, as "
+                    f"returned by `create_train_X_y`. Missing columns: {missing_cols}."
+                )
             start = X_train.columns.get_loc(encoding_keys[0])
             X_onehot = X_train.iloc[:, start:start + len(encoding_keys)]
             if X_onehot.columns.to_list() != encoding_keys:
@@ -2264,6 +2283,17 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             feature_names  = X_train_features_names_out_,
         )
 
+        # NOTE: The in-sample residuals are calculated after training with the
+        # same matrix the estimator receives, which is not copied. A few rows
+        # are kept to check that the estimator does not modify it in place (for
+        # example, `LinearRegression(copy_X=False)`).
+        if self._probabilistic_mode is not False:
+            rows_to_check = np.linspace(
+                0, len(X_train_estimator) - 1, num=min(len(X_train_estimator), 10),
+                dtype=int
+            )
+            X_train_rows = X_train_estimator.iloc[rows_to_check].copy()
+
         if sample_weight is not None:
             self.estimator.fit(
                 X             = X_train_estimator,
@@ -2273,6 +2303,17 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             )
         else:
             self.estimator.fit(X=X_train_estimator, y=y_train, **fit_kwargs)
+
+        if self._probabilistic_mode is not False:
+            if not X_train_estimator.iloc[rows_to_check].equals(X_train_rows):
+                raise ValueError(
+                    "The estimator has modified the training matrix in place during "
+                    "`fit`, so the in-sample residuals cannot be calculated. This "
+                    "happens with estimators that do not copy their input, such as "
+                    "`LinearRegression(copy_X=False)` or a pipeline with "
+                    "`StandardScaler(copy=False)`. Use the default copy behavior of "
+                    "the estimator (`copy_X=True`, `copy=True`)."
+                )
 
         self.series_names_in_ = series_names_in_
         self.X_train_series_names_in_ = X_train_series_names_in_
