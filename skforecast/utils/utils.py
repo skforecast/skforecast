@@ -3321,7 +3321,7 @@ def _build_predict_function(
     Fast prediction paths (bypassing sklearn's `predict` overhead) are used
     for the following estimator types:
 
-    - Linear models inheriting from sklearn's `LinearModel` (`np.dot`)
+    - Linear models of scikit-learn inheriting from `LinearModel` (`np.dot`)
     - `LGBMRegressor` (`booster_.predict`)
     - `XGBRegressor` (`get_booster().inplace_predict`, with the same
     `iteration_range` and `missing` as `XGBRegressor.predict`). The 'gblinear'
@@ -3339,6 +3339,8 @@ def _build_predict_function(
     copy and leaves it read-only.
 
     For any other estimator the standard `estimator.predict` method is used.
+    This includes user subclasses of scikit-learn estimators, since they may
+    override `predict`.
 
     Parameters
     ----------
@@ -3354,8 +3356,11 @@ def _build_predict_function(
     """
 
     estimator_name = type(estimator).__name__
+    # NOTE: The fast paths of scikit-learn estimators skip their `predict`
+    # method. User subclasses may override it, so they use the generic fallback.
+    is_sklearn_class = type(estimator).__module__.startswith('sklearn.')
 
-    if isinstance(estimator, LinearModel):
+    if is_sklearn_class and isinstance(estimator, LinearModel):
         coef = estimator.coef_
         intercept = estimator.intercept_
 
@@ -3394,7 +3399,7 @@ def _build_predict_function(
 
         return predict_fn
 
-    if estimator_name == 'RandomForestRegressor':
+    if is_sklearn_class and estimator_name == 'RandomForestRegressor':
         trees = estimator.estimators_
 
         def predict_fn(X):
@@ -3406,7 +3411,7 @@ def _build_predict_function(
 
         return predict_fn
 
-    if estimator_name == 'DecisionTreeRegressor':
+    if is_sklearn_class and estimator_name == 'DecisionTreeRegressor':
         tree_ = estimator.tree_
 
         def predict_fn(X):

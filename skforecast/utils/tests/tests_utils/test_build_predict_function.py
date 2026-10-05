@@ -31,6 +31,17 @@ def regression_data():
     return X.astype(np.float64), y
 
 
+def make_clipped_subclass(base):
+    """
+    Create a user subclass of `base`, with the same class name, whose `predict`
+    clips the predictions at 0.
+    """
+    def predict(self, X):
+        return np.clip(base.predict(self, X), 0, None)
+
+    return type(base.__name__, (base,), {"predict": predict})
+
+
 # Tests
 # ==============================================================================
 @pytest.mark.parametrize(
@@ -131,6 +142,36 @@ def test_build_predict_function_xgboost_output_equals_estimator_predict(
     assert result.ndim == 1
     np.testing.assert_allclose(result, expected)
     np.testing.assert_allclose(predict_fn(X[:1]), expected[:1])
+
+
+@pytest.mark.parametrize(
+    "base, estimator_kwargs",
+    [
+        (Ridge, {"alpha": 1.0}),
+        (RandomForestRegressor, {"n_estimators": 10, "random_state": 123}),
+        (DecisionTreeRegressor, {"random_state": 123}),
+    ],
+    ids=["Ridge", "RandomForestRegressor", "DecisionTreeRegressor"],
+)
+def test_build_predict_function_user_subclass_uses_its_own_predict(
+    base, estimator_kwargs, regression_data
+):
+    """
+    Test that a user subclass of a scikit-learn estimator with a fast path
+    (linear models, RandomForestRegressor and DecisionTreeRegressor) uses its
+    own `predict` method, even when it keeps the class name of its base.
+    """
+    X, y = regression_data
+    estimator = make_clipped_subclass(base)(**estimator_kwargs)
+    estimator.fit(X, y)
+    assert (base.predict(estimator, X) < 0).any()
+
+    predict_fn = _build_predict_function(estimator)
+    result = predict_fn(X)
+    expected = estimator.predict(X).ravel()
+
+    np.testing.assert_allclose(result, expected)
+    assert result.min() >= 0
 
 
 def test_build_predict_function_catboost_with_cat_features():
