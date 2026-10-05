@@ -797,6 +797,87 @@ def test_predict_output_when_series_and_exog_dict():
     pd.testing.assert_frame_equal(predictions, expected)
 
 
+@pytest.mark.parametrize(
+    'rows, columns, expected_values',
+    [
+        (list(range(100)), ['exog_1', 'exog_2'],
+         [[5.106484036157652, -3.648258245197447],
+          [8.154359171116097, -7.122723980821137],
+          [2.936390945688694, -1.452145008496344],
+          [2.7710678131212916, -1.4501338604047387],
+          [3.307517264202827, -1.843840645375435]]),
+        (list(range(52, 57)), ['exog_1', 'exog_2'],
+         [[2.647850416562357, -1.3417549703084646],
+          [2.884436633909491, -1.754977200206412],
+          [3.307517264202827, -1.843840645375435],
+          [3.4529272741470187, -1.8971453241638436],
+          [3.4529272741470187, -1.8971453241638436]]),
+        ([50, 51, 52], ['exog_1', 'exog_2'],
+         [[5.106484036157652, -3.648258245197447],
+          [8.154359171116097, -7.122723980821137],
+          [2.936390945688694, -1.452145008496344],
+          [2.884436633909491, -1.754977200206412],
+          [3.4208860849910265, -2.1486839851771093]]),
+        ([50, 51, 53, 54, 55], ['exog_1', 'exog_2'],
+         [[5.106484036157652, -3.648258245197447],
+          [8.154359171116097, -7.122723980821137],
+          [3.21079426705582, -1.7914061433153796],
+          [2.7710678131212916, -1.4501338604047387],
+          [3.307517264202827, -1.843840645375435]]),
+        (list(range(50, 55)), ['exog_2'],
+         [[2.631339914528938, -1.1628131767455951],
+          [2.7710678131212916, -1.4501338604047387],
+          [3.307517264202827, -1.843840645375435],
+          [3.4529272741470187, -1.8971453241638436],
+          [3.4529272741470187, -1.8971453241638436]]),
+    ],
+    ids=['with_train_period', 'starts_2_steps_late', 'shorter_than_steps',
+         'gap', 'missing_column']
+)
+def test_predict_output_when_exog_wide_is_not_aligned_same_as_exog_dict(
+    rows, columns, expected_values
+):
+    """
+    Test predict output when a wide `exog` does not follow the dates of the
+    steps predicted: it includes the training period, starts late, is shorter
+    than steps, has a gap or misses a column. As with a dict `exog`, it is
+    aligned with the predictions by date and column, and missing values are
+    filled with NaN (LGBMRegressor handles them natively).
+    """
+    exog = pd.DataFrame(
+        data  = {'exog_1': np.tile(exog_wide_range['exog_1'].to_numpy(), 2),
+                 'exog_2': np.arange(100, dtype=float)},
+        index = pd.date_range(start='2000-01-01', periods=100, freq='D')
+    )
+    series = (
+        series_wide_dt + exog[['exog_1']].iloc[:50].to_numpy() * np.array([10., -10.])
+    )
+    exog_pred = exog.iloc[rows][columns]
+
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator = LGBMRegressor(verbose=-1, random_state=123),
+                     lags      = 3
+                 )
+    forecaster.fit(series=series, exog=exog.iloc[:50])
+    predictions_wide = forecaster.predict(
+        steps=5, exog=exog_pred, suppress_warnings=True
+    )
+    predictions_dict = forecaster.predict(
+        steps=5, exog={'1': exog_pred, '2': exog_pred}, suppress_warnings=True
+    )
+
+    expected = expected_df_to_long_format(
+        pd.DataFrame(
+            data    = np.array(expected_values),
+            index   = pd.date_range(start='2000-02-20', periods=5, freq='D'),
+            columns = ['1', '2']
+        )
+    )
+
+    pd.testing.assert_frame_equal(predictions_wide, expected)
+    pd.testing.assert_frame_equal(predictions_dict, expected)
+
+
 @pytest.mark.parametrize("differentiation", 
                          [1, {'1': 1, '2': 1, '_unknown_level': 1}], 
                          ids = lambda diff: f'differentiation: {diff}')

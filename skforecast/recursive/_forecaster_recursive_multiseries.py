@@ -2432,8 +2432,16 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 )
             else:
                 exog = input_to_frame(data=exog, input_name='exog')
-                if exog.columns.tolist() != self.exog_names_in_:
-                    exog = exog[self.exog_names_in_]
+                # NOTE: As with a dict, `exog` is aligned with the predictions by
+                # date and column, so missing dates and columns are filled with NaN.
+                if not (
+                    exog.columns.tolist() == self.exog_names_in_
+                    and exog.index[:steps].equals(prediction_index)
+                ):
+                    exog = exog.reindex(
+                               index   = prediction_index,
+                               columns = self.exog_names_in_
+                           )
                 
                 exog = transform_dataframe(
                            df                = exog,

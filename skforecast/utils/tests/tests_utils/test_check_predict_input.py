@@ -1321,30 +1321,43 @@ def test_check_predict_input_MissingValuesWarning_when_exog_gaps_are_reindexed()
         )
 
 
-def test_check_predict_input_MissingValuesWarning_when_exog_dict_misses_some_steps():
+@pytest.mark.parametrize(
+    'exog_format', ['wide', 'dict'], ids=lambda fmt: f'exog: {fmt}'
+)
+@pytest.mark.parametrize(
+    'exog_index, position, missing_date',
+    [
+        (pd.DatetimeIndex(['2020-02-20', '2020-02-22', '2020-02-24',
+                           '2020-02-26', '2020-02-28']),
+         1, '2020-02-21 00:00:00'),
+        (pd.date_range(start='2020-02-22', periods=5, freq='D'),
+         0, '2020-02-20 00:00:00'),
+    ],
+    ids=['gaps', 'starts_2_steps_late']
+)
+def test_check_predict_input_MissingValuesWarning_when_MultiSeries_exog_misses_dates(
+    exog_index, position, missing_date, exog_format
+):
     """
-    Test MissingValuesWarning is raised when `exog` is a dict and the exog of
-    a series does not have the dates of some of the steps predicted. The dict
-    is aligned with the predictions by date, so those values are NaN.
+    Test MissingValuesWarning is raised in ForecasterRecursiveMultiSeries when
+    `exog` (wide or dict) does not have the dates of some of the steps
+    predicted. `exog` is aligned with the predictions by date, so those values
+    are NaN.
     """
     last_window = pd.DataFrame(
         data  = {'l1': np.arange(10, dtype=float)},
         index = pd.date_range(start='2020-02-10', periods=10, freq='D')
     )
-    exog = {
-        'l1': pd.Series(
-                  data  = np.arange(5, dtype=float),
-                  index = pd.DatetimeIndex(['2020-02-20', '2020-02-22', '2020-02-24',
-                                            '2020-02-26', '2020-02-28']),
-                  name  = 'exog1'
-              )
-    }
+    exog = pd.Series(data=np.arange(5, dtype=float), index=exog_index, name='exog1')
+    if exog_format == 'dict':
+        exog = {'l1': exog}
+    exog_name = "`exog`" if exog_format == 'wide' else "`exog` for series 'l1'"
 
     warn_msg = re.escape(
-        "`exog` for series 'l1' has no value for some of the 5 steps "
-        "predicted. The first one is 2020-02-21 00:00:00 (position 1). "
-        "Missing values are filled with NaN. Most of machine learning models "
-        "do not allow missing values. Prediction method may fail."
+        f"{exog_name} has no value for some of the 5 steps predicted. The "
+        f"first one is {missing_date} (position {position}). Missing values "
+        f"are filled with NaN. Most of machine learning models do not allow "
+        f"missing values. Prediction method may fail."
     )
     with pytest.warns(MissingValuesWarning, match = warn_msg):
         check_predict_input(
@@ -1363,24 +1376,37 @@ def test_check_predict_input_MissingValuesWarning_when_exog_dict_misses_some_ste
         )
 
 
-def test_check_predict_input_no_warning_when_exog_dict_has_other_freq_but_all_steps():
+@pytest.mark.parametrize(
+    'exog_format', ['wide', 'dict'], ids=lambda fmt: f'exog: {fmt}'
+)
+@pytest.mark.parametrize(
+    'exog_index',
+    [
+        pd.date_range(start='2020-02-01', periods=30, freq='D'),
+        pd.date_range(start='2020-02-20', periods=120, freq='h'),
+    ],
+    ids=['starts_before_first_step', 'hourly']
+)
+def test_check_predict_input_no_warning_when_MultiSeries_exog_has_all_dates(
+    exog_index, exog_format
+):
     """
-    Test no warning is raised when `exog` is a dict and the exog of a series
-    has other frequency (hourly instead of daily), but it contains the dates
-    of all the steps predicted. The dict is aligned with the predictions by
-    date, so no value is missing.
+    Test no warning is raised in ForecasterRecursiveMultiSeries when `exog`
+    (wide or dict) does not start at the first step predicted or has another
+    frequency, but it has the dates of all the steps predicted. `exog` is
+    aligned with the predictions by date, so no value is missing.
     """
     last_window = pd.DataFrame(
         data  = {'l1': np.arange(10, dtype=float)},
         index = pd.date_range(start='2020-02-10', periods=10, freq='D')
     )
-    exog = {
-        'l1': pd.Series(
-                  data  = np.arange(120, dtype=float),
-                  index = pd.date_range(start='2020-02-20', periods=120, freq='h'),
-                  name  = 'exog1'
-              )
-    }
+    exog = pd.Series(
+        data  = np.arange(len(exog_index), dtype=float),
+        index = exog_index,
+        name  = 'exog1'
+    )
+    if exog_format == 'dict':
+        exog = {'l1': exog}
 
     with warnings.catch_warnings():
         warnings.simplefilter('error')
@@ -1398,6 +1424,53 @@ def test_check_predict_input_no_warning_when_exog_dict_has_other_freq_but_all_st
             levels           = ['l1'],
             series_names_in_ = ['l1']
         )
+
+
+@pytest.mark.parametrize(
+    'exog_format', ['wide', 'dict'], ids=lambda fmt: f'exog: {fmt}'
+)
+def test_check_predict_input_ValueError_when_MultiSeries_exog_has_duplicated_dates(
+    exog_format
+):
+    """
+    Test ValueError is raised in ForecasterRecursiveMultiSeries when the index
+    of `exog` (wide or dict) has duplicated dates, since it cannot be aligned
+    with the predictions by date.
+    """
+    last_window = pd.DataFrame(
+        data  = {'l1': np.arange(10, dtype=float)},
+        index = pd.date_range(start='2020-02-10', periods=10, freq='D')
+    )
+    exog = pd.Series(
+        data  = np.arange(5, dtype=float),
+        index = pd.DatetimeIndex(['2020-02-20', '2020-02-21', '2020-02-21',
+                                  '2020-02-22', '2020-02-23']),
+        name  = 'exog1'
+    )
+    if exog_format == 'dict':
+        exog = {'l1': exog}
+    exog_name = "`exog`" if exog_format == 'wide' else "`exog` for series 'l1'"
+
+    err_msg = re.escape(
+        f"The index of {exog_name} has duplicated values, for example "
+        f"2020-02-21 00:00:00. Each date must appear only once."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_predict_input(
+            forecaster_name  = 'ForecasterRecursiveMultiSeries',
+            steps            = 5,
+            is_fitted        = True,
+            exog_in_         = True,
+            index_type_      = pd.DatetimeIndex,
+            index_freq_      = 'D',
+            window_size      = 5,
+            last_window      = last_window,
+            exog             = exog,
+            exog_names_in_   = ['exog1'],
+            levels           = ['l1'],
+            series_names_in_ = ['l1']
+        )
+
 
 def test_check_predict_input_ValueError_when_ForecasterStats_last_window_exog_is_not_None_and_exog_in_is_false():
     """
