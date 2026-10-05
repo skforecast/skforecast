@@ -1171,7 +1171,7 @@ def _check_exog_alignment(
 
     # NOTE: An index with the same frequency (or step) as the steps predicted
     # that starts at the first step has no gaps.
-    if exog_index[0] == expected_index[0]:
+    if len(exog_index) > 0 and exog_index[0] == expected_index[0]:
         if isinstance(expected_index, pd.RangeIndex):
             if exog_index.step == expected_index.step:
                 return

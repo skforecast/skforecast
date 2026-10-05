@@ -830,9 +830,15 @@ def test_predict_output_when_series_and_exog_dict():
           [3.307517264202827, -1.843840645375435],
           [3.4529272741470187, -1.8971453241638436],
           [3.4529272741470187, -1.8971453241638436]]),
+        ([], ['exog_1', 'exog_2'],
+         [[2.647850416562357, -1.3417549703084646],
+          [2.884436633909491, -1.754977200206412],
+          [3.4208860849910265, -2.1486839851771093],
+          [3.535205891784112, -2.147669916993845],
+          [3.535205891784112, -2.147669916993845]]),
     ],
     ids=['with_train_period', 'starts_2_steps_late', 'shorter_than_steps',
-         'gap', 'missing_column']
+         'gap', 'missing_column', 'empty']
 )
 def test_predict_output_when_exog_wide_is_not_aligned_same_as_exog_dict(
     rows, columns, expected_values
@@ -840,9 +846,9 @@ def test_predict_output_when_exog_wide_is_not_aligned_same_as_exog_dict(
     """
     Test predict output when a wide `exog` does not follow the dates of the
     steps predicted: it includes the training period, starts late, is shorter
-    than steps, has a gap or misses a column. As with a dict `exog`, it is
-    aligned with the predictions by date and column, and missing values are
-    filled with NaN (LGBMRegressor handles them natively).
+    than steps, has a gap, misses a column or is empty. As with a dict `exog`,
+    it is aligned with the predictions by date and column, and missing values
+    are filled with NaN (LGBMRegressor handles them natively).
     """
     exog = pd.DataFrame(
         data  = {'exog_1': np.tile(exog_wide_range['exog_1'].to_numpy(), 2),

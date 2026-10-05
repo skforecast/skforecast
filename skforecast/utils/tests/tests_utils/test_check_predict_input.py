@@ -872,7 +872,7 @@ def test_check_predict_input_MissingExogWarning_when_exog_is_DataFrame_without_c
     Forecaster multi series.
     """
     exog = pd.DataFrame(np.arange(10).reshape(5, 2), columns=['col1', 'col2'])
-    exog.index = pd.date_range(start='1/1/2018', periods=5, freq=freq)
+    exog.index = pd.date_range(start='11/30/2018', periods=5, freq=freq)
     exog_names_in_ = ['col1', 'col3']
 
     warn_msg = re.escape(
@@ -1410,6 +1410,52 @@ def test_check_predict_input_MissingValuesWarning_when_MultiSeries_exog_misses_d
             levels           = ['l1'],
             series_names_in_ = ['l1']
         )
+
+
+@pytest.mark.parametrize(
+    'exog_format', ['wide', 'dict'], ids=lambda fmt: f'exog: {fmt}'
+)
+def test_check_predict_input_MissingValuesWarning_when_MultiSeries_exog_is_empty(
+    exog_format
+):
+    """
+    Test that, in ForecasterRecursiveMultiSeries, an empty `exog` (wide or
+    dict) only issues the MissingValuesWarning of `exog` shorter than steps.
+    `exog` is aligned with the predictions by date, so all its values are NaN.
+    """
+    last_window = pd.DataFrame(
+        data  = {'l1': np.arange(10, dtype=float)},
+        index = pd.date_range(start='2020-02-10', periods=10, freq='D')
+    )
+    exog = pd.Series(
+        data=[], index=pd.DatetimeIndex([]), name='exog1', dtype=float
+    )
+    if exog_format == 'dict':
+        exog = {'l1': exog}
+    exog_name = "`exog`" if exog_format == 'wide' else "`exog` for series 'l1'"
+
+    warn_msg = re.escape(
+        f"{exog_name} doesn't have as many values as steps predicted, 5. "
+        f"Missing values are filled with NaN. Most of machine learning models "
+        f"do not allow missing values. Prediction method may fail."
+    )
+    with pytest.warns(MissingValuesWarning, match = warn_msg) as record:
+        check_predict_input(
+            forecaster_name  = 'ForecasterRecursiveMultiSeries',
+            steps            = 5,
+            is_fitted        = True,
+            exog_in_         = True,
+            index_type_      = pd.DatetimeIndex,
+            index_freq_      = 'D',
+            window_size      = 5,
+            last_window      = last_window,
+            exog             = exog,
+            exog_names_in_   = ['exog1'],
+            levels           = ['l1'],
+            series_names_in_ = ['l1']
+        )
+
+    assert len(record) == 1
 
 
 @pytest.mark.parametrize(
