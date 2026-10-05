@@ -22,6 +22,8 @@ The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> New functions <code>[get_model_info]</code> and <code>[list_adapters]</code> in `skforecast.foundation` to query, without installing the backend or loading the weights, the capabilities and requirements of the foundation models: adapter, default `context_length`, exogenous variable support, supported quantiles, backend package, license restriction and Hugging Face gating.
 
++ <span class="badge text-bg-api-change">API Change</span> The minimum supported versions of pandas and scikit-learn are now 2.2 and 1.6 (previously 2.1 and 1.4), because skforecast did not work correctly with the older ones.
+
 + <span class="badge text-bg-fix">Fix</span> <code>[Ets]</code> now estimates its smoothing parameters. A compilation flag disabled the checks of missing components, so every model without damping kept the starting values (alpha=0.1, beta=0.01, gamma=0.01). The estimates now agree with `statsmodels` and R's `forecast::ets`, and the prediction intervals of models without an analytical variance are reproducible and about 17 times faster.
 
 + <span class="badge text-bg-docs">Docs</span> The examples and tutorials pages are now a filterable card grid: every tutorial shows an icon, a one line summary and topic tags, and can be narrowed down with a search box and level/topic filters. [Examples](../examples/examples_english.md)
