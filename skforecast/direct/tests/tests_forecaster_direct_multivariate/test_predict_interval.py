@@ -260,6 +260,58 @@ def test_predict_interval_conformal_output_when_binned_residuals(interval):
     pd.testing.assert_frame_equal(results, expected)
 
 
+
+@pytest.mark.parametrize(
+    "method, expected_values",
+    [
+        (
+            'bootstrapping',
+            np.array([[ 0.60969863, -0.12448806,  1.57516311],
+                      [ 0.62481536, -0.19814162,  1.70919653],
+                      [ 0.623516  , -0.26307983,  1.82803249]])
+        ),
+        (
+            'conformal',
+            np.array([[ 0.60969863, -0.2679562 ,  1.48735345],
+                      [ 0.62481536, -0.25618318,  1.5058139 ],
+                      [ 0.623516  , -0.36147032,  1.60850231]])
+        ),
+    ],
+    ids=['bootstrapping', 'conformal']
+)
+def test_predict_interval_output_when_differentiation_and_steps_not_consecutive_from_1(
+    method, expected_values
+):
+    """
+    Test predict_interval output with differentiation when `steps` are not
+    consecutive from 1 (e.g. backtesting with `gap`). The predictions and their
+    intervals are the same as those of `predict_interval(steps=max(steps))` for
+    the requested steps.
+    """
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator       = LinearRegression(),
+                     level           = 'l1',
+                     steps           = 5,
+                     lags            = 3,
+                     differentiation = 1
+                 )
+    forecaster.fit(series=series, store_in_sample_residuals=True)
+    results = forecaster.predict_interval(steps=[3, 4, 5], method=method)
+    results_all_steps = forecaster.predict_interval(steps=5, method=method)
+
+    expected = pd.DataFrame(
+                   data    = expected_values,
+                   index   = pd.Index([52, 53, 54]),
+                   columns = ['pred', 'lower_bound', 'upper_bound']
+               )
+    expected.insert(0, 'level', np.tile(['l1'], 3))
+
+    pd.testing.assert_frame_equal(results, expected)
+    np.testing.assert_array_almost_equal(
+        results.drop(columns='level').to_numpy(),
+        results_all_steps.drop(columns='level').to_numpy()[2:]
+    )
+
 def test_predict_interval_bootstrapping_binned_residuals_when_binner_reduces_n_bins():
     """
     Test predict_interval with method 'bootstrapping' and binned residuals when

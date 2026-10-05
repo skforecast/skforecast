@@ -851,6 +851,69 @@ def test_predict_output_when_with_exog_and_differentiation_is_2_steps_10():
     pd.testing.assert_frame_equal(predictions_1.asfreq('MS'), predictions_2)
 
 
+@pytest.mark.parametrize(
+    "steps, expected_pred, expected_index",
+    [
+        (
+            [3, 4, 5],
+            np.array([0.53344188, 0.54610373, 0.54291434]),
+            pd.date_range(start='2004-05-01', periods=3, freq='MS')
+        ),
+        (
+            [1, 3, 5],
+            np.array([0.65791959, 0.53344188, 0.54291434]),
+            pd.DatetimeIndex(['2004-03-01', '2004-05-01', '2004-07-01'])
+        ),
+    ],
+    ids=['steps_3_4_5', 'steps_1_3_5']
+)
+def test_predict_output_when_differentiation_and_steps_not_consecutive_from_1(
+    steps, expected_pred, expected_index
+):
+    """
+    Test predict output with differentiation when `steps` are not consecutive
+    from 1 (e.g. backtesting with `gap`). The differentiation is reverted with
+    the predictions of all the steps from 1 to `max(steps)`, so the predictions
+    are the same as those of `predict(steps=max(steps))` for the requested steps.
+    Exog and calendar features check that each step uses its own predictors.
+    """
+    series_dt = series.copy()
+    series_dt.index = pd.date_range(start='2000-01-01', periods=len(series), freq='MS')
+
+    # Simulated exogenous variable
+    rng = np.random.default_rng(9876)
+    exog = pd.Series(
+        rng.normal(loc=0, scale=1, size=len(series) + 5),
+        index=pd.date_range(start='2000-01-01', periods=len(series) + 5, freq='MS'),
+        name='exog'
+    )
+    calendar = CalendarFeatures(features=['month'], encoding=None)
+
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator          = LinearRegression(),
+                     level              = 'l1',
+                     steps              = 5,
+                     lags               = 3,
+                     calendar_features  = calendar,
+                     transformer_series = None,
+                     differentiation    = 1
+                 )
+    forecaster.fit(series=series_dt, exog=exog.iloc[:len(series)])
+    results = forecaster.predict(steps=steps, exog=exog.iloc[len(series):])
+    predictions_all_steps = forecaster.predict(steps=5, exog=exog.iloc[len(series):])
+
+    expected = pd.DataFrame(
+                   data  = {'level': ['l1', 'l1', 'l1'], 'pred': expected_pred},
+                   index = expected_index
+               )
+
+    pd.testing.assert_frame_equal(results, expected)
+    np.testing.assert_array_almost_equal(
+        results['pred'].to_numpy(),
+        predictions_all_steps['pred'].to_numpy()[np.array(steps) - 1]
+    )
+
+
 def test_predict_output_when_window_features_steps_1():
     """
     Test output of predict when estimator is LGBMRegressor and window features

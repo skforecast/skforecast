@@ -1594,6 +1594,71 @@ def test_output_backtesting_forecaster_interval_yes_exog_not_allow_remainder_gap
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
+
+def test_output_backtesting_forecaster_ForecasterDirect_differentiation_gap_with_mocked():
+    """
+    Test output of _backtesting_forecaster with backtesting mocked, interval no.
+    Estimator is LinearRegression with lags=3 and differentiation=1, Series y is
+    mocked, exog is mocked, 12 observations to backtest, steps=3 and gap=2,
+    metric='mean_squared_error', ForecasterDirect. Each fold predicts the steps
+    3 to 5, so the differentiation is reverted with the predictions of the steps
+    1 to 5: the predictions are the last 3 values of `predict(steps=5)` from the
+    origin of each fold.
+    """
+    expected_metric = pd.DataFrame({"mean_squared_error": [0.07181106860770173]})
+    expected_predictions = pd.DataFrame(
+        {
+            "pred": np.array(
+                [
+                    0.69697363,
+                    0.51119036,
+                    0.50012072,
+                    0.539775,
+                    0.50483889,
+                    0.5671958,
+                    0.36586845,
+                    0.47880951,
+                    0.59479147,
+                    0.60391747,
+                ]
+            )
+        },
+        index=pd.RangeIndex(start=40, stop=50, step=1),
+    )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3])
+
+    forecaster = ForecasterDirect(
+                     estimator       = LinearRegression(),
+                     lags            = 3,
+                     steps           = 5,
+                     differentiation = 1
+                 )
+    n_backtest = 12
+    y_train = y[:-n_backtest]
+    cv = TimeSeriesFold(
+            steps                 = 3,
+            initial_train_size    = len(y_train),
+            window_size           = None,
+            differentiation       = 1,
+            refit                 = False,
+            fixed_train_size      = True,
+            gap                   = 2,
+            skip_folds            = None,
+            allow_incomplete_fold = True,
+            return_all_indexes    = False,
+        )
+    metric, backtest_predictions = _backtesting_forecaster(
+                                       forecaster = forecaster,
+                                       y          = y,
+                                       exog       = exog,
+                                       cv         = cv,
+                                       metric     = 'mean_squared_error',
+                                       verbose    = False
+                                   )
+
+    pd.testing.assert_frame_equal(expected_metric, metric)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
 # ******************************************************************************
 # * Return predictors                                                          *
 # ******************************************************************************
