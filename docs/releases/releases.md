@@ -82,6 +82,8 @@ The main changes in this release are:
 
 + <code>[show_versions]</code> also reports the versions of scipy, statsmodels, matplotlib, torch, lightgbm, xgboost, catboost, skops and cloudpickle (`None` when a package is not installed).
 
++ <code>[save_forecaster]</code> keeps the dots in `file_name` and adds the extension of the backend, so `'model_v1.2'` is saved as `'model_v1.2.joblib'`. Previously, everything after the last dot was replaced by the extension: `'model_v1.1'` and `'model_v1.2'` were both saved as `'model_v1.joblib'`, and the second one overwrote the first without any warning. A name that ends with a backend extension (`.joblib`, `.pkl`, `.pickle`, `.cloudpickle` or `.skops`) is saved as before, with that extension replaced by the one of the backend. Any other extension is now kept: `'model.bin'` is saved as `'model.bin.joblib'` instead of `'model.joblib'`. [User guide](../user_guides/save-load-forecaster.ipynb#pickle-backend)
+
 
 **Fixed**
 
@@ -167,6 +169,10 @@ The main changes in this release are:
 + The automatic model selection of <code>[Ets]</code> (`model='ZZZ'`) ignored `lambda_param` (and fitted the model without the Box-Cox transformation) and `bias_adjust` (for the fitted values). Both are now applied and, as in R's `forecast::ets`, only additive models are considered when `lambda_param` is given. The internal function `ets(model='ZZZ')` raised `KeyError: 'Z'` when `m <= 24`; it now runs the automatic selection.
 
 + <code>[Ets]</code> now raises a descriptive `ValueError` when `model` is not valid, instead of `KeyError`. This includes partial automatic specifications such as `'ZZN'`, which are not supported: use `model='ZZZ'` and restrict the search with `seasonal`, `trend`, `damped`, `allow_multiplicative` and `allow_multiplicative_trend`.
+
++ <code>[save_forecaster]</code> raised a `SaveLoadSkforecastWarning`, asking to save the class manually, when the `window_features` included a <code>[RollingFeaturesClassification]</code>, which is part of skforecast. The warning is now raised only for user-defined classes.
+
++ Fixed an issue in <code>[save_forecaster]</code> where the `.py` files of the custom weight functions (`weight_func`) were written with the default encoding of the platform instead of UTF-8. On Windows, a character outside its code page (for example, `σ`) raised `UnicodeEncodeError` after the forecaster file was written, and other non-ASCII characters (for example, `ñ` in a string) produced a file that could not be imported.
 
 
 ## 0.25.0 <small>Sep 11, 2026</small> { id="0.25.0" }
