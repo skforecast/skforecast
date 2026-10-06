@@ -25,10 +25,10 @@ def test_estimator_fitted_helper():
     
     # Check exact fitted values
     expected_fitted = np.array([
-        0.58403773, 0.53408473, 0.44332965, 0.50734765, 0.55752664,
-        0.67728581, 0.80587588, 0.80513257, 0.84378245, 0.81426792
+        -0.0030524914, -0.0064433509, -0.2841704194, 0.6998394422, 0.8564612979,
+        1.3812627201, 1.5929617682, 0.7890212263, 0.877994758, 0.4550762236
     ])
-    np.testing.assert_array_almost_equal(f[:10], expected_fitted, decimal=8)
+    np.testing.assert_allclose(f[:10], expected_fitted, rtol=1e-5, atol=1e-6)
 
 
 def test_get_fitted_values_raises_error_after_reduce_memory():

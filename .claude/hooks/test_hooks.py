@@ -140,3 +140,20 @@ def test_session_start_remote_does_nothing_locally(tmp_path):
     assert code == 0
     assert stdout == ""
     assert env_file.read_text() == ""
+
+
+def test_session_start_remote_skips_deep_learning_packages_by_default():
+    sys.path.insert(0, str(HOOKS_DIR))
+    try:
+        import session_start_remote
+    finally:
+        sys.path.remove(str(HOOKS_DIR))
+
+    requirements = session_start_remote.requirements_without_deep_learning(
+        PROJECT_DIR / "pyproject.toml"
+    )
+    names = [req.split(">")[0].split("[")[0].strip().lower() for req in requirements]
+    assert "torch" not in names
+    assert "keras" not in names
+    assert "pytest" in names
+    assert "statsmodels" in names

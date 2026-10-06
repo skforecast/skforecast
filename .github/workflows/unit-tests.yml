@@ -70,9 +70,12 @@ jobs:
       env:
         KERAS_BACKEND: torch
       run: |
+        # -q keeps the log short so failures are easy to find; -ra lists them at the end;
+        # verbosity_assertions=2 keeps the full assertion diffs of -vv. Failed tests are
+        # also shown as annotations (pytest-github-actions-annotate-failures).
         if [[ "$RUNNER_OS" == "macOS" ]]; then
           echo "Skipping deep_learning tests on macOS due to MPS issues"
-          pytest -vv --ignore=skforecast/deep_learning
+          pytest -q -ra -o verbosity_assertions=2 --exclude-warning-annotations --ignore=skforecast/deep_learning
         else
-          pytest -vv
+          pytest -q -ra -o verbosity_assertions=2 --exclude-warning-annotations
         fi

@@ -40,8 +40,8 @@ do not override it.
 
 ### Dependencies
 
-Core: numpy>=1.26, pandas>=2.1,<3.0, scikit-learn>=1.4, scipy>=1.12, optuna>=4.0, joblib>=1.3, numba>=0.59, tqdm>=4.66, rich>=13.9
-Optional: statsmodels>=0.13,<0.15 (stats), matplotlib>=3.7,<3.11 (plotting), keras>=3.0,<4.0 (deep learning)
+Core: numpy>=1.26, pandas>=2.2,<3.0, scikit-learn>=1.6, scipy>=1.12, optuna>=4.0, joblib>=1.3, numba>=0.59, tqdm>=4.66, rich>=13.9
+Optional: statsmodels>=0.13,<0.15 (stats), matplotlib>=3.7,<3.12 (plotting), keras>=3.0,<4.0 (deep learning)
 
 ### Python environment
 
@@ -55,7 +55,13 @@ your shell profile first, or call the interpreter through `conda run -n <env>`.
 Cloud sessions (`CLAUDE_CODE_REMOTE=true`, e.g. claude.ai/code): there is no
 conda. A SessionStart hook installs the package with the `test` extras into a
 virtual environment outside the repository and puts it on `PATH`, so call
-`python` and `pytest` directly.
+`python` and `pytest` directly. To make the install faster, it skips the deep
+learning packages (`torch`, `keras`): the deep learning tests do not need to
+pass unless you work on that code. When they are needed (e.g. `ForecasterRnn`
+or foundation models), set `SKFORECAST_CLOUD_DL=1` in the cloud environment
+variables, or install them in the session with
+`uv pip install torch "keras>=3.0,<4.0" --torch-backend cpu` (`uv` is in
+`~/.local/bin` if it is not on `PATH`).
 
 ---
 
@@ -550,8 +556,13 @@ info.adapter                  # 'TimesFM3Adapter'
 info.allow_exog               # True
 info.supported_quantiles      # (0.1, 0.2, ..., 0.9); None means any level in (0, 1)
 info.backend_package          # 'timesfm[torch]'
-info.license_restriction      # license name, or None if no restriction is registered
+info.license                  # SPDX id ('Apache-2.0') or model card license name (see info.license_url)
+info.commercial_use_restricted  # True if the license restricts commercial use (LicenseWarning on load)
 info.requires_hf_auth         # True if the weights are gated on the Hugging Face Hub
+info.requires_provider_auth   # True if the provider needs its own account/license acceptance (TabPFN)
+info.weights_repo_id          # Hugging Face repo the weights are downloaded from (may differ from
+                              # model_id, e.g. 'jingang/TabICL' for 'soda-inria/tabicl')
+info.weights_in_hf_cache      # False if the weights are not stored in the HF Hub cache (TabPFN)
 
 # One FoundationModelInfo per adapter (described by its default_model_id)
 [(i.adapter, i.default_model_id) for i in list_adapters()]
@@ -574,20 +585,20 @@ Key points:
 
 ## Feature Selection
 
-Use sklearn selectors (RFECV, SelectFromModel, etc.) to identify relevant lags, window features, and exogenous variables. Multi-series variant: `select_features_multiseries`.
+Use any selector compatible with the scikit-learn API (RFECV, SelectFromModel, etc.) to identify relevant lags, window features, exogenous variables and calendar features. Multi-series variant: `select_features_multiseries`.
 
 ```python
 from sklearn.feature_selection import RFECV
 from skforecast.feature_selection import select_features
 
-selected_lags, selected_window_features, selected_exog = select_features(
+selected_lags, selected_window_features, selected_exog, selected_calendar_features = select_features(
     forecaster=forecaster,
     selector=RFECV(estimator=RandomForestRegressor(), step=1, cv=3),
     y=y_train,
     exog=exog_train,
-    select_only=None,              # 'autoreg', 'exog', or None (all features)
+    select_only=None,              # 'autoreg', 'exog', 'calendar', a list of them, or None (all features)
     force_inclusion=None,          # Features to always include (list or regex str)
-    subsample=0.5,
+    subsample=0.5,                 # Proportion of records in (0, 1], sampled without replacement
     random_state=123,
     verbose=True
 )

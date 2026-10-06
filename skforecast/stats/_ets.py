@@ -301,6 +301,8 @@ class Ets(BaseEstimator, RegressorMixin):
                 allow_multiplicative       = self.allow_multiplicative,
                 allow_multiplicative_trend = self.allow_multiplicative_trend,
                 lambda_auto                = self.lambda_auto,
+                lambda_param               = self.lambda_param,
+                bias_adjust                = self.bias_adjust,
                 verbose                    = False,
             )
 

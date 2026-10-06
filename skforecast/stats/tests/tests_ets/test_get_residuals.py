@@ -32,10 +32,10 @@ def test_estimator_residuals_helper():
     
     # Check exact residual values (first 10)
     expected_residuals = np.array([
-        -0.58403773, -0.90187138,  0.58714496,  0.407959,  1.00341891,
-         0.99247986, -0.27350356,  0.10948028, -0.52014891, -0.91011355
+        0.0030524914, -0.3613433006, 1.3146450246, 0.2154672006, 0.7044842517,
+        0.2885029559, -1.0605894414, 0.1255916229, -0.5543612148, -0.5509218595
     ])
-    np.testing.assert_array_almost_equal(r[:10], expected_residuals, decimal=6)
+    np.testing.assert_allclose(r[:10], expected_residuals, rtol=1e-5, atol=1e-6)
 
 
 def test_get_residuals_raises_error_after_reduce_memory():

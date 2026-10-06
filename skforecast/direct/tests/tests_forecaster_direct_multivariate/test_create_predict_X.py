@@ -792,6 +792,55 @@ def test_create_predict_X_when_with_exog_differentiation_is_1_and_transformer_se
     pd.testing.assert_frame_equal(results, expected)
 
 
+def test_create_predict_X_output_when_differentiation_and_steps_not_consecutive_from_1():
+    """
+    Test create_predict_X when using LinearRegression as estimator and
+    differentiation=1, with `steps` not consecutive from 1. The predictors of
+    all the steps up to `max(steps)` are created internally, but only the rows
+    of the requested steps are returned.
+    """
+
+    end_train = '2003-03-01 23:59:00'
+    arr = data.to_numpy(copy=True)
+    series_diff = pd.DataFrame(
+        {'l1': arr,
+         'l2': arr * 1.6},
+        index=data.index
+    )
+
+    # Simulated exogenous variable
+    rng = np.random.default_rng(9876)
+    exog_diff = pd.Series(
+        rng.normal(loc=0, scale=1, size=len(data)), index=data.index, name='exog'
+    )
+
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator          = LinearRegression(),
+                     level              = 'l1',
+                     lags               = [1, 5],
+                     steps              = 5,
+                     transformer_series = None,
+                     differentiation    = 1
+                 )
+    forecaster.fit(series=series_diff.loc[:end_train], exog=exog_diff.loc[:end_train])
+    results = forecaster.create_predict_X(
+        steps=[1, 3, 5], exog=exog_diff.loc[end_train:]
+    )
+
+    expected = pd.DataFrame(
+        data = np.array([
+            [0.07503713, -0.01018012, 0.12005941, -0.01628819, 1.16172882],
+            [0.07503713, -0.01018012, 0.12005941, -0.01628819, -0.4399757],
+            [0.07503713, -0.01018012, 0.12005941, -0.01628819, 1.37496887]]
+        ),
+        columns = ['l1_lag_1', 'l1_lag_5', 'l2_lag_1', 'l2_lag_5', 'exog'],
+        index = pd.DatetimeIndex(['2003-04-01', '2003-06-01', '2003-08-01'])
+    )
+    expected.insert(0, 'level', np.tile([forecaster.level], 3))
+
+    pd.testing.assert_frame_equal(results, expected)
+
+
 def test_create_predict_X_when_window_features_steps_1():
     """
     Test the output of create_predict_X when using window_features and exog
@@ -1109,14 +1158,20 @@ def test_create_predict_X_same_predictions_as_predict_transformers_diff():
     with pytest.warns(DataTransformationWarning, match = warn_msg):
         X_predict = forecaster.create_predict_X(exog=exog.loc[end_train:]).drop(columns=['level'])
 
+    # Reverting the differentiation needs the predictions of all the previous
+    # steps, so all the rows are predicted before reverting it.
+    results = np.concatenate([
+        forecaster.estimators_[step].predict(X_predict.iloc[[i]])
+        for i, step in enumerate(forecaster.steps)
+    ])
+    results = forecaster.differentiator_[forecaster.level].inverse_transform_next_window(results)
+    results = transform_numpy(
+                  array             = results,
+                  transformer       = forecaster.transformer_series_[forecaster.level],
+                  fit               = False,
+                  inverse_transform = True
+              )
+
     for i, step in enumerate(forecaster.steps):
-        results = forecaster.estimators_[step].predict(X_predict.iloc[[i]])
-        results = forecaster.differentiator_[forecaster.level].inverse_transform_next_window(results)
-        results = transform_numpy(
-                      array             = results,
-                      transformer       = forecaster.transformer_series_[forecaster.level],
-                      fit               = False,
-                      inverse_transform = True
-                  )
         expected = forecaster.predict(steps=[step], exog=exog.loc[end_train:])[['pred']].to_numpy().item()
-        np.testing.assert_array_almost_equal(results, expected, decimal=7)
+        np.testing.assert_array_almost_equal(results[i], expected, decimal=7)

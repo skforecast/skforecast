@@ -36,8 +36,8 @@ do not override it.
 
 ### Dependencies
 
-Core: numpy>=1.26, pandas>=2.1,<3.0, scikit-learn>=1.4, scipy>=1.12, optuna>=4.0, joblib>=1.3, numba>=0.59, tqdm>=4.66, rich>=13.9
-Optional: statsmodels>=0.13,<0.15 (stats), matplotlib>=3.7,<3.11 (plotting), keras>=3.0,<4.0 (deep learning)
+Core: numpy>=1.26, pandas>=2.2,<3.0, scikit-learn>=1.6, scipy>=1.12, optuna>=4.0, joblib>=1.3, numba>=0.59, tqdm>=4.66, rich>=13.9
+Optional: statsmodels>=0.13,<0.15 (stats), matplotlib>=3.7,<3.12 (plotting), keras>=3.0,<4.0 (deep learning)
 
 ### Python environment
 
@@ -51,4 +51,10 @@ your shell profile first, or call the interpreter through `conda run -n <env>`.
 Cloud sessions (`CLAUDE_CODE_REMOTE=true`, e.g. claude.ai/code): there is no
 conda. A SessionStart hook installs the package with the `test` extras into a
 virtual environment outside the repository and puts it on `PATH`, so call
-`python` and `pytest` directly.
+`python` and `pytest` directly. To make the install faster, it skips the deep
+learning packages (`torch`, `keras`): the deep learning tests do not need to
+pass unless you work on that code. When they are needed (e.g. `ForecasterRnn`
+or foundation models), set `SKFORECAST_CLOUD_DL=1` in the cloud environment
+variables, or install them in the session with
+`uv pip install torch "keras>=3.0,<4.0" --torch-backend cpu` (`uv` is in
+`~/.local/bin` if it is not on `PATH`).

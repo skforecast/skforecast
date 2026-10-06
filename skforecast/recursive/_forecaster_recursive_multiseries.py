@@ -31,6 +31,7 @@ from ..exceptions import (
     UnknownLevelWarning
 )
 from ..utils import (
+    _date_range_from_index,
     initialize_lags,
     initialize_window_features,
     initialize_weights,
@@ -1313,7 +1314,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             X_train = [X_train, encoded_values]
         else:
             if self.encoding == 'ordinal_category':
-                X_train['_level_skforecast'] = pd.Categorical(encoded_values)
+                # NOTE: Categories are set to all the encoded levels so that the
+                # category codes match the level codes even when a level has no
+                # rows (e.g. the test split of a one-step-ahead search). CatBoost
+                # is fitted with the codes.
+                X_train['_level_skforecast'] = pd.Categorical(
+                    encoded_values, categories=range(len(self.encoding_mapping_))
+                )
             else:
                 X_train['_level_skforecast'] = encoded_values
             X_train = [X_train]
@@ -1650,15 +1657,23 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         # they have gone through the `check_one_step_ahead_input` function.
         min_index = []
         max_index = []
+        # NOTE: The longest index is the most likely to contain a daylight saving
+        # change, used to identify the convention of timezone-aware indexes.
+        longest_index = None
         for v in series.values():
             idx = v.index
             min_index.append(idx[0])
             max_index.append(idx[-1])
+            if longest_index is None or len(idx) > len(longest_index):
+                longest_index = idx
         
         if isinstance(idx, pd.DatetimeIndex):
-            span_index = pd.date_range(
-                start=min(min_index), end=max(max_index), freq=idx.freq
-            )
+            span_index = _date_range_from_index(
+                             index = longest_index, 
+                             start = min(min_index), 
+                             end   = max(max_index),
+                             freq  = idx.freq
+                         )
         else:
             span_index = pd.RangeIndex(
                 start=min(min_index), stop=max(max_index) + 1, step=idx.step
@@ -2423,8 +2438,16 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 )
             else:
                 exog = input_to_frame(data=exog, input_name='exog')
-                if exog.columns.tolist() != self.exog_names_in_:
-                    exog = exog[self.exog_names_in_]
+                # NOTE: As with a dict, `exog` is aligned with the predictions by
+                # date and column, so missing dates and columns are filled with NaN.
+                if not (
+                    exog.columns.tolist() == self.exog_names_in_
+                    and exog.index[:steps].equals(prediction_index)
+                ):
+                    exog = exog.reindex(
+                               index   = prediction_index,
+                               columns = self.exog_names_in_
+                           )
                 
                 exog = transform_dataframe(
                            df                = exog,

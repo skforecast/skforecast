@@ -489,8 +489,13 @@ info.adapter                  # 'TimesFM3Adapter'
 info.allow_exog               # True
 info.supported_quantiles      # (0.1, 0.2, ..., 0.9); None means any level in (0, 1)
 info.backend_package          # 'timesfm[torch]'
-info.license_restriction      # license name, or None if no restriction is registered
+info.license                  # SPDX id ('Apache-2.0') or model card license name (see info.license_url)
+info.commercial_use_restricted  # True if the license restricts commercial use (LicenseWarning on load)
 info.requires_hf_auth         # True if the weights are gated on the Hugging Face Hub
+info.requires_provider_auth   # True if the provider needs its own account/license acceptance (TabPFN)
+info.weights_repo_id          # Hugging Face repo the weights are downloaded from (may differ from
+                              # model_id, e.g. 'jingang/TabICL' for 'soda-inria/tabicl')
+info.weights_in_hf_cache      # False if the weights are not stored in the HF Hub cache (TabPFN)
 
 # One FoundationModelInfo per adapter (described by its default_model_id)
 [(i.adapter, i.default_model_id) for i in list_adapters()]
@@ -513,20 +518,20 @@ Key points:
 
 ## Feature Selection
 
-Use sklearn selectors (RFECV, SelectFromModel, etc.) to identify relevant lags, window features, and exogenous variables. Multi-series variant: `select_features_multiseries`.
+Use any selector compatible with the scikit-learn API (RFECV, SelectFromModel, etc.) to identify relevant lags, window features, exogenous variables and calendar features. Multi-series variant: `select_features_multiseries`.
 
 ```python
 from sklearn.feature_selection import RFECV
 from skforecast.feature_selection import select_features
 
-selected_lags, selected_window_features, selected_exog = select_features(
+selected_lags, selected_window_features, selected_exog, selected_calendar_features = select_features(
     forecaster=forecaster,
     selector=RFECV(estimator=RandomForestRegressor(), step=1, cv=3),
     y=y_train,
     exog=exog_train,
-    select_only=None,              # 'autoreg', 'exog', or None (all features)
+    select_only=None,              # 'autoreg', 'exog', 'calendar', a list of them, or None (all features)
     force_inclusion=None,          # Features to always include (list or regex str)
-    subsample=0.5,
+    subsample=0.5,                 # Proportion of records in (0, 1], sampled without replacement
     random_state=123,
     verbose=True
 )
@@ -2004,7 +2009,7 @@ NOT the `RollingFeatures` object. The original `RollingFeatures` instance
 should still be passed to the forecaster.
 
 ```python
-selected_lags, selected_wf, selected_exog = select_features(
+selected_lags, selected_wf, selected_exog, selected_cal = select_features(
     forecaster=forecaster,
     selector=RFECV(...),
     y=y_train,
@@ -2352,7 +2357,7 @@ pip install chronos-forecasting    # For Chronos-2
 pip install "timesfm[torch]"       # For TimesFM 2.5 and 3.0
 pip install uni2ts                 # For Moirai-2
 pip install tabicl[forecast]       # For TabICL
-pip install tabpfn-time-series     # For TabPFN-TS
+pip install "tabpfn-time-series>=1.3"  # For TabPFN-TS
 pip install tfc-t0                 # For T0
 pip install tsicl                  # For TS-ICL
 pip install synthefy-nori          # For Nori
@@ -2476,7 +2481,12 @@ from skforecast.foundation import get_model_info, list_adapters
 info = get_model_info('google/timesfm-3.0-pytorch')
 info.allow_exog, info.supported_quantiles  # supported_quantiles None = any level in (0, 1)
 info.backend_package                       # 'timesfm[torch]', as passed to pip install
-info.license_restriction, info.requires_hf_auth
+info.license, info.license_url             # SPDX id (or model card license name) and link, always informed
+info.commercial_use_restricted             # True if the license restricts commercial use
+info.requires_hf_auth                      # gated on the Hugging Face Hub
+info.requires_provider_auth                # provider account/license acceptance (TabPFN, Prior Labs)
+info.weights_repo_id                       # HF repo the weights come from, e.g. 'jingang/TabICL' for TabICL
+info.weights_in_hf_cache                   # False when the weights are not in the HF Hub cache (TabPFN)
 
 list_adapters(as_frame=True)  # DataFrame, one row per adapter; default: list of FoundationModelInfo
 ```
@@ -2681,7 +2691,7 @@ There is no compile step and no horizon ceiling. For each series, columns presen
 
 | Parameter            | Type  | Default  | Description                                                                      |
 |----------------------|-------|----------|----------------------------------------------------------------------------------|
-| `model_id`           | str   | —        | HuggingFace model ID (e.g. `soda-inria/tabicl`).                                 |
+| `model_id`           | str   | —        | Model ID (e.g. `soda-inria/tabicl`). Used only for adapter resolution; the weights are downloaded from the `jingang/TabICL` Hugging Face repository. |
 | `model`              | obj   | `None`   | Pre-instantiated `TabICLForecaster`. If `None`, created lazily on first predict. |
 | `context_length`     | int   | `4096`   | Max historical observations kept as context.                                     |
 | `point_estimate`     | str   | `'mean'` | Point forecast method: `'mean'` or `'median'`.                                   |
@@ -2697,7 +2707,7 @@ There is no compile step and no horizon ceiling. For each series, columns presen
 
 | Parameter             | Type  | Default    | Description                                                                      |
 |-----------------------|-------|------------|----------------------------------------------------------------------------------|
-| `model_id`            | str   | —          | Model ID (e.g. `priorlabs/tabpfn-ts`). Used only for adapter resolution.         |
+| `model_id`            | str   | —          | Model ID (e.g. `priorlabs/tabpfn-ts`). Used only for adapter resolution; the weights are those of the TabPFN version pinned by `tabpfn-time-series` (`Prior-Labs/tabpfn_3_5` with 1.3, the minimum supported version), stored in the TabPFN cache directory. Prior Labs requires an account token and accepting the license in a browser before the first download. |
 | `model`               | obj   | `None`     | Pre-instantiated `TabPFNTSPipeline`. If `None`, created lazily on first predict. |
 | `context_length`      | int   | `32768`    | Max historical observations kept as context. Lower (e.g. 4096) for faster inference. |
 | `mode`                | str   | `'local'`  | `'local'` (on-device inference, CUDA > MPS > CPU) or `'client'` (Prior Labs cloud API, no GPU needed). |
@@ -2721,8 +2731,6 @@ There is no compile step and no horizon ceiling. For each series, columns presen
 | `torch_dtype`    | object | `None`   | Torch dtype the loaded model is cast to (e.g. `torch.bfloat16`).           |
 
 Point forecasts use the median (quantile `0.5`). Covariates must be numeric; encode categoricals as numbers before passing them. A series with no future exog is forecast without covariates.
-
-**Gated checkpoints**: `theforecastingcompany/t0*` repos are gated on the Hugging Face Hub. Before first use, log in at the model page (e.g. `https://huggingface.co/theforecastingcompany/t0-alpha`) to accept its license, then authenticate locally (`hf auth login` or the `HF_TOKEN` environment variable). Skipping this step surfaces as a confusing `TypeError` about missing `T0Forecaster` constructor arguments rather than an authentication error.
 
 ## TSICLAdapter — EDF Lab TS-ICL
 
@@ -2749,7 +2757,7 @@ Covariates must be numeric; encode categoricals as numbers before passing them.
 
 | Parameter                | Type | Default  | Description                                                                                       |
 |--------------------------|------|----------|-----------------------------------------------------------------------------------------------------|
-| `model_id`               | str  | —        | Model ID (e.g. `Synthefy/Nori`). Used only for adapter resolution.                                 |
+| `model_id`               | str  | —        | Model ID (e.g. `Synthefy/Nori`). Selects the adapter and is forwarded to `NoriRegressor` as the checkpoint to load (its `model` argument), unless `nori_config` sets `model` or `model_path`. |
 | `model`                  | obj  | `None`   | Pre-instantiated `NoriRegressor`. If `None`, created lazily on first `predict`.                    |
 | `context_length`         | int  | `4096`   | Max historical observations kept as context.                                                        |
 | `point_estimate`         | str  | `'mean'` | Point forecast method: `'mean'`, `'median'` or `'mode'`.                                            |
@@ -2794,7 +2802,7 @@ All adapters implement the same minimal interface:
 - `predict(steps, context, context_exog, exog, quantiles)` — returns a   `dict[str, np.ndarray]` of shape `(steps, n_quantiles)` keyed by series name.
 - `get_params()` / `set_params(**kwargs)` — sklearn-style parameter access.
 - `allow_exog` / `supports_past_only_covariates` / `supports_heterogeneous_covariates` / `supports_nan_in_series` — class attributes read by `FoundationModel` to decide how exog and NaN are handled. When `supports_heterogeneous_covariates` is `False` (Chronos-2, TS-ICL, TabICL, TimesFM 3.0), `FoundationModel.predict` groups the series by their (past-only, future) exog columns and calls `adapter.predict` once per group; adapters never receive a batch with mixed covariate columns. When `supports_nan_in_series` is `False`, a context with NaN raises `ValueError` before the adapter is called (all current adapters accept NaN; Nori drops the NaN rows itself).
-- `supports_categorical_covariates` / `requires_hf_auth` / `backend_package` / `default_model_id` / `SUPPORTED_QUANTILES`: descriptive class attributes. They are exposed, together with the ones above and the default `context_length`, through `get_model_info` and `list_adapters`. `supports_categorical_covariates` is `True` only for Chronos-2 (non-numeric covariates are passed natively); `requires_hf_auth` is `True` only for TFC-T0 (gated weights); `SUPPORTED_QUANTILES` is `None` when any level in `(0, 1)` is accepted.
+- `supports_categorical_covariates` / `requires_hf_auth` / `requires_provider_auth` / `weights_repo_id` / `weights_in_hf_cache` / `backend_package` / `default_model_id` / `SUPPORTED_QUANTILES`: descriptive class attributes. They are exposed, together with the ones above and the default `context_length`, through `get_model_info` and `list_adapters`. `supports_categorical_covariates` is `True` only for Chronos-2 (non-numeric covariates are passed natively); `requires_hf_auth` is `True` when the weights are gated on the Hugging Face Hub (currently none of the supported models); `requires_provider_auth` is `True` only for TabPFN-TS (Prior Labs token and license acceptance, outside the Hugging Face Hub); `weights_repo_id` is the fixed Hugging Face repository of the backends that ignore `model_id` (`jingang/TabICL`, `Prior-Labs/tabpfn_3_5`, `taharnbl/TS-ICL`) and `None` when the weights are downloaded from `model_id`; `weights_in_hf_cache` is `False` only for TabPFN-TS, which keeps the weights in its own cache directory; `SUPPORTED_QUANTILES` is `None` when any level in `(0, 1)` is accepted.
 
 ### Exog column validation at predict time
 
@@ -3547,7 +3555,9 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 ## Constraints
 
 - Must produce **at least 2 folds**: `initial_train_size + gap + 2 * steps <= n_observations`
-- `initial_train_size` must be large enough for the model to learn patterns (at minimum 2× the lag order for ML models, or 2× steps for statistical models)
+- **Hard minimum**: `initial_train_size` must be greater than `forecaster.window_size`, the number of past observations needed to build one training row (`max(max_lag, max_size_window_features)` plus the `differentiation` order). Direct forecasters (`ForecasterDirect`, `ForecasterDirectMultiVariate`, `ForecasterRnn`) need at least `window_size + steps`, using the forecaster's `steps`. In multi-series forecasters, each series with data in the first window needs more than `window_size` observations there.
+- Forecasters without lags: `ForecasterEquivalentDate` has `window_size = offset * n_offsets` (same rule); in `ForecasterStats` the estimator sets the minimum (`window_size` is fixed at 1); `ForecasterFoundation` accepts any value ≥ 1 (`context_length` is a maximum, not a minimum).
+- **Recommended**: leave a margin above the hard minimum so the model has enough rows to learn from (e.g. two or more seasonal cycles), while keeping at least 2 folds
 - `gap` simulates real-world delay between data availability and forecast usage
 - When `fixed_train_size=True`, the window rolls forward (oldest data discarded). Use for concept drift or when old data is less relevant.
 - When `fixed_train_size=False`, the window expands (all history retained). Use when more data always helps.
@@ -3584,7 +3594,7 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 | Scenario | Configuration |
 |----------|--------------|
 | Default (balanced) | `int(len(data) * 0.7)` |
-| Maximize evaluation coverage | Minimum viable: `2 * max_lag` or `2 * steps` |
+| Maximize evaluation coverage | Hard minimum (`window_size + 1`; `window_size + steps` for direct) plus a learning margin, see Constraints |
 | Maximize training data | `n_observations - gap - 2 * steps` (minimum 2 folds) |
 | Start from specific date | `initial_train_size="2023-01-01"` |
 | Conservative (large training set) | `int(len(data) * 0.8)` |
@@ -3627,7 +3637,8 @@ skip_folds = 2  # Keep every 2nd fold
 
 ### "I want maximum evaluation coverage with a 12-step horizon"
 ```
-initial_train_size = <minimum viable>  # 2 * max_lag
+# Hard minimum: forecaster.window_size + 1 (window_size + 12 for ForecasterDirect with steps=12)
+initial_train_size = forecaster.window_size + margin  # margin: rows to learn from, e.g. 2+ seasonal cycles
 refit = False  # Faster; trains once, fixed_train_size has no effect
 fold_stride = 1  # Sliding window (many overlapping folds)
 ```
@@ -3687,7 +3698,7 @@ cv = TimeSeriesFold(
     refit=False,
 )
 
-# Define search space as a function — lags CAN be included here
+# Define search space as a function: lags CAN be included here
 def search_space(trial):
     return {
         'lags': trial.suggest_categorical('lags', [12, 24, [1, 2, 3, 23, 24]]),
@@ -3848,7 +3859,7 @@ forecaster = ForecasterFoundation(
     estimator=FoundationModel(model_id='autogluon/chronos-2-small', device_map='auto')
 )
 
-# TimeSeriesFold only — OneStepAheadFold raises TypeError
+# TimeSeriesFold only: OneStepAheadFold raises TypeError
 cv = TimeSeriesFold(steps=24, initial_train_size=len(series) - 200, refit=False)
 
 def search_space(trial):
@@ -3881,7 +3892,7 @@ skill (`references/adapter-parameters.md`).
 ```python
 from skforecast.model_selection import OneStepAheadFold
 
-# Much faster than TimeSeriesFold — no recursive predictions needed
+# Much faster than TimeSeriesFold: no recursive predictions needed
 cv_fast = OneStepAheadFold(
     initial_train_size=len(data) - 100,
 )
@@ -3901,10 +3912,11 @@ results, study = bayesian_search_forecaster(
 ## Common Mistakes
 
 1. **Not setting `return_best=True`**: The forecaster is not updated with the best parameters unless this is True.
-2. **Too few trials in Bayesian search**: Start with at least 20-50 trials for meaningful exploration.
+2. **Too few trials in Bayesian search**: Start with at least 20-50 trials for meaningful exploration. A small search may not beat the default configuration on the test set, because the configuration is chosen on the validation period, which can differ from the test period.
 3. **Using TimeSeriesFold for initial tuning**: Use `OneStepAheadFold` first for fast screening, then validate the top candidates with `TimeSeriesFold`.
-4. **Forgetting to include lags in search space**: For Bayesian search, lags can be included in `search_space()` — this is often the most impactful parameter.
+4. **Forgetting to include lags in search space**: For Bayesian search, lags can be included in `search_space()`; this is often the most impactful parameter.
 5. **Putting `lags` in a foundation `search_space`**: `bayesian_search_foundation` has no lag concept; any key that is not an adapter parameter raises `ValueError`.
+6. **Passing the test set to the search**: give the search only the training and validation data (e.g. `y=data.loc[:end_validation]`). With `return_best=True` the forecaster is refitted on everything the search receives, so keep the test set out and evaluate the refitted forecaster with `backtesting_forecaster` on it.
 
 ## References
 
@@ -4320,7 +4332,7 @@ forecaster = ForecasterRecursive(
 )
 
 # Run feature selection
-selected_lags, selected_window_features, selected_exog = select_features(
+selected_lags, selected_window_features, selected_exog, selected_calendar_features = select_features(
     forecaster=forecaster,
     selector=RFECV(
         estimator=RandomForestRegressor(n_estimators=50, random_state=123),
@@ -4329,9 +4341,9 @@ selected_lags, selected_window_features, selected_exog = select_features(
     ),
     y=y_train,
     exog=exog_train,
-    select_only=None,          # 'autoreg' (lags+window), 'exog', or None (all)
+    select_only=None,          # 'autoreg' (lags+window), 'exog', 'calendar', a list of them, or None (all)
     force_inclusion=None,      # Features to always keep (list or regex string)
-    subsample=0.5,             # Use 50% of data for faster selection
+    subsample=0.5,             # Use 50% of the records (without replacement) for faster selection
     random_state=123,
     verbose=True,
 )
@@ -4361,7 +4373,7 @@ forecaster = ForecasterRecursiveMultiSeries(
     encoding='ordinal',
 )
 
-selected_lags, selected_window_features, selected_exog = select_features_multiseries(
+selected_lags, selected_window_features, selected_exog, selected_calendar_features = select_features_multiseries(
     forecaster=forecaster,
     selector=RFECV(
         estimator=RandomForestRegressor(n_estimators=50, random_state=123),
@@ -4382,7 +4394,7 @@ selected_lags, selected_window_features, selected_exog = select_features_multise
 
 ```python
 # Always keep specific features regardless of selection
-selected_lags, selected_wf, selected_exog = select_features(
+selected_lags, selected_wf, selected_exog, selected_cal = select_features(
     forecaster=forecaster,
     selector=selector,
     y=y_train,
@@ -4391,7 +4403,7 @@ selected_lags, selected_wf, selected_exog = select_features(
 )
 
 # Regex pattern to force include
-selected_lags, selected_wf, selected_exog = select_features(
+selected_lags, selected_wf, selected_exog, selected_cal = select_features(
     forecaster=forecaster,
     selector=selector,
     y=y_train,
@@ -4404,7 +4416,7 @@ selected_lags, selected_wf, selected_exog = select_features(
 
 ```python
 # Only select among exogenous variables (keep all lags)
-selected_lags, selected_wf, selected_exog = select_features(
+selected_lags, selected_wf, selected_exog, selected_cal = select_features(
     forecaster=forecaster,
     selector=selector,
     y=y_train,
@@ -4413,7 +4425,7 @@ selected_lags, selected_wf, selected_exog = select_features(
 )
 
 # Only select among autoregressive features (keep all exog)
-selected_lags, selected_wf, selected_exog = select_features(
+selected_lags, selected_wf, selected_exog, selected_cal = select_features(
     forecaster=forecaster,
     selector=selector,
     y=y_train,
@@ -4428,7 +4440,7 @@ selected_lags, selected_wf, selected_exog = select_features(
 2. **Too small subsample**: If `subsample` is too small, selection may be unreliable. Use at least 0.3.
 3. **Not updating forecaster**: After selection, update the forecaster with `forecaster.set_lags(selected_lags)` — the original is not modified in place by `select_features`.
 4. **Running on full dataset**: Always run on training data only (`y_train`, `exog_train`).
-5. **Confusing `selected_window_features` with `RollingFeatures`**: The returned `selected_window_features` is a list of **feature name strings** (e.g. `['mean_7', 'std_14']`), not the `RollingFeatures` object itself. Use these names to verify which window features were kept, but pass the original `RollingFeatures` instance to the forecaster.
+5. **Confusing `selected_window_features` with `RollingFeatures`**: The returned `selected_window_features` is a list of **feature name strings** (e.g. `['roll_mean_7', 'roll_std_14']`), not the `RollingFeatures` object itself. Use these names to verify which window features were kept, but pass the original `RollingFeatures` instance to the forecaster.
 
 ================================================================================
 # SKILL: prediction-intervals
@@ -4549,7 +4561,7 @@ forecaster = ForecasterStats(
 )
 forecaster.fit(y=y_train)
 
-# Uses parametric intervals from statsmodels — different interface
+# Uses parametric intervals from statsmodels: different interface
 predictions = forecaster.predict_interval(
     steps=12,
     interval=[0.1, 0.9],       # Quantiles → 80% interval. Equivalently, alpha=0.2
@@ -4558,7 +4570,7 @@ predictions = forecaster.predict_interval(
 
 ## Foundation Model Intervals
 
-`ForecasterFoundation` returns intervals and quantiles directly from the underlying foundation model's native quantile output — no bootstrapping or conformal calibration required.
+`ForecasterFoundation` returns intervals and quantiles directly from the underlying foundation model's native quantile output, so no bootstrapping or conformal calibration is required.
 
 ```python
 from skforecast.foundation import FoundationModel, ForecasterFoundation
@@ -4662,7 +4674,7 @@ DirectMultiVariate), two richer probabilistic outputs build on the same residual
 resampling:
 
 ```python
-# Arbitrary quantiles — returns one column per quantile (q_0.05, q_0.5, q_0.95)
+# Arbitrary quantiles: returns one column per quantile (q_0.05, q_0.5, q_0.95)
 predictions = forecaster.predict_quantiles(
     steps=10,
     quantiles=[0.05, 0.5, 0.95],
@@ -4688,6 +4700,7 @@ See [references/interval-compatibility.md](references/interval-compatibility.md)
 3. **Wrong default method for multi-series**: `ForecasterRecursiveMultiSeries` and `ForecasterDirectMultiVariate` default to `method='conformal'`, not `'bootstrapping'`.
 4. **Mixing `alpha` and `interval`**: `ForecasterStats` supports both `alpha` (e.g., `alpha=0.05` for 95% interval) and `interval=[lo, hi]` (quantiles). ML forecasters only support `interval`.
 5. **Not evaluating coverage**: Always check if actual coverage matches nominal interval width.
+6. **Ignoring physical bounds**: neither the model nor the intervals know that a series cannot be negative (counts, sales, demand), so predictions and lower bounds can fall below zero. Clip them after predicting, e.g. `predictions.clip(lower=0)`. See the FAQ [Non-negative predictions](https://skforecast.org/latest/faq/non-negative-predictions.html).
 
 ## References
 
@@ -7296,28 +7309,28 @@ OneStepAheadFold(
 ```python
 select_features(
     forecaster,              # ForecasterRecursive | ForecasterDirect
-    selector,                # sklearn feature selector (RFECV, SelectFromModel, etc.)
+    selector,                # scikit-learn compatible selector (RFECV, SelectFromModel, etc.)
     y,                       # pd.Series | pd.DataFrame
     exog=None,               # pd.Series | pd.DataFrame | None
-    select_only=None,        # 'autoreg' | 'exog' | None (select all)
+    select_only=None,        # 'autoreg' | 'exog' | 'calendar' | list of them | None (select all)
     force_inclusion=None,    # list[str] | str (regex) | None
-    subsample=0.5,           # int | float, proportion or number of samples
+    subsample=0.5,           # float in (0, 1], proportion of records (sampled without replacement)
     random_state=123,        # int
     verbose=True             # bool
-) -> tuple[list[int], list[str], list[str]]
-# Returns: (selected_lags, selected_window_features, selected_exog)
+) -> tuple[list[int], list[str], list[str], list[str]]
+# Returns: (selected_lags, selected_window_features, selected_exog, selected_calendar_features)
 
 select_features_multiseries(
-    forecaster,              # ForecasterRecursiveMultiSeries
-    selector,                # sklearn feature selector
+    forecaster,              # ForecasterRecursiveMultiSeries | ForecasterDirectMultiVariate
+    selector,                # scikit-learn compatible selector
     series,                  # pd.DataFrame | dict[str, pd.Series | pd.DataFrame]
     exog=None,               # pd.Series | pd.DataFrame | dict | None
-    select_only=None,        # 'autoreg' | 'exog' | None
+    select_only=None,        # 'autoreg' | 'exog' | 'calendar' | list of them | None
     force_inclusion=None,    # list[str] | str (regex) | None
-    subsample=0.5,           # int | float
+    subsample=0.5,           # float in (0, 1]
     random_state=123,        # int
     verbose=True             # bool
-) -> tuple[list[int] | dict[str, int], list[str], list[str]]
+) -> tuple[list[int] | dict[str, list[int]], list[str], list[str], list[str]]
 ```
 
 ---

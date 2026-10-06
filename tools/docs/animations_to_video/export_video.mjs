@@ -13,6 +13,7 @@
  *   node export_video.mjs                          # all animations, light and dark
  *   node export_video.mjs global-forecasting       # one animation
  *   node export_video.mjs --theme light --fps 30 --scale 2 --out videos
+ *   node export_video.mjs --src ../../../../other-repo/docs/animations name
  *
  * Set CHROME_PATH if Chrome is not installed in its default location.
  */
@@ -26,7 +27,6 @@ import puppeteer from 'puppeteer-core';
 import ffmpegPath from 'ffmpeg-static';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const ANIM_DIR = path.resolve(HERE, '../../../docs/animations');
 
 /* ------------------------------------------------------------- arguments */
 const argv = process.argv.slice(2);
@@ -38,6 +38,11 @@ const theme = opt('theme', 'both');
 const fps = Number(opt('fps', 30));
 const scale = Number(opt('scale', 2));
 const outDir = path.resolve(HERE, opt('out', 'videos'));
+const ANIM_DIR = path.resolve(HERE, opt('src', '../../../docs/animations'));
+if (!fs.existsSync(ANIM_DIR)) {
+  console.error(`Animations folder not found: ${ANIM_DIR}`);
+  process.exit(1);
+}
 const themes = theme === 'both' ? ['light', 'dark'] : [theme];
 const names = argv.length ? argv : fs.readdirSync(ANIM_DIR)
   .filter(f => f.endsWith('.html'))

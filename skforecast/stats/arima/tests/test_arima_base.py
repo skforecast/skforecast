@@ -383,6 +383,56 @@ def test_compute_arima_likelihood_handles_missing():
     assert np.isnan(result['resid'][4])
 
 
+def test_compute_arima_likelihood_missing_value_propagates_covariance():
+    """
+    Test that the state covariance keeps growing over a missing observation.
+    For an AR(1) with phi = 0.5 and unit variance, F_0 = 1 / (1 - phi²) = 4/3
+    and, after a gap of one step, the 2-step-ahead variance of y_2 is
+    F_2 = 1 + phi² = 1.25 with prediction phi² * y_0.
+    """
+    y = np.array([1.0, np.nan, 2.0])
+    model = initialize_arima_state(np.array([0.5]), np.array([]), np.array([]))
+    result = compute_arima_likelihood(y, model, give_resid=True)
+
+    expected_resid = np.array([1.0, np.nan, 2.0 - 0.25 * 1.0])
+    expected_sumlog = np.log(4 / 3) + np.log(1.25)
+    expected_ssq = 1.0**2 / (4 / 3) + 1.75**2 / 1.25
+
+    assert result['nu'] == 2
+    np.testing.assert_allclose(result['resid'], expected_resid, rtol=1e-12)
+    np.testing.assert_allclose(result['sumlog'], expected_sumlog, rtol=1e-12)
+    np.testing.assert_allclose(result['ssq'], expected_ssq, rtol=1e-12)
+
+
+def test_compute_arima_likelihood_missing_values_match_exact_kalman_filter():
+    """
+    Test the innovations and likelihood terms of an ARMA(2,1) with several
+    missing values against the exact Kalman filter of statsmodels SARIMAX
+    (stationary initialization, sigma2 = 1).
+    """
+    y = np.array([0.5, -0.3, np.nan, 1.2, 0.8, np.nan, np.nan, -0.4, 0.1, 0.9, -1.1, 0.3])
+    model = initialize_arima_state(
+        np.array([0.5, -0.3]), np.array([0.4]), np.array([])
+    )
+    result = compute_arima_likelihood(y, model, give_resid=True)
+
+    # statsmodels.api.tsa.SARIMAX(y, order=(2, 0, 1), trend='n')
+    #   .filter([0.5, -0.3, 0.4, 1.0]): forecasts_error and forecasts_error_cov
+    expected_resid = np.array([
+        0.5, -0.5735849056603773, np.nan, 1.3465040650406503,
+        -0.03372265904217286, np.nan, np.nan, -0.2785416950653369,
+        0.24601431505749163, 0.6554058177323875, -1.7723908380129023,
+        1.8247534487235255
+    ])
+    expected_sumlog = 2.665949874101081
+    expected_ssq = 8.328436179710117
+
+    assert result['nu'] == 9
+    np.testing.assert_allclose(result['resid'], expected_resid, rtol=1e-10)
+    np.testing.assert_allclose(result['sumlog'], expected_sumlog, rtol=1e-10)
+    np.testing.assert_allclose(result['ssq'], expected_ssq, rtol=1e-10)
+
+
 # =============================================================================
 # Tests for kalman_forecast
 # =============================================================================

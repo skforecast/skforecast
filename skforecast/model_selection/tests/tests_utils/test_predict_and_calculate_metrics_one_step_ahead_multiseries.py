@@ -595,6 +595,23 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_Forecas
             differentiation    = None,
             dropna_from_series = False,
             forecaster_id      = 'multiseries_lgbm'
+        ),
+        ForecasterRecursiveMultiSeries(
+            estimator          = CatBoostRegressor(
+                                     iterations          = 50,
+                                     random_seed         = 123,
+                                     verbose             = 0,
+                                     allow_writing_files = False
+                                 ),
+            lags               = 24,
+            encoding           = 'ordinal_category',
+            transformer_series = StandardScaler(),
+            transformer_exog   = StandardScaler(),
+            weight_func        = None,
+            series_weights     = None,
+            differentiation    = None,
+            dropna_from_series = False,
+            forecaster_id      = 'multiseries_catboost_ordinal_category'
         )
     ],
 ids=lambda forecaster: f'{forecaster.forecaster_id}')
@@ -605,6 +622,8 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_equivalence_ba
     refit=False. Using series and exog as dictionaries.
     Results are not equivalent if differentiation is included.
     ForecasterMultiVariate is not included because it is not possible to use dictionaries as input.
+    Series 'id_1002' has no data in the test set: with CatBoost and
+    encoding='ordinal_category', the codes of the other levels must not shift.
     """
 
     initial_train_size = 213
@@ -982,3 +1001,57 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_equivalence_ba
 
     pd.testing.assert_frame_equal(metrics_one_step_ahead, metrics_backtesting)
     pd.testing.assert_frame_equal(pred_one_step_ahead, pred_backtesting, check_dtype=False)
+
+
+def test_predict_and_calculate_metrics_one_step_ahead_multiseries_when_index_is_tz_aware_and_utc_anchored():
+    """
+    Test the output of _predict_and_calculate_metrics_one_step_ahead_multiseries
+    when the series have a timezone-aware index that advances in fixed UTC steps
+    (created in UTC and converted to a local timezone) and both the training
+    and the test sets cross a daylight saving change.
+    """
+    index = pd.date_range(
+        start="2025-09-01", periods=250, freq="D", tz="UTC"
+    ).tz_convert("Europe/Madrid")
+    rng = np.random.default_rng(123)
+    series = {
+        "l1": pd.Series(rng.normal(size=250), index=index, name="l1"),
+        "l2": pd.Series(rng.normal(size=220), index=index[30:], name="l2"),
+    }
+    initial_train_size = 100
+    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=3)
+
+    (
+        X_train,
+        y_train,
+        X_test,
+        y_test,
+        X_train_encoding,
+        X_test_encoding,
+        sample_weight,
+        fit_kwargs
+    ) = forecaster._train_test_split_one_step_ahead(
+            series             = series,
+            initial_train_size = initial_train_size,
+        )
+
+    metrics, predictions = _predict_and_calculate_metrics_one_step_ahead_multiseries(
+        forecaster=forecaster,
+        series=series,
+        X_train = X_train,
+        y_train = y_train,
+        X_test = X_test,
+        y_test = y_test,
+        X_train_encoding = X_train_encoding,
+        X_test_encoding = X_test_encoding,
+        levels = ["l1", "l2"],
+        metrics = ["mean_absolute_error", mean_absolute_scaled_error],
+        add_aggregated_metric = False,
+        sample_weight = sample_weight,
+        fit_kwargs = fit_kwargs,
+        return_predictions = True
+    )
+
+    pd.testing.assert_index_equal(predictions.index, index[initial_train_size:])
+    assert predictions.notna().all(axis=None)
+    assert metrics.notna().all(axis=None)

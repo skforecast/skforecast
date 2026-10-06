@@ -22,6 +22,9 @@ cd tools/docs/animations_to_video
 node export_video.mjs                          # all animations, light and dark themes
 node export_video.mjs global-forecasting       # a single animation
 node export_video.mjs --theme light --fps 30 --scale 2 --out videos
+
+# animations of another repository that uses the same engine
+node export_video.mjs --src ../../../../skforecast-ai/docs/animations deterministic-first
 ```
 
 Videos are written to `tools/docs/animations_to_video/videos/` (git-ignored), named `<animation>-<theme>.mp4`.
@@ -32,6 +35,7 @@ Videos are written to `tools/docs/animations_to_video/videos/` (git-ignored), na
 | `--fps` | `30` | Frames per second |
 | `--scale` | `2` | Pixel density: `2` gives 2560 pixels wide, sharp on projectors |
 | `--out` | `videos` | Output folder, relative to this folder |
+| `--src` | `../../../docs/animations` | Folder with the animations, relative to this folder. Point it to another repository that uses the same engine (`skf-anim.js`) to export its animations |
 
 Set `CHROME_PATH` if Chrome is not installed in its default location.
 

@@ -16,6 +16,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import HistGradientBoostingClassifier
 from lightgbm import LGBMClassifier
+from catboost import CatBoostClassifier
 
 from skforecast.preprocessing import RollingFeaturesClassification
 from skforecast.exceptions import MissingValuesWarning
@@ -279,6 +280,50 @@ def test_predict_output_when_categorical_features_LGBMClassifier_auto(categorica
                    name = 'pred'
                )
     
+    pd.testing.assert_series_equal(predictions, expected)
+
+
+@pytest.mark.parametrize(
+    'categorical_features',
+    ['auto', ['exog_2', 'exog_3']],
+    ids=lambda cf: f'categorical_features: {cf}'
+)
+def test_predict_output_when_categorical_features_CatBoostClassifier(categorical_features):
+    """
+    Test predict output when using CatBoostClassifier with native categorical
+    features: the lags (`features_encoding='auto'`) and the categorical
+    exogenous variables. CatBoost requires these columns as integers when
+    predicting from a numpy array.
+    """
+    df_exog = pd.DataFrame(
+        {'exog_1': exog.to_numpy(),
+         'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
+         'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)}
+    )
+
+    df_exog_predict = df_exog.iloc[:10, :].copy()
+    df_exog_predict.index = pd.RangeIndex(start=50, stop=60)
+
+    forecaster = ForecasterRecursiveClassifier(
+                     estimator            = CatBoostClassifier(
+                                                iterations          = 100,
+                                                depth               = 3,
+                                                random_seed         = 123,
+                                                verbose             = 0,
+                                                allow_writing_files = False
+                                            ),
+                     lags                 = 5,
+                     categorical_features = categorical_features
+                 )
+    forecaster.fit(y=y, exog=df_exog)
+    predictions = forecaster.predict(steps=10, exog=df_exog_predict)
+
+    expected = pd.Series(
+                   data = np.array([2, 1, 2, 2, 2, 3, 2, 2, 1, 2]),
+                   index = pd.RangeIndex(start=50, stop=60, step=1),
+                   name = 'pred'
+               )
+
     pd.testing.assert_series_equal(predictions, expected)
 
 

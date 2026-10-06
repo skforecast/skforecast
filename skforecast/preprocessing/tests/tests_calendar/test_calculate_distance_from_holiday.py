@@ -7,10 +7,7 @@ from skforecast.preprocessing import calculate_distance_from_holiday
 from skforecast.preprocessing._calendar import _freq_to_timedelta_unit
 from skforecast.exceptions import IgnoredArgumentWarning
 
-if pd.__version__ < "2.2.0":
-    freq_h = "H"
-else:
-    freq_h = "h"
+freq_h = "h"
 
 
 def test_calculate_distance_from_holiday_daily_index():

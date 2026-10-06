@@ -6,7 +6,7 @@ import subprocess
 import dataclasses
 import pytest
 from skforecast.foundation import FoundationModelInfo, get_model_info
-from skforecast.foundation._utils import _NON_COMMERCIAL_LICENSES
+from skforecast.foundation._utils import _MODEL_LICENSES
 
 
 def test_get_model_info_TypeError_when_model_id_is_not_str():
@@ -27,6 +27,21 @@ def test_get_model_info_ValueError_when_no_adapter_matches_model_id():
     err_msg = re.escape("No adapter found for model 'unknown/my-model'.")
     with pytest.raises(ValueError, match=err_msg):
         get_model_info(model_id="unknown/my-model")
+
+
+def test_get_model_info_ValueError_when_no_license_is_registered(monkeypatch):
+    """
+    Test that get_model_info raises a ValueError when the adapter is
+    registered but the license registry has no entry for `model_id`.
+    """
+    monkeypatch.delitem(_MODEL_LICENSES, "Synthefy/Nori")
+
+    err_msg = re.escape(
+        "No license is registered for model 'Synthefy/Nori'. Add its prefix "
+        "to `_MODEL_LICENSES`."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        get_model_info(model_id="Synthefy/Nori")
 
 
 def test_get_model_info_output_Chronos():
@@ -50,8 +65,14 @@ def test_get_model_info_output_Chronos():
         supports_nan_in_series            = True,
         supported_quantiles               = None,
         requires_hf_auth                  = False,
-        license_restriction               = None,
-        license_url                       = None,
+        requires_provider_auth            = False,
+        weights_repo_id                   = "autogluon/chronos-2-synth",
+        weights_in_hf_cache               = True,
+        license                           = "Apache-2.0",
+        license_url                       = (
+            "https://huggingface.co/autogluon/chronos-2-synth"
+        ),
+        commercial_use_restricted         = False,
     )
 
     assert info == expected
@@ -79,10 +100,14 @@ def test_get_model_info_output_TimesFM3():
         supports_nan_in_series            = True,
         supported_quantiles               = (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9),
         requires_hf_auth                  = False,
-        license_restriction               = "TimesFM Non-Commercial License v1.0",
+        requires_provider_auth            = False,
+        weights_repo_id                   = "google/timesfm-3.0-pytorch",
+        weights_in_hf_cache               = True,
+        license                           = "timesfm-non-commercial-license-v1.0",
         license_url                       = (
             "https://huggingface.co/google/timesfm-3.0-pytorch/blob/main/LICENSE"
         ),
+        commercial_use_restricted         = True,
     )
 
     assert info == expected
@@ -102,9 +127,9 @@ def test_get_model_info_output_TimesFM3():
         ("soda-inria/tabicl",
          ("TabICLAdapter", 4096, "tabicl[forecast]", True, False, False)),
         ("priorlabs/tabpfn-ts",
-         ("TabPFNAdapter", 32768, "tabpfn-time-series", True, False, False)),
+         ("TabPFNAdapter", 32768, "tabpfn-time-series>=1.3", True, False, False)),
         ("theforecastingcompany/t0-alpha",
-         ("T0Adapter", 8192, "tfc-t0", True, False, True)),
+         ("T0Adapter", 8192, "tfc-t0", True, False, False)),
         ("Synthefy/Nori",
          ("NoriAdapter", 4096, "synthefy-nori", True, False, False)),
         ("taharnbl/TS-ICL",
@@ -153,32 +178,97 @@ def test_get_model_info_supported_quantiles(model_id, expected):
 
 
 @pytest.mark.parametrize(
-    "model_id, prefix",
+    "model_id, prefix, restricted",
     [
-        ("google/timesfm-3.0-pytorch", "google/timesfm-3.0"),
-        ("Salesforce/moirai-2.0-R-small", "Salesforce/moirai"),
-        ("priorlabs/tabpfn-ts", "priorlabs/tabpfn"),
-        ("taharnbl/TS-ICL", "taharnbl/TS-ICL"),
-        ("autogluon/chronos-2-small", None),
-        ("google/timesfm-2.5-200m-pytorch", None),
-        ("theforecastingcompany/t0-alpha", None),
+        ("google/timesfm-3.0-pytorch", "google/timesfm-3.0", True),
+        ("Salesforce/moirai-2.0-R-small", "Salesforce/moirai", True),
+        ("priorlabs/tabpfn-ts", "priorlabs/tabpfn", True),
+        ("taharnbl/TS-ICL", "taharnbl/TS-ICL", True),
+        ("autogluon/chronos-2-small", "autogluon/chronos-2", False),
+        ("amazon/chronos-2", "amazon/chronos-2", False),
+        ("google/timesfm-2.5-200m-pytorch", "google/timesfm-2.5", False),
+        ("soda-inria/tabicl", "soda-inria/tabicl", False),
+        ("theforecastingcompany/t0-alpha", "theforecastingcompany/t0", False),
+        ("Synthefy/Nori", "Synthefy/Nori", False),
     ],
     ids=lambda x: str(x),
 )
-def test_get_model_info_license_fields_match_LicenseWarning_registry(model_id, prefix):
+def test_get_model_info_license_fields_match_LicenseWarning_registry(
+    model_id, prefix, restricted
+):
     """
     Test that the license fields come from the same registry used by
-    `LicenseWarning`, and are `None` when no restriction is registered.
+    `LicenseWarning`: `license` and `license_url` are always informed, and
+    `commercial_use_restricted` is `True` only for the licenses that restrict
+    commercial use.
+    """
+    info = get_model_info(model_id=model_id)
+    license_name, license_url, _, _ = _MODEL_LICENSES[prefix]
+    if license_url is None:
+        license_url = f"https://huggingface.co/{info.weights_repo_id}"
+
+    assert info.license == license_name
+    assert info.license_url == license_url
+    assert info.commercial_use_restricted is restricted
+
+
+@pytest.mark.parametrize(
+    "model_id, expected",
+    [
+        ("amazon/chronos-2", "https://huggingface.co/amazon/chronos-2"),
+        ("Synthefy/Nori-30M", "https://huggingface.co/Synthefy/Nori-30M"),
+        ("soda-inria/tabicl", "https://huggingface.co/jingang/TabICL"),
+        ("priorlabs/tabpfn-ts",
+         "https://huggingface.co/Prior-Labs/tabpfn_3_5/blob/main/LICENSE"),
+        ("taharnbl/TS-ICL", "https://huggingface.co/taharnbl/TS-ICL/blob/main/LICENSE"),
+    ],
+    ids=lambda x: str(x),
+)
+def test_get_model_info_license_url(model_id, expected):
+    """
+    Test that `license_url` is the license file registered for licenses that
+    are not standard, and the model card of the repository the weights are
+    downloaded from otherwise, which follows `model_id` unless the backend
+    uses a fixed repository (TabICL).
     """
     info = get_model_info(model_id=model_id)
 
-    if prefix is None:
-        assert info.license_restriction is None
-        assert info.license_url is None
-    else:
-        license_name, license_url = _NON_COMMERCIAL_LICENSES[prefix]
-        assert info.license_restriction == license_name
-        assert info.license_url == license_url
+    assert info.license_url == expected
+
+
+@pytest.mark.parametrize(
+    "model_id, expected",
+    [
+        ("autogluon/chronos-2-small", ("autogluon/chronos-2-small", True, False)),
+        ("amazon/chronos-2", ("amazon/chronos-2", True, False)),
+        ("google/timesfm-2.5-200m-pytorch",
+         ("google/timesfm-2.5-200m-pytorch", True, False)),
+        ("google/timesfm-3.0-pytorch", ("google/timesfm-3.0-pytorch", True, False)),
+        ("Salesforce/moirai-2.0-R-base",
+         ("Salesforce/moirai-2.0-R-base", True, False)),
+        ("soda-inria/tabicl", ("jingang/TabICL", True, False)),
+        ("priorlabs/tabpfn-ts", ("Prior-Labs/tabpfn_3_5", False, True)),
+        ("theforecastingcompany/t0-alpha",
+         ("theforecastingcompany/t0-alpha", True, False)),
+        ("Synthefy/Nori", ("Synthefy/Nori", True, False)),
+        ("taharnbl/TS-ICL", ("taharnbl/TS-ICL", True, False)),
+    ],
+    ids=lambda x: str(x),
+)
+def test_get_model_info_weights_location_for_each_adapter(model_id, expected):
+    """
+    Test that `weights_repo_id` is the Hugging Face repository the backend
+    downloads the weights from (`model_id` itself, or the fixed repository of
+    backends that ignore it, as TabICL and TabPFN), and the values of
+    `weights_in_hf_cache` and `requires_provider_auth` for every adapter.
+    """
+    info = get_model_info(model_id=model_id)
+
+    assert (
+        info.weights_repo_id,
+        info.weights_in_hf_cache,
+        info.requires_provider_auth,
+    ) == expected
 
 
 def test_get_model_info_output_is_frozen_and_convertible_to_dict():

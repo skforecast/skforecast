@@ -814,8 +814,6 @@ def fetch_dataset(
         try:
             index_col = datasets[name]['index_col']
             freq = datasets[name]['freq']
-            if freq == 'h' and tuple(int(x) for x in pd.__version__.split('.')[:2]) < (2, 2):
-                freq = 'H'
             date_format = datasets[name]['date_format']
             if df.index.name != index_col:
                 df = df.set_index(index_col)

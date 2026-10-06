@@ -11,12 +11,13 @@ from typing import Optional, Tuple, Dict, Literal, List, Any
 import numpy as np
 from numpy.typing import NDArray
 from numba import njit
-from scipy.optimize import minimize, minimize_scalar
+from scipy.optimize import minimize
 from scipy.stats import norm, jarque_bera, shapiro
 import warnings
 import math
 
 from ...utils import check_optional_dependency
+from ..transformations import box_cox_lambda
 
 try:
     from statsmodels.tsa.seasonal import seasonal_decompose
@@ -24,6 +25,16 @@ except ModuleNotFoundError as error:
     if error.name == "statsmodels":
         check_optional_dependency(package_name="statsmodels")
     raise
+
+# The compiled functions of this module are not compiled with `fastmath`: it
+# lets the compiler assume that no NaN or inf values exist, which removes the
+# `np.isnan` checks of the absent parameters (NaN) and the guards of the
+# objective function, and makes the results depend on the CPU.
+
+# Usual bounds of the smoothing parameters (alpha, beta, gamma, phi), as in
+# R's forecast::ets.
+PARAM_LOWER = np.array([1e-4, 1e-4, 1e-4, 0.8])
+PARAM_UPPER = np.array([0.9999, 0.9999, 0.9999, 0.98])
 
 ERROR_TYPES = {"N": 0, "A": 1, "M": 2}
 TREND_TYPES = {"N": 0, "A": 1, "M": 2}
@@ -35,7 +46,51 @@ def is_constant(y: NDArray[np.float64]) -> bool:
     return np.all(y == y[0])
 
 
-@njit(cache=True, fastmath=True)
+@njit(cache=True)
+def _roots_within_radius(coefs: NDArray[np.float64], radius: float) -> bool:  # pragma: no cover
+    """
+    Check that every root of a polynomial has a modulus <= `radius`.
+
+    Schur-Cohn test applied to q(w) = p(radius * w): the roots of q are all
+    inside the unit circle if and only if every reflection coefficient of the
+    recursion has modulus below 1. Equivalent to computing the roots, without
+    an eigenvalue problem (O(n²) operations). Each step is divided by the
+    leading coefficient to avoid underflow.
+
+    Parameters
+    ----------
+    coefs : NDArray[np.float64]
+        Polynomial coefficients in ascending powers.
+    radius : float
+        Maximum modulus of the roots.
+
+    Returns
+    -------
+    bool
+        True if all the roots have a modulus <= radius.
+    """
+    n = len(coefs) - 1
+    q = np.empty(n + 1)
+    tmp = np.empty(n + 1)
+    scale = 1.0
+    for k in range(n + 1):
+        q[k] = coefs[k] * scale
+        scale *= radius
+    while n > 0:
+        if q[n] == 0.0:
+            return False
+        k_refl = q[0] / q[n]
+        if abs(k_refl) >= 1.0:
+            return False
+        for j in range(1, n + 1):
+            tmp[j - 1] = q[j] - k_refl * q[n - j]
+        for j in range(n):
+            q[j] = tmp[j]
+        n -= 1
+    return True
+
+
+@njit(cache=True)
 def _admissible_jit(alpha: float, beta: float, gamma: float, phi: float, m: int) -> bool:  # pragma: no cover
     TOL = 1e-8
     if phi < 0.0 or phi > 1.0 + TOL:
@@ -73,30 +128,19 @@ def _admissible_jit(alpha: float, beta: float, gamma: float, phi: float, m: int)
         c_coef = alpha + beta_val - alpha * phi
         d = alpha + beta_val - phi
 
-        n_coef = m + 1
-        P = np.zeros(n_coef, dtype=np.float64)
-        P[0] = a
-        P[1] = b
-        for i in range(2, m - 1):
-            P[i] = c_coef
-        P[m - 1] = d
-        P[m] = 1.0
-
+        # Characteristic polynomial of the discount matrix, in ascending
+        # powers as in R's forecast::ets: a, b, (m - 2) times c, d, 1. The
+        # model is admissible when no root has a modulus above 1 + 1e-10.
         if m <= 24:
-            C = np.zeros((n_coef - 1, n_coef - 1), dtype=np.float64)
-            for j in range(n_coef - 1):
-                C[0, j] = -P[j + 1] / P[0]
-            for i in range(1, n_coef - 1):
-                C[i, i - 1] = 1.0
-            try:
-                eigvals = np.linalg.eigvals(C)
-                max_abs_root = np.max(np.abs(eigvals))
-                if max_abs_root > 1.0 + 1e-10:
-                    return False
-            except:
+            P = np.empty(m + 2, dtype=np.float64)
+            P[0] = a
+            P[1] = b
+            for i in range(2, m):
+                P[i] = c_coef
+            P[m] = d
+            P[m + 1] = 1.0
+            if not _roots_within_radius(P, 1.0 + 1e-10):
                 return False
-        else:
-            pass
 
     return True
 
@@ -114,7 +158,7 @@ def admissible(alpha: Optional[float],
     return _admissible_jit(alpha_val, beta_val, gamma_val, phi_val, m)
 
 
-@njit(cache=True, fastmath=True)
+@njit(cache=True)
 def _check_param_jit(alpha: float, beta: float, gamma: float, phi: float,
                      lower: NDArray[np.float64], upper: NDArray[np.float64],
                      check_usual: bool, check_admissible: bool, m: int) -> bool:  # pragma: no cover
@@ -136,7 +180,9 @@ def _check_param_jit(alpha: float, beta: float, gamma: float, phi: float,
                 return False
 
     if check_admissible:
-        if not _admissible_jit(alpha, beta, gamma, phi, m):
+        # A model without damping is checked with phi = 1, as in R
+        phi_admissible = 1.0 if np.isnan(phi) else phi
+        if not _admissible_jit(alpha, beta, gamma, phi_admissible, m):
             return False
 
     return True
@@ -250,23 +296,22 @@ class BoxCoxTransform:
     shift: float = 0.0
 
     @staticmethod
-    def find_lambda(y: NDArray[np.float64], lambda_range: Tuple[float, float] = (-1, 2)) -> float:
+    def find_lambda(
+        y: NDArray[np.float64],
+        m: int = 1,
+        lambda_range: Tuple[float, float] = (-0.9, 2.0)
+    ) -> float:
+        """
+        Select the Box-Cox lambda with Guerrero's method, as R's
+        `forecast::BoxCox(lambda = "auto")`. Non-positive series are shifted
+        to be positive first.
+        """
         if np.any(y <= 0):
-            shift = np.abs(np.min(y)) + 1.0
-            y_shifted = y + shift
-        else:
-            shift = 0.0
-            y_shifted = y
+            y = y + np.abs(np.min(y)) + 1.0
 
-        def neg_log_likelihood(lam):
-            if abs(lam) < 1e-10:
-                y_trans = np.log(y_shifted)
-            else:
-                y_trans = (y_shifted ** lam - 1) / lam
-            return np.var(y_trans)
-
-        result = minimize_scalar(neg_log_likelihood, bounds=lambda_range, method='bounded')
-        return result.x
+        return box_cox_lambda(
+            y, m=m, method="guerrero", lower=lambda_range[0], upper=lambda_range[1]
+        )
 
     def transform(self, y: NDArray[np.float64]) -> NDArray[np.float64]:
         y_shifted = y + self.shift
@@ -277,21 +322,30 @@ class BoxCoxTransform:
 
     def inverse_transform(self, y_trans: NDArray[np.float64],
                          bias_adjust: bool = False,
-                         variance: Optional[float] = None) -> NDArray[np.float64]:
+                         variance: Optional[float | NDArray[np.float64]] = None) -> NDArray[np.float64]:
         if abs(self.lambda_param) < 1e-10:
             y_back = np.exp(y_trans)
             if bias_adjust and variance is not None:
-                y_back *= np.exp(variance / 2)
+                # R's InvBoxCox with lambda = 0
+                y_back = y_back * (1 + variance / 2)
         else:
-            y_back = (self.lambda_param * y_trans + 1) ** (1 / self.lambda_param)
+            # As R's InvBoxCox, values outside the range of the transformation
+            # (lambda * y + 1 < 0) are NaN when lambda < 0 and keep their sign
+            # otherwise, so the inverse is monotonic (interval bounds included).
+            xx = self.lambda_param * np.asarray(y_trans, dtype=np.float64) + 1
+            if self.lambda_param < 0:
+                xx = np.where(xx < 0, np.nan, xx)
+            y_back = np.sign(xx) * np.abs(xx) ** (1 / self.lambda_param)
             if bias_adjust and variance is not None:
-                correction = (1 - self.lambda_param) * variance / (2 * y_back ** (2 * self.lambda_param))
-                y_back += correction
+                y_back = y_back * (
+                    1 + (1 - self.lambda_param) * variance
+                    / (2 * y_back ** (2 * self.lambda_param))
+                )
 
         return y_back - self.shift
 
 
-@njit(cache=True, fastmath=True)
+@njit(cache=True, inline="always")
 def _ets_step(
     l: float, 
     b: float, 
@@ -308,6 +362,16 @@ def _ets_step(
 ) -> Tuple:  # pragma: no cover
     """
     Perform one step of the ETS state space model update and forecasting.
+
+    The seasonal states `s` are updated in place (no copy per step).
+
+    Returns
+    -------
+    l_new, b_new, yhat, e : float
+        Updated level and trend, one-step-ahead forecast and error.
+    valid : bool
+        False when a multiplicative trend has a non-positive level or trend,
+        in which case the other values are meaningless.
     """
     TOL = 1e-10
 
@@ -319,7 +383,7 @@ def _ets_step(
         q = l + phib
     else:
         if b <= 0 or l <= 0:
-            return l, b, s, -99999.0, 0.0
+            return l, b, 0.0, 0.0, False
         phib = b ** phi
         q = l * phib
     if season == 0:
@@ -350,27 +414,21 @@ def _ets_step(
     elif trend == 2:
         r = l_new / max(l, TOL)
         b_new = phib + (beta / alpha) * (r - phib)
-    
-    # Only copy seasonal array if model has seasonality
-    # This avoids 10-15% overhead for non-seasonal models (*NN, *AN, etc.)
+
     if season > 0:
-        s_new = s.copy()
         if season == 1:
             t = y - q
         else:
             t = y / max(q, TOL)
         new_seasonal = s[m - 1] + gamma * (t - s[m - 1])
-        s_new[0] = new_seasonal
+        for i in range(m - 1, 0, -1):
+            s[i] = s[i - 1]
+        s[0] = new_seasonal
 
-        for i in range(1, m):
-            s_new[i] = s[i - 1]
-    else:
-        s_new = s  # No copy needed for non-seasonal models
-
-    return l_new, b_new, s_new, yhat, e
+    return l_new, b_new, yhat, e, True
 
 
-@njit(cache=True, fastmath=True)
+@njit(cache=True)
 def _ets_likelihood(y: NDArray[np.float64], init_states: NDArray[np.float64],
                     m: int, error: int, trend: int, season: int,
                     alpha: float, beta: float, gamma: float, phi: float) -> Tuple:  # pragma: no cover
@@ -393,11 +451,11 @@ def _ets_likelihood(y: NDArray[np.float64], init_states: NDArray[np.float64],
     sum_log_yhat = 0.0
 
     for i in range(n):
-        l, b, s, yhat, e = _ets_step(
+        l, b, yhat, e, valid = _ets_step(
             l, b, s, y[i], m, error, trend, season, alpha, beta, gamma, phi
         )
 
-        if yhat < -99998:
+        if not valid:
             return np.inf, residuals, fitted, init_states
 
         fitted[i] = yhat
@@ -421,7 +479,7 @@ def _ets_likelihood(y: NDArray[np.float64], init_states: NDArray[np.float64],
     return loglik, residuals, fitted, final_state
 
 
-@njit(cache=True, fastmath=True)
+@njit(cache=True)
 def _fourier_jit(n: int, period: int, K: int, h: int) -> NDArray[np.float64]:  # pragma: no cover
     if h == 0:
         n_times = n
@@ -536,6 +594,60 @@ def init_states(y: NDArray[np.float64], config: ETSConfig) -> NDArray[np.float64
     return np.concatenate([[l0, b0], init_seas])
 
 
+def initial_smoothing_params(
+    config: ETSConfig,
+    alpha: Optional[float] = None,
+    beta: Optional[float] = None,
+    gamma: Optional[float] = None,
+    phi: Optional[float] = None
+) -> NDArray[np.float64]:
+    """
+    Starting values of the smoothing parameters for the optimizer.
+
+    Follows `initparam` of R's forecast::ets: every starting value is inside
+    the usual bounds and satisfies beta <= alpha and gamma <= 1 - alpha.
+    Values given by the user are kept.
+
+    Parameters
+    ----------
+    config : ETSConfig
+        Model configuration.
+    alpha, beta, gamma, phi : float, optional
+        Fixed values of the smoothing parameters.
+
+    Returns
+    -------
+    NDArray[np.float64]
+        Values of [alpha, beta, gamma, phi].
+    """
+    lower, upper = PARAM_LOWER, PARAM_UPPER
+    m = config.m
+
+    if alpha is None:
+        alpha = lower[0] + 0.2 * (upper[0] - lower[0]) / m
+        if alpha > 1 or alpha < 0:
+            alpha = lower[0] + 2e-3
+
+    if beta is None:
+        upper_beta = min(upper[1], alpha)
+        beta = lower[1] + 0.1 * (upper_beta - lower[1])
+        if beta < 0 or beta > alpha:
+            beta = alpha - 1e-3
+
+    if gamma is None:
+        upper_gamma = min(upper[2], 1 - alpha)
+        gamma = lower[2] + 0.05 * (upper_gamma - lower[2])
+        if gamma < 0 or gamma > 1 - alpha:
+            gamma = 1 - alpha - 1e-3
+
+    if phi is None:
+        phi = lower[3] + 0.99 * (upper[3] - lower[3])
+        if phi < 0 or phi > 1:
+            phi = upper[3] - 1e-3
+
+    return np.array([alpha, beta, gamma, phi], dtype=np.float64)
+
+
 def get_bounds(config: ETSConfig) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
     lower = [1e-4]
     upper = [0.9999]
@@ -552,17 +664,21 @@ def get_bounds(config: ETSConfig) -> Tuple[NDArray[np.float64], NDArray[np.float
         lower.append(0.8)
         upper.append(0.98)
     n_states = config.n_states
-    lower.extend([-1e6] * n_states)
-    upper.extend([1e6] * n_states)
+    # The initial states are not bounded (as in R): they are in the units of
+    # the series, whatever its magnitude.
+    lower.extend([-np.inf] * n_states)
+    upper.extend([np.inf] * n_states)
 
     return np.array(lower), np.array(upper)
 
 
-@njit(cache=True, fastmath=True)
+@njit(cache=True)
 def _ets_objective_jit(x: NDArray[np.float64], 
                        y: NDArray[np.float64], 
                        lower: NDArray[np.float64], 
                        upper: NDArray[np.float64],
+                       par_values: NDArray[np.float64],
+                       par_free: NDArray[np.bool_],
                        m: int, 
                        error_code: int, 
                        trend_code: int, 
@@ -587,11 +703,17 @@ def _ets_objective_jit(x: NDArray[np.float64],
     Parameters
     ----------
     x : NDArray[np.float64]
-        Parameter vector [alpha, beta?, gamma?, phi?, init_states...]
+        Vector of the estimated parameters: the free smoothing parameters
+        among [alpha, beta?, gamma?, phi?] followed by the initial states.
     y : NDArray[np.float64]
         Time series observations
     lower, upper : NDArray[np.float64]
-        Parameter bounds
+        Bounds of the elements of `x`.
+    par_values : NDArray[np.float64]
+        Values of the fixed smoothing parameters [alpha, beta, gamma, phi]
+        (entries of the free parameters are ignored).
+    par_free : NDArray[np.bool_]
+        Whether each of [alpha, beta, gamma, phi] is estimated.
     m : int
         Seasonal period
     error_code, trend_code, season_code : int
@@ -615,37 +737,28 @@ def _ets_objective_jit(x: NDArray[np.float64],
         if x[i] < lower[i] or x[i] > upper[i]:
             return PENALTY
 
-    # Extract smoothing parameters from x
+    # Smoothing parameters: estimated ones from x, fixed ones from par_values
+    values = par_values.copy()
     idx = 0
-    alpha = x[idx]
-    idx += 1
+    for k in range(4):
+        if par_free[k]:
+            values[k] = x[idx]
+            idx += 1
 
-    if has_trend:
-        beta = x[idx]
-        idx += 1
-    else:
-        beta = 0.0
-
-    if has_season:
-        gamma = x[idx]
-        idx += 1
-    else:
-        gamma = np.nan
-
-    if is_damped:
-        phi = x[idx]
-        idx += 1
-    else:
-        phi = 1.0
+    alpha = values[0]
+    beta = values[1] if has_trend else 0.0
+    gamma = values[2] if has_season else np.nan
+    phi = values[3] if is_damped else 1.0
 
     init_states = x[idx:].copy()
 
-    # Check parameter constraints
+    # Check parameter constraints (usual bounds of [alpha, beta, gamma, phi])
     beta_check = beta if has_trend else np.nan
     phi_check = phi if is_damped else np.nan
 
     if not _check_param_jit(alpha, beta_check, gamma, phi_check,
-                            lower, upper, check_usual, check_admissible, m):
+                            PARAM_LOWER, PARAM_UPPER, check_usual,
+                            check_admissible, m):
         return PENALTY
 
     # Handle seasonal component normalization
@@ -685,6 +798,268 @@ def _ets_objective_jit(x: NDArray[np.float64],
         return PENALTY
 
     return loglik
+
+
+# Optimization of the ETS parameters
+# ------------------------------------------------------------------------------
+# When the usual bounds apply and alpha is estimated, beta and gamma are
+# optimized as fractions of their admissible ranges,
+#     beta = 1e-4 + u_beta (alpha - 1e-4),  gamma = 1e-4 + u_gamma (1 - alpha - 1e-4)
+# with u_beta, u_gamma in [0, 1], so that the usual bounds (including
+# beta <= alpha and gamma <= 1 - alpha) become a box. The likelihood is
+# multimodal in the smoothing parameters and the initial states: L-BFGS-B is
+# run from several starting points and the best solution is refined with
+# Nelder-Mead. Besides R's starting values, the starts set alpha and, when
+# they are estimated, the fractions of beta and gamma (None keeps R's value).
+# The likelihood often has a local optimum at each end of the range of beta
+# (or gamma), so one start begins near the upper end. Known limitations: an
+# optimum very close to the corner alpha = beta = 1e-4 can end at the corner,
+# and a few series still end at a local optimum (MNA on the fuel consumption
+# series: -2 log-likelihood 1.13 above the best of 24 random starts).
+
+ETS_STARTS = ((0.5, None), (0.9, None), (0.5, 0.9))
+
+
+@njit(cache=True)
+def _ets_u_to_x(u: NDArray[np.float64], pos_beta: int, pos_gamma: int) -> NDArray[np.float64]:  # pragma: no cover
+    """Map the optimization variables to the model parameters."""
+    x = u.copy()
+    if pos_beta >= 0:
+        x[pos_beta] = 1e-4 + u[pos_beta] * (u[0] - 1e-4)
+    if pos_gamma >= 0:
+        x[pos_gamma] = 1e-4 + u[pos_gamma] * (1.0 - u[0] - 1e-4)
+    return x
+
+
+def _ets_x_to_u(x: NDArray[np.float64], pos_beta: int, pos_gamma: int) -> NDArray[np.float64]:
+    """Inverse of `_ets_u_to_x`."""
+    u = x.copy()
+    if pos_beta >= 0:
+        u[pos_beta] = (x[pos_beta] - 1e-4) / (x[0] - 1e-4)
+    if pos_gamma >= 0:
+        u[pos_gamma] = (x[pos_gamma] - 1e-4) / (1.0 - x[0] - 1e-4)
+    return u
+
+
+@njit(cache=True)
+def _ets_objective_grad(
+    u: NDArray[np.float64],
+    upper_u: NDArray[np.float64],
+    pos_beta: int,
+    pos_gamma: int,
+    obj_args: Tuple
+) -> Tuple[float, NDArray[np.float64]]:  # pragma: no cover
+    """
+    Objective and forward-difference gradient in the optimization variables.
+
+    The step of a variable goes backwards when the forward point would
+    exceed its upper bound.
+    """
+    N = len(u)
+    f0 = _ets_objective_jit(_ets_u_to_x(u, pos_beta, pos_gamma), *obj_args)
+    grad = np.empty(N)
+    u_step = u.copy()
+    for i in range(N):
+        h = 1.4901161193847656e-08 * max(1.0, abs(u[i]))
+        if u[i] + h > upper_u[i]:
+            h = -h
+        u_step[i] = u[i] + h
+        h = u_step[i] - u[i]
+        f_i = _ets_objective_jit(_ets_u_to_x(u_step, pos_beta, pos_gamma), *obj_args)
+        grad[i] = (f_i - f0) / h
+        u_step[i] = u[i]
+    return f0, grad
+
+
+@njit(cache=True)
+def _ets_nelder_mead(
+    u0: NDArray[np.float64],
+    maxiter: int,
+    xtol: float,
+    ftol: float,
+    pos_beta: int,
+    pos_gamma: int,
+    obj_args: Tuple
+) -> Tuple[NDArray[np.float64], float]:  # pragma: no cover
+    """
+    Nelder-Mead minimization of the objective in the optimization variables.
+
+    Same algorithm as `scipy.optimize.minimize(method='Nelder-Mead',
+    adaptive=True)` (Gao and Han, 2012), compiled to avoid the Python overhead
+    of each evaluation. The convergence tolerances are relative: the initial
+    states are in the units of the series, so absolute tolerances would never
+    be met for series of large magnitude.
+    """
+    N = len(u0)
+    rho = 1.0
+    chi = 1.0 + 2.0 / N
+    psi = 0.75 - 1.0 / (2.0 * N)
+    sigma = 1.0 - 1.0 / N
+
+    sim = np.empty((N + 1, N))
+    sim[0] = u0
+    for k in range(N):
+        vertex = u0.copy()
+        if vertex[k] != 0:
+            vertex[k] = 1.05 * vertex[k]
+        else:
+            vertex[k] = 0.00025
+        sim[k + 1] = vertex
+    fsim = np.empty(N + 1)
+    for k in range(N + 1):
+        fsim[k] = _ets_objective_jit(_ets_u_to_x(sim[k], pos_beta, pos_gamma), *obj_args)
+    order = np.argsort(fsim, kind="mergesort")
+    fsim = fsim[order]
+    sim = sim[order]
+
+    for _ in range(1, maxiter):
+        max_dx = 0.0
+        max_df = 0.0
+        for k in range(1, N + 1):
+            max_df = max(max_df, abs(fsim[0] - fsim[k]))
+            for j in range(N):
+                max_dx = max(
+                    max_dx, abs(sim[k, j] - sim[0, j]) / max(1.0, abs(sim[0, j]))
+                )
+        if max_dx <= xtol and max_df <= ftol * max(1.0, abs(fsim[0])):
+            break
+
+        xbar = np.zeros(N)
+        for k in range(N):
+            xbar += sim[k]
+        xbar /= N
+
+        xr = (1 + rho) * xbar - rho * sim[-1]
+        fxr = _ets_objective_jit(_ets_u_to_x(xr, pos_beta, pos_gamma), *obj_args)
+        shrink = False
+        if fxr < fsim[0]:
+            xe = (1 + rho * chi) * xbar - rho * chi * sim[-1]
+            fxe = _ets_objective_jit(_ets_u_to_x(xe, pos_beta, pos_gamma), *obj_args)
+            if fxe < fxr:
+                sim[-1] = xe
+                fsim[-1] = fxe
+            else:
+                sim[-1] = xr
+                fsim[-1] = fxr
+        elif fxr < fsim[-2]:
+            sim[-1] = xr
+            fsim[-1] = fxr
+        else:
+            if fxr < fsim[-1]:
+                xc = (1 + psi * rho) * xbar - psi * rho * sim[-1]
+                fxc = _ets_objective_jit(_ets_u_to_x(xc, pos_beta, pos_gamma), *obj_args)
+                if fxc <= fxr:
+                    sim[-1] = xc
+                    fsim[-1] = fxc
+                else:
+                    shrink = True
+            else:
+                xcc = (1 - psi) * xbar + psi * sim[-1]
+                fxcc = _ets_objective_jit(_ets_u_to_x(xcc, pos_beta, pos_gamma), *obj_args)
+                if fxcc < fsim[-1]:
+                    sim[-1] = xcc
+                    fsim[-1] = fxcc
+                else:
+                    shrink = True
+            if shrink:
+                for j in range(1, N + 1):
+                    sim[j] = sim[0] + sigma * (sim[j] - sim[0])
+                    fsim[j] = _ets_objective_jit(_ets_u_to_x(sim[j], pos_beta, pos_gamma), *obj_args)
+        order = np.argsort(fsim, kind="mergesort")
+        sim = sim[order]
+        fsim = fsim[order]
+
+    return sim[0].copy(), fsim[0]
+
+
+def _optimize_ets(
+    x0: NDArray[np.float64],
+    lower: NDArray[np.float64],
+    upper: NDArray[np.float64],
+    pos_beta: int,
+    pos_gamma: int,
+    alpha_free: bool,
+    obj_args: Tuple
+) -> Tuple[NDArray[np.float64], float]:
+    """
+    Minimize the ETS objective.
+
+    L-BFGS-B (with the gradient computed in compiled code) is run from the
+    starting values `x0` and, when alpha is estimated, from the starting
+    points of `ETS_STARTS`. The best solution is refined with
+    Nelder-Mead, restarted while it improves by more than a relative 1e-6.
+
+    Parameters
+    ----------
+    x0 : NDArray[np.float64]
+        Starting values of the estimated parameters and initial states.
+    lower, upper : NDArray[np.float64]
+        Bounds of the elements of `x0`.
+    pos_beta, pos_gamma : int
+        Positions of beta and gamma in `x0` when they are optimized as
+        fractions of their range (-1 otherwise).
+    alpha_free : bool
+        Whether alpha is estimated (first element of `x0`).
+    obj_args : tuple
+        Arguments of `_ets_objective_jit` after the parameter vector.
+
+    Returns
+    -------
+    x : NDArray[np.float64]
+        Estimated parameters and initial states.
+    fun : float
+        Objective value at `x`.
+    """
+    u0 = _ets_x_to_u(x0, pos_beta, pos_gamma)
+    lower_u = lower.copy()
+    upper_u = upper.copy()
+    for pos in (pos_beta, pos_gamma):
+        if pos >= 0:
+            lower_u[pos] = 0.0
+            upper_u[pos] = 1.0
+    bounds_u = list(zip(lower_u, upper_u))
+
+    starts = [u0]
+    if alpha_free:
+        for alpha_start, fraction_start in ETS_STARTS:
+            u_start = u0.copy()
+            u_start[0] = min(max(alpha_start, lower_u[0]), upper_u[0])
+            if fraction_start is not None:
+                if pos_beta < 0 and pos_gamma < 0:
+                    continue
+                for pos in (pos_beta, pos_gamma):
+                    if pos >= 0:
+                        u_start[pos] = fraction_start
+            starts.append(u_start)
+
+    best_u, best_f = u0, np.inf
+    for u_start in starts:
+        result = minimize(
+            _ets_objective_grad, u_start,
+            args=(upper_u, pos_beta, pos_gamma, obj_args),
+            jac=True, method="L-BFGS-B", bounds=bounds_u,
+            options={
+                "maxiter": 5000, "maxfun": 200000, "maxcor": 20,
+                "ftol": 1e-13, "gtol": 1e-9
+            }
+        )
+        if result.fun < best_f - 1e-10 * max(1.0, abs(result.fun)):
+            best_u, best_f = result.x, float(result.fun)
+
+    # Nelder-Mead moves along the bounds and the admissibility boundary,
+    # where the gradient-based search stops early. It is restarted (with a
+    # new simplex) while each run improves the objective noticeably.
+    for _ in range(20):
+        u_nm, f_nm = _ets_nelder_mead(
+            best_u, 2000, 1e-10, 1e-10, pos_beta, pos_gamma, obj_args
+        )
+        improved = best_f - f_nm > 1e-6 * max(1.0, abs(f_nm))
+        if f_nm < best_f:
+            best_u, best_f = u_nm, float(f_nm)
+        if not improved:
+            break
+
+    return _ets_u_to_x(best_u, pos_beta, pos_gamma), best_f
 
 
 def ets(y: NDArray[np.float64],
@@ -788,16 +1163,18 @@ def ets(y: NDArray[np.float64],
             )
 
     # Handle ZZZ with high frequency by calling auto_ets
-    if model == "ZZZ" and m > 24:
-        warnings.warn(
-            f"Frequency too high (m={m} > 24). Using auto_ets to select non-seasonal model. "
-            f"Try stlf() if you need seasonal forecasts."
-        )
+    if model == "ZZZ":
+        if m > 24:
+            warnings.warn(
+                f"Frequency too high (m={m} > 24). Using auto_ets to select non-seasonal model. "
+                f"Try stlf() if you need seasonal forecasts."
+            )
         return auto_ets(
-            y_original, m=m, seasonal=False, trend=None, damped=damped,
-            ic="aicc", allow_multiplicative=True, 
+            y_original, m=m, seasonal=m <= 24, trend=None, damped=damped,
+            ic="aicc", allow_multiplicative=True,
             allow_multiplicative_trend=False,
-            lambda_auto=lambda_auto, verbose=False
+            lambda_param=lambda_param, lambda_auto=lambda_auto,
+            bias_adjust=bias_adjust, verbose=False
         )
 
     season_type = model[2]
@@ -818,7 +1195,7 @@ def ets(y: NDArray[np.float64],
     transform = None
     if lambda_auto:
         shift = np.abs(np.min(y)) + 1.0 if np.any(y <= 0) else 0.0
-        lambda_opt = BoxCoxTransform.find_lambda(y)
+        lambda_opt = BoxCoxTransform.find_lambda(y, m=m)
         transform = BoxCoxTransform(lambda_opt, shift)
         y = transform.transform(y)
     elif lambda_param is not None:
@@ -828,6 +1205,12 @@ def ets(y: NDArray[np.float64],
 
     if len(model) != 3:
         raise ValueError("Model must be 3 characters (e.g., 'ANN', 'AAA')")
+
+    if "M" in model and np.min(y) <= 0:
+        raise ValueError(
+            f"Inappropriate model '{model}' for data with negative or zero values: "
+            f"multiplicative components require a strictly positive series."
+        )
 
     config = ETSConfig(
         error=model[0],
@@ -898,15 +1281,6 @@ def ets(y: NDArray[np.float64],
             )
 
     init_state_vec = init_states(y, config)
-    init_params = ETSParams(
-        alpha=alpha if alpha is not None else 0.1,
-        beta=beta if beta is not None else 0.01,
-        gamma=gamma if gamma is not None else 0.01,
-        phi=phi if phi is not None else 0.98,
-        init_states=init_state_vec
-    )
-
-    lower, upper = get_bounds(config)
 
     check_usual = (bounds != "admissible")
     check_admissible = (bounds != "usual")
@@ -914,39 +1288,113 @@ def ets(y: NDArray[np.float64],
     has_season = config.season != "N"
     is_mult_season = config.season == "M"
 
-    def objective(x):
-        """Wrapper for scipy.optimize.minimize that calls module-level JIT function"""
-        return _ets_objective_jit(
-            x,
-            y,
-            lower,
-            upper,
-            config.m,
-            config.error_code,
-            config.trend_code,
-            config.season_code,
-            has_trend,
-            has_season,
-            damped,
-            is_mult_season,
-            check_usual,
-            check_admissible,
+    # Smoothing parameters [alpha, beta, gamma, phi]: the ones given by the
+    # user are fixed, the rest of the parameters of the model are estimated.
+    present = np.array([True, has_trend, has_season, config.damped])
+    given = [alpha, beta, gamma, phi]
+    par_free = np.array([present[k] and given[k] is None for k in range(4)])
+    if any(present[k] and given[k] is not None for k in range(4)):
+        # Admissibility involves all the parameters, so it can only be
+        # checked here when none is estimated (otherwise the optimizer
+        # enforces it).
+        if not par_free.any():
+            bounds_fixed = bounds
+        else:
+            bounds_fixed = "usual" if check_usual else None
+        fixed_ok = bounds_fixed is None or check_param(
+            alpha,
+            beta if has_trend else None,
+            gamma if has_season else None,
+            phi if config.damped else None,
+            PARAM_LOWER, PARAM_UPPER, bounds_fixed, config.m
         )
+        if not fixed_ok:
+            raise ValueError(
+                "The fixed smoothing parameters are out of range for the "
+                f"'{bounds}' bounds (usual bounds: 1e-4 <= alpha <= 0.9999, "
+                "1e-4 <= beta <= alpha, 1e-4 <= gamma <= 1 - alpha, "
+                "0.8 <= phi <= 0.98)."
+            )
+    par_values = initial_smoothing_params(config, alpha, beta, gamma, phi)
 
-    x0 = init_params.to_vector(config)
+    # Bounds of the estimated parameters followed by the initial states
+    lower_all, upper_all = get_bounds(config)
+    n_smooth = int(np.sum(present))
+    keep = np.concatenate([par_free[present], np.ones(len(lower_all) - n_smooth, dtype=bool)])
+    lower = lower_all[keep]
+    upper = upper_all[keep]
+    n_free = int(np.sum(par_free))
 
-    result = minimize(
-        objective, x0,
-        method='Nelder-Mead',
-        options={
-            'maxiter': 2000,
-            'xatol': 1e-8,
-            'fatol': 1e-8,
-            'adaptive': True
-        }
+    # With the usual bounds, beta <= alpha and gamma <= 1 - alpha are made box
+    # constraints: through the reparameterization when alpha is estimated,
+    # or directly in their bounds when alpha is fixed.
+    pos_beta = pos_gamma = -1
+    if check_usual:
+        free_names = [name for name, free in zip(("alpha", "beta", "gamma", "phi"), par_free) if free]
+        if par_free[0]:
+            pos_beta = free_names.index("beta") if "beta" in free_names else -1
+            pos_gamma = free_names.index("gamma") if "gamma" in free_names else -1
+            # A fixed beta or gamma bounds alpha instead
+            if has_trend and not par_free[1]:
+                lower[0] = max(lower[0], par_values[1])
+            if has_season and not par_free[2]:
+                upper[0] = min(upper[0], 1.0 - par_values[2])
+        else:
+            if "beta" in free_names:
+                i = free_names.index("beta")
+                upper[i] = min(upper[i], par_values[0])
+            if "gamma" in free_names:
+                i = free_names.index("gamma")
+                upper[i] = min(upper[i], 1.0 - par_values[0])
+        if np.any(lower[:n_free] > upper[:n_free]):
+            fixed = ", ".join(
+                f"{name}={value}"
+                for name, value, used in zip(("alpha", "beta", "gamma"), given, present)
+                if used and value is not None
+            )
+            raise ValueError(
+                "No value of the estimated smoothing parameters satisfies the "
+                f"usual bounds with the fixed {fixed} (1e-4 <= beta <= alpha "
+                "and 1e-4 <= gamma <= 1 - alpha)."
+            )
+        if par_free[0]:
+            par_values[0] = min(max(par_values[0], lower[0]), upper[0])
+
+    obj_args = (
+        y, lower, upper, par_values, par_free, config.m,
+        config.error_code, config.trend_code, config.season_code,
+        has_trend, has_season, config.damped, is_mult_season,
+        check_usual, check_admissible,
+    )
+    x0 = np.concatenate([par_values[par_free], init_state_vec])
+    x_opt, _ = _optimize_ets(
+        x0, lower, upper, pos_beta, pos_gamma, bool(par_free[0]), obj_args
     )
 
-    fitted_params = ETSParams.from_vector(result.x, config)
+    values = par_values.copy()
+    values[par_free] = x_opt[:n_free]
+    # With fixed parameters, the bounds may leave no value of the estimated
+    # ones (for example, no admissible alpha for the fixed beta and gamma):
+    # the optimizer only sees the penalty and returns a point out of range.
+    # As R's check.param, the fit is refused.
+    if (present & ~par_free).any() and not check_param(
+        values[0],
+        values[1] if has_trend else None,
+        values[2] if has_season else None,
+        values[3] if config.damped else None,
+        PARAM_LOWER, PARAM_UPPER, bounds, config.m
+    ):
+        fixed = ", ".join(
+            f"{name}={value}"
+            for name, value, used in zip(("alpha", "beta", "gamma", "phi"), given, present)
+            if used and value is not None
+        )
+        raise ValueError(
+            f"No value of the estimated smoothing parameters satisfies the "
+            f"'{bounds}' bounds with the fixed {fixed}."
+        )
+    full_x = np.concatenate([values[present], x_opt[n_free:]])
+    fitted_params = ETSParams.from_vector(full_x, config)
 
     init_states_final = fitted_params.init_states.copy()
     if config.season != "N":
@@ -965,7 +1413,7 @@ def ets(y: NDArray[np.float64],
         fitted_params.alpha, fitted_params.beta, fitted_params.gamma, fitted_params.phi
     )
 
-    n_params = len(result.x)
+    n_params = len(x_opt)
     k = n_params + 1
     aic = loglik + 2 * k
     bic = loglik + k * np.log(n)
@@ -990,7 +1438,7 @@ def ets(y: NDArray[np.float64],
     )
 
 
-@njit(cache=True, fastmath=True)
+@njit(cache=True)
 def _forecast_ets(
     l: float, 
     b: float, 
@@ -1012,7 +1460,7 @@ def _forecast_ets(
             fc = l + phi_sum * b
         else:
             if b <= 0 or l <= 0:
-                fc = -99999.0
+                fc = np.nan
             else:
                 fc = l * (b ** phi_sum)
 
@@ -1129,14 +1577,59 @@ def forecast_ets(model: ETSModel, h: int = 10, bias_adjust: bool = True,
         model.params.phi
     )
 
+    # The variance of the forecasts on the scale of the model is needed for
+    # the intervals and, with a Box-Cox transformation, for the bias
+    # adjustment of the point forecasts. It is analytical when available
+    # and estimated from simulated paths otherwise.
+    var = None
+    simulations = None
+    simulation_error = None
+    need_var = level is not None or (model.transform is not None and bias_adjust)
+    if need_var and model.sigma2 > 0:
+        var = _compute_prediction_variance(model, h)
+        if var is None:
+            try:
+                simulations = simulate_ets(model, h=h, n_sim=1000)
+            except ValueError as e:
+                simulation_error = e
+
+    # As R's forecast.ets, the bias adjustment uses the variance of each
+    # horizon (InvBoxCox with the forecast variance). Without an analytical
+    # variance, it is the one implied by the 95% simulated interval, as R
+    # derives it from the interval bounds (R uses the widest requested level;
+    # a fixed level keeps the point forecasts independent of `level`).
+    forecasts_model_scale = forecasts
     if model.transform is not None:
-        forecasts = model.transform.inverse_transform(forecasts, bias_adjust, model.sigma2)
+        fvar = None
+        if bias_adjust:
+            if var is not None:
+                fvar = var
+            elif simulations is not None:
+                lv = 95.0
+                z = norm.ppf(0.5 + lv / 200)
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", RuntimeWarning)
+                    width = (
+                        np.nanpercentile(simulations, 50 + lv / 2, axis=0)
+                        - np.nanpercentile(simulations, 50 - lv / 2, axis=0)
+                    )
+                fvar = (width / (2 * z)) ** 2
+                # Horizons where every simulated path is invalid are not adjusted
+                fvar = np.where(np.isfinite(fvar), fvar, 0.0)
+        forecasts = model.transform.inverse_transform(forecasts, bias_adjust, fvar)
+
+    # Prediction intervals are computed on the scale of the model and their
+    # bounds are back-transformed (quantiles are preserved by the monotonic
+    # Box-Cox transformation, so no bias adjustment applies to them).
+    def to_original_scale(values):
+        if model.transform is None:
+            return values
+        return model.transform.inverse_transform(values)
 
     result = {'mean': forecasts}
 
     if level is not None:
         if model.sigma2 <= 0:
-            import warnings
             warnings.warn(
                 f"Cannot compute prediction intervals: model has invalid residual variance "
                 f"(sigma2={model.sigma2:.2e}). This usually means the model is overfit or "
@@ -1145,81 +1638,149 @@ def forecast_ets(model: ETSModel, h: int = 10, bias_adjust: bool = True,
             )
             return result
 
-        var = _compute_prediction_variance(model, h)
-
         if var is not None:
             for lv in level:
                 z = norm.ppf(0.5 + lv / 200)
                 std = np.sqrt(var)
-                result[f'lower_{int(lv)}'] = forecasts - z * std
-                result[f'upper_{int(lv)}'] = forecasts + z * std
-        else:
-            try:
-                simulations = simulate_ets(model, h=h, n_sim=1000)
-                for lv in level:
-                    result[f'lower_{int(lv)}'] = np.percentile(simulations, 50 - lv / 2, axis=0)
-                    result[f'upper_{int(lv)}'] = np.percentile(simulations, 50 + lv / 2, axis=0)
-            except ValueError as e:
-                import warnings
-                warnings.warn(
-                    f"Cannot compute prediction intervals via simulation: {str(e)}. "
-                    f"Returning point forecasts only.",
-                    UserWarning
+                result[f'lower_{int(lv)}'] = to_original_scale(forecasts_model_scale - z * std)
+                result[f'upper_{int(lv)}'] = to_original_scale(forecasts_model_scale + z * std)
+        elif simulations is not None:
+            for lv in level:
+                result[f'lower_{int(lv)}'] = to_original_scale(
+                    np.nanpercentile(simulations, 50 - lv / 2, axis=0)
                 )
+                result[f'upper_{int(lv)}'] = to_original_scale(
+                    np.nanpercentile(simulations, 50 + lv / 2, axis=0)
+                )
+        else:
+            warnings.warn(
+                f"Cannot compute prediction intervals via simulation: {str(simulation_error)}. "
+                f"Returning point forecasts only.",
+                UserWarning
+            )
 
     return result
 
 
-def simulate_ets(model: ETSModel, h: int = 10, n_sim: int = 1000) -> NDArray[np.float64]:
-    """Simulate future paths from ETS model"""
+@njit(cache=True)
+def _simulate_ets_jit(
+    l0: float,
+    b0: float,
+    s0: NDArray[np.float64],
+    errors: NDArray[np.float64],
+    m: int,
+    error: int,
+    trend: int,
+    season: int,
+    alpha: float,
+    beta: float,
+    gamma: float,
+    phi: float
+) -> NDArray[np.float64]:  # pragma: no cover
+    """
+    Simulate future sample paths of an ETS model.
+
+    Parameters
+    ----------
+    l0, b0 : float
+        Final level and trend of the fitted model.
+    s0 : NDArray[np.float64]
+        Final seasonal states of the fitted model.
+    errors : NDArray[np.float64]
+        Innovations of shape (n_sim, h).
+    m, error, trend, season : int
+        Seasonal period and component codes (0=N, 1=A, 2=M).
+    alpha, beta, gamma, phi : float
+        Smoothing parameters.
+
+    Returns
+    -------
+    NDArray[np.float64]
+        Simulated paths of shape (n_sim, h). A path whose multiplicative trend
+        becomes non-positive is NaN from that step on.
+    """
+    n_sim, h = errors.shape
+    simulations = np.full((n_sim, h), np.nan)
+    s = np.empty(len(s0))
+    for i in range(n_sim):
+        l = l0
+        b = b0
+        s[:] = s0
+        for t in range(h):
+            fc = _forecast_ets(l, b, s, 1, m, trend, season, phi)[0]
+            if np.isnan(fc):
+                break
+            if error == 1:
+                y_new = fc + errors[i, t]
+            else:
+                y_new = fc * (1.0 + errors[i, t])
+            simulations[i, t] = y_new
+            l, b, _, _, valid = _ets_step(
+                l, b, s, y_new, m, error, trend, season, alpha, beta, gamma, phi
+            )
+            if not valid:
+                break
+
+    return simulations
+
+
+def simulate_ets(
+    model: ETSModel,
+    h: int = 10,
+    n_sim: int = 1000,
+    random_state: int = 123
+) -> NDArray[np.float64]:
+    """
+    Simulate future sample paths from a fitted ETS model.
+
+    The paths are on the scale on which the model was estimated (after the
+    Box-Cox transformation, if any).
+
+    Parameters
+    ----------
+    model : ETSModel
+        Fitted model.
+    h : int, default 10
+        Forecast horizon.
+    n_sim : int, default 1000
+        Number of simulated paths.
+    random_state : int, default 123
+        Seed of the random number generator, so the simulations are
+        reproducible.
+
+    Returns
+    -------
+    NDArray[np.float64]
+        Simulated paths of shape (n_sim, h).
+    """
     if model.sigma2 <= 0:
         raise ValueError(
             f"Cannot simulate: model has invalid residual variance (sigma2={model.sigma2:.2e}). "
             f"This usually means the model is overfit or there is insufficient data."
         )
 
-    simulations = np.zeros((n_sim, h))
+    rng = np.random.default_rng(random_state)
+    errors = rng.normal(loc=0.0, scale=np.sqrt(model.sigma2), size=(n_sim, h))
 
-    for i in range(n_sim):
-        if model.config.error == "A":
-            errors = norm.rvs(loc=0, scale=np.sqrt(model.sigma2), size=h)
-        else:
-            errors = norm.rvs(loc=0, scale=np.sqrt(model.sigma2), size=h)
+    l = model.states[0]
+    b = model.states[1] if model.config.trend != "N" else 0.0
+    if model.config.season != "N":
+        s_start = 1 + (1 if model.config.trend != "N" else 0)
+        s = model.states[s_start:].astype(np.float64)
+    else:
+        s = np.zeros(max(model.config.m, 1))
 
-        l = model.states[0]
-        b = model.states[1] if model.config.trend != "N" else 0.0
-
-        if model.config.season != "N":
-            s_start = 1 + (1 if model.config.trend != "N" else 0)
-            s = model.states[s_start:].copy()
-        else:
-            s = np.zeros(max(model.config.m, 1))
-
-        for t in range(h):
-            fc = _forecast_ets(l, b, s, 1, model.config.m,
-                              model.config.trend_code, model.config.season_code,
-                              model.params.phi)[0]
-
-            if model.config.error == "A":
-                y_new = fc + errors[t]
-            else:
-                y_new = fc * (1 + errors[t])
-
-            simulations[i, t] = y_new
-
-            l, b, s, _, _ = _ets_step(
-                l, b, s, y_new,
-                model.config.m,
-                model.config.error_code,
-                model.config.trend_code,
-                model.config.season_code,
-                model.params.alpha,
-                model.params.beta,
-                model.params.gamma,
-                model.params.phi
-            )
-
-    return simulations
+    return _simulate_ets_jit(
+        l, b, s, errors,
+        model.config.m,
+        model.config.error_code,
+        model.config.trend_code,
+        model.config.season_code,
+        model.params.alpha,
+        model.params.beta,
+        model.params.gamma,
+        model.params.phi
+    )
 
 
 def auto_ets(
@@ -1233,7 +1794,9 @@ def auto_ets(
     allow_multiplicative_trend: bool = False,
     lambda_auto: bool = False,
     max_models: Optional[int] = None,
-    verbose: bool = False
+    verbose: bool = False,
+    lambda_param: Optional[float] = None,
+    bias_adjust: bool = False
 ) -> ETSModel:
     """
     Automatic ETS model selection
@@ -1263,6 +1826,11 @@ def auto_ets(
         Maximum number of models to try (None = try all)
     verbose : bool
         Print progress
+    lambda_param : float, optional
+        Box-Cox transformation parameter. If None, no transformation unless
+        `lambda_auto` is True.
+    bias_adjust : bool
+        Apply bias adjustment when back-transforming the fitted values.
 
     Returns
     -------
@@ -1272,6 +1840,12 @@ def auto_ets(
     n = len(y)
     if n < 1:
         raise ValueError(f"Need at least 1 observation, got {n}")
+
+    # Multiplicative components need a positive series, and only additive
+    # models are considered on the Box-Cox scale (as in R)
+    if np.min(y) <= 0 or lambda_auto or lambda_param is not None:
+        allow_multiplicative = False
+        allow_multiplicative_trend = False
 
     has_trend = False
     if trend is None:
@@ -1360,7 +1934,11 @@ def auto_ets(
 
     for model_spec, damped_flag in models_to_try:
         try:
-            model = ets(y, m=m, model=model_spec, damped=damped_flag, lambda_auto=lambda_auto, bounds="both")
+            model = ets(
+                y, m=m, model=model_spec, damped=damped_flag,
+                lambda_param=lambda_param, lambda_auto=lambda_auto,
+                bias_adjust=bias_adjust, bounds="both"
+            )
 
             if ic == "aic":
                 ic_value = model.aic

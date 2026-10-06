@@ -48,8 +48,9 @@ P = ParamSpec('P')
 R = TypeVar('R')
 
 # sklearn estimators that natively support NaN values in the input features.
-# Tree-based models gained this support in scikit-learn 1.3 (single trees) and
-# 1.4 (forests), both at or below the minimum version required by skforecast.
+# Tree-based models gained this support in scikit-learn 1.3 (decision trees),
+# 1.4 (random forests) and 1.6 (extra trees), all at or below the minimum
+# version required by skforecast.
 _SKLEARN_NAN_TOLERANT_ESTIMATORS = frozenset({
     'DecisionTreeClassifier',
     'DecisionTreeRegressor',
@@ -759,6 +760,31 @@ def cast_catboost_categorical_columns_dataframe(
     return X
 
 
+def _get_catboost_cat_feature_indices(estimator: object) -> np.ndarray:
+    """
+    Return the indices of the categorical features of a fitted CatBoost
+    estimator (regressor or classifier). At predict time, these columns must be
+    cast to integer, as `cast_catboost_categorical_columns` does at fit time.
+
+    Parameters
+    ----------
+    estimator : object
+        Fitted estimator.
+
+    Returns
+    -------
+    cat_indices : numpy ndarray
+        Indices of the categorical features. Empty if the estimator is not a
+        CatBoost model or was fitted without categorical features.
+
+    """
+
+    if type(estimator).__module__.split('.')[0] != 'catboost':
+        return np.array([], dtype=int)
+
+    return np.array(estimator.get_cat_feature_indices(), dtype=int)
+
+
 def _get_estimator_categorical_set_params(
     forecaster: object
 ) -> dict[str, object]:
@@ -1132,6 +1158,101 @@ def check_interval(
             )
 
 
+def _check_exog_alignment(
+    exog_name: str,
+    exog_index: pd.Index,
+    expected_index: pd.Index,
+    align_by_index: bool
+) -> None:
+    """
+    Check that `exog` has a value for each of the steps predicted.
+
+    - If `align_by_index` is `False`, `exog` is used by position, so its first
+    values must follow the dates of the steps predicted without gaps. A
+    `ValueError` is raised otherwise. The first date must have already been
+    checked.
+    - If `align_by_index` is `True` (`ForecasterRecursiveMultiSeries`), `exog`
+    is aligned with the predictions by its index, so it only has to contain
+    the dates of the steps predicted. A `MissingValuesWarning` is issued if
+    some of them are missing, since their values are filled with NaN, and a
+    `ValueError` is raised if its index has duplicated dates, since it cannot
+    be aligned.
+
+    Parameters
+    ----------
+    exog_name : str
+        Name of `exog` used in the error and warning messages.
+    exog_index : pandas Index
+        Index of `exog`.
+    expected_index : pandas Index
+        Index of the steps predicted, from 1 to the last step. It is created
+        with `expand_index` from the index of `last_window`.
+    align_by_index : bool
+        If `True`, `exog` is aligned with the predictions by its index, so
+        missing dates issue a warning instead of an error. If `False`, `exog`
+        is used by position.
+
+    Returns
+    -------
+    None
+
+    """
+
+    # NOTE: An index with the same frequency (or step) as the steps predicted
+    # that starts at the first step has no gaps.
+    if len(exog_index) > 0 and exog_index[0] == expected_index[0]:
+        if isinstance(expected_index, pd.RangeIndex):
+            if exog_index.step == expected_index.step:
+                return
+        elif exog_index.freq == expected_index.freq:
+            return
+
+    last_step = len(expected_index)
+    # NOTE: If `exog` has fewer values than steps, a warning or an error has
+    # already been issued, so only the first `len(exog)` steps are checked.
+    n_steps = min(len(exog_index), last_step)
+    expected_index = expected_index[:n_steps]
+    if align_by_index:
+        if exog_index.has_duplicates:
+            raise ValueError(
+                f"The index of {exog_name} has duplicated values, for example "
+                f"{exog_index[exog_index.duplicated()][0]}. Each date must "
+                f"appear only once."
+            )
+        is_misaligned = ~expected_index.isin(exog_index)
+    else:
+        exog_index = exog_index[:n_steps]
+        is_misaligned = exog_index != expected_index
+
+    if is_misaligned.any():
+        position = np.flatnonzero(is_misaligned)[0]
+        if align_by_index:
+            warnings.warn(
+                f"{exog_name} has no value for some of the {last_step} steps "
+                f"predicted. The first one is {expected_index[position]} "
+                f"(position {position}). Missing values are filled with NaN. "
+                f"Most of machine learning models do not allow missing values. "
+                f"Prediction method may fail.",
+                MissingValuesWarning
+            )
+        else:
+            raise ValueError(
+                f"{exog_name} must have consecutive values following the "
+                f"frequency of `last_window` for the {last_step} steps predicted.\n"
+                f"    Expected index at position {position} : "
+                f"{expected_index[position]}.\n"
+                f"    {exog_name} index at position {position} : "
+                f"{exog_index[position]}.\n"
+                f"If there is no data for some steps, add them to {exog_name} "
+                f"explicitly as NaN, for example:\n"
+                f"    exog = exog.reindex(expand_index(last_window.index, "
+                f"steps={last_step}))\n"
+                f"where `expand_index` is in `skforecast.utils`, and `last_window` "
+                f"is the window used to predict (by default, the last window "
+                f"stored in the forecaster)."
+            )
+
+
 def check_predict_input(
     forecaster_name: str,
     steps: int | list[int],
@@ -1327,6 +1448,11 @@ def check_predict_input(
                 f"`last_window` must be a pandas Series or DataFrame. "
                 f"Got {type(last_window)}."
             )
+        if isinstance(last_window, pd.DataFrame) and last_window.shape[1] != 1:
+            raise ValueError(
+                f"`last_window` must be a pandas Series or a DataFrame with a "
+                f"single column. Got {last_window.shape[1]} columns."
+            )
 
     # Check last_window len, nulls and index (type and freq)
     if len(last_window) < window_size:
@@ -1396,7 +1522,11 @@ def check_predict_input(
             exogs_to_check = [('`exog`', exog)]
 
         last_step = max(steps) if isinstance(steps, list) else steps
-        expected_index = expand_index(last_window_index, 1)[0]
+        expected_index = expand_index(last_window_index, last_step)
+        # NOTE: ForecasterRecursiveMultiSeries aligns `exog` with the predictions
+        # by index and column, so missing values are filled with NaN and only a
+        # warning is issued. The rest of forecasters use `exog` by position.
+        align_by_index = forecaster_name in ['ForecasterRecursiveMultiSeries']
         for exog_name, exog_to_check in exogs_to_check:
 
             if not isinstance(exog_to_check, (pd.Series, pd.DataFrame)):
@@ -1413,7 +1543,7 @@ def check_predict_input(
 
             # Check exog has many values as distance to max step predicted
             if len(exog_to_check) < last_step:
-                if forecaster_name in ['ForecasterRecursiveMultiSeries']:
+                if align_by_index:
                     warnings.warn(
                         f"{exog_name} doesn't have as many values as steps "
                         f"predicted, {last_step}. Missing values are filled "
@@ -1431,7 +1561,7 @@ def check_predict_input(
             if isinstance(exog_to_check, pd.DataFrame):
                 col_missing = set(exog_names_in_).difference(set(exog_to_check.columns))
                 if col_missing:
-                    if forecaster_name in ['ForecasterRecursiveMultiSeries']:
+                    if align_by_index:
                         warnings.warn(
                             f"{col_missing} not present in {exog_name}. All "
                             f"values will be NaN.",
@@ -1449,7 +1579,7 @@ def check_predict_input(
                     )
 
                 if exog_to_check.name not in exog_names_in_:
-                    if forecaster_name in ['ForecasterRecursiveMultiSeries']:
+                    if align_by_index:
                         warnings.warn(
                             f"'{exog_to_check.name}' was not observed during training. "
                             f"{exog_name} is ignored. Exogenous variables must be one "
@@ -1473,25 +1603,21 @@ def check_predict_input(
                 )
 
             # Check exog starts one step ahead of last_window end.
-            if expected_index != exog_index[0]:
-                if forecaster_name in ['ForecasterRecursiveMultiSeries']:
-                    warnings.warn(
-                        f"To make predictions {exog_name} must start one step "
-                        f"ahead of `last_window`. Missing values are filled "
-                        f"with NaN.\n"
-                        f"    `last_window` ends at : {last_window.index[-1]}.\n"
-                        f"    {exog_name} starts at : {exog_index[0]}.\n"
-                        f"    Expected index : {expected_index}.",
-                        MissingValuesWarning
-                    )  
-                else:
-                    raise ValueError(
-                        f"To make predictions {exog_name} must start one step "
-                        f"ahead of `last_window`.\n"
-                        f"    `last_window` ends at : {last_window.index[-1]}.\n"
-                        f"    {exog_name} starts at : {exog_index[0]}.\n"
-                        f"    Expected index : {expected_index}."
-                    )
+            if not align_by_index and expected_index[0] != exog_index[0]:
+                raise ValueError(
+                    f"To make predictions {exog_name} must start one step "
+                    f"ahead of `last_window`.\n"
+                    f"    `last_window` ends at : {last_window.index[-1]}.\n"
+                    f"    {exog_name} starts at : {exog_index[0]}.\n"
+                    f"    Expected index : {expected_index[0]}."
+                )
+
+            _check_exog_alignment(
+                exog_name      = exog_name,
+                exog_index     = exog_index,
+                expected_index = expected_index,
+                align_by_index = align_by_index
+            )
 
     # Checks ForecasterStats
     if forecaster_name == 'ForecasterStats':
@@ -1769,51 +1895,6 @@ def input_to_frame(
     return data
 
 
-def cast_exog_dtypes(
-    exog: pd.Series | pd.DataFrame,
-    exog_dtypes: dict[str, type],
-) -> pd.Series | pd.DataFrame:  # pragma: no cover
-    """
-    Cast `exog` to a specified types. This is done because, for a forecaster to 
-    accept a categorical exog, it must contain only integer values. Due to the 
-    internal modifications of numpy, the values may be casted to `float`, so 
-    they have to be re-converted to `int`.
-
-    - If `exog` is a pandas Series, `exog_dtypes` must be a dict with a 
-    single value.
-    - If `exog_dtypes` is `category` but the current type of `exog` is `float`, 
-    then the type is cast to `int` and then to `category`. 
-
-    Parameters
-    ----------
-    exog : pandas Series, pandas DataFrame
-        Exogenous variables.
-    exog_dtypes: dict
-        Dictionary with name and type of the series or data frame columns.
-
-    Returns
-    -------
-    exog : pandas Series, pandas DataFrame
-        Exogenous variables casted to the indicated dtypes.
-
-    """
-
-    # Remove keys from exog_dtypes not in exog.columns
-    exog_dtypes = {k: v for k, v in exog_dtypes.items() if k in exog.columns}
-    
-    if isinstance(exog, pd.Series) and exog.dtypes != list(exog_dtypes.values())[0]:
-        exog = exog.astype(list(exog_dtypes.values())[0])
-    elif isinstance(exog, pd.DataFrame):
-        for col, initial_dtype in exog_dtypes.items():
-            if exog[col].dtypes != initial_dtype:
-                if initial_dtype == "category" and exog[col].dtypes == float:
-                    exog[col] = exog[col].astype(int).astype("category")
-                else:
-                    exog[col] = exog[col].astype(initial_dtype)
-
-    return exog
-
-
 def exog_to_direct(
     exog: pd.Series | pd.DataFrame,
     steps: int
@@ -1913,6 +1994,110 @@ def exog_to_direct_numpy(
     return exog_direct, exog_direct_names
 
 
+def _is_utc_anchored_index(
+    index: pd.DatetimeIndex,
+    freq: pd.DateOffset
+) -> bool:
+    """
+    Check whether a timezone-aware DatetimeIndex advances in fixed UTC steps
+    instead of local calendar steps.
+
+    With a timezone that observes daylight saving time, a frequency of days
+    or longer (`'D'`, `'W'`, `'MS'`...) can follow two conventions that share
+    the same `freq`: local calendar steps, where the local time of day is
+    constant (e.g. data stamped at local midnight), or fixed UTC steps, where
+    the UTC time of day is constant and the local time shifts one hour at each
+    daylight saving change (e.g. data stamped at UTC midnight and then
+    converted to a local timezone). `pandas.date_range` always assumes the
+    first one.
+
+    Parameters
+    ----------
+    index : pandas DatetimeIndex
+        Index used to identify the convention.
+    freq : pandas DateOffset
+        Frequency of the index.
+
+    Returns
+    -------
+    is_utc_anchored : bool
+        `True` if the index advances in fixed UTC steps.
+
+    Notes
+    -----
+    If `index` contains a daylight saving change, the convention is identified
+    from the time of day that remains constant. If it does not, both
+    conventions are indistinguishable, and the index is considered UTC
+    anchored only when its timestamps are at UTC midnight but not at local
+    midnight.
+
+    """
+
+    if index.tz is None or len(index) == 0:
+        return False
+
+    # Intraday frequencies are always generated by pandas in fixed steps.
+    if isinstance(freq, pd.offsets.Tick) and not isinstance(freq, pd.offsets.Day):
+        return False
+
+    index_utc = index.tz_convert("UTC")
+    index_local = index.tz_localize(None)
+    time_utc = (index_utc - index_utc.normalize()).unique()
+    time_local = (index_local - index_local.normalize()).unique()
+
+    if len(time_utc) != 1:
+        return False
+    if len(time_local) != 1:
+        return True
+
+    midnight = pd.Timedelta(0)
+    is_utc_anchored = time_utc[0] == midnight and time_local[0] != midnight
+
+    return is_utc_anchored
+
+
+def _date_range_from_index(
+    index: pd.DatetimeIndex,
+    start: pd.Timestamp,
+    end: pd.Timestamp,
+    freq: pd.DateOffset
+) -> pd.DatetimeIndex:
+    """
+    Create a date range between `start` and `end` following the same time
+    convention as `index`. It behaves as `pandas.date_range` unless `index` is
+    a timezone-aware index that advances in fixed UTC steps, in which case the
+    range is generated in UTC and converted back to the timezone of `index`.
+
+    Parameters
+    ----------
+    index : pandas DatetimeIndex
+        Index used to identify the time convention.
+    start : pandas Timestamp
+        Left bound of the range.
+    end : pandas Timestamp
+        Right bound of the range.
+    freq : pandas DateOffset
+        Frequency of the range.
+
+    Returns
+    -------
+    span_index : pandas DatetimeIndex
+        Date range between `start` and `end`.
+
+    """
+
+    if _is_utc_anchored_index(index=index, freq=freq):
+        span_index = pd.date_range(
+                         start = start.tz_convert("UTC"),
+                         end   = end.tz_convert("UTC"),
+                         freq  = freq
+                     ).tz_convert(index.tz)
+    else:
+        span_index = pd.date_range(start=start, end=end, freq=freq)
+
+    return span_index
+
+
 def date_to_index_position(
     index: pd.Index,
     date_input: int | str | pd.Timestamp,
@@ -1977,7 +2162,12 @@ def date_to_index_position(
                     "If `steps` is a date, it must be greater than the last date "
                     "in the index."
                 )
-            span_index = pd.date_range(start=last_date, end=target_date, freq=index.freq) 
+            span_index = _date_range_from_index(
+                             index = index,
+                             start = last_date,
+                             end   = target_date,
+                             freq  = index.freq
+                         )
             output = len(span_index) - 1
         elif method == 'validation':
             first_date = pd.to_datetime(index[0])
@@ -1986,7 +2176,12 @@ def date_to_index_position(
                     "If `initial_train_size` is a date, it must be greater than "
                     "the first date in the index and less than the last date."
                 )
-            span_index = pd.date_range(start=first_date, end=target_date, freq=index.freq)
+            span_index = _date_range_from_index(
+                             index = index,
+                             start = first_date,
+                             end   = target_date,
+                             freq  = index.freq
+                         )
             output = len(span_index)
 
     elif isinstance(date_input, (int, np.integer)):
@@ -2043,11 +2238,23 @@ def expand_index(
                     "`index.freq = 'D'` or `series = series.asfreq('D')`) "
                     "before calling this function."
                 )
-            new_index = pd.date_range(
-                            start   = index[-1] + freq,
-                            periods = steps,
-                            freq    = freq
-                        )
+            if _is_utc_anchored_index(index=index, freq=freq):
+                # Timezone-aware index that advances in fixed UTC steps: the
+                # new index is generated in UTC to keep the same convention.
+                new_index = pd.date_range(
+                                start   = index[-1].tz_convert("UTC") + freq,
+                                periods = steps,
+                                freq    = freq
+                            ).tz_convert(index.tz)
+            else:
+                # NOTE: The range starts at the last date and drops it. Adding
+                # `freq` to it would add a fixed 24 hours with daily frequencies,
+                # which shifts the local time of day at a daylight saving change.
+                new_index = pd.date_range(
+                                start   = index[-1],
+                                periods = steps + 1,
+                                freq    = freq
+                            )[1:]
         elif isinstance(index, pd.RangeIndex):
             new_index = pd.RangeIndex(
                             start = index[-1] + index.step,
@@ -2655,8 +2862,11 @@ def save_forecaster(
     forecaster : Forecaster
         Forecaster created with skforecast library.
     file_name : str
-        File name given to the object. The file extension is determined by
-        the `backend` argument.
+        File name given to the object. The extension of the `backend` is added
+        to the name (e.g. `'model_v1.2'` is saved as `'model_v1.2.joblib'`). If
+        the name already ends with a backend extension (`.joblib`, `.pkl`,
+        `.pickle`, `.cloudpickle` or `.skops`), it is replaced by the extension
+        of the `backend`.
     backend : str, default 'joblib'
         Serialization backend used to save the forecaster.
 
@@ -2706,7 +2916,14 @@ def save_forecaster(
         'cloudpickle': '.cloudpickle',
         'skops': '.skops'
     }
-    file_name = Path(file_name).with_suffix(backend_extensions[backend])
+    # NOTE: Only a known backend extension is replaced, so that the dots in the
+    # name are kept (e.g. 'model_v1.2' is saved as 'model_v1.2.joblib').
+    known_extensions = {'.joblib', '.pkl', '.pickle', '.cloudpickle', '.skops'}
+    file_name = Path(file_name)
+    if file_name.suffix.lower() in known_extensions:
+        file_name = file_name.with_suffix(backend_extensions[backend])
+    else:
+        file_name = file_name.with_name(file_name.name + backend_extensions[backend])
 
     # Save forecaster
     if backend == 'joblib':
@@ -2776,7 +2993,7 @@ def save_forecaster(
                     saved_files = []
                     for fun in main_funs:
                         fun_file_name = fun.__name__ + '.py'
-                        with open(fun_file_name, 'w') as file:
+                        with open(fun_file_name, 'w', encoding='utf-8') as file:
                             file.write(inspect.getsource(fun))
                         saved_files.append(fun_file_name)
                     warnings.warn(
@@ -2800,7 +3017,7 @@ def save_forecaster(
                     )
 
         if hasattr(forecaster, 'window_features') and forecaster.window_features is not None:
-            skforecast_classes = {'RollingFeatures'}
+            skforecast_classes = {'RollingFeatures', 'RollingFeaturesClassification'}
             custom_classes = set(forecaster.window_features_class_names) - skforecast_classes
             if custom_classes:
                 warnings.warn(
@@ -3146,43 +3363,40 @@ def set_cpu_gpu_device(
     device: str | None = 'cpu'
 ) -> str | None:
     """
-    Set the device for the estimator to either 'cpu', 'gpu', 'cuda', or None.
+    Set the `device` parameter of an XGBoost or LightGBM regressor and return
+    its previous value, so that it can be restored afterwards. Recursive
+    forecasters use it to predict on CPU, since they predict one row at a time.
+
+    Parameters
+    ----------
+    estimator : object
+        Estimator whose device is set. Only `XGBRegressor` and `LGBMRegressor`
+        are modified. For any other estimator, nothing is done and `None` is
+        returned.
+    device : str, None, default 'cpu'
+        Device to set, passed to the estimator as is (for example `'cpu'`,
+        `'gpu'`, `'cuda'` or `'cuda:0'`). To restore the original device, pass
+        the value returned by a previous call. If `None`, the device is not
+        changed.
+
+    Returns
+    -------
+    original_device : str, None
+        Device of the estimator before the call. `None` if the estimator is not
+        supported or its device is not set (both libraries then use the CPU).
+
     """
 
-    valid_devices = {'gpu', 'cpu', 'cuda', 'GPU', 'CPU', None}
-    if device not in valid_devices:
-        raise ValueError("`device` must be 'gpu', 'cpu', 'cuda', or None.")
-    
-    estimator_name = type(estimator).__name__
-
-    supported_estimators = {'XGBRegressor', 'LGBMRegressor', 'CatBoostRegressor'}
-    if estimator_name not in supported_estimators:
+    if type(estimator).__name__ not in ('XGBRegressor', 'LGBMRegressor'):
         return None
-    
-    device_names = {
-        'XGBRegressor': 'device',
-        'LGBMRegressor': 'device',
-        'CatBoostRegressor': 'task_type',
-    }
-    device_values = {
-        'XGBRegressor': {'gpu': 'cuda', 'cpu': 'cpu', 'cuda': 'cuda'},
-        'LGBMRegressor': {'gpu': 'gpu', 'cpu': 'cpu', 'cuda': 'gpu'},
-        'CatBoostRegressor': {'gpu': 'GPU', 'cpu': 'CPU', 'cuda': 'GPU', 'GPU': 'GPU', 'CPU': 'CPU'},
-    }
 
-    param_name = device_names[estimator_name]
-    original_device = getattr(estimator, param_name, None)
+    original_device = getattr(estimator, 'device', None)
 
-    if device is None:
-        return original_device
-
-    new_device = device_values[estimator_name][device]
-
-    if original_device != new_device:
-        try:
-            estimator.set_params(**{param_name: new_device})
-        except Exception:
-            pass
+    # NOTE: A device that is not set already means CPU in XGBoost and LightGBM,
+    # so it is left unset instead of setting 'cpu'.
+    current_device = 'cpu' if original_device is None else original_device
+    if device is not None and device != current_device:
+        estimator.set_params(device=device)
 
     return original_device
 
@@ -3198,9 +3412,11 @@ def _build_predict_function(
     Fast prediction paths (bypassing sklearn's `predict` overhead) are used
     for the following estimator types:
 
-    - Linear models inheriting from sklearn's `LinearModel` (`np.dot`)
+    - Linear models of scikit-learn inheriting from `LinearModel` (`np.dot`)
     - `LGBMRegressor` (`booster_.predict`)
-    - `XGBRegressor` (`get_booster().inplace_predict`)
+    - `XGBRegressor` (`get_booster().inplace_predict`, with the same
+    `iteration_range` and `missing` as `XGBRegressor.predict`). The 'gblinear'
+    booster does not support `inplace_predict` and uses `estimator.predict`.
     - `RandomForestRegressor` (per-tree `tree_.predict`)
     - `DecisionTreeRegressor` (`tree_.predict`)
 
@@ -3214,6 +3430,8 @@ def _build_predict_function(
     copy and leaves it read-only.
 
     For any other estimator the standard `estimator.predict` method is used.
+    This includes user subclasses of scikit-learn estimators, since they may
+    override `predict`.
 
     Parameters
     ----------
@@ -3229,8 +3447,11 @@ def _build_predict_function(
     """
 
     estimator_name = type(estimator).__name__
+    # NOTE: The fast paths of scikit-learn estimators skip their `predict`
+    # method. User subclasses may override it, so they use the generic fallback.
+    is_sklearn_class = type(estimator).__module__.startswith('sklearn.')
 
-    if isinstance(estimator, LinearModel):
+    if is_sklearn_class and isinstance(estimator, LinearModel):
         coef = estimator.coef_
         intercept = estimator.intercept_
 
@@ -3250,15 +3471,26 @@ def _build_predict_function(
 
         return predict_fn
 
-    if estimator_name == 'XGBRegressor':
+    # NOTE: `inplace_predict` is not supported by the 'gblinear' booster, which
+    # uses the generic fallback (as `XGBRegressor.predict` does).
+    if estimator_name == 'XGBRegressor' and estimator.booster != 'gblinear':
         booster = estimator.get_booster()
+        # Same arguments as `XGBRegressor.predict`: only the trees up to the
+        # best iteration when early stopping is used, and the user `missing` value.
+        try:
+            iteration_range = (0, estimator.best_iteration + 1)
+        except AttributeError:
+            iteration_range = (0, 0)
+        missing = estimator.missing
 
         def predict_fn(X):
-            return booster.inplace_predict(X)
+            return booster.inplace_predict(
+                X, iteration_range=iteration_range, missing=missing
+            )
 
         return predict_fn
 
-    if estimator_name == 'RandomForestRegressor':
+    if is_sklearn_class and estimator_name == 'RandomForestRegressor':
         trees = estimator.estimators_
 
         def predict_fn(X):
@@ -3270,7 +3502,7 @@ def _build_predict_function(
 
         return predict_fn
 
-    if estimator_name == 'DecisionTreeRegressor':
+    if is_sklearn_class and estimator_name == 'DecisionTreeRegressor':
         tree_ = estimator.tree_
 
         def predict_fn(X):
@@ -3284,7 +3516,7 @@ def _build_predict_function(
         # CatBoost requires integer values (not float) for categorical features
         # when X is a numpy array. This requires casting the array to object
         # dtype and converting the categorical columns to int before each prediction call.
-        cat_indices = np.array(estimator.get_cat_feature_indices())
+        cat_indices = _get_catboost_cat_feature_indices(estimator)
         if len(cat_indices) > 0:
             def predict_fn(X):
                 X_obj = X.astype(object)
@@ -4018,11 +4250,20 @@ def show_versions(
         "pandas",
         "tqdm",
         "scikit-learn",
+        "scipy",
         "optuna",
         "joblib",
         "numba",
         "rich",
+        "statsmodels",
+        "matplotlib",
         "keras",
+        "torch",
+        "lightgbm",
+        "xgboost",
+        "catboost",
+        "skops",
+        "cloudpickle",
     ]
     
     sys_info = {

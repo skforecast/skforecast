@@ -94,15 +94,24 @@ def test_list_adapters_every_adapter_declares_its_capabilities(adapter_cls):
         "supports_heterogeneous_covariates",
         "supports_nan_in_series",
         "requires_hf_auth",
+        "requires_provider_auth",
+        "weights_in_hf_cache",
     ]
     for name in bool_attributes:
         assert isinstance(vars(adapter_cls).get(name), bool), name
+
+    assert "weights_repo_id" in vars(adapter_cls)
+    weights_repo_id = adapter_cls.weights_repo_id
+    assert weights_repo_id is None or (
+        isinstance(weights_repo_id, str) and weights_repo_id.count("/") == 1
+    )
 
     assert isinstance(vars(adapter_cls).get("backend_package"), str)
     assert isinstance(vars(adapter_cls).get("default_model_id"), str)
     assert "SUPPORTED_QUANTILES" in vars(adapter_cls)
     quantiles = adapter_cls.SUPPORTED_QUANTILES
     assert quantiles is None or all(0 < q < 1 for q in quantiles)
+    assert quantiles is None or list(quantiles) == sorted(set(quantiles))
 
     context_length = inspect.signature(adapter_cls).parameters["context_length"]
     assert isinstance(context_length.default, int)

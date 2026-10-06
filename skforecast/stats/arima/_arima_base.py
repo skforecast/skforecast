@@ -1178,6 +1178,24 @@ def _arima_kalman_core(
     else:
         std_residuals = np.empty(0)
 
+    # Loop bounds of the companion structure: rows/columns 0..n_both-1 have
+    # both an AR term and a shift term, which avoids branching inside the
+    # O(rd²) loops. The order of the floating-point operations of every
+    # element is the same as in the dense formulation.
+    n_both = min(p, r - 1)
+    n_v = min(q + 1, r)
+
+    # Seasonal models have many exact zeros in phi and delta (e.g. phi of an
+    # ARIMA(1,d,q)(1,D,Q)[12] has 3 non-zero values out of 13). Their terms
+    # are skipped in the O(rd²) loops: adding the product of an exact zero and
+    # a finite number does not change the accumulated value.
+    delta_nz = np.empty(d, dtype=np.int64)
+    n_delta_nz = 0
+    for k in range(d):
+        if delta[k] != 0.0:
+            delta_nz[n_delta_nz] = k
+            n_delta_nz += 1
+
     for t in range(n):
         # --- State prediction: anew = T @ a ---
         # Companion structure: T[i,0] = phi[i], T[i-1,i] = 1 for ARMA block
@@ -1204,7 +1222,8 @@ def _arima_kalman_core(
             # --- M = Pnew @ Z ---
             for i in range(rd):
                 tmp = Pnew[i, 0]
-                for j in range(d):
+                for k in range(n_delta_nz):
+                    j = delta_nz[k]
                     tmp += Pnew[i, r + j] * delta[j]
                 M[i] = tmp
 
@@ -1226,8 +1245,9 @@ def _arima_kalman_core(
             # --- Covariance update: P = Pnew - M M'/F ---
             inv_F = 1.0 / F
             for i in range(rd):
+                M_i = M[i]
                 for j in range(rd):
-                    P[i, j] = Pnew[i, j] - M[i] * M[j] * inv_F
+                    P[i, j] = Pnew[i, j] - M_i * M[j] * inv_F
 
             if give_resid:
                 # Observations still dominated by the diffuse initialization
@@ -1235,55 +1255,80 @@ def _arima_kalman_core(
                 # one-step-ahead prediction.
                 std_residuals[t] = innovation if F < 1e4 else np.nan
         else:
+            # Missing observation: no update step, the filtered state and
+            # covariance are the predicted ones, so the uncertainty keeps
+            # growing over the gap (as R's ARIMA_Like).
             for i in range(rd):
                 a[i] = anew[i]
+                for j in range(rd):
+                    P[i, j] = Pnew[i, j]
             if give_resid:
                 std_residuals[t] = np.nan
 
         if t >= update_start:
             # --- Covariance prediction: Pnew = T @ P @ T' + V ---
             # Step 1: mm = T @ P (companion structure)
-            for j in range(rd):
-                for i in range(r):
-                    tmp = 0.0
-                    if i < p:
-                        tmp += phi[i] * P[0, j]
-                    if i < r - 1:
-                        tmp += P[i + 1, j]
-                    mm[i, j] = tmp
+            # mm[i, :] = phi[i] * P[0, :] + P[i + 1, :]
+            for i in range(n_both):
+                phi_i = phi[i]
+                if phi_i != 0.0:
+                    for j in range(rd):
+                        mm[i, j] = (0.0 + phi_i * P[0, j]) + P[i + 1, j]
+                else:
+                    for j in range(rd):
+                        mm[i, j] = 0.0 + P[i + 1, j]
+            for i in range(n_both, r):
+                if i < p:
+                    phi_i = phi[i]
+                    for j in range(rd):
+                        mm[i, j] = 0.0 + phi_i * P[0, j]
+                elif i < r - 1:
+                    for j in range(rd):
+                        mm[i, j] = 0.0 + P[i + 1, j]
+                else:
+                    for j in range(rd):
+                        mm[i, j] = 0.0
             if d > 0:
                 for j in range(rd):
-                    tmp = P[0, j]
-                    for k in range(d):
-                        tmp += delta[k] * P[r + k, j]
-                    mm[r, j] = tmp
+                    mm[r, j] = P[0, j]
+                for kk in range(n_delta_nz):
+                    k = delta_nz[kk]
+                    delta_k = delta[k]
+                    for j in range(rd):
+                        mm[r, j] += delta_k * P[r + k, j]
                 for i in range(1, d):
                     for j in range(rd):
                         mm[r + i, j] = P[r + i - 1, j]
 
             # Step 2: Pnew = mm @ T' + V (companion structure, transposed)
+            # Pnew[:, j] = phi[j] * mm[:, 0] + mm[:, j + 1]
             for i in range(rd):
-                for j in range(r):
-                    tmp = 0.0
+                mm_i0 = mm[i, 0]
+                for j in range(n_both):
+                    if phi[j] != 0.0:
+                        Pnew[i, j] = (0.0 + phi[j] * mm_i0) + mm[i, j + 1]
+                    else:
+                        Pnew[i, j] = 0.0 + mm[i, j + 1]
+                for j in range(n_both, r):
                     if j < p:
-                        tmp += phi[j] * mm[i, 0]
-                    if j < r - 1:
-                        tmp += mm[i, j + 1]
-                    Pnew[i, j] = tmp
-            if d > 0:
-                for i in range(rd):
-                    tmp = mm[i, 0]
-                    for k in range(d):
+                        Pnew[i, j] = 0.0 + phi[j] * mm_i0
+                    elif j < r - 1:
+                        Pnew[i, j] = 0.0 + mm[i, j + 1]
+                    else:
+                        Pnew[i, j] = 0.0
+                if d > 0:
+                    tmp = mm_i0
+                    for kk in range(n_delta_nz):
+                        k = delta_nz[kk]
                         tmp += delta[k] * mm[i, r + k]
                     Pnew[i, r] = tmp
-                for j in range(1, d):
-                    for i in range(rd):
+                    for j in range(1, d):
                         Pnew[i, r + j] = mm[i, r + j - 1]
 
             # Step 3: Add V = R @ R' where R = [1, θ₁, ..., θ_{r-1}, 0, ..., 0]
-            for i in range(min(q + 1, r)):
+            for i in range(n_v):
                 vi = 1.0 if i == 0 else theta[i - 1]
-                for j in range(min(q + 1, r)):
+                for j in range(n_v):
                     vj = 1.0 if j == 0 else theta[j - 1]
                     Pnew[i, j] += vi * vj
 
@@ -1932,7 +1977,7 @@ def _initialize_regressor_params(
     svd_rotation = None
 
     if not use_orig_exog:
-        rows_good = np.array([np.all(np.isfinite(row)) for row in exog])
+        rows_good = np.all(np.isfinite(exog), axis=1)
         if np.sum(rows_good) > 0:
             _, _, Vt = np.linalg.svd(exog[rows_good, :], full_matrices=False)
             svd_rotation = {'V': Vt.T}
@@ -1972,7 +2017,7 @@ def _initialize_regressor_params(
             ols_coef = beta
 
     # Effective sample size
-    isna = np.isnan(x) | np.array([np.any(np.isnan(row)) for row in exog])
+    isna = np.isnan(x) | np.any(np.isnan(exog), axis=1)
     n_used = int(np.sum(~isna)) - len(Delta)
 
     if ols_coef is not None:
