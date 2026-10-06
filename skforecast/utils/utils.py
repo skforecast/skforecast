@@ -760,6 +760,31 @@ def cast_catboost_categorical_columns_dataframe(
     return X
 
 
+def _get_catboost_cat_feature_indices(estimator: object) -> np.ndarray:
+    """
+    Return the indices of the categorical features of a fitted CatBoost
+    estimator (regressor or classifier). At predict time, these columns must be
+    cast to integer, as `cast_catboost_categorical_columns` does at fit time.
+
+    Parameters
+    ----------
+    estimator : object
+        Fitted estimator.
+
+    Returns
+    -------
+    cat_indices : numpy ndarray
+        Indices of the categorical features. Empty if the estimator is not a
+        CatBoost model or was fitted without categorical features.
+
+    """
+
+    if type(estimator).__module__.split('.')[0] != 'catboost':
+        return np.array([], dtype=int)
+
+    return np.array(estimator.get_cat_feature_indices(), dtype=int)
+
+
 def _get_estimator_categorical_set_params(
     forecaster: object
 ) -> dict[str, object]:
@@ -3484,7 +3509,7 @@ def _build_predict_function(
         # CatBoost requires integer values (not float) for categorical features
         # when X is a numpy array. This requires casting the array to object
         # dtype and converting the categorical columns to int before each prediction call.
-        cat_indices = np.array(estimator.get_cat_feature_indices())
+        cat_indices = _get_catboost_cat_feature_indices(estimator)
         if len(cat_indices) > 0:
             def predict_fn(X):
                 X_obj = X.astype(object)
