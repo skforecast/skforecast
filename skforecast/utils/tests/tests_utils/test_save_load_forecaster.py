@@ -23,6 +23,8 @@ from ....recursive import ForecasterStats
 from ....direct import ForecasterDirect
 from ....direct import ForecasterDirectMultiVariate
 from ....stats import Arima
+from ....preprocessing import RollingFeatures
+from ....preprocessing import RollingFeaturesClassification
 from ...utils import save_forecaster
 from ...utils import load_forecaster
 from ....exceptions import SkforecastVersionWarning, SaveLoadSkforecastWarning
@@ -295,6 +297,38 @@ def test_save_forecaster_warning_when_user_defined_window_features():
             forecaster=forecaster, file_name='forecaster.joblib', save_custom_functions=False
         )
         os.remove('forecaster.joblib')
+
+
+@pytest.mark.parametrize(
+    "forecaster",
+    [
+        ForecasterRecursive(
+            estimator=LinearRegression(),
+            lags=3,
+            window_features=RollingFeatures(stats=['mean'], window_sizes=3)
+        ),
+        ForecasterRecursiveClassifier(
+            estimator=LogisticRegression(),
+            lags=3,
+            window_features=RollingFeaturesClassification(
+                stats=['proportion'], window_sizes=3
+            )
+        ),
+    ],
+    ids=['RollingFeatures', 'RollingFeaturesClassification']
+)
+def test_save_forecaster_no_warning_when_skforecast_window_features(
+    forecaster, tmp_path
+):
+    """
+    Test that no SaveLoadSkforecastWarning is raised when the window features
+    are skforecast classes, since they do not need to be saved by the user.
+    """
+    with warnings.catch_warnings():
+        warnings.simplefilter('error', SaveLoadSkforecastWarning)
+        save_forecaster(
+            forecaster=forecaster, file_name=str(tmp_path / 'forecaster.joblib')
+        )
 
 
 def test_save_forecaster_ValueError_when_invalid_backend():

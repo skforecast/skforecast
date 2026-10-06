@@ -3017,7 +3017,7 @@ def save_forecaster(
                     )
 
         if hasattr(forecaster, 'window_features') and forecaster.window_features is not None:
-            skforecast_classes = {'RollingFeatures'}
+            skforecast_classes = {'RollingFeatures', 'RollingFeaturesClassification'}
             custom_classes = set(forecaster.window_features_class_names) - skforecast_classes
             if custom_classes:
                 warnings.warn(
