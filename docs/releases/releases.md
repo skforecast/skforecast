@@ -174,6 +174,22 @@ The main changes in this release are:
 
 + Fixed an issue in <code>[save_forecaster]</code> where the `.py` files of the custom weight functions (`weight_func`) were written with the default encoding of the platform instead of UTF-8. On Windows, a character outside its code page (for example, `σ`) raised `UnicodeEncodeError` after the forecaster file was written, and other non-ASCII characters (for example, `ñ` in a string) produced a file that could not be imported.
 
++ Fixed an issue in <code>[RollingFeatures]</code> and <code>[RollingFeaturesClassification]</code> where `transform_batch` stored the pandas `Rolling` objects of the transformed series, so every forecaster fitted with these `window_features` kept a reference to its training series. <code>[save_forecaster]</code> with `backend='skops'` failed for these forecasters (`TypeError: no default __reduce__ due to non-trivial __cinit__` when saving or, with a `RangeIndex`, `TypeError: RangeIndex(...) must be called with integers` when loading), and the other backends wrote the training series to the file (with joblib and 500,000 values, 16 MB instead of 6 KB). The `Rolling` objects are no longer stored.
+
++ Fixed several issues in <code>[save_forecaster]</code> and <code>[load_forecaster]</code> with `backend='skops'` and a `DatetimeIndex`. The index was stored as text and is now stored as integers, with its unit, the name of its time zone and its frequency:
+    + The time zone was reduced to the UTC offset of each timestamp. A forecaster trained on a series with a daylight saving time change could not be loaded (`ValueError: Tz-aware datetime.datetime cannot be converted to datetime64 unless utc=True`), and one without it was loaded with a fixed offset (for example, `UTC+01:00` instead of `Europe/Madrid`), so the predictions beyond a later change had their labels shifted.
+    + Frequencies below one second (for example, `'500ms'`) could not be loaded.
+    + The parameters of the frequency were lost (for example, the holidays of a `CustomBusinessDay`), so loading or `predict` failed.
+    + Long series were slow to save and load: a <code>[ForecasterEquivalentDate]</code> trained on 200,000 values took 3.4 seconds to save and 3.4 seconds to load, with a 58 MB file (now 0.02 and 0.01 seconds, and 3.3 MB).
+    + Saving now raises a `ValueError` when the time zone cannot be rebuilt from its name (for example, a `dateutil` time zone). Convert the index to a named time zone (for example, `'Europe/Madrid'`) or use another backend.
+    + Files saved with previous versions are still loaded. Those with a frequency below one second, and most of those with a daylight saving time change, failed and are now loaded (with a fixed UTC offset, the only time zone information they stored).
+
++ Fixed an issue in <code>[save_forecaster]</code> with `backend='skops'` where a forecaster trained with categorical exogenous variables could not be saved (`TypeError: no default __reduce__ due to non-trivial __cinit__`). With pyarrow exogenous variables (for example, `double[pyarrow]`), the forecaster was saved and loaded, but its first `predict` crashed the Python process. The categorical, pyarrow and time zone aware dtypes of the exogenous variables are now stored as plain types.
+
++ Fixed an issue in <code>[save_forecaster]</code> with `backend='skops'` where a generic `pd.DateOffset` could not be saved (a `TypeError` saying that the `n` argument must be an integer). This affected the `offset` of <code>[ForecasterEquivalentDate]</code> (for example, `pd.DateOffset(days=7)`) and the forecasters trained on a series whose frequency is a `pd.DateOffset` (for example, `pd.DateOffset(months=1)`). Other offsets, such as `'D'` or `'MS'`, were not affected.
+
++ Fixed an issue in <code>[save_forecaster]</code> with `backend='skops'` where `last_window_` and `training_range_` were replaced with plain types while the file was written, so using the same forecaster from another thread at that time (for example, `predict`) failed. The forecaster is no longer modified.
+
 
 ## 0.25.0 <small>Sep 11, 2026</small> { id="0.25.0" }
 
