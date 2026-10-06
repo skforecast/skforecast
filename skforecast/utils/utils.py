@@ -3353,43 +3353,40 @@ def set_cpu_gpu_device(
     device: str | None = 'cpu'
 ) -> str | None:
     """
-    Set the device for the estimator to either 'cpu', 'gpu', 'cuda', or None.
+    Set the `device` parameter of an XGBoost or LightGBM regressor and return
+    its previous value, so that it can be restored afterwards. Recursive
+    forecasters use it to predict on CPU, since they predict one row at a time.
+
+    Parameters
+    ----------
+    estimator : object
+        Estimator whose device is set. Only `XGBRegressor` and `LGBMRegressor`
+        are modified. For any other estimator, nothing is done and `None` is
+        returned.
+    device : str, None, default 'cpu'
+        Device to set, passed to the estimator as is (for example `'cpu'`,
+        `'gpu'`, `'cuda'` or `'cuda:0'`). To restore the original device, pass
+        the value returned by a previous call. If `None`, the device is not
+        changed.
+
+    Returns
+    -------
+    original_device : str, None
+        Device of the estimator before the call. `None` if the estimator is not
+        supported or its device is not set (both libraries then use the CPU).
+
     """
 
-    valid_devices = {'gpu', 'cpu', 'cuda', 'GPU', 'CPU', None}
-    if device not in valid_devices:
-        raise ValueError("`device` must be 'gpu', 'cpu', 'cuda', or None.")
-    
-    estimator_name = type(estimator).__name__
-
-    supported_estimators = {'XGBRegressor', 'LGBMRegressor', 'CatBoostRegressor'}
-    if estimator_name not in supported_estimators:
+    if type(estimator).__name__ not in ('XGBRegressor', 'LGBMRegressor'):
         return None
-    
-    device_names = {
-        'XGBRegressor': 'device',
-        'LGBMRegressor': 'device',
-        'CatBoostRegressor': 'task_type',
-    }
-    device_values = {
-        'XGBRegressor': {'gpu': 'cuda', 'cpu': 'cpu', 'cuda': 'cuda'},
-        'LGBMRegressor': {'gpu': 'gpu', 'cpu': 'cpu', 'cuda': 'gpu'},
-        'CatBoostRegressor': {'gpu': 'GPU', 'cpu': 'CPU', 'cuda': 'GPU', 'GPU': 'GPU', 'CPU': 'CPU'},
-    }
 
-    param_name = device_names[estimator_name]
-    original_device = getattr(estimator, param_name, None)
+    original_device = getattr(estimator, 'device', None)
 
-    if device is None:
-        return original_device
-
-    new_device = device_values[estimator_name][device]
-
-    if original_device != new_device:
-        try:
-            estimator.set_params(**{param_name: new_device})
-        except Exception:
-            pass
+    # NOTE: A device that is not set already means CPU in XGBoost and LightGBM,
+    # so it is left unset instead of setting 'cpu'.
+    current_device = 'cpu' if original_device is None else original_device
+    if device is not None and device != current_device:
+        estimator.set_params(device=device)
 
     return original_device
 

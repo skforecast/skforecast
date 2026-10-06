@@ -17,6 +17,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
 from lightgbm import LGBMRegressor
+from xgboost import XGBRegressor
 
 from copy import deepcopy
 from skforecast.exceptions import IgnoredArgumentWarning
@@ -1336,3 +1337,26 @@ def test_predict_output_when_heterogeneous_differentiation_dict():
     expected = expected_df_to_long_format(expected)
 
     pd.testing.assert_frame_equal(predictions, expected)
+
+
+@pytest.mark.parametrize(
+    'estimator, device',
+    [(XGBRegressor(n_estimators=5, random_state=123), 'cuda:0'),
+     (XGBRegressor(n_estimators=5, random_state=123), 'gpu'),
+     (XGBRegressor(n_estimators=5, random_state=123), None),
+     (LGBMRegressor(n_estimators=5, verbose=-1, random_state=123), 'cuda')],
+    ids=['XGB-cuda:0', 'XGB-gpu', 'XGB-not_set', 'LGBM-cuda']
+)
+def test_predict_restores_estimator_device(estimator, device):
+    """
+    Test that predict, which runs on CPU, restores the original device of the
+    estimator verbatim, and leaves a device that is not set unset. The device
+    is set after fit, so no GPU is needed.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator, lags=3)
+    forecaster.fit(series=series_dict_range)
+    if device is not None:
+        forecaster.estimator.set_params(device=device)
+    forecaster.predict(steps=3)
+
+    assert forecaster.estimator.get_params().get('device') == device
