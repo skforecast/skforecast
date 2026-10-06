@@ -949,6 +949,68 @@ def test_save_and_load_forecaster_round_trip_skops_datetime_index(index, tmp_pat
     pd.testing.assert_series_equal(predictions, forecaster_loaded.predict(steps=15))
 
 
+@pytest.mark.parametrize(
+    "exog_type",
+    ['categorical', 'pyarrow'],
+    ids=lambda exog_type: f'exog: {exog_type}'
+)
+@pytest.mark.parametrize(
+    "forecaster_class",
+    [ForecasterRecursive, ForecasterRecursiveMultiSeries],
+    ids=lambda forecaster_class: forecaster_class.__name__
+)
+def test_save_and_load_forecaster_round_trip_skops_exog_dtypes(
+    forecaster_class, exog_type, tmp_path
+):
+    """
+    Test that a forecaster trained with categorical exog (categories of int32
+    and str) or pyarrow exog round-trips through the skops backend, keeps the
+    same exog dtypes and predicts the same values.
+    """
+    rng = np.random.default_rng(12345)
+    index = pd.date_range('2020-01-01', periods=65, freq='D')
+    if exog_type == 'categorical':
+        exog = pd.DataFrame(
+            {
+                'month': pd.Categorical(index.month),
+                'day_name': pd.Categorical(index.day_name()),
+            },
+            index=index,
+        )
+    else:
+        exog = pd.DataFrame(
+            {'exog_1': rng.normal(size=65)}, index=index, dtype='double[pyarrow]'
+        )
+    exog_train = exog.iloc[:60]
+    exog_predict = exog.iloc[60:]
+    y = pd.Series(rng.normal(size=60), index=index[:60])
+
+    forecaster = forecaster_class(estimator=LinearRegression(), lags=3)
+    if isinstance(forecaster, ForecasterRecursiveMultiSeries):
+        series = {'serie_1': y, 'serie_2': y * 2}
+        forecaster.fit(
+            series=series, exog={'serie_1': exog_train, 'serie_2': exog_train}
+        )
+        exog_predict = {'serie_1': exog_predict, 'serie_2': exog_predict}
+    else:
+        forecaster.fit(y=y, exog=exog_train)
+    predictions = forecaster.predict(steps=5, exog=exog_predict)
+
+    file_name = str(tmp_path / 'forecaster.skops')
+    save_forecaster(
+        forecaster=forecaster, file_name=file_name, backend='skops', verbose=False
+    )
+    forecaster_loaded = load_forecaster(
+        file_name=file_name, backend='skops', trusted=True, verbose=False
+    )
+
+    assert forecaster_loaded.exog_dtypes_in_ == forecaster.exog_dtypes_in_
+    assert forecaster_loaded.exog_dtypes_out_ == forecaster.exog_dtypes_out_
+    _assert_attribute_equal(
+        predictions, forecaster_loaded.predict(steps=5, exog=exog_predict)
+    )
+
+
 def test_load_forecaster_skops_raises_when_untrusted_by_default():
     """
     Test that load_forecaster with backend='skops' and the default

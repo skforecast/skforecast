@@ -16,6 +16,8 @@ from ...utils import _decompose_index
 from ...utils import _compose_index
 from ...utils import _decompose_pandas_object
 from ...utils import _compose_pandas_object
+from ...utils import _decompose_dtype
+from ...utils import _compose_dtype
 from ...utils import _skops_decompose_forecaster
 from ...utils import _skops_reconstruct_forecaster
 from ....recursive import ForecasterRecursive
@@ -301,6 +303,46 @@ def test_decompose_compose_pandas_object_round_trip_index():
     assert payload['object_type_'] == 'Index'
     assert 'data' not in payload
     pd.testing.assert_index_equal(rebuilt, index)
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        pd.CategoricalDtype(categories=pd.Index([3, 1, 2], dtype='int32')),
+        pd.CategoricalDtype(categories=['b', 'a'], ordered=True),
+        pd.api.types.pandas_dtype('double[pyarrow]'),
+        pd.DatetimeTZDtype(tz='Europe/Madrid'),
+    ],
+    ids=['category_int32', 'category_str_ordered', 'pyarrow', 'datetime_tz']
+)
+def test_decompose_compose_dtype_round_trip(dtype):
+    """
+    Test that _decompose_dtype replaces the pandas dtypes that skops cannot
+    serialize (categorical, pyarrow and time zone aware) with a plain dict, and
+    that _compose_dtype rebuilds a dtype equal to the original (including the
+    dtype and order of the categories).
+    """
+    payload = _decompose_dtype(dtype)
+    dtype_rebuilt = _compose_dtype(payload)
+
+    assert isinstance(payload, dict)
+    assert dtype_rebuilt == dtype
+    if isinstance(dtype, pd.CategoricalDtype):
+        pd.testing.assert_index_equal(dtype_rebuilt.categories, dtype.categories)
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [np.dtype('float64'), np.dtype('int32'), np.dtype('bool'), pd.Int64Dtype()],
+    ids=lambda dtype: f'dtype: {dtype}'
+)
+def test_decompose_compose_dtype_other_dtypes_unchanged(dtype):
+    """
+    Test that _decompose_dtype and _compose_dtype return unchanged the dtypes
+    that skops can serialize.
+    """
+    assert _decompose_dtype(dtype) is dtype
+    assert _compose_dtype(dtype) is dtype
 
 
 def test_skops_decompose_reconstruct_forecaster_single_series():

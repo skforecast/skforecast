@@ -2816,15 +2816,81 @@ def _compose_pandas_object(
     return obj
 
 
+def _decompose_dtype(dtype: Any) -> Any:
+    """
+    Replace a pandas dtype that skops cannot serialize with a plain dict.
+
+    A `CategoricalDtype` stores its categories as a numpy ndarray and whether
+    they are ordered, while an `ArrowDtype` or a `DatetimeTZDtype` stores its
+    name. Any other dtype is returned unchanged.
+
+    Parameters
+    ----------
+    dtype : object
+        Dtype to decompose.
+
+    Returns
+    -------
+    dtype : object
+        Plain dict representation of the dtype, or the dtype itself if skops
+        can serialize it. The `dtype_type_` key (`'category'` or `'name'`)
+        selects how it is rebuilt.
+
+    """
+
+    if isinstance(dtype, pd.CategoricalDtype):
+        dtype = {
+            'dtype_type_': 'category',
+            'categories': dtype.categories.to_numpy(),
+            'ordered': dtype.ordered,
+        }
+    elif isinstance(dtype, (pd.ArrowDtype, pd.DatetimeTZDtype)):
+        dtype = {'dtype_type_': 'name', 'name': str(dtype)}
+
+    return dtype
+
+
+def _compose_dtype(dtype: Any) -> Any:
+    """
+    Rebuild a pandas dtype from the dict produced by `_decompose_dtype`.
+
+    Parameters
+    ----------
+    dtype : object
+        Plain dict representation of the dtype, as returned by
+        `_decompose_dtype`, or a dtype that was not decomposed.
+
+    Returns
+    -------
+    dtype : object
+        Reconstructed dtype. A dtype that was not decomposed is returned
+        unchanged.
+
+    """
+
+    if isinstance(dtype, dict) and dtype.get('dtype_type_') == 'category':
+        dtype = pd.CategoricalDtype(
+            categories=dtype['categories'], ordered=dtype['ordered']
+        )
+    elif isinstance(dtype, dict) and dtype.get('dtype_type_') == 'name':
+        dtype = pd.api.types.pandas_dtype(dtype['name'])
+
+    return dtype
+
+
 def _skops_decompose_forecaster(forecaster: object) -> object:
     """
-    Return a shallow copy of a forecaster whose index-backed pandas attributes
-    are replaced with plain dicts, so it can be serialized with skops. The
-    forecaster itself is not modified.
+    Return a shallow copy of a forecaster whose attributes that skops cannot
+    serialize are replaced with plain dicts. The forecaster itself is not
+    modified.
 
-    The decomposed attributes are `last_window_` and `training_range_`, which
-    may be a pandas object (single-series forecasters) or a dict of pandas
-    objects (multi-series forecasters).
+    The decomposed attributes are:
+
+    - `last_window_` and `training_range_`, which may be a pandas object
+    (single-series forecasters) or a dict of pandas objects (multi-series
+    forecasters).
+    - `exog_dtypes_in_` and `exog_dtypes_out_`, whose categorical, pyarrow and
+    time zone aware dtypes are decomposed with `_decompose_dtype`.
 
     Parameters
     ----------
@@ -2848,18 +2914,23 @@ def _skops_decompose_forecaster(forecaster: object) -> object:
         else:
             continue
         setattr(forecaster_decomposed, attr, value)
+    for attr in ('exog_dtypes_in_', 'exog_dtypes_out_'):
+        value = getattr(forecaster, attr, None)
+        if isinstance(value, dict):
+            value = {k: _decompose_dtype(v) for k, v in value.items()}
+            setattr(forecaster_decomposed, attr, value)
 
     return forecaster_decomposed
 
 
 def _skops_reconstruct_forecaster(forecaster: object) -> None:
     """
-    Rebuild the index-backed pandas attributes of a forecaster decomposed by
+    Rebuild the attributes of a forecaster decomposed by
     `_skops_decompose_forecaster`.
 
-    Operates in place on `last_window_` and `training_range_`. The `object_type_`
-    marker key distinguishes a single decomposed object from a multi-series dict
-    of decomposed objects.
+    Operates in place on `last_window_`, `training_range_`, `exog_dtypes_in_`
+    and `exog_dtypes_out_`. The `object_type_` marker key distinguishes a single
+    decomposed object from a multi-series dict of decomposed objects.
 
     Parameters
     ----------
@@ -2881,6 +2952,11 @@ def _skops_reconstruct_forecaster(forecaster: object) -> None:
         else:
             value = {k: _compose_pandas_object(v) for k, v in value.items()}
         setattr(forecaster, attr, value)
+    for attr in ('exog_dtypes_in_', 'exog_dtypes_out_'):
+        value = getattr(forecaster, attr, None)
+        if isinstance(value, dict):
+            value = {k: _compose_dtype(v) for k, v in value.items()}
+            setattr(forecaster, attr, value)
 
 
 @manage_warnings
