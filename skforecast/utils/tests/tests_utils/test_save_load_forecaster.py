@@ -2,6 +2,7 @@
 # ==============================================================================
 import os
 import re
+import zoneinfo
 import joblib
 import pickle
 import pytest
@@ -900,6 +901,52 @@ def test_save_and_load_forecaster_round_trip_skops_window_features(
     )
 
     _assert_attribute_equal(predictions, forecaster_loaded.predict(steps=5))
+
+
+@pytest.mark.parametrize(
+    "index",
+    [
+        pd.date_range('2024-03-25', periods=200, freq='h', tz='Europe/Madrid'),
+        pd.date_range('2024-03-25', periods=140, freq='h', tz='Europe/Madrid'),
+        pd.date_range(
+            '2024-02-01', periods=30, freq='D', tz=zoneinfo.ZoneInfo('America/New_York')
+        ),
+        pd.date_range('2024-01-01', periods=100, freq='500ms'),
+        pd.date_range(
+            '2024-11-01',
+            periods=36,
+            freq=pd.offsets.CustomBusinessDay(holidays=['2024-12-25']),
+        ),
+    ],
+    ids=[
+        'dst_change_in_training',
+        'dst_change_in_predictions',
+        'zoneinfo_dst_change_in_predictions',
+        'freq_500ms',
+        'custom_business_day_with_holidays',
+    ]
+)
+def test_save_and_load_forecaster_round_trip_skops_datetime_index(index, tmp_path):
+    """
+    Test that a forecaster trained on a DatetimeIndex round-trips through the
+    skops backend and predicts the same values with the same index (time zone,
+    daylight saving time changes and frequency).
+    """
+    rng = np.random.default_rng(12345)
+    y = pd.Series(rng.normal(size=len(index)), index=index)
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
+    forecaster.fit(y=y)
+    predictions = forecaster.predict(steps=15)
+
+    file_name = str(tmp_path / 'forecaster.skops')
+    save_forecaster(
+        forecaster=forecaster, file_name=file_name, backend='skops', verbose=False
+    )
+    forecaster_loaded = load_forecaster(
+        file_name=file_name, backend='skops', trusted=True, verbose=False
+    )
+
+    pd.testing.assert_series_equal(predictions, forecaster_loaded.predict(steps=15))
 
 
 def test_load_forecaster_skops_raises_when_untrusted_by_default():

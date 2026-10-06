@@ -18,6 +18,7 @@ import sys
 from typing import Any, Callable, ParamSpec, TypeVar
 import uuid
 import warnings
+import zoneinfo
 import joblib
 import pickle
 import numpy as np
@@ -2620,9 +2621,10 @@ def _decompose_index(index: pd.Index) -> dict[str, Any]:
     """
     Decompose a pandas Index into a plain dict that skops can serialize.
 
-    `DatetimeIndex` values are stored as ISO strings together with their
-    frequency, a `RangeIndex` stores its `start`, `stop`, and `step`, and any
-    other index type stores its values as a list.
+    A `DatetimeIndex` stores its values as integers since the epoch (UTC)
+    together with their unit, time zone name and frequency, a `RangeIndex`
+    stores its `start`, `stop`, and `step`, and any other index type stores its
+    values as a list.
 
     Parameters
     ----------
@@ -2638,10 +2640,34 @@ def _decompose_index(index: pd.Index) -> dict[str, Any]:
     """
 
     if isinstance(index, pd.DatetimeIndex):
+        # NOTE: The time zone is stored by name, since skops cannot serialize
+        # the time zone objects. A time zone that cannot be rebuilt from its
+        # name (e.g. from dateutil, or a datetime.timezone with a custom name)
+        # raises an error here, instead of failing or changing when loading.
+        tz = None if index.tz is None else str(index.tz)
+        tz_zoneinfo = isinstance(index.tz, zoneinfo.ZoneInfo)
+        if tz is not None:
+            try:
+                tz_rebuilt = zoneinfo.ZoneInfo(tz) if tz_zoneinfo else tz
+                is_rebuilt = (
+                    pd.DatetimeTZDtype(unit=index.unit, tz=tz_rebuilt) == index.dtype
+                )
+            except (KeyError, ValueError):
+                is_rebuilt = False
+            if not is_rebuilt:
+                raise ValueError(
+                    f"The time zone {index.tz!r} of the index cannot be saved with "
+                    f"backend='skops' because it cannot be rebuilt from its name "
+                    f"{tz!r}. Convert the index to a named time zone (e.g. "
+                    f"'Europe/Madrid') or use another backend."
+                )
         payload = {
             'index_type_': 'datetime',
-            'index': [str(ts) for ts in index],
-            'freq': index.freqstr,
+            'index': index.asi8,
+            'unit': index.unit,
+            'tz': tz,
+            'tz_zoneinfo': tz_zoneinfo,
+            'freq': index.freq,
             'index_name': index.name,
         }
     elif isinstance(index, pd.RangeIndex):
@@ -2674,15 +2700,28 @@ def _compose_index(payload: dict[str, Any]) -> pd.Index:
     -------
     index : pandas Index
         Reconstructed index, matching the original type: `DatetimeIndex` (with
-        its frequency restored), `RangeIndex`, or a generic `Index`.
+        its time zone and frequency restored), `RangeIndex`, or a generic
+        `Index`.
 
     """
 
     if payload['index_type_'] == 'datetime':
+        if 'unit' in payload:
+            values = np.asarray(payload['index'], dtype=np.int64)
+            index = pd.DatetimeIndex(values.view(f"M8[{payload['unit']}]"))
+            if payload['tz'] is not None:
+                tz = payload['tz']
+                if payload['tz_zoneinfo']:
+                    tz = zoneinfo.ZoneInfo(tz)
+                index = index.tz_localize('UTC').tz_convert(tz)
+        else:
+            # NOTE: Files saved with skforecast < 0.26 store the timestamps as
+            # strings, which only keep the UTC offset of each one. They are
+            # rebuilt with the offset of the first one (or without time zone).
+            index = pd.to_datetime(payload['index'], format='ISO8601', utc=True)
+            index = index.tz_convert(pd.Timestamp(payload['index'][0]).tz)
         index = pd.DatetimeIndex(
-            pd.to_datetime(payload['index']),
-            freq=payload['freq'],
-            name=payload['index_name'],
+            index, freq=payload['freq'], name=payload['index_name']
         )
     elif payload['index_type_'] == 'range':
         start, stop, step = payload['range']
