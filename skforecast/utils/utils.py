@@ -2862,8 +2862,11 @@ def save_forecaster(
     forecaster : Forecaster
         Forecaster created with skforecast library.
     file_name : str
-        File name given to the object. The file extension is determined by
-        the `backend` argument.
+        File name given to the object. The extension of the `backend` is added
+        to the name (e.g. `'model_v1.2'` is saved as `'model_v1.2.joblib'`). If
+        the name already ends with a backend extension (`.joblib`, `.pkl`,
+        `.pickle`, `.cloudpickle` or `.skops`), it is replaced by the extension
+        of the `backend`.
     backend : str, default 'joblib'
         Serialization backend used to save the forecaster.
 
@@ -2913,7 +2916,14 @@ def save_forecaster(
         'cloudpickle': '.cloudpickle',
         'skops': '.skops'
     }
-    file_name = Path(file_name).with_suffix(backend_extensions[backend])
+    # NOTE: Only a known backend extension is replaced, so that the dots in the
+    # name are kept (e.g. 'model_v1.2' is saved as 'model_v1.2.joblib').
+    known_extensions = {'.joblib', '.pkl', '.pickle', '.cloudpickle', '.skops'}
+    file_name = Path(file_name)
+    if file_name.suffix.lower() in known_extensions:
+        file_name = file_name.with_suffix(backend_extensions[backend])
+    else:
+        file_name = file_name.with_name(file_name.name + backend_extensions[backend])
 
     # Save forecaster
     if backend == 'joblib':

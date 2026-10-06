@@ -315,6 +315,48 @@ def test_save_forecaster_ValueError_when_invalid_backend():
         )
 
 
+@pytest.mark.parametrize(
+    "file_name, backend, expected_file",
+    [
+        ('model', 'joblib', 'model.joblib'),
+        ('model.joblib', 'joblib', 'model.joblib'),
+        ('model.pkl', 'joblib', 'model.joblib'),
+        ('model.PKL', 'pickle', 'model.pkl'),
+        ('model_v1.2', 'joblib', 'model_v1.2.joblib'),
+        ('forecaster_2026.10.04', 'pickle', 'forecaster_2026.10.04.pkl'),
+        ('model.bin', 'joblib', 'model.bin.joblib'),
+    ],
+    ids=[
+        'no extension',
+        'same extension',
+        'other backend extension',
+        'uppercase extension',
+        'dotted name',
+        'dotted date',
+        'unknown extension',
+    ]
+)
+def test_save_forecaster_file_name_extension(
+    file_name, backend, expected_file, tmp_path
+):
+    """
+    Test that save_forecaster adds the backend extension to the file name and
+    only replaces the extension when it is a backend extension, so the dots in
+    the name are kept. The saved file loads with the inferred backend.
+    """
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
+    forecaster.fit(y=pd.Series(np.arange(20, dtype=float)))
+    save_forecaster(
+        forecaster=forecaster, file_name=str(tmp_path / file_name), backend=backend
+    )
+    forecaster_loaded = load_forecaster(
+        file_name=str(tmp_path / expected_file), verbose=False
+    )
+
+    assert os.listdir(tmp_path) == [expected_file]
+    np.testing.assert_array_equal(forecaster_loaded.lags, forecaster.lags)
+
+
 def test_load_forecaster_ValueError_when_invalid_backend():
     """
     Test ValueError when an invalid backend is passed to load_forecaster.
