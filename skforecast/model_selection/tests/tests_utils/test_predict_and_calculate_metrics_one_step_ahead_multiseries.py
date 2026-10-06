@@ -595,6 +595,23 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_Forecas
             differentiation    = None,
             dropna_from_series = False,
             forecaster_id      = 'multiseries_lgbm'
+        ),
+        ForecasterRecursiveMultiSeries(
+            estimator          = CatBoostRegressor(
+                                     iterations          = 50,
+                                     random_seed         = 123,
+                                     verbose             = 0,
+                                     allow_writing_files = False
+                                 ),
+            lags               = 24,
+            encoding           = 'ordinal_category',
+            transformer_series = StandardScaler(),
+            transformer_exog   = StandardScaler(),
+            weight_func        = None,
+            series_weights     = None,
+            differentiation    = None,
+            dropna_from_series = False,
+            forecaster_id      = 'multiseries_catboost_ordinal_category'
         )
     ],
 ids=lambda forecaster: f'{forecaster.forecaster_id}')
@@ -605,6 +622,8 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_equivalence_ba
     refit=False. Using series and exog as dictionaries.
     Results are not equivalent if differentiation is included.
     ForecasterMultiVariate is not included because it is not possible to use dictionaries as input.
+    Series 'id_1002' has no data in the test set: with CatBoost and
+    encoding='ordinal_category', the codes of the other levels must not shift.
     """
 
     initial_train_size = 213
