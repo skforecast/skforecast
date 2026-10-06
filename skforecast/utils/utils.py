@@ -2993,7 +2993,7 @@ def save_forecaster(
                     saved_files = []
                     for fun in main_funs:
                         fun_file_name = fun.__name__ + '.py'
-                        with open(fun_file_name, 'w') as file:
+                        with open(fun_file_name, 'w', encoding='utf-8') as file:
                             file.write(inspect.getsource(fun))
                         saved_files.append(fun_file_name)
                     warnings.warn(
