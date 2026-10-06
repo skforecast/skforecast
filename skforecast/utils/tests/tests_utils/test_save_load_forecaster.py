@@ -800,6 +800,108 @@ def test_save_and_load_forecaster_round_trip_skops(build_forecaster):
     _assert_attribute_equal(forecaster.training_range_, forecaster_loaded.training_range_)
 
 
+@pytest.mark.parametrize(
+    "forecaster, index",
+    [
+        (
+            ForecasterRecursive(
+                estimator=LinearRegression(),
+                lags=3,
+                window_features=RollingFeatures(stats=['mean', 'std'], window_sizes=4),
+            ),
+            pd.date_range('2020-01-01', periods=100, freq='D'),
+        ),
+        (
+            ForecasterRecursive(
+                estimator=LinearRegression(),
+                lags=3,
+                window_features=RollingFeatures(stats=['mean', 'std'], window_sizes=4),
+            ),
+            pd.RangeIndex(100),
+        ),
+        (
+            ForecasterDirect(
+                estimator=LinearRegression(),
+                steps=5,
+                lags=3,
+                window_features=RollingFeatures(stats=['mean', 'std'], window_sizes=4),
+            ),
+            pd.date_range('2020-01-01', periods=100, freq='D'),
+        ),
+        (
+            ForecasterRecursiveMultiSeries(
+                estimator=LinearRegression(),
+                lags=3,
+                window_features=RollingFeatures(stats=['mean', 'std'], window_sizes=4),
+            ),
+            pd.date_range('2020-01-01', periods=100, freq='D'),
+        ),
+        (
+            ForecasterDirectMultiVariate(
+                estimator=LinearRegression(),
+                level='serie_1',
+                steps=5,
+                lags=3,
+                window_features=RollingFeatures(stats=['mean', 'std'], window_sizes=4),
+            ),
+            pd.date_range('2020-01-01', periods=100, freq='D'),
+        ),
+        (
+            ForecasterRecursiveClassifier(
+                estimator=LogisticRegression(),
+                lags=3,
+                window_features=RollingFeaturesClassification(
+                    stats=['proportion', 'mode'], window_sizes=4
+                ),
+            ),
+            pd.date_range('2020-01-01', periods=100, freq='D'),
+        ),
+    ],
+    ids=[
+        'ForecasterRecursive',
+        'ForecasterRecursive_RangeIndex',
+        'ForecasterDirect',
+        'ForecasterRecursiveMultiSeries',
+        'ForecasterDirectMultiVariate',
+        'ForecasterRecursiveClassifier',
+    ]
+)
+def test_save_and_load_forecaster_round_trip_skops_window_features(
+    forecaster, index, tmp_path
+):
+    """
+    Test that forecasters with window features round-trip through the skops
+    backend. The window features must not keep the pandas Rolling objects of
+    the training series, which skops cannot serialize.
+    """
+    rng = np.random.default_rng(12345)
+    if isinstance(forecaster, ForecasterRecursiveClassifier):
+        y = pd.Series(rng.choice(['a', 'b', 'c'], size=100), index=index)
+        forecaster.fit(y=y)
+    elif isinstance(
+        forecaster, (ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate)
+    ):
+        series = pd.DataFrame(
+            {'serie_1': rng.normal(size=100), 'serie_2': rng.normal(size=100)},
+            index=index,
+        )
+        forecaster.fit(series=series)
+    else:
+        y = pd.Series(rng.normal(size=100), index=index)
+        forecaster.fit(y=y)
+    predictions = forecaster.predict(steps=5)
+
+    file_name = str(tmp_path / 'forecaster.skops')
+    save_forecaster(
+        forecaster=forecaster, file_name=file_name, backend='skops', verbose=False
+    )
+    forecaster_loaded = load_forecaster(
+        file_name=file_name, backend='skops', trusted=True, verbose=False
+    )
+
+    _assert_attribute_equal(predictions, forecaster_loaded.predict(steps=5))
+
+
 def test_load_forecaster_skops_raises_when_untrusted_by_default():
     """
     Test that load_forecaster with backend='skops' and the default
