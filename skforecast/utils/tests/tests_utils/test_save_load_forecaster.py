@@ -965,15 +965,15 @@ def test_save_and_load_forecaster_round_trip_skops_exog_dtypes(
 ):
     """
     Test that a forecaster trained with categorical exog (categories of int32
-    and str) or pyarrow exog round-trips through the skops backend, keeps the
-    same exog dtypes and predicts the same values.
+    and str, all of them seen in training) or pyarrow exog round-trips through
+    the skops backend, keeps the same exog dtypes and predicts the same values.
     """
     rng = np.random.default_rng(12345)
     index = pd.date_range('2020-01-01', periods=65, freq='D')
     if exog_type == 'categorical':
         exog = pd.DataFrame(
             {
-                'month': pd.Categorical(index.month),
+                'day_of_week': pd.Categorical(index.day_of_week),
                 'day_name': pd.Categorical(index.day_name()),
             },
             index=index,
@@ -1005,6 +1005,7 @@ def test_save_and_load_forecaster_round_trip_skops_exog_dtypes(
         file_name=file_name, backend='skops', trusted=True, verbose=False
     )
 
+    assert not predictions.isna().to_numpy().any()
     assert forecaster_loaded.exog_dtypes_in_ == forecaster.exog_dtypes_in_
     assert forecaster_loaded.exog_dtypes_out_ == forecaster.exog_dtypes_out_
     _assert_attribute_equal(

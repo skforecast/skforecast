@@ -6,7 +6,6 @@ import datetime
 import zoneinfo
 import pytest
 import dateutil.tz
-import pytz
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
@@ -30,7 +29,6 @@ from ....recursive import ForecasterRecursiveMultiSeries
     "tz",
     [
         dateutil.tz.tzoffset(None, 3600),
-        pytz.FixedOffset(60),
         datetime.timezone(datetime.timedelta(hours=1), 'CET'),
     ],
     ids=lambda tz: f'tz: {tz!r}'
