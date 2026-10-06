@@ -2,6 +2,7 @@
 # ==============================================================================
 import os
 import re
+import importlib.util
 import zoneinfo
 import joblib
 import pickle
@@ -42,6 +43,15 @@ def custom_weights2(y):  # pragma: no cover
     """
     """
     return np.arange(1, len(y) + 1)
+
+
+MIN_WEIGHT = 0.5
+
+
+def custom_weights_min_weight(y):  # pragma: no cover
+    """
+    """
+    return np.maximum(np.arange(len(y)), MIN_WEIGHT)
 
 
 class UserWindowFeature:  # pragma: no cover
@@ -181,8 +191,58 @@ def test_save_forecaster_save_custom_functions(weight_func, monkeypatch):
         weight_func_file = fun.__name__ + '.py'
         assert os.path.exists(weight_func_file)
         with open(weight_func_file, 'r') as file:
-            assert inspect.getsource(fun) == file.read()
+            assert file.read() == "import numpy as np\n\n\n" + inspect.getsource(fun)
         os.remove(weight_func_file)
+
+
+def test_save_forecaster_exported_weight_func_works_on_its_own(
+    tmp_path, monkeypatch
+):
+    """
+    Test that the .py file of a custom function defined in '__main__' includes
+    the imports it uses, so it can be imported and called in a new session
+    (e.g. to refit the loaded forecaster).
+    """
+    monkeypatch.chdir(tmp_path)
+    forecaster = ForecasterRecursive(
+        estimator=LinearRegression(), lags=3, weight_func=custom_weights
+    )
+    _simulate_main_namespace(monkeypatch, [custom_weights])
+
+    with pytest.warns(SaveLoadSkforecastWarning):
+        save_forecaster(forecaster=forecaster, file_name='forecaster.joblib')
+
+    spec = importlib.util.spec_from_file_location(
+        'custom_weights', tmp_path / 'custom_weights.py'
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    np.testing.assert_array_equal(module.custom_weights(np.arange(4)), np.ones(4))
+
+
+def test_save_forecaster_warning_when_weight_func_uses_objects_not_saved(
+    tmp_path, monkeypatch
+):
+    """
+    Test SaveLoadSkforecastWarning when a custom function defined in '__main__'
+    uses global variables that cannot be written as an import in its .py file.
+    """
+    monkeypatch.chdir(tmp_path)
+    forecaster = ForecasterRecursive(
+        estimator=LinearRegression(), lags=3, weight_func=custom_weights_min_weight
+    )
+    _simulate_main_namespace(monkeypatch, [custom_weights_min_weight])
+
+    warn_msg = re.escape(
+        "The custom function 'custom_weights_min_weight' uses objects defined "
+        "outside its body that cannot be saved in 'custom_weights_min_weight.py': "
+        "'MIN_WEIGHT'. Define them inside the function, or save the forecaster "
+        "with backend='cloudpickle', which stores the function together with the "
+        "objects it uses."
+    )
+    with pytest.warns(SaveLoadSkforecastWarning, match=warn_msg):
+        save_forecaster(forecaster=forecaster, file_name='forecaster.joblib')
 
 
 @pytest.mark.parametrize("weight_func",

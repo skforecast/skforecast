@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 from copy import copy, deepcopy
+import dis
 from functools import wraps
 from importlib.metadata import PackageNotFoundError, version
 from importlib.util import find_spec
@@ -15,6 +16,7 @@ from packaging.requirements import Requirement
 from pathlib import Path
 import platform
 import sys
+import textwrap
 from typing import Any, Callable, ParamSpec, TypeVar
 import uuid
 import warnings
@@ -3028,6 +3030,90 @@ def _skops_reconstruct_forecaster(forecaster: object) -> None:
             setattr(forecaster, attr, _compose_offset(getattr(forecaster, attr)))
 
 
+def _get_source_with_imports(fun: Callable) -> tuple[str, list[str]]:
+    """
+    Return the source code of a function preceded by the import statements of
+    the modules, functions and classes it uses from its global namespace, so
+    that the code can be saved as a module that works on its own.
+
+    Parameters
+    ----------
+    fun : Callable
+        Function whose source code is returned.
+
+    Returns
+    -------
+    source_code : str
+        Source code of the function, preceded by the import statements.
+    names_not_imported : list
+        Names of the other objects the function uses from outside its body,
+        which cannot be written as an import: global variables that are not a
+        module, function or class of an importable module, and variables of
+        an enclosing function.
+
+    """
+
+    def get_global_names(code):
+        # NOTE: The names are read from the bytecode, including nested code
+        # (comprehensions, generator expressions and lambdas), because
+        # `inspect.getclosurevars` misses nested code and takes attribute names
+        # (e.g. `month` in `index.month`) as global variables.
+        global_names = {
+            instruction.argval
+            for instruction in dis.get_instructions(code)
+            if instruction.opname in ('LOAD_GLOBAL', 'LOAD_NAME')
+        }
+        for constant in code.co_consts:
+            if inspect.iscode(constant):
+                global_names |= get_global_names(constant)
+
+        return global_names
+
+    # NOTE: The source code is compiled as a module, so that the names used in
+    # the signature (annotations and default values) and in the decorators,
+    # which are evaluated when the module is imported, are also read.
+    # `dont_inherit` avoids `from __future__ import annotations` of this module,
+    # which would compile the annotations as strings.
+    source_code = inspect.getsource(fun)
+    module_code = compile(
+        textwrap.dedent(source_code), '<string>', 'exec', dont_inherit=True
+    )
+    imports = []
+    names_not_imported = list(fun.__code__.co_freevars)
+    for name in sorted(get_global_names(module_code) - set(names_not_imported)):
+        if name not in fun.__globals__:
+            # Builtins and undefined names
+            continue
+        value = fun.__globals__[name]
+        if value is fun:
+            continue
+        if inspect.ismodule(value):
+            if value.__name__ == name:
+                imports.append(f"import {name}")
+            else:
+                imports.append(f"import {value.__name__} as {name}")
+            continue
+        module_name = getattr(value, '__module__', None)
+        object_name = getattr(value, '__qualname__', None)
+        module = sys.modules.get(module_name) if isinstance(module_name, str) else None
+        is_importable = (
+            module_name != '__main__'
+            and isinstance(object_name, str)
+            and getattr(module, object_name, None) is value
+        )
+        if is_importable and object_name == name:
+            imports.append(f"from {module_name} import {name}")
+        elif is_importable:
+            imports.append(f"from {module_name} import {object_name} as {name}")
+        else:
+            names_not_imported.append(name)
+
+    if imports:
+        source_code = "\n".join(sorted(imports)) + "\n\n\n" + source_code
+
+    return source_code, names_not_imported
+
+
 @manage_warnings
 def save_forecaster(
     forecaster: object,
@@ -3173,9 +3259,22 @@ def save_forecaster(
                     saved_files = []
                     for fun in main_funs:
                         fun_file_name = fun.__name__ + '.py'
+                        source_code, names_not_imported = _get_source_with_imports(fun)
                         with open(fun_file_name, 'w', encoding='utf-8') as file:
-                            file.write(inspect.getsource(fun))
+                            file.write(source_code)
                         saved_files.append(fun_file_name)
+                        if names_not_imported:
+                            warnings.warn(
+                                f"The custom function '{fun.__name__}' uses objects "
+                                f"defined outside its body that cannot be saved in "
+                                f"'{fun_file_name}': "
+                                f"{', '.join(repr(n) for n in names_not_imported)}. "
+                                f"Define them inside the function, or save the "
+                                f"forecaster with backend='cloudpickle', which "
+                                f"stores the function together with the objects "
+                                f"it uses.",
+                                SaveLoadSkforecastWarning
+                            )
                     warnings.warn(
                         "Custom function(s) used to create weights are defined in "
                         "the '__main__' namespace and have been saved as: "
