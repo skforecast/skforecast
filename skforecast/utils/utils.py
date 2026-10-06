@@ -8,7 +8,7 @@
 from __future__ import annotations
 from copy import copy, deepcopy
 import dis
-from functools import wraps
+from functools import partial, wraps
 from importlib.metadata import PackageNotFoundError, version
 from importlib.util import find_spec
 import inspect
@@ -250,6 +250,32 @@ def initialize_window_features(
     return window_features, window_features_names, max_size_window_features
 
 
+def _get_source_code(fun: Callable) -> str | None:
+    """
+    Return the source code of a function, or `None` if it is not available,
+    for example for a `functools.partial`, a callable object or a function
+    defined in an interactive console.
+
+    Parameters
+    ----------
+    fun : Callable
+        Function whose source code is returned.
+
+    Returns
+    -------
+    source_code : str, None
+        Source code of the function, or `None` if it is not available.
+
+    """
+
+    try:
+        source_code = inspect.getsource(fun)
+    except (OSError, TypeError):
+        source_code = None
+
+    return source_code
+
+
 def initialize_weights(
     forecaster_name: str,
     estimator: object,
@@ -277,7 +303,9 @@ def initialize_weights(
     weight_func : Callable, dict
         Argument `weight_func` of the forecaster.
     source_code_weight_func : str, dict
-        Argument `source_code_weight_func` of the forecaster.
+        Argument `source_code_weight_func` of the forecaster. It is `None` for a
+        function whose source code is not available (e.g. a `functools.partial`
+        or a callable object).
     series_weights : dict
         Argument `series_weights` of the forecaster. Only ForecasterRecursiveMultiSeries.
     
@@ -301,9 +329,9 @@ def initialize_weights(
         if isinstance(weight_func, dict):
             source_code_weight_func = {}
             for key in weight_func:
-                source_code_weight_func[key] = inspect.getsource(weight_func[key])
+                source_code_weight_func[key] = _get_source_code(weight_func[key])
         else:
-            source_code_weight_func = inspect.getsource(weight_func)
+            source_code_weight_func = _get_source_code(weight_func)
 
         if 'sample_weight' not in inspect.signature(estimator.fit).parameters:
             warnings.warn(
@@ -3252,13 +3280,23 @@ def save_forecaster(
             # cannot be re-imported when the forecaster is loaded in a different
             # session, so they are the only ones that need the .py export / warning.
             # Functions from importable modules are restored automatically by
-            # joblib/pickle (by reference).
-            main_funs = sorted(
-                (f for f in funs if getattr(f, '__module__', None) == '__main__'),
-                key=lambda f: f.__name__
-            )
-            if main_funs:
-                if save_custom_functions:
+            # joblib/pickle (by reference). A `functools.partial` is restored from
+            # the function it wraps, so that function is the one exported. Lambda
+            # functions and callable objects cannot be exported as a module.
+            main_funs = set()
+            main_callables_not_exportable = []
+            for fun in funs:
+                if isinstance(fun, partial):
+                    fun = fun.func
+                if getattr(fun, '__module__', None) != '__main__':
+                    continue
+                if inspect.isfunction(fun) and fun.__name__.isidentifier():
+                    main_funs.add(fun)
+                else:
+                    main_callables_not_exportable.append(fun)
+            main_funs = sorted(main_funs, key=lambda f: f.__name__)
+            if save_custom_functions:
+                if main_funs:
                     saved_files = []
                     for fun in main_funs:
                         fun_file_name = file_name.parent / f"{fun.__name__}.py"
@@ -3289,15 +3327,28 @@ def save_forecaster(
                         "#saving-and-loading-a-forecaster-model-with-custom-features",
                         SaveLoadSkforecastWarning
                     )
-                else:
+                if main_callables_not_exportable:
+                    callables_names = ', '.join(
+                        repr(getattr(f, '__name__', type(f).__name__))
+                        for f in main_callables_not_exportable
+                    )
                     warnings.warn(
-                        "Custom function(s) used to create weights are defined in "
-                        "the '__main__' namespace and have not been saved. To save "
-                        "them automatically, set `save_custom_functions=True`. "
-                        "Otherwise, ensure they are importable before loading the "
-                        "forecaster.",
+                        "Custom callable(s) used to create weights are defined in "
+                        "the '__main__' namespace but cannot be saved as .py files "
+                        f"(lambda functions or callable objects): {callables_names}. "
+                        "Define them as named functions, or save the forecaster "
+                        "with backend='cloudpickle', which stores them in the file.",
                         SaveLoadSkforecastWarning
                     )
+            elif main_funs or main_callables_not_exportable:
+                warnings.warn(
+                    "Custom function(s) used to create weights are defined in "
+                    "the '__main__' namespace and have not been saved. To save "
+                    "them automatically, set `save_custom_functions=True`. "
+                    "Otherwise, ensure they are importable before loading the "
+                    "forecaster.",
+                    SaveLoadSkforecastWarning
+                )
 
         if hasattr(forecaster, 'window_features') and forecaster.window_features is not None:
             skforecast_classes = {'RollingFeatures', 'RollingFeaturesClassification'}

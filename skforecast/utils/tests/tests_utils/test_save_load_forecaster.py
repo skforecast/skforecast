@@ -2,6 +2,7 @@
 # ==============================================================================
 import os
 import re
+import functools
 import importlib.util
 import zoneinfo
 import joblib
@@ -52,6 +53,17 @@ def custom_weights_min_weight(y):  # pragma: no cover
     """
     """
     return np.maximum(np.arange(len(y)), MIN_WEIGHT)
+
+
+def custom_weights_scale(y, scale):  # pragma: no cover
+    """
+    """
+    return np.ones(len(y)) * scale
+
+
+class CustomWeights:  # pragma: no cover
+    def __call__(self, y):
+        return np.ones(len(y))
 
 
 class UserWindowFeature:  # pragma: no cover
@@ -223,6 +235,49 @@ def test_save_forecaster_save_custom_functions_next_to_forecaster_file(
     assert sorted(os.listdir(tmp_path / 'models')) == [
         'custom_weights.py', 'forecaster.joblib'
     ]
+
+
+@pytest.mark.parametrize(
+    "weight_func, warn_msg, expected_files",
+    [
+        (
+            functools.partial(custom_weights_scale, scale=2),
+            "Custom function(s) used to create weights are defined in the "
+            "'__main__' namespace and have been saved as: 'custom_weights_scale.py'.",
+            ['custom_weights_scale.py', 'forecaster.joblib'],
+        ),
+        (
+            CustomWeights(),
+            "Custom callable(s) used to create weights are defined in the "
+            "'__main__' namespace but cannot be saved as .py files (lambda "
+            "functions or callable objects): 'CustomWeights'. Define them as "
+            "named functions, or save the forecaster with backend='cloudpickle', "
+            "which stores them in the file.",
+            ['forecaster.joblib'],
+        ),
+    ],
+    ids=['partial', 'callable_object']
+)
+def test_save_forecaster_save_custom_functions_partial_and_callable_object(
+    weight_func, warn_msg, expected_files, tmp_path, monkeypatch
+):
+    """
+    Test that a functools.partial of a function defined in '__main__' saves the
+    .py file of that function, and that a callable object defined in '__main__'
+    is not saved as a .py file and raises a SaveLoadSkforecastWarning instead
+    of failing.
+    """
+    monkeypatch.chdir(tmp_path)
+    forecaster = ForecasterRecursive(
+        estimator=LinearRegression(), lags=3, weight_func=weight_func
+    )
+    forecaster.fit(y=pd.Series(np.arange(20, dtype=float)))
+    _simulate_main_namespace(monkeypatch, [custom_weights_scale, CustomWeights])
+
+    with pytest.warns(SaveLoadSkforecastWarning, match=re.escape(warn_msg)):
+        save_forecaster(forecaster=forecaster, file_name='forecaster.joblib')
+
+    assert sorted(os.listdir(tmp_path)) == expected_files
 
 
 def test_save_forecaster_exported_weight_func_works_on_its_own(
