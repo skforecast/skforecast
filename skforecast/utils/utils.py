@@ -3282,7 +3282,9 @@ def save_forecaster(
             # Functions from importable modules are restored automatically by
             # joblib/pickle (by reference). A `functools.partial` is restored from
             # the function it wraps, so that function is the one exported. Lambda
-            # functions and callable objects cannot be exported as a module.
+            # functions, callable objects and functions whose source code is not
+            # available (e.g. defined in the Python console) cannot be exported
+            # as a module.
             main_funs = set()
             main_callables_not_exportable = []
             for fun in funs:
@@ -3290,7 +3292,11 @@ def save_forecaster(
                     fun = fun.func
                 if getattr(fun, '__module__', None) != '__main__':
                     continue
-                if inspect.isfunction(fun) and fun.__name__.isidentifier():
+                if (
+                    inspect.isfunction(fun)
+                    and fun.__name__.isidentifier()
+                    and _get_source_code(fun) is not None
+                ):
                     main_funs.add(fun)
                 else:
                     main_callables_not_exportable.append(fun)
@@ -3324,7 +3330,7 @@ def save_forecaster(
                         "must be imported before loading the forecaster.\n"
                         "Visit the documentation for more information: "
                         "https://skforecast.org/latest/user_guides/save-load-forecaster.html"
-                        "#saving-and-loading-a-forecaster-model-with-custom-features",
+                        "#forecaster-with-custom-features",
                         SaveLoadSkforecastWarning
                     )
                 if main_callables_not_exportable:
@@ -3335,7 +3341,9 @@ def save_forecaster(
                     warnings.warn(
                         "Custom callable(s) used to create weights are defined in "
                         "the '__main__' namespace but cannot be saved as .py files "
-                        f"(lambda functions or callable objects): {callables_names}. "
+                        "(lambda functions, callable objects or functions whose "
+                        "source code is not available, e.g. defined in the Python "
+                        f"console): {callables_names}. "
                         "Define them as named functions, or save the forecaster "
                         "with backend='cloudpickle', which stores them in the file.",
                         SaveLoadSkforecastWarning
@@ -3361,7 +3369,8 @@ def save_forecaster(
                     "manually and import them before loading the Forecaster.\n"
                     "    Custom classes: " + ', '.join(custom_classes) + "\n"
                     "Visit the documentation for more information: "
-                    "https://skforecast.org/latest/user_guides/save-load-forecaster.html#saving-and-loading-a-forecaster-model-with-custom-features",
+                    "https://skforecast.org/latest/user_guides/save-load-forecaster.html"
+                    "#forecaster-with-custom-features",
                     SaveLoadSkforecastWarning
                 )
 

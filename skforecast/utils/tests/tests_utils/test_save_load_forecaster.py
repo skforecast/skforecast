@@ -66,6 +66,16 @@ class CustomWeights:  # pragma: no cover
         return np.ones(len(y))
 
 
+# Function whose source code is not available (as one defined in the Python
+# console)
+_no_source_namespace = {'np': np}
+exec(
+    "def custom_weights_no_source(y):\n    return np.ones(len(y))\n",
+    _no_source_namespace
+)
+custom_weights_no_source = _no_source_namespace['custom_weights_no_source']
+
+
 class UserWindowFeature:  # pragma: no cover
     def __init__(self, window_sizes, features_names):
         self.window_sizes = window_sizes
@@ -250,29 +260,43 @@ def test_save_forecaster_save_custom_functions_next_to_forecaster_file(
             CustomWeights(),
             "Custom callable(s) used to create weights are defined in the "
             "'__main__' namespace but cannot be saved as .py files (lambda "
-            "functions or callable objects): 'CustomWeights'. Define them as "
-            "named functions, or save the forecaster with backend='cloudpickle', "
-            "which stores them in the file.",
+            "functions, callable objects or functions whose source code is not "
+            "available, e.g. defined in the Python console): 'CustomWeights'. "
+            "Define them as named functions, or save the forecaster with "
+            "backend='cloudpickle', which stores them in the file.",
+            ['forecaster.joblib'],
+        ),
+        (
+            custom_weights_no_source,
+            "Custom callable(s) used to create weights are defined in the "
+            "'__main__' namespace but cannot be saved as .py files (lambda "
+            "functions, callable objects or functions whose source code is not "
+            "available, e.g. defined in the Python console): "
+            "'custom_weights_no_source'. Define them as named functions, or save "
+            "the forecaster with backend='cloudpickle', which stores them in the "
+            "file.",
             ['forecaster.joblib'],
         ),
     ],
-    ids=['partial', 'callable_object']
+    ids=['partial', 'callable_object', 'no_source']
 )
 def test_save_forecaster_save_custom_functions_partial_and_callable_object(
     weight_func, warn_msg, expected_files, tmp_path, monkeypatch
 ):
     """
     Test that a functools.partial of a function defined in '__main__' saves the
-    .py file of that function, and that a callable object defined in '__main__'
-    is not saved as a .py file and raises a SaveLoadSkforecastWarning instead
-    of failing.
+    .py file of that function, and that a callable object or a function whose
+    source code is not available defined in '__main__' is not saved as a .py
+    file and raises a SaveLoadSkforecastWarning instead of failing.
     """
     monkeypatch.chdir(tmp_path)
     forecaster = ForecasterRecursive(
         estimator=LinearRegression(), lags=3, weight_func=weight_func
     )
     forecaster.fit(y=pd.Series(np.arange(20, dtype=float)))
-    _simulate_main_namespace(monkeypatch, [custom_weights_scale, CustomWeights])
+    _simulate_main_namespace(
+        monkeypatch, [custom_weights_scale, CustomWeights, custom_weights_no_source]
+    )
 
     with pytest.warns(SaveLoadSkforecastWarning, match=re.escape(warn_msg)):
         save_forecaster(forecaster=forecaster, file_name='forecaster.joblib')

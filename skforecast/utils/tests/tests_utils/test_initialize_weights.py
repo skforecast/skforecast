@@ -4,7 +4,6 @@ import re
 import functools
 import pytest
 import numpy as np
-import pandas as pd
 import inspect
 from skforecast.exceptions import IgnoredArgumentWarning
 from skforecast.utils.utils import initialize_weights
