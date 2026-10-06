@@ -1371,6 +1371,51 @@ def test_train_test_split_one_step_ahead_when_ordinal_category_and_lightgbm_cate
     assert len(cat_idx) == 2
 
 
+def test_train_test_split_one_step_ahead_when_ordinal_category_and_level_without_test_data():
+    """
+    Test _train_test_split_one_step_ahead with encoding='ordinal_category'
+    when a series has no data in the test set. The categories of
+    _level_skforecast include all the levels, so the category codes (used by
+    CatBoost) match the level codes in both X_train and X_test.
+    """
+    series_3 = {
+        "series_1": pd.Series(
+            np.arange(20, dtype=float),
+            index=pd.date_range("2020-01-01", periods=20)
+        ),
+        "series_2": pd.Series(
+            np.arange(50, 62, dtype=float),
+            index=pd.date_range("2020-01-01", periods=12)
+        ),
+        "series_3": pd.Series(
+            np.arange(100, 120, dtype=float),
+            index=pd.date_range("2020-01-01", periods=20)
+        ),
+    }
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, encoding='ordinal_category'
+    )
+
+    X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
+        forecaster._train_test_split_one_step_ahead(
+            series=series_3, initial_train_size=15
+        )
+    )
+
+    assert set(X_test_encoding.unique()) == {'series_1', 'series_3'}
+    assert X_train['_level_skforecast'].cat.categories.tolist() == [0, 1, 2]
+    assert X_test['_level_skforecast'].cat.categories.tolist() == [0, 1, 2]
+    np.testing.assert_array_equal(
+        X_train['_level_skforecast'].cat.codes.to_numpy(),
+        np.array([0] * 12 + [1] * 9 + [2] * 12)
+    )
+    np.testing.assert_array_equal(
+        X_test['_level_skforecast'].cat.codes.to_numpy(),
+        np.array([0] * 5 + [2] * 5)
+    )
+
+
 def test_train_test_split_one_step_ahead_when_weight_func_and_series_weights():
     """
     Test _train_test_split_one_step_ahead when both weight_func and

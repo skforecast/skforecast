@@ -1314,7 +1314,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             X_train = [X_train, encoded_values]
         else:
             if self.encoding == 'ordinal_category':
-                X_train['_level_skforecast'] = pd.Categorical(encoded_values)
+                # NOTE: Categories are set to all the encoded levels so that the
+                # category codes match the level codes even when a level has no
+                # rows (e.g. the test split of a one-step-ahead search). CatBoost
+                # is fitted with the codes.
+                X_train['_level_skforecast'] = pd.Categorical(
+                    encoded_values, categories=range(len(self.encoding_mapping_))
+                )
             else:
                 X_train['_level_skforecast'] = encoded_values
             X_train = [X_train]
