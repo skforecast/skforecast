@@ -7,7 +7,8 @@
 
 from __future__ import annotations
 from copy import copy, deepcopy
-from functools import wraps
+import dis
+from functools import partial, wraps
 from importlib.metadata import PackageNotFoundError, version
 from importlib.util import find_spec
 import inspect
@@ -15,6 +16,7 @@ from packaging.requirements import Requirement
 from pathlib import Path
 import platform
 import sys
+import textwrap
 from typing import Any, Callable, ParamSpec, TypeVar
 import uuid
 import warnings
@@ -248,6 +250,32 @@ def initialize_window_features(
     return window_features, window_features_names, max_size_window_features
 
 
+def _get_source_code(fun: Callable) -> str | None:
+    """
+    Return the source code of a function, or `None` if it is not available,
+    for example for a `functools.partial`, a callable object or a function
+    defined in an interactive console.
+
+    Parameters
+    ----------
+    fun : Callable
+        Function whose source code is returned.
+
+    Returns
+    -------
+    source_code : str, None
+        Source code of the function, or `None` if it is not available.
+
+    """
+
+    try:
+        source_code = inspect.getsource(fun)
+    except (OSError, TypeError):
+        source_code = None
+
+    return source_code
+
+
 def initialize_weights(
     forecaster_name: str,
     estimator: object,
@@ -275,7 +303,9 @@ def initialize_weights(
     weight_func : Callable, dict
         Argument `weight_func` of the forecaster.
     source_code_weight_func : str, dict
-        Argument `source_code_weight_func` of the forecaster.
+        Argument `source_code_weight_func` of the forecaster. It is `None` for a
+        function whose source code is not available (e.g. a `functools.partial`
+        or a callable object).
     series_weights : dict
         Argument `series_weights` of the forecaster. Only ForecasterRecursiveMultiSeries.
     
@@ -299,9 +329,9 @@ def initialize_weights(
         if isinstance(weight_func, dict):
             source_code_weight_func = {}
             for key in weight_func:
-                source_code_weight_func[key] = inspect.getsource(weight_func[key])
+                source_code_weight_func[key] = _get_source_code(weight_func[key])
         else:
-            source_code_weight_func = inspect.getsource(weight_func)
+            source_code_weight_func = _get_source_code(weight_func)
 
         if 'sample_weight' not in inspect.signature(estimator.fit).parameters:
             warnings.warn(
@@ -3028,6 +3058,90 @@ def _skops_reconstruct_forecaster(forecaster: object) -> None:
             setattr(forecaster, attr, _compose_offset(getattr(forecaster, attr)))
 
 
+def _get_source_with_imports(fun: Callable) -> tuple[str, list[str]]:
+    """
+    Return the source code of a function preceded by the import statements of
+    the modules, functions and classes it uses from its global namespace, so
+    that the code can be saved as a module that works on its own.
+
+    Parameters
+    ----------
+    fun : Callable
+        Function whose source code is returned.
+
+    Returns
+    -------
+    source_code : str
+        Source code of the function, preceded by the import statements.
+    names_not_imported : list
+        Names of the other objects the function uses from outside its body,
+        which cannot be written as an import: global variables that are not a
+        module, function or class of an importable module, and variables of
+        an enclosing function.
+
+    """
+
+    def get_global_names(code):
+        # NOTE: The names are read from the bytecode, including nested code
+        # (comprehensions, generator expressions and lambdas), because
+        # `inspect.getclosurevars` misses nested code and takes attribute names
+        # (e.g. `month` in `index.month`) as global variables.
+        global_names = {
+            instruction.argval
+            for instruction in dis.get_instructions(code)
+            if instruction.opname in ('LOAD_GLOBAL', 'LOAD_NAME')
+        }
+        for constant in code.co_consts:
+            if inspect.iscode(constant):
+                global_names |= get_global_names(constant)
+
+        return global_names
+
+    # NOTE: The source code is compiled as a module, so that the names used in
+    # the signature (annotations and default values) and in the decorators,
+    # which are evaluated when the module is imported, are also read.
+    # `dont_inherit` avoids `from __future__ import annotations` of this module,
+    # which would compile the annotations as strings.
+    source_code = inspect.getsource(fun)
+    module_code = compile(
+        textwrap.dedent(source_code), '<string>', 'exec', dont_inherit=True
+    )
+    imports = []
+    names_not_imported = list(fun.__code__.co_freevars)
+    for name in sorted(get_global_names(module_code) - set(names_not_imported)):
+        if name not in fun.__globals__:
+            # Builtins and undefined names
+            continue
+        value = fun.__globals__[name]
+        if value is fun:
+            continue
+        if inspect.ismodule(value):
+            if value.__name__ == name:
+                imports.append(f"import {name}")
+            else:
+                imports.append(f"import {value.__name__} as {name}")
+            continue
+        module_name = getattr(value, '__module__', None)
+        object_name = getattr(value, '__qualname__', None)
+        module = sys.modules.get(module_name) if isinstance(module_name, str) else None
+        is_importable = (
+            module_name != '__main__'
+            and isinstance(object_name, str)
+            and getattr(module, object_name, None) is value
+        )
+        if is_importable and object_name == name:
+            imports.append(f"from {module_name} import {name}")
+        elif is_importable:
+            imports.append(f"from {module_name} import {object_name} as {name}")
+        else:
+            names_not_imported.append(name)
+
+    if imports:
+        source_code = "\n".join(sorted(imports)) + "\n\n\n" + source_code
+
+    return source_code, names_not_imported
+
+
 @manage_warnings
 def save_forecaster(
     forecaster: object,
@@ -3040,10 +3154,11 @@ def save_forecaster(
     """
     Save forecaster model to disk. Custom functions used to create weights that
     are defined in the `'__main__'` namespace (e.g. a notebook or a script run
-    directly) are saved as .py files, since they cannot be re-imported when the
-    forecaster is loaded in a different session. Functions imported from a module
-    are restored automatically and are not exported. When `backend='cloudpickle'`,
-    custom functions are embedded in the saved file and no .py files are created.
+    directly) are saved as .py files next to the forecaster file, since they
+    cannot be re-imported when the forecaster is loaded in a different session.
+    Functions imported from a module are restored automatically and are not
+    exported. When `backend='cloudpickle'`, custom functions are embedded in the
+    saved file and no .py files are created.
 
     Parameters
     ----------
@@ -3079,9 +3194,11 @@ def save_forecaster(
         objects that skops cannot serialize. Requires `skops` to be installed.
     save_custom_functions : bool, default True
         If True, save custom functions used in the forecaster (weight_func) as
-        .py files, but only those defined in the `'__main__'` namespace. These
-        functions need to be available in the environment where the forecaster
-        is going to be loaded. Has no effect when `backend='cloudpickle'`.
+        .py files in the folder of `file_name`, but only those defined in the
+        `'__main__'` namespace. These functions need to be imported in the
+        environment where the forecaster is going to be loaded (e.g. with
+        `from models.custom_weights import custom_weights` if the forecaster is
+        saved in the folder `models`). Has no effect when `backend='cloudpickle'`.
     verbose : bool, default False
         Print summary about the forecaster saved.
     suppress_warnings : bool, default False
@@ -3163,38 +3280,83 @@ def save_forecaster(
             # cannot be re-imported when the forecaster is loaded in a different
             # session, so they are the only ones that need the .py export / warning.
             # Functions from importable modules are restored automatically by
-            # joblib/pickle (by reference).
-            main_funs = sorted(
-                (f for f in funs if getattr(f, '__module__', None) == '__main__'),
-                key=lambda f: f.__name__
-            )
-            if main_funs:
-                if save_custom_functions:
+            # joblib/pickle (by reference). A `functools.partial` is restored from
+            # the function it wraps, so that function is the one exported. Lambda
+            # functions, callable objects and functions whose source code is not
+            # available (e.g. defined in the Python console) cannot be exported
+            # as a module.
+            main_funs = set()
+            main_callables_not_exportable = []
+            for fun in funs:
+                if isinstance(fun, partial):
+                    fun = fun.func
+                if getattr(fun, '__module__', None) != '__main__':
+                    continue
+                if (
+                    inspect.isfunction(fun)
+                    and fun.__name__.isidentifier()
+                    and _get_source_code(fun) is not None
+                ):
+                    main_funs.add(fun)
+                else:
+                    main_callables_not_exportable.append(fun)
+            main_funs = sorted(main_funs, key=lambda f: f.__name__)
+            if save_custom_functions:
+                if main_funs:
                     saved_files = []
                     for fun in main_funs:
-                        fun_file_name = fun.__name__ + '.py'
+                        fun_file_name = file_name.parent / f"{fun.__name__}.py"
+                        source_code, names_not_imported = _get_source_with_imports(fun)
                         with open(fun_file_name, 'w', encoding='utf-8') as file:
-                            file.write(inspect.getsource(fun))
+                            file.write(source_code)
                         saved_files.append(fun_file_name)
+                        if names_not_imported:
+                            warnings.warn(
+                                f"The custom function '{fun.__name__}' uses objects "
+                                f"defined outside its body that cannot be saved in "
+                                f"'{fun_file_name}': "
+                                f"{', '.join(repr(n) for n in names_not_imported)}. "
+                                f"Define them inside the function, or save the "
+                                f"forecaster with backend='cloudpickle', which "
+                                f"stores the function together with the objects "
+                                f"it uses.",
+                                SaveLoadSkforecastWarning
+                            )
+                    saved_files_names = ', '.join(f"'{f}'" for f in saved_files)
                     warnings.warn(
                         "Custom function(s) used to create weights are defined in "
                         "the '__main__' namespace and have been saved as: "
-                        f"{', '.join(repr(f) for f in saved_files)}. These files "
+                        f"{saved_files_names}. These files "
                         "must be imported before loading the forecaster.\n"
                         "Visit the documentation for more information: "
                         "https://skforecast.org/latest/user_guides/save-load-forecaster.html"
-                        "#saving-and-loading-a-forecaster-model-with-custom-features",
+                        "#forecaster-with-custom-features",
                         SaveLoadSkforecastWarning
                     )
-                else:
+                if main_callables_not_exportable:
+                    callables_names = ', '.join(
+                        repr(getattr(f, '__name__', type(f).__name__))
+                        for f in main_callables_not_exportable
+                    )
                     warnings.warn(
-                        "Custom function(s) used to create weights are defined in "
-                        "the '__main__' namespace and have not been saved. To save "
-                        "them automatically, set `save_custom_functions=True`. "
-                        "Otherwise, ensure they are importable before loading the "
-                        "forecaster.",
+                        "Custom callable(s) used to create weights are defined in "
+                        "the '__main__' namespace but cannot be saved as .py files "
+                        "(lambda functions, callable objects or functions whose "
+                        "source code is not available, e.g. defined in the Python "
+                        f"console): {callables_names}. "
+                        "Define them as named functions, or save the forecaster "
+                        "with backend='cloudpickle', which stores them in the file.",
                         SaveLoadSkforecastWarning
                     )
+            elif main_funs or main_callables_not_exportable:
+                warnings.warn(
+                    "Custom function(s) used to create weights are defined in "
+                    "the '__main__' namespace and have not been saved. To save "
+                    "them automatically, set `save_custom_functions=True`. "
+                    "Otherwise, ensure they are importable before loading the "
+                    "forecaster.",
+                    SaveLoadSkforecastWarning
+                )
 
         if hasattr(forecaster, 'window_features') and forecaster.window_features is not None:
             skforecast_classes = {'RollingFeatures', 'RollingFeaturesClassification'}
@@ -3207,7 +3369,8 @@ def save_forecaster(
                     "manually and import them before loading the Forecaster.\n"
                     "    Custom classes: " + ', '.join(custom_classes) + "\n"
                     "Visit the documentation for more information: "
-                    "https://skforecast.org/latest/user_guides/save-load-forecaster.html#saving-and-loading-a-forecaster-model-with-custom-features",
+                    "https://skforecast.org/latest/user_guides/save-load-forecaster.html"
+                    "#forecaster-with-custom-features",
                     SaveLoadSkforecastWarning
                 )
 
