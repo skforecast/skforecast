@@ -22,6 +22,8 @@ The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> New functions <code>[get_model_info]</code> and <code>[list_adapters]</code> in `skforecast.foundation` to query, without installing the backend or loading the weights, the capabilities and requirements of the foundation models: adapter, default `context_length`, exogenous variable support, supported quantiles, backend package, license restriction and Hugging Face gating.
 
++ <span class="badge text-bg-api-change">API Change</span> The minimum supported versions of pandas and scikit-learn are now 2.2 and 1.6 (previously 2.1 and 1.4), because skforecast did not work correctly with the older ones.
+
 + <span class="badge text-bg-fix">Fix</span> <code>[Ets]</code> now estimates its smoothing parameters. A compilation flag disabled the checks of missing components, so every model without damping kept the starting values (alpha=0.1, beta=0.01, gamma=0.01). The estimates now agree with `statsmodels` and R's `forecast::ets`, and the prediction intervals of models without an analytical variance are reproducible and about 17 times faster.
 
 + <span class="badge text-bg-docs">Docs</span> The examples and tutorials pages are now a filterable card grid: every tutorial shows an icon, a one line summary and topic tags, and can be narrowed down with a search box and level/topic filters. [Examples](../examples/examples_english.md)
@@ -71,6 +73,14 @@ The main changes in this release are:
 + The <code>[LicenseWarning]</code> raised when TabPFN-TS is loaded now names the license of the weights that the backend actually downloads, `TabPFN-3.5 License v1.0`, and links to `Prior-Labs/tabpfn_3_5`. It previously pointed to the license of `Prior-Labs/tabpfn_3`, an older version of the weights. `tabpfn-time-series>=1.3` is now the documented minimum version of the backend, since earlier versions download other weights; it is the version the `ImportError` hint asks to install.
 
 + The `theforecastingcompany/t0*` checkpoints are no longer gated on the Hugging Face Hub, so the documentation of `T0Adapter` no longer asks to accept the license and authenticate before using them. The `OSError` raised when the checkpoint configuration cannot be downloaded now points first to the model ID and the network connection.
+
++ The minimum supported versions of pandas and scikit-learn are now 2.2 and 1.6 (previously 2.1 and 1.4), because skforecast did not work correctly with the older ones:
+    + pandas 2.1: `fit` failed with a target series of a nullable dtype (`Int64` or `Float64`), raising `TypeError: ufunc 'isnan' not supported for the input types`, and <code>[reshape_series_wide_to_long]</code> and <code>[calculate_distance_from_holiday]</code> (when the holiday column has missing values) raised errors, since they use features added in pandas 2.2.
+    + scikit-learn 1.4 and 1.5: `ExtraTreesRegressor`, `ExtraTreeRegressor` and their classifiers do not accept missing values, but skforecast treated them as if they did. With <code>[ForecasterRecursiveMultiSeries]</code>, <code>[backtesting_forecaster_multiseries]</code> raised `ValueError: Input X contains NaN` when the last window of a series had missing values, instead of skipping the predictions of that series. With scikit-learn 1.4, fitting a `LinearRegression` on the training matrices returned by `create_train_X_y` also raised `ValueError: cannot set WRITEABLE flag to True of this array`.
+
++ Removed the function `cast_exog_dtypes` from `skforecast.utils` (added in 0.8.0). It was not used by skforecast and did not work as documented: with a pandas Series it raised `AttributeError`, it modified the DataFrame passed by the user and it lost the categories. Use `exog.astype(exog_dtypes)` instead.
+
++ <code>[show_versions]</code> also reports the versions of scipy, statsmodels, matplotlib, torch, lightgbm, xgboost, catboost, skops and cloudpickle (`None` when a package is not installed).
 
 
 **Fixed**
@@ -1934,6 +1944,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [expand_index]: ../api/utils.md#skforecast.utils.utils.expand_index
 [save_forecaster]: ../api/utils.md#skforecast.utils.utils.save_forecaster
 [load_forecaster]: ../api/utils.md#skforecast.utils.utils.load_forecaster
+[show_versions]: ../api/utils.md#skforecast.utils.utils.show_versions
 
 <!-- experimental -->
 [experimental]: ../api/experimental.md

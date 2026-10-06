@@ -15,10 +15,7 @@ from skforecast.exceptions import MissingExogWarning
 from skforecast.exceptions import IgnoredArgumentWarning
 from skforecast.exceptions import UnknownLevelWarning
 
-if pd.__version__ < '2.2.0':
-    freq = "M"
-else:
-    freq = "ME"
+freq = "ME"
 
 
 def test_check_predict_input_NotFittedError_when_fitted_is_False():
@@ -1763,7 +1760,6 @@ def test_check_predict_input_ValueError_when_last_window_exog_is_DataFrame_witho
         )
 
 
-# @pytest.mark.skipif(pd.__version__ > '2.2.0', reason="requires pandas < 2.2.0")
 def test_check_predict_input_ValueError_when_last_window_exog_is_Series_with_no_name():
     """
     Raise ValueError when `last_window_exog` has no name, ForecasterStats.

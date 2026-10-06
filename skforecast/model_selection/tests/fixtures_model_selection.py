@@ -63,10 +63,7 @@ out_sample_residuals = np.array([
     0.75352599, 0.74186215, 0.04857903, 0.7086974 , 0.83924335
 ])
 
-if pd.__version__ < '2.2.0':
-    freq = "H"
-else:
-    freq = "h"
+freq = "h"
 
 y_feature_selection = pd.Series(
     np.array([
