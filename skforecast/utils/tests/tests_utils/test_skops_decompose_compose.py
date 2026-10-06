@@ -158,10 +158,11 @@ def test_decompose_compose_pandas_object_round_trip_index():
 
 def test_skops_decompose_reconstruct_forecaster_single_series():
     """
-    Test that _skops_decompose_forecaster replaces `last_window_` and
-    `training_range_` of a single-series forecaster with plain dicts carrying the
-    `object_type` marker, and that _skops_reconstruct_forecaster restores them to
-    the original pandas objects.
+    Test that _skops_decompose_forecaster returns a copy of a single-series
+    forecaster whose `last_window_` and `training_range_` are plain dicts
+    carrying the `object_type_` marker, without modifying the forecaster, and
+    that _skops_reconstruct_forecaster restores them to the original pandas
+    objects.
     """
     forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
     rng = np.random.default_rng(12345)
@@ -169,27 +170,35 @@ def test_skops_decompose_reconstruct_forecaster_single_series():
     y = pd.Series(rng.normal(size=50), index=idx)
     forecaster.fit(y=y)
 
-    last_window_original = forecaster.last_window_.copy()
-    training_range_original = forecaster.training_range_.copy()
+    last_window_original = forecaster.last_window_
+    training_range_original = forecaster.training_range_
 
-    _skops_decompose_forecaster(forecaster)
+    forecaster_decomposed = _skops_decompose_forecaster(forecaster)
 
-    assert isinstance(forecaster.last_window_, dict)
-    assert forecaster.last_window_['object_type_'] == 'DataFrame'
-    assert isinstance(forecaster.training_range_, dict)
-    assert forecaster.training_range_['object_type_'] == 'Index'
+    assert forecaster_decomposed is not forecaster
+    assert forecaster.last_window_ is last_window_original
+    assert forecaster.training_range_ is training_range_original
+    assert isinstance(forecaster_decomposed.last_window_, dict)
+    assert forecaster_decomposed.last_window_['object_type_'] == 'DataFrame'
+    assert isinstance(forecaster_decomposed.training_range_, dict)
+    assert forecaster_decomposed.training_range_['object_type_'] == 'Index'
 
-    _skops_reconstruct_forecaster(forecaster)
+    _skops_reconstruct_forecaster(forecaster_decomposed)
 
-    pd.testing.assert_frame_equal(forecaster.last_window_, last_window_original)
-    pd.testing.assert_index_equal(forecaster.training_range_, training_range_original)
+    pd.testing.assert_frame_equal(
+        forecaster_decomposed.last_window_, last_window_original
+    )
+    pd.testing.assert_index_equal(
+        forecaster_decomposed.training_range_, training_range_original
+    )
 
 
 def test_skops_decompose_reconstruct_forecaster_multiseries():
     """
     Test that _skops_decompose_forecaster handles the multi-series `dict`
-    containers (no top-level `object_type` key, each value decomposed) and that
-    _skops_reconstruct_forecaster rebuilds the per-level pandas objects.
+    containers (no top-level `object_type_` key, each value decomposed) without
+    modifying the forecaster, and that _skops_reconstruct_forecaster rebuilds
+    the per-level pandas objects.
     """
     forecaster = ForecasterRecursiveMultiSeries(
         estimator=LinearRegression(), lags=3, transformer_series=StandardScaler()
@@ -203,23 +212,26 @@ def test_skops_decompose_reconstruct_forecaster_multiseries():
     last_window_original = copy.deepcopy(forecaster.last_window_)
     training_range_original = copy.deepcopy(forecaster.training_range_)
 
-    _skops_decompose_forecaster(forecaster)
+    forecaster_decomposed = _skops_decompose_forecaster(forecaster)
 
-    assert isinstance(forecaster.last_window_, dict)
-    assert 'object_type_' not in forecaster.last_window_
-    assert all(v['object_type_'] == 'Series' for v in forecaster.last_window_.values())
-    assert isinstance(forecaster.training_range_, dict)
-    assert 'object_type_' not in forecaster.training_range_
-    assert all(v['object_type_'] == 'Index' for v in forecaster.training_range_.values())
+    last_window_decomposed = forecaster_decomposed.last_window_
+    training_range_decomposed = forecaster_decomposed.training_range_
+    assert 'object_type_' not in last_window_decomposed
+    assert all(v['object_type_'] == 'Series' for v in last_window_decomposed.values())
+    assert 'object_type_' not in training_range_decomposed
+    assert all(
+        v['object_type_'] == 'Index' for v in training_range_decomposed.values()
+    )
 
-    _skops_reconstruct_forecaster(forecaster)
+    _skops_reconstruct_forecaster(forecaster_decomposed)
 
-    assert forecaster.last_window_.keys() == last_window_original.keys()
-    assert forecaster.training_range_.keys() == training_range_original.keys()
-    for k in last_window_original.keys():
-        pd.testing.assert_series_equal(
-            forecaster.last_window_[k], last_window_original[k]
-        )
-        pd.testing.assert_index_equal(
-            forecaster.training_range_[k], training_range_original[k]
-        )
+    for forecaster_to_check in (forecaster, forecaster_decomposed):
+        last_window = forecaster_to_check.last_window_
+        training_range = forecaster_to_check.training_range_
+        assert last_window.keys() == last_window_original.keys()
+        assert training_range.keys() == training_range_original.keys()
+        for k in last_window_original.keys():
+            pd.testing.assert_series_equal(last_window[k], last_window_original[k])
+            pd.testing.assert_index_equal(
+                training_range[k], training_range_original[k]
+            )

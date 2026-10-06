@@ -2777,15 +2777,15 @@ def _compose_pandas_object(
     return obj
 
 
-def _skops_decompose_forecaster(forecaster: object) -> None:
+def _skops_decompose_forecaster(forecaster: object) -> object:
     """
-    Replace the index-backed pandas attributes of a forecaster with plain dicts
-    so it can be serialized with skops.
+    Return a shallow copy of a forecaster whose index-backed pandas attributes
+    are replaced with plain dicts, so it can be serialized with skops. The
+    forecaster itself is not modified.
 
-    Operates in place on `last_window_` and `training_range_`, which may be a
-    pandas object (single-series forecasters) or a dict of pandas objects
-    (multi-series forecasters). The caller is responsible for restoring the
-    original values afterwards.
+    The decomposed attributes are `last_window_` and `training_range_`, which
+    may be a pandas object (single-series forecasters) or a dict of pandas
+    objects (multi-series forecasters).
 
     Parameters
     ----------
@@ -2794,10 +2794,12 @@ def _skops_decompose_forecaster(forecaster: object) -> None:
 
     Returns
     -------
-    None
+    forecaster_decomposed : Forecaster
+        Shallow copy of the forecaster with the decomposed attributes.
 
     """
 
+    forecaster_decomposed = copy(forecaster)
     for attr in ('last_window_', 'training_range_'):
         value = getattr(forecaster, attr, None)
         if isinstance(value, dict):
@@ -2806,7 +2808,9 @@ def _skops_decompose_forecaster(forecaster: object) -> None:
             value = _decompose_pandas_object(value)
         else:
             continue
-        setattr(forecaster, attr, value)
+        setattr(forecaster_decomposed, attr, value)
+
+    return forecaster_decomposed
 
 
 def _skops_reconstruct_forecaster(forecaster: object) -> None:
@@ -2959,18 +2963,7 @@ def save_forecaster(
                 "'skops' is required for backend='skops' but is not installed. "
                 "Install it with: pip install skops"
             ) from exc
-        # NOTE: `last_window_` and `training_range_` are decomposed before the
-        # dump and restored.
-        originals = {
-            a: getattr(forecaster, a, None)
-            for a in ('last_window_', 'training_range_')
-        }
-        try:
-            _skops_decompose_forecaster(forecaster)
-            skops.io.dump(forecaster, file_name)
-        finally:
-            for a, v in originals.items():
-                setattr(forecaster, a, v)
+        skops.io.dump(_skops_decompose_forecaster(forecaster), file_name)
 
     if backend != 'cloudpickle':
         if hasattr(forecaster, 'weight_func') and forecaster.weight_func is not None:

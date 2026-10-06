@@ -783,8 +783,8 @@ def test_save_and_load_forecaster_round_trip_skops(build_forecaster):
     expected_file = file_base + '.skops'
     assert os.path.exists(expected_file)
 
-    # save_forecaster must not mutate the in-memory forecaster: the decomposed
-    # attributes are restored to the original objects after the dump.
+    # save_forecaster must not mutate the in-memory forecaster: skops
+    # serializes a decomposed copy.
     assert forecaster.last_window_ is last_window_before
     assert forecaster.training_range_ is training_range_before
 
