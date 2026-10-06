@@ -1199,8 +1199,7 @@ class RollingFeatures():
                         'closed': 'left'
                     },
                     'stats_idx': [], 
-                    'stats_names': [], 
-                    'rolling_obj': None
+                    'stats_names': []
                 }
             unique_rolling_windows[key]['stats_idx'].append(i)
             unique_rolling_windows[key]['stats_names'].append(self.features_names[i])
@@ -1480,9 +1479,9 @@ class RollingFeatures():
         
         """
 
-        for k in self.unique_rolling_windows.keys():
-            rolling_obj = X.rolling(**self.unique_rolling_windows[k]['params'])
-            self.unique_rolling_windows[k]['rolling_obj'] = rolling_obj
+        rolling_objs = {
+            k: X.rolling(**v['params']) for k, v in self.unique_rolling_windows.items()
+        }
         
         rolling_features = []
         for i, stat in enumerate(self.stats):
@@ -1490,7 +1489,7 @@ class RollingFeatures():
             min_periods = self.min_periods[i]
 
             key = f"{window_size}_{min_periods}"
-            rolling_obj = self.unique_rolling_windows[key]['rolling_obj']
+            rolling_obj = rolling_objs[key]
 
             stat_series = self._apply_stat_pandas(rolling_obj=rolling_obj, stat=stat)            
             rolling_features.append(stat_series)
@@ -1834,8 +1833,7 @@ class RollingFeaturesClassification():
                         'closed': 'left'
                     },
                     'stats_idx': [], 
-                    'stats_names': [], 
-                    'rolling_obj': None
+                    'stats_names': []
                 }
             unique_rolling_windows[key]['stats_idx'].append(i)
             unique_rolling_windows[key]['stats_names'].append(self.features_names[i])
@@ -2111,9 +2109,9 @@ class RollingFeaturesClassification():
             
             self.features_names = features_names
 
-        for k in self.unique_rolling_windows.keys():
-            rolling_obj = X.rolling(**self.unique_rolling_windows[k]['params'])
-            self.unique_rolling_windows[k]['rolling_obj'] = rolling_obj
+        rolling_objs = {
+            k: X.rolling(**v['params']) for k, v in self.unique_rolling_windows.items()
+        }
         
         rolling_features = []
         for i, stat in enumerate(self.stats):
@@ -2121,7 +2119,7 @@ class RollingFeaturesClassification():
             min_periods = self.min_periods[i]
 
             key = f"{window_size}_{min_periods}"
-            rolling_obj = self.unique_rolling_windows[key]['rolling_obj']
+            rolling_obj = rolling_objs[key]
 
             stat_series = self._apply_stat_pandas(X=X, rolling_obj=rolling_obj, stat=stat)     
             rolling_features.append(stat_series)

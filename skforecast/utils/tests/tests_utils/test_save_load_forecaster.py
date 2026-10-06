@@ -2,6 +2,7 @@
 # ==============================================================================
 import os
 import re
+import zoneinfo
 import joblib
 import pickle
 import pytest
@@ -20,6 +21,7 @@ from ....recursive import ForecasterRecursive
 from ....recursive import ForecasterRecursiveMultiSeries
 from ....recursive import ForecasterRecursiveClassifier
 from ....recursive import ForecasterStats
+from ....recursive import ForecasterEquivalentDate
 from ....direct import ForecasterDirect
 from ....direct import ForecasterDirectMultiVariate
 from ....stats import Arima
@@ -783,8 +785,8 @@ def test_save_and_load_forecaster_round_trip_skops(build_forecaster):
     expected_file = file_base + '.skops'
     assert os.path.exists(expected_file)
 
-    # save_forecaster must not mutate the in-memory forecaster: the decomposed
-    # attributes are restored to the original objects after the dump.
+    # save_forecaster must not mutate the in-memory forecaster: skops
+    # serializes a decomposed copy.
     assert forecaster.last_window_ is last_window_before
     assert forecaster.training_range_ is training_range_before
 
@@ -798,6 +800,264 @@ def test_save_and_load_forecaster_round_trip_skops(build_forecaster):
     # Shape-bearing attributes that the skops backend reconstructs.
     _assert_attribute_equal(forecaster.last_window_, forecaster_loaded.last_window_)
     _assert_attribute_equal(forecaster.training_range_, forecaster_loaded.training_range_)
+
+
+@pytest.mark.parametrize(
+    "forecaster, index",
+    [
+        (
+            ForecasterRecursive(
+                estimator=LinearRegression(),
+                lags=3,
+                window_features=RollingFeatures(stats=['mean', 'std'], window_sizes=4),
+            ),
+            pd.date_range('2020-01-01', periods=100, freq='D'),
+        ),
+        (
+            ForecasterRecursive(
+                estimator=LinearRegression(),
+                lags=3,
+                window_features=RollingFeatures(stats=['mean', 'std'], window_sizes=4),
+            ),
+            pd.RangeIndex(100),
+        ),
+        (
+            ForecasterDirect(
+                estimator=LinearRegression(),
+                steps=5,
+                lags=3,
+                window_features=RollingFeatures(stats=['mean', 'std'], window_sizes=4),
+            ),
+            pd.date_range('2020-01-01', periods=100, freq='D'),
+        ),
+        (
+            ForecasterRecursiveMultiSeries(
+                estimator=LinearRegression(),
+                lags=3,
+                window_features=RollingFeatures(stats=['mean', 'std'], window_sizes=4),
+            ),
+            pd.date_range('2020-01-01', periods=100, freq='D'),
+        ),
+        (
+            ForecasterDirectMultiVariate(
+                estimator=LinearRegression(),
+                level='serie_1',
+                steps=5,
+                lags=3,
+                window_features=RollingFeatures(stats=['mean', 'std'], window_sizes=4),
+            ),
+            pd.date_range('2020-01-01', periods=100, freq='D'),
+        ),
+        (
+            ForecasterRecursiveClassifier(
+                estimator=LogisticRegression(),
+                lags=3,
+                window_features=RollingFeaturesClassification(
+                    stats=['proportion', 'mode'], window_sizes=4
+                ),
+            ),
+            pd.date_range('2020-01-01', periods=100, freq='D'),
+        ),
+    ],
+    ids=[
+        'ForecasterRecursive',
+        'ForecasterRecursive_RangeIndex',
+        'ForecasterDirect',
+        'ForecasterRecursiveMultiSeries',
+        'ForecasterDirectMultiVariate',
+        'ForecasterRecursiveClassifier',
+    ]
+)
+def test_save_and_load_forecaster_round_trip_skops_window_features(
+    forecaster, index, tmp_path
+):
+    """
+    Test that forecasters with window features round-trip through the skops
+    backend. The window features must not keep the pandas Rolling objects of
+    the training series, which skops cannot serialize.
+    """
+    rng = np.random.default_rng(12345)
+    if isinstance(forecaster, ForecasterRecursiveClassifier):
+        y = pd.Series(rng.choice(['a', 'b', 'c'], size=100), index=index)
+        forecaster.fit(y=y)
+    elif isinstance(
+        forecaster, (ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate)
+    ):
+        series = pd.DataFrame(
+            {'serie_1': rng.normal(size=100), 'serie_2': rng.normal(size=100)},
+            index=index,
+        )
+        forecaster.fit(series=series)
+    else:
+        y = pd.Series(rng.normal(size=100), index=index)
+        forecaster.fit(y=y)
+    predictions = forecaster.predict(steps=5)
+
+    file_name = str(tmp_path / 'forecaster.skops')
+    save_forecaster(
+        forecaster=forecaster, file_name=file_name, backend='skops', verbose=False
+    )
+    forecaster_loaded = load_forecaster(
+        file_name=file_name, backend='skops', trusted=True, verbose=False
+    )
+
+    _assert_attribute_equal(predictions, forecaster_loaded.predict(steps=5))
+
+
+@pytest.mark.parametrize(
+    "index",
+    [
+        pd.date_range('2024-03-25', periods=200, freq='h', tz='Europe/Madrid'),
+        pd.date_range('2024-03-25', periods=140, freq='h', tz='Europe/Madrid'),
+        pd.date_range(
+            '2024-02-01', periods=30, freq='D', tz=zoneinfo.ZoneInfo('America/New_York')
+        ),
+        pd.date_range('2024-01-01', periods=100, freq='500ms'),
+        pd.date_range(
+            '2024-11-01',
+            periods=36,
+            freq=pd.offsets.CustomBusinessDay(holidays=['2024-12-25']),
+        ),
+    ],
+    ids=[
+        'dst_change_in_training',
+        'dst_change_in_predictions',
+        'zoneinfo_dst_change_in_predictions',
+        'freq_500ms',
+        'custom_business_day_with_holidays',
+    ]
+)
+def test_save_and_load_forecaster_round_trip_skops_datetime_index(index, tmp_path):
+    """
+    Test that a forecaster trained on a DatetimeIndex round-trips through the
+    skops backend and predicts the same values with the same index (time zone,
+    daylight saving time changes and frequency).
+    """
+    rng = np.random.default_rng(12345)
+    y = pd.Series(rng.normal(size=len(index)), index=index)
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
+    forecaster.fit(y=y)
+    predictions = forecaster.predict(steps=15)
+
+    file_name = str(tmp_path / 'forecaster.skops')
+    save_forecaster(
+        forecaster=forecaster, file_name=file_name, backend='skops', verbose=False
+    )
+    forecaster_loaded = load_forecaster(
+        file_name=file_name, backend='skops', trusted=True, verbose=False
+    )
+
+    pd.testing.assert_series_equal(predictions, forecaster_loaded.predict(steps=15))
+
+
+@pytest.mark.parametrize(
+    "exog_type",
+    ['categorical', 'pyarrow'],
+    ids=lambda exog_type: f'exog: {exog_type}'
+)
+@pytest.mark.parametrize(
+    "forecaster_class",
+    [ForecasterRecursive, ForecasterRecursiveMultiSeries],
+    ids=lambda forecaster_class: forecaster_class.__name__
+)
+def test_save_and_load_forecaster_round_trip_skops_exog_dtypes(
+    forecaster_class, exog_type, tmp_path
+):
+    """
+    Test that a forecaster trained with categorical exog (categories of int32
+    and str, all of them seen in training) or pyarrow exog round-trips through
+    the skops backend, keeps the same exog dtypes and predicts the same values.
+    """
+    rng = np.random.default_rng(12345)
+    index = pd.date_range('2020-01-01', periods=65, freq='D')
+    if exog_type == 'categorical':
+        exog = pd.DataFrame(
+            {
+                'day_of_week': pd.Categorical(index.day_of_week),
+                'day_name': pd.Categorical(index.day_name()),
+            },
+            index=index,
+        )
+    else:
+        exog = pd.DataFrame(
+            {'exog_1': rng.normal(size=65)}, index=index, dtype='double[pyarrow]'
+        )
+    exog_train = exog.iloc[:60]
+    exog_predict = exog.iloc[60:]
+    y = pd.Series(rng.normal(size=60), index=index[:60])
+
+    forecaster = forecaster_class(estimator=LinearRegression(), lags=3)
+    if isinstance(forecaster, ForecasterRecursiveMultiSeries):
+        series = {'serie_1': y, 'serie_2': y * 2}
+        forecaster.fit(
+            series=series, exog={'serie_1': exog_train, 'serie_2': exog_train}
+        )
+        exog_predict = {'serie_1': exog_predict, 'serie_2': exog_predict}
+    else:
+        forecaster.fit(y=y, exog=exog_train)
+    predictions = forecaster.predict(steps=5, exog=exog_predict)
+
+    file_name = str(tmp_path / 'forecaster.skops')
+    save_forecaster(
+        forecaster=forecaster, file_name=file_name, backend='skops', verbose=False
+    )
+    forecaster_loaded = load_forecaster(
+        file_name=file_name, backend='skops', trusted=True, verbose=False
+    )
+
+    assert not predictions.isna().to_numpy().any()
+    assert forecaster_loaded.exog_dtypes_in_ == forecaster.exog_dtypes_in_
+    assert forecaster_loaded.exog_dtypes_out_ == forecaster.exog_dtypes_out_
+    _assert_attribute_equal(
+        predictions, forecaster_loaded.predict(steps=5, exog=exog_predict)
+    )
+
+
+@pytest.mark.parametrize(
+    "forecaster, index",
+    [
+        (
+            ForecasterEquivalentDate(offset=pd.DateOffset(days=7), n_offsets=2),
+            pd.date_range('2020-01-01', periods=60, freq='D'),
+        ),
+        (
+            ForecasterRecursive(estimator=LinearRegression(), lags=3),
+            pd.date_range('2020-01-31', periods=48, freq=pd.DateOffset(months=1)),
+        ),
+    ],
+    ids=['ForecasterEquivalentDate_offset', 'ForecasterRecursive_freq']
+)
+def test_save_and_load_forecaster_round_trip_skops_DateOffset(
+    forecaster, index, tmp_path
+):
+    """
+    Test that a forecaster with a generic pandas DateOffset (the `offset` of
+    ForecasterEquivalentDate, and its `window_size` before fitting, or the
+    frequency of the series) round-trips through the skops backend, before
+    and after fitting, and predicts the same values.
+    """
+    file_name = str(tmp_path / 'forecaster.skops')
+    save_forecaster(
+        forecaster=forecaster, file_name=file_name, backend='skops', verbose=False
+    )
+    forecaster_loaded = load_forecaster(
+        file_name=file_name, backend='skops', trusted=True, verbose=False
+    )
+
+    assert forecaster_loaded.window_size == forecaster.window_size
+
+    rng = np.random.default_rng(12345)
+    y = pd.Series(rng.normal(size=len(index)), index=index)
+    forecaster.fit(y=y)
+    predictions = forecaster.predict(steps=5)
+    save_forecaster(
+        forecaster=forecaster, file_name=file_name, backend='skops', verbose=False
+    )
+    forecaster_loaded = load_forecaster(
+        file_name=file_name, backend='skops', trusted=True, verbose=False
+    )
+
+    pd.testing.assert_series_equal(predictions, forecaster_loaded.predict(steps=5))
 
 
 def test_load_forecaster_skops_raises_when_untrusted_by_default():

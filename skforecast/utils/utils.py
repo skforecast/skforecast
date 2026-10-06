@@ -18,6 +18,7 @@ import sys
 from typing import Any, Callable, ParamSpec, TypeVar
 import uuid
 import warnings
+import zoneinfo
 import joblib
 import pickle
 import numpy as np
@@ -2616,13 +2617,73 @@ def manage_warnings(func: Callable[P, R]) -> Callable[P, R]:
     return wrapper
 
 
+def _decompose_offset(offset: Any) -> Any:
+    """
+    Replace a generic `pandas.DateOffset` (e.g. `pd.DateOffset(days=7)`), which
+    skops cannot serialize, with a plain dict.
+
+    The other pandas offsets (e.g. `Day`, `MonthBegin` or `CustomBusinessDay`)
+    and any other value are returned unchanged.
+
+    Parameters
+    ----------
+    offset : object
+        Value to decompose.
+
+    Returns
+    -------
+    offset : object
+        Plain dict with the `n`, `normalize` and keyword arguments of the
+        `pandas.DateOffset`, or the value itself. The `offset_type_` key marks a
+        decomposed offset.
+
+    """
+
+    if type(offset) is pd.DateOffset:
+        offset = {
+            'offset_type_': 'DateOffset',
+            'n': offset.n,
+            'normalize': offset.normalize,
+            'kwds': offset.kwds,
+        }
+
+    return offset
+
+
+def _compose_offset(offset: Any) -> Any:
+    """
+    Rebuild a `pandas.DateOffset` from the dict produced by `_decompose_offset`.
+
+    Parameters
+    ----------
+    offset : object
+        Plain dict representation of the `pandas.DateOffset`, as returned by
+        `_decompose_offset`, or a value that was not decomposed.
+
+    Returns
+    -------
+    offset : object
+        Reconstructed `pandas.DateOffset`. A value that was not decomposed is
+        returned unchanged.
+
+    """
+
+    if isinstance(offset, dict) and offset.get('offset_type_') == 'DateOffset':
+        offset = pd.DateOffset(
+            n=offset['n'], normalize=offset['normalize'], **offset['kwds']
+        )
+
+    return offset
+
+
 def _decompose_index(index: pd.Index) -> dict[str, Any]:
     """
     Decompose a pandas Index into a plain dict that skops can serialize.
 
-    `DatetimeIndex` values are stored as ISO strings together with their
-    frequency, a `RangeIndex` stores its `start`, `stop`, and `step`, and any
-    other index type stores its values as a list.
+    A `DatetimeIndex` stores its values as integers since the epoch (UTC)
+    together with their unit, time zone name and frequency, a `RangeIndex`
+    stores its `start`, `stop`, and `step`, and any other index type stores its
+    values as a list.
 
     Parameters
     ----------
@@ -2638,10 +2699,34 @@ def _decompose_index(index: pd.Index) -> dict[str, Any]:
     """
 
     if isinstance(index, pd.DatetimeIndex):
+        # NOTE: The time zone is stored by name, since skops cannot serialize
+        # the time zone objects. A time zone that cannot be rebuilt from its
+        # name (e.g. from dateutil, or a datetime.timezone with a custom name)
+        # raises an error here, instead of failing or changing when loading.
+        tz = None if index.tz is None else str(index.tz)
+        tz_zoneinfo = isinstance(index.tz, zoneinfo.ZoneInfo)
+        if tz is not None:
+            try:
+                tz_rebuilt = zoneinfo.ZoneInfo(tz) if tz_zoneinfo else tz
+                is_rebuilt = (
+                    pd.DatetimeTZDtype(unit=index.unit, tz=tz_rebuilt) == index.dtype
+                )
+            except (KeyError, ValueError):
+                is_rebuilt = False
+            if not is_rebuilt:
+                raise ValueError(
+                    f"The time zone {index.tz!r} of the index cannot be saved with "
+                    f"backend='skops' because it cannot be rebuilt from its name "
+                    f"{tz!r}. Convert the index to a named time zone (e.g. "
+                    f"'Europe/Madrid') or use another backend."
+                )
         payload = {
             'index_type_': 'datetime',
-            'index': [str(ts) for ts in index],
-            'freq': index.freqstr,
+            'index': index.asi8,
+            'unit': index.unit,
+            'tz': tz,
+            'tz_zoneinfo': tz_zoneinfo,
+            'freq': _decompose_offset(index.freq),
             'index_name': index.name,
         }
     elif isinstance(index, pd.RangeIndex):
@@ -2674,15 +2759,28 @@ def _compose_index(payload: dict[str, Any]) -> pd.Index:
     -------
     index : pandas Index
         Reconstructed index, matching the original type: `DatetimeIndex` (with
-        its frequency restored), `RangeIndex`, or a generic `Index`.
+        its time zone and frequency restored), `RangeIndex`, or a generic
+        `Index`.
 
     """
 
     if payload['index_type_'] == 'datetime':
+        if 'unit' in payload:
+            values = np.asarray(payload['index'], dtype=np.int64)
+            index = pd.DatetimeIndex(values.view(f"M8[{payload['unit']}]"))
+            if payload['tz'] is not None:
+                tz = payload['tz']
+                if payload['tz_zoneinfo']:
+                    tz = zoneinfo.ZoneInfo(tz)
+                index = index.tz_localize('UTC').tz_convert(tz)
+        else:
+            # NOTE: Files saved with skforecast < 0.26 store the timestamps as
+            # strings, which only keep the UTC offset of each one. They are
+            # rebuilt with the offset of the first one (or without time zone).
+            index = pd.to_datetime(payload['index'], format='ISO8601', utc=True)
+            index = index.tz_convert(pd.Timestamp(payload['index'][0]).tz)
         index = pd.DatetimeIndex(
-            pd.to_datetime(payload['index']),
-            freq=payload['freq'],
-            name=payload['index_name'],
+            index, freq=_compose_offset(payload['freq']), name=payload['index_name']
         )
     elif payload['index_type_'] == 'range':
         start, stop, step = payload['range']
@@ -2777,15 +2875,83 @@ def _compose_pandas_object(
     return obj
 
 
-def _skops_decompose_forecaster(forecaster: object) -> None:
+def _decompose_dtype(dtype: Any) -> Any:
     """
-    Replace the index-backed pandas attributes of a forecaster with plain dicts
-    so it can be serialized with skops.
+    Replace a pandas dtype that skops cannot serialize with a plain dict.
 
-    Operates in place on `last_window_` and `training_range_`, which may be a
-    pandas object (single-series forecasters) or a dict of pandas objects
-    (multi-series forecasters). The caller is responsible for restoring the
-    original values afterwards.
+    A `CategoricalDtype` stores its categories as a numpy ndarray and whether
+    they are ordered, while an `ArrowDtype` or a `DatetimeTZDtype` stores its
+    name. Any other dtype is returned unchanged.
+
+    Parameters
+    ----------
+    dtype : object
+        Dtype to decompose.
+
+    Returns
+    -------
+    dtype : object
+        Plain dict representation of the dtype, or the dtype itself if skops
+        can serialize it. The `dtype_type_` key (`'category'` or `'name'`)
+        selects how it is rebuilt.
+
+    """
+
+    if isinstance(dtype, pd.CategoricalDtype):
+        dtype = {
+            'dtype_type_': 'category',
+            'categories': dtype.categories.to_numpy(),
+            'ordered': dtype.ordered,
+        }
+    elif isinstance(dtype, (pd.ArrowDtype, pd.DatetimeTZDtype)):
+        dtype = {'dtype_type_': 'name', 'name': str(dtype)}
+
+    return dtype
+
+
+def _compose_dtype(dtype: Any) -> Any:
+    """
+    Rebuild a pandas dtype from the dict produced by `_decompose_dtype`.
+
+    Parameters
+    ----------
+    dtype : object
+        Plain dict representation of the dtype, as returned by
+        `_decompose_dtype`, or a dtype that was not decomposed.
+
+    Returns
+    -------
+    dtype : object
+        Reconstructed dtype. A dtype that was not decomposed is returned
+        unchanged.
+
+    """
+
+    if isinstance(dtype, dict) and dtype.get('dtype_type_') == 'category':
+        dtype = pd.CategoricalDtype(
+            categories=dtype['categories'], ordered=dtype['ordered']
+        )
+    elif isinstance(dtype, dict) and dtype.get('dtype_type_') == 'name':
+        dtype = pd.api.types.pandas_dtype(dtype['name'])
+
+    return dtype
+
+
+def _skops_decompose_forecaster(forecaster: object) -> object:
+    """
+    Return a shallow copy of a forecaster whose attributes that skops cannot
+    serialize are replaced with plain dicts. The forecaster itself is not
+    modified.
+
+    The decomposed attributes are:
+
+    - `last_window_` and `training_range_`, which may be a pandas object
+    (single-series forecasters) or a dict of pandas objects (multi-series
+    forecasters).
+    - `exog_dtypes_in_` and `exog_dtypes_out_`, whose categorical, pyarrow and
+    time zone aware dtypes are decomposed with `_decompose_dtype`.
+    - `index_freq_`, `offset` and `window_size`, when they are a generic
+    `pandas.DateOffset` (`offset` and `window_size` in `ForecasterEquivalentDate`).
 
     Parameters
     ----------
@@ -2794,10 +2960,12 @@ def _skops_decompose_forecaster(forecaster: object) -> None:
 
     Returns
     -------
-    None
+    forecaster_decomposed : Forecaster
+        Shallow copy of the forecaster with the decomposed attributes.
 
     """
 
+    forecaster_decomposed = copy(forecaster)
     for attr in ('last_window_', 'training_range_'):
         value = getattr(forecaster, attr, None)
         if isinstance(value, dict):
@@ -2806,17 +2974,29 @@ def _skops_decompose_forecaster(forecaster: object) -> None:
             value = _decompose_pandas_object(value)
         else:
             continue
-        setattr(forecaster, attr, value)
+        setattr(forecaster_decomposed, attr, value)
+    for attr in ('exog_dtypes_in_', 'exog_dtypes_out_'):
+        value = getattr(forecaster, attr, None)
+        if isinstance(value, dict):
+            value = {k: _decompose_dtype(v) for k, v in value.items()}
+            setattr(forecaster_decomposed, attr, value)
+    for attr in ('index_freq_', 'offset', 'window_size'):
+        if hasattr(forecaster, attr):
+            value = _decompose_offset(getattr(forecaster, attr))
+            setattr(forecaster_decomposed, attr, value)
+
+    return forecaster_decomposed
 
 
 def _skops_reconstruct_forecaster(forecaster: object) -> None:
     """
-    Rebuild the index-backed pandas attributes of a forecaster decomposed by
+    Rebuild the attributes of a forecaster decomposed by
     `_skops_decompose_forecaster`.
 
-    Operates in place on `last_window_` and `training_range_`. The `object_type_`
-    marker key distinguishes a single decomposed object from a multi-series dict
-    of decomposed objects.
+    Operates in place on `last_window_`, `training_range_`, `exog_dtypes_in_`,
+    `exog_dtypes_out_`, `index_freq_`, `offset` and `window_size`. The
+    `object_type_` marker key distinguishes a single decomposed object from a
+    multi-series dict of decomposed objects.
 
     Parameters
     ----------
@@ -2838,6 +3018,14 @@ def _skops_reconstruct_forecaster(forecaster: object) -> None:
         else:
             value = {k: _compose_pandas_object(v) for k, v in value.items()}
         setattr(forecaster, attr, value)
+    for attr in ('exog_dtypes_in_', 'exog_dtypes_out_'):
+        value = getattr(forecaster, attr, None)
+        if isinstance(value, dict):
+            value = {k: _compose_dtype(v) for k, v in value.items()}
+            setattr(forecaster, attr, value)
+    for attr in ('index_freq_', 'offset', 'window_size'):
+        if hasattr(forecaster, attr):
+            setattr(forecaster, attr, _compose_offset(getattr(forecaster, attr)))
 
 
 @manage_warnings
@@ -2880,9 +3068,12 @@ def save_forecaster(
         Requires `cloudpickle` to be installed.
         - If `'skops'`, the forecaster is saved using skops (extension
         `.skops`), a secure format that does not execute arbitrary code on
-        load. The `last_window_` and `training_range_` attributes are
-        decomposed into plain types before saving and rebuilt on load, since
-        skops cannot serialize pandas objects. Not supported for
+        load. The attributes that skops cannot serialize (`last_window_` and
+        `training_range_`, the categorical, pyarrow and time zone aware dtypes
+        of the exogenous variables, and generic `pandas.DateOffset` objects)
+        are decomposed into plain types before saving and rebuilt on load. The
+        time zone of the index is stored by its name, so it must be a named time
+        zone (e.g. `'Europe/Madrid'` or `'UTC'`). Not supported for
         `ForecasterStats`, `ForecasterRnn`, or `ForecasterFoundation`, whose
         underlying estimators (statsmodels, Keras, or a foundation model) embed
         objects that skops cannot serialize. Requires `skops` to be installed.
@@ -2959,18 +3150,7 @@ def save_forecaster(
                 "'skops' is required for backend='skops' but is not installed. "
                 "Install it with: pip install skops"
             ) from exc
-        # NOTE: `last_window_` and `training_range_` are decomposed before the
-        # dump and restored.
-        originals = {
-            a: getattr(forecaster, a, None)
-            for a in ('last_window_', 'training_range_')
-        }
-        try:
-            _skops_decompose_forecaster(forecaster)
-            skops.io.dump(forecaster, file_name)
-        finally:
-            for a, v in originals.items():
-                setattr(forecaster, a, v)
+        skops.io.dump(_skops_decompose_forecaster(forecaster), file_name)
 
     if backend != 'cloudpickle':
         if hasattr(forecaster, 'weight_func') and forecaster.weight_func is not None:
@@ -3144,8 +3324,8 @@ def load_forecaster(
         # trusted explicitly. `skops.io.load` only accepts a list of type names
         # (or None), so the friendly `trusted` argument is mapped here: `False`
         # -> None (strict), `True` -> all types found in the file, list -> as is.
-        # `last_window_` and `training_range_` are rebuilt from the plain types
-        # stored by `save_forecaster`.
+        # The attributes decomposed into plain types by `save_forecaster` are
+        # rebuilt.
         if trusted is False:
             trusted_types = None
         elif trusted is True:
