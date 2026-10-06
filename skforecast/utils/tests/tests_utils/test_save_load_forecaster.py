@@ -21,6 +21,7 @@ from ....recursive import ForecasterRecursive
 from ....recursive import ForecasterRecursiveMultiSeries
 from ....recursive import ForecasterRecursiveClassifier
 from ....recursive import ForecasterStats
+from ....recursive import ForecasterEquivalentDate
 from ....direct import ForecasterDirect
 from ....direct import ForecasterDirectMultiVariate
 from ....stats import Arima
@@ -1009,6 +1010,53 @@ def test_save_and_load_forecaster_round_trip_skops_exog_dtypes(
     _assert_attribute_equal(
         predictions, forecaster_loaded.predict(steps=5, exog=exog_predict)
     )
+
+
+@pytest.mark.parametrize(
+    "forecaster, index",
+    [
+        (
+            ForecasterEquivalentDate(offset=pd.DateOffset(days=7), n_offsets=2),
+            pd.date_range('2020-01-01', periods=60, freq='D'),
+        ),
+        (
+            ForecasterRecursive(estimator=LinearRegression(), lags=3),
+            pd.date_range('2020-01-31', periods=48, freq=pd.DateOffset(months=1)),
+        ),
+    ],
+    ids=['ForecasterEquivalentDate_offset', 'ForecasterRecursive_freq']
+)
+def test_save_and_load_forecaster_round_trip_skops_DateOffset(
+    forecaster, index, tmp_path
+):
+    """
+    Test that a forecaster with a generic pandas DateOffset (the `offset` of
+    ForecasterEquivalentDate, and its `window_size` before fitting, or the
+    frequency of the series) round-trips through the skops backend, before
+    and after fitting, and predicts the same values.
+    """
+    file_name = str(tmp_path / 'forecaster.skops')
+    save_forecaster(
+        forecaster=forecaster, file_name=file_name, backend='skops', verbose=False
+    )
+    forecaster_loaded = load_forecaster(
+        file_name=file_name, backend='skops', trusted=True, verbose=False
+    )
+
+    assert forecaster_loaded.window_size == forecaster.window_size
+
+    rng = np.random.default_rng(12345)
+    y = pd.Series(rng.normal(size=len(index)), index=index)
+    forecaster.fit(y=y)
+    predictions = forecaster.predict(steps=5)
+    save_forecaster(
+        forecaster=forecaster, file_name=file_name, backend='skops', verbose=False
+    )
+    forecaster_loaded = load_forecaster(
+        file_name=file_name, backend='skops', trusted=True, verbose=False
+    )
+
+    pd.testing.assert_series_equal(predictions, forecaster_loaded.predict(steps=5))
 
 
 def test_load_forecaster_skops_raises_when_untrusted_by_default():

@@ -18,6 +18,8 @@ from ...utils import _decompose_pandas_object
 from ...utils import _compose_pandas_object
 from ...utils import _decompose_dtype
 from ...utils import _compose_dtype
+from ...utils import _decompose_offset
+from ...utils import _compose_offset
 from ...utils import _skops_decompose_forecaster
 from ...utils import _skops_reconstruct_forecaster
 from ....recursive import ForecasterRecursive
@@ -146,6 +148,7 @@ def test_decompose_index_output(index, expected_payload):
             periods=4,
             freq=pd.offsets.CustomBusinessDay(holidays=['2024-12-25']),
         ),
+        pd.date_range('2020-01-31', periods=4, freq=pd.DateOffset(months=1)),
         pd.RangeIndex(2, 12, 2, name='r'),
         pd.Index([10, 20, 30], name='x'),
         pd.Index(['a', 'b', 'c']),
@@ -159,7 +162,8 @@ def test_decompose_compose_index_round_trip(index):
     """
     Test that _compose_index rebuilds an index identical to the original
     produced by _decompose_index, preserving type, name, unit, time zone (and
-    its type) and frequency (including the holidays of a CustomBusinessDay).
+    its type) and frequency (including the holidays of a CustomBusinessDay and
+    a generic pandas DateOffset).
     """
     rebuilt = _compose_index(_decompose_index(index))
 
@@ -343,6 +347,52 @@ def test_decompose_compose_dtype_other_dtypes_unchanged(dtype):
     """
     assert _decompose_dtype(dtype) is dtype
     assert _compose_dtype(dtype) is dtype
+
+
+@pytest.mark.parametrize(
+    "offset",
+    [
+        pd.DateOffset(days=7),
+        pd.DateOffset(months=1),
+        pd.DateOffset(n=2, days=7),
+        pd.DateOffset(hours=12, normalize=True),
+    ],
+    ids=lambda offset: f'offset: {offset!r}'
+)
+def test_decompose_compose_offset_round_trip(offset):
+    """
+    Test that _decompose_offset replaces a generic pandas DateOffset, which
+    skops cannot serialize, with a plain dict and that _compose_offset rebuilds
+    an offset equal to the original.
+    """
+    payload = _decompose_offset(offset)
+    offset_rebuilt = _compose_offset(payload)
+
+    assert isinstance(payload, dict)
+    assert type(offset_rebuilt) is pd.DateOffset
+    assert offset_rebuilt == offset
+    assert offset_rebuilt.n == offset.n
+    assert offset_rebuilt.normalize == offset.normalize
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        pd.offsets.Day(),
+        pd.offsets.MonthBegin(),
+        pd.offsets.CustomBusinessDay(holidays=['2024-12-25']),
+        7,
+        None,
+    ],
+    ids=lambda value: f'value: {value!r}'
+)
+def test_decompose_compose_offset_other_values_unchanged(value):
+    """
+    Test that _decompose_offset and _compose_offset return unchanged the pandas
+    offsets that skops can serialize and any other value.
+    """
+    assert _decompose_offset(value) is value
+    assert _compose_offset(value) is value
 
 
 def test_skops_decompose_reconstruct_forecaster_single_series():
