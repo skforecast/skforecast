@@ -22,6 +22,10 @@ The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> New functions <code>[get_model_info]</code> and <code>[list_adapters]</code> in `skforecast.foundation` to query, without installing the backend or loading the weights, the capabilities and requirements of the foundation models: adapter, default `context_length`, exogenous variable support, supported quantiles, backend package, license restriction and Hugging Face gating.
 
++ <span class="badge text-bg-feature">Feature</span> The skforecast workflow skills can now be installed in your own coding agent: as a Claude Code plugin (`/plugin marketplace add skforecast/skforecast`) or, for Cursor, GitHub Copilot, Codex, Gemini CLI and other agents, with `npx skills add skforecast/skforecast`. See [Install skforecast context in your agent](../quick-start/ai-assisted-forecasting.md#install-skforecast-context-in-your-agent).
+
++ <span class="badge text-bg-feature">Feature</span> Skforecast documentation is available in [Context7](https://context7.com/skforecast/skforecast), so any MCP compatible agent can query it with the library `/skforecast/skforecast`.
+
 + <span class="badge text-bg-api-change">API Change</span> The minimum supported versions of pandas and scikit-learn are now 2.2 and 1.6 (previously 2.1 and 1.4), because skforecast did not work correctly with the older ones.
 
 + <span class="badge text-bg-fix">Fix</span> <code>[Ets]</code> now estimates its smoothing parameters. A compilation flag disabled the checks of missing components, so every model without damping kept the starting values (alpha=0.1, beta=0.01, gamma=0.01). The estimates now agree with `statsmodels` and R's `forecast::ets`, and the prediction intervals of models without an analytical variance are reproducible and about 17 times faster.
@@ -29,6 +33,8 @@ The main changes in this release are:
 + <span class="badge text-bg-docs">Docs</span> The examples and tutorials pages are now a filterable card grid: every tutorial shows an icon, a one line summary and topic tags, and can be narrowed down with a search box and level/topic filters. [Examples](../examples/examples_english.md)
 
 + <span class="badge text-bg-docs">Docs</span> New home page of the documentation: what skforecast does in one screen, with an animation of real forecasts from LightGBM, Chronos-2 and ARIMA, and sections on model families, global models, production features and AI assistants. [Home](../README.md)
+
++ <span class="badge text-bg-docs">Docs</span> New section "Install skforecast context in your agent" in the [AI-assisted forecasting](../quick-start/ai-assisted-forecasting.md) guide.
 
 
 **Added**
@@ -38,6 +44,12 @@ The main changes in this release are:
 + New class attributes in every foundation model adapter: `supports_categorical_covariates`, `requires_hf_auth`, `requires_provider_auth`, `weights_repo_id`, `weights_in_hf_cache`, `backend_package`, `default_model_id` and `SUPPORTED_QUANTILES` (`None` when any quantile level in `(0, 1)` is accepted). The installation hints of the `ImportError` raised when a backend is missing are built from `backend_package`.
 
 + New argument `include_drift` in <code>[Arima]</code> to include a linear drift term when the order is specified manually (`d + D <= 1`), equivalent to `include.drift` in R's `forecast::Arima`. The `best_params_` attribute found by the automatic model selection now also includes `fit_intercept` and `include_drift`, so passing them to `set_params` fits exactly the selected model.
+
++ Claude Code plugin marketplace (`.claude-plugin/marketplace.json`) that publishes the `skills/` folder as the `skforecast` plugin.
+
++ `context7.json` to configure how [Context7](https://context7.com/skforecast/skforecast) indexes the documentation (scratch, asset and unrelated folders are excluded) and to give coding agents a short list of rules that prevent the most common mistakes when generating skforecast code.
+
++ New section "Install skforecast context in your agent" in the [AI-assisted forecasting](../quick-start/ai-assisted-forecasting.md) guide.
 
 
 **Changed**
