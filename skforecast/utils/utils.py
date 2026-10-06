@@ -3126,10 +3126,11 @@ def save_forecaster(
     """
     Save forecaster model to disk. Custom functions used to create weights that
     are defined in the `'__main__'` namespace (e.g. a notebook or a script run
-    directly) are saved as .py files, since they cannot be re-imported when the
-    forecaster is loaded in a different session. Functions imported from a module
-    are restored automatically and are not exported. When `backend='cloudpickle'`,
-    custom functions are embedded in the saved file and no .py files are created.
+    directly) are saved as .py files next to the forecaster file, since they
+    cannot be re-imported when the forecaster is loaded in a different session.
+    Functions imported from a module are restored automatically and are not
+    exported. When `backend='cloudpickle'`, custom functions are embedded in the
+    saved file and no .py files are created.
 
     Parameters
     ----------
@@ -3165,9 +3166,11 @@ def save_forecaster(
         objects that skops cannot serialize. Requires `skops` to be installed.
     save_custom_functions : bool, default True
         If True, save custom functions used in the forecaster (weight_func) as
-        .py files, but only those defined in the `'__main__'` namespace. These
-        functions need to be available in the environment where the forecaster
-        is going to be loaded. Has no effect when `backend='cloudpickle'`.
+        .py files in the folder of `file_name`, but only those defined in the
+        `'__main__'` namespace. These functions need to be imported in the
+        environment where the forecaster is going to be loaded (e.g. with
+        `from models.custom_weights import custom_weights` if the forecaster is
+        saved in the folder `models`). Has no effect when `backend='cloudpickle'`.
     verbose : bool, default False
         Print summary about the forecaster saved.
     suppress_warnings : bool, default False
@@ -3258,7 +3261,7 @@ def save_forecaster(
                 if save_custom_functions:
                     saved_files = []
                     for fun in main_funs:
-                        fun_file_name = fun.__name__ + '.py'
+                        fun_file_name = file_name.parent / f"{fun.__name__}.py"
                         source_code, names_not_imported = _get_source_with_imports(fun)
                         with open(fun_file_name, 'w', encoding='utf-8') as file:
                             file.write(source_code)
@@ -3275,10 +3278,11 @@ def save_forecaster(
                                 f"it uses.",
                                 SaveLoadSkforecastWarning
                             )
+                    saved_files_names = ', '.join(f"'{f}'" for f in saved_files)
                     warnings.warn(
                         "Custom function(s) used to create weights are defined in "
                         "the '__main__' namespace and have been saved as: "
-                        f"{', '.join(repr(f) for f in saved_files)}. These files "
+                        f"{saved_files_names}. These files "
                         "must be imported before loading the forecaster.\n"
                         "Visit the documentation for more information: "
                         "https://skforecast.org/latest/user_guides/save-load-forecaster.html"

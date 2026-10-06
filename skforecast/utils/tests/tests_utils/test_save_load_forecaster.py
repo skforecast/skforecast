@@ -195,6 +195,36 @@ def test_save_forecaster_save_custom_functions(weight_func, monkeypatch):
         os.remove(weight_func_file)
 
 
+def test_save_forecaster_save_custom_functions_next_to_forecaster_file(
+    tmp_path, monkeypatch
+):
+    """
+    Test that the .py files of the custom functions defined in '__main__' are
+    saved in the folder of the forecaster file, not in the working directory.
+    """
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / 'models').mkdir()
+    forecaster = ForecasterRecursive(
+        estimator=LinearRegression(), lags=3, weight_func=custom_weights
+    )
+    _simulate_main_namespace(monkeypatch, [custom_weights])
+
+    expected_file = os.path.join('models', 'custom_weights.py')
+    warn_msg = re.escape(
+        f"Custom function(s) used to create weights are defined in the '__main__' "
+        f"namespace and have been saved as: '{expected_file}'."
+    )
+    with pytest.warns(SaveLoadSkforecastWarning, match=warn_msg):
+        save_forecaster(
+            forecaster=forecaster, file_name=os.path.join('models', 'forecaster.joblib')
+        )
+
+    assert os.listdir(tmp_path) == ['models']
+    assert sorted(os.listdir(tmp_path / 'models')) == [
+        'custom_weights.py', 'forecaster.joblib'
+    ]
+
+
 def test_save_forecaster_exported_weight_func_works_on_its_own(
     tmp_path, monkeypatch
 ):
