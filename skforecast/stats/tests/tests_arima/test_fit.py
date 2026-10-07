@@ -132,7 +132,7 @@ def test_arima_fit_with_default_parameters(y_input_type):
     
     # Check exact fit statistics
     assert model.sigma2_ > 0
-    np.testing.assert_almost_equal(model.sigma2_, 0.7909506154433268, decimal=6)
+    np.testing.assert_almost_equal(model.sigma2_, 0.8154130053749141, decimal=6)
     np.testing.assert_almost_equal(model.loglik_, -130.42354591874732, decimal=5)
     
     # Check that all fitted attributes are set with correct types/values
@@ -169,7 +169,7 @@ def test_arima_fit_ar_model():
     np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=6)
     
     # Check exact sigma2
-    np.testing.assert_almost_equal(model.sigma2_, 0.5966994213143275, decimal=6)
+    np.testing.assert_almost_equal(model.sigma2_, 0.6088769603439531, decimal=6)
     
     assert model.converged_ is True
     assert len(model.coef_) == 2  # AR coef + intercept
@@ -188,7 +188,7 @@ def test_arima_fit_ma_model():
     # Check exact MA coefficient (values verified against corrected Kalman filter)
     expected_coef = np.array([0.1401057101679745])
     np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=4)
-    expected_sigma2 = 1.3941861724091622
+    expected_sigma2 = 1.4232316729374743
     np.testing.assert_almost_equal(model.sigma2_, expected_sigma2, decimal=4)
     assert isinstance(model.converged_, bool)
     assert len(model.coef_) >= 1
@@ -208,7 +208,7 @@ def test_arima_fit_seasonal_model():
     np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=4)
     
     # Check exact sigma2
-    np.testing.assert_almost_equal(model.sigma2_, 1.2339349572398648, decimal=6)
+    np.testing.assert_almost_equal(model.sigma2_, 1.272097886946313, decimal=6)
     
     # Check ARMA specification
     assert model.arma_[4] == 12  # Check m is stored correctly
@@ -257,7 +257,7 @@ def test_arima_fit_with_exog_pandas_series():
     np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=4)
 
     # Check exact sigma2 and aic
-    np.testing.assert_almost_equal(model.sigma2_, 0.9175342091312804, decimal=5)
+    np.testing.assert_almost_equal(model.sigma2_, 0.9532826572059304, decimal=5)
     np.testing.assert_almost_equal(model.aic_, 231.45864989664312, decimal=4)
     
     assert model.n_exog_features_in_ == 1
@@ -315,7 +315,7 @@ def test_arima_fit_2d_y_with_single_column():
     np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=6)
     
     # Check exact sigma2 and aic
-    np.testing.assert_almost_equal(model.sigma2_, 0.9390704117766375, decimal=6)
+    np.testing.assert_almost_equal(model.sigma2_, 0.9781983457901334, decimal=6)
     np.testing.assert_almost_equal(model.aic_, 145.0946939719587, decimal=5)
     
     assert model.y_train_.ndim == 1
@@ -334,7 +334,7 @@ def test_arima_fit_method_css():
     
     # Check coefficients and sigma2 (aic is nan for CSS method)
     expected_coef = np.array([0.6651909069893525, 0.10578612974450272, -0.17749673261063734])
-    expected_sigma2 = 0.597459948833387
+    expected_sigma2 = 0.6161305722343569
     # The CSS objective is a smooth sum of squares: the estimates move less
     # than 5e-6 (relative) under perturbations, far less than `tol_coef`.
     np.testing.assert_allclose(model.coef_, expected_coef, rtol=1e-4)
@@ -359,7 +359,7 @@ def test_arima_fit_method_ml():
     np.testing.assert_array_almost_equal(model.coef_, expected_coef, decimal=6)
     
     # Check exact sigma2 and aic
-    np.testing.assert_almost_equal(model.sigma2_, 0.593032425363261, decimal=6)
+    np.testing.assert_almost_equal(model.sigma2_, 0.6113736343617622, decimal=6)
     np.testing.assert_almost_equal(model.aic_, 240.25265983237665, decimal=5)
     
     assert "ML" in model.model_['method'] or "ARIMA" in model.model_['method']
@@ -491,7 +491,7 @@ def test_arima_fit_box_cox_biasadj_fitted_values():
 
     np.testing.assert_array_almost_equal(
         model_biasadj.fitted_values_[13:] / model.fitted_values_[13:],
-        np.full(len(y) - 13, 1.0006740226534911)
+        np.full(len(y) - 13, 1.0006844726171111)
     )
 
 

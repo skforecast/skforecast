@@ -51,6 +51,26 @@ def test_TypeError_initialize_lags_when_lags_list_tuple_or_numpy_array_with_valu
 
 
 @pytest.mark.parametrize("lags", 
+                         [True, [True, 2], (2, np.True_)], 
+                         ids = lambda lags: f'lags: {lags}')
+def test_TypeError_initialize_lags_when_lags_contains_booleans(lags):
+    """
+    Test TypeError is raised when lags is a boolean or a list or tuple with
+    booleans, which are a subclass of int.
+    """
+    err_msg = (
+        re.escape(f"`lags` argument must be an int, 1d numpy ndarray, range, tuple or list. Got {type(lags)}.")
+        if isinstance(lags, bool)
+        else re.escape("All values in `lags` must be integers.")
+    )
+    with pytest.raises(TypeError, match = err_msg):
+        initialize_lags(
+            forecaster_name = 'ForecasterRecursive',
+            lags            = lags
+        )
+
+
+@pytest.mark.parametrize("lags", 
                          [[0, 1], (0, 1), range(0, 2), np.arange(0, 2)], 
                          ids = lambda lags: f'lags: {lags}')
 def test_ValueError_initialize_lags_when_lags_has_values_lower_than_1(lags):
@@ -109,7 +129,11 @@ def test_TypeError_initialize_lags_when_lags_is_not_valid_type(lags):
                           ([2, 3, 1]       , (np.array([1, 2, 3]), ['lag_1', 'lag_2', 'lag_3'], 3)),
                           ((4, 5, 6)       , (np.array((4, 5, 6)), ['lag_4', 'lag_5', 'lag_6'], 6)),  
                           (range(1, 4)     , (np.array([1, 2, 3]), ['lag_1', 'lag_2', 'lag_3'], 3)), 
-                          (np.arange(1, 10), (np.arange(1, 10), [f'lag_{i}' for i in range(1, 10)], 9))], 
+                          (np.arange(1, 10), (np.arange(1, 10), [f'lag_{i}' for i in range(1, 10)], 9)),
+                          (np.int64(3)     , (np.array([1, 2, 3]), ['lag_1', 'lag_2', 'lag_3'], 3)),
+                          (np.uint8(3)     , (np.array([1, 2, 3]), ['lag_1', 'lag_2', 'lag_3'], 3)),
+                          ([np.int32(2), 1], (np.array([1, 2]), ['lag_1', 'lag_2'], 2)),
+                          (np.array([3, 1], dtype=np.uint8), (np.array([1, 3]), ['lag_1', 'lag_3'], 3))], 
                          ids = lambda values: f'values: {values}')
 def test_initialize_lags_input_lags_parameter(lags, expected):
     """
@@ -126,5 +150,6 @@ def test_initialize_lags_input_lags_parameter(lags, expected):
         assert max_lag is expected[2]
     else:
         np.testing.assert_array_almost_equal(lags, expected[0])
+        assert lags.dtype == np.int64
         assert lags_names == expected[1]
         assert max_lag == expected[2]

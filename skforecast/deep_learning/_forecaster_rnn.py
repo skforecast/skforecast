@@ -28,6 +28,7 @@ from ..utils import (
     check_interval,
     check_predict_input,
     check_residuals_input,
+    check_residuals_per_bin,
     check_select_fit_kwargs,
     check_y,
     check_extract_values_and_index,
@@ -60,9 +61,9 @@ except ImportError as e:
             "Make sure you have PyTorch installed to use Keras with the torch backend. "
             "For installation instructions, visit https://pytorch.org/get-started/locally/"
         )
-    else:
-        package_name = str(e).split(" ")[-1].replace("'", "")
-        check_optional_dependency(package_name=package_name)
+    if isinstance(e, ModuleNotFoundError) and e.name == "keras":
+        check_optional_dependency(package_name="keras")
+    raise
 
 
 # TODO. Include window features
@@ -370,6 +371,10 @@ class ForecasterRnn(ForecasterBase):
 
         if fit_kwargs is None:
             fit_kwargs = {}
+        elif isinstance(fit_kwargs, dict):
+            # NOTE: Copy to avoid modifying the user's dict when popping
+            # `series_val` and `exog_val`.
+            fit_kwargs = fit_kwargs.copy()
 
         self.series_val = None
         self.exog_val = None
@@ -2005,6 +2010,11 @@ class ForecasterRnn(ForecasterBase):
 
         """
 
+        if isinstance(fit_kwargs, dict):
+            # NOTE: Copy to avoid modifying the user's dict when popping
+            # `series_val` and `exog_val`.
+            fit_kwargs = fit_kwargs.copy()
+
         self.series_val = None
         self.exog_val = None
         if "series_val" in fit_kwargs:
@@ -2365,3 +2375,13 @@ class ForecasterRnn(ForecasterBase):
 
             self.out_sample_residuals_[level] = out_sample_residuals
             self.out_sample_residuals_by_bin_[level] = out_sample_residuals_by_bin
+
+        check_residuals_per_bin(
+            n_residuals = {
+                level: len(self.out_sample_residuals_[level])
+                for level in sorted(series_to_update)
+            },
+            n_bins      = {
+                level: self.binner[level].n_bins_ for level in series_to_update
+            }
+        )

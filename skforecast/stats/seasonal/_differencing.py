@@ -190,8 +190,9 @@ def ndiffs(
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore')
+                # Same number of lags as R's forecast::ndiffs, 0 for fewer
+                # than 19 observations
                 nlags = math.floor(3 * math.sqrt(len(x)) / 13)
-                nlags = max(1, nlags)
                 stat, pval, _, _ = kpss(x, 'c', nlags=nlags)
                 return pval < alpha
         except Exception as e:

@@ -2,6 +2,7 @@
 # ==============================================================================
 import re
 import pytest
+import datetime
 import numpy as np
 import pandas as pd
 from skforecast.exceptions import IgnoredArgumentWarning, InputTypeWarning
@@ -134,6 +135,73 @@ def test_ValueError_check_preprocess_series_when_series_is_dict_with_different_f
     )
     with pytest.raises(ValueError, match = err_msg):
         check_preprocess_series(series = series_dict)
+
+
+@pytest.mark.parametrize("index_l2, expected_freqs", 
+                         [(pd.date_range(start='2000-01-01', periods=10, freq='MS'), "[<Day>, <MonthBegin>]"),
+                          (pd.RangeIndex(start=0, stop=10, step=1), "[1, <Day>]")], 
+                         ids = ['Day and MonthBegin', 'Day and step'])
+def test_ValueError_check_preprocess_series_when_series_is_dict_with_freqs_that_cannot_be_compared(index_l2, expected_freqs):
+    """
+    Test ValueError is raised when series is a dict with frequencies that cannot
+    be compared (Day and MonthBegin, or a frequency and a step). Before, sorting
+    the frequencies for the message raised a TypeError.
+    """
+    series_dict = {
+        'l1': pd.Series(np.arange(10), index=pd.date_range(start='2000-01-01', periods=10, freq='D')),
+        'l2': pd.Series(np.arange(10), index=index_l2)
+    }
+
+    err_msg = re.escape(
+        f"If `series` is a dictionary, all series must have a Pandas "
+        f"RangeIndex or DatetimeIndex with the same step/frequency. "
+        f"If it a MultiIndex DataFrame, the second level must be a DatetimeIndex "
+        f"with the same frequency for each series. "
+        f"Found frequencies: {expected_freqs}"
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_preprocess_series(series = series_dict)
+
+
+@pytest.mark.parametrize("tz_l2, expected_tz", 
+                         [('Europe/Madrid', "['Europe/Madrid', 'UTC']"),
+                          (None, "[None, 'UTC']")], 
+                         ids = ['UTC and Europe/Madrid', 'UTC and no time zone'])
+def test_ValueError_check_preprocess_series_when_series_is_dict_with_different_time_zones(tz_l2, expected_tz):
+    """
+    Test ValueError is raised when series is a dict with series in different 
+    time zones. Before, `fit` raised a TypeError when comparing timestamps 
+    with and without time zone, and `predict` only returned the series in one 
+    of the time zones.
+    """
+    series_dict = {
+        'l1': pd.Series(np.arange(10), index=pd.date_range(start='2000-01-01', periods=10, freq='D', tz='UTC')),
+        'l2': pd.Series(np.arange(10), index=pd.date_range(start='2000-01-01', periods=10, freq='D', tz=tz_l2))
+    }
+
+    err_msg = re.escape(
+        f"If `series` is a dictionary, all series must have the same time "
+        f"zone. Found time zones: {expected_tz}"
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_preprocess_series(series = series_dict)
+
+
+def test_check_preprocess_series_when_series_is_dict_with_same_time_zone_from_different_objects():
+    """
+    Test check_preprocess_series accepts a dict of series with the same time 
+    zone defined with different objects.
+    """
+    series_dict = {
+        'l1': pd.Series(np.arange(10), index=pd.date_range(start='2000-01-01', periods=10, freq='D', tz='UTC')),
+        'l2': pd.Series(np.arange(10), index=pd.date_range(start='2000-01-01', periods=10, freq='D', tz=datetime.timezone.utc))
+    }
+
+    series_dict, series_indexes = check_preprocess_series(series = series_dict)
+
+    assert list(series_dict.keys()) == ['l1', 'l2']
+    assert str(series_indexes['l1'].tz) == 'UTC'
+    assert str(series_indexes['l2'].tz) == 'UTC'
 
 
 def test_ValueError_check_preprocess_series_when_series_is_DataFrame_MultiIndex_different_freqs_or_None():

@@ -215,6 +215,12 @@ predictions = forecaster.predict_interval(
 )
 ```
 
+With binned residuals, keep an average of at least 10 out-of-sample residuals
+per bin (100 residuals for the default `n_bins=10`). Below that,
+`set_out_sample_residuals` issues a `ResidualsUsageWarning` and the intervals
+tend to be too narrow: reduce the bins with `binner_kwargs={'n_bins': 3}` when
+creating the forecaster, or predict with `use_binned_residuals=False`.
+
 ## Evaluating Interval Quality
 
 ```python

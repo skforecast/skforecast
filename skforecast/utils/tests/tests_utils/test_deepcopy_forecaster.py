@@ -3,7 +3,6 @@
 import pytest
 import numpy as np
 import pandas as pd
-from copy import deepcopy
 from sklearn.exceptions import NotFittedError
 from sklearn.linear_model import LinearRegression
 from sklearn.utils.validation import check_is_fitted
@@ -408,6 +407,34 @@ def test_deepcopy_forecaster_original_unchanged(forecaster_fixture, request):
 
     assert forecaster.last_window_ is original_last_window
     assert forecaster.last_window_ is not None
+
+
+def test_deepcopy_forecaster_original_unchanged_when_copy_fails():
+    """
+    Test that the original forecaster keeps its fitted estimator, residuals 
+    and last window when the deep copy raises an exception. Before, they were
+    replaced in the original before copying and not restored.
+    """
+
+    class NotCopyable:
+        def __deepcopy__(self, memo):
+            raise RuntimeError("Object cannot be copied.")
+
+    y = pd.Series(np.arange(50, dtype=float))
+    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    forecaster.fit(y=y, store_in_sample_residuals=True)
+    forecaster.not_copyable = NotCopyable()
+    estimator = forecaster.estimator
+    in_sample_residuals = forecaster.in_sample_residuals_
+    last_window = forecaster.last_window_
+
+    with pytest.raises(RuntimeError, match="Object cannot be copied."):
+        deepcopy_forecaster(forecaster)
+
+    assert forecaster.estimator is estimator
+    check_is_fitted(forecaster.estimator)
+    assert forecaster.in_sample_residuals_ is in_sample_residuals
+    assert forecaster.last_window_ is last_window
 
 
 def test_deepcopy_forecaster_copy_is_independent(fitted_forecaster_recursive):

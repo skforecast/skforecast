@@ -409,7 +409,7 @@ def test_predict_bootstrapping_ValueError_when_not_level_in_out_sample_residuals
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
     err_msg = re.escape(
-        "Residuals for level 'l2' are None. Check `forecaster.out_sample_residuals_`."
+        "Residuals for level 'l2' are None or empty. Check `forecaster.out_sample_residuals_`."
     )
     with pytest.raises(ValueError, match = err_msg):
         forecaster.predict_bootstrapping(
@@ -436,11 +436,40 @@ def test_predict_bootstrapping_ValueError_when_not_level_in_out_sample_residuals
     forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
     err_msg = re.escape(
-        "Residuals for level 'l2' are None. Check `forecaster.out_sample_residuals_by_bin_`."
+        "Residuals for level 'l2' are None or empty. Check `forecaster.out_sample_residuals_by_bin_`."
     )
 
     with pytest.raises(ValueError, match = err_msg):
         forecaster.predict_bootstrapping(steps=3, use_in_sample_residuals=False, use_binned_residuals=True)
+
+
+@pytest.mark.parametrize("use_binned_residuals", 
+                         [True, False],
+                         ids = lambda binned: f'use_binned_residuals: {binned}')
+def test_predict_bootstrapping_output_when_out_sample_residuals_only_for_predicted_level(use_binned_residuals):
+    """
+    Test predict_bootstrapping works when out-of-sample residuals are only 
+    available for the predicted level. Before, the residuals of all the levels
+    were checked, so it raised a ValueError for level 'l2'.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
+    forecaster.fit(series=series_dict_range, store_in_sample_residuals=True)
+    y_true = {'l1': np.array([1, 2, 3, 4, 5])}
+    y_pred = {'l1': np.array([0, 0, 0, 0, 0])}
+    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
+
+    results = forecaster.predict_bootstrapping(
+                  steps                   = 3,
+                  levels                  = ['l1'],
+                  n_boot                  = 4,
+                  use_in_sample_residuals = False,
+                  use_binned_residuals    = use_binned_residuals,
+                  suppress_warnings       = True
+              )
+
+    assert results.shape == (3, 5)
+    assert (results['level'] == 'l1').all()
+    assert not results.drop(columns='level').isna().to_numpy().any()
 
 
 def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_exog_steps_is_1_in_sample_residuals_is_True():

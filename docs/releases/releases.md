@@ -20,6 +20,8 @@ The main changes in this release are:
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Faster `fit` of <code>[ForecasterRecursiveMultiSeries]</code> with many series, with less memory and the same predictions: with 500 series, 10 to 22% faster with LightGBM and more than 10 times faster with `series_weights`; with 300 series and `encoding='onehot'`, about 3 times faster.
 
++ <span class="badge text-bg-enhancement">Enhancement</span> Faster predictions: `predict` of <code>[ForecasterRecursiveMultiSeries]</code> is 4.9x faster with 5000 series (2.3x with 500), and the forecasters with an `ExtraTreesRegressor` predict 15x faster.
+
 + <span class="badge text-bg-enhancement">Enhancement</span> Faster <code>[Arima]</code>: seasonal models fit 1.4x to 2.2x faster (an ARIMA(1,1,1)(1,1,1)[12] on 500 observations, from 0.51 to 0.27 seconds; the automatic order selection with `m=12`, from about 3.2 to 1.4-1.7 seconds). The speedups do not change the results.
 
 + <span class="badge text-bg-feature">Feature</span> New functions <code>[get_model_info]</code> and <code>[list_adapters]</code> in `skforecast.foundation` to query, without installing the backend or loading the weights, the capabilities and requirements of the foundation models: adapter, default `context_length`, exogenous variable support, supported quantiles, backend package, license restriction and Hugging Face gating.
@@ -61,6 +63,16 @@ The main changes in this release are:
 + `numba` is imported and the rolling statistics of <code>[RollingFeatures]</code> and <code>[RollingFeaturesClassification]</code> are JIT compiled on their first use instead of when `skforecast.preprocessing` is imported. This removes around 0.3 seconds from the import of every forecaster module (about 65% of the time spent by skforecast itself once numpy, pandas and scikit-learn are loaded). Behavior is unchanged.
 
 + `fit` of <code>[ForecasterRecursiveMultiSeries]</code> is faster and uses less memory with many series. The rows of each series in the training matrix are located once, instead of once per series, to split the in-sample residuals and the sample weights, and the training matrix is built in a single pre-allocated block, without the copies that merged its columns. With 500 series of 2,000 observations and a LightGBM of 25 trees, `fit` is 10 to 22% faster (with or without exogenous variables or `calendar_features`), about 3 times faster with `encoding='onehot'` (300 series) and more than 10 times faster with `series_weights` (from about 33 to 2.4 seconds). With `Ridge` it is almost 2 times faster; with heavier estimators the gain is proportionally smaller, and with `encoding=None` without exogenous variables or calendar features there is no change. The peak memory of `create_train_X_y` is halved with float exogenous variables and drops by 60% with `calendar_features`, and that of `fit` drops by 40% with `encoding='onehot'`. Results are unchanged, except for the matrices returned by `create_train_X_y` (next entry).
+
++ `predict` and the other prediction methods of <code>[ForecasterRecursiveMultiSeries]</code> are faster with many series when they use the last window stored in the forecaster. The series to predict were looked up in a list (quadratic in the number of series) and the last window was built aligning the index of every series. With `LinearRegression`, 24 lags and 24 steps, `predict` takes 1.8 ms instead of 2.6 ms with 50 series, 7.7 ms instead of 17.6 ms with 500 series and 71 ms instead of 349 ms with 5000 series.
+
++ The prediction methods of all the forecasters check their inputs faster: the missing values of `last_window` and `exog` are checked on their numpy values. With <code>[ForecasterRecursive]</code>, `LinearRegression`, 24 lags and 5 exogenous variables, the check takes 70 µs instead of 116 µs, and `predict(24)` 333 µs instead of 384 µs (174 µs instead of 200 µs without exogenous variables).
+
++ <code>[ForecasterRecursive]</code>, <code>[ForecasterDirect]</code>, <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> with an `ExtraTreesRegressor` or an `ExtraTreeRegressor` as estimator use the same fast prediction path as `RandomForestRegressor` and `DecisionTreeRegressor`, which predicts with each tree directly. The predictions are the same, also with missing values. With an `ExtraTreesRegressor(n_estimators=100)` and 24 lags, `predict(100)` of <code>[ForecasterRecursive]</code> takes 33 ms instead of 508 ms.
+
++ The backtesting and hyperparameter search functions copy a <code>[ForecasterRnn]</code> twice as fast (72 ms instead of 156 ms with a model of 126,000 parameters), because its Keras model is copied once instead of twice.
+
++ <code>[multivariate_time_series_corr]</code> only computes the correlations with `time_series` instead of the whole correlation matrix of the lags, with the same results. With 5 series of 2000 values and 24 lags, it takes 19 ms instead of 22 ms with `method='pearson'`, 98 ms instead of 327 ms with `'spearman'` and 87 ms instead of 769 ms with `'kendall'`.
 
 + In the matrices returned by `create_train_X_y` of <code>[ForecasterRecursiveMultiSeries]</code>, the one-hot columns of the series (`encoding='onehot'`) and the calendar features that <code>[CalendarFeatures]</code> returns as integers are now `float`, as the one-hot columns already were in `create_predict_X` and the calendar features in the other forecasters, and, when `series` is a dict, the index of `X_train` always has the name of the index of the series (with a wide or long DataFrame it has no name, as before). With `series_weights` or `weight_func`, `create_sample_weights` now raises a `ValueError` in three cases: when the rows of a series are not contiguous in `X_train`, when the forecaster has not created the encoding of the series yet, or, with `encoding='onehot'`, when the one-hot column of any series is missing.
 
@@ -108,16 +120,22 @@ The main changes in this release are:
 
 + Removed the function `cast_exog_dtypes` from `skforecast.utils` (added in 0.8.0). It was not used by skforecast and did not work as documented: with a pandas Series it raised `AttributeError`, it modified the DataFrame passed by the user and it lost the categories. Use `exog.astype(exog_dtypes)` instead.
 
++ `set_out_sample_residuals` of <code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveMultiSeries]</code>, <code>[ForecasterDirect]</code>, <code>[ForecasterDirectMultiVariate]</code>, <code>[ForecasterEquivalentDate]</code> and <code>[ForecasterRnn]</code> now issues a <code>[ResidualsUsageWarning]</code> when the out-of-sample residuals have, on average, fewer than 10 residuals per bin (for example, 48 residuals with the default `n_bins=10`). With so few values per bin, the intervals obtained with `use_binned_residuals=True` are too narrow: in simulations with a nominal coverage of 95% and 24 to 60 out-of-sample residuals, the empirical coverage was 59 to 83% with 10 bins and 90 to 97% without bins, for both `'bootstrapping'` and `'conformal'`. The warning suggests providing more residuals, reducing `n_bins` in `binner_kwargs` or predicting with `use_binned_residuals=False`. The stored residuals and the predictions are unchanged. In the forecasters with several series, a single warning lists the affected levels. [User guide](../user_guides/probabilistic-forecasting-bootstrapped-residuals.ipynb#intervals-conditioned-on-predicted-values-binned-residuals)
+
 + <code>[show_versions]</code> also reports the versions of scipy, statsmodels, matplotlib, torch, lightgbm, xgboost, catboost, skops and cloudpickle (`None` when a package is not installed).
 
 + <code>[save_forecaster]</code> keeps the dots in `file_name` and adds the extension of the backend, so `'model_v1.2'` is saved as `'model_v1.2.joblib'`. Previously, everything after the last dot was replaced by the extension: `'model_v1.1'` and `'model_v1.2'` were both saved as `'model_v1.joblib'`, and the second one overwrote the first without any warning. A name that ends with a backend extension (`.joblib`, `.pkl`, `.pickle`, `.cloudpickle` or `.skops`) is saved as before, with that extension replaced by the one of the backend. Any other extension is now kept: `'model.bin'` is saved as `'model.bin.joblib'` instead of `'model.joblib'`. [User guide](../user_guides/save-load-forecaster.ipynb#pickle-backend)
 
 + <code>[save_forecaster]</code> saves the `.py` files of the custom weight functions defined in `'__main__'` (`save_custom_functions=True`) in the folder of the forecaster file instead of the working directory, so two forecasters saved in different folders with functions of the same name no longer overwrite each other's file. A forecaster saved in the working directory keeps its files there. If it is saved in another folder, for example `models/forecaster.joblib`, the function is imported with `from models.custom_weights import custom_weights` before loading it. [User guide](../user_guides/save-load-forecaster.ipynb#forecaster-with-custom-features)
 
++ <code>[Arima]</code> corrects the innovation variance `sigma2_` for the degrees of freedom, as R's `forecast::Arima` does: the sum of squared innovations is divided by the number of innovations minus the number of estimated coefficients. Before, it was divided by the number of innovations (the maximum likelihood estimate), which is biased downwards and made the prediction intervals too narrow in short series and in models with many coefficients. Prediction intervals are now slightly wider, about 1% to 4% in series of 70 to 150 observations. In a simulation with 30 observations, the coverage of the 95% intervals increased from 87.2% to 90.3% for an AR(1) with three exogenous variables and from 84.9% to 87.5% for an ARMA(2,1), and it did not exceed the nominal level in any of the scenarios. Point predictions, coefficients, log-likelihood, information criteria and the model chosen by the automatic selection are unchanged. With `lambda_bc` and `biasadj=True`, fitted values and predictions change slightly because the bias adjustment uses this variance. `sigma2_` no longer matches the value of statsmodels' SARIMAX and R's `stats::arima`; the maximum likelihood estimate is still available in `model_['sigma2_ml']`. ([#1365](https://github.com/skforecast/skforecast/issues/1365))
+
 
 **Fixed**
 
 + The AICc used by the automatic model selection of <code>[Ets]</code> did not count the variance as a parameter, so its small-sample correction was smaller than the one in the AIC and in R's `forecast::ets`. It now uses the same number of parameters as the AIC, which can change the selected model for short series.
+
++ `ndiffs`, used by <code>[Arima]</code> to choose the order of differencing in the automatic model selection, forced at least one lag in the KPSS test. R's `forecast::ndiffs` uses `trunc(3 * sqrt(n) / 13)` lags, which is 0 for fewer than 19 observations, so the number of differences could differ from R for short series. It now uses the same number of lags.
 
 + <code>[FoundationModel]</code> only routes Chronos-2 checkpoints (`amazon/chronos-2*` and `autogluon/chronos-2*`) to `ChronosAdapter`. Chronos (T5) and Chronos-Bolt checkpoints were accepted when the model was created but failed at predict time, because their pipelines do not accept the input format and the `cross_learning` argument used by the adapter. They now raise a `ValueError` when the model is created.
 
@@ -251,6 +269,38 @@ The main changes in this release are:
 + Fixed an issue in <code>[ForecasterRecursiveMultiSeries]</code> where the prediction methods raised `ValueError: The truth value of a Index is ambiguous` when `levels` was a pandas Index or a numpy array (for example, `series.columns`). They are now converted to a list, also in <code>[ForecasterRnn]</code>, which raised a `TypeError`.
 
 + <code>[exog_to_direct]</code> and <code>[exog_to_direct_numpy]</code> now raise a `ValueError` when `steps` is not between 1 and the number of rows of `exog`. With more steps than rows, <code>[exog_to_direct]</code> returned missing values and <code>[exog_to_direct_numpy]</code> raised a concatenation error, and `steps=0` raised `IndexError: list index out of range`. The forecasters always call them with valid values.
+
++ The forecasters raised ``TypeError: `lags` argument must be an int, 1d numpy ndarray, range, tuple or list`` when `lags` was a numpy integer (`lags=np.int64(3)`, for example from `np.arange`), and accepted booleans (`lags=True` or `[True, 2]`). With lags given as unsigned integers (`np.uint8`), `predict` raised ``ValueError: `last_window` must have as many values as needed to generate the predictors``, because `-window_size` overflowed. Numpy integers are now accepted, booleans raise a `TypeError`, and the lags are stored as `int64`. The same applies to the `window_sizes` of custom window features, where an empty list raised `ValueError: max() iterable argument is empty`.
+
++ The forecasters removed `sample_weight` from the `fit_kwargs` dict passed by the user, and <code>[ForecasterRnn]</code> removed `series_val` and `exog_val` (when it was created and in `set_fit_kwargs`), so the same dict could not be reused. The dict is now copied. When the `fit` method of the estimator accepts `**kwargs` (for example, a scikit-learn `Pipeline`), the warning about ignored `fit_kwargs` said that they are not used by `fit`; it now says that arguments passed through `**kwargs` are not supported.
+
++ <code>[ForecasterRnn]</code> raised `KeyError: 'exog_val'` when the `exog_val` of `fit_kwargs` was a pandas Series without name. It is now named `'exog'`, as `exog` in `fit`.
+
++ The forecasters raised `TypeError: Categorical dtypes in exog must contain only integer values` with a categorical exogenous variable whose categories are nullable integers (`Int32`, for example after `convert_dtypes`), and issued a false `DataTypeWarning` with `UInt8` or pyarrow numeric columns (`double[pyarrow]`).
+
++ <code>[ForecasterRecursiveMultiSeries]</code> raised `TypeError: boolean value of NA is ambiguous` in `fit` when a series with a nullable or pyarrow dtype (`Float64`, `Int64`, `double[pyarrow]`) started or ended with missing values.
+
++ <code>[ForecasterRecursiveMultiSeries]</code> accepted a dict of series with different time zones. With series in `UTC` and `Europe/Madrid`, `predict` only returned the series in one of them; with a series without time zone, `fit` raised `TypeError: Cannot compare tz-naive and tz-aware timestamps`. A `ValueError` that lists the time zones is now raised, also in <code>[ForecasterFoundation]</code>. With series whose frequencies cannot be compared (daily and monthly, or a `DatetimeIndex` and a `RangeIndex`), the error about different frequencies raised `TypeError: '<' not supported between instances of ...` instead.
+
++ Fixed several issues with the `exog` of <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterFoundation]</code>:
+    + A wide `exog` Series without name was converted to a column named `0`, so `fit` of <code>[ForecasterRecursiveMultiSeries]</code> failed with a scikit-learn error about feature names of mixed types. It now raises the same `ValueError` as with a dict of `exog`.
+    + Duplicated column names raised an error saying that `exog` had a column named as one of the series (wide `exog`), or were accepted (dict of `exog`). They now raise a `ValueError`.
+    + An `exog` with the same length as its series but different dates was not aligned by date: <code>[ForecasterRecursiveMultiSeries]</code> raised ``ValueError: Different index for `series` and `exog` after transformation``, and <code>[ForecasterFoundation]</code> used its values by position. It is now aligned by date, with the usual warning about missing values. An `exog` with duplicated dates raises a `ValueError`.
+    + The order of `exog_names_in_` of <code>[FoundationModel]</code> changed between Python processes. It now follows the order of appearance of the columns.
+
++ Fixed an issue in <code>[ForecasterRecursiveMultiSeries]</code> where `predict_interval`, `predict_quantiles`, `predict_dist` and `predict_bootstrapping` raised `ValueError: Residuals for level 'b' are None` when a level that was not predicted had no residuals, for example after calling `set_out_sample_residuals` with only some of the series. Only the residuals of the levels to predict are now checked (for a level that is not in the residuals dict, those of `'_unknown_level'`).
+
++ The prediction methods did not detect an `exog` Series whose name is one of the exogenous variables used in training when the forecaster was trained with more of them. <code>[ForecasterRecursive]</code>, <code>[ForecasterDirect]</code> and the other forecasters with `exog` raised `KeyError: "['exog_2'] not in index"`, and <code>[ForecasterRecursiveMultiSeries]</code> filled the missing variables with NaN (without any warning with a dict of `exog`). They now raise the `ValueError` about missing columns, or a `MissingExogWarning` in <code>[ForecasterRecursiveMultiSeries]</code>.
+
++ Fixed an issue in <code>[ForecasterRnn]</code> where `predict` with a `last_window` without one of the series used as input (a series not in `levels`) used another column of `last_window` in its place, so the predictions were wrong without any warning. It now raises a `ValueError`, as <code>[ForecasterDirectMultiVariate]</code>.
+
++ The prediction methods issued a `MissingValuesWarning` when `last_window` had missing values that are not used to predict: before the last `window_size` rows, in levels that are not predicted (<code>[ForecasterRecursiveMultiSeries]</code>) or in series without lags (<code>[ForecasterDirectMultiVariate]</code>). <code>[ForecasterStats]</code>, which uses the whole `last_window`, still checks all its values.
+
++ When matplotlib, statsmodels or keras were installed but failed to import (for example, statsmodels 0.13.1 with pandas 2), the <code>[plot]</code> module, <code>[ForecasterRnn]</code> and <code>[create_and_compile_model]</code> raised `ModuleNotFoundError: No module named '(/path/to/python3'`, which hid the real error. The original error is now raised, and the installation instructions are only shown when the package is not installed.
+
++ Fixed an issue in the backtesting, hyperparameter search and feature selection functions where, if the internal copy of the forecaster failed (for example, with an estimator that cannot be deep-copied), the forecaster passed by the user was left without its fitted estimator, residuals and last window. The copy no longer modifies the original forecaster.
+
++ <code>[multivariate_time_series_corr]</code> raised `TypeError: 'numpy.int64' object is not iterable` when `lags` was a numpy integer. It is now handled as an int (the lags from 0 to `lags - 1`).
 
 
 ## 0.25.0 <small>Sep 11, 2026</small> { id="0.25.0" }
@@ -2038,6 +2088,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [transform_series]: ../api/utils.md#skforecast.utils.utils.transform_series
 [exog_to_direct]: ../api/utils.md#skforecast.utils.utils.exog_to_direct
 [exog_to_direct_numpy]: ../api/utils.md#skforecast.utils.utils.exog_to_direct_numpy
+[multivariate_time_series_corr]: ../api/utils.md#skforecast.utils.utils.multivariate_time_series_corr
 
 <!-- experimental -->
 [experimental]: ../api/experimental.md
@@ -2054,6 +2105,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [IgnoredArgumentWarning]: ../api/exceptions.md#skforecast.exceptions.exceptions.IgnoredArgumentWarning
 [LicenseWarning]: ../api/exceptions.md#skforecast.exceptions.exceptions.LicenseWarning
 [MissingValuesWarning]: ../api/exceptions.md#skforecast.exceptions.exceptions.MissingValuesWarning
+[ResidualsUsageWarning]: ../api/exceptions.md#skforecast.exceptions.exceptions.ResidualsUsageWarning
 
 <!-- OLD -->
 [ForecasterAutoreg]: https://skforecast.org/0.13.0/api/forecasterautoreg
