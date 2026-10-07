@@ -2,6 +2,7 @@
 # ==============================================================================
 import re
 import pytest
+import warnings
 import numpy as np
 import pandas as pd
 from skforecast.utils import check_exog_dtypes
@@ -198,3 +199,66 @@ def test_check_exog_dtypes_DataFrame_uint_and_nullable_dtypes():
     result = check_exog_dtypes(df, call_check_exog=False)
 
     assert result is None
+
+
+@pytest.mark.parametrize("dtype", 
+                         ['UInt8', 'UInt64', 'int64[pyarrow]', 'uint8[pyarrow]',
+                          'double[pyarrow]', 'float[pyarrow]'], 
+                         ids=lambda d: f'dtype: {d}')
+@pytest.mark.parametrize("as_frame", 
+                         [False, True], 
+                         ids=lambda as_frame: f'as_frame: {as_frame}')
+def test_check_exog_dtypes_no_warning_with_nullable_unsigned_and_pyarrow_numeric_dtypes(dtype, as_frame):
+    """
+    Test check_exog_dtypes does not issue a DataTypeWarning with nullable unsigned
+    integer and pyarrow numeric dtypes.
+    """
+    exog = pd.Series([1, 2, 3], name='exog', dtype=dtype)
+    if as_frame:
+        exog = exog.to_frame()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", category=DataTypeWarning)
+        check_exog_dtypes(exog, call_check_exog=False)
+
+
+@pytest.mark.parametrize("dtype", 
+                         ['Int32', 'UInt8', 'int64[pyarrow]'], 
+                         ids=lambda d: f'dtype: {d}')
+@pytest.mark.parametrize("as_frame", 
+                         [False, True], 
+                         ids=lambda as_frame: f'as_frame: {as_frame}')
+def test_check_exog_dtypes_categorical_with_nullable_and_pyarrow_integer_categories(dtype, as_frame):
+    """
+    Test check_exog_dtypes accepts categorical exog whose categories are nullable
+    or pyarrow integers, like the ones created by `convert_dtypes`.
+    """
+    exog = pd.Series([1, 2, 1], name='exog', dtype=dtype).astype('category')
+    if as_frame:
+        exog = exog.to_frame()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", category=DataTypeWarning)
+        check_exog_dtypes(exog, call_check_exog=False)
+
+
+@pytest.mark.parametrize("values", 
+                         [np.array([1j, 2j, 3j]),
+                          pd.to_timedelta([1, 2, 3], unit='D'),
+                          pd.arrays.IntervalArray.from_breaks([0, 1, 2, 3])], 
+                         ids=['complex', 'timedelta', 'interval'])
+def test_check_exog_dtypes_DataTypeWarning_when_exog_has_non_numeric_dtypes(values):
+    """
+    Test check_exog_dtypes issues a DataTypeWarning with complex, timedelta and
+    interval dtypes. The interval dtype (`interval[int64, right]`) passed the
+    previous check by the prefix of its name.
+    """
+    exog = pd.Series(values, name='exog')
+
+    warn_msg = re.escape(
+        "`exog` may contain only `int`, `float` or `category` dtypes. Most "
+        "machine learning models do not allow other types of values. "
+        "Fitting the forecaster may fail."
+    )
+    with pytest.warns(DataTypeWarning, match = warn_msg):
+        check_exog_dtypes(exog, call_check_exog=False)
