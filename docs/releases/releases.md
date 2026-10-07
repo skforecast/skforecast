@@ -104,6 +104,8 @@ The main changes in this release are:
 
 + The minimum supported version of keras (`deeplearning` extra) is now 3.3 (previously 3.0). With keras 3.0 to 3.2 and the PyTorch backend, a Keras model cannot be copied, so <code>[ForecasterRnn]</code> raised `TypeError: cannot pickle 'module' object` when it was created.
 
++ The minimum supported version of numpy is now 1.26.1 (previously 1.26). numpy 1.26.0 cannot load objects pickled with numpy 2, so a forecaster saved with <code>[save_forecaster]</code> in an environment with numpy 2 could not be loaded with it (`ModuleNotFoundError: No module named 'numpy._core'`).
+
 + Removed the function `cast_exog_dtypes` from `skforecast.utils` (added in 0.8.0). It was not used by skforecast and did not work as documented: with a pandas Series it raised `AttributeError`, it modified the DataFrame passed by the user and it lost the categories. Use `exog.astype(exog_dtypes)` instead.
 
 + <code>[show_versions]</code> also reports the versions of scipy, statsmodels, matplotlib, torch, lightgbm, xgboost, catboost, skops and cloudpickle (`None` when a package is not installed).
