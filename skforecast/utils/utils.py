@@ -4571,14 +4571,20 @@ def prepare_steps_direct(
 
     """
 
-    if isinstance(steps, int):
-        steps_direct = list(range(1, steps + 1))
+    if isinstance(steps, (int, np.integer)):
+        if steps < 1:
+            raise ValueError(
+                f"`steps` must be an integer greater than or equal to 1. Got {steps}."
+            )
+        steps_direct = list(range(1, int(steps) + 1))
     elif steps is None:
         if isinstance(max_step, int):
             steps_direct = list(range(1, max_step + 1))
         else:
             steps_direct = [int(s) for s in max_step]
     elif isinstance(steps, list):
+        if not steps:
+            raise ValueError("`steps` cannot be an empty list.")
         steps_direct = []
         for step in steps:
             if not isinstance(step, (int, np.integer)):
@@ -4587,6 +4593,11 @@ def prepare_steps_direct(
                     f"Got {type(steps)}."
                 )
             steps_direct.append(int(step))
+    else:
+        raise TypeError(
+            f"`steps` argument must be an int, a list of ints or `None`. "
+            f"Got {type(steps)}."
+        )
 
     return steps_direct
 
