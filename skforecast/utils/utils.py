@@ -1568,7 +1568,17 @@ def check_predict_input(
             f"`last_window` must have as many values as needed to "
             f"generate the predictors. For this forecaster it is {window_size}."
         )
-    if last_window.isna().to_numpy().any():
+    # NOTE: Only the values used to create the predictors are checked: the last
+    # `window_size` rows (ForecasterStats uses the whole `last_window`) of the
+    # levels to predict or of the series used as predictors.
+    last_window_to_check = last_window
+    if forecaster_name != 'ForecasterStats':
+        last_window_to_check = last_window_to_check.iloc[-window_size:]
+    if forecaster_name == 'ForecasterRecursiveMultiSeries':
+        last_window_to_check = last_window_to_check[levels]
+    elif forecaster_name in ['ForecasterDirectMultiVariate', 'ForecasterRnn']:
+        last_window_to_check = last_window_to_check[series_names_in_]
+    if last_window_to_check.isna().to_numpy().any():
         warnings.warn(
             "`last_window` has missing values. Most of machine learning models do "
             "not allow missing values. Prediction method may either raise an "

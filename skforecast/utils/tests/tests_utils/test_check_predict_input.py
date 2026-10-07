@@ -610,6 +610,80 @@ def test_check_predict_input_MissingValuesWarning_when_last_window_has_missing_v
         )
 
 
+@pytest.mark.parametrize("forecaster_name, last_window, levels, series_names_in_", 
+    [('ForecasterRecursive', 
+      pd.Series([np.nan, 2, 3, 4, 5, 6]), None, None),
+     ('ForecasterRecursiveMultiSeries', 
+      pd.DataFrame({'l1': [1, 2, 3, 4, 5, 6], 'l2': [1, 2, 3, 4, 5, np.nan]}), ['l1'], ['l1', 'l2']),
+     ('ForecasterDirectMultiVariate', 
+      pd.DataFrame({'l1': [1, 2, 3, 4, 5, 6], 'l2': [1, 2, 3, 4, 5, np.nan]}), None, ['l1']),
+     ('ForecasterRnn', 
+      pd.DataFrame({'l1': [1, 2, 3, 4, 5, 6], 'l2': [np.nan, 2, 3, 4, 5, 6]}), ['l1'], ['l1', 'l2'])], 
+    ids = ['ForecasterRecursive', 'ForecasterRecursiveMultiSeries', 'ForecasterDirectMultiVariate', 'ForecasterRnn'])
+def test_check_predict_input_no_MissingValuesWarning_when_missing_values_not_used_to_predict(
+    forecaster_name, last_window, levels, series_names_in_
+):
+    """
+    Test no MissingValuesWarning is issued when the missing values of 
+    `last_window` are outside the last `window_size` rows or in series that 
+    are not used to predict (levels not predicted in ForecasterRecursiveMultiSeries,
+    series without lags in ForecasterDirectMultiVariate).
+    """
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", category=MissingValuesWarning)
+        check_predict_input(
+            forecaster_name   = forecaster_name,
+            steps             = 2,
+            is_fitted         = True,
+            exog_in_          = False,
+            index_type_       = pd.RangeIndex,
+            index_freq_       = 1,
+            window_size       = 5,
+            last_window       = last_window,
+            levels            = levels,
+            levels_forecaster = levels,
+            series_names_in_  = series_names_in_
+        )
+
+
+@pytest.mark.parametrize("forecaster_name, last_window, levels, series_names_in_", 
+    [('ForecasterStats', 
+      pd.Series([np.nan, 2, 3, 4, 5, 6]), None, None),
+     ('ForecasterRecursiveMultiSeries', 
+      pd.DataFrame({'l1': [1, 2, 3, 4, 5, 6], 'l2': [1, 2, 3, 4, 5, np.nan]}), ['l2'], ['l1', 'l2']),
+     ('ForecasterDirectMultiVariate', 
+      pd.DataFrame({'l1': [1, 2, 3, 4, 5, 6], 'l2': [1, 2, 3, 4, 5, np.nan]}), None, ['l1', 'l2']),
+     ('ForecasterRnn', 
+      pd.DataFrame({'l1': [1, 2, 3, 4, 5, 6], 'l2': [1, 2, 3, 4, 5, np.nan]}), ['l1'], ['l1', 'l2'])], 
+    ids = ['ForecasterStats', 'ForecasterRecursiveMultiSeries', 'ForecasterDirectMultiVariate', 'ForecasterRnn'])
+def test_check_predict_input_MissingValuesWarning_when_missing_values_used_to_predict(
+    forecaster_name, last_window, levels, series_names_in_
+):
+    """
+    Test MissingValuesWarning is issued when the missing values of `last_window`
+    are used to predict. ForecasterStats uses the whole `last_window`.
+    """
+    warn_msg = re.escape(
+        "`last_window` has missing values. Most of machine learning models do "
+        "not allow missing values. Prediction method may either raise an "
+        "error or return NaN predictions."
+    )
+    with pytest.warns(MissingValuesWarning, match = warn_msg):
+        check_predict_input(
+            forecaster_name   = forecaster_name,
+            steps             = 2,
+            is_fitted         = True,
+            exog_in_          = False,
+            index_type_       = pd.RangeIndex,
+            index_freq_       = 1,
+            window_size       = 5,
+            last_window       = last_window,
+            levels            = levels,
+            levels_forecaster = levels,
+            series_names_in_  = series_names_in_
+        )
+
+
 def test_check_predict_input_TypeError_when_last_window_index_is_not_of_index_type():
     """
     """
