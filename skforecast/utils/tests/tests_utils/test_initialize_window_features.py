@@ -2,6 +2,7 @@
 # ==============================================================================
 import re
 import pytest
+import numpy as np
 from skforecast.utils import initialize_window_features
 
 
@@ -73,11 +74,14 @@ def test_ValueError_initialize_window_features_when_no_required_methods():
         initialize_window_features(InvalidWindowFeatureNoMethods(5, ['feature_1']))
 
 
-def test_TypeError_initialize_window_features_when_window_sizes_not_int_list():
+@pytest.mark.parametrize("window_sizes", 
+                         ['not_valid', True], 
+                         ids = lambda window_sizes: f'window_sizes: {window_sizes}')
+def test_TypeError_initialize_window_features_when_window_sizes_not_int_list(window_sizes):
     """
     Test TypeError is raised when `window_sizes` is not an int or a list of ints.
+    Booleans are a subclass of int, but they are not valid.
     """
-    window_sizes = 'not_valid'
 
     err_msg = re.escape(
         f"Attribute `window_sizes` of WindowFeature must be an int or a list "
@@ -99,8 +103,20 @@ def test_ValueError_initialize_window_features_when_window_sizes_int_lower_than_
         initialize_window_features(WindowFeature(0, ['feature_1']))
 
 
+def test_ValueError_initialize_window_features_when_window_sizes_empty_list():
+    """
+    Test ValueError is raised when `window_sizes` is an empty list.
+    """
+    err_msg = re.escape(
+        "If argument `window_sizes` is a list, it must contain at least one "
+        "element. Got [] from WindowFeature." + link_to_docs
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        initialize_window_features(WindowFeature([], ['feature_1']))
+
+
 @pytest.mark.parametrize("window_sizes", 
-                         [[1, 2, 1.], [1, 3, 0], ['1', 3, 5]], 
+                         [[1, 2, 1.], [1, 3, 0], ['1', 3, 5], [True, 3]], 
                          ids = lambda window_sizes: f'window_sizes: {window_sizes}')
 def test_ValueError_initialize_window_features_when_window_sizes_list_not_int_or_lower_than_1(window_sizes):
     """
@@ -191,3 +207,19 @@ def test_initialize_window_features_valid():
     assert window_features == [wf1, wf2]
     assert window_features_names == ["feature1", "feature2", "feature3"]
     assert max_size_window_features == 5
+
+
+def test_initialize_window_features_valid_when_window_sizes_numpy_integers():
+    """
+    Test initialize_window_features when `window_sizes` are numpy integers.
+    """
+
+    wf1 = WindowFeature(np.int64(5), ["feature1"])
+    wf2 = WindowFeature([np.int32(3), np.int64(6)], ["feature2", "feature3"])
+    window_features, window_features_names, max_size_window_features = (
+        initialize_window_features([wf1, wf2])
+    )
+
+    assert window_features == [wf1, wf2]
+    assert window_features_names == ["feature1", "feature2", "feature3"]
+    assert max_size_window_features == 6

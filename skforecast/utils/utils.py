@@ -110,12 +110,14 @@ def initialize_lags(
     lags_names = None
     max_lag = None
     if lags is not None:
-        if isinstance(lags, int):
+        if isinstance(lags, (int, np.integer)) and not isinstance(lags, bool):
             if lags < 1:
                 raise ValueError("Minimum value of lags allowed is 1.")
             lags = np.arange(1, lags + 1)
 
         if isinstance(lags, (list, tuple, range)):
+            if any(isinstance(lag, (bool, np.bool_)) for lag in lags):
+                raise TypeError("All values in `lags` must be integers.")
             lags = np.array(lags)
         
         if isinstance(lags, np.ndarray):
@@ -139,7 +141,8 @@ def initialize_lags(
                     f"tuple or list. Got {type(lags)}."
                 )
         
-        lags = np.sort(lags)
+        # NOTE: Unsigned integers overflow when negated (`-window_size`).
+        lags = np.sort(lags).astype(np.int64)
         lags_names = [f'lag_{i}' for i in lags]
         max_lag = max(lags)
 
@@ -205,13 +208,16 @@ def initialize_window_features(
                 )
             
             window_sizes = wf.window_sizes
-            if not isinstance(window_sizes, (int, list)):
+            if (
+                not isinstance(window_sizes, (int, np.integer, list))
+                or isinstance(window_sizes, bool)
+            ):
                 raise TypeError(
                     f"Attribute `window_sizes` of {wf_name} must be an int or a list "
                     f"of ints. Got {type(window_sizes)}." + link_to_docs
                 )
             
-            if isinstance(window_sizes, int):
+            if isinstance(window_sizes, (int, np.integer)):
                 if window_sizes < 1:
                     raise ValueError(
                         f"If argument `window_sizes` is an integer, it must be equal to or "
@@ -219,9 +225,15 @@ def initialize_window_features(
                     )
                 max_window_sizes.append(window_sizes)
             else:
-                if not all(isinstance(ws, int) for ws in window_sizes) or not all(
-                    ws >= 1 for ws in window_sizes
-                ):                    
+                if len(window_sizes) == 0:
+                    raise ValueError(
+                        f"If argument `window_sizes` is a list, it must contain at "
+                        f"least one element. Got [] from {wf_name}." + link_to_docs
+                    )
+                if not all(
+                    isinstance(ws, (int, np.integer)) and not isinstance(ws, bool)
+                    for ws in window_sizes
+                ) or not all(ws >= 1 for ws in window_sizes):
                     raise ValueError(
                         f"If argument `window_sizes` is a list, all elements must be integers "
                         f"equal to or greater than 1. Got {window_sizes} from {wf_name}." + link_to_docs
