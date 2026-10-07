@@ -41,7 +41,7 @@ do not override it.
 ### Dependencies
 
 Core: numpy>=1.26, pandas>=2.2,<3.0, scikit-learn>=1.6, scipy>=1.12, optuna>=4.0, joblib>=1.3, numba>=0.59, tqdm>=4.66, rich>=13.9
-Optional: statsmodels>=0.13.2,<0.15 (stats), matplotlib>=3.7,<3.12 (plotting), keras>=3.0,<4.0 (deep learning)
+Optional: statsmodels>=0.13.2,<0.15 (stats), matplotlib>=3.7,<3.12 (plotting), keras>=3.3,<4.0 (deep learning)
 
 ### Python environment
 
@@ -60,7 +60,7 @@ learning packages (`torch`, `keras`): the deep learning tests do not need to
 pass unless you work on that code. When they are needed (e.g. `ForecasterRnn`
 or foundation models), set `SKFORECAST_CLOUD_DL=1` in the cloud environment
 variables, or install them in the session with
-`uv pip install torch "keras>=3.0,<4.0" --torch-backend cpu` (`uv` is in
+`uv pip install torch "keras>=3.3,<4.0" --torch-backend cpu` (`uv` is in
 `~/.local/bin` if it is not on `PATH`).
 
 ---

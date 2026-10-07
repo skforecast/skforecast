@@ -75,5 +75,5 @@ pip install skforecast[plotting]
 pip install skforecast[deeplearning]
 ```
 
-+ keras>=3.0, <4.0
++ keras>=3.3, <4.0
 + matplotlib>=3.7, <3.12

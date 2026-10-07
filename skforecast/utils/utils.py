@@ -76,7 +76,7 @@ optional_dependencies = {
         'statsmodels>=0.13.2, <0.15'
     ],
         'deeplearning': [
-        'keras>=3.0, <4.0',
+        'keras>=3.3, <4.0',
         'matplotlib>=3.7, <3.12',
     ]
 }
