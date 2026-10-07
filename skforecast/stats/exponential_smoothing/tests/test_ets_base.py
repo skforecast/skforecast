@@ -494,6 +494,33 @@ def test_auto_ets_ic_selection():
     assert hasattr(model_aicc, "config")
 
 
+def test_auto_ets_aicc_counts_the_variance_as_a_parameter():
+    """
+    Test that the AICc used by auto_ets counts the same parameters as the AIC
+    (smoothing parameters, initial states and the variance), as in R's
+    forecast::ets. On this series the additive models ANA and AAA are ranked
+    differently when the variance is left out of the correction.
+    """
+    y = np.array([
+        10.5335, 7.5413, 11.1268, 9.2641, 8.7228, 6.3361, 12.537, 8.2767,
+        10.8999, 8.3079, 11.4537, 10.9171, 8.5956, 6.7733, 11.2666, 8.953,
+        7.377, 6.5915, 11.2618, 4.3945, 7.2241, 8.0699
+    ])
+    n = len(y)
+
+    def aicc(model):
+        # aic = -2 * loglik + 2 * k
+        k = (model.aic + 2 * model.loglik) / 2
+        return model.aic + 2 * k * (k + 1) / (n - k - 1)
+
+    model_ana = ets(y, m=4, model="ANA", damped=False)
+    model_aaa = ets(y, m=4, model="AAA", damped=False)
+    assert aicc(model_ana) < aicc(model_aaa)
+
+    model = auto_ets(y, m=4, allow_multiplicative=False, ic="aicc")
+    assert (model.config.error, model.config.trend, model.config.season) == ("A", "N", "A")
+
+
 def test_auto_ets_empty_series_raises():
     """Test auto_ets raises on empty series"""
     y = np.array([])
