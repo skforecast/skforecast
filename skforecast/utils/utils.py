@@ -1415,7 +1415,7 @@ def check_predict_input(
     max_step: int, default None
         Maximum number of steps allowed (`ForecasterDirect` and 
         `ForecasterDirectMultiVariate`).
-    levels : list, default None
+    levels : str, list, default None
         Time series to be predicted (`ForecasterRecursiveMultiSeries`
         and `ForecasterRnn`).
     levels_forecaster : str, list, default None

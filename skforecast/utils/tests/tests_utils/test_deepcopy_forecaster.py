@@ -3,7 +3,6 @@
 import pytest
 import numpy as np
 import pandas as pd
-from copy import deepcopy
 from sklearn.exceptions import NotFittedError
 from sklearn.linear_model import LinearRegression
 from sklearn.utils.validation import check_is_fitted
