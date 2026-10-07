@@ -28,8 +28,10 @@ from skforecast.preprocessing import reshape_series_wide_to_long
 # series_dict_nans_test: Dictionary with test time series containing NaN values and datetime index.
 # exog_dict_nans_train: Dictionary with training exogenous variables containing NaN values and datetime index.
 # exog_dict_nans_test: Dictionary with test exogenous variables containing NaN values and datetime index.
-# series_dict_unordered: Dictionary with four series in non-alphabetical order, different lengths and an interspersed NaN.
-# exog_dict_unordered: Dictionary with exogenous variables for series_dict_unordered ('d' has no exog).
+# series_dict_unordered: Dictionary with four series in non-alphabetical order,
+#     different lengths and an interspersed NaN.
+# exog_dict_unordered: Dictionary with exogenous variables for series_dict_unordered
+#     ('d' has no exog).
 
 # Code to generate fixtures values:
 # np.random.seed(123)
@@ -176,7 +178,8 @@ series_dict_unordered = {
 }
 exog_dict_unordered = {
     'c': pd.DataFrame(
-             {'exog_1': [-0.81, 1.06, -0.81, -0.03, 0.88, -0.58, -0.11, 0.11, 0.06, -1.23]},
+             {'exog_1': [-0.81, 1.06, -0.81, -0.03, 0.88, -0.58, -0.11, 0.11, 0.06,
+                         -1.23]},
              index=pd.date_range(start='2020-01-01', periods=10, freq='D')
          ),
     'a': pd.DataFrame(
@@ -185,7 +188,8 @@ exog_dict_unordered = {
          ),
     'd': None,
     'b': pd.DataFrame(
-             {'exog_1': [0.58, -0.19, 0.68, -0.07, 0.67, 1.44, -0.68, 0.2, -0.46, 0.13]},
+             {'exog_1': [0.58, -0.19, 0.68, -0.07, 0.67, 1.44, -0.68, 0.2, -0.46,
+                         0.13]},
              index=pd.date_range(start='2020-01-01', periods=10, freq='D')
          ),
 }

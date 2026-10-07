@@ -800,9 +800,15 @@ def test_select_features_multiseries_when_encoding_onehot_and_series_without_row
     """
     index = pd.date_range(start='2020-01-01', periods=8, freq='D')
     series = {
-        'a': pd.Series([8.5, 8.1, 11.5, 11.1, 10.3, 7.2, 9.9, 12.1], index=index, name='a'),
-        'b': pd.Series([10.5, 9.4, 2.5, 8.4, 9.9, 6.2, 5.4, 8.6], index=index, name='b'),
-        'c': pd.Series([8.6, 4.3, 6.1, 4.5, 9.3, 6.2, 10.8, 7.7], index=index, name='c')
+        'a': pd.Series(
+                 [8.5, 8.1, 11.5, 11.1, 10.3, 7.2, 9.9, 12.1], index=index, name='a'
+             ),
+        'b': pd.Series(
+                 [10.5, 9.4, 2.5, 8.4, 9.9, 6.2, 5.4, 8.6], index=index, name='b'
+             ),
+        'c': pd.Series(
+                 [8.6, 4.3, 6.1, 4.5, 9.3, 6.2, 10.8, 7.7], index=index, name='c'
+             )
     }
     exog = {
         'a': pd.DataFrame(
@@ -821,7 +827,12 @@ def test_select_features_multiseries_when_encoding_onehot_and_series_without_row
                  )
     selector = SelectorAllFeatures()
 
-    selected_lags, selected_window_features, selected_exog, selected_calendar_features = select_features_multiseries(
+    (
+        selected_lags,
+        selected_window_features,
+        selected_exog,
+        selected_calendar_features
+    ) = select_features_multiseries(
         selector   = selector,
         forecaster = forecaster,
         series     = series,

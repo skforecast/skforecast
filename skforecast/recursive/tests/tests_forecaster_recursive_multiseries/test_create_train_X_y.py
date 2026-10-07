@@ -4161,7 +4161,9 @@ def test_create_train_X_y_output_when_dropna_from_series_and_nan_in_lags_and_cat
     exog = {
         'l1': pd.DataFrame({
                   'exog_float': np.arange(100, 108, dtype=float),
-                  'exog_cat': pd.Categorical([0, 1, 2, 0, 1, 2, 0, 1], categories=[0, 1, 2])
+                  'exog_cat': pd.Categorical(
+                                  [0, 1, 2, 0, 1, 2, 0, 1], categories=[0, 1, 2]
+                              )
               }),
         'l2': pd.DataFrame({
                   'exog_float': np.arange(110, 118, dtype=float),
@@ -4796,8 +4798,12 @@ def test_create_train_X_y_index_names_when_series_and_exog_index_have_names(
         'l2': pd.Series(np.arange(10, 16, dtype=float), index=series_index, name='l2')
     }
     exog = {
-        'l1': pd.DataFrame({'exog': np.arange(100, 106, dtype=float)}, index=exog_index),
-        'l2': pd.DataFrame({'exog': np.arange(110, 116, dtype=float)}, index=exog_index)
+        'l1': pd.DataFrame(
+                  {'exog': np.arange(100, 106, dtype=float)}, index=exog_index
+              ),
+        'l2': pd.DataFrame(
+                  {'exog': np.arange(110, 116, dtype=float)}, index=exog_index
+              )
     }
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=2, encoding=encoding

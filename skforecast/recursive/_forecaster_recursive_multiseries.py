@@ -1282,8 +1282,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
             if self.encoding == 'onehot':
                 encoding_col_names = list(self.encoding_mapping_.keys())
+                onehot_values = np.eye(n_level_cols, dtype=float)[encoded_values]
                 encoded_values = pd.DataFrame(
-                                     data    = np.eye(n_level_cols, dtype=float)[encoded_values],
+                                     data    = onehot_values,
                                      columns = encoding_col_names,
                                      index   = train_index,
                                      copy    = False
@@ -1498,8 +1499,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         for series_name, y in series_dict.items():
             if len(y) <= self.window_size:
                 raise ValueError(
-                    f"Length of '{series_name}' must be greater than the maximum window size "
-                    f"needed by the forecaster.\n"
+                    f"Length of '{series_name}' must be greater than the maximum "
+                    f"window size needed by the forecaster.\n"
                     f"    Length '{series_name}': {len(y)}.\n"
                     f"    Max window size: {self.window_size}.\n"
                     f"    Lags window size: {self.max_lag}.\n"
