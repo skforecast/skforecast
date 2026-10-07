@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import json
 import re
 import sys
 import textwrap
@@ -45,6 +46,11 @@ ALLOWED_REDIRECT_PREFIXES = ("https://doi.org/",)
 # already in docs/, which lets the URL check tell it apart from a broken link.
 DOCS_SITE_PREFIX = "https://skforecast.org/latest/"
 DOCS_DIR = ROOT / "docs"
+# Distribution manifests, maintained by hand and validated here.
+CONTEXT7_PATH = ROOT / "context7.json"
+MARKETPLACE_PATH = ROOT / ".claude-plugin" / "marketplace.json"
+# Limit set by https://context7.com/schema/context7.json
+CONTEXT7_RULE_MAX_LENGTH = 255
 URL_CHECK_TIMEOUT = 20
 URL_CHECK_ATTEMPTS = 3
 URL_CHECK_RETRY_DELAY = 3
@@ -279,6 +285,66 @@ def validate_version_consistency() -> list[str]:
                 f"  CITATION.cff has version {m.group(1)}, expected {pkg_version}"
                 f" (from skforecast/__init__.py); also update 'date-released'"
             )
+    marketplace = load_json_manifest(MARKETPLACE_PATH, errors=[])
+    if marketplace is not None:
+        for plugin in marketplace.get("plugins", []):
+            plugin_version = plugin.get("version")
+            if plugin_version != pkg_version:
+                errors.append(
+                    f"  .claude-plugin/marketplace.json: plugin "
+                    f"'{plugin.get('name')}' has version '{plugin_version}', "
+                    f"expected '{pkg_version}' (from skforecast/__init__.py)"
+                )
+    return errors
+
+
+def load_json_manifest(path: Path, errors: list[str]) -> dict | None:
+    """Load a JSON manifest, appending to ``errors`` if missing or invalid."""
+    relpath = path.relative_to(ROOT)
+    if not path.exists():
+        errors.append(f"  {relpath} not found")
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        errors.append(f"  {relpath} is not valid JSON: {exc}")
+        return None
+
+
+def validate_distribution_manifests() -> list[str]:
+    """Check context7.json and the Claude Code plugin marketplace manifest.
+
+    Both files are maintained by hand. The checks catch the ways they go stale
+    silently: invalid JSON, an excluded folder that was renamed or removed, a
+    rule longer than Context7 accepts, and a plugin source that no longer
+    points to the skills directory.
+    """
+    errors: list[str] = []
+
+    context7 = load_json_manifest(CONTEXT7_PATH, errors)
+    if context7 is not None:
+        for folder in context7.get("excludeFolders", []):
+            if "*" not in folder and not (ROOT / folder).is_dir():
+                errors.append(
+                    f"  context7.json: excludeFolders entry '{folder}' "
+                    f"does not exist"
+                )
+        for i, rule in enumerate(context7.get("rules", []), start=1):
+            if len(rule) > CONTEXT7_RULE_MAX_LENGTH:
+                errors.append(
+                    f"  context7.json: rule {i} is {len(rule)} characters "
+                    f"(max {CONTEXT7_RULE_MAX_LENGTH})"
+                )
+
+    marketplace = load_json_manifest(MARKETPLACE_PATH, errors)
+    if marketplace is not None:
+        for plugin in marketplace.get("plugins", []):
+            source = plugin.get("source")
+            if isinstance(source, str) and not (ROOT / source).is_dir():
+                errors.append(
+                    f"  .claude-plugin/marketplace.json: plugin "
+                    f"'{plugin.get('name')}' source '{source}' does not exist"
+                )
     return errors
 
 
@@ -765,6 +831,9 @@ def generate(*, check_only: bool = False) -> bool:
 
     # ── validate version consistency ─────────────────────────────────
     all_errors.extend(validate_version_consistency())
+
+    # ── validate distribution manifests ──────────────────────────────
+    all_errors.extend(validate_distribution_manifests())
 
     # ── validate imports consistency ─────────────────────────────────
     all_errors.extend(validate_imports_consistency())

@@ -2,6 +2,9 @@
 # ==============================================================================
 import os
 import re
+import functools
+import importlib.util
+import zoneinfo
 import joblib
 import pickle
 import pytest
@@ -20,9 +23,12 @@ from ....recursive import ForecasterRecursive
 from ....recursive import ForecasterRecursiveMultiSeries
 from ....recursive import ForecasterRecursiveClassifier
 from ....recursive import ForecasterStats
+from ....recursive import ForecasterEquivalentDate
 from ....direct import ForecasterDirect
 from ....direct import ForecasterDirectMultiVariate
 from ....stats import Arima
+from ....preprocessing import RollingFeatures
+from ....preprocessing import RollingFeaturesClassification
 from ...utils import save_forecaster
 from ...utils import load_forecaster
 from ....exceptions import SkforecastVersionWarning, SaveLoadSkforecastWarning
@@ -38,6 +44,36 @@ def custom_weights2(y):  # pragma: no cover
     """
     """
     return np.arange(1, len(y) + 1)
+
+
+MIN_WEIGHT = 0.5
+
+
+def custom_weights_min_weight(y):  # pragma: no cover
+    """
+    """
+    return np.maximum(np.arange(len(y)), MIN_WEIGHT)
+
+
+def custom_weights_scale(y, scale):  # pragma: no cover
+    """
+    """
+    return np.ones(len(y)) * scale
+
+
+class CustomWeights:  # pragma: no cover
+    def __call__(self, y):
+        return np.ones(len(y))
+
+
+# Function whose source code is not available (as one defined in the Python
+# console)
+_no_source_namespace = {'np': np}
+exec(
+    "def custom_weights_no_source(y):\n    return np.ones(len(y))\n",
+    _no_source_namespace
+)
+custom_weights_no_source = _no_source_namespace['custom_weights_no_source']
 
 
 class UserWindowFeature:  # pragma: no cover
@@ -177,8 +213,145 @@ def test_save_forecaster_save_custom_functions(weight_func, monkeypatch):
         weight_func_file = fun.__name__ + '.py'
         assert os.path.exists(weight_func_file)
         with open(weight_func_file, 'r') as file:
-            assert inspect.getsource(fun) == file.read()
+            assert file.read() == "import numpy as np\n\n\n" + inspect.getsource(fun)
         os.remove(weight_func_file)
+
+
+def test_save_forecaster_save_custom_functions_next_to_forecaster_file(
+    tmp_path, monkeypatch
+):
+    """
+    Test that the .py files of the custom functions defined in '__main__' are
+    saved in the folder of the forecaster file, not in the working directory.
+    """
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / 'models').mkdir()
+    forecaster = ForecasterRecursive(
+        estimator=LinearRegression(), lags=3, weight_func=custom_weights
+    )
+    _simulate_main_namespace(monkeypatch, [custom_weights])
+
+    expected_file = os.path.join('models', 'custom_weights.py')
+    warn_msg = re.escape(
+        f"Custom function(s) used to create weights are defined in the '__main__' "
+        f"namespace and have been saved as: '{expected_file}'."
+    )
+    with pytest.warns(SaveLoadSkforecastWarning, match=warn_msg):
+        save_forecaster(
+            forecaster=forecaster, file_name=os.path.join('models', 'forecaster.joblib')
+        )
+
+    assert os.listdir(tmp_path) == ['models']
+    assert sorted(os.listdir(tmp_path / 'models')) == [
+        'custom_weights.py', 'forecaster.joblib'
+    ]
+
+
+@pytest.mark.parametrize(
+    "weight_func, warn_msg, expected_files",
+    [
+        (
+            functools.partial(custom_weights_scale, scale=2),
+            "Custom function(s) used to create weights are defined in the "
+            "'__main__' namespace and have been saved as: 'custom_weights_scale.py'.",
+            ['custom_weights_scale.py', 'forecaster.joblib'],
+        ),
+        (
+            CustomWeights(),
+            "Custom callable(s) used to create weights are defined in the "
+            "'__main__' namespace but cannot be saved as .py files (lambda "
+            "functions, callable objects or functions whose source code is not "
+            "available, e.g. defined in the Python console): 'CustomWeights'. "
+            "Define them as named functions, or save the forecaster with "
+            "backend='cloudpickle', which stores them in the file.",
+            ['forecaster.joblib'],
+        ),
+        (
+            custom_weights_no_source,
+            "Custom callable(s) used to create weights are defined in the "
+            "'__main__' namespace but cannot be saved as .py files (lambda "
+            "functions, callable objects or functions whose source code is not "
+            "available, e.g. defined in the Python console): "
+            "'custom_weights_no_source'. Define them as named functions, or save "
+            "the forecaster with backend='cloudpickle', which stores them in the "
+            "file.",
+            ['forecaster.joblib'],
+        ),
+    ],
+    ids=['partial', 'callable_object', 'no_source']
+)
+def test_save_forecaster_save_custom_functions_partial_and_callable_object(
+    weight_func, warn_msg, expected_files, tmp_path, monkeypatch
+):
+    """
+    Test that a functools.partial of a function defined in '__main__' saves the
+    .py file of that function, and that a callable object or a function whose
+    source code is not available defined in '__main__' is not saved as a .py
+    file and raises a SaveLoadSkforecastWarning instead of failing.
+    """
+    monkeypatch.chdir(tmp_path)
+    forecaster = ForecasterRecursive(
+        estimator=LinearRegression(), lags=3, weight_func=weight_func
+    )
+    forecaster.fit(y=pd.Series(np.arange(20, dtype=float)))
+    _simulate_main_namespace(
+        monkeypatch, [custom_weights_scale, CustomWeights, custom_weights_no_source]
+    )
+
+    with pytest.warns(SaveLoadSkforecastWarning, match=re.escape(warn_msg)):
+        save_forecaster(forecaster=forecaster, file_name='forecaster.joblib')
+
+    assert sorted(os.listdir(tmp_path)) == expected_files
+
+
+def test_save_forecaster_exported_weight_func_works_on_its_own(
+    tmp_path, monkeypatch
+):
+    """
+    Test that the .py file of a custom function defined in '__main__' includes
+    the imports it uses, so it can be imported and called in a new session
+    (e.g. to refit the loaded forecaster).
+    """
+    monkeypatch.chdir(tmp_path)
+    forecaster = ForecasterRecursive(
+        estimator=LinearRegression(), lags=3, weight_func=custom_weights
+    )
+    _simulate_main_namespace(monkeypatch, [custom_weights])
+
+    with pytest.warns(SaveLoadSkforecastWarning):
+        save_forecaster(forecaster=forecaster, file_name='forecaster.joblib')
+
+    spec = importlib.util.spec_from_file_location(
+        'custom_weights', tmp_path / 'custom_weights.py'
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    np.testing.assert_array_equal(module.custom_weights(np.arange(4)), np.ones(4))
+
+
+def test_save_forecaster_warning_when_weight_func_uses_objects_not_saved(
+    tmp_path, monkeypatch
+):
+    """
+    Test SaveLoadSkforecastWarning when a custom function defined in '__main__'
+    uses global variables that cannot be written as an import in its .py file.
+    """
+    monkeypatch.chdir(tmp_path)
+    forecaster = ForecasterRecursive(
+        estimator=LinearRegression(), lags=3, weight_func=custom_weights_min_weight
+    )
+    _simulate_main_namespace(monkeypatch, [custom_weights_min_weight])
+
+    warn_msg = re.escape(
+        "The custom function 'custom_weights_min_weight' uses objects defined "
+        "outside its body that cannot be saved in 'custom_weights_min_weight.py': "
+        "'MIN_WEIGHT'. Define them inside the function, or save the forecaster "
+        "with backend='cloudpickle', which stores the function together with the "
+        "objects it uses."
+    )
+    with pytest.warns(SaveLoadSkforecastWarning, match=warn_msg):
+        save_forecaster(forecaster=forecaster, file_name='forecaster.joblib')
 
 
 @pytest.mark.parametrize("weight_func",
@@ -297,6 +470,38 @@ def test_save_forecaster_warning_when_user_defined_window_features():
         os.remove('forecaster.joblib')
 
 
+@pytest.mark.parametrize(
+    "forecaster",
+    [
+        ForecasterRecursive(
+            estimator=LinearRegression(),
+            lags=3,
+            window_features=RollingFeatures(stats=['mean'], window_sizes=3)
+        ),
+        ForecasterRecursiveClassifier(
+            estimator=LogisticRegression(),
+            lags=3,
+            window_features=RollingFeaturesClassification(
+                stats=['proportion'], window_sizes=3
+            )
+        ),
+    ],
+    ids=['RollingFeatures', 'RollingFeaturesClassification']
+)
+def test_save_forecaster_no_warning_when_skforecast_window_features(
+    forecaster, tmp_path
+):
+    """
+    Test that no SaveLoadSkforecastWarning is raised when the window features
+    are skforecast classes, since they do not need to be saved by the user.
+    """
+    with warnings.catch_warnings():
+        warnings.simplefilter('error', SaveLoadSkforecastWarning)
+        save_forecaster(
+            forecaster=forecaster, file_name=str(tmp_path / 'forecaster.joblib')
+        )
+
+
 def test_save_forecaster_ValueError_when_invalid_backend():
     """
     Test ValueError when an invalid backend is passed to save_forecaster.
@@ -313,6 +518,48 @@ def test_save_forecaster_ValueError_when_invalid_backend():
             backend='invalid_backend',
             verbose=False,
         )
+
+
+@pytest.mark.parametrize(
+    "file_name, backend, expected_file",
+    [
+        ('model', 'joblib', 'model.joblib'),
+        ('model.joblib', 'joblib', 'model.joblib'),
+        ('model.pkl', 'joblib', 'model.joblib'),
+        ('model.PKL', 'pickle', 'model.pkl'),
+        ('model_v1.2', 'joblib', 'model_v1.2.joblib'),
+        ('forecaster_2026.10.04', 'pickle', 'forecaster_2026.10.04.pkl'),
+        ('model.bin', 'joblib', 'model.bin.joblib'),
+    ],
+    ids=[
+        'no extension',
+        'same extension',
+        'other backend extension',
+        'uppercase extension',
+        'dotted name',
+        'dotted date',
+        'unknown extension',
+    ]
+)
+def test_save_forecaster_file_name_extension(
+    file_name, backend, expected_file, tmp_path
+):
+    """
+    Test that save_forecaster adds the backend extension to the file name and
+    only replaces the extension when it is a backend extension, so the dots in
+    the name are kept. The saved file loads with the inferred backend.
+    """
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
+    forecaster.fit(y=pd.Series(np.arange(20, dtype=float)))
+    save_forecaster(
+        forecaster=forecaster, file_name=str(tmp_path / file_name), backend=backend
+    )
+    forecaster_loaded = load_forecaster(
+        file_name=str(tmp_path / expected_file), verbose=False
+    )
+
+    assert os.listdir(tmp_path) == [expected_file]
+    np.testing.assert_array_equal(forecaster_loaded.lags, forecaster.lags)
 
 
 def test_load_forecaster_ValueError_when_invalid_backend():
@@ -707,8 +954,8 @@ def test_save_and_load_forecaster_round_trip_skops(build_forecaster):
     expected_file = file_base + '.skops'
     assert os.path.exists(expected_file)
 
-    # save_forecaster must not mutate the in-memory forecaster: the decomposed
-    # attributes are restored to the original objects after the dump.
+    # save_forecaster must not mutate the in-memory forecaster: skops
+    # serializes a decomposed copy.
     assert forecaster.last_window_ is last_window_before
     assert forecaster.training_range_ is training_range_before
 
@@ -722,6 +969,264 @@ def test_save_and_load_forecaster_round_trip_skops(build_forecaster):
     # Shape-bearing attributes that the skops backend reconstructs.
     _assert_attribute_equal(forecaster.last_window_, forecaster_loaded.last_window_)
     _assert_attribute_equal(forecaster.training_range_, forecaster_loaded.training_range_)
+
+
+@pytest.mark.parametrize(
+    "forecaster, index",
+    [
+        (
+            ForecasterRecursive(
+                estimator=LinearRegression(),
+                lags=3,
+                window_features=RollingFeatures(stats=['mean', 'std'], window_sizes=4),
+            ),
+            pd.date_range('2020-01-01', periods=100, freq='D'),
+        ),
+        (
+            ForecasterRecursive(
+                estimator=LinearRegression(),
+                lags=3,
+                window_features=RollingFeatures(stats=['mean', 'std'], window_sizes=4),
+            ),
+            pd.RangeIndex(100),
+        ),
+        (
+            ForecasterDirect(
+                estimator=LinearRegression(),
+                steps=5,
+                lags=3,
+                window_features=RollingFeatures(stats=['mean', 'std'], window_sizes=4),
+            ),
+            pd.date_range('2020-01-01', periods=100, freq='D'),
+        ),
+        (
+            ForecasterRecursiveMultiSeries(
+                estimator=LinearRegression(),
+                lags=3,
+                window_features=RollingFeatures(stats=['mean', 'std'], window_sizes=4),
+            ),
+            pd.date_range('2020-01-01', periods=100, freq='D'),
+        ),
+        (
+            ForecasterDirectMultiVariate(
+                estimator=LinearRegression(),
+                level='serie_1',
+                steps=5,
+                lags=3,
+                window_features=RollingFeatures(stats=['mean', 'std'], window_sizes=4),
+            ),
+            pd.date_range('2020-01-01', periods=100, freq='D'),
+        ),
+        (
+            ForecasterRecursiveClassifier(
+                estimator=LogisticRegression(),
+                lags=3,
+                window_features=RollingFeaturesClassification(
+                    stats=['proportion', 'mode'], window_sizes=4
+                ),
+            ),
+            pd.date_range('2020-01-01', periods=100, freq='D'),
+        ),
+    ],
+    ids=[
+        'ForecasterRecursive',
+        'ForecasterRecursive_RangeIndex',
+        'ForecasterDirect',
+        'ForecasterRecursiveMultiSeries',
+        'ForecasterDirectMultiVariate',
+        'ForecasterRecursiveClassifier',
+    ]
+)
+def test_save_and_load_forecaster_round_trip_skops_window_features(
+    forecaster, index, tmp_path
+):
+    """
+    Test that forecasters with window features round-trip through the skops
+    backend. The window features must not keep the pandas Rolling objects of
+    the training series, which skops cannot serialize.
+    """
+    rng = np.random.default_rng(12345)
+    if isinstance(forecaster, ForecasterRecursiveClassifier):
+        y = pd.Series(rng.choice(['a', 'b', 'c'], size=100), index=index)
+        forecaster.fit(y=y)
+    elif isinstance(
+        forecaster, (ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate)
+    ):
+        series = pd.DataFrame(
+            {'serie_1': rng.normal(size=100), 'serie_2': rng.normal(size=100)},
+            index=index,
+        )
+        forecaster.fit(series=series)
+    else:
+        y = pd.Series(rng.normal(size=100), index=index)
+        forecaster.fit(y=y)
+    predictions = forecaster.predict(steps=5)
+
+    file_name = str(tmp_path / 'forecaster.skops')
+    save_forecaster(
+        forecaster=forecaster, file_name=file_name, backend='skops', verbose=False
+    )
+    forecaster_loaded = load_forecaster(
+        file_name=file_name, backend='skops', trusted=True, verbose=False
+    )
+
+    _assert_attribute_equal(predictions, forecaster_loaded.predict(steps=5))
+
+
+@pytest.mark.parametrize(
+    "index",
+    [
+        pd.date_range('2024-03-25', periods=200, freq='h', tz='Europe/Madrid'),
+        pd.date_range('2024-03-25', periods=140, freq='h', tz='Europe/Madrid'),
+        pd.date_range(
+            '2024-02-01', periods=30, freq='D', tz=zoneinfo.ZoneInfo('America/New_York')
+        ),
+        pd.date_range('2024-01-01', periods=100, freq='500ms'),
+        pd.date_range(
+            '2024-11-01',
+            periods=36,
+            freq=pd.offsets.CustomBusinessDay(holidays=['2024-12-25']),
+        ),
+    ],
+    ids=[
+        'dst_change_in_training',
+        'dst_change_in_predictions',
+        'zoneinfo_dst_change_in_predictions',
+        'freq_500ms',
+        'custom_business_day_with_holidays',
+    ]
+)
+def test_save_and_load_forecaster_round_trip_skops_datetime_index(index, tmp_path):
+    """
+    Test that a forecaster trained on a DatetimeIndex round-trips through the
+    skops backend and predicts the same values with the same index (time zone,
+    daylight saving time changes and frequency).
+    """
+    rng = np.random.default_rng(12345)
+    y = pd.Series(rng.normal(size=len(index)), index=index)
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
+    forecaster.fit(y=y)
+    predictions = forecaster.predict(steps=15)
+
+    file_name = str(tmp_path / 'forecaster.skops')
+    save_forecaster(
+        forecaster=forecaster, file_name=file_name, backend='skops', verbose=False
+    )
+    forecaster_loaded = load_forecaster(
+        file_name=file_name, backend='skops', trusted=True, verbose=False
+    )
+
+    pd.testing.assert_series_equal(predictions, forecaster_loaded.predict(steps=15))
+
+
+@pytest.mark.parametrize(
+    "exog_type",
+    ['categorical', 'pyarrow'],
+    ids=lambda exog_type: f'exog: {exog_type}'
+)
+@pytest.mark.parametrize(
+    "forecaster_class",
+    [ForecasterRecursive, ForecasterRecursiveMultiSeries],
+    ids=lambda forecaster_class: forecaster_class.__name__
+)
+def test_save_and_load_forecaster_round_trip_skops_exog_dtypes(
+    forecaster_class, exog_type, tmp_path
+):
+    """
+    Test that a forecaster trained with categorical exog (categories of int32
+    and str, all of them seen in training) or pyarrow exog round-trips through
+    the skops backend, keeps the same exog dtypes and predicts the same values.
+    """
+    rng = np.random.default_rng(12345)
+    index = pd.date_range('2020-01-01', periods=65, freq='D')
+    if exog_type == 'categorical':
+        exog = pd.DataFrame(
+            {
+                'day_of_week': pd.Categorical(index.day_of_week),
+                'day_name': pd.Categorical(index.day_name()),
+            },
+            index=index,
+        )
+    else:
+        exog = pd.DataFrame(
+            {'exog_1': rng.normal(size=65)}, index=index, dtype='double[pyarrow]'
+        )
+    exog_train = exog.iloc[:60]
+    exog_predict = exog.iloc[60:]
+    y = pd.Series(rng.normal(size=60), index=index[:60])
+
+    forecaster = forecaster_class(estimator=LinearRegression(), lags=3)
+    if isinstance(forecaster, ForecasterRecursiveMultiSeries):
+        series = {'serie_1': y, 'serie_2': y * 2}
+        forecaster.fit(
+            series=series, exog={'serie_1': exog_train, 'serie_2': exog_train}
+        )
+        exog_predict = {'serie_1': exog_predict, 'serie_2': exog_predict}
+    else:
+        forecaster.fit(y=y, exog=exog_train)
+    predictions = forecaster.predict(steps=5, exog=exog_predict)
+
+    file_name = str(tmp_path / 'forecaster.skops')
+    save_forecaster(
+        forecaster=forecaster, file_name=file_name, backend='skops', verbose=False
+    )
+    forecaster_loaded = load_forecaster(
+        file_name=file_name, backend='skops', trusted=True, verbose=False
+    )
+
+    assert not predictions.isna().to_numpy().any()
+    assert forecaster_loaded.exog_dtypes_in_ == forecaster.exog_dtypes_in_
+    assert forecaster_loaded.exog_dtypes_out_ == forecaster.exog_dtypes_out_
+    _assert_attribute_equal(
+        predictions, forecaster_loaded.predict(steps=5, exog=exog_predict)
+    )
+
+
+@pytest.mark.parametrize(
+    "forecaster, index",
+    [
+        (
+            ForecasterEquivalentDate(offset=pd.DateOffset(days=7), n_offsets=2),
+            pd.date_range('2020-01-01', periods=60, freq='D'),
+        ),
+        (
+            ForecasterRecursive(estimator=LinearRegression(), lags=3),
+            pd.date_range('2020-01-31', periods=48, freq=pd.DateOffset(months=1)),
+        ),
+    ],
+    ids=['ForecasterEquivalentDate_offset', 'ForecasterRecursive_freq']
+)
+def test_save_and_load_forecaster_round_trip_skops_DateOffset(
+    forecaster, index, tmp_path
+):
+    """
+    Test that a forecaster with a generic pandas DateOffset (the `offset` of
+    ForecasterEquivalentDate, and its `window_size` before fitting, or the
+    frequency of the series) round-trips through the skops backend, before
+    and after fitting, and predicts the same values.
+    """
+    file_name = str(tmp_path / 'forecaster.skops')
+    save_forecaster(
+        forecaster=forecaster, file_name=file_name, backend='skops', verbose=False
+    )
+    forecaster_loaded = load_forecaster(
+        file_name=file_name, backend='skops', trusted=True, verbose=False
+    )
+
+    assert forecaster_loaded.window_size == forecaster.window_size
+
+    rng = np.random.default_rng(12345)
+    y = pd.Series(rng.normal(size=len(index)), index=index)
+    forecaster.fit(y=y)
+    predictions = forecaster.predict(steps=5)
+    save_forecaster(
+        forecaster=forecaster, file_name=file_name, backend='skops', verbose=False
+    )
+    forecaster_loaded = load_forecaster(
+        file_name=file_name, backend='skops', trusted=True, verbose=False
+    )
+
+    pd.testing.assert_series_equal(predictions, forecaster_loaded.predict(steps=5))
 
 
 def test_load_forecaster_skops_raises_when_untrusted_by_default():

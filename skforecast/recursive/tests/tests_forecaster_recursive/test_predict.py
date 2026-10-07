@@ -16,6 +16,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
 from lightgbm import LGBMRegressor
+from xgboost import XGBRegressor
 
 from skforecast.preprocessing import RollingFeatures, TimeSeriesDifferentiator
 from skforecast.recursive import ForecasterRecursive
@@ -40,6 +41,36 @@ def test_predict_NotFittedError_when_fitted_is_False():
     )
     with pytest.raises(NotFittedError, match = err_msg):
         forecaster.predict(steps=5)
+
+
+def test_predict_ValueError_when_exog_index_does_not_follow_freq():
+    """
+    Test ValueError is raised when `exog` starts one step ahead of
+    `last_window`, but it has gaps (one value every two days with a daily
+    series). `exog` is used by position, so the predictions would use the
+    values of other dates.
+    """
+    index = pd.date_range(start='2020-01-01', periods=50, freq='D')
+    y = pd.Series(np.arange(50, dtype=float) * 2, index=index, name='y')
+    exog = pd.Series(np.arange(50, dtype=float), index=index, name='exog')
+    exog_pred = pd.Series(
+        data  = np.arange(50, 60, 2, dtype=float),
+        index = pd.DatetimeIndex(['2020-02-20', '2020-02-22', '2020-02-24',
+                                  '2020-02-26', '2020-02-28']),
+        name  = 'exog'
+    )
+
+    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    forecaster.fit(y=y, exog=exog)
+
+    err_msg = re.escape(
+        "`exog` must have consecutive values following the frequency of "
+        "`last_window` for the 5 steps predicted.\n"
+        "    Expected index at position 1 : 2020-02-21 00:00:00.\n"
+        "    `exog` index at position 1 : 2020-02-22 00:00:00.\n"
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster.predict(steps=5, exog=exog_pred)
 
 
 def test_predict_output_when_estimator_is_LinearRegression():
@@ -644,3 +675,60 @@ def test_predict_output_when_last_window_argument_has_NaN():
                )
 
     pd.testing.assert_series_equal(predictions, expected)
+
+
+def test_predict_output_when_index_is_tz_aware_and_last_window_ends_on_dst_day():
+    """
+    Test predict output when the series has a timezone-aware index that
+    follows the local calendar and `last_window` ends on the day of a
+    daylight saving change (Europe/Madrid). The predictions must start at the
+    local midnight of the next day, so an `exog` with that index is accepted.
+    """
+    index = pd.date_range(start='2024-03-20', periods=12, freq='D', tz='Europe/Madrid')
+    y = pd.Series(np.arange(12, dtype=float) * 2, index=index, name='y')
+    exog = pd.Series(np.arange(12, dtype=float), index=index, name='exog')
+    exog_pred = pd.Series(
+        data  = np.arange(12, 15, dtype=float),
+        index = pd.date_range(
+                    start='2024-04-01', periods=3, freq='D', tz='Europe/Madrid'
+                ),
+        name  = 'exog'
+    )
+
+    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    forecaster.fit(y=y, exog=exog)
+    predictions = forecaster.predict(steps=3, exog=exog_pred)
+
+    expected = pd.Series(
+                   data  = np.array([24., 26., 28.]),
+                   index = pd.DatetimeIndex(
+                               ['2024-04-01', '2024-04-02', '2024-04-03'],
+                               freq='D', tz='Europe/Madrid'
+                           ),
+                   name  = 'pred'
+               )
+
+    pd.testing.assert_series_equal(predictions, expected)
+
+
+@pytest.mark.parametrize(
+    'estimator, device',
+    [(XGBRegressor(n_estimators=5, random_state=123), 'cuda:0'),
+     (XGBRegressor(n_estimators=5, random_state=123), 'gpu'),
+     (XGBRegressor(n_estimators=5, random_state=123), None),
+     (LGBMRegressor(n_estimators=5, verbose=-1, random_state=123), 'cuda')],
+    ids=['XGB-cuda:0', 'XGB-gpu', 'XGB-not_set', 'LGBM-cuda']
+)
+def test_predict_restores_estimator_device(estimator, device):
+    """
+    Test that predict, which runs on CPU, restores the original device of the
+    estimator verbatim, and leaves a device that is not set unset. The device
+    is set after fit, so no GPU is needed.
+    """
+    forecaster = ForecasterRecursive(estimator, lags=3)
+    forecaster.fit(y=pd.Series(np.arange(50)))
+    if device is not None:
+        forecaster.estimator.set_params(device=device)
+    forecaster.predict(steps=3)
+
+    assert forecaster.estimator.get_params().get('device') == device

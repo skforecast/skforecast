@@ -1410,11 +1410,14 @@ class ForecasterRnn(ForecasterBase):
         prediction_index = expand_index(
                                index = last_window.index,
                                steps = max(steps)
-                           )[np.array(steps) - 1]
+                           )
         if isinstance(last_window.index, pd.DatetimeIndex) and np.array_equal(
             steps, np.arange(min(steps), max(steps) + 1)
         ):
-            prediction_index.freq = last_window.index.freq
+            # NOTE: Consecutive steps are selected with a slice to keep the freq.
+            prediction_index = prediction_index[min(steps) - 1:]
+        else:
+            prediction_index = prediction_index[np.array(steps) - 1]
 
         return X, X_predict_dimension_names, steps, levels, prediction_index
 

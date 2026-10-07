@@ -14,10 +14,7 @@ from skforecast.recursive import ForecasterRecursive
 # Fixtures
 from .fixtures_forecaster_recursive import y
 
-if pd.__version__ < '2.2.0':
-    freq = "H"
-else:
-    freq = "h"
+freq = "h"
 
 
 def test_set_out_sample_residuals_NotFittedError_when_forecaster_not_fitted():

@@ -4577,6 +4577,60 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
+def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_no_refit_differentiation_gap_with_mocked():
+    """
+    Test output of backtesting_forecaster_multiseries in ForecasterDirectMultiVariate
+    with no refit, differentiation=1 and gap=2. Each fold predicts the steps 3 to
+    5, so the differentiation is reverted with the predictions of the steps 1 to
+    5: the predictions are the last 3 values of `predict(steps=5)` from the origin
+    of each fold.
+    """
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator          = LinearRegression(),
+                     level              = 'l1',
+                     lags               = 3,
+                     steps              = 5,
+                     transformer_series = None,
+                     differentiation    = 1
+                 )
+    cv = TimeSeriesFold(
+             initial_train_size = len(series_wide_range) - 12,
+             steps              = 3,
+             gap                = 2,
+             refit              = False,
+             fixed_train_size   = False,
+             differentiation    = 1
+         )
+
+    metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
+                                               forecaster            = forecaster,
+                                               series                = series_wide_range,
+                                               cv                    = cv,
+                                               levels                = 'l1',
+                                               metric                = 'mean_absolute_error',
+                                               add_aggregated_metric = False,
+                                               exog                  = None,
+                                               verbose               = False
+                                           )
+
+    expected_metric = pd.DataFrame({'levels': ['l1'],
+                                    'mean_absolute_error': [0.28259064132339545]})
+    expected_predictions = pd.DataFrame({
+                               'l1': np.array([0.67319311, 0.73646909, 0.79885584,
+                                               0.65523291, 0.54385914, 0.55851699,
+                                               0.33780407, 0.45076754, 0.5263479 ,
+                                               0.49645289])},
+                               index=pd.RangeIndex(start=40, stop=50, step=1)
+                           )
+    expected_predictions.insert(1, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3])
+    expected_predictions = expected_df_to_long_format(
+        expected_predictions, method='backtesting-predict'
+    )
+
+    pd.testing.assert_frame_equal(expected_metric, metrics_levels)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
 def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_refit_int_interval_yes_exog_yes_remainder_with_mocked():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterDirectMultiVariate 
