@@ -4579,21 +4579,23 @@ def preprocess_levels_self_last_window_multiseries(
                 IgnoredArgumentWarning
             )
 
-    last_index_levels = [
-        v.index[-1] 
-        for k, v in last_window_.items()
-        if k in levels
-    ]
+    # NOTE: A set is used to check membership, a list is O(n) per lookup.
+    levels_set = set(levels)
+    last_windows = {
+        k: v for k, v in last_window_.items() if k in levels_set
+    }
+    last_index_levels = [v.index[-1] for v in last_windows.values()]
     if len(set(last_index_levels)) > 1:
         max_index_levels = max(last_index_levels)
         selected_levels = [
             k
-            for k, v in last_window_.items()
-            if k in levels and v.index[-1] == max_index_levels
+            for k, v in last_windows.items()
+            if v.index[-1] == max_index_levels
         ]
 
-        series_excluded_from_last_window = set(levels) - set(selected_levels)
+        series_excluded_from_last_window = levels_set - set(selected_levels)
         levels = selected_levels
+        last_windows = {k: last_windows[k] for k in selected_levels}
 
         if input_levels_is_list and series_excluded_from_last_window:
             warnings.warn(
@@ -4604,11 +4606,17 @@ def preprocess_levels_self_last_window_multiseries(
                 IgnoredArgumentWarning
             )
 
-    last_window = pd.DataFrame(
-        {k: v 
-         for k, v in last_window_.items() 
-         if k in levels}
-    )
+    # NOTE: When all the last windows have the same index (the usual case), the
+    # DataFrame is created from their values, which avoids aligning the index
+    # of every series.
+    first_index = next(iter(last_windows.values())).index
+    if all(v.index.equals(first_index) for v in last_windows.values()):
+        last_window = pd.DataFrame(
+            {k: v.to_numpy() for k, v in last_windows.items()},
+            index = first_index
+        )
+    else:
+        last_window = pd.DataFrame(last_windows)
 
     return levels, last_window
 
