@@ -4276,6 +4276,79 @@ def test_create_train_X_y_output_when_exog_dict_object_column_with_different_val
 
 
 @pytest.mark.parametrize(
+    "dropna_from_series",
+    [False, True],
+    ids=lambda dropna: f'dropna_from_series: {dropna}'
+)
+def test_create_train_X_y_output_when_exog_dict_float_column_with_NaNs(
+    dropna_from_series
+):
+    """
+    Test the output of _create_train_X_y when exog is a dict and a float column
+    has NaNs between valid values in both series. The NaNs are kept in X_train,
+    or the rows that have them are dropped when `dropna_from_series=True`.
+    """
+    series = {
+        'l1': pd.Series(np.arange(6, dtype=float), name='l1'),
+        'l2': pd.Series(np.arange(10, 16, dtype=float), name='l2')
+    }
+    exog = {
+        'l1': pd.DataFrame({
+                  'exog_1': [100., 101., np.nan, 103., np.nan, 105.],
+                  'exog_2': np.arange(200, 206, dtype=float)
+              }),
+        'l2': pd.DataFrame({
+                  'exog_1': [110., 111., 112., np.nan, 114., 115.],
+                  'exog_2': np.arange(210, 216, dtype=float)
+              })
+    }
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = LinearRegression(),
+                     lags               = 2,
+                     encoding           = 'ordinal',
+                     dropna_from_series = dropna_from_series
+                 )
+
+    warn_msg = re.escape("NaNs detected in `X_train`.")
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        results = forecaster._create_train_X_y(series=series, exog=exog)
+
+    expected_X = np.array([[1., 0., 0., np.nan, 202.],
+                           [2., 1., 0., 103., 203.],
+                           [3., 2., 0., np.nan, 204.],
+                           [4., 3., 0., 105., 205.],
+                           [11., 10., 1., 112., 212.],
+                           [12., 11., 1., np.nan, 213.],
+                           [13., 12., 1., 114., 214.],
+                           [14., 13., 1., 115., 215.]])
+    expected_y = np.array([2., 3., 4., 5., 12., 13., 14., 15.])
+    expected_index = np.array([2, 3, 4, 5, 2, 3, 4, 5])
+    if dropna_from_series:
+        rows_kept = [1, 3, 4, 6, 7]
+        expected_X = expected_X[rows_kept]
+        expected_y = expected_y[rows_kept]
+        expected_index = expected_index[rows_kept]
+
+    expected = (
+        pd.DataFrame(
+            data    = expected_X,
+            index   = pd.Index(expected_index),
+            columns = ['lag_1', 'lag_2', '_level_skforecast', 'exog_1', 'exog_2']
+        ),
+        pd.Series(
+            data  = expected_y,
+            index = pd.Index(expected_index),
+            name  = 'y',
+            dtype = float
+        )
+    )
+
+    pd.testing.assert_frame_equal(results[0], expected[0])
+    pd.testing.assert_series_equal(results[1], expected[1])
+    assert results[4] == ['l1', 'l2']
+
+
+@pytest.mark.parametrize(
     "encoding, use_exog, expected_no_copy, expected_order",
     [
         ('ordinal', False, True, 'F'),
@@ -4781,14 +4854,22 @@ def test_create_train_X_y_calendar_features_same_dtype_as_create_predict_X():
     ],
     ids=lambda value: f'index names: {value}'
 )
+@pytest.mark.parametrize(
+    "exog_dtype, n_exog_cols",
+    [(float, 1), (int, 5)],
+    ids=['1 float exog (single block)', '5 int exog (pd.concat)']
+)
 def test_create_train_X_y_index_names_when_series_and_exog_index_have_names(
-    encoding, series_index_name, exog_index_name
+    encoding, series_index_name, exog_index_name, exog_dtype, n_exog_cols
 ):
     """
     Test the name of the index of X_train and y_train when the indexes of
     series and exog have names. Both have the name of the index of series,
     whatever the name of the index of exog. If the index of series has no
-    name, they have no name.
+    name, they have no name. With one float exog X_train is built as a single
+    block; with 5 int exog (more inserted columns than block columns) it is
+    built with `pd.concat`, which drops the index name when series and exog
+    do not share it.
     """
     index = pd.date_range('2020-01-01', periods=6, freq='D')
     series_index = index.rename(series_index_name)
@@ -4799,10 +4880,14 @@ def test_create_train_X_y_index_names_when_series_and_exog_index_have_names(
     }
     exog = {
         'l1': pd.DataFrame(
-                  {'exog': np.arange(100, 106, dtype=float)}, index=exog_index
+                  {f'exog_{i}': np.arange(100, 106, dtype=exog_dtype)
+                   for i in range(n_exog_cols)},
+                  index=exog_index
               ),
         'l2': pd.DataFrame(
-                  {'exog': np.arange(110, 116, dtype=float)}, index=exog_index
+                  {f'exog_{i}': np.arange(110, 116, dtype=exog_dtype)
+                   for i in range(n_exog_cols)},
+                  index=exog_index
               )
     }
     forecaster = ForecasterRecursiveMultiSeries(
@@ -4812,7 +4897,6 @@ def test_create_train_X_y_index_names_when_series_and_exog_index_have_names(
 
     assert results[0].index.name == series_index_name
     assert results[1].index.name == series_index_name
-
 
 
 def test_create_train_X_y_output_when_exog_dict_and_one_series_without_exog():

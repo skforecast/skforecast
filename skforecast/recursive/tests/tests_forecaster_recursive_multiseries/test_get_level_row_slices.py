@@ -131,7 +131,8 @@ def test_get_level_row_slices_output_when_series_unordered_different_lengths_and
 def test_get_level_row_slices_output_when_onehot_columns_int_or_float(dtype):
     """
     Test the slice of rows of each level with `encoding='onehot'` when the
-    one-hot columns are int or float (as created by `_create_train_X_y`).
+    one-hot columns are int (for example, in a matrix built by the user) or
+    float (as created by `_create_train_X_y`).
     """
     X_train = pd.DataFrame({
         'lag_1': [1., 2., 3., 4., 5., 6.],

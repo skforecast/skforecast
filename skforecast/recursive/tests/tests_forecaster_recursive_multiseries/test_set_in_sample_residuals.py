@@ -182,7 +182,7 @@ def test_set_in_sample_residuals_same_as_fit_when_series_unordered_different_len
     series are not in alphabetical order, have different lengths and an
     interspersed NaN, and one series ('d') loses all its rows because it has no
     exog and `dropna_from_series=True`. The values stored by fit are tested in
-    test_fit.py.
+    test_fit.py for the encodings 'ordinal', 'ordinal_category' and 'onehot'.
     """
     forecaster_1 = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=2, encoding=encoding, dropna_from_series=True,
@@ -232,9 +232,9 @@ def test_set_in_sample_residuals_when_more_than_10_000_residuals(index_type):
     """
     Test that set_in_sample_residuals works when more than 10_000 in-sample
     residuals are available (they are sampled) and stores the same numpy arrays
-    as fit. Before the fix, `y_train` was a pandas Series and sampling it with
-    integer positions raised a KeyError with a RangeIndex and a pandas
-    FutureWarning with a DatetimeIndex.
+    as fit. The residuals are sampled by position, so neither a RangeIndex
+    (whose labels repeat across series) nor a DatetimeIndex raises an error or
+    a warning.
     """
     rng = np.random.default_rng(123)
     series = pd.DataFrame(

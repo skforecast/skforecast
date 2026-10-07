@@ -51,6 +51,8 @@ from ..utils import (
     check_interval,
     configure_estimator_categorical_features,
     cast_catboost_categorical_columns_dataframe,
+    _copy_rows_to_check,
+    _check_in_place_fit,
     estimator_has_native_nan_support,
     input_to_frame,
     expand_index,
@@ -936,7 +938,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     def _create_train_X_y_single_series(
         self,
         y: pd.Series
-    ) -> tuple[np.ndarray, str, list[str], np.ndarray]:
+    ) -> tuple[np.ndarray, str, list[str] | None, np.ndarray]:
         """
         Create the autoregressive training matrix (lags and window features)
         from a univariate time series. Exogenous variables are processed for
@@ -1132,11 +1134,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         #   fragmented DataFrames).
         # - `encoding` is None and there are neither exog nor calendar features.
         #   The level column is dropped before training and `drop` copies the
-        #   matrix in both paths, so the block saves nothing here. The copy that
-        #   `drop` makes in this path keeps the row order of the lags
-        #   (order='C'), as before: estimators such as LinearRegression can
-        #   change in the last decimals when the same values are stored by
-        #   columns.
+        #   matrix in both paths, so the block saves nothing here. In this path
+        #   the copy that `drop` makes keeps the lags row-contiguous
+        #   (order='C'), because estimators such as LinearRegression can change
+        #   in the last decimals when the same values are stored by columns.
         n_level_cols = len(self.encoding_mapping_) if self.encoding == 'onehot' else 1
         level_in_block = self.encoding != 'ordinal_category'
         exog_cols_in_block = []
@@ -1155,11 +1156,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         single_block = (
             n_inserted_cols <= n_block_cols
             and n_inserted_cols < 100
-            and not (
-                self.encoding is None
-                and X_train_exog is None
-                and self.calendar_features is None
-            )
         )
 
         if single_block:
@@ -1777,8 +1773,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         X_train : pandas DataFrame
             Training values (predictors). The lags, the window features, the
             one-hot columns of the series (`encoding='onehot'`) and the calendar
-            features are `float`; the exogenous variables keep their dtype. The
-            index keeps the name of the index of `series`.
+            features are `float`; the exogenous variables keep their dtype. When
+            `series` is a dict, the index keeps the name of the index of the
+            series.
         y_train : pandas Series
             Values (target) of the time series related to each row of `X_train`.
 
@@ -2421,19 +2418,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         )
 
         # NOTE: The in-sample residuals are calculated after training with the
-        # same matrix the estimator receives, which is not copied. A sample of
-        # rows is kept to check that the estimator does not modify it in place
-        # (for example, `LinearRegression(copy_X=False)`). The check is a
-        # heuristic: a modification limited to rows out of the sample is not
-        # detected. The cells that are NaN before training are not compared, so
-        # a step that fills them in place (for example, `SimpleImputer(copy=False)`)
-        # is allowed: `predict` fills them again in the same way.
-        if self._probabilistic_mode is not False:
-            rows_to_check = np.linspace(
-                0, len(X_train_estimator) - 1, num=min(len(X_train_estimator), 100),
-                dtype=int
-            )
-            X_train_rows = X_train_estimator.iloc[rows_to_check].copy()
+        # same matrix the estimator receives, which is not copied, so it is
+        # checked that the estimator does not modify it in place. Without
+        # residuals the matrix is not used again and the check is skipped.
+        check_in_place = self._probabilistic_mode is not False
+        if check_in_place:
+            X_train_rows = _copy_rows_to_check(X_train_estimator)
 
         if sample_weight is not None:
             self.estimator.fit(
@@ -2445,22 +2435,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         else:
             self.estimator.fit(X=X_train_estimator, y=y_train, **fit_kwargs)
 
-        if self._probabilistic_mode is not False:
-            X_train_rows_after = X_train_estimator.iloc[rows_to_check]
-            if (
-                X_train_rows_after.shape != X_train_rows.shape
-                or not X_train_rows_after.mask(
-                    X_train_rows.isna().to_numpy()
-                ).equals(X_train_rows)
-            ):
-                raise ValueError(
-                    "The estimator has modified the training matrix in place during "
-                    "`fit`, so the in-sample residuals cannot be calculated. This "
-                    "happens with estimators that do not copy their input, such as "
-                    "`LinearRegression(copy_X=False)` or a pipeline with "
-                    "`StandardScaler(copy=False)`. Use the default copy behavior of "
-                    "the estimator (`copy_X=True`, `copy=True`)."
-                )
+        if check_in_place:
+            _check_in_place_fit(X=X_train_estimator, X_rows=X_train_rows)
 
         self.series_names_in_ = series_names_in_
         self.X_train_series_names_in_ = X_train_series_names_in_

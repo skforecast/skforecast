@@ -76,7 +76,9 @@ def test_fit_ValueError_when_estimator_modifies_X_train_in_place(estimator, enco
 
     err_msg = re.escape(
         "The estimator has modified the training matrix in place during "
-        "`fit`, so the in-sample residuals cannot be calculated. This "
+        "`fit`. The matrix is used again after training, to calculate the "
+        "in-sample residuals or to fit the next candidates of a search "
+        "with `OneStepAheadFold`, so the results would be wrong. This "
         "happens with estimators that do not copy their input, such as "
         "`LinearRegression(copy_X=False)` or a pipeline with "
         "`StandardScaler(copy=False)`. Use the default copy behavior of "
