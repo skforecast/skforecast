@@ -15,7 +15,15 @@
 
 import math
 import numpy as np
-from statsmodels.tsa.seasonal import STL
+
+from ...utils import check_optional_dependency
+
+try:
+    from statsmodels.tsa.seasonal import STL
+except ModuleNotFoundError as error:
+    if error.name == "statsmodels":
+        check_optional_dependency(package_name="statsmodels")
+    raise
 
 
 def _nextodd(x: float) -> int:
@@ -47,6 +55,19 @@ def seas_heuristic(x: np.ndarray, period: int) -> float:
     float
         Seasonal strength in [0, 1]. Values > 0.64 suggest seasonal differencing.
 
+    Notes
+    -----
+    The decomposition follows `forecast::mstl` (used by R's
+    `forecast:::seas.heuristic`): statsmodels' `STL` with `seasonal=11`,
+    `seasonal_deg=0`, the default trend and low-pass windows and jumps of
+    R's `stats::stl`, 2 inner and 0 outer iterations. For odd periods the
+    low-pass window is `period + 2` instead of R's `period`, which
+    statsmodels does not accept, so the strength can differ from R's in the
+    fourth decimal. Series with `len(x) <= 2 * period` return 0. Missing
+    values are filled with the mean of the series, while `mstl` interpolates
+    them with `na.interp`, so the result only matches R for series without
+    missing values.
+
     Examples
     --------
     >>> import numpy as np
@@ -76,6 +97,11 @@ def seas_heuristic(x: np.ndarray, period: int) -> float:
     s_window = 11
     t_window = _nextodd(math.ceil(1.5 * period / (1 - 1.5 / s_window)))
     l_window = _nextodd(period)
+    if l_window <= period:
+        # statsmodels requires `low_pass > period`, while R uses
+        # `l.window = period` for odd periods. The next odd value gives
+        # seasonal strengths within about 1e-3 of R's.
+        l_window = period + 2
     fit = STL(
         x,
         period=period,
