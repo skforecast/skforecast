@@ -1465,19 +1465,21 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             # Columns out of the block are inserted in ascending position, so
             # each one lands in its final location: lags, window features,
             # level and exog. Exog columns are inserted as Series (same index
-            # as X_train) to keep their dtype untouched. Duplicated exog names
-            # are allowed here because they are checked below.
+            # as X_train) to keep their dtype untouched. Duplicated names are
+            # allowed here because they are checked below.
             if not level_in_block:
                 # NOTE: Categories are set to all the encoded levels so that the
                 # category codes match the level codes even when a level has no
                 # rows (e.g. the test split of a one-step-ahead search). CatBoost
                 # is fitted with the codes.
+                level_values = pd.Categorical(
+                    encoded_values, categories=range(len(self.encoding_mapping_))
+                )
                 X_train.insert(
-                    n_autoreg_cols,
-                    '_level_skforecast',
-                    pd.Categorical(
-                        encoded_values, categories=range(len(self.encoding_mapping_))
-                    )
+                    loc              = n_autoreg_cols,
+                    column           = '_level_skforecast',
+                    value            = level_values,
+                    allow_duplicates = True
                 )
             for i, in_block in enumerate(exog_cols_in_block):
                 if not in_block:

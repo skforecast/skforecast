@@ -149,6 +149,42 @@ def test_create_train_X_y_ValueError_when_exog_name_duplicated_with_lag(exog_dty
         forecaster._create_train_X_y(series=series, exog=exog)
 
 
+@pytest.mark.parametrize(
+    "encoding",
+    ['ordinal', 'ordinal_category', None],
+    ids=lambda encoding: f'encoding: {encoding}'
+)
+@pytest.mark.parametrize(
+    "exog_dtype",
+    [float, int],
+    ids=lambda dtype: f'exog_dtype: {dtype}'
+)
+def test_create_train_X_y_ValueError_when_exog_name_duplicated_with_level_column(
+    encoding, exog_dtype
+):
+    """
+    Test ValueError is raised when an exogenous variable is named
+    `_level_skforecast`, the column that identifies the series, producing
+    duplicated feature names. Both a float exog (written in the float block of
+    X_train) and an int exog (inserted as its own column) are checked with the
+    encodings that create the column.
+    """
+    series = pd.DataFrame({
+        'l1': pd.Series(np.arange(10, dtype=float)),
+        'l2': pd.Series(np.arange(10, dtype=float))
+    })
+    exog = pd.Series(np.arange(100, 110, dtype=exog_dtype), name='_level_skforecast')
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=LinearRegression(), lags=2, encoding=encoding
+    )
+    err_msg = re.escape(
+        "Duplicated feature names detected in X_train: ['_level_skforecast']."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster._create_train_X_y(series=series, exog=exog)
+
+
 def test_create_train_X_y_ValueError_when_Forecaster_fitted_without_exog_and_exog_is_not_None():
     """
     Test ValueError is raised when the forecaster was fitted without exog and
