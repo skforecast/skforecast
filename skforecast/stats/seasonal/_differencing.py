@@ -360,7 +360,7 @@ def nsdiffs(
         if is_constant(x):
             return D
 
-        if len(x) >= 2 * period and D < max_D:
+        if len(x) > 2 * period and D < max_D:
             dodiff = run_seas_test(x, period)
         else:
             dodiff = False
