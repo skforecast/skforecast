@@ -3778,7 +3778,8 @@ def multivariate_time_series_corr(
     other : pandas DataFrame
         Time series whose lagged values are correlated to `time_series`.
     lags : int, list, numpy ndarray
-        Lags to be included in the correlation analysis.
+        Lags to be included in the correlation analysis. If int, the lags from
+        0 to `lags - 1` are included (lag 0 is the correlation without shift).
     method : str, default 'pearson'
         - 'pearson': standard correlation coefficient.
         - 'kendall': Kendall Tau correlation coefficient.
@@ -3797,18 +3798,15 @@ def multivariate_time_series_corr(
     if not (time_series.index == other.index).all():
         raise ValueError("`time_series` and `other` must have the same index.")
 
-    if isinstance(lags, int):
+    if isinstance(lags, (int, np.integer)):
         lags = range(lags)
 
+    # NOTE: `corrwith` only computes the correlations with `time_series`, not
+    # the whole correlation matrix of the lags.
     corr = {}
     for col in other.columns:
-        lag_values = {}
-        for lag in lags:
-            lag_values[lag] = other[col].shift(lag)
-
-        lag_values = pd.DataFrame(lag_values)
-        lag_values.insert(0, None, time_series)
-        corr[col] = lag_values.corr(method=method).iloc[1:, 0]
+        lag_values = pd.DataFrame({lag: other[col].shift(lag) for lag in lags})
+        corr[col] = lag_values.corrwith(time_series, method=method)
 
     corr = pd.DataFrame(corr)
     corr.index = corr.index.astype('int64')
