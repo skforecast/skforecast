@@ -201,7 +201,6 @@ def test_transform_series_when_set_output_pandas_single_column():
     pd.testing.assert_series_equal(results, expected)
 
 
-
 def test_transform_series_when_set_output_pandas_single_row():
     """
     Test transform_series returns a Series when the input has a single row
@@ -221,6 +220,7 @@ def test_transform_series_when_set_output_pandas_single_row():
 
     expected = pd.Series(data=[0.70710678], index=[10], name='y')
     pd.testing.assert_series_equal(results, expected)
+
 
 def test_transform_series_when_transformer_expands_without_feature_names():
     """
