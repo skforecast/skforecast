@@ -175,7 +175,6 @@ def test_transform_dataframe_when_transformer_expands_columns_without_feature_na
     pd.testing.assert_frame_equal(results, expected)
 
 
-
 def test_transform_dataframe_when_Pipeline_step_without_get_feature_names_out():
     """
     Test that transform_dataframe keeps the input column names when the
@@ -199,6 +198,7 @@ def test_transform_dataframe_when_Pipeline_step_without_get_feature_names_out():
     log_values = np.log1p(df_input)
     expected = (log_values - log_values.mean()) / log_values.std(ddof=0)
     pd.testing.assert_frame_equal(results, expected)
+
 
 def test_transform_dataframe_when_fit_False_and_inverse_transform():
     """

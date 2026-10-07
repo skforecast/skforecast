@@ -2532,7 +2532,7 @@ def _get_feature_names_out(transformer: object) -> np.ndarray | None:
 
     try:
         feature_names_out = transformer.get_feature_names_out()
-    except (AttributeError, ValueError, TypeError):
+    except (AttributeError, ValueError):
         feature_names_out = None
 
     return feature_names_out
