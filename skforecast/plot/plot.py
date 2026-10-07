@@ -195,16 +195,16 @@ def plot_prediction_distribution(
         axs = np.array([axs])
 
     for i, step in enumerate(index):
-        plot = (
-            bootstrapping_predictions.loc[step, :]
-            .plot.kde(ax=axs[i], bw_method=bw_method, lw=0.5)
-        )
+        # NOTE: Rows are selected by position because the labels in `index` are
+        # strings, which do not match the labels of an integer index.
+        step_predictions = bootstrapping_predictions.iloc[-(i + 1), :]
+        plot = step_predictions.plot.kde(ax=axs[i], bw_method=bw_method, lw=0.5)
 
         # Fill density area
         x = plot.get_children()[0]._x
         y = plot.get_children()[0]._y
         axs[i].fill_between(x, y, color=palette[i])
-        prediction_mean = bootstrapping_predictions.loc[step, :].mean()
+        prediction_mean = step_predictions.mean()
         
         # Closest point on x to the prediction mean
         idx = np.abs(x - prediction_mean).argmin()
