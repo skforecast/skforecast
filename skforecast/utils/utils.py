@@ -1904,11 +1904,18 @@ def check_residuals_input(
                     )
 
     if forecaster_name in forecasters_multiseries:
-        for level in residuals.keys():
-            level_residuals = residuals[level]
+        # NOTE: Only the residuals of the levels to predict are used. In
+        # ForecasterRecursiveMultiSeries, levels without residuals use the
+        # residuals of '_unknown_level'.
+        for level in levels:
+            residuals_key = level
+            if forecaster_name == 'ForecasterRecursiveMultiSeries' and level not in residuals:
+                residuals_key = '_unknown_level'
+            level_residuals = residuals.get(residuals_key)
             if level_residuals is None or len(level_residuals) == 0:
                 raise ValueError(
-                    f"Residuals for level '{level}' are None. Check `forecaster.{literal}`."
+                    f"Residuals for level '{residuals_key}' are None or empty. "
+                    f"Check `forecaster.{literal}`."
                 )
 
 
