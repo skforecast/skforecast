@@ -4812,3 +4812,231 @@ def test_create_train_X_y_index_names_when_series_and_exog_index_have_names(
 
     assert results[0].index.name == series_index_name
     assert results[1].index.name == series_index_name
+
+
+
+def test_create_train_X_y_output_when_exog_dict_and_one_series_without_exog():
+    """
+    Test the output of _create_train_X_y when exog is a dict and one of the
+    series has no exogenous variables (`None`). The rows of that series have NaN
+    in the exogenous columns and keep their own training index, and the column
+    `_dummy_exog_col_to_keep_shape`, used internally to keep the shape of the
+    exogenous matrix, is not in the output.
+    """
+    index_l1 = pd.date_range('2000-01-01', periods=10, freq='D')
+    index_l2 = pd.date_range('2000-01-02', periods=8, freq='D')
+    series = {
+        'l1': pd.Series(np.arange(10, dtype=float), index=index_l1, name='l1'),
+        'l2': pd.Series(np.arange(20, 28, dtype=float), index=index_l2, name='l2')
+    }
+    exog = {
+        'l1': pd.DataFrame(
+                  {'exog_1': np.arange(100, 110, dtype=float),
+                   'exog_2': np.arange(200, 210, dtype=float)},
+                  index = index_l1
+              ),
+        'l2': None
+    }
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
+
+    warn_msg = re.escape(
+        "NaNs detected in `X_train`. Some estimators do not allow "
+        "NaN values during training. If you want to drop them, "
+        "set `forecaster.dropna_from_series = True`."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        results = forecaster._create_train_X_y(series=series, exog=exog)
+
+    expected_index = pd.DatetimeIndex(
+        ['2000-01-04', '2000-01-05', '2000-01-06', '2000-01-07', '2000-01-08',
+         '2000-01-09', '2000-01-10',
+         '2000-01-05', '2000-01-06', '2000-01-07', '2000-01-08', '2000-01-09']
+    )
+    expected = (
+        pd.DataFrame(
+            data = np.array([[ 2.,  1.,  0., 0., 103., 203.],
+                             [ 3.,  2.,  1., 0., 104., 204.],
+                             [ 4.,  3.,  2., 0., 105., 205.],
+                             [ 5.,  4.,  3., 0., 106., 206.],
+                             [ 6.,  5.,  4., 0., 107., 207.],
+                             [ 7.,  6.,  5., 0., 108., 208.],
+                             [ 8.,  7.,  6., 0., 109., 209.],
+                             [22., 21., 20., 1., np.nan, np.nan],
+                             [23., 22., 21., 1., np.nan, np.nan],
+                             [24., 23., 22., 1., np.nan, np.nan],
+                             [25., 24., 23., 1., np.nan, np.nan],
+                             [26., 25., 24., 1., np.nan, np.nan]]),
+            index   = expected_index,
+            columns = ['lag_1', 'lag_2', 'lag_3', '_level_skforecast',
+                       'exog_1', 'exog_2']
+        ),
+        pd.Series(
+            data  = np.array([3., 4., 5., 6., 7., 8., 9., 23., 24., 25., 26., 27.]),
+            index = expected_index,
+            name  = 'y',
+            dtype = float
+        ),
+        {'l1': index_l1, 'l2': index_l2},
+        ['l1', 'l2'],
+        ['l1', 'l2'],
+        ['exog_1', 'exog_2'],
+        [],
+        None,
+        None,
+        ['exog_1', 'exog_2'],
+        {'exog_1': np.dtype('float'), 'exog_2': np.dtype('float')},
+        {'exog_1': np.dtype('float'), 'exog_2': np.dtype('float')},
+        {'l1': pd.Series(
+                   data  = np.array([7., 8., 9.]),
+                   index = pd.date_range('2000-01-08', periods=3, freq='D'),
+                   name  = 'l1',
+                   dtype = float
+               ),
+         'l2': pd.Series(
+                   data  = np.array([25., 26., 27.]),
+                   index = pd.date_range('2000-01-07', periods=3, freq='D'),
+                   name  = 'l2',
+                   dtype = float
+               )
+        }
+    )
+
+    pd.testing.assert_frame_equal(results[0], expected[0])
+    pd.testing.assert_series_equal(results[1], expected[1])
+    for k in results[2].keys():
+        pd.testing.assert_index_equal(results[2][k], expected[2][k])
+    assert results[3] == expected[3]
+    assert results[4] == expected[4]
+    assert results[5] == expected[5]
+    assert results[6] == expected[6]
+    assert results[7] == expected[7]
+    assert results[8] == expected[8]
+    assert results[9] == expected[9]
+    for k in results[10].keys():
+        assert results[10][k] == expected[10][k]
+    for k in results[11].keys():
+        assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        pd.testing.assert_series_equal(results[12][k], expected[12][k])
+    assert '_dummy_exog_col_to_keep_shape' not in results[0].columns
+
+
+def test_create_train_X_y_output_when_exog_dict_window_features_transformers_and_differentiation_2():
+    """
+    Test the output of _create_train_X_y when exog is a dict and the forecaster
+    has window features, transformer_series, transformer_exog and
+    differentiation=2.
+    """
+    index = pd.date_range('2000-01-01', periods=10, freq='D')
+    series = {
+        'l1': pd.Series(
+                  [25.3, 29.1, 27.5, 24.3, 2.1, 46.5, 31.3, 87.1, 133.5, 4.3],
+                  index=index, name='l1', dtype=float
+              ),
+        'l2': pd.Series(
+                  [10.2, 15.1, 12.3, 18.9, 11.4, 22.8, 19.5, 25.1, 31.2, 28.2],
+                  index=index, name='l2', dtype=float
+              )
+    }
+    exog = {
+        'l1': pd.DataFrame({
+                  'col_1': [7.5, 24.4, 60.3, 57.3, 50.7, 41.4, 87.2, 47.4, 14.6, 73.5],
+                  'col_2': ['a', 'a', 'a', 'a', 'a', 'b', 'b', 'b', 'b', 'b']},
+                  index = index
+              ),
+        'l2': pd.DataFrame({
+                  'col_1': [12.1, 33.5, 48.2, 29.9, 51.3, 60.8, 41.7, 55.4, 38.6, 22.9],
+                  'col_2': ['b', 'a', 'b', 'a', 'b', 'a', 'b', 'a', 'b', 'a']},
+                  index = index
+              )
+    }
+    transformer_exog = ColumnTransformer(
+                           [('scale', StandardScaler(), ['col_1']),
+                            ('onehot', OneHotEncoder(), ['col_2'])],
+                           remainder = 'passthrough',
+                           verbose_feature_names_out = False
+                       )
+    rolling = RollingFeatures(stats=['ratio_min_max', 'median'], window_sizes=4)
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = LinearRegression(),
+                     lags               = [1, 5],
+                     window_features    = rolling,
+                     transformer_series = StandardScaler(),
+                     transformer_exog   = transformer_exog,
+                     differentiation    = 2
+                 )
+    results = forecaster._create_train_X_y(series=series, exog=exog)
+
+    expected_index = pd.DatetimeIndex(
+        ['2000-01-08', '2000-01-09', '2000-01-10',
+         '2000-01-08', '2000-01-09', '2000-01-10']
+    )
+    expected = (
+        pd.DataFrame(
+            data = np.array([
+                       [-1.56436158, -0.14173746, -0.89489489, -0.27035108,
+                         0.,  0.27075471, 0., 1.],
+                       [ 1.8635851 , -0.04199628, -0.83943662,  0.62469472,
+                         0., -1.39438677, 0., 1.],
+                       [-0.24672817, -0.49870587, -0.83943662,  0.75068358,
+                         0.,  1.59576059, 0., 1.],
+                       [-2.12512748, -1.11316201, -0.77777778, -0.33973126,
+                         1.,  0.67688678, 1., 0.],
+                       [ 1.2866418 ,  1.35892505, -0.77777778, -0.37587289,
+                         1., -0.17599056, 0., 1.],
+                       [ 0.07228325, -2.03838758, -0.77777778,  0.67946253,
+                         1., -0.97302475, 1., 0.]]),
+            index   = expected_index,
+            columns = ['lag_1', 'lag_5', 'roll_ratio_min_max_4', 'roll_median_4',
+                       '_level_skforecast', 'col_1', 'col_2_a', 'col_2_b']
+        ),
+        pd.Series(
+            data  = np.array([ 1.8635851 , -0.24672817, -4.60909217,
+                               1.2866418 ,  0.07228325, -1.3155551 ]),
+            index = expected_index,
+            name  = 'y',
+            dtype = float
+        ),
+        {'l1': index, 'l2': index},
+        ['l1', 'l2'],
+        ['l1', 'l2'],
+        ['col_1', 'col_2'],
+        [],
+        ['roll_ratio_min_max_4', 'roll_median_4'],
+        None,
+        ['col_1', 'col_2_a', 'col_2_b'],
+        {'col_1': np.dtype('float'), 'col_2': np.dtype('O')},
+        {'col_1': np.dtype('float'), 'col_2_a': np.dtype('float'),
+         'col_2_b': np.dtype('float')},
+        {'l1': pd.Series(
+                   data  = np.array([24.3, 2.1, 46.5, 31.3, 87.1, 133.5, 4.3]),
+                   index = pd.date_range('2000-01-04', periods=7, freq='D'),
+                   name  = 'l1',
+                   dtype = float
+               ),
+         'l2': pd.Series(
+                   data  = np.array([18.9, 11.4, 22.8, 19.5, 25.1, 31.2, 28.2]),
+                   index = pd.date_range('2000-01-04', periods=7, freq='D'),
+                   name  = 'l2',
+                   dtype = float
+               )
+        }
+    )
+
+    pd.testing.assert_frame_equal(results[0], expected[0])
+    pd.testing.assert_series_equal(results[1], expected[1])
+    for k in results[2].keys():
+        pd.testing.assert_index_equal(results[2][k], expected[2][k])
+    assert results[3] == expected[3]
+    assert results[4] == expected[4]
+    assert results[5] == expected[5]
+    assert results[6] == expected[6]
+    assert results[7] == expected[7]
+    assert results[8] == expected[8]
+    assert results[9] == expected[9]
+    for k in results[10].keys():
+        assert results[10][k] == expected[10][k]
+    for k in results[11].keys():
+        assert results[11][k] == expected[11][k]
+    for k in results[12].keys():
+        pd.testing.assert_series_equal(results[12][k], expected[12][k])
