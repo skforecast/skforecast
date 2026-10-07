@@ -20,6 +20,8 @@ The main changes in this release are:
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Faster `fit` of <code>[ForecasterRecursiveMultiSeries]</code> with many series, with less memory and the same predictions: with 500 series, 10 to 22% faster with LightGBM and more than 10 times faster with `series_weights`; with 300 series and `encoding='onehot'`, about 3 times faster.
 
++ <span class="badge text-bg-enhancement">Enhancement</span> Faster predictions: `predict` of <code>[ForecasterRecursiveMultiSeries]</code> is 4.9x faster with 5000 series (2.3x with 500), and the forecasters with an `ExtraTreesRegressor` predict 15x faster.
+
 + <span class="badge text-bg-enhancement">Enhancement</span> Faster <code>[Arima]</code>: seasonal models fit 1.4x to 2.2x faster (an ARIMA(1,1,1)(1,1,1)[12] on 500 observations, from 0.51 to 0.27 seconds; the automatic order selection with `m=12`, from about 3.2 to 1.4-1.7 seconds). The speedups do not change the results.
 
 + <span class="badge text-bg-feature">Feature</span> New functions <code>[get_model_info]</code> and <code>[list_adapters]</code> in `skforecast.foundation` to query, without installing the backend or loading the weights, the capabilities and requirements of the foundation models: adapter, default `context_length`, exogenous variable support, supported quantiles, backend package, license restriction and Hugging Face gating.
@@ -61,6 +63,16 @@ The main changes in this release are:
 + `numba` is imported and the rolling statistics of <code>[RollingFeatures]</code> and <code>[RollingFeaturesClassification]</code> are JIT compiled on their first use instead of when `skforecast.preprocessing` is imported. This removes around 0.3 seconds from the import of every forecaster module (about 65% of the time spent by skforecast itself once numpy, pandas and scikit-learn are loaded). Behavior is unchanged.
 
 + `fit` of <code>[ForecasterRecursiveMultiSeries]</code> is faster and uses less memory with many series. The rows of each series in the training matrix are located once, instead of once per series, to split the in-sample residuals and the sample weights, and the training matrix is built in a single pre-allocated block, without the copies that merged its columns. With 500 series of 2,000 observations and a LightGBM of 25 trees, `fit` is 10 to 22% faster (with or without exogenous variables or `calendar_features`), about 3 times faster with `encoding='onehot'` (300 series) and more than 10 times faster with `series_weights` (from about 33 to 2.4 seconds). With `Ridge` it is almost 2 times faster; with heavier estimators the gain is proportionally smaller, and with `encoding=None` without exogenous variables or calendar features there is no change. The peak memory of `create_train_X_y` is halved with float exogenous variables and drops by 60% with `calendar_features`, and that of `fit` drops by 40% with `encoding='onehot'`. Results are unchanged, except for the matrices returned by `create_train_X_y` (next entry).
+
++ `predict` and the other prediction methods of <code>[ForecasterRecursiveMultiSeries]</code> are faster with many series when they use the last window stored in the forecaster. The series to predict were looked up in a list (quadratic in the number of series) and the last window was built aligning the index of every series. With `LinearRegression`, 24 lags and 24 steps, `predict` takes 1.8 ms instead of 2.6 ms with 50 series, 7.7 ms instead of 17.6 ms with 500 series and 71 ms instead of 349 ms with 5000 series.
+
++ The prediction methods of all the forecasters check their inputs faster: the missing values of `last_window` and `exog` are checked on their numpy values. With <code>[ForecasterRecursive]</code>, `LinearRegression`, 24 lags and 5 exogenous variables, the check takes 70 µs instead of 116 µs, and `predict(24)` 333 µs instead of 384 µs (174 µs instead of 200 µs without exogenous variables).
+
++ <code>[ForecasterRecursive]</code>, <code>[ForecasterDirect]</code>, <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> with an `ExtraTreesRegressor` or an `ExtraTreeRegressor` as estimator use the same fast prediction path as `RandomForestRegressor` and `DecisionTreeRegressor`, which predicts with each tree directly. The predictions are the same, also with missing values. With an `ExtraTreesRegressor(n_estimators=100)` and 24 lags, `predict(100)` of <code>[ForecasterRecursive]</code> takes 33 ms instead of 508 ms.
+
++ The backtesting and hyperparameter search functions copy a <code>[ForecasterRnn]</code> twice as fast (72 ms instead of 156 ms with a model of 126,000 parameters), because its Keras model is copied once instead of twice.
+
++ <code>[multivariate_time_series_corr]</code> only computes the correlations with `time_series` instead of the whole correlation matrix of the lags, with the same results. With 5 series of 2000 values and 24 lags, it takes 19 ms instead of 22 ms with `method='pearson'`, 98 ms instead of 327 ms with `'spearman'` and 87 ms instead of 769 ms with `'kendall'`.
 
 + In the matrices returned by `create_train_X_y` of <code>[ForecasterRecursiveMultiSeries]</code>, the one-hot columns of the series (`encoding='onehot'`) and the calendar features that <code>[CalendarFeatures]</code> returns as integers are now `float`, as the one-hot columns already were in `create_predict_X` and the calendar features in the other forecasters, and, when `series` is a dict, the index of `X_train` always has the name of the index of the series (with a wide or long DataFrame it has no name, as before). With `series_weights` or `weight_func`, `create_sample_weights` now raises a `ValueError` in three cases: when the rows of a series are not contiguous in `X_train`, when the forecaster has not created the encoding of the series yet, or, with `encoding='onehot'`, when the one-hot column of any series is missing.
 
@@ -281,6 +293,10 @@ The main changes in this release are:
 + The prediction methods issued a `MissingValuesWarning` when `last_window` had missing values that are not used to predict: before the last `window_size` rows, in levels that are not predicted (<code>[ForecasterRecursiveMultiSeries]</code>) or in series without lags (<code>[ForecasterDirectMultiVariate]</code>). <code>[ForecasterStats]</code>, which uses the whole `last_window`, still checks all its values.
 
 + When matplotlib, statsmodels or keras were installed but failed to import (for example, statsmodels 0.13.1 with pandas 2), the <code>[plot]</code> module, <code>[ForecasterRnn]</code> and <code>[create_and_compile_model]</code> raised `ModuleNotFoundError: No module named '(/path/to/python3'`, which hid the real error. The original error is now raised, and the installation instructions are only shown when the package is not installed.
+
++ Fixed an issue in the backtesting, hyperparameter search and feature selection functions where, if the internal copy of the forecaster failed (for example, with an estimator that cannot be deep-copied), the forecaster passed by the user was left without its fitted estimator, residuals and last window. The copy no longer modifies the original forecaster.
+
++ <code>[multivariate_time_series_corr]</code> raised `TypeError: 'numpy.int64' object is not iterable` when `lags` was a numpy integer. It is now handled as an int (the lags from 0 to `lags - 1`).
 
 
 ## 0.25.0 <small>Sep 11, 2026</small> { id="0.25.0" }
@@ -2068,6 +2084,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [transform_series]: ../api/utils.md#skforecast.utils.utils.transform_series
 [exog_to_direct]: ../api/utils.md#skforecast.utils.utils.exog_to_direct
 [exog_to_direct_numpy]: ../api/utils.md#skforecast.utils.utils.exog_to_direct_numpy
+[multivariate_time_series_corr]: ../api/utils.md#skforecast.utils.utils.multivariate_time_series_corr
 
 <!-- experimental -->
 [experimental]: ../api/experimental.md

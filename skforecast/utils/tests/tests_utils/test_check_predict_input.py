@@ -684,6 +684,57 @@ def test_check_predict_input_MissingValuesWarning_when_missing_values_used_to_pr
         )
 
 
+@pytest.mark.parametrize("values", 
+    [pd.Series([1., np.nan, 3., 4., 5.]),
+     pd.Series([1., pd.NA, 3., 4., 5.], dtype='Float64'),
+     pd.Series([1., None, 3., 4., 5.], dtype='double[pyarrow]'),
+     pd.Series([1, np.nan, 3, 1, 2]).astype('category'),
+     pd.Series(pd.to_datetime(['2020-01-01', None, '2020-01-03', '2020-01-04', '2020-01-05']))], 
+    ids = ['float64', 'Float64', 'double[pyarrow]', 'category', 'datetime'])
+def test_check_predict_input_MissingValuesWarning_when_exog_has_missing_values_of_any_dtype(values):
+    """
+    Test MissingValuesWarning is issued when `exog` has missing values of any 
+    dtype, also in a DataFrame with columns of different dtypes.
+    """
+    exog = pd.DataFrame(
+        {'exog_1': np.arange(5, dtype=float), 'exog_2': values.to_numpy()},
+        index = pd.RangeIndex(start=10, stop=15)
+    ).astype({'exog_2': values.dtype})
+
+    warn_msg = re.escape(
+        "`exog` has missing values. Most of machine learning models "
+        "do not allow missing values. Prediction method may fail."
+    )
+    with pytest.warns(MissingValuesWarning, match = warn_msg):
+        check_predict_input(
+            forecaster_name  = 'ForecasterRecursive',
+            steps            = 5,
+            is_fitted        = True,
+            exog_in_         = True,
+            index_type_      = pd.RangeIndex,
+            index_freq_      = 1,
+            window_size      = 5,
+            last_window      = pd.Series(np.arange(10, dtype=float)),
+            exog             = exog,
+            exog_names_in_   = ['exog_1', 'exog_2']
+        )
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", category=MissingValuesWarning)
+        check_predict_input(
+            forecaster_name  = 'ForecasterRecursive',
+            steps            = 5,
+            is_fitted        = True,
+            exog_in_         = True,
+            index_type_      = pd.RangeIndex,
+            index_freq_      = 1,
+            window_size      = 5,
+            last_window      = pd.Series(np.arange(10, dtype=float)),
+            exog             = exog.dropna().reindex(exog.index).ffill().bfill(),
+            exog_names_in_   = ['exog_1', 'exog_2']
+        )
+
+
 def test_check_predict_input_TypeError_when_last_window_index_is_not_of_index_type():
     """
     """

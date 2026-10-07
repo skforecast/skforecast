@@ -455,11 +455,10 @@ def initialize_differentiator_multiseries(
     """
     Initialize `differentiator_` attribute for the ForecasterRecursiveMultiSeries.
 
-    - If `int`, the same order of differentiation is applied to all series.
-    - If `dict`, a different order of differentiation (including None) can 
-    be used for each series. The keys must be the names of the series used
-    to fit the forecaster. If a series is not present in the dictionary, no
-    differencing is applied.
+    - If a `TimeSeriesDifferentiator`, a copy of it is used for each series.
+    - If `dict`, a copy of the differentiator (or `None`) of each series. The
+    keys must be the names of the series used to fit the forecaster. If a
+    series is not present in the dictionary, no differencing is applied.
     - If `None`, no differencing is applied.
 
     Parameters
@@ -472,7 +471,7 @@ def initialize_differentiator_multiseries(
     Returns
     -------
     differentiator_ : dict
-        Dictionary with the `differentiator` for each series. It is created cloning the
+        Dictionary with the `differentiator` for each series. It is created copying the
         objects in `differentiator` and is used internally to avoid overwriting.
     
     """
@@ -1020,7 +1019,7 @@ def check_y(
     y : Any
         Time series values.
     series_id : str, default '`y`'
-        Identifier of the series used in the warning message.
+        Identifier of the series used in the error messages.
     allow_nan : bool, default False
         If `True`, skip the check for missing values.
     
@@ -1049,15 +1048,16 @@ def check_exog(
     series_id: str = "`exog`"
 ) -> None:
     """
-    Raise Exception if `exog` is not pandas Series or pandas DataFrame.
-    If `allow_nan = True`, issue a warning if `exog` contains NaN values.
+    Raise Exception if `exog` is not pandas Series or pandas DataFrame, or if
+    it is a pandas Series without name. If `allow_nan = False`, issue a warning
+    if `exog` contains NaN values.
     
     Parameters
     ----------
     exog : pandas Series, pandas DataFrame
         Exogenous variable/s included as predictor/s.
     allow_nan : bool, default True
-        If True, allows the presence of NaN values in `exog`. If False (default),
+        If `True`, allows the presence of NaN values in `exog`. If `False`,
         issue a warning if `exog` contains NaN values.
     series_id : str, default '`exog`'
         Identifier of the series for which the exogenous variable/s are used
@@ -1398,11 +1398,13 @@ def check_predict_input(
         If the forecaster has been trained using exogenous variable/s.
     index_type_ : type
         Type of index of the input used in training.
-    index_freq_ : str
-        Frequency of Index of the input used in training.
+    index_freq_ : pandas DateOffset, int
+        Frequency (`DatetimeIndex`) or step (`RangeIndex`) of the index of the
+        input used in training.
     window_size: int
-        Size of the window needed to create the predictors. It is equal to 
-        `max_lag`.
+        Size of the window needed to create the predictors (the largest of the
+        lags and the window sizes of the window features, plus the order of
+        differentiation).
     last_window : pandas Series, pandas DataFrame, None
         Values of the series used to create the predictors (lags) need in the 
         first iteration of prediction (t + 1).
@@ -1418,7 +1420,7 @@ def check_predict_input(
         `ForecasterDirectMultiVariate`).
     levels : str, list, default None
         Time series to be predicted (`ForecasterRecursiveMultiSeries`
-        and `ForecasterRnn).
+        and `ForecasterRnn`).
     levels_forecaster : str, list, default None
         Time series used as output data of a multiseries problem in a RNN problem
         (`ForecasterRnn`).
@@ -1575,13 +1577,16 @@ def check_predict_input(
     # `window_size` rows (ForecasterStats uses the whole `last_window`) of the
     # levels to predict or of the series used as predictors.
     last_window_to_check = last_window
-    if forecaster_name != 'ForecasterStats':
-        last_window_to_check = last_window_to_check.iloc[-window_size:]
     if forecaster_name == 'ForecasterRecursiveMultiSeries':
         last_window_to_check = last_window_to_check[levels]
     elif forecaster_name in ['ForecasterDirectMultiVariate', 'ForecasterRnn']:
         last_window_to_check = last_window_to_check[series_names_in_]
-    if last_window_to_check.isna().to_numpy().any():
+    # NOTE: `pd.isna` on the numpy values is faster than `DataFrame.isna` for
+    # the small inputs used to predict.
+    last_window_values = last_window_to_check.to_numpy()
+    if forecaster_name != 'ForecasterStats':
+        last_window_values = last_window_values[-window_size:]
+    if pd.isna(last_window_values).any():
         warnings.warn(
             "`last_window` has missing values. Most of machine learning models do "
             "not allow missing values. Prediction method may either raise an "
@@ -1655,7 +1660,7 @@ def check_predict_input(
                     f"{exog_name} must be a pandas Series or DataFrame. Got {type(exog_to_check)}"
                 )
 
-            if exog_to_check.isna().to_numpy().any():
+            if pd.isna(exog_to_check.to_numpy()).any():
                 warnings.warn(
                     f"{exog_name} has missing values. Most of machine learning models "
                     f"do not allow missing values. Prediction method may fail.", 
@@ -2155,8 +2160,8 @@ def exog_to_direct_numpy(
     Parameters
     ----------
     exog : numpy ndarray, pandas Series, pandas DataFrame
-        Exogenous variables, shape(samples,). If exog is a pandas format, the 
-        direct exog names are created.
+        Exogenous variables, shape (n_samples,) or (n_samples, n_exog). If exog
+        is a pandas format, the direct exog names are created.
     steps : int
         Number of steps that will be predicted using exog.
 
@@ -3840,7 +3845,8 @@ def multivariate_time_series_corr(
     other : pandas DataFrame
         Time series whose lagged values are correlated to `time_series`.
     lags : int, list, numpy ndarray
-        Lags to be included in the correlation analysis.
+        Lags to be included in the correlation analysis. If int, the lags from
+        0 to `lags - 1` are included (lag 0 is the correlation without shift).
     method : str, default 'pearson'
         - 'pearson': standard correlation coefficient.
         - 'kendall': Kendall Tau correlation coefficient.
@@ -3859,18 +3865,15 @@ def multivariate_time_series_corr(
     if not (time_series.index == other.index).all():
         raise ValueError("`time_series` and `other` must have the same index.")
 
-    if isinstance(lags, int):
+    if isinstance(lags, (int, np.integer)):
         lags = range(lags)
 
+    # NOTE: `corrwith` only computes the correlations with `time_series`, not
+    # the whole correlation matrix of the lags.
     corr = {}
     for col in other.columns:
-        lag_values = {}
-        for lag in lags:
-            lag_values[lag] = other[col].shift(lag)
-
-        lag_values = pd.DataFrame(lag_values)
-        lag_values.insert(0, None, time_series)
-        corr[col] = lag_values.corr(method=method).iloc[1:, 0]
+        lag_values = pd.DataFrame({lag: other[col].shift(lag) for lag in lags})
+        corr[col] = lag_values.corrwith(time_series, method=method)
 
     corr = pd.DataFrame(corr)
     corr.index = corr.index.astype('int64')
@@ -3987,8 +3990,8 @@ def _build_predict_function(
     - `XGBRegressor` (`get_booster().inplace_predict`, with the same
     `iteration_range` and `missing` as `XGBRegressor.predict`). The 'gblinear'
     booster does not support `inplace_predict` and uses `estimator.predict`.
-    - `RandomForestRegressor` (per-tree `tree_.predict`)
-    - `DecisionTreeRegressor` (`tree_.predict`)
+    - `RandomForestRegressor` and `ExtraTreesRegressor` (per-tree `tree_.predict`)
+    - `DecisionTreeRegressor` and `ExtraTreeRegressor` (`tree_.predict`)
 
     For `CatBoostRegressor` with categorical features, the categorical column
     indices are resolved once at build time and the array is cast to `object`
@@ -4060,7 +4063,9 @@ def _build_predict_function(
 
         return predict_fn
 
-    if is_sklearn_class and estimator_name == 'RandomForestRegressor':
+    if is_sklearn_class and estimator_name in (
+        'RandomForestRegressor', 'ExtraTreesRegressor'
+    ):
         trees = estimator.estimators_
 
         def predict_fn(X):
@@ -4072,7 +4077,9 @@ def _build_predict_function(
 
         return predict_fn
 
-    if is_sklearn_class and estimator_name == 'DecisionTreeRegressor':
+    if is_sklearn_class and estimator_name in (
+        'DecisionTreeRegressor', 'ExtraTreeRegressor'
+    ):
         tree_ = estimator.tree_
 
         def predict_fn(X):
@@ -4489,7 +4496,7 @@ def align_series_and_exog_multiseries(
     ----------
     series_dict : dict
         Dictionary with the series used during training.
-    exog_dict : dict, default None
+    exog_dict : dict
         Dictionary with the exogenous variable/s used during training.
     trim_series_nan : bool, default True
         If `True`, leading and trailing NaNs are removed from each series
@@ -4641,21 +4648,23 @@ def preprocess_levels_self_last_window_multiseries(
                 IgnoredArgumentWarning
             )
 
-    last_index_levels = [
-        v.index[-1] 
-        for k, v in last_window_.items()
-        if k in levels
-    ]
+    # NOTE: A set is used to check membership, a list is O(n) per lookup.
+    levels_set = set(levels)
+    last_windows = {
+        k: v for k, v in last_window_.items() if k in levels_set
+    }
+    last_index_levels = [v.index[-1] for v in last_windows.values()]
     if len(set(last_index_levels)) > 1:
         max_index_levels = max(last_index_levels)
         selected_levels = [
             k
-            for k, v in last_window_.items()
-            if k in levels and v.index[-1] == max_index_levels
+            for k, v in last_windows.items()
+            if v.index[-1] == max_index_levels
         ]
 
-        series_excluded_from_last_window = set(levels) - set(selected_levels)
+        series_excluded_from_last_window = levels_set - set(selected_levels)
         levels = selected_levels
+        last_windows = {k: last_windows[k] for k in selected_levels}
 
         if input_levels_is_list and series_excluded_from_last_window:
             warnings.warn(
@@ -4666,11 +4675,17 @@ def preprocess_levels_self_last_window_multiseries(
                 IgnoredArgumentWarning
             )
 
-    last_window = pd.DataFrame(
-        {k: v 
-         for k, v in last_window_.items() 
-         if k in levels}
-    )
+    # NOTE: When all the last windows have the same index (the usual case), the
+    # DataFrame is created from their values, which avoids aligning the index
+    # of every series.
+    first_index = next(iter(last_windows.values())).index
+    if all(v.index.equals(first_index) for v in last_windows.values()):
+        last_window = pd.DataFrame(
+            {k: v.to_numpy() for k, v in last_windows.items()},
+            index = first_index
+        )
+    else:
+        last_window = pd.DataFrame(last_windows)
 
     return levels, last_window
 
@@ -4919,15 +4934,14 @@ def deepcopy_forecaster(
     include_last_window: bool = False,
 ) -> object:
     """
-    Create a lightweight deep copy of a forecaster by temporarily
-    replacing heavy fitted attributes with lightweight placeholders
-    before copying.
+    Create a lightweight deep copy of a forecaster by replacing heavy fitted
+    attributes with lightweight placeholders in the copy. The original 
+    forecaster is not modified.
 
     Estimators are always replaced with unfitted clones (same
-    hyperparameters) to avoid copying expensive fitted state (e.g.,
-    tree structures, model weights). For sklearn-compatible estimators
-    `sklearn.base.clone` is used; for statistical models
-    (`ForecasterStats`) `copy.copy` is used instead. Additional
+    hyperparameters, `sklearn.base.clone`) to avoid copying expensive 
+    fitted state (e.g., tree structures). The Keras model of `ForecasterRnn` 
+    cannot be cloned this way, so it is copied with its weights. Additional
     heavy attributes (residuals and last window) can be optionally
     included via parameters.
 
@@ -4960,29 +4974,31 @@ def deepcopy_forecaster(
 
     """
 
-    # Save references to heavy attributes before replacing them
-    saved = {}
+    # NOTE: The original forecaster is not modified. The heavy attributes are
+    # replaced in the copy through the `memo` of `deepcopy`, which maps the id
+    # of an object to the object to use in its place, so the original stays
+    # intact even if the copy fails.
+    memo = {}
 
     # 1. Replace fitted estimator with unfitted clone (same hyperparameters)
     if hasattr(forecaster, 'estimator') and forecaster.estimator is not None:
-        saved['estimator'] = forecaster.estimator
         if type(forecaster).__name__ == 'ForecasterRnn':
-            forecaster.estimator = deepcopy(forecaster.estimator)
+            estimator_copy = deepcopy(forecaster.estimator)
         else:
-            forecaster.estimator = clone(forecaster.estimator)
+            estimator_copy = clone(forecaster.estimator)
+        memo[id(forecaster.estimator)] = estimator_copy
 
     # 2. Replace fitted estimators collection
     if hasattr(forecaster, 'estimators_') and forecaster.estimators_ is not None:
-        saved['estimators_'] = forecaster.estimators_
         if isinstance(forecaster.estimators_, dict):
             # ForecasterDirect, ForecasterDirectMultiVariate: dict of fitted estimators
-            forecaster.estimators_ = {
+            memo[id(forecaster.estimators_)] = {
                 step: clone(forecaster.estimator)
                 for step in forecaster.estimators_
             }
         elif isinstance(forecaster.estimators_, list):
             # ForecasterStats: list of fitted stats models
-            forecaster.estimators_ = [
+            memo[id(forecaster.estimators_)] = [
                 clone(est) for est in forecaster.estimators
             ]
 
@@ -4995,8 +5011,7 @@ def deepcopy_forecaster(
 
     for attr in _residual_attrs:
         if hasattr(forecaster, attr) and getattr(forecaster, attr) is not None:
-            saved[attr] = getattr(forecaster, attr)
-            setattr(forecaster, attr, None)
+            memo[id(getattr(forecaster, attr))] = None
 
     # 4. Optionally replace last_window_ with None
     if (
@@ -5004,15 +5019,10 @@ def deepcopy_forecaster(
         and hasattr(forecaster, 'last_window_')
         and forecaster.last_window_ is not None
     ):
-        saved['last_window_'] = forecaster.last_window_
-        forecaster.last_window_ = None
+        memo[id(forecaster.last_window_)] = None
 
     # Perform the (now lightweight) deep copy
-    forecaster_copy = deepcopy(forecaster)
-
-    # Restore original heavy attributes on the original forecaster
-    for attr, value in saved.items():
-        setattr(forecaster, attr, value)
+    forecaster_copy = deepcopy(forecaster, memo)
 
     return forecaster_copy
 
