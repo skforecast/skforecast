@@ -42,9 +42,9 @@ except ImportError as e:
             "Make sure you have PyTorch installed to use Keras with the torch backend. "
             "For installation instructions, visit https://pytorch.org/get-started/locally/"
         )
-    else:
-        package_name = str(e).split(" ")[-1].replace("'", "")
-        check_optional_dependency(package_name=package_name)
+    if isinstance(e, ModuleNotFoundError) and e.name == "keras":
+        check_optional_dependency(package_name="keras")
+    raise
 
 
 def create_and_compile_model(

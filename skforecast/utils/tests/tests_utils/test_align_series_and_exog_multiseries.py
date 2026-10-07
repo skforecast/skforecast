@@ -818,3 +818,82 @@ def test_output_align_series_and_exog_multiseries_when_trim_series_nan_is_False(
     for k in exog_dict:
         pd.testing.assert_frame_equal(exog_dict[k], expected_exog_dict[k])
         pd.testing.assert_index_equal(exog_dict[k].index, series_dict[k].index)
+
+
+@pytest.mark.parametrize("dtype", 
+                         ['Float64', 'Int64', 'double[pyarrow]'], 
+                         ids=lambda dtype: f'dtype: {dtype}')
+def test_output_align_series_and_exog_multiseries_when_series_nullable_dtypes_with_leading_and_trailing_NA(dtype):
+    """
+    Test align_series_and_exog_multiseries trims the leading and trailing missing 
+    values (`pd.NA`) of series with nullable and pyarrow dtypes, as with float64.
+    """
+    index = pd.date_range(start='2000-01-01', periods=10, freq='D')
+    series_float = pd.Series(np.arange(10, dtype=float), index=index, name='1')
+    series_float.iloc[:2] = np.nan
+    series_float.iloc[-3:] = np.nan
+    exog = pd.DataFrame({'exog_1': np.arange(10, dtype=float)}, index=index)
+
+    series_dict, exog_dict = align_series_and_exog_multiseries(
+                                 series_dict = {'1': series_float.astype(dtype)},
+                                 exog_dict   = {'1': exog}
+                             )
+    expected_series_dict, expected_exog_dict = align_series_and_exog_multiseries(
+                                                   series_dict = {'1': series_float},
+                                                   exog_dict   = {'1': exog}
+                                               )
+
+    pd.testing.assert_series_equal(series_dict['1'], expected_series_dict['1'].astype(dtype))
+    pd.testing.assert_frame_equal(exog_dict['1'], expected_exog_dict['1'])
+    assert series_dict['1'].index[0] == pd.Timestamp('2000-01-03')
+    assert series_dict['1'].index[-1] == pd.Timestamp('2000-01-07')
+
+
+def test_output_align_series_and_exog_multiseries_when_exog_same_length_and_different_dates():
+    """
+    Test align_series_and_exog_multiseries reindexes an exog with the same 
+    length as the series but different dates. Before, it was only reindexed 
+    when the lengths were different, so the exog was used by position.
+    """
+    index = pd.date_range(start='2000-01-01', periods=10, freq='D')
+    series = pd.Series(np.arange(10, dtype=float), index=index, name='1')
+    index_exog = index.delete(3).insert(3, pd.Timestamp('2000-01-04 12:00'))
+    exog = pd.DataFrame({'exog_1': np.arange(10, dtype=float)}, index=index_exog)
+
+    warn_msg = re.escape(
+        "`exog` for series '1' doesn't have values for all the dates in the "
+        "series. Missing values will be filled with NaN."
+    )
+    with pytest.warns(MissingValuesWarning, match = warn_msg):
+        series_dict, exog_dict = align_series_and_exog_multiseries(
+                                     series_dict     = {'1': series},
+                                     exog_dict       = {'1': exog},
+                                     trim_series_nan = False
+                                 )
+
+    expected_exog = pd.DataFrame(
+        {'exog_1': [0., 1., 2., np.nan, 4., 5., 6., 7., 8., 9.]}, index=index
+    )
+
+    pd.testing.assert_series_equal(series_dict['1'], series)
+    pd.testing.assert_frame_equal(exog_dict['1'], expected_exog)
+
+
+def test_ValueError_align_series_and_exog_multiseries_when_exog_index_has_duplicates():
+    """
+    Test ValueError is raised when the index of exog has duplicated values.
+    """
+    index = pd.date_range(start='2000-01-01', periods=10, freq='D')
+    series = pd.Series(np.arange(10, dtype=float), index=index, name='1')
+    index_exog = index.delete(3).append(pd.DatetimeIndex(['2000-01-10']))
+    exog = pd.DataFrame({'exog_1': np.arange(10, dtype=float)}, index=index_exog)
+
+    err_msg = re.escape(
+        "`exog` for series '1' has duplicated index values. Each date or "
+        "position can only appear once."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        align_series_and_exog_multiseries(
+            series_dict = {'1': series},
+            exog_dict   = {'1': exog}
+        )

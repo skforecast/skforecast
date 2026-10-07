@@ -224,7 +224,8 @@ class Arima(BaseEstimator, RegressorMixin):
         - 'y': Original training series
         - 'fitted': In-sample fitted values (Box-Cox scale when `lambda_bc` is used)
         - 'coef': Coefficient DataFrame
-        - 'sigma2': Innovation variance
+        - 'sigma2': Innovation variance, corrected for the degrees of freedom
+        - 'sigma2_ml': Innovation variance without the correction
         - 'var_coef': Variance-covariance matrix
         - 'loglik': Log-likelihood
         - 'aic': Akaike Information Criterion
@@ -242,7 +243,10 @@ class Arima(BaseEstimator, RegressorMixin):
     coef_names_ : list of str
         Names of coefficients in coef_.
     sigma2_ : float
-        Innovation variance (residual variance).
+        Innovation variance corrected for the degrees of freedom: the sum of
+        squared innovations divided by the number of innovations minus the
+        number of estimated coefficients. It is the variance used for the
+        prediction intervals.
     loglik_ : float
         Log-likelihood of the fitted model.
     aic_ : float
@@ -296,6 +300,16 @@ class Arima(BaseEstimator, RegressorMixin):
     The model uses a state-space representation and the Kalman filter for 
     likelihood computation and forecasting, which allows handling of missing 
     values and provides efficient recursive prediction.
+
+    The innovation variance `sigma2_` is corrected for the degrees of freedom,
+    as in R's `forecast::Arima`: the sum of squared innovations is divided by
+    the number of innovations minus the number of estimated coefficients. The
+    maximum likelihood estimate, which divides by the number of innovations, is
+    biased downwards and gives narrower prediction intervals in short series or
+    in models with many coefficients. For this reason `sigma2_` is slightly
+    larger than the variance reported by statsmodels' SARIMAX and by R's
+    `stats::arima`. The log-likelihood and the information criteria are those
+    of the maximum likelihood estimate, available in `model_['sigma2_ml']`.
 
     """
 
@@ -781,8 +795,9 @@ class Arima(BaseEstimator, RegressorMixin):
         Kalman filter and assuming normally distributed innovations. They account
         for the forecast uncertainty given the estimated parameters, but not for
         the uncertainty in the parameter estimates, as in R's `forecast::Arima`
-        and statsmodels SARIMAX. When `lambda_bc` is used, the bounds are
-        back-transformed from the Box-Cox scale.
+        and statsmodels SARIMAX. The innovation variance is corrected for the
+        degrees of freedom (see `sigma2_`). When `lambda_bc` is used, the bounds
+        are back-transformed from the Box-Cox scale.
 
         """
         

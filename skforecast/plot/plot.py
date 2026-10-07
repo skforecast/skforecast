@@ -22,9 +22,10 @@ try:
     from matplotlib.dates import AutoDateLocator, ConciseDateFormatter
     from matplotlib.animation import FuncAnimation, PillowWriter
     from statsmodels.graphics.tsaplots import plot_acf
-except Exception as e:
-    package_name = str(e).split(" ")[-1].replace("'", "")
-    check_optional_dependency(package_name=package_name)
+except ModuleNotFoundError as error:
+    if error.name in ("matplotlib", "statsmodels"):
+        check_optional_dependency(package_name=error.name)
+    raise
 
 
 def plot_residuals(

@@ -247,6 +247,28 @@ def test_ndiffs_respects_max_d(random_walk):
     assert d <= 1
 
 
+@pytest.mark.parametrize(
+    "x",
+    [
+        [1.7695, 3.4899, 4.3455, 4.6774, 5.8157, 5.675, 5.5799, 4.7196, 4.7251,
+         4.6431],
+        [0.062627, -0.404694, -1.371174, -2.375583, -4.232515, -4.486966,
+         -4.42123, -3.927546, -6.171507, -5.725627, -6.106631, -8.044207,
+         -8.447748, -8.05527, -7.904924, -7.481338, -6.745412, -5.971468,
+         -6.134676],
+    ],
+    ids=["n=10", "n=19"],
+)
+def test_ndiffs_kpss_lags_match_R_for_short_series(x):
+    """
+    Test the KPSS test uses trunc(3 * sqrt(n) / 13) lags, which is 0 for fewer
+    than 19 observations, as R's forecast::ndiffs. Both series need 2
+    differences in R (`forecast::ndiffs(x)`).
+    """
+    d = ndiffs(np.array(x), test="kpss", max_d=2)
+    assert d == 2
+
+
 def test_ndiffs_warns_alpha_too_small(stationary_series):
     """Test warns when alpha < 0.01."""
     msg = re.escape("Specified alpha value is less than the minimum")
