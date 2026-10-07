@@ -39,8 +39,8 @@ def test_OneStepAhead_split_invalid_initial_train_size_date(invalid_date):
     )
     
     err_msg = re.escape(
-        "If `initial_train_size` is a date, it must be greater than "
-        "the first date in the index and less than the last date."
+        "If `initial_train_size` is a date, it must be within the index "
+        "range, between the first and the last date (both included)."
     )
     with pytest.raises(ValueError, match=err_msg):
         cv.split(X=y)

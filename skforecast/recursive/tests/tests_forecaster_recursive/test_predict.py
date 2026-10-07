@@ -781,3 +781,22 @@ def test_predict_output_when_transformers_are_Pipelines_with_FunctionTransformer
     assert not expected.isna().any()
     pd.testing.assert_series_equal(predictions, expected)
 
+
+def test_predict_output_when_steps_is_a_date_without_time_zone_and_index_is_tz_aware():
+    """
+    Test predict when `steps` is a date without time zone and the series has a
+    timezone-aware index. The date is interpreted in the time zone of the index.
+    """
+    y = pd.Series(
+        data  = np.arange(100, dtype=float),
+        index = pd.date_range('2024-01-01', periods=100, freq='h', tz='Europe/Madrid'),
+        name  = 'y'
+    )
+    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    forecaster.fit(y=y)
+
+    predictions = forecaster.predict(steps='2024-01-05 08:00')
+    expected = forecaster.predict(steps=5)
+
+    assert not expected.isna().any()
+    pd.testing.assert_series_equal(predictions, expected)

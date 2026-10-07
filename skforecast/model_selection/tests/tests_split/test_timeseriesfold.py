@@ -118,11 +118,35 @@ def test_TimeSeriesFold_split_invalid_initial_train_size_date(initial_train_size
     )
     
     err_msg = re.escape(
-        "If `initial_train_size` is a date, it must be greater than "
-        "the first date in the index and less than the last date."
+        "If `initial_train_size` is a date, it must be within the index "
+        "range, between the first and the last date (both included)."
     )
     with pytest.raises(ValueError, match=err_msg):
         cv.split(X=y)
+
+
+@pytest.mark.parametrize(
+    "index, initial_train_size, expected",
+    [(pd.date_range('2024-01-01', periods=120, freq='h', tz='Europe/Madrid'),
+      '2024-01-03 23:00', 72),
+     (pd.DatetimeIndex(pd.date_range('2024-01-01', periods=120, freq='h').to_list()),
+      '2024-01-02 00:00', 25)],
+    ids=['tz_aware_index', 'index_without_freq']
+)
+def test_TimeSeriesFold_split_initial_train_size_date_tz_aware_or_no_freq(
+    index, initial_train_size, expected
+):
+    """
+    Test the training set of the first fold when `initial_train_size` is a date
+    without time zone and the index is timezone-aware, and when the index has
+    no frequency.
+    """
+    y = pd.Series(np.arange(120, dtype=float), index=index)
+    cv = TimeSeriesFold(steps=24, initial_train_size=initial_train_size, verbose=False)
+
+    folds = cv.split(X=y)
+
+    assert folds[0][1] == [0, expected]
 
 
 @pytest.mark.parametrize("initial_train_size",

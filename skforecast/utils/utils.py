@@ -2226,10 +2226,12 @@ def date_to_index_position(
         
         + If int, returns the same integer.
         + If str or pandas Timestamp, it is converted and expanded into the index.
+        A date without time zone is interpreted in the time zone of the index.
     method : str, default 'prediction'
-        Can be 'prediction' or 'validation'. 
-        
-        + If 'prediction', the date must be later than the last date in the index.
+        Can be 'prediction' or 'validation'.
+
+        + If 'prediction', the date must be later than the last date in the index,
+        and the index must have a frequency.
         + If 'validation', the date must be within the index range.
     date_literal : str, default 'steps'
         Variable name used in error messages.
@@ -2261,13 +2263,29 @@ def date_to_index_position(
             )
         
         target_date = pd.to_datetime(date_input, **kwargs_pd_to_datetime)
+        if index.tz is not None:
+            # A date without time zone is interpreted in the time zone of the index
+            if target_date.tz is None:
+                target_date = target_date.tz_localize(index.tz)
+            else:
+                target_date = target_date.tz_convert(index.tz)
+        elif target_date.tz is not None:
+            raise ValueError(
+                f"`{date_literal}` has a time zone ({target_date.tz}), but the "
+                f"index has none. Use a date without time zone."
+            )
         last_date = pd.to_datetime(index[-1])
 
         if method == 'prediction':
             if target_date <= last_date:
                 raise ValueError(
-                    "If `steps` is a date, it must be greater than the last date "
-                    "in the index."
+                    f"If `{date_literal}` is a date, it must be greater than the "
+                    f"last date in the index."
+                )
+            if index.freq is None:
+                raise ValueError(
+                    f"If `{date_literal}` is a date, the index must have a "
+                    f"frequency to compute the number of steps until that date."
                 )
             span_index = _date_range_from_index(
                              index = index,
@@ -2280,16 +2298,12 @@ def date_to_index_position(
             first_date = pd.to_datetime(index[0])
             if target_date < first_date or target_date > last_date:
                 raise ValueError(
-                    "If `initial_train_size` is a date, it must be greater than "
-                    "the first date in the index and less than the last date."
+                    f"If `{date_literal}` is a date, it must be within the index "
+                    f"range, between the first and the last date (both included)."
                 )
-            span_index = _date_range_from_index(
-                             index = index,
-                             start = first_date,
-                             end   = target_date,
-                             freq  = index.freq
-                         )
-            output = len(span_index)
+            # Number of dates in the index up to the target date (included). It
+            # does not need the frequency of the index.
+            output = int(index.searchsorted(target_date, side='right'))
 
     elif isinstance(date_input, (int, np.integer)):
         output = date_input

@@ -102,8 +102,8 @@ def test_ValueError_date_to_index_position_when_date_is_out_of_range_and_method_
     index = pd.date_range(start='1990-01-01', periods=3, freq='D')
     
     err_msg = re.escape(
-        "If `initial_train_size` is a date, it must be greater than "
-        "the first date in the index and less than the last date."
+        "If `initial_train_size` is a date, it must be within the index "
+        "range, between the first and the last date (both included)."
     )
     with pytest.raises(ValueError, match=err_msg):
         date_to_index_position(
@@ -177,3 +177,97 @@ def test_output_date_to_index_position_when_index_is_tz_aware_and_crosses_dst_ch
 
     assert results_prediction == 26
     assert results_validation == 46
+
+
+@pytest.mark.parametrize(
+    "date_input",
+    ['2024-01-05 08:00', pd.Timestamp('2024-01-05 07:00', tz='UTC')],
+    ids=['without_time_zone', 'other_time_zone']
+)
+def test_output_date_to_index_position_when_index_is_tz_aware_and_date_has_other_tz(
+    date_input
+):
+    """
+    Test that, with a timezone-aware index, a date without time zone is
+    interpreted in the time zone of the index and a date with another time
+    zone is converted to it ('2024-01-05 07:00' UTC is '2024-01-05 08:00' in
+    Europe/Madrid).
+    """
+    index = pd.date_range(start='2024-01-01', periods=120, freq='h', tz='Europe/Madrid')
+
+    results_prediction = date_to_index_position(
+        index=index[:100], date_input=date_input, method='prediction'
+    )
+    results_validation = date_to_index_position(
+        index=index, date_input=date_input, method='validation',
+        date_literal='initial_train_size'
+    )
+
+    assert results_prediction == 5
+    assert results_validation == 105
+
+
+def test_ValueError_date_to_index_position_when_date_has_tz_and_index_has_not():
+    """
+    Test ValueError is raised when `date_input` has a time zone and the index
+    does not.
+    """
+    index = pd.date_range(start='1990-01-01', periods=5, freq='D')
+
+    err_msg = re.escape(
+        "`initial_train_size` has a time zone (UTC), but the index has none. "
+        "Use a date without time zone."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        date_to_index_position(
+            index        = index,
+            date_input   = pd.Timestamp('1990-01-03', tz='UTC'),
+            method       = 'validation',
+            date_literal = 'initial_train_size'
+        )
+
+
+@pytest.mark.parametrize(
+    "index, date_input, expected",
+    [(pd.DatetimeIndex(pd.date_range('2020-01-01', periods=100, freq='h').to_list()),
+      '2020-01-02 00:00', 25),
+     (pd.DatetimeIndex(['2020-01-01', '2020-01-03', '2020-01-04', '2020-01-10']),
+      '2020-01-05', 3)],
+    ids=['hourly_without_freq', 'irregular']
+)
+def test_output_date_to_index_position_when_index_has_no_freq_and_method_is_validation(
+    index, date_input, expected
+):
+    """
+    Test that, with method 'validation', the position is the number of dates
+    in the index up to `date_input` (included) when the index has no frequency.
+    """
+    assert index.freq is None
+
+    results = date_to_index_position(
+                  index        = index,
+                  date_input   = date_input,
+                  method       = 'validation',
+                  date_literal = 'initial_train_size'
+              )
+
+    assert results == expected
+
+
+def test_ValueError_date_to_index_position_when_no_freq_and_method_is_prediction():
+    """
+    Test ValueError is raised when the index has no frequency and method is
+    'prediction', since the number of steps cannot be computed.
+    """
+    index = pd.DatetimeIndex(
+        pd.date_range('2020-01-01', periods=10, freq='h').to_list()
+    )
+
+    err_msg = re.escape(
+        "If `steps` is a date, the index must have a frequency to compute "
+        "the number of steps until that date."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        date_to_index_position(
+            index=index, date_input='2020-01-01 15:00', method='prediction'
+        )
