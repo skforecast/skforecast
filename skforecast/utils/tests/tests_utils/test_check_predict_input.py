@@ -924,6 +924,82 @@ def test_check_predict_input_ValueError_when_exog_is_DataFrame_without_columns_i
         )
 
 
+def test_check_predict_input_ValueError_when_exog_is_Series_and_exog_names_in_has_more_columns():
+    """
+    Raise ValueError when `exog` is a pandas Series whose name is in 
+    `exog_names_in_`, but the forecaster was trained with more exogenous 
+    variables. Before, the forecaster raised a KeyError without context.
+    """
+    exog = pd.Series(
+        np.arange(5), name='col1', 
+        index=pd.date_range(start='1/11/2018', periods=5, freq=freq)
+    )
+    exog_names_in_ = ['col1', 'col3']
+
+    err_msg = re.escape(
+        f"Missing columns in `exog`. Expected {exog_names_in_}. Got ['col1']."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_predict_input(
+            forecaster_name  = 'ForecasterRecursive',
+            steps            = 2,
+            is_fitted        = True,
+            exog_in_         = True,
+            index_type_      = pd.DatetimeIndex,
+            index_freq_      = freq,
+            window_size      = 5,
+            last_window      = pd.Series(np.arange(10), index=pd.date_range(start='1/1/2018', periods=10, freq=freq)),
+            last_window_exog = None,
+            exog             = exog,
+            exog_names_in_   = exog_names_in_,
+            max_step         = None,
+            levels           = None,
+            series_names_in_ = None
+        )
+
+
+@pytest.mark.parametrize("exog_type", 
+                         ['wide', 'dict'], 
+                         ids = lambda exog_type: f'exog_type: {exog_type}')
+def test_check_predict_input_MissingExogWarning_when_exog_is_Series_and_exog_names_in_has_more_columns_MultiSeries(exog_type):
+    """
+    Raise MissingExogWarning when `exog` is a pandas Series whose name is in 
+    `exog_names_in_`, but the forecaster was trained with more exogenous 
+    variables, when Forecaster multi series. Before, no warning was issued 
+    with a dict and the predictions of that series were NaN.
+    """
+    exog = pd.Series(
+        np.arange(5), name='col1', 
+        index=pd.date_range(start='1/11/2018', periods=5, freq=freq)
+    )
+    exog_name = '`exog`'
+    if exog_type == 'dict':
+        exog = {'l1': exog}
+        exog_name = "`exog` for series 'l1'"
+    exog_names_in_ = ['col1', 'col3']
+
+    warn_msg = re.escape(
+        f"{{'col3'}} not present in {exog_name}. All values will be NaN."
+    )
+    with pytest.warns(MissingExogWarning, match = warn_msg):
+        check_predict_input(
+            forecaster_name  = 'ForecasterRecursiveMultiSeries',
+            steps            = 2,
+            is_fitted        = True,
+            exog_in_         = True,
+            index_type_      = pd.DatetimeIndex,
+            index_freq_      = freq,
+            window_size      = 5,
+            last_window      = pd.DataFrame(np.arange(10), columns=['l1'], index=pd.date_range(start='1/1/2018', periods=10, freq=freq)),
+            last_window_exog = None,
+            exog             = exog,
+            exog_names_in_   = exog_names_in_,
+            max_step         = None,
+            levels           = ['l1'],
+            series_names_in_ = ['l1', 'l2']
+        )
+
+
 def test_check_predict_input_ValueError_when_exog_is_Series_with_no_name():
     """
     Raise ValueError when `exog` is a pandas Series with no name.

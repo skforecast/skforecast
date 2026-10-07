@@ -1666,19 +1666,7 @@ def check_predict_input(
 
             # Check name/columns are in exog_names_in_
             if isinstance(exog_to_check, pd.DataFrame):
-                col_missing = set(exog_names_in_).difference(set(exog_to_check.columns))
-                if col_missing:
-                    if align_by_index:
-                        warnings.warn(
-                            f"{col_missing} not present in {exog_name}. All "
-                            f"values will be NaN.",
-                            MissingExogWarning
-                        ) 
-                    else:
-                        raise ValueError(
-                            f"Missing columns in {exog_name}. Expected {exog_names_in_}. "
-                            f"Got {exog_to_check.columns.to_list()}."
-                        )
+                exog_columns = exog_to_check.columns.to_list()
             else:
                 if exog_to_check.name is None:
                     raise ValueError(
@@ -1698,6 +1686,21 @@ def check_predict_input(
                             f"'{exog_to_check.name}' was not observed during training. "
                             f"Exogenous variables must be: {exog_names_in_}."
                         )
+                exog_columns = [exog_to_check.name]
+
+            col_missing = set(exog_names_in_).difference(exog_columns)
+            if col_missing:
+                if align_by_index:
+                    warnings.warn(
+                        f"{col_missing} not present in {exog_name}. All "
+                        f"values will be NaN.",
+                        MissingExogWarning
+                    )
+                else:
+                    raise ValueError(
+                        f"Missing columns in {exog_name}. Expected {exog_names_in_}. "
+                        f"Got {exog_columns}."
+                    )
 
             # Check index dtype and freq
             _, exog_index = check_extract_values_and_index(
