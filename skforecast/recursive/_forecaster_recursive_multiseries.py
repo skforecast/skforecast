@@ -1156,6 +1156,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         single_block = (
             n_inserted_cols <= n_block_cols
             and n_inserted_cols < 100
+            and not (
+                self.encoding is None
+                and X_train_exog is None
+                and self.calendar_features is None
+            )
         )
 
         if single_block:
