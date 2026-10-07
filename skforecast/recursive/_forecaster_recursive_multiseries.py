@@ -2221,6 +2221,14 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         same index type as `series`, or `None`. It is not required for all series 
         to contain all exogenous variables, but data types must be consistent 
         across series for each variable.
+        - The in-sample residuals are calculated after training with the same
+        matrix the estimator received. If the estimator modifies it in place (for
+        example, `LinearRegression(copy_X=False)` or a pipeline with
+        `StandardScaler(copy=False)`), a `ValueError` is raised. The check
+        compares a sample of up to 100 rows before and after training, so a
+        modification limited to other rows is not detected, and it ignores the
+        cells that were NaN before training, so a step that fills them in place
+        (for example, `SimpleImputer(copy=False)`) is allowed.
         
         """
 
@@ -2305,12 +2313,16 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         )
 
         # NOTE: The in-sample residuals are calculated after training with the
-        # same matrix the estimator receives, which is not copied. A few rows
-        # are kept to check that the estimator does not modify it in place (for
-        # example, `LinearRegression(copy_X=False)`).
+        # same matrix the estimator receives, which is not copied. A sample of
+        # rows is kept to check that the estimator does not modify it in place
+        # (for example, `LinearRegression(copy_X=False)`). The check is a
+        # heuristic: a modification limited to rows out of the sample is not
+        # detected. The cells that are NaN before training are not compared, so
+        # a step that fills them in place (for example, `SimpleImputer(copy=False)`)
+        # is allowed: `predict` fills them again in the same way.
         if self._probabilistic_mode is not False:
             rows_to_check = np.linspace(
-                0, len(X_train_estimator) - 1, num=min(len(X_train_estimator), 10),
+                0, len(X_train_estimator) - 1, num=min(len(X_train_estimator), 100),
                 dtype=int
             )
             X_train_rows = X_train_estimator.iloc[rows_to_check].copy()
@@ -2326,7 +2338,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             self.estimator.fit(X=X_train_estimator, y=y_train, **fit_kwargs)
 
         if self._probabilistic_mode is not False:
-            if not X_train_estimator.iloc[rows_to_check].equals(X_train_rows):
+            X_train_rows_after = X_train_estimator.iloc[rows_to_check]
+            if not X_train_rows_after.mask(
+                X_train_rows.isna().to_numpy()
+            ).equals(X_train_rows):
                 raise ValueError(
                     "The estimator has modified the training matrix in place during "
                     "`fit`, so the in-sample residuals cannot be calculated. This "

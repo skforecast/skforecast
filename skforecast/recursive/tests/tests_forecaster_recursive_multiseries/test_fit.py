@@ -8,6 +8,7 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.impute import SimpleImputer
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
@@ -100,6 +101,59 @@ def test_fit_when_estimator_modifies_X_train_in_place_and_probabilistic_mode_Fal
     assert forecaster.is_fitted
     pd.testing.assert_frame_equal(
         forecaster.predict(steps=3), forecaster_copy.predict(steps=3)
+    )
+
+
+@pytest.mark.parametrize(
+    "encoding",
+    ['ordinal', 'onehot', None],
+    ids=lambda encoding: f'encoding: {encoding}'
+)
+def test_fit_when_pipeline_with_SimpleImputer_copy_False_fills_NaN_in_place(encoding):
+    """
+    Test that a pipeline with `SimpleImputer(copy=False)` can be fitted when
+    `exog` has NaN. The imputer fills the NaN cells of the training matrix in
+    place, which does not change the in-sample residuals because `predict`
+    fills them again, so the check against in-place modifications ignores
+    the cells that were NaN before training. Residuals and predictions are
+    the same as with `SimpleImputer(copy=True)`.
+    """
+    series = series_wide_range.iloc[:12]
+    exog = pd.DataFrame({'exog_1': np.arange(12, dtype=float)}, index=series.index)
+    exog.loc[[4, 8], 'exog_1'] = np.nan
+    exog_predict = pd.DataFrame(
+        {'exog_1': np.arange(12, 14, dtype=float)}, index=pd.RangeIndex(12, 14)
+    )
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=make_pipeline(SimpleImputer(copy=False), LinearRegression()),
+        lags=3, encoding=encoding
+    )
+    forecaster.fit(
+        series=series, exog=exog, store_in_sample_residuals=True,
+        suppress_warnings=True
+    )
+    forecaster_copy = ForecasterRecursiveMultiSeries(
+        estimator=make_pipeline(SimpleImputer(copy=True), LinearRegression()),
+        lags=3, encoding=encoding
+    )
+    forecaster_copy.fit(
+        series=series, exog=exog, store_in_sample_residuals=True,
+        suppress_warnings=True
+    )
+
+    assert forecaster.is_fitted
+    assert (
+        forecaster.in_sample_residuals_.keys()
+        == forecaster_copy.in_sample_residuals_.keys()
+    )
+    for level, residuals in forecaster_copy.in_sample_residuals_.items():
+        np.testing.assert_array_almost_equal(
+            forecaster.in_sample_residuals_[level], residuals
+        )
+    pd.testing.assert_frame_equal(
+        forecaster.predict(steps=2, exog=exog_predict),
+        forecaster_copy.predict(steps=2, exog=exog_predict)
     )
 
 
