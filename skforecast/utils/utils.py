@@ -4430,6 +4430,11 @@ def align_series_and_exog_multiseries(
 
         if exog_dict[k] is not None:
             if not series_dict[k].index.equals(exog_dict[k].index):
+                if exog_dict[k].index.has_duplicates:
+                    raise ValueError(
+                        f"`exog` for series '{k}' has duplicated index values. "
+                        f"Each date or position can only appear once."
+                    )
                 exog_dict[k] = exog_dict[k].loc[first_valid_index:last_valid_index]
                 if exog_dict[k].empty:
                     warnings.warn(
@@ -4438,7 +4443,7 @@ def align_series_and_exog_multiseries(
                         MissingValuesWarning
                     )
                     exog_dict[k] = None
-                elif len(exog_dict[k]) != len(series_dict[k]):
+                elif not exog_dict[k].index.equals(series_dict[k].index):
                     warnings.warn(
                         f"`exog` for series '{k}' doesn't have values for "
                         f"all the dates in the series. Missing values will be "
