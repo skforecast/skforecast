@@ -163,7 +163,10 @@ class ArimaResult:
     coefficients : pd.DataFrame
         Coefficient estimates as a single-row DataFrame.
     sigma2 : float
-        Estimated innovation variance.
+        Estimated innovation variance, corrected for the degrees of freedom:
+        the sum of squared innovations divided by the number of innovations
+        minus the number of free coefficients. It is the variance used for the
+        prediction intervals.
     param_covariance : np.ndarray
         Variance-covariance matrix of parameter estimates.
     param_mask : np.ndarray
@@ -202,6 +205,10 @@ class ArimaResult:
         Approximation offset.
     constant : Optional[bool]
         Whether model includes a constant (auto_arima only).
+    sigma2_ml : Optional[float]
+        Innovation variance without the degrees of freedom correction (the sum
+        of squared innovations divided by the number of innovations). It is the
+        variance behind the log-likelihood and the information criteria.
     """
     y: np.ndarray
     fitted_values: np.ndarray
@@ -226,6 +233,7 @@ class ArimaResult:
     biasadj: Optional[bool]
     offset: Optional[float]
     constant: Optional[bool] = None
+    sigma2_ml: Optional[float] = None
 
     # Mapping from legacy dict keys to dataclass field names
     _KEY_MAP: ClassVar[dict] = {
@@ -252,6 +260,7 @@ class ArimaResult:
         'biasadj': 'biasadj',
         'offset': 'offset',
         'constant': 'constant',
+        'sigma2_ml': 'sigma2_ml',
     }
 
     def __post_init__(self):
@@ -2208,6 +2217,7 @@ class _FitResult:
     sigma2: float
     optim_fun: float
     n_conditioning_obs: int
+    n_innovations: int
 
 
 def _prepare_arima_config(
@@ -2463,10 +2473,11 @@ def _fit_css(config: _ArimaConfig) -> _FitResult:
     kf_css = compute_arima_likelihood(adjusted_series, state_space, update_start=0, give_resid=True)
     state_space.filtered_state = kf_css['a']
     state_space.filtered_covariance = kf_css['P']
-    sigma2, _ = compute_css_residuals(
+    sigma2, css_resid = compute_css_residuals(
         adjusted_series, phi_final, theta_final, c.n_conditioning_obs,
         c.order_spec.d, c.order_spec.s, c.order_spec.D
     )
+    n_innovations = int(np.sum(~np.isnan(css_resid[c.n_conditioning_obs:])))
     resid = kf_css['resid']
 
     # Variance-covariance from inverse observed information
@@ -2484,7 +2495,7 @@ def _fit_css(config: _ArimaConfig) -> _FitResult:
         params=params, param_covariance=param_covariance,
         converged=optim_result['converged'], state_space=state_space,
         resid=resid, sigma2=sigma2, optim_fun=optim_result['fun'],
-        n_conditioning_obs=c.n_conditioning_obs,
+        n_conditioning_obs=c.n_conditioning_obs, n_innovations=n_innovations,
     )
 
 
@@ -2672,7 +2683,7 @@ def _fit_ml(config: _ArimaConfig, warm_start: np.ndarray = None) -> _FitResult:
         params=params, param_covariance=param_covariance,
         converged=optim_result['converged'], state_space=ss_final,
         resid=resid, sigma2=sigma2, optim_fun=optim_result['fun'],
-        n_conditioning_obs=0,
+        n_conditioning_obs=0, n_innovations=c.n_used,
     )
 
 
@@ -2792,6 +2803,17 @@ def _build_arima_result(config: _ArimaConfig, fit: _FitResult) -> ArimaResult:
         else:
             aicc = np.inf
 
+    # Innovation variance corrected for the degrees of freedom. The estimate
+    # of the optimizer (fit.sigma2) divides the sum of squared innovations by
+    # their number, which is biased downwards and gives narrow prediction
+    # intervals in short series. Here it is divided by the number of
+    # innovations minus the number of free coefficients, as R's
+    # forecast::Arima does. The log-likelihood and the information criteria
+    # keep using the uncorrected value.
+    sigma2_ml = float(fit.sigma2)
+    dof = fit.n_innovations - n_free
+    sigma2 = sigma2_ml * fit.n_innovations / dof if dof > 0 else sigma2_ml
+
     params = fit.params
     param_covariance = fit.param_covariance
 
@@ -2820,7 +2842,7 @@ def _build_arima_result(config: _ArimaConfig, fit: _FitResult) -> ArimaResult:
         y=c.y,
         fitted_values=fitted_vals,
         coefficients=coef_df,
-        sigma2=float(fit.sigma2),
+        sigma2=sigma2,
         param_covariance=param_covariance,
         param_mask=c.free_param_mask,
         loglik=loglik,
@@ -2839,6 +2861,7 @@ def _build_arima_result(config: _ArimaConfig, fit: _FitResult) -> ArimaResult:
         lambda_bc=None,
         biasadj=None,
         offset=None,
+        sigma2_ml=sigma2_ml,
     )
 
 

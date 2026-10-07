@@ -195,7 +195,7 @@ def compute_approx_offset(
                        exog=Exog, fit_intercept=False, **kwargs)
 
         loglik = fit['loglik']
-        sigma2 = fit['sigma2']
+        sigma2 = fit['sigma2_ml']
         offset = -2 * loglik - serieslength * np.log(sigma2)
         return offset
     except Exception:
@@ -428,7 +428,7 @@ def fit_custom_arima(
     npar = np.sum(fit['mask']) + 1
 
     if method == "CSS":
-        fit['aic'] = offset + nstar_adj * np.log(fit['sigma2']) + 2 * npar
+        fit['aic'] = offset + nstar_adj * np.log(fit['sigma2_ml']) + 2 * npar
 
     if not np.isnan(fit['aic']):
         fit['bic'] = fit['aic'] + npar * (np.log(nstar_adj) - 2)
@@ -1467,6 +1467,7 @@ def refit_arima_model(
 
     fit['var_coef'] = np.zeros_like(fit['var_coef'])
     fit['sigma2'] = model.get('sigma2', fit['sigma2'])
+    fit['sigma2_ml'] = model.get('sigma2_ml', fit['sigma2_ml'])
 
     if exog is not None:
         fit['exog'] = exog

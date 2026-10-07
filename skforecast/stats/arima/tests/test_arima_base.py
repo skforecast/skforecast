@@ -1200,7 +1200,7 @@ def test_arima_enforce_stationarity_false_near_unit_root():
     assert result['converged'] is True
     coef = result['coef'].values.flatten()[0]
     np.testing.assert_allclose(coef, 0.9772565333232445, rtol=1e-4)
-    np.testing.assert_allclose(result['sigma2'], 0.8358454427268373, rtol=1e-4)
+    np.testing.assert_allclose(result['sigma2'], 0.8428693540102556, rtol=1e-4)
 
 
 def test_arima_enforce_stationarity_false_covariance_is_positive_definite():
@@ -1281,3 +1281,78 @@ def test_arima_css_ml_result_consistent_with_ml():
         rtol=1e-3,
     )
     np.testing.assert_allclose(result_css_ml['sigma2'], result_ml['sigma2'], rtol=1e-3)
+
+# =============================================================================
+# Tests for the degrees of freedom correction of sigma2
+# =============================================================================
+@pytest.mark.parametrize(
+    "method, n_innovations",
+    [("ML", 99), ("CSS-ML", 99), ("CSS", 98)],
+    ids=lambda v: f"{v}"
+)
+def test_arima_sigma2_is_corrected_for_degrees_of_freedom(
+    simple_ar1_series, method, n_innovations
+):
+    """
+    Test that sigma2 is the sum of squared innovations divided by the number of
+    innovations minus the number of free coefficients, and that sigma2_ml keeps
+    the uncorrected value. With ML the innovations are the observations left
+    after differencing (100 - 1). With CSS the conditioning observations of the
+    AR term are also dropped (100 - 1 - 1).
+    """
+    y = np.cumsum(simple_ar1_series)
+
+    result = arima(y, order=(1, 1, 1), method=method)
+
+    n_free = int(np.sum(result['mask']))
+    assert n_free == 2
+    assert result['sigma2'] > result['sigma2_ml']
+    np.testing.assert_allclose(
+        result['sigma2'],
+        result['sigma2_ml'] * n_innovations / (n_innovations - n_free),
+        rtol=1e-12
+    )
+
+
+def test_arima_sigma2_correction_does_not_count_fixed_parameters(simple_ar1_series):
+    """
+    Test that only the free coefficients are subtracted from the number of
+    innovations: one when the AR coefficient is fixed, none when all the
+    coefficients are fixed (sigma2 equals sigma2_ml).
+    """
+    y = simple_ar1_series
+    n = len(y)
+
+    result = arima(
+        y, order=(1, 0, 1), fit_intercept=False, fixed=np.array([0.5, np.nan])
+    )
+    result_all_fixed = arima(
+        y, order=(1, 0, 1), fit_intercept=False, fixed=np.array([0.5, 0.2])
+    )
+
+    np.testing.assert_allclose(
+        result['sigma2'], result['sigma2_ml'] * n / (n - 1), rtol=1e-12
+    )
+    assert result_all_fixed['sigma2'] == result_all_fixed['sigma2_ml']
+
+
+def test_arima_sigma2_correction_does_not_change_loglik_and_aic(simple_ar1_series):
+    """
+    Test that the log-likelihood and the information criteria are those of the
+    uncorrected variance: the concentrated Gaussian log-likelihood of an AR(1)
+    without differencing is recovered from sigma2_ml, not from sigma2.
+    """
+    y = simple_ar1_series
+    n = len(y)
+
+    result = arima(y, order=(1, 0, 0), fit_intercept=False, method="ML")
+
+    phi = result['coef']['ar1'].values[0]
+    # Exact likelihood of a stationary AR(1): the first innovation has
+    # variance sigma2 / (1 - phi^2) and the rest have variance sigma2.
+    expected_loglik = -0.5 * (
+        n * np.log(2 * np.pi * result['sigma2_ml']) - np.log(1 - phi**2) + n
+    )
+
+    np.testing.assert_allclose(result['loglik'], expected_loglik, rtol=1e-8)
+    np.testing.assert_allclose(result['aic'], -2 * expected_loglik + 4, rtol=1e-8)

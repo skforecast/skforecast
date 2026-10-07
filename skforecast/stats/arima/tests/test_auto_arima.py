@@ -1178,6 +1178,59 @@ def test_refit_arima_model_with_xreg(ar1_series):
     assert refit['converged'] is True
 
 
+def test_refit_arima_model_keeps_sigma2_of_the_original_model(ar1_series):
+    """
+    Test that refit_arima_model keeps both variances of the original model
+    (the one corrected for the degrees of freedom and the uncorrected one)
+    instead of the variances of the new data.
+    """
+    from skforecast.stats.arima._auto_arima import refit_arima_model
+
+    fit = auto_arima(ar1_series, m=1, stepwise=True, trace=False)
+    refit = refit_arima_model(
+        ar1_series[:80], m=1, model=fit, exog=None, method="CSS-ML"
+    )
+
+    assert refit['sigma2'] == fit['sigma2']
+    assert refit['sigma2_ml'] == fit['sigma2_ml']
+    assert fit['sigma2'] > fit['sigma2_ml']
+
+
+@pytest.mark.parametrize(
+    "kwargs, expected_ic",
+    [({'method': 'CSS'},
+      (-20.71329655347501, -20.121747257700363, -2.6896187178022544)),
+     ({'approximation': True},
+      (402.06814049170123, 402.6555530791138, 420.13195225627874)),
+     ({},
+      (402.06814049170123, 402.6596897874759, 420.09181832737397))],
+    ids=['method_CSS', 'approximation', 'default']
+)
+def test_auto_arima_information_criteria_use_uncorrected_sigma2(kwargs, expected_ic):
+    """
+    Test that the information criteria of auto_arima, and so the selected
+    model, do not depend on the degrees of freedom correction of sigma2: the
+    AIC of the CSS method and the offset of the approximation are computed
+    with the uncorrected variance. Expected values were obtained before the
+    correction was added.
+    """
+    rng = np.random.default_rng(123)
+    n = 150
+    e = rng.standard_normal(n)
+    y = np.zeros(n)
+    for t in range(1, n):
+        y[t] = 0.6 * y[t - 1] + e[t]
+    y = np.cumsum(y)
+
+    fit = auto_arima(y, m=1, stepwise=True, trace=False, **kwargs)
+
+    order = fit['order_spec']
+    assert (order.p, order.d, order.q) == (2, 1, 2)
+    np.testing.assert_allclose(
+        (fit['aic'], fit['aicc'], fit['bic']), expected_ic, rtol=1e-5
+    )
+
+
 # =============================================================================
 # Tests for _time_index_jit
 # =============================================================================
