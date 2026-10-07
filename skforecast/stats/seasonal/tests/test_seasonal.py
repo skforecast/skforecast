@@ -79,6 +79,41 @@ def test_seas_heuristic_returns_zero_for_constant_variance():
     assert strength == 0.0
 
 
+@pytest.mark.parametrize(
+    "x, expected_strength, expected_D",
+    [
+        (
+            np.array([
+                22.82, 19.51, 20.26, 17.8, 22.48, 20.09, 20.9, 19.42, 22.78, 21.33,
+                19.76, 21.39, 20.94, 22.87, 19.75, 18.68, 21.37, 21.03, 20.4
+            ]),
+            0.5910679705,
+            0,
+        ),
+        (
+            np.array([
+                19.93, 21.5, 21.0, 16.31, 16.77, 19.77, 20.78, 18.23, 16.24, 19.21,
+                21.51, 19.16, 16.55, 20.25, 19.55, 18.53, 22.47, 21.38, 21.25, 18.52,
+                18.01, 19.97, 22.7, 19.61, 21.29
+            ]),
+            0.6694106278,
+            1,
+        ),
+    ],
+    ids=["n19", "n25"],
+)
+def test_seas_heuristic_and_nsdiffs_match_R(x, expected_strength, expected_D):
+    """
+    Test seasonal strength and number of seasonal differences match
+    forecast:::seas.heuristic and forecast::nsdiffs (forecast 9.0.2) for
+    quarterly series.
+    """
+    strength = seas_heuristic(x, period=4)
+    D = nsdiffs(x, period=4)
+    np.testing.assert_almost_equal(strength, expected_strength, decimal=8)
+    assert D == expected_D
+
+
 # Tests is_constant
 # ------------------------------------------------------------------------------
 def test_is_constant_constant_array_returns_true():

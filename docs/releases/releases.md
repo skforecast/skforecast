@@ -119,6 +119,8 @@ The main changes in this release are:
 
 **Fixed**
 
++ `seas_heuristic`, used by `nsdiffs` and the automatic order selection of <code>[Arima]</code> to choose the number of seasonal differences, computed the seasonal strength with a centered moving average instead of STL, so it could choose a different `D` than R's `forecast::nsdiffs` for series near the 0.64 threshold. It now uses the same STL decomposition as R's `forecast::mstl`.
+
 + <code>[FoundationModel]</code> only routes Chronos-2 checkpoints (`amazon/chronos-2*` and `autogluon/chronos-2*`) to `ChronosAdapter`. Chronos (T5) and Chronos-Bolt checkpoints were accepted when the model was created but failed at predict time, because their pipelines do not accept the input format and the `cross_learning` argument used by the adapter. They now raise a `ValueError` when the model is created.
 
 + <code>[FoundationModel]</code> only routes Moirai-2 checkpoints (`Salesforce/moirai-2*`) to `MoiraiAdapter`. Moirai 1.x and Moirai-MoE checkpoints were accepted when the model was created but failed when the weights were loaded, because their configurations lack arguments required by `Moirai2Module`. They now raise a `ValueError` when the model is created.
