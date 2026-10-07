@@ -4393,7 +4393,7 @@ def align_series_and_exog_multiseries(
 
     for k in series_dict.keys():
         if trim_series_nan and (
-            np.isnan(series_dict[k].iat[0]) or np.isnan(series_dict[k].iat[-1])
+            pd.isna(series_dict[k].iat[0]) or pd.isna(series_dict[k].iat[-1])
         ):
             first_valid_index = series_dict[k].first_valid_index()
             last_valid_index = series_dict[k].last_valid_index()
