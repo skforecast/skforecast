@@ -439,3 +439,35 @@ def test_forecaster_set_out_sample_residuals_when_transformer_y_and_differentiat
     assert forecaster.out_sample_residuals_.keys() == residuals.keys()
     for key in residuals.keys():
         np.testing.assert_array_almost_equal(forecaster.out_sample_residuals_[key], residuals[key])
+
+
+def test_set_out_sample_residuals_ResidualsUsageWarning_when_few_residuals_per_bin():
+    """
+    Test ResidualsUsageWarning is raised when the average number of
+    out-of-sample residuals per bin is lower than 10.
+    """
+    rng = np.random.default_rng(123)
+    series = pd.DataFrame({
+        'l1': rng.normal(loc=10, scale=10, size=200), 
+        'l2': rng.normal(loc=10, scale=10, size=200)
+    })
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', steps=2, lags=3,
+        transformer_series=None, binner_kwargs={'n_bins': 3}
+    )
+    forecaster.fit(series=series)
+
+    y_true = {'l1': pd.Series(rng.normal(loc=10, scale=10, size=20))}
+    y_pred = {'l1': pd.Series(rng.normal(loc=10, scale=10, size=20))}
+
+    warn_msg = re.escape(
+        "The out-of-sample residuals of the following levels have, on average, "
+        "fewer than 10 residuals per bin: ['l1']. "
+        "With fewer than 10 residuals per bin, prediction intervals estimated "
+        "with `use_binned_residuals = True` are likely to be too narrow. Consider "
+        "providing more out-of-sample residuals, reducing `n_bins` in the "
+        "`binner_kwargs` of the forecaster, or predicting with "
+        "`use_binned_residuals = False`."
+    )
+    with pytest.warns(ResidualsUsageWarning, match=warn_msg):
+        forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)

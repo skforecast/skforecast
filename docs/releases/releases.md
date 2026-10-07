@@ -108,6 +108,8 @@ The main changes in this release are:
 
 + Removed the function `cast_exog_dtypes` from `skforecast.utils` (added in 0.8.0). It was not used by skforecast and did not work as documented: with a pandas Series it raised `AttributeError`, it modified the DataFrame passed by the user and it lost the categories. Use `exog.astype(exog_dtypes)` instead.
 
++ `set_out_sample_residuals` of <code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveMultiSeries]</code>, <code>[ForecasterDirect]</code>, <code>[ForecasterDirectMultiVariate]</code>, <code>[ForecasterEquivalentDate]</code> and <code>[ForecasterRnn]</code> now issues a <code>[ResidualsUsageWarning]</code> when the out-of-sample residuals have, on average, fewer than 10 residuals per bin (for example, 48 residuals with the default `n_bins=10`). With so few values per bin, the intervals obtained with `use_binned_residuals=True` are too narrow: in simulations with a nominal coverage of 95% and 24 to 60 out-of-sample residuals, the empirical coverage was 59 to 83% with 10 bins and 90 to 97% without bins, for both `'bootstrapping'` and `'conformal'`. The warning suggests providing more residuals, reducing `n_bins` in `binner_kwargs` or predicting with `use_binned_residuals=False`. The stored residuals and the predictions are unchanged. In the forecasters with several series, a single warning lists the affected levels. [User guide](../user_guides/probabilistic-forecasting-bootstrapped-residuals.ipynb#intervals-conditioned-on-predicted-values-binned-residuals)
+
 + <code>[show_versions]</code> also reports the versions of scipy, statsmodels, matplotlib, torch, lightgbm, xgboost, catboost, skops and cloudpickle (`None` when a package is not installed).
 
 + <code>[save_forecaster]</code> keeps the dots in `file_name` and adds the extension of the backend, so `'model_v1.2'` is saved as `'model_v1.2.joblib'`. Previously, everything after the last dot was replaced by the extension: `'model_v1.1'` and `'model_v1.2'` were both saved as `'model_v1.joblib'`, and the second one overwrote the first without any warning. A name that ends with a backend extension (`.joblib`, `.pkl`, `.pickle`, `.cloudpickle` or `.skops`) is saved as before, with that extension replaced by the one of the backend. Any other extension is now kept: `'model.bin'` is saved as `'model.bin.joblib'` instead of `'model.joblib'`. [User guide](../user_guides/save-load-forecaster.ipynb#pickle-backend)
@@ -2052,6 +2054,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [IgnoredArgumentWarning]: ../api/exceptions.md#skforecast.exceptions.exceptions.IgnoredArgumentWarning
 [LicenseWarning]: ../api/exceptions.md#skforecast.exceptions.exceptions.LicenseWarning
 [MissingValuesWarning]: ../api/exceptions.md#skforecast.exceptions.exceptions.MissingValuesWarning
+[ResidualsUsageWarning]: ../api/exceptions.md#skforecast.exceptions.exceptions.ResidualsUsageWarning
 
 <!-- OLD -->
 [ForecasterAutoreg]: https://skforecast.org/0.13.0/api/forecasterautoreg

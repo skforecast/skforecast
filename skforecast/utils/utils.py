@@ -38,6 +38,7 @@ from ..exceptions import (
     IgnoredArgumentWarning,
     MissingExogWarning,
     MissingValuesWarning,
+    ResidualsUsageWarning,
     SaveLoadSkforecastWarning,
     SkforecastVersionWarning,
     UnknownLevelWarning,
@@ -1910,6 +1911,68 @@ def check_residuals_input(
                 raise ValueError(
                     f"Residuals for level '{level}' are None. Check `forecaster.{literal}`."
                 )
+
+
+def check_residuals_per_bin(
+    n_residuals: int | dict[str, int],
+    n_bins: int | dict[str, int],
+    min_residuals_per_bin: int = 10
+) -> None:
+    """
+    Check that there are enough out-of-sample residuals for the number of bins
+    used to store them. When the average number of residuals per bin is lower
+    than `min_residuals_per_bin`, a warning is issued, since the quantiles of
+    the residuals of each bin are estimated with very few values and the
+    prediction intervals tend to be too narrow.
+
+    Parameters
+    ----------
+    n_residuals : int, dict
+        Number of out-of-sample residuals stored in the forecaster. In
+        Forecasters multiseries, a dict with the number of residuals of each
+        level, `{level: n_residuals}`.
+    n_bins : int, dict
+        Number of bins of the binner used to bin the residuals. In Forecasters
+        multiseries, a dict with the number of bins of each level,
+        `{level: n_bins}`.
+    min_residuals_per_bin : int, default 10
+        Minimum average number of residuals per bin. Below this value a
+        warning is issued.
+
+    Returns
+    -------
+    None
+    
+    """
+
+    advice = (
+        f"With fewer than {min_residuals_per_bin} residuals per bin, prediction "
+        f"intervals estimated with `use_binned_residuals = True` are likely to be "
+        f"too narrow. Consider providing more out-of-sample residuals, reducing "
+        f"`n_bins` in the `binner_kwargs` of the forecaster, or predicting with "
+        f"`use_binned_residuals = False`."
+    )
+
+    if isinstance(n_residuals, dict):
+        levels = [
+            level
+            for level, n in n_residuals.items()
+            if n / n_bins[level] < min_residuals_per_bin
+        ]
+        if levels:
+            warnings.warn(
+                f"The out-of-sample residuals of the following levels have, on "
+                f"average, fewer than {min_residuals_per_bin} residuals per bin: "
+                f"{levels}. {advice}",
+                ResidualsUsageWarning
+            )
+    elif n_residuals / n_bins < min_residuals_per_bin:
+        warnings.warn(
+            f"Only {n_residuals} out-of-sample residuals are available for "
+            f"{n_bins} bins, an average of {n_residuals / n_bins:.1f} residuals "
+            f"per bin. {advice}",
+            ResidualsUsageWarning
+        )
 
 
 def check_extract_values_and_index(

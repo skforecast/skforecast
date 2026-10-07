@@ -37,6 +37,7 @@ from ..utils import (
     check_exog_dtypes,
     check_predict_input,
     check_residuals_input,
+    check_residuals_per_bin,
     check_interval,
     check_extract_values_and_index,
     configure_estimator_categorical_features,
@@ -3124,6 +3125,11 @@ class ForecasterRecursive(ForecasterBase):
                     size    = empty_bin_size,
                     replace = False
                 )
+
+        check_residuals_per_bin(
+            n_residuals = len(out_sample_residuals),
+            n_bins      = self.binner.n_bins_
+        )
 
         if len(out_sample_residuals) > 10_000:
             out_sample_residuals = rng.choice(

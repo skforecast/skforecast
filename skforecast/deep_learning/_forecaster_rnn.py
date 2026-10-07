@@ -28,6 +28,7 @@ from ..utils import (
     check_interval,
     check_predict_input,
     check_residuals_input,
+    check_residuals_per_bin,
     check_select_fit_kwargs,
     check_y,
     check_extract_values_and_index,
@@ -2365,3 +2366,13 @@ class ForecasterRnn(ForecasterBase):
 
             self.out_sample_residuals_[level] = out_sample_residuals
             self.out_sample_residuals_by_bin_[level] = out_sample_residuals_by_bin
+
+        check_residuals_per_bin(
+            n_residuals = {
+                level: len(self.out_sample_residuals_[level])
+                for level in sorted(series_to_update)
+            },
+            n_bins      = {
+                level: self.binner[level].n_bins_ for level in series_to_update
+            }
+        )
