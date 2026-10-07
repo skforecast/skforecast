@@ -52,7 +52,7 @@ keywords = [
     "catboost",
 ]
 dependencies = [
-    "numpy>=1.26",
+    "numpy>=1.26.1",
     "pandas>=2.2, <3.0",
     "tqdm>=4.66",
     "scikit-learn>=1.6",
