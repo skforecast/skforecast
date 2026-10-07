@@ -5101,9 +5101,10 @@ class TiRex2Adapter(_AdapterBase):
     Adapter for the NX-AI TiRex-2 zero-shot forecaster.
 
     TiRex-2 forecasts one or more target variates directly from their history,
-    optionally conditioned on past and future-known covariates.
-    `FoundationModel` supplies one independent series per adapter call, so each
-    series is forecast on its own and its forecast does not depend on which
+    optionally conditioned on past and future-known covariates. When multiple
+    series are supplied, `FoundationModel` sends them in one backend call when
+    their covariate signatures are compatible. Each series retains its own
+    `TimeseriesType` and covariates, so its forecast does not depend on which
     other series are passed alongside it.
 
     Parameters

@@ -365,6 +365,37 @@ def test_TiRex2Adapter_predict_heterogeneous_covariates_in_single_call(monkeypat
     assert timeseries[1].past_covariates.shape == (2, 3)
 
 
+def test_TiRex2Adapter_forecast_is_invariant_to_batch_members(monkeypatch):
+    """A series keeps the same forecast when batched with another series."""
+    index = pd.date_range("2024-01-01", periods=3, freq="D")
+    context = {
+        "target": pd.Series([1, 2, 3], index=index, dtype=float),
+        "other": pd.Series([10, 11, 12], index=index, dtype=float),
+    }
+    context_exog = {
+        "target": pd.DataFrame({"a": [0.0, 1.0, 2.0]}, index=index),
+        "other": pd.DataFrame(
+            {"a": [0.0, 1.0, 2.0], "b": [3.0, 4.0, 5.0]}, index=index
+        ),
+    }
+
+    alone_model = fake_tirex2_modules(monkeypatch)
+    alone = TiRex2Adapter("NX-AI/TiRex-2", model=alone_model).predict(
+        2,
+        {"target": context["target"]},
+        {"target": context_exog["target"]},
+        None,
+        None,
+    )["target"]
+
+    batched_model = FakeTirex2Model()
+    batched = TiRex2Adapter("NX-AI/TiRex-2", model=batched_model).predict(
+        2, context, context_exog, None, None
+    )["target"]
+
+    np.testing.assert_array_equal(alone, batched)
+
+
 def test_TiRex2Adapter_predict_accepts_nan_in_series(monkeypatch):
     """
     Test that a series containing NaN is forwarded to the backend unchanged
