@@ -146,3 +146,51 @@ def test_set_fit_kwargs_with_validation():
     assert results == expected
     pd.testing.assert_frame_equal(forecaster.series_val, series.iloc[10:20])
     pd.testing.assert_frame_equal(forecaster.exog_val, exog.iloc[10:20])
+
+
+def test_init_and_set_fit_kwargs_do_not_modify_user_fit_kwargs():
+    """
+    Test the forecaster initialization and set_fit_kwargs do not remove 
+    `series_val` and `exog_val` from the dict passed by the user.
+    """
+    fit_kwargs = {
+        "epochs": 10, 
+        "series_val": series.iloc[:10],
+        "exog_val": exog.iloc[:10]
+    }
+    new_fit_kwargs = {
+        "epochs": 25,
+        "series_val": series.iloc[10:20],
+        "exog_val": exog.iloc[10:20]
+    }
+
+    forecaster = ForecasterRnn(
+        estimator=model, levels=["1", "2", "3"], lags=3, 
+        fit_kwargs=fit_kwargs
+    )
+    assert list(fit_kwargs.keys()) == ["epochs", "series_val", "exog_val"]
+
+    forecaster.set_fit_kwargs(new_fit_kwargs)
+    assert list(new_fit_kwargs.keys()) == ["epochs", "series_val", "exog_val"]
+    assert forecaster.fit_kwargs == {"epochs": 25}
+    pd.testing.assert_frame_equal(forecaster.series_val, series.iloc[10:20])
+    pd.testing.assert_frame_equal(forecaster.exog_val, exog.iloc[10:20])
+
+
+def test_set_fit_kwargs_when_exog_val_is_Series_without_name():
+    """
+    Test set_fit_kwargs when `exog_val` is a pandas Series without name. It is
+    converted to a DataFrame with a column named 'exog', as `exog` in fit. 
+    Before, it raised `KeyError: 'exog_val'`.
+    """
+    forecaster = ForecasterRnn(
+        estimator=model, levels=["1", "2", "3"], lags=3, 
+        fit_kwargs={"epochs": 10}
+    )
+    exog_val = pd.Series(exog["exog_1"].iloc[:10].to_numpy(), index=exog.index[:10])
+    forecaster.set_fit_kwargs(
+        {"epochs": 10, "series_val": series.iloc[:10], "exog_val": exog_val}
+    )
+
+    expected = exog_val.to_frame(name="exog")
+    pd.testing.assert_frame_equal(forecaster.exog_val, expected)

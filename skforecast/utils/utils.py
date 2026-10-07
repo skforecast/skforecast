@@ -2000,7 +2000,8 @@ def input_to_frame(
     data : pandas Series, pandas DataFrame
         Input data.
     input_name : str
-        Name of the input data. Accepted values are 'y', 'last_window' and 'exog'.
+        Name of the input data. Accepted values are 'y', 'last_window', 'exog'
+        and 'exog_val'.
 
     Returns
     -------
@@ -2012,7 +2013,8 @@ def input_to_frame(
     output_col_name = {
         'y': 'y',
         'last_window': 'y',
-        'exog': 'exog'
+        'exog': 'exog',
+        'exog_val': 'exog'
     }
 
     if isinstance(data, pd.Series):

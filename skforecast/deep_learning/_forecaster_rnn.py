@@ -370,6 +370,10 @@ class ForecasterRnn(ForecasterBase):
 
         if fit_kwargs is None:
             fit_kwargs = {}
+        elif isinstance(fit_kwargs, dict):
+            # NOTE: Copy to avoid modifying the user's dict when popping
+            # `series_val` and `exog_val`.
+            fit_kwargs = fit_kwargs.copy()
 
         self.series_val = None
         self.exog_val = None
@@ -2004,6 +2008,11 @@ class ForecasterRnn(ForecasterBase):
         None
 
         """
+
+        if isinstance(fit_kwargs, dict):
+            # NOTE: Copy to avoid modifying the user's dict when popping
+            # `series_val` and `exog_val`.
+            fit_kwargs = fit_kwargs.copy()
 
         self.series_val = None
         self.exog_val = None
