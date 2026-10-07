@@ -208,6 +208,8 @@ The main changes in this release are:
 
 + Fixed an issue in <code>[save_forecaster]</code> with `backend='skops'` where `last_window_` and `training_range_` were replaced with plain types while the file was written, so using the same forecaster from another thread at that time (for example, `predict`) failed. The forecaster is no longer modified.
 
++ Fixed an issue in <code>[plot_prediction_distribution]</code> where it raised a `KeyError` (for example, `KeyError: '103'`) when `bootstrapping_predictions` had an integer index, such as the `RangeIndex` returned by `predict_bootstrapping` when the forecaster is trained with a series without a datetime index. The rows were looked up with their labels converted to strings. They are now selected by position.
+
 
 ## 0.25.0 <small>Sep 11, 2026</small> { id="0.25.0" }
 
