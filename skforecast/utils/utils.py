@@ -2483,6 +2483,37 @@ def transform_numpy(
     return array_transformed
 
 
+def _get_feature_names_out(transformer: object) -> np.ndarray | None:
+    """
+    Return the output feature names of a fitted transformer, or `None` if the
+    transformer does not provide them. Meta-estimators such as `Pipeline` or
+    `ColumnTransformer` have a `get_feature_names_out` method that raises an
+    error when one of their steps does not implement it (for example, a
+    `FunctionTransformer` without `feature_names_out`).
+
+    Parameters
+    ----------
+    transformer : object
+        Fitted scikit-learn alike transformer.
+
+    Returns
+    -------
+    feature_names_out : numpy ndarray, None
+        Output feature names, or `None` if they are not available.
+
+    """
+
+    if not hasattr(transformer, 'get_feature_names_out'):
+        return None
+
+    try:
+        feature_names_out = transformer.get_feature_names_out()
+    except (AttributeError, ValueError, TypeError):
+        feature_names_out = None
+
+    return feature_names_out
+
+
 def transform_series(
     series: pd.Series,
     transformer: object | None,
@@ -2568,11 +2599,11 @@ def transform_series(
                 f"columns are not supported; use `window_features` or pass "
                 f"those features through `exog` instead."
             )
-        if hasattr(transformer, 'get_feature_names_out'):
-            feature_names_out = transformer.get_feature_names_out()
-            if len(feature_names_out) != values_transformed.shape[1]:
-                feature_names_out = [f'transformed_{i}' for i in range(values_transformed.shape[1])]
-        else:
+        feature_names_out = _get_feature_names_out(transformer)
+        if (
+            feature_names_out is None
+            or len(feature_names_out) != values_transformed.shape[1]
+        ):
             feature_names_out = [f'transformed_{i}' for i in range(values_transformed.shape[1])]
 
         series_transformed = pd.DataFrame(
@@ -2652,11 +2683,9 @@ def transform_dataframe(
         if values_transformed.ndim == 1:
             values_transformed = values_transformed.reshape(-1, 1)
 
-        feature_names_out = (
-            transformer.get_feature_names_out()
-            if hasattr(transformer, 'get_feature_names_out')
-            else df.columns
-        )
+        feature_names_out = _get_feature_names_out(transformer)
+        if feature_names_out is None:
+            feature_names_out = df.columns
         if len(feature_names_out) != values_transformed.shape[1]:
             feature_names_out = [f'transformed_{i}' for i in range(values_transformed.shape[1])]
 

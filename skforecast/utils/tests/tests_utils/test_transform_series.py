@@ -7,6 +7,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import FunctionTransformer
+from sklearn.pipeline import make_pipeline
 from skforecast.utils import transform_series
 
 
@@ -198,6 +199,32 @@ def test_transform_series_when_transformer_expands_without_feature_names():
     """
     input_series = pd.Series([0.0, 1.0, 2.0, 3.0], name='y')
     transformer = FunctionTransformer(func=lambda X: np.c_[X, X**2], validate=False)
+
+    results = transform_series(
+        series=input_series,
+        transformer=transformer,
+        fit=True,
+        inverse_transform=False
+    )
+
+    expected = pd.DataFrame(
+        {'transformed_0': [0.0, 1.0, 2.0, 3.0],
+         'transformed_1': [0.0, 1.0, 4.0, 9.0]}
+    )
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_transform_series_when_Pipeline_expands_columns_without_get_feature_names_out():
+    """
+    Test output column naming when the transformer is a Pipeline that expands
+    columns and has a step that does not implement `get_feature_names_out`,
+    so `Pipeline.get_feature_names_out` raises an AttributeError. The
+    columns fall back to 'transformed_i' names.
+    """
+    input_series = pd.Series([0.0, 1.0, 2.0, 3.0], name='y')
+    transformer = make_pipeline(
+        FunctionTransformer(func=lambda X: np.c_[X, X**2], validate=False)
+    )
 
     results = transform_series(
         series=input_series,
