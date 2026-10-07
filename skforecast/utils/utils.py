@@ -2034,6 +2034,11 @@ def exog_to_direct(
         exog = exog.to_frame()
 
     n_rows = len(exog)
+    if not 1 <= steps <= n_rows:
+        raise ValueError(
+            f"`steps` must be between 1 and the number of rows of `exog` "
+            f"({n_rows}). Got {steps}."
+        )
     exog_idx = exog.index
     exog_cols = exog.columns
     exog_direct = []
@@ -2095,6 +2100,11 @@ def exog_to_direct_numpy(
         exog = np.expand_dims(exog, axis=1)
 
     n_rows = len(exog)
+    if not 1 <= steps <= n_rows:
+        raise ValueError(
+            f"`steps` must be between 1 and the number of rows of `exog` "
+            f"({n_rows}). Got {steps}."
+        )
     exog_direct = [exog[i : n_rows - (steps - 1 - i)] for i in range(steps)]
     exog_direct = np.concatenate(exog_direct, axis=1) if steps > 1 else exog_direct[0]
     

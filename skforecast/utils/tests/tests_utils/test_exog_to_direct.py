@@ -117,6 +117,22 @@ def test_exog_to_direct_when_steps_2_exog_DataFrame_2d_float_int(dtype):
     assert results[1] == expected[1]
 
 
+@pytest.mark.parametrize("steps", [0, 4], ids=['zero', 'greater_than_len_exog'])
+def test_exog_to_direct_ValueError_when_steps_out_of_range(steps):
+    """
+    Test ValueError is raised when steps is less than 1 or greater than the
+    number of rows of exog.
+    """
+    exog = pd.Series(np.arange(3), name='exog')
+
+    err_msg = re.escape(
+        f"`steps` must be between 1 and the number of rows of `exog` (3). "
+        f"Got {steps}."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        exog_to_direct(exog=exog, steps=steps)
+
+
 def test_exog_to_direct_when_steps_2_exog_1d_category():
     """
     Test exog_to_direct results when using steps 2 and exog is a  
