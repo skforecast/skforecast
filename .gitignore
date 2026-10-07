@@ -163,6 +163,3 @@ node_modules/
 
 # Videos exported from the documentation animations
 tools/docs/animations_to_video/videos/
-
-# Environment-dependent bit-identity snapshots (dev/profiling_multiseries_fit/11_snapshot_outputs.py)
-dev/profiling_multiseries_fit/results/snapshot/
