@@ -4,6 +4,8 @@ import re
 import pytest
 import warnings
 import numpy as np
+import sklearn
+from packaging import version
 from sklearn.exceptions import NotFittedError
 from sklearn.preprocessing import KBinsDiscretizer
 from ..._preprocessing import QuantileBinner
@@ -179,6 +181,12 @@ def test_QuantileBinner_is_equivalent_to_KBinsDiscretizer():
     X = np.random.normal(10, 10, 10000)
     n_bins_grid = [2, 10, 20]
 
+    # `quantile_method` was added in scikit-learn 1.7. Before, the quantiles
+    # are always computed with the 'linear' method of `np.percentile`.
+    quantile_method_kwargs = {}
+    if version.parse(sklearn.__version__) >= version.parse("1.7.0"):
+        quantile_method_kwargs = {'quantile_method': 'linear'}
+
     for n_bins in n_bins_grid:
         binner_1 = KBinsDiscretizer(
             n_bins=n_bins,
@@ -186,7 +194,7 @@ def test_QuantileBinner_is_equivalent_to_KBinsDiscretizer():
             strategy="quantile",
             dtype=np.float64,
             random_state=789654,
-            quantile_method='linear',
+            **quantile_method_kwargs,
         )
         binner_2 = QuantileBinner(
             n_bins=n_bins,

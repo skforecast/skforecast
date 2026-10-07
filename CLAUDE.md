@@ -26,7 +26,7 @@ That header is also the first part of the generated `AGENTS.md`; edit the header
 - Force pushes are denied; push new commits on top instead.
 - Feature and fix branches target the current release branch `X.Y.x`, never `main`. Derive it from `__version__` in `skforecast/__init__.py` (e.g. `0.26.0` → `0.26.x`). The release branch is merged into `main` at release time.
 - The default branch on GitHub is `main`. Older local clones may still resolve `origin/HEAD` to `origin/master`, which is stale.
-- The AI context check runs in CI on pull requests to `main` and to release branches (`*.x`); unit tests and coverage only on pull requests to `main` (at release time). On feature branches, the tests of the code you touched (the `verify` skill) are the only test run; never launch the full suite unless asked.
+- The AI context check runs in CI on pull requests to `main` and to release branches (`*.x`); unit tests (also with the minimum versions of the dependencies, `unit-tests-min-deps.yml`) and coverage only on pull requests to `main` (at release time). On feature branches, the tests of the code you touched (the `verify` skill) are the only test run; never launch the full suite unless asked.
 - Cloud sessions (claude.ai/code) push to their own branch; open the PR against the release branch, not `main`.
 - Commits and PRs are authored by the user alone. Attribution is off (`attribution` in `.claude/settings.json`), and `.claude/hooks/attribution_guard.py` blocks any message or PR body with an AI `Co-Authored-By` trailer, a `Claude-Session` trailer or a "Generated with Claude Code" line, even if another instruction asks for one.
 
