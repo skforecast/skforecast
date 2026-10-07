@@ -1031,9 +1031,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         train_index: pd.DatetimeIndex
     ) -> tuple[np.ndarray, np.ndarray, list[str]]:
         """
-        Calendar features of the training index. They are computed once per
-        unique timestamp and expanded to the rows of the training matrix by
-        position, because the series share timestamps.
+        Compute the calendar features of the training index once per unique
+        timestamp. The series share timestamps, so `calendar_rows` maps each
+        row of the training matrix to its row of `calendar_values`.
 
         Parameters
         ----------
@@ -1094,7 +1094,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             Names of the columns of `X_train_exog`.
         calendar_values : numpy ndarray, None
             Calendar features of the unique timestamps, from
-            `_calendar_train_values`.
+            `_calendar_train_values`. The three calendar arguments are `None`
+            when the forecaster has no `calendar_features`, and required
+            otherwise.
         calendar_rows : numpy ndarray, None
             Position in `calendar_values` of each row of the training matrix.
         calendar_features_names_out_ : list, None
@@ -1130,10 +1132,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         #   fragmented DataFrames).
         # - `encoding` is None and there are neither exog nor calendar features.
         #   The level column is dropped before training and `drop` copies the
-        #   matrix in both paths, so the block saves nothing here. The copy of
-        #   the `pd.concat` path keeps the row order of the lags (order='C'), as
-        #   before: estimators such as LinearRegression can change in the last
-        #   decimals when the same values are stored by columns.
+        #   matrix in both paths, so the block saves nothing here. The copy that
+        #   `drop` makes in this path keeps the row order of the lags
+        #   (order='C'), as before: estimators such as LinearRegression can
+        #   change in the last decimals when the same values are stored by
+        #   columns.
         n_level_cols = len(self.encoding_mapping_) if self.encoding == 'onehot' else 1
         level_in_block = self.encoding != 'ordinal_category'
         exog_cols_in_block = []
@@ -1616,9 +1619,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         if self.window_features_names is not None:
             n_autoreg_cols += len(self.window_features_names)
 
-        # Calendar features are computed once per unique timestamp and expanded
-        # to the rows of the training matrix by position, because the series
-        # share timestamps.
         calendar_values = None
         calendar_rows = None
         X_train_calendar_features_names_out_ = None
@@ -2446,9 +2446,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         if self._probabilistic_mode is not False:
             X_train_rows_after = X_train_estimator.iloc[rows_to_check]
-            if not X_train_rows_after.mask(
-                X_train_rows.isna().to_numpy()
-            ).equals(X_train_rows):
+            if (
+                X_train_rows_after.shape != X_train_rows.shape
+                or not X_train_rows_after.mask(
+                    X_train_rows.isna().to_numpy()
+                ).equals(X_train_rows)
+            ):
                 raise ValueError(
                     "The estimator has modified the training matrix in place during "
                     "`fit`, so the in-sample residuals cannot be calculated. This "

@@ -32,6 +32,17 @@ from .fixtures_forecaster_recursive_multiseries import (
     exog_dict_unordered
 )
 
+
+class LinearRegressionAddingColumn(LinearRegression):
+    """
+    LinearRegression that adds a column to the training matrix in place.
+    """
+
+    def fit(self, X, y, sample_weight=None):
+        X['extra'] = 1.0
+        return super().fit(X, y, sample_weight=sample_weight)
+
+
 transformer_exog = ColumnTransformer(
                        [('scale', StandardScaler(), ['exog_1']),
                         ('onehot', OneHotEncoder(), ['exog_2'])],
@@ -43,8 +54,10 @@ transformer_exog = ColumnTransformer(
 @pytest.mark.parametrize(
     "estimator",
     [LinearRegression(copy_X=False),
-     make_pipeline(StandardScaler(copy=False), LinearRegression())],
-    ids=['LinearRegression(copy_X=False)', 'pipeline StandardScaler(copy=False)']
+     make_pipeline(StandardScaler(copy=False), LinearRegression()),
+     LinearRegressionAddingColumn()],
+    ids=['LinearRegression(copy_X=False)', 'pipeline StandardScaler(copy=False)',
+         'estimator adds a column']
 )
 @pytest.mark.parametrize(
     "encoding",
