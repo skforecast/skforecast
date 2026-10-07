@@ -1,5 +1,6 @@
 # Unit test _predict_and_calculate_metrics_one_step_ahead_multiseries
 # ==============================================================================
+import re
 import pytest
 import numpy as np
 import pandas as pd
@@ -8,7 +9,8 @@ from lightgbm import LGBMRegressor
 from xgboost import XGBRegressor
 from sklearn.compose import make_column_transformer, make_column_selector
 from sklearn.ensemble import HistGradientBoostingRegressor
-from sklearn.linear_model import Ridge
+from sklearn.linear_model import LinearRegression, Ridge
+from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_percentage_error
 from skforecast.recursive import ForecasterRecursiveMultiSeries
@@ -172,6 +174,80 @@ pytestmark = [
 #             forecaster, series_dict_dt_item_sales, X_train, y_train, X_test, y_test, 
 #             X_train_encoding, X_test_encoding, levels, metrics, add_aggregated_metric_invalid
 #         )
+
+
+@pytest.mark.parametrize(
+    "encoding",
+    ['ordinal', 'onehot', None],
+    ids=lambda encoding: f'encoding: {encoding}'
+)
+@pytest.mark.parametrize(
+    "estimator",
+    [LinearRegression(copy_X=False),
+     make_pipeline(StandardScaler(copy=False), Ridge())],
+    ids=['LinearRegression(copy_X=False)', 'pipeline StandardScaler(copy=False)']
+)
+def test_predict_and_calculate_metrics_one_step_ahead_multiseries_ValueError_when_estimator_modifies_X_train_in_place(
+    estimator, encoding
+):
+    """
+    Test ValueError is raised with ForecasterRecursiveMultiSeries when the
+    estimator modifies the training matrix in place. A search with
+    `OneStepAheadFold` reuses the matrix for every candidate, so the metrics
+    of the next candidates would be wrong.
+    """
+    index = pd.date_range(start='2020-01-01', periods=30, freq='D')
+    series = {
+        f'l{i}': pd.Series(
+                     np.arange(30, dtype=float) ** 1.5 + 10 * i, index=index, name=f'l{i}'
+                 )
+        for i in range(1, 4)
+    }
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator = estimator,
+                     lags      = 3,
+                     encoding  = encoding
+                 )
+
+    (
+        X_train,
+        y_train,
+        X_test,
+        y_test,
+        X_train_encoding,
+        X_test_encoding,
+        sample_weight,
+        fit_kwargs
+    ) = forecaster._train_test_split_one_step_ahead(
+            series             = series,
+            initial_train_size = 20,
+        )
+
+    err_msg = re.escape(
+        "The estimator has modified the training matrix in place during "
+        "`fit`. The matrix is used again after training, to calculate the "
+        "in-sample residuals or to fit the next candidates of a search "
+        "with `OneStepAheadFold`, so the results would be wrong. This "
+        "happens with estimators that do not copy their input, such as "
+        "`LinearRegression(copy_X=False)` or a pipeline with "
+        "`StandardScaler(copy=False)`. Use the default copy behavior of "
+        "the estimator (`copy_X=True`, `copy=True`)."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        _predict_and_calculate_metrics_one_step_ahead_multiseries(
+            forecaster       = forecaster,
+            series           = series,
+            X_train          = X_train,
+            y_train          = y_train,
+            X_test           = X_test,
+            y_test           = y_test,
+            X_train_encoding = X_train_encoding,
+            X_test_encoding  = X_test_encoding,
+            levels           = ['l1', 'l2', 'l3'],
+            metrics          = ['mean_absolute_error'],
+            sample_weight    = sample_weight,
+            fit_kwargs       = fit_kwargs
+        )
 
 
 @pytest.mark.parametrize(

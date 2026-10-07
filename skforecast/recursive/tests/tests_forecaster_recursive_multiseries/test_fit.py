@@ -8,6 +8,8 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.impute import SimpleImputer
+from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
 from catboost import CatBoostRegressor
@@ -25,8 +27,21 @@ from .fixtures_forecaster_recursive_multiseries import (
     series_dict_dt,
     exog_wide_range,
     exog_wide_dt,
-    exog_dict_range
+    exog_dict_range,
+    series_dict_unordered,
+    exog_dict_unordered
 )
+
+
+class LinearRegressionAddingColumn(LinearRegression):
+    """
+    LinearRegression that adds a column to the training matrix in place.
+    """
+
+    def fit(self, X, y, sample_weight=None):
+        X['extra'] = 1.0
+        return super().fit(X, y, sample_weight=sample_weight)
+
 
 transformer_exog = ColumnTransformer(
                        [('scale', StandardScaler(), ['exog_1']),
@@ -34,6 +49,127 @@ transformer_exog = ColumnTransformer(
                        remainder = 'passthrough',
                        verbose_feature_names_out = False
                    )
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    [LinearRegression(copy_X=False),
+     make_pipeline(StandardScaler(copy=False), LinearRegression()),
+     LinearRegressionAddingColumn()],
+    ids=['LinearRegression(copy_X=False)', 'pipeline StandardScaler(copy=False)',
+         'estimator adds a column']
+)
+@pytest.mark.parametrize(
+    "encoding",
+    ['ordinal', 'onehot', None],
+    ids=lambda encoding: f'encoding: {encoding}'
+)
+def test_fit_ValueError_when_estimator_modifies_X_train_in_place(estimator, encoding):
+    """
+    Test ValueError is raised when the estimator modifies the training matrix
+    in place, because the in-sample residuals are calculated afterwards with
+    the same matrix.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=estimator, lags=3, encoding=encoding
+    )
+
+    err_msg = re.escape(
+        "The estimator has modified the training matrix in place during "
+        "`fit`. The matrix is used again after training, to calculate the "
+        "in-sample residuals or to fit the next candidates of a search "
+        "with `OneStepAheadFold`, so the results would be wrong. This "
+        "happens with estimators that do not copy their input, such as "
+        "`LinearRegression(copy_X=False)` or a pipeline with "
+        "`StandardScaler(copy=False)`. Use the default copy behavior of "
+        "the estimator (`copy_X=True`, `copy=True`)."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        forecaster.fit(series=series_wide_range)
+
+
+@pytest.mark.parametrize(
+    "encoding",
+    ['ordinal', 'onehot', None],
+    ids=lambda encoding: f'encoding: {encoding}'
+)
+def test_fit_when_estimator_modifies_X_train_in_place_and_probabilistic_mode_False(
+    encoding
+):
+    """
+    Test that an estimator that modifies the training matrix in place can be
+    fitted when `_probabilistic_mode` is `False`: the in-sample residuals are
+    not calculated, so the matrix is not used after training. Predictions are
+    the same as with the default copy behavior of the estimator.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=LinearRegression(copy_X=False), lags=3, encoding=encoding
+    )
+    forecaster._probabilistic_mode = False
+    forecaster.fit(series=series_wide_range)
+
+    forecaster_copy = ForecasterRecursiveMultiSeries(
+        estimator=LinearRegression(), lags=3, encoding=encoding
+    )
+    forecaster_copy.fit(series=series_wide_range)
+
+    assert forecaster.is_fitted
+    pd.testing.assert_frame_equal(
+        forecaster.predict(steps=3), forecaster_copy.predict(steps=3)
+    )
+
+
+@pytest.mark.parametrize(
+    "encoding",
+    ['ordinal', 'onehot', None],
+    ids=lambda encoding: f'encoding: {encoding}'
+)
+def test_fit_when_pipeline_with_SimpleImputer_copy_False_fills_NaN_in_place(encoding):
+    """
+    Test that a pipeline with `SimpleImputer(copy=False)` can be fitted when
+    `exog` has NaN. The imputer fills the NaN cells of the training matrix in
+    place, which does not change the in-sample residuals because `predict`
+    fills them again, so the check against in-place modifications ignores
+    the cells that were NaN before training. Residuals and predictions are
+    the same as with `SimpleImputer(copy=True)`.
+    """
+    series = series_wide_range.iloc[:12]
+    exog = pd.DataFrame({'exog_1': np.arange(12, dtype=float)}, index=series.index)
+    exog.loc[[4, 8], 'exog_1'] = np.nan
+    exog_predict = pd.DataFrame(
+        {'exog_1': np.arange(12, 14, dtype=float)}, index=pd.RangeIndex(12, 14)
+    )
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=make_pipeline(SimpleImputer(copy=False), LinearRegression()),
+        lags=3, encoding=encoding
+    )
+    forecaster.fit(
+        series=series, exog=exog, store_in_sample_residuals=True,
+        suppress_warnings=True
+    )
+    forecaster_copy = ForecasterRecursiveMultiSeries(
+        estimator=make_pipeline(SimpleImputer(copy=True), LinearRegression()),
+        lags=3, encoding=encoding
+    )
+    forecaster_copy.fit(
+        series=series, exog=exog, store_in_sample_residuals=True,
+        suppress_warnings=True
+    )
+
+    assert forecaster.is_fitted
+    assert (
+        forecaster.in_sample_residuals_.keys()
+        == forecaster_copy.in_sample_residuals_.keys()
+    )
+    for level, residuals in forecaster_copy.in_sample_residuals_.items():
+        np.testing.assert_array_almost_equal(
+            forecaster.in_sample_residuals_[level], residuals
+        )
+    pd.testing.assert_frame_equal(
+        forecaster.predict(steps=2, exog=exog_predict),
+        forecaster_copy.predict(steps=2, exog=exog_predict)
+    )
 
 
 @pytest.mark.parametrize(
@@ -365,9 +501,9 @@ def test_fit_in_sample_residuals_stored(encoding):
     results = forecaster.in_sample_residuals_
 
     expected = {
-        '1': np.array([-4.4408921e-16, 0.0000000e+00]),
-        '2': np.array([0., 0.]),
-        '_unknown_level': np.array([-4.4408921e-16, 0.0000000e+00, 0., 0.])
+        '1': np.array([0.]),
+        '2': np.array([0.]),
+        '_unknown_level': np.array([0., 0.])
     }
     
     X_train_window_features_names_out_ = ['roll_ratio_min_max_4', 'roll_median_4']
@@ -382,9 +518,10 @@ def test_fit_in_sample_residuals_stored(encoding):
     assert forecaster.X_train_window_features_names_out_ == X_train_window_features_names_out_
     assert forecaster.X_train_features_names_out_ == X_train_features_names_out_
     assert isinstance(results, dict)
-    assert np.all(isinstance(x, np.ndarray) for x in results.values())
+    assert all(isinstance(x, np.ndarray) for x in results.values())
     assert results.keys() == expected.keys()
-    assert np.all(np.all(np.isclose(results[k], expected[k])) for k in expected.keys())
+    for k in expected.keys():
+        np.testing.assert_array_almost_equal(results[k], expected[k])
 
 
 @pytest.mark.parametrize("encoding", 
@@ -545,8 +682,134 @@ def test_fit_in_sample_residuals_by_bin_stored(encoding):
             assert results_binner_intervals[level][k][1] == approx(expected_binner_intervals[level][k][1])
 
 
-@pytest.mark.parametrize("encoding", 
-                         ['ordinal', 'ordinal_category', 'onehot', None], 
+@pytest.mark.parametrize("encoding",
+                         ['ordinal', 'ordinal_category', 'onehot'],
+                         ids = lambda encoding: f'encoding: {encoding}')
+def test_fit_in_sample_residuals_by_level_when_series_unordered_different_lengths_and_dropped(encoding):
+    """
+    Test the in-sample residuals, residuals by bin and binner intervals stored for
+    each level when the series are not in alphabetical order, have different
+    lengths and an interspersed NaN, and one series ('d') loses all its rows
+    because it has no exog and `dropna_from_series=True`. The order of the keys
+    is also checked: it follows `X_train_series_names_in_`.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=2, encoding=encoding, dropna_from_series=True,
+        binner_kwargs={'n_bins': 2}
+    )
+    forecaster.fit(
+        series=series_dict_unordered, exog=exog_dict_unordered,
+        store_in_sample_residuals=True
+    )
+
+    if encoding == 'onehot':
+        expected_levels = ['c', 'a', 'b']
+        expected_residuals = {
+            'c': np.array([2.35785357, -0.66170765, -1.19700919, -3.45838688,
+                           -0.08898634, 3.04823649]),
+            'a': np.array([0.51834364, 0.8441147, 1.91669612, 0.06325437,
+                           -0.16432107, -0.53629588, -2.64179188]),
+            'b': np.array([-1.17587909, 1.23566797, 0.65774457, -0.71753345]),
+            '_unknown_level': np.array([
+                2.35785357, -0.66170765, -1.19700919, -3.45838688, -0.08898634,
+                3.04823649, 0.51834364, 0.8441147, 1.91669612, 0.06325437,
+                -0.16432107, -0.53629588, -2.64179188, -1.17587909, 1.23566797,
+                0.65774457, -0.71753345
+            ])
+        }
+        expected_residuals_by_bin = {
+            'c': {0: np.array([2.35785357, -0.66170765, -1.19700919]),
+                  1: np.array([-3.45838688, -0.08898634, 3.04823649])},
+            'a': {0: np.array([1.91669612, 0.06325437, -2.64179188]),
+                  1: np.array([0.51834364, 0.8441147, -0.16432107, -0.53629588])},
+            'b': {0: np.array([-1.17587909, 1.23566797]),
+                  1: np.array([0.65774457, -0.71753345])},
+            '_unknown_level': {
+                0: np.array([2.35785357, -0.66170765, 1.91669612, 0.06325437,
+                             -2.64179188, -1.17587909, 1.23566797, -0.71753345]),
+                1: np.array([-1.19700919, -3.45838688, -0.08898634, 3.04823649,
+                             0.51834364, 0.8441147, -0.16432107, -0.53629588,
+                             0.65774457])
+            }
+        }
+        expected_binner_intervals = {
+            'c': {0: (6.822146430589493, 10.05299776610925),
+                  1: (10.05299776610925, 10.971763505364349)},
+            'a': {0: (7.146745630949951, 10.074321066273868),
+                  1: (10.074321066273868, 12.626295879716096)},
+            'b': {0: (3.62587909306756, 7.460932738187426),
+                  1: (7.460932738187426, 9.192255430557589)},
+            '_unknown_level': {0: (3.62587909306756, 9.192255430557589),
+                               1: (9.192255430557589, 12.626295879716096)}
+        }
+    else:
+        expected_levels = ['a', 'b', 'c']
+        expected_residuals = {
+            'a': np.array([2.49700869, 1.45587963, 1.20052686, 0.5560771,
+                           1.4645523, 0.65310967, -2.95745736]),
+            'b': np.array([-5.99486505, -0.25639827, -0.26807589, -3.22005454]),
+            'c': np.array([2.24118559, -0.87331252, 0.10050154, -1.9052904,
+                           1.57948265, 3.72713002]),
+            '_unknown_level': np.array([
+                2.24118559, -0.87331252, 0.10050154, -1.9052904, 1.57948265,
+                3.72713002, 2.49700869, 1.45587963, 1.20052686, 0.5560771,
+                1.4645523, 0.65310967, -2.95745736, -5.99486505, -0.25639827,
+                -0.26807589, -3.22005454
+            ])
+        }
+        expected_residuals_by_bin = {
+            'a': {0: np.array([0.5560771, 1.4645523, -2.95745736]),
+                  1: np.array([2.49700869, 1.45587963, 1.20052686, 0.65310967])},
+            'b': {0: np.array([-5.99486505, -0.25639827]),
+                  1: np.array([-0.26807589, -3.22005454])},
+            'c': {0: np.array([2.24118559, -0.87331252, 0.10050154]),
+                  1: np.array([-1.9052904, 1.57948265, 3.72713002])},
+            '_unknown_level': {
+                0: np.array([2.24118559, -0.87331252, 0.10050154, 1.57948265,
+                             0.5560771, 1.4645523, -5.99486505, -0.25639827]),
+                1: np.array([-1.9052904, 3.72713002, 2.49700869, 1.45587963,
+                             1.20052686, 0.65310967, -2.95745736, -0.26807589,
+                             -3.22005454])
+            }
+        }
+        expected_binner_intervals = {
+            'a': {0: (6.653922900508369, 8.972991306860978),
+                  1: (8.972991306860978, 11.43689033146482)},
+            'b': {0: (8.444865054761285, 9.377237082067435),
+                  1: (9.377237082067435, 10.28005454280374)},
+            'c': {0: (6.93881441329464, 8.570007908230785),
+                  1: (8.570007908230785, 10.292869976253973)},
+            '_unknown_level': {0: (6.653922900508369, 8.927457363589692),
+                               1: (8.927457363589692, 11.43689033146482)}
+        }
+
+    expected_keys = expected_levels + ['_unknown_level']
+
+    assert forecaster.series_names_in_ == ['c', 'a', 'd', 'b']
+    assert forecaster.X_train_series_names_in_ == expected_levels
+    assert list(forecaster.in_sample_residuals_) == expected_keys
+    assert list(forecaster.in_sample_residuals_by_bin_) == expected_keys
+    assert list(forecaster.binner_intervals_) == expected_keys
+    for level in expected_keys:
+        np.testing.assert_array_almost_equal(
+            forecaster.in_sample_residuals_[level], expected_residuals[level]
+        )
+        results_bins = forecaster.in_sample_residuals_by_bin_[level]
+        assert results_bins.keys() == expected_residuals_by_bin[level].keys()
+        for k in results_bins.keys():
+            np.testing.assert_array_almost_equal(
+                results_bins[k], expected_residuals_by_bin[level][k]
+            )
+        results_intervals = forecaster.binner_intervals_[level]
+        assert results_intervals.keys() == expected_binner_intervals[level].keys()
+        for k in results_intervals.keys():
+            np.testing.assert_array_almost_equal(
+                results_intervals[k], expected_binner_intervals[level][k]
+            )
+
+
+@pytest.mark.parametrize("encoding",
+                         ['ordinal', 'ordinal_category', 'onehot', None],
                          ids = lambda encoding: f'encoding: {encoding}')
 def test_fit_same_residuals_when_residuals_greater_than_10_000(encoding):
     """
@@ -575,7 +838,8 @@ def test_fit_same_residuals_when_residuals_greater_than_10_000(encoding):
     assert results_1.keys() == results_2.keys()
     assert np.all([len(v) == 10_000 for v in results_1.values()])
     assert np.all([len(v) == 10_000 for v in results_2.values()])
-    assert np.all(np.all(results_1[k] == results_2[k]) for k in results_2.keys())
+    for k in results_2.keys():
+        np.testing.assert_array_equal(results_1[k], results_2[k])
 
 
 @pytest.mark.parametrize("encoding", 
@@ -676,12 +940,12 @@ def test_fit_in_sample_residuals_not_stored_probabilistic_mode_binned(encoding):
     # In-sample residuals
     assert isinstance(results_residuals, dict)
     assert results_residuals.keys() == expected_residuals.keys()
-    assert np.all(results_residuals[k] == expected_residuals[k] for k in results_residuals.keys())
+    assert results_residuals == expected_residuals
 
     # In-sample residuals by bin
     assert isinstance(results_residuals_bin, dict)
     assert results_residuals_bin.keys() == expected_residuals_by_bin.keys()
-    assert np.all(results_residuals_bin[k] == expected_residuals_by_bin[k] for k in results_residuals_bin.keys())
+    assert results_residuals_bin == expected_residuals_by_bin
 
     # Binner intervals
     assert results_binner_intervals.keys() == expected_binner_intervals.keys()
@@ -728,12 +992,12 @@ def test_fit_in_sample_residuals_not_stored_probabilistic_mode_False(encoding):
     # In-sample residuals
     assert isinstance(results_residuals, dict)
     assert results_residuals.keys() == expected_residuals.keys()
-    assert np.all(results_residuals[k] == expected_residuals[k] for k in results_residuals.keys())
+    assert results_residuals == expected_residuals
 
     # In-sample residuals by bin
     assert isinstance(results_residuals_bin, dict)
     assert results_residuals_bin.keys() == expected_residuals_by_bin.keys()
-    assert np.all(results_residuals_bin[k] == expected_residuals_by_bin[k] for k in results_residuals_bin.keys())
+    assert results_residuals_bin == expected_residuals_by_bin
 
     # Binner intervals
     assert results_binner_intervals == expected_binner_intervals

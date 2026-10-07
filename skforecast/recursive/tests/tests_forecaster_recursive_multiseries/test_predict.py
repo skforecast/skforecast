@@ -36,6 +36,8 @@ from .fixtures_forecaster_recursive_multiseries import (
     series_dict_nans_train,
     exog_dict_nans_train,
     exog_dict_nans_test,
+    series_dict_unordered,
+    exog_dict_unordered,
     expected_df_to_long_format
 )
 
@@ -1360,3 +1362,66 @@ def test_predict_restores_estimator_device(estimator, device):
     forecaster.predict(steps=3)
 
     assert forecaster.estimator.get_params().get('device') == device
+
+
+def test_predict_output_when_encoding_onehot_and_series_not_in_alphabetical_order():
+    """
+    Test predict output when `encoding='onehot'` and the series are not in
+    alphabetical order ('c', 'a', 'd', 'b'). The one-hot columns of the
+    prediction matrix follow `encoding_mapping_`, as those of the training
+    matrix, so each series uses its own column.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = LinearRegression(),
+                     lags               = 2,
+                     encoding           = 'onehot',
+                     transformer_series = None,
+                     dropna_from_series = True
+                 )
+    forecaster.fit(series=series_dict_unordered, suppress_warnings=True)
+    predictions = forecaster.predict(steps=2, suppress_warnings=True)
+
+    expected = pd.DataFrame(
+        {'level': ['c', 'a', 'd', 'b', 'c', 'a', 'd', 'b'],
+         'pred': np.array([6.7285487893, 10.1655085063, 5.6544730032, 6.2489071323,
+                           7.8841648026, 11.2932023086, 5.6029193510, 7.2654898680])},
+        index=pd.DatetimeIndex(['2020-01-11'] * 4 + ['2020-01-12'] * 4)
+    )
+
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
+def test_predict_output_when_encoding_onehot_and_series_without_rows_in_X_train():
+    """
+    Test predict output when `encoding='onehot'` and one series ('d') loses
+    all its rows in the training matrix (it has no exog and
+    `dropna_from_series=True`). The prediction matrix has one column per
+    series of `encoding_mapping_`, as the training matrix.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = LinearRegression(),
+                     lags               = 2,
+                     encoding           = 'onehot',
+                     transformer_series = None,
+                     dropna_from_series = True
+                 )
+    forecaster.fit(
+        series=series_dict_unordered, exog=exog_dict_unordered, suppress_warnings=True
+    )
+    index_pred = pd.date_range(start='2020-01-11', periods=2, freq='D')
+    exog_pred = {
+        'c': pd.DataFrame({'exog_1': [0.5, -0.3]}, index=index_pred),
+        'a': pd.DataFrame({'exog_1': [1.2, 0.4]}, index=index_pred),
+        'b': pd.DataFrame({'exog_1': [-0.7, 0.9]}, index=index_pred)
+    }
+    predictions = forecaster.predict(steps=2, exog=exog_pred, suppress_warnings=True)
+
+    expected = pd.DataFrame(
+        {'level': ['c', 'a', 'b', 'c', 'a', 'b'],
+         'pred': np.array([5.5028033139, 8.9732201648, 6.6545874777,
+                           7.1063619350, 12.8568790140, 6.8447158698])},
+        index=pd.DatetimeIndex(['2020-01-11'] * 3 + ['2020-01-12'] * 3)
+    )
+
+    assert forecaster.X_train_series_names_in_ == ['c', 'a', 'b']
+    pd.testing.assert_frame_equal(predictions, expected)

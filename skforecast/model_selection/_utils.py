@@ -23,6 +23,8 @@ from ..utils import (
     check_interval,
     date_to_index_position,
     cast_catboost_categorical_columns_dataframe,
+    _copy_rows_to_check,
+    _check_in_place_fit,
 )
 
 
@@ -1520,9 +1522,10 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
     # ==========================================================================
     # X_train_encoding and X_test_encoding are series identifiers for each row 
     # of X_train and X_test, respectively.
-    # NOTE: The utility copies internally, so the original X_train and X_test
-    # generated once by `_train_test_split_one_step_ahead` are not mutated and
-    # remain reusable across hyperparameter search iterations.
+    # NOTE: X_train and X_test are created once by `_train_test_split_one_step_ahead`
+    # and reused by every candidate of the search. The cast below only copies
+    # them for CatBoost, so it is checked that the estimator does not modify
+    # X_train in place, which would change the metrics of the next candidates.
     feature_names = X_train.columns.to_list()
     X_train = cast_catboost_categorical_columns_dataframe(
         X=X_train, fit_kwargs=fit_kwargs,
@@ -1533,6 +1536,8 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         estimator=forecaster.estimator, feature_names=feature_names,
     )
 
+    X_train_rows = _copy_rows_to_check(X_train)
+
     if sample_weight is not None:
         forecaster.estimator.fit(
             X             = X_train,
@@ -1542,6 +1547,8 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         )
     else:
         forecaster.estimator.fit(X=X_train, y=y_train, **fit_kwargs)
+
+    _check_in_place_fit(X=X_train, X_rows=X_train_rows)
 
     predictions_per_level = pd.DataFrame(
         {

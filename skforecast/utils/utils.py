@@ -791,6 +791,82 @@ def cast_catboost_categorical_columns_dataframe(
     return X
 
 
+def _copy_rows_to_check(
+    X: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    Copy a sample of up to 100 rows of the training matrix `X`, evenly spaced,
+    before it is passed to the `fit` method of an estimator. After training,
+    `_check_in_place_fit` compares them with the same rows of `X` to check that
+    the estimator has not modified the matrix in place.
+
+    Parameters
+    ----------
+    X : pandas DataFrame
+        Training values (predictors) passed to the estimator.
+
+    Returns
+    -------
+    X_rows : pandas DataFrame
+        Copy of the rows of `X` that are checked.
+
+    """
+
+    rows_to_check = np.linspace(0, len(X) - 1, num=min(len(X), 100), dtype=int)
+    X_rows = X.iloc[rows_to_check].copy()
+
+    return X_rows
+
+
+def _check_in_place_fit(
+    X: pd.DataFrame,
+    X_rows: pd.DataFrame
+) -> None:
+    """
+    Check that the `fit` method of an estimator has not modified the training
+    matrix `X` in place. The training matrix is passed to the estimator without
+    a copy and its callers use it again after training: `fit` to calculate the
+    in-sample residuals, and the searches with `OneStepAheadFold` to fit the
+    next candidates.
+
+    The rows copied by `_copy_rows_to_check` before training are compared with
+    the same rows of `X`, so a modification limited to other rows is not
+    detected. The cells that are NaN before training are not compared, so a
+    step that fills them in place (for example, `SimpleImputer(copy=False)`) is
+    allowed: `predict` fills them again in the same way.
+
+    Parameters
+    ----------
+    X : pandas DataFrame
+        Training values (predictors) passed to the estimator.
+    X_rows : pandas DataFrame
+        Rows of `X` copied with `_copy_rows_to_check` before training.
+
+    Returns
+    -------
+    None
+
+    """
+
+    # Same positions as in `_copy_rows_to_check`.
+    rows_to_check = np.linspace(0, len(X) - 1, num=len(X_rows), dtype=int)
+    X_rows_after = X.iloc[rows_to_check]
+    if (
+        X_rows_after.shape != X_rows.shape
+        or not X_rows_after.mask(X_rows.isna().to_numpy()).equals(X_rows)
+    ):
+        raise ValueError(
+            "The estimator has modified the training matrix in place during "
+            "`fit`. The matrix is used again after training, to calculate the "
+            "in-sample residuals or to fit the next candidates of a search "
+            "with `OneStepAheadFold`, so the results would be wrong. This "
+            "happens with estimators that do not copy their input, such as "
+            "`LinearRegression(copy_X=False)` or a pipeline with "
+            "`StandardScaler(copy=False)`. Use the default copy behavior of "
+            "the estimator (`copy_X=True`, `copy=True`)."
+        )
+
+
 def _get_catboost_cat_feature_indices(estimator: object) -> np.ndarray:
     """
     Return the indices of the categorical features of a fitted CatBoost

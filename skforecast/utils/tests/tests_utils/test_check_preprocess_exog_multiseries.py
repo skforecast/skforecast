@@ -181,17 +181,29 @@ def test_TypeError_check_preprocess_exog_multiseries_when_exog_dict_with_differe
         )
 
 
-def test_TypeError_check_preprocess_exog_multiseries_when_exog_dict_with_different_dtypes_same_column():
+@pytest.mark.parametrize(
+    "not_valid_exog",
+    [
+        {'l1': exog_wide_range.copy(),
+         'l2': exog_wide_range['exog_1'].astype(str).copy()},
+        {'l1': pd.DataFrame(
+                   {'exog_1': pd.Categorical(np.tile([0, 1], 25), categories=[0, 1])}
+               ),
+         'l2': pd.DataFrame(
+                   {'exog_1': pd.Categorical(np.tile([0, 1], 25), categories=[0, 1, 2])}
+               )},
+    ],
+    ids=['float and str', 'category with different categories'],
+)
+def test_TypeError_check_preprocess_exog_multiseries_when_exog_dict_with_different_dtypes_same_column(
+    not_valid_exog
+):
     """
-    Test TypeError is raised when exog is a dict with different dtypes for the 
-    same column.
+    Test TypeError is raised when exog is a dict with different dtypes for the
+    same column, including category columns whose categories differ between
+    series.
     """
     _, series_indexes = check_preprocess_series(series=series_dict_range)
-
-    not_valid_exog = {
-        'l1': exog_wide_range.copy(),
-        'l2': exog_wide_range['exog_1'].astype(str).copy()
-    }
 
     err_msg = re.escape(
         "Exog/s: ['exog_1'] have different dtypes in different "

@@ -492,7 +492,8 @@ def select_features_multiseries(
         lags_cols = forecaster.lags_names
         window_features_cols = output[7]  # X_train_window_features_names_out_ output
         if forecaster.encoding == 'onehot':
-            encoding_cols = output[4]  # X_train_series_names_in_ output
+            # One column per series, also for series without rows in X_train.
+            encoding_cols = list(forecaster.encoding_mapping_)
         else:
             encoding_cols = ['_level_skforecast']
     

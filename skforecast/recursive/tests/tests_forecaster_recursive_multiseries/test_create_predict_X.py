@@ -32,6 +32,7 @@ from .fixtures_forecaster_recursive_multiseries import (
     series_dict_nans_train,
     exog_dict_nans_train,
     exog_dict_nans_test,
+    series_dict_unordered,
     expected_df_to_long_format
 )
 
@@ -1420,3 +1421,73 @@ def test_create_predict_X_same_predictions_as_predict_transformers_diff(differen
     expected = expected.pivot(columns='level', values='pred').to_numpy()
     
     np.testing.assert_array_almost_equal(results, expected, decimal=7)
+
+
+def test_create_predict_X_output_when_encoding_onehot_and_series_not_in_alphabetical_order():
+    """
+    Test create_predict_X output when `encoding='onehot'` and the series are
+    not in alphabetical order ('c', 'a', 'd', 'b'). The one-hot columns follow
+    `encoding_mapping_`, as those of the training matrix, and the 1 of each
+    row is in the column of its series.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = LinearRegression(),
+                     lags               = 2,
+                     encoding           = 'onehot',
+                     transformer_series = None,
+                     dropna_from_series = True
+                 )
+    forecaster.fit(series=series_dict_unordered, suppress_warnings=True)
+    results = forecaster.create_predict_X(steps=1, suppress_warnings=True)
+
+    expected = pd.DataFrame(
+        {'level': ['c', 'a', 'd', 'b'],
+         'lag_1': [14.02, 5.97, 10.81, 7.06],
+         'lag_2': [10.18, 12.09, 6.2, 8.57],
+         'a': [0., 1., 0., 0.],
+         'b': [0., 0., 0., 1.],
+         'c': [1., 0., 0., 0.],
+         'd': [0., 0., 1., 0.]},
+        index=pd.DatetimeIndex(['2020-01-11'] * 4)
+    )
+
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_create_predict_X_output_when_encoding_onehot_and_unknown_level():
+    """
+    Test create_predict_X output when `encoding='onehot'` and one of the
+    levels was not seen during training. Its one-hot columns are all 0, the
+    same encoding that `predict` uses.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = LinearRegression(),
+                     lags               = 2,
+                     encoding           = 'onehot',
+                     transformer_series = None,
+                     dropna_from_series = True
+                 )
+    forecaster.fit(series=series_dict_unordered, suppress_warnings=True)
+    last_window = pd.DataFrame(
+        {'c': [10.18, 14.02], 'unknown': [5., 6.]},
+        index=pd.date_range(start='2020-01-09', periods=2, freq='D')
+    )
+    results = forecaster.create_predict_X(
+                  steps             = 1,
+                  levels            = ['c', 'unknown'],
+                  last_window       = last_window,
+                  suppress_warnings = True
+              )
+
+    expected = pd.DataFrame(
+        {'level': ['c', 'unknown'],
+         'lag_1': [14.02, 6.],
+         'lag_2': [10.18, 5.],
+         'a': [0., 0.],
+         'b': [0., 0.],
+         'c': [1., 0.],
+         'd': [0., 0.]},
+        index=pd.DatetimeIndex(['2020-01-11'] * 2)
+    )
+
+    pd.testing.assert_frame_equal(results, expected)
