@@ -111,12 +111,14 @@ def initialize_lags(
     lags_names = None
     max_lag = None
     if lags is not None:
-        if isinstance(lags, int):
+        if isinstance(lags, (int, np.integer)) and not isinstance(lags, bool):
             if lags < 1:
                 raise ValueError("Minimum value of lags allowed is 1.")
             lags = np.arange(1, lags + 1)
 
         if isinstance(lags, (list, tuple, range)):
+            if any(isinstance(lag, (bool, np.bool_)) for lag in lags):
+                raise TypeError("All values in `lags` must be integers.")
             lags = np.array(lags)
         
         if isinstance(lags, np.ndarray):
@@ -140,7 +142,8 @@ def initialize_lags(
                     f"tuple or list. Got {type(lags)}."
                 )
         
-        lags = np.sort(lags)
+        # NOTE: Unsigned integers overflow when negated (`-window_size`).
+        lags = np.sort(lags).astype(np.int64)
         lags_names = [f'lag_{i}' for i in lags]
         max_lag = max(lags)
 
@@ -206,28 +209,39 @@ def initialize_window_features(
                 )
             
             window_sizes = wf.window_sizes
-            if not isinstance(window_sizes, (int, list)):
+            if (
+                not isinstance(window_sizes, (int, np.integer, list))
+                or isinstance(window_sizes, bool)
+            ):
                 raise TypeError(
                     f"Attribute `window_sizes` of {wf_name} must be an int or a list "
                     f"of ints. Got {type(window_sizes)}." + link_to_docs
                 )
             
-            if isinstance(window_sizes, int):
+            if isinstance(window_sizes, (int, np.integer)):
                 if window_sizes < 1:
                     raise ValueError(
                         f"If argument `window_sizes` is an integer, it must be equal to or "
                         f"greater than 1. Got {window_sizes} from {wf_name}." + link_to_docs
                     )
-                max_window_sizes.append(window_sizes)
+                # NOTE: Cast to int, unsigned integers overflow when negated
+                # (`-window_size`).
+                max_window_sizes.append(int(window_sizes))
             else:
-                if not all(isinstance(ws, int) for ws in window_sizes) or not all(
-                    ws >= 1 for ws in window_sizes
-                ):                    
+                if len(window_sizes) == 0:
+                    raise ValueError(
+                        f"If argument `window_sizes` is a list, it must contain at "
+                        f"least one element. Got [] from {wf_name}." + link_to_docs
+                    )
+                if not all(
+                    isinstance(ws, (int, np.integer)) and not isinstance(ws, bool)
+                    for ws in window_sizes
+                ) or not all(ws >= 1 for ws in window_sizes):
                     raise ValueError(
                         f"If argument `window_sizes` is a list, all elements must be integers "
                         f"equal to or greater than 1. Got {window_sizes} from {wf_name}." + link_to_docs
                     )
-                max_window_sizes.append(max(window_sizes))
+                max_window_sizes.append(int(max(window_sizes)))
 
             features_names = wf.features_names
             if not isinstance(features_names, list):
@@ -532,11 +546,24 @@ def check_select_fit_kwargs(
             k for k in fit_kwargs.keys() if k not in fit_params
         ]
         if non_used_keys:
-            warnings.warn(
-                f"Argument/s {non_used_keys} ignored since they are not used by the "
-                f"estimator's `fit` method.",
-                IgnoredArgumentWarning
+            accepts_var_kwargs = any(
+                param.kind == inspect.Parameter.VAR_KEYWORD
+                for param in fit_params.values()
             )
+            if accepts_var_kwargs:
+                warnings.warn(
+                    f"Argument/s {non_used_keys} ignored since they are not "
+                    f"explicit arguments of the estimator's `fit` method. Arguments "
+                    f"passed through `**kwargs`, for example to the steps of a "
+                    f"scikit-learn Pipeline (`step__argument`), are not supported.",
+                    IgnoredArgumentWarning
+                )
+            else:
+                warnings.warn(
+                    f"Argument/s {non_used_keys} ignored since they are not used by the "
+                    f"estimator's `fit` method.",
+                    IgnoredArgumentWarning
+                )
 
         if 'sample_weight' in fit_kwargs.keys():
             warnings.warn(
@@ -545,11 +572,12 @@ def check_select_fit_kwargs(
                 "based on its index.",
                 IgnoredArgumentWarning
             )
-            del fit_kwargs['sample_weight']
 
         # Select only the keyword arguments allowed by the estimator's `fit` method.
+        # NOTE: A new dict is created to avoid modifying the user's `fit_kwargs`.
         fit_kwargs = {
-            k: v for k, v in fit_kwargs.items() if k in fit_params
+            k: v for k, v in fit_kwargs.items()
+            if k in fit_params and k != 'sample_weight'
         }
 
     return fit_kwargs
@@ -1116,58 +1144,32 @@ def check_exog_dtypes(
     if call_check_exog:
         check_exog(exog=exog, allow_nan=False, series_id=series_id)
 
-    valid_dtypes = ("int", "Int", "float", "Float", "uint")
-
-    if isinstance(exog, pd.DataFrame):
-        unique_dtypes = set(exog.dtypes)
-        has_invalid_dtype = False
-        for dtype in unique_dtypes:
-            if isinstance(dtype, pd.CategoricalDtype):
-                try:
-                    is_integer = np.issubdtype(dtype.categories.dtype, np.integer)
-                except TypeError:
-                    is_integer = False
-                if not is_integer:
-                    raise TypeError(
-                        "Categorical dtypes in exog must contain only integer values. "
-                        "See skforecast docs for more info about how to include "
-                        "categorical features https://skforecast.org/"
-                        "latest/user_guides/categorical-features.html"
-                    )
-            elif not dtype.name.startswith(valid_dtypes):
-                has_invalid_dtype = True
-        
-        if has_invalid_dtype:
-            warnings.warn(
-                f"{series_id} may contain only `int`, `float` or `category` dtypes. "
-                f"Most machine learning models do not allow other types of values. "
-                f"Fitting the forecaster may fail.", 
-                DataTypeWarning
-            )
-    
-    else:
-        
-        dtype_name = str(exog.dtypes)
-        if not (dtype_name.startswith(valid_dtypes) or dtype_name == "category"):
-            warnings.warn(
-                f"{series_id} may contain only `int`, `float` or `category` dtypes. Most "
-                f"machine learning models do not allow other types of values. "
-                f"Fitting the forecaster may fail.", 
-                DataTypeWarning
-            )
-
-        if isinstance(exog.dtype, pd.CategoricalDtype):
-            try:
-                is_integer = np.issubdtype(exog.cat.categories.dtype, np.integer)
-            except TypeError:
-                is_integer = False
-            if not is_integer:
+    # NOTE: Integer and float dtypes include the numpy, nullable (`Int64`,
+    # `Float64`) and pyarrow (`int64[pyarrow]`) dtypes. Booleans are not
+    # integers.
+    dtypes = set(exog.dtypes) if isinstance(exog, pd.DataFrame) else {exog.dtype}
+    has_invalid_dtype = False
+    for dtype in dtypes:
+        if isinstance(dtype, pd.CategoricalDtype):
+            if not pd.api.types.is_integer_dtype(dtype.categories.dtype):
                 raise TypeError(
                     "Categorical dtypes in exog must contain only integer values. "
                     "See skforecast docs for more info about how to include "
                     "categorical features https://skforecast.org/"
                     "latest/user_guides/categorical-features.html"
                 )
+        elif not (
+            pd.api.types.is_integer_dtype(dtype) or pd.api.types.is_float_dtype(dtype)
+        ):
+            has_invalid_dtype = True
+
+    if has_invalid_dtype:
+        warnings.warn(
+            f"{series_id} may contain only `int`, `float` or `category` dtypes. "
+            f"Most machine learning models do not allow other types of values. "
+            f"Fitting the forecaster may fail.",
+            DataTypeWarning
+        )
 
 
 def check_interval(
@@ -1542,7 +1544,8 @@ def check_predict_input(
                 f"`last_window` includes columns named 'series_1' and 'series_2'."
             )
 
-        if forecaster_name == 'ForecasterDirectMultiVariate':
+        # NOTE: ForecasterRnn uses all the series as input, not only the levels.
+        if forecaster_name in ['ForecasterDirectMultiVariate', 'ForecasterRnn']:
             if len(set(series_names_in_) - set(last_window_cols)) > 0:
                 raise ValueError(
                     f"`last_window` columns must be the same as the `series` "
@@ -1568,7 +1571,17 @@ def check_predict_input(
             f"`last_window` must have as many values as needed to "
             f"generate the predictors. For this forecaster it is {window_size}."
         )
-    if last_window.isna().to_numpy().any():
+    # NOTE: Only the values used to create the predictors are checked: the last
+    # `window_size` rows (ForecasterStats uses the whole `last_window`) of the
+    # levels to predict or of the series used as predictors.
+    last_window_to_check = last_window
+    if forecaster_name != 'ForecasterStats':
+        last_window_to_check = last_window_to_check.iloc[-window_size:]
+    if forecaster_name == 'ForecasterRecursiveMultiSeries':
+        last_window_to_check = last_window_to_check[levels]
+    elif forecaster_name in ['ForecasterDirectMultiVariate', 'ForecasterRnn']:
+        last_window_to_check = last_window_to_check[series_names_in_]
+    if last_window_to_check.isna().to_numpy().any():
         warnings.warn(
             "`last_window` has missing values. Most of machine learning models do "
             "not allow missing values. Prediction method may either raise an "
@@ -1667,19 +1680,7 @@ def check_predict_input(
 
             # Check name/columns are in exog_names_in_
             if isinstance(exog_to_check, pd.DataFrame):
-                col_missing = set(exog_names_in_).difference(set(exog_to_check.columns))
-                if col_missing:
-                    if align_by_index:
-                        warnings.warn(
-                            f"{col_missing} not present in {exog_name}. All "
-                            f"values will be NaN.",
-                            MissingExogWarning
-                        ) 
-                    else:
-                        raise ValueError(
-                            f"Missing columns in {exog_name}. Expected {exog_names_in_}. "
-                            f"Got {exog_to_check.columns.to_list()}."
-                        )
+                exog_columns = exog_to_check.columns.to_list()
             else:
                 if exog_to_check.name is None:
                     raise ValueError(
@@ -1699,6 +1700,21 @@ def check_predict_input(
                             f"'{exog_to_check.name}' was not observed during training. "
                             f"Exogenous variables must be: {exog_names_in_}."
                         )
+                exog_columns = [exog_to_check.name]
+
+            col_missing = set(exog_names_in_).difference(exog_columns)
+            if col_missing:
+                if align_by_index:
+                    warnings.warn(
+                        f"{col_missing} not present in {exog_name}. All "
+                        f"values will be NaN.",
+                        MissingExogWarning
+                    )
+                else:
+                    raise ValueError(
+                        f"Missing columns in {exog_name}. Expected {exog_names_in_}. "
+                        f"Got {exog_columns}."
+                    )
 
             # Check index dtype and freq
             _, exog_index = check_extract_values_and_index(
@@ -1905,11 +1921,18 @@ def check_residuals_input(
                     )
 
     if forecaster_name in forecasters_multiseries:
-        for level in residuals.keys():
-            level_residuals = residuals[level]
+        # NOTE: Only the residuals of the levels to predict are used. In
+        # ForecasterRecursiveMultiSeries, levels without residuals use the
+        # residuals of '_unknown_level'.
+        for level in levels:
+            residuals_key = level
+            if forecaster_name == 'ForecasterRecursiveMultiSeries' and level not in residuals:
+                residuals_key = '_unknown_level'
+            level_residuals = residuals.get(residuals_key)
             if level_residuals is None or len(level_residuals) == 0:
                 raise ValueError(
-                    f"Residuals for level '{level}' are None. Check `forecaster.{literal}`."
+                    f"Residuals for level '{residuals_key}' are None or empty. "
+                    f"Check `forecaster.{literal}`."
                 )
 
 
@@ -2042,7 +2065,8 @@ def input_to_frame(
     data : pandas Series, pandas DataFrame
         Input data.
     input_name : str
-        Name of the input data. Accepted values are 'y', 'last_window' and 'exog'.
+        Name of the input data. Accepted values are 'y', 'last_window', 'exog'
+        and 'exog_val'.
 
     Returns
     -------
@@ -2054,7 +2078,8 @@ def input_to_frame(
     output_col_name = {
         'y': 'y',
         'last_window': 'y',
-        'exog': 'exog'
+        'exog': 'exog',
+        'exog_val': 'exog'
     }
 
     if isinstance(data, pd.Series):
@@ -4102,9 +4127,9 @@ def check_preprocess_series(
     first level of the index must contain the series IDs, and the second 
     level must be a `DatetimeIndex` with the same frequency across all series.
     - If series is a dictionary, each key must be a series ID, and each value 
-    must be a named pandas Series. All series must have the same index, which 
-    must be either a `DatetimeIndex` or a `RangeIndex`, and they must share the 
-    same frequency or step size, as appropriate.
+    must be a named pandas Series. All series must have the same type of index, 
+    either a `DatetimeIndex` or a `RangeIndex`, and they must share the same 
+    frequency or step size, as appropriate, and the same time zone.
 
     When `series` is a pandas DataFrame, it is converted to a dictionary of pandas 
     Series, where the keys are the series IDs and the values are the Series with 
@@ -4193,6 +4218,7 @@ def check_preprocess_series(
 
     not_valid_index = []
     indexes_freq = set()
+    indexes_tz = set()
     series_indexes = {}
     for k, v in series_dict.items():
         if isinstance(v, pd.DataFrame):
@@ -4208,6 +4234,7 @@ def check_preprocess_series(
         idx = v.index
         if isinstance(idx, pd.DatetimeIndex):
             indexes_freq.add(idx.freq)
+            indexes_tz.add(None if idx.tz is None else str(idx.tz))
         elif isinstance(idx, pd.RangeIndex):
             indexes_freq.add(idx.step)
         else:
@@ -4233,12 +4260,23 @@ def check_preprocess_series(
             "frequency or step."
         )
     if not len(indexes_freq) == 1:
+        # NOTE: Frequencies of different types (e.g. `Day` and `MonthBegin`, or
+        # a frequency and a step) cannot be compared.
+        try:
+            indexes_freq = sorted(indexes_freq)
+        except TypeError:
+            indexes_freq = sorted(indexes_freq, key=str)
         raise ValueError(
             f"If `series` is a dictionary, all series must have a Pandas "
             f"RangeIndex or DatetimeIndex with the same step/frequency. "
             f"If it a MultiIndex DataFrame, the second level must be a DatetimeIndex "
             f"with the same frequency for each series. "
-            f"Found frequencies: {sorted(indexes_freq)}"
+            f"Found frequencies: {indexes_freq}"
+        )
+    if len(indexes_tz) > 1:
+        raise ValueError(
+            f"If `series` is a dictionary, all series must have the same time "
+            f"zone. Found time zones: {sorted(indexes_tz, key=str)}"
         )
 
     return series_dict, series_indexes
@@ -4298,7 +4336,13 @@ def check_preprocess_exog_multiseries(
 
     if isinstance(exog, (pd.Series, pd.DataFrame)): 
         
+        check_exog(exog=exog, allow_nan=True)
         exog = exog.copy().to_frame() if isinstance(exog, pd.Series) else exog.copy()
+        if exog.columns.has_duplicates:
+            raise ValueError(
+                f"`exog` cannot contain duplicated column names. "
+                f"Got {exog.columns.to_list()}."
+            )
         if isinstance(exog.index, pd.MultiIndex):
             if not isinstance(exog.index.levels[1], pd.DatetimeIndex):
                 raise TypeError(
@@ -4371,6 +4415,11 @@ def check_preprocess_exog_multiseries(
             check_exog(exog=v, allow_nan=True)
             if isinstance(v, pd.Series):
                 v = v.to_frame()
+            elif v.columns.has_duplicates:
+                raise ValueError(
+                    f"`exog` for series '{k}' cannot contain duplicated column "
+                    f"names. Got {v.columns.to_list()}."
+                )
             exog_dict[k] = v
 
     not_valid_index = [
@@ -4403,8 +4452,10 @@ def check_preprocess_exog_multiseries(
                 f"for each categorical variable."
             )
 
+        # NOTE: Names in order of appearance, a set does not keep the same
+        # order across Python processes.
         exog_names_in_ = list(
-            set(
+            dict.fromkeys(
                 column
                 for df in exog_dict.values()
                 if df is not None
@@ -4412,7 +4463,7 @@ def check_preprocess_exog_multiseries(
             )
         )
     else:
-        exog_names_in_ = list(exog.columns) if isinstance(exog, pd.DataFrame) else [exog.name]
+        exog_names_in_ = exog.columns.to_list()
 
     if len(set(exog_names_in_) - set(series_names_in_)) != len(exog_names_in_):
         raise ValueError(
@@ -4456,7 +4507,7 @@ def align_series_and_exog_multiseries(
 
     for k in series_dict.keys():
         if trim_series_nan and (
-            np.isnan(series_dict[k].iat[0]) or np.isnan(series_dict[k].iat[-1])
+            pd.isna(series_dict[k].iat[0]) or pd.isna(series_dict[k].iat[-1])
         ):
             first_valid_index = series_dict[k].first_valid_index()
             last_valid_index = series_dict[k].last_valid_index()
@@ -4467,6 +4518,11 @@ def align_series_and_exog_multiseries(
 
         if exog_dict[k] is not None:
             if not series_dict[k].index.equals(exog_dict[k].index):
+                if exog_dict[k].index.has_duplicates:
+                    raise ValueError(
+                        f"`exog` for series '{k}' has duplicated index values. "
+                        f"Each date or position can only appear once."
+                    )
                 exog_dict[k] = exog_dict[k].loc[first_valid_index:last_valid_index]
                 if exog_dict[k].empty:
                     warnings.warn(
@@ -4475,7 +4531,7 @@ def align_series_and_exog_multiseries(
                         MissingValuesWarning
                     )
                     exog_dict[k] = None
-                elif len(exog_dict[k]) != len(series_dict[k]):
+                elif not exog_dict[k].index.equals(series_dict[k].index):
                     warnings.warn(
                         f"`exog` for series '{k}' doesn't have values for "
                         f"all the dates in the series. Missing values will be "

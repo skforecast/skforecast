@@ -164,19 +164,10 @@ def test_check_residuals_input_multiseries_ValueError_when_not_out_sample_residu
         )
 
 
-@pytest.mark.parametrize("forecaster_name", 
-                         ['ForecasterRecursiveMultiSeries', 'ForecasterDirectMultiVariate', 'ForecasterRnn'],
-                         ids = lambda fn: f'forecaster_name: {fn}')
-@pytest.mark.parametrize("use_binned_residuals", 
-                         [True, False],
-                         ids = lambda binned: f'use_binned_residuals: {binned}')
-def test_check_residuals_input_ValueError_when_residuals_for_some_level_is_None(forecaster_name, use_binned_residuals):
+def _residuals_with_level_l3_None(use_binned_residuals):
     """
-    Test ValueError is raised when residuals for some level is None or empty
-    in 'ForecasterRecursiveMultiSeries'.
+    Residuals of levels 'l1' and 'l2', None or empty for level 'l3'.
     """
-    levels = ['1', '2']
-
     if use_binned_residuals:
         residuals = {
             'l1': {1: np.array([1, 2, 3, 4, 5])},
@@ -196,13 +187,31 @@ def test_check_residuals_input_ValueError_when_residuals_for_some_level_is_None(
         use_in_sample_residuals = True
         literal = "in_sample_residuals_"
 
+    return residuals, use_in_sample_residuals, literal
+
+
+@pytest.mark.parametrize("forecaster_name", 
+                         ['ForecasterRecursiveMultiSeries', 'ForecasterDirectMultiVariate', 'ForecasterRnn'],
+                         ids = lambda fn: f'forecaster_name: {fn}')
+@pytest.mark.parametrize("use_binned_residuals", 
+                         [True, False],
+                         ids = lambda binned: f'use_binned_residuals: {binned}')
+def test_check_residuals_input_ValueError_when_residuals_for_some_level_is_None(forecaster_name, use_binned_residuals):
+    """
+    Test ValueError is raised when residuals for a level to predict are None 
+    or empty.
+    """
+    residuals, use_in_sample_residuals, literal = _residuals_with_level_l3_None(
+        use_binned_residuals
+    )
+
     err_msg = re.escape(
-        f"Residuals for level 'l3' are None. Check `forecaster.{literal}`."
+        f"Residuals for level 'l3' are None or empty. Check `forecaster.{literal}`."
     )
     with pytest.raises(ValueError, match = err_msg):
         check_residuals_input(
             forecaster_name              = forecaster_name,
-            levels                       = levels,
+            levels                       = ['l1', 'l3'],
             encoding                     ='ordinal',
             use_in_sample_residuals      = use_in_sample_residuals,
             in_sample_residuals_         = residuals,
@@ -211,3 +220,74 @@ def test_check_residuals_input_ValueError_when_residuals_for_some_level_is_None(
             in_sample_residuals_by_bin_  = residuals,
             out_sample_residuals_by_bin_ = residuals
         )
+
+
+@pytest.mark.parametrize("forecaster_name", 
+                         ['ForecasterRecursiveMultiSeries', 'ForecasterDirectMultiVariate', 'ForecasterRnn'],
+                         ids = lambda fn: f'forecaster_name: {fn}')
+@pytest.mark.parametrize("use_binned_residuals", 
+                         [True, False],
+                         ids = lambda binned: f'use_binned_residuals: {binned}')
+def test_check_residuals_input_no_error_when_residuals_None_only_for_levels_not_predicted(forecaster_name, use_binned_residuals):
+    """
+    Test no error is raised when residuals are None or empty only for levels 
+    that are not predicted. Before, the residuals of all the levels were 
+    checked, so storing residuals only for some series made every prediction
+    interval fail.
+    """
+    residuals, use_in_sample_residuals, _ = _residuals_with_level_l3_None(
+        use_binned_residuals
+    )
+
+    check_residuals_input(
+        forecaster_name              = forecaster_name,
+        levels                       = ['l1', 'l2'],
+        encoding                     ='ordinal',
+        use_in_sample_residuals      = use_in_sample_residuals,
+        in_sample_residuals_         = residuals,
+        out_sample_residuals_        = residuals,
+        use_binned_residuals         = use_binned_residuals,
+        in_sample_residuals_by_bin_  = residuals,
+        out_sample_residuals_by_bin_ = residuals
+    )
+
+
+@pytest.mark.parametrize("use_binned_residuals", 
+                         [True, False],
+                         ids = lambda binned: f'use_binned_residuals: {binned}')
+def test_check_residuals_input_unknown_level_uses_unknown_level_residuals_ForecasterRecursiveMultiSeries(use_binned_residuals):
+    """
+    Test the residuals of '_unknown_level' are checked for a level without 
+    residuals in ForecasterRecursiveMultiSeries, the residuals used to 
+    predict it. In the rest of multiseries forecasters, a level without 
+    residuals raises a ValueError.
+    """
+    residuals, use_in_sample_residuals, literal = _residuals_with_level_l3_None(
+        use_binned_residuals
+    )
+    kwargs = {
+        'levels': ['l4'],
+        'encoding': None,
+        'use_in_sample_residuals': use_in_sample_residuals,
+        'in_sample_residuals_': residuals,
+        'out_sample_residuals_': residuals,
+        'use_binned_residuals': use_binned_residuals,
+        'in_sample_residuals_by_bin_': residuals,
+        'out_sample_residuals_by_bin_': residuals
+    }
+
+    check_residuals_input(forecaster_name='ForecasterRecursiveMultiSeries', **kwargs)
+
+    err_msg = re.escape(
+        f"Residuals for level 'l4' are None or empty. Check `forecaster.{literal}`."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_residuals_input(forecaster_name='ForecasterDirectMultiVariate', **kwargs)
+
+    residuals['_unknown_level'] = {} if use_binned_residuals else None
+    err_msg = re.escape(
+        f"Residuals for level '_unknown_level' are None or empty. Check "
+        f"`forecaster.{literal}`."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_residuals_input(forecaster_name='ForecasterRecursiveMultiSeries', **kwargs)

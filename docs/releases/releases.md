@@ -254,6 +254,34 @@ The main changes in this release are:
 
 + <code>[exog_to_direct]</code> and <code>[exog_to_direct_numpy]</code> now raise a `ValueError` when `steps` is not between 1 and the number of rows of `exog`. With more steps than rows, <code>[exog_to_direct]</code> returned missing values and <code>[exog_to_direct_numpy]</code> raised a concatenation error, and `steps=0` raised `IndexError: list index out of range`. The forecasters always call them with valid values.
 
++ The forecasters raised ``TypeError: `lags` argument must be an int, 1d numpy ndarray, range, tuple or list`` when `lags` was a numpy integer (`lags=np.int64(3)`, for example from `np.arange`), and accepted booleans (`lags=True` or `[True, 2]`). With lags given as unsigned integers (`np.uint8`), `predict` raised ``ValueError: `last_window` must have as many values as needed to generate the predictors``, because `-window_size` overflowed. Numpy integers are now accepted, booleans raise a `TypeError`, and the lags are stored as `int64`. The same applies to the `window_sizes` of custom window features, where an empty list raised `ValueError: max() iterable argument is empty`.
+
++ The forecasters removed `sample_weight` from the `fit_kwargs` dict passed by the user, and <code>[ForecasterRnn]</code> removed `series_val` and `exog_val` (when it was created and in `set_fit_kwargs`), so the same dict could not be reused. The dict is now copied. When the `fit` method of the estimator accepts `**kwargs` (for example, a scikit-learn `Pipeline`), the warning about ignored `fit_kwargs` said that they are not used by `fit`; it now says that arguments passed through `**kwargs` are not supported.
+
++ <code>[ForecasterRnn]</code> raised `KeyError: 'exog_val'` when the `exog_val` of `fit_kwargs` was a pandas Series without name. It is now named `'exog'`, as `exog` in `fit`.
+
++ The forecasters raised `TypeError: Categorical dtypes in exog must contain only integer values` with a categorical exogenous variable whose categories are nullable integers (`Int32`, for example after `convert_dtypes`), and issued a false `DataTypeWarning` with `UInt8` or pyarrow numeric columns (`double[pyarrow]`).
+
++ <code>[ForecasterRecursiveMultiSeries]</code> raised `TypeError: boolean value of NA is ambiguous` in `fit` when a series with a nullable or pyarrow dtype (`Float64`, `Int64`, `double[pyarrow]`) started or ended with missing values.
+
++ <code>[ForecasterRecursiveMultiSeries]</code> accepted a dict of series with different time zones. With series in `UTC` and `Europe/Madrid`, `predict` only returned the series in one of them; with a series without time zone, `fit` raised `TypeError: Cannot compare tz-naive and tz-aware timestamps`. A `ValueError` that lists the time zones is now raised, also in <code>[ForecasterFoundation]</code>. With series whose frequencies cannot be compared (daily and monthly, or a `DatetimeIndex` and a `RangeIndex`), the error about different frequencies raised `TypeError: '<' not supported between instances of ...` instead.
+
++ Fixed several issues with the `exog` of <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterFoundation]</code>:
+    + A wide `exog` Series without name was converted to a column named `0`, so `fit` of <code>[ForecasterRecursiveMultiSeries]</code> failed with a scikit-learn error about feature names of mixed types. It now raises the same `ValueError` as with a dict of `exog`.
+    + Duplicated column names raised an error saying that `exog` had a column named as one of the series (wide `exog`), or were accepted (dict of `exog`). They now raise a `ValueError`.
+    + An `exog` with the same length as its series but different dates was not aligned by date: <code>[ForecasterRecursiveMultiSeries]</code> raised ``ValueError: Different index for `series` and `exog` after transformation``, and <code>[ForecasterFoundation]</code> used its values by position. It is now aligned by date, with the usual warning about missing values. An `exog` with duplicated dates raises a `ValueError`.
+    + The order of `exog_names_in_` of <code>[FoundationModel]</code> changed between Python processes. It now follows the order of appearance of the columns.
+
++ Fixed an issue in <code>[ForecasterRecursiveMultiSeries]</code> where `predict_interval`, `predict_quantiles`, `predict_dist` and `predict_bootstrapping` raised `ValueError: Residuals for level 'b' are None` when a level that was not predicted had no residuals, for example after calling `set_out_sample_residuals` with only some of the series. Only the residuals of the levels to predict are now checked (for a level that is not in the residuals dict, those of `'_unknown_level'`).
+
++ The prediction methods did not detect an `exog` Series whose name is one of the exogenous variables used in training when the forecaster was trained with more of them. <code>[ForecasterRecursive]</code>, <code>[ForecasterDirect]</code> and the other forecasters with `exog` raised `KeyError: "['exog_2'] not in index"`, and <code>[ForecasterRecursiveMultiSeries]</code> filled the missing variables with NaN (without any warning with a dict of `exog`). They now raise the `ValueError` about missing columns, or a `MissingExogWarning` in <code>[ForecasterRecursiveMultiSeries]</code>.
+
++ Fixed an issue in <code>[ForecasterRnn]</code> where `predict` with a `last_window` without one of the series used as input (a series not in `levels`) used another column of `last_window` in its place, so the predictions were wrong without any warning. It now raises a `ValueError`, as <code>[ForecasterDirectMultiVariate]</code>.
+
++ The prediction methods issued a `MissingValuesWarning` when `last_window` had missing values that are not used to predict: before the last `window_size` rows, in levels that are not predicted (<code>[ForecasterRecursiveMultiSeries]</code>) or in series without lags (<code>[ForecasterDirectMultiVariate]</code>). <code>[ForecasterStats]</code>, which uses the whole `last_window`, still checks all its values.
+
++ When matplotlib, statsmodels or keras were installed but failed to import (for example, statsmodels 0.13.1 with pandas 2), the <code>[plot]</code> module, <code>[ForecasterRnn]</code> and <code>[create_and_compile_model]</code> raised `ModuleNotFoundError: No module named '(/path/to/python3'`, which hid the real error. The original error is now raised, and the installation instructions are only shown when the package is not installed.
+
 
 ## 0.25.0 <small>Sep 11, 2026</small> { id="0.25.0" }
 

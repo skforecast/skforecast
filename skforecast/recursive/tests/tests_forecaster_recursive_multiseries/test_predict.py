@@ -1448,3 +1448,33 @@ def test_predict_output_when_levels_is_pandas_Index_or_numpy_array(levels):
 
     assert not expected['pred'].isna().any()
     pd.testing.assert_frame_equal(predictions, expected)
+
+
+@pytest.mark.parametrize(
+    'dtype',
+    ['Float64', 'Int64', 'double[pyarrow]'],
+    ids=lambda dtype: f'dtype: {dtype}'
+)
+def test_predict_output_when_series_nullable_dtypes_with_leading_NA(dtype):
+    """
+    Test predict output when a series has a nullable or pyarrow dtype and
+    leading missing values (`pd.NA`) is the same as with float64. Before, `fit`
+    raised `TypeError: boolean value of NA is ambiguous`.
+    """
+    index = pd.date_range(start='2020-01-01', periods=30, freq='D')
+    series_float = {
+        'a': pd.Series(np.arange(30, dtype=float), index=index),
+        'b': pd.Series(np.arange(30, dtype=float) * 2, index=index)
+    }
+    series_float['a'].iloc[:3] = np.nan
+    series_nullable = {k: v.astype(dtype) for k, v in series_float.items()}
+
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=2)
+    forecaster.fit(series=series_nullable, suppress_warnings=True)
+    predictions = forecaster.predict(steps=2, suppress_warnings=True)
+
+    forecaster_float = ForecasterRecursiveMultiSeries(LinearRegression(), lags=2)
+    forecaster_float.fit(series=series_float, suppress_warnings=True)
+    expected = forecaster_float.predict(steps=2, suppress_warnings=True)
+
+    pd.testing.assert_frame_equal(predictions, expected)
