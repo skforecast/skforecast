@@ -56,7 +56,7 @@ For specific use cases, you can install these dependencies as needed:
 pip install skforecast[stats]
 ```
 
-+ statsmodels>=0.13, <0.15
++ statsmodels>=0.13.2, <0.15
 
 
 ### Plotting
@@ -66,7 +66,7 @@ pip install skforecast[plotting]
 ```
 
 + matplotlib>=3.7, <3.12
-+ statsmodels>=0.13, <0.15
++ statsmodels>=0.13.2, <0.15
 
 
 ### Deep Learning
