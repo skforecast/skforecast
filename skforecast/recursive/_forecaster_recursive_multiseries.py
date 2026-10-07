@@ -1026,6 +1026,300 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             y_train
         )
 
+    def _calendar_train_values(
+        self,
+        train_index: pd.DatetimeIndex
+    ) -> tuple[np.ndarray, np.ndarray, list[str]]:
+        """
+        Calendar features of the training index. They are computed once per
+        unique timestamp and expanded to the rows of the training matrix by
+        position, because the series share timestamps.
+
+        Parameters
+        ----------
+        train_index : pandas DatetimeIndex
+            Index of the training matrix, the rows of each series one after
+            another.
+
+        Returns
+        -------
+        calendar_values : numpy ndarray
+            Calendar features of the unique timestamps, as float, shape
+            (n_unique_timestamps, n_calendar_features).
+        calendar_rows : numpy ndarray
+            Position in `calendar_values` of each row of the training matrix.
+        calendar_features_names_out_ : list
+            Names of the calendar features.
+
+        """
+
+        calendar_rows, unique_index = train_index.factorize()
+        calendar_values = (
+            self.calendar_features.fit_transform(unique_index).to_numpy(dtype=float)
+        )
+
+        return calendar_values, calendar_rows, self.calendar_features.feature_names_out_
+
+    def _assemble_train_X_y(
+        self,
+        series_dict: dict[str, pd.Series],
+        train_index: pd.Index,
+        n_autoreg_cols: int,
+        X_train_exog: pd.DataFrame | None,
+        X_train_exog_names_out_: list[str] | None,
+        calendar_values: np.ndarray | None,
+        calendar_rows: np.ndarray | None,
+        calendar_features_names_out_: list[str] | None
+    ) -> tuple[pd.DataFrame, pd.Series, list[str] | None]:
+        """
+        Create the training matrices from the preprocessed inputs. The
+        autoregressive predictors and the target of each series are created
+        with `_create_train_X_y_single_series`, and the columns of `X_train`
+        are assembled in a single float block when possible.
+
+        Parameters
+        ----------
+        series_dict : dict
+            Series aligned with their exogenous variables, as pandas Series.
+        train_index : pandas Index
+            Index of the training matrix, the rows of each series one after
+            another (the first `window_size` observations of each series are
+            not in it).
+        n_autoreg_cols : int
+            Number of lags and window features.
+        X_train_exog : pandas DataFrame, None
+            Exogenous variables of the training rows, after `transformer_exog`
+            and the categorical encoding.
+        X_train_exog_names_out_ : list, None
+            Names of the columns of `X_train_exog`.
+        calendar_values : numpy ndarray, None
+            Calendar features of the unique timestamps, from
+            `_calendar_train_values`.
+        calendar_rows : numpy ndarray, None
+            Position in `calendar_values` of each row of the training matrix.
+        calendar_features_names_out_ : list, None
+            Names of the calendar features.
+
+        Returns
+        -------
+        X_train : pandas DataFrame
+            Training values (predictors), before the checks of missing values.
+        y_train : pandas Series
+            Values (target) of the time series related to each row of `X_train`.
+        X_train_window_features_names_out_ : list, None
+            Names of the window features.
+
+        """
+
+        total_rows = len(train_index)
+        n_calendar_cols = 0
+        if self.calendar_features is not None:
+            n_calendar_cols = len(calendar_features_names_out_)
+
+        # NOTE: When possible, X_train is built as a single float block: lags,
+        # window features, the level ('ordinal', 'onehot' and None encodings),
+        # the float64 exogenous variables and the calendar features (also the
+        # integer ones) are written into one pre-allocated array with contiguous
+        # columns (order='F', the layout of a pandas block). This avoids the full
+        # copy that `pd.concat` or the estimator make to merge several blocks.
+        # Columns of any other dtype are inserted afterwards, each one as its own
+        # block. The assembly with `pd.concat` is kept when:
+        # - More columns have to be inserted than the block has. Each inserted
+        #   column is copied, so the block is only faster when they are few.
+        # - 100 or more columns have to be inserted (pandas warns about
+        #   fragmented DataFrames).
+        # - `encoding` is None and there are neither exog nor calendar features.
+        #   The level column is dropped before training and `drop` copies the
+        #   matrix in both paths, so the block saves nothing here. The copy of
+        #   the `pd.concat` path keeps the row order of the lags (order='C'), as
+        #   before: estimators such as LinearRegression can change in the last
+        #   decimals when the same values are stored by columns.
+        n_level_cols = len(self.encoding_mapping_) if self.encoding == 'onehot' else 1
+        level_in_block = self.encoding != 'ordinal_category'
+        exog_cols_in_block = []
+        if X_train_exog is not None:
+            exog_cols_in_block = [
+                dtype == np.float64 for dtype in X_train_exog.dtypes
+            ]
+        n_exog_cols_in_block = sum(exog_cols_in_block)
+        n_block_cols = (
+            n_autoreg_cols + n_level_cols * level_in_block + n_exog_cols_in_block
+            + n_calendar_cols
+        )
+        n_inserted_cols = (
+            len(exog_cols_in_block) - n_exog_cols_in_block + (not level_in_block)
+        )
+        single_block = (
+            n_inserted_cols <= n_block_cols
+            and n_inserted_cols < 100
+            and not (
+                self.encoding is None
+                and X_train_exog is None
+                and self.calendar_features is None
+            )
+        )
+
+        if single_block:
+            # With 'onehot' the block is created with zeros, so that only the
+            # ones of the series columns have to be written.
+            allocate = np.zeros if self.encoding == 'onehot' else np.empty
+            X_train = allocate((total_rows, n_block_cols), order='F', dtype=float)
+        else:
+            X_train = np.empty((total_rows, n_autoreg_cols), order='C', dtype=float)
+
+        if self.calendar_features is not None:
+            # Calendar columns go at the end of the block, or to their own array
+            # when the block is not used. They are written one at a time.
+            if single_block:
+                X_train_calendar = X_train[:, n_block_cols - n_calendar_cols:]
+            else:
+                X_train_calendar = np.empty(
+                    (total_rows, n_calendar_cols), order='F', dtype=float
+                )
+            for i in range(n_calendar_cols):
+                X_train_calendar[:, i] = calendar_values[calendar_rows, i]
+
+        y_train = np.empty(total_rows, dtype=float)
+        if single_block and self.encoding in {None, 'ordinal'}:
+            # View of the level column of the block, filled in the loop.
+            encoded_values = X_train[:, n_autoreg_cols]
+        elif self.encoding in {'onehot', 'ordinal_category'}:
+            encoded_values = np.empty(total_rows, dtype=int)
+        else:
+            encoded_values = np.empty(total_rows, dtype=float)
+
+        offset = 0
+        for k in series_dict.keys():
+
+            (
+                X_train_autoreg_k,
+                series_name_k,
+                X_train_window_features_names_out_,
+                y_train_k
+            ) = self._create_train_X_y_single_series(y=series_dict[k])
+
+            n = len(y_train_k)
+            X_train[offset:offset + n, :n_autoreg_cols] = X_train_autoreg_k
+            y_train[offset:offset + n] = y_train_k
+            encoded_values[offset:offset + n] = self.encoding_mapping_[series_name_k]
+
+            offset += n
+
+        autoreg_col_names = []
+        if self.lags is not None:
+            autoreg_col_names.extend(self.lags_names)
+        if X_train_window_features_names_out_ is not None:
+            autoreg_col_names.extend(X_train_window_features_names_out_)
+
+        y_train = pd.Series(
+            data=y_train, index=train_index, name='y', copy=False
+        )
+
+        if single_block:
+
+            block_col_names = list(autoreg_col_names)
+            if self.encoding == 'onehot':
+                # One column per series, in the order of `encoding_mapping_`.
+                X_train[np.arange(total_rows), n_autoreg_cols + encoded_values] = 1.
+                block_col_names.extend(self.encoding_mapping_.keys())
+            elif level_in_block:
+                block_col_names.append('_level_skforecast')
+            for i, in_block in enumerate(exog_cols_in_block):
+                if in_block:
+                    X_train[:, len(block_col_names)] = (
+                        X_train_exog.iloc[:, i].to_numpy()
+                    )
+                    block_col_names.append(X_train_exog_names_out_[i])
+            if self.calendar_features is not None:
+                block_col_names.extend(calendar_features_names_out_)
+
+            X_train = pd.DataFrame(
+                          data    = X_train,
+                          columns = block_col_names,
+                          index   = train_index,
+                          copy    = False
+                      )
+
+            # Columns out of the block are inserted in ascending position, so
+            # each one lands in its final location: lags, window features,
+            # level and exog. Exog columns are inserted as Series (same index
+            # as X_train) to keep their dtype untouched. Duplicated names are
+            # allowed here because they are checked below.
+            if not level_in_block:
+                # NOTE: Categories are set to all the encoded levels so that the
+                # category codes match the level codes even when a level has no
+                # rows (e.g. the test split of a one-step-ahead search). CatBoost
+                # is fitted with the codes.
+                level_values = pd.Categorical(
+                    encoded_values, categories=range(len(self.encoding_mapping_))
+                )
+                X_train.insert(
+                    loc              = n_autoreg_cols,
+                    column           = '_level_skforecast',
+                    value            = level_values,
+                    allow_duplicates = True
+                )
+            for i, in_block in enumerate(exog_cols_in_block):
+                if not in_block:
+                    X_train.insert(
+                        loc              = n_autoreg_cols + n_level_cols + i,
+                        column           = X_train_exog_names_out_[i],
+                        value            = X_train_exog.iloc[:, i],
+                        allow_duplicates = True
+                    )
+
+        else:
+
+            X_train = pd.DataFrame(
+                          data    = X_train,
+                          columns = autoreg_col_names,
+                          index   = train_index,
+                          copy    = False
+                      )
+
+            if self.encoding == 'onehot':
+                encoding_col_names = list(self.encoding_mapping_.keys())
+                encoded_values = pd.DataFrame(
+                                     data    = np.eye(n_level_cols, dtype=float)[encoded_values],
+                                     columns = encoding_col_names,
+                                     index   = train_index,
+                                     copy    = False
+                                 )
+                X_train = [X_train, encoded_values]
+            else:
+                if self.encoding == 'ordinal_category':
+                    # NOTE: Same categories as in the `single_block` branch above,
+                    # see the note there.
+                    X_train['_level_skforecast'] = pd.Categorical(
+                        encoded_values, categories=range(len(self.encoding_mapping_))
+                    )
+                else:
+                    X_train['_level_skforecast'] = encoded_values
+                X_train = [X_train]
+
+            if X_train_exog is not None:
+                X_train.append(X_train_exog)
+
+            if self.calendar_features is not None:
+                X_train.append(
+                    pd.DataFrame(
+                        data    = X_train_calendar,
+                        columns = calendar_features_names_out_,
+                        index   = train_index,
+                        copy    = False
+                    )
+                )
+
+            if len(X_train) > 1:
+                X_train = pd.concat(X_train, axis=1, copy=False)
+                # `pd.concat` drops the index name when series and exog do not
+                # share it. The name of the series index is kept.
+                X_train.index = train_index
+            else:
+                X_train = X_train[0]
+
+        return X_train, y_train, X_train_window_features_names_out_
+
     def _create_train_X_y(
         self,
         series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
@@ -1213,7 +1507,6 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         # `self.window_size` positions are not in X_train.
         index_parts = [v.index[self.window_size:] for v in series_dict.values()]
         train_index = index_parts[0].append(index_parts[1:])
-        total_rows = len(train_index)
 
         # Build encoding mapping (sorted alphabetically for consistency). It is
         # rebuilt, not updated, so that no level of a previous fit is kept.
@@ -1323,222 +1616,31 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         if self.window_features_names is not None:
             n_autoreg_cols += len(self.window_features_names)
 
-        # Calendar features are computed once per unique date and then expanded
-        # to the train index by position. Since series can share dates, this
-        # avoids recomputing identical calendar values for duplicated timestamps.
-        n_calendar_cols = 0
+        # Calendar features are computed once per unique timestamp and expanded
+        # to the rows of the training matrix by position, because the series
+        # share timestamps.
+        calendar_values = None
+        calendar_rows = None
         X_train_calendar_features_names_out_ = None
         if self.calendar_features is not None:
-            calendar_rows, unique_index = train_index.factorize()
-            calendar_values = (
-                self.calendar_features.fit_transform(unique_index).to_numpy(dtype=float)
-            )
-            X_train_calendar_features_names_out_ = (
-                self.calendar_features.feature_names_out_
-            )
-            n_calendar_cols = len(X_train_calendar_features_names_out_)
-
-        # NOTE: When possible, X_train is built as a single float block: lags,
-        # window features, the level ('ordinal', 'onehot' and None encodings),
-        # the float64 exogenous variables and the calendar features (also the
-        # integer ones) are written into one pre-allocated array with contiguous
-        # columns (order='F', the layout of a pandas block). This avoids the full
-        # copy that `pd.concat` or the estimator make to merge several blocks.
-        # Columns of any other dtype are inserted afterwards, each one as its own
-        # block. The assembly with `pd.concat` is kept when:
-        # - More columns have to be inserted than the block has. Each inserted
-        #   column is copied, so the block is only faster when they are few.
-        # - 100 or more columns have to be inserted (pandas warns about
-        #   fragmented DataFrames).
-        # - `encoding` is None and there are neither exog nor calendar features.
-        #   The level column is dropped before training and `drop` copies the
-        #   matrix in both paths, so the block saves nothing here. The copy of
-        #   the `pd.concat` path keeps the row order of the lags (order='C'), as
-        #   before: estimators such as LinearRegression can change in the last
-        #   decimals when the same values are stored by columns.
-        n_level_cols = len(self.encoding_mapping_) if self.encoding == 'onehot' else 1
-        level_in_block = self.encoding != 'ordinal_category'
-        exog_cols_in_block = []
-        if X_train_exog is not None:
-            exog_cols_in_block = [
-                dtype == np.float64 for dtype in X_train_exog.dtypes
-            ]
-        n_exog_cols_in_block = sum(exog_cols_in_block)
-        n_block_cols = (
-            n_autoreg_cols + n_level_cols * level_in_block + n_exog_cols_in_block
-            + n_calendar_cols
-        )
-        n_inserted_cols = (
-            len(exog_cols_in_block) - n_exog_cols_in_block + (not level_in_block)
-        )
-        single_block = (
-            n_inserted_cols <= n_block_cols
-            and n_inserted_cols < 100
-            and not (
-                self.encoding is None
-                and X_train_exog is None
-                and self.calendar_features is None
-            )
-        )
-
-        if single_block:
-            # With 'onehot' the block is created with zeros, so that only the
-            # ones of the series columns have to be written.
-            allocate = np.zeros if self.encoding == 'onehot' else np.empty
-            X_train = allocate((total_rows, n_block_cols), order='F', dtype=float)
-        else:
-            X_train = np.empty((total_rows, n_autoreg_cols), order='C', dtype=float)
-
-        if self.calendar_features is not None:
-            # Calendar columns go at the end of the block, or to their own array
-            # when the block is not used. They are written one at a time.
-            if single_block:
-                X_train_calendar = X_train[:, n_block_cols - n_calendar_cols:]
-            else:
-                X_train_calendar = np.empty(
-                    (total_rows, n_calendar_cols), order='F', dtype=float
-                )
-            for i in range(n_calendar_cols):
-                X_train_calendar[:, i] = calendar_values[calendar_rows, i]
-
-        y_train = np.empty(total_rows, dtype=float)
-        if single_block and self.encoding in {None, 'ordinal'}:
-            # View of the level column of the block, filled in the loop.
-            encoded_values = X_train[:, n_autoreg_cols]
-        elif self.encoding in {'onehot', 'ordinal_category'}:
-            encoded_values = np.empty(total_rows, dtype=int)
-        else:
-            encoded_values = np.empty(total_rows, dtype=float)
-
-        offset = 0
-        for k in series_dict.keys():
-
             (
-                X_train_autoreg_k,
-                series_name_k,
-                X_train_window_features_names_out_,
-                y_train_k
-            ) = self._create_train_X_y_single_series(y=series_dict[k])
+                calendar_values,
+                calendar_rows,
+                X_train_calendar_features_names_out_
+            ) = self._calendar_train_values(train_index=train_index)
 
-            n = len(y_train_k)
-            X_train[offset:offset + n, :n_autoreg_cols] = X_train_autoreg_k
-            y_train[offset:offset + n] = y_train_k
-            encoded_values[offset:offset + n] = self.encoding_mapping_[series_name_k]
-
-            offset += n
-
-        autoreg_col_names = []
-        if self.lags is not None:
-            autoreg_col_names.extend(self.lags_names)
-        if X_train_window_features_names_out_ is not None:
-            autoreg_col_names.extend(X_train_window_features_names_out_)
-
-        y_train = pd.Series(
-            data=y_train, index=train_index, name='y', copy=False
+        X_train, y_train, X_train_window_features_names_out_ = (
+            self._assemble_train_X_y(
+                series_dict                  = series_dict,
+                train_index                  = train_index,
+                n_autoreg_cols               = n_autoreg_cols,
+                X_train_exog                 = X_train_exog,
+                X_train_exog_names_out_      = X_train_exog_names_out_,
+                calendar_values              = calendar_values,
+                calendar_rows                = calendar_rows,
+                calendar_features_names_out_ = X_train_calendar_features_names_out_
+            )
         )
-
-        if single_block:
-
-            block_col_names = list(autoreg_col_names)
-            if self.encoding == 'onehot':
-                # One column per series, in the order of `encoding_mapping_`.
-                X_train[np.arange(total_rows), n_autoreg_cols + encoded_values] = 1.
-                block_col_names.extend(self.encoding_mapping_.keys())
-            elif level_in_block:
-                block_col_names.append('_level_skforecast')
-            for i, in_block in enumerate(exog_cols_in_block):
-                if in_block:
-                    X_train[:, len(block_col_names)] = (
-                        X_train_exog.iloc[:, i].to_numpy()
-                    )
-                    block_col_names.append(X_train_exog_names_out_[i])
-            if self.calendar_features is not None:
-                block_col_names.extend(X_train_calendar_features_names_out_)
-
-            X_train = pd.DataFrame(
-                          data    = X_train,
-                          columns = block_col_names,
-                          index   = train_index,
-                          copy    = False
-                      )
-
-            # Columns out of the block are inserted in ascending position, so
-            # each one lands in its final location: lags, window features,
-            # level and exog. Exog columns are inserted as Series (same index
-            # as X_train) to keep their dtype untouched. Duplicated names are
-            # allowed here because they are checked below.
-            if not level_in_block:
-                # NOTE: Categories are set to all the encoded levels so that the
-                # category codes match the level codes even when a level has no
-                # rows (e.g. the test split of a one-step-ahead search). CatBoost
-                # is fitted with the codes.
-                level_values = pd.Categorical(
-                    encoded_values, categories=range(len(self.encoding_mapping_))
-                )
-                X_train.insert(
-                    loc              = n_autoreg_cols,
-                    column           = '_level_skforecast',
-                    value            = level_values,
-                    allow_duplicates = True
-                )
-            for i, in_block in enumerate(exog_cols_in_block):
-                if not in_block:
-                    X_train.insert(
-                        loc              = n_autoreg_cols + n_level_cols + i,
-                        column           = X_train_exog_names_out_[i],
-                        value            = X_train_exog.iloc[:, i],
-                        allow_duplicates = True
-                    )
-
-        else:
-
-            X_train = pd.DataFrame(
-                          data    = X_train,
-                          columns = autoreg_col_names,
-                          index   = train_index,
-                          copy    = False
-                      )
-
-            if self.encoding == 'onehot':
-                encoding_col_names = list(self.encoding_mapping_.keys())
-                encoded_values = pd.DataFrame(
-                                     data    = np.eye(n_level_cols, dtype=float)[encoded_values],
-                                     columns = encoding_col_names,
-                                     index   = train_index,
-                                     copy    = False
-                                 )
-                X_train = [X_train, encoded_values]
-            else:
-                if self.encoding == 'ordinal_category':
-                    # NOTE: Same categories as in the `single_block` branch above,
-                    # see the note there.
-                    X_train['_level_skforecast'] = pd.Categorical(
-                        encoded_values, categories=range(len(self.encoding_mapping_))
-                    )
-                else:
-                    X_train['_level_skforecast'] = encoded_values
-                X_train = [X_train]
-
-            if X_train_exog is not None:
-                X_train.append(X_train_exog)
-
-            if self.calendar_features is not None:
-                X_train.append(
-                    pd.DataFrame(
-                        data    = X_train_calendar,
-                        columns = X_train_calendar_features_names_out_,
-                        index   = train_index,
-                        copy    = False
-                    )
-                )
-
-            if len(X_train) > 1:
-                X_train = pd.concat(X_train, axis=1, copy=False)
-                # `pd.concat` drops the index name when series and exog do not
-                # share it. The name of the series index is kept.
-                X_train.index = train_index
-            else:
-                X_train = X_train[0]
 
         X_train_features_names_out_ = X_train.columns.to_list()
         if len(X_train_features_names_out_) != len(set(X_train_features_names_out_)):
