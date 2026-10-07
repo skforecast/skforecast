@@ -604,3 +604,29 @@ def test_predict_output_ForecasterStats_skforecast_Arima():
                )
 
     pd.testing.assert_series_equal(predictions, expected, atol=1e-4)
+
+
+def test_predict_output_ForecasterStats_last_window_one_observation_pandas_output():
+    """
+    Test predict output of ForecasterStats with a `last_window` of a single
+    observation and a `transformer_y` with pandas output. The transformed
+    last window must be a Series, as with a transformer with numpy output.
+    """
+    last_window = y_lw_datetime.iloc[:1]
+
+    forecaster = ForecasterStats(
+        estimator=Sarimax(order=(1, 0, 0), method='cg', disp=False),
+        transformer_y=StandardScaler().set_output(transform='pandas')
+    )
+    forecaster.fit(y=y_datetime)
+    predictions = forecaster.predict(steps=3, last_window=last_window)
+
+    forecaster_numpy = ForecasterStats(
+        estimator=Sarimax(order=(1, 0, 0), method='cg', disp=False),
+        transformer_y=StandardScaler()
+    )
+    forecaster_numpy.fit(y=y_datetime)
+    expected = forecaster_numpy.predict(steps=3, last_window=last_window)
+
+    assert not expected.isna().any()
+    pd.testing.assert_series_equal(predictions, expected)

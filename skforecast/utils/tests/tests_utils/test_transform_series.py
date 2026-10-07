@@ -191,6 +191,27 @@ def test_transform_series_when_set_output_pandas_single_column():
     pd.testing.assert_series_equal(results, expected)
 
 
+
+def test_transform_series_when_set_output_pandas_single_row():
+    """
+    Test transform_series returns a Series when the input has a single row
+    and the transformer has pandas output (`squeeze()` would return a scalar).
+    """
+    training_series = pd.Series([1.0, 2.0, 3.0, 4.0, 5.0], name='y')
+    transformer = StandardScaler().set_output(transform='pandas')
+    transformer.fit(training_series.to_frame())
+    input_series = pd.Series([4.0], index=[10], name='y')
+
+    results = transform_series(
+        series=input_series,
+        transformer=transformer,
+        fit=False,
+        inverse_transform=False
+    )
+
+    expected = pd.Series(data=[0.70710678], index=[10], name='y')
+    pd.testing.assert_series_equal(results, expected)
+
 def test_transform_series_when_transformer_expands_without_feature_names():
     """
     Test output column naming when transformer expands columns and

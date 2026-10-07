@@ -2589,7 +2589,8 @@ def transform_series(
                                  name  = data.columns[0]
                              )
     elif isinstance(values_transformed, pd.DataFrame) and values_transformed.shape[1] == 1:
-        series_transformed = values_transformed.squeeze()
+        # NOTE: `squeeze()` would return a scalar when there is a single row.
+        series_transformed = values_transformed.iloc[:, 0]
     else:
         if force_single_column:
             raise ValueError(
