@@ -48,6 +48,7 @@ from ..utils import (
     check_exog_dtypes,
     check_predict_input,
     check_residuals_input,
+    check_residuals_per_bin,
     check_interval,
     configure_estimator_categorical_features,
     cast_catboost_categorical_columns_dataframe,
@@ -4656,6 +4657,17 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             )
             self.out_sample_residuals_[level] = out_sample_residuals
             self.out_sample_residuals_by_bin_[level] = out_sample_residuals_by_bin
+
+        check_residuals_per_bin(
+            n_residuals = {
+                level: len(self.out_sample_residuals_[level])
+                for level in residuals_by_level
+            },
+            n_bins      = {
+                level: self.binner.get(level, self.binner['_unknown_level']).n_bins_
+                for level in residuals_by_level
+            }
+        )
 
     def _transform_out_sample_residuals(
         self,

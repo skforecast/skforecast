@@ -39,6 +39,7 @@ from ..utils import (
     prepare_steps_direct,
     check_predict_input,
     check_residuals_input,
+    check_residuals_per_bin,
     check_interval,
     input_to_frame,
     exog_to_direct_numpy,
@@ -3547,6 +3548,11 @@ class ForecasterDirect(ForecasterBase):
                     size    = empty_bin_size,
                     replace = False
                 )
+
+        check_residuals_per_bin(
+            n_residuals = len(out_sample_residuals),
+            n_bins      = self.binner.n_bins_
+        )
 
         if len(out_sample_residuals) > 10_000:
             out_sample_residuals = rng.choice(
