@@ -99,8 +99,8 @@ def seas_heuristic(x: np.ndarray, period: int) -> float:
     l_window = _nextodd(period)
     if l_window <= period:
         # statsmodels requires `low_pass > period`, while R uses
-        # `l.window = period` for odd periods. The next odd value gives
-        # seasonal strengths within about 1e-3 of R's.
+        # `l.window = period` for odd periods. With the next odd value the
+        # seasonal strength can differ from R's in the fourth decimal.
         l_window = period + 2
     fit = STL(
         x,

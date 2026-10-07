@@ -46,6 +46,17 @@ def is_constant(y: NDArray[np.float64]) -> bool:
     return np.all(y == y[0])
 
 
+def _aicc(aic: float, k: int, n: int) -> float:
+    """
+    AIC with the small-sample correction, using the same number of
+    parameters `k` as the AIC (as in R's forecast::ets). It is infinite when
+    the series is too short for the correction to be defined (n <= k + 1).
+    """
+    if n - k - 1 <= 0:
+        return np.inf
+    return aic + (2 * k * (k + 1)) / (n - k - 1)
+
+
 @njit(cache=True)
 def _roots_within_radius(coefs: NDArray[np.float64], radius: float) -> bool:  # pragma: no cover
     """
@@ -284,6 +295,7 @@ class ETSModel:
     states: NDArray[np.float64]
     loglik: float
     aic: float
+    aicc: float
     bic: float
     sigma2: float
     y_original: Optional[NDArray[np.float64]] = None
@@ -1129,6 +1141,7 @@ def ets(y: NDArray[np.float64],
             states=np.array([l0]),
             loglik=0.0,
             aic=2 * k_const,
+            aicc=_aicc(2 * k_const, k_const, n),
             bic=k_const * np.log(n),
             sigma2=0.0,
             y_original=y_original,
@@ -1416,6 +1429,7 @@ def ets(y: NDArray[np.float64],
     n_params = len(x_opt)
     k = n_params + 1
     aic = loglik + 2 * k
+    aicc = _aicc(aic, k, n)
     bic = loglik + k * np.log(n)
     sigma2 = np.sum(residuals ** 2) / (n - n_params)
 
@@ -1431,6 +1445,7 @@ def ets(y: NDArray[np.float64],
         states=final_states,
         loglik=-0.5 * loglik,
         aic=aic,
+        aicc=aicc,
         bic=bic,
         sigma2=sigma2,
         y_original=y_original,
@@ -1943,12 +1958,7 @@ def auto_ets(
             if ic == "aic":
                 ic_value = model.aic
             elif ic == "aicc":
-                n = len(y)
-                # Smoothing parameters, initial states and the variance, the
-                # same count used for the AIC (as in R's forecast::ets)
-                k = (1 + (model.config.trend != "N") + (model.config.season != "N") +
-                     damped_flag + model.config.n_states + 1)
-                ic_value = model.aic + (2 * k * (k + 1)) / (n - k - 1)
+                ic_value = model.aicc
             else:
                 ic_value = model.bic
 

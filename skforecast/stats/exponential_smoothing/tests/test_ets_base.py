@@ -522,6 +522,54 @@ def test_auto_ets_aicc_counts_the_variance_as_a_parameter(capsys):
         assert float(printed[name]) == pytest.approx(expected, abs=0.006)
 
 
+def test_ets_aicc_uses_the_parameters_of_the_aic():
+    """
+    Test that the AICc stored in the model is the AIC plus the small-sample
+    correction, computed with the number of parameters of the AIC.
+    """
+    np.random.seed(42)
+    y = np.cumsum(np.random.randn(40)) + 50
+    n = len(y)
+    for model_spec, damped, k in [("ANN", False, 3), ("AAN", True, 6), ("AAA", False, 9)]:
+        model = ets(y, m=4, model=model_spec, damped=damped)
+        # aic = -2 * loglik + 2 * k
+        assert (model.aic + 2 * model.loglik) / 2 == pytest.approx(k)
+        expected = model.aic + 2 * k * (k + 1) / (n - k - 1)
+        assert model.aicc == pytest.approx(expected)
+
+
+def test_ets_aicc_when_damping_is_disabled_for_short_series():
+    """
+    Test that the AICc counts the parameters of the fitted model when the
+    series is too short for the requested one. With 9 observations the damped
+    trend is dropped, so the AICc is the same as that of the model without it.
+    """
+    y = np.array([50.1, 52.3, 53.9, 56.2, 58.4, 59.7, 62.1, 64.0, 66.3])
+    with pytest.warns(UserWarning, match="Disabling damping"):
+        model_damped = ets(y, m=1, model="AAN", damped=True)
+    model = ets(y, m=1, model="AAN", damped=False)
+
+    assert model_damped.config.damped is False
+    assert model_damped.aicc == pytest.approx(model.aicc)
+    assert np.isfinite(model.aicc)
+
+
+def test_ets_aicc_is_infinite_when_correction_is_not_defined():
+    """
+    Test that the AICc is infinite, instead of negative or a division by
+    zero, when n <= k + 1. Only a constant series can reach this case, since
+    the rest of the models need more than k + 3 observations.
+    """
+    for n in (2, 3, 4):
+        with pytest.warns(UserWarning, match="Series is constant"):
+            model = ets(np.full(n, 5.0), m=1, model="ZZZ")
+        assert model.aicc == np.inf
+
+    with pytest.warns(UserWarning, match="Series is constant"):
+        model = ets(np.full(10, 5.0), m=1, model="ZZZ")
+    assert model.aicc == pytest.approx(model.aic + 2 * 3 * 4 / (10 - 3 - 1))
+
+
 def test_auto_ets_empty_series_raises():
     """Test auto_ets raises on empty series"""
     y = np.array([])
