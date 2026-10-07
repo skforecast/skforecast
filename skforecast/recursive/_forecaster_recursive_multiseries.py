@@ -1351,11 +1351,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         # - 100 or more columns have to be inserted (pandas warns about
         #   fragmented DataFrames).
         # - `encoding` is None and there are neither exog nor calendar features.
-        #   The block brings no gain here: the level column is dropped before
-        #   training, so the lags and window features already reach the estimator
-        #   as one array, without copies. That array keeps its row order
-        #   (order='C'), because estimators such as LinearRegression can change in
-        #   the last decimals when the same values are stored by columns.
+        #   The level column is dropped before training and `drop` copies the
+        #   matrix in both paths, so the block saves nothing here. The copy of
+        #   the `pd.concat` path keeps the row order of the lags (order='C'), as
+        #   before: estimators such as LinearRegression can change in the last
+        #   decimals when the same values are stored by columns.
         n_level_cols = len(self.encoding_mapping_) if self.encoding == 'onehot' else 1
         level_in_block = self.encoding != 'ordinal_category'
         exog_cols_in_block = []
@@ -1510,8 +1510,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 X_train = [X_train, encoded_values]
             else:
                 if self.encoding == 'ordinal_category':
-                    # NOTE: Same categories as in the block path above, see the
-                    # note there.
+                    # NOTE: Same categories as in the `single_block` branch above,
+                    # see the note there.
                     X_train['_level_skforecast'] = pd.Categorical(
                         encoded_values, categories=range(len(self.encoding_mapping_))
                     )
@@ -1672,7 +1672,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         Returns
         -------
         X_train : pandas DataFrame
-            Training values (predictors).
+            Training values (predictors). The lags, the window features, the
+            one-hot columns of the series (`encoding='onehot'`) and the calendar
+            features are `float`; the exogenous variables keep their dtype. The
+            index keeps the name of the index of `series`.
         y_train : pandas Series
             Values (target) of the time series related to each row of `X_train`.
 
@@ -3172,7 +3175,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             Number of steps to predict. 
         levels : str, list, default None
             Time series to be predicted. If `None` all levels whose last window
-            ends at the same datetime index will be predicted together.
+            ends at the same datetime index will be predicted together. With
+            `encoding='onehot'`, a level not seen during training has all its
+            one-hot columns set to 0, as in `predict`.
         last_window : pandas DataFrame, default None
             Series values used to create the predictors (lags) needed in the 
             first iteration of the prediction (t + 1).
