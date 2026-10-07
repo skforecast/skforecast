@@ -4039,9 +4039,9 @@ def check_preprocess_series(
     first level of the index must contain the series IDs, and the second 
     level must be a `DatetimeIndex` with the same frequency across all series.
     - If series is a dictionary, each key must be a series ID, and each value 
-    must be a named pandas Series. All series must have the same index, which 
-    must be either a `DatetimeIndex` or a `RangeIndex`, and they must share the 
-    same frequency or step size, as appropriate.
+    must be a named pandas Series. All series must have the same type of index, 
+    either a `DatetimeIndex` or a `RangeIndex`, and they must share the same 
+    frequency or step size, as appropriate, and the same time zone.
 
     When `series` is a pandas DataFrame, it is converted to a dictionary of pandas 
     Series, where the keys are the series IDs and the values are the Series with 
@@ -4130,6 +4130,7 @@ def check_preprocess_series(
 
     not_valid_index = []
     indexes_freq = set()
+    indexes_tz = set()
     series_indexes = {}
     for k, v in series_dict.items():
         if isinstance(v, pd.DataFrame):
@@ -4145,6 +4146,7 @@ def check_preprocess_series(
         idx = v.index
         if isinstance(idx, pd.DatetimeIndex):
             indexes_freq.add(idx.freq)
+            indexes_tz.add(None if idx.tz is None else str(idx.tz))
         elif isinstance(idx, pd.RangeIndex):
             indexes_freq.add(idx.step)
         else:
@@ -4170,12 +4172,23 @@ def check_preprocess_series(
             "frequency or step."
         )
     if not len(indexes_freq) == 1:
+        # NOTE: Frequencies of different types (e.g. `Day` and `MonthBegin`, or
+        # a frequency and a step) cannot be compared.
+        try:
+            indexes_freq = sorted(indexes_freq)
+        except TypeError:
+            indexes_freq = sorted(indexes_freq, key=str)
         raise ValueError(
             f"If `series` is a dictionary, all series must have a Pandas "
             f"RangeIndex or DatetimeIndex with the same step/frequency. "
             f"If it a MultiIndex DataFrame, the second level must be a DatetimeIndex "
             f"with the same frequency for each series. "
-            f"Found frequencies: {sorted(indexes_freq)}"
+            f"Found frequencies: {indexes_freq}"
+        )
+    if len(indexes_tz) > 1:
+        raise ValueError(
+            f"If `series` is a dictionary, all series must have the same time "
+            f"zone. Found time zones: {sorted(indexes_tz, key=str)}"
         )
 
     return series_dict, series_indexes
