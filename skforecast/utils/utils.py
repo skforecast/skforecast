@@ -452,11 +452,10 @@ def initialize_differentiator_multiseries(
     """
     Initialize `differentiator_` attribute for the ForecasterRecursiveMultiSeries.
 
-    - If `int`, the same order of differentiation is applied to all series.
-    - If `dict`, a different order of differentiation (including None) can 
-    be used for each series. The keys must be the names of the series used
-    to fit the forecaster. If a series is not present in the dictionary, no
-    differencing is applied.
+    - If a `TimeSeriesDifferentiator`, a copy of it is used for each series.
+    - If `dict`, a copy of the differentiator (or `None`) of each series. The
+    keys must be the names of the series used to fit the forecaster. If a
+    series is not present in the dictionary, no differencing is applied.
     - If `None`, no differencing is applied.
 
     Parameters
@@ -469,7 +468,7 @@ def initialize_differentiator_multiseries(
     Returns
     -------
     differentiator_ : dict
-        Dictionary with the `differentiator` for each series. It is created cloning the
+        Dictionary with the `differentiator` for each series. It is created copying the
         objects in `differentiator` and is used internally to avoid overwriting.
     
     """
@@ -1017,7 +1016,7 @@ def check_y(
     y : Any
         Time series values.
     series_id : str, default '`y`'
-        Identifier of the series used in the warning message.
+        Identifier of the series used in the error messages.
     allow_nan : bool, default False
         If `True`, skip the check for missing values.
     
@@ -1046,15 +1045,16 @@ def check_exog(
     series_id: str = "`exog`"
 ) -> None:
     """
-    Raise Exception if `exog` is not pandas Series or pandas DataFrame.
-    If `allow_nan = True`, issue a warning if `exog` contains NaN values.
+    Raise Exception if `exog` is not pandas Series or pandas DataFrame, or if
+    it is a pandas Series without name. If `allow_nan = False`, issue a warning
+    if `exog` contains NaN values.
     
     Parameters
     ----------
     exog : pandas Series, pandas DataFrame
         Exogenous variable/s included as predictor/s.
     allow_nan : bool, default True
-        If True, allows the presence of NaN values in `exog`. If False (default),
+        If `True`, allows the presence of NaN values in `exog`. If `False`,
         issue a warning if `exog` contains NaN values.
     series_id : str, default '`exog`'
         Identifier of the series for which the exogenous variable/s are used
@@ -1395,11 +1395,13 @@ def check_predict_input(
         If the forecaster has been trained using exogenous variable/s.
     index_type_ : type
         Type of index of the input used in training.
-    index_freq_ : str
-        Frequency of Index of the input used in training.
+    index_freq_ : pandas DateOffset, int
+        Frequency (`DatetimeIndex`) or step (`RangeIndex`) of the index of the
+        input used in training.
     window_size: int
-        Size of the window needed to create the predictors. It is equal to 
-        `max_lag`.
+        Size of the window needed to create the predictors (the largest of the
+        lags and the window sizes of the window features, plus the order of
+        differentiation).
     last_window : pandas Series, pandas DataFrame, None
         Values of the series used to create the predictors (lags) need in the 
         first iteration of prediction (t + 1).
@@ -1413,9 +1415,9 @@ def check_predict_input(
     max_step: int, default None
         Maximum number of steps allowed (`ForecasterDirect` and 
         `ForecasterDirectMultiVariate`).
-    levels : str, list, default None
+    levels : list, default None
         Time series to be predicted (`ForecasterRecursiveMultiSeries`
-        and `ForecasterRnn).
+        and `ForecasterRnn`).
     levels_forecaster : str, list, default None
         Time series used as output data of a multiseries problem in a RNN problem
         (`ForecasterRnn`).
@@ -2093,8 +2095,8 @@ def exog_to_direct_numpy(
     Parameters
     ----------
     exog : numpy ndarray, pandas Series, pandas DataFrame
-        Exogenous variables, shape(samples,). If exog is a pandas format, the 
-        direct exog names are created.
+        Exogenous variables, shape (n_samples,) or (n_samples, n_exog). If exog
+        is a pandas format, the direct exog names are created.
     steps : int
         Number of steps that will be predicted using exog.
 
@@ -4429,7 +4431,7 @@ def align_series_and_exog_multiseries(
     ----------
     series_dict : dict
         Dictionary with the series used during training.
-    exog_dict : dict, default None
+    exog_dict : dict
         Dictionary with the exogenous variable/s used during training.
     trim_series_nan : bool, default True
         If `True`, leading and trailing NaNs are removed from each series
