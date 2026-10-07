@@ -826,3 +826,41 @@ def test_predict_output_when_lags_are_numpy_integers(lags):
     assert forecaster.window_size == 3
     assert len(forecaster.last_window_) == 3
     pd.testing.assert_series_equal(predictions, expected)
+
+
+def test_predict_output_when_window_sizes_is_numpy_unsigned_integer():
+    """
+    Test predict output when the `window_sizes` of a custom window feature is a
+    numpy unsigned integer is the same as with a Python int. Before, 
+    `-window_size` overflowed and `last_window_` was empty.
+    """
+
+    class RollingMean:
+        def __init__(self, window_sizes):
+            self.window_sizes = window_sizes
+            self.features_names = ['roll_mean']
+
+        def transform_batch(self, y):
+            return y.rolling(int(self.window_sizes)).mean().to_frame('roll_mean')
+
+        def transform(self, X):
+            return np.array([np.mean(X[-int(self.window_sizes):])])
+
+    y = pd.Series(np.arange(50, dtype=float))
+
+    forecaster = ForecasterRecursive(
+        LinearRegression(), lags=2, window_features=RollingMean(np.uint8(5))
+    )
+    forecaster.fit(y=y)
+    predictions = forecaster.predict(steps=3)
+
+    forecaster_int = ForecasterRecursive(
+        LinearRegression(), lags=2, window_features=RollingMean(5)
+    )
+    forecaster_int.fit(y=y)
+    expected = forecaster_int.predict(steps=3)
+
+    assert forecaster.window_size == 5
+    assert type(forecaster.window_size) is int
+    assert len(forecaster.last_window_) == 5
+    pd.testing.assert_series_equal(predictions, expected)

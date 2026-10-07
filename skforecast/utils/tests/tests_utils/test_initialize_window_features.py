@@ -212,10 +212,12 @@ def test_initialize_window_features_valid():
 def test_initialize_window_features_valid_when_window_sizes_numpy_integers():
     """
     Test initialize_window_features when `window_sizes` are numpy integers.
+    `max_size_window_features` is a Python int, unsigned integers overflow when
+    negated.
     """
 
     wf1 = WindowFeature(np.int64(5), ["feature1"])
-    wf2 = WindowFeature([np.int32(3), np.int64(6)], ["feature2", "feature3"])
+    wf2 = WindowFeature([np.int32(3), np.uint8(6)], ["feature2", "feature3"])
     window_features, window_features_names, max_size_window_features = (
         initialize_window_features([wf1, wf2])
     )
@@ -223,3 +225,10 @@ def test_initialize_window_features_valid_when_window_sizes_numpy_integers():
     assert window_features == [wf1, wf2]
     assert window_features_names == ["feature1", "feature2", "feature3"]
     assert max_size_window_features == 6
+    assert type(max_size_window_features) is int
+
+    wf3 = WindowFeature(np.uint8(4), ["feature4"])
+    _, _, max_size_window_features = initialize_window_features(wf3)
+
+    assert max_size_window_features == 4
+    assert type(max_size_window_features) is int

@@ -223,7 +223,9 @@ def initialize_window_features(
                         f"If argument `window_sizes` is an integer, it must be equal to or "
                         f"greater than 1. Got {window_sizes} from {wf_name}." + link_to_docs
                     )
-                max_window_sizes.append(window_sizes)
+                # NOTE: Cast to int, unsigned integers overflow when negated
+                # (`-window_size`).
+                max_window_sizes.append(int(window_sizes))
             else:
                 if len(window_sizes) == 0:
                     raise ValueError(
@@ -238,7 +240,7 @@ def initialize_window_features(
                         f"If argument `window_sizes` is a list, all elements must be integers "
                         f"equal to or greater than 1. Got {window_sizes} from {wf_name}." + link_to_docs
                     )
-                max_window_sizes.append(max(window_sizes))
+                max_window_sizes.append(int(max(window_sizes)))
 
             features_names = wf.features_names
             if not isinstance(features_names, list):
