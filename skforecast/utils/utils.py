@@ -1541,7 +1541,8 @@ def check_predict_input(
                 f"`last_window` includes columns named 'series_1' and 'series_2'."
             )
 
-        if forecaster_name == 'ForecasterDirectMultiVariate':
+        # NOTE: ForecasterRnn uses all the series as input, not only the levels.
+        if forecaster_name in ['ForecasterDirectMultiVariate', 'ForecasterRnn']:
             if len(set(series_names_in_) - set(last_window_cols)) > 0:
                 raise ValueError(
                     f"`last_window` columns must be the same as the `series` "

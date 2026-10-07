@@ -460,6 +460,39 @@ def test_check_predict_input_ValueError_when_series_names_in__not_last_window_Fo
         )
 
 
+def test_check_predict_input_ValueError_when_series_names_in__not_last_window_ForecasterRnn():
+    """
+    Check ValueError is raised when `last_window` does not contain all the 
+    series used as input during fit in ForecasterRnn, also the ones that are 
+    not predicted (not in `levels`). Before, the missing series were silently
+    replaced by another column of `last_window`.
+    """
+    last_window = pd.DataFrame(
+        {'l1': [1, 2, 3]}, index=pd.date_range(start='1/1/2018', periods=3, freq=freq)
+    )
+
+    err_msg = re.escape(
+        "`last_window` columns must be the same as the `series` "
+        "column names used to create the X_train matrix.\n"
+        "    `last_window` columns    : ['l1']\n"
+        "    `series` columns X train : ['l1', 'l2']"
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_predict_input(
+            forecaster_name   = 'ForecasterRnn',
+            steps             = 2,
+            is_fitted         = True,
+            exog_in_          = False,
+            index_type_       = pd.DatetimeIndex,
+            index_freq_       = freq,
+            window_size       = 2,
+            last_window       = last_window,
+            levels            = ['l1'],
+            levels_forecaster = ['l1'],
+            series_names_in_  = ['l1', 'l2']
+        )
+
+
 def test_check_predict_input_TypeError_when_last_window_is_not_pandas_series():
     """
     """
