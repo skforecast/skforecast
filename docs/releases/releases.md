@@ -117,6 +117,8 @@ The main changes in this release are:
 
 **Fixed**
 
++ The AICc used by the automatic model selection of <code>[Ets]</code> did not count the variance as a parameter, so its small-sample correction was smaller than the one in the AIC and in R's `forecast::ets`. It now uses the same number of parameters as the AIC, which can change the selected model for short series.
+
 + <code>[FoundationModel]</code> only routes Chronos-2 checkpoints (`amazon/chronos-2*` and `autogluon/chronos-2*`) to `ChronosAdapter`. Chronos (T5) and Chronos-Bolt checkpoints were accepted when the model was created but failed at predict time, because their pipelines do not accept the input format and the `cross_learning` argument used by the adapter. They now raise a `ValueError` when the model is created.
 
 + <code>[FoundationModel]</code> only routes Moirai-2 checkpoints (`Salesforce/moirai-2*`) to `MoiraiAdapter`. Moirai 1.x and Moirai-MoE checkpoints were accepted when the model was created but failed when the weights were loaded, because their configurations lack arguments required by `Moirai2Module`. They now raise a `ValueError` when the model is created.
