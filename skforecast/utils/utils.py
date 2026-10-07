@@ -4854,15 +4854,14 @@ def deepcopy_forecaster(
     include_last_window: bool = False,
 ) -> object:
     """
-    Create a lightweight deep copy of a forecaster by temporarily
-    replacing heavy fitted attributes with lightweight placeholders
-    before copying.
+    Create a lightweight deep copy of a forecaster by replacing heavy fitted
+    attributes with lightweight placeholders in the copy. The original 
+    forecaster is not modified.
 
     Estimators are always replaced with unfitted clones (same
-    hyperparameters) to avoid copying expensive fitted state (e.g.,
-    tree structures, model weights). For sklearn-compatible estimators
-    `sklearn.base.clone` is used; for statistical models
-    (`ForecasterStats`) `copy.copy` is used instead. Additional
+    hyperparameters, `sklearn.base.clone`) to avoid copying expensive 
+    fitted state (e.g., tree structures). The Keras model of `ForecasterRnn` 
+    cannot be cloned this way, so it is copied with its weights. Additional
     heavy attributes (residuals and last window) can be optionally
     included via parameters.
 
@@ -4895,29 +4894,31 @@ def deepcopy_forecaster(
 
     """
 
-    # Save references to heavy attributes before replacing them
-    saved = {}
+    # NOTE: The original forecaster is not modified. The heavy attributes are
+    # replaced in the copy through the `memo` of `deepcopy`, which maps the id
+    # of an object to the object to use in its place, so the original stays
+    # intact even if the copy fails.
+    memo = {}
 
     # 1. Replace fitted estimator with unfitted clone (same hyperparameters)
     if hasattr(forecaster, 'estimator') and forecaster.estimator is not None:
-        saved['estimator'] = forecaster.estimator
         if type(forecaster).__name__ == 'ForecasterRnn':
-            forecaster.estimator = deepcopy(forecaster.estimator)
+            estimator_copy = deepcopy(forecaster.estimator)
         else:
-            forecaster.estimator = clone(forecaster.estimator)
+            estimator_copy = clone(forecaster.estimator)
+        memo[id(forecaster.estimator)] = estimator_copy
 
     # 2. Replace fitted estimators collection
     if hasattr(forecaster, 'estimators_') and forecaster.estimators_ is not None:
-        saved['estimators_'] = forecaster.estimators_
         if isinstance(forecaster.estimators_, dict):
             # ForecasterDirect, ForecasterDirectMultiVariate: dict of fitted estimators
-            forecaster.estimators_ = {
+            memo[id(forecaster.estimators_)] = {
                 step: clone(forecaster.estimator)
                 for step in forecaster.estimators_
             }
         elif isinstance(forecaster.estimators_, list):
             # ForecasterStats: list of fitted stats models
-            forecaster.estimators_ = [
+            memo[id(forecaster.estimators_)] = [
                 clone(est) for est in forecaster.estimators
             ]
 
@@ -4930,8 +4931,7 @@ def deepcopy_forecaster(
 
     for attr in _residual_attrs:
         if hasattr(forecaster, attr) and getattr(forecaster, attr) is not None:
-            saved[attr] = getattr(forecaster, attr)
-            setattr(forecaster, attr, None)
+            memo[id(getattr(forecaster, attr))] = None
 
     # 4. Optionally replace last_window_ with None
     if (
@@ -4939,15 +4939,10 @@ def deepcopy_forecaster(
         and hasattr(forecaster, 'last_window_')
         and forecaster.last_window_ is not None
     ):
-        saved['last_window_'] = forecaster.last_window_
-        forecaster.last_window_ = None
+        memo[id(forecaster.last_window_)] = None
 
     # Perform the (now lightweight) deep copy
-    forecaster_copy = deepcopy(forecaster)
-
-    # Restore original heavy attributes on the original forecaster
-    for attr, value in saved.items():
-        setattr(forecaster, attr, value)
+    forecaster_copy = deepcopy(forecaster, memo)
 
     return forecaster_copy
 
