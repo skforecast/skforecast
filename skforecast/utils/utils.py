@@ -4437,7 +4437,7 @@ def prepare_levels_multiseries(
     ----------
     X_train_series_names_in_ : list
         Names of the series (levels) included in the matrix `X_train`.
-    levels : str, list, default None
+    levels : str, list, pandas Index, numpy ndarray, default None
         Names of the series (levels) to be predicted.
 
     Returns
@@ -4445,7 +4445,8 @@ def prepare_levels_multiseries(
     levels : list
         Names of the series (levels) to be predicted.
     input_levels_is_list : bool
-        Indicates if input levels argument is a list.
+        Indicates if input levels argument is a list (or a pandas Index or
+        numpy ndarray, which are converted to a list).
 
     """
 
@@ -4454,6 +4455,9 @@ def prepare_levels_multiseries(
         levels = X_train_series_names_in_
     elif isinstance(levels, str):
         levels = [levels]
+    elif isinstance(levels, (pd.Index, np.ndarray)):
+        levels = levels.tolist()
+        input_levels_is_list = True
     else:
         input_levels_is_list = True
 
