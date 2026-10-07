@@ -4248,7 +4248,13 @@ def check_preprocess_exog_multiseries(
 
     if isinstance(exog, (pd.Series, pd.DataFrame)): 
         
+        check_exog(exog=exog, allow_nan=True)
         exog = exog.copy().to_frame() if isinstance(exog, pd.Series) else exog.copy()
+        if exog.columns.has_duplicates:
+            raise ValueError(
+                f"`exog` cannot contain duplicated column names. "
+                f"Got {exog.columns.to_list()}."
+            )
         if isinstance(exog.index, pd.MultiIndex):
             if not isinstance(exog.index.levels[1], pd.DatetimeIndex):
                 raise TypeError(
@@ -4321,6 +4327,11 @@ def check_preprocess_exog_multiseries(
             check_exog(exog=v, allow_nan=True)
             if isinstance(v, pd.Series):
                 v = v.to_frame()
+            elif v.columns.has_duplicates:
+                raise ValueError(
+                    f"`exog` for series '{k}' cannot contain duplicated column "
+                    f"names. Got {v.columns.to_list()}."
+                )
             exog_dict[k] = v
 
     not_valid_index = [
@@ -4353,8 +4364,10 @@ def check_preprocess_exog_multiseries(
                 f"for each categorical variable."
             )
 
+        # NOTE: Names in order of appearance, a set does not keep the same
+        # order across Python processes.
         exog_names_in_ = list(
-            set(
+            dict.fromkeys(
                 column
                 for df in exog_dict.values()
                 if df is not None
@@ -4362,7 +4375,7 @@ def check_preprocess_exog_multiseries(
             )
         )
     else:
-        exog_names_in_ = list(exog.columns) if isinstance(exog, pd.DataFrame) else [exog.name]
+        exog_names_in_ = exog.columns.to_list()
 
     if len(set(exog_names_in_) - set(series_names_in_)) != len(exog_names_in_):
         raise ValueError(
