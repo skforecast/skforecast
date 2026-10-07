@@ -3923,8 +3923,8 @@ def _build_predict_function(
     - `XGBRegressor` (`get_booster().inplace_predict`, with the same
     `iteration_range` and `missing` as `XGBRegressor.predict`). The 'gblinear'
     booster does not support `inplace_predict` and uses `estimator.predict`.
-    - `RandomForestRegressor` (per-tree `tree_.predict`)
-    - `DecisionTreeRegressor` (`tree_.predict`)
+    - `RandomForestRegressor` and `ExtraTreesRegressor` (per-tree `tree_.predict`)
+    - `DecisionTreeRegressor` and `ExtraTreeRegressor` (`tree_.predict`)
 
     For `CatBoostRegressor` with categorical features, the categorical column
     indices are resolved once at build time and the array is cast to `object`
@@ -3996,7 +3996,9 @@ def _build_predict_function(
 
         return predict_fn
 
-    if is_sklearn_class and estimator_name == 'RandomForestRegressor':
+    if is_sklearn_class and estimator_name in (
+        'RandomForestRegressor', 'ExtraTreesRegressor'
+    ):
         trees = estimator.estimators_
 
         def predict_fn(X):
@@ -4008,7 +4010,9 @@ def _build_predict_function(
 
         return predict_fn
 
-    if is_sklearn_class and estimator_name == 'DecisionTreeRegressor':
+    if is_sklearn_class and estimator_name in (
+        'DecisionTreeRegressor', 'ExtraTreeRegressor'
+    ):
         tree_ = estimator.tree_
 
         def predict_fn(X):
