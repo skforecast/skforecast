@@ -2603,7 +2603,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         ----------
         steps : int
             Number of steps to predict. 
-        levels : str, list, default None
+        levels : str, list, pandas Index, numpy ndarray, default None
             Time series to be predicted. If `None` all levels whose last window
             ends at the same datetime index will be predicted together.
         last_window : pandas DataFrame, default None
@@ -3260,7 +3260,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         ----------
         steps : int
             Number of steps to predict. 
-        levels : str, list, default None
+        levels : str, list, pandas Index, numpy ndarray, default None
             Time series to be predicted. If `None` all levels whose last window
             ends at the same datetime index will be predicted together. With
             `encoding='onehot'`, a level not seen during training has all its
@@ -3443,7 +3443,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         ----------
         steps : int
             Number of steps to predict. 
-        levels : str, list, default None
+        levels : str, list, pandas Index, numpy ndarray, default None
             Time series to be predicted. If `None` all levels whose last window
             ends at the same datetime index will be predicted together.
         last_window : pandas DataFrame, default None
@@ -3546,7 +3546,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         ----------
         steps : int
             Number of steps to predict. 
-        levels : str, list, default None
+        levels : str, list, pandas Index, numpy ndarray, default None
             Time series to be predicted. If `None` all levels whose last window
             ends at the same datetime index will be predicted together.
         last_window : pandas DataFrame, default None
@@ -3726,7 +3726,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             
             - If steps is int, number of steps to predict. 
             - If str or pandas Datetime, the prediction will be up to that date.
-        levels : str, list, default None
+        levels : str, list, pandas Index, numpy ndarray, default None
             Time series to be predicted. If `None` all levels whose last window
             ends at the same datetime index will be predicted together.
         last_window : pandas DataFrame, default None
@@ -3898,7 +3898,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         ----------
         steps : int
             Number of steps to predict. 
-        levels : str, list, default None
+        levels : str, list, pandas Index, numpy ndarray, default None
             Time series to be predicted. If `None` all levels whose last window
             ends at the same datetime index will be predicted together.
         last_window : pandas DataFrame, default None
@@ -4054,7 +4054,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         ----------
         steps : int
             Number of steps to predict. 
-        levels : str, list, default None
+        levels : str, list, pandas Index, numpy ndarray, default None
             Time series to be predicted. If `None` all levels whose last window
             ends at the same datetime index will be predicted together.
         last_window : pandas DataFrame, default None
@@ -4151,7 +4151,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         distribution : object
             A distribution object from scipy.stats with methods `_pdf` and `fit`. 
             For example scipy.stats.norm.
-        levels : str, list, default None
+        levels : str, list, pandas Index, numpy ndarray, default None
             Time series to be predicted. If `None` all levels whose last window
             ends at the same datetime index will be predicted together.
         last_window : pandas DataFrame, default None

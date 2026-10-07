@@ -732,3 +732,71 @@ def test_predict_restores_estimator_device(estimator, device):
     forecaster.predict(steps=3)
 
     assert forecaster.estimator.get_params().get('device') == device
+
+
+def test_predict_output_when_transformers_are_Pipelines_with_FunctionTransformer():
+    """
+    Test predict when `transformer_y` and `transformer_exog` are Pipelines
+    with a FunctionTransformer without `feature_names_out`, whose
+    `get_feature_names_out` raises an AttributeError. Predictions must be equal
+    to those of the same Pipelines with `feature_names_out='one-to-one'`.
+    """
+    y = pd.Series(
+        data  = np.arange(1, 51, dtype=float) + np.sin(np.arange(50)),
+        index = pd.date_range('2020-01-01', periods=50, freq='D'),
+        name  = 'y'
+    )
+    exog = pd.DataFrame(
+        {'exog_1': np.arange(1, 54, dtype=float),
+         'exog_2': np.cos(np.arange(53)) + 2},
+        index = pd.date_range('2020-01-01', periods=53, freq='D')
+    )
+
+    def make_transformer(feature_names_out):
+        return make_pipeline(
+            FunctionTransformer(
+                func=np.log1p, inverse_func=np.expm1, feature_names_out=feature_names_out
+            ),
+            StandardScaler()
+        )
+
+    forecaster = ForecasterRecursive(
+                     estimator        = LinearRegression(),
+                     lags             = 3,
+                     transformer_y    = make_transformer(feature_names_out=None),
+                     transformer_exog = make_transformer(feature_names_out=None)
+                 )
+    forecaster.fit(y=y, exog=exog.iloc[:50])
+    predictions = forecaster.predict(steps=3, exog=exog.iloc[50:])
+
+    forecaster_names_out = ForecasterRecursive(
+                               estimator        = LinearRegression(),
+                               lags             = 3,
+                               transformer_y    = make_transformer('one-to-one'),
+                               transformer_exog = make_transformer('one-to-one')
+                           )
+    forecaster_names_out.fit(y=y, exog=exog.iloc[:50])
+    expected = forecaster_names_out.predict(steps=3, exog=exog.iloc[50:])
+
+    assert not expected.isna().any()
+    pd.testing.assert_series_equal(predictions, expected)
+
+
+def test_predict_output_when_steps_is_a_date_without_time_zone_and_index_is_tz_aware():
+    """
+    Test predict when `steps` is a date without time zone and the series has a
+    timezone-aware index. The date is interpreted in the time zone of the index.
+    """
+    y = pd.Series(
+        data  = np.arange(100, dtype=float),
+        index = pd.date_range('2024-01-01', periods=100, freq='h', tz='Europe/Madrid'),
+        name  = 'y'
+    )
+    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    forecaster.fit(y=y)
+
+    predictions = forecaster.predict(steps='2024-01-05 08:00')
+    expected = forecaster.predict(steps=5)
+
+    assert not expected.isna().any()
+    pd.testing.assert_series_equal(predictions, expected)

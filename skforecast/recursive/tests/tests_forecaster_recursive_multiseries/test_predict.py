@@ -1425,3 +1425,26 @@ def test_predict_output_when_encoding_onehot_and_series_without_rows_in_X_train(
 
     assert forecaster.X_train_series_names_in_ == ['c', 'a', 'b']
     pd.testing.assert_frame_equal(predictions, expected)
+
+
+@pytest.mark.parametrize(
+    "levels",
+    [pd.Index(['1', '2']), np.array(['1', '2'])],
+    ids=['pandas_Index', 'numpy_array']
+)
+def test_predict_output_when_levels_is_pandas_Index_or_numpy_array(levels):
+    """
+    Test predict output when `levels` is a pandas Index or a numpy array, which
+    must give the same predictions as a list.
+    """
+    series = pd.DataFrame(
+        {'1': np.arange(50, dtype=float), '2': np.arange(50, dtype=float) * 2}
+    )
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
+    forecaster.fit(series=series)
+
+    predictions = forecaster.predict(steps=3, levels=levels)
+    expected = forecaster.predict(steps=3, levels=['1', '2'])
+
+    assert not expected['pred'].isna().any()
+    pd.testing.assert_frame_equal(predictions, expected)

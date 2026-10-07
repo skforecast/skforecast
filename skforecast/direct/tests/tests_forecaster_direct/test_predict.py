@@ -1000,3 +1000,35 @@ def test_predict_output_index_when_index_is_tz_aware_and_utc_anchored(steps):
 
     pd.testing.assert_index_equal(predictions.index, expected_index)
     assert predictions.index.freq == expected_index.freq
+
+
+def test_predict_output_when_steps_is_numpy_integer():
+    """
+    Test predict output when `steps` is a numpy integer, which must give the
+    same predictions as a Python int.
+    """
+    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=5)
+    forecaster.fit(y=pd.Series(np.arange(50, dtype=float)))
+
+    predictions = forecaster.predict(steps=np.int64(3))
+    expected = forecaster.predict(steps=3)
+
+    assert not expected.isna().any()
+    pd.testing.assert_series_equal(predictions, expected)
+
+
+@pytest.mark.parametrize(
+    "steps, err_msg",
+    [(0, "`steps` must be an integer greater than or equal to 1. Got 0."),
+     ([], "`steps` cannot be an empty list.")],
+    ids=['zero', 'empty_list']
+)
+def test_predict_ValueError_when_steps_is_zero_or_empty_list(steps, err_msg):
+    """
+    Test ValueError is raised when `steps` is 0 or an empty list.
+    """
+    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=5)
+    forecaster.fit(y=pd.Series(np.arange(50, dtype=float)))
+
+    with pytest.raises(ValueError, match=re.escape(err_msg)):
+        forecaster.predict(steps=steps)

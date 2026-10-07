@@ -2034,6 +2034,11 @@ def exog_to_direct(
         exog = exog.to_frame()
 
     n_rows = len(exog)
+    if not 1 <= steps <= n_rows:
+        raise ValueError(
+            f"`steps` must be between 1 and the number of rows of `exog` "
+            f"({n_rows}). Got {steps}."
+        )
     exog_idx = exog.index
     exog_cols = exog.columns
     exog_direct = []
@@ -2095,6 +2100,11 @@ def exog_to_direct_numpy(
         exog = np.expand_dims(exog, axis=1)
 
     n_rows = len(exog)
+    if not 1 <= steps <= n_rows:
+        raise ValueError(
+            f"`steps` must be between 1 and the number of rows of `exog` "
+            f"({n_rows}). Got {steps}."
+        )
     exog_direct = [exog[i : n_rows - (steps - 1 - i)] for i in range(steps)]
     exog_direct = np.concatenate(exog_direct, axis=1) if steps > 1 else exog_direct[0]
     
@@ -2226,10 +2236,12 @@ def date_to_index_position(
         
         + If int, returns the same integer.
         + If str or pandas Timestamp, it is converted and expanded into the index.
+        A date without time zone is interpreted in the time zone of the index.
     method : str, default 'prediction'
-        Can be 'prediction' or 'validation'. 
-        
-        + If 'prediction', the date must be later than the last date in the index.
+        Can be 'prediction' or 'validation'.
+
+        + If 'prediction', the date must be later than the last date in the index,
+        and the index must have a frequency.
         + If 'validation', the date must be within the index range.
     date_literal : str, default 'steps'
         Variable name used in error messages.
@@ -2261,13 +2273,29 @@ def date_to_index_position(
             )
         
         target_date = pd.to_datetime(date_input, **kwargs_pd_to_datetime)
+        if index.tz is not None:
+            # A date without time zone is interpreted in the time zone of the index
+            if target_date.tz is None:
+                target_date = target_date.tz_localize(index.tz)
+            else:
+                target_date = target_date.tz_convert(index.tz)
+        elif target_date.tz is not None:
+            raise ValueError(
+                f"`{date_literal}` has a time zone ({target_date.tz}), but the "
+                f"index has none. Use a date without time zone."
+            )
         last_date = pd.to_datetime(index[-1])
 
         if method == 'prediction':
             if target_date <= last_date:
                 raise ValueError(
-                    "If `steps` is a date, it must be greater than the last date "
-                    "in the index."
+                    f"If `{date_literal}` is a date, it must be greater than the "
+                    f"last date in the index."
+                )
+            if index.freq is None:
+                raise ValueError(
+                    f"If `{date_literal}` is a date, the index must have a "
+                    f"frequency to compute the number of steps until that date."
                 )
             span_index = _date_range_from_index(
                              index = index,
@@ -2280,16 +2308,12 @@ def date_to_index_position(
             first_date = pd.to_datetime(index[0])
             if target_date < first_date or target_date > last_date:
                 raise ValueError(
-                    "If `initial_train_size` is a date, it must be greater than "
-                    "the first date in the index and less than the last date."
+                    f"If `{date_literal}` is a date, it must be within the index "
+                    f"range, between the first and the last date (both included)."
                 )
-            span_index = _date_range_from_index(
-                             index = index,
-                             start = first_date,
-                             end   = target_date,
-                             freq  = index.freq
-                         )
-            output = len(span_index)
+            # Number of dates in the index up to the target date (included). It
+            # does not need the frequency of the index.
+            output = int(index.searchsorted(target_date, side='right'))
 
     elif isinstance(date_input, (int, np.integer)):
         output = date_input
@@ -2483,6 +2507,37 @@ def transform_numpy(
     return array_transformed
 
 
+def _get_feature_names_out(transformer: object) -> np.ndarray | None:
+    """
+    Return the output feature names of a fitted transformer, or `None` if the
+    transformer does not provide them. Meta-estimators such as `Pipeline` or
+    `ColumnTransformer` have a `get_feature_names_out` method that raises an
+    error when one of their steps does not implement it (for example, a
+    `FunctionTransformer` without `feature_names_out`).
+
+    Parameters
+    ----------
+    transformer : object
+        Fitted scikit-learn alike transformer.
+
+    Returns
+    -------
+    feature_names_out : numpy ndarray, None
+        Output feature names, or `None` if they are not available.
+
+    """
+
+    if not hasattr(transformer, 'get_feature_names_out'):
+        return None
+
+    try:
+        feature_names_out = transformer.get_feature_names_out()
+    except (AttributeError, ValueError):
+        feature_names_out = None
+
+    return feature_names_out
+
+
 def transform_series(
     series: pd.Series,
     transformer: object | None,
@@ -2532,11 +2587,18 @@ def transform_series(
     series_name = series.name if series.name is not None else 'no_name'
     data = series.to_frame(name=series_name)
 
-    # If argument feature_names_in_ exits, is overwritten to allow using the 
-    # transformer on other series than those that were passed during fit.
-    if not fit and hasattr(transformer, 'feature_names_in_') and transformer.feature_names_in_[0] != data.columns[0]:
-        transformer = deepcopy(transformer)
-        transformer.feature_names_in_ = np.array([data.columns[0]], dtype=object)
+    # To use the transformer on a series with another name than the one seen
+    # in fit, the column is renamed to that name. The transformer is not
+    # modified: in meta-estimators such as Pipeline, `feature_names_in_` is a
+    # read-only property.
+    fitted_name = None
+    if (
+        not fit
+        and hasattr(transformer, 'feature_names_in_')
+        and transformer.feature_names_in_[0] != series_name
+    ):
+        fitted_name = transformer.feature_names_in_[0]
+        data.columns = [fitted_name]
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=UserWarning)
@@ -2555,10 +2617,13 @@ def transform_series(
         series_transformed = pd.Series(
                                  data  = values_transformed.ravel(),
                                  index = data.index,
-                                 name  = data.columns[0]
+                                 name  = series_name
                              )
     elif isinstance(values_transformed, pd.DataFrame) and values_transformed.shape[1] == 1:
-        series_transformed = values_transformed.squeeze()
+        # NOTE: `squeeze()` would return a scalar when there is a single row.
+        series_transformed = values_transformed.iloc[:, 0]
+        if fitted_name is not None and series_transformed.name == fitted_name:
+            series_transformed = series_transformed.rename(series_name)
     else:
         if force_single_column:
             raise ValueError(
@@ -2568,11 +2633,11 @@ def transform_series(
                 f"columns are not supported; use `window_features` or pass "
                 f"those features through `exog` instead."
             )
-        if hasattr(transformer, 'get_feature_names_out'):
-            feature_names_out = transformer.get_feature_names_out()
-            if len(feature_names_out) != values_transformed.shape[1]:
-                feature_names_out = [f'transformed_{i}' for i in range(values_transformed.shape[1])]
-        else:
+        feature_names_out = _get_feature_names_out(transformer)
+        if (
+            feature_names_out is None
+            or len(feature_names_out) != values_transformed.shape[1]
+        ):
             feature_names_out = [f'transformed_{i}' for i in range(values_transformed.shape[1])]
 
         series_transformed = pd.DataFrame(
@@ -2652,11 +2717,9 @@ def transform_dataframe(
         if values_transformed.ndim == 1:
             values_transformed = values_transformed.reshape(-1, 1)
 
-        feature_names_out = (
-            transformer.get_feature_names_out()
-            if hasattr(transformer, 'get_feature_names_out')
-            else df.columns
-        )
+        feature_names_out = _get_feature_names_out(transformer)
+        if feature_names_out is None:
+            feature_names_out = df.columns
         if len(feature_names_out) != values_transformed.shape[1]:
             feature_names_out = [f'transformed_{i}' for i in range(values_transformed.shape[1])]
 
@@ -4374,7 +4437,7 @@ def prepare_levels_multiseries(
     ----------
     X_train_series_names_in_ : list
         Names of the series (levels) included in the matrix `X_train`.
-    levels : str, list, default None
+    levels : str, list, pandas Index, numpy ndarray, default None
         Names of the series (levels) to be predicted.
 
     Returns
@@ -4382,7 +4445,8 @@ def prepare_levels_multiseries(
     levels : list
         Names of the series (levels) to be predicted.
     input_levels_is_list : bool
-        Indicates if input levels argument is a list.
+        Indicates if input levels argument is a list (or a pandas Index or
+        numpy ndarray, which are converted to a list).
 
     """
 
@@ -4391,6 +4455,9 @@ def prepare_levels_multiseries(
         levels = X_train_series_names_in_
     elif isinstance(levels, str):
         levels = [levels]
+    elif isinstance(levels, (pd.Index, np.ndarray)):
+        levels = levels.tolist()
+        input_levels_is_list = True
     else:
         input_levels_is_list = True
 
@@ -4518,14 +4585,20 @@ def prepare_steps_direct(
 
     """
 
-    if isinstance(steps, int):
-        steps_direct = list(range(1, steps + 1))
+    if isinstance(steps, (int, np.integer)):
+        if steps < 1:
+            raise ValueError(
+                f"`steps` must be an integer greater than or equal to 1. Got {steps}."
+            )
+        steps_direct = list(range(1, int(steps) + 1))
     elif steps is None:
         if isinstance(max_step, int):
             steps_direct = list(range(1, max_step + 1))
         else:
             steps_direct = [int(s) for s in max_step]
     elif isinstance(steps, list):
+        if not steps:
+            raise ValueError("`steps` cannot be an empty list.")
         steps_direct = []
         for step in steps:
             if not isinstance(step, (int, np.integer)):
@@ -4534,6 +4607,11 @@ def prepare_steps_direct(
                     f"Got {type(steps)}."
                 )
             steps_direct.append(int(step))
+    else:
+        raise TypeError(
+            f"`steps` argument must be an int, a list of ints or `None`. "
+            f"Got {type(steps)}."
+        )
 
     return steps_direct
 

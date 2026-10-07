@@ -1256,7 +1256,7 @@ class ForecasterRnn(ForecasterBase):
             are predicted.
             - If `None`: As many steps are predicted as defined in the estimator
             architecture.
-        levels : str, list, default None
+        levels : str, list, pandas Index, numpy ndarray, default None
             Name(s) of the time series to be predicted. It must be included
             in `levels`, defined when initializing the forecaster. If `None`, all
             all series used during training will be available for prediction.
@@ -1445,7 +1445,7 @@ class ForecasterRnn(ForecasterBase):
             are predicted.
             - If `None`: As many steps are predicted as defined in the estimator
             architecture.
-        levels : str, list, default None
+        levels : str, list, pandas Index, numpy ndarray, default None
             Name(s) of the time series to be predicted. It must be included
             in `levels`, defined when initializing the forecaster. If `None`, all
             all series used during training will be available for prediction.
@@ -1545,7 +1545,7 @@ class ForecasterRnn(ForecasterBase):
             are predicted.
             - If `None`: As many steps are predicted as defined in the estimator
             architecture.
-        levels : str, list, default None
+        levels : str, list, pandas Index, numpy ndarray, default None
             Name(s) of the time series to be predicted. It must be included
             in `levels`, defined when initializing the forecaster. If `None`, all
             all series used during training will be available for prediction.
@@ -1639,7 +1639,7 @@ class ForecasterRnn(ForecasterBase):
             are predicted.
             - If `None`: As many steps are predicted as defined in the estimator
             architecture.
-        levels : str, list, default None
+        levels : str, list, pandas Index, numpy ndarray, default None
             Name(s) of the time series to be predicted. It must be included
             in `levels`, defined when initializing the forecaster. If `None`, all
             all series used during training will be available for prediction.
@@ -1798,7 +1798,7 @@ class ForecasterRnn(ForecasterBase):
             are predicted.
             - If `None`: As many steps are predicted as defined in the estimator
             architecture.
-        levels : str, list, default None
+        levels : str, list, pandas Index, numpy ndarray, default None
             Name(s) of the time series to be predicted. It must be included
             in `levels`, defined when initializing the forecaster. If `None`, all
             all series used during training will be available for prediction.
