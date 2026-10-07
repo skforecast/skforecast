@@ -543,11 +543,24 @@ def check_select_fit_kwargs(
             k for k in fit_kwargs.keys() if k not in fit_params
         ]
         if non_used_keys:
-            warnings.warn(
-                f"Argument/s {non_used_keys} ignored since they are not used by the "
-                f"estimator's `fit` method.",
-                IgnoredArgumentWarning
+            accepts_var_kwargs = any(
+                param.kind == inspect.Parameter.VAR_KEYWORD
+                for param in fit_params.values()
             )
+            if accepts_var_kwargs:
+                warnings.warn(
+                    f"Argument/s {non_used_keys} ignored since they are not "
+                    f"explicit arguments of the estimator's `fit` method. Arguments "
+                    f"passed through `**kwargs`, for example to the steps of a "
+                    f"scikit-learn Pipeline (`step__argument`), are not supported.",
+                    IgnoredArgumentWarning
+                )
+            else:
+                warnings.warn(
+                    f"Argument/s {non_used_keys} ignored since they are not used by the "
+                    f"estimator's `fit` method.",
+                    IgnoredArgumentWarning
+                )
 
         if 'sample_weight' in fit_kwargs.keys():
             warnings.warn(
@@ -556,11 +569,12 @@ def check_select_fit_kwargs(
                 "based on its index.",
                 IgnoredArgumentWarning
             )
-            del fit_kwargs['sample_weight']
 
         # Select only the keyword arguments allowed by the estimator's `fit` method.
+        # NOTE: A new dict is created to avoid modifying the user's `fit_kwargs`.
         fit_kwargs = {
-            k: v for k, v in fit_kwargs.items() if k in fit_params
+            k: v for k, v in fit_kwargs.items()
+            if k in fit_params and k != 'sample_weight'
         }
 
     return fit_kwargs
