@@ -2563,11 +2563,18 @@ def transform_series(
     series_name = series.name if series.name is not None else 'no_name'
     data = series.to_frame(name=series_name)
 
-    # If argument feature_names_in_ exits, is overwritten to allow using the 
-    # transformer on other series than those that were passed during fit.
-    if not fit and hasattr(transformer, 'feature_names_in_') and transformer.feature_names_in_[0] != data.columns[0]:
-        transformer = deepcopy(transformer)
-        transformer.feature_names_in_ = np.array([data.columns[0]], dtype=object)
+    # To use the transformer on a series with another name than the one seen
+    # in fit, the column is renamed to that name. The transformer is not
+    # modified: in meta-estimators such as Pipeline, `feature_names_in_` is a
+    # read-only property.
+    fitted_name = None
+    if (
+        not fit
+        and hasattr(transformer, 'feature_names_in_')
+        and transformer.feature_names_in_[0] != series_name
+    ):
+        fitted_name = transformer.feature_names_in_[0]
+        data.columns = [fitted_name]
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=UserWarning)
@@ -2586,11 +2593,13 @@ def transform_series(
         series_transformed = pd.Series(
                                  data  = values_transformed.ravel(),
                                  index = data.index,
-                                 name  = data.columns[0]
+                                 name  = series_name
                              )
     elif isinstance(values_transformed, pd.DataFrame) and values_transformed.shape[1] == 1:
         # NOTE: `squeeze()` would return a scalar when there is a single row.
         series_transformed = values_transformed.iloc[:, 0]
+        if fitted_name is not None and series_transformed.name == fitted_name:
+            series_transformed = series_transformed.rename(series_name)
     else:
         if force_single_column:
             raise ValueError(

@@ -118,10 +118,21 @@ def test_transform_series_when_transformer_is_OneHotEncoder():
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_transform_series_when_applied_to_serie_with_different_name_than_the_one_used_to_fit():
+@pytest.mark.parametrize(
+    "transformer",
+    [StandardScaler(),
+     StandardScaler().set_output(transform='pandas'),
+     make_pipeline(StandardScaler()),
+     make_pipeline(StandardScaler()).set_output(transform='pandas')],
+    ids=['StandardScaler', 'StandardScaler_pandas', 'Pipeline', 'Pipeline_pandas']
+)
+def test_transform_series_when_applied_to_serie_with_different_name_than_the_one_used_to_fit(
+    transformer
+):
     """
     Test the transform series works when the serie to transform has different name
-    than the serie used for training.
+    than the serie used for training, also with a Pipeline, whose
+    `feature_names_in_` is a read-only property, and with pandas output.
     """
     training_series = pd.Series([1.16, -0.28, 0.07, 2.4, 0.25, -0.56, -1.42, 1.26, 1.78, -1.49],
                                 name = 'y')
@@ -130,7 +141,6 @@ def test_transform_series_when_applied_to_serie_with_different_name_than_the_one
     expected = pd.Series([0.67596768, -0.47871021, -0.19805933,  1.67027365, -0.0537246,
                          -0.70323091, -1.39283021,  0.75615365,  1.17312067, -1.44896038],
                          name = 'pred')
-    transformer = StandardScaler()
     transformer.fit(training_series.to_frame())
     results = transform_series(
                   series = input_series,
