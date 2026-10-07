@@ -1944,8 +1944,10 @@ def auto_ets(
                 ic_value = model.aic
             elif ic == "aicc":
                 n = len(y)
+                # Smoothing parameters, initial states and the variance, the
+                # same count used for the AIC (as in R's forecast::ets)
                 k = (1 + (model.config.trend != "N") + (model.config.season != "N") +
-                     damped_flag + model.config.n_states)
+                     damped_flag + model.config.n_states + 1)
                 ic_value = model.aic + (2 * k * (k + 1)) / (n - k - 1)
             else:
                 ic_value = model.bic

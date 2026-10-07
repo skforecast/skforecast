@@ -494,6 +494,34 @@ def test_auto_ets_ic_selection():
     assert hasattr(model_aicc, "config")
 
 
+def test_auto_ets_aicc_counts_the_variance_as_a_parameter(capsys):
+    """
+    Test that the AICc used by auto_ets to compare models counts the same
+    parameters as the AIC it corrects (smoothing parameters, initial states
+    and the variance), as in R's forecast::ets. The value is read from the
+    verbose output, before the trend penalty is added.
+    """
+    y = np.array([
+        10.5335, 7.5413, 11.1268, 9.2641, 8.7228, 6.3361, 12.537, 8.2767,
+        10.8999, 8.3079, 11.4537, 10.9171, 8.5956, 6.7733, 11.2666, 8.953,
+        7.377, 6.5915, 11.2618, 4.3945, 7.2241, 8.0699
+    ])
+    n = len(y)
+    auto_ets(
+        y, m=4, damped=False, allow_multiplicative=False, ic="aicc", verbose=True
+    )
+    out = capsys.readouterr().out
+    printed = dict(re.findall(r"^\s+(\w+)\s*: AICC=(-?\d+\.\d+)", out, flags=re.M))
+
+    assert set(printed) == {"ANA", "AAA"}
+    for name in ("ANA", "AAA"):
+        model = ets(y, m=4, model=name, damped=False)
+        # Parameters counted by the AIC: aic = -2 * loglik + 2 * k
+        k = (model.aic + 2 * model.loglik) / 2
+        expected = model.aic + 2 * k * (k + 1) / (n - k - 1)
+        assert float(printed[name]) == pytest.approx(expected, abs=0.006)
+
+
 def test_auto_ets_empty_series_raises():
     """Test auto_ets raises on empty series"""
     y = np.array([])

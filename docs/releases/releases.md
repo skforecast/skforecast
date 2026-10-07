@@ -133,6 +133,8 @@ The main changes in this release are:
 
 **Fixed**
 
++ The AICc used by the automatic model selection of <code>[Ets]</code> did not count the variance as a parameter, so its small-sample correction was smaller than the one in the AIC and in R's `forecast::ets`. It now uses the same number of parameters as the AIC, which can change the selected model for short series.
+
 + `ndiffs`, used by <code>[Arima]</code> to choose the order of differencing in the automatic model selection, forced at least one lag in the KPSS test. R's `forecast::ndiffs` uses `trunc(3 * sqrt(n) / 13)` lags, which is 0 for fewer than 19 observations, so the number of differences could differ from R for short series. It now uses the same number of lags.
 
 + <code>[FoundationModel]</code> only routes Chronos-2 checkpoints (`amazon/chronos-2*` and `autogluon/chronos-2*`) to `ChronosAdapter`. Chronos (T5) and Chronos-Bolt checkpoints were accepted when the model was created but failed at predict time, because their pipelines do not accept the input format and the `cross_learning` argument used by the adapter. They now raise a `ValueError` when the model is created.
