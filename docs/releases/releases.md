@@ -143,6 +143,8 @@ The main changes in this release are:
 
 **Fixed**
 
++ Importing `skforecast.deep_learning` in Python 3.14 raised an error about TensorFlow not supporting Python 3.14 for any failure of the `keras` import, also when `keras` was not installed. The error that explains how to install TensorFlow or switch to the PyTorch backend (`KERAS_BACKEND='torch'`) is now raised only when TensorFlow is the missing package, in any Python version, and a missing `keras` reports how to install it.
+
 + <code>[acf]</code> and the autocorrelation of <code>[calculate_lag_autocorrelation]</code>, for series with missing values inside, divided the sum of products at each lag by the number of pairs, so a single missing value switched the result from the biased to the adjusted estimator (and `adjusted=True` corrected it twice). As R's `acf(na.action = na.pass)`, they now divide by the number of pairs plus the lag, which is `n` without missing values.
 
 + <code>[pacf]</code> and the partial autocorrelation of <code>[calculate_lag_autocorrelation]</code>, for series with scattered missing values inside, could return values far outside [-1, 1], because the autocorrelations estimated from the valid pairs of each lag are not a positive semi-definite sequence and the Levinson-Durbin recursion becomes unstable. They now divide the sum of products at every lag by the number of finite observations (as `statsmodels` with `missing='conservative'`), which keeps the values in [-1, 1] at the cost of shrinking them towards zero in proportion to the fraction of scattered missing values. Lags that follow one with fewer than 2 valid pairs are now `NaN` instead of 0.

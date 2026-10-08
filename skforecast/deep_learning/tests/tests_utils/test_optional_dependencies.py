@@ -28,11 +28,13 @@ skforecast.utils.check_optional_dependency = check_optional_dependency
 """
 
 
-def run_import(code, pythonpath=None):
+def run_import(code, pythonpath=None, keras_backend=None):
     """
     Run `code` in a new Python process and return the result.
     """
     env = os.environ.copy()
+    if keras_backend is not None:
+        env['KERAS_BACKEND'] = keras_backend
     if pythonpath is not None:
         paths = [str(pythonpath), env.get('PYTHONPATH', '')]
         env['PYTHONPATH'] = os.pathsep.join(path for path in paths if path)
@@ -41,10 +43,6 @@ def run_import(code, pythonpath=None):
     )
 
 
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14), 
-    reason="Python 3.14+ raises a specific error about the Keras backend."
-)
 @pytest.mark.parametrize("module", 
                          ['skforecast.deep_learning._forecaster_rnn', 
                           'skforecast.deep_learning.utils'], 
@@ -60,10 +58,6 @@ def test_import_check_optional_dependency_when_keras_is_not_installed(module):
     assert "check_optional_dependency called with 'keras'" in result.stderr
 
 
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14), 
-    reason="Python 3.14+ raises a specific error about the Keras backend."
-)
 @pytest.mark.parametrize("module", 
                          ['skforecast.deep_learning._forecaster_rnn', 
                           'skforecast.deep_learning.utils'], 
@@ -85,3 +79,27 @@ def test_import_shows_real_error_when_keras_fails_to_import(module, tmp_path):
     assert result.stderr.strip().splitlines()[-1] == (
         "ImportError: cannot import name 'x' from 'backend' (/path/backend)"
     )
+
+
+@pytest.mark.parametrize("module", 
+                         ['skforecast.deep_learning._forecaster_rnn', 
+                          'skforecast.deep_learning.utils'], 
+                         ids = lambda module: f'module: {module}')
+def test_import_ImportError_when_tensorflow_backend_is_not_installed(module):
+    """
+    Test ImportError explains how to install TensorFlow or switch to the 
+    PyTorch backend when keras is installed, its backend is TensorFlow and 
+    TensorFlow is not installed.
+    """
+    result = run_import(
+        HIDE_PACKAGE.format(package='tensorflow') + f"import {module}",
+        keras_backend='tensorflow'
+    )
+
+    assert result.returncode != 0
+    assert "check_optional_dependency called" not in result.stderr
+    assert (
+        "ImportError: Keras uses TensorFlow as its default backend and "
+        "TensorFlow is not installed."
+    ) in result.stderr
+    assert "os.environ['KERAS_BACKEND'] = 'torch'" in result.stderr

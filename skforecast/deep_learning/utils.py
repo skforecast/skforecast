@@ -33,17 +33,17 @@ try:
     from keras.losses import MeanSquaredError
     from keras.models import Model
 except ImportError as e:
-    import sys
-    if sys.version_info >= (3, 14):
-        raise ImportError(
-            "Python 3.14+ is not supported by TensorFlow, which is the default "
-            "backend used by Keras. To use Keras with Python 3.14+, the KERAS_BACKEND "
-            "environment variable needs to be set to 'torch', `os.environ['KERAS_BACKEND'] = 'torch'`."
-            "Make sure you have PyTorch installed to use Keras with the torch backend. "
-            "For installation instructions, visit https://pytorch.org/get-started/locally/"
-        )
     if isinstance(e, ModuleNotFoundError) and e.name == "keras":
         check_optional_dependency(package_name="keras")
+    if isinstance(e, ModuleNotFoundError) and e.name == "tensorflow":
+        raise ImportError(
+            "Keras uses TensorFlow as its default backend and TensorFlow is not "
+            "installed. Install it with `pip install tensorflow` or, if TensorFlow "
+            "is not available for your Python version, use the PyTorch backend: "
+            "install PyTorch (https://pytorch.org/get-started/locally/) and set "
+            "the environment variable before the import, "
+            "`os.environ['KERAS_BACKEND'] = 'torch'`."
+        ) from e
     raise
 
 
