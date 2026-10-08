@@ -618,8 +618,18 @@ def test_check_predict_input_MissingValuesWarning_when_last_window_has_missing_v
      ('ForecasterDirectMultiVariate', 
       pd.DataFrame({'l1': [1, 2, 3, 4, 5, 6], 'l2': [1, 2, 3, 4, 5, np.nan]}), None, ['l1']),
      ('ForecasterRnn', 
-      pd.DataFrame({'l1': [1, 2, 3, 4, 5, 6], 'l2': [np.nan, 2, 3, 4, 5, 6]}), ['l1'], ['l1', 'l2'])], 
-    ids = ['ForecasterRecursive', 'ForecasterRecursiveMultiSeries', 'ForecasterDirectMultiVariate', 'ForecasterRnn'])
+      pd.DataFrame({'l1': [1, 2, 3, 4, 5, 6], 'l2': [np.nan, 2, 3, 4, 5, 6]}), ['l1'], ['l1', 'l2']),
+     ('ForecasterRecursive', 
+      pd.Series([pd.NA, 2, 3, 4, 5, 6], dtype='Float64'), None, None),
+     ('ForecasterRecursiveMultiSeries', 
+      pd.DataFrame({'l1': [pd.NA, 2, 3, 4, 5, 6], 'l2': [1, 2, 3, 4, 5, pd.NA]}, dtype='Float64'), 
+      ['l1'], ['l1', 'l2']),
+     ('ForecasterDirectMultiVariate', 
+      pd.DataFrame({'l1': [None, 2, 3, 4, 5, 6], 'l2': [1, 2, 3, 4, 5, None]}, dtype='double[pyarrow]'), 
+      None, ['l1'])], 
+    ids = ['ForecasterRecursive', 'ForecasterRecursiveMultiSeries', 'ForecasterDirectMultiVariate', 
+           'ForecasterRnn', 'ForecasterRecursive-Float64', 'ForecasterRecursiveMultiSeries-Float64', 
+           'ForecasterDirectMultiVariate-pyarrow'])
 def test_check_predict_input_no_MissingValuesWarning_when_missing_values_not_used_to_predict(
     forecaster_name, last_window, levels, series_names_in_
 ):
@@ -654,8 +664,18 @@ def test_check_predict_input_no_MissingValuesWarning_when_missing_values_not_use
      ('ForecasterDirectMultiVariate', 
       pd.DataFrame({'l1': [1, 2, 3, 4, 5, 6], 'l2': [1, 2, 3, 4, 5, np.nan]}), None, ['l1', 'l2']),
      ('ForecasterRnn', 
-      pd.DataFrame({'l1': [1, 2, 3, 4, 5, 6], 'l2': [1, 2, 3, 4, 5, np.nan]}), ['l1'], ['l1', 'l2'])], 
-    ids = ['ForecasterStats', 'ForecasterRecursiveMultiSeries', 'ForecasterDirectMultiVariate', 'ForecasterRnn'])
+      pd.DataFrame({'l1': [1, 2, 3, 4, 5, 6], 'l2': [1, 2, 3, 4, 5, np.nan]}), ['l1'], ['l1', 'l2']),
+     ('ForecasterStats', 
+      pd.Series([pd.NA, 2, 3, 4, 5, 6], dtype='Float64'), None, None),
+     ('ForecasterRecursiveMultiSeries', 
+      pd.DataFrame({'l1': [1, 2, 3, 4, 5, 6], 'l2': [1, pd.NA, 3, 4, 5, 6]}, dtype='Float64'), 
+      ['l2'], ['l1', 'l2']),
+     ('ForecasterDirectMultiVariate', 
+      pd.DataFrame({'l1': [1, 2, 3, 4, 5, 6], 'l2': [1, None, 3, 4, 5, 6]}, dtype='double[pyarrow]'), 
+      None, ['l1', 'l2'])], 
+    ids = ['ForecasterStats', 'ForecasterRecursiveMultiSeries', 'ForecasterDirectMultiVariate', 
+           'ForecasterRnn', 'ForecasterStats-Float64', 'ForecasterRecursiveMultiSeries-Float64', 
+           'ForecasterDirectMultiVariate-pyarrow'])
 def test_check_predict_input_MissingValuesWarning_when_missing_values_used_to_predict(
     forecaster_name, last_window, levels, series_names_in_
 ):
