@@ -131,9 +131,16 @@ try {
     width: 1200, height: 630, deviceScaleFactor: 1, mobile: false,
   });
   const cardUrl = pathToFileURL(join(HERE, "social_card.html"));
-  cardUrl.searchParams.set("stage", pathToFileURL(stageFile).href);
   await card.send("Page.navigate", { url: cardUrl.href });
   await sleep(2500);
+  // The card reads nothing from its URL: the screenshot is set from here
+  const stageLoaded = await card.evaluate(`new Promise((done) => {
+    const img = document.getElementById("stage");
+    img.onload = () => done(true);
+    img.onerror = () => done(false);
+    img.src = ${JSON.stringify(pathToFileURL(stageFile).href)};
+  })`);
+  if (!stageLoaded) throw new Error(`Could not load ${stageFile} in the card`);
   await card.evaluate("document.fonts.ready.then(() => true)");
   const shot = await card.send("Page.captureScreenshot", {
     format: "png",
