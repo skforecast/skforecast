@@ -1542,10 +1542,66 @@ def _compute_prediction_variance(model: ETSModel, h: int) -> NDArray[np.float64]
         else:
             var = None
 
+    elif trend in ("N", "A") and season in ("N", "A"):
+        var = _multiplicative_error_variance(model, h)
+
     else:
         var = None
 
     return var
+
+
+def _multiplicative_error_variance(model: ETSModel, h: int) -> NDArray[np.float64]:
+    """
+    Forecast variance of the ETS models with multiplicative errors and
+    additive (or no) trend and seasonality (class 2 in Hyndman et al. 2008,
+    Section 6.4), as R's forecast.ets.
+
+    With the state-space form x_t = F x_{t-1} + g e_t and forecast
+    mu_h = w F^(h-1) x_n, c_j = w F^(j-1) g, theta_1 = mu_1^2 and
+    theta_h = mu_h^2 + sigma2 * sum_{j=1}^{h-1} c_j^2 theta_{h-j}, the
+    variance is (1 + sigma2) theta_h - mu_h^2.
+    """
+    sigma2 = model.sigma2
+    m = model.config.m
+    has_trend = model.config.trend == "A"
+    has_season = model.config.season == "A"
+    phi = model.params.phi if model.config.damped else 1.0
+    states = np.asarray(model.states, dtype=float)
+    p = 1 + has_trend + (m if has_season else 0)
+    states = states[:p]
+
+    w = np.zeros(p)
+    F = np.zeros((p, p))
+    g = np.zeros(p)
+    w[0] = 1.0
+    F[0, 0] = 1.0
+    g[0] = model.params.alpha
+    if has_trend:
+        w[1] = phi
+        F[0, 1] = F[1, 1] = phi
+        g[1] = model.params.beta
+    if has_season:
+        s0 = 1 + has_trend
+        w[p - 1] = 1.0
+        F[s0, p - 1] = 1.0
+        F[s0 + 1:, s0:p - 1] = np.eye(m - 1)
+        g[s0] = model.params.gamma
+
+    mu = np.zeros(h)
+    c = np.zeros(h)
+    Fj = np.eye(p)
+    for j in range(h):
+        mu[j] = w @ Fj @ states
+        c[j] = w @ Fj @ g
+        Fj = Fj @ F
+
+    theta = np.zeros(h)
+    theta[0] = mu[0]**2
+    for j in range(1, h):
+        theta[j] = mu[j]**2 + sigma2 * np.sum(c[:j]**2 * theta[j - 1::-1])
+
+    return (1 + sigma2) * theta - mu**2
 
 
 def forecast_ets(model: ETSModel, h: int = 10, bias_adjust: bool = True,

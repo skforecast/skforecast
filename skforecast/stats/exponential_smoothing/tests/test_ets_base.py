@@ -1264,6 +1264,47 @@ def test_ets_multistart_finds_global_optimum_air_passengers():
     np.testing.assert_allclose(-2 * model.loglik, 763.4188655657, atol=1e-2)
 
 
+@pytest.mark.parametrize(
+    "spec, params, sigma2, states, expected",
+    [
+        (
+            ("MNN", False, 1),
+            {"alpha": 0.1980437},
+            0.005568436,
+            [65.93663],
+            [24.20955, 25.16437, 26.1194, 27.07463, 28.03007, 28.98573],
+        ),
+        (
+            ("MAA", True, 4),
+            {"alpha": 0.02273056, "beta": 0.02273048, "gamma": 0.0005420204,
+             "phi": 0.979853},
+            0.0008499492,
+            [67.48862, 0.2841045, -4.605832, 0.074629, 5.005672, -0.4664106],
+            [3.849733, 4.542823, 4.000807, 3.535686, 4.078293, 4.838711],
+        ),
+    ],
+    ids=["MNN", "MAdA"],
+)
+def test_compute_prediction_variance_multiplicative_error_matches_R(
+    spec, params, sigma2, states, expected
+):
+    """
+    Test that the forecast variance of ETS models with multiplicative errors
+    and additive (or no) trend and seasonality is analytical (class 2 of
+    Hyndman et al. 2008) and matches R's forecast.ets. Parameters, final
+    states and variances from forecast 9.0.2.
+    """
+    model_spec, damped, m = spec
+    y = 50 + 0.3 * np.arange(60) + 5 * np.sin(2 * np.pi * np.arange(60) / 4)
+    model = ets(y, m=m, model=model_spec, damped=damped)
+    model.params = ETSParams(**params, init_states=model.params.init_states)
+    model.sigma2 = sigma2
+    model.states = np.array(states)
+
+    var = _compute_prediction_variance(model, h=6)
+    np.testing.assert_allclose(var, expected, rtol=1e-6)
+
+
 @pytest.mark.parametrize("lambda_param", [0.0, 0.5], ids=lambda x: f"lambda: {x}")
 def test_forecast_ets_box_cox_bias_adjustment_uses_forecast_variance(lambda_param):
     """
