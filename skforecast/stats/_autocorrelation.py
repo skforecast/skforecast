@@ -97,6 +97,50 @@ def _pairwise_acf(x: np.ndarray, n_orig: int, nlags: int) -> np.ndarray:
     return acf_vals
 
 
+def _zero_filled_acf(x: np.ndarray, n_orig: int, nlags: int) -> np.ndarray:
+    """
+    Positive semi-definite ACF for series with interleaved NaN/inf (internal
+    helper).
+
+    The series is centered with the mean of the finite values and the
+    non-finite positions are set to 0, so the biased ACF of the result (via
+    FFT) is the sum of the products of the valid pairs at each lag divided by
+    the sum of squares. Unlike `_pairwise_acf`, all lags share the same
+    denominator, which keeps the sequence positive semi-definite as
+    Levinson-Durbin requires. Lags with fewer than 2 valid pairs are set to
+    NaN.
+
+    Parameters
+    ----------
+    x : numpy ndarray
+        1-D series (may contain NaN/inf at interleaved positions).
+    n_orig : int
+        Length of `x` after leading/trailing strip.
+    nlags : int
+        Number of lags to compute (result has length `nlags + 1`).
+
+    Returns
+    -------
+    acf_vals : numpy ndarray, shape (nlags + 1,)
+
+    """
+
+    finite_mask = np.isfinite(x)
+    x_c = np.where(finite_mask, x - x[finite_mask].mean(), 0.0)
+    acf_vals = _fft_acf(x_c, n_orig, nlags)
+
+    if not x_c.any():
+        return acf_vals
+
+    # Number of valid pairs at each lag: autocorrelation of the mask.
+    n_fft = next_fast_len(2 * n_orig - 1)
+    fft_mask = rfft(finite_mask.astype(float), n=n_fft)
+    n_pairs = np.rint(irfft((fft_mask * fft_mask.conj()).real, n=n_fft))
+    acf_vals[n_pairs[:nlags + 1] < 2] = np.nan
+
+    return acf_vals
+
+
 def _strip_and_check(
     x: np.ndarray,
 ) -> tuple[np.ndarray, int, int, bool]:
@@ -295,6 +339,8 @@ def pacf(
     Computes the sample PACF in two stages:
 
     1. The biased ACF is estimated in O(N log N) using `scipy.fft.rfft`.
+       With missing values inside the series, a positive semi-definite
+       estimator is used instead of the one of `acf` (see Notes).
     2. The PACF coefficients (Yule-Walker reflection coefficients) are
        extracted from the ACF in O(p²) time via the Levinson-Durbin
        recursion.
@@ -345,13 +391,19 @@ def pacf(
     If `x` contains leading or trailing non-finite values (NaN, ±inf), they
     are silently removed before any computation. If interleaved non-finite
     values remain after stripping, a ``MissingValuesWarning`` is issued and
-    the function falls back to pairwise deletion: for each lag *k* only pairs
-    *(x[t-k], x[t])* where both values are finite are used. This preserves
-    true temporal distances but requires O(N·p) time instead of O(N log N)
-    because FFT cannot be applied to irregular observations. As in R's
-    `acf(na.action = na.pass)`, the sum of the products at lag *k* is divided
-    by the number of pairs plus *k*, which is `n` without missing values.
-    Lags with fewer than 2 valid pairs are set to NaN.
+    only the pairs *(x[t-k], x[t])* where both values are finite are used,
+    which preserves true temporal distances. The sum of their products at
+    every lag is divided by the number of finite observations (the biased
+    ACF of the centered series with its missing values set to 0, as
+    `statsmodels.tsa.stattools.acf(missing='conservative')`). This differs
+    from `acf`, which follows R and divides by the number of pairs plus *k*:
+    that estimator is more accurate lag by lag, but the resulting sequence
+    is not positive semi-definite and Levinson-Durbin can return partial
+    autocorrelations far outside [-1, 1]. The price is a shrinkage towards
+    zero, roughly proportional to the fraction of scattered missing values,
+    so `pacf(x)[1]` is no longer equal to `acf(x)[1]`. Contiguous gaps
+    barely shrink the values. Lags with fewer than 2 valid pairs, and all
+    the following ones, are set to NaN.
 
     References
     ----------
@@ -394,8 +446,10 @@ def pacf(
     x, n, n_finite, has_interleaved_nan = _strip_and_check(x)
     if has_interleaved_nan:
         warnings.warn(
-            "Interleaved NaN/inf detected. Falling back to pairwise deletion "
-            "(slower). Lags with fewer than 2 valid pairs will be NaN.",
+            "Interleaved NaN/inf detected. Only the pairs where both values "
+            "are finite are used, which shrinks the partial autocorrelations "
+            "towards zero. Lags with fewer than 2 valid pairs, and the "
+            "following ones, will be NaN.",
             MissingValuesWarning,
             stacklevel=2,
         )
@@ -420,7 +474,7 @@ def pacf(
         raise ValueError(f"`alpha` must be in (0, 1), got {alpha!r}.")
 
     if has_interleaved_nan:
-        acf_vals = _pairwise_acf(x, n, nlags)
+        acf_vals = _zero_filled_acf(x, n, nlags)
     else:
         acf_vals = _fft_acf(x - x.mean(), n, nlags)
 
@@ -439,6 +493,12 @@ def pacf(
         phi[k] = kk
         pacf_vals[k] = kk
         phi, phi_prev = phi_prev, phi  # swap without copy
+
+    if has_interleaved_nan:
+        # A lag without enough valid pairs makes the following ones undefined.
+        nan_lags = np.flatnonzero(np.isnan(acf_vals))
+        if nan_lags.size > 0:
+            pacf_vals[nan_lags[0]:] = np.nan
 
     if alpha is None:
         return pacf_vals
@@ -466,8 +526,10 @@ def calculate_lag_autocorrelation(
         Time series to calculate autocorrelation. If a DataFrame is provided,
         it must have exactly one column. Leading and trailing non-finite values
         (NaN, ±inf) are silently removed. If interleaved non-finite values
-        remain after stripping, a ``MissingValuesWarning`` is issued and
-        pairwise deletion is used (see Notes in `acf` and `pacf`).
+        remain after stripping, a ``MissingValuesWarning`` is issued and only
+        the pairs of finite values are used. The autocorrelation and the
+        partial autocorrelation use different estimators in this case (see
+        Notes in `acf` and `pacf`).
     n_lags : int, default 50
         Number of lags to calculate autocorrelation.
     last_n_samples : int, default None
