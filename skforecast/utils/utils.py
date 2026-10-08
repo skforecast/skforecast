@@ -70,11 +70,11 @@ _SKLEARN_NAN_TOLERANT_ESTIMATORS = frozenset({
 
 optional_dependencies = {
     'stats': [
-        'statsmodels>=0.13.2, <0.15'
+        'statsmodels>=0.13.2, <0.16'
     ],
     'plotting': [
         'matplotlib>=3.7, <3.12', 
-        'statsmodels>=0.13.2, <0.15'
+        'statsmodels>=0.13.2, <0.16'
     ],
         'deeplearning': [
         'keras>=3.3, <4.0',
