@@ -36,7 +36,7 @@ python tools/docs/execute_notebooks/execute_notebooks.py <path relative to docs/
 
 The original stays in git: compare the new outputs with `git diff`, and restore it with `git restore <guide>` if the user does not approve any change. For a Markdown guide, copy its code blocks into a temporary script and run it from the repo root.
 
-Record every error, every warning (the runner's log in `tools/docs/execute_notebooks/logs/`, especially `DeprecationWarning` and `FutureWarning`) and every output that differs meaningfully from the stored one. If execution is too slow or needs unavailable resources (GPU, gated models), tell the user and continue with a static review.
+Record every error, every warning (the runner's log in `tools/docs/execute_notebooks/logs/`, especially `DeprecationWarning` and `FutureWarning`) and every output that differs meaningfully from the stored one. If execution is too slow or needs unavailable resources (GPU, gated models), tell the user and continue with a static review, after running the runner with `--check <guide>`: it lists the error outputs and unexecuted cells of the saved outputs without executing anything.
 
 ## Step 3. Review
 

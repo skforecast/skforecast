@@ -48,7 +48,7 @@ pytest <paths> -q
 
 - Public API or AI context sources changed: follow the `ai-context-sync` skill and run `python tools/ai/generate_ai_context_files.py --check`.
 - Harness changed (`.claude/hooks/`): `python -m pytest .claude/hooks -q -p no:cacheprovider` (outside `testpaths`).
-- A documentation notebook's code changed: re-execute only that notebook with `python tools/docs/execute_notebooks/execute_notebooks.py <notebook>` and check its log in `tools/docs/execute_notebooks/logs/`.
+- A documentation notebook's code changed: re-execute only that notebook with `python tools/docs/execute_notebooks/execute_notebooks.py <notebook>` and check its log in `tools/docs/execute_notebooks/logs/` (exit code 1 means a failure). If it cannot be executed (slow, GPU, gated models), at least run the same command with `--check` to catch error outputs and unexecuted cells in the saved outputs.
 - User-facing change with no entry in `docs/releases/releases.md` (section of the version in development): follow the `release-note` skill.
 
 ## 5. Report
