@@ -556,7 +556,10 @@ def init_states(y: NDArray[np.float64], config: ETSConfig) -> NDArray[np.float64
                 y,
                 period=m,
                 model="additive" if seasontype == "A" else "multiplicative",
-                extrapolate_trend='freq'
+                # Same as `extrapolate_trend='freq'`, deprecated in
+                # statsmodels 0.15 (its replacement 'period' is not
+                # available in earlier versions)
+                extrapolate_trend=m - 1
             )
             seasonal = decomp.seasonal
         init_seas = seasonal[1:m][::-1]

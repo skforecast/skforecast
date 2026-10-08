@@ -698,8 +698,13 @@ def kpss_test(x: np.ndarray, regression: str = 'c') -> Tuple[float, float]:
     pvalue : float
         P-value (approximate).
     """
-    stat, pval, _, _ = kpss(x[~np.isnan(x)], regression=regression, nlags='auto')
-    return stat, pval
+    with warnings.catch_warnings():
+        # statsmodels 0.15 warns that the return type will change to a result
+        # object. Both return types are indexable by position.
+        warnings.simplefilter('ignore', category=FutureWarning)
+        result = kpss(x[~np.isnan(x)], regression=regression, nlags='auto')
+
+    return result[0], result[1]
 
 
 def adf_test(x: np.ndarray) -> Tuple[float, float]:
@@ -718,7 +723,12 @@ def adf_test(x: np.ndarray) -> Tuple[float, float]:
     pvalue : float
         P-value.
     """
-    result = adfuller(x[~np.isnan(x)], autolag='AIC')
+    with warnings.catch_warnings():
+        # statsmodels 0.15 warns that the return type will change to a result
+        # object. Both return types are indexable by position.
+        warnings.simplefilter('ignore', category=FutureWarning)
+        result = adfuller(x[~np.isnan(x)], autolag='AIC')
+
     return result[0], result[1]
 
 

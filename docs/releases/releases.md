@@ -57,6 +57,8 @@ The main changes in this release are:
 
 + New section "Install skforecast context in your agent" in the [AI-assisted forecasting](../quick-start/ai-assisted-forecasting.md) guide.
 
++ Added `statsmodels 0.15` compatibility. The upper limit of the `stats` and `plotting` extras is now `<0.16` (previously `<0.15`), and <code>[Ets]</code> no longer raises the `FutureWarning` that statsmodels 0.15 emits for `extrapolate_trend='freq'` when it estimates the initial seasonal states.
+
 
 **Changed**
 
