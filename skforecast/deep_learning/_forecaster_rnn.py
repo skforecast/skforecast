@@ -10,7 +10,7 @@ from __future__ import annotations
 import sys
 import warnings
 from copy import deepcopy
-from typing import Any, Mapping
+from typing import Any
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -2178,8 +2178,8 @@ class ForecasterRnn(ForecasterBase):
 
     def set_out_sample_residuals(
         self,
-        y_true: Mapping[str, np.ndarray | pd.Series],
-        y_pred: Mapping[str, np.ndarray | pd.Series],
+        y_true: dict[str, np.ndarray | pd.Series],
+        y_pred: dict[str, np.ndarray | pd.Series],
         append: bool = False,
         random_state: int = 123
     ) -> None:

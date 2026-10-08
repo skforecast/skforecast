@@ -17,7 +17,7 @@ from pathlib import Path
 import platform
 import sys
 import textwrap
-from typing import Any, Callable, ParamSpec, TypeVar, Mapping
+from typing import Any, Callable, ParamSpec, TypeVar
 import uuid
 import warnings
 import zoneinfo
@@ -1373,7 +1373,7 @@ def check_predict_input(
     window_size: int,
     last_window: pd.Series | pd.DataFrame | None,
     last_window_exog: pd.Series | pd.DataFrame | None = None,
-    exog: pd.Series | pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame] | None = None,
+    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
     exog_names_in_: list[str] | None = None,
     max_step: int | None = None,
     levels: str | list[str] | None = None,
@@ -4128,7 +4128,7 @@ def _build_predict_function(
 
 
 def check_preprocess_series(
-    series: pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame],
+    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
 ) -> tuple[dict[str, pd.Series], dict[str, pd.Index]]:
     """
     Check and preprocess `series` argument in `ForecasterRecursiveMultiSeries` class.
@@ -4298,8 +4298,8 @@ def check_preprocess_series(
 def check_preprocess_exog_multiseries(
     series_names_in_: list[str],
     series_index_type: type,
-    exog: pd.Series | pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame | None],
-    exog_dict: Mapping[str, pd.Series | pd.DataFrame | None],
+    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame | None],
+    exog_dict: dict[str, pd.Series | pd.DataFrame | None],
 ) -> tuple[dict[str, pd.DataFrame | None], list[str]]:
     """
     Check and preprocess `exog` argument in `ForecasterRecursiveMultiSeries` class.
@@ -4495,7 +4495,7 @@ def check_preprocess_exog_multiseries(
 
 def align_series_and_exog_multiseries(
     series_dict: dict[str, pd.Series],
-    exog_dict: Mapping[str, pd.DataFrame | None],
+    exog_dict: dict[str, pd.DataFrame | None],
     trim_series_nan: bool = True,
 ) -> tuple[dict[str, pd.Series], dict[str, pd.DataFrame | None]]:
     """

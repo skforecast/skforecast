@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import uuid
 import sys
-from typing import Literal, Mapping
+from typing import Literal
 from .. import __version__
 from ..utils import check_preprocess_series
 from ..preprocessing import reshape_series_wide_to_long
@@ -74,7 +74,7 @@ class TimeSeriesSplitter:
     """
 
     def __init__(
-        self, *series: pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame]
+        self, *series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame]
     ) -> None:
         """
         Initialize TimeSeriesSplitter with one or more series.

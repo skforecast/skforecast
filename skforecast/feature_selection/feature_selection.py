@@ -6,7 +6,6 @@
 
 
 from __future__ import annotations
-from typing import Mapping
 import re
 from itertools import chain
 import warnings
@@ -337,8 +336,8 @@ def select_features(
 def select_features_multiseries(
     forecaster: object,
     selector: object,
-    series: pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame],
-    exog: pd.Series | pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame] | None = None,
+    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
     select_only: str | list[str] | None = None,
     force_inclusion: list[str] | str | None = None,
     subsample: float = 0.5,

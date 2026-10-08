@@ -5,7 +5,7 @@
 ################################################################################
 
 from __future__ import annotations
-from typing import Mapping, Any
+from typing import Any
 import html
 import sys
 import textwrap
@@ -687,7 +687,7 @@ class ForecasterFoundation:
         exog: (
             pd.Series
             | pd.DataFrame
-            | Mapping[str, pd.Series | pd.DataFrame | None]
+            | dict[str, pd.Series | pd.DataFrame | None]
             | None
         ) = None,
     ) -> None:
@@ -754,13 +754,13 @@ class ForecasterFoundation:
         context_exog: (
             pd.Series
             | pd.DataFrame
-            | Mapping[str, pd.DataFrame | pd.Series | None]
+            | dict[str, pd.DataFrame | pd.Series | None]
             | None
         ) = None,
         exog: (
             pd.Series
             | pd.DataFrame
-            | Mapping[str, pd.Series | pd.DataFrame | None]
+            | dict[str, pd.Series | pd.DataFrame | None]
             | None
         ) = None,
         check_inputs: bool = True,
@@ -849,13 +849,13 @@ class ForecasterFoundation:
         context_exog: (
             pd.Series
             | pd.DataFrame
-            | Mapping[str, pd.DataFrame | pd.Series | None]
+            | dict[str, pd.DataFrame | pd.Series | None]
             | None
         ) = None,
         exog: (
             pd.Series
             | pd.DataFrame
-            | Mapping[str, pd.Series | pd.DataFrame | None]
+            | dict[str, pd.Series | pd.DataFrame | None]
             | None
         ) = None,
         interval: float | list[float] | tuple[float, ...] = [0.1, 0.9],
@@ -969,13 +969,13 @@ class ForecasterFoundation:
         context_exog: (
             pd.Series
             | pd.DataFrame
-            | Mapping[str, pd.DataFrame | pd.Series | None]
+            | dict[str, pd.DataFrame | pd.Series | None]
             | None
         ) = None,
         exog: (
             pd.Series
             | pd.DataFrame
-            | Mapping[str, pd.Series | pd.DataFrame | None]
+            | dict[str, pd.Series | pd.DataFrame | None]
             | None
         ) = None,
         quantiles: list[float] | tuple[float, ...] = [0.1, 0.5, 0.9],

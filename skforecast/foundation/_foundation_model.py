@@ -5,7 +5,7 @@
 ################################################################################
 
 from __future__ import annotations
-from typing import Any, Mapping
+from typing import Any
 import html
 import sys
 import warnings
@@ -505,7 +505,7 @@ class FoundationModel:
         exog: (
             pd.Series
             | pd.DataFrame
-            | Mapping[str, pd.DataFrame | pd.Series | None]
+            | dict[str, pd.DataFrame | pd.Series | None]
             | None
         ) = None,
     ) -> tuple[dict[str, pd.Series], dict[str, pd.Index], list[str], dict[str, pd.DataFrame | None] | None, list[str] | None]:
@@ -593,7 +593,7 @@ class FoundationModel:
         exog: (
             pd.Series
             | pd.DataFrame
-            | Mapping[str, pd.DataFrame | pd.Series | None]
+            | dict[str, pd.DataFrame | pd.Series | None]
             | None
         ) = None,
     ) -> FoundationModel:
@@ -684,7 +684,7 @@ class FoundationModel:
 
     @staticmethod
     def _exog_to_dict(
-        exog: pd.Series | pd.DataFrame | Mapping[str, pd.DataFrame | pd.Series | None],
+        exog: pd.Series | pd.DataFrame | dict[str, pd.DataFrame | pd.Series | None],
         series_names_in: list[str],
     ) -> dict[str, pd.DataFrame | pd.Series | None]:
         """
@@ -759,7 +759,7 @@ class FoundationModel:
         exog: (
             pd.Series
             | pd.DataFrame
-            | Mapping[str, pd.DataFrame | pd.Series | None]
+            | dict[str, pd.DataFrame | pd.Series | None]
             | None
         ),
         series_names_in: list[str],
@@ -911,8 +911,8 @@ class FoundationModel:
 
     def _check_exog_columns(
         self,
-        context_exog: Mapping[str, pd.DataFrame | None] | None,
-        exog: Mapping[str, pd.DataFrame | None] | None,
+        context_exog: dict[str, pd.DataFrame | None] | None,
+        exog: dict[str, pd.DataFrame | None] | None,
         series_names_in: list[str],
     ) -> None:
         """
@@ -1000,13 +1000,13 @@ class FoundationModel:
         context_exog: (
             pd.Series
             | pd.DataFrame
-            | Mapping[str, pd.DataFrame | pd.Series | None]
+            | dict[str, pd.DataFrame | pd.Series | None]
             | None
         ) = None,
         exog: (
             pd.Series
             | pd.DataFrame
-            | Mapping[str, pd.DataFrame | pd.Series | None]
+            | dict[str, pd.DataFrame | pd.Series | None]
             | None
         ) = None,
         quantiles: list[float] | tuple[float, ...] | None = None,

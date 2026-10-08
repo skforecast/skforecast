@@ -6,7 +6,7 @@
 
 
 from __future__ import annotations
-from typing import Callable, Mapping, Any, Sequence
+from typing import Callable, Any
 from copy import deepcopy
 from itertools import chain
 import warnings
@@ -347,7 +347,7 @@ def _backtesting_forecaster(
     forecaster: object,
     y: pd.Series,
     cv: TimeSeriesFold,
-    metric: str | Callable | Sequence[str | Callable],
+    metric: str | Callable | list[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
     interval: float | list[float] | tuple[float, ...] | str | object | None = None,
     interval_method: str = 'bootstrapping',
@@ -702,7 +702,7 @@ def backtesting_forecaster(
     forecaster: object,
     y: pd.Series,
     cv: TimeSeriesFold,
-    metric: str | Callable | Sequence[str | Callable],
+    metric: str | Callable | list[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
     interval: float | list[float] | tuple[float, ...] | str | object | None = None,
     interval_method: str = 'bootstrapping',
@@ -1106,12 +1106,12 @@ def _fit_predict_forecaster_multiseries(
 @manage_warnings
 def _backtesting_forecaster_multiseries(
     forecaster: object,
-    series: pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame],
+    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
     cv: TimeSeriesFold,
-    metric: str | Callable | Sequence[str | Callable],
+    metric: str | Callable | list[str | Callable],
     levels: str | list[str] | None = None,
     add_aggregated_metric: bool = True,
-    exog: pd.Series | pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame] | None = None,
+    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
     interval: float | list[float] | tuple[float, ...] | str | object | None = None,
     interval_method: str = 'conformal',
     n_boot: int = 250,
@@ -1515,12 +1515,12 @@ def _backtesting_forecaster_multiseries(
 @manage_warnings
 def backtesting_forecaster_multiseries(
     forecaster: object,
-    series: pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame],
+    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
     cv: TimeSeriesFold,
-    metric: str | Callable | Sequence[str | Callable],
+    metric: str | Callable | list[str | Callable],
     levels: str | list[str] | None = None,
     add_aggregated_metric: bool = True,
-    exog: pd.Series | pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame] | None = None,
+    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
     interval: float | list[float] | tuple[float, ...] | str | object | None = None,
     interval_method: str = 'conformal',
     n_boot: int = 250,
@@ -1891,7 +1891,7 @@ def _backtesting_stats(
     forecaster: object,
     y: pd.Series,
     cv: TimeSeriesFold,
-    metric: str | Callable | Sequence[str | Callable],
+    metric: str | Callable | list[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
     alpha: float | None = None,
     interval: list[float] | tuple[float, ...] | None = None,
@@ -2201,7 +2201,7 @@ def backtesting_stats(
     forecaster: object,
     y: pd.Series,
     cv: TimeSeriesFold,
-    metric: str | Callable | Sequence[str | Callable],
+    metric: str | Callable | list[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
     alpha: float | None = None,
     interval: list[float] | tuple[float, ...] | None = None,
@@ -2358,10 +2358,10 @@ def _backtesting_foundation(
     forecaster: object,
     series: dict[str, pd.Series],
     cv: TimeSeriesFold,
-    metric: str | Callable | Sequence[str | Callable],
+    metric: str | Callable | list[str | Callable],
     levels: str | list[str] | None = None,
     add_aggregated_metric: bool = True,
-    exog: Mapping[str, pd.Series | pd.DataFrame | None] | None = None,
+    exog: dict[str, pd.Series | pd.DataFrame | None] | None = None,
     quantiles: list[float] | None = None,
     verbose: bool = False,
     show_progress: bool = True,
@@ -2713,7 +2713,7 @@ def backtesting_foundation(
     forecaster: object,
     series: pd.Series | pd.DataFrame | dict,
     cv: TimeSeriesFold,
-    metric: str | Callable | Sequence[str | Callable],
+    metric: str | Callable | list[str | Callable],
     levels: str | list[str] | None = None,
     add_aggregated_metric: bool = True,
     exog: pd.Series | pd.DataFrame | dict | None = None,

@@ -10,7 +10,6 @@
 # `_REQUIRED_CLASS_ATTRIBUTES` and register the class in `_ADAPTER_REGISTRY`.
 
 from __future__ import annotations
-from typing import Mapping
 from abc import ABC, abstractmethod
 import numpy as np
 import pandas as pd
@@ -65,7 +64,7 @@ class _AdapterBase(ABC):
     def fit(
         self,
         context: dict[str, pd.Series],
-        context_exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
     ) -> _AdapterBase:
         """
         Store the training series and historical exogenous variables, and
@@ -99,8 +98,8 @@ class _AdapterBase(ABC):
         self,
         steps: int,
         context: dict[str, pd.Series],
-        context_exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
-        exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
         quantiles: list[float] | tuple[float, ...] | None
     ) -> dict[str, np.ndarray]:
         """

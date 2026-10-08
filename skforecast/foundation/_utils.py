@@ -6,7 +6,7 @@
 
 
 from __future__ import annotations
-from typing import Any, Callable, Mapping
+from typing import Any, Callable
 import warnings
 import numpy as np
 import pandas as pd
@@ -484,8 +484,8 @@ def get_exog_signature(
 
 def group_series_by_exog_signature(
     series_names_in: list[str],
-    context_exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
-    exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
+    context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+    exog: dict[str, pd.DataFrame | pd.Series | None] | None,
 ) -> list[list[str]]:
     """
     Group series that share the same covariate signature.
@@ -526,7 +526,7 @@ def group_series_by_exog_signature(
 
 def align_context_exog(
     context: dict[str, pd.Series],
-    context_exog: Mapping[str, pd.DataFrame | pd.Series | None],
+    context_exog: dict[str, pd.DataFrame | pd.Series | None],
     series_names_in: list[str],
 ) -> dict[str, pd.DataFrame | None]:
     """

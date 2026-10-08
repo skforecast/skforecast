@@ -6,7 +6,7 @@
 
 
 from __future__ import annotations
-from typing import Callable, Any, Mapping
+from typing import Callable, Any
 import warnings
 import sys
 import numpy as np
@@ -3612,8 +3612,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
     def set_out_sample_residuals(
         self,
-        y_true: Mapping[str, np.ndarray | pd.Series],
-        y_pred: Mapping[str, np.ndarray | pd.Series],
+        y_true: dict[str, np.ndarray | pd.Series],
+        y_pred: dict[str, np.ndarray | pd.Series],
         append: bool = False,
         random_state: int = 123
     ) -> None:

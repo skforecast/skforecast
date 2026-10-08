@@ -6,7 +6,7 @@
 
 
 from __future__ import annotations
-from typing import Any, Mapping
+from typing import Any
 import contextlib
 import functools
 import warnings
@@ -781,7 +781,7 @@ def reshape_exog_long_to_dict(
 
 def reshape_series_exog_dict_to_long(
     series: dict[str, pd.Series] | None,
-    exog: Mapping[str, pd.Series | pd.DataFrame] | None,
+    exog: dict[str, pd.Series | pd.DataFrame] | None,
     series_col_name: str = 'series_value',
     index_names: list[str] = ['series_id', 'datetime'],
     merge_how: str = 'left'
