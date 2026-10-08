@@ -14,7 +14,7 @@ from skforecast.model_selection import backtesting_stats
 from skforecast.exceptions import IgnoredArgumentWarning
 
 # Fixtures
-from ....stats.tests.tests_arima.fixtures_arima import air_passengers
+from ....stats.tests.tests_arima.fixtures_arima import air_passengers, tol_pred
 from ....recursive.tests.tests_forecaster_stats.fixtures_forecaster_stats import y_datetime
 from ....recursive.tests.tests_forecaster_stats.fixtures_forecaster_stats import exog_datetime
 
@@ -989,7 +989,7 @@ def test_output_backtesting_stats_multiple_estimators_refit_False_with_mocked():
     expected_metric = pd.DataFrame({
         'estimator_id': ['skforecast.Sarimax', 'skforecast.Arar', 
                          'skforecast.Ets', 'skforecast.Arima'],
-        'mean_squared_error': [0.03870420, 0.00075339, 0.02130093, 0.01282563]
+        'mean_squared_error': [0.03870420, 0.00075339, 0.01301978, 0.01282563]
     })
     
     expected_preds = pd.DataFrame(
@@ -999,18 +999,18 @@ def test_output_backtesting_stats_multiple_estimators_refit_False_with_mocked():
             'estimator_id': ['skforecast.Sarimax', 'skforecast.Arar', 
                              'skforecast.Ets', 'skforecast.Arima'] * 12,
             'pred': np.array([
-                0.51853756, 0.59008805, 0.55841927, 0.56450749,
-                0.5165776 , 0.6215785 , 0.558423  , 0.5666523 ,
-                0.51790214, 0.72728926, 0.55842598, 0.56806442,
-                0.80295192, 0.74408697, 0.74574166, 0.73782662,
-                0.85238217, 0.75550972, 0.75722036, 0.7397932 ,
-                0.9244119 , 0.82159729, 0.76846949, 0.7385086 ,
-                0.84173367, 0.95293211, 0.82573018, 0.80561376,
-                0.8793909 , 0.93913951, 0.83668506, 0.8113779 ,
-                0.91329115, 0.5480628 , 0.84742083, 0.80742048,
-                0.42336972, 0.6195116 , 0.75333365, 0.57027113,
-                0.38434305, 0.58648398, 0.75541092, 0.59693343,
-                0.2093133 , 0.62192848, 0.75738421, 0.61405911
+                0.51853756, 0.59008805, 0.57787066, 0.56450749,
+                0.5165776 , 0.6215785 , 0.59537616  , 0.5666523 ,
+                0.51790214, 0.72728926, 0.61288166, 0.56806442,
+                0.80295192, 0.74408697, 0.75511286, 0.73782662,
+                0.85238217, 0.75550972, 0.77508663, 0.7397932 ,
+                0.9244119 , 0.82159729, 0.79506039, 0.7385086 ,
+                0.84173367, 0.95293211, 0.83543811, 0.80561376,
+                0.8793909 , 0.93913951, 0.85573702, 0.8113779 ,
+                0.91329115, 0.5480628 , 0.87603592, 0.80742048,
+                0.42336972, 0.6195116 , 0.57538167, 0.57027113,
+                0.38434305, 0.58648398, 0.59269907, 0.59693343,
+                0.2093133 , 0.62192848, 0.61001647, 0.61405911
             ])
         },
         index = pd.DatetimeIndex(
@@ -1064,7 +1064,7 @@ def test_output_backtesting_stats_multiple_estimators_refit_True_with_mocked():
     expected_metric = pd.DataFrame({
         'estimator_id': ['skforecast.Sarimax', 'skforecast.Arar', 
                          'skforecast.Ets', 'skforecast.Arima'],
-        'mean_squared_error': [0.03870420, 0.00075339, 0.02130093, 0.01282563]
+        'mean_squared_error': [0.03870420, 0.00075339, 0.01301978, 0.01282563]
     })
     
     expected_preds = pd.DataFrame(
@@ -1074,18 +1074,18 @@ def test_output_backtesting_stats_multiple_estimators_refit_True_with_mocked():
             'estimator_id': ['skforecast.Sarimax', 'skforecast.Arar', 
                              'skforecast.Ets', 'skforecast.Arima'] * 12,
             'pred': np.array([
-                0.51853756, 0.59008805, 0.55841927, 0.56450749,
-                0.5165776 , 0.6215785 , 0.558423  , 0.5666523 ,
-                0.51790214, 0.72728926, 0.55842598, 0.56806442,
-                0.80295192, 0.74408697, 0.74574166, 0.73782662,
-                0.85238217, 0.75550972, 0.75722036, 0.7397932 ,
-                0.9244119 , 0.82159729, 0.76846949, 0.7385086 ,
-                0.84173367, 0.95293211, 0.82573018, 0.80561376,
-                0.8793909 , 0.93913951, 0.83668506, 0.8113779 ,
-                0.91329115, 0.5480628 , 0.84742083, 0.80742048,
-                0.42336972, 0.6195116 , 0.75333365, 0.57027113,
-                0.38434305, 0.58648398, 0.75541092, 0.59693343,
-                0.2093133 , 0.62192848, 0.75738421, 0.61405911
+                0.51853756, 0.59008805, 0.57787066, 0.56450749,
+                0.5165776 , 0.6215785 , 0.59537616  , 0.5666523 ,
+                0.51790214, 0.72728926, 0.61288166, 0.56806442,
+                0.80295192, 0.74408697, 0.75511286, 0.73782662,
+                0.85238217, 0.75550972, 0.77508663, 0.7397932 ,
+                0.9244119 , 0.82159729, 0.79506039, 0.7385086 ,
+                0.84173367, 0.95293211, 0.83543811, 0.80561376,
+                0.8793909 , 0.93913951, 0.85573702, 0.8113779 ,
+                0.91329115, 0.5480628 , 0.87603592, 0.80742048,
+                0.42336972, 0.6195116 , 0.57538167, 0.57027113,
+                0.38434305, 0.58648398, 0.59269907, 0.59693343,
+                0.2093133 , 0.62192848, 0.61001647, 0.61405911
             ])
         },
         index = pd.DatetimeIndex(
@@ -1349,29 +1349,29 @@ def test_output_backtesting_stats_auto_arima_arar_freeze_params_False_gap_air_pa
                              'skforecast.Arar'],
             'pred': pred,
             'estimator_params': [
-                'AutoArima(1,1,0)(0,1,0)[12]', 'AutoArima(1,1,0)(0,1,0)[12]',
-                'AutoArima(1,1,0)(0,1,0)[12]', 'AutoArima(1,1,0)(0,1,0)[12]',
-                'Arar(lags=(1, 2, 12, 13))', 'Arar(lags=(1, 2, 12, 13))',
-                'Arar(lags=(1, 2, 12, 13))', 'Arar(lags=(1, 2, 12, 13))',
-                'AutoArima(1,0,0)(0,1,0)[12]', 'AutoArima(1,0,0)(0,1,0)[12]',
-                'AutoArima(1,0,0)(0,1,0)[12]', 'AutoArima(1,0,0)(0,1,0)[12]',
-                'Arar(lags=(1, 2, 12, 13))', 'Arar(lags=(1, 2, 12, 13))',
-                'Arar(lags=(1, 2, 12, 13))', 'Arar(lags=(1, 2, 12, 13))',
-                'AutoArima(3,0,0)(0,1,0)[12]', 'AutoArima(3,0,0)(0,1,0)[12]',
-                'AutoArima(3,0,0)(0,1,0)[12]', 'AutoArima(3,0,0)(0,1,0)[12]',
-                'Arar(lags=(1, 2, 9, 10))', 'Arar(lags=(1, 2, 9, 10))',
-                'Arar(lags=(1, 2, 9, 10))', 'Arar(lags=(1, 2, 9, 10))',
-                'AutoArima(3,0,0)(0,1,0)[12]', 'AutoArima(3,0,0)(0,1,0)[12]',
-                'AutoArima(3,0,0)(0,1,0)[12]', 'AutoArima(3,0,0)(0,1,0)[12]',
-                'Arar(lags=(1, 2, 10, 13))', 'Arar(lags=(1, 2, 10, 13))',
-                'Arar(lags=(1, 2, 10, 13))', 'Arar(lags=(1, 2, 10, 13))',
-                'AutoArima(1,0,0)(1,1,0)[12]', 'AutoArima(1,0,0)(1,1,0)[12]',
-                'AutoArima(1,0,0)(1,1,0)[12]', 'AutoArima(1,0,0)(1,1,0)[12]',
-                'Arar(lags=(1, 2, 9, 10))', 'Arar(lags=(1, 2, 9, 10))',
-                'Arar(lags=(1, 2, 9, 10))', 'Arar(lags=(1, 2, 9, 10))',
-                'AutoArima(1,1,0)(0,1,0)[12]', 'AutoArima(1,1,0)(0,1,0)[12]',
+                'AutoArima(1,1,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 12, 13))',
+                'AutoArima(1,1,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 12, 13))',
+                'AutoArima(1,1,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 12, 13))',
+                'AutoArima(1,1,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 12, 13))',
+                'AutoArima(1,0,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 12, 13))',
+                'AutoArima(1,0,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 12, 13))',
+                'AutoArima(1,0,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 12, 13))',
+                'AutoArima(1,0,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 12, 13))',
+                'AutoArima(3,0,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 9, 10))',
+                'AutoArima(3,0,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 9, 10))',
+                'AutoArima(3,0,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 9, 10))',
+                'AutoArima(3,0,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 9, 10))',
+                'AutoArima(3,0,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 10, 13))',
+                'AutoArima(3,0,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 10, 13))',
+                'AutoArima(3,0,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 10, 13))',
+                'AutoArima(3,0,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 10, 13))',
+                'AutoArima(1,0,0)(1,1,0)[12]', 'Arar(lags=(1, 2, 9, 10))',
+                'AutoArima(1,0,0)(1,1,0)[12]', 'Arar(lags=(1, 2, 9, 10))',
+                'AutoArima(1,0,0)(1,1,0)[12]', 'Arar(lags=(1, 2, 9, 10))',
+                'AutoArima(1,0,0)(1,1,0)[12]', 'Arar(lags=(1, 2, 9, 10))',
                 'AutoArima(1,1,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 9, 10))',
-                'Arar(lags=(1, 2, 9, 10))', 'Arar(lags=(1, 2, 9, 10))'
+                'AutoArima(1,1,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 9, 10))',
+                'AutoArima(1,1,0)(0,1,0)[12]', 'Arar(lags=(1, 2, 9, 10))'
             ]
         },
         index = pd.Index([121, 121, 122, 122, 123, 123, 124, 124, 125, 125, 126, 126, 127, 127,
@@ -1382,3 +1382,150 @@ def test_output_backtesting_stats_auto_arima_arar_freeze_params_False_gap_air_pa
 
     pd.testing.assert_frame_equal(expected_metric, metric, rtol=0.01)
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, rtol=0.01)
+
+
+@pytest.mark.parametrize(
+    "freeze_params",
+    [True, False],
+    ids=lambda freeze: f'freeze_params: {freeze}'
+)
+def test_output_backtesting_stats_single_estimator_gap_no_interval(freeze_params):
+    """
+    Test output of backtesting_stats with a single estimator, gap > 0 and no
+    interval. In this case `predict` returns a pandas Series, so the gap must
+    be removed without column indexing. Predictions are compared with a
+    manual fit and predict of each fold.
+    """
+    forecaster = ForecasterStats(estimator=Arima(order=(1, 1, 0)))
+    cv = TimeSeriesFold(
+             steps                 = 4,
+             initial_train_size    = len(air_passengers) - 25,
+             refit                 = True,
+             gap                   = 2,
+             allow_incomplete_fold = True
+         )
+
+    metric, backtest_predictions = backtesting_stats(
+                                        forecaster        = forecaster,
+                                        y                 = air_passengers,
+                                        cv                = cv,
+                                        metric            = 'mean_absolute_error',
+                                        freeze_params     = freeze_params,
+                                        n_jobs            = 1,
+                                        show_progress     = False,
+                                        suppress_warnings = True
+                                   )
+
+    cv.set_params({'window_size': 1, 'verbose': False})
+    expected_preds = []
+    for fold in cv.split(X=air_passengers, as_pandas=False):
+        train_iloc_start, train_iloc_end = fold[1]
+        test_iloc_start, test_iloc_end = fold[3]
+        forecaster_fold = ForecasterStats(estimator=Arima(order=(1, 1, 0)))
+        forecaster_fold.fit(y=air_passengers.iloc[train_iloc_start:train_iloc_end])
+        pred = forecaster_fold.predict(steps=test_iloc_end - test_iloc_start)
+        expected_preds.append(pred.iloc[2:].to_frame().assign(fold=fold[0]))
+    expected_preds = pd.concat(expected_preds)[['fold', 'pred']]
+    if not freeze_params:
+        expected_preds['estimator_params'] = 'Arima(1,1,0)'
+
+    expected_metric = pd.DataFrame({
+        'mean_absolute_error': [
+            np.mean(np.abs(
+                air_passengers.loc[expected_preds.index] - expected_preds['pred']
+            ))
+        ]
+    })
+
+    assert backtest_predictions.shape[0] == 23
+    pd.testing.assert_frame_equal(expected_preds, backtest_predictions)
+    pd.testing.assert_frame_equal(expected_metric, metric)
+
+
+@pytest.mark.parametrize(
+    "freeze_params",
+    [True, False],
+    ids=lambda freeze: f'freeze_params: {freeze}'
+)
+def test_output_backtesting_stats_auto_arima_with_drift_and_exog(freeze_params):
+    """
+    Test output of backtesting_stats with auto ARIMA when the selected model
+    includes a drift term and exogenous variables. Before the fix, prediction
+    failed because the future drift column was not added and, with
+    `freeze_params=True`, the frozen model lost the drift term. Both values of
+    `freeze_params` must give the same results because the same model is
+    selected in every fold. Data follow a random walk with drift 0.5 plus 2 * x.
+    """
+    rng = np.random.RandomState(123)
+    n = 150
+    idx = pd.date_range("2020-01-01", periods=n, freq="D")
+    x = rng.normal(0, 1, n)
+    y = pd.Series(np.cumsum(0.5 + rng.normal(0, 1, n)) + 2 * x, index=idx, name="y")
+    exog = pd.Series(x, index=idx, name="x")
+
+    forecaster = ForecasterStats(estimator=Arima(order=None, seasonal_order=None))
+    cv = TimeSeriesFold(steps=10, initial_train_size=120, refit=True, verbose=False)
+    metric, predictions = backtesting_stats(
+                              forecaster    = forecaster,
+                              y             = y,
+                              exog          = exog,
+                              cv            = cv,
+                              metric        = 'mean_absolute_error',
+                              freeze_params = freeze_params,
+                              show_progress = False
+                          )
+
+    expected_pred_first_fold = np.array([
+        53.05455301243655, 52.84403933832447, 54.62085697324249,
+        56.37693992373822, 58.51309599304228, 55.19445992985424,
+        57.79232775521178, 57.646267725872065, 58.028279498479925,
+        56.400873088166044
+    ])
+
+    # Values that depend on where the optimizer stops, see `tol_pred`
+    np.testing.assert_allclose(
+        metric.loc[0, 'mean_absolute_error'], 2.7797731527375893, **tol_pred
+    )
+    # The predictions differ by up to 5e-7 (relative) between the CI runners
+    # and by up to 1e-6 under perturbations, far less than `tol_pred`.
+    np.testing.assert_allclose(
+        predictions['pred'].to_numpy()[:10], expected_pred_first_fold, rtol=1e-4
+    )
+
+
+def test_backtesting_stats_IgnoredArgumentWarning_integer_refit_with_non_Sarimax():
+    """
+    Test that an integer `refit` other than 1 (intermittent refit) with an
+    estimator different from Sarimax issues an IgnoredArgumentWarning and is
+    set to True, the same as `refit=False`. Before the fix, it raised a
+    NotImplementedError about `last_window` in the folds without refit.
+    """
+    forecaster = ForecasterStats(estimator=Arima(order=(1, 1, 1)))
+    cv = TimeSeriesFold(
+             steps              = 3,
+             initial_train_size = len(y_datetime) - 12,
+             refit              = 2,
+             verbose            = False
+         )
+
+    warn_msg = re.escape(
+        "Estimators different from `skforecast.stats.Sarimax` require refitting "
+        "since predictions must start from the end of the training set. `refit` "
+        "is set to `True`, regardless of the value provided."
+    )
+    with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
+        metric, predictions = backtesting_stats(
+                                  forecaster    = forecaster,
+                                  y             = y_datetime,
+                                  cv            = cv,
+                                  metric        = 'mean_squared_error',
+                                  show_progress = False
+                              )
+
+    # The squared error of small residuals amplifies the platform differences
+    # of the predictions (see `tol_pred`), so the metric is compared with a
+    # looser tolerance.
+    np.testing.assert_allclose(
+        metric.loc[0, 'mean_squared_error'], 0.01505251113240201, rtol=1e-2
+    )
+    assert len(predictions) == 12

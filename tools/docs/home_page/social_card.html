@@ -1,0 +1,73 @@
+<!doctype html>
+<!--
+  Social preview card of the documentation home page (1200 x 630 px), rendered
+  to docs/img/social-card-home.png by make_social_card.mjs. The query string
+  `?stage=<file URL>` points to a screenshot of the home page animation.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Poppins:wght@600;700&display=swap">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    width: 1200px;
+    height: 630px;
+    overflow: hidden;
+    background: #001633;
+    color: #ffffff;
+    font-family: "Open Sans", sans-serif;
+    position: relative;
+  }
+  .text {
+    position: absolute;
+    left: 64px;
+    top: 52px;
+    right: 64px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-family: "Poppins", sans-serif;
+    font-weight: 600;
+    font-size: 26px;
+    color: #f79939;
+  }
+  .brand img { height: 46px; }
+  h1 {
+    margin: 26px 0 0;
+    font-family: "Poppins", sans-serif;
+    font-weight: 700;
+    font-size: 50px;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+  .stage {
+    position: absolute;
+    left: 64px;
+    right: 64px;
+    top: 262px;
+    border-radius: 14px 14px 0 0;
+    overflow: hidden;
+    border: 1px solid #1c3357;
+    border-bottom: 0;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.35);
+  }
+  .stage img { display: block; width: 100%; }
+</style>
+</head>
+<body>
+  <div class="text">
+    <div class="brand"><img src="../../../docs/img/logo-skforecast-white-no-backgound.png" alt="">skforecast</div>
+    <h1>Time series forecasting,<br>from prototype to production</h1>
+  </div>
+  <div class="stage"><img id="stage" alt=""></div>
+  <script>
+    document.getElementById("stage").src = new URLSearchParams(location.search).get("stage");
+  </script>
+</body>
+</html>

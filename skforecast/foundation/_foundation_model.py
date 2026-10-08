@@ -611,7 +611,9 @@ class FoundationModel:
             - If `dict[str, pandas Series]`: multi-series mode; keys are
             series names.
         exog : pandas Series, pandas DataFrame, dict, default None
-            Historical exogenous variables aligned to `series`.
+            Historical exogenous variables aligned to `series`. If the adapter
+            does not support exogenous variables (`allow_exog=False`), `exog`
+            is ignored and an `IgnoredArgumentWarning` is issued.
 
             - If `pandas Series` or `pandas DataFrame`: broadcast to all
             series.
@@ -622,6 +624,15 @@ class FoundationModel:
         self : FoundationModel
 
         """
+
+        if exog is not None and not self.allow_exog:
+            warnings.warn(
+                f"The model '{self.model_id}' does not support exogenous "
+                f"variables. `exog` will be ignored.",
+                IgnoredArgumentWarning,
+                stacklevel=2,
+            )
+            exog = None
 
         self.index_type_                = None
         self.index_freq_                = None
@@ -856,9 +867,7 @@ class FoundationModel:
             # DatetimeIndex: reindex to the exact expected date range,
             # filling gaps with NaN.
             if is_datetime_ctx and isinstance(series_exog.index, pd.DatetimeIndex):
-                expected_idx = pd.date_range(
-                    start=ref_end + freq, periods=steps, freq=freq
-                )
+                expected_idx = expand_index(ctx.index, steps=steps)
                 # Fast path: exog already aligned, no reindex needed.
                 series_exog_aligned = (
                     series_exog
@@ -1000,7 +1009,7 @@ class FoundationModel:
             | dict[str, pd.DataFrame | pd.Series | None]
             | None
         ) = None,
-        quantiles: list[float] | tuple[float] | None = None,
+        quantiles: list[float] | tuple[float, ...] | None = None,
         check_inputs: bool = True,
     ) -> pd.DataFrame:
         """

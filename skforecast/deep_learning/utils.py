@@ -33,30 +33,30 @@ try:
     from keras.losses import MeanSquaredError
     from keras.models import Model
 except ImportError as e:
-    import sys
-    if sys.version_info >= (3, 14):
+    if isinstance(e, ModuleNotFoundError) and e.name == "keras":
+        check_optional_dependency(package_name="keras")
+    if isinstance(e, ModuleNotFoundError) and e.name == "tensorflow":
         raise ImportError(
-            "Python 3.14+ is not supported by TensorFlow, which is the default "
-            "backend used by Keras. To use Keras with Python 3.14+, the KERAS_BACKEND "
-            "environment variable needs to be set to 'torch', `os.environ['KERAS_BACKEND'] = 'torch'`."
-            "Make sure you have PyTorch installed to use Keras with the torch backend. "
-            "For installation instructions, visit https://pytorch.org/get-started/locally/"
-        )
-    else:
-        package_name = str(e).split(" ")[-1].replace("'", "")
-        check_optional_dependency(package_name=package_name)
+            "Keras uses TensorFlow as its default backend and TensorFlow is not "
+            "installed. Install it with `pip install tensorflow` or, if TensorFlow "
+            "is not available for your Python version, use the PyTorch backend: "
+            "install PyTorch (https://pytorch.org/get-started/locally/) and set "
+            "the environment variable before the import, "
+            "`os.environ['KERAS_BACKEND'] = 'torch'`."
+        ) from e
+    raise
 
 
 def create_and_compile_model(
     series: pd.DataFrame,
-    lags: int | list[int] | np.ndarray[int] | range[int],
+    lags: int | list[int] | np.ndarray | range,
     steps: int,
-    levels: str | list[str] | tuple[str] | None = None,
+    levels: str | list[str] | tuple[str, ...] | None = None,
     exog: pd.Series | pd.DataFrame | None = None,
     recurrent_layer: str = "LSTM",
-    recurrent_units: int | list[int] | tuple[int] = 100,
+    recurrent_units: int | list[int] | tuple[int, ...] = 100,
     recurrent_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "tanh"},
-    dense_units: int | list[int] | tuple[int] | None = 64,
+    dense_units: int | list[int] | tuple[int, ...] | None = 64,
     dense_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "relu"},
     output_dense_layer_kwargs: dict[str, Any] | None = {"activation": "linear"},
     compile_kwargs: dict[str, Any] = {"optimizer": Adam(), "loss": MeanSquaredError()},
@@ -187,14 +187,14 @@ def create_and_compile_model(
 
 def _create_and_compile_model_exog(
     series: pd.DataFrame,
-    lags: int | list[int] | np.ndarray[int] | range[int],
+    lags: int | list[int] | np.ndarray | range,
     steps: int,
-    levels: str | list[str] | tuple[str] | None = None,
+    levels: str | list[str] | tuple[str, ...] | None = None,
     exog: pd.Series | pd.DataFrame | None = None,
     recurrent_layer: str = "LSTM",
-    recurrent_units: int | list[int] | tuple[int] = 100,
+    recurrent_units: int | list[int] | tuple[int, ...] = 100,
     recurrent_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "tanh"},
-    dense_units: int | list[int] | tuple[int] | None = 64,
+    dense_units: int | list[int] | tuple[int, ...] | None = 64,
     dense_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "relu"},
     output_dense_layer_kwargs: dict[str, Any] | None = {"activation": "linear"},
     compile_kwargs: dict[str, Any] = {"optimizer": Adam(), "loss": MeanSquaredError()},
@@ -442,13 +442,13 @@ def _create_and_compile_model_exog(
 
 def _create_and_compile_model_no_exog(
     series: pd.DataFrame,
-    lags: int | list[int] | np.ndarray[int] | range[int],
+    lags: int | list[int] | np.ndarray | range,
     steps: int,
-    levels: str | list[str] | tuple[str] | None = None,
+    levels: str | list[str] | tuple[str, ...] | None = None,
     recurrent_layer: str = "LSTM",
-    recurrent_units: int | list[int] | tuple[int] = 100,
+    recurrent_units: int | list[int] | tuple[int, ...] = 100,
     recurrent_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "tanh"},
-    dense_units: int | list[int] | tuple[int] | None = 64,
+    dense_units: int | list[int] | tuple[int, ...] | None = 64,
     dense_layers_kwargs: dict[str, Any] | list[dict[str, Any]] | None = {"activation": "relu"},
     output_dense_layer_kwargs: dict[str, Any] | None = {"activation": "linear"},
     compile_kwargs: dict[str, Any] = {"optimizer": Adam(), "loss": MeanSquaredError()},

@@ -62,7 +62,7 @@ def _validate_model_id_prefix(model_id: str, prefix: str, adapter_name: str) -> 
 
 
 def _validate_supported_quantiles(
-    quantiles: list[float] | tuple[float] | None,
+    quantiles: list[float] | tuple[float, ...] | None,
     supported_quantiles: list[float],
     model_name: str,
     tol: float = 1e-9,
@@ -198,30 +198,148 @@ def _tensor_to_numpy(values: Any) -> np.ndarray:
     return np.asarray(values)
 
 
-# License terms last verified against the HuggingFace model card on
-# 2026-09-07. This table is not checked automatically against the source, so
-# it can go stale silently if a provider changes its license terms; re-verify
-# periodically. A `model_id` not listed here is not known to carry a
+# License of the weights served by every registered `model_id` prefix, as
+# `(license, license_url, commercial_use_restricted, warning_name)`:
+#
+# - `license`: SPDX identifier, or the `license_name` of the HuggingFace model
+#   card when the license is not a standard one.
+# - `license_url`: link to the license file. `None` for standard licenses,
+#   whose link is the model card of the repository the weights come from
+#   (see `_get_license_url`), so it follows the `model_id`.
+# - `warning_name`: descriptive name shown by `LicenseWarning`. `None` when
+#   the license does not restrict commercial use, so no warning is raised.
+#
+# Every prefix in `_ADAPTER_REGISTRY` must be covered by an entry (checked by
+# the tests), so adding an adapter forces an explicit decision about its
+# license. The entries are compared with the HuggingFace model cards by
+# `tools/check_foundation_models_metadata.py`, which runs on a schedule in CI
+# because a provider can change its terms, or a backend switch to newer
+# weights, at any time. A `model_id` not covered here is not known to carry a
 # commercial-use restriction, it does not mean the license has been confirmed
 # permissive.
-_NON_COMMERCIAL_LICENSES: dict[str, tuple[str, str]] = {
+_MODEL_LICENSES: dict[str, tuple[str, str | None, bool, str | None]] = {
+    "amazon/chronos-2": (
+        "Apache-2.0",
+        None,
+        False,
+        None,
+    ),
+    "autogluon/chronos-2": (
+        "Apache-2.0",
+        None,
+        False,
+        None,
+    ),
+    "google/timesfm-2.5": (
+        "Apache-2.0",
+        None,
+        False,
+        None,
+    ),
     "google/timesfm-3.0": (
-        "TimesFM Non-Commercial License v1.0",
+        "timesfm-non-commercial-license-v1.0",
         "https://huggingface.co/google/timesfm-3.0-pytorch/blob/main/LICENSE",
+        True,
+        "TimesFM Non-Commercial License v1.0",
     ),
     "Salesforce/moirai": (
         "CC-BY-NC-4.0",
-        "https://huggingface.co/Salesforce/moirai-2.0-R-small",
+        None,
+        True,
+        "CC-BY-NC-4.0",
     ),
+    "soda-inria/tabicl": (
+        "BSD-3-Clause",
+        None,
+        False,
+        None,
+    ),
+    # License of the TabPFN-3.5 weights, the version pinned by
+    # tabpfn-time-series 1.3. See `TabPFNAdapter.weights_repo_id`.
     "priorlabs/tabpfn": (
-        "TabPFN License v1.0 (non-commercial without an enterprise license)",
-        "https://huggingface.co/Prior-Labs/tabpfn_3/blob/main/LICENSE",
+        "tabpfn-3-5-license-v1.0",
+        "https://huggingface.co/Prior-Labs/tabpfn_3_5/blob/main/LICENSE",
+        True,
+        "TabPFN-3.5 License v1.0 (non-commercial without an enterprise license)",
+    ),
+    "theforecastingcompany/t0": (
+        "Apache-2.0",
+        None,
+        False,
+        None,
+    ),
+    "Synthefy/Nori": (
+        "Apache-2.0",
+        None,
+        False,
+        None,
     ),
     "taharnbl/TS-ICL": (
+        "tsicl-v1-license-v1.0",
+        "https://huggingface.co/taharnbl/TS-ICL/blob/main/LICENSE",
+        True,
         "tsicl-v1-license-v1.0 (non-commercial)",
-        "https://huggingface.co/taharnbl/TS-ICL",
     ),
 }
+
+
+def _get_model_license(
+    model_id: str
+) -> tuple[str, str | None, bool, str | None] | None:
+    """
+    Return the license registered for the weights of `model_id`, if any.
+
+    Looks up `model_id` in `_MODEL_LICENSES` using longest-prefix matching.
+
+    Parameters
+    ----------
+    model_id : str
+        Model ID to look up.
+
+    Returns
+    -------
+    license_info : tuple, None
+        Tuple `(license, license_url, commercial_use_restricted,
+        warning_name)`, or `None` when no registered prefix matches
+        `model_id`.
+
+    """
+
+    best_prefix = None
+    for prefix in _MODEL_LICENSES:
+        if model_id.startswith(prefix):
+            if best_prefix is None or len(prefix) > len(best_prefix):
+                best_prefix = prefix
+
+    if best_prefix is None:
+        return None
+
+    return _MODEL_LICENSES[best_prefix]
+
+
+def _get_license_url(license_url: str | None, weights_repo_id: str) -> str:
+    """
+    Return the link to the terms of a registered license.
+
+    Parameters
+    ----------
+    license_url : str, None
+        Link registered in `_MODEL_LICENSES`. `None` for standard licenses.
+    weights_repo_id : str
+        Hugging Face repository the weights are downloaded from.
+
+    Returns
+    -------
+    license_url : str
+        `license_url` when it is registered, otherwise the model card of
+        `weights_repo_id`.
+
+    """
+
+    if license_url is None:
+        license_url = f"https://huggingface.co/{weights_repo_id}"
+
+    return license_url
 
 
 def _warn_if_non_commercial(model_id: str) -> None:
@@ -229,10 +347,11 @@ def _warn_if_non_commercial(model_id: str) -> None:
     Warn when `model_id` matches a prefix known to carry a non-commercial
     license.
 
-    Looks up `model_id` in `_NON_COMMERCIAL_LICENSES` using longest-prefix
-    matching. Model ids that do not match any registered prefix do not raise
-    a warning; this only means the id is not in this registry, it does not
-    confirm that the license permits commercial use.
+    Looks up `model_id` with `_get_model_license`. Model ids whose registered
+    license does not restrict commercial use, or that do not match any
+    registered prefix, do not raise a warning; the latter only means the id
+    is not in the registry, it does not confirm that the license permits
+    commercial use.
 
     Parameters
     ----------
@@ -245,16 +364,14 @@ def _warn_if_non_commercial(model_id: str) -> None:
 
     """
 
-    best_prefix = None
-    for prefix in _NON_COMMERCIAL_LICENSES:
-        if model_id.startswith(prefix):
-            if best_prefix is None or len(prefix) > len(best_prefix):
-                best_prefix = prefix
-
-    if best_prefix is None:
+    license_info = _get_model_license(model_id)
+    if license_info is None or not license_info[2]:
         return
 
-    license_name, license_url = _NON_COMMERCIAL_LICENSES[best_prefix]
+    _, license_url, _, license_name = license_info
+    # The licenses that restrict commercial use and have no registered link
+    # belong to backends that download the weights from `model_id`.
+    license_url = _get_license_url(license_url, weights_repo_id=model_id)
     warnings.warn(
         f"The weights for '{model_id}' are released under {license_name}. "
         "Review the license terms before commercial or production use. "

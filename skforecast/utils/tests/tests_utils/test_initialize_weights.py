@@ -1,15 +1,30 @@
 # Unit test initialize_weights
 # ==============================================================================
 import re
+import functools
 import pytest
 import numpy as np
-import pandas as pd
 import inspect
 from skforecast.exceptions import IgnoredArgumentWarning
 from skforecast.utils.utils import initialize_weights
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.neighbors import KNeighborsRegressor
+
+
+def weight_func_with_cutoff(index, cutoff):  # pragma: no cover
+    """
+    Weight function with an argument to fix with functools.partial.
+    """
+    return np.where(index >= cutoff, 1, 0)
+
+
+class CallableWeights:  # pragma: no cover
+    """
+    Callable object used as weight function.
+    """
+    def __call__(self, index):
+        return np.ones(len(index))
 
 
 @pytest.mark.parametrize("forecaster_name", 
@@ -205,3 +220,27 @@ def test_output_initialize_weights_source_code_weight_func_when_weight_func_dict
     
     assert source_code_weight_func['series_1'] == inspect.getsource(test_weight_func)
     assert source_code_weight_func['series_2'] == inspect.getsource(test_weight_func_2)
+
+
+@pytest.mark.parametrize(
+    "weight_func",
+    [functools.partial(weight_func_with_cutoff, cutoff=10), CallableWeights()],
+    ids=['partial', 'callable_object']
+)
+def test_output_initialize_weights_source_code_weight_func_None_when_no_source(
+    weight_func
+):
+    """
+    Test that initialize_weights accepts a weight_func whose source code is not
+    available (a functools.partial or a callable object) and returns `None` as
+    its source code.
+    """
+    weight_func_out, source_code_weight_func, _ = initialize_weights(
+        forecaster_name = 'ForecasterRecursive',
+        estimator       = LinearRegression(),
+        weight_func     = weight_func,
+        series_weights  = None
+    )
+
+    assert weight_func_out is weight_func
+    assert source_code_weight_func is None

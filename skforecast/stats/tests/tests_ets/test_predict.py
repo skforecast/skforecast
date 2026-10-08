@@ -1,6 +1,5 @@
 # Unit test predict method - Ets
 # ==============================================================================
-import platform
 import numpy as np
 import pytest
 from ..._ets import Ets
@@ -37,10 +36,10 @@ def test_estimator_predict():
     assert np.all(np.isfinite(mean))
     
     expected_mean = np.array([
-        -0.21174572, -0.2703575, -0.32896928, -0.38758106, -0.44619284,
-        -0.50480462, -0.5634164, -0.62202818
+        0.1647033144, 0.1662691275, 0.1678349406, 0.1694007537, 0.1709665668,
+        0.1725323799, 0.174098193, 0.1756640061
     ])
-    np.testing.assert_array_almost_equal(mean, expected_mean, decimal=8)
+    np.testing.assert_allclose(mean, expected_mean, rtol=1e-5, atol=1e-6)
 
 
 def test_estimator_invalid_steps():
@@ -78,14 +77,14 @@ def test_estimator_seasonal_forecast():
     assert np.all(np.isfinite(forecasts))
     
     expected = np.array([
-        21.79508244, 23.43787498, 24.89522337, 25.42741021, 24.90993587,
-        24.00846331, 22.78025097, 21.16618097, 20.23863544, 19.89626461,
-        20.49691337, 21.6713034,
-        23.12161355, 24.76440609, 26.22175448, 26.75394132, 26.23646698,
-        25.33499441, 24.10678208, 22.49271208, 21.56516655, 21.22279572,
-        21.82344448, 22.99783451
+        21.7119669666, 23.3449832475, 24.7929372905, 25.3181161357, 24.7941342012,
+        23.8828471306, 22.6341107929, 21.0085260619, 20.0684274667, 19.7130601543,
+        20.30497262, 21.4707654929,
+        22.893467927, 24.5264842079, 25.9744382509, 26.4996170961, 25.9756351616,
+        25.064348091, 23.8156117533, 22.1900270223, 21.249928427, 20.8945611146,
+        21.4864735804, 22.6522664533
     ])
-    np.testing.assert_array_almost_equal(forecasts, expected, decimal=6)
+    np.testing.assert_allclose(forecasts, expected, rtol=1e-5, atol=1e-6)
 
 
 def test_reduce_memory_preserves_predictions():
@@ -97,10 +96,10 @@ def test_reduce_memory_preserves_predictions():
     pred_before = est.predict(steps=10)
     
     expected_predictions = np.array([
-        0.39943144, 0.39595466, 0.39247788, 0.3890011, 0.38552432,
-        0.38204754, 0.37857076, 0.37509398, 0.3716172, 0.36814041
+        0.5896991484, 0.5958411095, 0.6019830706, 0.6081250317, 0.6142669927,
+        0.6204089538, 0.6265509149, 0.632692876, 0.6388348371, 0.6449767981
     ])
-    np.testing.assert_array_almost_equal(pred_before, expected_predictions, decimal=8)
+    np.testing.assert_allclose(pred_before, expected_predictions, rtol=1e-5, atol=1e-6)
     
     est.reduce_memory()
     
@@ -118,8 +117,8 @@ def test_estimator_ann_single_step():
     pred = est.predict(steps=1)
     assert pred.shape == (1,)
     
-    expected = np.array([0.4408458])
-    np.testing.assert_array_almost_equal(pred, expected, decimal=7)
+    expected = np.array([-0.1165068109])
+    np.testing.assert_allclose(pred, expected, rtol=1e-5, atol=1e-6)
 
 
 def test_estimator_ann_no_trend():
@@ -133,16 +132,12 @@ def test_estimator_ann_no_trend():
     assert np.all(np.isfinite(pred))
     
     expected = np.array([
-        0.4408458, 0.4408458, 0.4408458, 0.4408458, 0.4408458,
-        0.4408458, 0.4408458, 0.4408458, 0.4408458, 0.4408458
+        -0.1165068109, -0.1165068109, -0.1165068109, -0.1165068109, -0.1165068109,
+        -0.1165068109, -0.1165068109, -0.1165068109, -0.1165068109, -0.1165068109
     ])
-    np.testing.assert_array_almost_equal(pred, expected, decimal=7)
+    np.testing.assert_allclose(pred, expected, rtol=1e-5, atol=1e-6)
 
 
-@pytest.mark.skipif(
-    platform.system() == 'Darwin',
-    reason="Ets optimizer converges to different local minima on macOS"
-)
 def test_estimator_damped_trend():
     """Test damped trend model predictions"""
     rng = np.random.default_rng(789)
@@ -156,11 +151,11 @@ def test_estimator_damped_trend():
     assert np.all(np.isfinite(pred))
     
     expected = np.array([
-        26.0228922, 25.88284481, 25.7602587, 25.65295676, 25.55903335,
-        25.47682042, 25.40485789, 25.34186773, 25.28673125, 25.23846926,
-        25.19622463, 25.1592471
+        26.0228921872, 25.8828448005, 25.760258682, 25.6529567408, 25.5590333283,
+        25.4768203941, 25.4048578625, 25.3418677016, 25.2867312259, 25.238469229,
+        25.196224593, 25.1592470665
     ])
-    np.testing.assert_array_almost_equal(pred, expected, decimal=7)
+    np.testing.assert_allclose(pred, expected, rtol=1e-5, atol=1e-6)
     
     # Verify trend is decreasing (damped)
     assert np.all(np.diff(pred) < 0)
@@ -183,7 +178,7 @@ def test_estimator_multiplicative_error():
     assert np.all(pred > 0)  # Must be positive for multiplicative model
     
     expected = np.array([
-        20.93505704, 21.22724504, 21.51943305, 21.81162106, 22.10380907,
-        22.39599708, 22.68818509, 22.9803731
+        21.0777933234, 21.3790225557, 21.6802517881, 21.9814810204, 22.2827102527,
+        22.583939485, 22.8851687173, 23.1863979497
     ])
-    np.testing.assert_array_almost_equal(pred, expected, decimal=7)
+    np.testing.assert_allclose(pred, expected, rtol=1e-5, atol=1e-6)

@@ -411,3 +411,30 @@ def test_repr_and_repr_html_multiple_estimators():
     # Verify parameters for each estimator are shown
     assert "skforecast.Sarimax:" in result_repr7
     assert "skforecast.Arima:" in result_repr7
+
+
+def test_repr_and_repr_html_show_only_non_default_estimator_params():
+    """
+    Test that __repr__ and _repr_html_ only show the estimator parameters that
+    differ from their default values, including parameters normalized in
+    `__init__` (Arima `optim_kwargs`), while `estimator_params_` keeps the full
+    set of parameters.
+    """
+    forecaster = ForecasterStats(
+        estimator=[
+            Sarimax(order=(2, 1, 1)),
+            Arima(order=(1, 1, 1), method='ML')
+        ]
+    )
+    result_repr = repr(forecaster)
+    result_html = forecaster._repr_html_()
+
+    expected_sarimax = "skforecast.Sarimax: {'order': (2, 1, 1)}"
+    expected_arima = "skforecast.Arima: {'order': (1, 1, 1), 'method': 'ML'}"
+    assert expected_sarimax in result_repr
+    assert expected_arima in result_repr
+    assert f"<li>{expected_sarimax}</li>" in result_html
+    assert f"<li>{expected_arima}</li>" in result_html
+    assert "optim_kwargs" not in result_repr
+    assert len(forecaster.estimator_params_['skforecast.Sarimax']) == 24
+    assert len(forecaster.estimator_params_['skforecast.Arima']) == 38

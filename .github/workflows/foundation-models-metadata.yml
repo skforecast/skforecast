@@ -1,0 +1,51 @@
+name: Foundation Models Metadata
+
+# The license, weights repository and gating of the foundation models are
+# declared by hand in skforecast/foundation. This job compares them with the
+# model cards on the Hugging Face Hub, so a change of terms by a provider is
+# detected instead of going stale silently.
+
+permissions:
+  contents: read
+
+on:
+  schedule:
+    # Every Monday at 07:30 UTC
+    - cron: '30 7 * * 1'
+  workflow_dispatch:  # Allow manual trigger
+  pull_request:
+    branches:
+      - main
+      - '*.x'
+    paths:
+      - 'skforecast/foundation/_adapters.py'
+      - 'skforecast/foundation/_utils.py'
+      - 'skforecast/foundation/_model_info.py'
+      - 'tools/check_foundation_models_metadata.py'
+      - '.github/workflows/foundation-models-metadata.yml'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up uv and Python
+        uses: astral-sh/setup-uv@v10.2.0
+        with:
+          python-version: '3.12'
+          activate-environment: true  # creates .venv and puts it on PATH for the next steps
+          enable-cache: true
+          cache-dependency-glob: "pyproject.toml"
+          prune-cache: true
+
+      # Only the core dependencies: the check does not import any backend.
+      - name: Install package
+        run: uv pip install -e .
+
+      - name: Check foundation model metadata against the Hugging Face Hub
+        run: python tools/check_foundation_models_metadata.py

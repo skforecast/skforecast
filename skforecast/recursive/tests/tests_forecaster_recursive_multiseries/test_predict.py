@@ -1,6 +1,7 @@
 # Unit test predict ForecasterRecursiveMultiSeries
 # ==============================================================================
 import re
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
@@ -17,9 +18,11 @@ from sklearn.pipeline import make_pipeline
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
 from lightgbm import LGBMRegressor
+from xgboost import XGBRegressor
 
 from copy import deepcopy
 from skforecast.exceptions import IgnoredArgumentWarning
+from skforecast.exceptions import MissingExogWarning, MissingValuesWarning
 from skforecast.preprocessing import RollingFeatures, TimeSeriesDifferentiator
 from ....recursive import ForecasterRecursiveMultiSeries
 
@@ -35,6 +38,8 @@ from .fixtures_forecaster_recursive_multiseries import (
     series_dict_nans_train,
     exog_dict_nans_train,
     exog_dict_nans_test,
+    series_dict_unordered,
+    exog_dict_unordered,
     expected_df_to_long_format
 )
 
@@ -797,6 +802,93 @@ def test_predict_output_when_series_and_exog_dict():
     pd.testing.assert_frame_equal(predictions, expected)
 
 
+@pytest.mark.parametrize(
+    'rows, columns, expected_values',
+    [
+        (list(range(100)), ['exog_1', 'exog_2'],
+         [[5.106484036157652, -3.648258245197447],
+          [8.154359171116097, -7.122723980821137],
+          [2.936390945688694, -1.452145008496344],
+          [2.7710678131212916, -1.4501338604047387],
+          [3.307517264202827, -1.843840645375435]]),
+        (list(range(52, 57)), ['exog_1', 'exog_2'],
+         [[2.647850416562357, -1.3417549703084646],
+          [2.884436633909491, -1.754977200206412],
+          [3.307517264202827, -1.843840645375435],
+          [3.4529272741470187, -1.8971453241638436],
+          [3.4529272741470187, -1.8971453241638436]]),
+        ([50, 51, 52], ['exog_1', 'exog_2'],
+         [[5.106484036157652, -3.648258245197447],
+          [8.154359171116097, -7.122723980821137],
+          [2.936390945688694, -1.452145008496344],
+          [2.884436633909491, -1.754977200206412],
+          [3.4208860849910265, -2.1486839851771093]]),
+        ([50, 51, 53, 54, 55], ['exog_1', 'exog_2'],
+         [[5.106484036157652, -3.648258245197447],
+          [8.154359171116097, -7.122723980821137],
+          [3.21079426705582, -1.7914061433153796],
+          [2.7710678131212916, -1.4501338604047387],
+          [3.307517264202827, -1.843840645375435]]),
+        (list(range(50, 55)), ['exog_2'],
+         [[2.631339914528938, -1.1628131767455951],
+          [2.7710678131212916, -1.4501338604047387],
+          [3.307517264202827, -1.843840645375435],
+          [3.4529272741470187, -1.8971453241638436],
+          [3.4529272741470187, -1.8971453241638436]]),
+        ([], ['exog_1', 'exog_2'],
+         [[2.647850416562357, -1.3417549703084646],
+          [2.884436633909491, -1.754977200206412],
+          [3.4208860849910265, -2.1486839851771093],
+          [3.535205891784112, -2.147669916993845],
+          [3.535205891784112, -2.147669916993845]]),
+    ],
+    ids=['with_train_period', 'starts_2_steps_late', 'shorter_than_steps',
+         'gap', 'missing_column', 'empty']
+)
+def test_predict_output_when_exog_wide_is_not_aligned_same_as_exog_dict(
+    rows, columns, expected_values
+):
+    """
+    Test predict output when a wide `exog` does not follow the dates of the
+    steps predicted: it includes the training period, starts late, is shorter
+    than steps, has a gap, misses a column or is empty. As with a dict `exog`,
+    it is aligned with the predictions by date and column, and missing values
+    are filled with NaN (LGBMRegressor handles them natively).
+    """
+    exog = pd.DataFrame(
+        data  = {'exog_1': np.tile(exog_wide_range['exog_1'].to_numpy(), 2),
+                 'exog_2': np.arange(100, dtype=float)},
+        index = pd.date_range(start='2000-01-01', periods=100, freq='D')
+    )
+    series = (
+        series_wide_dt + exog[['exog_1']].iloc[:50].to_numpy() * np.array([10., -10.])
+    )
+    exog_pred = exog.iloc[rows][columns]
+
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator = LGBMRegressor(verbose=-1, random_state=123),
+                     lags      = 3
+                 )
+    forecaster.fit(series=series, exog=exog.iloc[:50])
+    predictions_wide = forecaster.predict(
+        steps=5, exog=exog_pred, suppress_warnings=True
+    )
+    predictions_dict = forecaster.predict(
+        steps=5, exog={'1': exog_pred, '2': exog_pred}, suppress_warnings=True
+    )
+
+    expected = expected_df_to_long_format(
+        pd.DataFrame(
+            data    = np.array(expected_values),
+            index   = pd.date_range(start='2000-02-20', periods=5, freq='D'),
+            columns = ['1', '2']
+        )
+    )
+
+    pd.testing.assert_frame_equal(predictions_wide, expected)
+    pd.testing.assert_frame_equal(predictions_dict, expected)
+
+
 @pytest.mark.parametrize("differentiation", 
                          [1, {'1': 1, '2': 1, '_unknown_level': 1}], 
                          ids = lambda diff: f'differentiation: {diff}')
@@ -1249,3 +1341,246 @@ def test_predict_output_when_heterogeneous_differentiation_dict():
     expected = expected_df_to_long_format(expected)
 
     pd.testing.assert_frame_equal(predictions, expected)
+
+
+@pytest.mark.parametrize(
+    'estimator, device',
+    [(XGBRegressor(n_estimators=5, random_state=123), 'cuda:0'),
+     (XGBRegressor(n_estimators=5, random_state=123), 'gpu'),
+     (XGBRegressor(n_estimators=5, random_state=123), None),
+     (LGBMRegressor(n_estimators=5, verbose=-1, random_state=123), 'cuda')],
+    ids=['XGB-cuda:0', 'XGB-gpu', 'XGB-not_set', 'LGBM-cuda']
+)
+def test_predict_restores_estimator_device(estimator, device):
+    """
+    Test that predict, which runs on CPU, restores the original device of the
+    estimator verbatim, and leaves a device that is not set unset. The device
+    is set after fit, so no GPU is needed.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator, lags=3)
+    forecaster.fit(series=series_dict_range)
+    if device is not None:
+        forecaster.estimator.set_params(device=device)
+    forecaster.predict(steps=3)
+
+    assert forecaster.estimator.get_params().get('device') == device
+
+
+def test_predict_output_when_encoding_onehot_and_series_not_in_alphabetical_order():
+    """
+    Test predict output when `encoding='onehot'` and the series are not in
+    alphabetical order ('c', 'a', 'd', 'b'). The one-hot columns of the
+    prediction matrix follow `encoding_mapping_`, as those of the training
+    matrix, so each series uses its own column.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = LinearRegression(),
+                     lags               = 2,
+                     encoding           = 'onehot',
+                     transformer_series = None,
+                     dropna_from_series = True
+                 )
+    forecaster.fit(series=series_dict_unordered, suppress_warnings=True)
+    predictions = forecaster.predict(steps=2, suppress_warnings=True)
+
+    expected = pd.DataFrame(
+        {'level': ['c', 'a', 'd', 'b', 'c', 'a', 'd', 'b'],
+         'pred': np.array([6.7285487893, 10.1655085063, 5.6544730032, 6.2489071323,
+                           7.8841648026, 11.2932023086, 5.6029193510, 7.2654898680])},
+        index=pd.DatetimeIndex(['2020-01-11'] * 4 + ['2020-01-12'] * 4)
+    )
+
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
+def test_predict_output_when_encoding_onehot_and_series_without_rows_in_X_train():
+    """
+    Test predict output when `encoding='onehot'` and one series ('d') loses
+    all its rows in the training matrix (it has no exog and
+    `dropna_from_series=True`). The prediction matrix has one column per
+    series of `encoding_mapping_`, as the training matrix.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = LinearRegression(),
+                     lags               = 2,
+                     encoding           = 'onehot',
+                     transformer_series = None,
+                     dropna_from_series = True
+                 )
+    forecaster.fit(
+        series=series_dict_unordered, exog=exog_dict_unordered, suppress_warnings=True
+    )
+    index_pred = pd.date_range(start='2020-01-11', periods=2, freq='D')
+    exog_pred = {
+        'c': pd.DataFrame({'exog_1': [0.5, -0.3]}, index=index_pred),
+        'a': pd.DataFrame({'exog_1': [1.2, 0.4]}, index=index_pred),
+        'b': pd.DataFrame({'exog_1': [-0.7, 0.9]}, index=index_pred)
+    }
+    predictions = forecaster.predict(steps=2, exog=exog_pred, suppress_warnings=True)
+
+    expected = pd.DataFrame(
+        {'level': ['c', 'a', 'b', 'c', 'a', 'b'],
+         'pred': np.array([5.5028033139, 8.9732201648, 6.6545874777,
+                           7.1063619350, 12.8568790140, 6.8447158698])},
+        index=pd.DatetimeIndex(['2020-01-11'] * 3 + ['2020-01-12'] * 3)
+    )
+
+    assert forecaster.X_train_series_names_in_ == ['c', 'a', 'b']
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
+@pytest.mark.parametrize(
+    "levels",
+    [pd.Index(['1', '2']), np.array(['1', '2'])],
+    ids=['pandas_Index', 'numpy_array']
+)
+def test_predict_output_when_levels_is_pandas_Index_or_numpy_array(levels):
+    """
+    Test predict output when `levels` is a pandas Index or a numpy array, which
+    must give the same predictions as a list.
+    """
+    series = pd.DataFrame(
+        {'1': np.arange(50, dtype=float), '2': np.arange(50, dtype=float) * 2}
+    )
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
+    forecaster.fit(series=series)
+
+    predictions = forecaster.predict(steps=3, levels=levels)
+    expected = forecaster.predict(steps=3, levels=['1', '2'])
+
+    assert not expected['pred'].isna().any()
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
+@pytest.mark.parametrize(
+    'dtype',
+    ['Float64', 'Int64', 'double[pyarrow]'],
+    ids=lambda dtype: f'dtype: {dtype}'
+)
+def test_predict_output_when_series_nullable_dtypes_with_leading_NA(dtype):
+    """
+    Test predict output when a series has a nullable or pyarrow dtype and
+    leading missing values (`pd.NA`) is the same as with float64. Before, `fit`
+    raised `TypeError: boolean value of NA is ambiguous`.
+    """
+    index = pd.date_range(start='2020-01-01', periods=30, freq='D')
+    series_float = {
+        'a': pd.Series(np.arange(30, dtype=float), index=index),
+        'b': pd.Series(np.arange(30, dtype=float) * 2, index=index)
+    }
+    series_float['a'].iloc[:3] = np.nan
+    series_nullable = {k: v.astype(dtype) for k, v in series_float.items()}
+
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=2)
+    forecaster.fit(series=series_nullable, suppress_warnings=True)
+    predictions = forecaster.predict(steps=2, suppress_warnings=True)
+
+    forecaster_float = ForecasterRecursiveMultiSeries(LinearRegression(), lags=2)
+    forecaster_float.fit(series=series_float, suppress_warnings=True)
+    expected = forecaster_float.predict(steps=2, suppress_warnings=True)
+
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
+@pytest.mark.parametrize(
+    "exog_format",
+    ['wide', 'dict'],
+    ids=lambda exog_format: f'exog_format: {exog_format}'
+)
+@pytest.mark.parametrize(
+    "case, warning_category, warning_message",
+    [
+        ('user_nan', MissingValuesWarning, "has missing values"),
+        ('fewer_rows', MissingValuesWarning, "doesn't have as many values as steps"),
+        ('dates_gap', MissingValuesWarning, "has no value for some of the 3 steps"),
+        ('missing_column', MissingExogWarning, "{'exog_2'} not present in `exog`"),
+    ],
+    ids=['user_nan', 'fewer_rows', 'dates_gap', 'missing_column']
+)
+def test_predict_warns_once_when_exog_has_missing_values(
+    exog_format, case, warning_category, warning_message
+):
+    """
+    Test predict issues a single warning for each level when the exog used to
+    predict has missing values, or they appear when aligning it with the 
+    predictions. Before, a wide exog issued a second MissingValuesWarning.
+    The exog has an integer column, whose dtype changes with the NaN values.
+    """
+    rng = np.random.default_rng(123)
+    index = pd.date_range(start='2020-01-01', periods=50, freq='D')
+    series = {
+        'l1': pd.Series(rng.normal(size=50), index=index),
+        'l2': pd.Series(rng.normal(size=50), index=index)
+    }
+    exog = pd.DataFrame(
+        {'exog_1': rng.normal(size=50), 'exog_2': np.arange(50)}, index=index
+    )
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
+    forecaster.fit(series=series, exog=exog)
+
+    exog_pred = pd.DataFrame(
+        {'exog_1': [1., 2., 3.], 'exog_2': [1, 2, 3]},
+        index=pd.date_range(start='2020-02-20', periods=3, freq='D')
+    )
+    if case == 'user_nan':
+        exog_pred['exog_1'] = [1., np.nan, 3.]
+    elif case == 'fewer_rows':
+        exog_pred = exog_pred.iloc[:2]
+    elif case == 'dates_gap':
+        exog_pred.index = pd.DatetimeIndex(['2020-02-20', '2020-02-22', '2020-02-23'])
+    else:
+        exog_pred = exog_pred[['exog_1']]
+    if exog_format == 'dict':
+        exog_pred = {'l1': exog_pred, 'l2': exog_pred}
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        forecaster.predict(steps=3, exog=exog_pred)
+
+    n_expected_warnings = 1 if exog_format == 'wide' else 2
+    warnings_raised = [
+        x for x in w
+        if issubclass(x.category, (MissingValuesWarning, MissingExogWarning))
+    ]
+    assert len(warnings_raised) == n_expected_warnings
+    for x in warnings_raised:
+        assert x.category is warning_category
+        assert warning_message in str(x.message)
+
+
+
+def test_predict_MissingValuesWarning_when_exog_has_categories_not_seen_in_fit():
+    """
+    Test predict issues a single MissingValuesWarning when a wide exog has a 
+    category not seen during training, which is encoded as NaN.
+    """
+    rng = np.random.default_rng(123)
+    index = pd.date_range(start='2020-01-01', periods=50, freq='D')
+    series = {
+        'l1': pd.Series(rng.normal(size=50), index=index),
+        'l2': pd.Series(rng.normal(size=50), index=index)
+    }
+    exog = pd.DataFrame(
+        {
+            'exog_1': rng.normal(size=50),
+            'exog_2': pd.Categorical(rng.choice(['a', 'b'], size=50))
+        },
+        index=index
+    )
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
+    forecaster.fit(series=series, exog=exog)
+
+    exog_pred = pd.DataFrame(
+        {'exog_1': [1., 2., 3.], 'exog_2': pd.Categorical(['a', 'c', 'b'])},
+        index=pd.date_range(start='2020-02-20', periods=3, freq='D')
+    )
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        forecaster.predict(steps=3, exog=exog_pred)
+
+    warnings_raised = [x for x in w if issubclass(x.category, MissingValuesWarning)]
+    assert len(warnings_raised) == 1
+    assert str(warnings_raised[0].message).startswith(
+        "`exog` has missing values after its transformation, for example "
+        "categories not seen during training."
+    )

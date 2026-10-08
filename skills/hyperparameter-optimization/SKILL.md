@@ -58,7 +58,7 @@ cv = TimeSeriesFold(
     refit=False,
 )
 
-# Define search space as a function — lags CAN be included here
+# Define search space as a function: lags CAN be included here
 def search_space(trial):
     return {
         'lags': trial.suggest_categorical('lags', [12, 24, [1, 2, 3, 23, 24]]),
@@ -219,7 +219,7 @@ forecaster = ForecasterFoundation(
     estimator=FoundationModel(model_id='autogluon/chronos-2-small', device_map='auto')
 )
 
-# TimeSeriesFold only — OneStepAheadFold raises TypeError
+# TimeSeriesFold only: OneStepAheadFold raises TypeError
 cv = TimeSeriesFold(steps=24, initial_train_size=len(series) - 200, refit=False)
 
 def search_space(trial):
@@ -252,7 +252,7 @@ skill (`references/adapter-parameters.md`).
 ```python
 from skforecast.model_selection import OneStepAheadFold
 
-# Much faster than TimeSeriesFold — no recursive predictions needed
+# Much faster than TimeSeriesFold: no recursive predictions needed
 cv_fast = OneStepAheadFold(
     initial_train_size=len(data) - 100,
 )
@@ -272,10 +272,11 @@ results, study = bayesian_search_forecaster(
 ## Common Mistakes
 
 1. **Not setting `return_best=True`**: The forecaster is not updated with the best parameters unless this is True.
-2. **Too few trials in Bayesian search**: Start with at least 20-50 trials for meaningful exploration.
+2. **Too few trials in Bayesian search**: Start with at least 20-50 trials for meaningful exploration. A small search may not beat the default configuration on the test set, because the configuration is chosen on the validation period, which can differ from the test period.
 3. **Using TimeSeriesFold for initial tuning**: Use `OneStepAheadFold` first for fast screening, then validate the top candidates with `TimeSeriesFold`.
-4. **Forgetting to include lags in search space**: For Bayesian search, lags can be included in `search_space()` — this is often the most impactful parameter.
+4. **Forgetting to include lags in search space**: For Bayesian search, lags can be included in `search_space()`; this is often the most impactful parameter.
 5. **Putting `lags` in a foundation `search_space`**: `bayesian_search_foundation` has no lag concept; any key that is not an adapter parameter raises `ValueError`.
+6. **Passing the test set to the search**: give the search only the training and validation data (e.g. `y=data.loc[:end_validation]`). With `return_best=True` the forecaster is refitted on everything the search receives, so keep the test set out and evaluate the refitted forecaster with `backtesting_forecaster` on it.
 
 ## References
 

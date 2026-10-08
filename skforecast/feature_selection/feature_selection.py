@@ -21,7 +21,7 @@ def select_features(
     exog: pd.Series | pd.DataFrame | None = None,
     select_only: str | list[str] | None = None,
     force_inclusion: list[str] | str | None = None,
-    subsample: int | float = 0.5,
+    subsample: float = 0.5,
     random_state: int = 123,
     verbose: bool = True
 ) -> tuple[list[int], list[str], list[str], list[str]]:
@@ -49,7 +49,9 @@ def select_features(
         Forecaster model. If forecaster is a ForecasterDirect, the
         selector will only be applied to the features of the first step.
     selector : object
-        A feature selector from sklearn.feature_selection.
+        A feature selector compatible with the scikit-learn API (it must
+        implement `fit` and `get_feature_names_out`), for example the
+        selectors of `sklearn.feature_selection`.
     y : pandas Series, pandas DataFrame
         Target time series to which the feature selection will be applied.
     exog : pandas Series, pandas DataFrame, default None
@@ -86,8 +88,9 @@ def select_features(
         For calendar features, `force_inclusion` is matched against the encoded
         column names (e.g. `month_sin`); forcing any encoded column keeps its
         source calendar feature in `selected_calendar_features`.
-    subsample : int, float, default 0.5
-        Proportion of records to use for feature selection.
+    subsample : float, default 0.5
+        Proportion of records to use for feature selection, in (0, 1]. Records
+        are sampled without replacement and kept in their original time order.
     random_state : int, default 123
         Sets a seed for the random subsample so that the subsampling process 
         is always deterministic.
@@ -214,15 +217,18 @@ def select_features(
             "forecaster includes features for the selected group(s)."
         )
 
-    if isinstance(subsample, float):
-        subsample = int(len(X_train) * subsample)
-
+    # Sample without replacement and keep the time order of the records, so
+    # that the selector's internal cross-validation never sees the same record
+    # in train and validation, and a `TimeSeriesSplit` can be used as its `cv`.
+    n_samples = max(1, int(len(X_train) * subsample))
     rng = np.random.default_rng(seed=random_state)
-    sample = rng.integers(low=0, high=len(X_train), size=subsample)
+    sample = np.sort(rng.choice(len(X_train), size=n_samples, replace=False))
     X_train_sample = X_train.iloc[sample, :]
     y_train_sample = y_train.iloc[sample]
     selector.fit(X_train_sample, y_train_sample)
-    selected_features = selector.get_feature_names_out()
+    selected_features = [
+        str(feature) for feature in selector.get_feature_names_out()
+    ]
 
     if eval_autoreg:
         selected_autoreg = [
@@ -305,8 +311,8 @@ def select_features(
     selected_calendar_features.sort(key=lambda x: calendar_features_order[x])
 
     if verbose:
-        print(f"Recursive feature elimination ({selector.__class__.__name__})")
-        print("--------------------------------" + "-" * len(selector.__class__.__name__))
+        print(f"Feature selection ({selector.__class__.__name__})")
+        print("--------------------" + "-" * len(selector.__class__.__name__))
         print(f"Total number of records available: {X_train.shape[0]}")
         print(f"Total number of records used for feature selection: {X_train_sample.shape[0]}")
         print(f"Number of features available: {len(autoreg_cols) + len(exog_cols) + len(calendar_cols)}") 
@@ -334,7 +340,7 @@ def select_features_multiseries(
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
     select_only: str | list[str] | None = None,
     force_inclusion: list[str] | str | None = None,
-    subsample: int | float = 0.5,
+    subsample: float = 0.5,
     random_state: int = 123,
     verbose: bool = True,
 ) -> tuple[list[int] | dict[str, list[int]], list[str], list[str], list[str]]:
@@ -362,7 +368,9 @@ def select_features_multiseries(
         Forecaster model. If forecaster is a ForecasterDirectMultiVariate, the
         selector will only be applied to the features of the first step.
     selector : object
-        A feature selector from sklearn.feature_selection.
+        A feature selector compatible with the scikit-learn API (it must
+        implement `fit` and `get_feature_names_out`), for example the
+        selectors of `sklearn.feature_selection`.
     series : pandas DataFrame, dict
         Target time series to which the feature selection will be applied.
     exog : pandas Series, pandas DataFrame, dict, default None
@@ -397,8 +405,12 @@ def select_features_multiseries(
         For calendar features, `force_inclusion` is matched against the encoded
         column names (e.g. `month_sin`); forcing any encoded column keeps its
         source calendar feature in `selected_calendar_features`.
-    subsample : int, float, default 0.5
-        Proportion of records to use for feature selection.
+    subsample : float, default 0.5
+        Proportion of records to use for feature selection, in (0, 1]. Records
+        are sampled without replacement and kept in the order of the training
+        matrix, where the series are stacked one after another, so the records
+        of each series are in time order but the series are not interleaved by
+        date.
     random_state : int, default 123
         Sets a seed for the random subsample so that the subsampling process 
         is always deterministic.
@@ -480,7 +492,8 @@ def select_features_multiseries(
         lags_cols = forecaster.lags_names
         window_features_cols = output[7]  # X_train_window_features_names_out_ output
         if forecaster.encoding == 'onehot':
-            encoding_cols = output[4]  # X_train_series_names_in_ output
+            # One column per series, also for series without rows in X_train.
+            encoding_cols = list(forecaster.encoding_mapping_)
         else:
             encoding_cols = ['_level_skforecast']
     
@@ -548,15 +561,20 @@ def select_features_multiseries(
             "forecaster includes features for the selected group(s)."
         )
 
-    if isinstance(subsample, float):
-        subsample = int(len(X_train) * subsample)
-
+    # Sample without replacement, so that the selector's internal cross-validation
+    # never sees the same record in train and validation. Sorting keeps the order
+    # of X_train: each series in time order, but series are stacked one after
+    # another, so a `TimeSeriesSplit` as the selector's `cv` does not give a
+    # temporal validation.
+    n_samples = max(1, int(len(X_train) * subsample))
     rng = np.random.default_rng(seed=random_state)
-    sample = rng.integers(low=0, high=len(X_train), size=subsample)
+    sample = np.sort(rng.choice(len(X_train), size=n_samples, replace=False))
     X_train_sample = X_train.iloc[sample, :]
     y_train_sample = y_train.iloc[sample]
     selector.fit(X_train_sample, y_train_sample)
-    selected_features = selector.get_feature_names_out()
+    selected_features = [
+        str(feature) for feature in selector.get_feature_names_out()
+    ]
 
     if eval_autoreg:
         selected_autoreg = [
@@ -667,8 +685,8 @@ def select_features_multiseries(
     selected_calendar_features.sort(key=lambda x: calendar_features_order[x])
 
     if verbose:
-        print(f"Recursive feature elimination ({selector.__class__.__name__})")
-        print("--------------------------------" + "-" * len(selector.__class__.__name__))
+        print(f"Feature selection ({selector.__class__.__name__})")
+        print("--------------------" + "-" * len(selector.__class__.__name__))
         print(f"Total number of records available: {X_train.shape[0]}")
         print(f"Total number of records used for feature selection: {X_train_sample.shape[0]}")
         print(f"Number of features available: {len(autoreg_cols) + len(exog_cols) + len(calendar_cols)}") 

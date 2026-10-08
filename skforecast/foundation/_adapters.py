@@ -17,6 +17,7 @@ import pandas as pd
 import warnings
 
 from ..utils import expand_index
+from ._adapter_base import _AdapterBase
 from ._utils import (
     _validate_positive_int,
     _validate_model_id_prefix,
@@ -60,9 +61,9 @@ def _resolve_torch_device(device: str) -> str:
     return "cpu"
 
 
-class ChronosAdapter:
+class ChronosAdapter(_AdapterBase):
     """
-    Adapter for Amazon Chronos foundation models.
+    Adapter for Amazon Chronos-2 foundation models.
 
     Parameters
     ----------
@@ -121,6 +122,34 @@ class ChronosAdapter:
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as
         context. `True` for Chronos, which treats them as missing values.
+    supports_categorical_covariates : bool
+        Whether the backend supports non-numeric covariates natively, so
+        they do not have to be encoded as numbers. `False` also when the
+        adapter forwards them unchanged but skforecast does not verify how
+        the backend handles them.
+    SUPPORTED_QUANTILES : list, None
+        Quantile levels accepted by the backend. `None` means any level in
+        `(0, 1)`.
+    requires_hf_auth : bool
+        Whether the checkpoints served by this adapter are gated on the
+        Hugging Face Hub, so an authenticated account that has accepted the
+        model license is needed. Declared per adapter, not per checkpoint.
+    requires_provider_auth : bool
+        Whether the model provider requires its own account or license
+        acceptance, outside the Hugging Face Hub, before the weights can be
+        used.
+    weights_repo_id : str, None
+        Hugging Face repository the backend downloads the weights from when
+        it is not `model_id`. `None` means the repository is `model_id`.
+        `None` for Chronos: the weights are downloaded from `model_id`.
+    weights_in_hf_cache : bool
+        Whether the downloaded weights are stored in the Hugging Face Hub
+        cache, under `weights_repo_id`.
+    backend_package : str
+        Package that provides the backend, as passed to `pip install`.
+    default_model_id : str
+        Model ID used by default for this adapter (e.g. by skforecast
+        documentation and tools that need a concrete checkpoint).
     is_fitted : bool
         Whether the adapter has been fitted.
 
@@ -136,10 +165,18 @@ class ChronosAdapter:
 
     """
 
+    SUPPORTED_QUANTILES: list[float] | None = None
     allow_exog: bool = True
     supports_past_only_covariates: bool = True
+    supports_categorical_covariates: bool = True
     supports_heterogeneous_covariates: bool = False
     supports_nan_in_series: bool = True
+    requires_hf_auth: bool = False
+    requires_provider_auth: bool = False
+    weights_repo_id: str | None = None
+    weights_in_hf_cache: bool = True
+    backend_package: str = "chronos-forecasting"
+    default_model_id: str = "autogluon/chronos-2-small"
 
     def __init__(
         self,
@@ -266,7 +303,7 @@ class ChronosAdapter:
     def fit(
         self,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
     ) -> ChronosAdapter:
         """
         Store the training series and optional historical exogenous variables.
@@ -288,19 +325,15 @@ class ChronosAdapter:
 
         """
 
-        self.context_ = context
-        self.context_exog_ = context_exog
-        self.is_fitted = True
-
-        return self
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
         steps: int,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None],
-        exog: dict[str, pd.DataFrame | pd.Series | None],
-        quantiles: list[float] | tuple[float] | None
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        quantiles: list[float] | tuple[float, ...] | None
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using the Chronos pipeline.
@@ -391,8 +424,8 @@ class ChronosAdapter:
             from chronos import BaseChronosPipeline
         except ImportError as exc:
             raise ImportError(
-                "chronos-forecasting >=2.0 is required. "
-                "Install it with `pip install chronos-forecasting`."
+                f"{self.backend_package} >=2.0 is required. "
+                f"Install it with `pip install {self.backend_package}`."
             ) from exc
 
         kwargs: dict[str, Any] = {}
@@ -503,14 +536,15 @@ class ChronosAdapter:
         return input_dict
 
 
-def _import_timesfm(adapter_name: str) -> Any:
+def _import_timesfm(adapter_cls: type) -> Any:
     """
     Import the `timesfm` package lazily.
 
     Parameters
     ----------
-    adapter_name : str
-        Adapter class name, used in the raised error message.
+    adapter_cls : type
+        Adapter class, whose name and `backend_package` are used in the raised
+        error message.
 
     Returns
     -------
@@ -523,14 +557,14 @@ def _import_timesfm(adapter_name: str) -> Any:
         import timesfm
     except ImportError as exc:
         raise ImportError(
-            f"timesfm is required for {adapter_name}. "
-            'Install it with `pip install "timesfm[torch]"`.'
+            f"timesfm is required for {adapter_cls.__name__}. "
+            f'Install it with `pip install "{adapter_cls.backend_package}"`.'
         ) from exc
 
     return timesfm
 
 
-class TimesFM25Adapter:
+class TimesFM25Adapter(_AdapterBase):
     """
     Adapter for Google TimesFM 2.5 foundation models.
 
@@ -590,6 +624,34 @@ class TimesFM25Adapter:
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as
         context. Always `True`.
+    supports_categorical_covariates : bool
+        Whether the backend supports non-numeric covariates natively, so
+        they do not have to be encoded as numbers. `False` also when the
+        adapter forwards them unchanged but skforecast does not verify how
+        the backend handles them.
+    SUPPORTED_QUANTILES : list, None
+        Quantile levels accepted by the backend. `None` means any level in
+        `(0, 1)`.
+    requires_hf_auth : bool
+        Whether the checkpoints served by this adapter are gated on the
+        Hugging Face Hub, so an authenticated account that has accepted the
+        model license is needed. Declared per adapter, not per checkpoint.
+    requires_provider_auth : bool
+        Whether the model provider requires its own account or license
+        acceptance, outside the Hugging Face Hub, before the weights can be
+        used.
+    weights_repo_id : str, None
+        Hugging Face repository the backend downloads the weights from when
+        it is not `model_id`. `None` means the repository is `model_id`.
+        `None` for TimesFM 2.5: the weights are downloaded from `model_id`.
+    weights_in_hf_cache : bool
+        Whether the downloaded weights are stored in the Hugging Face Hub
+        cache, under `weights_repo_id`.
+    backend_package : str
+        Package that provides the backend, as passed to `pip install`.
+    default_model_id : str
+        Model ID used by default for this adapter (e.g. by skforecast
+        documentation and tools that need a concrete checkpoint).
     is_fitted : bool
         Whether the adapter has been fitted.
 
@@ -622,8 +684,15 @@ class TimesFM25Adapter:
     SUPPORTED_QUANTILES: list[float] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
     allow_exog: bool = False
     supports_past_only_covariates: bool = False
+    supports_categorical_covariates: bool = False
     supports_heterogeneous_covariates: bool = True
     supports_nan_in_series: bool = True
+    requires_hf_auth: bool = False
+    requires_provider_auth: bool = False
+    weights_repo_id: str | None = None
+    weights_in_hf_cache: bool = True
+    backend_package: str = "timesfm[torch]"
+    default_model_id: str = "google/timesfm-2.5-200m-pytorch"
 
     _MODEL_ID_PREFIX: str = "google/timesfm-2.5"
 
@@ -769,9 +838,8 @@ class TimesFM25Adapter:
         context : dict pandas Series
             Normalized training series, one entry per series.
         context_exog : dict pandas DataFrame, pandas Series, or None
-            Per-series historical exogenous variables. Stored for API
-            consistency but never used, since TimesFM 2.5 does not support
-            covariates.
+            Per-series historical exogenous variables. `FoundationModel`
+            passes `None`, since TimesFM 2.5 does not support covariates.
 
         Returns
         -------
@@ -779,11 +847,7 @@ class TimesFM25Adapter:
 
         """
 
-        self.context_ = context
-        self.context_exog_ = context_exog
-        self.is_fitted = True
-
-        return self
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
@@ -791,7 +855,7 @@ class TimesFM25Adapter:
         context: dict[str, pd.Series],
         context_exog: Any,
         exog: Any,
-        quantiles: list[float] | tuple[float] | None,
+        quantiles: list[float] | tuple[float, ...] | None,
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using the TimesFM 2.5 model.
@@ -892,7 +956,7 @@ class TimesFM25Adapter:
         if self._model is not None:
             return
 
-        timesfm = _import_timesfm(type(self).__name__)
+        timesfm = _import_timesfm(type(self))
 
         _warn_if_non_commercial(self.model_id)
 
@@ -949,7 +1013,7 @@ class TimesFM25Adapter:
         if fc is not None and steps <= fc.max_horizon:
             return
 
-        timesfm = _import_timesfm(type(self).__name__)
+        timesfm = _import_timesfm(type(self))
         self._model.compile(
             timesfm.ForecastConfig(
                 max_context = self.context_length,
@@ -959,7 +1023,7 @@ class TimesFM25Adapter:
         )
 
 
-class TimesFM3Adapter:
+class TimesFM3Adapter(_AdapterBase):
     """
     Adapter for Google TimesFM 3.0 foundation models.
 
@@ -1019,6 +1083,34 @@ class TimesFM3Adapter:
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as
         context. Always `True`.
+    supports_categorical_covariates : bool
+        Whether the backend supports non-numeric covariates natively, so
+        they do not have to be encoded as numbers. `False` also when the
+        adapter forwards them unchanged but skforecast does not verify how
+        the backend handles them.
+    SUPPORTED_QUANTILES : list, None
+        Quantile levels accepted by the backend. `None` means any level in
+        `(0, 1)`.
+    requires_hf_auth : bool
+        Whether the checkpoints served by this adapter are gated on the
+        Hugging Face Hub, so an authenticated account that has accepted the
+        model license is needed. Declared per adapter, not per checkpoint.
+    requires_provider_auth : bool
+        Whether the model provider requires its own account or license
+        acceptance, outside the Hugging Face Hub, before the weights can be
+        used.
+    weights_repo_id : str, None
+        Hugging Face repository the backend downloads the weights from when
+        it is not `model_id`. `None` means the repository is `model_id`.
+        `None` for TimesFM 3.0: the weights are downloaded from `model_id`.
+    weights_in_hf_cache : bool
+        Whether the downloaded weights are stored in the Hugging Face Hub
+        cache, under `weights_repo_id`.
+    backend_package : str
+        Package that provides the backend, as passed to `pip install`.
+    default_model_id : str
+        Model ID used by default for this adapter (e.g. by skforecast
+        documentation and tools that need a concrete checkpoint).
     is_fitted : bool
         Whether the adapter has been fitted.
 
@@ -1038,10 +1130,10 @@ class TimesFM3Adapter:
     the same set of past-only and known-future columns and calls `predict`
     once per group, so the prediction of a series never depends on the
     covariates of the other series in the batch. Covariates must be numeric;
-    encode categoricals as numbers (e.g. via `transformer_exog`) before
-    passing them. NaN values inside covariates and inside the target series
-    are linearly interpolated by the backend, and leading NaNs in the target
-    trim the context and its covariates accordingly.
+    encode categoricals as numbers before passing them. NaN values inside
+    covariates and inside the target series are linearly interpolated by the
+    backend, and leading NaNs in the target trim the context and its
+    covariates accordingly.
 
     There is no compile step and no horizon ceiling: context length and
     horizon are handled internally by `predict_batch`.
@@ -1060,8 +1152,15 @@ class TimesFM3Adapter:
     SUPPORTED_QUANTILES: list[float] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
     allow_exog: bool = True
     supports_past_only_covariates: bool = True
+    supports_categorical_covariates: bool = False
     supports_heterogeneous_covariates: bool = False
     supports_nan_in_series: bool = True
+    requires_hf_auth: bool = False
+    requires_provider_auth: bool = False
+    weights_repo_id: str | None = None
+    weights_in_hf_cache: bool = True
+    backend_package: str = "timesfm[torch]"
+    default_model_id: str = "google/timesfm-3.0-pytorch"
 
     _MODEL_ID_PREFIX: str = "google/timesfm-3.0"
     _RESERVED_PREDICT_KWARGS: frozenset[str] = frozenset({
@@ -1245,11 +1344,7 @@ class TimesFM3Adapter:
 
         """
 
-        self.context_ = context
-        self.context_exog_ = context_exog
-        self.is_fitted = True
-
-        return self
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
@@ -1257,7 +1352,7 @@ class TimesFM3Adapter:
         context: dict[str, pd.Series],
         context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
         exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        quantiles: list[float] | tuple[float] | None,
+        quantiles: list[float] | tuple[float, ...] | None,
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using the TimesFM 3.0 model.
@@ -1398,7 +1493,7 @@ class TimesFM3Adapter:
         the offending column is raised otherwise. `predict_batch` casts
         covariates to `float32` internally and has no native categorical
         support, unlike Chronos. Encode categorical covariates as numeric
-        values (e.g. via `transformer_exog`) before passing them.
+        values before passing them.
 
         """
 
@@ -1573,7 +1668,7 @@ class TimesFM3Adapter:
         if self._model is not None:
             return
 
-        timesfm = _import_timesfm(type(self).__name__)
+        timesfm = _import_timesfm(type(self))
 
         if not hasattr(timesfm, "TimesFM3Forecaster"):
             from importlib.metadata import PackageNotFoundError, version
@@ -1593,7 +1688,7 @@ class TimesFM3Adapter:
                     f"TimesFM 3.0 requires `timesfm>=3.0`, but timesfm "
                     f"{installed} is installed and does not provide "
                     f"`TimesFM3Forecaster`. Upgrade with "
-                    f'`pip install -U "timesfm[torch]"`.'
+                    f'`pip install -U "{self.backend_package}"`.'
                 )
 
             # timesfm>=3 is installed but TimesFM3Forecaster is missing. The
@@ -1607,13 +1702,13 @@ class TimesFM3Adapter:
                     f"TimesFM 3.0 is installed (timesfm {installed}) but its "
                     f"backend could not be imported ({exc}). This usually means "
                     f"torch is missing. Install it with "
-                    f'`pip install "timesfm[torch]"`.'
+                    f'`pip install "{self.backend_package}"`.'
                 ) from exc
 
             raise ImportError(
                 f"TimesFM 3.0 is installed (timesfm {installed}) but does not "
                 f"provide `TimesFM3Forecaster`. Reinstall with "
-                f'`pip install -U "timesfm[torch]"`.'
+                f'`pip install -U "{self.backend_package}"`.'
             )
 
         _warn_if_non_commercial(self.model_id)
@@ -1624,7 +1719,7 @@ class TimesFM3Adapter:
         )
 
 
-class MoiraiAdapter:
+class MoiraiAdapter(_AdapterBase):
     """
     Adapter for Salesforce Moirai foundation models.
 
@@ -1668,6 +1763,34 @@ class MoiraiAdapter:
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as
         context.
+    supports_categorical_covariates : bool
+        Whether the backend supports non-numeric covariates natively, so
+        they do not have to be encoded as numbers. `False` also when the
+        adapter forwards them unchanged but skforecast does not verify how
+        the backend handles them.
+    SUPPORTED_QUANTILES : list, None
+        Quantile levels accepted by the backend. `None` means any level in
+        `(0, 1)`.
+    requires_hf_auth : bool
+        Whether the checkpoints served by this adapter are gated on the
+        Hugging Face Hub, so an authenticated account that has accepted the
+        model license is needed. Declared per adapter, not per checkpoint.
+    requires_provider_auth : bool
+        Whether the model provider requires its own account or license
+        acceptance, outside the Hugging Face Hub, before the weights can be
+        used.
+    weights_repo_id : str, None
+        Hugging Face repository the backend downloads the weights from when
+        it is not `model_id`. `None` means the repository is `model_id`.
+        `None` for Moirai: the weights are downloaded from `model_id`.
+    weights_in_hf_cache : bool
+        Whether the downloaded weights are stored in the Hugging Face Hub
+        cache, under `weights_repo_id`.
+    backend_package : str
+        Package that provides the backend, as passed to `pip install`.
+    default_model_id : str
+        Model ID used by default for this adapter (e.g. by skforecast
+        documentation and tools that need a concrete checkpoint).
     is_fitted : bool
         Whether the adapter has been fitted.
 
@@ -1695,8 +1818,15 @@ class MoiraiAdapter:
     SUPPORTED_QUANTILES: list[float] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
     allow_exog: bool = False
     supports_past_only_covariates: bool = False
+    supports_categorical_covariates: bool = False
     supports_heterogeneous_covariates: bool = True
     supports_nan_in_series: bool = True
+    requires_hf_auth: bool = False
+    requires_provider_auth: bool = False
+    weights_repo_id: str | None = None
+    weights_in_hf_cache: bool = True
+    backend_package: str = "uni2ts"
+    default_model_id: str = "Salesforce/moirai-2.0-R-small"
 
     def __init__(
         self,
@@ -1794,10 +1924,10 @@ class MoiraiAdapter:
     def fit(
         self,
         context: dict[str, pd.Series],
-        context_exog: Any,
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
     ) -> MoiraiAdapter:
         """
-        Store the training series.
+        Store the training series and optional historical exogenous variables.
         No model training occurs since Moirai is a zero-shot inference model.
 
         All input normalization and validation is performed upstream by
@@ -1807,8 +1937,9 @@ class MoiraiAdapter:
         ----------
         context : dict pandas Series
             Normalized training series, one entry per series.
-        context_exog : Any
-            Not used, present here for API consistency by convention.
+        context_exog : dict pandas DataFrame, pandas Series, or None
+            Per-series historical exogenous variables. `FoundationModel`
+            passes `None`, since Moirai does not support covariates.
 
         Returns
         -------
@@ -1816,10 +1947,7 @@ class MoiraiAdapter:
 
         """
 
-        self.context_ = context
-        self.is_fitted = True
-
-        return self
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
@@ -1827,7 +1955,7 @@ class MoiraiAdapter:
         context: dict[str, pd.Series],
         context_exog: Any,
         exog: Any,
-        quantiles: list[float] | tuple[float] | None,
+        quantiles: list[float] | tuple[float, ...] | None,
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using Moirai.
@@ -1915,8 +2043,8 @@ class MoiraiAdapter:
             from uni2ts.model.moirai2 import Moirai2Module
         except ImportError as exc:
             raise ImportError(
-                "uni2ts is required for MoiraiAdapter. "
-                "Install it with `pip install uni2ts`."
+                f"{self.backend_package} is required for MoiraiAdapter. "
+                f"Install it with `pip install {self.backend_package}`."
             ) from exc
         _warn_if_non_commercial(self.model_id)
         self._module = Moirai2Module.from_pretrained(self.model_id)
@@ -1998,7 +2126,7 @@ class MoiraiAdapter:
         return raw
 
 
-class TabICLAdapter:
+class TabICLAdapter(_AdapterBase):
     """
     Adapter for TabICL zero-shot time-series foundation models.
 
@@ -2059,6 +2187,35 @@ class TabICLAdapter:
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as
         context. `True`: TabICL drops the rows whose target is NaN.
+    supports_categorical_covariates : bool
+        Whether the backend supports non-numeric covariates natively, so
+        they do not have to be encoded as numbers. `False` also when the
+        adapter forwards them unchanged but skforecast does not verify how
+        the backend handles them.
+    SUPPORTED_QUANTILES : list, None
+        Quantile levels accepted by the backend. `None` means any level in
+        `(0, 1)`.
+    requires_hf_auth : bool
+        Whether the checkpoints served by this adapter are gated on the
+        Hugging Face Hub, so an authenticated account that has accepted the
+        model license is needed. Declared per adapter, not per checkpoint.
+    requires_provider_auth : bool
+        Whether the model provider requires its own account or license
+        acceptance, outside the Hugging Face Hub, before the weights can be
+        used.
+    weights_repo_id : str, None
+        Hugging Face repository the backend downloads the weights from when
+        it is not `model_id`. `None` means the repository is `model_id`.
+        `'jingang/TabICL'` for TabICL: the backend downloads its checkpoints
+        from that repository whatever the `model_id`.
+    weights_in_hf_cache : bool
+        Whether the downloaded weights are stored in the Hugging Face Hub
+        cache, under `weights_repo_id`.
+    backend_package : str
+        Package that provides the backend, as passed to `pip install`.
+    default_model_id : str
+        Model ID used by default for this adapter (e.g. by skforecast
+        documentation and tools that need a concrete checkpoint).
     is_fitted : bool
         Whether the adapter has been fitted.
     _model : object
@@ -2090,10 +2247,18 @@ class TabICLAdapter:
 
     """
 
+    SUPPORTED_QUANTILES: list[float] | None = None
     allow_exog: bool = True
     supports_past_only_covariates: bool = False
+    supports_categorical_covariates: bool = False
     supports_heterogeneous_covariates: bool = False
     supports_nan_in_series: bool = True
+    requires_hf_auth: bool = False
+    requires_provider_auth: bool = False
+    weights_repo_id: str | None = "jingang/TabICL"
+    weights_in_hf_cache: bool = True
+    backend_package: str = "tabicl[forecast]"
+    default_model_id: str = "soda-inria/tabicl"
 
     def __init__(
         self,
@@ -2260,11 +2425,7 @@ class TabICLAdapter:
 
         """
 
-        self.context_      = context
-        self.context_exog_ = context_exog
-        self.is_fitted     = True
-
-        return self
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
@@ -2272,7 +2433,7 @@ class TabICLAdapter:
         context: dict[str, pd.Series],
         context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
         exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        quantiles: list[float] | tuple[float] | None,
+        quantiles: list[float] | tuple[float, ...] | None,
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using TabICL.
@@ -2394,8 +2555,8 @@ class TabICLAdapter:
             from tabicl.forecast import TabICLForecaster
         except ImportError as exc:
             raise ImportError(
-                "tabicl[forecast] is required for TabICLAdapter. "
-                "Install it with `pip install tabicl[forecast]`."
+                f"{self.backend_package} is required for TabICLAdapter. "
+                f"Install it with `pip install {self.backend_package}`."
             ) from exc
         
         self._model = TabICLForecaster(
@@ -2585,7 +2746,7 @@ class TabICLAdapter:
         return future_df
 
 
-class TabPFNAdapter:
+class TabPFNAdapter(_AdapterBase):
     """
     Adapter for Prior Labs TabPFN-TS zero-shot time-series foundation models.
 
@@ -2662,6 +2823,41 @@ class TabPFNAdapter:
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as
         context.
+    supports_categorical_covariates : bool
+        Whether the backend supports non-numeric covariates natively, so
+        they do not have to be encoded as numbers. `False` also when the
+        adapter forwards them unchanged but skforecast does not verify how
+        the backend handles them.
+    SUPPORTED_QUANTILES : list, None
+        Quantile levels accepted by the backend. `None` means any level in
+        `(0, 1)`.
+    requires_hf_auth : bool
+        Whether the checkpoints served by this adapter are gated on the
+        Hugging Face Hub, so an authenticated account that has accepted the
+        model license is needed. Declared per adapter, not per checkpoint.
+    requires_provider_auth : bool
+        Whether the model provider requires its own account or license
+        acceptance, outside the Hugging Face Hub, before the weights can be
+        used. `True` for TabPFN: Prior Labs
+        requires an account token and accepting the license in a browser
+        before the weights are downloaded (`mode='local'`) or the API is
+        called (`mode='client'`).
+    weights_repo_id : str, None
+        Hugging Face repository the backend downloads the weights from when
+        it is not `model_id`. `None` means the repository is `model_id`.
+        `'Prior-Labs/tabpfn_3_5'` for TabPFN: the repository of the TabPFN
+        version pinned by tabpfn-time-series 1.3, whatever the `model_id`.
+        Earlier versions of the backend download other weights, with a
+        different license, hence the minimum version in `backend_package`.
+    weights_in_hf_cache : bool
+        Whether the downloaded weights are stored in the Hugging Face Hub
+        cache, under `weights_repo_id`. `False` for
+        TabPFN, which keeps them in its own cache directory.
+    backend_package : str
+        Package that provides the backend, as passed to `pip install`.
+    default_model_id : str
+        Model ID used by default for this adapter (e.g. by skforecast
+        documentation and tools that need a concrete checkpoint).
     is_fitted : bool
         Whether the adapter has been fitted.
     _model : object
@@ -2692,10 +2888,18 @@ class TabPFNAdapter:
 
     """
 
+    SUPPORTED_QUANTILES: list[float] | None = None
     allow_exog: bool = True
     supports_past_only_covariates: bool = False
+    supports_categorical_covariates: bool = False
     supports_heterogeneous_covariates: bool = True
     supports_nan_in_series: bool = True
+    requires_hf_auth: bool = False
+    requires_provider_auth: bool = True
+    weights_repo_id: str | None = "Prior-Labs/tabpfn_3_5"
+    weights_in_hf_cache: bool = False
+    backend_package: str = "tabpfn-time-series>=1.3"
+    default_model_id: str = "priorlabs/tabpfn-ts"
 
     def __init__(
         self,
@@ -2881,11 +3085,7 @@ class TabPFNAdapter:
 
         """
 
-        self.context_      = context
-        self.context_exog_ = context_exog
-        self.is_fitted     = True
-
-        return self
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
@@ -2893,7 +3093,7 @@ class TabPFNAdapter:
         context: dict[str, pd.Series],
         context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
         exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        quantiles: list[float] | tuple[float] | None,
+        quantiles: list[float] | tuple[float, ...] | None,
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using TabPFN-TS.
@@ -3016,8 +3216,8 @@ class TabPFNAdapter:
             from tabpfn_time_series import TabPFNMode, TabPFNTSPipeline
         except ImportError as exc:
             raise ImportError(
-                "tabpfn-time-series is required for TabPFNAdapter. "
-                "Install it with `pip install tabpfn-time-series`."
+                f"{self.backend_package} is required for TabPFNAdapter. "
+                f'Install it with `pip install "{self.backend_package}"`.'
             ) from exc
         _warn_if_non_commercial(self.model_id)
 
@@ -3215,7 +3415,7 @@ class TabPFNAdapter:
         return future_df
 
 
-class T0Adapter:
+class T0Adapter(_AdapterBase):
     """
     Adapter for The Forecasting Company T0 foundation models.
 
@@ -3262,6 +3462,34 @@ class T0Adapter:
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as
         context.
+    supports_categorical_covariates : bool
+        Whether the backend supports non-numeric covariates natively, so
+        they do not have to be encoded as numbers. `False` also when the
+        adapter forwards them unchanged but skforecast does not verify how
+        the backend handles them.
+    SUPPORTED_QUANTILES : list, None
+        Quantile levels accepted by the backend. `None` means any level in
+        `(0, 1)`.
+    requires_hf_auth : bool
+        Whether the checkpoints served by this adapter are gated on the
+        Hugging Face Hub, so an authenticated account that has accepted the
+        model license is needed. Declared per adapter, not per checkpoint.
+    requires_provider_auth : bool
+        Whether the model provider requires its own account or license
+        acceptance, outside the Hugging Face Hub, before the weights can be
+        used.
+    weights_repo_id : str, None
+        Hugging Face repository the backend downloads the weights from when
+        it is not `model_id`. `None` means the repository is `model_id`.
+        `None` for T0: the weights are downloaded from `model_id`.
+    weights_in_hf_cache : bool
+        Whether the downloaded weights are stored in the Hugging Face Hub
+        cache, under `weights_repo_id`.
+    backend_package : str
+        Package that provides the backend, as passed to `pip install`.
+    default_model_id : str
+        Model ID used by default for this adapter (e.g. by skforecast
+        documentation and tools that need a concrete checkpoint).
     is_fitted : bool
         Whether the adapter has been fitted.
 
@@ -3276,11 +3504,6 @@ class T0Adapter:
     before passing them. A series with no future exog is forecast without
     covariates.
 
-    T0 checkpoints (e.g. `theforecastingcompany/t0-alpha`) are gated on the
-    Hugging Face Hub: visit the model page while logged in to accept its
-    license, then authenticate locally (`hf auth login` or the `HF_TOKEN`
-    environment variable) before first use.
-
     References
     ----------
     .. [1] https://github.com/theforecastingcompany/tfc-t0
@@ -3289,10 +3512,18 @@ class T0Adapter:
 
     """
 
+    SUPPORTED_QUANTILES: list[float] | None = None
     allow_exog: bool = True
     supports_past_only_covariates: bool = False
+    supports_categorical_covariates: bool = False
     supports_heterogeneous_covariates: bool = True
     supports_nan_in_series: bool = True
+    requires_hf_auth: bool = False
+    requires_provider_auth: bool = False
+    weights_repo_id: str | None = None
+    weights_in_hf_cache: bool = True
+    backend_package: str = "tfc-t0"
+    default_model_id: str = "theforecastingcompany/t0-alpha"
 
     def __init__(
         self,
@@ -3396,7 +3627,7 @@ class T0Adapter:
     def fit(
         self,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
     ) -> T0Adapter:
         """
         Store the training series and optional historical exogenous variables.
@@ -3418,19 +3649,15 @@ class T0Adapter:
 
         """
 
-        self.context_ = context
-        self.context_exog_ = context_exog
-        self.is_fitted = True
-
-        return self
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
         steps: int,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None],
-        exog: dict[str, pd.DataFrame | pd.Series | None],
-        quantiles: list[float] | tuple[float] | None
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        quantiles: list[float] | tuple[float, ...] | None
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using the T0 model.
@@ -3524,13 +3751,12 @@ class T0Adapter:
         switched to eval mode. This method is a no-op when `self._model` is
         already populated. `tfc-t0` must be installed; an `ImportError` is
         raised otherwise. An `OSError` is raised if
-        `T0Forecaster.from_pretrained` fails to build the model, most
-        commonly because the repository is gated on the Hugging Face Hub and
-        the active credentials have not accepted its license.
+        `T0Forecaster.from_pretrained` fails to build the model because the
+        configuration of the checkpoint could not be downloaded.
 
-        T0 checkpoints are gated on the Hugging Face Hub. When the
-        repository's `config.json` cannot be downloaded (e.g. the license
-        has not been accepted, or no valid token is available),
+        When the repository's `config.json` cannot be downloaded (e.g. a
+        wrong model ID, no network connection, or a gated repository whose
+        license has not been accepted),
         `huggingface_hub`'s `from_pretrained` silently swallows the download
         failure and falls back to instantiating the model with no
         constructor arguments, raising a confusing `TypeError` about missing
@@ -3545,8 +3771,8 @@ class T0Adapter:
             from t0 import T0Forecaster
         except ImportError as exc:
             raise ImportError(
-                "tfc-t0 is required for T0Adapter. "
-                "Install it with `pip install tfc-t0`."
+                f"{self.backend_package} is required for T0Adapter. "
+                f"Install it with `pip install {self.backend_package}`."
             ) from exc
 
         try:
@@ -3554,11 +3780,13 @@ class T0Adapter:
         except TypeError as exc:
             raise OSError(
                 f"Could not load model '{self.model_id}' from the Hugging "
-                f"Face Hub. This is often caused by a gated repository "
-                f"whose license has not been accepted: visit "
+                f"Face Hub. Its configuration could not be downloaded: "
+                f"check the model ID and the network connection. If the "
+                f"repository is gated, visit "
                 f"https://huggingface.co/{self.model_id} while logged in "
-                f"to accept it, then authenticate locally (`hf auth login` "
-                f"or the `HF_TOKEN` environment variable) before retrying."
+                f"to accept its license, then authenticate locally (`hf "
+                f"auth login` or the `HF_TOKEN` environment variable) "
+                f"before retrying."
             ) from exc
 
         device = _resolve_torch_device(self.device_map)
@@ -3684,7 +3912,7 @@ class T0Adapter:
         )
 
 
-class TSICLAdapter:
+class TSICLAdapter(_AdapterBase):
     """
     Adapter for EDF Lab TS-ICL foundation model.
 
@@ -3741,6 +3969,35 @@ class TSICLAdapter:
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as
         context.
+    supports_categorical_covariates : bool
+        Whether the backend supports non-numeric covariates natively, so
+        they do not have to be encoded as numbers. `False` also when the
+        adapter forwards them unchanged but skforecast does not verify how
+        the backend handles them.
+    SUPPORTED_QUANTILES : list, None
+        Quantile levels accepted by the backend. `None` means any level in
+        `(0, 1)`.
+    requires_hf_auth : bool
+        Whether the checkpoints served by this adapter are gated on the
+        Hugging Face Hub, so an authenticated account that has accepted the
+        model license is needed. Declared per adapter, not per checkpoint.
+    requires_provider_auth : bool
+        Whether the model provider requires its own account or license
+        acceptance, outside the Hugging Face Hub, before the weights can be
+        used.
+    weights_repo_id : str, None
+        Hugging Face repository the backend downloads the weights from when
+        it is not `model_id`. `None` means the repository is `model_id`.
+        `'taharnbl/TS-ICL'` for TS-ICL: the backend downloads its
+        checkpoints from that repository whatever the `model_id`.
+    weights_in_hf_cache : bool
+        Whether the downloaded weights are stored in the Hugging Face Hub
+        cache, under `weights_repo_id`.
+    backend_package : str
+        Package that provides the backend, as passed to `pip install`.
+    default_model_id : str
+        Model ID used by default for this adapter (e.g. by skforecast
+        documentation and tools that need a concrete checkpoint).
     is_fitted : bool
         Whether the adapter has been fitted.
 
@@ -3765,10 +4022,19 @@ class TSICLAdapter:
 
     """
 
+    # Validation of this grid is delegated to the tsicl library.
+    SUPPORTED_QUANTILES: list[float] = [round(0.01 * i, 2) for i in range(1, 100)]
     allow_exog: bool = True
     supports_past_only_covariates: bool = True
+    supports_categorical_covariates: bool = False
     supports_heterogeneous_covariates: bool = False
     supports_nan_in_series: bool = True
+    requires_hf_auth: bool = False
+    requires_provider_auth: bool = False
+    weights_repo_id: str | None = "taharnbl/TS-ICL"
+    weights_in_hf_cache: bool = True
+    backend_package: str = "tsicl"
+    default_model_id: str = "taharnbl/TS-ICL"
 
     def __init__(
         self,
@@ -3882,7 +4148,7 @@ class TSICLAdapter:
     def fit(
         self,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
     ) -> TSICLAdapter:
         """
         Store the training series and optional historical exogenous variables.
@@ -3904,19 +4170,15 @@ class TSICLAdapter:
 
         """
 
-        self.context_ = context
-        self.context_exog_ = context_exog
-        self.is_fitted = True
-
-        return self
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
         steps: int,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None],
-        exog: dict[str, pd.DataFrame | pd.Series | None],
-        quantiles: list[float] | tuple[float] | None
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        quantiles: list[float] | tuple[float, ...] | None
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using the TS-ICL model.
@@ -4017,8 +4279,8 @@ class TSICLAdapter:
             from tsicl import TSICL
         except ImportError as exc:
             raise ImportError(
-                "tsicl is required for TSICLAdapter. "
-                "Install it with `pip install tsicl`."
+                f"{self.backend_package} is required for TSICLAdapter. "
+                f"Install it with `pip install {self.backend_package}`."
             ) from exc
 
         _warn_if_non_commercial(self.model_id)
@@ -4128,7 +4390,7 @@ class TSICLAdapter:
         return input_dict
 
 
-class NoriAdapter:
+class NoriAdapter(_AdapterBase):
     """
     Adapter for Synthefy Nori zero-shot tabular foundation models.
 
@@ -4201,6 +4463,35 @@ class NoriAdapter:
         context. `True`: `NoriRegressor` rejects NaN, so the adapter drops
         the context rows whose target (or any feature) is NaN before the
         in-context fit.
+    supports_categorical_covariates : bool
+        Whether the backend supports non-numeric covariates natively, so
+        they do not have to be encoded as numbers. `False` also when the
+        adapter forwards them unchanged but skforecast does not verify how
+        the backend handles them.
+    SUPPORTED_QUANTILES : list, None
+        Quantile levels accepted by the backend. `None` means any level in
+        `(0, 1)`.
+    requires_hf_auth : bool
+        Whether the checkpoints served by this adapter are gated on the
+        Hugging Face Hub, so an authenticated account that has accepted the
+        model license is needed. Declared per adapter, not per checkpoint.
+    requires_provider_auth : bool
+        Whether the model provider requires its own account or license
+        acceptance, outside the Hugging Face Hub, before the weights can be
+        used.
+    weights_repo_id : str, None
+        Hugging Face repository the backend downloads the weights from when
+        it is not `model_id`. `None` means the repository is `model_id`.
+        `None` for Nori: `model_id` is forwarded to the backend as the
+        checkpoint to load.
+    weights_in_hf_cache : bool
+        Whether the downloaded weights are stored in the Hugging Face Hub
+        cache, under `weights_repo_id`.
+    backend_package : str
+        Package that provides the backend, as passed to `pip install`.
+    default_model_id : str
+        Model ID used by default for this adapter (e.g. by skforecast
+        documentation and tools that need a concrete checkpoint).
     is_fitted : bool
         Whether the adapter has been fitted.
     _model : object
@@ -4231,10 +4522,18 @@ class NoriAdapter:
 
     """
 
+    SUPPORTED_QUANTILES: list[float] | None = None
     allow_exog: bool = True
     supports_past_only_covariates: bool = False
+    supports_categorical_covariates: bool = False
     supports_heterogeneous_covariates: bool = True
     supports_nan_in_series: bool = True
+    requires_hf_auth: bool = False
+    requires_provider_auth: bool = False
+    weights_repo_id: str | None = None
+    weights_in_hf_cache: bool = True
+    backend_package: str = "synthefy-nori"
+    default_model_id: str = "Synthefy/Nori"
 
     def __init__(
         self,
@@ -4417,11 +4716,7 @@ class NoriAdapter:
 
         """
 
-        self.context_      = context
-        self.context_exog_ = context_exog
-        self.is_fitted     = True
-
-        return self
+        return super().fit(context=context, context_exog=context_exog)
 
     def predict(
         self,
@@ -4429,7 +4724,7 @@ class NoriAdapter:
         context: dict[str, pd.Series],
         context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
         exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        quantiles: list[float] | tuple[float] | None,
+        quantiles: list[float] | tuple[float, ...] | None,
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using Nori.
@@ -4569,8 +4864,8 @@ class NoriAdapter:
             from synthefy_nori import NoriRegressor
         except ImportError as exc:
             raise ImportError(
-                "synthefy-nori is required for NoriAdapter. "
-                "Install it with `pip install synthefy-nori`."
+                f"{self.backend_package} is required for NoriAdapter. "
+                f"Install it with `pip install {self.backend_package}`."
             ) from exc
 
         # synthefy-nori has no default checkpoint. Its `model` argument accepts
@@ -4801,11 +5096,15 @@ class NoriAdapter:
 
 
 _ADAPTER_REGISTRY: dict[str, type] = {
-    "amazon/chronos":     ChronosAdapter,
-    "autogluon/chronos":  ChronosAdapter,
+    # Only Chronos-2 checkpoints: Chronos and Chronos-Bolt pipelines take a
+    # different input format and do not accept `cross_learning`.
+    "amazon/chronos-2":    ChronosAdapter,
+    "autogluon/chronos-2": ChronosAdapter,
     "google/timesfm-2.5": TimesFM25Adapter,
     "google/timesfm-3.0": TimesFM3Adapter,
-    "Salesforce/moirai":  MoiraiAdapter,
+    # Only Moirai-2 checkpoints: the configs of Moirai 1.x and Moirai-MoE lack
+    # arguments required by `Moirai2Module` (`patch_size`, `d_ff`).
+    "Salesforce/moirai-2": MoiraiAdapter,
     "soda-inria/tabicl":  TabICLAdapter,
     "priorlabs/tabpfn":   TabPFNAdapter,
     "theforecastingcompany/t0": T0Adapter,

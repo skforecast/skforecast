@@ -163,7 +163,10 @@ class ArimaResult:
     coefficients : pd.DataFrame
         Coefficient estimates as a single-row DataFrame.
     sigma2 : float
-        Estimated innovation variance.
+        Estimated innovation variance, corrected for the degrees of freedom:
+        the sum of squared innovations divided by the number of innovations
+        minus the number of free coefficients. It is the variance used for the
+        prediction intervals.
     param_covariance : np.ndarray
         Variance-covariance matrix of parameter estimates.
     param_mask : np.ndarray
@@ -202,6 +205,10 @@ class ArimaResult:
         Approximation offset.
     constant : Optional[bool]
         Whether model includes a constant (auto_arima only).
+    sigma2_ml : Optional[float]
+        Innovation variance without the degrees of freedom correction (the sum
+        of squared innovations divided by the number of innovations). It is the
+        variance behind the log-likelihood and the information criteria.
     """
     y: np.ndarray
     fitted_values: np.ndarray
@@ -226,6 +233,7 @@ class ArimaResult:
     biasadj: Optional[bool]
     offset: Optional[float]
     constant: Optional[bool] = None
+    sigma2_ml: Optional[float] = None
 
     # Mapping from legacy dict keys to dataclass field names
     _KEY_MAP: ClassVar[dict] = {
@@ -252,6 +260,7 @@ class ArimaResult:
         'biasadj': 'biasadj',
         'offset': 'offset',
         'constant': 'constant',
+        'sigma2_ml': 'sigma2_ml',
     }
 
     def __post_init__(self):
@@ -1148,6 +1157,8 @@ def _arima_kalman_core(
         [ssq, sumlog, nu] — sum of squares, log-determinant sum, count.
     residuals : np.ndarray
         Raw innovations v_t = y_t - Z'*a_{t|t-1} (if give_resid=True, else empty).
+        NaN for missing observations and for observations excluded from the
+        likelihood because of the diffuse initialization (F_t >= 1e4).
     a_final : np.ndarray
         Final filtered state vector.
     P_final : np.ndarray
@@ -1176,6 +1187,24 @@ def _arima_kalman_core(
     else:
         std_residuals = np.empty(0)
 
+    # Loop bounds of the companion structure: rows/columns 0..n_both-1 have
+    # both an AR term and a shift term, which avoids branching inside the
+    # O(rd²) loops. The order of the floating-point operations of every
+    # element is the same as in the dense formulation.
+    n_both = min(p, r - 1)
+    n_v = min(q + 1, r)
+
+    # Seasonal models have many exact zeros in phi and delta (e.g. phi of an
+    # ARIMA(1,d,q)(1,D,Q)[12] has 3 non-zero values out of 13). Their terms
+    # are skipped in the O(rd²) loops: adding the product of an exact zero and
+    # a finite number does not change the accumulated value.
+    delta_nz = np.empty(d, dtype=np.int64)
+    n_delta_nz = 0
+    for k in range(d):
+        if delta[k] != 0.0:
+            delta_nz[n_delta_nz] = k
+            n_delta_nz += 1
+
     for t in range(n):
         # --- State prediction: anew = T @ a ---
         # Companion structure: T[i,0] = phi[i], T[i-1,i] = 1 for ARMA block
@@ -1202,7 +1231,8 @@ def _arima_kalman_core(
             # --- M = Pnew @ Z ---
             for i in range(rd):
                 tmp = Pnew[i, 0]
-                for j in range(d):
+                for k in range(n_delta_nz):
+                    j = delta_nz[k]
                     tmp += Pnew[i, r + j] * delta[j]
                 M[i] = tmp
 
@@ -1224,61 +1254,90 @@ def _arima_kalman_core(
             # --- Covariance update: P = Pnew - M M'/F ---
             inv_F = 1.0 / F
             for i in range(rd):
+                M_i = M[i]
                 for j in range(rd):
-                    P[i, j] = Pnew[i, j] - M[i] * M[j] * inv_F
+                    P[i, j] = Pnew[i, j] - M_i * M[j] * inv_F
 
             if give_resid:
-                std_residuals[t] = innovation
+                # Observations still dominated by the diffuse initialization
+                # are excluded from the likelihood and have no meaningful
+                # one-step-ahead prediction.
+                std_residuals[t] = innovation if F < 1e4 else np.nan
         else:
+            # Missing observation: no update step, the filtered state and
+            # covariance are the predicted ones, so the uncertainty keeps
+            # growing over the gap (as R's ARIMA_Like).
             for i in range(rd):
                 a[i] = anew[i]
+                for j in range(rd):
+                    P[i, j] = Pnew[i, j]
             if give_resid:
                 std_residuals[t] = np.nan
 
         if t >= update_start:
             # --- Covariance prediction: Pnew = T @ P @ T' + V ---
             # Step 1: mm = T @ P (companion structure)
-            for j in range(rd):
-                for i in range(r):
-                    tmp = 0.0
-                    if i < p:
-                        tmp += phi[i] * P[0, j]
-                    if i < r - 1:
-                        tmp += P[i + 1, j]
-                    mm[i, j] = tmp
+            # mm[i, :] = phi[i] * P[0, :] + P[i + 1, :]
+            for i in range(n_both):
+                phi_i = phi[i]
+                if phi_i != 0.0:
+                    for j in range(rd):
+                        mm[i, j] = (0.0 + phi_i * P[0, j]) + P[i + 1, j]
+                else:
+                    for j in range(rd):
+                        mm[i, j] = 0.0 + P[i + 1, j]
+            for i in range(n_both, r):
+                if i < p:
+                    phi_i = phi[i]
+                    for j in range(rd):
+                        mm[i, j] = 0.0 + phi_i * P[0, j]
+                elif i < r - 1:
+                    for j in range(rd):
+                        mm[i, j] = 0.0 + P[i + 1, j]
+                else:
+                    for j in range(rd):
+                        mm[i, j] = 0.0
             if d > 0:
                 for j in range(rd):
-                    tmp = P[0, j]
-                    for k in range(d):
-                        tmp += delta[k] * P[r + k, j]
-                    mm[r, j] = tmp
+                    mm[r, j] = P[0, j]
+                for kk in range(n_delta_nz):
+                    k = delta_nz[kk]
+                    delta_k = delta[k]
+                    for j in range(rd):
+                        mm[r, j] += delta_k * P[r + k, j]
                 for i in range(1, d):
                     for j in range(rd):
                         mm[r + i, j] = P[r + i - 1, j]
 
             # Step 2: Pnew = mm @ T' + V (companion structure, transposed)
+            # Pnew[:, j] = phi[j] * mm[:, 0] + mm[:, j + 1]
             for i in range(rd):
-                for j in range(r):
-                    tmp = 0.0
+                mm_i0 = mm[i, 0]
+                for j in range(n_both):
+                    if phi[j] != 0.0:
+                        Pnew[i, j] = (0.0 + phi[j] * mm_i0) + mm[i, j + 1]
+                    else:
+                        Pnew[i, j] = 0.0 + mm[i, j + 1]
+                for j in range(n_both, r):
                     if j < p:
-                        tmp += phi[j] * mm[i, 0]
-                    if j < r - 1:
-                        tmp += mm[i, j + 1]
-                    Pnew[i, j] = tmp
-            if d > 0:
-                for i in range(rd):
-                    tmp = mm[i, 0]
-                    for k in range(d):
+                        Pnew[i, j] = 0.0 + phi[j] * mm_i0
+                    elif j < r - 1:
+                        Pnew[i, j] = 0.0 + mm[i, j + 1]
+                    else:
+                        Pnew[i, j] = 0.0
+                if d > 0:
+                    tmp = mm_i0
+                    for kk in range(n_delta_nz):
+                        k = delta_nz[kk]
                         tmp += delta[k] * mm[i, r + k]
                     Pnew[i, r] = tmp
-                for j in range(1, d):
-                    for i in range(rd):
+                    for j in range(1, d):
                         Pnew[i, r + j] = mm[i, r + j - 1]
 
             # Step 3: Add V = R @ R' where R = [1, θ₁, ..., θ_{r-1}, 0, ..., 0]
-            for i in range(min(q + 1, r)):
+            for i in range(n_v):
                 vi = 1.0 if i == 0 else theta[i - 1]
-                for j in range(min(q + 1, r)):
+                for j in range(n_v):
                     vj = 1.0 if j == 0 else theta[j - 1]
                     Pnew[i, j] += vi * vj
 
@@ -1327,6 +1386,12 @@ def initialize_arima_state(
     The initial covariance P₀ for the stationary ARMA block is obtained
     from the discrete Lyapunov equation P₀ = T·P₀·T' + V
     (computed via `compute_q0_covariance_matrix`).
+
+    The Lyapunov equation only has a valid (positive semi-definite) solution
+    when the AR polynomial is stationary. If it is not (which can happen with
+    CSS estimates, since CSS does not constrain the AR coefficients), the
+    ARMA block has no stationary distribution and it is given the same
+    diffuse prior variance κ as the differencing states.
 
     Parameters
     ----------
@@ -1389,8 +1454,14 @@ def initialize_arima_state(
     P0 = np.zeros((state_dim, state_dim))
     Pn = np.zeros((state_dim, state_dim))
 
-    # Stationary ARMA block: P₀ from discrete Lyapunov equation
-    if r > 1:
+    if p > 0 and not ar_check(phi):
+        # Non-stationary ARMA block: the Lyapunov equation has no valid
+        # solution (the solver diverges to NaN, or gives a negative variance
+        # for an AR(1)), so a diffuse prior is used instead.
+        for i in range(r):
+            Pn[i, i] = kappa
+    elif r > 1:
+        # Stationary ARMA block: P₀ from discrete Lyapunov equation
         Pn[:r, :r] = compute_q0_covariance_matrix(phi, theta)
     else:
         if p > 0:
@@ -1531,6 +1602,8 @@ def compute_arima_likelihood(
         - 'sumlog': Accumulated log-determinants.
         - 'nu': Number of innovations.
         - 'resid': Raw innovations v_t = y_t - Z'*a_{t|t-1} (only if give_resid=True).
+          NaN for missing observations and for observations dominated by the
+          diffuse initialization (F_t >= 1e4).
         - 'a': Final filtered state vector.
         - 'P': Final filtered state covariance.
     """
@@ -1925,7 +1998,7 @@ def _initialize_regressor_params(
     svd_rotation = None
 
     if not use_orig_exog:
-        rows_good = np.array([np.all(np.isfinite(row)) for row in exog])
+        rows_good = np.all(np.isfinite(exog), axis=1)
         if np.sum(rows_good) > 0:
             _, _, Vt = np.linalg.svd(exog[rows_good, :], full_matrices=False)
             svd_rotation = {'V': Vt.T}
@@ -1965,7 +2038,7 @@ def _initialize_regressor_params(
             ols_coef = beta
 
     # Effective sample size
-    isna = np.isnan(x) | np.array([np.any(np.isnan(row)) for row in exog])
+    isna = np.isnan(x) | np.any(np.isnan(exog), axis=1)
     n_used = int(np.sum(~isna)) - len(Delta)
 
     if ols_coef is not None:
@@ -2156,6 +2229,7 @@ class _FitResult:
     sigma2: float
     optim_fun: float
     n_conditioning_obs: int
+    n_innovations: int
 
 
 def _prepare_arima_config(
@@ -2294,6 +2368,10 @@ def _prepare_arima_config(
                 order[1], seasonal[1], m, Delta
             )
         )
+        # The initial values are in the rotated basis and _build_arima_result
+        # rotates the estimates back, so the optimizer must use the same basis.
+        if svd_transform is not None:
+            exog_matrix = exog_matrix @ svd_transform['V']
     else:
         init0 = np.zeros(n_arma_params)
         param_scale = np.ones(n_arma_params)
@@ -2348,6 +2426,11 @@ def _fit_css(config: _ArimaConfig) -> _FitResult:
     from the inverse of the observed information (numerical Hessian
     of the objective, scaled by n_eff).
 
+    CSS does not constrain the AR coefficients, so the estimates can be
+    non-stationary. In that case a warning is issued and the state used for
+    forecasting is initialized with a diffuse prior (see
+    `initialize_arima_state`).
+
     Reference: Hamilton (1994), *Time Series Analysis*, §5.2.
     """
     c = config
@@ -2401,16 +2484,24 @@ def _fit_css(config: _ArimaConfig) -> _FitResult:
         params, c.order_spec.p, c.order_spec.q, c.order_spec.P,
         c.order_spec.Q, c.order_spec.s, False
     )
+    if len(phi_final) > 0 and not ar_check(phi_final):
+        warnings.warn(
+            "CSS estimation produced non-stationary AR parameters. Predictions "
+            "are computed with a diffuse initial state and may be unreliable. "
+            "Use `method='CSS-ML'` or `method='ML'` to obtain stationary "
+            "estimates."
+        )
     state_space = initialize_arima_state(phi_final, theta_final, c.Delta, kappa=c.kappa)
 
     adjusted_series = (c.x - c.exog_matrix @ params[c.n_arma_params:c.n_arma_params + c.n_exog]) if c.n_exog > 0 else c.x
     kf_css = compute_arima_likelihood(adjusted_series, state_space, update_start=0, give_resid=True)
     state_space.filtered_state = kf_css['a']
     state_space.filtered_covariance = kf_css['P']
-    sigma2, _ = compute_css_residuals(
+    sigma2, css_resid = compute_css_residuals(
         adjusted_series, phi_final, theta_final, c.n_conditioning_obs,
         c.order_spec.d, c.order_spec.s, c.order_spec.D
     )
+    n_innovations = int(np.sum(~np.isnan(css_resid[c.n_conditioning_obs:])))
     resid = kf_css['resid']
 
     # Variance-covariance from inverse observed information
@@ -2428,7 +2519,7 @@ def _fit_css(config: _ArimaConfig) -> _FitResult:
         params=params, param_covariance=param_covariance,
         converged=optim_result['converged'], state_space=state_space,
         resid=resid, sigma2=sigma2, optim_fun=optim_result['fun'],
-        n_conditioning_obs=c.n_conditioning_obs,
+        n_conditioning_obs=c.n_conditioning_obs, n_innovations=n_innovations,
     )
 
 
@@ -2465,6 +2556,7 @@ def _fit_ml(config: _ArimaConfig, warm_start: np.ndarray = None) -> _FitResult:
 
     # Persistent scratch array for objective — avoids copy per call
     _par = c.fixed.astype(np.float64, copy=False).copy()
+    has_ar_terms = c.order_spec.p + c.order_spec.P > 0
 
     def _ml_objective(free_params, use_transform):
         """Negative concentrated log-likelihood via Kalman filter."""
@@ -2476,6 +2568,12 @@ def _fit_ml(config: _ArimaConfig, warm_start: np.ndarray = None) -> _FitResult:
             )
         except Exception:
             return _OBJECTIVE_PENALTY
+        # The exact likelihood is only defined for a stationary AR part. The
+        # Jones transform guarantees it; without the transform the optimizer
+        # is free to leave the stationary region, where the initial state
+        # covariance is not valid, so those points are rejected.
+        if not use_transform and has_ar_terms and not ar_check(phi_exp):
+            return _OBJECTIVE_PENALTY
         try:
             ss_holder[0] = _update_state_space(ss_holder[0], phi_exp, theta_exp)
         except Exception:
@@ -2485,11 +2583,16 @@ def _fit_ml(config: _ArimaConfig, warm_start: np.ndarray = None) -> _FitResult:
             kf = compute_arima_likelihood(adjusted, ss_holder[0], update_start=0, give_resid=False)
         except Exception:
             return _OBJECTIVE_PENALTY
-        sigma2 = kf['ssq'] / kf['nu'] if kf['nu'] > 0 else _OBJECTIVE_PENALTY
-        if sigma2 <= 0:
+        # No observation contributes to the likelihood when the filter
+        # degenerates (e.g. the Jones transform saturates at a unit root).
+        if not kf['nu'] > 0:
+            return _OBJECTIVE_PENALTY
+        sigma2 = kf['ssq'] / kf['nu']
+        if not sigma2 > 0:
             return _OBJECTIVE_PENALTY
         # Concentrated log-likelihood: ½[log(σ²) + (1/n)Σlog(Fₜ)]
-        return 0.5 * (np.log(sigma2) + kf['sumlog'] / kf['nu'])
+        value = 0.5 * (np.log(sigma2) + kf['sumlog'] / kf['nu'])
+        return value if np.isfinite(value) else _OBJECTIVE_PENALTY
 
     # If stationarity enforced, map initial params to unconstrained space
     if c.enforce_stationarity:
@@ -2616,7 +2719,7 @@ def _fit_ml(config: _ArimaConfig, warm_start: np.ndarray = None) -> _FitResult:
         params=params, param_covariance=param_covariance,
         converged=optim_result['converged'], state_space=ss_final,
         resid=resid, sigma2=sigma2, optim_fun=optim_result['fun'],
-        n_conditioning_obs=0,
+        n_conditioning_obs=0, n_innovations=c.n_used,
     )
 
 
@@ -2724,6 +2827,29 @@ def _build_arima_result(config: _ArimaConfig, fit: _FitResult) -> ArimaResult:
     n_free = int(np.sum(c.free_param_mask))
     aic = neg_twice_loglik + 2 * n_free + 2 if c.method != "CSS" else np.nan
 
+    # BIC and AICc as in R's forecast::Arima, with n* = n - d - D*m (n_used)
+    # and k = number of free parameters + 1 (for σ²).
+    bic = None
+    aicc = None
+    if np.isfinite(aic):
+        n_params = n_free + 1
+        bic = aic + n_params * (np.log(c.n_used) - 2)
+        if c.n_used - n_params - 1 > 0:
+            aicc = aic + 2 * n_params * (n_params + 1) / (c.n_used - n_params - 1)
+        else:
+            aicc = np.inf
+
+    # Innovation variance corrected for the degrees of freedom. The estimate
+    # of the optimizer (fit.sigma2) divides the sum of squared innovations by
+    # their number, which is biased downwards and gives narrow prediction
+    # intervals in short series. Here it is divided by the number of
+    # innovations minus the number of free coefficients, as R's
+    # forecast::Arima does. The log-likelihood and the information criteria
+    # keep using the uncorrected value.
+    sigma2_ml = float(fit.sigma2)
+    dof = fit.n_innovations - n_free
+    sigma2 = sigma2_ml * fit.n_innovations / dof if dof > 0 else sigma2_ml
+
     params = fit.params
     param_covariance = fit.param_covariance
 
@@ -2752,13 +2878,13 @@ def _build_arima_result(config: _ArimaConfig, fit: _FitResult) -> ArimaResult:
         y=c.y,
         fitted_values=fitted_vals,
         coefficients=coef_df,
-        sigma2=float(fit.sigma2),
+        sigma2=sigma2,
         param_covariance=param_covariance,
         param_mask=c.free_param_mask,
         loglik=loglik,
         aic=aic,
-        bic=None,
-        aicc=None,
+        bic=bic,
+        aicc=aicc,
         ic=None,
         order=c.order_spec,
         residuals=fit.resid,
@@ -2771,6 +2897,7 @@ def _build_arima_result(config: _ArimaConfig, fit: _FitResult) -> ArimaResult:
         lambda_bc=None,
         biasadj=None,
         offset=None,
+        sigma2_ml=sigma2_ml,
     )
 
 

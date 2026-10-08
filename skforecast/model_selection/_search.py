@@ -55,8 +55,8 @@ def grid_search_forecaster(
     metric: str | Callable | list[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
     lags_grid: (
-        list[int | list[int] | np.ndarray[int] | range[int]]
-        | dict[str, list[int | list[int] | np.ndarray[int] | range[int]]]
+        list[int | list[int] | np.ndarray | range]
+        | dict[str, int | list[int] | np.ndarray | range]
         | None
     ) = None,
     return_best: bool = True,
@@ -160,8 +160,8 @@ def random_search_forecaster(
     metric: str | Callable | list[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
     lags_grid: (
-        list[int | list[int] | np.ndarray[int] | range[int]]
-        | dict[str, list[int | list[int] | np.ndarray[int] | range[int]]]
+        list[int | list[int] | np.ndarray | range]
+        | dict[str, int | list[int] | np.ndarray | range]
         | None
     ) = None,
     n_iter: int = 10,
@@ -273,8 +273,8 @@ def _evaluate_grid_hyperparameters(
     metric: str | Callable | list[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
     lags_grid: (
-        list[int | list[int] | np.ndarray[int] | range[int]]
-        | dict[str, list[int | list[int] | np.ndarray[int] | range[int]]]
+        list[int | list[int] | np.ndarray | range]
+        | dict[str, int | list[int] | np.ndarray | range]
         | None
     ) = None,
     return_best: bool = True,
@@ -958,8 +958,8 @@ def grid_search_forecaster_multiseries(
     levels: str | list[str] | None = None,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
     lags_grid: (
-        list[int | list[int] | np.ndarray[int] | range[int]]
-        | dict[str, list[int | list[int] | np.ndarray[int] | range[int]]]
+        list[int | list[int] | np.ndarray | range]
+        | dict[str, int | list[int] | np.ndarray | range]
         | None
     ) = None,
     return_best: bool = True,
@@ -1081,8 +1081,8 @@ def random_search_forecaster_multiseries(
     levels: str | list[str] | None = None,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
     lags_grid: (
-        list[int | list[int] | np.ndarray[int] | range[int]]
-        | dict[str, list[int | list[int] | np.ndarray[int] | range[int]]]
+        list[int | list[int] | np.ndarray | range]
+        | dict[str, int | list[int] | np.ndarray | range]
         | None
     ) = None,
     n_iter: int = 10,
@@ -1214,8 +1214,8 @@ def _evaluate_grid_hyperparameters_multiseries(
     levels: str | list[str] | None = None,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
     lags_grid: (
-        list[int | list[int] | np.ndarray[int] | range[int]]
-        | dict[str, list[int | list[int] | np.ndarray[int] | range[int]]]
+        list[int | list[int] | np.ndarray | range]
+        | dict[str, int | list[int] | np.ndarray | range]
         | None
     ) = None,
     return_best: bool = True,

@@ -22,6 +22,22 @@ def test_exog_to_direct_TypeError_when_exog_not_numpy_ndarray_pandas_series_or_d
         exog_to_direct_numpy(exog=exog, steps=2)
 
 
+@pytest.mark.parametrize("steps", [0, 4], ids=['zero', 'greater_than_len_exog'])
+def test_exog_to_direct_numpy_ValueError_when_steps_out_of_range(steps):
+    """
+    Test ValueError is raised when steps is less than 1 or greater than the
+    number of rows of exog.
+    """
+    exog = np.arange(3)
+
+    err_msg = re.escape(
+        f"`steps` must be between 1 and the number of rows of `exog` (3). "
+        f"Got {steps}."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        exog_to_direct_numpy(exog=exog, steps=steps)
+
+
 def test_exog_to_direct_numpy_when_steps_1_exog_numpy_array_1d():
     """
     Test exog_to_direct_numpy results when using steps 1 and exog is a  

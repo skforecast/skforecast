@@ -13,6 +13,7 @@
     "tests",
     "tools",
     "**/tests",
+    "docs/animations",
     "docs/examples",
     "docs/img",
     "docs/javascripts",
@@ -21,7 +22,8 @@
     "docs/releases",
     "docs/skforecast-ai",
     "docs/skforecast-studio",
-    "docs/stylesheets"
+    "docs/stylesheets",
+    "docs/vendor"
   ],
   "excludeFiles": [
     "CLAUDE.md",

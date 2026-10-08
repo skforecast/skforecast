@@ -175,6 +175,31 @@ def test_transform_dataframe_when_transformer_expands_columns_without_feature_na
     pd.testing.assert_frame_equal(results, expected)
 
 
+def test_transform_dataframe_when_Pipeline_step_without_get_feature_names_out():
+    """
+    Test that transform_dataframe keeps the input column names when the
+    transformer is a Pipeline with a step that does not implement
+    `get_feature_names_out` (FunctionTransformer without `feature_names_out`),
+    so `Pipeline.get_feature_names_out` raises an AttributeError.
+    """
+    df_input = pd.DataFrame({
+        'col_1': [1.0, 2.0, 3.0, 4.0],
+        'col_2': [10.0, 20.0, 30.0, 40.0]
+    })
+    transformer = make_pipeline(
+        FunctionTransformer(func=np.log1p, inverse_func=np.expm1),
+        StandardScaler()
+    )
+
+    results = transform_dataframe(
+        df=df_input, transformer=transformer, fit=True, inverse_transform=False
+    )
+
+    log_values = np.log1p(df_input)
+    expected = (log_values - log_values.mean()) / log_values.std(ddof=0)
+    pd.testing.assert_frame_equal(results, expected)
+
+
 def test_transform_dataframe_when_fit_False_and_inverse_transform():
     """
     Test transform_dataframe with fit=False (pre-fitted transformer) and

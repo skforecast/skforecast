@@ -10,10 +10,7 @@ from skforecast.exceptions import IgnoredArgumentWarning
 # Fixtures
 from ..tests_preprocessing.fixtures_preprocessing import features_all_onehot
 
-if pd.__version__ < '2.2.0':
-    freq_h = "H"
-else:
-    freq_h = "h"
+freq_h = "h"
 
 
 def test_create_calendar_features_invalid_input_type():

@@ -23,6 +23,7 @@ from ..utils import (
     check_y,
     check_predict_input,
     check_residuals_input,
+    check_residuals_per_bin,
     check_interval,
     check_extract_values_and_index,
     expand_index,
@@ -184,10 +185,10 @@ class ForecasterEquivalentDate():
     
     def __init__(
         self,
-        offset: int | pd.tseries.offsets.DateOffset,
+        offset: int | pd.tseries.offsets.BaseOffset,
         n_offsets: int = 1,
         agg_func: Callable = np.mean,
-        binner_kwargs: dict[str, object] | None = None,
+        binner_kwargs: dict[str, Any] | None = None,
         forecaster_id: str | int | None = None
     ) -> None:
         
@@ -734,7 +735,7 @@ class ForecasterEquivalentDate():
         steps: int,
         last_window: pd.Series | None = None,
         method: str = 'conformal',
-        interval: float | list[float] | tuple[float] = [0.05, 0.95],
+        interval: float | list[float] | tuple[float, ...] = [0.05, 0.95],
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
         random_state: Any = None,
@@ -1188,6 +1189,11 @@ class ForecasterEquivalentDate():
                     replace = False
                 )
 
+        check_residuals_per_bin(
+            n_residuals = len(out_sample_residuals),
+            n_bins      = self.binner.n_bins_
+        )
+
         if len(out_sample_residuals) > 10_000:
             out_sample_residuals = rng.choice(
                 a       = out_sample_residuals, 
@@ -1200,7 +1206,7 @@ class ForecasterEquivalentDate():
 
     def set_params(
         self,
-        params: dict[str, object]
+        params: dict[str, Any]
     ) -> None:
         """
         Set new values to the parameters of the forecaster. After calling this

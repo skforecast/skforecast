@@ -32,17 +32,18 @@ def test_estimator_predict_interval():
     assert "upper_0.95" in df.columns
     assert len(df) == 5
     
-    expected_mean = np.array([-0.21174572, -0.2703575, -0.32896928, -0.38758106, -0.44619284])
-    expected_lower_80 = np.array([-1.93400505, -2.00300517, -2.07389933, -2.14681648, -2.22187478])
-    expected_upper_80 = np.array([1.5105136, 1.46229016, 1.41596077, 1.37165436, 1.3294891])
-    expected_lower_95 = np.array([-2.84571406, -2.92021344, -2.9976095, -3.07809946, -3.16186402])
-    expected_upper_95 = np.array([2.42222262, 2.37949843, 2.33967094, 2.30293734, 2.26947834])
-    
-    np.testing.assert_array_almost_equal(df['mean'].values, expected_mean, decimal=8)
-    np.testing.assert_array_almost_equal(df['lower_0.8'].values, expected_lower_80, decimal=6)
-    np.testing.assert_array_almost_equal(df['upper_0.8'].values, expected_upper_80, decimal=6)
-    np.testing.assert_array_almost_equal(df['lower_0.95'].values, expected_lower_95, decimal=6)
-    np.testing.assert_array_almost_equal(df['upper_0.95'].values, expected_upper_95, decimal=6)
+    expected_mean = np.array([0.1647033144, 0.1662691275, 0.1678349406, 0.1694007537, 0.1709665668])
+    expected_lower_80 = np.array([-1.1934638323, -1.6591995525, -2.027702611, -2.3423248984, -2.621429854])
+    expected_upper_80 = np.array([1.5228704611, 1.9917378075, 2.3633724922, 2.6811264058, 2.9633629877])
+    expected_lower_95 = np.array([-1.91243409, -2.6255442992, -3.1899499847, -3.6719521418, -4.0996352276])
+    expected_upper_95 = np.array([2.2418407188, 2.9580825543, 3.5256198659, 4.0107536493, 4.4415683612])
+
+    tol = {'rtol': 1e-5, 'atol': 1e-6}
+    np.testing.assert_allclose(df['mean'].values, expected_mean, **tol)
+    np.testing.assert_allclose(df['lower_0.8'].values, expected_lower_80, **tol)
+    np.testing.assert_allclose(df['upper_0.8'].values, expected_upper_80, **tol)
+    np.testing.assert_allclose(df['lower_0.95'].values, expected_lower_95, **tol)
+    np.testing.assert_allclose(df['upper_0.95'].values, expected_upper_95, **tol)
 
 
 def test_predict_interval_values_contain_point_forecast():

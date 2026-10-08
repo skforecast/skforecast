@@ -47,10 +47,7 @@ out_sample_residuals = np.array([
                         0.75352599, 0.74186215, 0.04857903, 0.7086974 , 0.83924335
                       ])
 
-if pd.__version__ < '2.2.0':
-    freq = "H"
-else:
-    freq = "h"
+freq = "h"
 
 y_feature_selection = pd.Series(
     np.array([
@@ -780,3 +777,17 @@ series_wide_datetime = pd.DataFrame(
     index = pd.date_range(start='2020-01-01', periods=500, freq=freq)
 )
 series_dict_datetime = series_wide_datetime.copy().to_dict(orient='series')
+
+
+class SelectorAllFeatures:
+    """
+    Selector compatible with the scikit-learn API that keeps every feature. It
+    stores the matrix passed to `fit` and returns the feature names as `np.str_`.
+    """
+
+    def fit(self, X, y):
+        self.X_fit_ = X
+        return self
+
+    def get_feature_names_out(self):
+        return np.array(self.X_fit_.columns, dtype=str)

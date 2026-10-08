@@ -6,13 +6,13 @@
 
 > Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models
 
-This document is for skforecast v0.25.0+. If you are using an older version, check the documentation at skforecast.org.
+This document is for skforecast v0.26.0+. If you are using an older version, check the documentation at skforecast.org.
 
 Skforecast is a Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. It works with any estimator compatible with the scikit-learn API (LightGBM, XGBoost, CatBoost, Keras, etc.).
 
 ## Quick Info
 
-- Version: 0.25.0
+- Version: 0.26.0
 - License: BSD-3-Clause
 - Python: 3.10, 3.11, 3.12, 3.13, 3.14
 - Repository: https://github.com/skforecast/skforecast
@@ -41,7 +41,7 @@ skforecast/
 │                            # ForecasterRecursiveClassifier, ForecasterStats, ForecasterEquivalentDate
 ├── direct/                  # ForecasterDirect, ForecasterDirectMultiVariate
 ├── deep_learning/           # ForecasterRnn, create_and_compile_model
-├── foundation/              # FoundationModel, ForecasterFoundation
+├── foundation/              # FoundationModel, ForecasterFoundation, get_model_info, list_adapters
 │                            # (zero-shot: Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL)
 ├── stats/                   # Arima, Sarimax, Ets, Arar, acf, pacf, calculate_lag_autocorrelation
 ├── preprocessing/           # TimeSeriesDifferentiator, RollingFeatures, CalendarFeatures,
@@ -434,7 +434,7 @@ predictions = forecaster.predict(steps=10)
 # Auto ARIMA (automatic order selection) - set order=None and seasonal_order=None
 forecaster = ForecasterStats(estimator=Arima(order=None, seasonal_order=None, m=12))
 
-# ETS model (model string: 1st=Error, 2nd=Trend, 3rd=Seasonal; A=Add, M=Mult, N=None, Z=Auto)
+# ETS model (model string: 1st=Error, 2nd=Trend, 3rd=Seasonal; A=Add, M=Mult, N=None; 'ZZZ'=Auto)
 forecaster = ForecasterStats(estimator=Ets(m=12, model='AAA'))
 ```
 
@@ -466,19 +466,43 @@ forecaster.fit(series=series_df)
 predictions = forecaster.predict(steps=24, levels=['series_1', 'series_2'])
 ```
 
-Supported adapters (selected automatically from `model_id`):
+Supported adapters (selected automatically from `model_id`). Query them programmatically with `get_model_info` and `list_adapters` (see below):
 
 | Adapter | `model_id` prefix | Exog | Default `context_length` | Quantiles |
 |---------|-------------------|------|--------------------------|-----------|
-| ChronosAdapter (Amazon) | `autogluon/chronos` | Yes (past & future covariates) | 8192 | Any in `(0, 1)` |
+| ChronosAdapter (Amazon) | `autogluon/chronos-2` | Yes (past & future covariates) | 8192 | Any in `(0, 1)` |
 | TimesFM25Adapter (Google, v2.5) | `google/timesfm-2.5` | No | 512 | `[0.1, 0.2, ..., 0.9]` |
 | TimesFM3Adapter (Google, v3.0) | `google/timesfm-3.0` | Yes (past & known-future covariates) | 2048 | `[0.1, 0.2, ..., 0.9]` |
-| MoiraiAdapter (Salesforce) | `Salesforce/moirai` | No | 2048 | `[0.1, 0.2, ..., 0.9]` |
-| TabICLAdapter (Soda-INRIA) | `soda-inria/tabicl` | Yes (past & future covariates) | 4096 | Any in `(0, 1)` |
+| MoiraiAdapter (Salesforce) | `Salesforce/moirai-2` | No | 2048 | `[0.1, 0.2, ..., 0.9]` |
+| TabICLAdapter (Soda-INRIA) | `soda-inria/tabicl` | Yes (known-future covariates) | 4096 | Any in `(0, 1)` |
 | TabPFNAdapter (Prior Labs) | `priorlabs/tabpfn` | Yes (known-future covariates) | 32768 | Any in `(0, 1)` |
 | T0Adapter (The Forecasting Company) | `theforecastingcompany/t0` | Yes (future-known covariates) | 8192 | Any in `(0, 1)` |
 | NoriAdapter (Synthefy) | `Synthefy/Nori` | Yes (known-future covariates) | 4096 | Any in `(0, 1)` |
 | TSICLAdapter (EDF Lab) | `taharnbl/TS-ICL` | Yes (past & future covariates) | 4096 | Subset of `[0.01, 0.02, ..., 0.99]` |
+
+```python
+from skforecast.foundation import get_model_info, list_adapters
+
+# Capabilities of a model without installing its backend or loading weights
+info = get_model_info('google/timesfm-3.0-pytorch')
+info.adapter                  # 'TimesFM3Adapter'
+info.allow_exog               # True
+info.supported_quantiles      # (0.1, 0.2, ..., 0.9); None means any level in (0, 1)
+info.backend_package          # 'timesfm[torch]'
+info.license                  # SPDX id ('Apache-2.0') or model card license name (see info.license_url)
+info.commercial_use_restricted  # True if the license restricts commercial use (LicenseWarning on load)
+info.requires_hf_auth         # True if the weights are gated on the Hugging Face Hub
+info.requires_provider_auth   # True if the provider needs its own account/license acceptance (TabPFN)
+info.weights_repo_id          # Hugging Face repo the weights are downloaded from (may differ from
+                              # model_id, e.g. 'jingang/TabICL' for 'soda-inria/tabicl')
+info.weights_in_hf_cache      # False if the weights are not stored in the HF Hub cache (TabPFN)
+
+# One FoundationModelInfo per adapter (described by its default_model_id)
+[(i.adapter, i.default_model_id) for i in list_adapters()]
+
+# Same information as a DataFrame, one row per adapter (index 'adapter')
+list_adapters(as_frame=True)
+```
 
 Key points:
 - `fit()` only stores the last `context_length` observations and metadata. It does **not** train the model.
@@ -494,20 +518,20 @@ Key points:
 
 ## Feature Selection
 
-Use sklearn selectors (RFECV, SelectFromModel, etc.) to identify relevant lags, window features, and exogenous variables. Multi-series variant: `select_features_multiseries`.
+Use any selector compatible with the scikit-learn API (RFECV, SelectFromModel, etc.) to identify relevant lags, window features, exogenous variables and calendar features. Multi-series variant: `select_features_multiseries`.
 
 ```python
 from sklearn.feature_selection import RFECV
 from skforecast.feature_selection import select_features
 
-selected_lags, selected_window_features, selected_exog = select_features(
+selected_lags, selected_window_features, selected_exog, selected_calendar_features = select_features(
     forecaster=forecaster,
     selector=RFECV(estimator=RandomForestRegressor(), step=1, cv=3),
     y=y_train,
     exog=exog_train,
-    select_only=None,              # 'autoreg', 'exog', or None (all features)
+    select_only=None,              # 'autoreg', 'exog', 'calendar', a list of them, or None (all features)
     force_inclusion=None,          # Features to always include (list or regex str)
-    subsample=0.5,
+    subsample=0.5,                 # Proportion of records in (0, 1], sampled without replacement
     random_state=123,
     verbose=True
 )
@@ -551,6 +575,9 @@ from skforecast.deep_learning import ForecasterRnn
 from skforecast.deep_learning import create_and_compile_model
 from skforecast.foundation import FoundationModel
 from skforecast.foundation import ForecasterFoundation
+from skforecast.foundation import FoundationModelInfo
+from skforecast.foundation import get_model_info
+from skforecast.foundation import list_adapters
 
 # Model Selection
 from skforecast.model_selection import backtesting_forecaster
@@ -681,7 +708,7 @@ show_datasets_info()
 ## Citation
 
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.25.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, J., & Escobar Ortiz, J. skforecast [Computer software]. https://doi.org/10.5281/zenodo.8382787
 ```
 
 ================================================================================
@@ -728,7 +755,7 @@ the chosen model adds value.
 | **General purpose** (start here) | `ForecasterRecursive` | Default choice. One model, recursive multi-step. Works with any sklearn-compatible estimator (LightGBM, XGBoost, CatBoost, RandomForest, etc.). Supports lags, window features, exog, differentiation, transformers, weight functions, and all probabilistic prediction methods (bootstrapping, conformal, quantiles, distributions) |
 | **Horizon-dependent patterns** (e.g., predicting at 1h vs 24h requires different relationships) | `ForecasterDirect` | Trains one independent model per step — no error propagation. Better when the predictive relationship changes significantly across the forecast horizon. Requires `steps` at init; parallelizable with `n_jobs` |
 | **Statistical baseline** | `ForecasterStats` | Wraps ARIMA, SARIMAX, ETS, ARAR. Use as a benchmark to compare against ML models, or when the series is very short (< 200 obs) and ML overfits |
-| **Zero-shot / cold-start / no training data** | `ForecasterFoundation` | Wraps pre-trained foundation models (Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL). `fit()` only stores context — no training. Good baseline and cold-start option. See the `foundation-forecasting` skill |
+| **Zero-shot / cold-start / no training data** | `ForecasterFoundation` | Wraps pre-trained foundation models (Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL). `fit()` only stores context, no training. Strong zero-shot accuracy, also for short or new series; needs more compute to predict. See the `foundation-forecasting` skill |
 | **Naive baseline** | `ForecasterEquivalentDate` | Predicts using equivalent past dates (e.g., same weekday last week). Use as a sanity-check baseline. See the `baseline-forecasting` skill |
 
 ## Step 2b — Multiple Series
@@ -738,7 +765,7 @@ the chosen model adds value.
 | **Forecast many series with a shared model** (start here) | `ForecasterRecursiveMultiSeries` | One global model learns cross-series patterns. Supports DataFrame or dict input (dict allows series with different date ranges). Encoding options: `'ordinal'` (default), `'ordinal_category'`, `'onehot'`, `None`. Supports per-series transformers, per-series differentiation, series_weights |
 | **Other series are features for one target** | `ForecasterDirectMultiVariate` | All series become input features to predict a single `level`. Per-series lags via dict (`{'sales': [1,7], 'price': [1]}`). One model per step — no error propagation |
 | **Deep learning / complex nonlinear patterns** | `ForecasterRnn` | Keras-based RNN/LSTM/GRU. Single model outputs all steps and levels simultaneously via 3D tensors. Only conformal intervals (no bootstrapping). Requires keras |
-| **Zero-shot / pre-trained generalist** | `ForecasterFoundation` | Global zero-shot forecasts via Chronos-2 / TimesFM 2.5/3.0 / Moirai-2 / TabICL / TabPFN-TS / TFC-T0 / Nori / TS-ICL. `fit()` only stores context. Native quantile intervals. Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, and Nori support exog; TimesFM 2.5 & Moirai-2 do not. See the `foundation-forecasting` skill |
+| **Zero-shot / pre-trained generalist** | `ForecasterFoundation` | Global zero-shot forecasts via Chronos-2 / TimesFM 2.5/3.0 / Moirai-2 / TabICL / TabPFN-TS / TFC-T0 / Nori / TS-ICL. `fit()` only stores context. Native quantile intervals. Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori and TS-ICL support exog; TimesFM 2.5 & Moirai-2 do not. See the `foundation-forecasting` skill |
 
 ## Decision Flowchart
 
@@ -771,7 +798,7 @@ How many series?
         └─► ForecasterRnn
 
 Zero-shot / no training data / cold-start (single or multi-series)?
-    └─► ForecasterFoundation (Chronos-2 / TimesFM 2.5/3.0 / Moirai-2 / TabICL / TabPFN-TS / TFC-T0 / Nori/ TS-ICL)
+    └─► ForecasterFoundation (Chronos-2 / TimesFM 2.5/3.0 / Moirai-2 / TabICL / TabPFN-TS / TFC-T0 / Nori / TS-ICL)
 ```
 
 ## Key Comparisons
@@ -1061,7 +1088,7 @@ Both use the `CalendarFeatures` class; they differ in who builds the features.
 | Workflow | How | When to use |
 |----------|-----|-------------|
 | **Delegated** | Pass a `CalendarFeatures` instance to the forecaster's `calendar_features` parameter. The forecaster generates the features at train **and** predict — no manual exog. | The 4 supported forecasters: `ForecasterRecursive`, `ForecasterRecursiveMultiSeries`, `ForecasterDirect`, `ForecasterDirectMultiVariate`. |
-| **Manual** | Build features with `CalendarFeatures.fit_transform` / `create_calendar_features` and pass them as `exog` (or wire `CalendarFeatures` as `transformer_exog`). | Forecasters without `calendar_features` support (`ForecasterRecursiveClassifier`, `ForecasterRnn`, `ForecasterStats`, `ForecasterFoundation`, `ForecasterEquivalentDate`), or when the features live inside a `Pipeline` / `ColumnTransformer`. |
+| **Manual** | Build features with `CalendarFeatures.fit_transform` / `create_calendar_features` and pass them as `exog` (or wire `CalendarFeatures` as `transformer_exog` on forecasters that have it). | Forecasters without `calendar_features` support (`ForecasterRecursiveClassifier`, `ForecasterRnn`, `ForecasterStats`, and `ForecasterFoundation` with an exog-capable model, which has no `transformer_exog`), or when the features live inside a `Pipeline` / `ColumnTransformer`. |
 
 > Full constructor, all features/encodings, per-forecaster support, and gotchas:
 > [references/calendar-features-reference.md](references/calendar-features-reference.md).
@@ -1425,7 +1452,7 @@ predictions = forecaster.predict(steps=10, exog=exog.loc[forecast_index])
 2. **Forgetting frequency on index**: `CalendarFeatures` (and the `calendar_features` parameter) requires a `DatetimeIndex`; `calculate_distance_from_holiday` (index mode) infers the time unit from the frequency. Always set `data.asfreq('h')` (or similar) first.
 3. **Not covering forecast horizon with calendar/holiday exog (manual path only)**: When building calendar features manually as `exog`, the `predict()` exog must include future dates covering the entire forecast horizon. With the delegated `calendar_features` parameter this is handled automatically.
 4. **Mixing the delegated and manual calendar paths for the same features**: Passing `calendar_features=` *and* also adding manually-built calendar columns with the same names to `exog` raises `ValueError: Duplicated feature names detected in X_train`. Pick one path per feature.
-5. **Using `calendar_features` on an unsupported forecaster**: Only `ForecasterRecursive`, `ForecasterRecursiveMultiSeries`, `ForecasterDirect`, and `ForecasterDirectMultiVariate` accept it. For `ForecasterRecursiveClassifier`, `ForecasterRnn`, `ForecasterStats`, `ForecasterFoundation`, and `ForecasterEquivalentDate`, build calendar features manually as `exog`.
+5. **Using `calendar_features` on an unsupported forecaster**: Only `ForecasterRecursive`, `ForecasterRecursiveMultiSeries`, `ForecasterDirect`, and `ForecasterDirectMultiVariate` accept it. For `ForecasterRecursiveClassifier`, `ForecasterRnn`, `ForecasterStats`, and `ForecasterFoundation` (exog-capable models only), build calendar features manually as `exog`. `ForecasterEquivalentDate` ignores `exog`, so it cannot use calendar features.
 6. **Overriding `max_values` for `'week'` or `'day_of_year'`**: The defaults (53, 366) are intentional — they handle ISO week 53 and leap years correctly. Use the smaller value (52 / 365) only if you have verified your data never reaches the maximum.
 7. **Over-engineering features**: Start with lags only, then add rolling features and calendar features incrementally. Validate each addition with backtesting.
 8. **Rolling window larger than lags without checking training size**: The forecaster's `window_size` is `max(max_lag, max_size_window_features) (+ differentiation)`. A 30-step rolling window with `lags=7` drops the first 30 rows of training data and requires `last_window` of length ≥ 30 at predict time.
@@ -1456,8 +1483,9 @@ forecaster:
   automatically during **training and prediction**. No manual `exog`.
 - **Manual** — build the features yourself with `CalendarFeatures`
   (`fit_transform`) or `create_calendar_features` and pass the result as `exog`
-  (or wire `CalendarFeatures` as `transformer_exog`). Required for forecasters
-  that do not support the `calendar_features` parameter.
+  (or wire `CalendarFeatures` as `transformer_exog` on forecasters that have
+  it). Required for forecasters that do not support the `calendar_features`
+  parameter.
 
 Both paths use the same `CalendarFeatures` class, so the constructor and
 encoding options below apply to either workflow.
@@ -1491,8 +1519,8 @@ encoding options below apply to either workflow.
 | `ForecasterRecursiveClassifier` | ✗ | Manual only |
 | `ForecasterRnn` | ✗ | Manual only |
 | `ForecasterStats` | ✗ | Manual only |
-| `ForecasterFoundation` | ✗ | Manual only |
-| `ForecasterEquivalentDate` | ✗ | Manual only |
+| `ForecasterFoundation` | ✗ | Manual only, as `exog` (exog-capable models; no `transformer_exog`) |
+| `ForecasterEquivalentDate` | ✗ | Not supported (`exog` is ignored) |
 
 > All calendar tools are built into skforecast — no `feature_engine` (or any
 > other extra) dependency is required.
@@ -1981,7 +2009,7 @@ NOT the `RollingFeatures` object. The original `RollingFeatures` instance
 should still be passed to the forecaster.
 
 ```python
-selected_lags, selected_wf, selected_exog = select_features(
+selected_lags, selected_wf, selected_exog, selected_cal = select_features(
     forecaster=forecaster,
     selector=RFECV(...),
     y=y_train,
@@ -2153,7 +2181,7 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 |------|---------|----------|
 | Use `backtesting_forecaster_multiseries` and the `*_multiseries` search functions | `backtesting_forecaster` / `grid_search_forecaster` raises on a multi-series forecaster | Call the `_multiseries` variant with `series=` instead of `y=` |
 | `ForecasterDirectMultiVariate` defaults to `transformer_series=StandardScaler()` | Series are scaled unexpectedly (other forecasters default to `None`) | Pass `transformer_series=None` explicitly if you do not want scaling |
-| `exog` format must match the `series` format (both wide, or both dict) | Index / format mismatch during fit or predict | Convert exog to the same layout as `series` before fitting |
+| `exog` and `series` formats can be combined (wide, long or dict); a dict or long `exog` is matched to the series by name | `MissingExogWarning` about series without exog, whose exog values are NaN | Use the series names as the keys of the exog dict (or the series IDs of a long exog). A wide exog is shared by all series and aligned with each one by date |
 | Regressors with native categorical support need `encoding='ordinal_category'` | Categoricals silently encoded as plain ordinals, degrading the model | Set `encoding='ordinal_category'` for LightGBM / CatBoost / XGBoost / HistGBR |
 
 ## Data Formats
@@ -2277,7 +2305,7 @@ exog_dict = reshape_exog_long_to_dict(exog_long, freq='D')
 
 1. **Mismatched series lengths**: ForecasterRecursiveMultiSeries handles different-length series if `dropna_from_series=True`.
 2. **Wrong encoding for categorical regressor**: Use `encoding='ordinal_category'` with regressors that natively handle categoricals (LightGBM, CatBoost).
-3. **Exog format mismatch**: Exog format (wide/dict) must match the series format.
+3. **Exog keys not matching the series names**: Any exog format (wide, long or dict) can be combined with any series format. A wide exog is shared by all series and aligned with each one by date; a dict or long exog must use the series names as keys, otherwise those series get NaN exog values (`MissingExogWarning`).
 4. **Forgetting `levels` parameter**: By default `predict()` forecasts all series. Use `levels` to limit predictions.
 5. **Unexpected scaling in ForecasterDirectMultiVariate**: `transformer_series` defaults to `StandardScaler()`, unlike other forecasters that default to `None`. Set `transformer_series=None` explicitly if you don't want automatic scaling.
 
@@ -2290,10 +2318,12 @@ exog_dict = reshape_exog_long_to_dict(exog_long, freq='D')
 ## When to Use
 
 Use `ForecasterFoundation` when:
-- You want a **zero-shot baseline** before investing in model training.
+- You want **accurate forecasts without training** a model. The best pre-trained models are among the top performers in public benchmarks (GIFT-Eval, fev-bench).
 - You have **very short histories** where ML models struggle.
 - You need to forecast **cold-start** series (new product, new sensor).
-- You want to compare against pre-trained generalist models.
+- You have **many heterogeneous series** (different lengths, exogenous variables or missing values).
+
+Trade-offs: prediction needs more computing resources (usually a GPU), and a forecaster trained on the user's data with well-designed features and exogenous variables can still be more accurate for a specific problem. Compare them with backtesting on the same folds.
 
 Foundation models are **pre-trained on massive corpora** — `fit()` does not train them; it only stores the recent context and metadata.
 
@@ -2312,7 +2342,7 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 |------|---------|----------|
 | `fit()` stores context only; it never trains the model | Expecting training to happen or weights to update | Treat the model as pre-trained; evaluate with `backtesting_foundation` |
 | `cv.refit` and `cv.fixed_train_size` are overridden by `backtesting_foundation` | `IgnoredArgumentWarning` when `refit=True` or `fixed_train_size=False` | Leave them at their defaults; the context window expands per fold either way |
-| Only Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, T0, Nori, and TS-ICL use `exog`; TimesFM 2.5 and Moirai-2 ignore it | `exog` silently dropped, no error raised | Pick an exog-capable adapter when covariates matter |
+| Only Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, T0, Nori, and TS-ICL use `exog`; TimesFM 2.5 and Moirai-2 ignore it | `IgnoredArgumentWarning`, forecast made without `exog` | Pick an exog-capable adapter when covariates matter |
 | TimesFM (2.5 and 3.0) and Moirai-2 restrict quantiles to `[0.1, 0.2, ..., 0.9]` | Requested quantile rejected or unsupported | Request only supported quantiles, or use an adapter allowing any quantile in (0, 1) |
 | Each backend library must be installed separately | `ModuleNotFoundError` / `ImportError` on first use | `pip install` the matching backend (see Installation) |
 | Tuning uses `bayesian_search_foundation`, never `bayesian_search_forecaster*` | `TypeError` on the forecaster type or on `OneStepAheadFold` | Call `bayesian_search_foundation` with a `TimeSeriesFold` |
@@ -2327,7 +2357,7 @@ pip install chronos-forecasting    # For Chronos-2
 pip install "timesfm[torch]"       # For TimesFM 2.5 and 3.0
 pip install uni2ts                 # For Moirai-2
 pip install tabicl[forecast]       # For TabICL
-pip install tabpfn-time-series     # For TabPFN-TS
+pip install "tabpfn-time-series>=1.3"  # For TabPFN-TS
 pip install tfc-t0                 # For T0
 pip install tsicl                  # For TS-ICL
 pip install synthefy-nori          # For Nori
@@ -2443,6 +2473,24 @@ For TimesFM (2.5 and 3.0) and Moirai-2, requested quantiles must be a subset of 
 
 The adapter is resolved automatically from the `model_id` prefix — no need to import adapter classes directly.
 
+To check what a model supports before installing its backend or loading its weights, use `get_model_info` (one `model_id`) or `list_adapters` (one entry per adapter, or a DataFrame with `as_frame=True`). Both return a frozen `FoundationModelInfo` read from the adapter classes, so it always matches the installed skforecast version; prefer it over hard-coding the table above.
+
+```python
+from skforecast.foundation import get_model_info, list_adapters
+
+info = get_model_info('google/timesfm-3.0-pytorch')
+info.allow_exog, info.supported_quantiles  # supported_quantiles None = any level in (0, 1)
+info.backend_package                       # 'timesfm[torch]', as passed to pip install
+info.license, info.license_url             # SPDX id (or model card license name) and link, always informed
+info.commercial_use_restricted             # True if the license restricts commercial use
+info.requires_hf_auth                      # gated on the Hugging Face Hub
+info.requires_provider_auth                # provider account/license acceptance (TabPFN, Prior Labs)
+info.weights_repo_id                       # HF repo the weights come from, e.g. 'jingang/TabICL' for TabICL
+info.weights_in_hf_cache                   # False when the weights are not in the HF Hub cache (TabPFN)
+
+list_adapters(as_frame=True)  # DataFrame, one row per adapter; default: list of FoundationModelInfo
+```
+
 TimesFM 3.0, Moirai-2, TabPFN-TS, and TS-ICL weights are released under known non-commercial licenses; loading them raises a `LicenseWarning` naming the license and a link to the model card. Terms vary by provider (e.g. TabPFN-TS permits commercial use under an enterprise license), so review the linked license rather than the warning text alone. A model id not covered by this warning is not confirmed to be unrestricted.
 
 ## Backtesting
@@ -2520,12 +2568,12 @@ automatically to the last `context_length` observations.
 
 1. **Expecting `fit()` to train the model**: it only stores context. The weights come from HuggingFace.
 2. **Index without frequency**: call `series.asfreq('h')` (or similar) before `fit` — skforecast requires a frequency.
-3. **Passing `exog` to TimesFM 2.5 / Moirai-2**: ignored. Only Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL support exogenous variables.
+3. **Passing `exog` to TimesFM 2.5 / Moirai-2**: ignored with an `IgnoredArgumentWarning`. Only Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, and TS-ICL support exogenous variables.
 4. **Requesting unsupported quantiles**: TimesFM (2.5 and 3.0) and Moirai-2 are restricted to the nine deciles `0.1 … 0.9` ; TS-ICL is restricted to a 0.01 grid in `[0.01, 0.99]`.
 5. **Large model downloads**: first call can be slow; consider using smaller variants (`*-small`) for experimentation.
 6. **Forgetting to install the backend**: each foundation model requires its own library (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`). Install only the one(s) you need.
 7. **Tuning a parameter that forces a model reload**: `model_id` and device/dtype arguments reload the model on every trial, and `context_length` does the same on TimesFM 2.5 (but **not** TimesFM 3.0), Moirai-2, TabICL and TabPFN-TS.
-8. **Assuming TimesFM 3.0 accepts categorical covariates**: it does not; encode categoricals as numeric (e.g. via `transformer_exog`) before passing them, same as Nori, T0, and TS-ICL.
+8. **Assuming TimesFM 3.0 accepts categorical covariates**: it does not, and neither do Nori, T0, and TS-ICL (`ValueError`). Only Chronos-2 accepts them natively. `ForecasterFoundation` has no `transformer_exog`, so encode categoricals as numbers in `exog` before passing it to `fit` and `predict`.
 9. **Passing a future `exog` column that was not in the historical exog** (`fit` without that column, or `context` without `context_exog`): `ValueError` on every adapter. Pass the same columns to `fit` (or `context_exog`) and to `predict`.
 10. **Predicting without `exog` after fitting with exog on TabICL, TabPFN-TS, T0 or Nori**: the historical columns are ignored (`IgnoredArgumentWarning`) and the forecast uses no covariates. Only Chronos-2, TS-ICL and TimesFM 3.0 use them as past-only covariates.
 
@@ -2568,7 +2616,7 @@ model = FoundationModel(
 
 ## ChronosAdapter — Amazon Chronos-2
 
-- **`model_id` prefix**: `autogluon/chronos`
+- **`model_id` prefix**: `autogluon/chronos-2` or `amazon/chronos-2` (Chronos and Chronos-Bolt checkpoints are not supported)
 - **`allow_exog`**: `True` (past and future covariates)
 - **Quantiles**: any value in `(0, 1)`
 
@@ -2624,7 +2672,7 @@ There is no compile step and no horizon ceiling. For each series, columns presen
 
 ## MoiraiAdapter — Salesforce Moirai-2
 
-- **`model_id` prefix**: `Salesforce/moirai`
+- **`model_id` prefix**: `Salesforce/moirai-2` (Moirai 1.x and Moirai-MoE checkpoints are not supported)
 - **`allow_exog`**: `False`
 - **Supported quantiles**: `[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]`
 
@@ -2638,17 +2686,18 @@ There is no compile step and no horizon ceiling. For each series, columns presen
 ## TabICLAdapter — Soda-INRIA TabICL
 
 - **`model_id` prefix**: `soda-inria/tabicl`
-- **`allow_exog`**: `True` (past and future covariates)
+- **`allow_exog`**: `True` (known-future covariates; covariates without future values are ignored with an `IgnoredArgumentWarning`)
 - **Quantiles**: any value in `(0, 1)`
 
 | Parameter            | Type  | Default  | Description                                                                      |
 |----------------------|-------|----------|----------------------------------------------------------------------------------|
-| `model_id`           | str   | —        | HuggingFace model ID (e.g. `soda-inria/tabicl`).                                 |
+| `model_id`           | str   | —        | Model ID (e.g. `soda-inria/tabicl`). Used only for adapter resolution; the weights are downloaded from the `jingang/TabICL` Hugging Face repository. |
 | `model`              | obj   | `None`   | Pre-instantiated `TabICLForecaster`. If `None`, created lazily on first predict. |
 | `context_length`     | int   | `4096`   | Max historical observations kept as context.                                     |
 | `point_estimate`     | str   | `'mean'` | Point forecast method: `'mean'` or `'median'`.                                   |
 | `tabicl_config`      | dict  | `None`   | Extra kwargs forwarded to `TabICLRegressor` at inference time.                   |
 | `temporal_features`  | list  | `None`   | `TimeTransform` instances applied before inference. `None` = TabICL defaults; `[]` = disable all. |
+| `show_progress`      | bool  | `False`  | Show the backend progress bar during inference.                                  |
 
 ## TabPFNAdapter — Prior Labs TabPFN-TS
 
@@ -2658,13 +2707,14 @@ There is no compile step and no horizon ceiling. For each series, columns presen
 
 | Parameter             | Type  | Default    | Description                                                                      |
 |-----------------------|-------|------------|----------------------------------------------------------------------------------|
-| `model_id`            | str   | —          | Model ID (e.g. `priorlabs/tabpfn-ts`). Used only for adapter resolution.         |
+| `model_id`            | str   | —          | Model ID (e.g. `priorlabs/tabpfn-ts`). Used only for adapter resolution; the weights are those of the TabPFN version pinned by `tabpfn-time-series` (`Prior-Labs/tabpfn_3_5` with 1.3, the minimum supported version), stored in the TabPFN cache directory. Prior Labs requires an account token and accepting the license in a browser before the first download. |
 | `model`               | obj   | `None`     | Pre-instantiated `TabPFNTSPipeline`. If `None`, created lazily on first predict. |
 | `context_length`      | int   | `32768`    | Max historical observations kept as context. Lower (e.g. 4096) for faster inference. |
 | `mode`                | str   | `'local'`  | `'local'` (on-device inference, CUDA > MPS > CPU) or `'client'` (Prior Labs cloud API, no GPU needed). |
 | `point_estimate`      | str   | `'median'` | Ensemble aggregation for the point forecast: `'mean'`, `'median'` or `'mode'`.   |
 | `tabpfn_model_config` | dict  | `None`     | Extra config forwarded to the underlying TabPFN regressor (e.g. `model_path`, `device`). |
 | `temporal_features`   | list  | `None`     | `FeatureGenerator` instances applied before inference. `None` = TabPFN-TS defaults; `[]` = disable all. |
+| `show_progress`       | bool  | `False`    | Show the backend progress bar during inference.                                  |
 
 ## T0Adapter — The Forecasting Company T0
 
@@ -2681,8 +2731,6 @@ There is no compile step and no horizon ceiling. For each series, columns presen
 | `torch_dtype`    | object | `None`   | Torch dtype the loaded model is cast to (e.g. `torch.bfloat16`).           |
 
 Point forecasts use the median (quantile `0.5`). Covariates must be numeric; encode categoricals as numbers before passing them. A series with no future exog is forecast without covariates.
-
-**Gated checkpoints**: `theforecastingcompany/t0*` repos are gated on the Hugging Face Hub. Before first use, log in at the model page (e.g. `https://huggingface.co/theforecastingcompany/t0-alpha`) to accept its license, then authenticate locally (`hf auth login` or the `HF_TOKEN` environment variable). Skipping this step surfaces as a confusing `TypeError` about missing `T0Forecaster` constructor arguments rather than an authentication error.
 
 ## TSICLAdapter — EDF Lab TS-ICL
 
@@ -2709,7 +2757,7 @@ Covariates must be numeric; encode categoricals as numbers before passing them.
 
 | Parameter                | Type | Default  | Description                                                                                       |
 |--------------------------|------|----------|-----------------------------------------------------------------------------------------------------|
-| `model_id`               | str  | —        | Model ID (e.g. `Synthefy/Nori`). Used only for adapter resolution.                                 |
+| `model_id`               | str  | —        | Model ID (e.g. `Synthefy/Nori`). Selects the adapter and is forwarded to `NoriRegressor` as the checkpoint to load (its `model` argument), unless `nori_config` sets `model` or `model_path`. |
 | `model`                  | obj  | `None`   | Pre-instantiated `NoriRegressor`. If `None`, created lazily on first `predict`.                    |
 | `context_length`         | int  | `4096`   | Max historical observations kept as context.                                                        |
 | `point_estimate`         | str  | `'mean'` | Point forecast method: `'mean'`, `'median'` or `'mode'`.                                            |
@@ -2754,6 +2802,7 @@ All adapters implement the same minimal interface:
 - `predict(steps, context, context_exog, exog, quantiles)` — returns a   `dict[str, np.ndarray]` of shape `(steps, n_quantiles)` keyed by series name.
 - `get_params()` / `set_params(**kwargs)` — sklearn-style parameter access.
 - `allow_exog` / `supports_past_only_covariates` / `supports_heterogeneous_covariates` / `supports_nan_in_series` — class attributes read by `FoundationModel` to decide how exog and NaN are handled. When `supports_heterogeneous_covariates` is `False` (Chronos-2, TS-ICL, TabICL, TimesFM 3.0), `FoundationModel.predict` groups the series by their (past-only, future) exog columns and calls `adapter.predict` once per group; adapters never receive a batch with mixed covariate columns. When `supports_nan_in_series` is `False`, a context with NaN raises `ValueError` before the adapter is called (all current adapters accept NaN; Nori drops the NaN rows itself).
+- `supports_categorical_covariates` / `requires_hf_auth` / `requires_provider_auth` / `weights_repo_id` / `weights_in_hf_cache` / `backend_package` / `default_model_id` / `SUPPORTED_QUANTILES`: descriptive class attributes. They are exposed, together with the ones above and the default `context_length`, through `get_model_info` and `list_adapters`. `supports_categorical_covariates` is `True` only for Chronos-2 (non-numeric covariates are passed natively); `requires_hf_auth` is `True` when the weights are gated on the Hugging Face Hub (currently none of the supported models); `requires_provider_auth` is `True` only for TabPFN-TS (Prior Labs token and license acceptance, outside the Hugging Face Hub); `weights_repo_id` is the fixed Hugging Face repository of the backends that ignore `model_id` (`jingang/TabICL`, `Prior-Labs/tabpfn_3_5`, `taharnbl/TS-ICL`) and `None` when the weights are downloaded from `model_id`; `weights_in_hf_cache` is `False` only for TabPFN-TS, which keeps the weights in its own cache directory; `SUPPORTED_QUANTILES` is `None` when any level in `(0, 1)` is accepted.
 
 ### Exog column validation at predict time
 
@@ -3506,7 +3555,9 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 ## Constraints
 
 - Must produce **at least 2 folds**: `initial_train_size + gap + 2 * steps <= n_observations`
-- `initial_train_size` must be large enough for the model to learn patterns (at minimum 2× the lag order for ML models, or 2× steps for statistical models)
+- **Hard minimum**: `initial_train_size` must be greater than `forecaster.window_size`, the number of past observations needed to build one training row (`max(max_lag, max_size_window_features)` plus the `differentiation` order). Direct forecasters (`ForecasterDirect`, `ForecasterDirectMultiVariate`, `ForecasterRnn`) need at least `window_size + steps`, using the forecaster's `steps`. In multi-series forecasters, each series with data in the first window needs more than `window_size` observations there.
+- Forecasters without lags: `ForecasterEquivalentDate` has `window_size = offset * n_offsets` (same rule); in `ForecasterStats` the estimator sets the minimum (`window_size` is fixed at 1); `ForecasterFoundation` accepts any value ≥ 1 (`context_length` is a maximum, not a minimum).
+- **Recommended**: leave a margin above the hard minimum so the model has enough rows to learn from (e.g. two or more seasonal cycles), while keeping at least 2 folds
 - `gap` simulates real-world delay between data availability and forecast usage
 - When `fixed_train_size=True`, the window rolls forward (oldest data discarded). Use for concept drift or when old data is less relevant.
 - When `fixed_train_size=False`, the window expands (all history retained). Use when more data always helps.
@@ -3543,7 +3594,7 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 | Scenario | Configuration |
 |----------|--------------|
 | Default (balanced) | `int(len(data) * 0.7)` |
-| Maximize evaluation coverage | Minimum viable: `2 * max_lag` or `2 * steps` |
+| Maximize evaluation coverage | Hard minimum (`window_size + 1`; `window_size + steps` for direct) plus a learning margin, see Constraints |
 | Maximize training data | `n_observations - gap - 2 * steps` (minimum 2 folds) |
 | Start from specific date | `initial_train_size="2023-01-01"` |
 | Conservative (large training set) | `int(len(data) * 0.8)` |
@@ -3586,7 +3637,8 @@ skip_folds = 2  # Keep every 2nd fold
 
 ### "I want maximum evaluation coverage with a 12-step horizon"
 ```
-initial_train_size = <minimum viable>  # 2 * max_lag
+# Hard minimum: forecaster.window_size + 1 (window_size + 12 for ForecasterDirect with steps=12)
+initial_train_size = forecaster.window_size + margin  # margin: rows to learn from, e.g. 2+ seasonal cycles
 refit = False  # Faster; trains once, fixed_train_size has no effect
 fold_stride = 1  # Sliding window (many overlapping folds)
 ```
@@ -3646,7 +3698,7 @@ cv = TimeSeriesFold(
     refit=False,
 )
 
-# Define search space as a function — lags CAN be included here
+# Define search space as a function: lags CAN be included here
 def search_space(trial):
     return {
         'lags': trial.suggest_categorical('lags', [12, 24, [1, 2, 3, 23, 24]]),
@@ -3807,7 +3859,7 @@ forecaster = ForecasterFoundation(
     estimator=FoundationModel(model_id='autogluon/chronos-2-small', device_map='auto')
 )
 
-# TimeSeriesFold only — OneStepAheadFold raises TypeError
+# TimeSeriesFold only: OneStepAheadFold raises TypeError
 cv = TimeSeriesFold(steps=24, initial_train_size=len(series) - 200, refit=False)
 
 def search_space(trial):
@@ -3840,7 +3892,7 @@ skill (`references/adapter-parameters.md`).
 ```python
 from skforecast.model_selection import OneStepAheadFold
 
-# Much faster than TimeSeriesFold — no recursive predictions needed
+# Much faster than TimeSeriesFold: no recursive predictions needed
 cv_fast = OneStepAheadFold(
     initial_train_size=len(data) - 100,
 )
@@ -3860,10 +3912,11 @@ results, study = bayesian_search_forecaster(
 ## Common Mistakes
 
 1. **Not setting `return_best=True`**: The forecaster is not updated with the best parameters unless this is True.
-2. **Too few trials in Bayesian search**: Start with at least 20-50 trials for meaningful exploration.
+2. **Too few trials in Bayesian search**: Start with at least 20-50 trials for meaningful exploration. A small search may not beat the default configuration on the test set, because the configuration is chosen on the validation period, which can differ from the test period.
 3. **Using TimeSeriesFold for initial tuning**: Use `OneStepAheadFold` first for fast screening, then validate the top candidates with `TimeSeriesFold`.
-4. **Forgetting to include lags in search space**: For Bayesian search, lags can be included in `search_space()` — this is often the most impactful parameter.
+4. **Forgetting to include lags in search space**: For Bayesian search, lags can be included in `search_space()`; this is often the most impactful parameter.
 5. **Putting `lags` in a foundation `search_space`**: `bayesian_search_foundation` has no lag concept; any key that is not an adapter parameter raises `ValueError`.
+6. **Passing the test set to the search**: give the search only the training and validation data (e.g. `y=data.loc[:end_validation]`). With `return_best=True` the forecaster is refitted on everything the search receives, so keep the test set out and evaluate the refitted forecaster with `backtesting_forecaster` on it.
 
 ## References
 
@@ -4279,7 +4332,7 @@ forecaster = ForecasterRecursive(
 )
 
 # Run feature selection
-selected_lags, selected_window_features, selected_exog = select_features(
+selected_lags, selected_window_features, selected_exog, selected_calendar_features = select_features(
     forecaster=forecaster,
     selector=RFECV(
         estimator=RandomForestRegressor(n_estimators=50, random_state=123),
@@ -4288,9 +4341,9 @@ selected_lags, selected_window_features, selected_exog = select_features(
     ),
     y=y_train,
     exog=exog_train,
-    select_only=None,          # 'autoreg' (lags+window), 'exog', or None (all)
+    select_only=None,          # 'autoreg' (lags+window), 'exog', 'calendar', a list of them, or None (all)
     force_inclusion=None,      # Features to always keep (list or regex string)
-    subsample=0.5,             # Use 50% of data for faster selection
+    subsample=0.5,             # Use 50% of the records (without replacement) for faster selection
     random_state=123,
     verbose=True,
 )
@@ -4320,7 +4373,7 @@ forecaster = ForecasterRecursiveMultiSeries(
     encoding='ordinal',
 )
 
-selected_lags, selected_window_features, selected_exog = select_features_multiseries(
+selected_lags, selected_window_features, selected_exog, selected_calendar_features = select_features_multiseries(
     forecaster=forecaster,
     selector=RFECV(
         estimator=RandomForestRegressor(n_estimators=50, random_state=123),
@@ -4341,7 +4394,7 @@ selected_lags, selected_window_features, selected_exog = select_features_multise
 
 ```python
 # Always keep specific features regardless of selection
-selected_lags, selected_wf, selected_exog = select_features(
+selected_lags, selected_wf, selected_exog, selected_cal = select_features(
     forecaster=forecaster,
     selector=selector,
     y=y_train,
@@ -4350,7 +4403,7 @@ selected_lags, selected_wf, selected_exog = select_features(
 )
 
 # Regex pattern to force include
-selected_lags, selected_wf, selected_exog = select_features(
+selected_lags, selected_wf, selected_exog, selected_cal = select_features(
     forecaster=forecaster,
     selector=selector,
     y=y_train,
@@ -4363,7 +4416,7 @@ selected_lags, selected_wf, selected_exog = select_features(
 
 ```python
 # Only select among exogenous variables (keep all lags)
-selected_lags, selected_wf, selected_exog = select_features(
+selected_lags, selected_wf, selected_exog, selected_cal = select_features(
     forecaster=forecaster,
     selector=selector,
     y=y_train,
@@ -4372,7 +4425,7 @@ selected_lags, selected_wf, selected_exog = select_features(
 )
 
 # Only select among autoregressive features (keep all exog)
-selected_lags, selected_wf, selected_exog = select_features(
+selected_lags, selected_wf, selected_exog, selected_cal = select_features(
     forecaster=forecaster,
     selector=selector,
     y=y_train,
@@ -4387,7 +4440,7 @@ selected_lags, selected_wf, selected_exog = select_features(
 2. **Too small subsample**: If `subsample` is too small, selection may be unreliable. Use at least 0.3.
 3. **Not updating forecaster**: After selection, update the forecaster with `forecaster.set_lags(selected_lags)` — the original is not modified in place by `select_features`.
 4. **Running on full dataset**: Always run on training data only (`y_train`, `exog_train`).
-5. **Confusing `selected_window_features` with `RollingFeatures`**: The returned `selected_window_features` is a list of **feature name strings** (e.g. `['mean_7', 'std_14']`), not the `RollingFeatures` object itself. Use these names to verify which window features were kept, but pass the original `RollingFeatures` instance to the forecaster.
+5. **Confusing `selected_window_features` with `RollingFeatures`**: The returned `selected_window_features` is a list of **feature name strings** (e.g. `['roll_mean_7', 'roll_std_14']`), not the `RollingFeatures` object itself. Use these names to verify which window features were kept, but pass the original `RollingFeatures` instance to the forecaster.
 
 ================================================================================
 # SKILL: prediction-intervals
@@ -4508,7 +4561,7 @@ forecaster = ForecasterStats(
 )
 forecaster.fit(y=y_train)
 
-# Uses parametric intervals from statsmodels — different interface
+# Uses parametric intervals from statsmodels: different interface
 predictions = forecaster.predict_interval(
     steps=12,
     interval=[0.1, 0.9],       # Quantiles → 80% interval. Equivalently, alpha=0.2
@@ -4517,7 +4570,7 @@ predictions = forecaster.predict_interval(
 
 ## Foundation Model Intervals
 
-`ForecasterFoundation` returns intervals and quantiles directly from the underlying foundation model's native quantile output — no bootstrapping or conformal calibration required.
+`ForecasterFoundation` returns intervals and quantiles directly from the underlying foundation model's native quantile output, so no bootstrapping or conformal calibration is required.
 
 ```python
 from skforecast.foundation import FoundationModel, ForecasterFoundation
@@ -4601,6 +4654,12 @@ predictions = forecaster.predict_interval(
 )
 ```
 
+With binned residuals, keep an average of at least 10 out-of-sample residuals
+per bin (100 residuals for the default `n_bins=10`). Below that,
+`set_out_sample_residuals` issues a `ResidualsUsageWarning` and the intervals
+tend to be too narrow: reduce the bins with `binner_kwargs={'n_bins': 3}` when
+creating the forecaster, or predict with `use_binned_residuals=False`.
+
 ## Evaluating Interval Quality
 
 ```python
@@ -4621,7 +4680,7 @@ DirectMultiVariate), two richer probabilistic outputs build on the same residual
 resampling:
 
 ```python
-# Arbitrary quantiles — returns one column per quantile (q_0.05, q_0.5, q_0.95)
+# Arbitrary quantiles: returns one column per quantile (q_0.05, q_0.5, q_0.95)
 predictions = forecaster.predict_quantiles(
     steps=10,
     quantiles=[0.05, 0.5, 0.95],
@@ -4647,6 +4706,7 @@ See [references/interval-compatibility.md](references/interval-compatibility.md)
 3. **Wrong default method for multi-series**: `ForecasterRecursiveMultiSeries` and `ForecasterDirectMultiVariate` default to `method='conformal'`, not `'bootstrapping'`.
 4. **Mixing `alpha` and `interval`**: `ForecasterStats` supports both `alpha` (e.g., `alpha=0.05` for 95% interval) and `interval=[lo, hi]` (quantiles). ML forecasters only support `interval`.
 5. **Not evaluating coverage**: Always check if actual coverage matches nominal interval width.
+6. **Ignoring physical bounds**: neither the model nor the intervals know that a series cannot be negative (counts, sales, demand), so predictions and lower bounds can fall below zero. Clip them after predicting, e.g. `predictions.clip(lower=0)`. See the FAQ [Non-negative predictions](https://skforecast.org/latest/faq/non-negative-predictions.html).
 
 ## References
 
@@ -4946,9 +5006,10 @@ auto_arima = Arima(order=None, seasonal_order=None, m=12)
 forecaster = ForecasterStats(estimator=auto_arima)
 forecaster.fit(y=data['target'])
 
-# Check selected order
-print(forecaster.estimator.best_params_['order'])
-print(forecaster.estimator.best_params_['seasonal_order'])
+# Check the selected model (fitted estimators are stored in `estimators_`)
+print(forecaster.estimators_[0].best_params_)
+# {'order': ..., 'seasonal_order': ..., 'm': 12, 'fit_intercept': ...,
+#  'include_drift': ..., 'lambda_bc': ...}
 
 predictions = forecaster.predict(steps=12)
 ```
@@ -4959,7 +5020,8 @@ predictions = forecaster.predict(steps=12)
 from skforecast.stats import Ets
 
 # Model string: 1st=Error, 2nd=Trend, 3rd=Seasonal
-# A=Additive, M=Multiplicative, N=None, Z=Auto-select
+# A=Additive, M=Multiplicative, N=None. Automatic selection only as model='ZZZ'
+# (partial specs like 'ZZN' raise an error: use 'ZZZ' with seasonal=False, trend=...)
 ets_model = Ets(model='AAA', m=12)
 forecaster = ForecasterStats(estimator=ets_model)
 forecaster.fit(y=data['target'])
@@ -4976,7 +5038,7 @@ forecaster = ForecasterStats(estimator=auto_ets)
 forecaster.fit(y=data['target'])
 
 # Check the selected model configuration
-print(forecaster.estimator.best_params_)
+print(forecaster.estimators_[0].best_params_)
 
 predictions = forecaster.predict(steps=12)
 ```
@@ -5098,14 +5160,14 @@ Arima(
     order=(1, 0, 0),                  # tuple(p, d, q) | None → auto ARIMA
     seasonal_order=(0, 0, 0),         # tuple(P, D, Q) — 3 elements, NOT 4
     m=1,                              # int, seasonal period (1 = no seasonality)
-    include_mean=True,                # bool
-    transform_pars=True,              # bool
-    method='CSS-ML',                  # str, fitting method
+    fit_intercept=True,               # bool, only used when d + D = 0
+    enforce_stationarity=True,        # bool
+    method='CSS-ML',                  # 'CSS-ML' | 'ML' | 'CSS'
     n_cond=None,                      # int | None
-    SSinit='Gardner1980',             # str
     optim_method='BFGS',              # str
     optim_kwargs=None,                # dict | None
     kappa=1e6,                        # float
+    include_drift=False,              # bool, linear drift with a manual order (d + D <= 1)
 
     # --- Auto ARIMA (only used when order=None) ---
     max_p=5,                          # int
@@ -5134,9 +5196,9 @@ Arima(
     allowdrift=True,                  # bool
     allowmean=True,                   # bool
 
-    # --- Box-Cox transformation ---
-    lambda_bc=None,                   # float | str | None
-    biasadj=False,                    # bool
+    # --- Box-Cox transformation (manual and auto modes) ---
+    lambda_bc=None,                   # float | 'auto' | None, 0 = log
+    biasadj=False,                    # bool, mean instead of median forecasts
 )
 ```
 
@@ -5147,9 +5209,15 @@ Arima(
 | **Manual** | `order=(p,d,q)` | User specifies exact order |
 | **Auto** | `order=None` | Automatic order selection via stepwise algorithm |
 
-After fitting (auto mode), selected order available in:
-- `forecaster.estimator.best_params_['order']`
-- `forecaster.estimator.best_params_['seasonal_order']`
+After fitting (auto mode), the selected model is available in
+`forecaster.estimators_[0].best_params_`: `order`, `seasonal_order`, `m`,
+`fit_intercept`, `include_drift` and `lambda_bc` (the Box-Cox lambda used).
+Passing these values to a manual `Arima` fits the same model (this is what
+`freeze_params=True` does in backtesting).
+
+With `lambda_bc`, `fitted_values_` and `in_sample_residuals_` are on the original
+scale. For models with differencing, the first `d + D * m` fitted values and
+residuals are NaN (diffuse initialization of the Kalman filter).
 
 ## Sarimax
 
@@ -5227,7 +5295,7 @@ The `model` parameter is a 3-character string: `Error`, `Trend`, `Seasonal`.
 | `'ZZZ'` | Auto | Auto | Auto | Auto-ETS (selects best) |
 
 After fitting (auto mode), selected configuration available in:
-- `forecaster.estimator.best_params_`
+- `forecaster.estimators_[0].best_params_`
 
 ## Arar
 
@@ -5310,10 +5378,10 @@ backtesting_stats(
 
 | Model | Exog in fit/predict | Notes |
 |-------|:--:|------|
-| `Arima` | — | No exog support |
+| `Arima` | ✓ | Regression with ARIMA errors |
 | `Sarimax` | ✓ | Full exog support via statsmodels SARIMAX |
 | `Ets` | — | No exog support |
-| `Arar` | — | No exog support |
+| `Arar` | ✓ | Two-step: linear regression on exog, then ARAR on the residuals |
 
 For `Sarimax` with exog, pass `exog` to both `fit()` and `predict()`:
 
@@ -6174,7 +6242,8 @@ ets_model = Ets(error='add', trend='add', seasonal='add', seasonal_periods=12)
 # ✅ CORRECT (current API)
 ets_model = Ets(model='AAA', m=12)
 # Model string: 1st char=Error, 2nd=Trend, 3rd=Seasonal
-# A=Additive, M=Multiplicative, N=None, Z=Auto-select
+# A=Additive, M=Multiplicative, N=None. Automatic selection only as model='ZZZ'
+# (partial specs like 'ZZN' raise an error: use 'ZZZ' with seasonal=False, trend=...)
 ```
 
 ## Function Mapping Reference
@@ -6241,6 +6310,7 @@ Use this when you need exact parameter names, types, defaults, or method signatu
 - `ForecasterRnn` — deep learning (RNN/LSTM/GRU)
 - `ForecasterFoundation` — zero-shot with foundation models (Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL)
 - `FoundationModel` — low-level foundation model wrapper used by `ForecasterFoundation`
+- `get_model_info` / `list_adapters`: capabilities of a foundation model (exog, quantiles, context length, backend, license) without installing its backend
 
 ### Forecaster Methods
 - `fit()` — train the model
@@ -6452,10 +6522,11 @@ FoundationModel(
                                #   cross_learning : bool (Chronos-2 only)
                                #   max_horizon, forecast_config_kwargs (TimesFM 2.5 only)
                                #   predict_kwargs (TimesFM 3.0 only)
-                               #   point_estimate, tabicl_config, temporal_features (TabICL)
-                               #   mode, point_estimate, tabpfn_model_config, temporal_features (TabPFN-TS)
+                               #   point_estimate, tabicl_config, temporal_features, show_progress (TabICL)
+                               #   mode, point_estimate, tabpfn_model_config, temporal_features, show_progress (TabPFN-TS)
                                #   (T0 uses only context_length, device_map, torch_dtype)
                                #   point_estimate, add_calendar_features, n_fourier_terms, nori_config (Nori)
+                               #   checkpoint_version, allow_auto_download (TS-ICL)
 )
 
 ForecasterFoundation(
@@ -6539,12 +6610,12 @@ forecaster.fit(
     random_state=123,                 # int
     suppress_warnings=False           # bool
 )
-# NOTE: No exog parameter (uses date offsets, not exogenous variables).
+# NOTE: `exog` is accepted for API compatibility but ignored (uses date offsets).
 
 # ForecasterFoundation
 forecaster.fit(
     series,                           # pd.Series | pd.DataFrame | dict[str, pd.Series] (required)
-    exog=None,                        # pd.Series | pd.DataFrame | dict | None (Chronos-2 only)
+    exog=None,                        # pd.Series | pd.DataFrame | dict | None (ignored if not forecaster.allow_exog)
 )
 # NOTE: "fit" does not train the model — it only stores the last
 # context_length observations and metadata. Foundation models are
@@ -6632,7 +6703,7 @@ forecaster.predict(
     levels=None,              # str | list[str] | None, subset of series
     context=None,             # pd.Series | pd.DataFrame | dict | None, override stored context
     context_exog=None,        # pd.Series | pd.DataFrame | dict | None, historical exog
-    exog=None,                # pd.Series | pd.DataFrame | dict | None, future exog (Chronos-2 only)
+    exog=None,                # pd.Series | pd.DataFrame | dict | None, future exog (ignored if not forecaster.allow_exog)
     check_inputs=True         # bool
 ) -> pd.DataFrame             # Long-format: columns ['level', 'pred']
 # Also:
@@ -7244,28 +7315,28 @@ OneStepAheadFold(
 ```python
 select_features(
     forecaster,              # ForecasterRecursive | ForecasterDirect
-    selector,                # sklearn feature selector (RFECV, SelectFromModel, etc.)
+    selector,                # scikit-learn compatible selector (RFECV, SelectFromModel, etc.)
     y,                       # pd.Series | pd.DataFrame
     exog=None,               # pd.Series | pd.DataFrame | None
-    select_only=None,        # 'autoreg' | 'exog' | None (select all)
+    select_only=None,        # 'autoreg' | 'exog' | 'calendar' | list of them | None (select all)
     force_inclusion=None,    # list[str] | str (regex) | None
-    subsample=0.5,           # int | float, proportion or number of samples
+    subsample=0.5,           # float in (0, 1], proportion of records (sampled without replacement)
     random_state=123,        # int
     verbose=True             # bool
-) -> tuple[list[int], list[str], list[str]]
-# Returns: (selected_lags, selected_window_features, selected_exog)
+) -> tuple[list[int], list[str], list[str], list[str]]
+# Returns: (selected_lags, selected_window_features, selected_exog, selected_calendar_features)
 
 select_features_multiseries(
-    forecaster,              # ForecasterRecursiveMultiSeries
-    selector,                # sklearn feature selector
+    forecaster,              # ForecasterRecursiveMultiSeries | ForecasterDirectMultiVariate
+    selector,                # scikit-learn compatible selector
     series,                  # pd.DataFrame | dict[str, pd.Series | pd.DataFrame]
     exog=None,               # pd.Series | pd.DataFrame | dict | None
-    select_only=None,        # 'autoreg' | 'exog' | None
+    select_only=None,        # 'autoreg' | 'exog' | 'calendar' | list of them | None
     force_inclusion=None,    # list[str] | str (regex) | None
-    subsample=0.5,           # int | float
+    subsample=0.5,           # float in (0, 1]
     random_state=123,        # int
     verbose=True             # bool
-) -> tuple[list[int] | dict[str, int], list[str], list[str]]
+) -> tuple[list[int] | dict[str, list[int]], list[str], list[str], list[str]]
 ```
 
 ---

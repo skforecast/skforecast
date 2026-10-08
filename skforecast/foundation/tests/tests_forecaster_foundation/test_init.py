@@ -186,6 +186,26 @@ def test_init_metadata_and_tags_correctly_stored():
     assert "quantile_native" in tags["probabilistic_methods"]
 
 
+@pytest.mark.parametrize(
+    "model_id, expected",
+    [
+        ("autogluon/chronos-2-small", True),
+        ("google/timesfm-3.0-pytorch", False),
+        ("soda-inria/tabicl", False),
+    ],
+    ids=lambda x: str(x),
+)
+def test_init_tag_supports_categorical_features_follows_adapter(model_id, expected):
+    """
+    Test that the `supports_categorical_features` tag is read from the
+    `supports_categorical_covariates` attribute of the adapter instead of
+    being fixed for every foundation model.
+    """
+    forecaster = ForecasterFoundation(estimator=FoundationModel(model_id=model_id))
+
+    assert forecaster.__skforecast_tags__["supports_categorical_features"] is expected
+
+
 def test_init_adapter_capability_properties_delegate_to_estimator():
     """
     Test that the adapter capability flags are exposed by the forecaster,

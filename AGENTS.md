@@ -9,10 +9,15 @@
 ### Testing
 
 ```bash
-pytest skforecast/recursive/tests/ -vv            # Run a specific module's tests
-pytest --cov=skforecast --cov-report=html         # Coverage report
-pytest -n auto                                    # Parallel execution (pytest-xdist)
+pytest path/to/test_file.py -x -q                 # Iterate on the touched test file
+pytest path/to/tests/ -q --lf                     # Rerun only the last failures
+pytest skforecast/<pkg>/tests/tests_<module>/ -q  # Touched module, once when done
 ```
+
+Do not run the full suite (6000+ tests) unless the user asks for it; it runs in
+CI on the pull request of each release to `main`. Run tests sequentially: do not
+use `-n` (pytest-xdist), it saturates the machine and some search tests write
+output files that collide in parallel runs.
 
 Markers: `@pytest.mark.slow` for long-running tests (skip with `-m "not slow"`).
 
@@ -25,21 +30,38 @@ Markers: `@pytest.mark.slow` for long-running tests (skip with `-m "not slow"`).
 - Relative imports within package
 - When generating code comments, docstrings, and documentation, do not use en dashes (–), or em dashes (—). Use commas, colons, semicolons, or parentheses for punctuation instead.
 
+### Commits and pull requests
+
+Commits and pull requests carry only the author's identity: no
+`Co-Authored-By` trailer for an AI agent, no session link trailer, no
+"Generated with" line and no mention of the AI assistant in the message. The
+author identity comes from git config or `GIT_AUTHOR_*` and `GIT_COMMITTER_*`;
+do not override it.
+
 ### Dependencies
 
-Core: numpy>=1.26, pandas>=2.1,<3.0, scikit-learn>=1.4, scipy>=1.12, optuna>=4.0, joblib>=1.3, numba>=0.59, tqdm>=4.66, rich>=13.9
-Optional: statsmodels>=0.13,<0.15 (stats), matplotlib>=3.7,<3.11 (plotting), keras>=3.0,<4.0 (deep learning)
+Core: numpy>=1.26.1, pandas>=2.2,<3.0, scikit-learn>=1.6, scipy>=1.12, optuna>=4.0, joblib>=1.3, numba>=0.59, tqdm>=4.66, rich>=13.9
+Optional: statsmodels>=0.13.2,<0.16 (stats), matplotlib>=3.7,<3.12 (plotting), keras>=3.3,<4.0 (deep learning)
 
 ### Python environment
 
-Environments are managed with conda. Run every Python command (tests, scripts,
-notebooks, `pip install`, etc.) in the conda environment that is currently
-active. Do not run `conda env list` to ask which environment to use, and do not
-use the `.venv` directory at the repository root.
+Local machines: environments are managed with conda. Run every Python command
+(tests, scripts, notebooks, `pip install`, etc.) in the conda environment that
+is currently active. Do not run `conda env list` to ask which environment to
+use, and do not use the `.venv` directory at the repository root. If the shell
+does not inherit the active environment (`$CONDA_DEFAULT_ENV` is empty), source
+your shell profile first, or call the interpreter through `conda run -n <env>`.
 
-If the shell does not inherit the active environment (`$CONDA_DEFAULT_ENV` is
-empty), source the user profile first (`source ~/.zshrc`), or call the
-interpreter through `conda run -n <env>`.
+Cloud sessions (`CLAUDE_CODE_REMOTE=true`, e.g. claude.ai/code): there is no
+conda. A SessionStart hook installs the package with the `test` extras into a
+virtual environment outside the repository and puts it on `PATH`, so call
+`python` and `pytest` directly. To make the install faster, it skips the deep
+learning packages (`torch`, `keras`): the deep learning tests do not need to
+pass unless you work on that code. When they are needed (e.g. `ForecasterRnn`
+or foundation models), set `SKFORECAST_CLOUD_DL=1` in the cloud environment
+variables, or install them in the session with
+`uv pip install torch "keras>=3.3,<4.0" --torch-backend cpu` (`uv` is in
+`~/.local/bin` if it is not on `PATH`).
 
 ---
 
@@ -51,13 +73,13 @@ interpreter through `conda run -n <env>`.
 
 > Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models
 
-This document is for skforecast v0.25.0+. If you are using an older version, check the documentation at skforecast.org.
+This document is for skforecast v0.26.0+. If you are using an older version, check the documentation at skforecast.org.
 
 Skforecast is a Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. It works with any estimator compatible with the scikit-learn API (LightGBM, XGBoost, CatBoost, Keras, etc.).
 
 ## Quick Info
 
-- Version: 0.25.0
+- Version: 0.26.0
 - License: BSD-3-Clause
 - Python: 3.10, 3.11, 3.12, 3.13, 3.14
 - Repository: https://github.com/skforecast/skforecast
@@ -86,7 +108,7 @@ skforecast/
 │                            # ForecasterRecursiveClassifier, ForecasterStats, ForecasterEquivalentDate
 ├── direct/                  # ForecasterDirect, ForecasterDirectMultiVariate
 ├── deep_learning/           # ForecasterRnn, create_and_compile_model
-├── foundation/              # FoundationModel, ForecasterFoundation
+├── foundation/              # FoundationModel, ForecasterFoundation, get_model_info, list_adapters
 │                            # (zero-shot: Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL)
 ├── stats/                   # Arima, Sarimax, Ets, Arar, acf, pacf, calculate_lag_autocorrelation
 ├── preprocessing/           # TimeSeriesDifferentiator, RollingFeatures, CalendarFeatures,
@@ -479,7 +501,7 @@ predictions = forecaster.predict(steps=10)
 # Auto ARIMA (automatic order selection) - set order=None and seasonal_order=None
 forecaster = ForecasterStats(estimator=Arima(order=None, seasonal_order=None, m=12))
 
-# ETS model (model string: 1st=Error, 2nd=Trend, 3rd=Seasonal; A=Add, M=Mult, N=None, Z=Auto)
+# ETS model (model string: 1st=Error, 2nd=Trend, 3rd=Seasonal; A=Add, M=Mult, N=None; 'ZZZ'=Auto)
 forecaster = ForecasterStats(estimator=Ets(m=12, model='AAA'))
 ```
 
@@ -511,19 +533,43 @@ forecaster.fit(series=series_df)
 predictions = forecaster.predict(steps=24, levels=['series_1', 'series_2'])
 ```
 
-Supported adapters (selected automatically from `model_id`):
+Supported adapters (selected automatically from `model_id`). Query them programmatically with `get_model_info` and `list_adapters` (see below):
 
 | Adapter | `model_id` prefix | Exog | Default `context_length` | Quantiles |
 |---------|-------------------|------|--------------------------|-----------|
-| ChronosAdapter (Amazon) | `autogluon/chronos` | Yes (past & future covariates) | 8192 | Any in `(0, 1)` |
+| ChronosAdapter (Amazon) | `autogluon/chronos-2` | Yes (past & future covariates) | 8192 | Any in `(0, 1)` |
 | TimesFM25Adapter (Google, v2.5) | `google/timesfm-2.5` | No | 512 | `[0.1, 0.2, ..., 0.9]` |
 | TimesFM3Adapter (Google, v3.0) | `google/timesfm-3.0` | Yes (past & known-future covariates) | 2048 | `[0.1, 0.2, ..., 0.9]` |
-| MoiraiAdapter (Salesforce) | `Salesforce/moirai` | No | 2048 | `[0.1, 0.2, ..., 0.9]` |
-| TabICLAdapter (Soda-INRIA) | `soda-inria/tabicl` | Yes (past & future covariates) | 4096 | Any in `(0, 1)` |
+| MoiraiAdapter (Salesforce) | `Salesforce/moirai-2` | No | 2048 | `[0.1, 0.2, ..., 0.9]` |
+| TabICLAdapter (Soda-INRIA) | `soda-inria/tabicl` | Yes (known-future covariates) | 4096 | Any in `(0, 1)` |
 | TabPFNAdapter (Prior Labs) | `priorlabs/tabpfn` | Yes (known-future covariates) | 32768 | Any in `(0, 1)` |
 | T0Adapter (The Forecasting Company) | `theforecastingcompany/t0` | Yes (future-known covariates) | 8192 | Any in `(0, 1)` |
 | NoriAdapter (Synthefy) | `Synthefy/Nori` | Yes (known-future covariates) | 4096 | Any in `(0, 1)` |
 | TSICLAdapter (EDF Lab) | `taharnbl/TS-ICL` | Yes (past & future covariates) | 4096 | Subset of `[0.01, 0.02, ..., 0.99]` |
+
+```python
+from skforecast.foundation import get_model_info, list_adapters
+
+# Capabilities of a model without installing its backend or loading weights
+info = get_model_info('google/timesfm-3.0-pytorch')
+info.adapter                  # 'TimesFM3Adapter'
+info.allow_exog               # True
+info.supported_quantiles      # (0.1, 0.2, ..., 0.9); None means any level in (0, 1)
+info.backend_package          # 'timesfm[torch]'
+info.license                  # SPDX id ('Apache-2.0') or model card license name (see info.license_url)
+info.commercial_use_restricted  # True if the license restricts commercial use (LicenseWarning on load)
+info.requires_hf_auth         # True if the weights are gated on the Hugging Face Hub
+info.requires_provider_auth   # True if the provider needs its own account/license acceptance (TabPFN)
+info.weights_repo_id          # Hugging Face repo the weights are downloaded from (may differ from
+                              # model_id, e.g. 'jingang/TabICL' for 'soda-inria/tabicl')
+info.weights_in_hf_cache      # False if the weights are not stored in the HF Hub cache (TabPFN)
+
+# One FoundationModelInfo per adapter (described by its default_model_id)
+[(i.adapter, i.default_model_id) for i in list_adapters()]
+
+# Same information as a DataFrame, one row per adapter (index 'adapter')
+list_adapters(as_frame=True)
+```
 
 Key points:
 - `fit()` only stores the last `context_length` observations and metadata. It does **not** train the model.
@@ -539,20 +585,20 @@ Key points:
 
 ## Feature Selection
 
-Use sklearn selectors (RFECV, SelectFromModel, etc.) to identify relevant lags, window features, and exogenous variables. Multi-series variant: `select_features_multiseries`.
+Use any selector compatible with the scikit-learn API (RFECV, SelectFromModel, etc.) to identify relevant lags, window features, exogenous variables and calendar features. Multi-series variant: `select_features_multiseries`.
 
 ```python
 from sklearn.feature_selection import RFECV
 from skforecast.feature_selection import select_features
 
-selected_lags, selected_window_features, selected_exog = select_features(
+selected_lags, selected_window_features, selected_exog, selected_calendar_features = select_features(
     forecaster=forecaster,
     selector=RFECV(estimator=RandomForestRegressor(), step=1, cv=3),
     y=y_train,
     exog=exog_train,
-    select_only=None,              # 'autoreg', 'exog', or None (all features)
+    select_only=None,              # 'autoreg', 'exog', 'calendar', a list of them, or None (all features)
     force_inclusion=None,          # Features to always include (list or regex str)
-    subsample=0.5,
+    subsample=0.5,                 # Proportion of records in (0, 1], sampled without replacement
     random_state=123,
     verbose=True
 )
@@ -596,6 +642,9 @@ from skforecast.deep_learning import ForecasterRnn
 from skforecast.deep_learning import create_and_compile_model
 from skforecast.foundation import FoundationModel
 from skforecast.foundation import ForecasterFoundation
+from skforecast.foundation import FoundationModelInfo
+from skforecast.foundation import get_model_info
+from skforecast.foundation import list_adapters
 
 # Model Selection
 from skforecast.model_selection import backtesting_forecaster
@@ -726,5 +775,5 @@ show_datasets_info()
 ## Citation
 
 ```
-Amat Rodrigo, J., & Escobar Ortiz, J. (2026). skforecast (Version 0.25.0) [Computer software]. https://doi.org/10.5281/zenodo.8382787
+Amat Rodrigo, J., & Escobar Ortiz, J. skforecast [Computer software]. https://doi.org/10.5281/zenodo.8382787
 ```

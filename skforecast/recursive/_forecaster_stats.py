@@ -352,10 +352,11 @@ class ForecasterStats(MultiEstimatorMixin):
 
         """
         
-        # Format parameters for each estimator
+        # Format parameters for each estimator (only non-default values)
+        non_default_params = self._get_non_default_estimator_params()
         estimator_params = []
         for id in self.estimator_ids:
-            params = str(self.estimator_params_[id])
+            params = str(non_default_params[id])
             if len(params) > 58:
                 params = "\n        " + textwrap.fill(
                     params, width=76, subsequent_indent="        "
@@ -740,6 +741,9 @@ class ForecasterStats(MultiEstimatorMixin):
                               fit               = False,
                               inverse_transform = False
                           )
+            # NOTE: statsmodels appends `last_window` by column name, so it
+            # must have the name of the series seen by the estimators in `fit`.
+            last_window = last_window.rename(self.last_window_.name)
             
             if last_window_exog is not None:
                 if expected_index != last_window_exog.index[0]:
@@ -1004,7 +1008,7 @@ class ForecasterStats(MultiEstimatorMixin):
         last_window_exog: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
         alpha: float = 0.05,
-        interval: list[float] | tuple[float] | None = None,
+        interval: list[float] | tuple[float, ...] | None = None,
         suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
@@ -1193,7 +1197,7 @@ class ForecasterStats(MultiEstimatorMixin):
 
     def set_params(
         self, 
-        params: dict[str, object] | dict[str, dict[str, object]]
+        params: dict[str, Any] | dict[str, dict[str, Any]]
     ) -> None:
         """
         Set new values to the parameters of the model stored in the forecaster.

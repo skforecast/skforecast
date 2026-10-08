@@ -12,10 +12,12 @@ from skforecast.foundation._utils import (
     group_series_by_exog_signature,
     align_context_exog,
     _warn_if_non_commercial,
-    _NON_COMMERCIAL_LICENSES,
+    _get_model_license,
+    _MODEL_LICENSES,
     _validate_model_id_prefix,
     _validate_supported_quantiles,
 )
+from skforecast.foundation._adapters import _ADAPTER_REGISTRY
 from skforecast.exceptions import (
     IgnoredArgumentWarning,
     InputTypeWarning,
@@ -157,6 +159,42 @@ def test_check_preprocess_series_foundation_invalid_input_raises(series, error, 
 
 
 # ===========================================================================
+# _get_model_license
+# ===========================================================================
+
+@pytest.mark.parametrize("prefix", list(_ADAPTER_REGISTRY), ids=str)
+def test_get_model_license_every_registered_prefix_has_a_license(prefix):
+    """
+    Contract test: every model ID prefix in the adapter registry is covered
+    by an entry of the license registry, with a license identifier without
+    spaces, a link (or None, to use the model card of the weights
+    repository), a flag that states whether it restricts commercial use and,
+    only in that case, the name shown by LicenseWarning. A new adapter
+    registered without its license fails here.
+    """
+    license_info = _get_model_license(prefix)
+
+    assert license_info is not None
+    license_name, license_url, restricted, warning_name = license_info
+    assert isinstance(license_name, str) and license_name
+    assert " " not in license_name
+    assert license_url is None or license_url.startswith("https://")
+    assert isinstance(restricted, bool)
+    if restricted:
+        assert isinstance(warning_name, str) and warning_name
+    else:
+        assert warning_name is None
+
+
+def test_get_model_license_output_when_model_id_is_not_registered():
+    """
+    _get_model_license should return None for a model id that does not match
+    any registered prefix.
+    """
+    assert _get_model_license("unknown/some-model") is None
+
+
+# ===========================================================================
 # _warn_if_non_commercial
 # ===========================================================================
 
@@ -175,10 +213,12 @@ def test_warn_if_non_commercial_warns_for_registered_prefixes(model_id):
     _warn_if_non_commercial should raise a LicenseWarning naming the
     model_id and its license for every registered non-commercial prefix.
     """
-    license_name, license_url = next(
-        info for prefix, info in _NON_COMMERCIAL_LICENSES.items()
+    _, license_url, _, license_name = next(
+        info for prefix, info in _MODEL_LICENSES.items()
         if model_id.startswith(prefix)
     )
+    if license_url is None:
+        license_url = f"https://huggingface.co/{model_id}"
     warn_msg = re.escape(
         f"The weights for '{model_id}' are released under {license_name}"
     )
@@ -203,7 +243,8 @@ def test_warn_if_non_commercial_warns_for_registered_prefixes(model_id):
 def test_warn_if_non_commercial_no_warning_for_unmatched_prefixes(model_id):
     """
     _warn_if_non_commercial should be a no-op (no warning) for model ids
-    that are not registered as non-commercial.
+    whose registered license does not restrict commercial use, and for
+    model ids that are not registered.
     """
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
@@ -220,12 +261,12 @@ def test_warn_if_non_commercial_uses_longest_prefix_match(monkeypatch):
     tie-break (the shipped registry has none that overlap).
     """
     monkeypatch.setitem(
-        _NON_COMMERCIAL_LICENSES, "vendor/model",
-        ("Short License", "https://example.com/short"),
+        _MODEL_LICENSES, "vendor/model",
+        ("short-license", "https://example.com/short", True, "Short License"),
     )
     monkeypatch.setitem(
-        _NON_COMMERCIAL_LICENSES, "vendor/model-pro",
-        ("Long License", "https://example.com/long"),
+        _MODEL_LICENSES, "vendor/model-pro",
+        ("long-license", "https://example.com/long", True, "Long License"),
     )
 
     # A model_id matching both prefixes must resolve to the longer one.
@@ -239,8 +280,8 @@ def test_warn_if_non_commercial_uses_longest_prefix_match(monkeypatch):
 
 def test_warn_if_non_commercial_matches_registered_and_skips_unregistered():
     """
-    A registered non-commercial prefix (TimesFM 3.0) warns, while an
-    unregistered id (TimesFM 2.5) does not.
+    A registered non-commercial prefix (TimesFM 3.0) warns, while a prefix
+    registered with a license without restrictions (TimesFM 2.5) does not.
     """
     with pytest.warns(LicenseWarning, match=re.escape("google/timesfm-3.0-pytorch")):
         _warn_if_non_commercial("google/timesfm-3.0-pytorch")

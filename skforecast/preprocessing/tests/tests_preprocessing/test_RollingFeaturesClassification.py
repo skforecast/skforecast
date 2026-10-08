@@ -157,8 +157,7 @@ def test_RollingFeaturesClassification_init_store_parameters(params):
         '5_5': {
             'params': {'window': 5, 'min_periods': 5, 'center': False, 'closed': 'left'}, 
             'stats_idx': [0, 1],
-            'stats_names': ['roll_proportion_5', 'roll_entropy_5'],
-            'rolling_obj': None
+            'stats_names': ['roll_proportion_5', 'roll_entropy_5']
         }
     }
 
@@ -185,14 +184,12 @@ def test_RollingFeaturesClassification_init_store_parameters_multiple_stats():
         '5_5': {
             'params': {'window': 5, 'min_periods': 5, 'center': False, 'closed': 'left'}, 
             'stats_idx': [0, 1],
-            'stats_names': ['roll_proportion_5', 'roll_mode_5'],
-            'rolling_obj': None
+            'stats_names': ['roll_proportion_5', 'roll_mode_5']
         },
         '6_6': {
             'params': {'window': 6, 'min_periods': 6, 'center': False, 'closed': 'left'}, 
             'stats_idx': [2],
-            'stats_names': ['roll_entropy_6'],
-            'rolling_obj': None
+            'stats_names': ['roll_entropy_6']
         }
     }
 
@@ -405,6 +402,41 @@ def test_RollingFeaturesClassification_transform_batch_fillna_all_methods(fillna
     )
 
     pd.testing.assert_frame_equal(rolling_features, expected)
+
+
+def test_RollingFeaturesClassification_transform_batch_does_not_store_rolling_objects():
+    """
+    Test RollingFeaturesClassification transform_batch does not store the pandas
+    Rolling objects, so the instance keeps no reference to the transformed series.
+    """
+    X_datetime = X_classification.copy()
+    X_datetime.index = pd.date_range(
+        start='1990-01-01', periods=len(X_classification), freq='D'
+    )
+
+    rolling = RollingFeaturesClassification(
+        stats=['mode', 'entropy'], window_sizes=[4, 5]
+    )
+    rolling.transform_batch(X_datetime)
+
+    unique_rolling_windows = {
+        '4_4': {
+            'params': {
+                'window': 4, 'min_periods': 4, 'center': False, 'closed': 'left'
+            },
+            'stats_idx': [0],
+            'stats_names': ['roll_mode_4']
+        },
+        '5_5': {
+            'params': {
+                'window': 5, 'min_periods': 5, 'center': False, 'closed': 'left'
+            },
+            'stats_idx': [1],
+            'stats_names': ['roll_entropy_5']
+        }
+    }
+
+    assert rolling.unique_rolling_windows == unique_rolling_windows
 
 
 def test_RollingFeaturesClassification_ValueError_transform_without_classes():

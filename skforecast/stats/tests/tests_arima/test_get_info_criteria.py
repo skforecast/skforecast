@@ -5,6 +5,7 @@ import pytest
 import numpy as np
 from sklearn.exceptions import NotFittedError
 from ..._arima import Arima
+from .fixtures_arima import air_passengers
 
 
 def ar1_series(n=100, phi=0.7, sigma=1.0, seed=123):
@@ -91,8 +92,8 @@ def test_get_info_criteria_aic_exact_value():
 
 def test_get_info_criteria_bic_matches_bic_attribute():
     """
-    Test that get_info_criteria(criteria='bic') equals the bic_ attribute
-    when bic_ is available, or nan when bic_ is None.
+    Test that get_info_criteria(criteria='bic') equals the bic_ attribute,
+    which is also available for models with a manual order.
     """
     y = ar1_series(100, seed=42)
     model = Arima(order=(1, 0, 0), seasonal_order=(0, 0, 0))
@@ -100,10 +101,38 @@ def test_get_info_criteria_bic_matches_bic_attribute():
 
     bic = model.get_info_criteria(criteria='bic')
 
-    if model.bic_ is None:
-        assert np.isnan(bic)
-    else:
-        np.testing.assert_almost_equal(bic, model.bic_, decimal=10)
+    assert np.isclose(model.bic_, 246.67507352901887)
+    np.testing.assert_almost_equal(bic, model.bic_, decimal=10)
+
+
+@pytest.mark.parametrize(
+    "order, seasonal_order, m, expected_aic, expected_bic",
+    [((1, 0, 0), (0, 0, 0), 1, -228.13092253933831, -219.2214826406103),
+     ((1, 1, 1), (0, 0, 0), 1, -242.62622163300256, -233.73768774222285),
+     ((0, 1, 1), (0, 1, 1), 12, -483.39906053339917, -474.7734685637957)],
+    ids=['AR(1)', 'ARIMA(1,1,1)', 'airline']
+)
+def test_get_info_criteria_bic_with_manual_order(
+    order, seasonal_order, m, expected_aic, expected_bic
+):
+    """
+    Test that BIC is computed for models with a manual order (before the fix it
+    was None and get_info_criteria returned NaN). Values match statsmodels
+    SARIMAX (BIC = -2 loglik + k log(n - d - D*m)) on log(air_passengers).
+    CSS has no likelihood, so AIC is NaN and BIC is None.
+    """
+    y = np.log(air_passengers.to_numpy())
+    model = Arima(order=order, seasonal_order=seasonal_order, m=m)
+    model.fit(y)
+
+    assert np.isclose(model.get_info_criteria('aic'), expected_aic)
+    assert np.isclose(model.get_info_criteria('bic'), expected_bic)
+
+    model_css = Arima(order=order, seasonal_order=seasonal_order, m=m, method='CSS')
+    model_css.fit(y)
+
+    assert model_css.bic_ is None
+    assert np.isnan(model_css.get_info_criteria('bic'))
 
 
 def test_get_info_criteria_default_criteria_is_aic():

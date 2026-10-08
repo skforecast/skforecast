@@ -1,6 +1,7 @@
 # Unit tests for skforecast.stats.seasonal
 # ==============================================================================
 import re
+import warnings
 import numpy as np
 import pytest
 from .._seasonal_strength import seas_heuristic
@@ -77,6 +78,86 @@ def test_seas_heuristic_returns_zero_for_constant_variance():
     x = np.ones(50)
     strength = seas_heuristic(x, period=12)
     assert strength == 0.0
+
+
+@pytest.mark.parametrize(
+    "x, expected_strength, expected_D",
+    [
+        (
+            np.array([
+                22.82, 19.51, 20.26, 17.8, 22.48, 20.09, 20.9, 19.42, 22.78, 21.33,
+                19.76, 21.39, 20.94, 22.87, 19.75, 18.68, 21.37, 21.03, 20.4
+            ]),
+            0.5910679705,
+            0,
+        ),
+        (
+            np.array([
+                19.93, 21.5, 21.0, 16.31, 16.77, 19.77, 20.78, 18.23, 16.24, 19.21,
+                21.51, 19.16, 16.55, 20.25, 19.55, 18.53, 22.47, 21.38, 21.25, 18.52,
+                18.01, 19.97, 22.7, 19.61, 21.29
+            ]),
+            0.6694106278,
+            1,
+        ),
+    ],
+    ids=["n19", "n25"],
+)
+def test_seas_heuristic_and_nsdiffs_match_R(x, expected_strength, expected_D):
+    """
+    Test seasonal strength and number of seasonal differences match
+    forecast:::seas.heuristic and forecast::nsdiffs (forecast 9.0.2) for
+    quarterly series.
+    """
+    strength = seas_heuristic(x, period=4)
+    D = nsdiffs(x, period=4)
+    np.testing.assert_almost_equal(strength, expected_strength, decimal=8)
+    assert D == expected_D
+
+
+def test_seas_heuristic_and_nsdiffs_odd_period_close_to_R():
+    """
+    Test seasonal strength and number of seasonal differences for an odd
+    period, where the low-pass window is period + 2 instead of R's period.
+    Reference values from forecast:::seas.heuristic and forecast::nsdiffs
+    (forecast 9.0.2).
+    """
+    x = np.array([
+        22.04, 19.01, 22.37, 20.3, 18.68, 17.83, 16.42, 19.77, 20.7, 25.27,
+        21.09, 18.78, 17.77, 17.77, 18.94, 21.17, 22.43, 20.63, 20.09, 17.85,
+        18.46, 21.55, 22.11, 21.44, 20.68, 19.67, 19.99, 18.17, 19.76, 22.57
+    ])
+    strength = seas_heuristic(x, period=7)
+    D = nsdiffs(x, period=7)
+    np.testing.assert_allclose(strength, 0.7780835306, atol=1e-4)
+    assert D == 1
+
+
+def test_nsdiffs_odd_period_seasonal_series():
+    """
+    Test nsdiffs takes a seasonal difference for a long series with a strong
+    weekly pattern (odd period).
+    """
+    rng = np.random.default_rng(1)
+    n = 7 * 60
+    x = 10 * np.sin(2 * np.pi * np.arange(n) / 7) + rng.normal(size=n)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        D = nsdiffs(x, period=7)
+    assert D == 1
+
+
+def test_seas_heuristic_series_length_two_periods():
+    """
+    Test seasonal strength is 0 for exactly two periods (R's stl needs more)
+    and matches forecast:::seas.heuristic (forecast 9.0.2) with one more
+    observation.
+    """
+    x = np.array([19.11, 22.71, 20.88, 17.58, 20.09, 23.67, 17.17, 18.02, 19.04])
+    assert seas_heuristic(x[:8], period=4) == 0.0
+    assert nsdiffs(x[:8], period=4) == 0
+    np.testing.assert_almost_equal(seas_heuristic(x, period=4), 0.8361322664, decimal=8)
+    assert nsdiffs(x, period=4) == 1
 
 
 # Tests is_constant
@@ -164,6 +245,28 @@ def test_ndiffs_respects_max_d(random_walk):
     """Test max_d parameter is respected."""
     d = ndiffs(random_walk, max_d=1)
     assert d <= 1
+
+
+@pytest.mark.parametrize(
+    "x",
+    [
+        [1.7695, 3.4899, 4.3455, 4.6774, 5.8157, 5.675, 5.5799, 4.7196, 4.7251,
+         4.6431],
+        [0.062627, -0.404694, -1.371174, -2.375583, -4.232515, -4.486966,
+         -4.42123, -3.927546, -6.171507, -5.725627, -6.106631, -8.044207,
+         -8.447748, -8.05527, -7.904924, -7.481338, -6.745412, -5.971468,
+         -6.134676],
+    ],
+    ids=["n=10", "n=19"],
+)
+def test_ndiffs_kpss_lags_match_R_for_short_series(x):
+    """
+    Test the KPSS test uses trunc(3 * sqrt(n) / 13) lags, which is 0 for fewer
+    than 19 observations, as R's forecast::ndiffs. Both series need 2
+    differences in R (`forecast::ndiffs(x)`).
+    """
+    d = ndiffs(np.array(x), test="kpss", max_d=2)
+    assert d == 2
 
 
 def test_ndiffs_warns_alpha_too_small(stationary_series):

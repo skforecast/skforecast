@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import json
 import re
 import sys
 import textwrap
@@ -45,6 +46,11 @@ ALLOWED_REDIRECT_PREFIXES = ("https://doi.org/",)
 # already in docs/, which lets the URL check tell it apart from a broken link.
 DOCS_SITE_PREFIX = "https://skforecast.org/latest/"
 DOCS_DIR = ROOT / "docs"
+# Distribution manifests, maintained by hand and validated here.
+CONTEXT7_PATH = ROOT / "context7.json"
+MARKETPLACE_PATH = ROOT / ".claude-plugin" / "marketplace.json"
+# Limit set by https://context7.com/schema/context7.json
+CONTEXT7_RULE_MAX_LENGTH = 255
 URL_CHECK_TIMEOUT = 20
 URL_CHECK_ATTEMPTS = 3
 URL_CHECK_RETRY_DELAY = 3
@@ -87,6 +93,17 @@ AUTOGEN_NOTICE_IDE = textwrap.dedent("""\
     <!-- AUTO-GENERATED FILE. DO NOT EDIT MANUALLY. -->
     <!-- Source: tools/ai/llms-base.txt + tools/ai/ai_context_header.md -->
     <!-- Regenerate with: python tools/ai/generate_ai_context_files.py -->
+
+""")
+
+# Separator between the contributor header and the API reference in the IDE
+# files. Kept out of ai_context_header.md so CLAUDE.md can import the header alone.
+IDE_API_SEPARATOR = textwrap.dedent("""\
+    ---
+
+    # Skforecast: Complete API & Workflow Reference
+
+    (The content below is the full `llms-base.txt` and applies to any user of skforecast)
 
 """)
 
@@ -229,7 +246,7 @@ def validate_skill(skill_dir: Path) -> list[str]:
 
 
 def validate_version_consistency() -> list[str]:
-    """Check that llms-base.txt version matches skforecast/__init__.py."""
+    """Check that llms-base.txt (and CITATION.cff, if versioned) match __init__.py."""
     errors: list[str] = []
     init_path = ROOT / "skforecast" / "__init__.py"
     llms_path = AI_DIR / "llms-base.txt"
@@ -252,6 +269,82 @@ def validate_version_consistency() -> list[str]:
             f"  llms-base.txt does not contain 'Version: {pkg_version}'"
             f" (from skforecast/__init__.py)"
         )
+
+    # CITATION.cff has no version on purpose (Zenodo takes it from each GitHub
+    # release). If one is added, it must be the current one: a stale version
+    # would make GitHub's "Cite this repository" give an outdated citation.
+    cff_path = ROOT / "CITATION.cff"
+    if cff_path.exists():
+        m = re.search(
+            r"^version:\s*['\"]?([^'\"\s]+)",
+            cff_path.read_text(encoding="utf-8"),
+            re.MULTILINE,
+        )
+        if m and m.group(1) != pkg_version:
+            errors.append(
+                f"  CITATION.cff has version {m.group(1)}, expected {pkg_version}"
+                f" (from skforecast/__init__.py); also update 'date-released'"
+            )
+    marketplace = load_json_manifest(MARKETPLACE_PATH, errors=[])
+    if marketplace is not None:
+        for plugin in marketplace.get("plugins", []):
+            plugin_version = plugin.get("version")
+            if plugin_version != pkg_version:
+                errors.append(
+                    f"  .claude-plugin/marketplace.json: plugin "
+                    f"'{plugin.get('name')}' has version '{plugin_version}', "
+                    f"expected '{pkg_version}' (from skforecast/__init__.py)"
+                )
+    return errors
+
+
+def load_json_manifest(path: Path, errors: list[str]) -> dict | None:
+    """Load a JSON manifest, appending to ``errors`` if missing or invalid."""
+    relpath = path.relative_to(ROOT)
+    if not path.exists():
+        errors.append(f"  {relpath} not found")
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        errors.append(f"  {relpath} is not valid JSON: {exc}")
+        return None
+
+
+def validate_distribution_manifests() -> list[str]:
+    """Check context7.json and the Claude Code plugin marketplace manifest.
+
+    Both files are maintained by hand. The checks catch the ways they go stale
+    silently: invalid JSON, an excluded folder that was renamed or removed, a
+    rule longer than Context7 accepts, and a plugin source that no longer
+    points to the skills directory.
+    """
+    errors: list[str] = []
+
+    context7 = load_json_manifest(CONTEXT7_PATH, errors)
+    if context7 is not None:
+        for folder in context7.get("excludeFolders", []):
+            if "*" not in folder and not (ROOT / folder).is_dir():
+                errors.append(
+                    f"  context7.json: excludeFolders entry '{folder}' "
+                    f"does not exist"
+                )
+        for i, rule in enumerate(context7.get("rules", []), start=1):
+            if len(rule) > CONTEXT7_RULE_MAX_LENGTH:
+                errors.append(
+                    f"  context7.json: rule {i} is {len(rule)} characters "
+                    f"(max {CONTEXT7_RULE_MAX_LENGTH})"
+                )
+
+    marketplace = load_json_manifest(MARKETPLACE_PATH, errors)
+    if marketplace is not None:
+        for plugin in marketplace.get("plugins", []):
+            source = plugin.get("source")
+            if isinstance(source, str) and not (ROOT / source).is_dir():
+                errors.append(
+                    f"  .claude-plugin/marketplace.json: plugin "
+                    f"'{plugin.get('name')}' source '{source}' does not exist"
+                )
     return errors
 
 
@@ -694,8 +787,13 @@ def build_llms_full(llms_base_txt: str) -> str:
 
 
 def build_ide_content(header: str, llms_base_txt: str) -> str:
-    """Build IDE context file = notice + header + llms-base.txt."""
-    return AUTOGEN_NOTICE_IDE + header.rstrip("\n") + "\n\n" + llms_base_txt.rstrip("\n") + "\n"
+    """Build IDE context file = notice + header + separator + llms-base.txt."""
+    return (
+        AUTOGEN_NOTICE_IDE
+        + header.rstrip("\n") + "\n\n"
+        + IDE_API_SEPARATOR
+        + llms_base_txt.rstrip("\n") + "\n"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -733,6 +831,9 @@ def generate(*, check_only: bool = False) -> bool:
 
     # ── validate version consistency ─────────────────────────────────
     all_errors.extend(validate_version_consistency())
+
+    # ── validate distribution manifests ──────────────────────────────
+    all_errors.extend(validate_distribution_manifests())
 
     # ── validate imports consistency ─────────────────────────────────
     all_errors.extend(validate_imports_consistency())

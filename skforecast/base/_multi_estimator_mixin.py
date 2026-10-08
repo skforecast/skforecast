@@ -6,9 +6,37 @@
 
 
 from __future__ import annotations
+from typing import Any
+import warnings
 import pandas as pd
 
 from ..utils import check_select_fit_kwargs
+
+
+def _is_default_value(value: object, default: object) -> bool:
+    """
+    Check whether a parameter value is equal to its default value. Values
+    that cannot be compared as a single boolean (e.g. numpy arrays) are
+    treated as non-default.
+
+    Parameters
+    ----------
+    value : object
+        Value of the parameter.
+    default : object
+        Default value of the parameter.
+
+    Returns
+    -------
+    is_default : bool
+        True if `value` is equal to `default`.
+
+    """
+
+    try:
+        return bool(value == default)
+    except Exception:
+        return False
 
 
 class MultiEstimatorMixin:
@@ -76,6 +104,43 @@ class MultiEstimatorMixin:
 
         return estimator_ids
 
+    def _get_non_default_estimator_params(self) -> dict[str, dict[str, object]]:
+        """
+        Get, for each estimator, the parameters whose value differs from the
+        one of a default instance of its class. Used to display the estimator
+        parameters in a compact way (`__repr__`, `_repr_html_` and
+        `get_estimators_info`). Comparing against a default instance, instead of
+        the signature defaults, accounts for parameters normalized in `__init__`.
+        If the class cannot be instantiated without arguments, all the
+        parameters are returned.
+
+        Returns
+        -------
+        non_default_params : dict
+            Parameters that differ from their default value, keyed by
+            estimator id.
+
+        """
+
+        non_default_params = {}
+        for est_id, est in zip(self.estimator_ids, self.estimators):
+            params = self.estimator_params_[est_id]
+            try:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    default_params = type(est)().get_params()
+            except Exception:
+                non_default_params[est_id] = params
+                continue
+
+            non_default_params[est_id] = {
+                k: v for k, v in params.items()
+                if k not in default_params
+                or not _is_default_value(v, default_params[k])
+            }
+
+        return non_default_params
+
     def _build_estimators_repr_html(
         self, estimator_params: list[str]
     ) -> tuple[str, str]:
@@ -117,7 +182,7 @@ class MultiEstimatorMixin:
         return estimators_html, params_html
 
     def _check_select_fit_kwargs(
-        self, fit_kwargs: dict[str, object] | None = None
+        self, fit_kwargs: dict[str, Any] | None = None
     ) -> dict[str, dict[str, object]]:
         """
         Select, for each estimator, the keyword arguments accepted by its `fit`
@@ -235,8 +300,10 @@ class MultiEstimatorMixin:
             - supports_interval: Whether the estimator supports prediction
             intervals. Only included if the forecaster defines
             `estimators_support_interval`.
-            - params: Dictionary of the estimator parameters.
-        
+            - params: Estimator parameters that differ from their default
+            values. The full set of parameters is available in the
+            `estimator_params_` attribute.
+
         """
 
         info = {
@@ -256,8 +323,9 @@ class MultiEstimatorMixin:
                 for est_type in self.estimator_types
             ]
 
+        non_default_params = self._get_non_default_estimator_params()
         info['params'] = [
-            str(self.estimator_params_[est_id]) for est_id in self.estimator_ids
+            str(non_default_params[est_id]) for est_id in self.estimator_ids
         ]
 
         info = pd.DataFrame(info)

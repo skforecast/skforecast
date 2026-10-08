@@ -48,10 +48,10 @@ jobs:
             echo "::error::Secret CONTEXT7_API_KEY is not set"
             exit 1
           fi
-          # `branch` is omitted by default: sending "main" returned
-          # 400 branch-not-found, which suggests the field selects a branch
-          # version registered in Context7, not any git branch. The default
-          # index follows the `branch` field of context7.json.
+          # `branch` is omitted by default. Verified: without it the default
+          # index is refreshed (HTTP 200), which follows the `branch` field of
+          # context7.json, while sending "main" returns 400 branch-not-found
+          # (the field seems to select a branch version registered in Context7).
           body=$(jq -cn --arg branch "$BRANCH" \
             '{libraryName: "/skforecast/skforecast"}
              + (if $branch == "" then {} else {branch: $branch} end)')

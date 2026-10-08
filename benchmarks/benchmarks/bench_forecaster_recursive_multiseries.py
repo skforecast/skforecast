@@ -203,11 +203,14 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir, run_id=None):
         forecaster._create_train_X_y(series=series, exog=exog)
 
     def ForecasterRecursiveMultiSeries__create_train_X_y_single_series(forecaster, y, exog):
-        _ = forecaster._create_train_X_y_single_series(
-                y           = y,
-                exog        = exog,
-                ignore_exog = False,
-            )
+        if parse(skforecast_version) >= parse("0.26.0"):
+            _ = forecaster._create_train_X_y_single_series(y=y)
+        else:
+            _ = forecaster._create_train_X_y_single_series(
+                    y           = y,
+                    exog        = exog,
+                    ignore_exog = False,
+                )
 
     # Fit
     # ==========================================================================

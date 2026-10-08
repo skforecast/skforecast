@@ -22,9 +22,10 @@ try:
     from matplotlib.dates import AutoDateLocator, ConciseDateFormatter
     from matplotlib.animation import FuncAnimation, PillowWriter
     from statsmodels.graphics.tsaplots import plot_acf
-except Exception as e:
-    package_name = str(e).split(" ")[-1].replace("'", "")
-    check_optional_dependency(package_name=package_name)
+except ModuleNotFoundError as error:
+    if error.name in ("matplotlib", "statsmodels"):
+        check_optional_dependency(package_name=error.name)
+    raise
 
 
 def plot_residuals(
@@ -195,16 +196,16 @@ def plot_prediction_distribution(
         axs = np.array([axs])
 
     for i, step in enumerate(index):
-        plot = (
-            bootstrapping_predictions.loc[step, :]
-            .plot.kde(ax=axs[i], bw_method=bw_method, lw=0.5)
-        )
+        # NOTE: Rows are selected by position because the labels in `index` are
+        # strings, which do not match the labels of an integer index.
+        step_predictions = bootstrapping_predictions.iloc[-(i + 1), :]
+        plot = step_predictions.plot.kde(ax=axs[i], bw_method=bw_method, lw=0.5)
 
         # Fill density area
         x = plot.get_children()[0]._x
         y = plot.get_children()[0]._y
         axs[i].fill_between(x, y, color=palette[i])
-        prediction_mean = bootstrapping_predictions.loc[step, :].mean()
+        prediction_mean = step_predictions.mean()
         
         # Closest point on x to the prediction mean
         idx = np.abs(x - prediction_mean).argmin()
@@ -284,8 +285,8 @@ def plot_prediction_intervals(
     xaxis_title: str | None = None,
     yaxis_title: str | None = None,
     ax: plt.Axes | None = None,
-    kwargs_subplots: dict[str, object] = {'figsize': (7, 3)},
-    kwargs_fill_between: dict[str, object] = {'color': '#444444', 'alpha': 0.3, 'zorder': 1}
+    kwargs_subplots: dict[str, Any] = {'figsize': (7, 3)},
+    kwargs_fill_between: dict[str, Any] = {'color': '#444444', 'alpha': 0.3, 'zorder': 1}
 ):
     """
     Plot predicted intervals vs real values using matplotlib.

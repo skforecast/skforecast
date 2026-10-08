@@ -103,6 +103,37 @@ def test_predict_NotFittedError_when_fitted_is_False():
         forecaster.predict(steps=5)
 
 
+def test_predict_ValueError_when_exog_index_does_not_follow_freq():
+    """
+    Test ValueError is raised when `exog` starts one step ahead of
+    `last_window`, but it has gaps (one value every two days with a daily
+    series), and the steps predicted are not consecutive from 1. `exog` is
+    used by position up to the last step, so the predictions would use the
+    values of other dates.
+    """
+    index = pd.date_range(start='2020-01-01', periods=50, freq='D')
+    y = pd.Series(np.arange(50, dtype=float) * 2, index=index, name='y')
+    exog = pd.Series(np.arange(50, dtype=float), index=index, name='exog')
+    exog_pred = pd.Series(
+        data  = np.arange(50, 60, 2, dtype=float),
+        index = pd.DatetimeIndex(['2020-02-20', '2020-02-22', '2020-02-24',
+                                  '2020-02-26', '2020-02-28']),
+        name  = 'exog'
+    )
+
+    forecaster = ForecasterDirect(LinearRegression(), steps=5, lags=3)
+    forecaster.fit(y=y, exog=exog)
+
+    err_msg = re.escape(
+        "`exog` must have consecutive values following the frequency of "
+        "`last_window` for the 5 steps predicted.\n"
+        "    Expected index at position 1 : 2020-02-21 00:00:00.\n"
+        "    `exog` index at position 1 : 2020-02-22 00:00:00.\n"
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster.predict(steps=[3, 4, 5], exog=exog_pred)
+
+
 @pytest.mark.parametrize("steps", [3, [1, 2, 3], None], 
                          ids=lambda steps: f'steps: {steps}')
 def test_predict_output_when_estimator_is_LinearRegression(steps):
@@ -686,6 +717,76 @@ def test_predict_output_when_with_exog_and_differentiation_is_2_steps_10():
     pd.testing.assert_series_equal(predictions_1.asfreq('MS'), predictions_2, check_names=False)
 
 
+@pytest.mark.parametrize(
+    "differentiation, steps, expected_pred, expected_index",
+    [
+        (
+            1,
+            [3, 4, 5],
+            np.array([2.18981727, 2.33891198, 2.36338658]),
+            pd.date_range(start='2003-06-01', periods=3, freq='MS')
+        ),
+        (
+            1,
+            [1, 3, 5],
+            np.array([2.05562694, 2.18981727, 2.36338658]),
+            pd.DatetimeIndex(['2003-04-01', '2003-06-01', '2003-08-01'])
+        ),
+        (
+            1,
+            [4, 2],
+            np.array([2.33891198, 2.21299169]),
+            pd.DatetimeIndex(['2003-07-01', '2003-05-01'])
+        ),
+        (
+            2,
+            [3, 4, 5],
+            np.array([2.1398422, 2.26119262, 2.22563129]),
+            pd.date_range(start='2003-06-01', periods=3, freq='MS')
+        ),
+    ],
+    ids=['diff_1_steps_3_4_5', 'diff_1_steps_1_3_5', 'diff_1_steps_4_2',
+         'diff_2_steps_3_4_5']
+)
+def test_predict_output_when_differentiation_and_steps_not_consecutive_from_1(
+    differentiation, steps, expected_pred, expected_index
+):
+    """
+    Test predict output with differentiation when `steps` are not consecutive
+    from 1 (e.g. backtesting with `gap`) or not sorted. The differentiation is
+    reverted with the predictions of all the steps from 1 to `max(steps)`, so
+    the predictions are the same as those of `predict(steps=max(steps))` for the
+    requested steps. Exog and calendar features check that each step uses its
+    own predictors.
+    """
+    end_train = '2003-03-01 23:59:00'
+
+    # Simulated exogenous variable
+    rng = np.random.default_rng(9876)
+    exog = pd.Series(
+        rng.normal(loc=0, scale=1, size=len(data)), index=data.index, name='exog'
+    )
+    calendar = CalendarFeatures(features=['month'], encoding=None)
+
+    forecaster = ForecasterDirect(
+                     estimator         = LinearRegression(),
+                     steps             = 5,
+                     lags              = 15,
+                     calendar_features = calendar,
+                     differentiation   = differentiation
+                 )
+    forecaster.fit(y=data.loc[:end_train], exog=exog.loc[:end_train])
+    results = forecaster.predict(steps=steps, exog=exog.loc[end_train:])
+    predictions_all_steps = forecaster.predict(steps=5, exog=exog.loc[end_train:])
+
+    expected = pd.Series(data=expected_pred, index=expected_index, name='pred')
+
+    pd.testing.assert_series_equal(results, expected)
+    np.testing.assert_array_almost_equal(
+        results.to_numpy(), predictions_all_steps.to_numpy()[np.array(steps) - 1]
+    )
+
+
 def test_predict_output_when_window_features_steps_1():
     """
     Test output of predict when estimator is LGBMRegressor and window features
@@ -875,3 +976,59 @@ def test_predict_with_exog_window_features_and_calendar():
     predictions_no_cal = forecaster_no_cal.predict(steps=10, exog=exog_predict_calendar)
 
     pd.testing.assert_series_equal(predictions, predictions_no_cal)
+
+
+@pytest.mark.parametrize(
+    "steps", [None, [1, 5, 10]], ids=lambda steps: f"steps: {steps}"
+)
+def test_predict_output_index_when_index_is_tz_aware_and_utc_anchored(steps):
+    """
+    Test the index of the predictions when the series has a timezone-aware
+    index that advances in fixed UTC steps (created in UTC and converted to a
+    local timezone) and the forecast horizon crosses a daylight saving change.
+    """
+    index = pd.date_range(
+        start="2025-09-01", periods=60, freq="D", tz="UTC"
+    ).tz_convert("Europe/Madrid")
+    y_tz = pd.Series(np.arange(60, dtype=float), index=index, name="y")
+
+    forecaster = ForecasterDirect(LinearRegression(), steps=10, lags=3)
+    forecaster.fit(y=y_tz.iloc[:50])
+    predictions = forecaster.predict(steps=steps)
+
+    expected_index = index[50:] if steps is None else index[50:][[0, 4, 9]]
+
+    pd.testing.assert_index_equal(predictions.index, expected_index)
+    assert predictions.index.freq == expected_index.freq
+
+
+def test_predict_output_when_steps_is_numpy_integer():
+    """
+    Test predict output when `steps` is a numpy integer, which must give the
+    same predictions as a Python int.
+    """
+    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=5)
+    forecaster.fit(y=pd.Series(np.arange(50, dtype=float)))
+
+    predictions = forecaster.predict(steps=np.int64(3))
+    expected = forecaster.predict(steps=3)
+
+    assert not expected.isna().any()
+    pd.testing.assert_series_equal(predictions, expected)
+
+
+@pytest.mark.parametrize(
+    "steps, err_msg",
+    [(0, "`steps` must be an integer greater than or equal to 1. Got 0."),
+     ([], "`steps` cannot be an empty list.")],
+    ids=['zero', 'empty_list']
+)
+def test_predict_ValueError_when_steps_is_zero_or_empty_list(steps, err_msg):
+    """
+    Test ValueError is raised when `steps` is 0 or an empty list.
+    """
+    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=5)
+    forecaster.fit(y=pd.Series(np.arange(50, dtype=float)))
+
+    with pytest.raises(ValueError, match=re.escape(err_msg)):
+        forecaster.predict(steps=steps)

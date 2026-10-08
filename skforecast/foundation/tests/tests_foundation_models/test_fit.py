@@ -1,11 +1,17 @@
 # Unit test fit FoundationModel
 # ==============================================================================
 import re
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
+from skforecast.exceptions import IgnoredArgumentWarning
 from skforecast.foundation._foundation_model import FoundationModel
-from .fixtures_adapters import y, exog, y_wide, y_dict
+from .fixtures_adapters import (
+    y, exog, y_wide, y_dict,
+    FakeTimesFM25Model,
+    FakeMoirai2Forecast,
+)
 
 
 # Tests fit — errors
@@ -22,6 +28,43 @@ def test_fit_TypeError_when_series_is_invalid_type():
     )
     with pytest.raises(TypeError, match=err_msg):
         m.fit(series=[1, 2, 3])
+
+
+@pytest.mark.parametrize(
+    "model_id, backend_attr, fake_backend",
+    [
+        ("google/timesfm-2.5-200m-pytorch", "_model", FakeTimesFM25Model),
+        ("Salesforce/moirai-2.0-R-small", "_forecast_obj", FakeMoirai2Forecast),
+    ],
+    ids=["TimesFM25Adapter", "MoiraiAdapter"],
+)
+def test_fit_IgnoredArgumentWarning_when_adapter_does_not_support_exog(
+    model_id, backend_attr, fake_backend
+):
+    """
+    Test that fit warns that `exog` is ignored when the adapter does not
+    support exogenous variables, stores no exog (exog_in_, exog_names_in_
+    and context_exog_), and that a later predict without exog does not warn
+    again about covariates.
+    """
+    m = FoundationModel(model_id)
+    setattr(m.adapter, backend_attr, fake_backend())
+
+    warn_msg = re.escape(
+        f"The model '{model_id}' does not support exogenous variables. "
+        f"`exog` will be ignored."
+    )
+    with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
+        m.fit(series=y, exog=exog)
+
+    assert m.exog_in_ is False
+    assert m.exog_names_in_ is None
+    assert m.exog_names_in_per_series_ is None
+    assert m.context_exog_ is None
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", category=IgnoredArgumentWarning)
+        m.predict(steps=3)
 
 
 # Tests fit — single series

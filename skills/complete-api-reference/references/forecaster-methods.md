@@ -70,12 +70,12 @@ forecaster.fit(
     random_state=123,                 # int
     suppress_warnings=False           # bool
 )
-# NOTE: No exog parameter (uses date offsets, not exogenous variables).
+# NOTE: `exog` is accepted for API compatibility but ignored (uses date offsets).
 
 # ForecasterFoundation
 forecaster.fit(
     series,                           # pd.Series | pd.DataFrame | dict[str, pd.Series] (required)
-    exog=None,                        # pd.Series | pd.DataFrame | dict | None (Chronos-2 only)
+    exog=None,                        # pd.Series | pd.DataFrame | dict | None (ignored if not forecaster.allow_exog)
 )
 # NOTE: "fit" does not train the model — it only stores the last
 # context_length observations and metadata. Foundation models are
@@ -163,7 +163,7 @@ forecaster.predict(
     levels=None,              # str | list[str] | None, subset of series
     context=None,             # pd.Series | pd.DataFrame | dict | None, override stored context
     context_exog=None,        # pd.Series | pd.DataFrame | dict | None, historical exog
-    exog=None,                # pd.Series | pd.DataFrame | dict | None, future exog (Chronos-2 only)
+    exog=None,                # pd.Series | pd.DataFrame | dict | None, future exog (ignored if not forecaster.allow_exog)
     check_inputs=True         # bool
 ) -> pd.DataFrame             # Long-format: columns ['level', 'pred']
 # Also:

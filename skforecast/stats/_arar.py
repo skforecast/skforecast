@@ -56,6 +56,14 @@ class Arar(BaseEstimator, RegressorMixin):
         Maximum lag used when estimating autocovariances during the memory-shortening 
         step. When None, a default value is determined automatically based on the 
         series length.
+    max_ar_depth_ : int or None
+        Maximum AR depth used in the last fit (the value of `max_ar_depth`, or the
+        one determined from the series length when it is None). Available after
+        calling `fit()`.
+    max_lag_ : int or None
+        Maximum lag used in the last fit (the value of `max_lag`, or the one
+        determined from the series length when it is None). Available after
+        calling `fit()`.
     safe : bool
         Whether to use safe mode. When True, the model falls back to a mean-only 
         forecast on numerical issues or very short series. When False, errors are 
@@ -170,6 +178,8 @@ class Arar(BaseEstimator, RegressorMixin):
         self.max_ar_depth           = max_ar_depth
         self.max_lag                = max_lag
         self.safe                   = safe
+        self.max_ar_depth_          = None
+        self.max_lag_               = None
         self.lags_                  = None
         self.sigma2_                = None
         self.psi_                   = None
@@ -256,6 +266,8 @@ class Arar(BaseEstimator, RegressorMixin):
 
         """
 
+        self.max_ar_depth_        = None
+        self.max_lag_             = None
         self.lags_                = None
         self.sigma2_              = None
         self.psi_                 = None
@@ -325,8 +337,8 @@ class Arar(BaseEstimator, RegressorMixin):
 
         (Y, best_phi, best_lag, sigma2, psi, sbar, max_ar_depth, max_lag) = self.model_
 
-        self.max_ar_depth        = max_ar_depth
-        self.max_lag             = max_lag
+        self.max_ar_depth_       = max_ar_depth
+        self.max_lag_            = max_lag
         self.lags_               = tuple(best_lag)
         self.sigma2_             = float(sigma2)
         self.psi_                = np.asarray(psi, dtype=float)
@@ -698,6 +710,8 @@ class Arar(BaseEstimator, RegressorMixin):
             setattr(self, key, value)
         
         # Reset fitted state
+        self.max_ar_depth_          = None
+        self.max_lag_               = None
         self.lags_                  = None
         self.sigma2_                = None
         self.psi_                   = None

@@ -1,5 +1,8 @@
 blank_issues_enabled: true
 contact_links:
+  - name: 🔒 Report a security vulnerability
+    url: https://github.com/skforecast/skforecast/security/policy
+    about: Please report vulnerabilities privately, following the security policy, not in a public issue.
   - name: 📚 Documentation
     url: https://skforecast.org/
     about: Check the documentation before opening a new issue.

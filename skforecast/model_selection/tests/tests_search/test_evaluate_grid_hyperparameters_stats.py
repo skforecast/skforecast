@@ -137,11 +137,10 @@ def test_evaluate_grid_hyperparameters_stats_warn_when_non_valid_params():
     forecaster = ForecasterStats(estimator=Sarimax(order=(1, 1, 1), maxiter=500))
     cv = TimeSeriesFold(steps=12, initial_train_size=20)
 
+    # The reason that follows comes from statsmodels and changes between versions
     msg = re.escape(
         "Parameters skipped: {'order': (0, 1, 0), 'seasonal_order': (0, 0, 0, 0), "
-        "'trend': 'no-valid-value'}. Valid trend inputs are 'c' (constant), 't' (linear trend in time), "
-        "'ct' (both), 'ctt' (both with trend squared) or an interable defining a polynomial, e.g., "
-        "[1, 1, 0, 1] is `a + b*t + ct**3`. Received no-valid-value"
+        "'trend': 'no-valid-value'}."
     )
     with pytest.warns(RuntimeWarning, match=msg):
         results = _evaluate_grid_hyperparameters_stats(
