@@ -1,5 +1,6 @@
 # Unit test _arima_base
 # ==============================================================================
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
@@ -24,11 +25,24 @@ from skforecast.stats.arima._arima_base import (
     fitted_values,
     residuals_arima
 )
+from skforecast.stats.tests.tests_arima.fixtures_arima import air_passengers
 
 
 # =============================================================================
 # Fixtures
 # =============================================================================
+@pytest.fixture
+def explosive_ar1_series():
+    """Generate an AR(1) series with a root inside the unit circle (phi > 1)."""
+    rng = np.random.default_rng(0)
+    n = 120
+    y = np.empty(n)
+    y[0] = 1.0
+    for t in range(1, n):
+        y[t] = 1.03 * y[t - 1] + rng.normal(0, 0.05)
+    return y
+
+
 @pytest.fixture
 def simple_ar1_series():
     """Generate a simple AR(1) series for testing."""
@@ -323,6 +337,53 @@ def test_initialize_arima_state_with_differencing():
 
     # Diffuse prior for differencing state
     assert ss.predicted_covariance[1, 1] > 1e5
+
+
+@pytest.mark.parametrize(
+    "phi, Delta",
+    [
+        (np.array([1.05]), np.array([])),
+        (np.array([1.0]), np.array([])),
+        (np.array([1.5, -0.4]), np.array([])),
+        (np.array([1.5, -0.4]), np.array([1.0])),
+    ],
+    ids=lambda v: f"{v}"
+)
+def test_initialize_arima_state_diffuse_prior_when_ar_is_non_stationary(phi, Delta):
+    """
+    Test that a non-stationary AR part gets a diffuse prior in the ARMA block
+    of the initial covariance. The Lyapunov equation has no valid solution in
+    that case: its solver returns NaN, and the closed form of the AR(1) gives a
+    negative (phi > 1) or infinite (phi = 1) variance.
+    """
+    kappa = 1e6
+
+    ss = initialize_arima_state(phi, np.array([]), Delta, kappa=kappa)
+
+    state_dim = len(phi) + len(Delta)
+    np.testing.assert_array_equal(
+        ss.predicted_covariance, kappa * np.eye(state_dim)
+    )
+
+
+def test_initialize_arima_state_keeps_lyapunov_solution_when_ar_is_stationary():
+    """
+    Test that the initial covariance of a stationary ARMA block is still the
+    solution of the Lyapunov equation, also close to the unit root.
+    """
+    ss_ar1 = initialize_arima_state(np.array([0.999]), np.array([]), np.array([]))
+    ss_ar2 = initialize_arima_state(
+        np.array([1.4, -0.45]), np.array([0.3]), np.array([])
+    )
+
+    np.testing.assert_allclose(
+        ss_ar1.predicted_covariance[0, 0], 1.0 / (1.0 - 0.999**2), rtol=1e-12
+    )
+    np.testing.assert_allclose(
+        ss_ar2.predicted_covariance,
+        compute_q0_covariance_matrix(np.array([1.4, -0.45]), np.array([0.3])),
+        rtol=1e-12
+    )
 
 
 def test_update_arima_changes_coefficients():
@@ -1356,3 +1417,138 @@ def test_arima_sigma2_correction_does_not_change_loglik_and_aic(simple_ar1_serie
 
     np.testing.assert_allclose(result['loglik'], expected_loglik, rtol=1e-8)
     np.testing.assert_allclose(result['aic'], -2 * expected_loglik + 4, rtol=1e-8)
+
+
+# =============================================================================
+# Tests for non-stationary AR estimates
+# =============================================================================
+
+@pytest.mark.parametrize(
+    "order, expected_coef, expected_mean, expected_se, n_nan_residuals",
+    [
+        (
+            (1, 0, 0),
+            np.array([1.0301731845]),
+            np.array([35.5346247356, 36.6068175249, 37.7113617851]),
+            np.array([0.0479733596, 0.0688757249, 0.0856498843]),
+            1,
+        ),
+        (
+            (2, 0, 0),
+            np.array([1.0840743225, -0.0555250171]),
+            np.array([35.5366696894, 36.6091202903, 37.7138330826]),
+            np.array([0.0483118048, 0.0712532322, 0.0894607260]),
+            2,
+        ),
+    ],
+    ids=lambda v: f"{v}"
+)
+def test_arima_css_warns_and_predicts_when_ar_estimates_are_non_stationary(
+    explosive_ar1_series, order, expected_coef, expected_mean, expected_se,
+    n_nan_residuals
+):
+    """
+    Test that a CSS fit with non-stationary AR estimates issues a warning and
+    still gives finite predictions, standard errors and fitted values, both
+    when the state has dimension 1 (AR(1)) and when it is larger. Only the
+    observations dominated by the diffuse prior have no residual.
+    """
+    warn_msg = "CSS estimation produced non-stationary AR parameters"
+    with pytest.warns(UserWarning, match=warn_msg):
+        result = arima(
+            explosive_ar1_series, order=order, method="CSS", fit_intercept=False
+        )
+    pred = predict_arima(result, n_ahead=3, level=[95])
+
+    assert not ar_check(result['state_space'].ar_coefs)
+    assert np.all(np.isfinite(result['state_space'].filtered_state))
+    assert np.all(np.isfinite(result['state_space'].filtered_covariance))
+    assert int(np.isnan(result['residuals']).sum()) == n_nan_residuals
+    assert int(np.isnan(result['fitted']).sum()) == n_nan_residuals
+    np.testing.assert_allclose(
+        result['coef'].values.flatten(), expected_coef, rtol=1e-3
+    )
+    np.testing.assert_allclose(pred['mean'], expected_mean, rtol=1e-3)
+    np.testing.assert_allclose(pred['se'], expected_se, rtol=1e-2)
+    assert np.all(np.isfinite(pred['lower']))
+    assert np.all(np.isfinite(pred['upper']))
+
+
+def test_arima_css_does_not_warn_when_ar_estimates_are_stationary(simple_ar1_series):
+    """
+    Test that a CSS fit with stationary AR estimates does not issue the
+    non-stationarity warning.
+    """
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        result = arima(
+            simple_ar1_series, order=(1, 0, 0), method="CSS", fit_intercept=False
+        )
+
+    assert ar_check(result['state_space'].ar_coefs)
+
+
+@pytest.mark.parametrize(
+    "order",
+    [(1, 0, 1), (2, 0, 0)],
+    ids=lambda v: f"order: {v}"
+)
+@pytest.mark.parametrize(
+    "method",
+    ["ML", "CSS-ML"],
+    ids=lambda v: f"method: {v}"
+)
+def test_arima_enforce_stationarity_false_reaches_same_optimum_as_true(order, method):
+    """
+    Test that, without the Jones transform, the optimizer stays in the
+    stationary region and reaches the same optimum as with the transform.
+    Non-stationary points used to make the objective return NaN, which drove
+    the optimizer to meaningless coefficients and NaN predictions.
+    """
+    y = air_passengers.to_numpy()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        result = arima(y, order=order, method=method, enforce_stationarity=False)
+        expected = arima(y, order=order, method="CSS-ML", enforce_stationarity=True)
+    pred = predict_arima(result, n_ahead=12, level=[95])
+    expected_pred = predict_arima(expected, n_ahead=12, level=[95])
+
+    assert result['converged'] is True
+    assert ar_check(result['state_space'].ar_coefs)
+    np.testing.assert_allclose(result['loglik'], expected['loglik'], rtol=1e-6)
+    np.testing.assert_allclose(
+        result['coef'].values.flatten()[:2],
+        expected['coef'].values.flatten()[:2],
+        rtol=1e-3
+    )
+    np.testing.assert_allclose(pred['mean'], expected_pred['mean'], rtol=1e-2)
+    np.testing.assert_allclose(pred['se'], expected_pred['se'], rtol=1e-3)
+
+
+@pytest.mark.parametrize(
+    "method",
+    ["ML", "CSS-ML"],
+    ids=lambda v: f"method: {v}"
+)
+def test_arima_enforce_stationarity_false_stationary_estimates_when_series_is_explosive(
+    explosive_ar1_series, method
+):
+    """
+    Test that, without the Jones transform, the estimates of a series that is
+    not stationary stay in the stationary region and the predictions are
+    finite. The optimizer used to end at coefficients of several hundreds.
+    """
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UserWarning)
+        warnings.simplefilter("error", RuntimeWarning)
+        result = arima(
+            explosive_ar1_series, order=(2, 0, 0), method=method,
+            fit_intercept=False, enforce_stationarity=False
+        )
+    pred = predict_arima(result, n_ahead=3, level=[95])
+
+    assert ar_check(result['state_space'].ar_coefs)
+    assert np.all(np.abs(result['coef'].values) < 2)
+    assert np.all(np.isfinite(pred['mean']))
+    assert np.all(np.isfinite(pred['se']))

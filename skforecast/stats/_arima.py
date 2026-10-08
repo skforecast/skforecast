@@ -53,12 +53,16 @@ class Arima(BaseEstimator, RegressorMixin):
         when there is no differencing (d=0 and D=0).
     enforce_stationarity : bool, default True
         Whether to transform parameters to ensure stationarity and invertibility 
-        during optimization.
+        during optimization. If False, the optimizer works on the coefficients
+        directly; the maximum likelihood methods still reject non-stationary
+        AR coefficients, since the exact likelihood is not defined for them.
     method : str, default "CSS-ML"
         Estimation method. Options:
         - "CSS-ML": Conditional sum of squares for initial values, then maximum likelihood
         - "ML": Maximum likelihood only
-        - "CSS": Conditional sum of squares only
+        - "CSS": Conditional sum of squares only. It does not constrain the AR
+          coefficients: if the estimates are not stationary, a warning is issued
+          and the predictions are computed with a diffuse initial state.
     n_cond : int, optional
         Number of initial observations to use for conditional sum of squares. 
         If None, defaults to max(p + d*m + P*m, q + Q*m).

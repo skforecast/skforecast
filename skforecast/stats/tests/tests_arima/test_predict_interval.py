@@ -713,3 +713,30 @@ def test_predict_interval_auto_arima_multi_seasonal_data():
     assert model.best_params_['m'] == 12
     assert model.estimator_name_ == "AutoArima(2,1,1)"
     pd.testing.assert_frame_equal(pred, expected, rtol=tol_pred['rtol'])
+
+
+def test_predict_interval_output_when_css_estimates_are_non_stationary():
+    """
+    Test that predict_interval returns finite values when the CSS estimates of
+    the AR part are not stationary, and that fit warns about it. The
+    predictions, the intervals and the fitted values used to be NaN.
+    """
+    model = Arima(order=(1, 0, 0), seasonal_order=(1, 0, 0), m=12, method="CSS")
+
+    warn_msg = "CSS estimation produced non-stationary AR parameters"
+    with pytest.warns(UserWarning, match=warn_msg):
+        model.fit(air_passengers)
+    pred = model.predict_interval(steps=3, level=0.95)
+
+    expected = pd.DataFrame(
+        {
+            'mean': [448.6295512687, 423.9093188721, 455.4486508233],
+            'lower_0.95': [426.3090023038, 396.6478326811, 426.0606817600],
+            'upper_0.95': [470.9501002336, 451.1708050630, 484.8366198866],
+        },
+        index=pd.RangeIndex(start=1, stop=4, name='step')
+    )
+
+    assert int(np.isnan(model.fitted_values_).sum()) == 13
+    pd.testing.assert_frame_equal(pred, expected, rtol=tol_pred['rtol'])
+

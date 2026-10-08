@@ -1387,6 +1387,12 @@ def initialize_arima_state(
     from the discrete Lyapunov equation P₀ = T·P₀·T' + V
     (computed via `compute_q0_covariance_matrix`).
 
+    The Lyapunov equation only has a valid (positive semi-definite) solution
+    when the AR polynomial is stationary. If it is not (which can happen with
+    CSS estimates, since CSS does not constrain the AR coefficients), the
+    ARMA block has no stationary distribution and it is given the same
+    diffuse prior variance κ as the differencing states.
+
     Parameters
     ----------
     phi : np.ndarray
@@ -1448,8 +1454,14 @@ def initialize_arima_state(
     P0 = np.zeros((state_dim, state_dim))
     Pn = np.zeros((state_dim, state_dim))
 
-    # Stationary ARMA block: P₀ from discrete Lyapunov equation
-    if r > 1:
+    if p > 0 and not ar_check(phi):
+        # Non-stationary ARMA block: the Lyapunov equation has no valid
+        # solution (the solver diverges to NaN, or gives a negative variance
+        # for an AR(1)), so a diffuse prior is used instead.
+        for i in range(r):
+            Pn[i, i] = kappa
+    elif r > 1:
+        # Stationary ARMA block: P₀ from discrete Lyapunov equation
         Pn[:r, :r] = compute_q0_covariance_matrix(phi, theta)
     else:
         if p > 0:
@@ -2414,6 +2426,11 @@ def _fit_css(config: _ArimaConfig) -> _FitResult:
     from the inverse of the observed information (numerical Hessian
     of the objective, scaled by n_eff).
 
+    CSS does not constrain the AR coefficients, so the estimates can be
+    non-stationary. In that case a warning is issued and the state used for
+    forecasting is initialized with a diffuse prior (see
+    `initialize_arima_state`).
+
     Reference: Hamilton (1994), *Time Series Analysis*, §5.2.
     """
     c = config
@@ -2467,6 +2484,13 @@ def _fit_css(config: _ArimaConfig) -> _FitResult:
         params, c.order_spec.p, c.order_spec.q, c.order_spec.P,
         c.order_spec.Q, c.order_spec.s, False
     )
+    if len(phi_final) > 0 and not ar_check(phi_final):
+        warnings.warn(
+            "CSS estimation produced non-stationary AR parameters. Predictions "
+            "are computed with a diffuse initial state and may be unreliable. "
+            "Use `method='CSS-ML'` or `method='ML'` to obtain stationary "
+            "estimates."
+        )
     state_space = initialize_arima_state(phi_final, theta_final, c.Delta, kappa=c.kappa)
 
     adjusted_series = (c.x - c.exog_matrix @ params[c.n_arma_params:c.n_arma_params + c.n_exog]) if c.n_exog > 0 else c.x
@@ -2532,6 +2556,7 @@ def _fit_ml(config: _ArimaConfig, warm_start: np.ndarray = None) -> _FitResult:
 
     # Persistent scratch array for objective — avoids copy per call
     _par = c.fixed.astype(np.float64, copy=False).copy()
+    has_ar_terms = c.order_spec.p + c.order_spec.P > 0
 
     def _ml_objective(free_params, use_transform):
         """Negative concentrated log-likelihood via Kalman filter."""
@@ -2543,6 +2568,12 @@ def _fit_ml(config: _ArimaConfig, warm_start: np.ndarray = None) -> _FitResult:
             )
         except Exception:
             return _OBJECTIVE_PENALTY
+        # The exact likelihood is only defined for a stationary AR part. The
+        # Jones transform guarantees it; without the transform the optimizer
+        # is free to leave the stationary region, where the initial state
+        # covariance is not valid, so those points are rejected.
+        if not use_transform and has_ar_terms and not ar_check(phi_exp):
+            return _OBJECTIVE_PENALTY
         try:
             ss_holder[0] = _update_state_space(ss_holder[0], phi_exp, theta_exp)
         except Exception:
@@ -2552,11 +2583,16 @@ def _fit_ml(config: _ArimaConfig, warm_start: np.ndarray = None) -> _FitResult:
             kf = compute_arima_likelihood(adjusted, ss_holder[0], update_start=0, give_resid=False)
         except Exception:
             return _OBJECTIVE_PENALTY
-        sigma2 = kf['ssq'] / kf['nu'] if kf['nu'] > 0 else _OBJECTIVE_PENALTY
-        if sigma2 <= 0:
+        # No observation contributes to the likelihood when the filter
+        # degenerates (e.g. the Jones transform saturates at a unit root).
+        if not kf['nu'] > 0:
+            return _OBJECTIVE_PENALTY
+        sigma2 = kf['ssq'] / kf['nu']
+        if not sigma2 > 0:
             return _OBJECTIVE_PENALTY
         # Concentrated log-likelihood: ½[log(σ²) + (1/n)Σlog(Fₜ)]
-        return 0.5 * (np.log(sigma2) + kf['sumlog'] / kf['nu'])
+        value = 0.5 * (np.log(sigma2) + kf['sumlog'] / kf['nu'])
+        return value if np.isfinite(value) else _OBJECTIVE_PENALTY
 
     # If stationarity enforced, map initial params to unconstrained space
     if c.enforce_stationarity:
