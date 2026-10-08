@@ -136,6 +136,28 @@ def test_acf_interleaved_nans_lag0_is_one():
     assert result[0] == 1.0
 
 
+def test_acf_interleaved_nans_match_R_na_pass():
+    """
+    Test that, with interleaved NaNs, acf matches R's
+    acf(x, lag.max = 5, na.action = na.pass): the sum at lag k is divided by
+    the number of pairs plus k.
+    """
+    x = np.array([
+        0.0, 0.9415, 1.1093, 0.4411, -0.3568, np.nan, 0.3206, 1.357, 1.7894,
+        1.3121, 0.456, 0.1, 0.6634, 1.7202, np.nan, np.nan, 1.3121, 0.7386,
+        1.049, 2.0499, 2.9129, 2.9367, 2.1911, 1.4538, 1.4944, 2.3676, 3.3626,
+        3.6564, 3.0709, 2.2364
+    ])
+    expected = np.array([
+        1.0, 0.7272286368, 0.4232593005, 0.2124681053, 0.1997451129,
+        0.2957699560
+    ])
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", MissingValuesWarning)
+        result = acf(x, nlags=5)
+    np.testing.assert_allclose(result, expected, atol=1e-9)
+
+
 def test_acf_interleaved_nans_lag_with_no_valid_pairs_is_nan():
     """
     Test that a lag with fewer than 2 valid pairs returns NaN.

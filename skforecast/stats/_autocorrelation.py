@@ -89,7 +89,10 @@ def _pairwise_acf(x: np.ndarray, n_orig: int, nlags: int) -> np.ndarray:
         if n_k < 2:
             acf_vals[k] = np.nan
         else:
-            acf_vals[k] = float(np.nansum(prod)) / (n_k * var_x)
+            # Divided by the number of pairs plus the lag, as R's
+            # acf(na.action = na.pass): without missing values it is n, the
+            # same biased estimator as the FFT path.
+            acf_vals[k] = float(np.nansum(prod)) / ((n_k + k) * var_x)
 
     return acf_vals
 
@@ -193,8 +196,10 @@ def acf(
     the function falls back to pairwise deletion: for each lag *k* only pairs
     *(x[t-k], x[t])* where both values are finite are used. This preserves
     true temporal distances but requires O(N·p) time instead of O(N log N)
-    because FFT cannot be applied to irregular observations. Lags with fewer
-    than 2 valid pairs are set to NaN.
+    because FFT cannot be applied to irregular observations. As in R's
+    `acf(na.action = na.pass)`, the sum of the products at lag *k* is divided
+    by the number of pairs plus *k*, which is `n` without missing values.
+    Lags with fewer than 2 valid pairs are set to NaN.
 
     References
     ----------
@@ -343,8 +348,10 @@ def pacf(
     the function falls back to pairwise deletion: for each lag *k* only pairs
     *(x[t-k], x[t])* where both values are finite are used. This preserves
     true temporal distances but requires O(N·p) time instead of O(N log N)
-    because FFT cannot be applied to irregular observations. Lags with fewer
-    than 2 valid pairs are set to NaN.
+    because FFT cannot be applied to irregular observations. As in R's
+    `acf(na.action = na.pass)`, the sum of the products at lag *k* is divided
+    by the number of pairs plus *k*, which is `n` without missing values.
+    Lags with fewer than 2 valid pairs are set to NaN.
 
     References
     ----------
