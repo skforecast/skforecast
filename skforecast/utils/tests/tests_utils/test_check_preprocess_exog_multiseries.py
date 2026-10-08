@@ -624,3 +624,41 @@ def test_output_check_preprocess_exog_multiseries_when_series_is_dict_and_exog_d
             assert len(index_intersection) == len(exog_dict[k])
 
     assert exog_names_in_ == expected_exog_names_in_
+
+
+@pytest.mark.parametrize(
+    "exog_sorted",
+    [exog_wide_dt, exog_dict_dt, exog_long_dt],
+    ids=['wide', 'dict', 'long']
+)
+def test_output_check_preprocess_exog_multiseries_when_exog_index_is_descending(
+    exog_sorted
+):
+    """
+    Test check_preprocess_exog_multiseries sorts the index of an exog with 
+    the dates in descending order, so the output is the same as with the exog 
+    sorted. Before, the exog was empty after aligning it with the series.
+    """
+    _, series_indexes = check_preprocess_series(series=series_dict_dt)
+    if isinstance(exog_sorted, dict):
+        exog_descending = {k: v.iloc[::-1] for k, v in exog_sorted.items()}
+    else:
+        exog_descending = exog_sorted.iloc[::-1]
+
+    expected_exog_dict, expected_exog_names_in_ = check_preprocess_exog_multiseries(
+        series_names_in_  = ['l1', 'l2'],
+        series_index_type = type(series_indexes['l1']),
+        exog              = exog_sorted,
+        exog_dict         = {'l1': None, 'l2': None}
+    )
+    exog_dict, exog_names_in_ = check_preprocess_exog_multiseries(
+        series_names_in_  = ['l1', 'l2'],
+        series_index_type = type(series_indexes['l1']),
+        exog              = exog_descending,
+        exog_dict         = {'l1': None, 'l2': None}
+    )
+
+    assert exog_names_in_ == expected_exog_names_in_
+    for k in ['l1', 'l2']:
+        assert exog_dict[k].index.is_monotonic_increasing
+        pd.testing.assert_frame_equal(exog_dict[k], expected_exog_dict[k])

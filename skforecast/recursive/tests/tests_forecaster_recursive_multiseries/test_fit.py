@@ -1245,3 +1245,53 @@ def test_fit_no_categoricals_with_supported_estimators(estimator):
 
     assert forecaster.is_fitted
     assert forecaster.categorical_features_names_in_ is None
+
+
+@pytest.mark.parametrize(
+    "exog_format",
+    ['wide', 'dict'],
+    ids=lambda exog_format: f'exog_format: {exog_format}'
+)
+def test_fit_and_predict_when_exog_index_is_descending(exog_format):
+    """
+    Test that an exog with the dates in descending order is used in fit and
+    gives the same predictions as the exog sorted. Before, the exog was 
+    empty after aligning and the forecaster was trained without it.
+    """
+    rng = np.random.default_rng(123)
+    index = pd.date_range(start='2020-01-01', periods=30, freq='D')
+    series = {
+        'l1': pd.Series(rng.normal(size=30), index=index),
+        'l2': pd.Series(rng.normal(size=30), index=index)
+    }
+    exog = pd.DataFrame(
+        {'exog_1': rng.normal(size=35)},
+        index=pd.date_range(start='2020-01-01', periods=35, freq='D')
+    )
+    exog_train = exog.iloc[:30]
+    exog_pred = exog.iloc[30:]
+    exog_train_descending = exog_train.iloc[::-1]
+    exog_pred_descending = exog_pred.iloc[::-1]
+    if exog_format == 'dict':
+        exog_train = {'l1': exog_train, 'l2': exog_train}
+        exog_pred = {'l1': exog_pred, 'l2': exog_pred}
+        exog_train_descending = {
+            'l1': exog_train_descending, 'l2': exog_train_descending
+        }
+        exog_pred_descending = {
+            'l1': exog_pred_descending, 'l2': exog_pred_descending
+        }
+
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
+    forecaster.fit(series=series, exog=exog_train, suppress_warnings=True)
+    expected = forecaster.predict(steps=5, exog=exog_pred, suppress_warnings=True)
+
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
+    forecaster.fit(series=series, exog=exog_train_descending, suppress_warnings=True)
+    results = forecaster.predict(
+        steps=5, exog=exog_pred_descending, suppress_warnings=True
+    )
+
+    assert forecaster.exog_in_
+    assert forecaster.exog_names_in_ == ['exog_1']
+    pd.testing.assert_frame_equal(results, expected)

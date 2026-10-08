@@ -4317,6 +4317,7 @@ def check_preprocess_exog_multiseries(
     When `exog` is a pandas DataFrame, it is converted to a dictionary of pandas 
     DataFrames, where the keys are the series IDs and the values are the Series 
     with the same index as the original DataFrame.
+    The index of each exog is sorted in ascending order if it is not.
 
     Parameters
     ----------
@@ -4430,6 +4431,10 @@ def check_preprocess_exog_multiseries(
                     f"`exog` for series '{k}' cannot contain duplicated column "
                     f"names. Got {v.columns.to_list()}."
                 )
+            # NOTE: exog is sliced by label when it is aligned with the series
+            # and in the backtesting folds, which needs an ascending index.
+            if not v.index.is_monotonic_increasing:
+                v = v.sort_index()
             exog_dict[k] = v
 
     not_valid_index = [

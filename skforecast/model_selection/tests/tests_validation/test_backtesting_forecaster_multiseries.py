@@ -5798,3 +5798,58 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     pd.testing.assert_frame_equal(expected_metric, metrics_levels)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
+
+
+@pytest.mark.parametrize(
+    "exog_format",
+    ['wide', 'dict'],
+    ids=lambda exog_format: f'exog_format: {exog_format}'
+)
+def test_output_backtesting_forecaster_multiseries_when_exog_index_is_descending(
+    exog_format
+):
+    """
+    Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries
+    when exog has the dates in descending order is the same as with the exog
+    sorted. Before, the exog of each fold was empty and the backtesting raised
+    a ValueError.
+    """
+    if exog_format == 'wide':
+        series = series_wide_dt
+        exog_sorted = pd.DataFrame(
+            {'exog_1': np.random.default_rng(123).normal(size=len(series_wide_dt))},
+            index=series_wide_dt.index
+        )
+        exog_descending = exog_sorted.iloc[::-1]
+    else:
+        series = series_dict_nans
+        exog_sorted = exog_dict_nans
+        exog_descending = {k: v.iloc[::-1] for k, v in exog_dict_nans.items()}
+
+    cv = TimeSeriesFold(
+             initial_train_size = 30 if exog_format == 'wide' else 213,
+             steps              = 5 if exog_format == 'wide' else 24,
+             refit              = True
+         )
+    results = []
+    for exog_input in [exog_sorted, exog_descending]:
+        forecaster = ForecasterRecursiveMultiSeries(
+            estimator=LGBMRegressor(
+                n_estimators=5, max_depth=2, random_state=123, verbose=-1
+            ),
+            lags=3
+        )
+        results.append(
+            backtesting_forecaster_multiseries(
+                forecaster        = forecaster,
+                series            = series,
+                exog              = exog_input,
+                cv                = cv,
+                metric            = 'mean_absolute_error',
+                show_progress     = False,
+                suppress_warnings = True
+            )
+        )
+
+    pd.testing.assert_frame_equal(results[1][0], results[0][0])
+    pd.testing.assert_frame_equal(results[1][1], results[0][1])
