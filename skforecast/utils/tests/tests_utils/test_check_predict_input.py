@@ -2014,6 +2014,41 @@ def test_check_predict_input_ValueError_when_last_window_exog_is_DataFrame_witho
         )
 
 
+def test_check_predict_input_ValueError_when_last_window_exog_is_Series_and_exog_names_in_has_more_columns():
+    """
+    Raise ValueError when `last_window_exog` is a pandas Series whose name is in
+    `exog_names_in_` but the forecaster was trained with more exogenous 
+    variables, ForecasterStats. Before, only a DataFrame was checked.
+    """
+    exog = pd.DataFrame(np.arange(10).reshape(5, 2), columns=['exog1', 'exog2'])
+    exog.index = pd.date_range(start='6/1/2018', periods=5, freq=freq)
+    exog_names_in_ = ['exog1', 'exog2']
+
+    last_window_exog = pd.Series(np.arange(5), name='exog1')
+    last_window_exog.index = pd.date_range(start='1/1/2018', periods=5, freq=freq)
+
+    err_msg = re.escape(
+        "Missing columns in `last_window_exog`. Expected ['exog1', 'exog2']. "
+        "Got ['exog1']."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_predict_input(
+            forecaster_name  = 'ForecasterStats',
+            steps            = 2,
+            is_fitted        = True,
+            exog_in_         = True,
+            index_type_      = pd.DatetimeIndex,
+            index_freq_      = freq,
+            window_size      = 5,
+            last_window      = pd.Series(np.arange(5), index=pd.date_range(start='1/1/2018', periods=5, freq=freq)),
+            last_window_exog = last_window_exog,
+            exog             = exog,
+            exog_names_in_   = exog_names_in_,
+            max_step         = None,
+            levels           = None,
+            series_names_in_ = None
+        )
+
 def test_check_predict_input_ValueError_when_last_window_exog_is_Series_with_no_name():
     """
     Raise ValueError when `last_window_exog` has no name, ForecasterStats.

@@ -1792,14 +1792,9 @@ def check_predict_input(
                         f"`last_window_exog`. Got {last_window_exog_index.freq}."
                     )
 
-            # Check all columns are in the pd.DataFrame, last_window_exog
+            # Check name/columns are in exog_names_in_
             if isinstance(last_window_exog, pd.DataFrame):
-                col_missing = set(exog_names_in_).difference(set(last_window_exog.columns))
-                if col_missing:
-                    raise ValueError(
-                        f"Missing columns in `last_window_exog`. Expected {exog_names_in_}. "
-                        f"Got {last_window_exog.columns.to_list()}."
-                    )
+                last_window_exog_columns = last_window_exog.columns.to_list()
             else:
                 if last_window_exog.name is None:
                     raise ValueError(
@@ -1812,6 +1807,14 @@ def check_predict_input(
                         f"'{last_window_exog.name}' was not observed during training. "
                         f"Exogenous variables must be: {exog_names_in_}."
                     )
+                last_window_exog_columns = [last_window_exog.name]
+
+            col_missing = set(exog_names_in_).difference(last_window_exog_columns)
+            if col_missing:
+                raise ValueError(
+                    f"Missing columns in `last_window_exog`. Expected "
+                    f"{exog_names_in_}. Got {last_window_exog_columns}."
+                )
 
 
 def check_residuals_input(
@@ -4317,6 +4320,7 @@ def check_preprocess_exog_multiseries(
     When `exog` is a pandas DataFrame, it is converted to a dictionary of pandas 
     DataFrames, where the keys are the series IDs and the values are the Series 
     with the same index as the original DataFrame.
+    The index of each exog is sorted in ascending order if it is not.
 
     Parameters
     ----------
@@ -4430,6 +4434,10 @@ def check_preprocess_exog_multiseries(
                     f"`exog` for series '{k}' cannot contain duplicated column "
                     f"names. Got {v.columns.to_list()}."
                 )
+            # NOTE: exog is sliced by label when it is aligned with the series
+            # and in the backtesting folds, which needs an ascending index.
+            if not v.index.is_monotonic_increasing:
+                v = v.sort_index()
             exog_dict[k] = v
 
     not_valid_index = [

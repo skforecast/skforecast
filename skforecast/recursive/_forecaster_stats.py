@@ -741,6 +741,9 @@ class ForecasterStats(MultiEstimatorMixin):
                               fit               = False,
                               inverse_transform = False
                           )
+            # NOTE: statsmodels appends `last_window` by column name, so it
+            # must have the name of the series seen by the estimators in `fit`.
+            last_window = last_window.rename(self.last_window_.name)
             
             if last_window_exog is not None:
                 if expected_index != last_window_exog.index[0]:

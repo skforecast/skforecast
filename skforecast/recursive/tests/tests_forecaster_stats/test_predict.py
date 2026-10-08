@@ -484,6 +484,43 @@ def test_predict_output_ForecasterStats_with_last_window_and_exog_and_transforme
     pd.testing.assert_series_equal(predictions, expected, atol=0.0001)
 
 
+@pytest.mark.parametrize(
+    "y_name, last_window_name",
+    [('y', 'other_name'), ('y', None), (None, 'other_name'), (None, 'y')],
+    ids=lambda name: f'name: {name}'
+)
+@pytest.mark.parametrize(
+    "transformer_y",
+    [None, StandardScaler()],
+    ids=lambda transformer_y: f'transformer_y: {type(transformer_y).__name__}'
+)
+def test_predict_output_ForecasterStats_with_last_window_with_other_name(
+    y_name, last_window_name, transformer_y
+):
+    """
+    Test predict output of ForecasterStats with a `last_window` whose name is
+    not the name of the series used in fit is the same as with the name of
+    that series. Before, statsmodels raised `ValueError: Columns must match 
+    to concatenate along rows.`
+    """
+    forecaster = ForecasterStats(
+                     estimator     = Sarimax(order=(1, 0, 0), method='cg', disp=False),
+                     transformer_y = transformer_y
+                 )
+    forecaster.fit(y=y_datetime.rename(y_name))
+    expected = forecaster.predict(steps=5, last_window=y_lw_datetime.rename(y_name))
+
+    forecaster = ForecasterStats(
+                     estimator     = Sarimax(order=(1, 0, 0), method='cg', disp=False),
+                     transformer_y = transformer_y
+                 )
+    forecaster.fit(y=y_datetime.rename(y_name))
+    predictions = forecaster.predict(
+                      steps=5, last_window=y_lw_datetime.rename(last_window_name)
+                  )
+
+    pd.testing.assert_series_equal(predictions, expected)
+
 @pytest.mark.parametrize("y          , idx", 
                          [(y         , pd.RangeIndex(start=0, stop=50)), 
                           (y_datetime, pd.date_range(start='2000', periods=50, freq='YE'))], 
