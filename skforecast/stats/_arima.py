@@ -116,7 +116,13 @@ class Arima(BaseEstimator, RegressorMixin):
     trace : bool, default False
         Print progress during automatic model selection.
     approximation : bool or None, default None
-        Use CSS approximation during automatic search. If None, auto-determined based on data size.
+        Whether to speed up the automatic search by fitting the candidate models
+        with conditional sum of squares (CSS) instead of maximum likelihood. The
+        selected model is then refitted with `method`, so only the search is
+        approximated. If None, it is used when the series has more than 150
+        observations or `m > 12`. It only takes effect with the default
+        `method="CSS-ML"`: with `"ML"` or `"CSS"` all the candidates are fitted
+        with that method.
     truncate : int or None, default None
         Truncate series to this length for approximation offset computation.
     test : str, default "kpss"
@@ -200,8 +206,10 @@ class Arima(BaseEstimator, RegressorMixin):
         Maximum number of models to try in stepwise search.
     trace : bool, default False
         Print progress during automatic model selection.
-    approximation : bool or None, default None
-        Use CSS approximation during automatic search. If None, auto-determined based on data size.
+    approximation : bool or None
+        Whether the candidate models of the automatic search are fitted with
+        CSS (only with `method="CSS-ML"`). If None, auto-determined based on
+        data size.
     truncate : int or None, default None
         Truncate series to this length for approximation offset computation.
     test : str, default "kpss"
@@ -537,6 +545,10 @@ class Arima(BaseEstimator, RegressorMixin):
                 warnings.simplefilter("ignore")
             
             if self.is_auto:
+                # As in R's forecast::auto.arima, the default method lets the
+                # search fit the candidates with CSS when the approximation is
+                # active. The selected model is always refitted with CSS-ML.
+                search_method = None if self.method == "CSS-ML" else self.method
                 self.model_ = auto_arima(
                     y                  = y,
                     m                  = self.m,
@@ -560,7 +572,7 @@ class Arima(BaseEstimator, RegressorMixin):
                     nmodels            = self.nmodels,
                     trace              = self.trace,
                     approximation      = self.approximation,
-                    method             = self.method,
+                    method             = search_method,
                     truncate           = self.truncate,
                     exog               = exog,
                     test               = self.test,
