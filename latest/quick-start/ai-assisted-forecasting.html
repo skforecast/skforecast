@@ -5080,13 +5080,13 @@
 <div class="tabbed-block">
 <p>Any agent that supports the <a href="https://agentskills.io">Agent Skills</a> format can use the skills. The open source <a href="https://github.com/vercel-labs/skills"><code>skills</code></a> CLI copies them into the right folder for your agent (requires <a href="https://nodejs.org">Node.js</a>):</p>
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># Install in the current project (asks which agents to install to)</span>
-npx<span class="w"> </span>skills<span class="w"> </span>add<span class="w"> </span>skforecast/skforecast
+npx<span class="w"> </span>skills<span class="w"> </span>add<span class="w"> </span>skforecast/skforecast/skills
 
 <span class="c1"># Install for a specific agent, available in all your projects</span>
-npx<span class="w"> </span>skills<span class="w"> </span>add<span class="w"> </span>skforecast/skforecast<span class="w"> </span>--agent<span class="w"> </span>cursor<span class="w"> </span>--global
+npx<span class="w"> </span>skills<span class="w"> </span>add<span class="w"> </span>skforecast/skforecast/skills<span class="w"> </span>--agent<span class="w"> </span>cursor<span class="w"> </span>--global
 
 <span class="c1"># Install only some skills</span>
-npx<span class="w"> </span>skills<span class="w"> </span>add<span class="w"> </span>skforecast/skforecast<span class="w"> </span>--skill<span class="w"> </span>forecasting-single-series<span class="w"> </span>--skill<span class="w"> </span>prediction-intervals
+npx<span class="w"> </span>skills<span class="w"> </span>add<span class="w"> </span>skforecast/skforecast/skills<span class="w"> </span>--skill<span class="w"> </span>forecasting-single-series<span class="w"> </span>--skill<span class="w"> </span>prediction-intervals
 
 <span class="c1"># Update to the latest published skills</span>
 npx<span class="w"> </span>skills<span class="w"> </span>update
