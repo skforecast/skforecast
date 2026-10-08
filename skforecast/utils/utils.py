@@ -1577,16 +1577,17 @@ def check_predict_input(
     # `window_size` rows (ForecasterStats uses the whole `last_window`) of the
     # levels to predict or of the series used as predictors.
     last_window_to_check = last_window
+    if forecaster_name != 'ForecasterStats' and len(last_window) > window_size:
+        last_window_to_check = last_window_to_check.iloc[-window_size:]
     if forecaster_name == 'ForecasterRecursiveMultiSeries':
         last_window_to_check = last_window_to_check[levels]
     elif forecaster_name in ['ForecasterDirectMultiVariate', 'ForecasterRnn']:
         last_window_to_check = last_window_to_check[series_names_in_]
     # NOTE: `pd.isna` on the numpy values is faster than `DataFrame.isna` for
-    # the small inputs used to predict.
-    last_window_values = last_window_to_check.to_numpy()
-    if forecaster_name != 'ForecasterStats':
-        last_window_values = last_window_values[-window_size:]
-    if pd.isna(last_window_values).any():
+    # the few rows of the window. The rows are selected before `to_numpy`
+    # because it copies the data and, with extension dtypes (nullable,
+    # pyarrow), converts every value to a Python object.
+    if pd.isna(last_window_to_check.to_numpy()).any():
         warnings.warn(
             "`last_window` has missing values. Most of machine learning models do "
             "not allow missing values. Prediction method may either raise an "
@@ -1660,7 +1661,9 @@ def check_predict_input(
                     f"{exog_name} must be a pandas Series or DataFrame. Got {type(exog_to_check)}"
                 )
 
-            if pd.isna(exog_to_check.to_numpy()).any():
+            # NOTE: `exog` can be long and of any dtype, `DataFrame.isna` checks
+            # each column in its own dtype without converting it to object.
+            if exog_to_check.isna().to_numpy().any():
                 warnings.warn(
                     f"{exog_name} has missing values. Most of machine learning models "
                     f"do not allow missing values. Prediction method may fail.", 
