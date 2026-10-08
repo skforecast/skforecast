@@ -568,3 +568,41 @@ def test_arima_fit_auto_arima_air_passengers_data():
     assert model.best_params_['seasonal_order'] == (2, 1, 0)
     assert model.best_params_['m'] == 12
     assert model.estimator_name_ == "AutoArima(0,1,1)(2,1,0)[12]"
+
+
+@pytest.mark.parametrize(
+    "method, approximation, css_in_search",
+    [("CSS-ML", True, True), ("CSS-ML", False, False), ("ML", True, False)],
+    ids=lambda v: f"{v}"
+)
+def test_arima_fit_auto_arima_search_uses_css_only_with_approximation_and_default_method(
+    monkeypatch, method, approximation, css_in_search
+):
+    """
+    Test that the candidates of the automatic search are fitted with CSS when
+    the approximation is active and `method` is the default, that a method
+    chosen by the user is used for all the candidates, and that the selected
+    model is always refitted with a likelihood method.
+    """
+    from ...arima import _auto_arima
+
+    methods_used = []
+    original_arima = _auto_arima.arima
+
+    def arima_spy(*args, **kwargs):
+        methods_used.append(kwargs.get("method"))
+        return original_arima(*args, **kwargs)
+
+    monkeypatch.setattr(_auto_arima, "arima", arima_spy)
+
+    model = Arima(
+        order=None, seasonal_order=None, m=12, method=method,
+        approximation=approximation, max_p=1, max_q=1, max_P=1, max_Q=1
+    )
+    model.fit(air_passengers, suppress_warnings=True)
+
+    assert ("CSS" in methods_used) is css_in_search
+    assert methods_used[-1] == method
+    assert np.isfinite(model.aic_)
+    assert not np.isnan(model.predict(steps=3)).any()
+
