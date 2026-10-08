@@ -308,6 +308,27 @@ def test_pacf_alpha_confint_lower_le_upper():
     assert np.all(confint[:, 0] <= confint[:, 1])
 
 
+def test_pacf_interleaved_nans_match_R_na_pass():
+    """
+    Test that, with interleaved NaNs, pacf matches R's
+    pacf(x, lag.max = 5, na.action = na.pass).
+    """
+    x = np.array([
+        0.0, 0.9415, 1.1093, 0.4411, -0.3568, np.nan, 0.3206, 1.357, 1.7894,
+        1.3121, 0.456, 0.1, 0.6634, 1.7202, np.nan, np.nan, 1.3121, 0.7386,
+        1.049, 2.0499, 2.9129, 2.9367, 2.1911, 1.4538, 1.4944, 2.3676, 3.3626,
+        3.6564, 3.0709, 2.2364
+    ])
+    expected = np.array([
+        1.0, 0.7272286368, -0.2241425558, -0.0029673162, 0.2383448269,
+        0.1693013434
+    ])
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", MissingValuesWarning)
+        result = pacf(x, nlags=5)
+    np.testing.assert_allclose(result, expected, atol=1e-9)
+
+
 def test_pacf_interleaved_nans_lag_with_few_valid_pairs_returns_nan():
     """
     Test that pacf returns NaN for lag 1 when that lag has fewer than 2 valid
