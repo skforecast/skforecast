@@ -1264,6 +1264,28 @@ def test_ets_multistart_finds_global_optimum_air_passengers():
     np.testing.assert_allclose(-2 * model.loglik, 763.4188655657, atol=1e-2)
 
 
+def test_compute_prediction_variance_damped_additive_seasonal_matches_R():
+    """
+    Test that the forecast variance of an ETS(A,Ad,A) model is analytical and
+    matches R's forecast.ets (class 1 state-space formula). Parameters and
+    variances from forecast 9.0.2 for a quarterly series.
+    """
+    y = 50 + 0.3 * np.arange(60) + 5 * np.sin(2 * np.pi * np.arange(60) / 4)
+    model = ets(y, m=4, model="AAA", damped=True)
+    model.params = ETSParams(
+        alpha=0.02314127, beta=0.02313899, gamma=0.0001478949, phi=0.9799998,
+        init_states=model.params.init_states
+    )
+    model.sigma2 = 2.773066
+
+    var = _compute_prediction_variance(model, h=8)
+    expected = np.array([
+        2.773066, 2.778888, 2.791725, 2.814097, 2.848454, 2.896828, 2.961382,
+        3.044053
+    ])
+    np.testing.assert_allclose(var, expected, rtol=1e-6)
+
+
 @pytest.mark.parametrize("lambda_param", [0.0, 0.5], ids=lambda x: f"lambda: {x}")
 def test_forecast_ets_box_cox_bias_adjustment_uses_forecast_variance(lambda_param):
     """
