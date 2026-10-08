@@ -6,6 +6,7 @@
 
 
 from __future__ import annotations
+from typing import Any
 import warnings
 import inspect
 import numpy as np
@@ -248,9 +249,9 @@ class Sarimax(BaseEstimator, RegressorMixin):
         maxiter: int = 50,
         start_params: np.ndarray = None,
         disp: bool = False,
-        sm_init_kwargs: dict[str, object] = {},
-        sm_fit_kwargs: dict[str, object] = {},
-        sm_predict_kwargs: dict[str, object] = {}
+        sm_init_kwargs: dict[str, Any] = {},
+        sm_fit_kwargs: dict[str, Any] = {},
+        sm_predict_kwargs: dict[str, Any] = {}
     ) -> None:
 
         self.order                   = order
@@ -703,7 +704,7 @@ class Sarimax(BaseEstimator, RegressorMixin):
 
     def set_params(
         self, 
-        **params: dict[str, object]
+        **params: dict[str, Any]
     ) -> None:
         """
         Set new values to the parameters of the estimator.

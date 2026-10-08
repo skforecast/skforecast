@@ -86,7 +86,7 @@ optional_dependencies = {
 def initialize_lags(
     forecaster_name: str,
     lags: Any
-) -> tuple[np.ndarray[int] | None, list[str] | None, int | None]:
+) -> tuple[np.ndarray | None, list[str] | None, int | None]:
     """
     Check lags argument input and generate the corresponding numpy ndarray.
 
@@ -509,7 +509,7 @@ def initialize_differentiator_multiseries(
 
 def check_select_fit_kwargs(
     estimator: object,
-    fit_kwargs: dict[str, object] | None = None
+    fit_kwargs: dict[str, Any] | None = None
 ) -> dict[str, object]:
     """
     Check if `fit_kwargs` is a dict and select only the keys that are used by
@@ -586,7 +586,7 @@ def configure_estimator_categorical_features(
     estimator: object,
     categorical_features_names_in_: list[str] | None,
     X_train_features_names_out_: list[str],
-    fit_kwargs: dict[str, object]
+    fit_kwargs: dict[str, Any]
 ) -> dict[str, object]:
     """
     Configure native categorical feature support for the estimator. Returns
@@ -708,7 +708,7 @@ def configure_estimator_categorical_features(
 
 def cast_catboost_categorical_columns(
     X: np.ndarray,
-    fit_kwargs: dict[str, object],
+    fit_kwargs: dict[str, Any],
     estimator: object,
 ) -> np.ndarray:
     """
@@ -762,7 +762,7 @@ def cast_catboost_categorical_columns(
 
 def cast_catboost_categorical_columns_dataframe(
     X: pd.DataFrame,
-    fit_kwargs: dict[str, object],
+    fit_kwargs: dict[str, Any],
     estimator: object,
     feature_names: list[str],
 ) -> pd.DataFrame:
@@ -977,7 +977,7 @@ def _get_estimator_categorical_set_params(
 
 def _restore_estimator_categorical_set_params(
     forecaster: object,
-    params: dict[str, object]
+    params: dict[str, Any]
 ) -> None:
     """
     Restore the estimator-level params previously captured by
@@ -1173,9 +1173,9 @@ def check_exog_dtypes(
 
 
 def check_interval(
-    interval: list[float] | tuple[float] | None = None,
+    interval: list[float] | tuple[float, ...] | None = None,
     ensure_symmetric_intervals: bool = False,
-    quantiles: list[float] | tuple[float] | None = None,
+    quantiles: list[float] | tuple[float, ...] | None = None,
     alpha: float = None,
     alpha_literal: str | None = 'alpha'
 ) -> None:
@@ -3837,7 +3837,7 @@ def check_optional_dependency(
 def multivariate_time_series_corr(
     time_series: pd.Series,
     other: pd.DataFrame,
-    lags: int | list[int] | np.ndarray[int],
+    lags: int | list[int] | np.ndarray,
     method: str = 'pearson'
 ) -> pd.DataFrame:
     """
@@ -4702,7 +4702,7 @@ def preprocess_levels_self_last_window_multiseries(
 
 
 def prepare_steps_direct(
-    max_step: int | list[int] | np.ndarray[int],
+    max_step: int | list[int] | np.ndarray,
     steps: int | list[int] | None = None
 ) -> list[int]:
     """

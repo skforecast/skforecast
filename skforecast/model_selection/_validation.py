@@ -6,7 +6,7 @@
 
 
 from __future__ import annotations
-from typing import Callable
+from typing import Callable, Any
 from copy import deepcopy
 from itertools import chain
 import warnings
@@ -161,7 +161,7 @@ def _fit_predict_forecaster(
     forecaster: object,
     store_in_sample_residuals: bool,
     gap: int,
-    interval: float | list[float] | tuple[float] | str | object | None,
+    interval: float | list[float] | tuple[float, ...] | str | object | None,
     interval_method: str,
     n_boot: int,
     use_in_sample_residuals: bool,
@@ -349,7 +349,7 @@ def _backtesting_forecaster(
     cv: TimeSeriesFold,
     metric: str | Callable | list[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
-    interval: float | list[float] | tuple[float] | str | object | None = None,
+    interval: float | list[float] | tuple[float, ...] | str | object | None = None,
     interval_method: str = 'bootstrapping',
     n_boot: int = 250,
     use_in_sample_residuals: bool = True,
@@ -704,7 +704,7 @@ def backtesting_forecaster(
     cv: TimeSeriesFold,
     metric: str | Callable | list[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
-    interval: float | list[float] | tuple[float] | str | object | None = None,
+    interval: float | list[float] | tuple[float, ...] | str | object | None = None,
     interval_method: str = 'bootstrapping',
     n_boot: int = 250,
     use_in_sample_residuals: bool = True,
@@ -915,14 +915,14 @@ def _fit_predict_forecaster_multiseries(
     store_in_sample_residuals: bool,
     levels: list[str],
     gap: int,
-    interval: float | list[float] | tuple[float] | str | object | None,
+    interval: float | list[float] | tuple[float, ...] | str | object | None,
     interval_method: str,
     n_boot: int,
     use_in_sample_residuals: bool,
     use_binned_residuals: bool,
     out_sample_residuals_: dict[str, np.ndarray] | None,
     out_sample_residuals_by_bin_: dict[str, dict[int, np.ndarray]] | None,
-    binner_: dict[str, object] | None,
+    binner_: dict[str, Any] | None,
     random_state: int,
     return_predictors: bool,
     suppress_warnings: bool
@@ -1112,7 +1112,7 @@ def _backtesting_forecaster_multiseries(
     levels: str | list[str] | None = None,
     add_aggregated_metric: bool = True,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
-    interval: float | list[float] | tuple[float] | str | object | None = None,
+    interval: float | list[float] | tuple[float, ...] | str | object | None = None,
     interval_method: str = 'conformal',
     n_boot: int = 250,
     use_in_sample_residuals: bool = True,
@@ -1521,7 +1521,7 @@ def backtesting_forecaster_multiseries(
     levels: str | list[str] | None = None,
     add_aggregated_metric: bool = True,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
-    interval: float | list[float] | tuple[float] | str | object | None = None,
+    interval: float | list[float] | tuple[float, ...] | str | object | None = None,
     interval_method: str = 'conformal',
     n_boot: int = 250,
     use_in_sample_residuals: bool = True,
@@ -1762,7 +1762,7 @@ def _fit_predict_forecaster_stats(
     steps: int,
     gap: int,
     alpha: float | None,
-    interval: list[float] | tuple[float] | None,
+    interval: list[float] | tuple[float, ...] | None,
     refit: bool | int,
     folds: list,
     freeze_params: bool,
@@ -1894,7 +1894,7 @@ def _backtesting_stats(
     metric: str | Callable | list[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
     alpha: float | None = None,
-    interval: list[float] | tuple[float] | None = None,
+    interval: list[float] | tuple[float, ...] | None = None,
     freeze_params: bool = True,
     n_jobs: int | str = 'auto',
     verbose: bool = False,
@@ -2204,7 +2204,7 @@ def backtesting_stats(
     metric: str | Callable | list[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
     alpha: float | None = None,
-    interval: list[float] | tuple[float] | None = None,
+    interval: list[float] | tuple[float, ...] | None = None,
     freeze_params: bool = True,
     n_jobs: int | str = 'auto',
     verbose: bool = False,

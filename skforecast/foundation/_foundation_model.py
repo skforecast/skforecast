@@ -1009,7 +1009,7 @@ class FoundationModel:
             | dict[str, pd.DataFrame | pd.Series | None]
             | None
         ) = None,
-        quantiles: list[float] | tuple[float] | None = None,
+        quantiles: list[float] | tuple[float, ...] | None = None,
         check_inputs: bool = True,
     ) -> pd.DataFrame:
         """

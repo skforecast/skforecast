@@ -270,13 +270,13 @@ class ForecasterRnn(ForecasterBase):
         self,
         estimator: object,
         levels: str | list[str],
-        lags: int | list[int] | np.ndarray[int] | range[int],
-        transformer_series: object | dict[str, object] | None = MinMaxScaler(
+        lags: int | list[int] | np.ndarray | range,
+        transformer_series: object | dict[str, Any] | None = MinMaxScaler(
             feature_range=(0, 1)
         ),
         transformer_exog: object | None = MinMaxScaler(feature_range=(0, 1)),
-        fit_kwargs: dict[str, object] | None = None,
-        binner_kwargs: dict[str, object] | None = None,
+        fit_kwargs: dict[str, Any] | None = None,
+        binner_kwargs: dict[str, Any] | None = None,
         forecaster_id: str | int | None = None
     ) -> None:
         
@@ -1781,7 +1781,7 @@ class ForecasterRnn(ForecasterBase):
         last_window: pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
         method: str = 'conformal',
-        interval: float | list[float] | tuple[float] = [0.05, 0.95],
+        interval: float | list[float] | tuple[float, ...] = [0.05, 0.95],
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
         suppress_warnings: bool = False,

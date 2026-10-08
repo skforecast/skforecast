@@ -62,7 +62,7 @@ def _validate_model_id_prefix(model_id: str, prefix: str, adapter_name: str) -> 
 
 
 def _validate_supported_quantiles(
-    quantiles: list[float] | tuple[float] | None,
+    quantiles: list[float] | tuple[float, ...] | None,
     supported_quantiles: list[float],
     model_name: str,
     tol: float = 1e-9,

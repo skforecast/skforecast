@@ -100,7 +100,7 @@ class _AdapterBase(ABC):
         context: dict[str, pd.Series],
         context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
         exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        quantiles: list[float] | tuple[float] | None
+        quantiles: list[float] | tuple[float, ...] | None
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions with the backend.

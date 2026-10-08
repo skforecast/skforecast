@@ -6,7 +6,7 @@
 
 
 from __future__ import annotations
-from typing import Callable, Generator
+from typing import Callable, Generator, Any
 import warnings
 import numpy as np
 import pandas as pd
@@ -31,8 +31,8 @@ from ..utils import (
 def initialize_lags_grid(
     forecaster: object, 
     lags_grid: (
-        list[int | list[int] | np.ndarray[int] | range[int]]
-        | dict[str, list[int | list[int] | np.ndarray[int] | range[int]]]
+        list[int | list[int] | np.ndarray | range]
+        | dict[str, int | list[int] | np.ndarray | range]
         | None
     ) = None,
 ) -> tuple[dict[str, int], str]:
@@ -84,7 +84,7 @@ def check_backtesting_input(
     y: pd.Series | None = None,
     series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame] = None,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
-    interval: float | list[float] | tuple[float] | str | object | None = None,
+    interval: float | list[float] | tuple[float, ...] | str | object | None = None,
     interval_method: str = 'bootstrapping',    
     alpha: float | None = None,
     n_boot: int = 250,
@@ -747,7 +747,7 @@ def _calculate_metrics_one_step_ahead(
     X_test: np.ndarray,
     y_test: np.ndarray,
     sample_weight: np.ndarray | None,
-    fit_kwargs: dict[str, object]
+    fit_kwargs: dict[str, Any]
 ) -> list:
     """
     Calculate metrics when predictions are one-step-ahead. When forecaster is
@@ -1304,7 +1304,7 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
     metrics: list[str | Callable],
     add_aggregated_metric: bool = True,
     sample_weight: np.ndarray | None = None,
-    fit_kwargs: dict[str, object] | None = None,
+    fit_kwargs: dict[str, Any] | None = None,
     return_predictions: bool = True
 ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
     """   

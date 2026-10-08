@@ -1137,7 +1137,7 @@ class RollingFeatures():
         min_periods: int | list[int] | None = None,
         features_names: list[str] | None = None, 
         fillna: str | float | None = None,
-        kwargs_stats: dict[str, dict[str, object]] | None = None
+        kwargs_stats: dict[str, dict[str, Any]] | None = None
     ) -> None:
         
         self._validate_params(
@@ -1266,7 +1266,7 @@ class RollingFeatures():
         min_periods: int | list[int] | None = None,
         features_names: list[str] | None = None, 
         fillna: str | float | None = None,
-        kwargs_stats: dict[str, dict[str, object]] | None = None
+        kwargs_stats: dict[str, dict[str, Any]] | None = None
     ) -> None:
         """
         Validate the parameters of the RollingFeatures class.

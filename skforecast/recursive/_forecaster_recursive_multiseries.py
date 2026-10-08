@@ -6,7 +6,7 @@
 
 
 from __future__ import annotations
-from typing import Callable
+from typing import Callable, Any
 import warnings
 import sys
 import numpy as np
@@ -407,19 +407,19 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     def __init__(
         self,
         estimator: object,
-        lags: int | list[int] | np.ndarray[int] | range[int] | None = None,
+        lags: int | list[int] | np.ndarray | range | None = None,
         window_features: object | list[object] | None = None,
         calendar_features: object | None = None,
         encoding: str | None = 'ordinal',
-        transformer_series: object | dict[str, object] | None = None,
+        transformer_series: object | dict[str, Any] | None = None,
         transformer_exog: object | None = None,
         categorical_features: str | list[str] | None = 'auto',
         weight_func: Callable | dict[str, Callable] | None = None,
         series_weights: dict[str, float] | None = None,
         differentiation: int | dict[str, int | None] | None = None,
         dropna_from_series: bool = False,
-        fit_kwargs: dict[str, object] | None = None,
-        binner_kwargs: dict[str, object] | None = None,
+        fit_kwargs: dict[str, Any] | None = None,
+        binner_kwargs: dict[str, Any] | None = None,
         forecaster_id: str | int | None = None
     ) -> None:
 
@@ -3896,7 +3896,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         last_window: pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
         method: str = 'conformal',
-        interval: float | list[float] | tuple[float] = [0.05, 0.95],
+        interval: float | list[float] | tuple[float, ...] = [0.05, 0.95],
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
@@ -4052,7 +4052,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         levels: str | list[str] | None = None,
         last_window: pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
-        quantiles: list[float] | tuple[float] = [0.05, 0.5, 0.95],
+        quantiles: list[float] | tuple[float, ...] = [0.05, 0.5, 0.95],
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
@@ -4245,7 +4245,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
     def set_params(
         self, 
-        params: dict[str, object]
+        params: dict[str, Any]
     ) -> None:
         """
         Set new values to the parameters of the scikit-learn model stored in the
@@ -4269,7 +4269,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     
     def set_lags(
         self, 
-        lags: int | list[int] | np.ndarray[int] | range[int] | None = None
+        lags: int | list[int] | np.ndarray | range | None = None
     ) -> None:
         """
         Set new value to the attribute `lags`. Attributes `lags_names`, 
@@ -4369,7 +4369,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
     def set_fit_kwargs(
         self, 
-        fit_kwargs: dict[str, object]
+        fit_kwargs: dict[str, Any]
     ) -> None:
         """
         Set new values for the additional keyword arguments passed to the `fit` 

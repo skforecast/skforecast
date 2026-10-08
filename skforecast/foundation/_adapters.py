@@ -333,7 +333,7 @@ class ChronosAdapter(_AdapterBase):
         context: dict[str, pd.Series],
         context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
         exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        quantiles: list[float] | tuple[float] | None
+        quantiles: list[float] | tuple[float, ...] | None
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using the Chronos pipeline.
@@ -855,7 +855,7 @@ class TimesFM25Adapter(_AdapterBase):
         context: dict[str, pd.Series],
         context_exog: Any,
         exog: Any,
-        quantiles: list[float] | tuple[float] | None,
+        quantiles: list[float] | tuple[float, ...] | None,
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using the TimesFM 2.5 model.
@@ -1352,7 +1352,7 @@ class TimesFM3Adapter(_AdapterBase):
         context: dict[str, pd.Series],
         context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
         exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        quantiles: list[float] | tuple[float] | None,
+        quantiles: list[float] | tuple[float, ...] | None,
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using the TimesFM 3.0 model.
@@ -1955,7 +1955,7 @@ class MoiraiAdapter(_AdapterBase):
         context: dict[str, pd.Series],
         context_exog: Any,
         exog: Any,
-        quantiles: list[float] | tuple[float] | None,
+        quantiles: list[float] | tuple[float, ...] | None,
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using Moirai.
@@ -2433,7 +2433,7 @@ class TabICLAdapter(_AdapterBase):
         context: dict[str, pd.Series],
         context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
         exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        quantiles: list[float] | tuple[float] | None,
+        quantiles: list[float] | tuple[float, ...] | None,
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using TabICL.
@@ -3093,7 +3093,7 @@ class TabPFNAdapter(_AdapterBase):
         context: dict[str, pd.Series],
         context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
         exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        quantiles: list[float] | tuple[float] | None,
+        quantiles: list[float] | tuple[float, ...] | None,
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using TabPFN-TS.
@@ -3657,7 +3657,7 @@ class T0Adapter(_AdapterBase):
         context: dict[str, pd.Series],
         context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
         exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        quantiles: list[float] | tuple[float] | None
+        quantiles: list[float] | tuple[float, ...] | None
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using the T0 model.
@@ -4178,7 +4178,7 @@ class TSICLAdapter(_AdapterBase):
         context: dict[str, pd.Series],
         context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
         exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        quantiles: list[float] | tuple[float] | None
+        quantiles: list[float] | tuple[float, ...] | None
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using the TS-ICL model.
@@ -4724,7 +4724,7 @@ class NoriAdapter(_AdapterBase):
         context: dict[str, pd.Series],
         context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
         exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        quantiles: list[float] | tuple[float] | None,
+        quantiles: list[float] | tuple[float, ...] | None,
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using Nori.
