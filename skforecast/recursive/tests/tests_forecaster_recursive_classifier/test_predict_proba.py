@@ -359,32 +359,39 @@ def test_predict_proba_output_when_categorical_features_CatBoostClassifier(categ
     df_exog_predict = df_exog.iloc[:10, :].copy()
     df_exog_predict.index = pd.RangeIndex(start=50, stop=60)
 
+    estimator_params = {
+        'iterations': 100,
+        'depth': 3,
+        'random_seed': 123,
+        'verbose': 0,
+        'allow_writing_files': False
+    }
     forecaster = ForecasterRecursiveClassifier(
-                     estimator            = CatBoostClassifier(
-                                                iterations          = 100,
-                                                depth               = 3,
-                                                random_seed         = 123,
-                                                verbose             = 0,
-                                                allow_writing_files = False
-                                            ),
+                     estimator            = CatBoostClassifier(**estimator_params),
                      lags                 = 5,
                      categorical_features = categorical_features
                  )
     forecaster.fit(y=y, exog=df_exog)
     predictions = forecaster.predict_proba(steps=10, exog=df_exog_predict)
 
+    # NOTE: CatBoost results with categorical features change between platforms
+    # (Linux, macOS), so the expected values are not hardcoded. They are the
+    # probabilities of a CatBoostClassifier fitted on the training matrix with
+    # the lags and the categorical exogenous variables as integers.
+    cat_features = [0, 1, 2, 3, 4, 6, 7]
+    X_train, y_train = forecaster.create_train_X_y(y=y, exog=df_exog)
+    X_train = X_train.to_numpy().astype(object)
+    X_train[:, cat_features] = X_train[:, cat_features].astype(int)
+    X_predict = forecaster.create_predict_X(steps=10, exog=df_exog_predict)
+    X_predict = X_predict.to_numpy().astype(object)
+    X_predict[:, cat_features] = X_predict[:, cat_features].astype(int)
+
+    estimator = CatBoostClassifier(**estimator_params)
+    estimator.fit(X_train, y_train.to_numpy(), cat_features=cat_features)
+
     expected = pd.DataFrame(
-                   data = np.array([[0.0759817550656337, 0.7041720532218548, 0.2198461917125115],
-                                    [0.6406071699256985, 0.2324798747075047, 0.1269129553667967],
-                                    [0.0511993527852198, 0.8924973605778815, 0.0563032866368987],
-                                    [0.2237888965477214, 0.7492117704139325, 0.0269993330383462],
-                                    [0.1903214609510423, 0.5860509998241306, 0.2236275392248271],
-                                    [0.1122263693714086, 0.4269629913191674, 0.4608106393094241],
-                                    [0.3571045520259484, 0.5627838580096052, 0.0801115899644464],
-                                    [0.0982799844325707, 0.8757713500450107, 0.0259486655224185],
-                                    [0.718621564597885 , 0.2123840479271896, 0.0689943874749255],
-                                    [0.1003955219995584, 0.8702504435039864, 0.0293540344964551]]),
-                   index = pd.RangeIndex(start=50, stop=60, step=1),
+                   data    = estimator.predict_proba(X_predict),
+                   index   = pd.RangeIndex(start=50, stop=60, step=1),
                    columns = ['1_proba', '2_proba', '3_proba']
                )
 
