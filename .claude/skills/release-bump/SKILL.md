@@ -31,7 +31,9 @@ Then grep the old version across the repository (excluding `docs/releases/`, `de
 
 ## 3. Release notes
 
-In `docs/releases/releases.md`, add a section above the previous one following the existing format:
+The section of the version being closed must not stay as `In development`: check that it went through the consolidation pass of the `release-note` skill (`/release-note consolidate`) and that its heading has the release date (`<small>Oct 8, 2026</small>`). If not, tell the user before going on.
+
+Then, in `docs/releases/releases.md`, add a section above the previous one following the existing format:
 
 ```markdown
 ## X.Y.Z <small>In development</small> { id="X.Y.Z" }
