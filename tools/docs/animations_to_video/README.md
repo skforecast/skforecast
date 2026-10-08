@@ -4,7 +4,7 @@ Exports the documentation animations in [`docs/animations/`](../../../docs/anima
 
 ## Setup
 
-Requires Node.js and Google Chrome. The dependencies are installed locally in this folder (`node_modules/`, git-ignored):
+Requires Node.js 22.12 or later and Google Chrome. The dependencies are installed locally in this folder (`node_modules/`, git-ignored):
 
 ```bash
 cd tools/docs/animations_to_video

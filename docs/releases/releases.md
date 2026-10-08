@@ -12,7 +12,7 @@ All significant changes to this project are documented in this release file.
 
 
 
-## 0.26.0 <small>Oct 8, 2024</small> { id="0.26.0" }
+## 0.26.0 <small>Oct 8, 2026</small> { id="0.26.0" }
 
 The main changes in this release are:
 
