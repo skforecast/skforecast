@@ -59,6 +59,8 @@ The main changes in this release are:
 
 + Added `statsmodels 0.15` compatibility. The upper limit of the `stats` and `plotting` extras is now `<0.16` (previously `<0.15`), and <code>[Ets]</code> no longer raises the `FutureWarning` that statsmodels 0.15 emits for `extrapolate_trend='freq'` when it estimates the initial seasonal states.
 
++ Added `optuna 5.0` compatibility. No code changes are needed, but `TPESampler` suggests different values in optuna 5.0, so the results of <code>[bayesian_search_forecaster]</code>, <code>[bayesian_search_forecaster_multiseries]</code> and <code>[bayesian_search_foundation]</code> for a given `random_state` may differ from those obtained with optuna 4.x when `n_trials` is greater than the 10 startup trials of the sampler (which are sampled at random and remain the same).
+
 
 **Changed**
 
