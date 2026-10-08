@@ -30,7 +30,7 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 |------|---------|----------|
 | Use `backtesting_forecaster_multiseries` and the `*_multiseries` search functions | `backtesting_forecaster` / `grid_search_forecaster` raises on a multi-series forecaster | Call the `_multiseries` variant with `series=` instead of `y=` |
 | `ForecasterDirectMultiVariate` defaults to `transformer_series=StandardScaler()` | Series are scaled unexpectedly (other forecasters default to `None`) | Pass `transformer_series=None` explicitly if you do not want scaling |
-| `exog` format must match the `series` format (both wide, or both dict) | Index / format mismatch during fit or predict | Convert exog to the same layout as `series` before fitting |
+| `exog` and `series` formats can be combined (wide, long or dict); a dict or long `exog` is matched to the series by name | `MissingExogWarning` about series without exog, whose exog values are NaN | Use the series names as the keys of the exog dict (or the series IDs of a long exog). A wide exog is shared by all series and aligned with each one by date |
 | Regressors with native categorical support need `encoding='ordinal_category'` | Categoricals silently encoded as plain ordinals, degrading the model | Set `encoding='ordinal_category'` for LightGBM / CatBoost / XGBoost / HistGBR |
 
 ## Data Formats
@@ -154,6 +154,6 @@ exog_dict = reshape_exog_long_to_dict(exog_long, freq='D')
 
 1. **Mismatched series lengths**: ForecasterRecursiveMultiSeries handles different-length series if `dropna_from_series=True`.
 2. **Wrong encoding for categorical regressor**: Use `encoding='ordinal_category'` with regressors that natively handle categoricals (LightGBM, CatBoost).
-3. **Exog format mismatch**: Exog format (wide/dict) must match the series format.
+3. **Exog keys not matching the series names**: Any exog format (wide, long or dict) can be combined with any series format. A wide exog is shared by all series and aligned with each one by date; a dict or long exog must use the series names as keys, otherwise those series get NaN exog values (`MissingExogWarning`).
 4. **Forgetting `levels` parameter**: By default `predict()` forecasts all series. Use `levels` to limit predictions.
 5. **Unexpected scaling in ForecasterDirectMultiVariate**: `transformer_series` defaults to `StandardScaler()`, unlike other forecasters that default to `None`. Set `transformer_series=None` explicitly if you don't want automatic scaling.
