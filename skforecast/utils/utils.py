@@ -1792,14 +1792,9 @@ def check_predict_input(
                         f"`last_window_exog`. Got {last_window_exog_index.freq}."
                     )
 
-            # Check all columns are in the pd.DataFrame, last_window_exog
+            # Check name/columns are in exog_names_in_
             if isinstance(last_window_exog, pd.DataFrame):
-                col_missing = set(exog_names_in_).difference(set(last_window_exog.columns))
-                if col_missing:
-                    raise ValueError(
-                        f"Missing columns in `last_window_exog`. Expected {exog_names_in_}. "
-                        f"Got {last_window_exog.columns.to_list()}."
-                    )
+                last_window_exog_columns = last_window_exog.columns.to_list()
             else:
                 if last_window_exog.name is None:
                     raise ValueError(
@@ -1812,6 +1807,14 @@ def check_predict_input(
                         f"'{last_window_exog.name}' was not observed during training. "
                         f"Exogenous variables must be: {exog_names_in_}."
                     )
+                last_window_exog_columns = [last_window_exog.name]
+
+            col_missing = set(exog_names_in_).difference(last_window_exog_columns)
+            if col_missing:
+                raise ValueError(
+                    f"Missing columns in `last_window_exog`. Expected "
+                    f"{exog_names_in_}. Got {last_window_exog_columns}."
+                )
 
 
 def check_residuals_input(

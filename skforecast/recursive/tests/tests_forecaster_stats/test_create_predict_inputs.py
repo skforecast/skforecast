@@ -88,6 +88,36 @@ def test_create_predict_inputs_ValueError_when_ForecasterStats_last_window_exog_
         )
 
 
+def test_create_predict_inputs_ValueError_when_last_window_exog_is_Series_and_forecaster_trained_with_more_exog():
+    """
+    Check ValueError is raised when `last_window_exog` is a pandas Series with 
+    a valid name, but the forecaster was trained with more exogenous variables.
+    Before, the error was raised by statsmodels when appending the data.
+    """
+    transformer_exog = ColumnTransformer(
+                           [('scale', StandardScaler(), ['exog_1']),
+                            ('onehot', OneHotEncoder(), ['exog_2'])],
+                           remainder = 'passthrough',
+                           verbose_feature_names_out = False
+                       )
+    forecaster = ForecasterStats(
+                     estimator        = Sarimax(order=(1, 0, 0)),
+                     transformer_exog = transformer_exog
+                 )
+    forecaster.fit(y=y_datetime, exog=df_exog_datetime)
+
+    err_msg = re.escape(
+        "Missing columns in `last_window_exog`. Expected ['exog_1', 'exog_2']. "
+        "Got ['exog_1']."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster._create_predict_inputs(
+            steps            = 5,
+            exog             = df_exog_lw_predict_datetime,
+            last_window      = y_lw_datetime,
+            last_window_exog = df_exog_lw_datetime['exog_1']
+        )
+
 def test_create_predict_inputs_ValueError_when_last_window_index_does_not_follow_training_set():
     """
     Raise ValueError if `last_window` index does not start at the end 
