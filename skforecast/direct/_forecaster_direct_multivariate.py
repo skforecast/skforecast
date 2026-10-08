@@ -6,7 +6,7 @@
 
 
 from __future__ import annotations
-from typing import Callable, Any
+from typing import Callable, Any, Mapping
 import warnings
 import sys
 import numpy as np
@@ -382,17 +382,17 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         estimator: object,
         level: str,
         steps: int,
-        lags: int | list[int] | np.ndarray[int] | range[int] | dict[str, int | list] | None = None,
+        lags: int | list[int] | np.ndarray | range | dict[str, int | list] | None = None,
         window_features: object | list[object] | None = None,
         calendar_features: object | None = None,
-        transformer_series: object | dict[str, object] | None = StandardScaler(),
+        transformer_series: object | dict[str, Any] | None = StandardScaler(),
         transformer_exog: object | None = None,
         categorical_features: str | list[str] | None = 'auto',
         weight_func: Callable | None = None,
         differentiation: int | None = None,
         dropna_from_series: bool = False,
-        fit_kwargs: dict[str, object] | None = None,
-        binner_kwargs: dict[str, object] | None = None,
+        fit_kwargs: dict[str, Any] | None = None,
+        binner_kwargs: dict[str, Any] | None = None,
         n_jobs: int | str = 'auto',
         forecaster_id: str | int | None = None
     ) -> None:
@@ -2928,7 +2928,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         last_window: pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
         method: str = 'conformal',
-        interval: float | list[float] | tuple[float] = [0.05, 0.95],
+        interval: float | list[float] | tuple[float, ...] = [0.05, 0.95],
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
@@ -3085,7 +3085,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         steps: int | list[int] | None = None,
         last_window: pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
-        quantiles: list[float] | tuple[float] = [0.05, 0.5, 0.95],
+        quantiles: list[float] | tuple[float, ...] = [0.05, 0.5, 0.95],
         n_boot: int = 250,
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
@@ -3284,7 +3284,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
     def set_params(
         self, 
-        params: dict[str, object]
+        params: dict[str, Any]
     ) -> None:
         """
         Set new values to the parameters of the scikit-learn model stored in the
@@ -3314,7 +3314,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
     def set_lags(
         self, 
-        lags: int | list[int] | np.ndarray[int] | range[int] | dict[str, int | list] | None = None,
+        lags: int | list[int] | np.ndarray | range | dict[str, int | list] | None = None,
     ) -> None:
         """
         Set new value to the attribute `lags`. Attributes `lags_names`, 
@@ -3440,7 +3440,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
     def set_fit_kwargs(
         self, 
-        fit_kwargs: dict[str, object]
+        fit_kwargs: dict[str, Any]
     ) -> None:
         """
         Set new values for the additional keyword arguments passed to the `fit` 
@@ -3612,8 +3612,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
     def set_out_sample_residuals(
         self,
-        y_true: dict[str, np.ndarray | pd.Series],
-        y_pred: dict[str, np.ndarray | pd.Series],
+        y_true: Mapping[str, np.ndarray | pd.Series],
+        y_pred: Mapping[str, np.ndarray | pd.Series],
         append: bool = False,
         random_state: int = 123
     ) -> None:

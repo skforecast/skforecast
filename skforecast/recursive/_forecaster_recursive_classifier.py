@@ -260,14 +260,14 @@ class ForecasterRecursiveClassifier(ForecasterBase):
     def __init__(
         self,
         estimator: object,
-        lags: int | list[int] | np.ndarray[int] | range[int] | None = None,
+        lags: int | list[int] | np.ndarray | range | None = None,
         window_features: object | list[object] | None = None,
         features_encoding: str = 'auto',
         transformer_exog: object | None = None,
         categorical_features: str | list[str] | None = 'auto',
         weight_func: Callable | None = None,
         dropna_from_series: bool = False,
-        fit_kwargs: dict[str, object] | None = None,
+        fit_kwargs: dict[str, Any] | None = None,
         forecaster_id: str | int | None = None
     ) -> None:
         
@@ -2001,7 +2001,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
     def set_params(
         self, 
-        params: dict[str, object]
+        params: dict[str, Any]
     ) -> None:
         """
         Set new values to the parameters of the scikit-learn model stored in the
@@ -2025,7 +2025,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
     def set_lags(
         self, 
-        lags: int | list[int] | np.ndarray[int] | range[int] | None = None
+        lags: int | list[int] | np.ndarray | range | None = None
     ) -> None:
         """
         Set new value to the attribute `lags`. Attributes `lags_names`, 
@@ -2107,7 +2107,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
     def set_fit_kwargs(
         self, 
-        fit_kwargs: dict[str, object]
+        fit_kwargs: dict[str, Any]
     ) -> None:
         """
         Set new values for the additional keyword arguments passed to the `fit` 

@@ -6,7 +6,7 @@
 
 
 from __future__ import annotations
-from typing import Any
+from typing import Any, Mapping
 import contextlib
 import functools
 import warnings
@@ -781,7 +781,7 @@ def reshape_exog_long_to_dict(
 
 def reshape_series_exog_dict_to_long(
     series: dict[str, pd.Series] | None,
-    exog: dict[str, pd.Series | pd.DataFrame] | None,
+    exog: Mapping[str, pd.Series | pd.DataFrame] | None,
     series_col_name: str = 'series_value',
     index_names: list[str] = ['series_id', 'datetime'],
     merge_how: str = 'left'
@@ -1137,7 +1137,7 @@ class RollingFeatures():
         min_periods: int | list[int] | None = None,
         features_names: list[str] | None = None, 
         fillna: str | float | None = None,
-        kwargs_stats: dict[str, dict[str, object]] | None = None
+        kwargs_stats: dict[str, dict[str, Any]] | None = None
     ) -> None:
         
         self._validate_params(
@@ -1266,7 +1266,7 @@ class RollingFeatures():
         min_periods: int | list[int] | None = None,
         features_names: list[str] | None = None, 
         fillna: str | float | None = None,
-        kwargs_stats: dict[str, dict[str, object]] | None = None
+        kwargs_stats: dict[str, dict[str, Any]] | None = None
     ) -> None:
         """
         Validate the parameters of the RollingFeatures class.

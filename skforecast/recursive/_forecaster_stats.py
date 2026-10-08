@@ -1008,7 +1008,7 @@ class ForecasterStats(MultiEstimatorMixin):
         last_window_exog: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
         alpha: float = 0.05,
-        interval: list[float] | tuple[float] | None = None,
+        interval: list[float] | tuple[float, ...] | None = None,
         suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
@@ -1197,7 +1197,7 @@ class ForecasterStats(MultiEstimatorMixin):
 
     def set_params(
         self, 
-        params: dict[str, object] | dict[str, dict[str, object]]
+        params: dict[str, Any] | dict[str, dict[str, Any]]
     ) -> None:
         """
         Set new values to the parameters of the model stored in the forecaster.

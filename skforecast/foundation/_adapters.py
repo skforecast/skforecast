@@ -9,7 +9,7 @@
 # foundation-model backends remain optional.
 
 from __future__ import annotations
-from typing import Any
+from typing import Any, Mapping
 import contextlib
 import io
 import numpy as np
@@ -303,7 +303,7 @@ class ChronosAdapter(_AdapterBase):
     def fit(
         self,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        context_exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
     ) -> ChronosAdapter:
         """
         Store the training series and optional historical exogenous variables.
@@ -331,9 +331,9 @@ class ChronosAdapter(_AdapterBase):
         self,
         steps: int,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        quantiles: list[float] | tuple[float] | None
+        context_exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
+        exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
+        quantiles: list[float] | tuple[float, ...] | None
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using the Chronos pipeline.
@@ -824,7 +824,7 @@ class TimesFM25Adapter(_AdapterBase):
     def fit(
         self,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        context_exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
     ) -> TimesFM25Adapter:
         """
         Store the training series and optional historical exogenous variables.
@@ -855,7 +855,7 @@ class TimesFM25Adapter(_AdapterBase):
         context: dict[str, pd.Series],
         context_exog: Any,
         exog: Any,
-        quantiles: list[float] | tuple[float] | None,
+        quantiles: list[float] | tuple[float, ...] | None,
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using the TimesFM 2.5 model.
@@ -1322,7 +1322,7 @@ class TimesFM3Adapter(_AdapterBase):
     def fit(
         self,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        context_exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
     ) -> TimesFM3Adapter:
         """
         Store the training series and optional historical exogenous variables.
@@ -1350,9 +1350,9 @@ class TimesFM3Adapter(_AdapterBase):
         self,
         steps: int,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        quantiles: list[float] | tuple[float] | None,
+        context_exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
+        exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
+        quantiles: list[float] | tuple[float, ...] | None,
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using the TimesFM 3.0 model.
@@ -1924,7 +1924,7 @@ class MoiraiAdapter(_AdapterBase):
     def fit(
         self,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        context_exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
     ) -> MoiraiAdapter:
         """
         Store the training series and optional historical exogenous variables.
@@ -1955,7 +1955,7 @@ class MoiraiAdapter(_AdapterBase):
         context: dict[str, pd.Series],
         context_exog: Any,
         exog: Any,
-        quantiles: list[float] | tuple[float] | None,
+        quantiles: list[float] | tuple[float, ...] | None,
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using Moirai.
@@ -2403,7 +2403,7 @@ class TabICLAdapter(_AdapterBase):
     def fit(
         self,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        context_exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
     ) -> TabICLAdapter:
         """
         Store the training series and optional historical exogenous variables.
@@ -2431,9 +2431,9 @@ class TabICLAdapter(_AdapterBase):
         self,
         steps: int,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        quantiles: list[float] | tuple[float] | None,
+        context_exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
+        exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
+        quantiles: list[float] | tuple[float, ...] | None,
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using TabICL.
@@ -2639,7 +2639,7 @@ class TabICLAdapter(_AdapterBase):
         self,
         series_names: list,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | None] | None,
+        context_exog: Mapping[str, pd.DataFrame | None] | None,
         is_datetime: bool,
     ) -> pd.DataFrame:
         """
@@ -2693,7 +2693,7 @@ class TabICLAdapter(_AdapterBase):
         self,
         series_names: list,
         context: dict[str, pd.Series],
-        exog: dict[str, pd.DataFrame | None] | None,
+        exog: Mapping[str, pd.DataFrame | None] | None,
         steps: int,
         is_datetime: bool,
     ) -> pd.DataFrame:
@@ -3062,7 +3062,7 @@ class TabPFNAdapter(_AdapterBase):
     def fit(
         self,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        context_exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
     ) -> TabPFNAdapter:
         """
         Store the training series and optional historical exogenous variables.
@@ -3091,9 +3091,9 @@ class TabPFNAdapter(_AdapterBase):
         self,
         steps: int,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        quantiles: list[float] | tuple[float] | None,
+        context_exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
+        exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
+        quantiles: list[float] | tuple[float, ...] | None,
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using TabPFN-TS.
@@ -3308,7 +3308,7 @@ class TabPFNAdapter(_AdapterBase):
         self,
         series_names: list,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | None] | None,
+        context_exog: Mapping[str, pd.DataFrame | None] | None,
         is_datetime: bool,
     ) -> pd.DataFrame:
         """
@@ -3362,7 +3362,7 @@ class TabPFNAdapter(_AdapterBase):
         self,
         series_names: list,
         context: dict[str, pd.Series],
-        exog: dict[str, pd.DataFrame | None] | None,
+        exog: Mapping[str, pd.DataFrame | None] | None,
         steps: int,
         is_datetime: bool,
     ) -> pd.DataFrame:
@@ -3627,7 +3627,7 @@ class T0Adapter(_AdapterBase):
     def fit(
         self,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        context_exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
     ) -> T0Adapter:
         """
         Store the training series and optional historical exogenous variables.
@@ -3655,9 +3655,9 @@ class T0Adapter(_AdapterBase):
         self,
         steps: int,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        quantiles: list[float] | tuple[float] | None
+        context_exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
+        exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
+        quantiles: list[float] | tuple[float, ...] | None
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using the T0 model.
@@ -3798,8 +3798,8 @@ class T0Adapter(_AdapterBase):
     def _build_future_covariates(
         self,
         series_names: list[str],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        context_exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
+        exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
         context_length: int,
         steps: int,
     ) -> np.ndarray | None:
@@ -4148,7 +4148,7 @@ class TSICLAdapter(_AdapterBase):
     def fit(
         self,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        context_exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
     ) -> TSICLAdapter:
         """
         Store the training series and optional historical exogenous variables.
@@ -4176,9 +4176,9 @@ class TSICLAdapter(_AdapterBase):
         self,
         steps: int,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        quantiles: list[float] | tuple[float] | None
+        context_exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
+        exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
+        quantiles: list[float] | tuple[float, ...] | None
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using the TS-ICL model.
@@ -4694,7 +4694,7 @@ class NoriAdapter(_AdapterBase):
     def fit(
         self,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        context_exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
     ) -> NoriAdapter:
         """
         Store the training series and optional historical exogenous variables.
@@ -4722,9 +4722,9 @@ class NoriAdapter(_AdapterBase):
         self,
         steps: int,
         context: dict[str, pd.Series],
-        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        quantiles: list[float] | tuple[float] | None,
+        context_exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
+        exog: Mapping[str, pd.DataFrame | pd.Series | None] | None,
+        quantiles: list[float] | tuple[float, ...] | None,
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using Nori.

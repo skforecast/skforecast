@@ -6,6 +6,7 @@
 
 
 from __future__ import annotations
+from typing import Mapping
 import pandas as pd
 import warnings
 import textwrap
@@ -375,7 +376,7 @@ class RangeDriftDetector:
 
     def _normalize_input(
         self, 
-        X: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+        X: pd.Series | pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame],
         name: str,
         series_ids: list[str] | None = None
     ) -> dict[str, pd.Series | pd.DataFrame]:
@@ -441,8 +442,8 @@ class RangeDriftDetector:
     
     def fit(
         self,
-        series: pd.DataFrame | pd.Series | dict[str, pd.Series | pd.DataFrame] | None = None,
-        exog: pd.DataFrame | pd.Series | dict[str, pd.Series | pd.DataFrame] | None = None,
+        series: pd.DataFrame | pd.Series | Mapping[str, pd.Series | pd.DataFrame] | None = None,
+        exog: pd.DataFrame | pd.Series | Mapping[str, pd.Series | pd.DataFrame] | None = None,
         **kwargs
     ) -> None:
         """
@@ -515,8 +516,8 @@ class RangeDriftDetector:
     @manage_warnings
     def predict(
         self,
-        last_window: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
-        exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+        last_window: pd.Series | pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame] | None = None,
+        exog: pd.Series | pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame] | None = None,
         verbose: bool = True,
         suppress_warnings: bool = False
     ) -> tuple[bool, list[str], list[str] | dict[str, list[str]]]:

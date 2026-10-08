@@ -5,6 +5,7 @@
 ################################################################################
 
 from __future__ import annotations
+from typing import Mapping, Any
 import html
 import sys
 import textwrap
@@ -686,7 +687,7 @@ class ForecasterFoundation:
         exog: (
             pd.Series
             | pd.DataFrame
-            | dict[str, pd.Series | pd.DataFrame | None]
+            | Mapping[str, pd.Series | pd.DataFrame | None]
             | None
         ) = None,
     ) -> None:
@@ -753,13 +754,13 @@ class ForecasterFoundation:
         context_exog: (
             pd.Series
             | pd.DataFrame
-            | dict[str, pd.DataFrame | pd.Series | None]
+            | Mapping[str, pd.DataFrame | pd.Series | None]
             | None
         ) = None,
         exog: (
             pd.Series
             | pd.DataFrame
-            | dict[str, pd.Series | pd.DataFrame | None]
+            | Mapping[str, pd.Series | pd.DataFrame | None]
             | None
         ) = None,
         check_inputs: bool = True,
@@ -848,16 +849,16 @@ class ForecasterFoundation:
         context_exog: (
             pd.Series
             | pd.DataFrame
-            | dict[str, pd.DataFrame | pd.Series | None]
+            | Mapping[str, pd.DataFrame | pd.Series | None]
             | None
         ) = None,
         exog: (
             pd.Series
             | pd.DataFrame
-            | dict[str, pd.Series | pd.DataFrame | None]
+            | Mapping[str, pd.Series | pd.DataFrame | None]
             | None
         ) = None,
-        interval: float | list[float] | tuple[float] = [0.1, 0.9],
+        interval: float | list[float] | tuple[float, ...] = [0.1, 0.9],
         check_inputs: bool = True,
     ) -> pd.DataFrame:
         """
@@ -968,16 +969,16 @@ class ForecasterFoundation:
         context_exog: (
             pd.Series
             | pd.DataFrame
-            | dict[str, pd.DataFrame | pd.Series | None]
+            | Mapping[str, pd.DataFrame | pd.Series | None]
             | None
         ) = None,
         exog: (
             pd.Series
             | pd.DataFrame
-            | dict[str, pd.Series | pd.DataFrame | None]
+            | Mapping[str, pd.Series | pd.DataFrame | None]
             | None
         ) = None,
-        quantiles: list[float] | tuple[float] = [0.1, 0.5, 0.9],
+        quantiles: list[float] | tuple[float, ...] = [0.1, 0.5, 0.9],
         check_inputs: bool = True,
     ) -> pd.DataFrame:
         """
@@ -1049,7 +1050,7 @@ class ForecasterFoundation:
 
         return predictions
 
-    def set_params(self, params: dict[str, object]) -> None:
+    def set_params(self, params: dict[str, Any]) -> None:
         """
         Set new values to the parameters of the underlying estimator.
 

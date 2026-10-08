@@ -8,7 +8,7 @@
 from __future__ import annotations
 import os
 import logging
-from typing import Callable
+from typing import Callable, Mapping, Sequence
 import warnings
 from copy import deepcopy
 import numpy as np
@@ -52,11 +52,11 @@ def grid_search_forecaster(
     y: pd.Series,
     cv: TimeSeriesFold | OneStepAheadFold,
     param_grid: dict,
-    metric: str | Callable | list[str | Callable],
+    metric: str | Callable | Sequence[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
     lags_grid: (
-        list[int | list[int] | np.ndarray[int] | range[int]]
-        | dict[str, list[int | list[int] | np.ndarray[int] | range[int]]]
+        Sequence[int | list[int] | np.ndarray | range]
+        | Mapping[str, int | list[int] | np.ndarray | range]
         | None
     ) = None,
     return_best: bool = True,
@@ -157,11 +157,11 @@ def random_search_forecaster(
     y: pd.Series,
     cv: TimeSeriesFold | OneStepAheadFold,
     param_distributions: dict,
-    metric: str | Callable | list[str | Callable],
+    metric: str | Callable | Sequence[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
     lags_grid: (
-        list[int | list[int] | np.ndarray[int] | range[int]]
-        | dict[str, list[int | list[int] | np.ndarray[int] | range[int]]]
+        Sequence[int | list[int] | np.ndarray | range]
+        | Mapping[str, int | list[int] | np.ndarray | range]
         | None
     ) = None,
     n_iter: int = 10,
@@ -270,11 +270,11 @@ def _evaluate_grid_hyperparameters(
     y: pd.Series,
     cv: TimeSeriesFold | OneStepAheadFold,
     param_grid: dict,
-    metric: str | Callable | list[str | Callable],
+    metric: str | Callable | Sequence[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
     lags_grid: (
-        list[int | list[int] | np.ndarray[int] | range[int]]
-        | dict[str, list[int | list[int] | np.ndarray[int] | range[int]]]
+        Sequence[int | list[int] | np.ndarray | range]
+        | Mapping[str, int | list[int] | np.ndarray | range]
         | None
     ) = None,
     return_best: bool = True,
@@ -559,7 +559,7 @@ def bayesian_search_forecaster(
     y: pd.Series,
     cv: TimeSeriesFold | OneStepAheadFold,
     search_space: Callable,
-    metric: str | Callable | list[str | Callable],
+    metric: str | Callable | Sequence[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
     n_trials: int = 20,
     random_state: int = 123,
@@ -950,16 +950,16 @@ def bayesian_search_forecaster(
 
 def grid_search_forecaster_multiseries(
     forecaster: object,
-    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+    series: pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame],
     cv: TimeSeriesFold | OneStepAheadFold,
     param_grid: dict,
-    metric: str | Callable | list[str | Callable],
+    metric: str | Callable | Sequence[str | Callable],
     aggregate_metric: str | list[str] | None = None,
     levels: str | list[str] | None = None,
-    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+    exog: pd.Series | pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame] | None = None,
     lags_grid: (
-        list[int | list[int] | np.ndarray[int] | range[int]]
-        | dict[str, list[int | list[int] | np.ndarray[int] | range[int]]]
+        Sequence[int | list[int] | np.ndarray | range]
+        | Mapping[str, int | list[int] | np.ndarray | range]
         | None
     ) = None,
     return_best: bool = True,
@@ -1073,16 +1073,16 @@ def grid_search_forecaster_multiseries(
 
 def random_search_forecaster_multiseries(
     forecaster: object,
-    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+    series: pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame],
     cv: TimeSeriesFold | OneStepAheadFold,
     param_distributions: dict,
-    metric: str | Callable | list[str | Callable],
+    metric: str | Callable | Sequence[str | Callable],
     aggregate_metric: str | list[str] | None = None,
     levels: str | list[str] | None = None,
-    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+    exog: pd.Series | pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame] | None = None,
     lags_grid: (
-        list[int | list[int] | np.ndarray[int] | range[int]]
-        | dict[str, list[int | list[int] | np.ndarray[int] | range[int]]]
+        Sequence[int | list[int] | np.ndarray | range]
+        | Mapping[str, int | list[int] | np.ndarray | range]
         | None
     ) = None,
     n_iter: int = 10,
@@ -1206,16 +1206,16 @@ def random_search_forecaster_multiseries(
 @manage_warnings
 def _evaluate_grid_hyperparameters_multiseries(
     forecaster: object,
-    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+    series: pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame],
     cv: TimeSeriesFold | OneStepAheadFold,
     param_grid: dict,
-    metric: str | Callable | list[str | Callable],
+    metric: str | Callable | Sequence[str | Callable],
     aggregate_metric: str | list[str] | None = None,
     levels: str | list[str] | None = None,
-    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+    exog: pd.Series | pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame] | None = None,
     lags_grid: (
-        list[int | list[int] | np.ndarray[int] | range[int]]
-        | dict[str, list[int | list[int] | np.ndarray[int] | range[int]]]
+        Sequence[int | list[int] | np.ndarray | range]
+        | Mapping[str, int | list[int] | np.ndarray | range]
         | None
     ) = None,
     return_best: bool = True,
@@ -1578,13 +1578,13 @@ def _evaluate_grid_hyperparameters_multiseries(
 @manage_warnings
 def bayesian_search_forecaster_multiseries(
     forecaster: object,
-    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+    series: pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame],
     cv: TimeSeriesFold | OneStepAheadFold,
     search_space: Callable,
-    metric: str | Callable | list[str | Callable],
+    metric: str | Callable | Sequence[str | Callable],
     aggregate_metric: str | list[str] | None = None,
     levels: str | list[str] | None = None,
-    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+    exog: pd.Series | pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame] | None = None,
     n_trials: int = 20,
     random_state: int = 123,
     return_best: bool = True,
@@ -2090,10 +2090,10 @@ def bayesian_search_forecaster_multiseries(
 @manage_warnings
 def bayesian_search_foundation(
     forecaster: object,
-    series: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+    series: pd.Series | pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame],
     cv: TimeSeriesFold,
     search_space: Callable,
-    metric: str | Callable | list[str | Callable],
+    metric: str | Callable | Sequence[str | Callable],
     aggregate_metric: str | list[str] | None = None,
     levels: str | list[str] | None = None,
     exog: pd.Series | pd.DataFrame | dict | None = None,
@@ -2461,7 +2461,7 @@ def grid_search_stats(
     y: pd.Series,
     cv: TimeSeriesFold,
     param_grid: dict,
-    metric: str | Callable | list[str | Callable],
+    metric: str | Callable | Sequence[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
     return_best: bool = True,
     n_jobs: int | str = 'auto',
@@ -2553,7 +2553,7 @@ def random_search_stats(
     y: pd.Series,
     cv: TimeSeriesFold,
     param_distributions: dict,
-    metric: str | Callable | list[str | Callable],
+    metric: str | Callable | Sequence[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
     n_iter: int = 10,
     random_state: int = 123,
@@ -2653,7 +2653,7 @@ def _evaluate_grid_hyperparameters_stats(
     y: pd.Series,
     cv: TimeSeriesFold,
     param_grid: dict,
-    metric: str | Callable | list[str | Callable],
+    metric: str | Callable | Sequence[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
     return_best: bool = True,
     n_jobs: int | str = 'auto',
@@ -2850,7 +2850,7 @@ def grid_search_equivalent_date(
     y: pd.Series,
     cv: TimeSeriesFold,
     param_grid: dict | list[dict],
-    metric: str | Callable | list[str | Callable],
+    metric: str | Callable | Sequence[str | Callable],
     return_best: bool = True,
     n_jobs: int | str = 'auto',
     verbose: bool = False,

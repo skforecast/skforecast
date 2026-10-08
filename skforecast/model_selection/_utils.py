@@ -6,7 +6,7 @@
 
 
 from __future__ import annotations
-from typing import Callable, Generator
+from typing import Callable, Generator, Mapping, Any, Sequence
 import warnings
 import numpy as np
 import pandas as pd
@@ -31,8 +31,8 @@ from ..utils import (
 def initialize_lags_grid(
     forecaster: object, 
     lags_grid: (
-        list[int | list[int] | np.ndarray[int] | range[int]]
-        | dict[str, list[int | list[int] | np.ndarray[int] | range[int]]]
+        Sequence[int | list[int] | np.ndarray | range]
+        | Mapping[str, int | list[int] | np.ndarray | range]
         | None
     ) = None,
 ) -> tuple[dict[str, int], str]:
@@ -79,12 +79,12 @@ def initialize_lags_grid(
 def check_backtesting_input(
     forecaster: object,
     cv: object,
-    metric: str | Callable | list[str | Callable],
+    metric: str | Callable | Sequence[str | Callable],
     add_aggregated_metric: bool = True,
     y: pd.Series | None = None,
-    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame] = None,
-    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
-    interval: float | list[float] | tuple[float] | str | object | None = None,
+    series: pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame] = None,
+    exog: pd.Series | pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame] | None = None,
+    interval: float | list[float] | tuple[float, ...] | str | object | None = None,
     interval_method: str = 'bootstrapping',    
     alpha: float | None = None,
     n_boot: int = 250,
@@ -495,10 +495,10 @@ def check_backtesting_input(
 def check_one_step_ahead_input(
     forecaster: object,
     cv: object,
-    metric: str | Callable | list[str | Callable],
+    metric: str | Callable | Sequence[str | Callable],
     y: pd.Series | None = None,
-    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame] = None,
-    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+    series: pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame] = None,
+    exog: pd.Series | pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame] | None = None,
     show_progress: bool = True,
     suppress_warnings: bool = False
 ) -> None:
@@ -747,7 +747,7 @@ def _calculate_metrics_one_step_ahead(
     X_test: np.ndarray,
     y_test: np.ndarray,
     sample_weight: np.ndarray | None,
-    fit_kwargs: dict[str, object]
+    fit_kwargs: dict[str, Any]
 ) -> list:
     """
     Calculate metrics when predictions are one-step-ahead. When forecaster is
@@ -837,7 +837,7 @@ def _calculate_metrics_one_step_ahead(
 
 def _initialize_levels_model_selection_multiseries(
     forecaster: object, 
-    series:  pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+    series:  pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame],
     levels: str | list | None = None
 ) -> list:
     """
@@ -912,11 +912,11 @@ def _initialize_levels_model_selection_multiseries(
 
 
 def _extract_data_folds_multiseries(
-    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+    series: pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame],
     folds: list,
     span_index: pd.DatetimeIndex | pd.RangeIndex,
     window_size: int,
-    exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
+    exog: pd.Series | pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame] | None = None,
     dropna_last_window: bool = False,
     externally_fitted: bool = False
 ) -> Generator[
@@ -1065,7 +1065,7 @@ def _extract_data_folds_multiseries(
 
 
 def _calculate_metrics_backtesting_multiseries(
-    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+    series: pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame],
     predictions: pd.DataFrame,
     folds: list[list[int]] | tqdm,
     span_index: pd.DatetimeIndex | pd.RangeIndex,
@@ -1293,7 +1293,7 @@ def _calculate_metrics_backtesting_multiseries(
 
 def _predict_and_calculate_metrics_one_step_ahead_multiseries(
     forecaster: object,
-    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+    series: pd.DataFrame | Mapping[str, pd.Series | pd.DataFrame],
     X_train: pd.DataFrame,
     y_train: pd.Series | dict[int, pd.Series],
     X_test: pd.DataFrame,
@@ -1301,10 +1301,10 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
     X_train_encoding: pd.Series | pd.Index,
     X_test_encoding: pd.Series | pd.Index,
     levels: list[str],
-    metrics: list[str | Callable],
+    metrics: Sequence[str | Callable],
     add_aggregated_metric: bool = True,
     sample_weight: np.ndarray | None = None,
-    fit_kwargs: dict[str, object] | None = None,
+    fit_kwargs: dict[str, Any] | None = None,
     return_predictions: bool = True
 ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
     """   

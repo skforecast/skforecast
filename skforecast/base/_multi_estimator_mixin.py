@@ -6,6 +6,7 @@
 
 
 from __future__ import annotations
+from typing import Any
 import warnings
 import pandas as pd
 
@@ -181,7 +182,7 @@ class MultiEstimatorMixin:
         return estimators_html, params_html
 
     def _check_select_fit_kwargs(
-        self, fit_kwargs: dict[str, object] | None = None
+        self, fit_kwargs: dict[str, Any] | None = None
     ) -> dict[str, dict[str, object]]:
         """
         Select, for each estimator, the keyword arguments accepted by its `fit`

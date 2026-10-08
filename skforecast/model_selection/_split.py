@@ -6,7 +6,7 @@
 
 
 from __future__ import annotations
-from typing import Any
+from typing import Any, Mapping
 import warnings
 import numpy as np
 import pandas as pd
@@ -264,7 +264,7 @@ class BaseFold():
 
     def _extract_index(
         self,
-        X: pd.Series | pd.DataFrame | pd.Index | dict[str, pd.Series | pd.DataFrame]
+        X: pd.Series | pd.DataFrame | pd.Index | Mapping[str, pd.Series | pd.DataFrame]
     ) -> pd.Index:
         """
         Extracts and returns the index from the input data X.
@@ -494,7 +494,7 @@ class OneStepAheadFold(BaseFold):
     
     def split(
         self,
-        X: pd.Series | pd.DataFrame | pd.Index | dict[str, pd.Series | pd.DataFrame],
+        X: pd.Series | pd.DataFrame | pd.Index | Mapping[str, pd.Series | pd.DataFrame],
         as_pandas: bool = False,
         externally_fitted: Any = None
     ) -> list | pd.DataFrame:
@@ -918,7 +918,7 @@ class TimeSeriesFold(BaseFold):
 
     def split(
         self,
-        X: pd.Series | pd.DataFrame | pd.Index | dict[str, pd.Series | pd.DataFrame],
+        X: pd.Series | pd.DataFrame | pd.Index | Mapping[str, pd.Series | pd.DataFrame],
         as_pandas: bool = False
     ) -> list | pd.DataFrame:
         """

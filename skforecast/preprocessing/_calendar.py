@@ -42,7 +42,7 @@ def create_calendar_features(
     X: pd.Series | pd.DataFrame | pd.DatetimeIndex,
     features: list[str] | None = None,
     features_to_encode: list[str] | None = None,
-    encoding: str = "cyclical",
+    encoding: str | None = "cyclical",
     max_values: dict[str, int] | None = None,
     spline_kwargs: dict | None = None,
     keep_original_columns: bool = True,
@@ -70,7 +70,7 @@ def create_calendar_features(
         cannot be encoded with the chosen `encoding` (e.g. `'year'` or
         `'weekend'`, which are never encodable), an `IgnoredArgumentWarning`
         is issued and those features are kept as raw integers.
-    encoding : str, default 'cyclical'
+    encoding : str, None, default 'cyclical'
         Encoding method for the extracted features. Options are `None`,
         `'cyclical'`, `'onehot'` or `'spline'`. Features that cannot be
         encoded under the chosen mode are kept as raw integers. By default,
@@ -412,7 +412,7 @@ class CalendarFeatures(BaseEstimator, TransformerMixin):
         (e.g. `'year'` or `'weekend'`, which are never encodable), an
         `IgnoredArgumentWarning` is issued and those features are kept as raw
         integers.
-    encoding : str, default 'cyclical'
+    encoding : str, None, default 'cyclical'
         Encoding method for the extracted features. Options are `None`,
         `'cyclical'`, `'onehot'` or `'spline'`. Features that cannot be
         encoded under the chosen mode are kept as raw integers. By default,
@@ -530,7 +530,7 @@ class CalendarFeatures(BaseEstimator, TransformerMixin):
         self,
         features: list[str] | None = None,
         features_to_encode: list[str] | None = None,
-        encoding: str = "cyclical",
+        encoding: str | None = "cyclical",
         max_values: dict[str, int] | None = None,
         spline_kwargs: dict | None = None,
         keep_original_columns: bool = True,
