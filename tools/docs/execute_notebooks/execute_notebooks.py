@@ -242,7 +242,12 @@ def _get_kernel_skforecast(kernel_python):
     if proc.returncode != 0:
         last_line = (proc.stderr.strip().splitlines() or ["unknown error"])[-1]
         return f"n/a ({last_line})", False
-    location = Path(proc.stdout.strip()).resolve()
+    location = proc.stdout.strip()
+    if location == "None":
+        # Namespace package: a 'skforecast' folder without __init__.py, such as
+        # the leftovers of an uninstalled version in site-packages
+        return "n/a (folder without __init__.py, not an installed package)", False
+    location = Path(location).resolve()
     return str(location), location.is_relative_to(REPO_ROOT / "skforecast")
 
 
