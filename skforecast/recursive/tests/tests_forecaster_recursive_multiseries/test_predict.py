@@ -1,6 +1,7 @@
 # Unit test predict ForecasterRecursiveMultiSeries
 # ==============================================================================
 import re
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
@@ -21,6 +22,7 @@ from xgboost import XGBRegressor
 
 from copy import deepcopy
 from skforecast.exceptions import IgnoredArgumentWarning
+from skforecast.exceptions import MissingExogWarning, MissingValuesWarning
 from skforecast.preprocessing import RollingFeatures, TimeSeriesDifferentiator
 from ....recursive import ForecasterRecursiveMultiSeries
 
@@ -1478,3 +1480,107 @@ def test_predict_output_when_series_nullable_dtypes_with_leading_NA(dtype):
     expected = forecaster_float.predict(steps=2, suppress_warnings=True)
 
     pd.testing.assert_frame_equal(predictions, expected)
+
+
+@pytest.mark.parametrize(
+    "exog_format",
+    ['wide', 'dict'],
+    ids=lambda exog_format: f'exog_format: {exog_format}'
+)
+@pytest.mark.parametrize(
+    "case, warning_category, warning_message",
+    [
+        ('user_nan', MissingValuesWarning, "has missing values"),
+        ('fewer_rows', MissingValuesWarning, "doesn't have as many values as steps"),
+        ('dates_gap', MissingValuesWarning, "has no value for some of the 3 steps"),
+        ('missing_column', MissingExogWarning, "{'exog_2'} not present in `exog`"),
+    ],
+    ids=['user_nan', 'fewer_rows', 'dates_gap', 'missing_column']
+)
+def test_predict_warns_once_when_exog_has_missing_values(
+    exog_format, case, warning_category, warning_message
+):
+    """
+    Test predict issues a single warning for each level when the exog used to
+    predict has missing values, or they appear when aligning it with the 
+    predictions. Before, a wide exog issued a second MissingValuesWarning.
+    The exog has an integer column, whose dtype changes with the NaN values.
+    """
+    rng = np.random.default_rng(123)
+    index = pd.date_range(start='2020-01-01', periods=50, freq='D')
+    series = {
+        'l1': pd.Series(rng.normal(size=50), index=index),
+        'l2': pd.Series(rng.normal(size=50), index=index)
+    }
+    exog = pd.DataFrame(
+        {'exog_1': rng.normal(size=50), 'exog_2': np.arange(50)}, index=index
+    )
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
+    forecaster.fit(series=series, exog=exog)
+
+    exog_pred = pd.DataFrame(
+        {'exog_1': [1., 2., 3.], 'exog_2': [1, 2, 3]},
+        index=pd.date_range(start='2020-02-20', periods=3, freq='D')
+    )
+    if case == 'user_nan':
+        exog_pred['exog_1'] = [1., np.nan, 3.]
+    elif case == 'fewer_rows':
+        exog_pred = exog_pred.iloc[:2]
+    elif case == 'dates_gap':
+        exog_pred.index = pd.DatetimeIndex(['2020-02-20', '2020-02-22', '2020-02-23'])
+    else:
+        exog_pred = exog_pred[['exog_1']]
+    if exog_format == 'dict':
+        exog_pred = {'l1': exog_pred, 'l2': exog_pred}
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        forecaster.predict(steps=3, exog=exog_pred)
+
+    n_expected_warnings = 1 if exog_format == 'wide' else 2
+    warnings_raised = [
+        x for x in w
+        if issubclass(x.category, (MissingValuesWarning, MissingExogWarning))
+    ]
+    assert len(warnings_raised) == n_expected_warnings
+    for x in warnings_raised:
+        assert x.category is warning_category
+        assert warning_message in str(x.message)
+
+
+
+def test_predict_MissingValuesWarning_when_exog_has_categories_not_seen_in_fit():
+    """
+    Test predict issues a single MissingValuesWarning when a wide exog has a 
+    category not seen during training, which is encoded as NaN.
+    """
+    rng = np.random.default_rng(123)
+    index = pd.date_range(start='2020-01-01', periods=50, freq='D')
+    series = {
+        'l1': pd.Series(rng.normal(size=50), index=index),
+        'l2': pd.Series(rng.normal(size=50), index=index)
+    }
+    exog = pd.DataFrame(
+        {
+            'exog_1': rng.normal(size=50),
+            'exog_2': pd.Categorical(rng.choice(['a', 'b'], size=50))
+        },
+        index=index
+    )
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
+    forecaster.fit(series=series, exog=exog)
+
+    exog_pred = pd.DataFrame(
+        {'exog_1': [1., 2., 3.], 'exog_2': pd.Categorical(['a', 'c', 'b'])},
+        index=pd.date_range(start='2020-02-20', periods=3, freq='D')
+    )
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        forecaster.predict(steps=3, exog=exog_pred)
+
+    warnings_raised = [x for x in w if issubclass(x.category, MissingValuesWarning)]
+    assert len(warnings_raised) == 1
+    assert str(warnings_raised[0].message).startswith(
+        "`exog` has missing values after its transformation, for example "
+        "categories not seen during training."
+    )

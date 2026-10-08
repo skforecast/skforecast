@@ -43,7 +43,6 @@ from ..utils import (
     align_series_and_exog_multiseries,
     prepare_levels_multiseries,
     preprocess_levels_self_last_window_multiseries,
-    check_exog,
     get_exog_dtypes,
     check_exog_dtypes,
     check_predict_input,
@@ -2766,6 +2765,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                                index   = prediction_index,
                                columns = self.exog_names_in_
                            )
+
+                # NOTE: The missing values of `exog`, also those created when
+                # aligning it, are already warned in `check_predict_input`.
+                exog_has_nan = exog.iloc[:steps].isna().to_numpy().any()
                 
                 exog = transform_dataframe(
                            df                = exog,
@@ -2786,9 +2789,16 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 
                 # NOTE: Only check dtypes if they are not the same as seen in training
                 if not exog.dtypes.to_dict() == self.exog_dtypes_out_:
-                    check_exog_dtypes(exog=exog)
-                else:
-                    check_exog(exog=exog, allow_nan=False)
+                    check_exog_dtypes(exog=exog, call_check_exog=False)
+                
+                if not exog_has_nan and exog.iloc[:steps].isna().to_numpy().any():
+                    warnings.warn(
+                        "`exog` has missing values after its transformation, for "
+                        "example categories not seen during training. Most of "
+                        "machine learning models do not allow missing values. "
+                        "Prediction method may fail.",
+                        MissingValuesWarning
+                    )
                 
                 exog_values = exog.iloc[:steps, :]
         else:
@@ -2862,9 +2872,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         )
                     )
             
-                # NOTE: Only check dtypes if they are not the same as seen in training
+                # NOTE: Only check dtypes if they are not the same as seen in
+                # training. Missing values are already warned in `check_predict_input`.
                 if not exog_values_all_levels.dtypes.to_dict() == self.exog_dtypes_out_:
-                    check_exog_dtypes(exog=exog_values_all_levels)
+                    check_exog_dtypes(
+                        exog=exog_values_all_levels, call_check_exog=False
+                    )
             
             exog_values_all_levels = exog_values_all_levels.to_numpy()
             exog_values_dict = {
