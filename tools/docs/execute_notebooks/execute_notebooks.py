@@ -674,6 +674,10 @@ def run_notebooks(targets=None, include_slow=False, check=False):
     if targets:
         suffix_parts = [t.replace("/", "_").replace(".ipynb", "") for t in targets]
         suffix = f"_{'_'.join(suffix_parts)}"
+        # File names are limited to 255 bytes: with many targets, the log name
+        # only carries their number (the log header lists them in `Scope`).
+        if len(suffix) > 100:
+            suffix = f"_{len(targets)}_targets"
     else:
         suffix = ""
     LOG_DIR.mkdir(parents=True, exist_ok=True)

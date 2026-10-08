@@ -201,9 +201,10 @@ def run_benchmark_ForecasterRecursive(output_dir, run_id=None):
     _ = runner.benchmark(ForecasterRecursive_predict, forecaster=forecaster, exog=exog_pred)
     _ = runner.benchmark(ForecasterRecursive_predict_interval_conformal, forecaster=forecaster, exog=exog_pred)
 
-    # Slow, low-repeat benchmark: no warmup on purpose, it would disproportionately
-    # increase CI time, and repeat=5 is too low for the max-trim to apply anyway.
-    runner = BenchmarkRunner(repeat=5, output_dir=output_dir, run_id=run_id)
+    # Low-repeat benchmark: repeat=5 is too low for the max-trim to apply, so a
+    # single warmup call absorbs the one-time costs of the first backtesting
+    # (lazy imports, JIT compilation), which otherwise inflate the average.
+    runner = BenchmarkRunner(repeat=5, warmup=1, output_dir=output_dir, run_id=run_id)
     _ = runner.benchmark(ForecasterRecursive_backtesting, forecaster=forecaster, y=y, exog=exog)
     _ = runner.benchmark(ForecasterRecursive_backtesting_conformal, forecaster=forecaster, y=y, exog=exog)
 
