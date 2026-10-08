@@ -55,13 +55,13 @@ The files above are only loaded when the skforecast repository itself is open. T
 
     ```bash
     # Install in the current project (asks which agents to install to)
-    npx skills add skforecast/skforecast
+    npx skills add skforecast/skforecast/skills
 
     # Install for a specific agent, available in all your projects
-    npx skills add skforecast/skforecast --agent cursor --global
+    npx skills add skforecast/skforecast/skills --agent cursor --global
 
     # Install only some skills
-    npx skills add skforecast/skforecast --skill forecasting-single-series --skill prediction-intervals
+    npx skills add skforecast/skforecast/skills --skill forecasting-single-series --skill prediction-intervals
 
     # Update to the latest published skills
     npx skills update
