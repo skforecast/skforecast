@@ -1,8 +1,8 @@
 <!doctype html>
 <!--
   Social preview card of the documentation home page (1200 x 630 px), rendered
-  to docs/img/social-card-home.png by make_social_card.mjs. The query string
-  `?stage=<file URL>` points to a screenshot of the home page animation.
+  to docs/img/social-card-home.png by make_social_card.mjs, which sets the
+  source of the `#stage` image to a screenshot of the home page animation.
 -->
 <html lang="en">
 <head>
@@ -66,8 +66,5 @@
     <h1>Time series forecasting,<br>from prototype to production</h1>
   </div>
   <div class="stage"><img id="stage" alt=""></div>
-  <script>
-    document.getElementById("stage").src = new URLSearchParams(location.search).get("stage");
-  </script>
 </body>
 </html>
