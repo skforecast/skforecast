@@ -1286,6 +1286,59 @@ def test_compute_prediction_variance_damped_additive_seasonal_matches_R():
     np.testing.assert_allclose(var, expected, rtol=1e-6)
 
 
+@pytest.mark.parametrize("model_type, m", [("AAN", 1), ("AAA", 4), ("AAA", 12)])
+@pytest.mark.parametrize("phi", [0.8, 0.9, 0.98, 0.9985, 0.9995, 1.0])
+def test_compute_prediction_variance_damped_matches_error_weights(model_type, m, phi):
+    """
+    Test that the analytical forecast variance of the damped additive models,
+    ETS(A,Ad,N) and ETS(A,Ad,A), is the one of the state-space model,
+    sigma2 * (1 + sum of the squared weights of the past errors), with a
+    seasonal smoothing parameter that is not negligible and more than two
+    seasonal cycles. It includes values of phi close to 1 and phi = 1, where
+    the closed form is not used because it divides by (1 - phi)**2.
+    """
+    y = 50 + 0.3 * np.arange(60) + 5 * np.sin(2 * np.pi * np.arange(60) / 4)
+    model = ets(y, m=m, model=model_type, damped=True)
+    alpha, beta, gamma, sigma2, h = 0.4, 0.15, 0.3, 2.5, 40
+    model.params = ETSParams(
+        alpha=alpha, beta=beta, gamma=gamma, phi=phi,
+        init_states=model.params.init_states
+    )
+    model.sigma2 = sigma2
+
+    var = _compute_prediction_variance(model, h=h)
+
+    weights = np.array([
+        alpha
+        + beta * sum(phi**i for i in range(1, j + 1))
+        + (gamma if model_type == "AAA" and j % m == 0 else 0.0)
+        for j in range(1, h)
+    ])
+    expected = sigma2 * np.concatenate(([1.0], 1 + np.cumsum(weights**2)))
+    np.testing.assert_allclose(var, expected, rtol=1e-7)
+
+
+@pytest.mark.parametrize("model_type, m", [("AAN", 1), ("AAA", 4)])
+def test_compute_prediction_variance_damped_phi_1_equals_not_damped(model_type, m):
+    """
+    Test that the forecast variance of a damped model with phi = 1 is finite
+    and equal to the one of the same model without damping.
+    """
+    y = 50 + 0.3 * np.arange(60) + 5 * np.sin(2 * np.pi * np.arange(60) / 4)
+    variances = []
+    for damped in [True, False]:
+        model = ets(y, m=m, model=model_type, damped=damped)
+        model.params = ETSParams(
+            alpha=0.4, beta=0.15, gamma=0.3, phi=1.0,
+            init_states=model.params.init_states
+        )
+        model.sigma2 = 2.5
+        variances.append(_compute_prediction_variance(model, h=30))
+
+    assert np.all(np.isfinite(variances[0]))
+    np.testing.assert_allclose(variances[0], variances[1], rtol=1e-12)
+
+
 @pytest.mark.parametrize("lambda_param", [0.0, 0.5], ids=lambda x: f"lambda: {x}")
 def test_forecast_ets_box_cox_bias_adjustment_uses_forecast_variance(lambda_param):
     """

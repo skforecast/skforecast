@@ -1522,6 +1522,19 @@ def _compute_prediction_variance(model: ETSModel, h: int) -> NDArray[np.float64]
             var = sigma * (1 + (steps - 1) * (alpha**2 + alpha * beta * steps +
                           (1 / 6) * beta**2 * steps * (2 * steps - 1)))
 
+        elif trend == "A" and season in ("N", "A") and damped and 1 - phi < 1e-3:
+            # The closed forms of the damped models divide by (1 - phi)**2:
+            # they lose precision when phi is close to 1 and are undefined
+            # when phi = 1 (only possible with a fixed phi and admissible
+            # bounds). The variance is then accumulated from the weights of
+            # the past errors, alpha + beta * (phi + ... + phi**j), plus gamma
+            # every m steps.
+            j = steps[:-1]
+            psi = alpha + beta * np.cumsum(phi**j)
+            if season == "A":
+                psi = psi + gamma * (j % m == 0)
+            var = sigma * np.concatenate(([1.0], 1 + np.cumsum(psi**2)))
+
         elif trend == "A" and season == "N" and damped:
             exp1 = (beta * phi * steps) / (1 - phi)**2
             exp2 = 2 * alpha * (1 - phi) + beta * phi
