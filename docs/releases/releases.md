@@ -133,6 +133,8 @@ The main changes in this release are:
 
 **Fixed**
 
++ The prediction intervals of <code>[Ets]</code> models with damped additive trend and additive seasonality (ETS(A,Ad,A)) are now computed from the analytical forecast variance, as R's `forecast.ets` does, instead of from 1000 simulated paths, which made them differ from R's by a few percent.
+
 + `seas_heuristic`, used by `nsdiffs` and the automatic order selection of <code>[Arima]</code> to choose the number of seasonal differences, computed the seasonal strength with a centered moving average instead of STL, so it could choose a different `D` than R's `forecast::nsdiffs` for series near the 0.64 threshold. It now uses the same STL decomposition as R's `forecast::mstl`.
 
 + The AICc used by the automatic model selection of <code>[Ets]</code> did not count the variance as a parameter, so its small-sample correction was smaller than the one in the AIC and in R's `forecast::ets`. It now uses the same number of parameters as the AIC, which can change the selected model for short series.

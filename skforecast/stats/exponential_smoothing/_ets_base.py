@@ -1539,6 +1539,19 @@ def _compute_prediction_variance(model: ETSModel, h: int) -> NDArray[np.float64]
             exp2 = 2 * alpha + gamma + beta * m * (hm + 1)
             var = sigma * (1 + (steps - 1) * exp1 + gamma * hm * exp2)
 
+        elif trend == "A" and season == "A" and damped:
+            hm = np.floor((steps - 1) / m)
+            exp1 = (beta * phi * steps) / (1 - phi)**2
+            exp2 = 2 * alpha * (1 - phi) + beta * phi
+            exp3 = (beta * phi * (1 - phi**steps)) / ((1 - phi)**2 * (1 - phi**2))
+            exp4 = 2 * alpha * (1 - phi**2) + beta * phi * (1 + 2 * phi - phi**steps)
+            exp5 = (2 * beta * gamma * phi) / ((1 - phi) * (1 - phi**m))
+            exp6 = hm * (1 - phi**m) - phi**m * (1 - phi**(m * hm))
+            var = sigma * (
+                1 + alpha**2 * (steps - 1) + gamma * hm * (2 * alpha + gamma)
+                + exp1 * exp2 - exp3 * exp4 + exp5 * exp6
+            )
+
         else:
             var = None
 
