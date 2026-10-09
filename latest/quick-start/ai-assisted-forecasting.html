@@ -114,7 +114,7 @@
             
   👋 New in the skforecast ecosystem:
 <a href="https://studio.skforecast.org" target="_blank" rel="noopener noreferrer"><strong>skforecast studio</strong></a> (train and evaluate models visually, no coding required) and
-<a href="https://ai.skforecast.org" target="_blank" rel="noopener noreferrer"><strong>skforecast-ai</strong></a> (agentic time series forecasting).
+<a href="https://ai.skforecast.org" target="_blank" rel="noopener noreferrer"><strong>skforecast-ai</strong></a> (agentic time series forecasting, now with an <a href="https://ai.skforecast.org/stable/user-guides/mcp-server.html" target="_blank" rel="noopener noreferrer">MCP server</a> for coding agents).
 
           </div>
           
@@ -5114,6 +5114,10 @@ cp<span class="w"> </span>-r<span class="w"> </span>skforecast/skills/*<span cla
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>The plugin, the <code>skills</code> CLI and Context7 read the <code>main</code> branch of the repository, so the installed skills always describe the <strong>latest released version</strong> of skforecast. If you work with an older version, mention it in your prompt.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Let the agent run the forecast</p>
+<p>The options above give your agent the knowledge to write skforecast code. To give it tools that run the forecast instead, use the MCP server of <a href="../skforecast-ai/skforecast-ai.html#use-it-from-your-coding-agent">skforecast-ai</a>: the agent profiles a CSV file, plans a forecaster, backtests it and forecasts. Every decision comes from deterministic rules, not from the language model, and every result comes with the skforecast script that produced it.</p>
 </div>
 <h2 id="whats-included-in-the-context">What's included in the context<a class="headerlink" href="#whats-included-in-the-context" title="Permanent link">&para;</a></h2>
 <p>The AI context covers:</p>
