@@ -93,6 +93,10 @@ The files above are only loaded when the skforecast repository itself is open. T
 
     The plugin, the `skills` CLI and Context7 read the `main` branch of the repository, so the installed skills always describe the **latest released version** of skforecast. If you work with an older version, mention it in your prompt.
 
+!!! tip "Let the agent run the forecast"
+
+    The options above give your agent the knowledge to write skforecast code. To give it tools that run the forecast instead, use the MCP server of [skforecast-ai](../skforecast-ai/skforecast-ai.md#use-it-from-your-coding-agent): the agent profiles a CSV file, plans a forecaster, backtests it and forecasts. Every decision comes from deterministic rules, not from the language model, and every result comes with the skforecast script that produced it.
+
 
 ## What's included in the context
 
