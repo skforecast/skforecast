@@ -2358,7 +2358,7 @@ pip install "timesfm[torch]"       # For TimesFM 2.5 and 3.0
 pip install uni2ts                 # For Moirai-2
 pip install tabicl[forecast]       # For TabICL
 pip install "tabpfn-time-series>=1.3"  # For TabPFN-TS
-pip install tfc-t0                 # For T0
+pip install "tfc-t0<0.4"           # For T0
 pip install tsicl                  # For TS-ICL
 pip install synthefy-nori          # For Nori
 ```
