@@ -9,6 +9,7 @@ from skforecast.metrics import root_mean_squared_scaled_error
 from sklearn.linear_model import Ridge
 from sklearn.preprocessing import StandardScaler
 from skforecast.recursive import ForecasterRecursive
+from skforecast.preprocessing import RollingFeatures
 from skforecast.direct import ForecasterDirect
 from skforecast.model_selection._search import grid_search_forecaster
 from skforecast.model_selection._split import TimeSeriesFold
@@ -217,3 +218,42 @@ def test_grid_search_forecaster_one_step_ahead_date_initial_train_size_equivalen
     # `initial_train_size` must remain the raw user input on the (deep-copied) cv objects.
     assert cv_int.initial_train_size == initial_train_size_int
     assert cv_date.initial_train_size == "2020-02-07"
+
+
+@pytest.mark.parametrize(
+    "cv",
+    [TimeSeriesFold(steps=3, initial_train_size=30),
+     OneStepAheadFold(initial_train_size=30)],
+    ids=lambda cv: type(cv).__name__
+)
+@pytest.mark.parametrize(
+    "lags_grid, lags_expected",
+    [(None, [None, None]),
+     ([None], [None, None])],
+    ids=lambda x: f"{x}"
+)
+def test_grid_search_forecaster_when_forecaster_has_only_window_features(cv, lags_grid, lags_expected):
+    """
+    Test grid_search_forecaster with a forecaster created with lags=None and
+    window features.
+    """
+    forecaster = ForecasterRecursive(
+        estimator=Ridge(random_state=123),
+        lags=None,
+        window_features=RollingFeatures(stats='mean', window_sizes=3)
+    )
+    results = grid_search_forecaster(
+        forecaster  = forecaster,
+        y           = y,
+        cv          = cv,
+        lags_grid   = lags_grid,
+        param_grid  = {"alpha": [0.01, 1]},
+        metric      = "mean_absolute_error",
+        return_best = True,
+        verbose     = False
+    )
+
+    assert results['lags'].to_list() == lags_expected
+    assert forecaster.lags is None
+    assert forecaster.is_fitted
+

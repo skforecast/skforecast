@@ -418,7 +418,11 @@ def _evaluate_grid_hyperparameters(
     for lags_k, lags_v in lags_grid_tqdm:
         
         forecaster_search.set_lags(lags_v)
-        lags_v = forecaster_search.lags.copy()
+        lags_v = (
+            forecaster_search.lags.copy()
+            if forecaster_search.lags is not None
+            else None
+        )
         if lags_label == 'values':
             lags_k = lags_v
 
@@ -1412,7 +1416,11 @@ def _evaluate_grid_hyperparameters_multiseries(
     for lags_k, lags_v in lags_grid_tqdm:
 
         forecaster_search.set_lags(lags_v)
-        lags_v = forecaster_search.lags.copy()
+        lags_v = (
+            forecaster_search.lags.copy()
+            if forecaster_search.lags is not None
+            else None
+        )
         if lags_label == 'values':
             lags_k = lags_v
 

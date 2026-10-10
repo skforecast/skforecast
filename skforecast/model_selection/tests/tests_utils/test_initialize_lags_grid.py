@@ -5,6 +5,7 @@ import pytest
 import numpy as np
 from sklearn.linear_model import Ridge
 from skforecast.recursive import ForecasterRecursive
+from skforecast.preprocessing import RollingFeatures
 from skforecast.model_selection._utils import initialize_lags_grid
 
 
@@ -67,6 +68,22 @@ def test_initialize_lags_grid_when_lags_grid_is_None(lags, lags_grid_expected):
     assert lags_grid.keys() == lags_grid_expected.keys()
     for v, v_expected in zip(lags_grid.values(), lags_grid_expected.values()):
         assert v == v_expected
+
+
+def test_initialize_lags_grid_when_lags_grid_is_None_and_forecaster_has_no_lags():
+    """
+    Test initialize_lags_grid when lags_grid is None and the forecaster only
+    uses window features (lags=None).
+    """
+    forecaster = ForecasterRecursive(
+        estimator=Ridge(random_state=123),
+        lags=None,
+        window_features=RollingFeatures(stats='mean', window_sizes=3)
+    )
+    lags_grid, lags_label = initialize_lags_grid(forecaster, None)
+
+    assert lags_label == 'values'
+    assert lags_grid == {'None': None}
 
 
 def test_initialize_lags_grid_when_lags_grid_is_a_dict():
