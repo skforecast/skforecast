@@ -55,13 +55,13 @@ The files above are only loaded when the skforecast repository itself is open. T
 
     ```bash
     # Install in the current project (asks which agents to install to)
-    npx skills add skforecast/skforecast
+    npx skills add skforecast/skforecast/skills
 
     # Install for a specific agent, available in all your projects
-    npx skills add skforecast/skforecast --agent cursor --global
+    npx skills add skforecast/skforecast/skills --agent cursor --global
 
     # Install only some skills
-    npx skills add skforecast/skforecast --skill forecasting-single-series --skill prediction-intervals
+    npx skills add skforecast/skforecast/skills --skill forecasting-single-series --skill prediction-intervals
 
     # Update to the latest published skills
     npx skills update
@@ -92,6 +92,10 @@ The files above are only loaded when the skforecast repository itself is open. T
 !!! note
 
     The plugin, the `skills` CLI and Context7 read the `main` branch of the repository, so the installed skills always describe the **latest released version** of skforecast. If you work with an older version, mention it in your prompt.
+
+!!! tip "Let the agent run the forecast"
+
+    The options above give your agent the knowledge to write skforecast code. To give it tools that run the forecast instead, use the MCP server of [skforecast-ai](../skforecast-ai/skforecast-ai.md#use-it-from-your-coding-agent): the agent profiles a CSV file, plans a forecaster, backtests it and forecasts. Every decision comes from deterministic rules, not from the language model, and every result comes with the skforecast script that produced it.
 
 
 ## What's included in the context

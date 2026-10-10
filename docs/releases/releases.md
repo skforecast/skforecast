@@ -18,7 +18,7 @@ The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> New functions <code>[get_model_info]</code> and <code>[list_adapters]</code> in `skforecast.foundation` to query the capabilities and requirements of the foundation models (exogenous variable support, quantiles, backend package, license) without installing the backend or loading the weights. ([#1324](https://github.com/skforecast/skforecast/pull/1324))
 
-+ <span class="badge text-bg-feature">Feature</span> The skforecast workflow skills can be installed in your own coding agent, as a Claude Code plugin or with `npx skills add skforecast/skforecast`, and the documentation is available in [Context7](https://context7.com/skforecast/skforecast). [User guide](../quick-start/ai-assisted-forecasting.md#install-skforecast-context-in-your-agent) ([#1351](https://github.com/skforecast/skforecast/pull/1351))
++ <span class="badge text-bg-feature">Feature</span> The skforecast workflow skills can be installed in your own coding agent, as a Claude Code plugin or with `npx skills add skforecast/skforecast/skills`, and the documentation is available in [Context7](https://context7.com/skforecast/skforecast). [User guide](../quick-start/ai-assisted-forecasting.md#install-skforecast-context-in-your-agent) ([#1351](https://github.com/skforecast/skforecast/pull/1351))
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Faster <code>[ForecasterRecursiveMultiSeries]</code> with many series: with 500 series, `fit` is 10 to 22% faster with LightGBM (more than 10 times with `series_weights`) and `predict` is 2.3 times faster (4.9 times with 5000 series). The predictions are the same. ([#1342](https://github.com/skforecast/skforecast/pull/1342), [#1363](https://github.com/skforecast/skforecast/pull/1363))
 
@@ -52,7 +52,7 @@ The main changes in this release are:
 
 + New argument `include_drift` in <code>[Arima]</code> to include a linear drift term when the order is specified manually (`d + D <= 1`), equivalent to `include.drift` in R's `forecast::Arima`. `best_params_` now includes `fit_intercept` and `include_drift`, so `set_params` fits exactly the selected model.
 
-+ The skforecast workflow skills can be installed in your own coding agent: as a Claude Code plugin (`/plugin marketplace add skforecast/skforecast`) or, for Cursor, GitHub Copilot, Codex, Gemini CLI and other agents, with `npx skills add skforecast/skforecast`. The documentation is also available in [Context7](https://context7.com/skforecast/skforecast) as `/skforecast/skforecast`. [User guide](../quick-start/ai-assisted-forecasting.md#install-skforecast-context-in-your-agent) ([#1351](https://github.com/skforecast/skforecast/pull/1351))
++ The skforecast workflow skills can be installed in your own coding agent: as a Claude Code plugin (`/plugin marketplace add skforecast/skforecast`) or, for Cursor, GitHub Copilot, Codex, Gemini CLI and other agents, with `npx skills add skforecast/skforecast/skills`. The documentation is also available in [Context7](https://context7.com/skforecast/skforecast) as `/skforecast/skforecast`. [User guide](../quick-start/ai-assisted-forecasting.md#install-skforecast-context-in-your-agent) ([#1351](https://github.com/skforecast/skforecast/pull/1351))
 
 + Added `statsmodels 0.15` compatibility. ([#1377](https://github.com/skforecast/skforecast/pull/1377))
 

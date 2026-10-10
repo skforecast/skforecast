@@ -183,7 +183,7 @@ duplicates `skills/`: all read the folder at the repository root.
 | Channel | Config in this repo | What the user runs |
 |---------|---------------------|--------------------|
 | **Claude Code plugin** | `.claude-plugin/marketplace.json` | `/plugin marketplace add skforecast/skforecast`, then `/plugin install skforecast@skforecast` |
-| **Any Agent Skills client** (Cursor, Copilot, Codex, Gemini CLI, ...) | None: [`npx skills`](https://github.com/vercel-labs/skills) discovers `skills/*/SKILL.md` | `npx skills add skforecast/skforecast` |
+| **Any Agent Skills client** (Cursor, Copilot, Codex, Gemini CLI, ...) | None: [`npx skills`](https://github.com/vercel-labs/skills) discovers `skills/*/SKILL.md`. The `/skills` subpath in the command is required: without it the CLI also offers the contributor skills in `.claude/skills/` | `npx skills add skforecast/skforecast/skills` |
 | **Context7** (MCP docs server) | `context7.json` | Nothing: agents with the Context7 MCP server query `/skforecast/skforecast` |
 
 Notes:

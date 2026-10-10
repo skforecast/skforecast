@@ -141,13 +141,13 @@ ForecasterEquivalentDate(
 
 ```python
 ForecasterRnn(
-    estimator=None,                    # Keras model (use create_and_compile_model)
+    estimator,                         # Keras model (required), use create_and_compile_model
     levels,                            # str | list[str] (required), target series names
     lags,                              # int | list[int] | np.ndarray | range (required)
     transformer_series=MinMaxScaler(feature_range=(0, 1)),  # transformer | dict | None
     transformer_exog=MinMaxScaler(feature_range=(0, 1)),    # transformer | None
-    fit_kwargs=None,                   # dict, extra kwargs passed to model.fit()
-    binner_kwargs=None,                # dict, kwargs for KBinsDiscretizer (binned residuals)
+    fit_kwargs=None,                   # dict, extra kwargs passed to model.fit() (plus series_val / exog_val)
+    binner_kwargs=None,                # dict, kwargs for QuantileBinner (binned residuals)
     forecaster_id=None,                # str | int, optional identifier
 )
 ```
