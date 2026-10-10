@@ -262,6 +262,8 @@ The main changes in this release are:
 
 + <code>[plot_prediction_distribution]</code> raised a `KeyError` when `bootstrapping_predictions` had an integer index, as returned by a forecaster trained without a datetime index. ([#1359](https://github.com/skforecast/skforecast/pull/1359))
 
++ <code>[plot_residuals]</code> ignored the `fig` argument and drew subplots on the active pyplot figure when another figure was already open. Subplots are now added directly to `fig`. ([#1387](https://github.com/skforecast/skforecast/pull/1387))
+
 
 ## 0.25.0 <small>Sep 11, 2026</small> { id="0.25.0" }
 
