@@ -83,9 +83,10 @@ auto_arima = Arima(order=None, seasonal_order=None, m=12)
 forecaster = ForecasterStats(estimator=auto_arima)
 forecaster.fit(y=data['target'])
 
-# Check selected order
-print(forecaster.estimator.best_params_['order'])
-print(forecaster.estimator.best_params_['seasonal_order'])
+# Check the selected model (fitted estimators are stored in `estimators_`)
+print(forecaster.estimators_[0].best_params_)
+# {'order': ..., 'seasonal_order': ..., 'm': 12, 'fit_intercept': ...,
+#  'include_drift': ..., 'lambda_bc': ...}
 
 predictions = forecaster.predict(steps=12)
 ```
@@ -96,7 +97,8 @@ predictions = forecaster.predict(steps=12)
 from skforecast.stats import Ets
 
 # Model string: 1st=Error, 2nd=Trend, 3rd=Seasonal
-# A=Additive, M=Multiplicative, N=None, Z=Auto-select
+# A=Additive, M=Multiplicative, N=None. Automatic selection only as model='ZZZ'
+# (partial specs like 'ZZN' raise an error: use 'ZZZ' with seasonal=False, trend=...)
 ets_model = Ets(model='AAA', m=12)
 forecaster = ForecasterStats(estimator=ets_model)
 forecaster.fit(y=data['target'])
@@ -113,7 +115,7 @@ forecaster = ForecasterStats(estimator=auto_ets)
 forecaster.fit(y=data['target'])
 
 # Check the selected model configuration
-print(forecaster.estimator.best_params_)
+print(forecaster.estimators_[0].best_params_)
 
 predictions = forecaster.predict(steps=12)
 ```

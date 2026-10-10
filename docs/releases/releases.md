@@ -11,18 +11,256 @@ All significant changes to this project are documented in this release file.
 | <span class="badge text-bg-docs">Docs</span>               | Documentation improvement             |
 
 
-## 0.26.0 <small>Unreleased</small> { id="0.26.0" }
+
+## 0.26.0 <small>Oct 8, 2026</small> { id="0.26.0" }
 
 The main changes in this release are:
 
-+ <span class="badge text-bg-docs">Docs</span> The examples and tutorials pages are now a filterable card grid: every tutorial shows an icon, a one line summary and topic tags, and can be narrowed down with a search box and level/topic filters. [Examples](../examples/examples_english.md)
++ <span class="badge text-bg-feature">Feature</span> New functions <code>[get_model_info]</code> and <code>[list_adapters]</code> in `skforecast.foundation` to query the capabilities and requirements of the foundation models (exogenous variable support, quantiles, backend package, license) without installing the backend or loading the weights. ([#1324](https://github.com/skforecast/skforecast/pull/1324))
+
++ <span class="badge text-bg-feature">Feature</span> The skforecast workflow skills can be installed in your own coding agent, as a Claude Code plugin or with `npx skills add skforecast/skforecast/skills`, and the documentation is available in [Context7](https://context7.com/skforecast/skforecast). [User guide](../quick-start/ai-assisted-forecasting.md#install-skforecast-context-in-your-agent) ([#1351](https://github.com/skforecast/skforecast/pull/1351))
+
++ <span class="badge text-bg-enhancement">Enhancement</span> Faster <code>[ForecasterRecursiveMultiSeries]</code> with many series: with 500 series, `fit` is 10 to 22% faster with LightGBM (more than 10 times with `series_weights`) and `predict` is 2.3 times faster (4.9 times with 5000 series). The predictions are the same. ([#1342](https://github.com/skforecast/skforecast/pull/1342), [#1363](https://github.com/skforecast/skforecast/pull/1363))
+
++ <span class="badge text-bg-enhancement">Enhancement</span> Faster <code>[Arima]</code>: seasonal models fit 1.4 to 2.2 times faster with the same results, and the automatic order selection is about 5 times faster in series with more than 150 observations. ([#1335](https://github.com/skforecast/skforecast/pull/1335), [#1374](https://github.com/skforecast/skforecast/pull/1374))
+
++ <span class="badge text-bg-api-change">API Change</span> The minimum supported versions of pandas and scikit-learn are now 2.2 and 1.6 (previously 2.1 and 1.4). ([#1348](https://github.com/skforecast/skforecast/pull/1348))
+
++ <span class="badge text-bg-fix">Fix</span> <code>[Ets]</code> now estimates its smoothing parameters. In models without a damped trend they stayed at their starting values (alpha=0.1, beta=0.01, gamma=0.01). The estimates now agree with `statsmodels` and R's `forecast::ets`. ([#1337](https://github.com/skforecast/skforecast/pull/1337))
+
++ <span class="badge text-bg-fix">Fix</span> <code>[Arima]</code> models with exogenous variables returned wrong coefficients and predictions when they had two or more regressors (for example, one exogenous variable plus the intercept). They now match `statsmodels` SARIMAX.
+
++ <span class="badge text-bg-fix">Fix</span> <code>[ForecasterRecursiveMultiSeries]</code> with `encoding='onehot'` returned wrong predictions when the series were not in alphabetical order, for example when they were named `'s1'` to `'s10'`. ([#1342](https://github.com/skforecast/skforecast/pull/1342))
+
++ <span class="badge text-bg-docs">Docs</span> New [home page](../README.md) of the documentation, and the [examples and tutorials](../examples/examples_english.md) pages are now a card grid with a search box and level and topic filters. ([#1323](https://github.com/skforecast/skforecast/pull/1323))
+
+!!! warning "Before upgrading"
+
+    Some results change with this version, without any change in your code:
+
+    + <code>[Ets]</code>: estimates, predictions, prediction intervals and the model chosen by the automatic selection change, because the smoothing parameters are now estimated.
+    + <code>[Arima]</code>: predictions change in models with exogenous variables, a Box-Cox transformation or missing values; prediction intervals are slightly wider; and the automatic order selection can choose another model (use `approximation=False` to fit every candidate by maximum likelihood, as before).
+    + <code>[ForecasterRecursiveMultiSeries]</code>: predictions change with `encoding='onehot'` when the series are not in alphabetical order, and a wide `exog` is now aligned with the predictions by index instead of by position.
+    + <code>[select_features]</code>, <code>[select_features_multiseries]</code> and, with optuna 5.0, the Bayesian search functions can return different results for the same `random_state`.
+
+    And some code needs to be updated: the minimum versions of pandas, scikit-learn, numpy, statsmodels and keras are higher, `cast_exog_dtypes` is removed and <code>[save_forecaster]</code> names its files differently. See **Changed**.
+
+
+**Added**
+
++ New functions <code>[get_model_info]</code> and <code>[list_adapters]</code> in `skforecast.foundation`. They return a <code>[FoundationModelInfo]</code> with the capabilities and requirements of a foundation model: adapter, default `context_length`, covariate support, supported quantiles, backend package, authentication, repository of the weights and license. `list_adapters(as_frame=True)` returns them as a pandas DataFrame. ([#1324](https://github.com/skforecast/skforecast/pull/1324), [#1332](https://github.com/skforecast/skforecast/pull/1332))
+
++ New argument `include_drift` in <code>[Arima]</code> to include a linear drift term when the order is specified manually (`d + D <= 1`), equivalent to `include.drift` in R's `forecast::Arima`. `best_params_` now includes `fit_intercept` and `include_drift`, so `set_params` fits exactly the selected model.
+
++ The skforecast workflow skills can be installed in your own coding agent: as a Claude Code plugin (`/plugin marketplace add skforecast/skforecast`) or, for Cursor, GitHub Copilot, Codex, Gemini CLI and other agents, with `npx skills add skforecast/skforecast/skills`. The documentation is also available in [Context7](https://context7.com/skforecast/skforecast) as `/skforecast/skforecast`. [User guide](../quick-start/ai-assisted-forecasting.md#install-skforecast-context-in-your-agent) ([#1351](https://github.com/skforecast/skforecast/pull/1351))
+
++ Added `statsmodels 0.15` compatibility. ([#1377](https://github.com/skforecast/skforecast/pull/1377))
+
++ Added `optuna 5.0` compatibility. Its `TPESampler` suggests different values, so the results of the Bayesian search functions for a given `random_state` may differ from those obtained with optuna 4.x.
 
 
 **Changed**
 
-+ The examples and tutorials pages (English, Spanish and Chinese) are rendered as Material card grids with a search box and level/topic filter chips. Each tutorial now carries a one line summary and tags, and a language switcher links the three pages. The page URLs are unchanged. The three pages are generated at build time from a single source of truth, `tools/docs_hooks/examples.yml`, so the languages can no longer drift apart; add or edit a tutorial there rather than in the Markdown pages.
+*Performance*
 
-+ The examples pages no longer load Font Awesome from an external kit. All icons come from the sets bundled with the documentation theme, which removes a third party request per page, fixes the icons that did not render, and makes them follow the light and dark color schemes.
++ `numba` is loaded on the first use of <code>[RollingFeatures]</code> or <code>[RollingFeaturesClassification]</code> instead of when skforecast is imported, which removes around 0.3 seconds from the import of every forecaster module. ([#1317](https://github.com/skforecast/skforecast/pull/1317))
+
++ `fit` of <code>[ForecasterRecursiveMultiSeries]</code> is faster and uses less memory with many series. With 500 series and LightGBM, it is 10 to 22% faster, about 3 times faster with `encoding='onehot'` and more than 10 times faster with `series_weights`. Results are unchanged. ([#1342](https://github.com/skforecast/skforecast/pull/1342))
+
++ The prediction methods of <code>[ForecasterRecursiveMultiSeries]</code> are faster with many series: with 24 lags and 24 steps, `predict` is 2.3 times faster with 500 series and 4.9 times faster with 5000. ([#1363](https://github.com/skforecast/skforecast/pull/1363))
+
++ Forecasters with an `ExtraTreesRegressor` or an `ExtraTreeRegressor` predict about 15 times faster (33 ms instead of 508 ms for 100 steps with 100 trees), with the same predictions. ([#1363](https://github.com/skforecast/skforecast/pull/1363))
+
++ <code>[Arima]</code> is faster with identical results: seasonal models fit 1.4 to 2.2 times faster, and models with an intercept or exogenous variables up to 1.5 times faster on long series. ([#1335](https://github.com/skforecast/skforecast/pull/1335))
+
++ The automatic order selection of <code>[Arima]</code> (`order=None`) now applies `approximation` as documented: when it is active (by default, more than 150 observations or `m > 12`), the candidates are fitted with conditional sum of squares and only the selected model by maximum likelihood, as R's `forecast::auto.arima`. The search is about 5 times faster and can select a different model; use `approximation=False` for the previous behavior. ([#1374](https://github.com/skforecast/skforecast/pull/1374))
+
++ <code>[multivariate_time_series_corr]</code> is 3 to 9 times faster with `method='spearman'` or `'kendall'`, and backtesting and hyperparameter search copy a <code>[ForecasterRnn]</code> twice as fast. ([#1363](https://github.com/skforecast/skforecast/pull/1363))
+
+*Forecasters*
+
++ <code>[ForecasterRecursiveMultiSeries]</code> raises a `ValueError` when the estimator modifies the training matrix in place, for example `LinearRegression(copy_X=False)` or a pipeline with `StandardScaler(copy=False)`. These estimators could give wrong residuals or search metrics without any warning. Use the default copy behavior of the estimator. ([#1342](https://github.com/skforecast/skforecast/pull/1342))
+
++ In the matrices returned by `create_train_X_y` of <code>[ForecasterRecursiveMultiSeries]</code>, the one-hot columns of the series and the integer calendar features are now `float`, as in `create_predict_X` and in the other forecasters. ([#1342](https://github.com/skforecast/skforecast/pull/1342))
+
++ `set_out_sample_residuals` issues a <code>[ResidualsUsageWarning]</code> when there are, on average, fewer than 10 residuals per bin, because the intervals obtained with `use_binned_residuals=True` are then too narrow. Provide more residuals, reduce `n_bins` or predict with `use_binned_residuals=False`. [User guide](../user_guides/probabilistic-forecasting-bootstrapped-residuals.ipynb#intervals-conditioned-on-predicted-values-binned-residuals) ([#1364](https://github.com/skforecast/skforecast/pull/1364))
+
++ The `__repr__` and `summary` of <code>[ForecasterStats]</code> only show the estimator parameters that differ from their default values. All of them are still available in `estimator_params_`.
+
++ Corrected type hints that made static type checkers (Pyright, Pylance) report errors on valid calls, for example `interval` and `quantiles` given as tuples or `lags` as a numpy array. Behavior at runtime is the same. ([#1379](https://github.com/skforecast/skforecast/pull/1379))
+
+*Statistical models*
+
++ <code>[Arima]</code> corrects the innovation variance `sigma2_` for the degrees of freedom, as R's `forecast::Arima`. Prediction intervals are slightly wider (1 to 4% in series of 70 to 150 observations) and closer to their nominal coverage; point predictions, coefficients and information criteria are unchanged. The maximum likelihood estimate is available in `model_['sigma2_ml']`. ([#1365](https://github.com/skforecast/skforecast/issues/1365), [#1369](https://github.com/skforecast/skforecast/pull/1369))
+
++ In <code>[Arima]</code>, the in-sample fitted values and residuals of the first `d + D * m` observations are now NaN, because they have no meaningful one-step-ahead prediction. `get_score` and `summary` ignore them.
+
++ The prediction intervals of <code>[Ets]</code> models with damped additive trend and additive seasonality use the analytical forecast variance, as R's `forecast.ets`, instead of simulated paths, so they no longer carry sampling noise. ([#1371](https://github.com/skforecast/skforecast/pull/1371))
+
+*Feature selection*
+
++ <code>[select_features]</code> and <code>[select_features_multiseries]</code> sample the records without replacement and keep them in their original order, so selectors with internal cross-validation no longer see the same record in train and validation. The selected features for a given `random_state` may differ from previous versions. ([#1327](https://github.com/skforecast/skforecast/pull/1327))
+
+*Foundation models*
+
++ The <code>[LicenseWarning]</code> of TabPFN-TS names the license of the weights that are actually downloaded, `TabPFN-3.5 License v1.0`, and `tabpfn-time-series>=1.3` is the documented minimum version of the backend. ([#1332](https://github.com/skforecast/skforecast/pull/1332))
+
++ The `theforecastingcompany/t0*` checkpoints are no longer gated on the Hugging Face Hub, so they can be used without accepting the license or authenticating. ([#1332](https://github.com/skforecast/skforecast/pull/1332))
+
+*Save and load*
+
++ <code>[save_forecaster]</code> keeps the dots in `file_name` and adds the extension of the backend: `'model_v1.2'` is saved as `'model_v1.2.joblib'` instead of `'model_v1.joblib'`, which silently overwrote `'model_v1.1'`. Extensions other than those of the backends are also kept (`'model.bin'` is saved as `'model.bin.joblib'`). [User guide](../user_guides/save-load-forecaster.ipynb#pickle-backend) ([#1350](https://github.com/skforecast/skforecast/pull/1350))
+
++ <code>[save_forecaster]</code> saves the `.py` files of the custom weight functions in the folder of the forecaster file instead of the working directory, so forecasters saved in different folders no longer overwrite each other's functions. [User guide](../user_guides/save-load-forecaster.ipynb#forecaster-with-custom-features) ([#1353](https://github.com/skforecast/skforecast/pull/1353))
+
++ <code>[show_versions]</code> also reports the versions of scipy, statsmodels, matplotlib, torch, lightgbm, xgboost, catboost, skops and cloudpickle. ([#1348](https://github.com/skforecast/skforecast/pull/1348))
+
+*Dependencies*
+
++ The minimum supported versions of pandas and scikit-learn are now 2.2 and 1.6 (previously 2.1 and 1.4). With the older versions, `fit` failed with nullable dtypes and `ExtraTreesRegressor` did not handle missing values. ([#1348](https://github.com/skforecast/skforecast/pull/1348))
+
++ The minimum supported versions of numpy, statsmodels and keras are now 1.26.1, 0.13.2 and 3.3 (previously 1.26, 0.13 and 3.0). The previous minimums could not be installed or failed with the other supported dependencies. ([#1360](https://github.com/skforecast/skforecast/pull/1360))
+
++ Removed the function `cast_exog_dtypes` from `skforecast.utils`. It was not used by skforecast and did not work as documented. Use `exog.astype(exog_dtypes)` instead. ([#1348](https://github.com/skforecast/skforecast/pull/1348))
+
+*Documentation*
+
++ New [home page](../README.md) and GitHub README, and the [examples and tutorials](../examples/examples_english.md) pages (English, Spanish and Chinese) are a card grid with a search box and level and topic filters. The site serves its fonts and scripts from its own domain, so visitors no longer connect to third parties. ([#1323](https://github.com/skforecast/skforecast/pull/1323))
+
+
+**Fixed**
+
+*Forecasters*
+
++ Fixed an issue in the forecasters with an `XGBRegressor` where the predictions differed from those of `XGBRegressor.predict`: all the trees were used even when early stopping had selected a better iteration, and a `missing` value set by the user was ignored. `booster='gblinear'` raised an `XGBoostError`. ([#1344](https://github.com/skforecast/skforecast/pull/1344))
+
++ Fixed an issue where a user subclass of a scikit-learn linear model, `RandomForestRegressor` or `DecisionTreeRegressor` that overrides `predict` (for example, a `Ridge` that clips its predictions at 0) was predicted as its base class. ([#1344](https://github.com/skforecast/skforecast/pull/1344))
+
++ Fixed an issue in <code>[ForecasterRecursive]</code> and <code>[ForecasterRecursiveMultiSeries]</code> with an `XGBRegressor` or an `LGBMRegressor` on GPU: `device='cuda:0'` raised a `ValueError` in the prediction methods, and the device of the estimator was not restored as it was after predicting (in LightGBM, `'cuda'` became `'gpu'`). ([#1349](https://github.com/skforecast/skforecast/pull/1349))
+
++ Fixed an issue in <code>[ForecasterRecursiveClassifier]</code> with a `CatBoostClassifier`, where `predict`, `predict_proba` and <code>[backtesting_forecaster]</code> raised a `CatBoostError` about `cat_features`. ([#1349](https://github.com/skforecast/skforecast/pull/1349))
+
++ Fixed an issue in <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code> with `differentiation` where the predictions were wrong when `steps` was not consecutive from 1 (for example, `steps=[3, 4, 5]`). It also affected backtesting and hyperparameter search with `gap > 0`. ([#1345](https://github.com/skforecast/skforecast/pull/1345))
+
++ `predict` accepted an `exog` whose index did not follow the frequency of the series (gaps, duplicated dates or another frequency) and used its values by position, so the predictions used the values of other dates. It now raises a `ValueError` that shows the first date that does not match. ([#1346](https://github.com/skforecast/skforecast/pull/1346))
+
++ A `last_window` DataFrame with several columns was accepted by the single series forecasters, which mixed the values of its columns in the lags. It now raises a `ValueError`. ([#1346](https://github.com/skforecast/skforecast/pull/1346))
+
++ An `exog` Series named as one of the exogenous variables used in training, when the forecaster was trained with more of them, raised a `KeyError` or was filled with NaN. The prediction methods now report the missing columns. ([#1362](https://github.com/skforecast/skforecast/pull/1362))
+
++ `lags`, `steps`, `levels` and `window_sizes` given as numpy integers, numpy arrays or a pandas Index (for example, `lags=np.int64(3)` or `levels=series.columns`) raised different errors. They are now accepted, booleans are rejected, and `steps=0` or an empty list raise a descriptive `ValueError`. ([#1361](https://github.com/skforecast/skforecast/pull/1361), [#1362](https://github.com/skforecast/skforecast/pull/1362), [#1363](https://github.com/skforecast/skforecast/pull/1363))
+
++ Exogenous variables whose categories are nullable integers (`Int32`) raised a `TypeError`, and `UInt8` or pyarrow numeric columns issued a false `DataTypeWarning`. ([#1362](https://github.com/skforecast/skforecast/pull/1362))
+
++ Fixed an issue where `fit` raised `AttributeError: Estimator functiontransformer does not provide get_feature_names_out` when `transformer_exog` or `transformer_y` was a scikit-learn `Pipeline` or `ColumnTransformer` with a step that does not implement `get_feature_names_out`. ([#1361](https://github.com/skforecast/skforecast/pull/1361))
+
++ The forecasters removed `sample_weight` (and <code>[ForecasterRnn]</code>, `series_val` and `exog_val`) from the `fit_kwargs` dict passed by the user, so it could not be reused. The dict is now copied. ([#1362](https://github.com/skforecast/skforecast/pull/1362))
+
++ `weight_func` can be a `functools.partial` or a callable object. Before, the forecasters raised a `TypeError` because they read its source code. ([#1353](https://github.com/skforecast/skforecast/pull/1353))
+
++ The prediction methods no longer issue a `MissingValuesWarning` for missing values of `last_window` that are not used to predict, and <code>[ForecasterRecursiveMultiSeries]</code> no longer issues the one about `exog` twice. ([#1362](https://github.com/skforecast/skforecast/pull/1362), [#1375](https://github.com/skforecast/skforecast/pull/1375))
+
++ <code>[RollingFeatures]</code> raised `TypeError: argument of type 'NoneType' is not iterable` when `kwargs_stats=None`. `None` is now the default and is replaced by `{'ewm': {'alpha': 0.3}}`. ([#1320](https://github.com/skforecast/skforecast/pull/1320))
+
++ Fixed an issue in <code>[ForecasterRnn]</code> where `predict` with a `last_window` without one of the series used as input used another column in its place, so the predictions were wrong. It now raises a `ValueError`. ([#1362](https://github.com/skforecast/skforecast/pull/1362))
+
++ When matplotlib, statsmodels or keras were installed but failed to import, a misleading `ModuleNotFoundError` hid the real error, and in Python 3.14 any failure of the `keras` import was reported as TensorFlow not supporting Python 3.14. The original error is now raised. ([#1362](https://github.com/skforecast/skforecast/pull/1362))
+
+*Time zones and dates*
+
++ Fixed two issues with time zone aware indexes in a time zone with daylight saving time (for example, `Europe/Madrid`) and a frequency of days or longer. When the dates generated by skforecast crossed a daylight saving change, `predict`, backtesting and the reshape functions raised `AmbiguousTimeError` or returned timestamps shifted one hour. Intraday frequencies and indexes without time zone were not affected. ([#1343](https://github.com/skforecast/skforecast/pull/1343))
+
++ A date without time zone, given as `steps` in `predict` or as `initial_train_size` in <code>[TimeSeriesFold]</code> and <code>[OneStepAheadFold]</code>, raised `TypeError: Cannot compare tz-naive and tz-aware timestamps` with a time zone aware index. It is now interpreted in the time zone of the index. ([#1361](https://github.com/skforecast/skforecast/pull/1361))
+
++ Fixed an issue in <code>[TimeSeriesFold]</code> and <code>[OneStepAheadFold]</code> where `initial_train_size` given as a date was converted into a wrong number of training observations when the index had no frequency (for example, 2 instead of 25 with an hourly index). ([#1361](https://github.com/skforecast/skforecast/pull/1361))
+
+*Multiple series*
+
++ Fixed an issue in <code>[ForecasterRecursiveMultiSeries]</code> with `encoding='onehot'` where the predictions were wrong when the series were not in alphabetical order, which includes names such as `'s1'` to `'s10'`. It affected the prediction methods and backtesting since at least version 0.19.0. ([#1342](https://github.com/skforecast/skforecast/pull/1342))
+
++ Fixed an issue in <code>[ForecasterRecursiveMultiSeries]</code> where a wide `exog` (the same values for all the series) was used by position in the prediction methods, so an `exog` that did not start at the first step predicted gave wrong predictions without any error. It is now aligned by date, as in `fit` and backtesting. An `exog` whose index does not match the index of the predictions is filled with NaN: give it the index of the predictions. ([#1346](https://github.com/skforecast/skforecast/pull/1346))
+
++ Fixed several issues with the `exog` of <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterFoundation]</code>: an `exog` with the same length as its series but different dates is now aligned by date, an `exog` with the dates in descending order is no longer ignored, and a Series without name or duplicated column names raise a descriptive `ValueError`. ([#1362](https://github.com/skforecast/skforecast/pull/1362), [#1375](https://github.com/skforecast/skforecast/pull/1375))
+
++ <code>[ForecasterRecursiveMultiSeries]</code> accepted a dict of series with different time zones and only predicted some of them. A `ValueError` that lists the time zones is now raised, also in <code>[ForecasterFoundation]</code>. ([#1362](https://github.com/skforecast/skforecast/pull/1362))
+
++ <code>[ForecasterRecursiveMultiSeries]</code> raised `TypeError: boolean value of NA is ambiguous` in `fit` when a series with a nullable or pyarrow dtype started or ended with missing values. ([#1362](https://github.com/skforecast/skforecast/pull/1362))
+
++ `set_in_sample_residuals` of <code>[ForecasterRecursiveMultiSeries]</code> raised `KeyError: '[...] not in index'` when the series had a `RangeIndex` and more than 10,000 training residuals. ([#1342](https://github.com/skforecast/skforecast/pull/1342))
+
++ The probabilistic prediction methods of <code>[ForecasterRecursiveMultiSeries]</code> raised `ValueError: Residuals for level 'b' are None` when a level that was not predicted had no residuals. ([#1362](https://github.com/skforecast/skforecast/pull/1362))
+
+*Backtesting, hyperparameter search and feature selection*
+
++ Fixed two issues in <code>[backtesting_forecaster]</code> and <code>[backtesting_forecaster_multiseries]</code> with `refit` and `use_in_sample_residuals=False`: the intervals could be built with the residuals of a different bin, and <code>[ForecasterDirectMultiVariate]</code> raised `TypeError: 'NoneType' object is not subscriptable`. ([#1321](https://github.com/skforecast/skforecast/pull/1321))
+
++ Fixed two issues in the multi-series hyperparameter search with <code>[OneStepAheadFold]</code> that gave wrong metrics without any warning: when the forecaster had already been fitted with other series, and with `encoding='ordinal_category'` and a `CatBoostRegressor` when a series had no data in the test period. ([#1342](https://github.com/skforecast/skforecast/pull/1342), [#1349](https://github.com/skforecast/skforecast/pull/1349))
+
++ If the internal copy of the forecaster failed in the backtesting, hyperparameter search or feature selection functions, the forecaster passed by the user lost its fitted estimator, residuals and last window. It is no longer modified. ([#1363](https://github.com/skforecast/skforecast/pull/1363))
+
++ <code>[select_features]</code> and <code>[select_features_multiseries]</code> fitted the selector with a single record when `subsample=1` was an integer, and their `verbose` header said "Recursive feature elimination" for any selector. `subsample` is now always a proportion. ([#1327](https://github.com/skforecast/skforecast/pull/1327))
+
++ Fixed three issues in <code>[backtesting_stats]</code>: `IndexingError: Too many indexers` with `gap > 0`, a single estimator and no interval (also in <code>[grid_search_stats]</code> and <code>[random_search_stats]</code>); an `estimator_params` column not aligned with `estimator_id` with several estimators; and a confusing `NotImplementedError` with an intermittent `refit`. ([#1331](https://github.com/skforecast/skforecast/pull/1331))
+
+*Arima*
+
++ Fixed an issue where the coefficients of the exogenous variables, the intercept and the drift were wrong when the model had two or more of them (for example, one exogenous variable plus the intercept). `coef_` and the predictions could be far from the data. They now match `statsmodels` SARIMAX.
+
++ Fixed an issue in <code>[Arima]</code> and <code>[Ets]</code> where `get_params` did not return all the constructor parameters. <code>[ForecasterStats]</code>, <code>[backtesting_stats]</code> and the search functions clone the estimator, so the automatic selection settings of `Arima` (`max_p`, `stepwise`, `ic`, `lambda_bc`...) and `lambda_param`, `bounds` and `ic` of `Ets` were silently reset to their defaults.
+
++ Fixed several issues of the automatic model selection (`order=None`) when the selected model had a drift term: `predict` raised `ValueError: matmul: ...` with exogenous variables, <code>[backtesting_stats]</code> with `freeze_params=True` lost the drift, and perfectly linear series got flat forecasts.
+
++ Fixed the Box-Cox transformation (`lambda_bc`, `biasadj`). With a manual order it was silently ignored, and with automatic selection the fitted values and residuals were left on the transformed scale.
+
++ Fixed an issue in models estimated by maximum likelihood on series with missing values, where the uncertainty did not grow over the gaps. It affected coefficients, fitted values and prediction intervals. ([#1335](https://github.com/skforecast/skforecast/pull/1335))
+
++ Predictions, intervals and fitted values were NaN when the estimated AR coefficients were not stationary, which could happen with `enforce_stationarity=False` or `method='CSS'`. ([#1374](https://github.com/skforecast/skforecast/pull/1374))
+
++ The BIC and the AICc are now computed for models with a manual order. Before, `bic_` was `None` and `get_info_criteria('bic')` returned NaN.
+
++ The automatic selection of the differencing orders follows R's `forecast::ndiffs` and `forecast::nsdiffs` in two cases where it could differ: series with fewer than 19 observations and series with a seasonal strength close to the threshold. ([#1367](https://github.com/skforecast/skforecast/pull/1367), [#1368](https://github.com/skforecast/skforecast/pull/1368))
+
+*Ets*
+
++ Fixed the estimation of the smoothing parameters. In models without a damped trend they stayed at their starting values (alpha=0.1, beta=0.01, gamma=0.01), and the automatic model selection compared these unfitted models. Fixed parameters (`alpha`, `beta`, `gamma`, `phi`) were estimated anyway. Estimates and predictions change, and the log-likelihoods now match those of `statsmodels` and R's `forecast::ets`. ([#1337](https://github.com/skforecast/skforecast/pull/1337))
+
++ Fixed the Box-Cox transformation: `lambda_auto=True` always selected `lambda=-1` (it now uses Guerrero's method, as R), and the bias adjustment and the prediction intervals were not back-transformed correctly. ([#1337](https://github.com/skforecast/skforecast/pull/1337))
+
++ The automatic model selection (`model='ZZZ'`) ignored `lambda_param` and `bias_adjust`, and its AICc did not count the variance as a parameter, which can change the selected model for short series. ([#1337](https://github.com/skforecast/skforecast/pull/1337), [#1366](https://github.com/skforecast/skforecast/pull/1366))
+
++ The prediction intervals of models with multiplicative errors were simulated without a seed, so `predict_interval` returned different values on every call. They were also `NaN` in damped trend models with `phi` fixed to 1. ([#1337](https://github.com/skforecast/skforecast/pull/1337))
+
++ <code>[Ets]</code> raises a `ValueError` when a model with multiplicative components is fitted to a series with zero or negative values, and when `model` is not valid (before, a `KeyError`). ([#1337](https://github.com/skforecast/skforecast/pull/1337))
+
+*Other statistical models*
+
++ <code>[acf]</code>, <code>[pacf]</code> and <code>[calculate_lag_autocorrelation]</code> with missing values inside the series: the autocorrelation now uses the same estimator as R's `acf(na.action = na.pass)`, and the partial autocorrelation no longer returns values outside [-1, 1]. ([#1370](https://github.com/skforecast/skforecast/pull/1370))
+
++ Fixed an issue in <code>[Arar]</code> where `fit` overwrote `max_ar_depth` and `max_lag` when they were `None`, so refitting on another series reused the limits of the first one. The values used are stored in `max_ar_depth_` and `max_lag_`.
+
++ Fixed three errors in the prediction methods of <code>[ForecasterStats]</code> with `last_window`: with a single observation and a `transformer_y` with pandas output, and, with a <code>[Sarimax]</code> estimator, when the name of `last_window` or `last_window_exog` was not the one used in `fit`. ([#1361](https://github.com/skforecast/skforecast/pull/1361), [#1375](https://github.com/skforecast/skforecast/pull/1375))
+
+*Foundation models*
+
++ <code>[FoundationModel]</code> now raises a `ValueError` when it is created with a Chronos (T5), Chronos-Bolt, Moirai 1.x or Moirai-MoE checkpoint. They were accepted but failed later, because only Chronos-2 and Moirai-2 are supported by their adapters. ([#1324](https://github.com/skforecast/skforecast/pull/1324))
+
++ The `supports_categorical_features` tag of <code>[ForecasterFoundation]</code> was always `True`. It is now only `True` for Chronos-2. ([#1324](https://github.com/skforecast/skforecast/pull/1324))
+
++ `fit` of <code>[FoundationModel]</code> stored `exog` when the model does not support exogenous variables (TimesFM 2.5 and Moirai-2). It is now ignored with an `IgnoredArgumentWarning`, as in <code>[ForecasterFoundation]</code>. ([#1329](https://github.com/skforecast/skforecast/pull/1329))
+
+*Save and load*
+
++ Fixed several issues in <code>[save_forecaster]</code> and <code>[load_forecaster]</code> with `backend='skops'`: forecasters with a time zone aware index, a frequency below one second, a `pd.DateOffset` frequency or categorical exogenous variables could not be saved or loaded, and the time zone was loaded as a fixed UTC offset. Saving and loading long series is also much faster. Files saved with previous versions are still loaded. ([#1352](https://github.com/skforecast/skforecast/pull/1352))
+
++ Forecasters with <code>[RollingFeatures]</code> or <code>[RollingFeaturesClassification]</code> kept a reference to their training series, so it was written to the file (16 MB instead of 6 KB with 500,000 values) and `backend='skops'` failed. ([#1352](https://github.com/skforecast/skforecast/pull/1352))
+
++ Fixed two issues in the `.py` files that <code>[save_forecaster]</code> writes for the custom weight functions: they did not include the imports used by the function, so refitting the loaded forecaster raised `NameError: name 'np' is not defined`, and non-ASCII characters failed on Windows. ([#1350](https://github.com/skforecast/skforecast/pull/1350), [#1353](https://github.com/skforecast/skforecast/pull/1353))
+
++ <code>[save_forecaster]</code> no longer asks to save the class manually when the `window_features` include a <code>[RollingFeaturesClassification]</code>. ([#1350](https://github.com/skforecast/skforecast/pull/1350))
+
+*Plotting*
+
++ <code>[plot_prediction_distribution]</code> raised a `KeyError` when `bootstrapping_predictions` had an integer index, as returned by a forecaster trained without a datetime index. ([#1359](https://github.com/skforecast/skforecast/pull/1359))
 
 
 ## 0.25.0 <small>Sep 11, 2026</small> { id="0.25.0" }
@@ -79,10 +317,6 @@ The main changes in this release are:
 + Fixed an issue in <code>[ForecasterRecursiveMultiSeries]</code> where `predict_bootstrapping` used the requested number of bins instead of the number of bins actually learned by each series binner, raising a `KeyError` when any of them was reduced.
 
 + Fixed an issue in <code>[ForecasterRecursiveMultiSeries]</code> where `set_out_sample_residuals` built the binned residuals of `'_unknown_level'` by joining the bins of the known series, although each series has its own binner. The residuals of all series are now binned with the binner of `'_unknown_level'`, so `predict_interval`, `predict_bootstrapping` and `predict_quantiles` no longer raise a `KeyError` for unknown levels when `use_in_sample_residuals=False` and `use_binned_residuals=True`, and the residuals stored in each bin correspond to that bin.
-
-+ Fixed an issue in <code>[backtesting_forecaster]</code> and <code>[backtesting_forecaster_multiseries]</code> where, with `use_in_sample_residuals=False` and `use_binned_residuals=True`, the out-of-sample residuals set by the user were restored after each `fit()` but the binner was not. The residuals had been binned with the binner of the original forecaster while the predictions were assigned to bins with the binner refitted in each fold, so the residuals of a different bin could be used to build the intervals or, when the refitted binner learned more bins than the original one, a `KeyError` was raised. The binner and its intervals are now preserved together with the out-of-sample residuals in every fold. This did not affect `refit=False` when `initial_train_size` matches the training set of the forecaster.
-
-+ Fixed an issue in <code>[backtesting_forecaster_multiseries]</code> where <code>[ForecasterDirectMultiVariate]</code> raised `TypeError: 'NoneType' object is not subscriptable` with `use_in_sample_residuals=False`, because only one of `out_sample_residuals_` and `out_sample_residuals_by_bin_` was restored after each `fit()` depending on `use_binned_residuals`. Both attributes are now restored.
 
 + Fixed an issue in <code>[crps_from_quantiles]</code> where the integration bounds were derived by scaling the extreme predicted quantiles by fixed factors (`0.9` and `1.1`). This made the score depend on the level of the series, return negative values for negative quantiles, under-penalize true values far outside the predicted quantiles, and return `0` when all predicted quantiles were `0`. The area outside the predicted quantiles is now computed analytically, so the score is translation invariant, non-negative, grows linearly with the distance when `y_true` falls outside the predicted range, and reduces to the absolute error when the predictive distribution is a point mass.
 
@@ -309,7 +543,7 @@ The main changes in this release are:
 
 + Fixed an issue where `out_sample_residuals_` and `out_sample_residuals_by_bin_` were not reset during `fit()`, causing stale residuals from a previous model to silently persist after refitting. ([#1123](https://github.com/skforecast/skforecast/pull/1123))
 
-+ Fixed an issue in <code>[expand_index]</code> where the original `RangeIndex.step` was not preserved when creating future indices. Previously, `step=1` was always assumed, which could lead to incorrect prediction indices. ([#1150](https://github.com/skforecast/skforecast/pull/1150))
++ Fixed an issue in <code>expand_index</code> where the original `RangeIndex.step` was not preserved when creating future indices. Previously, `step=1` was always assumed, which could lead to incorrect prediction indices. ([#1150](https://github.com/skforecast/skforecast/pull/1150))
 
 
 ## 0.20.1 <small>Feb 11, 2026</small> { id="0.20.1" }
@@ -926,7 +1160,7 @@ The main changes in this release are:
 
 + New argument `aggregate_metric` in <code>[grid_search_forecaster_multiseries]</code>, <code>[random_search_forecaster_multiseries]</code> and <code>[bayesian_search_forecaster_multiseries]</code> to select the aggregation method used to combine the metric(s) of all levels during the hyperparameter search. The available methods are: mean (arithmetic mean), weighted (weighted by the number of predicted values of each level) and pool (the values of all levels are pooled and then the metric is calculated). If more than one metric and/or aggregation method is used, all are reported in the results, but the first of each is used to select the best model.
 
-+ New class <code>[DateTimeFeatureTransformer]</code> and function <code>[create_datetime_features]</code> in the <code>[preprocessing]</code> module to create datetime and calendar features from a datetime index.
++ New class <code>DateTimeFeatureTransformer</code> and function <code>create_datetime_features</code> in the <code>[preprocessing]</code> module to create datetime and calendar features from a datetime index.
 
 **Changed**
 
@@ -1709,6 +1943,9 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 <!-- foundation -->
 [FoundationModel]: ../api/FoundationModel.md#skforecast.foundation._foundation_model.FoundationModel
+[FoundationModelInfo]: ../api/FoundationModel.md#skforecast.foundation._model_info.FoundationModelInfo
+[get_model_info]: ../api/FoundationModel.md#skforecast.foundation._model_info.get_model_info
+[list_adapters]: ../api/FoundationModel.md#skforecast.foundation._model_info.list_adapters
 [ChronosAdapter]: ../api/FoundationModel.md#skforecast.foundation._adapters.ChronosAdapter
 [TimesFM25Adapter]: ../api/FoundationModel.md#skforecast.foundation._adapters.TimesFM25Adapter
 [TimesFM3Adapter]: ../api/FoundationModel.md#skforecast.foundation._adapters.TimesFM3Adapter
@@ -1804,8 +2041,14 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 <!-- utils -->
 [utils]: ../api/utils.md
+[expand_index]: ../api/utils.md#skforecast.utils.utils.expand_index
 [save_forecaster]: ../api/utils.md#skforecast.utils.utils.save_forecaster
 [load_forecaster]: ../api/utils.md#skforecast.utils.utils.load_forecaster
+[show_versions]: ../api/utils.md#skforecast.utils.utils.show_versions
+[transform_series]: ../api/utils.md#skforecast.utils.utils.transform_series
+[exog_to_direct]: ../api/utils.md#skforecast.utils.utils.exog_to_direct
+[exog_to_direct_numpy]: ../api/utils.md#skforecast.utils.utils.exog_to_direct_numpy
+[multivariate_time_series_corr]: ../api/utils.md#skforecast.utils.utils.multivariate_time_series_corr
 
 <!-- experimental -->
 [experimental]: ../api/experimental.md
@@ -1822,6 +2065,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [IgnoredArgumentWarning]: ../api/exceptions.md#skforecast.exceptions.exceptions.IgnoredArgumentWarning
 [LicenseWarning]: ../api/exceptions.md#skforecast.exceptions.exceptions.LicenseWarning
 [MissingValuesWarning]: ../api/exceptions.md#skforecast.exceptions.exceptions.MissingValuesWarning
+[ResidualsUsageWarning]: ../api/exceptions.md#skforecast.exceptions.exceptions.ResidualsUsageWarning
 
 <!-- OLD -->
 [ForecasterAutoreg]: https://skforecast.org/0.13.0/api/forecasterautoreg

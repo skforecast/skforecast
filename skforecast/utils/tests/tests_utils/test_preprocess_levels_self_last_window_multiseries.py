@@ -166,3 +166,48 @@ def test_output_preprocess_levels_self_last_window_multiseries(input_levels_is_l
 
     assert levels == expected[0]
     pd.testing.assert_frame_equal(last_window, expected[1])
+
+
+def test_output_preprocess_levels_self_last_window_multiseries_when_last_windows_with_different_index():
+    """
+    Test output preprocess_levels_self_last_window_multiseries when the last
+    windows end at the same index but have different lengths. The last windows
+    are aligned by their index, so the missing values are NaN. The columns
+    follow the order of `last_window_` and keep their dtype when the indexes
+    are equal.
+    """
+
+    last_window_ = {
+        '2': pd.Series(np.arange(3), index=pd.RangeIndex(start=7, stop=10), name='2'),
+        '1': pd.Series(np.arange(5, dtype=float), index=pd.RangeIndex(start=5, stop=10), name='1'),
+    }
+
+    levels, last_window = preprocess_levels_self_last_window_multiseries(
+                              levels               = ['1', '2'],
+                              input_levels_is_list = False,
+                              last_window_         = last_window_
+                          )
+
+    expected = pd.DataFrame(
+        {'2': [np.nan, np.nan, 0., 1., 2.],
+         '1': [0., 1., 2., 3., 4.]},
+        index=pd.RangeIndex(start=5, stop=10)
+    )
+
+    assert levels == ['1', '2']
+    pd.testing.assert_frame_equal(last_window, expected)
+
+    last_window_['1'] = last_window_['1'].iloc[-3:]
+    levels, last_window = preprocess_levels_self_last_window_multiseries(
+                              levels               = ['1', '2'],
+                              input_levels_is_list = False,
+                              last_window_         = last_window_
+                          )
+
+    expected = pd.DataFrame(
+        {'2': [0, 1, 2],
+         '1': [2., 3., 4.]},
+        index=pd.RangeIndex(start=7, stop=10)
+    )
+
+    pd.testing.assert_frame_equal(last_window, expected)

@@ -12,6 +12,7 @@ from skforecast.feature_selection import select_features
 # Fixtures
 from .fixtures_feature_selection import y_feature_selection as y
 from .fixtures_feature_selection import exog_feature_selection as exog
+from .fixtures_feature_selection import SelectorAllFeatures
 
 
 def test_TypeError_select_features_raise_when_forecaster_is_not_supported():
@@ -141,6 +142,61 @@ def test_ValueError_select_features_subsample_not_greater_0_less_equal_1(subsamp
         )
 
 
+
+@pytest.mark.parametrize("subsample, expected_n_records", 
+                         [(1, 495), (1.0, 495), (0.5, 247)], 
+                         ids=lambda ss: f'subsample, expected_n_records: {ss}')
+def test_select_features_subsample_without_replacement_and_in_time_order(subsample, expected_n_records):
+    """
+    Test that select_features samples `subsample` proportion of the records
+    without replacement and keeps their time order. `subsample=1` uses all
+    the records.
+    """
+    forecaster = ForecasterRecursive(
+                     estimator = LinearRegression(),
+                     lags      = 5,
+                 )
+    selector = SelectorAllFeatures()
+
+    select_features(
+        selector   = selector,
+        forecaster = forecaster,
+        y          = y,
+        exog       = exog,
+        subsample  = subsample,
+        verbose    = False,
+    )
+
+    assert len(selector.X_fit_) == expected_n_records
+    assert selector.X_fit_.index.is_unique
+    assert selector.X_fit_.index.is_monotonic_increasing
+
+
+def test_select_features_output_is_str_when_selector_returns_np_str():
+    """
+    Test that select_features returns the selected window features and exog
+    as Python `str` when the selector returns the feature names as `np.str_`.
+    """
+    forecaster = ForecasterRecursive(
+                     estimator       = LinearRegression(),
+                     lags            = 3,
+                     window_features = RollingFeatures(stats='mean', window_sizes=3),
+                 )
+
+    selected_lags, selected_window_features, selected_exog, selected_calendar_features = select_features(
+        selector   = SelectorAllFeatures(),
+        forecaster = forecaster,
+        y          = y,
+        exog       = exog,
+        verbose    = False,
+    )
+
+    assert selected_lags == [1, 2, 3]
+    assert selected_window_features == ['roll_mean_3']
+    assert selected_exog == ['exog_0', 'exog_1', 'exog_2', 'exog_3', 'exog_4']
+    assert selected_calendar_features == []
+    assert all(type(feature) is str for feature in selected_window_features + selected_exog)
+
 def test_select_features_when_selector_is_RFE_and_select_only_is_exog_estimator():
     """
     Test that select_features returns the expected values when selector is RFE
@@ -164,7 +220,7 @@ def test_select_features_when_selector_is_RFE_and_select_only_is_exog_estimator(
 
     assert selected_lags == [1, 2, 3, 4, 5]
     assert selected_window_features == []
-    assert selected_exog == ['exog_0', 'exog_1', 'exog_2']
+    assert selected_exog == ['exog_1', 'exog_2', 'exog_4']
     assert selected_calendar_features == []
 
 
@@ -191,7 +247,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterRecu
 
     assert selected_lags == [1, 2, 3, 4, 5]
     assert selected_window_features == []
-    assert selected_exog == ['exog_0', 'exog_1', 'exog_2']
+    assert selected_exog == ['exog_1', 'exog_2', 'exog_4']
     assert selected_calendar_features == []
 
 
@@ -223,7 +279,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_exog_ForecasterRecu
 
     assert selected_lags == [1, 2, 3, 4, 5]
     assert selected_window_features == ['roll_mean_3', 'roll_std_5']
-    assert selected_exog == ['exog_0', 'exog_1', 'exog_2']
+    assert selected_exog == ['exog_1', 'exog_2', 'exog_4']
     assert selected_calendar_features == []
 
 
@@ -248,7 +304,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_autoreg_ForecasterR
         verbose     = False,
     )
 
-    assert selected_lags == [2, 3, 4]
+    assert selected_lags == [1, 3, 4]
     assert selected_window_features == []
     assert selected_exog == ['exog_0', 'exog_1', 'exog_2', 'exog_3', 'exog_4']
     assert selected_calendar_features == []
@@ -280,8 +336,8 @@ def test_select_features_when_selector_is_RFE_select_only_is_autoreg_ForecasterR
         verbose     = False,
     )
 
-    assert selected_lags == [2, 3, 4]
-    assert selected_window_features == ['roll_mean_3']
+    assert selected_lags == [1, 3, 4]
+    assert selected_window_features == ['roll_std_5']
     assert selected_exog == ['exog_0', 'exog_1', 'exog_2', 'exog_3', 'exog_4']
     assert selected_calendar_features == []
 
@@ -384,7 +440,7 @@ def test_select_features_when_selector_is_RFE_select_only_autoreg_and_force_incl
     )
 
     assert selected_lags == [1, 2, 3, 4, 5]
-    assert selected_window_features == []
+    assert selected_window_features == ['roll_std_5']
     assert selected_exog == ['exog_0', 'exog_1', 'exog_2', 'exog_3', 'exog_4']
     assert selected_calendar_features == []
 
@@ -417,7 +473,7 @@ def test_select_features_when_selector_is_RFE_and_force_inclusion_is_regex():
 
     assert selected_lags == []
     assert selected_window_features == ['roll_mean_3']
-    assert selected_exog == ['exog_0', 'exog_1', 'exog_2']
+    assert selected_exog == ['exog_1', 'exog_2', 'exog_4']
     assert selected_calendar_features == []
 
 
@@ -444,7 +500,7 @@ def test_select_features_when_selector_is_RFE_select_force_inclusion_is_list():
 
     assert selected_lags == [1]
     assert selected_window_features == []
-    assert selected_exog == ['exog_0', 'exog_1', 'exog_2']
+    assert selected_exog == ['exog_1', 'exog_2', 'exog_4']
     assert selected_calendar_features == []
 
 
@@ -577,7 +633,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_calendar_Forecaster
     assert selected_lags == [1, 2, 3, 4, 5]
     assert selected_window_features == []
     assert selected_exog == ['exog_0', 'exog_1', 'exog_2', 'exog_3', 'exog_4']
-    assert selected_calendar_features == ['week', 'day_of_week', 'hour']
+    assert selected_calendar_features == ['week', 'hour']
 
 
 def test_select_features_when_selector_is_RFE_select_only_is_list_autoreg_calendar_ForecasterRecursive():
@@ -616,7 +672,7 @@ def test_select_features_when_selector_is_RFE_select_only_is_list_autoreg_calend
     assert selected_lags == []
     assert selected_window_features == []
     assert selected_exog == ['exog_0', 'exog_1', 'exog_2', 'exog_3', 'exog_4']
-    assert selected_calendar_features == ['week', 'day_of_week', 'hour']
+    assert selected_calendar_features == ['week', 'hour']
 
 
 def test_select_features_when_selector_is_RFE_select_only_is_calendar_onehot_ForecasterRecursive():

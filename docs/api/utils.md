@@ -14,7 +14,6 @@
 ::: skforecast.utils.utils.check_predict_input
 ::: skforecast.utils.utils.check_residuals_input
 ::: skforecast.utils.utils.check_extract_values_and_index
-::: skforecast.utils.utils.cast_exog_dtypes
 ::: skforecast.utils.utils.exog_to_direct
 ::: skforecast.utils.utils.exog_to_direct_numpy
 ::: skforecast.utils.utils.expand_index
@@ -30,4 +29,5 @@
 ::: skforecast.utils.utils.prepare_levels_multiseries
 ::: skforecast.utils.utils.preprocess_levels_self_last_window_multiseries
 ::: skforecast.utils.utils.prepare_steps_direct
+::: skforecast.utils.utils.show_versions
 ::: skforecast.utils.utils.scale_correction_factor_differentiation

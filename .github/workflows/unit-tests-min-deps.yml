@@ -1,0 +1,59 @@
+name: Test Minimum Dependencies
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    branches:
+    - main
+  workflow_dispatch:
+
+concurrency:
+  group: unit-tests-min-deps-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test-min-deps:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+      with:
+        persist-credentials: false
+
+    - name: Set up uv and Python 3.10
+      uses: astral-sh/setup-uv@v10.2.0
+      with:
+        python-version: '3.10'  # minimum supported version of Python
+        activate-environment: true  # creates .venv and puts it on PATH for the next steps
+        enable-cache: true
+        cache-dependency-glob: "pyproject.toml"
+        cache-suffix: min-deps  # do not share the cache with the latest versions
+        prune-cache: true
+
+    - name: Install package with the minimum versions of its dependencies
+      env:
+        UV_TORCH_BACKEND: cpu  # CPU-only torch build; the runner has no GPU
+      run: |
+        # lowest-direct installs the minimum version declared in pyproject.toml for
+        # each direct dependency (core and test extra) and the latest compatible
+        # version of the transitive ones.
+        uv pip install --resolution lowest-direct -e ".[test]"
+
+    - name: Show environment info
+      run: |
+        python --version
+        uv pip list
+
+    - name: Run tests with pytest
+      shell: bash
+      env:
+        KERAS_BACKEND: torch
+      run: |
+        # -q keeps the log short so failures are easy to find; -ra lists them at the end;
+        # verbosity_assertions=2 keeps the full assertion diffs of -vv. Failed tests are
+        # also shown as annotations (pytest-github-actions-annotate-failures).
+        pytest -q -ra -o verbosity_assertions=2 --exclude-warning-annotations

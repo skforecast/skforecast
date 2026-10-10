@@ -53,7 +53,7 @@ forecaster = ForecasterRecursive(
 )
 
 # Run feature selection
-selected_lags, selected_window_features, selected_exog = select_features(
+selected_lags, selected_window_features, selected_exog, selected_calendar_features = select_features(
     forecaster=forecaster,
     selector=RFECV(
         estimator=RandomForestRegressor(n_estimators=50, random_state=123),
@@ -62,9 +62,9 @@ selected_lags, selected_window_features, selected_exog = select_features(
     ),
     y=y_train,
     exog=exog_train,
-    select_only=None,          # 'autoreg' (lags+window), 'exog', or None (all)
+    select_only=None,          # 'autoreg' (lags+window), 'exog', 'calendar', a list of them, or None (all)
     force_inclusion=None,      # Features to always keep (list or regex string)
-    subsample=0.5,             # Use 50% of data for faster selection
+    subsample=0.5,             # Use 50% of the records (without replacement) for faster selection
     random_state=123,
     verbose=True,
 )
@@ -94,7 +94,7 @@ forecaster = ForecasterRecursiveMultiSeries(
     encoding='ordinal',
 )
 
-selected_lags, selected_window_features, selected_exog = select_features_multiseries(
+selected_lags, selected_window_features, selected_exog, selected_calendar_features = select_features_multiseries(
     forecaster=forecaster,
     selector=RFECV(
         estimator=RandomForestRegressor(n_estimators=50, random_state=123),
@@ -115,7 +115,7 @@ selected_lags, selected_window_features, selected_exog = select_features_multise
 
 ```python
 # Always keep specific features regardless of selection
-selected_lags, selected_wf, selected_exog = select_features(
+selected_lags, selected_wf, selected_exog, selected_cal = select_features(
     forecaster=forecaster,
     selector=selector,
     y=y_train,
@@ -124,7 +124,7 @@ selected_lags, selected_wf, selected_exog = select_features(
 )
 
 # Regex pattern to force include
-selected_lags, selected_wf, selected_exog = select_features(
+selected_lags, selected_wf, selected_exog, selected_cal = select_features(
     forecaster=forecaster,
     selector=selector,
     y=y_train,
@@ -137,7 +137,7 @@ selected_lags, selected_wf, selected_exog = select_features(
 
 ```python
 # Only select among exogenous variables (keep all lags)
-selected_lags, selected_wf, selected_exog = select_features(
+selected_lags, selected_wf, selected_exog, selected_cal = select_features(
     forecaster=forecaster,
     selector=selector,
     y=y_train,
@@ -146,7 +146,7 @@ selected_lags, selected_wf, selected_exog = select_features(
 )
 
 # Only select among autoregressive features (keep all exog)
-selected_lags, selected_wf, selected_exog = select_features(
+selected_lags, selected_wf, selected_exog, selected_cal = select_features(
     forecaster=forecaster,
     selector=selector,
     y=y_train,
@@ -161,4 +161,4 @@ selected_lags, selected_wf, selected_exog = select_features(
 2. **Too small subsample**: If `subsample` is too small, selection may be unreliable. Use at least 0.3.
 3. **Not updating forecaster**: After selection, update the forecaster with `forecaster.set_lags(selected_lags)` — the original is not modified in place by `select_features`.
 4. **Running on full dataset**: Always run on training data only (`y_train`, `exog_train`).
-5. **Confusing `selected_window_features` with `RollingFeatures`**: The returned `selected_window_features` is a list of **feature name strings** (e.g. `['mean_7', 'std_14']`), not the `RollingFeatures` object itself. Use these names to verify which window features were kept, but pass the original `RollingFeatures` instance to the forecaster.
+5. **Confusing `selected_window_features` with `RollingFeatures`**: The returned `selected_window_features` is a list of **feature name strings** (e.g. `['roll_mean_7', 'roll_std_14']`), not the `RollingFeatures` object itself. Use these names to verify which window features were kept, but pass the original `RollingFeatures` instance to the forecaster.

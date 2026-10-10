@@ -142,8 +142,8 @@ def test_predict_output_ForecasterStats_with_exog(kwargs, data):
         ),
         (
             Ets(trend='add', seasonal=None),
-            {'win': [0.60498897, 0.60498083, 0.60497432, 0.60496911, 0.60496495],
-             'linux': [0.60498897, 0.60498083, 0.60497432, 0.60496911, 0.60496495]}
+            {'win': [0.63159637, 0.64934164, 0.66708691, 0.68483217, 0.70257744],
+             'linux': [0.63159637, 0.64934164, 0.66708691, 0.68483217, 0.70257744]}
         ),
     ],
     ids=['Sarimax', 'Arar', 'Ets']
@@ -186,8 +186,8 @@ def test_predict_output_ForecasterStats_different_estimators(estimator, expected
         ),
         (
             Ets(trend='add', seasonal=None),
-            {'win': [0.60498897, 0.60498083, 0.60497432, 0.60496911, 0.60496495],
-             'linux': [0.60498897, 0.60498083, 0.60497432, 0.60496911, 0.60496495]}
+            {'win': [0.63159637, 0.64934164, 0.66708691, 0.68483217, 0.70257744],
+             'linux': [0.63159637, 0.64934164, 0.66708691, 0.68483217, 0.70257744]}
         ),
     ],
     ids=['Sarimax', 'Arar', 'Ets']
@@ -235,19 +235,19 @@ def test_predict_output_ForecasterStats_with_exog_multiple_estimators():
 
     if platform.system() == "Windows":
         expected_pred = [
-            0.5992994623690436, 0.6350996966849843, 0.60498897,  # t1: Sarimax, Arar, Ets
-            0.6129973483291491, 0.6771100748590699, 0.60498083,  # t2
-            0.628731260599752, 0.7653813773256566, 0.60497432,   # t3
-            0.6441357287484715, 0.757965843942972, 0.60496911,   # t4
-            0.6619599475823104, 0.8005572909755608, 0.60496495   # t5
+            0.5992994623690436, 0.6350996966849843, 0.63159637,  # t1: Sarimax, Arar, Ets
+            0.6129973483291491, 0.6771100748590699, 0.64934164,  # t2
+            0.628731260599752, 0.7653813773256566, 0.66708691,   # t3
+            0.6441357287484715, 0.757965843942972, 0.68483217,   # t4
+            0.6619599475823104, 0.8005572909755608, 0.70257744   # t5
         ]
     else:
         expected_pred = [
-            0.5992994623690436, 0.6350996966849843, 0.60498897,  # t1: Sarimax, Arar, Ets
-            0.6129973483291491, 0.6771100748590699, 0.60498083,  # t2
-            0.628731260599752, 0.7653813773256566, 0.60497432,   # t3
-            0.6441357287484715, 0.757965843942972, 0.60496911,   # t4
-            0.6619599475823104, 0.8005572909755608, 0.60496495   # t5
+            0.5992994623690436, 0.6350996966849843, 0.63159637,  # t1: Sarimax, Arar, Ets
+            0.6129973483291491, 0.6771100748590699, 0.64934164,  # t2
+            0.628731260599752, 0.7653813773256566, 0.66708691,   # t3
+            0.6441357287484715, 0.757965843942972, 0.68483217,   # t4
+            0.6619599475823104, 0.8005572909755608, 0.70257744   # t5
         ]
     
     expected = pd.DataFrame({
@@ -281,8 +281,8 @@ def test_predict_output_ForecasterStats_with_exog_multiple_estimators():
         ),
         (
             Ets(trend='add', seasonal=None),
-            {'win': [0.69319696, 0.6939948, 0.69476642, 0.69551268, 0.69623443],
-             'linux': [0.69319696, 0.6939948, 0.69476642, 0.69551268, 0.69623443]}
+            {'win': [0.61836689, 0.62315518, 0.62794347, 0.63273176, 0.63752005],
+             'linux': [0.61836689, 0.62315518, 0.62794347, 0.63273176, 0.63752005]}
         ),
     ],
     ids=['Sarimax', 'Arar', 'Ets']
@@ -337,11 +337,11 @@ def test_predict_output_ForecasterStats_with_transform_y_multiple_estimators():
     expected = pd.DataFrame({
         'estimator_id': ['skforecast.Sarimax', 'skforecast.Arar', 'skforecast.Ets'] * 5,
         'pred': [
-            0.60290703, 0.62548412, 0.69319696,  # t1: Sarimax, Arar, Ets
-            0.60568721, 0.63711385, 0.6939948,   # t2
-            0.60451413, 0.70171521, 0.69476642,  # t3
-            0.6050091, 0.68564555, 0.69551268,   # t4
-            0.60480025, 0.72810186, 0.69623443   # t5
+            0.60290703, 0.62548412, 0.61836689,  # t1: Sarimax, Arar, Ets
+            0.60568721, 0.63711385, 0.62315518,   # t2
+            0.60451413, 0.70171521, 0.62794347,  # t3
+            0.6050091, 0.68564555, 0.63273176,   # t4
+            0.60480025, 0.72810186, 0.63752005   # t5
         ]
     }, index=[50, 50, 50, 51, 51, 51, 52, 52, 52, 53, 53, 53, 54, 54, 54])
     
@@ -484,6 +484,43 @@ def test_predict_output_ForecasterStats_with_last_window_and_exog_and_transforme
     pd.testing.assert_series_equal(predictions, expected, atol=0.0001)
 
 
+@pytest.mark.parametrize(
+    "y_name, last_window_name",
+    [('y', 'other_name'), ('y', None), (None, 'other_name'), (None, 'y')],
+    ids=lambda name: f'name: {name}'
+)
+@pytest.mark.parametrize(
+    "transformer_y",
+    [None, StandardScaler()],
+    ids=lambda transformer_y: f'transformer_y: {type(transformer_y).__name__}'
+)
+def test_predict_output_ForecasterStats_with_last_window_with_other_name(
+    y_name, last_window_name, transformer_y
+):
+    """
+    Test predict output of ForecasterStats with a `last_window` whose name is
+    not the name of the series used in fit is the same as with the name of
+    that series. Before, statsmodels raised `ValueError: Columns must match 
+    to concatenate along rows.`
+    """
+    forecaster = ForecasterStats(
+                     estimator     = Sarimax(order=(1, 0, 0), method='cg', disp=False),
+                     transformer_y = transformer_y
+                 )
+    forecaster.fit(y=y_datetime.rename(y_name))
+    expected = forecaster.predict(steps=5, last_window=y_lw_datetime.rename(y_name))
+
+    forecaster = ForecasterStats(
+                     estimator     = Sarimax(order=(1, 0, 0), method='cg', disp=False),
+                     transformer_y = transformer_y
+                 )
+    forecaster.fit(y=y_datetime.rename(y_name))
+    predictions = forecaster.predict(
+                      steps=5, last_window=y_lw_datetime.rename(last_window_name)
+                  )
+
+    pd.testing.assert_series_equal(predictions, expected)
+
 @pytest.mark.parametrize("y          , idx", 
                          [(y         , pd.RangeIndex(start=0, stop=50)), 
                           (y_datetime, pd.date_range(start='2000', periods=50, freq='YE'))], 
@@ -545,16 +582,16 @@ def test_predict_ForecasterStats_updates_extended_index_twice(y, idx):
         (
             Ets(model='AAN', damped=False),
             [
-                0.6812318294683052,
-                0.679950896354816,
-                0.6786699632413268,
-                0.6773890301278376,
-                0.6761080970143484,
-                0.6748271639008592,
-                0.67354623078737,
-                0.6722652976738808,
-                0.6709843645603916,
-                0.6697034314469024,
+                0.61836689,
+                0.62315517,
+                0.62794346,
+                0.63273175,
+                0.63752004,
+                0.64230832,
+                0.64709661,
+                0.65188490,
+                0.65667319,
+                0.66146147,
             ]
         )
     ],
@@ -604,3 +641,29 @@ def test_predict_output_ForecasterStats_skforecast_Arima():
                )
 
     pd.testing.assert_series_equal(predictions, expected, atol=1e-4)
+
+
+def test_predict_output_ForecasterStats_last_window_one_observation_pandas_output():
+    """
+    Test predict output of ForecasterStats with a `last_window` of a single
+    observation and a `transformer_y` with pandas output. The transformed
+    last window must be a Series, as with a transformer with numpy output.
+    """
+    last_window = y_lw_datetime.iloc[:1]
+
+    forecaster = ForecasterStats(
+        estimator=Sarimax(order=(1, 0, 0), method='cg', disp=False),
+        transformer_y=StandardScaler().set_output(transform='pandas')
+    )
+    forecaster.fit(y=y_datetime)
+    predictions = forecaster.predict(steps=3, last_window=last_window)
+
+    forecaster_numpy = ForecasterStats(
+        estimator=Sarimax(order=(1, 0, 0), method='cg', disp=False),
+        transformer_y=StandardScaler()
+    )
+    forecaster_numpy.fit(y=y_datetime)
+    expected = forecaster_numpy.predict(steps=3, last_window=last_window)
+
+    assert not expected.isna().any()
+    pd.testing.assert_series_equal(predictions, expected)

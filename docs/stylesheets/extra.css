@@ -91,7 +91,11 @@ Markdown Content Styles
 Color Scheme Styles
 ===============================
 */
-/* Light color scheme styles */
+/* Light color scheme styles. "light" is not a Material scheme (the light one
+   is "default"), but it was used in mkdocs.yml until 0.26.0 and Material
+   re-applies the scheme saved in the browser of returning visitors, so it is
+   kept here until those saved values have expired. */
+[data-md-color-scheme="default"],
 [data-md-color-scheme="light"] {
   --md-primary-fg-color:        #001633;
   --md-primary-fg-color--light: #001633;
@@ -99,8 +103,12 @@ Color Scheme Styles
   --md-accent-fg-color:         #f79939;
   --md-accent-fg-color--light:  #f79939;
   --md-accent-fg-color--dark:   #f79939;
+  --md-accent-fg-color--transparent: #f799391a;
   --md-primary-bg-color:        #f79939;
-  --md-typeset-a-color:         #f79939;
+  /* Links: the brand orange darkened on the same hue, the lightest one with a
+     contrast of at least 4.5:1 on white (WCAG AA) and 3:1 against the body
+     text, so links stand out by color alone. #f79939 on white is only 2.2:1. */
+  --md-typeset-a-color:         #b35e07;
   --md-default-fg-color:        #2c2c2c;
 }
 
@@ -112,20 +120,20 @@ Color Scheme Styles
   --md-accent-fg-color:         #f79939;
   --md-accent-fg-color--light:  #f79939;
   --md-accent-fg-color--dark:   #f79939;
+  --md-accent-fg-color--transparent: #f799391a;
   --md-primary-bg-color:        #f79939;
   --md-typeset-a-color:         #f79939;
 }
   
-/* Hide dark images in light mode */
-[data-md-color-scheme="light"] img[src$="#only-dark"],
-[data-md-color-scheme="light"] img[src$="#gh-dark-mode-only"] {
-  display: none; 
+/* Material hides the #only-dark images in "default" and the #only-light images
+   in "slate". Same behavior for the legacy "light" value (see above). */
+[data-md-color-scheme="light"] {
+  color-scheme: light;
 }
 
-/* Hide light images in dark mode */
-[data-md-color-scheme="dark"] img[src$="#only-light"],
-[data-md-color-scheme="dark"] img[src$="#gh-light-mode-only"] {
-  display: none; 
+[data-md-color-scheme="light"] img[src$="#only-dark"],
+[data-md-color-scheme="light"] img[src$="#gh-dark-mode-only"] {
+  display: none;
 }
 
 /*
@@ -176,84 +184,106 @@ Badge Styles
 
 /*
 ===============================
-Profile Cards (More section) Styles
-=============================== 
+Team cards
+===============================
 */
 
-.profile-container {
-    display: flex;
-    gap: 20px; /* Espacio entre las tarjetas */
-    justify-content: center; /* Centrar en la página */
+/* Component in docs/overrides/partials/team.html, used on the home page and on
+   the More pages. Colors come from Material's variables, so the cards follow
+   the light and dark schemes. */
+.sk-team {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 1.2em 0;
 }
-.profile-card {
-    display: flex;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    overflow: hidden;
-    width: 380px;
-    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s;
-    background-color: #ffffff;
+
+.sk-person {
+  flex: 1 1 320px;
+  max-width: 480px;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  padding: 20px 22px;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 12px;
+  background: var(--md-default-bg-color);
 }
-.profile-card:hover {
-    transform: scale(1.03);
-    box-shadow: 3px 3px 12px rgba(0, 0, 0, 0.15);
+
+.sk-person__photo {
+  flex: none;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
 }
-.profile-avatar {
-    padding: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #f8f8f8;
+
+.sk-person__body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
 }
-.profile-avatar img {
-    width: 100px;
-    height: auto;
-    border-radius: 50%;
+
+.sk-person__name {
+  font-size: 17.5px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--md-default-fg-color);
 }
-.profile-info {
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+
+.sk-person__role {
+  font-size: 14px;
+  color: var(--md-default-fg-color--light);
 }
-.profile-info strong {
-    font-size: 19px;
-    color: #333;
+
+/* Emails only where the cards are wrapped in <div class="sk-team-contact"> */
+.sk-person__email {
+  display: none;
+  font-size: 13.5px;
+  overflow-wrap: anywhere;
 }
-.profile-info a {
-    text-decoration: none;
-    font-size: 17px;
+
+.sk-team-contact .sk-person__email {
+  display: block;
 }
-.github-link {
-    color: #333;
-    font-weight: bold;
+
+.sk-person__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
 }
-.github-link:hover {
-    color: #f79939 !important; 
-    font-weight: bold;
+
+.sk-team .sk-person__links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--md-default-fg-color);
+  text-decoration: none;
+  transition: border-color 0.2s ease;
 }
-.github-link:visited {
-    color: #333; 
-    font-weight: bold;
+
+.sk-team .sk-person__links a:hover {
+  border-color: var(--md-accent-fg-color);
 }
-.linkedin-link {
-    color: #0e76a8 !important;
-    font-weight: bold;
+
+.sk-team .sk-person__links svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
 }
-.linkedin-link:hover {
-    color: #084461 !important; 
-    font-weight: bold;
-    text-decoration: underline; 
+
+.sk-team .sk-person__linkedin svg {
+  fill: #0a66c2;
 }
-.linkedin-link:visited {
-    color: #0e76a8 !important; 
-    font-weight: bold;
-}
-.email-info {
-    color: #f79939 !important; 
-    font-size: 15px;
-    font-weight: bold;
+
+[data-md-color-scheme="slate"] .sk-team .sk-person__linkedin svg {
+  fill: #3f8fe0;
 }
 
 /*
@@ -262,7 +292,7 @@ Examples Section Styles
 ===============================
 */
 /* Card grids, filter bar and language switcher on the Examples pages. Markup is
-   generated by tools/docs_hooks/examples_grid.py; behaviour lives in
+   generated by tools/docs/hooks/examples_grid.py; behaviour lives in
    docs/javascripts/examples-filter.js. Colors come exclusively from Material
    CSS variables so both the light and slate schemes work without extra rules. */
 
@@ -643,4 +673,19 @@ Announcement Bar Styles
 
 [data-md-component="announce"] .md-banner a:hover {
   text-decoration: underline;
+}
+
+/* Animations (docs/animations/*.html) embedded with an iframe.
+   Height = stage (width x --skf-ratio) + 48px controls bar. The default ratio
+   matches a 1280x640 stage; override it inline for other sizes, for example
+   style="--skf-ratio: 0.5625" for 1280x720. */
+.skf-anim-embed {
+  container-type: inline-size;
+  margin: 1.5em 0;
+}
+.skf-anim-embed iframe {
+  display: block;
+  width: 100%;
+  height: calc(var(--skf-ratio, 0.5) * 100cqw + 48px);
+  border: 0;
 }

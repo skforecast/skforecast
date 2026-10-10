@@ -333,6 +333,77 @@ def test_fit_custom_arima_with_drift(random_walk_series):
     assert fit['exog'] is not None
 
 
+def test_fit_custom_arima_and_forecast_arima_with_drift_and_ndarray_exog():
+    """
+    Test that, with drift and exog as a numpy array, fit_custom_arima stores
+    the regressors as a DataFrame with a named 'drift' column, so that
+    forecast_arima extends the drift over the forecast horizon. Data follow a
+    random walk with drift 0.5 plus 2 * x.
+    """
+    rng = np.random.RandomState(123)
+    n = 100
+    steps = 5
+    x = rng.normal(0, 1, n + steps)
+    y = np.cumsum(0.5 + rng.normal(0, 1, n + steps)) + 2 * x
+
+    fit = fit_custom_arima(
+        y[:n], m=1, order=(0, 1, 0), constant=True, exog=x[:n].reshape(-1, 1)
+    )
+    fc = forecast_arima(fit, h=steps, exog=x[n:].reshape(-1, 1), level=[])
+
+    assert isinstance(fit['exog'], pd.DataFrame)
+    assert list(fit['exog'].columns) == ['drift', 'exog1']
+    assert list(fit['coef'].columns) == ['drift', 'exog1']
+    np.testing.assert_array_almost_equal(
+        fit['coef'].to_numpy().ravel(),
+        np.array([0.4909742755025071, 1.9202151091518056])
+    )
+    np.testing.assert_array_almost_equal(
+        fc['mean'],
+        np.array([50.77783587521633, 46.23795674516272, 51.8946026257248,
+                  56.007178045793324, 51.461562680362405])
+    )
+
+
+@pytest.mark.parametrize(
+    "y, m, kwargs, expected_coef_names, expected_coef, expected_pred",
+    [
+        (2 + 0.5 * np.arange(40), 1, {},
+         ['drift'], [0.5], [22.0, 22.5, 23.0, 23.5]),
+        (np.tile([1., 3., 2., 5.], 10) + np.repeat(np.arange(10.), 4), 4, {},
+         ['drift'], [0.25], [11.0, 13.0, 12.0, 15.0]),
+        (2 + 0.5 * np.arange(40), 1, {'allowdrift': False},
+         [], [], [21.5, 21.5, 21.5, 21.5]),
+        (np.exp(1 + 0.05 * np.arange(40)), 1, {'lambda_bc': 0.0},
+         ['drift'], [0.05],
+         [20.085536923187675, 21.115344422540616, 22.197951281441636,
+          23.336064580942722]),
+    ],
+    ids=['linear', 'seasonal_linear_growth', 'allowdrift_False', 'box_cox_log_linear']
+)
+def test_auto_arima_when_differenced_series_is_constant(
+    y, m, kwargs, expected_coef_names, expected_coef, expected_pred
+):
+    """
+    Test auto_arima when the differenced series is constant (perfectly linear
+    series, or seasonal pattern growing linearly). As in R's
+    forecast::auto.arima, with d + D = 1 the drift is fixed at the mean of the
+    differenced series (per period when D = 1), so the forecasts extend the
+    trend. Before the fix they were flat. With Box-Cox, the lambda is stored so
+    that forecasts are back-transformed. `allowdrift=False` is respected.
+    """
+    fit = auto_arima(y, m=m, **kwargs)
+    fc = forecast_arima(fit, h=4, level=[])
+
+    assert list(fit['coef'].columns) == expected_coef_names
+    np.testing.assert_array_almost_equal(
+        fit['coef'].to_numpy().ravel(), np.array(expected_coef)
+    )
+    np.testing.assert_array_almost_equal(fc['mean'], np.array(expected_pred))
+    if 'lambda_bc' in kwargs:
+        assert fit['lambda'] == kwargs['lambda_bc']
+
+
 def test_fit_custom_arima_different_ic(ar1_series):
     """Test fit_custom_arima computes different IC values."""
     fit = fit_custom_arima(
@@ -1105,6 +1176,59 @@ def test_refit_arima_model_with_xreg(ar1_series):
     refit = refit_arima_model(ar1_series, m=1, model=fit, exog=xreg, method="CSS-ML")
     
     assert refit['converged'] is True
+
+
+def test_refit_arima_model_keeps_sigma2_of_the_original_model(ar1_series):
+    """
+    Test that refit_arima_model keeps both variances of the original model
+    (the one corrected for the degrees of freedom and the uncorrected one)
+    instead of the variances of the new data.
+    """
+    from skforecast.stats.arima._auto_arima import refit_arima_model
+
+    fit = auto_arima(ar1_series, m=1, stepwise=True, trace=False)
+    refit = refit_arima_model(
+        ar1_series[:80], m=1, model=fit, exog=None, method="CSS-ML"
+    )
+
+    assert refit['sigma2'] == fit['sigma2']
+    assert refit['sigma2_ml'] == fit['sigma2_ml']
+    assert fit['sigma2'] > fit['sigma2_ml']
+
+
+@pytest.mark.parametrize(
+    "kwargs, expected_ic",
+    [({'method': 'CSS'},
+      (-20.71329655347501, -20.121747257700363, -2.6896187178022544)),
+     ({'approximation': True},
+      (402.06814049170123, 402.6555530791138, 420.13195225627874)),
+     ({},
+      (402.06814049170123, 402.6596897874759, 420.09181832737397))],
+    ids=['method_CSS', 'approximation', 'default']
+)
+def test_auto_arima_information_criteria_use_uncorrected_sigma2(kwargs, expected_ic):
+    """
+    Test that the information criteria of auto_arima, and so the selected
+    model, do not depend on the degrees of freedom correction of sigma2: the
+    AIC of the CSS method and the offset of the approximation are computed
+    with the uncorrected variance. Expected values were obtained before the
+    correction was added.
+    """
+    rng = np.random.default_rng(123)
+    n = 150
+    e = rng.standard_normal(n)
+    y = np.zeros(n)
+    for t in range(1, n):
+        y[t] = 0.6 * y[t - 1] + e[t]
+    y = np.cumsum(y)
+
+    fit = auto_arima(y, m=1, stepwise=True, trace=False, **kwargs)
+
+    order = fit['order_spec']
+    assert (order.p, order.d, order.q) == (2, 1, 2)
+    np.testing.assert_allclose(
+        (fit['aic'], fit['aicc'], fit['bic']), expected_ic, rtol=1e-5
+    )
 
 
 # =============================================================================

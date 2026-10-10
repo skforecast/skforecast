@@ -240,8 +240,8 @@ def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dataframe
             "lag_3": [2.0, 3.0, 4.0, 5.0, 6.0, 52.0, 53.0, 54.0, 55.0, 56.0],
             "lag_4": [1.0, 2.0, 3.0, 4.0, 5.0, 51.0, 52.0, 53.0, 54.0, 55.0],
             "lag_5": [0.0, 1.0, 2.0, 3.0, 4.0, 50.0, 51.0, 52.0, 53.0, 54.0],
-            'series_1': [1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
-            'series_2': [0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+            'series_1': [1., 1., 1., 1., 1., 0., 0., 0., 0., 0.],
+            'series_2': [0., 0., 0., 0., 0., 1., 1., 1., 1., 1.],
             "exog_1": [
                 105.0,
                 106.0,
@@ -298,8 +298,8 @@ def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dataframe
             "lag_3": [7.0, 8.0, 9.0, 10.0, 11.0, 57.0, 58.0, 59.0, 60.0, 61.0],
             "lag_4": [6.0, 7.0, 8.0, 9.0, 10.0, 56.0, 57.0, 58.0, 59.0, 60.0],
             "lag_5": [5.0, 6.0, 7.0, 8.0, 9.0, 55.0, 56.0, 57.0, 58.0, 59.0],
-            'series_1': [1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
-            'series_2': [0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+            'series_1': [1., 1., 1., 1., 1., 0., 0., 0., 0., 0.],
+            'series_2': [0., 0., 0., 0., 0., 1., 1., 1., 1., 1.],
             "exog_1": [
                 110.0,
                 111.0,
@@ -1371,6 +1371,51 @@ def test_train_test_split_one_step_ahead_when_ordinal_category_and_lightgbm_cate
     assert len(cat_idx) == 2
 
 
+def test_train_test_split_one_step_ahead_when_ordinal_category_and_level_without_test_data():
+    """
+    Test _train_test_split_one_step_ahead with encoding='ordinal_category'
+    when a series has no data in the test set. The categories of
+    _level_skforecast include all the levels, so the category codes (used by
+    CatBoost) match the level codes in both X_train and X_test.
+    """
+    series_3 = {
+        "series_1": pd.Series(
+            np.arange(20, dtype=float),
+            index=pd.date_range("2020-01-01", periods=20)
+        ),
+        "series_2": pd.Series(
+            np.arange(50, 62, dtype=float),
+            index=pd.date_range("2020-01-01", periods=12)
+        ),
+        "series_3": pd.Series(
+            np.arange(100, 120, dtype=float),
+            index=pd.date_range("2020-01-01", periods=20)
+        ),
+    }
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, encoding='ordinal_category'
+    )
+
+    X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
+        forecaster._train_test_split_one_step_ahead(
+            series=series_3, initial_train_size=15
+        )
+    )
+
+    assert set(X_test_encoding.unique()) == {'series_1', 'series_3'}
+    assert X_train['_level_skforecast'].cat.categories.tolist() == [0, 1, 2]
+    assert X_test['_level_skforecast'].cat.categories.tolist() == [0, 1, 2]
+    np.testing.assert_array_equal(
+        X_train['_level_skforecast'].cat.codes.to_numpy(),
+        np.array([0] * 12 + [1] * 9 + [2] * 12)
+    )
+    np.testing.assert_array_equal(
+        X_test['_level_skforecast'].cat.codes.to_numpy(),
+        np.array([0] * 5 + [2] * 5)
+    )
+
+
 def test_train_test_split_one_step_ahead_when_weight_func_and_series_weights():
     """
     Test _train_test_split_one_step_ahead when both weight_func and
@@ -1589,3 +1634,54 @@ def test_train_test_split_one_step_ahead_encoding_onehot_with_window_features():
         active_idx = np.flatnonzero(onehot_arr[i] == 1)
         assert len(active_idx) == 1
         assert X_train_encoding.iloc[i] == encoding_keys[active_idx[0]]
+
+
+@pytest.mark.parametrize(
+    "encoding",
+    ['ordinal', 'ordinal_category', 'onehot', None],
+    ids=lambda encoding: f'encoding: {encoding}'
+)
+def test_train_test_split_one_step_ahead_when_forecaster_fitted_with_other_series(encoding):
+    """
+    Test _train_test_split_one_step_ahead when the forecaster was already fitted
+    with a different set of series ('b', 'c') than the one used in the split
+    ('a', 'b'). The split uses an encoding built only with the new series, so
+    no level of the previous fit is kept, and the sample weights and the series
+    of each row match the new series. The forecaster keeps the
+    `encoding_mapping_` of its fit and its predictions do not change.
+    """
+    index = pd.date_range('2020-01-01', periods=15)
+    series_fit = {
+        'b': pd.Series(np.arange(15, dtype=float), index=index, name='b'),
+        'c': pd.Series(np.arange(50, 65, dtype=float), index=index, name='c')
+    }
+    series_split = {
+        'a': pd.Series(np.arange(100, 115, dtype=float), index=index, name='a'),
+        'b': pd.Series(np.arange(15, dtype=float), index=index, name='b')
+    }
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=2, encoding=encoding,
+        series_weights={'a': 2., 'b': 3., 'c': 4.}
+    )
+    forecaster.fit(series=series_fit)
+    predictions_before_split = forecaster.predict(steps=3)
+
+    (
+        X_train, y_train, X_test, y_test,
+        X_train_encoding, X_test_encoding,
+        sample_weight, fit_kwargs
+    ) = forecaster._train_test_split_one_step_ahead(
+            series=series_split, initial_train_size=10
+        )
+
+    assert forecaster.encoding_mapping_ == {'b': 0, 'c': 1}
+    pd.testing.assert_frame_equal(
+        forecaster.predict(steps=3), predictions_before_split
+    )
+    assert len(X_train) == 16
+    np.testing.assert_array_equal(
+        sample_weight, np.array([2.] * 8 + [3.] * 8)
+    )
+    assert X_train_encoding.to_list() == ['a'] * 8 + ['b'] * 8
+    assert X_test_encoding.to_list() == ['a'] * 5 + ['b'] * 5

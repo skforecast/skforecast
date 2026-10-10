@@ -1,4 +1,6 @@
 # These are supported funding model platforms
+open_collective: skforecast
 github: [JoaquinAmatRodrigo, JavierEscobarOrtiz]
+buy_me_a_coffee: skforecast
 
-custom: ["https://www.buymeacoffee.com/skforecast", "https://www.paypal.com/donate/?hosted_button_id=D2JZSWRLTZDL6"]
+custom: ["https://skforecast.org/latest/more/funding.html", "https://www.paypal.com/donate/?hosted_button_id=D2JZSWRLTZDL6"]

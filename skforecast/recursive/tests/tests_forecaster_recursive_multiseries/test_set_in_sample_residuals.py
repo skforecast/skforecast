@@ -1,6 +1,7 @@
 # Unit test set_in_sample_residuals ForecasterRecursiveMultiSeries
 # ==============================================================================
 import re
+import warnings
 import pytest
 from pytest import approx
 import numpy as np
@@ -13,7 +14,9 @@ from skforecast.recursive import ForecasterRecursiveMultiSeries
 # Fixtures
 from .fixtures_forecaster_recursive_multiseries import (
     series_dict_range, 
-    exog_wide_range
+    exog_wide_range,
+    series_dict_unordered,
+    exog_dict_unordered
 )
 
 
@@ -167,3 +170,100 @@ def test_set_in_sample_residuals_store_same_residuals_as_fit(encoding):
         for k in results_binner_intervals_1[level].keys():
             assert results_binner_intervals_1[level][k][0] == approx(results_binner_intervals_2[level][k][0])
             assert results_binner_intervals_1[level][k][1] == approx(results_binner_intervals_2[level][k][1])
+
+
+@pytest.mark.parametrize("encoding", 
+                         ["ordinal", "ordinal_category", "onehot", None],
+                         ids = lambda value: f'encoding: {value}')
+def test_set_in_sample_residuals_same_as_fit_when_series_unordered_different_lengths_and_dropped(encoding):
+    """
+    Test that set_in_sample_residuals stores exactly the same residuals, residuals
+    by bin and binner intervals as fit, with the same order of keys, when the
+    series are not in alphabetical order, have different lengths and an
+    interspersed NaN, and one series ('d') loses all its rows because it has no
+    exog and `dropna_from_series=True`. The values stored by fit are tested in
+    test_fit.py for the encodings 'ordinal', 'ordinal_category' and 'onehot'.
+    """
+    forecaster_1 = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=2, encoding=encoding, dropna_from_series=True,
+        binner_kwargs={'n_bins': 2}
+    )
+    forecaster_1.fit(
+        series=series_dict_unordered, exog=exog_dict_unordered,
+        store_in_sample_residuals=True
+    )
+
+    forecaster_2 = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=2, encoding=encoding, dropna_from_series=True,
+        binner_kwargs={'n_bins': 2}
+    )
+    forecaster_2.fit(
+        series=series_dict_unordered, exog=exog_dict_unordered,
+        store_in_sample_residuals=False
+    )
+    forecaster_2.set_in_sample_residuals(
+        series=series_dict_unordered, exog=exog_dict_unordered
+    )
+
+    residuals_1 = forecaster_1.in_sample_residuals_
+    residuals_2 = forecaster_2.in_sample_residuals_
+    assert list(residuals_1) == list(residuals_2)
+    for level in residuals_1.keys():
+        np.testing.assert_array_equal(residuals_1[level], residuals_2[level])
+
+    residuals_bin_1 = forecaster_1.in_sample_residuals_by_bin_
+    residuals_bin_2 = forecaster_2.in_sample_residuals_by_bin_
+    assert list(residuals_bin_1) == list(residuals_bin_2)
+    for level in residuals_bin_1.keys():
+        assert residuals_bin_1[level].keys() == residuals_bin_2[level].keys()
+        for k in residuals_bin_1[level].keys():
+            np.testing.assert_array_equal(
+                residuals_bin_1[level][k], residuals_bin_2[level][k]
+            )
+
+    assert list(forecaster_1.binner_intervals_) == list(forecaster_2.binner_intervals_)
+    assert forecaster_1.binner_intervals_ == forecaster_2.binner_intervals_
+
+
+@pytest.mark.parametrize("index_type", 
+                         ["RangeIndex", "DatetimeIndex"],
+                         ids = lambda value: f'index_type: {value}')
+def test_set_in_sample_residuals_when_more_than_10_000_residuals(index_type):
+    """
+    Test that set_in_sample_residuals works when more than 10_000 in-sample
+    residuals are available (they are sampled) and stores the same numpy arrays
+    as fit. The residuals are sampled by position, so neither a RangeIndex
+    (whose labels repeat across series) nor a DatetimeIndex raises an error or
+    a warning.
+    """
+    rng = np.random.default_rng(123)
+    series = pd.DataFrame(
+        rng.normal(size=(1200, 10)), columns=[f'l{i}' for i in range(10)]
+    )
+    if index_type == "DatetimeIndex":
+        series.index = pd.date_range(start='2000-01-01', periods=1200, freq='h')
+
+    forecaster_1 = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
+    forecaster_1.fit(series=series, store_in_sample_residuals=True)
+
+    forecaster_2 = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
+    forecaster_2.fit(series=series, store_in_sample_residuals=False)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", category=FutureWarning)
+        forecaster_2.set_in_sample_residuals(series=series)
+
+    assert len(forecaster_2.in_sample_residuals_['_unknown_level']) == 10_000
+    for level in forecaster_1.in_sample_residuals_.keys():
+        assert isinstance(forecaster_2.in_sample_residuals_[level], np.ndarray)
+        np.testing.assert_array_equal(
+            forecaster_1.in_sample_residuals_[level],
+            forecaster_2.in_sample_residuals_[level]
+        )
+        for k in forecaster_1.in_sample_residuals_by_bin_[level].keys():
+            assert isinstance(
+                forecaster_2.in_sample_residuals_by_bin_[level][k], np.ndarray
+            )
+            np.testing.assert_array_equal(
+                forecaster_1.in_sample_residuals_by_bin_[level][k],
+                forecaster_2.in_sample_residuals_by_bin_[level][k]
+            )

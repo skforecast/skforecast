@@ -146,7 +146,7 @@ def test_pacf_leading_trailing_nans_stripped_silently():
 
 def test_pacf_interleaved_nans_lag0_is_one():
     """
-    Test that lag-0 PACF is 1.0 even when pairwise deletion is used.
+    Test that lag-0 PACF is 1.0 even when the series has interleaved NaNs.
     """
     x = np.array([1.0, np.nan, 3.0, 4.0, np.nan, 6.0, 7.0, 8.0, 9.0, 10.0,
                   11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0])
@@ -308,6 +308,48 @@ def test_pacf_alpha_confint_lower_le_upper():
     assert np.all(confint[:, 0] <= confint[:, 1])
 
 
+def test_pacf_interleaved_nans_match_statsmodels_conservative():
+    """
+    Test that, with interleaved NaNs, pacf is the Levinson-Durbin recursion on
+    the ACF of the valid pairs divided by the number of finite observations.
+
+    Expected values were generated with:
+        from statsmodels.tsa.stattools import acf as sm_acf, levinson_durbin
+        r = sm_acf(x, nlags=5, missing='conservative', fft=False)
+        levinson_durbin(r, nlags=5, isacov=True)[2]
+    """
+    x = np.array([
+        0.0, 0.9415, 1.1093, 0.4411, -0.3568, np.nan, 0.3206, 1.357, 1.7894,
+        1.3121, 0.456, 0.1, 0.6634, 1.7202, np.nan, np.nan, 1.3121, 0.7386,
+        1.049, 2.0499, 2.9129, 2.9367, 2.1911, 1.4538, 1.4944, 2.3676, 3.3626,
+        3.6564, 3.0709, 2.2364
+    ])
+    expected = np.array([
+        1.0, 0.6733598489, -0.1412091130, -0.0096457830, 0.1671151397,
+        0.1667053951
+    ])
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", MissingValuesWarning)
+        result = pacf(x, nlags=5)
+    np.testing.assert_allclose(result, expected, atol=1e-9)
+
+
+def test_pacf_interleaved_nans_values_within_unit_interval():
+    """
+    Test that pacf stays in [-1, 1] for a random walk with scattered NaNs.
+    With the denominators of acf (number of pairs plus the lag) the ACF is
+    not positive semi-definite and Levinson-Durbin returns values above 400
+    for this series.
+    """
+    rng = np.random.default_rng(0)
+    x = np.cumsum(rng.normal(size=200))
+    x[rng.choice(np.arange(1, 199), 20, replace=False)] = np.nan
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", MissingValuesWarning)
+        result = pacf(x, nlags=20)
+    assert np.all(np.abs(result) <= 1.0)
+
+
 def test_pacf_interleaved_nans_lag_with_few_valid_pairs_returns_nan():
     """
     Test that pacf returns NaN for lag 1 when that lag has fewer than 2 valid
@@ -325,10 +367,27 @@ def test_pacf_interleaved_nans_lag_with_few_valid_pairs_returns_nan():
     assert np.isnan(result[1])
 
 
-def test_pacf_alpha_pairwise_confint_uses_n_finite():
+def test_pacf_interleaved_nans_lags_after_first_nan_lag_are_nan():
+    """
+    Test that pacf returns NaN for a lag with fewer than 2 valid pairs and for
+    all the following lags. NaNs come in pairs every 4 positions, so lag 2
+    has no valid pair while lags 1 and 3 do.
+    """
+    x = np.array([
+        1.0, 2.0, np.nan, np.nan, 5.0, 3.0, np.nan, np.nan, 9.0, 10.0, np.nan,
+        np.nan, 13.0, 11.0, np.nan, np.nan, 2.0, 5.0
+    ])
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", MissingValuesWarning)
+        result = pacf(x, nlags=3)
+    np.testing.assert_allclose(result[:2], np.array([1.0, 0.4430796884]), atol=1e-9)
+    assert np.all(np.isnan(result[2:]))
+
+
+def test_pacf_alpha_interleaved_nans_confint_uses_n_finite():
     """
     Test that asymptotic CI half-width uses n_finite (finite count) not stripped
-    length when pairwise deletion is active. Half-width = z / sqrt(n_finite) for
+    length when the series has interleaved NaNs. Half-width = z / sqrt(n_finite) for
     all lags >= 1.
     """
     import scipy.stats

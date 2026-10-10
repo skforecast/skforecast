@@ -43,6 +43,12 @@
     "funding": {
         "channels": [
             {
+                "guid": "opencollective",
+                "type": "payment-provider",
+                "address": "https://opencollective.com/skforecast",
+                "description": "Open Collective: corporate sponsorship tiers and individual support."
+            },
+            {
                 "guid": "bank",
                 "type": "bank",
                 "address": "IBAN: ES6300812717310023277146",

@@ -34,6 +34,70 @@ If you clone or open the skforecast repository in an AI-enabled IDE that support
 These files contain the same core content: project structure, all forecasters, code style, and testing conventions.
 
 
+## Install skforecast context in your agent
+
+The files above are only loaded when the skforecast repository itself is open. To give your coding agent the same knowledge while you work in **your own project**, install the skforecast [workflow skills](#workflow-skills) or connect a documentation server. Pick the option that matches your tool:
+
+=== "Claude Code"
+
+    The skills are published as a Claude Code plugin. Run these commands inside Claude Code:
+
+    ```
+    /plugin marketplace add skforecast/skforecast
+    /plugin install skforecast@skforecast
+    ```
+
+    The 17 skills become available as `skforecast:<skill-name>` and Claude loads the relevant one on demand, for example when you ask it to forecast a series or to set up backtesting. Update them with `/plugin marketplace update skforecast`.
+
+=== "Cursor, Copilot, Codex, Gemini CLI and others"
+
+    Any agent that supports the [Agent Skills](https://agentskills.io) format can use the skills. The open source [`skills`](https://github.com/vercel-labs/skills) CLI copies them into the right folder for your agent (requires [Node.js](https://nodejs.org)):
+
+    ```bash
+    # Install in the current project (asks which agents to install to)
+    npx skills add skforecast/skforecast/skills
+
+    # Install for a specific agent, available in all your projects
+    npx skills add skforecast/skforecast/skills --agent cursor --global
+
+    # Install only some skills
+    npx skills add skforecast/skforecast/skills --skill forecasting-single-series --skill prediction-intervals
+
+    # Update to the latest published skills
+    npx skills update
+    ```
+
+=== "Manual copy"
+
+    Without Node.js, copy the [`skills/`](https://github.com/skforecast/skforecast/tree/main/skills) folder of the repository into the skills directory of your agent (for example `.claude/skills/` for Claude Code; check the documentation of your agent for the exact location):
+
+    ```bash
+    git clone --depth 1 https://github.com/skforecast/skforecast.git
+    mkdir -p .claude/skills
+    cp -r skforecast/skills/* .claude/skills/
+    ```
+
+=== "Context7 (MCP)"
+
+    Skforecast is indexed in [Context7](https://context7.com/skforecast/skforecast), a documentation server for coding agents that works with any [MCP](https://modelcontextprotocol.io) client. Once the Context7 MCP server is [installed in your agent](https://github.com/upstash/context7#installation), ask for it explicitly:
+
+    > Create a multi-series forecaster with LightGBM and backtest it. Use context7 with the library `/skforecast/skforecast`.
+
+    The agent retrieves up-to-date documentation snippets together with a short list of rules that prevent the most common mistakes (deprecated class names, missing frequency in the index, intervals expressed as percentiles instead of quantiles).
+
+=== "Any other LLM"
+
+    Paste `https://skforecast.org/latest/llms-full.txt` into the chat, as described in the [quick start](#quick-start-provide-the-context-to-an-llm). It contains the API reference and the 17 skills in a single file and works with any assistant.
+
+!!! note
+
+    The plugin, the `skills` CLI and Context7 read the `main` branch of the repository, so the installed skills always describe the **latest released version** of skforecast. If you work with an older version, mention it in your prompt.
+
+!!! tip "Let the agent run the forecast"
+
+    The options above give your agent the knowledge to write skforecast code. To give it tools that run the forecast instead, use the MCP server of [skforecast-ai](../skforecast-ai/skforecast-ai.md#use-it-from-your-coding-agent): the agent profiles a CSV file, plans a forecaster, backtests it and forecasts. Every decision comes from deterministic rules, not from the language model, and every result comes with the skforecast script that produced it.
+
+
 ## What's included in the context
 
 The AI context covers:
@@ -74,7 +138,7 @@ Skforecast includes 17 modular **skills** — self-contained guides that AI agen
 | `troubleshooting-common-errors` | Frequent mistakes AI assistants make with skforecast and their corrections |
 | `complete-api-reference` | Full method signatures and availability matrix for all forecasters |
 
-These skills are bundled into `llms-full.txt`. AI agents that support the [Agent Skills](https://agentskills.io) spec (such as GitHub Copilot in VS Code) can also load them individually from the `skills/` directory.
+These skills are bundled into `llms-full.txt`. AI agents that support the [Agent Skills](https://agentskills.io) spec (Claude Code, GitHub Copilot, Cursor, Codex, Gemini CLI, and others) can also load them individually: see [Install skforecast context in your agent](#install-skforecast-context-in-your-agent).
 
 The table follows the same reading order as `llms-full.txt`: decide → analyse inputs → build → benchmark → evaluate and tune → refine → specialist paths → operate → reference.
 
@@ -87,6 +151,9 @@ The table follows the same reading order as `llms-full.txt`: decide → analyse 
 | [`llms.txt`](../llms.txt) | LLMs with web search | Public index with links to all documentation sections |
 | `.github/copilot-instructions.md` | Contributors (VS Code) | Auto-injected into GitHub Copilot |
 | `AGENTS.md` | Contributors (Claude Code, Codex, Aider) | Standard agent context file |
+| [`skills/`](https://github.com/skforecast/skforecast/tree/main/skills) | Agents supporting Agent Skills | 17 workflow skills, installable with the Claude Code plugin or `npx skills` |
+| `.claude-plugin/marketplace.json` | Claude Code users | Publishes `skills/` as the `skforecast` plugin |
+| `context7.json` | Context7 (MCP) users | Controls what Context7 indexes and the rules it gives to agents |
 
 The context files are **auto-generated** from maintained source files (`tools/ai/llms-base.txt`, `llms.txt`, `tools/ai/ai_context_header.md`, and `skills/`) to ensure they stay in sync with the library. They are regenerated on every release.
 
@@ -95,5 +162,5 @@ The context files are **auto-generated** from maintained source files (`tools/ai
 
 1. **Always provide the context URL** — Without it, LLMs may hallucinate methods that don't exist or use outdated API names (e.g., `ForecasterAutoreg` instead of `ForecasterRecursive`).
 2. **Be specific about your forecaster** — Mention which forecaster you're using. Parameter names and defaults differ across forecasters.
-3. **Mention the version** — Say "skforecast 0.25.0" so the LLM doesn't mix advice from older versions.
+3. **Mention the version** — Say "skforecast 0.26.0" so the LLM doesn't mix advice from older versions.
 4. **Validate the output** — AI-generated code is a starting point. Use backtesting or an appropriate holdout evaluation to verify model performance.

@@ -309,3 +309,36 @@ def test_set_out_sample_residuals_when_there_are_no_residuals_for_some_bins():
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred, append=True)
 
     assert len(forecaster.out_sample_residuals_by_bin_[0]) == len(y_pred)
+
+
+def test_set_out_sample_residuals_ResidualsUsageWarning_when_few_residuals_per_bin():
+    """
+    Test ResidualsUsageWarning is raised when the average number of
+    out-of-sample residuals per bin is lower than 10.
+    """
+    rng = np.random.default_rng(12345)
+    y_true = pd.Series(rng.normal(loc=10, scale=10, size=1000))
+    y_pred = pd.Series(rng.normal(loc=10, scale=10, size=1000))
+
+    forecaster = ForecasterEquivalentDate(
+                     offset        = 2,
+                     n_offsets     = 2,
+                     agg_func      = np.mean,
+                 )
+    forecaster.fit(y_true)
+    n_bins = forecaster.binner.n_bins_
+    n_residuals = 5 * n_bins
+
+    warn_msg = re.escape(
+        f"Only {n_residuals} out-of-sample residuals are available for "
+        f"{n_bins} bins, an average of 5.0 residuals per bin. "
+        "With fewer than 10 residuals per bin, prediction intervals estimated "
+        "with `use_binned_residuals = True` are likely to be too narrow. Consider "
+        "providing more out-of-sample residuals, reducing `n_bins` in the "
+        "`binner_kwargs` of the forecaster, or predicting with "
+        "`use_binned_residuals = False`."
+    )
+    with pytest.warns(ResidualsUsageWarning, match=warn_msg):
+        forecaster.set_out_sample_residuals(
+            y_true=y_true.iloc[:n_residuals], y_pred=y_pred.iloc[:n_residuals]
+        )

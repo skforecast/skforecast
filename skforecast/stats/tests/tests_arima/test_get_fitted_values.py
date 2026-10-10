@@ -96,17 +96,31 @@ def test_get_fitted_values_exact_values():
     np.testing.assert_array_almost_equal(fitted[:5], expected_first5, decimal=5)
 
 
-def test_get_fitted_values_all_finite():
+@pytest.mark.parametrize(
+    "order, n_diffuse",
+    [((1, 0, 0), 0), ((2, 1, 1), 1), ((0, 2, 1), 2)],
+    ids=lambda x: f'{x}'
+)
+def test_get_fitted_values_NaN_only_in_diffuse_observations(order, n_diffuse):
     """
-    Test that get_fitted_values returns only finite values (no NaN or Inf).
+    Test that get_fitted_values returns NaN only for the first d + D * m
+    observations, whose prediction is dominated by the diffuse initialization
+    of the Kalman filter and which are excluded from the likelihood, and finite
+    values for the rest.
     """
     y = ar1_series(100, seed=42)
-    model = Arima(order=(2, 1, 1), seasonal_order=(0, 0, 0))
+    if order[1] == 2:
+        y = np.cumsum(y)
+    model = Arima(order=order, seasonal_order=(0, 0, 0))
     model.fit(y)
 
     fitted = model.get_fitted_values()
+    residuals = model.get_residuals()
 
-    assert np.all(np.isfinite(fitted))
+    assert np.all(np.isnan(fitted[:n_diffuse]))
+    assert np.all(np.isnan(residuals[:n_diffuse]))
+    assert np.all(np.isfinite(fitted[n_diffuse:]))
+    assert np.all(np.isfinite(residuals[n_diffuse:]))
 
 
 def test_get_fitted_values_returns_ndarray():
@@ -153,7 +167,9 @@ def test_get_fitted_values_with_seasonal_model():
     fitted = model.get_fitted_values()
 
     assert fitted.shape == air_passengers.shape
-    assert np.all(np.isfinite(fitted))
+    # First d + D * m = 13 observations are NaN (diffuse initialization)
+    assert np.all(np.isnan(fitted[:13]))
+    assert np.all(np.isfinite(fitted[13:]))
     assert isinstance(fitted, np.ndarray)
 
 

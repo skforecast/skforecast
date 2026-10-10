@@ -41,7 +41,7 @@ def test_create_train_X_y_output_when_series_and_exog_is_None():
                 "2000-01-04", "2000-01-05", "2000-01-06", "2000-01-07"
             ]),
             columns = ['lag_1', 'lag_2', 'lag_3', '1', '2']
-        ).astype({'1': int, '2': int}),
+        ),
         pd.Series(
             data  = np.array([0., 0.5, 1., 1.5, 0., 0.5, 1., 1.5]),
             index = pd.DatetimeIndex([

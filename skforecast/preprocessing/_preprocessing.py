@@ -8,8 +8,8 @@
 from __future__ import annotations
 from typing import Any
 import contextlib
+import functools
 import warnings
-from numba import njit
 import numpy as np
 import pandas as pd
 from scipy.stats import mode as scipy_mode
@@ -21,6 +21,7 @@ from .. import __version__
 from ..exceptions import IgnoredArgumentWarning, MissingValuesWarning
 from ..metrics import calculate_coverage
 from ..utils import get_style_repr_html
+from ..utils.utils import _date_range_from_index, _is_utc_anchored_index
 
 
 def _check_X_numpy_ndarray_1d(ensure_1d=True):
@@ -378,6 +379,55 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
             setattr(self, param, value)
 
 
+def _asfreq_from_index(
+    data: pd.Series | pd.DataFrame,
+    freq: str | pd.DateOffset,
+    fill_value: object = None
+) -> pd.Series | pd.DataFrame:
+    """
+    Convert `data` to the specified frequency. It behaves as pandas `asfreq`
+    unless `data` has a timezone-aware index that advances in fixed UTC steps
+    (timestamps created in UTC and converted to a local timezone), in which
+    case the new index is generated in UTC to keep the same convention when it
+    crosses a daylight saving change.
+
+    Parameters
+    ----------
+    data : pandas Series, pandas DataFrame
+        Data with a pandas DatetimeIndex.
+    freq : str, pandas DateOffset
+        Frequency of the new index.
+    fill_value : object, default None
+        Value used to fill the rows added by the new index.
+
+    Returns
+    -------
+    data : pandas Series, pandas DataFrame
+        Data converted to the specified frequency.
+
+    """
+
+    index = data.index
+    offset = pd.tseries.frequencies.to_offset(freq)
+    if (
+        isinstance(index, pd.DatetimeIndex)
+        and offset is not None
+        and _is_utc_anchored_index(index=index, freq=offset)
+    ):
+        new_index = _date_range_from_index(
+                        index = index,
+                        start = index.min(),
+                        end   = index.max(),
+                        freq  = offset
+                    )
+        new_index.name = index.name
+        data = data.reindex(new_index, fill_value=fill_value)
+    else:
+        data = data.asfreq(freq, fill_value=fill_value)
+
+    return data
+
+
 def reshape_series_wide_to_long(
     data: pd.DataFrame,
     return_multi_index: bool = True
@@ -422,7 +472,8 @@ def reshape_series_wide_to_long(
     data = data.reset_index()
     data = pd.melt(data, id_vars="datetime", var_name="series_id", value_name="value")
     data = data.groupby("series_id", sort=False).apply(
-        lambda x: x.set_index("datetime").asfreq(freq), include_groups=False
+        lambda x: _asfreq_from_index(x.set_index("datetime"), freq),
+        include_groups=False
     )
 
     if not return_multi_index:
@@ -491,7 +542,9 @@ def reshape_series_long_to_dict(
         for k, group in data.groupby(level=0, sort=True, observed=True):
             group = group.droplevel(0)
             original_size = len(group)
-            series_dict[k] = group[first_col].rename(k).asfreq(freq, fill_value=fill_value)
+            series_dict[k] = _asfreq_from_index(
+                group[first_col].rename(k), freq, fill_value=fill_value
+            )
             if not suppress_warnings and len(series_dict[k]) != original_size:
                 fill_msg = (
                     "NaNs have been introduced"
@@ -520,7 +573,9 @@ def reshape_series_long_to_dict(
         original_sizes = data_grouped.size()
         series_dict = {}
         for k, v in data_grouped:
-            series_dict[k] = v.set_index(index)[values].asfreq(freq, fill_value=fill_value).rename(k)
+            series_dict[k] = _asfreq_from_index(
+                v.set_index(index)[values], freq, fill_value=fill_value
+            ).rename(k)
             series_dict[k].index.name = None
             if not suppress_warnings and len(series_dict[k]) != original_sizes[k]:
                 fill_msg = (
@@ -607,7 +662,7 @@ def reshape_exog_long_to_dict(
             group = group.droplevel(0)
             original_index = group.index
             original_size = len(group)
-            exog_dict[k] = group.asfreq(freq)
+            exog_dict[k] = _asfreq_from_index(group, freq)
             if len(exog_dict[k]) != original_size:
                 nans_introduced = True
                 non_numeric_cols = []
@@ -669,7 +724,7 @@ def reshape_exog_long_to_dict(
             k: set(v[index]) for k, v in exog_dict.items()
         }
         exog_dict = {
-            k: v.set_index(index).drop(columns=series_id).asfreq(freq)
+            k: _asfreq_from_index(v.set_index(index).drop(columns=series_id), freq)
             for k, v in exog_dict.items()
         }
 
@@ -823,7 +878,40 @@ def reshape_series_exog_dict_to_long(
     return long_df
 
 
-@njit
+def _lazy_njit(func):
+    """
+    Decorator that defers `numba.njit` compilation until the first call, so
+    that importing skforecast does not import numba. The compiled dispatcher
+    is created once and reused in subsequent calls.
+
+    Parameters
+    ----------
+    func : Callable
+        Function to be compiled with `numba.njit` on its first call.
+
+    Returns
+    -------
+    wrapper : Callable
+        Function with the same signature as `func` that compiles it with
+        `numba.njit` the first time it is called and reuses the compiled
+        version afterwards.
+
+    """
+
+    compiled = None
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        nonlocal compiled
+        if compiled is None:
+            from numba import njit
+            compiled = njit(func)
+        return compiled(*args, **kwargs)
+
+    return wrapper
+
+
+@_lazy_njit
 def _np_mean_jit(x: np.ndarray) -> float:  # pragma: no cover
     """
     NumPy mean function implemented with Numba JIT.
@@ -831,7 +919,7 @@ def _np_mean_jit(x: np.ndarray) -> float:  # pragma: no cover
     return np.mean(x)
 
 
-@njit
+@_lazy_njit
 def _np_std_jit(x: np.ndarray, ddof: int = 1) -> float:  # pragma: no cover
     """
     Standard deviation function implemented with Numba JIT.
@@ -851,7 +939,7 @@ def _np_std_jit(x: np.ndarray, ddof: int = 1) -> float:  # pragma: no cover
     return std
 
 
-@njit
+@_lazy_njit
 def _np_min_jit(x: np.ndarray) -> float:  # pragma: no cover
     """
     NumPy min function implemented with Numba JIT.
@@ -859,7 +947,7 @@ def _np_min_jit(x: np.ndarray) -> float:  # pragma: no cover
     return np.min(x)
 
 
-@njit
+@_lazy_njit
 def _np_max_jit(x: np.ndarray) -> float:  # pragma: no cover
     """
     NumPy max function implemented with Numba JIT.
@@ -867,7 +955,7 @@ def _np_max_jit(x: np.ndarray) -> float:  # pragma: no cover
     return np.max(x)
 
 
-@njit
+@_lazy_njit
 def _np_sum_jit(x: np.ndarray) -> float:  # pragma: no cover
     """
     NumPy sum function implemented with Numba JIT.
@@ -875,7 +963,7 @@ def _np_sum_jit(x: np.ndarray) -> float:  # pragma: no cover
     return np.sum(x)
 
 
-@njit
+@_lazy_njit
 def _np_median_jit(x: np.ndarray) -> float:  # pragma: no cover
     """
     NumPy median function implemented with Numba JIT.
@@ -883,7 +971,7 @@ def _np_median_jit(x: np.ndarray) -> float:  # pragma: no cover
     return np.median(x)
 
 
-@njit
+@_lazy_njit
 def _np_min_max_ratio_jit(x: np.ndarray) -> float:  # pragma: no cover
     """
     NumPy min-max ratio function implemented with Numba JIT.
@@ -891,7 +979,7 @@ def _np_min_max_ratio_jit(x: np.ndarray) -> float:  # pragma: no cover
     return np.min(x) / np.max(x)
 
 
-@njit
+@_lazy_njit
 def _np_cv_jit(x: np.ndarray) -> float:  # pragma: no cover
     """
     Coefficient of variation function implemented with Numba JIT.
@@ -911,7 +999,7 @@ def _np_cv_jit(x: np.ndarray) -> float:  # pragma: no cover
     return std / np.mean(x)
 
 
-@njit
+@_lazy_njit
 def _ewm_jit(x: np.ndarray, alpha: float = 0.3) -> float:  # pragma: no cover
     """
     Calculate the exponentially weighted mean of an array.
@@ -945,7 +1033,7 @@ def _ewm_jit(x: np.ndarray, alpha: float = 0.3) -> float:  # pragma: no cover
     return ewm
 
 
-@njit
+@_lazy_njit
 def _n_unique_jit(x):  # pragma: no cover
     """
     Count number of unique classes using numba JIT.
@@ -953,7 +1041,7 @@ def _n_unique_jit(x):  # pragma: no cover
     return len(np.unique(x))
 
 
-@njit
+@_lazy_njit
 def _n_changes_jit(x):  # pragma: no cover
     """
     Count number of class changes using numba JIT.
@@ -1012,10 +1100,11 @@ class RollingFeatures():
     fillna : str, float, default None
         Fill missing values in `transform_batch` method. Available 
         methods are: 'mean', 'median', 'ffill', 'bfill', or a float value.
-    kwargs_stats : dict, default {'ewm': {'alpha': 0.3}}
+    kwargs_stats : dict, default None
         Dictionary with additional arguments for the statistics. The keys are the
         statistic names and the values are dictionaries with the arguments for the
-        corresponding statistic. For example, {'ewm': {'alpha': 0.3}}.
+        corresponding statistic. For example, {'ewm': {'alpha': 0.3}}. If `None`,
+        the default {'ewm': {'alpha': 0.3}} is used.
     
     Attributes
     ----------
@@ -1048,7 +1137,7 @@ class RollingFeatures():
         min_periods: int | list[int] | None = None,
         features_names: list[str] | None = None, 
         fillna: str | float | None = None,
-        kwargs_stats: dict[str, dict[str, object]] | None = {'ewm': {'alpha': 0.3}}
+        kwargs_stats: dict[str, dict[str, Any]] | None = None
     ) -> None:
         
         self._validate_params(
@@ -1059,6 +1148,9 @@ class RollingFeatures():
             fillna         = fillna,
             kwargs_stats   = kwargs_stats
         )
+
+        if kwargs_stats is None:
+            kwargs_stats = {'ewm': {'alpha': 0.3}}
 
         if isinstance(stats, str):
             stats = [stats]
@@ -1087,7 +1179,7 @@ class RollingFeatures():
         self.features_names = features_names
 
         self.fillna = fillna
-        self.kwargs_stats = kwargs_stats if kwargs_stats is not None else {}
+        self.kwargs_stats = kwargs_stats
 
         window_params_list = []
         for i in range(len(self.stats)):
@@ -1107,8 +1199,7 @@ class RollingFeatures():
                         'closed': 'left'
                     },
                     'stats_idx': [], 
-                    'stats_names': [], 
-                    'rolling_obj': None
+                    'stats_names': []
                 }
             unique_rolling_windows[key]['stats_idx'].append(i)
             unique_rolling_windows[key]['stats_names'].append(self.features_names[i])
@@ -1175,7 +1266,7 @@ class RollingFeatures():
         min_periods: int | list[int] | None = None,
         features_names: list[str] | None = None, 
         fillna: str | float | None = None,
-        kwargs_stats: dict[str, dict[str, object]] | None = None
+        kwargs_stats: dict[str, dict[str, Any]] | None = None
     ) -> None:
         """
         Validate the parameters of the RollingFeatures class.
@@ -1388,9 +1479,9 @@ class RollingFeatures():
         
         """
 
-        for k in self.unique_rolling_windows.keys():
-            rolling_obj = X.rolling(**self.unique_rolling_windows[k]['params'])
-            self.unique_rolling_windows[k]['rolling_obj'] = rolling_obj
+        rolling_objs = {
+            k: X.rolling(**v['params']) for k, v in self.unique_rolling_windows.items()
+        }
         
         rolling_features = []
         for i, stat in enumerate(self.stats):
@@ -1398,7 +1489,7 @@ class RollingFeatures():
             min_periods = self.min_periods[i]
 
             key = f"{window_size}_{min_periods}"
-            rolling_obj = self.unique_rolling_windows[key]['rolling_obj']
+            rolling_obj = rolling_objs[key]
 
             stat_series = self._apply_stat_pandas(rolling_obj=rolling_obj, stat=stat)            
             rolling_features.append(stat_series)
@@ -1742,8 +1833,7 @@ class RollingFeaturesClassification():
                         'closed': 'left'
                     },
                     'stats_idx': [], 
-                    'stats_names': [], 
-                    'rolling_obj': None
+                    'stats_names': []
                 }
             unique_rolling_windows[key]['stats_idx'].append(i)
             unique_rolling_windows[key]['stats_names'].append(self.features_names[i])
@@ -2019,9 +2109,9 @@ class RollingFeaturesClassification():
             
             self.features_names = features_names
 
-        for k in self.unique_rolling_windows.keys():
-            rolling_obj = X.rolling(**self.unique_rolling_windows[k]['params'])
-            self.unique_rolling_windows[k]['rolling_obj'] = rolling_obj
+        rolling_objs = {
+            k: X.rolling(**v['params']) for k, v in self.unique_rolling_windows.items()
+        }
         
         rolling_features = []
         for i, stat in enumerate(self.stats):
@@ -2029,7 +2119,7 @@ class RollingFeaturesClassification():
             min_periods = self.min_periods[i]
 
             key = f"{window_size}_{min_periods}"
-            rolling_obj = self.unique_rolling_windows[key]['rolling_obj']
+            rolling_obj = rolling_objs[key]
 
             stat_series = self._apply_stat_pandas(X=X, rolling_obj=rolling_obj, stat=stat)     
             rolling_features.append(stat_series)

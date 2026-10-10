@@ -141,7 +141,7 @@ def test_MissingValuesWarning_check_preprocess_exog_multiseries_when_exog_is_dic
         'l1': None,
         'l2': exog_dict_dt['l2'].to_frame()
     }
-    expected_exog_names_in_ = ['exog_1', 'exog_2']
+    expected_exog_names_in_ = ['exog_1']
     
     assert isinstance(exog_dict, dict)
     assert list(exog_dict.keys()) == ['l1', 'l2']
@@ -156,7 +156,7 @@ def test_MissingValuesWarning_check_preprocess_exog_multiseries_when_exog_is_dic
             )
             assert len(index_intersection) == len(exog_dict[k])
 
-    assert len(set(exog_names_in_) - set(expected_exog_names_in_)) == 0
+    assert exog_names_in_ == expected_exog_names_in_
 
 
 def test_TypeError_check_preprocess_exog_multiseries_when_exog_dict_with_different_index_from_series():
@@ -181,17 +181,29 @@ def test_TypeError_check_preprocess_exog_multiseries_when_exog_dict_with_differe
         )
 
 
-def test_TypeError_check_preprocess_exog_multiseries_when_exog_dict_with_different_dtypes_same_column():
+@pytest.mark.parametrize(
+    "not_valid_exog",
+    [
+        {'l1': exog_wide_range.copy(),
+         'l2': exog_wide_range['exog_1'].astype(str).copy()},
+        {'l1': pd.DataFrame(
+                   {'exog_1': pd.Categorical(np.tile([0, 1], 25), categories=[0, 1])}
+               ),
+         'l2': pd.DataFrame(
+                   {'exog_1': pd.Categorical(np.tile([0, 1], 25), categories=[0, 1, 2])}
+               )},
+    ],
+    ids=['float and str', 'category with different categories'],
+)
+def test_TypeError_check_preprocess_exog_multiseries_when_exog_dict_with_different_dtypes_same_column(
+    not_valid_exog
+):
     """
-    Test TypeError is raised when exog is a dict with different dtypes for the 
-    same column.
+    Test TypeError is raised when exog is a dict with different dtypes for the
+    same column, including category columns whose categories differ between
+    series.
     """
     _, series_indexes = check_preprocess_series(series=series_dict_range)
-
-    not_valid_exog = {
-        'l1': exog_wide_range.copy(),
-        'l2': exog_wide_range['exog_1'].astype(str).copy()
-    }
 
     err_msg = re.escape(
         "Exog/s: ['exog_1'] have different dtypes in different "
@@ -235,6 +247,102 @@ def test_ValueError_check_preprocess_exog_multiseries_when_exog_has_columns_name
             exog              = not_valid_exog,
             exog_dict         = {'l1': None, 'l2': None}
         )
+
+
+@pytest.mark.parametrize("exog_type", 
+                         ['wide', 'dict'],
+                         ids = lambda exog_type: f'exog type: {exog_type}')
+def test_ValueError_check_preprocess_exog_multiseries_when_exog_Series_without_name(exog_type):
+    """
+    Test ValueError is raised when exog is a pandas Series without name. Before,
+    a wide Series without name was converted to a DataFrame with a column 
+    named 0.
+    """
+    _, series_indexes = check_preprocess_series(series=series_dict_range)
+
+    exog = exog_wide_range['exog_1'].copy()
+    exog.name = None
+    if exog_type == 'dict':
+        exog = {'l1': exog, 'l2': exog}
+
+    err_msg = re.escape("When `exog` is a pandas Series, it must have a name.")
+    with pytest.raises(ValueError, match = err_msg):
+        check_preprocess_exog_multiseries(
+            series_names_in_  = ['l1', 'l2'],
+            series_index_type = type(series_indexes['l1']),
+            exog              = exog,
+            exog_dict         = {'l1': None, 'l2': None}
+        )
+
+
+def test_ValueError_check_preprocess_exog_multiseries_when_exog_DataFrame_with_duplicated_columns():
+    """
+    Test ValueError is raised when exog is a pandas DataFrame with duplicated 
+    column names. Before, the error said that exog had a column named as one 
+    of the series.
+    """
+    _, series_indexes = check_preprocess_series(series=series_dict_range)
+
+    exog = exog_wide_range[['exog_1', 'exog_1']].copy()
+
+    err_msg = re.escape(
+        "`exog` cannot contain duplicated column names. Got ['exog_1', 'exog_1']."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_preprocess_exog_multiseries(
+            series_names_in_  = ['l1', 'l2'],
+            series_index_type = type(series_indexes['l1']),
+            exog              = exog,
+            exog_dict         = {'l1': None, 'l2': None}
+        )
+
+
+def test_ValueError_check_preprocess_exog_multiseries_when_exog_dict_with_duplicated_columns():
+    """
+    Test ValueError is raised when exog is a dict with a pandas DataFrame with 
+    duplicated column names. Before, the duplicated columns were accepted.
+    """
+    _, series_indexes = check_preprocess_series(series=series_dict_range)
+
+    exog = {
+        'l1': exog_wide_range[['exog_1']].copy(),
+        'l2': exog_wide_range[['exog_1', 'exog_1']].copy()
+    }
+
+    err_msg = re.escape(
+        "`exog` for series 'l2' cannot contain duplicated column names. "
+        "Got ['exog_1', 'exog_1']."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_preprocess_exog_multiseries(
+            series_names_in_  = ['l1', 'l2'],
+            series_index_type = type(series_indexes['l1']),
+            exog              = exog,
+            exog_dict         = {'l1': None, 'l2': None}
+        )
+
+
+def test_output_check_preprocess_exog_multiseries_exog_names_in_order_of_appearance():
+    """
+    Test `exog_names_in_` follows the order of appearance of the columns in 
+    the exog dict. Before, it was built from a set, so the order changed 
+    between Python processes.
+    """
+    _, series_indexes = check_preprocess_series(series=series_dict_range)
+
+    exog = {
+        'l1': exog_wide_range[['exog_1']].rename(columns={'exog_1': 'e3'}).assign(e1=1.),
+        'l2': exog_wide_range[['exog_1']].rename(columns={'exog_1': 'e2'}).assign(e1=1.)
+    }
+
+    _, exog_names_in_ = check_preprocess_exog_multiseries(
+                            series_names_in_  = ['l1', 'l2'],
+                            series_index_type = type(series_indexes['l1']),
+                            exog              = exog,
+                            exog_dict         = {'l1': None, 'l2': None}
+                        )
+
+    assert exog_names_in_ == ['e3', 'e1', 'e2']
 
 
 @pytest.mark.parametrize("series", 
@@ -314,7 +422,7 @@ def test_output_check_preprocess_exog_multiseries_when_exog_pandas_DataFrame():
         pd.testing.assert_frame_equal(exog_dict[k], expected_exog_dict[k])
         pd.testing.assert_index_equal(exog_dict[k].index, series_dict[k].index)
 
-    assert len(set(exog_names_in_) - set(expected_exog_names_in_)) == 0
+    assert exog_names_in_ == expected_exog_names_in_
 
 
 def test_output_check_preprocess_exog_multiseries_when_exog_DataFrame_MultiIndex():
@@ -360,7 +468,7 @@ def test_output_check_preprocess_exog_multiseries_when_exog_DataFrame_MultiIndex
         pd.testing.assert_frame_equal(exog_dict[k], expected_exog_dict[k])
         pd.testing.assert_index_equal(exog_dict[k].index, series_dict[k].index)
 
-    assert len(set(exog_names_in_) - set(expected_exog_names_in_)) == 0
+    assert exog_names_in_ == expected_exog_names_in_
 
 
 def test_output_check_preprocess_exog_multiseries_when_exog_MultiIndex_with_different_lengths():
@@ -420,7 +528,7 @@ def test_output_check_preprocess_exog_multiseries_when_exog_MultiIndex_with_diff
             )
             assert len(index_intersection) == len(exog_dict[k])
 
-    assert len(set(exog_names_in_) - set(expected_exog_names_in_)) == 0
+    assert exog_names_in_ == expected_exog_names_in_
 
 
 def test_output_check_preprocess_exog_multiseries_when_series_is_dict_and_exog_dict():
@@ -457,7 +565,7 @@ def test_output_check_preprocess_exog_multiseries_when_series_is_dict_and_exog_d
         pd.testing.assert_frame_equal(exog_dict[k], expected_exog_dict[k])
         pd.testing.assert_index_equal(exog_dict[k].index, series_dict[k].index)
 
-    assert len(set(exog_names_in_) - set(expected_exog_names_in_)) == 0
+    assert exog_names_in_ == expected_exog_names_in_
 
 
 def test_output_check_preprocess_exog_multiseries_when_series_is_dict_and_exog_dict_with_different_lengths():
@@ -515,4 +623,42 @@ def test_output_check_preprocess_exog_multiseries_when_series_is_dict_and_exog_d
             )
             assert len(index_intersection) == len(exog_dict[k])
 
-    assert len(set(exog_names_in_) - set(expected_exog_names_in_)) == 0
+    assert exog_names_in_ == expected_exog_names_in_
+
+
+@pytest.mark.parametrize(
+    "exog_sorted",
+    [exog_wide_dt, exog_dict_dt, exog_long_dt],
+    ids=['wide', 'dict', 'long']
+)
+def test_output_check_preprocess_exog_multiseries_when_exog_index_is_descending(
+    exog_sorted
+):
+    """
+    Test check_preprocess_exog_multiseries sorts the index of an exog with 
+    the dates in descending order, so the output is the same as with the exog 
+    sorted. Before, the exog was empty after aligning it with the series.
+    """
+    _, series_indexes = check_preprocess_series(series=series_dict_dt)
+    if isinstance(exog_sorted, dict):
+        exog_descending = {k: v.iloc[::-1] for k, v in exog_sorted.items()}
+    else:
+        exog_descending = exog_sorted.iloc[::-1]
+
+    expected_exog_dict, expected_exog_names_in_ = check_preprocess_exog_multiseries(
+        series_names_in_  = ['l1', 'l2'],
+        series_index_type = type(series_indexes['l1']),
+        exog              = exog_sorted,
+        exog_dict         = {'l1': None, 'l2': None}
+    )
+    exog_dict, exog_names_in_ = check_preprocess_exog_multiseries(
+        series_names_in_  = ['l1', 'l2'],
+        series_index_type = type(series_indexes['l1']),
+        exog              = exog_descending,
+        exog_dict         = {'l1': None, 'l2': None}
+    )
+
+    assert exog_names_in_ == expected_exog_names_in_
+    for k in ['l1', 'l2']:
+        assert exog_dict[k].index.is_monotonic_increasing
+        pd.testing.assert_frame_equal(exog_dict[k], expected_exog_dict[k])

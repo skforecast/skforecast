@@ -75,7 +75,9 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 ## Constraints
 
 - Must produce **at least 2 folds**: `initial_train_size + gap + 2 * steps <= n_observations`
-- `initial_train_size` must be large enough for the model to learn patterns (at minimum 2× the lag order for ML models, or 2× steps for statistical models)
+- **Hard minimum**: `initial_train_size` must be greater than `forecaster.window_size`, the number of past observations needed to build one training row (`max(max_lag, max_size_window_features)` plus the `differentiation` order). Direct forecasters (`ForecasterDirect`, `ForecasterDirectMultiVariate`, `ForecasterRnn`) need at least `window_size + steps`, using the forecaster's `steps`. In multi-series forecasters, each series with data in the first window needs more than `window_size` observations there.
+- Forecasters without lags: `ForecasterEquivalentDate` has `window_size = offset * n_offsets` (same rule); in `ForecasterStats` the estimator sets the minimum (`window_size` is fixed at 1); `ForecasterFoundation` accepts any value ≥ 1 (`context_length` is a maximum, not a minimum).
+- **Recommended**: leave a margin above the hard minimum so the model has enough rows to learn from (e.g. two or more seasonal cycles), while keeping at least 2 folds
 - `gap` simulates real-world delay between data availability and forecast usage
 - When `fixed_train_size=True`, the window rolls forward (oldest data discarded). Use for concept drift or when old data is less relevant.
 - When `fixed_train_size=False`, the window expands (all history retained). Use when more data always helps.
@@ -112,7 +114,7 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 | Scenario | Configuration |
 |----------|--------------|
 | Default (balanced) | `int(len(data) * 0.7)` |
-| Maximize evaluation coverage | Minimum viable: `2 * max_lag` or `2 * steps` |
+| Maximize evaluation coverage | Hard minimum (`window_size + 1`; `window_size + steps` for direct) plus a learning margin, see Constraints |
 | Maximize training data | `n_observations - gap - 2 * steps` (minimum 2 folds) |
 | Start from specific date | `initial_train_size="2023-01-01"` |
 | Conservative (large training set) | `int(len(data) * 0.8)` |
@@ -155,7 +157,8 @@ skip_folds = 2  # Keep every 2nd fold
 
 ### "I want maximum evaluation coverage with a 12-step horizon"
 ```
-initial_train_size = <minimum viable>  # 2 * max_lag
+# Hard minimum: forecaster.window_size + 1 (window_size + 12 for ForecasterDirect with steps=12)
+initial_train_size = forecaster.window_size + margin  # margin: rows to learn from, e.g. 2+ seasonal cycles
 refit = False  # Faster; trains once, fixed_train_size has no effect
 fold_stride = 1  # Sliding window (many overlapping folds)
 ```

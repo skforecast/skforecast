@@ -312,27 +312,27 @@ OneStepAheadFold(
 ```python
 select_features(
     forecaster,              # ForecasterRecursive | ForecasterDirect
-    selector,                # sklearn feature selector (RFECV, SelectFromModel, etc.)
+    selector,                # scikit-learn compatible selector (RFECV, SelectFromModel, etc.)
     y,                       # pd.Series | pd.DataFrame
     exog=None,               # pd.Series | pd.DataFrame | None
-    select_only=None,        # 'autoreg' | 'exog' | None (select all)
+    select_only=None,        # 'autoreg' | 'exog' | 'calendar' | list of them | None (select all)
     force_inclusion=None,    # list[str] | str (regex) | None
-    subsample=0.5,           # int | float, proportion or number of samples
+    subsample=0.5,           # float in (0, 1], proportion of records (sampled without replacement)
     random_state=123,        # int
     verbose=True             # bool
-) -> tuple[list[int], list[str], list[str]]
-# Returns: (selected_lags, selected_window_features, selected_exog)
+) -> tuple[list[int], list[str], list[str], list[str]]
+# Returns: (selected_lags, selected_window_features, selected_exog, selected_calendar_features)
 
 select_features_multiseries(
-    forecaster,              # ForecasterRecursiveMultiSeries
-    selector,                # sklearn feature selector
+    forecaster,              # ForecasterRecursiveMultiSeries | ForecasterDirectMultiVariate
+    selector,                # scikit-learn compatible selector
     series,                  # pd.DataFrame | dict[str, pd.Series | pd.DataFrame]
     exog=None,               # pd.Series | pd.DataFrame | dict | None
-    select_only=None,        # 'autoreg' | 'exog' | None
+    select_only=None,        # 'autoreg' | 'exog' | 'calendar' | list of them | None
     force_inclusion=None,    # list[str] | str (regex) | None
-    subsample=0.5,           # int | float
+    subsample=0.5,           # float in (0, 1]
     random_state=123,        # int
     verbose=True             # bool
-) -> tuple[list[int] | dict[str, int], list[str], list[str]]
+) -> tuple[list[int] | dict[str, list[int]], list[str], list[str], list[str]]
 ```
 

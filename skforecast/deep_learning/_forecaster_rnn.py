@@ -28,6 +28,7 @@ from ..utils import (
     check_interval,
     check_predict_input,
     check_residuals_input,
+    check_residuals_per_bin,
     check_select_fit_kwargs,
     check_y,
     check_extract_values_and_index,
@@ -47,22 +48,21 @@ from ..utils import (
 )
 from ..preprocessing import QuantileBinner
 
-# TODO: Review in skforecast 0.26.0
 try:
     import keras
 except ImportError as e:
-    import sys
-    if sys.version_info >= (3, 14):
+    if isinstance(e, ModuleNotFoundError) and e.name == "keras":
+        check_optional_dependency(package_name="keras")
+    if isinstance(e, ModuleNotFoundError) and e.name == "tensorflow":
         raise ImportError(
-            "Python 3.14+ is not supported by TensorFlow, which is the default "
-            "backend used by Keras. To use Keras with Python 3.14+, the KERAS_BACKEND "
-            "environment variable needs to be set to 'torch', `os.environ['KERAS_BACKEND'] = 'torch'`."
-            "Make sure you have PyTorch installed to use Keras with the torch backend. "
-            "For installation instructions, visit https://pytorch.org/get-started/locally/"
-        )
-    else:
-        package_name = str(e).split(" ")[-1].replace("'", "")
-        check_optional_dependency(package_name=package_name)
+            "Keras uses TensorFlow as its default backend and TensorFlow is not "
+            "installed. Install it with `pip install tensorflow` or, if TensorFlow "
+            "is not available for your Python version, use the PyTorch backend: "
+            "install PyTorch (https://pytorch.org/get-started/locally/) and set "
+            "the environment variable before the import, "
+            "`os.environ['KERAS_BACKEND'] = 'torch'`."
+        ) from e
+    raise
 
 
 # TODO. Include window features
@@ -269,13 +269,13 @@ class ForecasterRnn(ForecasterBase):
         self,
         estimator: object,
         levels: str | list[str],
-        lags: int | list[int] | np.ndarray[int] | range[int],
-        transformer_series: object | dict[str, object] | None = MinMaxScaler(
+        lags: int | list[int] | np.ndarray | range,
+        transformer_series: object | dict[str, Any] | None = MinMaxScaler(
             feature_range=(0, 1)
         ),
         transformer_exog: object | None = MinMaxScaler(feature_range=(0, 1)),
-        fit_kwargs: dict[str, object] | None = None,
-        binner_kwargs: dict[str, object] | None = None,
+        fit_kwargs: dict[str, Any] | None = None,
+        binner_kwargs: dict[str, Any] | None = None,
         forecaster_id: str | int | None = None
     ) -> None:
         
@@ -370,6 +370,10 @@ class ForecasterRnn(ForecasterBase):
 
         if fit_kwargs is None:
             fit_kwargs = {}
+        elif isinstance(fit_kwargs, dict):
+            # NOTE: Copy to avoid modifying the user's dict when popping
+            # `series_val` and `exog_val`.
+            fit_kwargs = fit_kwargs.copy()
 
         self.series_val = None
         self.exog_val = None
@@ -1256,7 +1260,7 @@ class ForecasterRnn(ForecasterBase):
             are predicted.
             - If `None`: As many steps are predicted as defined in the estimator
             architecture.
-        levels : str, list, default None
+        levels : str, list, pandas Index, numpy ndarray, default None
             Name(s) of the time series to be predicted. It must be included
             in `levels`, defined when initializing the forecaster. If `None`, all
             all series used during training will be available for prediction.
@@ -1410,11 +1414,14 @@ class ForecasterRnn(ForecasterBase):
         prediction_index = expand_index(
                                index = last_window.index,
                                steps = max(steps)
-                           )[np.array(steps) - 1]
+                           )
         if isinstance(last_window.index, pd.DatetimeIndex) and np.array_equal(
             steps, np.arange(min(steps), max(steps) + 1)
         ):
-            prediction_index.freq = last_window.index.freq
+            # NOTE: Consecutive steps are selected with a slice to keep the freq.
+            prediction_index = prediction_index[min(steps) - 1:]
+        else:
+            prediction_index = prediction_index[np.array(steps) - 1]
 
         return X, X_predict_dimension_names, steps, levels, prediction_index
 
@@ -1442,7 +1449,7 @@ class ForecasterRnn(ForecasterBase):
             are predicted.
             - If `None`: As many steps are predicted as defined in the estimator
             architecture.
-        levels : str, list, default None
+        levels : str, list, pandas Index, numpy ndarray, default None
             Name(s) of the time series to be predicted. It must be included
             in `levels`, defined when initializing the forecaster. If `None`, all
             all series used during training will be available for prediction.
@@ -1542,7 +1549,7 @@ class ForecasterRnn(ForecasterBase):
             are predicted.
             - If `None`: As many steps are predicted as defined in the estimator
             architecture.
-        levels : str, list, default None
+        levels : str, list, pandas Index, numpy ndarray, default None
             Name(s) of the time series to be predicted. It must be included
             in `levels`, defined when initializing the forecaster. If `None`, all
             all series used during training will be available for prediction.
@@ -1636,7 +1643,7 @@ class ForecasterRnn(ForecasterBase):
             are predicted.
             - If `None`: As many steps are predicted as defined in the estimator
             architecture.
-        levels : str, list, default None
+        levels : str, list, pandas Index, numpy ndarray, default None
             Name(s) of the time series to be predicted. It must be included
             in `levels`, defined when initializing the forecaster. If `None`, all
             all series used during training will be available for prediction.
@@ -1773,7 +1780,7 @@ class ForecasterRnn(ForecasterBase):
         last_window: pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
         method: str = 'conformal',
-        interval: float | list[float] | tuple[float] = [0.05, 0.95],
+        interval: float | list[float] | tuple[float, ...] = [0.05, 0.95],
         use_in_sample_residuals: bool = True,
         use_binned_residuals: bool = True,
         suppress_warnings: bool = False,
@@ -1795,7 +1802,7 @@ class ForecasterRnn(ForecasterBase):
             are predicted.
             - If `None`: As many steps are predicted as defined in the estimator
             architecture.
-        levels : str, list, default None
+        levels : str, list, pandas Index, numpy ndarray, default None
             Name(s) of the time series to be predicted. It must be included
             in `levels`, defined when initializing the forecaster. If `None`, all
             all series used during training will be available for prediction.
@@ -2001,6 +2008,11 @@ class ForecasterRnn(ForecasterBase):
         None
 
         """
+
+        if isinstance(fit_kwargs, dict):
+            # NOTE: Copy to avoid modifying the user's dict when popping
+            # `series_val` and `exog_val`.
+            fit_kwargs = fit_kwargs.copy()
 
         self.series_val = None
         self.exog_val = None
@@ -2362,3 +2374,13 @@ class ForecasterRnn(ForecasterBase):
 
             self.out_sample_residuals_[level] = out_sample_residuals
             self.out_sample_residuals_by_bin_[level] = out_sample_residuals_by_bin
+
+        check_residuals_per_bin(
+            n_residuals = {
+                level: len(self.out_sample_residuals_[level])
+                for level in sorted(series_to_update)
+            },
+            n_bins      = {
+                level: self.binner[level].n_bins_ for level in series_to_update
+            }
+        )

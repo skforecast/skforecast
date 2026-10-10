@@ -295,16 +295,29 @@ def test_arar_fit_exact_aic_bic_values():
     np.testing.assert_almost_equal(model.bic_, expected_bic, decimal=6)
 
 
-def test_arar_fit_updates_max_ar_depth_and_max_lag():
+def test_arar_fit_stores_max_ar_depth_and_max_lag_used_without_modifying_params():
     """
-    Test that fit updates max_ar_depth and max_lag when None.
+    Test that, when max_ar_depth and max_lag are None, fit stores the values
+    determined from the series length in `max_ar_depth_` and `max_lag_` without
+    modifying the constructor parameters, so that refitting on a series of a
+    different length determines them again.
     """
-    y = ar1_series(100)
     model = Arar(max_ar_depth=None, max_lag=None)
-    model.fit(y)
+    model.fit(ar1_series(100))
+
     # For n=100, defaults should be 26 and 40
-    assert model.max_ar_depth == 26
-    assert model.max_lag == 40
+    assert model.max_ar_depth is None
+    assert model.max_lag is None
+    assert model.max_ar_depth_ == 26
+    assert model.max_lag_ == 40
+
+    # For n=30, defaults should be 13 and 13
+    model.fit(ar1_series(30))
+
+    assert model.max_ar_depth is None
+    assert model.max_lag is None
+    assert model.max_ar_depth_ == 13
+    assert model.max_lag_ == 13
 
 
 def test_arar_fit_preserves_explicit_params():
@@ -318,6 +331,8 @@ def test_arar_fit_preserves_explicit_params():
     # These should be preserved
     assert model.max_ar_depth == 10
     assert model.max_lag == 20
+    assert model.max_ar_depth_ == 10
+    assert model.max_lag_ == 20
     assert model.safe is True
 
 
@@ -343,8 +358,8 @@ def test_arar_fit_model_tuple_structure():
     np.testing.assert_almost_equal(sigma2, model.sigma2_, decimal=10)
     np.testing.assert_array_almost_equal(psi, model.psi_, decimal=10)
     np.testing.assert_almost_equal(sbar, model.sbar_, decimal=10)
-    assert max_ar_depth == model.max_ar_depth
-    assert max_lag == model.max_lag
+    assert max_ar_depth == model.max_ar_depth_
+    assert max_lag == model.max_lag_
 
 
 def test_arar_fit_resets_memory_reduced_flag():

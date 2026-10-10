@@ -711,3 +711,41 @@ def test_set_out_sample_residuals_unknown_level_when_its_binner_has_more_bins_th
         forecaster.out_sample_residuals_by_bin_['_unknown_level'][4],
         expected_unknown_level_bin_4
     )
+
+
+def test_set_out_sample_residuals_ResidualsUsageWarning_when_few_residuals_per_bin():
+    """
+    Test a single ResidualsUsageWarning, listing only the affected levels, is
+    raised when the average number of out-of-sample residuals per bin is lower
+    than 10.
+    """
+    rng = np.random.default_rng(12345)
+    series = {
+        "l1": pd.Series(rng.normal(10, 3, 100)), 
+        "l2": pd.Series(rng.normal(10, 3, 100))
+    }
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, binner_kwargs={"n_bins": 3}
+    )
+    forecaster.fit(series=series)
+
+    # l1: 20 / 3 bins, l2: 60 / 3 bins, _unknown_level: 80 / 3 bins
+    y_true = {"l1": rng.normal(10, 3, 20), "l2": rng.normal(10, 3, 60)}
+    y_pred = {"l1": rng.normal(10, 3, 20), "l2": rng.normal(10, 3, 60)}
+
+    warn_msg = re.escape(
+        "The out-of-sample residuals of the following levels have, on average, "
+        "fewer than 10 residuals per bin: ['l1']. "
+        "With fewer than 10 residuals per bin, prediction intervals estimated "
+        "with `use_binned_residuals = True` are likely to be too narrow. Consider "
+        "providing more out-of-sample residuals, reducing `n_bins` in the "
+        "`binner_kwargs` of the forecaster, or predicting with "
+        "`use_binned_residuals = False`."
+    )
+    with pytest.warns(ResidualsUsageWarning, match=warn_msg) as record:
+        forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
+
+    n_warnings = sum(
+        "residuals per bin" in str(w.message) for w in record
+    )
+    assert n_warnings == 1

@@ -12,9 +12,11 @@ import pandas as pd
 from contextlib import nullcontext
 from sklearn.base import BaseEstimator, RegressorMixin
 
-from .arima._arima_base import arima, predict_arima
+from .arima._arima_base import arima, add_drift_term
 from .arima._auto_arima import auto_arima, forecast_arima
+from .transformations import box_cox, inv_box_cox
 from ._utils import check_is_fitted, check_memory_reduced, check_level
+from ..exceptions import IgnoredArgumentWarning
 
 
 class Arima(BaseEstimator, RegressorMixin):
@@ -51,12 +53,16 @@ class Arima(BaseEstimator, RegressorMixin):
         when there is no differencing (d=0 and D=0).
     enforce_stationarity : bool, default True
         Whether to transform parameters to ensure stationarity and invertibility 
-        during optimization.
+        during optimization. If False, the optimizer works on the coefficients
+        directly; the maximum likelihood methods still reject non-stationary
+        AR coefficients, since the exact likelihood is not defined for them.
     method : str, default "CSS-ML"
         Estimation method. Options:
         - "CSS-ML": Conditional sum of squares for initial values, then maximum likelihood
         - "ML": Maximum likelihood only
-        - "CSS": Conditional sum of squares only
+        - "CSS": Conditional sum of squares only. It does not constrain the AR
+          coefficients: if the estimates are not stationary, a warning is issued
+          and the predictions are computed with a diffuse initial state.
     n_cond : int, optional
         Number of initial observations to use for conditional sum of squares. 
         If None, defaults to max(p + d*m + P*m, q + Q*m).
@@ -67,6 +73,14 @@ class Arima(BaseEstimator, RegressorMixin):
         Additional options passed to the optimizer (e.g., maxiter, ftol).
     kappa : float, default 1e6
         Prior variance for diffuse states in the Kalman filter.
+    include_drift : bool, default False
+        Whether to include a linear drift term (a regressor equal to the time
+        index 1, 2, ..., n) when the order is specified manually. It is only
+        applied when `d + D <= 1`; with more differences a warning is issued
+        and no drift is fitted. With `d + D = 1` it is equivalent to a
+        constant in the differenced series. Ignored when the order is selected
+        automatically (`order=None` or `seasonal_order=None`), where the drift
+        is controlled by `allowdrift`.
     max_p : int, default 5
         Maximum AR order for automatic model selection.
     max_q : int, default 5
@@ -102,7 +116,13 @@ class Arima(BaseEstimator, RegressorMixin):
     trace : bool, default False
         Print progress during automatic model selection.
     approximation : bool or None, default None
-        Use CSS approximation during automatic search. If None, auto-determined based on data size.
+        Whether to speed up the automatic search by fitting the candidate models
+        with conditional sum of squares (CSS) instead of maximum likelihood. The
+        selected model is then refitted with `method`, so only the search is
+        approximated. If None, it is used when the series has more than 150
+        observations or `m > 12`. It only takes effect with the default
+        `method="CSS-ML"`: with `"ML"` or `"CSS"` all the candidates are fitted
+        with that method.
     truncate : int or None, default None
         Truncate series to this length for approximation offset computation.
     test : str, default "kpss"
@@ -118,7 +138,9 @@ class Arima(BaseEstimator, RegressorMixin):
     allowmean : bool, default True
         Allow mean term in automatic selection when d+D=0.
     lambda_bc : float, str, or None, default None
-        Box-Cox transformation parameter:
+        Box-Cox transformation parameter, used with both manual and automatic
+        order selection. The model is fitted on the transformed series and
+        predictions and fitted values are back-transformed:
         - None: No transformation
         - "auto": Automatically select lambda using Guerrero's method
         - float: Use the specified lambda value (0 = log transform)
@@ -147,6 +169,9 @@ class Arima(BaseEstimator, RegressorMixin):
         Additional optimizer options.
     kappa : float
         Prior variance for diffuse states in the Kalman filter.
+    include_drift : bool
+        Whether a linear drift term is included when the order is specified
+        manually.
     max_p : int, default 5
         Maximum AR order for automatic model selection.
     max_q : int, default 5
@@ -181,8 +206,10 @@ class Arima(BaseEstimator, RegressorMixin):
         Maximum number of models to try in stepwise search.
     trace : bool, default False
         Print progress during automatic model selection.
-    approximation : bool or None, default None
-        Use CSS approximation during automatic search. If None, auto-determined based on data size.
+    approximation : bool or None
+        Whether the candidate models of the automatic search are fitted with
+        CSS (only with `method="CSS-ML"`). If None, auto-determined based on
+        data size.
     truncate : int or None, default None
         Truncate series to this length for approximation offset computation.
     test : str, default "kpss"
@@ -204,13 +231,13 @@ class Arima(BaseEstimator, RegressorMixin):
         - float: Use the specified lambda value (0 = log transform)
     biasadj : bool, default False
         Bias adjustment for Box-Cox back-transformation (produces mean forecasts instead of median).
-        Only available for auto arima mode.
     model_ : dict
         Dictionary containing the fitted ARIMA model with keys:
         - 'y': Original training series
-        - 'fitted': In-sample fitted values
+        - 'fitted': In-sample fitted values (Box-Cox scale when `lambda_bc` is used)
         - 'coef': Coefficient DataFrame
-        - 'sigma2': Innovation variance
+        - 'sigma2': Innovation variance, corrected for the degrees of freedom
+        - 'sigma2_ml': Innovation variance without the correction
         - 'var_coef': Variance-covariance matrix
         - 'loglik': Log-likelihood
         - 'aic': Akaike Information Criterion
@@ -228,7 +255,10 @@ class Arima(BaseEstimator, RegressorMixin):
     coef_names_ : list of str
         Names of coefficients in coef_.
     sigma2_ : float
-        Innovation variance (residual variance).
+        Innovation variance corrected for the degrees of freedom: the sum of
+        squared innovations divided by the number of innovations minus the
+        number of estimated coefficients. It is the variance used for the
+        prediction intervals.
     loglik_ : float
         Log-likelihood of the fitted model.
     aic_ : float
@@ -247,14 +277,21 @@ class Arima(BaseEstimator, RegressorMixin):
     n_exog_features_in_ : int
         Number of exogenous features seen during fitting (0 if no exog provided).
     fitted_values_ : ndarray of shape (n_samples,)
-        In-sample fitted values.
+        In-sample one-step-ahead fitted values, on the original scale when
+        `lambda_bc` is used. NaN for missing observations and for the first
+        `d + D * m` observations, whose prediction is dominated by the diffuse
+        initialization of the Kalman filter.
     in_sample_residuals_ : ndarray of shape (n_samples,)
-        In-sample residuals (observed - fitted).
+        In-sample residuals (observed - fitted), on the original scale when
+        `lambda_bc` is used. NaN where `fitted_values_` is NaN.
     var_coef_ : ndarray
         Variance-covariance matrix of coefficients.
     best_params_ : dict or None
-        If auto arima was used, dictionary with 'order', 'seasonal_order' and `m`
-        of the selected best model. Otherwise None.
+        If auto arima was used, dictionary with 'order', 'seasonal_order', 'm',
+        'fit_intercept', 'include_drift' and 'lambda_bc' (the Box-Cox lambda
+        used, None if no transformation) of the selected best model, so that
+        passing them to `set_params` fits the same model with a manual order.
+        Otherwise None.
     is_auto : bool
         Flag indicating whether auto arima model selection is used.
     is_memory_reduced : bool
@@ -276,6 +313,16 @@ class Arima(BaseEstimator, RegressorMixin):
     likelihood computation and forecasting, which allows handling of missing 
     values and provides efficient recursive prediction.
 
+    The innovation variance `sigma2_` is corrected for the degrees of freedom,
+    as in R's `forecast::Arima`: the sum of squared innovations is divided by
+    the number of innovations minus the number of estimated coefficients. The
+    maximum likelihood estimate, which divides by the number of innovations, is
+    biased downwards and gives narrower prediction intervals in short series or
+    in models with many coefficients. For this reason `sigma2_` is slightly
+    larger than the variance reported by statsmodels' SARIMAX and by R's
+    `stats::arima`. The log-likelihood and the information criteria are those
+    of the maximum likelihood estimate, available in `model_['sigma2_ml']`.
+
     """
 
     def __init__(
@@ -290,6 +337,7 @@ class Arima(BaseEstimator, RegressorMixin):
         optim_method: str = "BFGS",
         optim_kwargs: dict | None = None,
         kappa: float = 1e6,
+        include_drift: bool = False,
         max_p: int = 5,
         max_q: int = 5,
         max_P: int = 2,
@@ -340,6 +388,7 @@ class Arima(BaseEstimator, RegressorMixin):
         self.optim_method         = optim_method
         self.optim_kwargs         = optim_kwargs
         self.kappa                = kappa
+        self.include_drift        = include_drift
         self.max_p                = max_p
         self.max_q                = max_q
         self.max_P                = max_P
@@ -496,6 +545,10 @@ class Arima(BaseEstimator, RegressorMixin):
                 warnings.simplefilter("ignore")
             
             if self.is_auto:
+                # As in R's forecast::auto.arima, the default method lets the
+                # search fit the candidates with CSS when the approximation is
+                # active. The selected model is always refitted with CSS-ML.
+                search_method = None if self.method == "CSS-ML" else self.method
                 self.model_ = auto_arima(
                     y                  = y,
                     m                  = self.m,
@@ -519,7 +572,7 @@ class Arima(BaseEstimator, RegressorMixin):
                     nmodels            = self.nmodels,
                     trace              = self.trace,
                     approximation      = self.approximation,
-                    method             = self.method,
+                    method             = search_method,
                     truncate           = self.truncate,
                     exog               = exog,
                     test               = self.test,
@@ -536,10 +589,14 @@ class Arima(BaseEstimator, RegressorMixin):
                 order_spec = self.model_['order_spec']
                 best_model_order_ = (order_spec.p, order_spec.d, order_spec.q)
                 best_seasonal_order_ = (order_spec.P, order_spec.D, order_spec.Q)
+                coef_names = list(self.model_['coef'].columns)
                 self.best_params_ = {
                     'order': best_model_order_,
                     'seasonal_order': best_seasonal_order_,
-                    'm': self.m
+                    'm': self.m,
+                    'fit_intercept': 'intercept' in coef_names,
+                    'include_drift': 'drift' in coef_names,
+                    'lambda_bc': self.model_.get('lambda')
                 }
                 
                 # NOTE: Only needed to update `estimator_name_` when auto arima is used
@@ -551,12 +608,29 @@ class Arima(BaseEstimator, RegressorMixin):
                     self.estimator_name_ = f"AutoArima({p},{d},{q})({P},{D},{Q})[{self.m}]"
                 
             else:
+                y_arima = y
+                lambda_bc = None
+                if self.lambda_bc is not None:
+                    y_arima, lambda_bc = box_cox(y, self.m, self.lambda_bc)
+
+                exog_arima = exog
+                if self.include_drift:
+                    if self.order[1] + self.seasonal_order[1] > 1:
+                        warnings.warn(
+                            "No drift term is fitted because the order of "
+                            "differencing (d + D) is 2 or more.",
+                            IgnoredArgumentWarning
+                        )
+                    else:
+                        drift = np.arange(1, len(y) + 1, dtype=float)
+                        exog_arima = add_drift_term(exog, drift, name='drift')
+
                 self.model_ = arima(
-                    x              = y,
+                    x              = y_arima,
                     m              = self.m,
                     order          = self.order,
                     seasonal       = self.seasonal_order,
-                    exog           = exog,
+                    exog           = exog_arima,
                     fit_intercept   = self.fit_intercept,
                     enforce_stationarity = self.enforce_stationarity,
                     fixed          = None,
@@ -567,7 +641,34 @@ class Arima(BaseEstimator, RegressorMixin):
                     opt_options    = self.optim_kwargs,
                     kappa          = self.kappa
                 )
-        
+                # Same keys as auto_arima: forecast_arima reverts the
+                # transformation using them.
+                self.model_['lambda'] = lambda_bc
+                self.model_['biasadj'] = self.biasadj
+                self.model_['y'] = y
+
+        # With Box-Cox, the model is fitted on the transformed series. Fitted
+        # values are back-transformed and residuals are computed on the
+        # original scale (observed - fitted), as in Ets.
+        fitted_values = np.asarray(self.model_['fitted'], dtype=float)
+        in_sample_residuals = np.asarray(self.model_['residuals'], dtype=float)
+        n_leading_nan = len(self.model_['y']) - len(fitted_values)
+        if n_leading_nan > 0:
+            # auto_arima drops leading missing values before fitting, align the
+            # in-sample outputs with the training series.
+            padding = np.full(n_leading_nan, np.nan)
+            fitted_values = np.concatenate([padding, fitted_values])
+            in_sample_residuals = np.concatenate([padding, in_sample_residuals])
+        lambda_fitted = self.model_.get('lambda')
+        if lambda_fitted is not None:
+            fitted_values = inv_box_cox(
+                fitted_values,
+                lambda_fitted,
+                biasadj = self.biasadj,
+                fvar    = self.model_['sigma2'] if self.biasadj else None
+            )
+            in_sample_residuals = self.model_['y'] - fitted_values
+
         self.y_train_             = self.model_['y']
         self.coef_                = self.model_['coef'].to_numpy().ravel()
         self.coef_names_          = list(self.model_['coef'].columns)
@@ -578,8 +679,8 @@ class Arima(BaseEstimator, RegressorMixin):
         self.order_spec_          = self.model_['order_spec']
         self.arma_                = self.order_spec_.to_arma_list()
         self.converged_           = self.model_['converged']
-        self.fitted_values_       = self.model_['fitted']
-        self.in_sample_residuals_ = self.model_['residuals']
+        self.fitted_values_       = fitted_values
+        self.in_sample_residuals_ = in_sample_residuals
         self.var_coef_            = self.model_['var_coef']
         self.n_exog_names_in_     = exog_names_in_
         self.n_exog_features_in_  = exog.shape[1] if exog is not None else 0
@@ -648,20 +749,17 @@ class Arima(BaseEstimator, RegressorMixin):
                 f"but `exog` was not provided for prediction."
             )
         
-        if self.is_auto:
-            predictions = forecast_arima(
-                model   = self.model_,
-                h       = steps,
-                exog    = exog,
-                level   = []
-            )['mean']
-        else:
-            predictions = predict_arima(
-                model   = self.model_,
-                n_ahead = steps,
-                new_exog = exog,
-                se_fit  = False
-            )['mean']
+        # NOTE: forecast_arima is used for both manual and automatic models
+        # because it adds the future drift term and reverts the Box-Cox
+        # transformation when the fitted model includes them. The fitted model
+        # determines this, not the current parameters, which may change after
+        # fitting (e.g. `_set_params` when freezing parameters in backtesting).
+        predictions = forecast_arima(
+            model   = self.model_,
+            h       = steps,
+            exog    = exog,
+            level   = []
+        )['mean']
         
         return predictions
 
@@ -710,9 +808,12 @@ class Arima(BaseEstimator, RegressorMixin):
         Notes
         -----
         Prediction intervals are computed using the standard errors from the 
-        Kalman filter and assuming normally distributed innovations. The intervals 
-        fully account for both parameter uncertainty (through the variance-covariance 
-        matrix) and forecast uncertainty.
+        Kalman filter and assuming normally distributed innovations. They account
+        for the forecast uncertainty given the estimated parameters, but not for
+        the uncertainty in the parameter estimates, as in R's `forecast::Arima`
+        and statsmodels SARIMAX. The innovation variance is corrected for the
+        degrees of freedom (see `sigma2_`). When `lambda_bc` is used, the bounds
+        are back-transformed from the Box-Cox scale.
 
         """
         
@@ -756,21 +857,12 @@ class Arima(BaseEstimator, RegressorMixin):
                 f"but `exog` was not provided for prediction."
             )
         
-        if self.is_auto:
-            raw_preds = forecast_arima(
-                model   = self.model_,
-                h       = steps,
-                exog    = exog,
-                level   = level
-            )
-        else:
-            raw_preds = predict_arima(
-                model   = self.model_,
-                n_ahead = steps,
-                new_exog = exog,
-                se_fit  = True,
-                level   = level
-            )
+        raw_preds = forecast_arima(
+            model   = self.model_,
+            h       = steps,
+            exog    = exog,
+            level   = level
+        )
 
         levels = [lvl / 100 for lvl in raw_preds['level']]
         n_levels = len(levels)
@@ -801,7 +893,9 @@ class Arima(BaseEstimator, RegressorMixin):
         Returns
         -------
         residuals : ndarray of shape (n_samples,)
-            In-sample residuals.
+            In-sample residuals, on the original scale when `lambda_bc` is
+            used. NaN for missing observations and for the first `d + D * m`
+            observations (diffuse initialization).
 
         Raises
         ------
@@ -823,7 +917,9 @@ class Arima(BaseEstimator, RegressorMixin):
         Returns
         -------
         fitted : ndarray of shape (n_samples,)
-            In-sample fitted values.
+            In-sample fitted values, on the original scale when `lambda_bc` is
+            used. NaN for missing observations and for the first `d + D * m`
+            observations (diffuse initialization).
 
         Raises
         ------
@@ -937,6 +1033,34 @@ class Arima(BaseEstimator, RegressorMixin):
             "optim_method": self.optim_method,
             "optim_kwargs": self.optim_kwargs,
             "kappa": self.kappa,
+            "include_drift": self.include_drift,
+            "max_p": self.max_p,
+            "max_q": self.max_q,
+            "max_P": self.max_P,
+            "max_Q": self.max_Q,
+            "max_order": self.max_order,
+            "max_d": self.max_d,
+            "max_D": self.max_D,
+            "start_p": self.start_p,
+            "start_q": self.start_q,
+            "start_P": self.start_P,
+            "start_Q": self.start_Q,
+            "stationary": self.stationary,
+            "seasonal": self.seasonal,
+            "ic": self.ic,
+            "stepwise": self.stepwise,
+            "nmodels": self.nmodels,
+            "trace": self.trace,
+            "approximation": self.approximation,
+            "truncate": self.truncate,
+            "test": self.test,
+            "test_kwargs": self.test_kwargs,
+            "seasonal_test": self.seasonal_test,
+            "seasonal_test_kwargs": self.seasonal_test_kwargs,
+            "allowdrift": self.allowdrift,
+            "allowmean": self.allowmean,
+            "lambda_bc": self.lambda_bc,
+            "biasadj": self.biasadj,
         }
     
     def _set_params(self, **params) -> None:
@@ -982,9 +1106,8 @@ class Arima(BaseEstimator, RegressorMixin):
         Parameters
         ----------
         **params : dict
-            Estimator parameters. Valid parameter keys are: 'order', 'seasonal_order',
-            'm', 'fit_intercept', 'enforce_stationarity', 'method', 'n_cond',
-            'optim_method', 'optim_kwargs', 'kappa'.
+            Estimator parameters. Valid parameter keys are the arguments of
+            `__init__` (the keys returned by `get_params`).
 
         Returns
         -------
@@ -998,10 +1121,7 @@ class Arima(BaseEstimator, RegressorMixin):
         
         """
 
-        valid_params = {
-            'order', 'seasonal_order', 'm', 'fit_intercept', 'enforce_stationarity',
-            'method', 'n_cond', 'optim_method', 'optim_kwargs', 'kappa'
-        }
+        valid_params = set(self.get_params())
         for key in params.keys():
             if key not in valid_params:
                 raise ValueError(
@@ -1062,10 +1182,10 @@ class Arima(BaseEstimator, RegressorMixin):
         
         if not self.is_memory_reduced:
             print("Residual statistics:")
-            print(f"  Mean:                {np.mean(self.in_sample_residuals_):.6f}")
-            print(f"  Std Dev:             {np.std(self.in_sample_residuals_, ddof=1):.6f}")
-            print(f"  MAE:                 {np.mean(np.abs(self.in_sample_residuals_)):.6f}")
-            print(f"  RMSE:                {np.sqrt(np.mean(self.in_sample_residuals_**2)):.6f}")
+            print(f"  Mean:                {np.nanmean(self.in_sample_residuals_):.6f}")
+            print(f"  Std Dev:             {np.nanstd(self.in_sample_residuals_, ddof=1):.6f}")
+            print(f"  MAE:                 {np.nanmean(np.abs(self.in_sample_residuals_)):.6f}")
+            print(f"  RMSE:                {np.sqrt(np.nanmean(self.in_sample_residuals_**2)):.6f}")
             print()
             
             print("Time Series Summary Statistics:")

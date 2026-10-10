@@ -7,6 +7,7 @@
 [![License](https://img.shields.io/github/license/skforecast/skforecast-ai)](https://github.com/skforecast/skforecast-ai/blob/main/LICENSE)
 [![Documentation](https://img.shields.io/badge/docs-ai.skforecast.org-f79939?logo=readthedocs)](https://ai.skforecast.org/)
 [![GitHub](https://img.shields.io/badge/GitHub-skforecast--ai-181717?logo=github)](https://github.com/skforecast/skforecast-ai)
+[![MCP server](https://img.shields.io/badge/MCP-server-blue?logo=modelcontextprotocol&logoColor=white)](https://ai.skforecast.org/stable/user-guides/mcp-server.html)
 
 
 **[Skforecast AI](https://ai.skforecast.org/)** is an AI-assisted forecasting package from the skforecast team. It combines a deterministic forecasting engine powered by [skforecast](https://skforecast.org/) with an optional LLM reasoning layer.
@@ -57,11 +58,42 @@ print(result.code)
 The result includes the predictions, backtesting metrics, data profile, selected modeling plan, and the standalone skforecast script used to produce the forecast.
 
 
+## Use it from your coding agent
+
+Since version 0.4.0, Skforecast AI includes an [MCP](https://modelcontextprotocol.io) server that brings skforecast to coding agents such as Claude Code, Claude Desktop or VS Code. Ask in plain language ("Forecast the next 12 months of `data/sales.csv` and tell me how accurate it is") and the agent profiles the file, plans a forecaster, backtests it, compares candidates and forecasts.
+
+=== "Claude Code"
+
+    Install it as a plugin. Run these commands inside Claude Code:
+
+    ```
+    /plugin marketplace add skforecast/skforecast-ai
+    /plugin install skforecast-ai@skforecast-ai
+    ```
+
+=== "Other MCP clients"
+
+    Register this command as an MCP server in your client (requires [uv](https://docs.astral.sh/uv/)):
+
+    ```bash
+    uvx skforecast-ai-mcp --allow-dir /absolute/path/to/project
+    ```
+
+    The server is listed in the official MCP registry as `io.github.skforecast/skforecast-ai`.
+
+- **The rules decide, the agent explains**: the forecaster, estimator, lags, metric and cross-validation come from deterministic rules, not from the language model. The agent provides the model and explains the results.
+- **Every result comes with its code**: each result includes the skforecast script that produced it, which you can run on its own.
+- **Your data stays local**: the server only reads CSV files inside the allowed directory and never returns data rows to the agent, only summaries.
+
+The server requires skforecast 0.26.0 or later. See the [MCP server user guide](https://ai.skforecast.org/stable/user-guides/mcp-server.html) for the configuration of each client, the available tools and the security model.
+
+
 ## Learn More
 
 - :books: **[Documentation](https://ai.skforecast.org/)**: Tutorials, user guides, API reference, and release notes.
 - :rocket: **[Quick start](https://ai.skforecast.org/stable/quick-start/quick-start.html)**: Create your first AI-assisted forecast.
 - :book: **[Introduction to agentic forecasting](https://ai.skforecast.org/stable/user-guides/agentic-forecasting.html)**: Learn how the deterministic engine and optional reasoning layer work together.
+- :robot: **[MCP server for coding agents](https://ai.skforecast.org/stable/user-guides/mcp-server.html)**: Use skforecast as tools from Claude Code, VS Code and other MCP clients.
 - :octicons-mark-github-16: **[GitHub repository](https://github.com/skforecast/skforecast-ai)**: Browse the source, report issues, and contribute.
 
 

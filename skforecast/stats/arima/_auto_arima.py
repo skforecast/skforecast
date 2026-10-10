@@ -26,7 +26,7 @@ except ModuleNotFoundError as error:
 
 from ._arima_base import (
     arima, predict_arima, diff, _validate_choice, ArimaResult, SARIMAOrder,
-    StateSpaceArrays
+    StateSpaceArrays, add_drift_term
 )
 
 from ..seasonal import (
@@ -195,7 +195,7 @@ def compute_approx_offset(
                        exog=Exog, fit_intercept=False, **kwargs)
 
         loglik = fit['loglik']
-        sigma2 = fit['sigma2']
+        sigma2 = fit['sigma2_ml']
         offset = -2 * loglik - serieslength * np.log(sigma2)
         return offset
     except Exception:
@@ -393,14 +393,10 @@ def fit_custom_arima(
 
     exog_use = exog
     if drift_case:
+        # Always a DataFrame with a named 'drift' column, so that forecast_arima
+        # can detect the drift and extend it over the forecast horizon.
         drift = np.arange(1, len(x) + 1, dtype=np.float64)
-        if exog_use is None:
-            exog_use = pd.DataFrame({'drift': drift})
-        elif isinstance(exog_use, pd.DataFrame):
-            exog_use = exog_use.copy()
-            exog_use.insert(0, 'drift', drift)
-        else:
-            exog_use = np.column_stack([drift, exog_use])
+        exog_use = add_drift_term(exog_use, drift, name='drift')
 
     try:
         if drift_case:
@@ -432,7 +428,7 @@ def fit_custom_arima(
     npar = np.sum(fit['mask']) + 1
 
     if method == "CSS":
-        fit['aic'] = offset + nstar_adj * np.log(fit['sigma2']) + 2 * npar
+        fit['aic'] = offset + nstar_adj * np.log(fit['sigma2_ml']) + 2 * npar
 
     if not np.isnan(fit['aic']):
         fit['bic'] = fit['aic'] + npar * (np.log(nstar_adj) - 2)
@@ -702,8 +698,13 @@ def kpss_test(x: np.ndarray, regression: str = 'c') -> Tuple[float, float]:
     pvalue : float
         P-value (approximate).
     """
-    stat, pval, _, _ = kpss(x[~np.isnan(x)], regression=regression, nlags='auto')
-    return stat, pval
+    with warnings.catch_warnings():
+        # statsmodels 0.15 warns that the return type will change to a result
+        # object. Both return types are indexable by position.
+        warnings.simplefilter('ignore', category=FutureWarning)
+        result = kpss(x[~np.isnan(x)], regression=regression, nlags='auto')
+
+    return result[0], result[1]
 
 
 def adf_test(x: np.ndarray) -> Tuple[float, float]:
@@ -722,7 +723,12 @@ def adf_test(x: np.ndarray) -> Tuple[float, float]:
     pvalue : float
         P-value.
     """
-    result = adfuller(x[~np.isnan(x)], autolag='AIC')
+    with warnings.catch_warnings():
+        # statsmodels 0.15 warns that the return type will change to a result
+        # object. Both return types are indexable by position.
+        warnings.simplefilter('ignore', category=FutureWarning)
+        result = adfuller(x[~np.isnan(x)], autolag='AIC')
+
     return result[0], result[1]
 
 
@@ -952,12 +958,27 @@ def auto_arima(
         raise ValueError("Not enough data to proceed")
 
     if is_constant(dx):
-        if D > 0:
+        # Perfectly linear series (or seasonal pattern growing linearly). As in
+        # R's forecast::auto.arima, when d + D = 1 the drift is fixed at the
+        # mean of the differenced series (per period when D = 1), so the
+        # forecasts extend the trend instead of being flat.
+        if exog is None and allowdrift and d + D == 1:
+            drift_slope = np.nanmean(dx) / m if D > 0 else np.nanmean(dx)
+            drift = np.arange(1, len(x) + 1, dtype=np.float64)
+            fit = arima(x, m, order=(0, d, 0), seasonal=(0, D, 0),
+                       exog=add_drift_term(None, drift, name='drift'),
+                       fit_intercept=False, fixed=np.array([drift_slope]),
+                       method=method, **kwargs)
+        elif D > 0:
             fit = arima(x, m, order=(0, d, 0), seasonal=(0, D, 0),
                        exog=exog, fit_intercept=False, method=method, **kwargs)
         else:
             fit = arima(x, m, order=(0, d, 0), exog=exog,
                        fit_intercept=False, method=method, **kwargs)
+        # `x` is already Box-Cox transformed, store lambda so that forecasts
+        # are back-transformed.
+        fit['lambda'] = lambda_bc
+        fit['biasadj'] = biasadj
         fit['y'] = y
         return fit
 
@@ -1456,6 +1477,7 @@ def refit_arima_model(
 
     fit['var_coef'] = np.zeros_like(fit['var_coef'])
     fit['sigma2'] = model.get('sigma2', fit['sigma2'])
+    fit['sigma2_ml'] = model.get('sigma2_ml', fit['sigma2_ml'])
 
     if exog is not None:
         fit['exog'] = exog
@@ -1717,13 +1739,18 @@ def forecast_arima(
     else:
         levels = [80, 95]
 
-    n = len(model.get('y', model.get('x', [])))
     model_exog = model.get('exog')
     has_drift = (
         model_exog is not None and
         isinstance(model_exog, pd.DataFrame) and
         'drift' in model_exog.columns
     )
+
+    if has_drift:
+        # Continue the drift from its last training value. Using the length of
+        # `y` would shift it when leading missing values were dropped before
+        # fitting.
+        last_drift = float(model_exog['drift'].to_numpy()[-1])
 
     if exog is not None:
         if isinstance(exog, np.ndarray):
@@ -1732,9 +1759,9 @@ def forecast_arima(
 
         if has_drift and 'drift' not in exog.columns:
             exog = exog.copy()
-            exog.insert(0, 'drift', np.arange(n + 1, n + h + 1))
+            exog.insert(0, 'drift', last_drift + np.arange(1, h + 1))
     elif has_drift:
-        exog = pd.DataFrame({'drift': np.arange(n + 1, n + h + 1)})
+        exog = pd.DataFrame({'drift': last_drift + np.arange(1, h + 1)})
 
     pred_result = predict_arima(model, n_ahead=h, new_exog=exog, se_fit=True)
     mean = pred_result['mean']
@@ -1743,7 +1770,9 @@ def forecast_arima(
     lower = None
     upper = None
     if levels:
-        z_values = [norm.ppf(0.5 + l / 200) for l in levels]
+        # A single vectorized call: same quantiles as one call per level,
+        # without repeating the argument checks of `norm.ppf`.
+        z_values = norm.ppf(0.5 + np.asarray(levels, dtype=np.float64) / 200)
         lower = np.column_stack([mean - z * se for z in z_values])
         upper = np.column_stack([mean + z * se for z in z_values])
 

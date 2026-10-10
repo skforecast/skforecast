@@ -7,7 +7,8 @@
 
 from __future__ import annotations
 from copy import copy, deepcopy
-from functools import wraps
+import dis
+from functools import partial, wraps
 from importlib.metadata import PackageNotFoundError, version
 from importlib.util import find_spec
 import inspect
@@ -15,9 +16,11 @@ from packaging.requirements import Requirement
 from pathlib import Path
 import platform
 import sys
+import textwrap
 from typing import Any, Callable, ParamSpec, TypeVar
 import uuid
 import warnings
+import zoneinfo
 import joblib
 import pickle
 import numpy as np
@@ -35,6 +38,7 @@ from ..exceptions import (
     IgnoredArgumentWarning,
     MissingExogWarning,
     MissingValuesWarning,
+    ResidualsUsageWarning,
     SaveLoadSkforecastWarning,
     SkforecastVersionWarning,
     UnknownLevelWarning,
@@ -48,8 +52,9 @@ P = ParamSpec('P')
 R = TypeVar('R')
 
 # sklearn estimators that natively support NaN values in the input features.
-# Tree-based models gained this support in scikit-learn 1.3 (single trees) and
-# 1.4 (forests), both at or below the minimum version required by skforecast.
+# Tree-based models gained this support in scikit-learn 1.3 (decision trees),
+# 1.4 (random forests) and 1.6 (extra trees), all at or below the minimum
+# version required by skforecast.
 _SKLEARN_NAN_TOLERANT_ESTIMATORS = frozenset({
     'DecisionTreeClassifier',
     'DecisionTreeRegressor',
@@ -65,14 +70,14 @@ _SKLEARN_NAN_TOLERANT_ESTIMATORS = frozenset({
 
 optional_dependencies = {
     'stats': [
-        'statsmodels>=0.13, <0.15'
+        'statsmodels>=0.13.2, <0.16'
     ],
     'plotting': [
         'matplotlib>=3.7, <3.12', 
-        'statsmodels>=0.13, <0.15'
+        'statsmodels>=0.13.2, <0.16'
     ],
         'deeplearning': [
-        'keras>=3.0, <4.0',
+        'keras>=3.3, <4.0',
         'matplotlib>=3.7, <3.12',
     ]
 }
@@ -81,7 +86,7 @@ optional_dependencies = {
 def initialize_lags(
     forecaster_name: str,
     lags: Any
-) -> tuple[np.ndarray[int] | None, list[str] | None, int | None]:
+) -> tuple[np.ndarray | None, list[str] | None, int | None]:
     """
     Check lags argument input and generate the corresponding numpy ndarray.
 
@@ -106,12 +111,14 @@ def initialize_lags(
     lags_names = None
     max_lag = None
     if lags is not None:
-        if isinstance(lags, int):
+        if isinstance(lags, (int, np.integer)) and not isinstance(lags, bool):
             if lags < 1:
                 raise ValueError("Minimum value of lags allowed is 1.")
             lags = np.arange(1, lags + 1)
 
         if isinstance(lags, (list, tuple, range)):
+            if any(isinstance(lag, (bool, np.bool_)) for lag in lags):
+                raise TypeError("All values in `lags` must be integers.")
             lags = np.array(lags)
         
         if isinstance(lags, np.ndarray):
@@ -135,7 +142,8 @@ def initialize_lags(
                     f"tuple or list. Got {type(lags)}."
                 )
         
-        lags = np.sort(lags)
+        # NOTE: Unsigned integers overflow when negated (`-window_size`).
+        lags = np.sort(lags).astype(np.int64)
         lags_names = [f'lag_{i}' for i in lags]
         max_lag = max(lags)
 
@@ -201,28 +209,39 @@ def initialize_window_features(
                 )
             
             window_sizes = wf.window_sizes
-            if not isinstance(window_sizes, (int, list)):
+            if (
+                not isinstance(window_sizes, (int, np.integer, list))
+                or isinstance(window_sizes, bool)
+            ):
                 raise TypeError(
                     f"Attribute `window_sizes` of {wf_name} must be an int or a list "
                     f"of ints. Got {type(window_sizes)}." + link_to_docs
                 )
             
-            if isinstance(window_sizes, int):
+            if isinstance(window_sizes, (int, np.integer)):
                 if window_sizes < 1:
                     raise ValueError(
                         f"If argument `window_sizes` is an integer, it must be equal to or "
                         f"greater than 1. Got {window_sizes} from {wf_name}." + link_to_docs
                     )
-                max_window_sizes.append(window_sizes)
+                # NOTE: Cast to int, unsigned integers overflow when negated
+                # (`-window_size`).
+                max_window_sizes.append(int(window_sizes))
             else:
-                if not all(isinstance(ws, int) for ws in window_sizes) or not all(
-                    ws >= 1 for ws in window_sizes
-                ):                    
+                if len(window_sizes) == 0:
+                    raise ValueError(
+                        f"If argument `window_sizes` is a list, it must contain at "
+                        f"least one element. Got [] from {wf_name}." + link_to_docs
+                    )
+                if not all(
+                    isinstance(ws, (int, np.integer)) and not isinstance(ws, bool)
+                    for ws in window_sizes
+                ) or not all(ws >= 1 for ws in window_sizes):
                     raise ValueError(
                         f"If argument `window_sizes` is a list, all elements must be integers "
                         f"equal to or greater than 1. Got {window_sizes} from {wf_name}." + link_to_docs
                     )
-                max_window_sizes.append(max(window_sizes))
+                max_window_sizes.append(int(max(window_sizes)))
 
             features_names = wf.features_names
             if not isinstance(features_names, list):
@@ -244,6 +263,32 @@ def initialize_window_features(
             )
 
     return window_features, window_features_names, max_size_window_features
+
+
+def _get_source_code(fun: Callable) -> str | None:
+    """
+    Return the source code of a function, or `None` if it is not available,
+    for example for a `functools.partial`, a callable object or a function
+    defined in an interactive console.
+
+    Parameters
+    ----------
+    fun : Callable
+        Function whose source code is returned.
+
+    Returns
+    -------
+    source_code : str, None
+        Source code of the function, or `None` if it is not available.
+
+    """
+
+    try:
+        source_code = inspect.getsource(fun)
+    except (OSError, TypeError):
+        source_code = None
+
+    return source_code
 
 
 def initialize_weights(
@@ -273,7 +318,9 @@ def initialize_weights(
     weight_func : Callable, dict
         Argument `weight_func` of the forecaster.
     source_code_weight_func : str, dict
-        Argument `source_code_weight_func` of the forecaster.
+        Argument `source_code_weight_func` of the forecaster. It is `None` for a
+        function whose source code is not available (e.g. a `functools.partial`
+        or a callable object).
     series_weights : dict
         Argument `series_weights` of the forecaster. Only ForecasterRecursiveMultiSeries.
     
@@ -297,9 +344,9 @@ def initialize_weights(
         if isinstance(weight_func, dict):
             source_code_weight_func = {}
             for key in weight_func:
-                source_code_weight_func[key] = inspect.getsource(weight_func[key])
+                source_code_weight_func[key] = _get_source_code(weight_func[key])
         else:
-            source_code_weight_func = inspect.getsource(weight_func)
+            source_code_weight_func = _get_source_code(weight_func)
 
         if 'sample_weight' not in inspect.signature(estimator.fit).parameters:
             warnings.warn(
@@ -408,11 +455,10 @@ def initialize_differentiator_multiseries(
     """
     Initialize `differentiator_` attribute for the ForecasterRecursiveMultiSeries.
 
-    - If `int`, the same order of differentiation is applied to all series.
-    - If `dict`, a different order of differentiation (including None) can 
-    be used for each series. The keys must be the names of the series used
-    to fit the forecaster. If a series is not present in the dictionary, no
-    differencing is applied.
+    - If a `TimeSeriesDifferentiator`, a copy of it is used for each series.
+    - If `dict`, a copy of the differentiator (or `None`) of each series. The
+    keys must be the names of the series used to fit the forecaster. If a
+    series is not present in the dictionary, no differencing is applied.
     - If `None`, no differencing is applied.
 
     Parameters
@@ -425,7 +471,7 @@ def initialize_differentiator_multiseries(
     Returns
     -------
     differentiator_ : dict
-        Dictionary with the `differentiator` for each series. It is created cloning the
+        Dictionary with the `differentiator` for each series. It is created copying the
         objects in `differentiator` and is used internally to avoid overwriting.
     
     """
@@ -463,7 +509,7 @@ def initialize_differentiator_multiseries(
 
 def check_select_fit_kwargs(
     estimator: object,
-    fit_kwargs: dict[str, object] | None = None
+    fit_kwargs: dict[str, Any] | None = None
 ) -> dict[str, object]:
     """
     Check if `fit_kwargs` is a dict and select only the keys that are used by
@@ -499,11 +545,24 @@ def check_select_fit_kwargs(
             k for k in fit_kwargs.keys() if k not in fit_params
         ]
         if non_used_keys:
-            warnings.warn(
-                f"Argument/s {non_used_keys} ignored since they are not used by the "
-                f"estimator's `fit` method.",
-                IgnoredArgumentWarning
+            accepts_var_kwargs = any(
+                param.kind == inspect.Parameter.VAR_KEYWORD
+                for param in fit_params.values()
             )
+            if accepts_var_kwargs:
+                warnings.warn(
+                    f"Argument/s {non_used_keys} ignored since they are not "
+                    f"explicit arguments of the estimator's `fit` method. Arguments "
+                    f"passed through `**kwargs`, for example to the steps of a "
+                    f"scikit-learn Pipeline (`step__argument`), are not supported.",
+                    IgnoredArgumentWarning
+                )
+            else:
+                warnings.warn(
+                    f"Argument/s {non_used_keys} ignored since they are not used by the "
+                    f"estimator's `fit` method.",
+                    IgnoredArgumentWarning
+                )
 
         if 'sample_weight' in fit_kwargs.keys():
             warnings.warn(
@@ -512,11 +571,12 @@ def check_select_fit_kwargs(
                 "based on its index.",
                 IgnoredArgumentWarning
             )
-            del fit_kwargs['sample_weight']
 
         # Select only the keyword arguments allowed by the estimator's `fit` method.
+        # NOTE: A new dict is created to avoid modifying the user's `fit_kwargs`.
         fit_kwargs = {
-            k: v for k, v in fit_kwargs.items() if k in fit_params
+            k: v for k, v in fit_kwargs.items()
+            if k in fit_params and k != 'sample_weight'
         }
 
     return fit_kwargs
@@ -526,7 +586,7 @@ def configure_estimator_categorical_features(
     estimator: object,
     categorical_features_names_in_: list[str] | None,
     X_train_features_names_out_: list[str],
-    fit_kwargs: dict[str, object]
+    fit_kwargs: dict[str, Any]
 ) -> dict[str, object]:
     """
     Configure native categorical feature support for the estimator. Returns
@@ -648,7 +708,7 @@ def configure_estimator_categorical_features(
 
 def cast_catboost_categorical_columns(
     X: np.ndarray,
-    fit_kwargs: dict[str, object],
+    fit_kwargs: dict[str, Any],
     estimator: object,
 ) -> np.ndarray:
     """
@@ -702,7 +762,7 @@ def cast_catboost_categorical_columns(
 
 def cast_catboost_categorical_columns_dataframe(
     X: pd.DataFrame,
-    fit_kwargs: dict[str, object],
+    fit_kwargs: dict[str, Any],
     estimator: object,
     feature_names: list[str],
 ) -> pd.DataFrame:
@@ -757,6 +817,107 @@ def cast_catboost_categorical_columns_dataframe(
             X[col] = X[col].fillna(-1).astype(int)
 
     return X
+
+
+def _copy_rows_to_check(
+    X: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    Copy a sample of up to 100 rows of the training matrix `X`, evenly spaced,
+    before it is passed to the `fit` method of an estimator. After training,
+    `_check_in_place_fit` compares them with the same rows of `X` to check that
+    the estimator has not modified the matrix in place.
+
+    Parameters
+    ----------
+    X : pandas DataFrame
+        Training values (predictors) passed to the estimator.
+
+    Returns
+    -------
+    X_rows : pandas DataFrame
+        Copy of the rows of `X` that are checked.
+
+    """
+
+    rows_to_check = np.linspace(0, len(X) - 1, num=min(len(X), 100), dtype=int)
+    X_rows = X.iloc[rows_to_check].copy()
+
+    return X_rows
+
+
+def _check_in_place_fit(
+    X: pd.DataFrame,
+    X_rows: pd.DataFrame
+) -> None:
+    """
+    Check that the `fit` method of an estimator has not modified the training
+    matrix `X` in place. The training matrix is passed to the estimator without
+    a copy and its callers use it again after training: `fit` to calculate the
+    in-sample residuals, and the searches with `OneStepAheadFold` to fit the
+    next candidates.
+
+    The rows copied by `_copy_rows_to_check` before training are compared with
+    the same rows of `X`, so a modification limited to other rows is not
+    detected. The cells that are NaN before training are not compared, so a
+    step that fills them in place (for example, `SimpleImputer(copy=False)`) is
+    allowed: `predict` fills them again in the same way.
+
+    Parameters
+    ----------
+    X : pandas DataFrame
+        Training values (predictors) passed to the estimator.
+    X_rows : pandas DataFrame
+        Rows of `X` copied with `_copy_rows_to_check` before training.
+
+    Returns
+    -------
+    None
+
+    """
+
+    # Same positions as in `_copy_rows_to_check`.
+    rows_to_check = np.linspace(0, len(X) - 1, num=len(X_rows), dtype=int)
+    X_rows_after = X.iloc[rows_to_check]
+    if (
+        X_rows_after.shape != X_rows.shape
+        or not X_rows_after.mask(X_rows.isna().to_numpy()).equals(X_rows)
+    ):
+        raise ValueError(
+            "The estimator has modified the training matrix in place during "
+            "`fit`. The matrix is used again after training, to calculate the "
+            "in-sample residuals or to fit the next candidates of a search "
+            "with `OneStepAheadFold`, so the results would be wrong. This "
+            "happens with estimators that do not copy their input, such as "
+            "`LinearRegression(copy_X=False)` or a pipeline with "
+            "`StandardScaler(copy=False)`. Use the default copy behavior of "
+            "the estimator (`copy_X=True`, `copy=True`)."
+        )
+
+
+def _get_catboost_cat_feature_indices(estimator: object) -> np.ndarray:
+    """
+    Return the indices of the categorical features of a fitted CatBoost
+    estimator (regressor or classifier). At predict time, these columns must be
+    cast to integer, as `cast_catboost_categorical_columns` does at fit time.
+
+    Parameters
+    ----------
+    estimator : object
+        Fitted estimator.
+
+    Returns
+    -------
+    cat_indices : numpy ndarray
+        Indices of the categorical features. Empty if the estimator is not a
+        CatBoost model or was fitted without categorical features.
+
+    """
+
+    if type(estimator).__module__.split('.')[0] != 'catboost':
+        return np.array([], dtype=int)
+
+    return np.array(estimator.get_cat_feature_indices(), dtype=int)
 
 
 def _get_estimator_categorical_set_params(
@@ -816,7 +977,7 @@ def _get_estimator_categorical_set_params(
 
 def _restore_estimator_categorical_set_params(
     forecaster: object,
-    params: dict[str, object]
+    params: dict[str, Any]
 ) -> None:
     """
     Restore the estimator-level params previously captured by
@@ -858,7 +1019,7 @@ def check_y(
     y : Any
         Time series values.
     series_id : str, default '`y`'
-        Identifier of the series used in the warning message.
+        Identifier of the series used in the error messages.
     allow_nan : bool, default False
         If `True`, skip the check for missing values.
     
@@ -887,15 +1048,16 @@ def check_exog(
     series_id: str = "`exog`"
 ) -> None:
     """
-    Raise Exception if `exog` is not pandas Series or pandas DataFrame.
-    If `allow_nan = True`, issue a warning if `exog` contains NaN values.
+    Raise Exception if `exog` is not pandas Series or pandas DataFrame, or if
+    it is a pandas Series without name. If `allow_nan = False`, issue a warning
+    if `exog` contains NaN values.
     
     Parameters
     ----------
     exog : pandas Series, pandas DataFrame
         Exogenous variable/s included as predictor/s.
     allow_nan : bool, default True
-        If True, allows the presence of NaN values in `exog`. If False (default),
+        If `True`, allows the presence of NaN values in `exog`. If `False`,
         issue a warning if `exog` contains NaN values.
     series_id : str, default '`exog`'
         Identifier of the series for which the exogenous variable/s are used
@@ -982,64 +1144,38 @@ def check_exog_dtypes(
     if call_check_exog:
         check_exog(exog=exog, allow_nan=False, series_id=series_id)
 
-    valid_dtypes = ("int", "Int", "float", "Float", "uint")
-
-    if isinstance(exog, pd.DataFrame):
-        unique_dtypes = set(exog.dtypes)
-        has_invalid_dtype = False
-        for dtype in unique_dtypes:
-            if isinstance(dtype, pd.CategoricalDtype):
-                try:
-                    is_integer = np.issubdtype(dtype.categories.dtype, np.integer)
-                except TypeError:
-                    is_integer = False
-                if not is_integer:
-                    raise TypeError(
-                        "Categorical dtypes in exog must contain only integer values. "
-                        "See skforecast docs for more info about how to include "
-                        "categorical features https://skforecast.org/"
-                        "latest/user_guides/categorical-features.html"
-                    )
-            elif not dtype.name.startswith(valid_dtypes):
-                has_invalid_dtype = True
-        
-        if has_invalid_dtype:
-            warnings.warn(
-                f"{series_id} may contain only `int`, `float` or `category` dtypes. "
-                f"Most machine learning models do not allow other types of values. "
-                f"Fitting the forecaster may fail.", 
-                DataTypeWarning
-            )
-    
-    else:
-        
-        dtype_name = str(exog.dtypes)
-        if not (dtype_name.startswith(valid_dtypes) or dtype_name == "category"):
-            warnings.warn(
-                f"{series_id} may contain only `int`, `float` or `category` dtypes. Most "
-                f"machine learning models do not allow other types of values. "
-                f"Fitting the forecaster may fail.", 
-                DataTypeWarning
-            )
-
-        if isinstance(exog.dtype, pd.CategoricalDtype):
-            try:
-                is_integer = np.issubdtype(exog.cat.categories.dtype, np.integer)
-            except TypeError:
-                is_integer = False
-            if not is_integer:
+    # NOTE: Integer and float dtypes include the numpy, nullable (`Int64`,
+    # `Float64`) and pyarrow (`int64[pyarrow]`) dtypes. Booleans are not
+    # integers.
+    dtypes = set(exog.dtypes) if isinstance(exog, pd.DataFrame) else {exog.dtype}
+    has_invalid_dtype = False
+    for dtype in dtypes:
+        if isinstance(dtype, pd.CategoricalDtype):
+            if not pd.api.types.is_integer_dtype(dtype.categories.dtype):
                 raise TypeError(
                     "Categorical dtypes in exog must contain only integer values. "
                     "See skforecast docs for more info about how to include "
                     "categorical features https://skforecast.org/"
                     "latest/user_guides/categorical-features.html"
                 )
+        elif not (
+            pd.api.types.is_integer_dtype(dtype) or pd.api.types.is_float_dtype(dtype)
+        ):
+            has_invalid_dtype = True
+
+    if has_invalid_dtype:
+        warnings.warn(
+            f"{series_id} may contain only `int`, `float` or `category` dtypes. "
+            f"Most machine learning models do not allow other types of values. "
+            f"Fitting the forecaster may fail.",
+            DataTypeWarning
+        )
 
 
 def check_interval(
-    interval: list[float] | tuple[float] | None = None,
+    interval: list[float] | tuple[float, ...] | None = None,
     ensure_symmetric_intervals: bool = False,
-    quantiles: list[float] | tuple[float] | None = None,
+    quantiles: list[float] | tuple[float, ...] | None = None,
     alpha: float = None,
     alpha_literal: str | None = 'alpha'
 ) -> None:
@@ -1132,6 +1268,101 @@ def check_interval(
             )
 
 
+def _check_exog_alignment(
+    exog_name: str,
+    exog_index: pd.Index,
+    expected_index: pd.Index,
+    align_by_index: bool
+) -> None:
+    """
+    Check that `exog` has a value for each of the steps predicted.
+
+    - If `align_by_index` is `False`, `exog` is used by position, so its first
+    values must follow the dates of the steps predicted without gaps. A
+    `ValueError` is raised otherwise. The first date must have already been
+    checked.
+    - If `align_by_index` is `True` (`ForecasterRecursiveMultiSeries`), `exog`
+    is aligned with the predictions by its index, so it only has to contain
+    the dates of the steps predicted. A `MissingValuesWarning` is issued if
+    some of them are missing, since their values are filled with NaN, and a
+    `ValueError` is raised if its index has duplicated dates, since it cannot
+    be aligned.
+
+    Parameters
+    ----------
+    exog_name : str
+        Name of `exog` used in the error and warning messages.
+    exog_index : pandas Index
+        Index of `exog`.
+    expected_index : pandas Index
+        Index of the steps predicted, from 1 to the last step. It is created
+        with `expand_index` from the index of `last_window`.
+    align_by_index : bool
+        If `True`, `exog` is aligned with the predictions by its index, so
+        missing dates issue a warning instead of an error. If `False`, `exog`
+        is used by position.
+
+    Returns
+    -------
+    None
+
+    """
+
+    # NOTE: An index with the same frequency (or step) as the steps predicted
+    # that starts at the first step has no gaps.
+    if len(exog_index) > 0 and exog_index[0] == expected_index[0]:
+        if isinstance(expected_index, pd.RangeIndex):
+            if exog_index.step == expected_index.step:
+                return
+        elif exog_index.freq == expected_index.freq:
+            return
+
+    last_step = len(expected_index)
+    # NOTE: If `exog` has fewer values than steps, a warning or an error has
+    # already been issued, so only the first `len(exog)` steps are checked.
+    n_steps = min(len(exog_index), last_step)
+    expected_index = expected_index[:n_steps]
+    if align_by_index:
+        if exog_index.has_duplicates:
+            raise ValueError(
+                f"The index of {exog_name} has duplicated values, for example "
+                f"{exog_index[exog_index.duplicated()][0]}. Each date must "
+                f"appear only once."
+            )
+        is_misaligned = ~expected_index.isin(exog_index)
+    else:
+        exog_index = exog_index[:n_steps]
+        is_misaligned = exog_index != expected_index
+
+    if is_misaligned.any():
+        position = np.flatnonzero(is_misaligned)[0]
+        if align_by_index:
+            warnings.warn(
+                f"{exog_name} has no value for some of the {last_step} steps "
+                f"predicted. The first one is {expected_index[position]} "
+                f"(position {position}). Missing values are filled with NaN. "
+                f"Most of machine learning models do not allow missing values. "
+                f"Prediction method may fail.",
+                MissingValuesWarning
+            )
+        else:
+            raise ValueError(
+                f"{exog_name} must have consecutive values following the "
+                f"frequency of `last_window` for the {last_step} steps predicted.\n"
+                f"    Expected index at position {position} : "
+                f"{expected_index[position]}.\n"
+                f"    {exog_name} index at position {position} : "
+                f"{exog_index[position]}.\n"
+                f"If there is no data for some steps, add them to {exog_name} "
+                f"explicitly as NaN, for example:\n"
+                f"    exog = exog.reindex(expand_index(last_window.index, "
+                f"steps={last_step}))\n"
+                f"where `expand_index` is in `skforecast.utils`, and `last_window` "
+                f"is the window used to predict (by default, the last window "
+                f"stored in the forecaster)."
+            )
+
+
 def check_predict_input(
     forecaster_name: str,
     steps: int | list[int],
@@ -1167,11 +1398,13 @@ def check_predict_input(
         If the forecaster has been trained using exogenous variable/s.
     index_type_ : type
         Type of index of the input used in training.
-    index_freq_ : str
-        Frequency of Index of the input used in training.
+    index_freq_ : pandas DateOffset, int
+        Frequency (`DatetimeIndex`) or step (`RangeIndex`) of the index of the
+        input used in training.
     window_size: int
-        Size of the window needed to create the predictors. It is equal to 
-        `max_lag`.
+        Size of the window needed to create the predictors (the largest of the
+        lags and the window sizes of the window features, plus the order of
+        differentiation).
     last_window : pandas Series, pandas DataFrame, None
         Values of the series used to create the predictors (lags) need in the 
         first iteration of prediction (t + 1).
@@ -1187,7 +1420,7 @@ def check_predict_input(
         `ForecasterDirectMultiVariate`).
     levels : str, list, default None
         Time series to be predicted (`ForecasterRecursiveMultiSeries`
-        and `ForecasterRnn).
+        and `ForecasterRnn`).
     levels_forecaster : str, list, default None
         Time series used as output data of a multiseries problem in a RNN problem
         (`ForecasterRnn`).
@@ -1313,7 +1546,8 @@ def check_predict_input(
                 f"`last_window` includes columns named 'series_1' and 'series_2'."
             )
 
-        if forecaster_name == 'ForecasterDirectMultiVariate':
+        # NOTE: ForecasterRnn uses all the series as input, not only the levels.
+        if forecaster_name in ['ForecasterDirectMultiVariate', 'ForecasterRnn']:
             if len(set(series_names_in_) - set(last_window_cols)) > 0:
                 raise ValueError(
                     f"`last_window` columns must be the same as the `series` "
@@ -1327,6 +1561,11 @@ def check_predict_input(
                 f"`last_window` must be a pandas Series or DataFrame. "
                 f"Got {type(last_window)}."
             )
+        if isinstance(last_window, pd.DataFrame) and last_window.shape[1] != 1:
+            raise ValueError(
+                f"`last_window` must be a pandas Series or a DataFrame with a "
+                f"single column. Got {last_window.shape[1]} columns."
+            )
 
     # Check last_window len, nulls and index (type and freq)
     if len(last_window) < window_size:
@@ -1334,7 +1573,21 @@ def check_predict_input(
             f"`last_window` must have as many values as needed to "
             f"generate the predictors. For this forecaster it is {window_size}."
         )
-    if last_window.isna().to_numpy().any():
+    # NOTE: Only the values used to create the predictors are checked: the last
+    # `window_size` rows (ForecasterStats uses the whole `last_window`) of the
+    # levels to predict or of the series used as predictors.
+    last_window_to_check = last_window
+    if forecaster_name != 'ForecasterStats' and len(last_window) > window_size:
+        last_window_to_check = last_window_to_check.iloc[-window_size:]
+    if forecaster_name == 'ForecasterRecursiveMultiSeries':
+        last_window_to_check = last_window_to_check[levels]
+    elif forecaster_name in ['ForecasterDirectMultiVariate', 'ForecasterRnn']:
+        last_window_to_check = last_window_to_check[series_names_in_]
+    # NOTE: `pd.isna` on the numpy values is faster than `DataFrame.isna` for
+    # the few rows of the window. The rows are selected before `to_numpy`
+    # because it copies the data and, with extension dtypes (nullable,
+    # pyarrow), converts every value to a Python object.
+    if pd.isna(last_window_to_check.to_numpy()).any():
         warnings.warn(
             "`last_window` has missing values. Most of machine learning models do "
             "not allow missing values. Prediction method may either raise an "
@@ -1396,7 +1649,11 @@ def check_predict_input(
             exogs_to_check = [('`exog`', exog)]
 
         last_step = max(steps) if isinstance(steps, list) else steps
-        expected_index = expand_index(last_window_index, 1)[0]
+        expected_index = expand_index(last_window_index, last_step)
+        # NOTE: ForecasterRecursiveMultiSeries aligns `exog` with the predictions
+        # by index and column, so missing values are filled with NaN and only a
+        # warning is issued. The rest of forecasters use `exog` by position.
+        align_by_index = forecaster_name in ['ForecasterRecursiveMultiSeries']
         for exog_name, exog_to_check in exogs_to_check:
 
             if not isinstance(exog_to_check, (pd.Series, pd.DataFrame)):
@@ -1404,6 +1661,8 @@ def check_predict_input(
                     f"{exog_name} must be a pandas Series or DataFrame. Got {type(exog_to_check)}"
                 )
 
+            # NOTE: `exog` can be long and of any dtype, `DataFrame.isna` checks
+            # each column in its own dtype without converting it to object.
             if exog_to_check.isna().to_numpy().any():
                 warnings.warn(
                     f"{exog_name} has missing values. Most of machine learning models "
@@ -1413,7 +1672,7 @@ def check_predict_input(
 
             # Check exog has many values as distance to max step predicted
             if len(exog_to_check) < last_step:
-                if forecaster_name in ['ForecasterRecursiveMultiSeries']:
+                if align_by_index:
                     warnings.warn(
                         f"{exog_name} doesn't have as many values as steps "
                         f"predicted, {last_step}. Missing values are filled "
@@ -1429,19 +1688,7 @@ def check_predict_input(
 
             # Check name/columns are in exog_names_in_
             if isinstance(exog_to_check, pd.DataFrame):
-                col_missing = set(exog_names_in_).difference(set(exog_to_check.columns))
-                if col_missing:
-                    if forecaster_name in ['ForecasterRecursiveMultiSeries']:
-                        warnings.warn(
-                            f"{col_missing} not present in {exog_name}. All "
-                            f"values will be NaN.",
-                            MissingExogWarning
-                        ) 
-                    else:
-                        raise ValueError(
-                            f"Missing columns in {exog_name}. Expected {exog_names_in_}. "
-                            f"Got {exog_to_check.columns.to_list()}."
-                        )
+                exog_columns = exog_to_check.columns.to_list()
             else:
                 if exog_to_check.name is None:
                     raise ValueError(
@@ -1449,7 +1696,7 @@ def check_predict_input(
                     )
 
                 if exog_to_check.name not in exog_names_in_:
-                    if forecaster_name in ['ForecasterRecursiveMultiSeries']:
+                    if align_by_index:
                         warnings.warn(
                             f"'{exog_to_check.name}' was not observed during training. "
                             f"{exog_name} is ignored. Exogenous variables must be one "
@@ -1461,6 +1708,21 @@ def check_predict_input(
                             f"'{exog_to_check.name}' was not observed during training. "
                             f"Exogenous variables must be: {exog_names_in_}."
                         )
+                exog_columns = [exog_to_check.name]
+
+            col_missing = set(exog_names_in_).difference(exog_columns)
+            if col_missing:
+                if align_by_index:
+                    warnings.warn(
+                        f"{col_missing} not present in {exog_name}. All "
+                        f"values will be NaN.",
+                        MissingExogWarning
+                    )
+                else:
+                    raise ValueError(
+                        f"Missing columns in {exog_name}. Expected {exog_names_in_}. "
+                        f"Got {exog_columns}."
+                    )
 
             # Check index dtype and freq
             _, exog_index = check_extract_values_and_index(
@@ -1473,25 +1735,21 @@ def check_predict_input(
                 )
 
             # Check exog starts one step ahead of last_window end.
-            if expected_index != exog_index[0]:
-                if forecaster_name in ['ForecasterRecursiveMultiSeries']:
-                    warnings.warn(
-                        f"To make predictions {exog_name} must start one step "
-                        f"ahead of `last_window`. Missing values are filled "
-                        f"with NaN.\n"
-                        f"    `last_window` ends at : {last_window.index[-1]}.\n"
-                        f"    {exog_name} starts at : {exog_index[0]}.\n"
-                        f"    Expected index : {expected_index}.",
-                        MissingValuesWarning
-                    )  
-                else:
-                    raise ValueError(
-                        f"To make predictions {exog_name} must start one step "
-                        f"ahead of `last_window`.\n"
-                        f"    `last_window` ends at : {last_window.index[-1]}.\n"
-                        f"    {exog_name} starts at : {exog_index[0]}.\n"
-                        f"    Expected index : {expected_index}."
-                    )
+            if not align_by_index and expected_index[0] != exog_index[0]:
+                raise ValueError(
+                    f"To make predictions {exog_name} must start one step "
+                    f"ahead of `last_window`.\n"
+                    f"    `last_window` ends at : {last_window.index[-1]}.\n"
+                    f"    {exog_name} starts at : {exog_index[0]}.\n"
+                    f"    Expected index : {expected_index[0]}."
+                )
+
+            _check_exog_alignment(
+                exog_name      = exog_name,
+                exog_index     = exog_index,
+                expected_index = expected_index,
+                align_by_index = align_by_index
+            )
 
     # Checks ForecasterStats
     if forecaster_name == 'ForecasterStats':
@@ -1534,14 +1792,9 @@ def check_predict_input(
                         f"`last_window_exog`. Got {last_window_exog_index.freq}."
                     )
 
-            # Check all columns are in the pd.DataFrame, last_window_exog
+            # Check name/columns are in exog_names_in_
             if isinstance(last_window_exog, pd.DataFrame):
-                col_missing = set(exog_names_in_).difference(set(last_window_exog.columns))
-                if col_missing:
-                    raise ValueError(
-                        f"Missing columns in `last_window_exog`. Expected {exog_names_in_}. "
-                        f"Got {last_window_exog.columns.to_list()}."
-                    )
+                last_window_exog_columns = last_window_exog.columns.to_list()
             else:
                 if last_window_exog.name is None:
                     raise ValueError(
@@ -1554,6 +1807,14 @@ def check_predict_input(
                         f"'{last_window_exog.name}' was not observed during training. "
                         f"Exogenous variables must be: {exog_names_in_}."
                     )
+                last_window_exog_columns = [last_window_exog.name]
+
+            col_missing = set(exog_names_in_).difference(last_window_exog_columns)
+            if col_missing:
+                raise ValueError(
+                    f"Missing columns in `last_window_exog`. Expected "
+                    f"{exog_names_in_}. Got {last_window_exog_columns}."
+                )
 
 
 def check_residuals_input(
@@ -1671,12 +1932,81 @@ def check_residuals_input(
                     )
 
     if forecaster_name in forecasters_multiseries:
-        for level in residuals.keys():
-            level_residuals = residuals[level]
+        # NOTE: Only the residuals of the levels to predict are used. In
+        # ForecasterRecursiveMultiSeries, levels without residuals use the
+        # residuals of '_unknown_level'.
+        for level in levels:
+            residuals_key = level
+            if forecaster_name == 'ForecasterRecursiveMultiSeries' and level not in residuals:
+                residuals_key = '_unknown_level'
+            level_residuals = residuals.get(residuals_key)
             if level_residuals is None or len(level_residuals) == 0:
                 raise ValueError(
-                    f"Residuals for level '{level}' are None. Check `forecaster.{literal}`."
+                    f"Residuals for level '{residuals_key}' are None or empty. "
+                    f"Check `forecaster.{literal}`."
                 )
+
+
+def check_residuals_per_bin(
+    n_residuals: int | dict[str, int],
+    n_bins: int | dict[str, int],
+    min_residuals_per_bin: int = 10
+) -> None:
+    """
+    Check that there are enough out-of-sample residuals for the number of bins
+    used to store them. When the average number of residuals per bin is lower
+    than `min_residuals_per_bin`, a warning is issued, since the quantiles of
+    the residuals of each bin are estimated with very few values and the
+    prediction intervals tend to be too narrow.
+
+    Parameters
+    ----------
+    n_residuals : int, dict
+        Number of out-of-sample residuals stored in the forecaster. In
+        Forecasters multiseries, a dict with the number of residuals of each
+        level, `{level: n_residuals}`.
+    n_bins : int, dict
+        Number of bins of the binner used to bin the residuals. In Forecasters
+        multiseries, a dict with the number of bins of each level,
+        `{level: n_bins}`.
+    min_residuals_per_bin : int, default 10
+        Minimum average number of residuals per bin. Below this value a
+        warning is issued.
+
+    Returns
+    -------
+    None
+    
+    """
+
+    advice = (
+        f"With fewer than {min_residuals_per_bin} residuals per bin, prediction "
+        f"intervals estimated with `use_binned_residuals = True` are likely to be "
+        f"too narrow. Consider providing more out-of-sample residuals, reducing "
+        f"`n_bins` in the `binner_kwargs` of the forecaster, or predicting with "
+        f"`use_binned_residuals = False`."
+    )
+
+    if isinstance(n_residuals, dict):
+        levels = [
+            level
+            for level, n in n_residuals.items()
+            if n / n_bins[level] < min_residuals_per_bin
+        ]
+        if levels:
+            warnings.warn(
+                f"The out-of-sample residuals of the following levels have, on "
+                f"average, fewer than {min_residuals_per_bin} residuals per bin: "
+                f"{levels}. {advice}",
+                ResidualsUsageWarning
+            )
+    elif n_residuals / n_bins < min_residuals_per_bin:
+        warnings.warn(
+            f"Only {n_residuals} out-of-sample residuals are available for "
+            f"{n_bins} bins, an average of {n_residuals / n_bins:.1f} residuals "
+            f"per bin. {advice}",
+            ResidualsUsageWarning
+        )
 
 
 def check_extract_values_and_index(
@@ -1746,7 +2076,8 @@ def input_to_frame(
     data : pandas Series, pandas DataFrame
         Input data.
     input_name : str
-        Name of the input data. Accepted values are 'y', 'last_window' and 'exog'.
+        Name of the input data. Accepted values are 'y', 'last_window', 'exog'
+        and 'exog_val'.
 
     Returns
     -------
@@ -1758,7 +2089,8 @@ def input_to_frame(
     output_col_name = {
         'y': 'y',
         'last_window': 'y',
-        'exog': 'exog'
+        'exog': 'exog',
+        'exog_val': 'exog'
     }
 
     if isinstance(data, pd.Series):
@@ -1767,51 +2099,6 @@ def input_to_frame(
         )
 
     return data
-
-
-def cast_exog_dtypes(
-    exog: pd.Series | pd.DataFrame,
-    exog_dtypes: dict[str, type],
-) -> pd.Series | pd.DataFrame:  # pragma: no cover
-    """
-    Cast `exog` to a specified types. This is done because, for a forecaster to 
-    accept a categorical exog, it must contain only integer values. Due to the 
-    internal modifications of numpy, the values may be casted to `float`, so 
-    they have to be re-converted to `int`.
-
-    - If `exog` is a pandas Series, `exog_dtypes` must be a dict with a 
-    single value.
-    - If `exog_dtypes` is `category` but the current type of `exog` is `float`, 
-    then the type is cast to `int` and then to `category`. 
-
-    Parameters
-    ----------
-    exog : pandas Series, pandas DataFrame
-        Exogenous variables.
-    exog_dtypes: dict
-        Dictionary with name and type of the series or data frame columns.
-
-    Returns
-    -------
-    exog : pandas Series, pandas DataFrame
-        Exogenous variables casted to the indicated dtypes.
-
-    """
-
-    # Remove keys from exog_dtypes not in exog.columns
-    exog_dtypes = {k: v for k, v in exog_dtypes.items() if k in exog.columns}
-    
-    if isinstance(exog, pd.Series) and exog.dtypes != list(exog_dtypes.values())[0]:
-        exog = exog.astype(list(exog_dtypes.values())[0])
-    elif isinstance(exog, pd.DataFrame):
-        for col, initial_dtype in exog_dtypes.items():
-            if exog[col].dtypes != initial_dtype:
-                if initial_dtype == "category" and exog[col].dtypes == float:
-                    exog[col] = exog[col].astype(int).astype("category")
-                else:
-                    exog[col] = exog[col].astype(initial_dtype)
-
-    return exog
 
 
 def exog_to_direct(
@@ -1846,6 +2133,11 @@ def exog_to_direct(
         exog = exog.to_frame()
 
     n_rows = len(exog)
+    if not 1 <= steps <= n_rows:
+        raise ValueError(
+            f"`steps` must be between 1 and the number of rows of `exog` "
+            f"({n_rows}). Got {steps}."
+        )
     exog_idx = exog.index
     exog_cols = exog.columns
     exog_direct = []
@@ -1874,8 +2166,8 @@ def exog_to_direct_numpy(
     Parameters
     ----------
     exog : numpy ndarray, pandas Series, pandas DataFrame
-        Exogenous variables, shape(samples,). If exog is a pandas format, the 
-        direct exog names are created.
+        Exogenous variables, shape (n_samples,) or (n_samples, n_exog). If exog
+        is a pandas format, the direct exog names are created.
     steps : int
         Number of steps that will be predicted using exog.
 
@@ -1907,10 +2199,119 @@ def exog_to_direct_numpy(
         exog = np.expand_dims(exog, axis=1)
 
     n_rows = len(exog)
+    if not 1 <= steps <= n_rows:
+        raise ValueError(
+            f"`steps` must be between 1 and the number of rows of `exog` "
+            f"({n_rows}). Got {steps}."
+        )
     exog_direct = [exog[i : n_rows - (steps - 1 - i)] for i in range(steps)]
     exog_direct = np.concatenate(exog_direct, axis=1) if steps > 1 else exog_direct[0]
     
     return exog_direct, exog_direct_names
+
+
+def _is_utc_anchored_index(
+    index: pd.DatetimeIndex,
+    freq: pd.DateOffset
+) -> bool:
+    """
+    Check whether a timezone-aware DatetimeIndex advances in fixed UTC steps
+    instead of local calendar steps.
+
+    With a timezone that observes daylight saving time, a frequency of days
+    or longer (`'D'`, `'W'`, `'MS'`...) can follow two conventions that share
+    the same `freq`: local calendar steps, where the local time of day is
+    constant (e.g. data stamped at local midnight), or fixed UTC steps, where
+    the UTC time of day is constant and the local time shifts one hour at each
+    daylight saving change (e.g. data stamped at UTC midnight and then
+    converted to a local timezone). `pandas.date_range` always assumes the
+    first one.
+
+    Parameters
+    ----------
+    index : pandas DatetimeIndex
+        Index used to identify the convention.
+    freq : pandas DateOffset
+        Frequency of the index.
+
+    Returns
+    -------
+    is_utc_anchored : bool
+        `True` if the index advances in fixed UTC steps.
+
+    Notes
+    -----
+    If `index` contains a daylight saving change, the convention is identified
+    from the time of day that remains constant. If it does not, both
+    conventions are indistinguishable, and the index is considered UTC
+    anchored only when its timestamps are at UTC midnight but not at local
+    midnight.
+
+    """
+
+    if index.tz is None or len(index) == 0:
+        return False
+
+    # Intraday frequencies are always generated by pandas in fixed steps.
+    if isinstance(freq, pd.offsets.Tick) and not isinstance(freq, pd.offsets.Day):
+        return False
+
+    index_utc = index.tz_convert("UTC")
+    index_local = index.tz_localize(None)
+    time_utc = (index_utc - index_utc.normalize()).unique()
+    time_local = (index_local - index_local.normalize()).unique()
+
+    if len(time_utc) != 1:
+        return False
+    if len(time_local) != 1:
+        return True
+
+    midnight = pd.Timedelta(0)
+    is_utc_anchored = time_utc[0] == midnight and time_local[0] != midnight
+
+    return is_utc_anchored
+
+
+def _date_range_from_index(
+    index: pd.DatetimeIndex,
+    start: pd.Timestamp,
+    end: pd.Timestamp,
+    freq: pd.DateOffset
+) -> pd.DatetimeIndex:
+    """
+    Create a date range between `start` and `end` following the same time
+    convention as `index`. It behaves as `pandas.date_range` unless `index` is
+    a timezone-aware index that advances in fixed UTC steps, in which case the
+    range is generated in UTC and converted back to the timezone of `index`.
+
+    Parameters
+    ----------
+    index : pandas DatetimeIndex
+        Index used to identify the time convention.
+    start : pandas Timestamp
+        Left bound of the range.
+    end : pandas Timestamp
+        Right bound of the range.
+    freq : pandas DateOffset
+        Frequency of the range.
+
+    Returns
+    -------
+    span_index : pandas DatetimeIndex
+        Date range between `start` and `end`.
+
+    """
+
+    if _is_utc_anchored_index(index=index, freq=freq):
+        span_index = pd.date_range(
+                         start = start.tz_convert("UTC"),
+                         end   = end.tz_convert("UTC"),
+                         freq  = freq
+                     ).tz_convert(index.tz)
+    else:
+        span_index = pd.date_range(start=start, end=end, freq=freq)
+
+    return span_index
 
 
 def date_to_index_position(
@@ -1934,10 +2335,12 @@ def date_to_index_position(
         
         + If int, returns the same integer.
         + If str or pandas Timestamp, it is converted and expanded into the index.
+        A date without time zone is interpreted in the time zone of the index.
     method : str, default 'prediction'
-        Can be 'prediction' or 'validation'. 
-        
-        + If 'prediction', the date must be later than the last date in the index.
+        Can be 'prediction' or 'validation'.
+
+        + If 'prediction', the date must be later than the last date in the index,
+        and the index must have a frequency.
         + If 'validation', the date must be within the index range.
     date_literal : str, default 'steps'
         Variable name used in error messages.
@@ -1969,25 +2372,47 @@ def date_to_index_position(
             )
         
         target_date = pd.to_datetime(date_input, **kwargs_pd_to_datetime)
+        if index.tz is not None:
+            # A date without time zone is interpreted in the time zone of the index
+            if target_date.tz is None:
+                target_date = target_date.tz_localize(index.tz)
+            else:
+                target_date = target_date.tz_convert(index.tz)
+        elif target_date.tz is not None:
+            raise ValueError(
+                f"`{date_literal}` has a time zone ({target_date.tz}), but the "
+                f"index has none. Use a date without time zone."
+            )
         last_date = pd.to_datetime(index[-1])
 
         if method == 'prediction':
             if target_date <= last_date:
                 raise ValueError(
-                    "If `steps` is a date, it must be greater than the last date "
-                    "in the index."
+                    f"If `{date_literal}` is a date, it must be greater than the "
+                    f"last date in the index."
                 )
-            span_index = pd.date_range(start=last_date, end=target_date, freq=index.freq) 
+            if index.freq is None:
+                raise ValueError(
+                    f"If `{date_literal}` is a date, the index must have a "
+                    f"frequency to compute the number of steps until that date."
+                )
+            span_index = _date_range_from_index(
+                             index = index,
+                             start = last_date,
+                             end   = target_date,
+                             freq  = index.freq
+                         )
             output = len(span_index) - 1
         elif method == 'validation':
             first_date = pd.to_datetime(index[0])
             if target_date < first_date or target_date > last_date:
                 raise ValueError(
-                    "If `initial_train_size` is a date, it must be greater than "
-                    "the first date in the index and less than the last date."
+                    f"If `{date_literal}` is a date, it must be within the index "
+                    f"range, between the first and the last date (both included)."
                 )
-            span_index = pd.date_range(start=first_date, end=target_date, freq=index.freq)
-            output = len(span_index)
+            # Number of dates in the index up to the target date (included). It
+            # does not need the frequency of the index.
+            output = int(index.searchsorted(target_date, side='right'))
 
     elif isinstance(date_input, (int, np.integer)):
         output = date_input
@@ -2043,11 +2468,23 @@ def expand_index(
                     "`index.freq = 'D'` or `series = series.asfreq('D')`) "
                     "before calling this function."
                 )
-            new_index = pd.date_range(
-                            start   = index[-1] + freq,
-                            periods = steps,
-                            freq    = freq
-                        )
+            if _is_utc_anchored_index(index=index, freq=freq):
+                # Timezone-aware index that advances in fixed UTC steps: the
+                # new index is generated in UTC to keep the same convention.
+                new_index = pd.date_range(
+                                start   = index[-1].tz_convert("UTC") + freq,
+                                periods = steps,
+                                freq    = freq
+                            ).tz_convert(index.tz)
+            else:
+                # NOTE: The range starts at the last date and drops it. Adding
+                # `freq` to it would add a fixed 24 hours with daily frequencies,
+                # which shifts the local time of day at a daylight saving change.
+                new_index = pd.date_range(
+                                start   = index[-1],
+                                periods = steps + 1,
+                                freq    = freq
+                            )[1:]
         elif isinstance(index, pd.RangeIndex):
             new_index = pd.RangeIndex(
                             start = index[-1] + index.step,
@@ -2169,6 +2606,37 @@ def transform_numpy(
     return array_transformed
 
 
+def _get_feature_names_out(transformer: object) -> np.ndarray | None:
+    """
+    Return the output feature names of a fitted transformer, or `None` if the
+    transformer does not provide them. Meta-estimators such as `Pipeline` or
+    `ColumnTransformer` have a `get_feature_names_out` method that raises an
+    error when one of their steps does not implement it (for example, a
+    `FunctionTransformer` without `feature_names_out`).
+
+    Parameters
+    ----------
+    transformer : object
+        Fitted scikit-learn alike transformer.
+
+    Returns
+    -------
+    feature_names_out : numpy ndarray, None
+        Output feature names, or `None` if they are not available.
+
+    """
+
+    if not hasattr(transformer, 'get_feature_names_out'):
+        return None
+
+    try:
+        feature_names_out = transformer.get_feature_names_out()
+    except (AttributeError, ValueError):
+        feature_names_out = None
+
+    return feature_names_out
+
+
 def transform_series(
     series: pd.Series,
     transformer: object | None,
@@ -2218,11 +2686,18 @@ def transform_series(
     series_name = series.name if series.name is not None else 'no_name'
     data = series.to_frame(name=series_name)
 
-    # If argument feature_names_in_ exits, is overwritten to allow using the 
-    # transformer on other series than those that were passed during fit.
-    if not fit and hasattr(transformer, 'feature_names_in_') and transformer.feature_names_in_[0] != data.columns[0]:
-        transformer = deepcopy(transformer)
-        transformer.feature_names_in_ = np.array([data.columns[0]], dtype=object)
+    # To use the transformer on a series with another name than the one seen
+    # in fit, the column is renamed to that name. The transformer is not
+    # modified: in meta-estimators such as Pipeline, `feature_names_in_` is a
+    # read-only property.
+    fitted_name = None
+    if (
+        not fit
+        and hasattr(transformer, 'feature_names_in_')
+        and transformer.feature_names_in_[0] != series_name
+    ):
+        fitted_name = transformer.feature_names_in_[0]
+        data.columns = [fitted_name]
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=UserWarning)
@@ -2241,10 +2716,13 @@ def transform_series(
         series_transformed = pd.Series(
                                  data  = values_transformed.ravel(),
                                  index = data.index,
-                                 name  = data.columns[0]
+                                 name  = series_name
                              )
     elif isinstance(values_transformed, pd.DataFrame) and values_transformed.shape[1] == 1:
-        series_transformed = values_transformed.squeeze()
+        # NOTE: `squeeze()` would return a scalar when there is a single row.
+        series_transformed = values_transformed.iloc[:, 0]
+        if fitted_name is not None and series_transformed.name == fitted_name:
+            series_transformed = series_transformed.rename(series_name)
     else:
         if force_single_column:
             raise ValueError(
@@ -2254,11 +2732,11 @@ def transform_series(
                 f"columns are not supported; use `window_features` or pass "
                 f"those features through `exog` instead."
             )
-        if hasattr(transformer, 'get_feature_names_out'):
-            feature_names_out = transformer.get_feature_names_out()
-            if len(feature_names_out) != values_transformed.shape[1]:
-                feature_names_out = [f'transformed_{i}' for i in range(values_transformed.shape[1])]
-        else:
+        feature_names_out = _get_feature_names_out(transformer)
+        if (
+            feature_names_out is None
+            or len(feature_names_out) != values_transformed.shape[1]
+        ):
             feature_names_out = [f'transformed_{i}' for i in range(values_transformed.shape[1])]
 
         series_transformed = pd.DataFrame(
@@ -2338,11 +2816,9 @@ def transform_dataframe(
         if values_transformed.ndim == 1:
             values_transformed = values_transformed.reshape(-1, 1)
 
-        feature_names_out = (
-            transformer.get_feature_names_out()
-            if hasattr(transformer, 'get_feature_names_out')
-            else df.columns
-        )
+        feature_names_out = _get_feature_names_out(transformer)
+        if feature_names_out is None:
+            feature_names_out = df.columns
         if len(feature_names_out) != values_transformed.shape[1]:
             feature_names_out = [f'transformed_{i}' for i in range(values_transformed.shape[1])]
 
@@ -2409,13 +2885,73 @@ def manage_warnings(func: Callable[P, R]) -> Callable[P, R]:
     return wrapper
 
 
+def _decompose_offset(offset: Any) -> Any:
+    """
+    Replace a generic `pandas.DateOffset` (e.g. `pd.DateOffset(days=7)`), which
+    skops cannot serialize, with a plain dict.
+
+    The other pandas offsets (e.g. `Day`, `MonthBegin` or `CustomBusinessDay`)
+    and any other value are returned unchanged.
+
+    Parameters
+    ----------
+    offset : object
+        Value to decompose.
+
+    Returns
+    -------
+    offset : object
+        Plain dict with the `n`, `normalize` and keyword arguments of the
+        `pandas.DateOffset`, or the value itself. The `offset_type_` key marks a
+        decomposed offset.
+
+    """
+
+    if type(offset) is pd.DateOffset:
+        offset = {
+            'offset_type_': 'DateOffset',
+            'n': offset.n,
+            'normalize': offset.normalize,
+            'kwds': offset.kwds,
+        }
+
+    return offset
+
+
+def _compose_offset(offset: Any) -> Any:
+    """
+    Rebuild a `pandas.DateOffset` from the dict produced by `_decompose_offset`.
+
+    Parameters
+    ----------
+    offset : object
+        Plain dict representation of the `pandas.DateOffset`, as returned by
+        `_decompose_offset`, or a value that was not decomposed.
+
+    Returns
+    -------
+    offset : object
+        Reconstructed `pandas.DateOffset`. A value that was not decomposed is
+        returned unchanged.
+
+    """
+
+    if isinstance(offset, dict) and offset.get('offset_type_') == 'DateOffset':
+        offset = pd.DateOffset(
+            n=offset['n'], normalize=offset['normalize'], **offset['kwds']
+        )
+
+    return offset
+
+
 def _decompose_index(index: pd.Index) -> dict[str, Any]:
     """
     Decompose a pandas Index into a plain dict that skops can serialize.
 
-    `DatetimeIndex` values are stored as ISO strings together with their
-    frequency, a `RangeIndex` stores its `start`, `stop`, and `step`, and any
-    other index type stores its values as a list.
+    A `DatetimeIndex` stores its values as integers since the epoch (UTC)
+    together with their unit, time zone name and frequency, a `RangeIndex`
+    stores its `start`, `stop`, and `step`, and any other index type stores its
+    values as a list.
 
     Parameters
     ----------
@@ -2431,10 +2967,34 @@ def _decompose_index(index: pd.Index) -> dict[str, Any]:
     """
 
     if isinstance(index, pd.DatetimeIndex):
+        # NOTE: The time zone is stored by name, since skops cannot serialize
+        # the time zone objects. A time zone that cannot be rebuilt from its
+        # name (e.g. from dateutil, or a datetime.timezone with a custom name)
+        # raises an error here, instead of failing or changing when loading.
+        tz = None if index.tz is None else str(index.tz)
+        tz_zoneinfo = isinstance(index.tz, zoneinfo.ZoneInfo)
+        if tz is not None:
+            try:
+                tz_rebuilt = zoneinfo.ZoneInfo(tz) if tz_zoneinfo else tz
+                is_rebuilt = (
+                    pd.DatetimeTZDtype(unit=index.unit, tz=tz_rebuilt) == index.dtype
+                )
+            except (KeyError, ValueError):
+                is_rebuilt = False
+            if not is_rebuilt:
+                raise ValueError(
+                    f"The time zone {index.tz!r} of the index cannot be saved with "
+                    f"backend='skops' because it cannot be rebuilt from its name "
+                    f"{tz!r}. Convert the index to a named time zone (e.g. "
+                    f"'Europe/Madrid') or use another backend."
+                )
         payload = {
             'index_type_': 'datetime',
-            'index': [str(ts) for ts in index],
-            'freq': index.freqstr,
+            'index': index.asi8,
+            'unit': index.unit,
+            'tz': tz,
+            'tz_zoneinfo': tz_zoneinfo,
+            'freq': _decompose_offset(index.freq),
             'index_name': index.name,
         }
     elif isinstance(index, pd.RangeIndex):
@@ -2467,15 +3027,28 @@ def _compose_index(payload: dict[str, Any]) -> pd.Index:
     -------
     index : pandas Index
         Reconstructed index, matching the original type: `DatetimeIndex` (with
-        its frequency restored), `RangeIndex`, or a generic `Index`.
+        its time zone and frequency restored), `RangeIndex`, or a generic
+        `Index`.
 
     """
 
     if payload['index_type_'] == 'datetime':
+        if 'unit' in payload:
+            values = np.asarray(payload['index'], dtype=np.int64)
+            index = pd.DatetimeIndex(values.view(f"M8[{payload['unit']}]"))
+            if payload['tz'] is not None:
+                tz = payload['tz']
+                if payload['tz_zoneinfo']:
+                    tz = zoneinfo.ZoneInfo(tz)
+                index = index.tz_localize('UTC').tz_convert(tz)
+        else:
+            # NOTE: Files saved with skforecast < 0.26 store the timestamps as
+            # strings, which only keep the UTC offset of each one. They are
+            # rebuilt with the offset of the first one (or without time zone).
+            index = pd.to_datetime(payload['index'], format='ISO8601', utc=True)
+            index = index.tz_convert(pd.Timestamp(payload['index'][0]).tz)
         index = pd.DatetimeIndex(
-            pd.to_datetime(payload['index']),
-            freq=payload['freq'],
-            name=payload['index_name'],
+            index, freq=_compose_offset(payload['freq']), name=payload['index_name']
         )
     elif payload['index_type_'] == 'range':
         start, stop, step = payload['range']
@@ -2570,15 +3143,83 @@ def _compose_pandas_object(
     return obj
 
 
-def _skops_decompose_forecaster(forecaster: object) -> None:
+def _decompose_dtype(dtype: Any) -> Any:
     """
-    Replace the index-backed pandas attributes of a forecaster with plain dicts
-    so it can be serialized with skops.
+    Replace a pandas dtype that skops cannot serialize with a plain dict.
 
-    Operates in place on `last_window_` and `training_range_`, which may be a
-    pandas object (single-series forecasters) or a dict of pandas objects
-    (multi-series forecasters). The caller is responsible for restoring the
-    original values afterwards.
+    A `CategoricalDtype` stores its categories as a numpy ndarray and whether
+    they are ordered, while an `ArrowDtype` or a `DatetimeTZDtype` stores its
+    name. Any other dtype is returned unchanged.
+
+    Parameters
+    ----------
+    dtype : object
+        Dtype to decompose.
+
+    Returns
+    -------
+    dtype : object
+        Plain dict representation of the dtype, or the dtype itself if skops
+        can serialize it. The `dtype_type_` key (`'category'` or `'name'`)
+        selects how it is rebuilt.
+
+    """
+
+    if isinstance(dtype, pd.CategoricalDtype):
+        dtype = {
+            'dtype_type_': 'category',
+            'categories': dtype.categories.to_numpy(),
+            'ordered': dtype.ordered,
+        }
+    elif isinstance(dtype, (pd.ArrowDtype, pd.DatetimeTZDtype)):
+        dtype = {'dtype_type_': 'name', 'name': str(dtype)}
+
+    return dtype
+
+
+def _compose_dtype(dtype: Any) -> Any:
+    """
+    Rebuild a pandas dtype from the dict produced by `_decompose_dtype`.
+
+    Parameters
+    ----------
+    dtype : object
+        Plain dict representation of the dtype, as returned by
+        `_decompose_dtype`, or a dtype that was not decomposed.
+
+    Returns
+    -------
+    dtype : object
+        Reconstructed dtype. A dtype that was not decomposed is returned
+        unchanged.
+
+    """
+
+    if isinstance(dtype, dict) and dtype.get('dtype_type_') == 'category':
+        dtype = pd.CategoricalDtype(
+            categories=dtype['categories'], ordered=dtype['ordered']
+        )
+    elif isinstance(dtype, dict) and dtype.get('dtype_type_') == 'name':
+        dtype = pd.api.types.pandas_dtype(dtype['name'])
+
+    return dtype
+
+
+def _skops_decompose_forecaster(forecaster: object) -> object:
+    """
+    Return a shallow copy of a forecaster whose attributes that skops cannot
+    serialize are replaced with plain dicts. The forecaster itself is not
+    modified.
+
+    The decomposed attributes are:
+
+    - `last_window_` and `training_range_`, which may be a pandas object
+    (single-series forecasters) or a dict of pandas objects (multi-series
+    forecasters).
+    - `exog_dtypes_in_` and `exog_dtypes_out_`, whose categorical, pyarrow and
+    time zone aware dtypes are decomposed with `_decompose_dtype`.
+    - `index_freq_`, `offset` and `window_size`, when they are a generic
+    `pandas.DateOffset` (`offset` and `window_size` in `ForecasterEquivalentDate`).
 
     Parameters
     ----------
@@ -2587,10 +3228,12 @@ def _skops_decompose_forecaster(forecaster: object) -> None:
 
     Returns
     -------
-    None
+    forecaster_decomposed : Forecaster
+        Shallow copy of the forecaster with the decomposed attributes.
 
     """
 
+    forecaster_decomposed = copy(forecaster)
     for attr in ('last_window_', 'training_range_'):
         value = getattr(forecaster, attr, None)
         if isinstance(value, dict):
@@ -2599,17 +3242,29 @@ def _skops_decompose_forecaster(forecaster: object) -> None:
             value = _decompose_pandas_object(value)
         else:
             continue
-        setattr(forecaster, attr, value)
+        setattr(forecaster_decomposed, attr, value)
+    for attr in ('exog_dtypes_in_', 'exog_dtypes_out_'):
+        value = getattr(forecaster, attr, None)
+        if isinstance(value, dict):
+            value = {k: _decompose_dtype(v) for k, v in value.items()}
+            setattr(forecaster_decomposed, attr, value)
+    for attr in ('index_freq_', 'offset', 'window_size'):
+        if hasattr(forecaster, attr):
+            value = _decompose_offset(getattr(forecaster, attr))
+            setattr(forecaster_decomposed, attr, value)
+
+    return forecaster_decomposed
 
 
 def _skops_reconstruct_forecaster(forecaster: object) -> None:
     """
-    Rebuild the index-backed pandas attributes of a forecaster decomposed by
+    Rebuild the attributes of a forecaster decomposed by
     `_skops_decompose_forecaster`.
 
-    Operates in place on `last_window_` and `training_range_`. The `object_type_`
-    marker key distinguishes a single decomposed object from a multi-series dict
-    of decomposed objects.
+    Operates in place on `last_window_`, `training_range_`, `exog_dtypes_in_`,
+    `exog_dtypes_out_`, `index_freq_`, `offset` and `window_size`. The
+    `object_type_` marker key distinguishes a single decomposed object from a
+    multi-series dict of decomposed objects.
 
     Parameters
     ----------
@@ -2631,6 +3286,98 @@ def _skops_reconstruct_forecaster(forecaster: object) -> None:
         else:
             value = {k: _compose_pandas_object(v) for k, v in value.items()}
         setattr(forecaster, attr, value)
+    for attr in ('exog_dtypes_in_', 'exog_dtypes_out_'):
+        value = getattr(forecaster, attr, None)
+        if isinstance(value, dict):
+            value = {k: _compose_dtype(v) for k, v in value.items()}
+            setattr(forecaster, attr, value)
+    for attr in ('index_freq_', 'offset', 'window_size'):
+        if hasattr(forecaster, attr):
+            setattr(forecaster, attr, _compose_offset(getattr(forecaster, attr)))
+
+
+def _get_source_with_imports(fun: Callable) -> tuple[str, list[str]]:
+    """
+    Return the source code of a function preceded by the import statements of
+    the modules, functions and classes it uses from its global namespace, so
+    that the code can be saved as a module that works on its own.
+
+    Parameters
+    ----------
+    fun : Callable
+        Function whose source code is returned.
+
+    Returns
+    -------
+    source_code : str
+        Source code of the function, preceded by the import statements.
+    names_not_imported : list
+        Names of the other objects the function uses from outside its body,
+        which cannot be written as an import: global variables that are not a
+        module, function or class of an importable module, and variables of
+        an enclosing function.
+
+    """
+
+    def get_global_names(code):
+        # NOTE: The names are read from the bytecode, including nested code
+        # (comprehensions, generator expressions and lambdas), because
+        # `inspect.getclosurevars` misses nested code and takes attribute names
+        # (e.g. `month` in `index.month`) as global variables.
+        global_names = {
+            instruction.argval
+            for instruction in dis.get_instructions(code)
+            if instruction.opname in ('LOAD_GLOBAL', 'LOAD_NAME')
+        }
+        for constant in code.co_consts:
+            if inspect.iscode(constant):
+                global_names |= get_global_names(constant)
+
+        return global_names
+
+    # NOTE: The source code is compiled as a module, so that the names used in
+    # the signature (annotations and default values) and in the decorators,
+    # which are evaluated when the module is imported, are also read.
+    # `dont_inherit` avoids `from __future__ import annotations` of this module,
+    # which would compile the annotations as strings.
+    source_code = inspect.getsource(fun)
+    module_code = compile(
+        textwrap.dedent(source_code), '<string>', 'exec', dont_inherit=True
+    )
+    imports = []
+    names_not_imported = list(fun.__code__.co_freevars)
+    for name in sorted(get_global_names(module_code) - set(names_not_imported)):
+        if name not in fun.__globals__:
+            # Builtins and undefined names
+            continue
+        value = fun.__globals__[name]
+        if value is fun:
+            continue
+        if inspect.ismodule(value):
+            if value.__name__ == name:
+                imports.append(f"import {name}")
+            else:
+                imports.append(f"import {value.__name__} as {name}")
+            continue
+        module_name = getattr(value, '__module__', None)
+        object_name = getattr(value, '__qualname__', None)
+        module = sys.modules.get(module_name) if isinstance(module_name, str) else None
+        is_importable = (
+            module_name != '__main__'
+            and isinstance(object_name, str)
+            and getattr(module, object_name, None) is value
+        )
+        if is_importable and object_name == name:
+            imports.append(f"from {module_name} import {name}")
+        elif is_importable:
+            imports.append(f"from {module_name} import {object_name} as {name}")
+        else:
+            names_not_imported.append(name)
+
+    if imports:
+        source_code = "\n".join(sorted(imports)) + "\n\n\n" + source_code
+
+    return source_code, names_not_imported
 
 
 @manage_warnings
@@ -2645,18 +3392,22 @@ def save_forecaster(
     """
     Save forecaster model to disk. Custom functions used to create weights that
     are defined in the `'__main__'` namespace (e.g. a notebook or a script run
-    directly) are saved as .py files, since they cannot be re-imported when the
-    forecaster is loaded in a different session. Functions imported from a module
-    are restored automatically and are not exported. When `backend='cloudpickle'`,
-    custom functions are embedded in the saved file and no .py files are created.
+    directly) are saved as .py files next to the forecaster file, since they
+    cannot be re-imported when the forecaster is loaded in a different session.
+    Functions imported from a module are restored automatically and are not
+    exported. When `backend='cloudpickle'`, custom functions are embedded in the
+    saved file and no .py files are created.
 
     Parameters
     ----------
     forecaster : Forecaster
         Forecaster created with skforecast library.
     file_name : str
-        File name given to the object. The file extension is determined by
-        the `backend` argument.
+        File name given to the object. The extension of the `backend` is added
+        to the name (e.g. `'model_v1.2'` is saved as `'model_v1.2.joblib'`). If
+        the name already ends with a backend extension (`.joblib`, `.pkl`,
+        `.pickle`, `.cloudpickle` or `.skops`), it is replaced by the extension
+        of the `backend`.
     backend : str, default 'joblib'
         Serialization backend used to save the forecaster.
 
@@ -2670,17 +3421,22 @@ def save_forecaster(
         Requires `cloudpickle` to be installed.
         - If `'skops'`, the forecaster is saved using skops (extension
         `.skops`), a secure format that does not execute arbitrary code on
-        load. The `last_window_` and `training_range_` attributes are
-        decomposed into plain types before saving and rebuilt on load, since
-        skops cannot serialize pandas objects. Not supported for
+        load. The attributes that skops cannot serialize (`last_window_` and
+        `training_range_`, the categorical, pyarrow and time zone aware dtypes
+        of the exogenous variables, and generic `pandas.DateOffset` objects)
+        are decomposed into plain types before saving and rebuilt on load. The
+        time zone of the index is stored by its name, so it must be a named time
+        zone (e.g. `'Europe/Madrid'` or `'UTC'`). Not supported for
         `ForecasterStats`, `ForecasterRnn`, or `ForecasterFoundation`, whose
         underlying estimators (statsmodels, Keras, or a foundation model) embed
         objects that skops cannot serialize. Requires `skops` to be installed.
     save_custom_functions : bool, default True
         If True, save custom functions used in the forecaster (weight_func) as
-        .py files, but only those defined in the `'__main__'` namespace. These
-        functions need to be available in the environment where the forecaster
-        is going to be loaded. Has no effect when `backend='cloudpickle'`.
+        .py files in the folder of `file_name`, but only those defined in the
+        `'__main__'` namespace. These functions need to be imported in the
+        environment where the forecaster is going to be loaded (e.g. with
+        `from models.custom_weights import custom_weights` if the forecaster is
+        saved in the folder `models`). Has no effect when `backend='cloudpickle'`.
     verbose : bool, default False
         Print summary about the forecaster saved.
     suppress_warnings : bool, default False
@@ -2706,7 +3462,14 @@ def save_forecaster(
         'cloudpickle': '.cloudpickle',
         'skops': '.skops'
     }
-    file_name = Path(file_name).with_suffix(backend_extensions[backend])
+    # NOTE: Only a known backend extension is replaced, so that the dots in the
+    # name are kept (e.g. 'model_v1.2' is saved as 'model_v1.2.joblib').
+    known_extensions = {'.joblib', '.pkl', '.pickle', '.cloudpickle', '.skops'}
+    file_name = Path(file_name)
+    if file_name.suffix.lower() in known_extensions:
+        file_name = file_name.with_suffix(backend_extensions[backend])
+    else:
+        file_name = file_name.with_name(file_name.name + backend_extensions[backend])
 
     # Save forecaster
     if backend == 'joblib':
@@ -2742,18 +3505,7 @@ def save_forecaster(
                 "'skops' is required for backend='skops' but is not installed. "
                 "Install it with: pip install skops"
             ) from exc
-        # NOTE: `last_window_` and `training_range_` are decomposed before the
-        # dump and restored.
-        originals = {
-            a: getattr(forecaster, a, None)
-            for a in ('last_window_', 'training_range_')
-        }
-        try:
-            _skops_decompose_forecaster(forecaster)
-            skops.io.dump(forecaster, file_name)
-        finally:
-            for a, v in originals.items():
-                setattr(forecaster, a, v)
+        skops.io.dump(_skops_decompose_forecaster(forecaster), file_name)
 
     if backend != 'cloudpickle':
         if hasattr(forecaster, 'weight_func') and forecaster.weight_func is not None:
@@ -2766,41 +3518,86 @@ def save_forecaster(
             # cannot be re-imported when the forecaster is loaded in a different
             # session, so they are the only ones that need the .py export / warning.
             # Functions from importable modules are restored automatically by
-            # joblib/pickle (by reference).
-            main_funs = sorted(
-                (f for f in funs if getattr(f, '__module__', None) == '__main__'),
-                key=lambda f: f.__name__
-            )
-            if main_funs:
-                if save_custom_functions:
+            # joblib/pickle (by reference). A `functools.partial` is restored from
+            # the function it wraps, so that function is the one exported. Lambda
+            # functions, callable objects and functions whose source code is not
+            # available (e.g. defined in the Python console) cannot be exported
+            # as a module.
+            main_funs = set()
+            main_callables_not_exportable = []
+            for fun in funs:
+                if isinstance(fun, partial):
+                    fun = fun.func
+                if getattr(fun, '__module__', None) != '__main__':
+                    continue
+                if (
+                    inspect.isfunction(fun)
+                    and fun.__name__.isidentifier()
+                    and _get_source_code(fun) is not None
+                ):
+                    main_funs.add(fun)
+                else:
+                    main_callables_not_exportable.append(fun)
+            main_funs = sorted(main_funs, key=lambda f: f.__name__)
+            if save_custom_functions:
+                if main_funs:
                     saved_files = []
                     for fun in main_funs:
-                        fun_file_name = fun.__name__ + '.py'
-                        with open(fun_file_name, 'w') as file:
-                            file.write(inspect.getsource(fun))
+                        fun_file_name = file_name.parent / f"{fun.__name__}.py"
+                        source_code, names_not_imported = _get_source_with_imports(fun)
+                        with open(fun_file_name, 'w', encoding='utf-8') as file:
+                            file.write(source_code)
                         saved_files.append(fun_file_name)
+                        if names_not_imported:
+                            warnings.warn(
+                                f"The custom function '{fun.__name__}' uses objects "
+                                f"defined outside its body that cannot be saved in "
+                                f"'{fun_file_name}': "
+                                f"{', '.join(repr(n) for n in names_not_imported)}. "
+                                f"Define them inside the function, or save the "
+                                f"forecaster with backend='cloudpickle', which "
+                                f"stores the function together with the objects "
+                                f"it uses.",
+                                SaveLoadSkforecastWarning
+                            )
+                    saved_files_names = ', '.join(f"'{f}'" for f in saved_files)
                     warnings.warn(
                         "Custom function(s) used to create weights are defined in "
                         "the '__main__' namespace and have been saved as: "
-                        f"{', '.join(repr(f) for f in saved_files)}. These files "
+                        f"{saved_files_names}. These files "
                         "must be imported before loading the forecaster.\n"
                         "Visit the documentation for more information: "
                         "https://skforecast.org/latest/user_guides/save-load-forecaster.html"
-                        "#saving-and-loading-a-forecaster-model-with-custom-features",
+                        "#forecaster-with-custom-features",
                         SaveLoadSkforecastWarning
                     )
-                else:
+                if main_callables_not_exportable:
+                    callables_names = ', '.join(
+                        repr(getattr(f, '__name__', type(f).__name__))
+                        for f in main_callables_not_exportable
+                    )
                     warnings.warn(
-                        "Custom function(s) used to create weights are defined in "
-                        "the '__main__' namespace and have not been saved. To save "
-                        "them automatically, set `save_custom_functions=True`. "
-                        "Otherwise, ensure they are importable before loading the "
-                        "forecaster.",
+                        "Custom callable(s) used to create weights are defined in "
+                        "the '__main__' namespace but cannot be saved as .py files "
+                        "(lambda functions, callable objects or functions whose "
+                        "source code is not available, e.g. defined in the Python "
+                        f"console): {callables_names}. "
+                        "Define them as named functions, or save the forecaster "
+                        "with backend='cloudpickle', which stores them in the file.",
                         SaveLoadSkforecastWarning
                     )
+            elif main_funs or main_callables_not_exportable:
+                warnings.warn(
+                    "Custom function(s) used to create weights are defined in "
+                    "the '__main__' namespace and have not been saved. To save "
+                    "them automatically, set `save_custom_functions=True`. "
+                    "Otherwise, ensure they are importable before loading the "
+                    "forecaster.",
+                    SaveLoadSkforecastWarning
+                )
 
         if hasattr(forecaster, 'window_features') and forecaster.window_features is not None:
-            skforecast_classes = {'RollingFeatures'}
+            skforecast_classes = {'RollingFeatures', 'RollingFeaturesClassification'}
             custom_classes = set(forecaster.window_features_class_names) - skforecast_classes
             if custom_classes:
                 warnings.warn(
@@ -2810,7 +3607,8 @@ def save_forecaster(
                     "manually and import them before loading the Forecaster.\n"
                     "    Custom classes: " + ', '.join(custom_classes) + "\n"
                     "Visit the documentation for more information: "
-                    "https://skforecast.org/latest/user_guides/save-load-forecaster.html#saving-and-loading-a-forecaster-model-with-custom-features",
+                    "https://skforecast.org/latest/user_guides/save-load-forecaster.html"
+                    "#forecaster-with-custom-features",
                     SaveLoadSkforecastWarning
                 )
 
@@ -2927,8 +3725,8 @@ def load_forecaster(
         # trusted explicitly. `skops.io.load` only accepts a list of type names
         # (or None), so the friendly `trusted` argument is mapped here: `False`
         # -> None (strict), `True` -> all types found in the file, list -> as is.
-        # `last_window_` and `training_range_` are rebuilt from the plain types
-        # stored by `save_forecaster`.
+        # The attributes decomposed into plain types by `save_forecaster` are
+        # rebuilt.
         if trusted is False:
             trusted_types = None
         elif trusted is True:
@@ -3039,7 +3837,7 @@ def check_optional_dependency(
 def multivariate_time_series_corr(
     time_series: pd.Series,
     other: pd.DataFrame,
-    lags: int | list[int] | np.ndarray[int],
+    lags: int | list[int] | np.ndarray,
     method: str = 'pearson'
 ) -> pd.DataFrame:
     """
@@ -3053,7 +3851,8 @@ def multivariate_time_series_corr(
     other : pandas DataFrame
         Time series whose lagged values are correlated to `time_series`.
     lags : int, list, numpy ndarray
-        Lags to be included in the correlation analysis.
+        Lags to be included in the correlation analysis. If int, the lags from
+        0 to `lags - 1` are included (lag 0 is the correlation without shift).
     method : str, default 'pearson'
         - 'pearson': standard correlation coefficient.
         - 'kendall': Kendall Tau correlation coefficient.
@@ -3072,18 +3871,15 @@ def multivariate_time_series_corr(
     if not (time_series.index == other.index).all():
         raise ValueError("`time_series` and `other` must have the same index.")
 
-    if isinstance(lags, int):
+    if isinstance(lags, (int, np.integer)):
         lags = range(lags)
 
+    # NOTE: `corrwith` only computes the correlations with `time_series`, not
+    # the whole correlation matrix of the lags.
     corr = {}
     for col in other.columns:
-        lag_values = {}
-        for lag in lags:
-            lag_values[lag] = other[col].shift(lag)
-
-        lag_values = pd.DataFrame(lag_values)
-        lag_values.insert(0, None, time_series)
-        corr[col] = lag_values.corr(method=method).iloc[1:, 0]
+        lag_values = pd.DataFrame({lag: other[col].shift(lag) for lag in lags})
+        corr[col] = lag_values.corrwith(time_series, method=method)
 
     corr = pd.DataFrame(corr)
     corr.index = corr.index.astype('int64')
@@ -3146,43 +3942,40 @@ def set_cpu_gpu_device(
     device: str | None = 'cpu'
 ) -> str | None:
     """
-    Set the device for the estimator to either 'cpu', 'gpu', 'cuda', or None.
+    Set the `device` parameter of an XGBoost or LightGBM regressor and return
+    its previous value, so that it can be restored afterwards. Recursive
+    forecasters use it to predict on CPU, since they predict one row at a time.
+
+    Parameters
+    ----------
+    estimator : object
+        Estimator whose device is set. Only `XGBRegressor` and `LGBMRegressor`
+        are modified. For any other estimator, nothing is done and `None` is
+        returned.
+    device : str, None, default 'cpu'
+        Device to set, passed to the estimator as is (for example `'cpu'`,
+        `'gpu'`, `'cuda'` or `'cuda:0'`). To restore the original device, pass
+        the value returned by a previous call. If `None`, the device is not
+        changed.
+
+    Returns
+    -------
+    original_device : str, None
+        Device of the estimator before the call. `None` if the estimator is not
+        supported or its device is not set (both libraries then use the CPU).
+
     """
 
-    valid_devices = {'gpu', 'cpu', 'cuda', 'GPU', 'CPU', None}
-    if device not in valid_devices:
-        raise ValueError("`device` must be 'gpu', 'cpu', 'cuda', or None.")
-    
-    estimator_name = type(estimator).__name__
-
-    supported_estimators = {'XGBRegressor', 'LGBMRegressor', 'CatBoostRegressor'}
-    if estimator_name not in supported_estimators:
+    if type(estimator).__name__ not in ('XGBRegressor', 'LGBMRegressor'):
         return None
-    
-    device_names = {
-        'XGBRegressor': 'device',
-        'LGBMRegressor': 'device',
-        'CatBoostRegressor': 'task_type',
-    }
-    device_values = {
-        'XGBRegressor': {'gpu': 'cuda', 'cpu': 'cpu', 'cuda': 'cuda'},
-        'LGBMRegressor': {'gpu': 'gpu', 'cpu': 'cpu', 'cuda': 'gpu'},
-        'CatBoostRegressor': {'gpu': 'GPU', 'cpu': 'CPU', 'cuda': 'GPU', 'GPU': 'GPU', 'CPU': 'CPU'},
-    }
 
-    param_name = device_names[estimator_name]
-    original_device = getattr(estimator, param_name, None)
+    original_device = getattr(estimator, 'device', None)
 
-    if device is None:
-        return original_device
-
-    new_device = device_values[estimator_name][device]
-
-    if original_device != new_device:
-        try:
-            estimator.set_params(**{param_name: new_device})
-        except Exception:
-            pass
+    # NOTE: A device that is not set already means CPU in XGBoost and LightGBM,
+    # so it is left unset instead of setting 'cpu'.
+    current_device = 'cpu' if original_device is None else original_device
+    if device is not None and device != current_device:
+        estimator.set_params(device=device)
 
     return original_device
 
@@ -3198,11 +3991,13 @@ def _build_predict_function(
     Fast prediction paths (bypassing sklearn's `predict` overhead) are used
     for the following estimator types:
 
-    - Linear models inheriting from sklearn's `LinearModel` (`np.dot`)
+    - Linear models of scikit-learn inheriting from `LinearModel` (`np.dot`)
     - `LGBMRegressor` (`booster_.predict`)
-    - `XGBRegressor` (`get_booster().inplace_predict`)
-    - `RandomForestRegressor` (per-tree `tree_.predict`)
-    - `DecisionTreeRegressor` (`tree_.predict`)
+    - `XGBRegressor` (`get_booster().inplace_predict`, with the same
+    `iteration_range` and `missing` as `XGBRegressor.predict`). The 'gblinear'
+    booster does not support `inplace_predict` and uses `estimator.predict`.
+    - `RandomForestRegressor` and `ExtraTreesRegressor` (per-tree `tree_.predict`)
+    - `DecisionTreeRegressor` and `ExtraTreeRegressor` (`tree_.predict`)
 
     For `CatBoostRegressor` with categorical features, the categorical column
     indices are resolved once at build time and the array is cast to `object`
@@ -3214,6 +4009,8 @@ def _build_predict_function(
     copy and leaves it read-only.
 
     For any other estimator the standard `estimator.predict` method is used.
+    This includes user subclasses of scikit-learn estimators, since they may
+    override `predict`.
 
     Parameters
     ----------
@@ -3229,8 +4026,11 @@ def _build_predict_function(
     """
 
     estimator_name = type(estimator).__name__
+    # NOTE: The fast paths of scikit-learn estimators skip their `predict`
+    # method. User subclasses may override it, so they use the generic fallback.
+    is_sklearn_class = type(estimator).__module__.startswith('sklearn.')
 
-    if isinstance(estimator, LinearModel):
+    if is_sklearn_class and isinstance(estimator, LinearModel):
         coef = estimator.coef_
         intercept = estimator.intercept_
 
@@ -3250,15 +4050,28 @@ def _build_predict_function(
 
         return predict_fn
 
-    if estimator_name == 'XGBRegressor':
+    # NOTE: `inplace_predict` is not supported by the 'gblinear' booster, which
+    # uses the generic fallback (as `XGBRegressor.predict` does).
+    if estimator_name == 'XGBRegressor' and estimator.booster != 'gblinear':
         booster = estimator.get_booster()
+        # Same arguments as `XGBRegressor.predict`: only the trees up to the
+        # best iteration when early stopping is used, and the user `missing` value.
+        try:
+            iteration_range = (0, estimator.best_iteration + 1)
+        except AttributeError:
+            iteration_range = (0, 0)
+        missing = estimator.missing
 
         def predict_fn(X):
-            return booster.inplace_predict(X)
+            return booster.inplace_predict(
+                X, iteration_range=iteration_range, missing=missing
+            )
 
         return predict_fn
 
-    if estimator_name == 'RandomForestRegressor':
+    if is_sklearn_class and estimator_name in (
+        'RandomForestRegressor', 'ExtraTreesRegressor'
+    ):
         trees = estimator.estimators_
 
         def predict_fn(X):
@@ -3270,7 +4083,9 @@ def _build_predict_function(
 
         return predict_fn
 
-    if estimator_name == 'DecisionTreeRegressor':
+    if is_sklearn_class and estimator_name in (
+        'DecisionTreeRegressor', 'ExtraTreeRegressor'
+    ):
         tree_ = estimator.tree_
 
         def predict_fn(X):
@@ -3284,7 +4099,7 @@ def _build_predict_function(
         # CatBoost requires integer values (not float) for categorical features
         # when X is a numpy array. This requires casting the array to object
         # dtype and converting the categorical columns to int before each prediction call.
-        cat_indices = np.array(estimator.get_cat_feature_indices())
+        cat_indices = _get_catboost_cat_feature_indices(estimator)
         if len(cat_indices) > 0:
             def predict_fn(X):
                 X_obj = X.astype(object)
@@ -3325,9 +4140,9 @@ def check_preprocess_series(
     first level of the index must contain the series IDs, and the second 
     level must be a `DatetimeIndex` with the same frequency across all series.
     - If series is a dictionary, each key must be a series ID, and each value 
-    must be a named pandas Series. All series must have the same index, which 
-    must be either a `DatetimeIndex` or a `RangeIndex`, and they must share the 
-    same frequency or step size, as appropriate.
+    must be a named pandas Series. All series must have the same type of index, 
+    either a `DatetimeIndex` or a `RangeIndex`, and they must share the same 
+    frequency or step size, as appropriate, and the same time zone.
 
     When `series` is a pandas DataFrame, it is converted to a dictionary of pandas 
     Series, where the keys are the series IDs and the values are the Series with 
@@ -3416,6 +4231,7 @@ def check_preprocess_series(
 
     not_valid_index = []
     indexes_freq = set()
+    indexes_tz = set()
     series_indexes = {}
     for k, v in series_dict.items():
         if isinstance(v, pd.DataFrame):
@@ -3431,6 +4247,7 @@ def check_preprocess_series(
         idx = v.index
         if isinstance(idx, pd.DatetimeIndex):
             indexes_freq.add(idx.freq)
+            indexes_tz.add(None if idx.tz is None else str(idx.tz))
         elif isinstance(idx, pd.RangeIndex):
             indexes_freq.add(idx.step)
         else:
@@ -3456,12 +4273,23 @@ def check_preprocess_series(
             "frequency or step."
         )
     if not len(indexes_freq) == 1:
+        # NOTE: Frequencies of different types (e.g. `Day` and `MonthBegin`, or
+        # a frequency and a step) cannot be compared.
+        try:
+            indexes_freq = sorted(indexes_freq)
+        except TypeError:
+            indexes_freq = sorted(indexes_freq, key=str)
         raise ValueError(
             f"If `series` is a dictionary, all series must have a Pandas "
             f"RangeIndex or DatetimeIndex with the same step/frequency. "
             f"If it a MultiIndex DataFrame, the second level must be a DatetimeIndex "
             f"with the same frequency for each series. "
-            f"Found frequencies: {sorted(indexes_freq)}"
+            f"Found frequencies: {indexes_freq}"
+        )
+    if len(indexes_tz) > 1:
+        raise ValueError(
+            f"If `series` is a dictionary, all series must have the same time "
+            f"zone. Found time zones: {sorted(indexes_tz, key=str)}"
         )
 
     return series_dict, series_indexes
@@ -3492,6 +4320,7 @@ def check_preprocess_exog_multiseries(
     When `exog` is a pandas DataFrame, it is converted to a dictionary of pandas 
     DataFrames, where the keys are the series IDs and the values are the Series 
     with the same index as the original DataFrame.
+    The index of each exog is sorted in ascending order if it is not.
 
     Parameters
     ----------
@@ -3521,7 +4350,13 @@ def check_preprocess_exog_multiseries(
 
     if isinstance(exog, (pd.Series, pd.DataFrame)): 
         
+        check_exog(exog=exog, allow_nan=True)
         exog = exog.copy().to_frame() if isinstance(exog, pd.Series) else exog.copy()
+        if exog.columns.has_duplicates:
+            raise ValueError(
+                f"`exog` cannot contain duplicated column names. "
+                f"Got {exog.columns.to_list()}."
+            )
         if isinstance(exog.index, pd.MultiIndex):
             if not isinstance(exog.index.levels[1], pd.DatetimeIndex):
                 raise TypeError(
@@ -3594,6 +4429,15 @@ def check_preprocess_exog_multiseries(
             check_exog(exog=v, allow_nan=True)
             if isinstance(v, pd.Series):
                 v = v.to_frame()
+            elif v.columns.has_duplicates:
+                raise ValueError(
+                    f"`exog` for series '{k}' cannot contain duplicated column "
+                    f"names. Got {v.columns.to_list()}."
+                )
+            # NOTE: exog is sliced by label when it is aligned with the series
+            # and in the backtesting folds, which needs an ascending index.
+            if not v.index.is_monotonic_increasing:
+                v = v.sort_index()
             exog_dict[k] = v
 
     not_valid_index = [
@@ -3626,8 +4470,10 @@ def check_preprocess_exog_multiseries(
                 f"for each categorical variable."
             )
 
+        # NOTE: Names in order of appearance, a set does not keep the same
+        # order across Python processes.
         exog_names_in_ = list(
-            set(
+            dict.fromkeys(
                 column
                 for df in exog_dict.values()
                 if df is not None
@@ -3635,7 +4481,7 @@ def check_preprocess_exog_multiseries(
             )
         )
     else:
-        exog_names_in_ = list(exog.columns) if isinstance(exog, pd.DataFrame) else [exog.name]
+        exog_names_in_ = exog.columns.to_list()
 
     if len(set(exog_names_in_) - set(series_names_in_)) != len(exog_names_in_):
         raise ValueError(
@@ -3661,7 +4507,7 @@ def align_series_and_exog_multiseries(
     ----------
     series_dict : dict
         Dictionary with the series used during training.
-    exog_dict : dict, default None
+    exog_dict : dict
         Dictionary with the exogenous variable/s used during training.
     trim_series_nan : bool, default True
         If `True`, leading and trailing NaNs are removed from each series
@@ -3679,7 +4525,7 @@ def align_series_and_exog_multiseries(
 
     for k in series_dict.keys():
         if trim_series_nan and (
-            np.isnan(series_dict[k].iat[0]) or np.isnan(series_dict[k].iat[-1])
+            pd.isna(series_dict[k].iat[0]) or pd.isna(series_dict[k].iat[-1])
         ):
             first_valid_index = series_dict[k].first_valid_index()
             last_valid_index = series_dict[k].last_valid_index()
@@ -3690,6 +4536,11 @@ def align_series_and_exog_multiseries(
 
         if exog_dict[k] is not None:
             if not series_dict[k].index.equals(exog_dict[k].index):
+                if exog_dict[k].index.has_duplicates:
+                    raise ValueError(
+                        f"`exog` for series '{k}' has duplicated index values. "
+                        f"Each date or position can only appear once."
+                    )
                 exog_dict[k] = exog_dict[k].loc[first_valid_index:last_valid_index]
                 if exog_dict[k].empty:
                     warnings.warn(
@@ -3698,7 +4549,7 @@ def align_series_and_exog_multiseries(
                         MissingValuesWarning
                     )
                     exog_dict[k] = None
-                elif len(exog_dict[k]) != len(series_dict[k]):
+                elif not exog_dict[k].index.equals(series_dict[k].index):
                     warnings.warn(
                         f"`exog` for series '{k}' doesn't have values for "
                         f"all the dates in the series. Missing values will be "
@@ -3723,7 +4574,7 @@ def prepare_levels_multiseries(
     ----------
     X_train_series_names_in_ : list
         Names of the series (levels) included in the matrix `X_train`.
-    levels : str, list, default None
+    levels : str, list, pandas Index, numpy ndarray, default None
         Names of the series (levels) to be predicted.
 
     Returns
@@ -3731,7 +4582,8 @@ def prepare_levels_multiseries(
     levels : list
         Names of the series (levels) to be predicted.
     input_levels_is_list : bool
-        Indicates if input levels argument is a list.
+        Indicates if input levels argument is a list (or a pandas Index or
+        numpy ndarray, which are converted to a list).
 
     """
 
@@ -3740,6 +4592,9 @@ def prepare_levels_multiseries(
         levels = X_train_series_names_in_
     elif isinstance(levels, str):
         levels = [levels]
+    elif isinstance(levels, (pd.Index, np.ndarray)):
+        levels = levels.tolist()
+        input_levels_is_list = True
     else:
         input_levels_is_list = True
 
@@ -3804,21 +4659,23 @@ def preprocess_levels_self_last_window_multiseries(
                 IgnoredArgumentWarning
             )
 
-    last_index_levels = [
-        v.index[-1] 
-        for k, v in last_window_.items()
-        if k in levels
-    ]
+    # NOTE: A set is used to check membership, a list is O(n) per lookup.
+    levels_set = set(levels)
+    last_windows = {
+        k: v for k, v in last_window_.items() if k in levels_set
+    }
+    last_index_levels = [v.index[-1] for v in last_windows.values()]
     if len(set(last_index_levels)) > 1:
         max_index_levels = max(last_index_levels)
         selected_levels = [
             k
-            for k, v in last_window_.items()
-            if k in levels and v.index[-1] == max_index_levels
+            for k, v in last_windows.items()
+            if v.index[-1] == max_index_levels
         ]
 
-        series_excluded_from_last_window = set(levels) - set(selected_levels)
+        series_excluded_from_last_window = levels_set - set(selected_levels)
         levels = selected_levels
+        last_windows = {k: last_windows[k] for k in selected_levels}
 
         if input_levels_is_list and series_excluded_from_last_window:
             warnings.warn(
@@ -3829,17 +4686,23 @@ def preprocess_levels_self_last_window_multiseries(
                 IgnoredArgumentWarning
             )
 
-    last_window = pd.DataFrame(
-        {k: v 
-         for k, v in last_window_.items() 
-         if k in levels}
-    )
+    # NOTE: When all the last windows have the same index (the usual case), the
+    # DataFrame is created from their values, which avoids aligning the index
+    # of every series.
+    first_index = next(iter(last_windows.values())).index
+    if all(v.index.equals(first_index) for v in last_windows.values()):
+        last_window = pd.DataFrame(
+            {k: v.to_numpy() for k, v in last_windows.items()},
+            index = first_index
+        )
+    else:
+        last_window = pd.DataFrame(last_windows)
 
     return levels, last_window
 
 
 def prepare_steps_direct(
-    max_step: int | list[int] | np.ndarray[int],
+    max_step: int | list[int] | np.ndarray,
     steps: int | list[int] | None = None
 ) -> list[int]:
     """
@@ -3867,14 +4730,20 @@ def prepare_steps_direct(
 
     """
 
-    if isinstance(steps, int):
-        steps_direct = list(range(1, steps + 1))
+    if isinstance(steps, (int, np.integer)):
+        if steps < 1:
+            raise ValueError(
+                f"`steps` must be an integer greater than or equal to 1. Got {steps}."
+            )
+        steps_direct = list(range(1, int(steps) + 1))
     elif steps is None:
         if isinstance(max_step, int):
             steps_direct = list(range(1, max_step + 1))
         else:
             steps_direct = [int(s) for s in max_step]
     elif isinstance(steps, list):
+        if not steps:
+            raise ValueError("`steps` cannot be an empty list.")
         steps_direct = []
         for step in steps:
             if not isinstance(step, (int, np.integer)):
@@ -3883,6 +4752,11 @@ def prepare_steps_direct(
                     f"Got {type(steps)}."
                 )
             steps_direct.append(int(step))
+    else:
+        raise TypeError(
+            f"`steps` argument must be an int, a list of ints or `None`. "
+            f"Got {type(steps)}."
+        )
 
     return steps_direct
 
@@ -4018,11 +4892,20 @@ def show_versions(
         "pandas",
         "tqdm",
         "scikit-learn",
+        "scipy",
         "optuna",
         "joblib",
         "numba",
         "rich",
+        "statsmodels",
+        "matplotlib",
         "keras",
+        "torch",
+        "lightgbm",
+        "xgboost",
+        "catboost",
+        "skops",
+        "cloudpickle",
     ]
     
     sys_info = {
@@ -4062,15 +4945,14 @@ def deepcopy_forecaster(
     include_last_window: bool = False,
 ) -> object:
     """
-    Create a lightweight deep copy of a forecaster by temporarily
-    replacing heavy fitted attributes with lightweight placeholders
-    before copying.
+    Create a lightweight deep copy of a forecaster by replacing heavy fitted
+    attributes with lightweight placeholders in the copy. The original 
+    forecaster is not modified.
 
     Estimators are always replaced with unfitted clones (same
-    hyperparameters) to avoid copying expensive fitted state (e.g.,
-    tree structures, model weights). For sklearn-compatible estimators
-    `sklearn.base.clone` is used; for statistical models
-    (`ForecasterStats`) `copy.copy` is used instead. Additional
+    hyperparameters, `sklearn.base.clone`) to avoid copying expensive 
+    fitted state (e.g., tree structures). The Keras model of `ForecasterRnn` 
+    cannot be cloned this way, so it is copied with its weights. Additional
     heavy attributes (residuals and last window) can be optionally
     included via parameters.
 
@@ -4103,29 +4985,31 @@ def deepcopy_forecaster(
 
     """
 
-    # Save references to heavy attributes before replacing them
-    saved = {}
+    # NOTE: The original forecaster is not modified. The heavy attributes are
+    # replaced in the copy through the `memo` of `deepcopy`, which maps the id
+    # of an object to the object to use in its place, so the original stays
+    # intact even if the copy fails.
+    memo = {}
 
     # 1. Replace fitted estimator with unfitted clone (same hyperparameters)
     if hasattr(forecaster, 'estimator') and forecaster.estimator is not None:
-        saved['estimator'] = forecaster.estimator
         if type(forecaster).__name__ == 'ForecasterRnn':
-            forecaster.estimator = deepcopy(forecaster.estimator)
+            estimator_copy = deepcopy(forecaster.estimator)
         else:
-            forecaster.estimator = clone(forecaster.estimator)
+            estimator_copy = clone(forecaster.estimator)
+        memo[id(forecaster.estimator)] = estimator_copy
 
     # 2. Replace fitted estimators collection
     if hasattr(forecaster, 'estimators_') and forecaster.estimators_ is not None:
-        saved['estimators_'] = forecaster.estimators_
         if isinstance(forecaster.estimators_, dict):
             # ForecasterDirect, ForecasterDirectMultiVariate: dict of fitted estimators
-            forecaster.estimators_ = {
+            memo[id(forecaster.estimators_)] = {
                 step: clone(forecaster.estimator)
                 for step in forecaster.estimators_
             }
         elif isinstance(forecaster.estimators_, list):
             # ForecasterStats: list of fitted stats models
-            forecaster.estimators_ = [
+            memo[id(forecaster.estimators_)] = [
                 clone(est) for est in forecaster.estimators
             ]
 
@@ -4138,8 +5022,7 @@ def deepcopy_forecaster(
 
     for attr in _residual_attrs:
         if hasattr(forecaster, attr) and getattr(forecaster, attr) is not None:
-            saved[attr] = getattr(forecaster, attr)
-            setattr(forecaster, attr, None)
+            memo[id(getattr(forecaster, attr))] = None
 
     # 4. Optionally replace last_window_ with None
     if (
@@ -4147,15 +5030,10 @@ def deepcopy_forecaster(
         and hasattr(forecaster, 'last_window_')
         and forecaster.last_window_ is not None
     ):
-        saved['last_window_'] = forecaster.last_window_
-        forecaster.last_window_ = None
+        memo[id(forecaster.last_window_)] = None
 
     # Perform the (now lightweight) deep copy
-    forecaster_copy = deepcopy(forecaster)
-
-    # Restore original heavy attributes on the original forecaster
-    for attr, value in saved.items():
-        setattr(forecaster, attr, value)
+    forecaster_copy = deepcopy(forecaster, memo)
 
     return forecaster_copy
 

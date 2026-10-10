@@ -5,6 +5,7 @@
 ################################################################################
 
 from __future__ import annotations
+from typing import Any
 import html
 import sys
 import textwrap
@@ -190,7 +191,9 @@ class ForecasterFoundation:
             "supports_calendar_features": False,
             "supports_transformer_series": False,
             "supports_transformer_exog": False,
-            "supports_categorical_features": True,
+            "supports_categorical_features": (
+                self.estimator.adapter.supports_categorical_covariates
+            ),
             "supports_weight_func": False,
             "supports_differentiation": False,
 
@@ -855,7 +858,7 @@ class ForecasterFoundation:
             | dict[str, pd.Series | pd.DataFrame | None]
             | None
         ) = None,
-        interval: float | list[float] | tuple[float] = [0.1, 0.9],
+        interval: float | list[float] | tuple[float, ...] = [0.1, 0.9],
         check_inputs: bool = True,
     ) -> pd.DataFrame:
         """
@@ -975,7 +978,7 @@ class ForecasterFoundation:
             | dict[str, pd.Series | pd.DataFrame | None]
             | None
         ) = None,
-        quantiles: list[float] | tuple[float] = [0.1, 0.5, 0.9],
+        quantiles: list[float] | tuple[float, ...] = [0.1, 0.5, 0.9],
         check_inputs: bool = True,
     ) -> pd.DataFrame:
         """
@@ -1047,7 +1050,7 @@ class ForecasterFoundation:
 
         return predictions
 
-    def set_params(self, params: dict[str, object]) -> None:
+    def set_params(self, params: dict[str, Any]) -> None:
         """
         Set new values to the parameters of the underlying estimator.
 

@@ -7,6 +7,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import FunctionTransformer
+from sklearn.pipeline import make_pipeline
 from skforecast.utils import transform_series
 
 
@@ -117,10 +118,21 @@ def test_transform_series_when_transformer_is_OneHotEncoder():
     pd.testing.assert_frame_equal(results, expected)
 
 
-def test_transform_series_when_applied_to_serie_with_different_name_than_the_one_used_to_fit():
+@pytest.mark.parametrize(
+    "transformer",
+    [StandardScaler(),
+     StandardScaler().set_output(transform='pandas'),
+     make_pipeline(StandardScaler()),
+     make_pipeline(StandardScaler()).set_output(transform='pandas')],
+    ids=['StandardScaler', 'StandardScaler_pandas', 'Pipeline', 'Pipeline_pandas']
+)
+def test_transform_series_when_applied_to_serie_with_different_name_than_the_one_used_to_fit(
+    transformer
+):
     """
     Test the transform series works when the serie to transform has different name
-    than the serie used for training.
+    than the serie used for training, also with a Pipeline, whose
+    `feature_names_in_` is a read-only property, and with pandas output.
     """
     training_series = pd.Series([1.16, -0.28, 0.07, 2.4, 0.25, -0.56, -1.42, 1.26, 1.78, -1.49],
                                 name = 'y')
@@ -129,7 +141,6 @@ def test_transform_series_when_applied_to_serie_with_different_name_than_the_one
     expected = pd.Series([0.67596768, -0.47871021, -0.19805933,  1.67027365, -0.0537246,
                          -0.70323091, -1.39283021,  0.75615365,  1.17312067, -1.44896038],
                          name = 'pred')
-    transformer = StandardScaler()
     transformer.fit(training_series.to_frame())
     results = transform_series(
                   series = input_series,
@@ -190,6 +201,27 @@ def test_transform_series_when_set_output_pandas_single_column():
     pd.testing.assert_series_equal(results, expected)
 
 
+def test_transform_series_when_set_output_pandas_single_row():
+    """
+    Test transform_series returns a Series when the input has a single row
+    and the transformer has pandas output (`squeeze()` would return a scalar).
+    """
+    training_series = pd.Series([1.0, 2.0, 3.0, 4.0, 5.0], name='y')
+    transformer = StandardScaler().set_output(transform='pandas')
+    transformer.fit(training_series.to_frame())
+    input_series = pd.Series([4.0], index=[10], name='y')
+
+    results = transform_series(
+        series=input_series,
+        transformer=transformer,
+        fit=False,
+        inverse_transform=False
+    )
+
+    expected = pd.Series(data=[0.70710678], index=[10], name='y')
+    pd.testing.assert_series_equal(results, expected)
+
+
 def test_transform_series_when_transformer_expands_without_feature_names():
     """
     Test output column naming when transformer expands columns and
@@ -198,6 +230,32 @@ def test_transform_series_when_transformer_expands_without_feature_names():
     """
     input_series = pd.Series([0.0, 1.0, 2.0, 3.0], name='y')
     transformer = FunctionTransformer(func=lambda X: np.c_[X, X**2], validate=False)
+
+    results = transform_series(
+        series=input_series,
+        transformer=transformer,
+        fit=True,
+        inverse_transform=False
+    )
+
+    expected = pd.DataFrame(
+        {'transformed_0': [0.0, 1.0, 2.0, 3.0],
+         'transformed_1': [0.0, 1.0, 4.0, 9.0]}
+    )
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_transform_series_when_Pipeline_expands_columns_without_get_feature_names_out():
+    """
+    Test output column naming when the transformer is a Pipeline that expands
+    columns and has a step that does not implement `get_feature_names_out`,
+    so `Pipeline.get_feature_names_out` raises an AttributeError. The
+    columns fall back to 'transformed_i' names.
+    """
+    input_series = pd.Series([0.0, 1.0, 2.0, 3.0], name='y')
+    transformer = make_pipeline(
+        FunctionTransformer(func=lambda X: np.c_[X, X**2], validate=False)
+    )
 
     results = transform_series(
         series=input_series,

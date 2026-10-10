@@ -33,6 +33,7 @@ Use this when you need exact parameter names, types, defaults, or method signatu
 - `ForecasterRnn` — deep learning (RNN/LSTM/GRU)
 - `ForecasterFoundation` — zero-shot with foundation models (Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL)
 - `FoundationModel` — low-level foundation model wrapper used by `ForecasterFoundation`
+- `get_model_info` / `list_adapters`: capabilities of a foundation model (exog, quantiles, context length, backend, license) without installing its backend
 
 ### Forecaster Methods
 - `fit()` — train the model

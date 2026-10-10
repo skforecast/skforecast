@@ -384,6 +384,27 @@ def test_basefold_extract_index_when_X_is_dict():
     pd.testing.assert_index_equal(index, expected_index)
 
 
+@pytest.mark.parametrize(
+    "start", ["2025-10-01", "2026-03-01"], ids=lambda start: f"start: {start}"
+)
+def test_basefold_extract_index_when_X_is_dict_tz_aware_and_utc_anchored(start):
+    """
+    Test that the index is correctly extracted when X is a dict of series with
+    a timezone-aware index that advances in fixed UTC steps (created in UTC and
+    converted to a local timezone) and crosses a daylight saving change.
+    """
+    cv = BaseFold()
+    expected_index = pd.date_range(
+        start=start, periods=50, freq="D", tz="UTC"
+    ).tz_convert("Europe/Madrid")
+    X = {
+        "a": pd.Series(np.arange(40), index=expected_index[:40]),
+        "b": pd.Series(np.arange(30), index=expected_index[20:]),
+    }
+    index = cv._extract_index(X)
+    pd.testing.assert_index_equal(index, expected_index)
+
+
 def test_basefold_extract_index_raise_error_when_X_is_dict_with_series_with_no_valid_index():
     """
     Test that TypeError is raised when X is a dict with series with no valid index type.

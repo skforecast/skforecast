@@ -3,6 +3,8 @@
 import re
 import pytest
 import inspect
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 from skforecast.exceptions import IgnoredArgumentWarning
 from skforecast.utils import check_select_fit_kwargs
 from lightgbm import LGBMRegressor
@@ -39,6 +41,27 @@ def test_check_select_fit_kwargs_IgnoredArgumentWarning_when_fit_kwargs_has_argu
         )
     with pytest.warns(IgnoredArgumentWarning, match = warn_msg):       
         check_select_fit_kwargs(estimator=estimator, fit_kwargs=fit_kwargs)
+
+
+def test_check_select_fit_kwargs_IgnoredArgumentWarning_when_estimator_fit_has_var_kwargs():
+    """
+    Test check_select_fit_kwargs issues IgnoredArgumentWarning saying that
+    arguments passed through `**kwargs` are not supported when the `fit` method
+    of the estimator accepts them (Pipeline).
+    """
+    fit_kwargs = {'lgbmregressor__feature_name': 'auto'}
+    estimator = make_pipeline(StandardScaler(), LGBMRegressor())
+    
+    warn_msg = re.escape(
+        "Argument/s ['lgbmregressor__feature_name'] ignored since they are not "
+        "explicit arguments of the estimator's `fit` method. Arguments "
+        "passed through `**kwargs`, for example to the steps of a "
+        "scikit-learn Pipeline (`step__argument`), are not supported."
+    )
+    with pytest.warns(IgnoredArgumentWarning, match = warn_msg):       
+        results = check_select_fit_kwargs(estimator=estimator, fit_kwargs=fit_kwargs)
+
+    assert results == {}
 
 
 def test_check_select_fit_kwargs_IgnoredArgumentWarning_when_fit_kwargs_has_sample_weight():
@@ -82,3 +105,20 @@ def test_check_select_fit_kwargs_ignores_arguments_not_in_estimator_fit():
     expected = {'feature_name':'auto'}
 
     assert results == expected
+
+
+def test_check_select_fit_kwargs_does_not_modify_user_fit_kwargs():
+    """
+    Test check_select_fit_kwargs does not modify the dictionary passed by the
+    user when `sample_weight` and arguments not in estimator fit are removed.
+    """
+    fit_kwargs = {'sample_weight': [1, 2, 3], 'feature_name': 'auto', 'no_valid_argument': 10}
+    fit_kwargs_copy = fit_kwargs.copy()
+
+    results = check_select_fit_kwargs(
+                  estimator  = LGBMRegressor(),
+                  fit_kwargs = fit_kwargs
+              )
+
+    assert results == {'feature_name': 'auto'}
+    assert fit_kwargs == fit_kwargs_copy

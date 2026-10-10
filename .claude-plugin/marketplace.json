@@ -1,0 +1,26 @@
+{
+  "name": "skforecast",
+  "owner": {
+    "name": "skforecast",
+    "url": "https://github.com/skforecast"
+  },
+  "description": "Agent Skills for time series forecasting with skforecast.",
+  "plugins": [
+    {
+      "name": "skforecast",
+      "source": "./skills",
+      "strict": false,
+      "skills": ".",
+      "description": "Workflow skills for time series forecasting with skforecast: choosing a forecaster, single and multiple series, foundation models, backtesting, hyperparameter search, prediction intervals and troubleshooting.",
+      "version": "0.26.0",
+      "author": {
+        "name": "skforecast",
+        "url": "https://skforecast.org"
+      },
+      "homepage": "https://skforecast.org/latest/quick-start/ai-assisted-forecasting.html",
+      "repository": "https://github.com/skforecast/skforecast",
+      "license": "BSD-3-Clause",
+      "keywords": ["forecasting", "time-series", "machine-learning", "scikit-learn", "python"]
+    }
+  ]
+}

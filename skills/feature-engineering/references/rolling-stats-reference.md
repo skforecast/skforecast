@@ -282,7 +282,7 @@ NOT the `RollingFeatures` object. The original `RollingFeatures` instance
 should still be passed to the forecaster.
 
 ```python
-selected_lags, selected_wf, selected_exog = select_features(
+selected_lags, selected_wf, selected_exog, selected_cal = select_features(
     forecaster=forecaster,
     selector=RFECV(...),
     y=y_train,

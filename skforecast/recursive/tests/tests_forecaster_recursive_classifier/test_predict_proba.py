@@ -16,6 +16,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.linear_model import LogisticRegression, LinearRegression
 from sklearn.ensemble import HistGradientBoostingClassifier
 from lightgbm import LGBMClassifier
+from catboost import CatBoostClassifier
 
 from skforecast.exceptions import MissingValuesWarning
 from skforecast.preprocessing import RollingFeaturesClassification
@@ -334,6 +335,66 @@ def test_predict_proba_output_when_categorical_features_LGBMClassifier_auto(cate
                    columns = ['1_proba', '2_proba', '3_proba']
                )
     
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
+@pytest.mark.parametrize(
+    'categorical_features',
+    ['auto', ['exog_2', 'exog_3']],
+    ids=lambda cf: f'categorical_features: {cf}'
+)
+def test_predict_proba_output_when_categorical_features_CatBoostClassifier(categorical_features):
+    """
+    Test predict_proba output when using CatBoostClassifier with native
+    categorical features: the lags (`features_encoding='auto'`) and the
+    categorical exogenous variables. CatBoost requires these columns as
+    integers when predicting from a numpy array.
+    """
+    df_exog = pd.DataFrame(
+        {'exog_1': exog.to_numpy(),
+         'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
+         'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)}
+    )
+
+    df_exog_predict = df_exog.iloc[:10, :].copy()
+    df_exog_predict.index = pd.RangeIndex(start=50, stop=60)
+
+    estimator_params = {
+        'iterations': 100,
+        'depth': 3,
+        'random_seed': 123,
+        'verbose': 0,
+        'allow_writing_files': False
+    }
+    forecaster = ForecasterRecursiveClassifier(
+                     estimator            = CatBoostClassifier(**estimator_params),
+                     lags                 = 5,
+                     categorical_features = categorical_features
+                 )
+    forecaster.fit(y=y, exog=df_exog)
+    predictions = forecaster.predict_proba(steps=10, exog=df_exog_predict)
+
+    # NOTE: CatBoost results with categorical features change between platforms
+    # (Linux, macOS), so the expected values are not hardcoded. They are the
+    # probabilities of a CatBoostClassifier fitted on the training matrix with
+    # the lags and the categorical exogenous variables as integers.
+    cat_features = [0, 1, 2, 3, 4, 6, 7]
+    X_train, y_train = forecaster.create_train_X_y(y=y, exog=df_exog)
+    X_train = X_train.to_numpy().astype(object)
+    X_train[:, cat_features] = X_train[:, cat_features].astype(int)
+    X_predict = forecaster.create_predict_X(steps=10, exog=df_exog_predict)
+    X_predict = X_predict.to_numpy().astype(object)
+    X_predict[:, cat_features] = X_predict[:, cat_features].astype(int)
+
+    estimator = CatBoostClassifier(**estimator_params)
+    estimator.fit(X_train, y_train.to_numpy(), cat_features=cat_features)
+
+    expected = pd.DataFrame(
+                   data    = estimator.predict_proba(X_predict),
+                   index   = pd.RangeIndex(start=50, stop=60, step=1),
+                   columns = ['1_proba', '2_proba', '3_proba']
+               )
+
     pd.testing.assert_frame_equal(predictions, expected)
 
 

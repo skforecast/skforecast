@@ -38,6 +38,7 @@ from ..utils import (
     transform_dataframe,
     get_style_repr_html,
     set_cpu_gpu_device,
+    _get_catboost_cat_feature_indices,
     manage_warnings
 )
 
@@ -259,14 +260,14 @@ class ForecasterRecursiveClassifier(ForecasterBase):
     def __init__(
         self,
         estimator: object,
-        lags: int | list[int] | np.ndarray[int] | range[int] | None = None,
+        lags: int | list[int] | np.ndarray | range | None = None,
         window_features: object | list[object] | None = None,
         features_encoding: str = 'auto',
         transformer_exog: object | None = None,
         categorical_features: str | list[str] | None = 'auto',
         weight_func: Callable | None = None,
         dropna_from_series: bool = False,
-        fit_kwargs: dict[str, object] | None = None,
+        fit_kwargs: dict[str, Any] | None = None,
         forecaster_id: str | int | None = None
     ) -> None:
         
@@ -1680,6 +1681,11 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         has_window_features = self.window_features is not None
         has_exog = exog_values is not None
 
+        # CatBoost requires integer values (not float) for its categorical features
+        # when X is a numpy array. They are cast as in `fit`, with NaN as -1.
+        catboost_cat_indices = _get_catboost_cat_feature_indices(self.estimator)
+        has_catboost_cat_features = len(catboost_cat_indices) > 0
+
         for i in range(steps):
 
             remaining = steps - i
@@ -1701,12 +1707,19 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             if has_exog:
                 X[n_lags + n_window_features:] = exog_values[i]
 
+            X_predict = X.reshape(1, -1)
+            if has_catboost_cat_features:
+                X_predict = X_predict.astype(object)
+                X_predict[:, catboost_cat_indices] = np.nan_to_num(
+                    X[catboost_cat_indices], nan=-1
+                ).astype(int)
+
             if predict_proba:
-                proba = self.estimator.predict_proba(X.reshape(1, -1)).ravel()
+                proba = self.estimator.predict_proba(X_predict).ravel()
                 predictions[i, :] = proba
                 pred = self.class_codes_[np.argmax(proba)]
             else:
-                pred = self.estimator.predict(X.reshape(1, -1)).ravel().item()
+                pred = self.estimator.predict(X_predict).ravel().item()
                 predictions[i] = pred
 
             # Update `last_window` values. The first position is discarded and 
@@ -1988,7 +2001,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
     def set_params(
         self, 
-        params: dict[str, object]
+        params: dict[str, Any]
     ) -> None:
         """
         Set new values to the parameters of the scikit-learn model stored in the
@@ -2012,7 +2025,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
     def set_lags(
         self, 
-        lags: int | list[int] | np.ndarray[int] | range[int] | None = None
+        lags: int | list[int] | np.ndarray | range | None = None
     ) -> None:
         """
         Set new value to the attribute `lags`. Attributes `lags_names`, 
@@ -2094,7 +2107,7 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
     def set_fit_kwargs(
         self, 
-        fit_kwargs: dict[str, object]
+        fit_kwargs: dict[str, Any]
     ) -> None:
         """
         Set new values for the additional keyword arguments passed to the `fit` 

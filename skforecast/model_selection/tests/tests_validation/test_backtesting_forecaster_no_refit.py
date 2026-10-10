@@ -11,6 +11,7 @@ from sklearn.compose import make_column_transformer, make_column_selector
 from sklearn.ensemble import HistGradientBoostingRegressor
 from lightgbm import LGBMRegressor
 from xgboost import XGBRegressor
+from catboost import CatBoostClassifier
 from skforecast.recursive import ForecasterRecursive, ForecasterRecursiveClassifier
 from skforecast.direct import ForecasterDirect
 from skforecast.model_selection._validation import _backtesting_forecaster
@@ -169,6 +170,100 @@ def test_output_backtesting_forecaster_ForecasterRecursiveClassifier_with_mocked
                                         cv         = cv,
                                         metric     = ['accuracy_score', 'balanced_accuracy_score'],
                                         n_jobs     = n_jobs,
+                                        verbose    = False
+                                   )
+
+    pd.testing.assert_frame_equal(expected_metrics, metric)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+def test_output_backtesting_forecaster_ForecasterRecursiveClassifier_CatBoostClassifier():
+    """
+    Test output of _backtesting_forecaster with ForecasterRecursiveClassifier
+    and CatBoostClassifier, whose lags are native categorical features
+    (`features_encoding='auto'`).
+    """
+    expected_metrics = pd.DataFrame(
+        data=[[0.4166666666666667, 0.42777777777777776]],
+        columns=['accuracy_score', 'balanced_accuracy_score']
+    )
+    expected_predictions = pd.DataFrame(
+        {
+            "fold": [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2],
+            "pred": [
+                "car", "train", "car", "train", "car", "train",
+                "car", "train", "car", "train", "bus", "bus",
+            ],
+            "bus_proba": [
+                0.15262225273284843,
+                0.43045932214692756,
+                0.29671272467906284,
+                0.32889561826105207,
+                0.29671272467906284,
+                0.43045932214692756,
+                0.29671272467906284,
+                0.32889561826105207,
+                0.29671272467906284,
+                0.32889561826105207,
+                0.5215101173359493,
+                0.6477586483958747,
+            ],
+            "car_proba": [
+                0.8128241758388729,
+                0.019976299135345574,
+                0.6307982184148794,
+                0.026582480581256816,
+                0.6307982184148794,
+                0.019976299135345574,
+                0.6307982184148794,
+                0.026582480581256816,
+                0.6307982184148794,
+                0.026582480581256816,
+                0.1883185121480904,
+                0.11100625882009661,
+            ],
+            "train_proba": [
+                0.03455357142827862,
+                0.5495643787177268,
+                0.07248905690605777,
+                0.6445219011576911,
+                0.07248905690605777,
+                0.5495643787177268,
+                0.07248905690605777,
+                0.6445219011576911,
+                0.07248905690605777,
+                0.6445219011576911,
+                0.2901713705159602,
+                0.2412350927840287,
+            ],
+        },
+        index=pd.RangeIndex(start=38, stop=50, step=1)
+    )
+
+    forecaster = ForecasterRecursiveClassifier(
+        estimator=CatBoostClassifier(
+            iterations=100, depth=3, random_seed=123, verbose=0,
+            allow_writing_files=False
+        ),
+        lags=3
+    )
+
+    cv = TimeSeriesFold(
+            steps                 = 5,
+            initial_train_size    = len(y_clf) - 12,
+            refit                 = False,
+            gap                   = 0,
+            skip_folds            = None,
+            allow_incomplete_fold = True,
+        )
+
+    metric, backtest_predictions = _backtesting_forecaster(
+                                        forecaster = forecaster,
+                                        y          = y_clf,
+                                        exog       = None,
+                                        cv         = cv,
+                                        metric     = ['accuracy_score', 'balanced_accuracy_score'],
+                                        n_jobs     = 1,
                                         verbose    = False
                                    )
 
@@ -1589,6 +1684,71 @@ def test_output_backtesting_forecaster_interval_yes_exog_not_allow_remainder_gap
                                        verbose                 = False
                                    )
     backtest_predictions = backtest_predictions.asfreq('D')
+
+    pd.testing.assert_frame_equal(expected_metric, metric)
+    pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
+
+
+def test_output_backtesting_forecaster_ForecasterDirect_differentiation_gap_with_mocked():
+    """
+    Test output of _backtesting_forecaster with backtesting mocked, interval no.
+    Estimator is LinearRegression with lags=3 and differentiation=1, Series y is
+    mocked, exog is mocked, 12 observations to backtest, steps=3 and gap=2,
+    metric='mean_squared_error', ForecasterDirect. Each fold predicts the steps
+    3 to 5, so the differentiation is reverted with the predictions of the steps
+    1 to 5: the predictions are the last 3 values of `predict(steps=5)` from the
+    origin of each fold.
+    """
+    expected_metric = pd.DataFrame({"mean_squared_error": [0.07181106860770173]})
+    expected_predictions = pd.DataFrame(
+        {
+            "pred": np.array(
+                [
+                    0.69697363,
+                    0.51119036,
+                    0.50012072,
+                    0.539775,
+                    0.50483889,
+                    0.5671958,
+                    0.36586845,
+                    0.47880951,
+                    0.59479147,
+                    0.60391747,
+                ]
+            )
+        },
+        index=pd.RangeIndex(start=40, stop=50, step=1),
+    )
+    expected_predictions.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3])
+
+    forecaster = ForecasterDirect(
+                     estimator       = LinearRegression(),
+                     lags            = 3,
+                     steps           = 5,
+                     differentiation = 1
+                 )
+    n_backtest = 12
+    y_train = y[:-n_backtest]
+    cv = TimeSeriesFold(
+            steps                 = 3,
+            initial_train_size    = len(y_train),
+            window_size           = None,
+            differentiation       = 1,
+            refit                 = False,
+            fixed_train_size      = True,
+            gap                   = 2,
+            skip_folds            = None,
+            allow_incomplete_fold = True,
+            return_all_indexes    = False,
+        )
+    metric, backtest_predictions = _backtesting_forecaster(
+                                       forecaster = forecaster,
+                                       y          = y,
+                                       exog       = exog,
+                                       cv         = cv,
+                                       metric     = 'mean_squared_error',
+                                       verbose    = False
+                                   )
 
     pd.testing.assert_frame_equal(expected_metric, metric)
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)

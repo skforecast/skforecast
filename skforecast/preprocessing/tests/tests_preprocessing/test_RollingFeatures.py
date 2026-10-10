@@ -178,8 +178,7 @@ def test_RollingFeatures_init_store_parameters(params):
     unique_rolling_windows = {
         '5_5': {'params': {'window': 5, 'min_periods': 5, 'center': False, 'closed': 'left'}, 
                 'stats_idx': [0, 1],
-                'stats_names': ['roll_mean_5', 'roll_ewm_5_alpha_0.3'],
-                'rolling_obj': None}
+                'stats_names': ['roll_mean_5', 'roll_ewm_5_alpha_0.3']}
     }
 
     assert rolling.unique_rolling_windows == unique_rolling_windows
@@ -204,15 +203,25 @@ def test_RollingFeatures_init_store_parameters_multiple_stats():
     unique_rolling_windows = {
         '5_5': {'params': {'window': 5, 'min_periods': 5, 'center': False, 'closed': 'left'}, 
                 'stats_idx': [0, 1],
-                'stats_names': ['roll_mean_5', 'roll_median_5'],
-                'rolling_obj': None},
+                'stats_names': ['roll_mean_5', 'roll_median_5']},
         '6_6': {'params': {'window': 6, 'min_periods': 6, 'center': False, 'closed': 'left'}, 
                 'stats_idx': [2],
-                'stats_names': ['roll_sum_6'],
-                'rolling_obj': None}
+                'stats_names': ['roll_sum_6']}
     }
 
     assert rolling.unique_rolling_windows == unique_rolling_windows
+
+
+def test_RollingFeatures_init_store_parameters_when_kwargs_stats_is_None():
+    """
+    Test RollingFeatures initialization and stored parameters when
+    `kwargs_stats` is None.
+    """
+
+    rolling = RollingFeatures(stats=['mean', 'ewm'], window_sizes=5, kwargs_stats=None)
+
+    assert rolling.kwargs_stats == {'ewm': {'alpha': 0.3}}
+    assert rolling.features_names == ['roll_mean_5', 'roll_ewm_5_alpha_0.3']
 
 
 def test_RollingFeatures_ValueError_apply_stat_when_stat_not_implemented():
@@ -461,6 +470,37 @@ def test_RollingFeatures_transform_batch_fillna_all_methods(fillna):
     )
 
     pd.testing.assert_frame_equal(rolling_features, expected)
+
+
+def test_RollingFeatures_transform_batch_does_not_store_rolling_objects():
+    """
+    Test RollingFeatures transform_batch does not store the pandas Rolling
+    objects, so the instance keeps no reference to the transformed series.
+    """
+    X_datetime = X.copy()
+    X_datetime.index = pd.date_range(start='1990-01-01', periods=len(X), freq='D')
+
+    rolling = RollingFeatures(stats=['mean', 'std'], window_sizes=[4, 5])
+    rolling.transform_batch(X_datetime)
+
+    unique_rolling_windows = {
+        '4_4': {
+            'params': {
+                'window': 4, 'min_periods': 4, 'center': False, 'closed': 'left'
+            },
+            'stats_idx': [0],
+            'stats_names': ['roll_mean_4']
+        },
+        '5_5': {
+            'params': {
+                'window': 5, 'min_periods': 5, 'center': False, 'closed': 'left'
+            },
+            'stats_idx': [1],
+            'stats_names': ['roll_std_5']
+        }
+    }
+
+    assert rolling.unique_rolling_windows == unique_rolling_windows
 
 
 def test_RollingFeatures_transform():

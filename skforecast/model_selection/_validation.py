@@ -6,7 +6,7 @@
 
 
 from __future__ import annotations
-from typing import Callable
+from typing import Callable, Any
 from copy import deepcopy
 from itertools import chain
 import warnings
@@ -101,6 +101,57 @@ def _prepare_fold_data(
     return fold_data
 
 
+def _restore_out_sample_residuals(
+    forecaster: object,
+    out_sample_residuals_: np.ndarray | dict | None,
+    out_sample_residuals_by_bin_: dict | None,
+    binner_: object | dict | None
+) -> None:
+    """
+    Restore the out-of-sample residuals set by the user, and the binner that
+    binned them, after a `fit()` call. `fit()` resets the residuals to `None`
+    and refits the binner on the in-sample predictions of the new training
+    set. Without restoring the binner, the residuals stored for each bin would
+    be selected with a binner whose bins are different from the ones that
+    created them.
+
+    Parameters
+    ----------
+    forecaster : object
+        Forecaster model.
+    out_sample_residuals_ : numpy ndarray, dict, default None
+        Out-of-sample residuals to restore. Ignored if `None`.
+    out_sample_residuals_by_bin_ : dict, default None
+        Out-of-sample residuals indexed by predicted-value bin to restore.
+        Ignored if `None`.
+    binner_ : object, dict, default None
+        Binner (or dict of binners, one per level) fitted before the first
+        `fit()` call. Ignored if `None`.
+
+    Returns
+    -------
+    None
+
+    """
+
+    if out_sample_residuals_ is not None:
+        forecaster.out_sample_residuals_ = out_sample_residuals_
+    if out_sample_residuals_by_bin_ is not None:
+        forecaster.out_sample_residuals_by_bin_ = out_sample_residuals_by_bin_
+    if binner_ is not None:
+        # NOTE: A fresh copy is restored every time. Forecasters with a single
+        # binner refit it in place in `fit()`, so restoring the saved object
+        # itself would let the next fit modify it.
+        forecaster.binner = deepcopy(binner_)
+        if isinstance(forecaster.binner, dict):
+            forecaster.binner_intervals_ = {
+                level: binner.intervals_
+                for level, binner in forecaster.binner.items()
+            }
+        else:
+            forecaster.binner_intervals_ = forecaster.binner.intervals_
+
+
 def _fit_predict_forecaster(
     fold: list,
     y_train: pd.Series | None,
@@ -110,13 +161,14 @@ def _fit_predict_forecaster(
     forecaster: object,
     store_in_sample_residuals: bool,
     gap: int,
-    interval: float | list[float] | tuple[float] | str | object | None,
+    interval: float | list[float] | tuple[float, ...] | str | object | None,
     interval_method: str,
     n_boot: int,
     use_in_sample_residuals: bool,
     use_binned_residuals: bool,
     out_sample_residuals_: np.ndarray | None,
     out_sample_residuals_by_bin_: dict[int, np.ndarray] | None,
+    binner_: object | None,
     random_state: int,
     return_predictors: bool,
     is_regression: bool,
@@ -166,10 +218,14 @@ def _fit_predict_forecaster(
     use_binned_residuals : bool
         Whether to bin residuals by predicted value.
     out_sample_residuals_ : np.ndarray, default None
-        Pre-validated out-of-sample residuals to restore after each `fit()` call 
+        Pre-validated out-of-sample residuals to restore after each `fit()` call
         (which resets them to `None`).
     out_sample_residuals_by_bin_ : dict, default None
         Pre-validated out-of-sample residuals indexed by predicted-value bin.
+    binner_ : object, default None
+        Binner fitted by the user before backtesting, restored after each
+        `fit()` call (which refits it) so that `out_sample_residuals_by_bin_`
+        is used with the binner that created it.
     random_state : int
         Random seed.
     return_predictors : bool
@@ -198,10 +254,12 @@ def _fit_predict_forecaster(
             store_in_sample_residuals = store_in_sample_residuals,
             suppress_warnings         = suppress_warnings
         )
-        if out_sample_residuals_ is not None:
-            forecaster.out_sample_residuals_ = out_sample_residuals_
-        if out_sample_residuals_by_bin_ is not None:
-            forecaster.out_sample_residuals_by_bin_ = out_sample_residuals_by_bin_
+        _restore_out_sample_residuals(
+            forecaster                   = forecaster,
+            out_sample_residuals_        = out_sample_residuals_,
+            out_sample_residuals_by_bin_ = out_sample_residuals_by_bin_,
+            binner_                      = binner_
+        )
 
     steps = test_iloc_end - test_iloc_start
     if type(forecaster).__name__ == 'ForecasterDirect' and gap > 0:
@@ -291,7 +349,7 @@ def _backtesting_forecaster(
     cv: TimeSeriesFold,
     metric: str | Callable | list[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
-    interval: float | list[float] | tuple[float] | str | object | None = None,
+    interval: float | list[float] | tuple[float, ...] | str | object | None = None,
     interval_method: str = 'bootstrapping',
     n_boot: int = 250,
     use_in_sample_residuals: bool = True,
@@ -504,16 +562,20 @@ def _backtesting_forecaster(
     window_size = cv.window_size
     gap = cv.gap
 
-    # Save out-of-sample residuals before any fit() call. Since fit() resets
-    # them to None, they must be preserved and restored after each fit so that
-    # probabilistic predictions with use_in_sample_residuals=False keep working.
+    # Save out-of-sample residuals, and the binner that binned them, before any
+    # fit() call. Since fit() resets the residuals to None and refits the binner,
+    # they must be preserved and restored after each fit so that probabilistic
+    # predictions with use_in_sample_residuals=False keep working and the
+    # residuals of each bin are selected with the binner that created them.
+    # Both residual attributes are restored regardless of `use_binned_residuals`
+    # because some forecasters access both of them when predicting.
     out_sample_residuals_ = None
     out_sample_residuals_by_bin_ = None
+    binner_ = None
     if need_out_sample_residuals:
-        if use_binned_residuals:
-            out_sample_residuals_by_bin_ = forecaster.out_sample_residuals_by_bin_
-        else:
-            out_sample_residuals_ = forecaster.out_sample_residuals_
+        out_sample_residuals_ = forecaster.out_sample_residuals_
+        out_sample_residuals_by_bin_ = forecaster.out_sample_residuals_by_bin_
+        binner_ = deepcopy(forecaster.binner)
 
     if initial_train_size is not None:
         # NOTE: This allows for parallelization when `refit` is `False`. The initial 
@@ -525,10 +587,12 @@ def _backtesting_forecaster(
             store_in_sample_residuals = store_in_sample_residuals,
             suppress_warnings         = suppress_warnings
         )
-        if out_sample_residuals_ is not None:
-            forecaster.out_sample_residuals_ = out_sample_residuals_
-        if out_sample_residuals_by_bin_ is not None:
-            forecaster.out_sample_residuals_by_bin_ = out_sample_residuals_by_bin_
+        _restore_out_sample_residuals(
+            forecaster                   = forecaster,
+            out_sample_residuals_        = out_sample_residuals_,
+            out_sample_residuals_by_bin_ = out_sample_residuals_by_bin_,
+            binner_                      = binner_
+        )
         folds[0][5] = False
 
     if refit:
@@ -563,6 +627,7 @@ def _backtesting_forecaster(
         "use_binned_residuals": use_binned_residuals,
         "out_sample_residuals_": out_sample_residuals_,
         "out_sample_residuals_by_bin_": out_sample_residuals_by_bin_,
+        "binner_": binner_,
         "random_state": random_state,
         "return_predictors": return_predictors,
         'is_regression': is_regression,
@@ -639,7 +704,7 @@ def backtesting_forecaster(
     cv: TimeSeriesFold,
     metric: str | Callable | list[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
-    interval: float | list[float] | tuple[float] | str | object | None = None,
+    interval: float | list[float] | tuple[float, ...] | str | object | None = None,
     interval_method: str = 'bootstrapping',
     n_boot: int = 250,
     use_in_sample_residuals: bool = True,
@@ -850,13 +915,14 @@ def _fit_predict_forecaster_multiseries(
     store_in_sample_residuals: bool,
     levels: list[str],
     gap: int,
-    interval: float | list[float] | tuple[float] | str | object | None,
+    interval: float | list[float] | tuple[float, ...] | str | object | None,
     interval_method: str,
     n_boot: int,
     use_in_sample_residuals: bool,
     use_binned_residuals: bool,
     out_sample_residuals_: dict[str, np.ndarray] | None,
     out_sample_residuals_by_bin_: dict[str, dict[int, np.ndarray]] | None,
+    binner_: dict[str, Any] | None,
     random_state: int,
     return_predictors: bool,
     suppress_warnings: bool
@@ -896,10 +962,14 @@ def _fit_predict_forecaster_multiseries(
     use_binned_residuals : bool
         Whether to bin residuals by predicted value.
     out_sample_residuals_ : dict, default None
-        Pre-validated out-of-sample residuals to restore after each `fit()` call 
+        Pre-validated out-of-sample residuals to restore after each `fit()` call
         (which resets them to `None`).
     out_sample_residuals_by_bin_ : dict, default None
         Pre-validated out-of-sample residuals indexed by predicted-value bin.
+    binner_ : dict, default None
+        Binners fitted by the user before backtesting, one per level, restored
+        after each `fit()` call (which refits them) so that
+        `out_sample_residuals_by_bin_` is used with the binners that created it.
     random_state : int
         Random seed.
     return_predictors : bool
@@ -933,10 +1003,12 @@ def _fit_predict_forecaster_multiseries(
             store_in_sample_residuals = store_in_sample_residuals,
             suppress_warnings         = suppress_warnings
         )
-        if out_sample_residuals_ is not None:
-            forecaster.out_sample_residuals_ = out_sample_residuals_
-        if out_sample_residuals_by_bin_ is not None:
-            forecaster.out_sample_residuals_by_bin_ = out_sample_residuals_by_bin_
+        _restore_out_sample_residuals(
+            forecaster                   = forecaster,
+            out_sample_residuals_        = out_sample_residuals_,
+            out_sample_residuals_by_bin_ = out_sample_residuals_by_bin_,
+            binner_                      = binner_
+        )
 
     if type(forecaster).__name__ == 'ForecasterDirectMultiVariate' and gap > 0:
         # Select only the steps that need to be predicted if gap > 0
@@ -1040,7 +1112,7 @@ def _backtesting_forecaster_multiseries(
     levels: str | list[str] | None = None,
     add_aggregated_metric: bool = True,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
-    interval: float | list[float] | tuple[float] | str | object | None = None,
+    interval: float | list[float] | tuple[float, ...] | str | object | None = None,
     interval_method: str = 'conformal',
     n_boot: int = 250,
     use_in_sample_residuals: bool = True,
@@ -1286,16 +1358,20 @@ def _backtesting_forecaster_multiseries(
             or not estimator_has_native_nan_support(forecaster.estimator)
         )
     
-    # Save out-of-sample residuals before any fit() call. Since fit() resets
-    # them to None, they must be preserved and restored after each fit so that
-    # probabilistic predictions with use_in_sample_residuals=False keep working.
+    # Save out-of-sample residuals, and the binner that binned them, before any
+    # fit() call. Since fit() resets the residuals to None and refits the binner,
+    # they must be preserved and restored after each fit so that probabilistic
+    # predictions with use_in_sample_residuals=False keep working and the
+    # residuals of each bin are selected with the binner that created them.
+    # Both residual attributes are restored regardless of `use_binned_residuals`
+    # because some forecasters access both of them when predicting.
     out_sample_residuals_ = None
     out_sample_residuals_by_bin_ = None
+    binner_ = None
     if need_out_sample_residuals:
-        if use_binned_residuals:
-            out_sample_residuals_by_bin_ = forecaster.out_sample_residuals_by_bin_
-        else:
-            out_sample_residuals_ = forecaster.out_sample_residuals_
+        out_sample_residuals_ = forecaster.out_sample_residuals_
+        out_sample_residuals_by_bin_ = forecaster.out_sample_residuals_by_bin_
+        binner_ = deepcopy(forecaster.binner)
 
     if initial_train_size is not None:
         # NOTE: This allows for parallelization when `refit` is `False`. The initial 
@@ -1317,10 +1393,12 @@ def _backtesting_forecaster_multiseries(
             store_in_sample_residuals = store_in_sample_residuals,
             suppress_warnings         = suppress_warnings
         )
-        if out_sample_residuals_ is not None:
-            forecaster.out_sample_residuals_ = out_sample_residuals_
-        if out_sample_residuals_by_bin_ is not None:
-            forecaster.out_sample_residuals_by_bin_ = out_sample_residuals_by_bin_
+        _restore_out_sample_residuals(
+            forecaster                   = forecaster,
+            out_sample_residuals_        = out_sample_residuals_,
+            out_sample_residuals_by_bin_ = out_sample_residuals_by_bin_,
+            binner_                      = binner_
+        )
         folds[0][5] = False
         
     if refit:
@@ -1373,6 +1451,7 @@ def _backtesting_forecaster_multiseries(
         "use_binned_residuals": use_binned_residuals,
         "out_sample_residuals_": out_sample_residuals_,
         "out_sample_residuals_by_bin_": out_sample_residuals_by_bin_,
+        "binner_": binner_,
         "random_state": random_state,
         "return_predictors": return_predictors,
         "suppress_warnings": suppress_warnings
@@ -1442,7 +1521,7 @@ def backtesting_forecaster_multiseries(
     levels: str | list[str] | None = None,
     add_aggregated_metric: bool = True,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
-    interval: float | list[float] | tuple[float] | str | object | None = None,
+    interval: float | list[float] | tuple[float, ...] | str | object | None = None,
     interval_method: str = 'conformal',
     n_boot: int = 250,
     use_in_sample_residuals: bool = True,
@@ -1683,7 +1762,7 @@ def _fit_predict_forecaster_stats(
     steps: int,
     gap: int,
     alpha: float | None,
-    interval: list[float] | tuple[float] | None,
+    interval: list[float] | tuple[float, ...] | None,
     refit: bool | int,
     folds: list,
     freeze_params: bool,
@@ -1794,12 +1873,15 @@ def _fit_predict_forecaster_stats(
                    suppress_warnings = suppress_warnings
                )
 
+    # NOTE: With a single estimator and no interval, `pred` is a pandas Series.
     if gap > 0:
-        pred = pred.iloc[forecaster.n_estimators * gap:, :]
+        pred = pred.iloc[forecaster.n_estimators * gap:]
 
+    # NOTE: Predictions are in long format with estimators interleaved per step,
+    # so names are tiled (not repeated) to stay aligned with `estimator_id`.
     estimator_names_ = None
     if not freeze_params:
-        estimator_names_ = np.repeat(forecaster.estimator_names_, steps - gap)
+        estimator_names_ = np.tile(forecaster.estimator_names_, steps - gap)
 
     return pred, estimator_names_
 
@@ -1812,7 +1894,7 @@ def _backtesting_stats(
     metric: str | Callable | list[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
     alpha: float | None = None,
-    interval: list[float] | tuple[float] | None = None,
+    interval: list[float] | tuple[float, ...] | None = None,
     freeze_params: bool = True,
     n_jobs: int | str = 'auto',
     verbose: bool = False,
@@ -1922,13 +2004,14 @@ def _backtesting_stats(
     forecaster = deepcopy_forecaster(forecaster)
     cv = deepcopy(cv)
 
-    # NOTE: Only skforecast.Sarimax allows refit=False, if other estimators are 
-    # present, refit must be True.
+    # NOTE: Only skforecast.Sarimax allows refit=False, if other estimators are
+    # present, refit must be True. An integer refit other than 1 (intermittent
+    # refit) also predicts some folds without refitting. True == 1 in Python.
     all_sarimax = all(
-        est_type == 'skforecast.stats._sarimax.Sarimax' 
+        est_type == 'skforecast.stats._sarimax.Sarimax'
         for est_type in forecaster.estimator_types
     )
-    if not all_sarimax and not cv.refit:
+    if not all_sarimax and cv.refit != 1:
         warnings.warn(
             "Estimators different from `skforecast.stats.Sarimax` require refitting "
             "since predictions must start from the end of the training set. "
@@ -2121,7 +2204,7 @@ def backtesting_stats(
     metric: str | Callable | list[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
     alpha: float | None = None,
-    interval: list[float] | tuple[float] | None = None,
+    interval: list[float] | tuple[float, ...] | None = None,
     freeze_params: bool = True,
     n_jobs: int | str = 'auto',
     verbose: bool = False,
@@ -2288,9 +2371,10 @@ def _backtesting_foundation(
     Backtesting of ForecasterFoundation.
 
     The original forecaster is used directly (no copy) and is not modified:
-    refit is always disabled for foundation models, `fit` is never called,
-    and every fold passes `context` explicitly, so neither the fit state nor
-    `context_` change during the fold loop.
+    `fit` is never called (`cv` is forced to `refit=True` only so that the
+    training span of each fold expands) and every fold passes `context`
+    explicitly, so neither the fit state nor `context_` change during the
+    fold loop.
 
     Parameters
     ----------
@@ -2643,10 +2727,11 @@ def backtesting_foundation(
 
     The original forecaster is used directly (no copy) and is not modified:
     its loaded model weights are reused across the entire backtesting run
-    and `fit` is never called. Since foundation models are zero-shot, refit
-    is always disabled and per-fold predictions receive `context`
-    explicitly, so neither the fit state nor the stored context change
-    during the fold loop.
+    and `fit` is never called. Since foundation models are zero-shot, `cv`
+    is forced to `refit=True` and `fixed_train_size=False` only so that the
+    context expands with each fold, and per-fold predictions receive
+    `context` explicitly, so neither the fit state nor the stored context
+    change during the fold loop.
 
     Parameters
     ----------

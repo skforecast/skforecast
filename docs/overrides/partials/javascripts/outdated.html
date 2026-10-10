@@ -1,0 +1,13 @@
+{#-
+  Override of Material's partials/javascripts/outdated.html (9.7.7), which
+  shows the outdated version banner early when the version check of a previous
+  page already found this version outdated.
+
+  The original calls `new URL("{{ base_url }}")` without a base URL. base_url is
+  relative ("." or ".."), so it throws "TypeError: Failed to construct 'URL':
+  Invalid URL" on every page and the banner is only shown later by the bundle.
+  The only change is passing `location` as the base, as Material already does
+  for `__md_scope` in partials/javascripts/base.html. Remove this file if a new
+  Material release fixes the partial.
+-#}
+<script>var el=document.querySelector("[data-md-component=outdated]"),base=new URL("{{ base_url }}",location),outdated=__md_get("__outdated",sessionStorage,base);!0===outdated&&el&&(el.hidden=!1)</script>

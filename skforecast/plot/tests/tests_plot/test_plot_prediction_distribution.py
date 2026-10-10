@@ -63,3 +63,25 @@ def test_plot_prediction_distribution_output_single_step():
 
     assert isinstance(fig, matplotlib.figure.Figure)
     assert len(fig.axes) == 1
+
+
+def test_plot_prediction_distribution_output_when_index_is_RangeIndex():
+    """
+    Test that plot_prediction_distribution plots one Axes per forecast step,
+    from the last step to the first, when the predictions have a RangeIndex,
+    as returned by a forecaster trained with a series without datetime index.
+    """
+    bootstrapping_predictions = _make_bootstrapping_predictions(steps=4)
+    bootstrapping_predictions.index = pd.RangeIndex(start=100, stop=104)
+
+    fig = plot_prediction_distribution(bootstrapping_predictions=bootstrapping_predictions)
+
+    assert isinstance(fig, matplotlib.figure.Figure)
+    assert [ax.get_ylabel() for ax in fig.axes] == ["103", "102", "101", "100"]
+    for ax, step in zip(fig.axes, [103, 102, 101, 100]):
+        # The dashed line is drawn at the point of the KDE closest to the mean
+        x_kde = ax.lines[0].get_xdata()
+        mean_line = [c for c in ax.collections if isinstance(c, LineCollection)][0]
+        expected_mean = bootstrapping_predictions.loc[step, :].mean()
+        expected_x = x_kde[np.abs(x_kde - expected_mean).argmin()]
+        assert mean_line.get_segments()[0][0, 0] == expected_x

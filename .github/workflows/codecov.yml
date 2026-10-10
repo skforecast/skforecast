@@ -26,7 +26,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up uv and Python 3.14
-        uses: astral-sh/setup-uv@v10.1.0
+        uses: astral-sh/setup-uv@v10.2.0
         with:
           python-version: '3.14'
           activate-environment: true  # creates .venv and puts it on PATH for the next steps
@@ -45,7 +45,10 @@ jobs:
           KERAS_BACKEND: torch
           # NUMBA_DISABLE_JIT: 1  # Disable Numba JIT to capture a better coverage report
         run: |
-          pytest \
+          # -q keeps the log short so failures are easy to find; -ra lists them at the end;
+          # verbosity_assertions=2 keeps the full assertion diffs of -vv. Failed tests are
+          # also shown as annotations (pytest-github-actions-annotate-failures).
+          pytest -q -ra -o verbosity_assertions=2 --exclude-warning-annotations \
             --cov=skforecast \
             --cov-report=xml:coverage.xml \
             --junitxml=junit.xml \

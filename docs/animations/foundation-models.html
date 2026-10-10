@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<!--
+  Copyright (c) 2021-present Joaquín Amat Rodrigo and Javier Escobar Ortiz.
+  Part of the skforecast documentation, licensed under CC BY-NC-SA 4.0
+  (https://creativecommons.org/licenses/by-nc-sa/4.0/). It is not covered by the
+  BSD-3-Clause license of the skforecast software.
+  The skforecast trademark and logo are registered with the EUIPO (application
+  number 019109684) and may not be used without permission.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Foundation models</title>
+<meta name="description" content="Animated explanation of forecasting with foundation models and ForecasterFoundation: a model pre-trained on large collections of series receives the recent values of new series as context and forecasts all of them zero-shot, without training.">
+<link rel="stylesheet" href="skf-anim.css">
+</head>
+<body>
+<div class="skf-anim"></div>
+<script src="skf-anim.js"></script>
+<script>
+(function(){
+"use strict";
+const {cl, ease, lin, P, lerp, r2, V, pulse, mw, text, rect, line, circle, path, polyline, arrow, header} = SkfAnim;
+
+/* ------------------------------------------------------------------ data */
+let seed = 11;
+const rnd = () => (seed = (seed*16807) % 2147483647)/2147483647 - .5;
+
+// Pre-training collection: 40 different series. Ten kinds of pattern, each one
+// with its own parameters (period, direction, noise, position of the changes).
+const NCLOUD = 40, NCK = 24;
+const DOMAINS = {0:'energy', 7:'retail', 13:'traffic', 21:'weather', 28:'finance', 34:'sensors'};
+const KINDS = [
+  (k, j, ph) => Math.sin(2*Math.PI*k/[4, 6, 8, 12][j] + ph),                               // seasonality
+  (k, j) => (j % 2 ? -1 : 1)*k/NCK + .15*Math.sin(2*Math.PI*k/6),                          // trend
+  () => rnd() > .15 ? .4 + rnd() : 0,                                                     // intermittent
+  (k, j) => (k >= 8 + 3*j ? (j % 2 ? -1 : 1) : 0),                                        // level shift
+  null,                                                                                  // random walk
+  (k, j) => Math.exp(k/(6 + 2*j)),                                                        // growth
+  (k, j) => Math.sin(2*Math.PI*k/4) + .9*Math.sin(2*Math.PI*k/(12 + 4*j)),                // two seasonalities
+  (k, j, ph) => Math.exp(-k/(6 + 2*j))*Math.sin(2*Math.PI*k/5 + ph),                      // damped
+  (k, j) => (k % (5 + j) === 2 ? 1 : .15*Math.sin(k)),                                    // spikes
+  (k, j) => (k % (5 + j))/(5 + j)                                                         // sawtooth
+];
+const CLOUD = [];
+for (let i = 0; i < NCLOUD; i++){
+  const kind = (i*3 + Math.floor(i/5)) % KINDS.length, j = Math.floor(i/10), ph = i*1.7;
+  const noise = [.05, .12, .2, .08][(i*7) % 4], pts = [];
+  let walk = 0;
+  for (let k = 0; k < NCK; k++){
+    const v = KINDS[kind] ? KINDS[kind](k, j, ph) : (walk += rnd());
+    pts.push(v + noise*rnd());
+  }
+  const lo = Math.min(...pts), hi = Math.max(...pts);
+  CLOUD.push(pts.map((v, k) => [6 + k*(84/(NCK - 1)), 36 - (v - lo)/((hi - lo) || 1)*22]));
+}
+
+// Your series: three stores with different patterns. Days k = 0..13 are observed,
+// k = 14..16 are forecast. Store C opened later.
+const CTX = 8, NK = 14, STEPS = 3;
+const W = [1.00, 1.06, 1.02, 0.96, 1.10, 0.70, 0.62];   // weekly pattern, k = 0 is a Monday
+const S = [
+  {name:'Store A', k0:0, tag:'weekly cycle',
+   v:k => 62*W[k % 7]*(1 + .02*Math.sin(3*k))},
+  {name:'Store B', k0:0, tag:'growing trend',
+   v:k => 30 + 1.2*k + 1.2*Math.sin(2*Math.PI*k/7) + .6*Math.sin(5*k)},
+  {name:'Store C', k0:6, tag:'peak every 3 days',
+   v:k => (k % 3 === 2 ? 31 : 22) + .8*Math.sin(4*k)}
+];
+for (const s of S){
+  s.y = [];
+  for (let k = 0; k < NK + STEPS; k++) s.y.push(k < s.k0 ? null : s.v(k));
+  const all = s.y.filter(v => v !== null);
+  const lo = Math.min(...all), hi = Math.max(...all), pad = (hi - lo)*.12;
+  s.lo = lo - pad; s.hi = hi + pad;
+}
+const CK0 = NK - CTX;                                    // first day of the context
+
+/* -------------------------------------------------------------- timeline */
+const T = {
+  cloud:[0.2,2.2], box:[0.8,1.4], fly0:3.4, flyStep:.1, flyDur:1.0, train:[3.2,8.6], pretrained:[8.4,9.0],
+  panels:[9.6,10.2], draw:[9.9,12.0], ctx:[13.4,14.0], ghost:14.4, ghostStep:.35, ghostDur:1.0,
+  predCode:[20.0,20.4], predArrow:[20.4,21.4], read:[21.4,22.6], outArrow:[22.6,23.6], fc:23.6, fcStep:.6, fcDur:1.4,
+  tags:[28.4,29.0], fadeOut:[35.2,36.0], total:36.0
+};
+const CAPTIONS = [
+  [0.0, 4.6, 'Foundation models are pre-trained on large collections of series from many domains.'],
+  [4.6, 9.5, 'They learn general patterns: seasonality, trends, level changes, intermittency. This is done once, by their authors.'],
+  [9.5, 13.4,'Your series are new to the model: it has never seen them.'],
+  [13.4,20.0,'Their recent values are given to the model as context. In skforecast, fit() only stores this context.'],
+  [20.0,28.2,'Zero-shot: the model reads the patterns in each context and forecasts every series in one call.'],
+  [28.2,99,  'This is in-context learning: the model adapts to each series at prediction time, without any training.']
+];
+const STEPPER = [['Pre-training',0,9.5],['Context',9.5,20.0],['Zero-shot forecast',20.0,99]];
+
+/* ---------------------------------------------------------------- layout */
+const CX0 = 104, DX = 22, xk = k => CX0 + k*DX;
+const PX0 = 36, PX1 = 560;
+S.forEach((s, si) => { s.top = 118 + si*156; s.SA0 = s.top + 30; s.SA1 = s.top + 126; s.bot = s.top + 140; });
+const yv = (s, v) => s.SA1 - 4 - (v - s.lo)/(s.hi - s.lo)*(s.SA1 - s.SA0 - 8);
+const tileX = i => 36 + (i % 5)*107, tileY = i => 118 + Math.floor(i/5)*57;
+const MX0 = 640, MX1 = 1240, MY0 = 156, MY1 = 330;          // model box
+const MCX = (MX0 + MX1)/2, MCY = (MY0 + MY1)/2;
+const CW = (MX1 - MX0 - 2*16)/3, CY0 = 440, CY1 = 530;       // context cards
+const cardX = si => MX0 + si*(CW + 16);
+
+/* ----------------------------------------------------------------- scenes */
+function vArrow(o, x0, y0, x1, y1, p, color, op){
+  if (p <= 0 || op <= 0) return;
+  const b = (y1 - y0)*.5, dir = y1 > y0 ? 1 : -1;
+  const d = `M${r2(x0)} ${r2(y0)} C${r2(x0)} ${r2(y0 + b)} ${r2(x1)} ${r2(y1 - b)} ${r2(x1)} ${r2(y1)}`;
+  o.push(`<path d="${d}" pathLength="1" style="fill:none;stroke:${color};stroke-width:2;stroke-dasharray:${r2(p)} 1;stroke-linecap:round" opacity="${r2(op)}"/>`);
+  if (p > .96) o.push(path(`M${r2(x1)} ${r2(y1 + dir)} l-5 ${-dir*9} h10 z`, {fill:color, op:op*lin(p, .96, 1)}));
+}
+
+function cloud(t, o){
+  for (let i = 0; i < NCLOUD; i++){
+    const a = P(t, T.cloud[0] + i*.05, T.cloud[0] + i*.05 + .4);
+    if (a <= 0) continue;
+    const fs = T.fly0 + i*T.flyStep, q = ease(lin(t, fs, fs + T.flyDur));
+    if (q >= 1) continue;
+    const x = lerp(tileX(i), MCX - 48, q), y = lerp(tileY(i), MCY - 21, q) - 30*Math.sin(Math.PI*q), sc = 1 - .6*q;
+    const g = [rect(0, 0, 96, 42, {rx:6, fill:V('panel'), stroke:V('border')}),
+      path(polyline(CLOUD[i]), {stroke:V('series'), sw:1.3})];
+    if (DOMAINS[i]) g.push(text(6, 12, DOMAINS[i], {size:9.5, cls:'m', fill:V('muted')}));
+    o.push(`<g transform="translate(${r2(x + 48*(1 - sc))} ${r2(y + 21*(1 - sc))}) scale(${r2(sc)})" opacity="${r2(a*(1 - q*q))}">${g.join('')}</g>`);
+  }
+}
+
+function lockIcon(o, x, y, op){
+  o.push(rect(x, y + 6, 13, 10, {rx:2, fill:V('muted'), op}));
+  o.push(path(`M${x + 3} ${y + 6} v-3 a3.5 3.5 0 0 1 7 0 v3`, {stroke:V('muted'), sw:1.8, op}));
+}
+
+function model(t, o){
+  const a = P(t, ...T.box);
+  if (a <= 0) return;
+  o.push(rect(MX0, MY0, MX1 - MX0, MY1 - MY0, {rx:14, fill:V('panel'), stroke:V('border'), sw:1.5, op:a}));
+  // reading the contexts
+  const rd = P(t, T.read[0], T.read[0] + .3)*(1 - P(t, T.read[1] - .3, T.read[1]));
+  o.push(rect(MX0, MY0, MX1 - MX0, MY1 - MY0, {rx:14, fill:V('lag'), fo:.08, stroke:V('lag'), sw:2, op:a*rd}));
+  o.push(text(MX0 + 24, MY0 + 38, 'Foundation model', {size:20, weight:700, op:a}));
+  o.push(text(MX0 + 24, MY0 + 62, 'Chronos-2 · TimesFM · Moirai-2 · TabICL · TabPFN-TS · …', {size:13, fill:V('muted'), op:a}));
+  const pb = P(t, ...T.pretrained)*a, bw = mw('pre-trained', 12, 700, 'm') + 16;
+  o.push(rect(MX0 + 24, MY0 + 76, bw, 22, {rx:6, fill:V('lag'), fo:.15, op:pb}));
+  o.push(text(MX0 + 24 + bw/2, MY0 + 91, 'pre-trained', {size:12, cls:'m', weight:700, anchor:'middle', fill:V('lag'), op:pb}));
+
+  // weights: they change while pre-training and are frozen afterwards
+  const env = P(t, T.train[0] - .2, T.train[0] + .3)*(1 - P(t, T.train[1] - .4, T.train[1]));
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 10; c++){
+    const fixed = .5 + .5*Math.sin(r*1.7 + c*2.3), live = .5 + .5*Math.sin(t*6 + r*1.7 + c*2.3);
+    const v = lerp(t < T.train[0] ? .15 : fixed, live, env);
+    o.push(rect(MX1 - 160 + c*13, MY0 + 26 + r*13, 10, 10, {rx:2, fill:V('lag'), op:a*(.12 + .75*v)}));
+  }
+  o.push(text(MX1 - 95, MY0 + 18, 'weights', {size:11, cls:'m', anchor:'middle', fill:V('muted'), op:a}));
+  lockIcon(o, MX1 - 160, MY0 + 84, pb);
+  o.push(text(MX1 - 140, MY0 + 99, 'frozen', {size:12, cls:'m', weight:700, fill:V('muted'), op:pb}));
+
+  // code
+  const codes = [
+    [T.pretrained[0], T.ctx[0], "FoundationModel('autogluon/chronos-2-small')", 'fg'],
+    [T.ctx[0], T.predCode[0], 'forecaster.fit(series)  # stores the context', 'fg'],
+    [T.predCode[0], 99, 'forecaster.predict(steps=3)', 'targetText']
+  ];
+  for (const [s, e, code, c] of codes){
+    const ca = Math.min(lin(t, s, s + .3), 1 - lin(t, e - .2, e));
+    o.push(text(MX0 + 24, MY1 - 22, code, {size:13.5, cls:'m', weight:700, fill:V(c), op:a*ca}));
+  }
+}
+
+function panels(t, o){
+  const pa = P(t, ...T.panels);
+  if (pa <= 0) return;
+  const dp = P(t, ...T.draw);
+  const ca = P(t, ...T.ctx), ta = P(t, ...T.tags);
+  S.forEach((s, si) => {
+    o.push(rect(PX0, s.top - 8, PX1 - PX0, s.bot - s.top + 8, {rx:10, fill:V('panel'), fo:.6, stroke:V('border'), so:.8, op:pa}));
+    o.push(text(52, s.top + 14, s.name, {size:14, weight:700, op:pa}));
+    o.push(text(PX1 - 14, s.top + 14, (NK - s.k0) + ' days', {size:12, anchor:'end', fill:V('muted'), op:pa*(1 - ta)}));
+    o.push(text(PX1 - 14, s.top + 14, 'continues its ' + s.tag, {size:12.5, weight:700, anchor:'end', fill:V('targetText'), op:pa*ta}));
+    o.push(line(CX0 - 6, s.SA1 + 1, xk(NK + STEPS - 1) + 12, s.SA1 + 1, {op:pa}));
+    if (s.k0 > 0){
+      const la = pa*(1 - ca);
+      o.push(rect(xk(0) - 8, s.SA0 + 4, xk(s.k0 - 1) - xk(0) + 16, s.SA1 - s.SA0 - 8, {rx:7, stroke:V('faint'), dash:'4 4', op:la}));
+      o.push(text((xk(0) + xk(s.k0 - 1))/2, (s.SA0 + s.SA1)/2 + 4, 'opened later', {size:12, cls:'i', anchor:'middle', fill:V('muted'), op:la}));
+    }
+    // context window
+    if (ca > 0){
+      const x0 = xk(Math.max(s.k0, CK0)) - 9, x1 = xk(NK - 1) + 9;
+      o.push(rect(x0, s.SA0 - 4, x1 - x0, s.SA1 - s.SA0 + 8, {rx:7, fill:V('lag'), fo:.09, stroke:V('lag'), so:.55, op:ca}));
+      o.push(text((x0 + x1)/2, s.SA0 - 10, 'context', {size:12, weight:700, anchor:'middle', fill:V('lag'), op:ca}));
+    }
+    // observed values
+    const pts = [];
+    for (let k = s.k0; k < NK; k++) pts.push([xk(k), yv(s, s.y[k])]);
+    o.push(path(polyline(pts, dp), {stroke:V('series'), sw:2.2, op:pa}));
+    for (let k = s.k0; k < NK; k++){
+      const a = cl((dp*(NK - 1 - s.k0) - (k - s.k0) + .35)/.35)*pa;
+      if (a <= 0) continue;
+      o.push(circle(xk(k), yv(s, s.y[k]), 3.8, {fill:V('bg'), stroke:V('series'), sw:1.8, op:a}));
+      if (ca > 0 && k >= CK0) o.push(circle(xk(k), yv(s, s.y[k]), 4.4, {fill:V('lag'), op:ca*a}));
+    }
+    // zero-shot forecast
+    const fp = lin(t, T.fc + si*T.fcStep, T.fc + si*T.fcStep + T.fcDur);
+    if (fp > 0){
+      const fpts = [[xk(NK - 1), yv(s, s.y[NK - 1])]];
+      for (let k = NK; k < NK + STEPS; k++) fpts.push([xk(k), yv(s, s.y[k])]);
+      o.push(path(polyline(fpts, fp), {stroke:V('target'), sw:2.4, dash:'5 4'}));
+      for (let h = 0; h < STEPS; h++) o.push(circle(xk(NK + h), yv(s, s.y[NK + h]), 4.6, {fill:V('target'), op:lin(fp, (h + 1)/STEPS - .12, (h + 1)/STEPS)}));
+    }
+  });
+}
+
+function contexts(t, o){
+  const la = P(t, T.ghost - .2, T.ghost + .3);
+  if (la <= 0) return;
+  o.push(text(MX0, CY0 - 14, 'context', {size:13, weight:700, fill:V('lag'), op:la}));
+  o.push(text(MX0 + mw('context', 13, 700) + 10, CY0 - 14, `(context_length = ${CTX})`, {size:13, cls:'m', fill:V('muted'), op:la}));
+  S.forEach((s, si) => {
+    const gs = T.ghost + si*T.ghostStep, q = ease(lin(t, gs, gs + T.ghostDur));
+    const x0 = cardX(si), ca = lin(q, .85, 1);
+    const wx0 = xk(Math.max(s.k0, CK0)) - 9, wx1 = xk(NK - 1) + 9;
+    if (q > 0 && q < 1){
+      o.push(rect(lerp(wx0, x0, q), lerp(s.SA0 - 4, CY0, q), lerp(wx1 - wx0, CW, q), lerp(s.SA1 - s.SA0 + 8, CY1 - CY0, q),
+        {rx:8, fill:V('lag'), fo:.12, stroke:V('lag'), so:.7, op:1 - .3*q}));
+    }
+    if (ca <= 0) return;
+    o.push(rect(x0, CY0, CW, CY1 - CY0, {rx:10, fill:V('lag'), fo:.08, stroke:V('lag'), so:.55, op:ca}));
+    o.push(text(x0 + 14, CY0 + 22, s.name, {size:13, weight:700, op:ca}));
+    const pts = [];
+    for (let k = Math.max(s.k0, CK0); k < NK; k++) pts.push([x0 + 14 + (k - CK0)*((CW - 28)/(CTX - 1)), CY1 - 12 - (s.y[k] - s.lo)/(s.hi - s.lo)*48]);
+    o.push(path(polyline(pts), {stroke:V('lag'), sw:1.8, op:ca}));
+  });
+}
+
+function arrows(t, o){
+  // the contexts go into the model, and the model forecasts every series
+  S.forEach((s, si) => {
+    vArrow(o, cardX(si) + CW/2, CY0 - 30, cardX(si) + CW/2, MY1 + 6, P(t, ...T.predArrow), V('lag'), .9);
+    arrow(o, MX0 - 6, MCY - 30 + si*30, PX1 + 6, (s.SA0 + s.SA1)/2, P(t, T.outArrow[0] + si*.15, T.outArrow[1] + si*.15), V('targetText'), 1, 36);
+  });
+}
+
+/* ---------------------------------------------------------------- run */
+SkfAnim.run({
+  title: 'Foundation models',
+  desc: 'A foundation model is pre-trained on a large collection of time series from many domains (seasonal, ' +
+        'trending, intermittent, with level changes...), and its weights are then frozen. Three new stores, which ' +
+        'the model has never seen, have different patterns: a weekly cycle, a growing trend and a peak every 3 ' +
+        'days. Their recent values are given to the model as context (in skforecast, fit() only stores this ' +
+        'context). The model forecasts the three stores in one call without any training (zero-shot), and each ' +
+        'forecast continues the pattern of its own context: in-context learning.',
+  total: T.total,
+  height: 640,
+  still: 33.5,
+  fadeOut: T.fadeOut,
+  render(t, o){
+    header(t, o, {title:'Foundation models', captions:CAPTIONS, steps:STEPPER});
+    cloud(t, o); model(t, o); panels(t, o); contexts(t, o); arrows(t, o);
+  }
+});
+})();
+</script>
+</body>
+</html>

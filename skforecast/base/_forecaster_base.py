@@ -35,7 +35,7 @@ class ForecasterBase(ABC):
         training_range_: dict[str, str] | None = None,
         series_names_in_: list[str] | None = None,
         exog_names_in_: list[str] | None = None,
-        transformer_series: object | dict[str, object] | None = None,
+        transformer_series: object | dict[str, Any] | None = None,
         categorical_features_names_in_: list[str] | None = None,
         as_html: bool = False
     ) -> tuple[str, str | None, str | None, str | None, str | None]:
@@ -268,7 +268,7 @@ class ForecasterBase(ABC):
         pass
         
     @abstractmethod
-    def set_params(self, params: dict[str, object]) -> None:
+    def set_params(self, params: dict[str, Any]) -> None:
         """
         Set new values to the parameters of the scikit-learn model stored in the
         forecaster.
@@ -288,7 +288,7 @@ class ForecasterBase(ABC):
         
     def set_lags(
         self, 
-        lags: int | list[int] | np.ndarray[int] | range[int] | None = None
+        lags: int | list[int] | np.ndarray | range | None = None
     ) -> None:
         """
         Set new value to the attribute `lags`.

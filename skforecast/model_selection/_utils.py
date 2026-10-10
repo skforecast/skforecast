@@ -6,7 +6,7 @@
 
 
 from __future__ import annotations
-from typing import Callable, Generator
+from typing import Callable, Generator, Any
 import warnings
 import numpy as np
 import pandas as pd
@@ -19,17 +19,20 @@ from tqdm.auto import tqdm
 from ..exceptions import IgnoredArgumentWarning, OneStepAheadValidationWarning
 from ..metrics import add_y_train_argument, _any_metric_needs_y_train, _get_metric
 from ..utils import (
+    _date_range_from_index,
     check_interval,
     date_to_index_position,
     cast_catboost_categorical_columns_dataframe,
+    _copy_rows_to_check,
+    _check_in_place_fit,
 )
 
 
 def initialize_lags_grid(
     forecaster: object, 
     lags_grid: (
-        list[int | list[int] | np.ndarray[int] | range[int]]
-        | dict[str, list[int | list[int] | np.ndarray[int] | range[int]]]
+        list[int | list[int] | np.ndarray | range]
+        | dict[str, int | list[int] | np.ndarray | range]
         | None
     ) = None,
 ) -> tuple[dict[str, int], str]:
@@ -81,7 +84,7 @@ def check_backtesting_input(
     y: pd.Series | None = None,
     series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame] = None,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
-    interval: float | list[float] | tuple[float] | str | object | None = None,
+    interval: float | list[float] | tuple[float, ...] | str | object | None = None,
     interval_method: str = 'bootstrapping',    
     alpha: float | None = None,
     n_boot: int = 250,
@@ -744,7 +747,7 @@ def _calculate_metrics_one_step_ahead(
     X_test: np.ndarray,
     y_test: np.ndarray,
     sample_weight: np.ndarray | None,
-    fit_kwargs: dict[str, object]
+    fit_kwargs: dict[str, Any]
 ) -> list:
     """
     Calculate metrics when predictions are one-step-ahead. When forecaster is
@@ -1301,7 +1304,7 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
     metrics: list[str | Callable],
     add_aggregated_metric: bool = True,
     sample_weight: np.ndarray | None = None,
-    fit_kwargs: dict[str, object] | None = None,
+    fit_kwargs: dict[str, Any] | None = None,
     return_predictions: bool = True
 ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
     """   
@@ -1494,7 +1497,14 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
             predictions = pd.DataFrame({level: y_pred}, index=test_index)
             predictions.index.name = None
             if isinstance(test_index, pd.DatetimeIndex):
-                predictions = predictions.asfreq(freq)
+                predictions = predictions.reindex(
+                    _date_range_from_index(
+                        index = predictions.index,
+                        start = predictions.index[0],
+                        end   = predictions.index[-1],
+                        freq  = freq
+                    )
+                )
             else:
                 predictions = predictions.reindex(
                     pd.RangeIndex(
@@ -1512,9 +1522,10 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
     # ==========================================================================
     # X_train_encoding and X_test_encoding are series identifiers for each row 
     # of X_train and X_test, respectively.
-    # NOTE: The utility copies internally, so the original X_train and X_test
-    # generated once by `_train_test_split_one_step_ahead` are not mutated and
-    # remain reusable across hyperparameter search iterations.
+    # NOTE: X_train and X_test are created once by `_train_test_split_one_step_ahead`
+    # and reused by every candidate of the search. The cast below only copies
+    # them for CatBoost, so it is checked that the estimator does not modify
+    # X_train in place, which would change the metrics of the next candidates.
     feature_names = X_train.columns.to_list()
     X_train = cast_catboost_categorical_columns_dataframe(
         X=X_train, fit_kwargs=fit_kwargs,
@@ -1525,6 +1536,8 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         estimator=forecaster.estimator, feature_names=feature_names,
     )
 
+    X_train_rows = _copy_rows_to_check(X_train)
+
     if sample_weight is not None:
         forecaster.estimator.fit(
             X             = X_train,
@@ -1534,6 +1547,8 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         )
     else:
         forecaster.estimator.fit(X=X_train, y=y_train, **fit_kwargs)
+
+    _check_in_place_fit(X=X_train, X_rows=X_train_rows)
 
     predictions_per_level = pd.DataFrame(
         {
@@ -1555,7 +1570,15 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         # NOTE: Interleaved Nan values were excluded fom y_train. They are restored
         if isinstance(series[levels[0]].index, pd.DatetimeIndex):
             y_train_per_level = {
-                key: group.asfreq(freq) for key, group in y_train_per_level
+                key: group.reindex(
+                    _date_range_from_index(
+                        index = group.index,
+                        start = group.index[0],
+                        end   = group.index[-1],
+                        freq  = freq
+                    )
+                )
+                for key, group in y_train_per_level
             }
         else:
             y_train_per_level = {
@@ -1708,7 +1731,14 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
             .rename_axis(columns=None, index=None)
         )
         if isinstance(X_test.index, pd.DatetimeIndex):
-            predictions = predictions.asfreq(freq)
+            predictions = predictions.reindex(
+                _date_range_from_index(
+                    index = predictions.index,
+                    start = predictions.index[0],
+                    end   = predictions.index[-1],
+                    freq  = freq
+                )
+            )
         else:
             predictions = predictions.reindex(
                 pd.RangeIndex(

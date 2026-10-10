@@ -190,9 +190,10 @@ def ndiffs(
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore')
+                # Same number of lags as R's forecast::ndiffs, 0 for fewer
+                # than 19 observations
                 nlags = math.floor(3 * math.sqrt(len(x)) / 13)
-                nlags = max(1, nlags)
-                stat, pval, _, _ = kpss(x, 'c', nlags=nlags)
+                pval = kpss(x, 'c', nlags=nlags)[1]
                 return pval < alpha
         except Exception as e:
             warnings.warn(
@@ -359,7 +360,7 @@ def nsdiffs(
         if is_constant(x):
             return D
 
-        if len(x) >= 2 * period and D < max_D:
+        if len(x) > 2 * period and D < max_D:
             dodiff = run_seas_test(x, period)
         else:
             dodiff = False

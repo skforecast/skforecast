@@ -16,6 +16,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
 from lightgbm import LGBMRegressor
+from xgboost import XGBRegressor
 
 from skforecast.preprocessing import RollingFeatures, TimeSeriesDifferentiator
 from skforecast.recursive import ForecasterRecursive
@@ -40,6 +41,36 @@ def test_predict_NotFittedError_when_fitted_is_False():
     )
     with pytest.raises(NotFittedError, match = err_msg):
         forecaster.predict(steps=5)
+
+
+def test_predict_ValueError_when_exog_index_does_not_follow_freq():
+    """
+    Test ValueError is raised when `exog` starts one step ahead of
+    `last_window`, but it has gaps (one value every two days with a daily
+    series). `exog` is used by position, so the predictions would use the
+    values of other dates.
+    """
+    index = pd.date_range(start='2020-01-01', periods=50, freq='D')
+    y = pd.Series(np.arange(50, dtype=float) * 2, index=index, name='y')
+    exog = pd.Series(np.arange(50, dtype=float), index=index, name='exog')
+    exog_pred = pd.Series(
+        data  = np.arange(50, 60, 2, dtype=float),
+        index = pd.DatetimeIndex(['2020-02-20', '2020-02-22', '2020-02-24',
+                                  '2020-02-26', '2020-02-28']),
+        name  = 'exog'
+    )
+
+    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    forecaster.fit(y=y, exog=exog)
+
+    err_msg = re.escape(
+        "`exog` must have consecutive values following the frequency of "
+        "`last_window` for the 5 steps predicted.\n"
+        "    Expected index at position 1 : 2020-02-21 00:00:00.\n"
+        "    `exog` index at position 1 : 2020-02-22 00:00:00.\n"
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster.predict(steps=5, exog=exog_pred)
 
 
 def test_predict_output_when_estimator_is_LinearRegression():
@@ -643,4 +674,193 @@ def test_predict_output_when_last_window_argument_has_NaN():
                    name='pred'
                )
 
+    pd.testing.assert_series_equal(predictions, expected)
+
+
+def test_predict_output_when_index_is_tz_aware_and_last_window_ends_on_dst_day():
+    """
+    Test predict output when the series has a timezone-aware index that
+    follows the local calendar and `last_window` ends on the day of a
+    daylight saving change (Europe/Madrid). The predictions must start at the
+    local midnight of the next day, so an `exog` with that index is accepted.
+    """
+    index = pd.date_range(start='2024-03-20', periods=12, freq='D', tz='Europe/Madrid')
+    y = pd.Series(np.arange(12, dtype=float) * 2, index=index, name='y')
+    exog = pd.Series(np.arange(12, dtype=float), index=index, name='exog')
+    exog_pred = pd.Series(
+        data  = np.arange(12, 15, dtype=float),
+        index = pd.date_range(
+                    start='2024-04-01', periods=3, freq='D', tz='Europe/Madrid'
+                ),
+        name  = 'exog'
+    )
+
+    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    forecaster.fit(y=y, exog=exog)
+    predictions = forecaster.predict(steps=3, exog=exog_pred)
+
+    expected = pd.Series(
+                   data  = np.array([24., 26., 28.]),
+                   index = pd.DatetimeIndex(
+                               ['2024-04-01', '2024-04-02', '2024-04-03'],
+                               freq='D', tz='Europe/Madrid'
+                           ),
+                   name  = 'pred'
+               )
+
+    pd.testing.assert_series_equal(predictions, expected)
+
+
+@pytest.mark.parametrize(
+    'estimator, device',
+    [(XGBRegressor(n_estimators=5, random_state=123), 'cuda:0'),
+     (XGBRegressor(n_estimators=5, random_state=123), 'gpu'),
+     (XGBRegressor(n_estimators=5, random_state=123), None),
+     (LGBMRegressor(n_estimators=5, verbose=-1, random_state=123), 'cuda')],
+    ids=['XGB-cuda:0', 'XGB-gpu', 'XGB-not_set', 'LGBM-cuda']
+)
+def test_predict_restores_estimator_device(estimator, device):
+    """
+    Test that predict, which runs on CPU, restores the original device of the
+    estimator verbatim, and leaves a device that is not set unset. The device
+    is set after fit, so no GPU is needed.
+    """
+    forecaster = ForecasterRecursive(estimator, lags=3)
+    forecaster.fit(y=pd.Series(np.arange(50)))
+    if device is not None:
+        forecaster.estimator.set_params(device=device)
+    forecaster.predict(steps=3)
+
+    assert forecaster.estimator.get_params().get('device') == device
+
+
+def test_predict_output_when_transformers_are_Pipelines_with_FunctionTransformer():
+    """
+    Test predict when `transformer_y` and `transformer_exog` are Pipelines
+    with a FunctionTransformer without `feature_names_out`, whose
+    `get_feature_names_out` raises an AttributeError. Predictions must be equal
+    to those of the same Pipelines with `feature_names_out='one-to-one'`.
+    """
+    y = pd.Series(
+        data  = np.arange(1, 51, dtype=float) + np.sin(np.arange(50)),
+        index = pd.date_range('2020-01-01', periods=50, freq='D'),
+        name  = 'y'
+    )
+    exog = pd.DataFrame(
+        {'exog_1': np.arange(1, 54, dtype=float),
+         'exog_2': np.cos(np.arange(53)) + 2},
+        index = pd.date_range('2020-01-01', periods=53, freq='D')
+    )
+
+    def make_transformer(feature_names_out):
+        return make_pipeline(
+            FunctionTransformer(
+                func=np.log1p, inverse_func=np.expm1, feature_names_out=feature_names_out
+            ),
+            StandardScaler()
+        )
+
+    forecaster = ForecasterRecursive(
+                     estimator        = LinearRegression(),
+                     lags             = 3,
+                     transformer_y    = make_transformer(feature_names_out=None),
+                     transformer_exog = make_transformer(feature_names_out=None)
+                 )
+    forecaster.fit(y=y, exog=exog.iloc[:50])
+    predictions = forecaster.predict(steps=3, exog=exog.iloc[50:])
+
+    forecaster_names_out = ForecasterRecursive(
+                               estimator        = LinearRegression(),
+                               lags             = 3,
+                               transformer_y    = make_transformer('one-to-one'),
+                               transformer_exog = make_transformer('one-to-one')
+                           )
+    forecaster_names_out.fit(y=y, exog=exog.iloc[:50])
+    expected = forecaster_names_out.predict(steps=3, exog=exog.iloc[50:])
+
+    assert not expected.isna().any()
+    pd.testing.assert_series_equal(predictions, expected)
+
+
+def test_predict_output_when_steps_is_a_date_without_time_zone_and_index_is_tz_aware():
+    """
+    Test predict when `steps` is a date without time zone and the series has a
+    timezone-aware index. The date is interpreted in the time zone of the index.
+    """
+    y = pd.Series(
+        data  = np.arange(100, dtype=float),
+        index = pd.date_range('2024-01-01', periods=100, freq='h', tz='Europe/Madrid'),
+        name  = 'y'
+    )
+    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    forecaster.fit(y=y)
+
+    predictions = forecaster.predict(steps='2024-01-05 08:00')
+    expected = forecaster.predict(steps=5)
+
+    assert not expected.isna().any()
+    pd.testing.assert_series_equal(predictions, expected)
+
+
+@pytest.mark.parametrize(
+    'lags',
+    [np.int64(3), np.array([1, 2, 3], dtype=np.uint8)],
+    ids=['np.int64', 'np.uint8']
+)
+def test_predict_output_when_lags_are_numpy_integers(lags):
+    """
+    Test predict output when `lags` are numpy integers is the same as with a
+    Python int. With unsigned integers, `-window_size` overflowed and
+    `last_window_` was empty.
+    """
+    y = pd.Series(np.arange(50, dtype=float))
+
+    forecaster = ForecasterRecursive(LinearRegression(), lags=lags)
+    forecaster.fit(y=y)
+    predictions = forecaster.predict(steps=3)
+
+    forecaster_int = ForecasterRecursive(LinearRegression(), lags=3)
+    forecaster_int.fit(y=y)
+    expected = forecaster_int.predict(steps=3)
+
+    assert forecaster.window_size == 3
+    assert len(forecaster.last_window_) == 3
+    pd.testing.assert_series_equal(predictions, expected)
+
+
+def test_predict_output_when_window_sizes_is_numpy_unsigned_integer():
+    """
+    Test predict output when the `window_sizes` of a custom window feature is a
+    numpy unsigned integer is the same as with a Python int. Before, 
+    `-window_size` overflowed and `last_window_` was empty.
+    """
+
+    class RollingMean:
+        def __init__(self, window_sizes):
+            self.window_sizes = window_sizes
+            self.features_names = ['roll_mean']
+
+        def transform_batch(self, y):
+            return y.rolling(int(self.window_sizes)).mean().to_frame('roll_mean')
+
+        def transform(self, X):
+            return np.array([np.mean(X[-int(self.window_sizes):])])
+
+    y = pd.Series(np.arange(50, dtype=float))
+
+    forecaster = ForecasterRecursive(
+        LinearRegression(), lags=2, window_features=RollingMean(np.uint8(5))
+    )
+    forecaster.fit(y=y)
+    predictions = forecaster.predict(steps=3)
+
+    forecaster_int = ForecasterRecursive(
+        LinearRegression(), lags=2, window_features=RollingMean(5)
+    )
+    forecaster_int.fit(y=y)
+    expected = forecaster_int.predict(steps=3)
+
+    assert forecaster.window_size == 5
+    assert type(forecaster.window_size) is int
+    assert len(forecaster.last_window_) == 5
     pd.testing.assert_series_equal(predictions, expected)
