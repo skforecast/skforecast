@@ -42,6 +42,7 @@ from ..utils import (
     check_extract_values_and_index,
     configure_estimator_categorical_features,
     cast_catboost_categorical_columns,
+    _get_catboost_cat_feature_indices,
     input_to_frame,
     date_to_index_position,
     expand_index,
@@ -2935,6 +2936,16 @@ class ForecasterRecursive(ForecasterBase):
                 f"ensure that the same data and preprocessing steps are applied.\n"
                 f"    Expected output : {self.X_train_features_names_out_}\n"
                 f"    Current output  : {X_train_features_names_out_}"
+            )
+
+        # NOTE: CatBoost requires the categorical columns cast to integer, as
+        # in `fit`. The indices are taken from the fitted estimator.
+        cat_indices = _get_catboost_cat_feature_indices(self.estimator)
+        if len(cat_indices) > 0:
+            X_train = cast_catboost_categorical_columns(
+                X          = X_train,
+                fit_kwargs = {'cat_features': cat_indices.tolist()},
+                estimator  = self.estimator
             )
 
         with warnings.catch_warnings():

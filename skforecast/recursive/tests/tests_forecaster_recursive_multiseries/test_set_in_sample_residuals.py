@@ -9,6 +9,7 @@ import pandas as pd
 from sklearn.exceptions import NotFittedError
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
+from catboost import CatBoostRegressor
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 
 # Fixtures
@@ -267,3 +268,49 @@ def test_set_in_sample_residuals_when_more_than_10_000_residuals(index_type):
                 forecaster_1.in_sample_residuals_by_bin_[level][k],
                 forecaster_2.in_sample_residuals_by_bin_[level][k]
             )
+
+
+@pytest.mark.parametrize("encoding", 
+                         ["ordinal", "ordinal_category", "onehot", None], 
+                         ids = lambda value: f'encoding: {value}')
+def test_set_in_sample_residuals_CatBoost_with_categorical_exog(encoding):
+    """
+    Test that set_in_sample_residuals casts the categorical columns as fit
+    does when the estimator is a CatBoostRegressor and exog has a categorical
+    variable, and stores the same residuals as fit.
+    """
+    rng = np.random.default_rng(1)
+    index = pd.date_range("2021-01-01", periods=40, freq="D")
+    series = {
+        k: pd.Series(rng.normal(10 * (i + 1), 1, 40), index=index, name=k)
+        for i, k in enumerate(["a", "b", "c"])
+    }
+    exog = {
+        k: pd.DataFrame(
+            {
+                "exog_1": rng.normal(0, 1, 40),
+                "exog_cat": pd.Categorical(
+                    rng.integers(0, 3, 40), categories=[0, 1, 2]
+                ),
+            },
+            index=index,
+        )
+        for k in series
+    }
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=CatBoostRegressor(
+            iterations=20, verbose=0, allow_writing_files=False
+        ),
+        lags=3,
+        encoding=encoding,
+    )
+    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
+    results = {k: v.copy() for k, v in forecaster.in_sample_residuals_.items()}
+    forecaster.set_in_sample_residuals(series=series, exog=exog)
+
+    assert results.keys() == forecaster.in_sample_residuals_.keys()
+    for level in results.keys():
+        np.testing.assert_array_almost_equal(
+            results[level], forecaster.in_sample_residuals_[level]
+        )

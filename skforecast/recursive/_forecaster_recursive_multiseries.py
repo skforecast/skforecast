@@ -51,6 +51,7 @@ from ..utils import (
     check_interval,
     configure_estimator_categorical_features,
     cast_catboost_categorical_columns_dataframe,
+    _get_catboost_cat_feature_indices,
     _copy_rows_to_check,
     _check_in_place_fit,
     estimator_has_native_nan_support,
@@ -4482,6 +4483,17 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 f"    Current output  : {X_train_features_names_out_}"
             )
         
+        # NOTE: CatBoost requires the categorical columns cast to integer, as
+        # in `fit`. The indices are taken from the fitted estimator.
+        cat_indices = _get_catboost_cat_feature_indices(self.estimator)
+        if len(cat_indices) > 0:
+            X_train_estimator = cast_catboost_categorical_columns_dataframe(
+                X             = X_train_estimator,
+                fit_kwargs    = {'cat_features': cat_indices.tolist()},
+                estimator     = self.estimator,
+                feature_names = X_train_features_names_out_,
+            )
+
         self.in_sample_residuals_ = {}
         self.in_sample_residuals_by_bin_ = {}
         y_train = y_train.to_numpy()

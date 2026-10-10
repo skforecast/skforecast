@@ -7,6 +7,7 @@ import pandas as pd
 from sklearn.exceptions import NotFittedError
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
+from catboost import CatBoostRegressor
 from skforecast.recursive import ForecasterRecursive
 
 # Fixtures
@@ -109,3 +110,34 @@ def test_set_in_sample_residuals_store_same_residuals_as_fit():
     for k in forecaster_1.in_sample_residuals_by_bin_.keys():
         np.testing.assert_almost_equal(forecaster_1.in_sample_residuals_by_bin_[k], forecaster_2.in_sample_residuals_by_bin_[k])
     assert forecaster_1.binner_intervals_ == forecaster_2.binner_intervals_
+
+
+def test_set_in_sample_residuals_CatBoost_with_categorical_exog():
+    """
+    Test that set_in_sample_residuals casts the categorical columns as fit
+    does when the estimator is a CatBoostRegressor and exog has a categorical
+    variable, and stores the same residuals as fit.
+    """
+    rng = np.random.default_rng(1)
+    index = pd.date_range("2021-01-01", periods=40, freq="D")
+    y = pd.Series(rng.normal(10, 1, 40), index=index, name='y')
+    exog = pd.DataFrame(
+        {
+            "exog_1": rng.normal(0, 1, 40),
+            "exog_cat": pd.Categorical(rng.integers(0, 3, 40), categories=[0, 1, 2]),
+        },
+        index=index,
+    )
+
+    forecaster = ForecasterRecursive(
+        estimator=CatBoostRegressor(
+            iterations=20, verbose=0, allow_writing_files=False
+        ),
+        lags=3,
+        categorical_features="auto",
+    )
+    forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
+    results = forecaster.in_sample_residuals_.copy()
+    forecaster.set_in_sample_residuals(y=y, exog=exog)
+
+    np.testing.assert_array_almost_equal(results, forecaster.in_sample_residuals_)
