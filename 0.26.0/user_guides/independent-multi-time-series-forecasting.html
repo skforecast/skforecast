@@ -5849,19 +5849,12 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h1 id="global-forecasting-models-independent-multi-series-forecasting">Global Forecasting Models: Independent multi-series forecasting<a class="anchor-link" href="#global-forecasting-models-independent-multi-series-forecasting">¶</a></h1><p><a href="../introduction-forecasting/introduction-forecasting.html">Univariate time series forecasting</a> focuses on modeling a single time series as a linear or nonlinear function of its own past values (lags), using historical observations to predict future ones.</p>
-<p><strong>Global forecasting</strong> builds a single predictive model that considers all time series simultaneously. This approach seeks to learn the shared patterns that underlie the different series, helping to reduce the influence of noise present in individual time series. It is computationally efficient, easier to maintain, and often yields more robust generalization across series.</p>
-<p>In <strong>independent multi-series forecasting</strong>, a single model is trained using all time series, but each series is treated independently—past values of one series are not used to predict another. Modeling them together is still beneficial when the series share similar temporal dynamics. For example, sales of products A and B in the same store may not be directly related, but both are influenced by the same underlying store-level patterns.</p>
-<p style="text-align: center">
-<img alt="No description has been provided for this image" src="../img/forecaster_multi_series_train_matrix_diagram.png" style="width: 700px"/>
-<br/>
-<font size="2.5"> <i>Internal Forecaster transformation of two time series and an exogenous variable into the matrices needed to train a machine learning model in a multi-series context.</i></font>
-</p>
+<p><a href="../user_guides/global-forecasting-overview.html">Global forecasting</a> builds a single predictive model that learns from all the time series at once.</p>
+<p>In <strong>independent multi-series forecasting</strong>, a single model is trained using all time series, but each series is treated independently: past values of one series are not used to predict another. Modeling them together is still beneficial when the series share similar temporal dynamics. For example, sales of products A and B in the same store may not be directly related, but both are influenced by the same underlying store-level patterns.</p>
+<div class="skf-anim-embed">
+<iframe allowfullscreen="" loading="lazy" src="../animations/independent-multi-series.html" title="Animation: independent multi-series forecasting"></iframe>
+</div>
 <p>To predict the next <em>n</em> steps, the strategy of <a href="../introduction-forecasting/introduction-forecasting.html#recursive-multi-step-forecasting">recursive multi-step forecasting</a> is applied, with the only difference being that the series name for which to estimate the predictions needs to be indicated.</p>
-<p style="text-align: center">
-<img alt="No description has been provided for this image" src="../img/forecaster_multi_series_prediction_diagram.png" style="width: 700px"/>
-<br/>
-<font size="2.5"> <i>Diagram of recursive forecasting with multiple independent time series.</i></font>
-</p>
 <p>Using the <code>ForecasterRecursiveMultiSeries</code> it is possible to easily build machine learning models for <strong>independent multi-series forecasting</strong>.</p>
 </div>
 </div>
