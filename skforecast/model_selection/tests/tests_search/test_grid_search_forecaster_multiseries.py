@@ -2,9 +2,11 @@
 # ==============================================================================
 import numpy as np
 import pandas as pd
+import pytest
 from sklearn.linear_model import Ridge
 from lightgbm import LGBMRegressor
 from skforecast.recursive import ForecasterRecursiveMultiSeries
+from skforecast.preprocessing import RollingFeatures
 from skforecast.direct import ForecasterDirectMultiVariate
 from skforecast.model_selection import grid_search_forecaster_multiseries
 from skforecast.model_selection._split import TimeSeriesFold, OneStepAheadFold
@@ -675,3 +677,35 @@ def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSerie
     )
 
     pd.testing.assert_frame_equal(results, expected_results)
+
+
+@pytest.mark.parametrize(
+    "cv",
+    [TimeSeriesFold(steps=3, initial_train_size=30),
+     OneStepAheadFold(initial_train_size=30)],
+    ids=lambda cv: type(cv).__name__
+)
+def test_grid_search_forecaster_multiseries_when_forecaster_has_only_window_features(cv):
+    """
+    Test grid_search_forecaster_multiseries with a ForecasterRecursiveMultiSeries
+    created with lags=None and window features.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=Ridge(random_state=123),
+        lags=None,
+        window_features=RollingFeatures(stats='mean', window_sizes=3)
+    )
+    results = grid_search_forecaster_multiseries(
+        forecaster  = forecaster,
+        series      = series_wide_range,
+        cv          = cv,
+        param_grid  = {"alpha": [0.01, 1]},
+        metric      = "mean_absolute_error",
+        return_best = True,
+        verbose     = False
+    )
+
+    assert results['lags'].to_list() == [None, None]
+    assert forecaster.lags is None
+    assert forecaster.is_fitted
+
