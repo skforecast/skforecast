@@ -126,45 +126,35 @@ The [`ForecasterStats`](../user_guides/forecasting-statistical-models.ipynb) cla
 
 **Univariate time series forecasting** focuses on modeling a single time series as a linear or nonlinear function of its own past values (lags), using historical observations to predict future ones. 
 
-**Global forecasting** builds a single predictive model that considers all time series simultaneously. This approach seeks to **learn the shared patterns that underlie the different series**, helping to reduce the influence of noise present in individual time series. It is computationally efficient, easier to maintain, and often yields more robust generalization across series. Two main strategies are used to implement global forecasting models.
+**Global forecasting** builds a single predictive model that considers all time series simultaneously. This approach seeks to **learn the shared patterns that underlie the different series**, helping to reduce the influence of noise present in individual time series. It is computationally efficient, easier to maintain, and often yields more robust generalization across series.
+
+<div class="skf-anim-embed">
+  <iframe src="../animations/global-forecasting.html" title="Animation: local and global forecasting models" loading="lazy" allowfullscreen></iframe>
+</div>
+
+Skforecast implements several strategies to build global forecasting models. A comparison of all of them is available in the [Global forecasting overview](../user_guides/global-forecasting-overview.md).
 
 ### Independent Multi-Series Forecasting
 
-In **independent multi-series forecasting**, a single model is trained using all time series, but each series is treated independently—past values of one series are not used to predict another. Modeling them together is still beneficial when the series share similar temporal dynamics. For example, sales of products A and B in the same store may not be directly related, but both are influenced by the same underlying store-level patterns.
-
-<p style="text-align: center">
-    <img src="../img/forecaster_multi_series_train_matrix_diagram.png" style="width: 700px">
-    <br>
-    <font size="2.5"> <i>Transformation of two time series and an exogenous variable into the matrices needed to train a machine learning model in a multi-series context</i></font>
-</p>
-
-To predict the next *n* steps, the strategy of [recursive multi-step forecasting](../introduction-forecasting/introduction-forecasting.md#recursive-multi-step-forecasting) is applied
-
-<p style="text-align: center">
-    <img src="../img/forecaster_multi_series_prediction_diagram.png" style="width: 700px">
-    <br>
-    <font size="2.5"> <i>Diagram of recursive forecasting with multiple independent time series</i></font>
-</p>
+In **independent multi-series forecasting**, a single model is trained using all time series, but each series is treated independently: past values of one series are not used to predict another. Modeling them together is still beneficial when the series share similar temporal dynamics. For example, sales of products A and B in the same store may not be directly related, but both are influenced by the same underlying store-level patterns. To predict the next *n* steps, the strategy of [recursive multi-step forecasting](../introduction-forecasting/introduction-forecasting.md#recursive-multi-step-forecasting) is applied.
 
 The [`ForecasterRecursiveMultiSeries`](../user_guides/independent-multi-time-series-forecasting.ipynb) class covers this process. 
 
 ### Dependent Multi-Series Forecasting (multivariate time series)
 
-In **dependent multi-series forecasting** (also known as **multivariate time series forecasting**), all series are modeled jointly under the assumption that each series depends not only on its own past values, but also on the past values of the other series. The forecaster is expected to learn both the individual dynamics of each series and the relationships between them.
-
-A typical example is the set of sensor readings (such as flow, temperature, and pressure) collected from an industrial machine like a compressor, where the variables influence each other over time.
-
-<p style="text-align: center">
-    <img src="../img/forecaster_multivariate_train_matrix_diagram.png" style="width: 700px">
-    <br>
-    <font size="2.5"> <i>Transformation of two time series and an exogenous variable into the matrices needed to train a machine learning model in a multi-variate-series context</i></font>
-</p>
+In **dependent multi-series forecasting** (also known as **multivariate time series forecasting**), all series are modeled jointly under the assumption that each series depends not only on its own past values, but also on the past values of the other series. A typical example is the set of sensor readings (such as flow, temperature, and pressure) collected from an industrial machine like a compressor, where the variables influence each other over time.
 
 Using the [`ForecasterDirectMultiVariate`](../user_guides/dependent-multi-series-multivariate-forecasting.ipynb) class, it is possible to easily build machine learning models for **multivariate forecasting**.
 
+### Forecasting with foundation models
+
+**Foundation models**, such as Chronos-2, TimesFM or Moirai-2, are pre-trained on large collections of time series from many domains. They forecast any number of series in a single call **without training** (zero-shot), which makes them a strong option even for short or new series. In exchange, they need more computing resources to predict, usually a GPU.
+
+The [`ForecasterFoundation`](../user_guides/foundation-forecasting-models.ipynb) class integrates them with the rest of skforecast, so they can be backtested and compared with any other forecaster.
+
 ### Forecasting with Deep Learning
 
-**Deep learning** models have become increasingly popular for time series forecasting, especially when traditional statistical approaches struggle to capture **non-linear relationships or complex temporal patterns**. By leveraging neural network architectures, deep learning methods can automatically learn features and dependencies directly from raw data, offering significant advantages for large datasets, multivariate time series, and problems where classic models fall short.
+**Deep learning** models, such as recurrent neural networks (RNN and LSTM), can learn **non-linear relationships and complex temporal patterns** from several series at once, but they need more data and more tuning than the other options.
 
 Using the [`ForecasterRnn`](../user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb) class, it is possible to easily build machine learning models using **deep learning**.
 
