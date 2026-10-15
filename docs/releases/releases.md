@@ -12,6 +12,23 @@ All significant changes to this project are documented in this release file.
 
 
 
+## 0.27.0 <small>In development</small> { id="0.27.0" }
+
+The main changes in this release are:
+
+
+**Added**
+
+
+**Changed**
+
++ The first fit of <code>[Ets]</code> in a new environment, when numba compiles its functions, takes about 40% less time (7 s instead of 12 s on a 4-core CPU). Estimates and selected models are unchanged. ([#1400](https://github.com/skforecast/skforecast/pull/1400))
+
+
+**Fixed**
+
+
+
 ## 0.26.0 <small>Oct 8, 2026</small> { id="0.26.0" }
 
 The main changes in this release are:

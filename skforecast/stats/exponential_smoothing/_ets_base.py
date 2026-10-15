@@ -887,6 +887,32 @@ def _ets_objective_grad(
 
 
 @njit(cache=True)
+def _sort_simplex(sim: NDArray[np.float64], fsim: NDArray[np.float64]) -> None:  # pragma: no cover
+    """
+    Sort the vertices of the simplex by their objective value, in place.
+
+    Stable insertion sort: same order as `np.argsort(kind='mergesort')` for
+    the few vertices of the simplex (the objective is never NaN), without
+    compiling the general sorting routines.
+    """
+    N = sim.shape[1]
+    vertex = np.empty(N)
+    for i in range(1, len(fsim)):
+        f = fsim[i]
+        for j in range(N):
+            vertex[j] = sim[i, j]
+        k = i - 1
+        while k >= 0 and fsim[k] > f:
+            fsim[k + 1] = fsim[k]
+            for j in range(N):
+                sim[k + 1, j] = sim[k, j]
+            k -= 1
+        fsim[k + 1] = f
+        for j in range(N):
+            sim[k + 1, j] = vertex[j]
+
+
+@njit(cache=True)
 def _ets_nelder_mead(
     u0: NDArray[np.float64],
     maxiter: int,
@@ -911,22 +937,26 @@ def _ets_nelder_mead(
     psi = 0.75 - 1.0 / (2.0 * N)
     sigma = 1.0 - 1.0 / N
 
+    # The vertices are updated element by element, without array
+    # expressions or slice assignments: same floating point operations, and
+    # numba does not compile the broadcasting and its error messages.
     sim = np.empty((N + 1, N))
-    sim[0] = u0
+    for k in range(N + 1):
+        for j in range(N):
+            sim[k, j] = u0[j]
     for k in range(N):
-        vertex = u0.copy()
-        if vertex[k] != 0:
-            vertex[k] = 1.05 * vertex[k]
+        if sim[k + 1, k] != 0:
+            sim[k + 1, k] = 1.05 * sim[k + 1, k]
         else:
-            vertex[k] = 0.00025
-        sim[k + 1] = vertex
+            sim[k + 1, k] = 0.00025
     fsim = np.empty(N + 1)
     for k in range(N + 1):
         fsim[k] = _ets_objective_jit(_ets_u_to_x(sim[k], pos_beta, pos_gamma), *obj_args)
-    order = np.argsort(fsim, kind="mergesort")
-    fsim = fsim[order]
-    sim = sim[order]
+    _sort_simplex(sim, fsim)
 
+    xbar = np.empty(N)
+    xr = np.empty(N)
+    xt = np.empty(N)
     for _ in range(1, maxiter):
         max_dx = 0.0
         max_df = 0.0
@@ -939,50 +969,65 @@ def _ets_nelder_mead(
         if max_dx <= xtol and max_df <= ftol * max(1.0, abs(fsim[0])):
             break
 
-        xbar = np.zeros(N)
+        for j in range(N):
+            xbar[j] = 0.0
         for k in range(N):
-            xbar += sim[k]
-        xbar /= N
+            for j in range(N):
+                xbar[j] += sim[k, j]
+        for j in range(N):
+            xbar[j] /= N
 
-        xr = (1 + rho) * xbar - rho * sim[-1]
+        # Reflection
+        for j in range(N):
+            xr[j] = (1 + rho) * xbar[j] - rho * sim[N, j]
         fxr = _ets_objective_jit(_ets_u_to_x(xr, pos_beta, pos_gamma), *obj_args)
         shrink = False
         if fxr < fsim[0]:
-            xe = (1 + rho * chi) * xbar - rho * chi * sim[-1]
-            fxe = _ets_objective_jit(_ets_u_to_x(xe, pos_beta, pos_gamma), *obj_args)
+            # Expansion
+            for j in range(N):
+                xt[j] = (1 + rho * chi) * xbar[j] - rho * chi * sim[N, j]
+            fxe = _ets_objective_jit(_ets_u_to_x(xt, pos_beta, pos_gamma), *obj_args)
             if fxe < fxr:
-                sim[-1] = xe
-                fsim[-1] = fxe
+                for j in range(N):
+                    sim[N, j] = xt[j]
+                fsim[N] = fxe
             else:
-                sim[-1] = xr
-                fsim[-1] = fxr
-        elif fxr < fsim[-2]:
-            sim[-1] = xr
-            fsim[-1] = fxr
+                for j in range(N):
+                    sim[N, j] = xr[j]
+                fsim[N] = fxr
+        elif fxr < fsim[N - 1]:
+            for j in range(N):
+                sim[N, j] = xr[j]
+            fsim[N] = fxr
         else:
-            if fxr < fsim[-1]:
-                xc = (1 + psi * rho) * xbar - psi * rho * sim[-1]
-                fxc = _ets_objective_jit(_ets_u_to_x(xc, pos_beta, pos_gamma), *obj_args)
+            if fxr < fsim[N]:
+                # Outside contraction
+                for j in range(N):
+                    xt[j] = (1 + psi * rho) * xbar[j] - psi * rho * sim[N, j]
+                fxc = _ets_objective_jit(_ets_u_to_x(xt, pos_beta, pos_gamma), *obj_args)
                 if fxc <= fxr:
-                    sim[-1] = xc
-                    fsim[-1] = fxc
+                    for j in range(N):
+                        sim[N, j] = xt[j]
+                    fsim[N] = fxc
                 else:
                     shrink = True
             else:
-                xcc = (1 - psi) * xbar + psi * sim[-1]
-                fxcc = _ets_objective_jit(_ets_u_to_x(xcc, pos_beta, pos_gamma), *obj_args)
-                if fxcc < fsim[-1]:
-                    sim[-1] = xcc
-                    fsim[-1] = fxcc
+                # Inside contraction
+                for j in range(N):
+                    xt[j] = (1 - psi) * xbar[j] + psi * sim[N, j]
+                fxcc = _ets_objective_jit(_ets_u_to_x(xt, pos_beta, pos_gamma), *obj_args)
+                if fxcc < fsim[N]:
+                    for j in range(N):
+                        sim[N, j] = xt[j]
+                    fsim[N] = fxcc
                 else:
                     shrink = True
             if shrink:
-                for j in range(1, N + 1):
-                    sim[j] = sim[0] + sigma * (sim[j] - sim[0])
-                    fsim[j] = _ets_objective_jit(_ets_u_to_x(sim[j], pos_beta, pos_gamma), *obj_args)
-        order = np.argsort(fsim, kind="mergesort")
-        sim = sim[order]
-        fsim = fsim[order]
+                for k in range(1, N + 1):
+                    for j in range(N):
+                        sim[k, j] = sim[0, j] + sigma * (sim[k, j] - sim[0, j])
+                    fsim[k] = _ets_objective_jit(_ets_u_to_x(sim[k], pos_beta, pos_gamma), *obj_args)
+        _sort_simplex(sim, fsim)
 
     return sim[0].copy(), fsim[0]
 
@@ -1749,7 +1794,8 @@ def _simulate_ets_jit(
     for i in range(n_sim):
         l = l0
         b = b0
-        s[:] = s0
+        for j in range(len(s0)):
+            s[j] = s0[j]
         for t in range(h):
             fc = _forecast_ets(l, b, s, 1, m, trend, season, phi)[0]
             if np.isnan(fc):
