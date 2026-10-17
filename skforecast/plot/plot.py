@@ -70,9 +70,9 @@ def plot_residuals(
         fig = plt.figure(constrained_layout=True, **fig_kw)
         
     gs  = matplotlib.gridspec.GridSpec(2, 2, figure=fig)
-    ax1 = plt.subplot(gs[0, :])
-    ax2 = plt.subplot(gs[1, 0])
-    ax3 = plt.subplot(gs[1, 1])
+    ax1 = fig.add_subplot(gs[0, :])
+    ax2 = fig.add_subplot(gs[1, 0])
+    ax3 = fig.add_subplot(gs[1, 1])
     
     ax1.plot(residuals)
     residuals_kde = np.asarray(residuals, dtype=float)
