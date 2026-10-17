@@ -5590,6 +5590,43 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     assert 2 not in backtest_predictions['fold'].to_numpy()
 
 
+def test_backtesting_forecaster_multiseries_MissingValuesWarning_when_level_not_predicted_in_any_fold():
+    """
+    Test a MissingValuesWarning is raised naming the levels that are not
+    predicted in any fold, here because the series is shorter than the window
+    size of the forecaster, so they are left out of the aggregated metrics.
+    """
+    idx = pd.date_range("2016-01-01", periods=96, freq="MS")
+    rng = np.random.default_rng(0)
+    series = {
+        "S01": pd.Series(rng.normal(100, 5, 96), index=idx, name="S01"),
+        "S02": pd.Series(rng.normal(100, 5, 20), index=idx[-20:], name="S02"),
+        "S10": pd.Series(rng.normal(100, 5, 96), index=idx, name="S10"),
+    }
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = Ridge(),
+                     lags               = [1, 2, 3, 12],
+                     window_features    = RollingFeatures(stats=["mean"], window_sizes=[24]),
+                     encoding           = "ordinal",
+                     transformer_series = None
+                 )
+    cv = TimeSeriesFold(steps=12, initial_train_size="2021-07-01", refit=False)
+
+    warn_msg = re.escape("Levels ['S02'] have not been predicted in any fold")
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
+                                                   forecaster    = forecaster,
+                                                   series        = series,
+                                                   cv            = cv,
+                                                   metric        = "mean_absolute_error",
+                                                   n_jobs        = 1,
+                                                   show_progress = False
+                                               )
+
+    assert np.isnan(metrics_levels.loc[metrics_levels["levels"] == "S02", "mean_absolute_error"].item())
+    assert "S02" not in backtest_predictions["level"].to_numpy()
+
+
 # ******************************************************************************
 # * Test backtesting ForecasterDirectMultiVariate with NaN values              *
 # ******************************************************************************

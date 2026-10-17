@@ -1470,7 +1470,16 @@ def _backtesting_forecaster_multiseries(
     backtest_predictions = pd.concat(backtest_predictions, axis=0)
     backtest_predictions.insert(0, 'fold', np.concatenate(fold_labels))
     backtest_levels = set(chain(*[result[1] for result in results]))
-    
+    levels_not_predicted = [level for level in levels if level not in backtest_levels]
+    if levels_not_predicted:
+        warnings.warn(
+            f"Levels {levels_not_predicted} have not been predicted in any fold, "
+            f"for example because their last window is shorter than the window "
+            f"size of the forecaster or has missing values. Their metrics are NaN "
+            f"and they are not included in the aggregated metrics.",
+            MissingValuesWarning
+        )
+
     backtest_predictions = (
         backtest_predictions
         .rename_axis('idx', axis=0)
