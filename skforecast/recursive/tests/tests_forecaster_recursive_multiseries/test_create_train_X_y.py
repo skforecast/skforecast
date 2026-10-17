@@ -5124,3 +5124,97 @@ def test_create_train_X_y_output_when_exog_dict_window_features_transformers_and
         assert results[11][k] == expected[11][k]
     for k in results[12].keys():
         pd.testing.assert_series_equal(results[12][k], expected[12][k])
+
+
+@pytest.mark.parametrize(
+    "encoding", ['ordinal', 'ordinal_category', 'onehot', None],
+    ids = lambda enc: f'encoding: {enc}'
+)
+@pytest.mark.parametrize(
+    "series_format", ['dict', 'wide_DataFrame'],
+    ids = lambda fmt: f'series: {fmt}'
+)
+def test_create_train_X_y_when_series_names_are_integers_same_as_string_names(
+    encoding, series_format
+):
+    """
+    Test that series named with integers, as dict keys or as columns of a wide
+    DataFrame, give the same training matrices as the same series named with
+    strings.
+    """
+    rng = np.random.default_rng(123)
+    index = pd.date_range(start='2020-01-01', periods=30, freq='D')
+    values = {0: rng.normal(size=30), 1: rng.normal(size=30)}
+
+    if series_format == 'dict':
+        series_int = {
+            k: pd.Series(v, index=index, name=k) for k, v in values.items()
+        }
+    else:
+        series_int = pd.DataFrame(values, index=index)
+    series_str = {
+        str(k): pd.Series(v, index=index, name=str(k)) for k, v in values.items()
+    }
+
+    forecaster_int = ForecasterRecursiveMultiSeries(
+                         LinearRegression(), lags=3, encoding=encoding
+                     )
+    forecaster_str = ForecasterRecursiveMultiSeries(
+                         LinearRegression(), lags=3, encoding=encoding
+                     )
+    X_int, y_int = forecaster_int.create_train_X_y(
+                       series=series_int, suppress_warnings=True
+                   )
+    X_str, y_str = forecaster_str.create_train_X_y(
+                       series=series_str, suppress_warnings=True
+                   )
+
+    pd.testing.assert_frame_equal(X_int, X_str)
+    pd.testing.assert_series_equal(y_int, y_str)
+
+
+@pytest.mark.parametrize(
+    "exog_format", ['dict', 'long_DataFrame'],
+    ids = lambda fmt: f'exog: {fmt}'
+)
+def test_create_train_X_y_when_series_names_are_integers_and_exog_same_as_string_names(
+    exog_format
+):
+    """
+    Test that exog given by series named with integers, as a dict or as a long
+    format DataFrame, is aligned with the series exactly as the exog of the same
+    series named with strings.
+    """
+    rng = np.random.default_rng(123)
+    index = pd.date_range(start='2020-01-01', periods=30, freq='D')
+    values = {0: rng.normal(size=30), 1: rng.normal(size=30)}
+    exog_values = {0: rng.normal(size=30), 1: rng.normal(size=30)}
+
+    def build_inputs(to_str):
+        name = (lambda k: str(k)) if to_str else (lambda k: k)
+        series = {
+            name(k): pd.Series(v, index=index, name=name(k))
+            for k, v in values.items()
+        }
+        exog_dfs = {
+            name(k): pd.DataFrame({'exog_1': v}, index=index)
+            for k, v in exog_values.items()
+        }
+        exog = exog_dfs if exog_format == 'dict' else pd.concat(exog_dfs)
+        return series, exog
+
+    series_int, exog_int = build_inputs(to_str=False)
+    series_str, exog_str = build_inputs(to_str=True)
+
+    forecaster_int = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
+    forecaster_str = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
+    X_int, y_int = forecaster_int.create_train_X_y(
+                       series=series_int, exog=exog_int, suppress_warnings=True
+                   )
+    X_str, y_str = forecaster_str.create_train_X_y(
+                       series=series_str, exog=exog_str, suppress_warnings=True
+                   )
+
+    assert X_int['exog_1'].notna().all()
+    pd.testing.assert_frame_equal(X_int, X_str)
+    pd.testing.assert_series_equal(y_int, y_str)

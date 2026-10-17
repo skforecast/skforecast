@@ -4229,6 +4229,8 @@ def check_preprocess_series(
             for k, v in series.items()
         }
 
+    series_dict = {str(k): v for k, v in series_dict.items()}
+
     not_valid_index = []
     indexes_freq = set()
     indexes_tz = set()

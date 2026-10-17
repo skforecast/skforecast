@@ -1449,6 +1449,17 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     "must be a pandas DatetimeIndex."
                 )
 
+        # Series IDs of `exog` are converted to str to match `series_names_in_`.
+        if isinstance(exog, dict):
+            exog = {str(k): v for k, v in exog.items()}
+        elif isinstance(exog, (pd.Series, pd.DataFrame)) and isinstance(
+            exog.index, pd.MultiIndex
+        ):
+            exog = exog.set_axis(
+                exog.index.set_levels(exog.index.levels[0].astype(str), level=0),
+                axis=0
+            )
+
         exog_dict = {serie: None for serie in series_names_in_}
         exog_names_in_ = None
         if exog is not None:

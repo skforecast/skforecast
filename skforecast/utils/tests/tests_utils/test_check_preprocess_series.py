@@ -470,3 +470,30 @@ def test_check_preprocess_series_when_series_is_dict_with_a_pandas_Series_and_a_
     for k in series_indexes:
         pd.testing.assert_index_equal(series_indexes[k], expected_series_indexes[k])
         assert series_indexes[k].freq == expected_series_indexes[k].freq
+
+
+def test_check_preprocess_series_when_series_keys_are_integers():
+    """
+    Test that integer series IDs (dict keys or DataFrame column names) are
+    normalized to string keys in both series_dict and series_indexes.
+    """
+    index = pd.date_range(start='2020-01-01', periods=10, freq='D')
+    series_dict_int = {
+        0: pd.Series(np.arange(10, dtype=float), index=index, name=0),
+        1: pd.Series(np.arange(10, 20, dtype=float), index=index, name=1),
+    }
+    series_dict, series_indexes = check_preprocess_series(series=series_dict_int)
+
+    assert list(series_dict.keys()) == ['0', '1']
+    assert list(series_indexes.keys()) == ['0', '1']
+    assert series_dict['0'].name == '0'
+    assert series_dict['1'].name == '1'
+
+    series_df_int = pd.DataFrame({0: np.arange(10, dtype=float), 1: np.arange(10, 20, dtype=float)}, index=index)
+    series_dict_df, series_indexes_df = check_preprocess_series(series=series_df_int)
+
+    assert list(series_dict_df.keys()) == ['0', '1']
+    assert list(series_indexes_df.keys()) == ['0', '1']
+    assert series_dict_df['0'].name == '0'
+    assert series_dict_df['1'].name == '1'
+

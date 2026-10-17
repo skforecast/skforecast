@@ -12,6 +12,18 @@ All significant changes to this project are documented in this release file.
 
 
 
+## 0.26.1 <small>Unreleased</small> { id="0.26.1" }
+
+The main changes in this release are:
+
++ <span class="badge text-bg-fix">Fix</span> <code>[ForecasterRecursiveMultiSeries]</code> raised `KeyError` in `fit` and `create_train_X_y` when the series were named with integers, as dictionary keys or as columns of a wide DataFrame. The series names are now stored as strings, so the predictions are the same as with string names. In the prediction methods, the names passed in `levels`, `last_window` and `exog` must be strings.
+
+
+**Fixed**
+
++ <code>[ForecasterRecursiveMultiSeries]</code> raised `KeyError` in `fit` and `create_train_X_y` when the series were named with integers, as dictionary keys or as columns of a wide DataFrame. The names are now converted to strings during training, so `series_names_in_`, `encoding_mapping_`, the residuals and `last_window_` use the same names, and the predictions are the same as with string names. Integer series IDs in the `exog` given to `fit` (dictionary or long-format DataFrame) are also matched. In the prediction methods, the names passed in `levels`, `last_window` and `exog` must still be strings.
+
+
 ## 0.26.0 <small>Oct 8, 2026</small> { id="0.26.0" }
 
 The main changes in this release are:

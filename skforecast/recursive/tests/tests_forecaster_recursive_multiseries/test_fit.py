@@ -1295,3 +1295,58 @@ def test_fit_and_predict_when_exog_index_is_descending(exog_format):
     assert forecaster.exog_in_
     assert forecaster.exog_names_in_ == ['exog_1']
     pd.testing.assert_frame_equal(results, expected)
+
+
+@pytest.mark.parametrize(
+    "encoding", ['ordinal', 'ordinal_category', 'onehot', None],
+    ids = lambda enc: f'encoding: {enc}'
+)
+@pytest.mark.parametrize(
+    "series_format", ['dict', 'wide_DataFrame'],
+    ids = lambda fmt: f'series: {fmt}'
+)
+def test_fit_when_series_names_are_integers_same_as_string_names(
+    encoding, series_format
+):
+    """
+    Test that series named with integers, as dict keys or as columns of a wide
+    DataFrame, are trained the same way as the same series named with strings:
+    `series_names_in_`, `encoding_mapping_`, in-sample residuals and predictions
+    are equal.
+    """
+    rng = np.random.default_rng(123)
+    index = pd.date_range(start='2020-01-01', periods=30, freq='D')
+    values = {0: rng.normal(size=30), 1: rng.normal(size=30)}
+
+    if series_format == 'dict':
+        series_int = {
+            k: pd.Series(v, index=index, name=k) for k, v in values.items()
+        }
+    else:
+        series_int = pd.DataFrame(values, index=index)
+    series_str = {
+        str(k): pd.Series(v, index=index, name=str(k)) for k, v in values.items()
+    }
+
+    forecaster_int = ForecasterRecursiveMultiSeries(
+                         LinearRegression(), lags=3, encoding=encoding
+                     )
+    forecaster_int.fit(
+        series=series_int, store_in_sample_residuals=True, suppress_warnings=True
+    )
+    forecaster_str = ForecasterRecursiveMultiSeries(
+                         LinearRegression(), lags=3, encoding=encoding
+                     )
+    forecaster_str.fit(
+        series=series_str, store_in_sample_residuals=True, suppress_warnings=True
+    )
+
+    assert forecaster_int.series_names_in_ == ['0', '1']
+    assert forecaster_int.encoding_mapping_ == forecaster_str.encoding_mapping_
+    assert (
+        forecaster_int.in_sample_residuals_.keys()
+        == forecaster_str.in_sample_residuals_.keys()
+    )
+    predictions_int = forecaster_int.predict(steps=3, suppress_warnings=True)
+    predictions_str = forecaster_str.predict(steps=3, suppress_warnings=True)
+    pd.testing.assert_frame_equal(predictions_int, predictions_str)
