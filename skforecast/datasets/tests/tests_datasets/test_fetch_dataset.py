@@ -1,6 +1,7 @@
 # Unit test fetch_dataset
 # ==============================================================================
 import re
+import warnings
 import pytest
 import pandas as pd
 from unittest.mock import patch
@@ -50,6 +51,23 @@ def test_fetch_dataset_csv_multiple_series():
     assert df.index.freq == 'D'
     assert df.index[0] == pd.Timestamp('2012-01-01')
     assert df.index[-1] == pd.Timestamp('2015-01-01')
+
+
+def test_fetch_dataset_website_visits_day_first_dates():
+    """
+    `fetch_dataset` parses the day-first dates of `website_visits` (e.g.
+    '1/7/20') without warnings, returning a gapless daily DatetimeIndex.
+    """
+    with warnings.catch_warnings():
+        warnings.simplefilter('error', UserWarning)
+        df = fetch_dataset('website_visits', version='latest', raw=False, verbose=False)
+
+    assert isinstance(df.index, pd.DatetimeIndex)
+    assert df.shape == (421, 1)
+    assert df.index.freq == 'D'
+    assert df.index[0] == pd.Timestamp('2020-07-01')
+    assert df.index[-1] == pd.Timestamp('2021-08-25')
+    assert df['users'].notna().all()
 
 
 def test_fetch_dataset_kwargs_read():
@@ -198,6 +216,33 @@ def test_fetch_dataset_duplicate_index_skips_asfreq():
     assert isinstance(df.index, pd.DatetimeIndex)
     assert not df.index.is_unique
     assert df.index.freq is None
+
+
+def test_fetch_dataset_m5_long_format_unsorted():
+    """
+    `fetch_dataset` sets the `datetime` column of the long-format `m5` dataset
+    as a sorted DatetimeIndex, without warnings and without frequency, as the
+    index has duplicate dates.
+    """
+    mock_df = pd.DataFrame({
+        'id': ['A', 'A', 'B', 'B'],
+        'datetime': pd.to_datetime(
+            ['2011-01-29', '2011-01-30', '2011-01-29', '2011-01-30']
+        ),
+        'sales': [1, 2, 3, 4],
+    })
+
+    with patch('pandas.read_parquet', return_value=mock_df):
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', UserWarning)
+            df = fetch_dataset('m5', version='latest', raw=False, verbose=False)
+
+    assert isinstance(df.index, pd.DatetimeIndex)
+    assert df.index.name == 'datetime'
+    assert df.index.is_monotonic_increasing
+    assert df.index.freq is None
+    assert list(df.columns) == ['id', 'sales']
+    assert sorted(df['sales']) == [1, 2, 3, 4]
 
 
 def test_fetch_dataset_preprocessing_failure_warns():

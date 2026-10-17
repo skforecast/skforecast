@@ -12,6 +12,22 @@ All significant changes to this project are documented in this release file.
 
 
 
+## 0.27.0 <small>In development</small> { id="0.27.0" }
+
+The main changes in this release are:
+
+
+**Added**
+
+
+**Changed**
+
+
+**Fixed**
+
++ Fixed two issues in <code>[fetch_dataset]</code> where the `website_visits` and `m5` datasets were returned without a `DatetimeIndex`, with the warning `Could not preprocess dataset`. In addition, large parquet datasets such as `m5` need less memory to load (about 10 GB instead of more than 15 GB). ([#1402](https://github.com/skforecast/skforecast/pull/1402))
+
+
 ## 0.26.0 <small>Oct 8, 2026</small> { id="0.26.0" }
 
 The main changes in this release are:

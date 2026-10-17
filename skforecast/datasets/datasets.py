@@ -141,7 +141,7 @@ datasets = {
         ),
         'sep': ',',
         'index_col': 'date',
-        'date_format': '%Y-%m-%d',
+        'date_format': '%d/%m/%y',
         'freq': 'D',
         'file_type': 'csv',
         'description': (
@@ -488,7 +488,7 @@ datasets = {
     'm5': {
         'url': 'https://huggingface.co/datasets/skforecast/m5_daily/resolve/main/m5_daily.parquet',
         'sep': None,
-        'index_col': 'timestamp',
+        'index_col': 'datetime',
         'date_format': '%Y-%m-%d',
         'freq': 'D',
         'file_type': 'parquet',
@@ -809,6 +809,14 @@ def fetch_dataset(
             raise ValueError(
                 f"Error reading dataset '{name}' from {url}: {str(e)}."
             )
+        # pyarrow keeps the memory used while reading in its pool. Returning it
+        # to the OS lets the preprocessing of large datasets (e.g. m5) fit in
+        # memory.
+        try:
+            import pyarrow as pa
+            pa.default_memory_pool().release_unused()
+        except ImportError:
+            pass
 
     if not raw:
         try:
@@ -816,11 +824,13 @@ def fetch_dataset(
             freq = datasets[name]['freq']
             date_format = datasets[name]['date_format']
             if df.index.name != index_col:
-                df = df.set_index(index_col)
+                # Unlike `set_index`, `pop` does not copy the whole DataFrame
+                df.index = df.pop(index_col)
             df.index = pd.to_datetime(df.index, format=date_format)
             if df.index.is_unique:
                 df = df.asfreq(freq)
-            df = df.sort_index()
+            if not df.index.is_monotonic_increasing:
+                df = df.sort_index()
         except Exception as e:
             warnings.warn(
                 f"Could not preprocess dataset '{name}': {e}",
