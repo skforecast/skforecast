@@ -38,7 +38,8 @@ class FoundationModel:
     Scikit-learn compatible interface for foundation time-series models.
 
     Currently supports Amazon Chronos-2, Google TimesFM 2.5 and 3.0, Salesforce
-    Moirai-2, TabICLv2, TabPFN-TS, TFC-T0, Synthefy Nori and EDF Lab TS-ICL.
+    Moirai-2, TabICLv2, TabPFN-TS, TFC-T0, Synthefy Nori, EDF Lab TS-ICL and
+    NX-AI TiRex-2.
     For full skforecast ecosystem integration (backtesting, model selection, etc.)
     use `ForecasterFoundation` instead.
 
@@ -88,6 +89,10 @@ class FoundationModel:
 
         - `'taharnbl/TS-ICL'`
 
+        NX-AI TiRex-2 (supports `exog`):
+
+        - `'NX-AI/TiRex-2'`
+
         See References for links to model documentation and model cards.
     **kwargs :
         Additional keyword arguments forwarded to the underlying adapter.
@@ -131,6 +136,9 @@ class FoundationModel:
           default `'tsicl-v1.ckpt'`), `context_length` (int, default 4096),
           `device` (str, default `'auto'`), `allow_auto_download` (bool,
           default True).
+        - **NX-AI TiRex-2** (`TiRex2Adapter`): `context_length` (int, default
+          2048), `device` (str, default `'auto'`), `predict_kwargs` (dict,
+          default None).
 
     Attributes
     ----------
@@ -271,6 +279,12 @@ class FoundationModel:
 
     .. [16] EDF Lab TS-ICL - HuggingFace model card.
             https://huggingface.co/taharnbl/TS-ICL
+
+    .. [17] NX-AI TiRex-2 - GitHub repository.
+            https://github.com/NX-AI/tirex-2
+
+    .. [18] NX-AI TiRex-2 - HuggingFace model card.
+            https://huggingface.co/NX-AI/TiRex-2
 
     """
 

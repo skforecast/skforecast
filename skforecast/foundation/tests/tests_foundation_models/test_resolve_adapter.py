@@ -12,6 +12,7 @@ from skforecast.foundation._adapters import (
     T0Adapter,
     NoriAdapter,
     TSICLAdapter,
+    TiRex2Adapter,
     _resolve_adapter,
     _ADAPTER_REGISTRY,
 )
@@ -35,6 +36,7 @@ from skforecast.foundation._adapters import (
         ("theforecastingcompany/t0-alpha", T0Adapter),
         ("Synthefy/Nori", NoriAdapter),
         ("taharnbl/TS-ICL", TSICLAdapter),
+        ("NX-AI/TiRex-2", TiRex2Adapter),
     ],
     ids=lambda x: str(x),
 )
@@ -127,6 +129,7 @@ def test_ADAPTER_REGISTRY_contains_all_expected_entries():
         "theforecastingcompany/t0": T0Adapter,
         "Synthefy/Nori": NoriAdapter,
         "taharnbl/TS-ICL": TSICLAdapter,
+        "NX-AI/TiRex-2": TiRex2Adapter,
     }
     for prefix, cls in expected.items():
         assert prefix in _ADAPTER_REGISTRY
