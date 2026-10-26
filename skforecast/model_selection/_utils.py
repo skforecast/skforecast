@@ -68,8 +68,12 @@ def initialize_lags_grid(
     if isinstance(lags_grid, list):
         lags_grid = {f'{lags}': lags for lags in lags_grid}
     elif lags_grid is None:
-        lags = [int(lag) for lag in forecaster.lags]  # Required since numpy 2.0
-        lags_grid = {f'{lags}': lags}
+        if forecaster.lags is None:
+            # Forecaster with only window features
+            lags_grid = {'None': None}
+        else:
+            lags = [int(lag) for lag in forecaster.lags]  # Required since numpy 2.0
+            lags_grid = {f'{lags}': lags}
     else:
         lags_label = 'keys'
 
