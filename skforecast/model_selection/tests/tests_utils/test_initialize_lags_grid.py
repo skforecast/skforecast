@@ -4,6 +4,7 @@ import re
 import pytest
 import numpy as np
 from sklearn.linear_model import Ridge
+from skforecast.preprocessing import RollingFeatures
 from skforecast.recursive import ForecasterRecursive
 from skforecast.model_selection._utils import initialize_lags_grid
 
@@ -28,14 +29,15 @@ def test_initialize_lags_grid_when_lags_grid_is_a_list():
     Test initialize_lags_grid when lags_grid is a list.
     """
     forecaster = ForecasterRecursive(estimator=Ridge(random_state=123), lags=2)
-    lags_grid = [1, [2, 4], range(3, 5), np.array([3, 7])]
+    lags_grid = [1, [2, 4], range(3, 5), np.array([3, 7]), None]
     lags_grid, lags_label = initialize_lags_grid(forecaster, lags_grid)
 
     lags_grid_expected = {
         '1': 1, 
         '[2, 4]': [2, 4], 
         'range(3, 5)': range(3, 5), 
-        '[3 7]': np.array([3, 7])
+        '[3 7]': np.array([3, 7]),
+        'None': None
     }
 
     assert lags_label == 'values'
@@ -53,13 +55,19 @@ def test_initialize_lags_grid_when_lags_grid_is_a_list():
                          [(3, {'[1, 2, 3]': [1, 2, 3]}), 
                           ([1, 2, 3], {'[1, 2, 3]': [1, 2, 3]}),
                           (range(1, 4), {'[1, 2, 3]': [1, 2, 3]}),
-                          (np.array([1, 2, 3]), {'[1, 2, 3]': [1, 2, 3]})],
+                          (np.array([1, 2, 3]), {'[1, 2, 3]': [1, 2, 3]}),
+                          (None, {'None': None})],
                          ids=lambda lags: f'lags, lags_grid_expected: {lags}')
 def test_initialize_lags_grid_when_lags_grid_is_None(lags, lags_grid_expected):
     """
-    Test initialize_lags_grid when lags_grid is None.
+    Test initialize_lags_grid when lags_grid is None, the lags of the forecaster
+    are used, also when they are None (forecaster with only window features).
     """
-    forecaster = ForecasterRecursive(estimator=Ridge(random_state=123), lags=lags)
+    forecaster = ForecasterRecursive(
+                     estimator       = Ridge(random_state=123),
+                     lags            = lags,
+                     window_features = RollingFeatures(stats=['mean'], window_sizes=3)
+                 )
     lags_grid = None
     lags_grid, lags_label = initialize_lags_grid(forecaster, lags_grid)
 
@@ -74,14 +82,21 @@ def test_initialize_lags_grid_when_lags_grid_is_a_dict():
     Test initialize_lags_grid when lags_grid is a dict.
     """
     forecaster = ForecasterRecursive(estimator=Ridge(random_state=123), lags=2)
-    lags_grid = {'1': 1, '[2, 4]': [2, 4], 'range(3, 5)': range(3, 5), '[3 7]': np.array([3, 7])}
+    lags_grid = {
+        '1': 1,
+        '[2, 4]': [2, 4],
+        'range(3, 5)': range(3, 5),
+        '[3 7]': np.array([3, 7]),
+        'no_lags': None
+    }
     lags_grid, lags_label = initialize_lags_grid(forecaster, lags_grid)
 
     lags_grid_expected = {
         '1': 1, 
         '[2, 4]': [2, 4], 
         'range(3, 5)': range(3, 5), 
-        '[3 7]': np.array([3, 7])
+        '[3 7]': np.array([3, 7]),
+        'no_lags': None
     }
     
     assert lags_label == 'keys'
