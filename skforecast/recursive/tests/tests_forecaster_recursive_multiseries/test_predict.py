@@ -1393,6 +1393,45 @@ def test_predict_output_when_encoding_onehot_and_series_not_in_alphabetical_orde
     pd.testing.assert_frame_equal(predictions, expected)
 
 
+@pytest.mark.parametrize(
+    "encoding, expected_pred",
+    [
+        ('ordinal', np.array([7.9141030331, 9.0366090718, 7.8098308274, 8.8198044885,
+                              7.5396723503, 9.7230055130, 7.3020742452, 8.9756666102])),
+        (None, np.array([9.2055791683, 8.1803752703, 8.9613651365, 8.4324024806,
+                         8.4987969814, 8.6561123966, 8.5811338924, 8.6482967876]))
+    ],
+    ids=['encoding: ordinal', 'encoding: None']
+)
+def test_predict_output_when_encoding_not_onehot_and_series_not_in_alphabetical_order(
+    encoding, expected_pred
+):
+    """
+    Test predict output when `encoding` is 'ordinal' or None and the series are
+    not in alphabetical order ('c', 'a', 'd', 'b'). With `levels=None`, the
+    levels of each step follow the order of the series, as with 'onehot', not
+    the alphabetical order of `encoding_mapping_`.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = LinearRegression(),
+                     lags               = 2,
+                     encoding           = encoding,
+                     transformer_series = None,
+                     dropna_from_series = True
+                 )
+    forecaster.fit(series=series_dict_unordered, suppress_warnings=True)
+    predictions = forecaster.predict(steps=2, suppress_warnings=True)
+
+    expected = pd.DataFrame(
+        {'level': ['c', 'a', 'd', 'b', 'c', 'a', 'd', 'b'],
+         'pred': expected_pred},
+        index=pd.DatetimeIndex(['2020-01-11'] * 4 + ['2020-01-12'] * 4)
+    )
+
+    assert forecaster.X_train_series_names_in_ == ['c', 'a', 'd', 'b']
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
 def test_predict_output_when_encoding_onehot_and_series_without_rows_in_X_train():
     """
     Test predict output when `encoding='onehot'` and one series ('d') loses
