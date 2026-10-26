@@ -89,6 +89,8 @@ The main changes in this release are:
 
 + Hyperparameter searches ranked the candidates by the task of the forecaster (minimize in regression, maximize in classification), not by the metric: with `r2_score`, or `zero_one_loss` in classification, `return_best=True` refitted the worst candidate. The direction is now inferred from the metric (scikit-learn `*_score` metrics are maximized), a custom callable can set `greater_is_better`, and `direction` in `kwargs_create_study` also orders the results. ([#1431](https://github.com/skforecast/skforecast/pull/1431))
 
++ <code>[grid_search_forecaster]</code>, <code>[random_search_forecaster]</code> and their multiseries versions failed with a forecaster created with `lags=None` and only `window_features` (`TypeError: 'NoneType' object is not iterable`), and with a `None` element in `lags_grid` (`AttributeError`). A `None` element now evaluates a candidate without lags. ([#1355](https://github.com/skforecast/skforecast/issues/1355), [#1388](https://github.com/skforecast/skforecast/pull/1388), [#1433](https://github.com/skforecast/skforecast/pull/1433))
+
 + <code>[plot_residuals]</code> ignored the `fig` argument when another figure was active: the subplots were drawn on the active figure and `fig` was returned empty. ([#1386](https://github.com/skforecast/skforecast/issues/1386), [#1387](https://github.com/skforecast/skforecast/pull/1387))
 
 

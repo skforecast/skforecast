@@ -57,8 +57,8 @@ def grid_search_forecaster(
     metric: str | Callable | list[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
     lags_grid: (
-        list[int | list[int] | np.ndarray | range]
-        | dict[str, int | list[int] | np.ndarray | range]
+        list[int | list[int] | np.ndarray | range | None]
+        | dict[str, int | list[int] | np.ndarray | range | None]
         | None
     ) = None,
     return_best: bool = True,
@@ -106,9 +106,12 @@ def grid_search_forecaster(
         number of observations as `y` and should be aligned so that y[i] is
         regressed on exog[i].
     lags_grid : list, dict, default None
-        Lists of lags to try, containing int, lists, numpy ndarray, or range 
-        objects. If `dict`, the keys are used as labels in the `results` 
-        DataFrame, and the values are used as the lists of lags to try.
+        Lists of lags to try, containing int, lists, numpy ndarray, range
+        objects or `None`. A `None` element evaluates the forecaster without
+        lags, using only its `window_features` (a `ValueError` is raised if
+        it has none). If `dict`, the keys are used as labels in the `results`
+        DataFrame, and the values are used as the lists of lags to try. If
+        `None`, the lags of the forecaster are used.
     return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
     n_jobs : int, 'auto', default 'auto'
@@ -170,8 +173,8 @@ def random_search_forecaster(
     metric: str | Callable | list[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
     lags_grid: (
-        list[int | list[int] | np.ndarray | range]
-        | dict[str, int | list[int] | np.ndarray | range]
+        list[int | list[int] | np.ndarray | range | None]
+        | dict[str, int | list[int] | np.ndarray | range | None]
         | None
     ) = None,
     n_iter: int = 10,
@@ -221,9 +224,12 @@ def random_search_forecaster(
         number of observations as `y` and should be aligned so that y[i] is
         regressed on exog[i]. 
     lags_grid : list, dict, default None
-        Lists of lags to try, containing int, lists, numpy ndarray, or range 
-        objects. If `dict`, the keys are used as labels in the `results` 
-        DataFrame, and the values are used as the lists of lags to try.
+        Lists of lags to try, containing int, lists, numpy ndarray, range
+        objects or `None`. A `None` element evaluates the forecaster without
+        lags, using only its `window_features` (a `ValueError` is raised if
+        it has none). If `dict`, the keys are used as labels in the `results`
+        DataFrame, and the values are used as the lists of lags to try. If
+        `None`, the lags of the forecaster are used.
     n_iter : int, default 10
         Number of parameter settings that are sampled per lags configuration. 
         n_iter trades off runtime vs quality of the solution.
@@ -291,8 +297,8 @@ def _evaluate_grid_hyperparameters(
     metric: str | Callable | list[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
     lags_grid: (
-        list[int | list[int] | np.ndarray | range]
-        | dict[str, int | list[int] | np.ndarray | range]
+        list[int | list[int] | np.ndarray | range | None]
+        | dict[str, int | list[int] | np.ndarray | range | None]
         | None
     ) = None,
     return_best: bool = True,
@@ -339,9 +345,12 @@ def _evaluate_grid_hyperparameters(
         number of observations as `y` and should be aligned so that y[i] is
         regressed on exog[i]. 
     lags_grid : list, dict, default None
-        Lists of lags to try, containing int, lists, numpy ndarray, or range 
-        objects. If `dict`, the keys are used as labels in the `results` 
-        DataFrame, and the values are used as the lists of lags to try.
+        Lists of lags to try, containing int, lists, numpy ndarray, range
+        objects or `None`. A `None` element evaluates the forecaster without
+        lags, using only its `window_features` (a `ValueError` is raised if
+        it has none). If `dict`, the keys are used as labels in the `results`
+        DataFrame, and the values are used as the lists of lags to try. If
+        `None`, the lags of the forecaster are used.
     return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
     n_jobs : int, 'auto', default 'auto'
@@ -443,7 +452,11 @@ def _evaluate_grid_hyperparameters(
     for lags_k, lags_v in lags_grid_tqdm:
         
         forecaster_search.set_lags(lags_v)
-        lags_v = forecaster_search.lags.copy()
+        lags_v = (
+            forecaster_search.lags.copy()
+            if forecaster_search.lags is not None
+            else None
+        )
         if lags_label == 'values':
             lags_k = lags_v
 
@@ -995,8 +1008,8 @@ def grid_search_forecaster_multiseries(
     levels: str | list[str] | None = None,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
     lags_grid: (
-        list[int | list[int] | np.ndarray | range]
-        | dict[str, int | list[int] | np.ndarray | range]
+        list[int | list[int] | np.ndarray | range | None]
+        | dict[str, int | list[int] | np.ndarray | range | None]
         | None
     ) = None,
     return_best: bool = True,
@@ -1056,9 +1069,12 @@ def grid_search_forecaster_multiseries(
     exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variables.
     lags_grid : list, dict, default None
-        Lists of lags to try, containing int, lists, numpy ndarray, or range 
-        objects. If `dict`, the keys are used as labels in the `results` 
-        DataFrame, and the values are used as the lists of lags to try.
+        Lists of lags to try, containing int, lists, numpy ndarray, range
+        objects or `None`. A `None` element evaluates the forecaster without
+        lags, using only its `window_features` (a `ValueError` is raised if
+        it has none). If `dict`, the keys are used as labels in the `results`
+        DataFrame, and the values are used as the lists of lags to try. If
+        `None`, the lags of the forecaster are used.
     return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
     n_jobs : int, 'auto', default 'auto'
@@ -1126,8 +1142,8 @@ def random_search_forecaster_multiseries(
     levels: str | list[str] | None = None,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
     lags_grid: (
-        list[int | list[int] | np.ndarray | range]
-        | dict[str, int | list[int] | np.ndarray | range]
+        list[int | list[int] | np.ndarray | range | None]
+        | dict[str, int | list[int] | np.ndarray | range | None]
         | None
     ) = None,
     n_iter: int = 10,
@@ -1189,9 +1205,12 @@ def random_search_forecaster_multiseries(
     exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variables.
     lags_grid : list, dict, default None
-        Lists of lags to try, containing int, lists, numpy ndarray, or range 
-        objects. If `dict`, the keys are used as labels in the `results` 
-        DataFrame, and the values are used as the lists of lags to try.
+        Lists of lags to try, containing int, lists, numpy ndarray, range
+        objects or `None`. A `None` element evaluates the forecaster without
+        lags, using only its `window_features` (a `ValueError` is raised if
+        it has none). If `dict`, the keys are used as labels in the `results`
+        DataFrame, and the values are used as the lists of lags to try. If
+        `None`, the lags of the forecaster are used.
     n_iter : int, default 10
         Number of parameter settings that are sampled per lags configuration. 
         n_iter trades off runtime vs quality of the solution.
@@ -1267,8 +1286,8 @@ def _evaluate_grid_hyperparameters_multiseries(
     levels: str | list[str] | None = None,
     exog: pd.Series | pd.DataFrame | dict[str, pd.Series | pd.DataFrame] | None = None,
     lags_grid: (
-        list[int | list[int] | np.ndarray | range]
-        | dict[str, int | list[int] | np.ndarray | range]
+        list[int | list[int] | np.ndarray | range | None]
+        | dict[str, int | list[int] | np.ndarray | range | None]
         | None
     ) = None,
     return_best: bool = True,
@@ -1327,9 +1346,12 @@ def _evaluate_grid_hyperparameters_multiseries(
     exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variables.
     lags_grid : list, dict, default None
-        Lists of lags to try, containing int, lists, numpy ndarray, or range 
-        objects. If `dict`, the keys are used as labels in the `results` 
-        DataFrame, and the values are used as the lists of lags to try.
+        Lists of lags to try, containing int, lists, numpy ndarray, range
+        objects or `None`. A `None` element evaluates the forecaster without
+        lags, using only its `window_features` (a `ValueError` is raised if
+        it has none). If `dict`, the keys are used as labels in the `results`
+        DataFrame, and the values are used as the lists of lags to try. If
+        `None`, the lags of the forecaster are used.
     return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
     n_jobs : int, 'auto', default 'auto'
@@ -1473,7 +1495,11 @@ def _evaluate_grid_hyperparameters_multiseries(
     for lags_k, lags_v in lags_grid_tqdm:
 
         forecaster_search.set_lags(lags_v)
-        lags_v = forecaster_search.lags.copy()
+        lags_v = (
+            forecaster_search.lags.copy()
+            if forecaster_search.lags is not None
+            else None
+        )
         if lags_label == 'values':
             lags_k = lags_v
 

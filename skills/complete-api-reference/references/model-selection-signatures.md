@@ -96,7 +96,7 @@ grid_search_forecaster(
     param_grid,              # dict, sklearn-style parameter grid
     metric,                  # str | Callable | list[str | Callable]
     exog=None,               # pd.Series | pd.DataFrame | None
-    lags_grid=None,          # list[int | list | np.ndarray | range] | dict | None
+    lags_grid=None,          # list[int | list | np.ndarray | range | None] | dict | None
     return_best=True,        # bool
     n_jobs='auto',           # int | str
     verbose=False,           # bool
@@ -112,7 +112,7 @@ random_search_forecaster(
     param_distributions,     # dict, parameter distributions for sampling
     metric,                  # str | Callable | list[str | Callable]
     exog=None,               # pd.Series | pd.DataFrame | None
-    lags_grid=None,          # list[int | list | np.ndarray | range] | dict | None
+    lags_grid=None,          # list[int | list | np.ndarray | range | None] | dict | None
     n_iter=10,               # int, number of random parameter combinations
     random_state=123,        # int
     return_best=True,        # bool
@@ -155,7 +155,7 @@ grid_search_forecaster_multiseries(
     aggregate_metric=['weighted_average', 'average', 'pooling'],  # str | list[str]
     levels=None,             # str | list[str] | None
     exog=None,               # pd.Series | pd.DataFrame | dict | None
-    lags_grid=None,          # list | dict | None
+    lags_grid=None,          # list[int | list | np.ndarray | range | None] | dict | None
     return_best=True,        # bool
     n_jobs='auto',           # int | str
     verbose=False,           # bool
@@ -173,7 +173,7 @@ random_search_forecaster_multiseries(
     aggregate_metric=['weighted_average', 'average', 'pooling'],  # str | list[str]
     levels=None,             # str | list[str] | None
     exog=None,               # pd.Series | pd.DataFrame | dict | None
-    lags_grid=None,          # list | dict | None
+    lags_grid=None,          # list[int | list | np.ndarray | range | None] | dict | None
     n_iter=10,               # int
     random_state=123,        # int
     return_best=True,        # bool

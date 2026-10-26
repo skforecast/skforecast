@@ -99,6 +99,35 @@ def test_ValueError_evaluate_grid_hyperparameters_when_return_best_and_len_y_exo
         )
 
 
+def test_ValueError_evaluate_grid_hyperparameters_when_lags_grid_has_None_and_no_window_features():
+    """
+    Test ValueError is raised in _evaluate_grid_hyperparameters when `lags_grid`
+    contains `None` and the forecaster has no window features.
+    """
+    forecaster = ForecasterRecursive(
+                     estimator = Ridge(random_state=123),
+                     lags      = 2
+                 )
+    cv = TimeSeriesFold(steps=3, initial_train_size=len(y) - 12, refit=False)
+
+    err_msg = re.escape(
+        "At least one of the arguments `lags` or `window_features` must be "
+        "different from None. This is required to create the predictors used "
+        "in training the forecaster."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        _evaluate_grid_hyperparameters(
+            forecaster  = forecaster,
+            y           = y,
+            cv          = cv,
+            lags_grid   = [None],
+            param_grid  = [{'alpha': 0.01}, {'alpha': 0.1}],
+            metric      = 'mean_squared_error',
+            return_best = False,
+            verbose     = False
+        )
+
+
 def test_ValueError_evaluate_grid_hyperparameters_metric_list_duplicate_names():
     """
     Test ValueError is raised in _evaluate_grid_hyperparameters when a `list` of 
@@ -560,6 +589,110 @@ def test_output_evaluate_grid_hyperparameters_ForecasterRecursive_lags_grid_is_N
     )
 
     pd.testing.assert_frame_equal(results, expected_results)
+
+
+@pytest.mark.parametrize(
+    "cv, expected_metric",
+    [(TimeSeriesFold(steps=3, initial_train_size=len(y) - 12, refit=False),
+      np.array([0.07236308467323382, 0.07375229571270249, 0.07413626926165669])),
+     (OneStepAheadFold(initial_train_size=len(y) - 12),
+      np.array([0.07178242992279948, 0.0727094177919783, 0.07301468528616072]))],
+    ids=['TimeSeriesFold', 'OneStepAheadFold']
+)
+@pytest.mark.parametrize("lags_grid",
+                         [None, [None]],
+                         ids=lambda lg: f'lags_grid: {lg}')
+def test_output_evaluate_grid_hyperparameters_when_forecaster_lags_is_None(
+    cv, expected_metric, lags_grid
+):
+    """
+    Test output of _evaluate_grid_hyperparameters when the forecaster has
+    `lags=None` and only window features: `lags_grid=None` uses the lags of
+    the forecaster and `lags_grid=[None]` evaluates the forecaster without lags.
+    """
+    forecaster = ForecasterRecursive(
+                     estimator       = Ridge(random_state=123),
+                     lags            = None,
+                     window_features = RollingFeatures(stats=['mean'], window_sizes=3)
+                 )
+    param_grid = [{'alpha': 0.01}, {'alpha': 0.1}, {'alpha': 1}]
+
+    results = _evaluate_grid_hyperparameters(
+                  forecaster  = forecaster,
+                  y           = y,
+                  cv          = cv,
+                  lags_grid   = lags_grid,
+                  param_grid  = param_grid,
+                  metric      = 'mean_squared_error',
+                  return_best = False,
+                  verbose     = False
+              )
+
+    expected_results = pd.DataFrame(
+        {
+            "lags": [None, None, None],
+            "lags_label": [None, None, None],
+            "params": [{"alpha": 1}, {"alpha": 0.1}, {"alpha": 0.01}],
+            "mean_squared_error": expected_metric,
+            "alpha": np.array([1.0, 0.1, 0.01]),
+        },
+        index=pd.RangeIndex(start=0, stop=3, step=1),
+    )
+
+    pd.testing.assert_frame_equal(results, expected_results)
+
+
+def test_evaluate_grid_hyperparameters_when_lags_grid_has_None_and_return_best():
+    """
+    Test that `None` in `lags_grid` evaluates the forecaster without lags (only
+    window features) next to the other candidates, and that the forecaster is
+    refitted with the best lags when `return_best=True`.
+    """
+    forecaster = ForecasterDirect(
+                     estimator       = Ridge(random_state=123),
+                     steps           = 3,
+                     lags            = None,
+                     window_features = RollingFeatures(stats=['mean'], window_sizes=3)
+                 )
+    cv = TimeSeriesFold(steps=3, initial_train_size=len(y) - 12, refit=False)
+    param_grid = [{'alpha': 0.01}, {'alpha': 0.1}, {'alpha': 1}]
+
+    results = _evaluate_grid_hyperparameters(
+                  forecaster  = forecaster,
+                  y           = y,
+                  cv          = cv,
+                  lags_grid   = [None, 2],
+                  param_grid  = param_grid,
+                  metric      = 'mean_squared_error',
+                  return_best = True,
+                  verbose     = False
+              )
+
+    expected_lags = [[1, 2], [1, 2], [1, 2], None, None, None]
+    expected_params = [
+        {'alpha': 1}, {'alpha': 0.1}, {'alpha': 0.01},
+        {'alpha': 1}, {'alpha': 0.1}, {'alpha': 0.01}
+    ]
+    expected_metric = np.array(
+        [0.069079, 0.069753, 0.072559, 0.073967, 0.076073, 0.076646]
+    )
+
+    results_lags = [
+        None if lags is None else lags.tolist() for lags in results['lags']
+    ]
+    results_lags_label = [
+        None if lags is None else lags.tolist() for lags in results['lags_label']
+    ]
+    assert results_lags == expected_lags
+    assert results_lags_label == expected_lags
+    assert results['params'].to_list() == expected_params
+    np.testing.assert_array_almost_equal(
+        results['mean_squared_error'].to_numpy(), expected_metric
+    )
+    np.testing.assert_array_equal(forecaster.lags, np.array([1, 2]))
+    for i in forecaster.steps:
+        assert forecaster.estimators_[i].alpha == 1
+    assert forecaster.is_fitted
 
 
 def test_output_evaluate_grid_hyperparameters_ForecasterRecursive_metric_list_with_mocked():
