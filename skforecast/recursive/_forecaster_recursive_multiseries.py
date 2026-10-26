@@ -311,9 +311,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         is equal to `exog_dtypes_in_`.
     X_train_series_names_in_ : list
         Names of the series (levels) included in the matrix `X_train` created
-        internally for training. It can be different from `series_names_in_` if
-        some series are dropped during the training process because of NaNs or 
-        because they are not present in the training period.
+        internally for training, in the same order as `series_names_in_`. It can
+        be different from `series_names_in_` if some series are dropped during
+        the training process because of NaNs or because they are not present in
+        the training period.
     X_train_window_features_names_out_ : list
         Names of the window features included in the matrix `X_train` created
         internally for training.
@@ -1377,9 +1378,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             Names of the series (levels) provided by the user during training.
         X_train_series_names_in_ : list
             Names of the series (levels) included in the matrix `X_train` created
-            internally for training. It can be different from `series_names_in_` if
-            some series are dropped during the training process because of NaNs or
-            because they are not present in the training period.
+            internally for training, in the same order as `series_names_in_`. It
+            can be different from `series_names_in_` if some series are dropped
+            during the training process because of NaNs or because they are not
+            present in the training period.
         exog_names_in_ : list
             Names of the exogenous variables used during training.
         categorical_features_names_in_ : list
@@ -1708,17 +1710,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 )
             )
         
-        if self.encoding == 'onehot':
-            level_slices = self._get_level_row_slices(X_train=X_train)
-            X_train_series_names_in_ = [
-                col for col in series_names_in_ if col in level_slices
-            ]
-        else:
-            unique_levels = X_train['_level_skforecast'].unique()
-            X_train_series_names_in_ = [
-                k for k, v in self.encoding_mapping_.items()
-                if v in unique_levels
-            ]
+        # Series with rows in `X_train`, in the order of `series_names_in_`
+        # whatever the encoding.
+        level_slices = self._get_level_row_slices(X_train=X_train)
+        X_train_series_names_in_ = [
+            col for col in series_names_in_ if col in level_slices
+        ]
 
         # The last time window of training data is stored so that lags needed as
         # predictors in the first iteration of `predict()` can be calculated.

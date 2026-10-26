@@ -38,6 +38,8 @@ The main changes in this release are:
 
     + Hyperparameter searches with a scikit-learn metric in which greater is better (`r2_score`, `explained_variance_score`...) or, with <code>[ForecasterRecursiveClassifier]</code>, a loss (`zero_one_loss`): the order of the results and the model selected with `return_best` change, now to the best candidate.
 
+    + <code>[ForecasterRecursiveMultiSeries]</code> with `encoding='ordinal'` (the default), `'ordinal_category'` or `None` and series not given in alphabetical order: the rows of each step in the output of `predict` and the other predict methods with `levels=None`, and the keys of `in_sample_residuals_`, follow the order of the series instead of the alphabetical order. The values are the same; pass `levels` to fix an order.
+
     And some code needs to be updated: passing both `alpha` and `interval` to <code>[ForecasterStats]</code> or <code>[backtesting_stats]</code> raises a `ValueError`; and the metrics of backtesting with one prediction interval (`interval`, or `quantiles` in <code>[backtesting_foundation]</code>) have two more columns, `coverage` and `interval_width`, so code that selects them by position may need to change. See **Added** and **Changed**.
 
 
@@ -72,6 +74,8 @@ The main changes in this release are:
 + `freeze_params=True` (the default) in <code>[backtesting_stats]</code>, also used by <code>[grid_search_stats]</code> and <code>[random_search_stats]</code>, did not freeze anything: the automatic selection of <code>[Arima]</code> and <code>[Ets]</code> was repeated in every refit. The model selected in the first fit is now reused, 3.6 times faster with automatic Arima and 8.4 times with Ets (20 folds). With `lambda_auto=True`, `best_params_` of <code>[Ets]</code> stores the selected Box-Cox lambda, as R's `ets(y, model = fit)` reuses it. ([#1425](https://github.com/skforecast/skforecast/pull/1425))
 
 + <code>[ForecasterRecursiveMultiSeries]</code> raised a `KeyError` in `fit` and in backtesting when the series names were integers (dict keys, wide DataFrame columns or numeric ids in long data). The names are now kept as given; with `encoding='onehot'` the one-hot columns are named after the series as strings. ([#1357](https://github.com/skforecast/skforecast/issues/1357), [#1412](https://github.com/skforecast/skforecast/pull/1412))
+
++ In <code>[ForecasterRecursiveMultiSeries]</code>, the order of `X_train_series_names_in_`, of the keys of `in_sample_residuals_` and `in_sample_residuals_by_bin_`, and of the series in the output of the predict methods with `levels=None` depended on `encoding`: the order of the series with `'onehot'`, alphabetical with the other encodings. It now always follows the order in which the series were given, as `series_names_in_` and `last_window_` already did. ([#1356](https://github.com/skforecast/skforecast/issues/1356))
 
 + When missing values left no training sample, <code>[ForecasterRecursive]</code>, <code>[ForecasterDirect]</code> and the other machine learning forecasters advised `dropna_from_series = False`, which then failed with estimators that do not accept NaNs. The error now gives the largest lag and window feature and the fixes that work for the estimator. ([#1411](https://github.com/skforecast/skforecast/issues/1411), [#1422](https://github.com/skforecast/skforecast/pull/1422))
 
