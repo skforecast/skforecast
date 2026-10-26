@@ -111,9 +111,9 @@ def test_ValueError_evaluate_grid_hyperparameters_when_lags_grid_has_None_and_no
     cv = TimeSeriesFold(steps=3, initial_train_size=len(y) - 12, refit=False)
 
     err_msg = re.escape(
-        "At least one of the arguments `lags` or `window_features` must be "
-        "different from None. This is required to create the predictors used "
-        "in training the forecaster."
+        "`lags_grid` contains `None`, which evaluates the forecaster without "
+        "lags, but the forecaster has no `window_features`. Set "
+        "`window_features` in the forecaster or remove `None` from `lags_grid`."
     )
     with pytest.raises(ValueError, match=err_msg):
         _evaluate_grid_hyperparameters(
@@ -609,6 +609,7 @@ def test_output_evaluate_grid_hyperparameters_when_forecaster_lags_is_None(
     Test output of _evaluate_grid_hyperparameters when the forecaster has
     `lags=None` and only window features: `lags_grid=None` uses the lags of
     the forecaster and `lags_grid=[None]` evaluates the forecaster without lags.
+    With `return_best=True`, the forecaster is refitted without lags.
     """
     forecaster = ForecasterRecursive(
                      estimator       = Ridge(random_state=123),
@@ -624,7 +625,7 @@ def test_output_evaluate_grid_hyperparameters_when_forecaster_lags_is_None(
                   lags_grid   = lags_grid,
                   param_grid  = param_grid,
                   metric      = 'mean_squared_error',
-                  return_best = False,
+                  return_best = True,
                   verbose     = False
               )
 
@@ -640,6 +641,9 @@ def test_output_evaluate_grid_hyperparameters_when_forecaster_lags_is_None(
     )
 
     pd.testing.assert_frame_equal(results, expected_results)
+    assert forecaster.lags is None
+    assert forecaster.estimator.alpha == 1
+    assert forecaster.is_fitted
 
 
 def test_evaluate_grid_hyperparameters_when_lags_grid_has_None_and_return_best():

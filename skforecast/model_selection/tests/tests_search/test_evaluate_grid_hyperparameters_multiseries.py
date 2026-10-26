@@ -553,6 +553,7 @@ def test_output_evaluate_grid_hyperparameters_multiseries_when_forecaster_lags_i
     Test output of _evaluate_grid_hyperparameters_multiseries when the forecaster
     has `lags=None` and only window features: `lags_grid=None` uses the lags of
     the forecaster and `lags_grid=[None]` evaluates the forecaster without lags.
+    With `return_best=True`, the forecaster is refitted without lags.
     """
     forecaster = ForecasterRecursiveMultiSeries(
                      estimator          = Ridge(random_state=123),
@@ -573,7 +574,7 @@ def test_output_evaluate_grid_hyperparameters_multiseries_when_forecaster_lags_i
                   levels             = ['l1', 'l2'],
                   exog               = None,
                   lags_grid          = lags_grid,
-                  return_best        = False,
+                  return_best        = True,
                   verbose            = False
               )
 
@@ -590,6 +591,9 @@ def test_output_evaluate_grid_hyperparameters_multiseries_when_forecaster_lags_i
     )
 
     pd.testing.assert_frame_equal(results, expected_results)
+    assert forecaster.lags is None
+    assert forecaster.estimator.alpha == 1
+    assert forecaster.is_fitted
 
 
 @pytest.mark.parametrize("levels", 

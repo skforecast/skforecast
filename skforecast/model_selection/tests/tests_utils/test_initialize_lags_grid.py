@@ -28,7 +28,11 @@ def test_initialize_lags_grid_when_lags_grid_is_a_list():
     """
     Test initialize_lags_grid when lags_grid is a list.
     """
-    forecaster = ForecasterRecursive(estimator=Ridge(random_state=123), lags=2)
+    forecaster = ForecasterRecursive(
+                     estimator       = Ridge(random_state=123),
+                     lags            = 2,
+                     window_features = RollingFeatures(stats=['mean'], window_sizes=3)
+                 )
     lags_grid = [1, [2, 4], range(3, 5), np.array([3, 7]), None]
     lags_grid, lags_label = initialize_lags_grid(forecaster, lags_grid)
 
@@ -81,7 +85,11 @@ def test_initialize_lags_grid_when_lags_grid_is_a_dict():
     """
     Test initialize_lags_grid when lags_grid is a dict.
     """
-    forecaster = ForecasterRecursive(estimator=Ridge(random_state=123), lags=2)
+    forecaster = ForecasterRecursive(
+                     estimator       = Ridge(random_state=123),
+                     lags            = 2,
+                     window_features = RollingFeatures(stats=['mean'], window_sizes=3)
+                 )
     lags_grid = {
         '1': 1,
         '[2, 4]': [2, 4],
@@ -108,3 +116,22 @@ def test_initialize_lags_grid_when_lags_grid_is_a_dict():
             assert list(v) == list(v_expected)
         else:
             assert v == v_expected
+
+
+@pytest.mark.parametrize("lags_grid",
+                         [[2, None], {'two': 2, 'no_lags': None}],
+                         ids=lambda lg: f'lags_grid: {lg}')
+def test_ValueError_initialize_lags_grid_when_lags_grid_has_None_and_no_window_features(lags_grid):
+    """
+    Test ValueError is raised when lags_grid contains None and the forecaster
+    has no window features, before any candidate is evaluated.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(random_state=123), lags=2)
+
+    err_msg = re.escape(
+        "`lags_grid` contains `None`, which evaluates the forecaster without "
+        "lags, but the forecaster has no `window_features`. Set "
+        "`window_features` in the forecaster or remove `None` from `lags_grid`."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        initialize_lags_grid(forecaster, lags_grid)
