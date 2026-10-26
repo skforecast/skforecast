@@ -111,8 +111,8 @@ def test_ValueError_evaluate_grid_hyperparameters_when_lags_grid_has_None_and_no
     cv = TimeSeriesFold(steps=3, initial_train_size=len(y) - 12, refit=False)
 
     err_msg = re.escape(
-        "`lags_grid` contains `None`, which evaluates the forecaster without "
-        "lags, but the forecaster has no `window_features`. Set "
+        "`lags_grid` contains `None`, a candidate without lags, but the "
+        "forecaster has no `window_features` to create the predictors. Set "
         "`window_features` in the forecaster or remove `None` from `lags_grid`."
     )
     with pytest.raises(ValueError, match=err_msg):

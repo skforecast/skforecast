@@ -95,12 +95,13 @@ def initialize_lags_grid(
     else:
         lags_label = 'keys'
 
-    if forecaster.window_features is None and any(
-        lags is None for lags in lags_grid.values()
+    if (
+        any(lags is None for lags in lags_grid.values())
+        and forecaster.window_features is None
     ):
         raise ValueError(
-            "`lags_grid` contains `None`, which evaluates the forecaster without "
-            "lags, but the forecaster has no `window_features`. Set "
+            "`lags_grid` contains `None`, a candidate without lags, but the "
+            "forecaster has no `window_features` to create the predictors. Set "
             "`window_features` in the forecaster or remove `None` from `lags_grid`."
         )
 
