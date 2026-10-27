@@ -1893,3 +1893,27 @@ def test_predict_output_when_last_window_last_value_is_NaN_and_differentiation_a
 
     assert predictions.loc[predictions['level'] == 'l1', 'pred'].isna().all()
     assert not predictions.loc[predictions['level'] == 'l2', 'pred'].isna().any()
+
+
+def test_predict_output_when_last_window_NaN_before_last_values_of_level_and_differentiation_dict():
+    """
+    Test predict output when `differentiation` is a dict with different
+    orders and `last_window` has a NaN in the second last value of a series
+    with order 1. All the series are checked at once with the maximum order
+    (2), but the differentiation of that series is reverted only from its
+    last value, so no error is raised and, with an estimator that accepts
+    NaN, its predictions are not NaN.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator=HistGradientBoostingRegressor(max_iter=10, random_state=123),
+                     lags=[3],
+                     differentiation={'l1': 1, 'l2': 2, '_unknown_level': 1}
+                 )
+    forecaster.fit(series=series_diff.iloc[:20])
+    last_window = series_diff.iloc[-6:].copy()
+    last_window.iloc[-2, 0] = np.nan
+    predictions = forecaster.predict(
+        steps=2, last_window=last_window, suppress_warnings=True
+    )
+
+    assert not predictions['pred'].isna().any()

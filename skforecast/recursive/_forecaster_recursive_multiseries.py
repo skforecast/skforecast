@@ -2874,6 +2874,21 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             shape=last_window.shape, fill_value=np.nan, order='F', dtype=float
         )
 
+        # NOTE: The differentiation of each level is reverted from its last
+        # values. They are checked for all levels at once, and level by level,
+        # to name the series and the dates, only where one is missing.
+        # Backtesting allows NaN predictions, which it handles when calculating
+        # the metrics. `getattr` keeps forecasters saved with previous versions
+        # working.
+        levels_nan_last_values = None
+        if (
+            self.differentiation is not None
+            and not getattr(self, '_allow_nan_predictions', False)
+        ):
+            levels_nan_last_values = pd.isna(
+                last_window_values[-self.differentiation_max:]
+            ).any(axis=0)
+
         differentiators = {}
         exog_values_all_levels = []
         for idx_level, level in enumerate(levels):
@@ -2891,10 +2906,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 else:
                     differentiators[level] = copy(self.differentiator_['_unknown_level'])
                 if differentiators[level] is not None:
-                    # NOTE: Backtesting allows NaN predictions, which it handles
-                    # when calculating the metrics. `getattr` keeps forecasters
-                    # saved with previous versions working.
-                    if not getattr(self, '_allow_nan_predictions', False):
+                    if (
+                        levels_nan_last_values is not None
+                        and levels_nan_last_values[idx_level]
+                    ):
                         _check_differentiation_last_values(
                             last_window_values = last_window_level,
                             last_window_index  = last_window.index,
