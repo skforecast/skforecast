@@ -63,8 +63,8 @@ grande es la suite: 90 tests cuyas expectativas son específicas de pandas 2
 (dtype `object`, resolución `[ns]`, textos de mensajes). Esfuerzo estimado:
 3 a 4 días, la mitad en tests.
 
-**¿Se pierde rendimiento? Con el código actual, en pandas 3, sí en la
-construcción de matrices; con los cambios propuestos, no.** pandas 3 copia
+**¿Se pierde rendimiento? pandas 2 queda igual; pandas 3 pierde algo de
+tiempo frente a pandas 2 incluso con los cambios propuestos, pero no memoria.** pandas 3 copia
 los arrays de numpy al construir un `DataFrame` y los `astype` y `concat`
 fragmentan igual que antes: `create_train_X_y` de los forecasters que
 construyen la matriz en numpy es entre 1,6 y 3,1 veces más lento en pandas 3
@@ -79,8 +79,16 @@ keyword `copy=False` sin más costaría hasta 1,9 veces el tiempo y un 22 %
 más de memoria, medido). Algunos caminos ya mejoran con pandas 3 sin tocar
 nada: `ForecasterRecursiveMultiSeries` con `onehot` y dicts (27 % menos
 memoria pico), la ruta `pd.concat` (20 % menos) y las window features (25 %
-menos). Dos resultados A/B quedan sin explicar y la PR debe medirlos con el
-cambio real (3.6). Las cifras, con su protocolo y versiones, están en 3.6 y 4.
+menos). Comparado con pandas 2, pandas 3 con los cambios queda entre 1,25 y 1,74
+veces en tiempo en la construcción de matrices y 1,4 en `predict` en bucle
+y en el backtesting de folds de un paso, con la misma memoria (1,00 a 1,09):
+lo que resta es coste propio de pandas 3 por llamada (seguimiento de
+referencias de Copy-on-Write, constructores e indexación), no copias
+evitables desde skforecast. En otros caminos pandas 3 ya gana (`fit`
+univariante 0,84; multiseries con dicts y window features con un 20 % a 27 %
+menos de memoria). Dos resultados A/B quedan sin explicar y la PR debe
+medirlos con el cambio real (3.6). Las cifras, con su protocolo y versiones,
+están en 3.6 y 4.
 
 **¿Se mantiene la compatibilidad de resultados? Sí, bit a bit.** 21 casos
 que cubren los cinco forecasters autorregresivos, `ForecasterStats`,
@@ -885,6 +893,25 @@ sección 4):
   de hoy (`astype(todas, copy=False)`). Así pandas 2 no puede empeorar y
   pandas 3 obtiene las ganancias medidas. La PR debe repetir esta medida con
   el cambio real en el fichero (sin monkeypatch).
+- **pandas 3 con los cambios frente a pandas 2 con el código actual** (lo
+  que verá un usuario al cambiar de versión una vez hecha la migración):
+
+  | Benchmark | Tiempo p3 con cambios / p2 | Memoria p3 con cambios / p2 |
+  |---|---|---|
+  | `recursive_create_train_X_y` | 1,39 (101,9 frente a 73,3 ms) | 1,03 |
+  | `recursive_create_train_X_y_float` | 1,25 (36,6 frente a 29,3 ms) | 1,00 |
+  | `direct_create_train_X_y` | 1,74 (49,0 frente a 28,1 ms) | 1,09 |
+  | `direct_multivariate_create_train_X_y` | 1,37 | 1,02 |
+  | `classifier_create_train_X_y` | 1,52 | 1,00 |
+  | `predict_loop` (sin cambio aplicable) | 1,40 | 1,08 |
+  | `backtesting_recursive` (1000 folds de 1 paso) | 1,44 | 1,07 |
+  | `recursive_fit_linear` | 0,84 | 1,00 |
+  | multiseries `onehot` con dicts, ruta `concat`, window features | 1,00 a 1,23 | 0,73 a 0,80 |
+
+  La memoria queda igualada; el tiempo restante es coste por llamada de
+  pandas 3 (Copy-on-Write, constructores, indexación) que skforecast no
+  puede evitar sin reescribir los caminos de `predict` en numpy puro, fuera
+  del alcance de esta migración.
 - `no_copy_keyword_both` (quitar `copy=False` también en pandas 2, lo que
   costaría no tener el helper): entre 1,10 y 1,90 veces más lento y hasta un
   22 % más de memoria en las matrices multiseries de pandas 2 (confirma la
