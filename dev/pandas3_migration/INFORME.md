@@ -37,6 +37,7 @@ fichero y línea de las fuentes RST (`doc/source/whatsnew/v3.0.0.rst` y
 8. Decisiones que debes tomar tú
 9. Preguntas abiertas y lo no verificado
 10. Pendiente para retomar
+11. Siguientes pasos después de la migración: el camino de `predict` en numpy
 
 ## 1. Resumen ejecutivo
 
@@ -1411,6 +1412,94 @@ sección 7):
    `exog_names_in_` en lugar de `exog.columns` en cada `predict` (evita las
    conversiones arrow, como mucho un 7 % del bucle). El bucle de `predict`
    no tiene punto caliente: lo que queda es coste por objeto de pandas 3.
+
+## 11. Siguientes pasos después de la migración: el camino de `predict` en numpy
+
+Esta sección no forma parte de la migración. Recoge la decisión tomada tras
+el perfilado de 3.6: la brecha de `predict` en bucle no se cierra haciendo
+más baratos los objetos de pandas, sino creando menos. Se deja aquí para
+abrirla como una PR de rendimiento propia, después de la migración.
+
+### 11.1 Qué queda y por qué no es de la migración
+
+Medido con 200 llamadas a `predict(steps=1, exog=..., last_window=...)`
+sobre `ForecasterRecursive(LinearRegression(), lags=24)`, código actual,
+mínimos y medianas de 9 repeticiones en dos rondas intercaladas:
+
+| | pandas 2.3.3 (ms) | pandas 3.1.0 (ms) | relación |
+|---|---|---|---|
+| `check_inputs=True` (por defecto) | 97,1 / 108,2 y 98,8 / 100,4 | 115,1 / 122,3 y 113,1 / 130,6 | 1,17 |
+| `check_inputs=False` | 61,6 / 66,6 y 62,4 / 65,3 | 72,3 / 79,9 y 68,8 / 70,9 | 1,13 |
+
+Por llamada son 0,5 ms en pandas 2 y 0,6 ms en pandas 3; la predicción del
+modelo (`_recursive_predict`) es 0,07 ms en las dos. El resto es validación
+(`check_predict_input`, un tercio del bucle), dos `expand_index` con su
+`date_range` por llamada, los `to_numpy()` de `last_window` y `exog`, la
+construcción de la `Series` de salida y, en pandas 3, la conversión arrow de
+los nombres de columna. Ninguna propuesta de la migración toca ese camino
+porque ninguna copia evitable hay en él: lo que cuesta es cada objeto de
+pandas, y en pandas 3 cada objeto cuesta un 10 a 20 % más.
+
+En una llamada suelta la diferencia (0,1 ms) es irrelevante. Importa en
+bucles: backtesting sin reentrenar con miles de folds de pocos pasos,
+intervalos por bootstrapping y búsquedas de hiperparámetros, y sobre todo
+con modelos baratos (lineales, árboles pequeños), donde la sobrecarga de
+pandas es la mayor parte del tiempo. Con un modelo pesado (LightGBM grande)
+la predicción domina y la ganancia relativa será modesta.
+
+### 11.2 La propuesta: un único camino interno en numpy
+
+- `predict` público sigue aceptando pandas y validando: la validación es
+  parte del valor del paquete y no se toca.
+- Por debajo, un camino interno que reciba `last_window` y `exog` como
+  arrays de numpy ya validados, recorra los pasos sin reconstruir
+  `DataFrame`s ni `Series` intermedios y devuelva un array; `predict`
+  lo envuelve una vez (una `Series` de salida con el índice expandido una
+  sola vez). Backtesting, `predict_interval` con bootstrapping y la búsqueda
+  de hiperparámetros lo usan directamente, convirtiendo a numpy una vez por
+  fold o por iteración, no por paso.
+- Un solo camino, no dos `predict` paralelos: si se implementa como una
+  segunda función de predicción, en un año tendrá bugs distintos que la
+  primera. Lo que hoy hacen `_create_predict_inputs` más
+  `_recursive_predict` es la base; el trabajo es dejar de construir pandas
+  dentro de ellos.
+- Alcance inicial: `ForecasterRecursive` y `ForecasterDirect`. Multiseries
+  (diccionarios por serie, codificación de niveles, `exog` por serie) se
+  aborda cuando el patrón esté probado en los univariantes.
+
+### 11.3 Los cambios baratos van en esta PR, no en la migración
+
+Los recortes que aparecieron en el perfil (calcular `expand_index` una vez
+por llamada en lugar de dos; cachear en `fit` el offset de la frecuencia y
+las comprobaciones de dtype que `check_predict_input` repite; no volver a
+leer `exog.columns` después de validarlas) son neutros respecto a la versión
+de pandas: aceleran lo mismo pandas 2 y pandas 3. Por eso no se incluyen en
+la migración, cuyo criterio es "resultados idénticos y ningún empeoramiento
+en pandas 2" y cuyas PRs ya son bastante grandes. Con la opción (b) además
+quedan subsumidos: en un camino sin objetos de pandas no hay `expand_index`
+duplicado que ahorrar. Si se hace la PR de rendimiento, son su primer
+commit, medidos uno a uno; si no se hace, no merecen una PR propia (como
+mucho cubren la mitad de 0,1 ms por llamada, estimación sin medir). La
+conversión arrow de los nombres de columna (7 % del bucle) no es evitable
+mientras se validen las columnas de entrada: hay que leerlas.
+
+Lo único que sí entra en la migración es documentación: la PR 7 puede
+mencionar, en la guía de rendimiento, que `check_inputs=False` quita un
+tercio del tiempo de `predict` en bucles con entradas ya validadas (tabla
+de 11.1), en las dos versiones de pandas.
+
+### 11.4 Cómo justificarla y validarla
+
+1. Antes de escribir código, un benchmark de backtesting realista
+   (`backtesting_forecaster`, `refit=False`, 1000 a 5000 folds de 1 a 24
+   pasos, regresor lineal y LightGBM pequeño) en pandas 2 y 3 con el
+   protocolo del anexo. Si la sobrecarga de pandas no es al menos la mitad
+   del tiempo del fold con el regresor lineal, la PR no compensa.
+2. Identidad bit a bit con `identity_cases.py` (anexo) entre el `predict`
+   actual y el nuevo camino, en los dos entornos.
+3. Medida antes y después en los dos entornos, una a una, intercaladas,
+   como en 3.6: la PR se acepta solo si pandas 2 no empeora en ningún
+   benchmark.
 
 ## Anexo: cómo reproducir los números
 
