@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import norm
 from sklearn.linear_model import Ridge
+from sklearn.ensemble import HistGradientBoostingRegressor
 from skforecast.recursive import ForecasterRecursive
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirect
@@ -154,6 +155,20 @@ nan_predictions_msg = (
 )
 
 
+def nan_predictions_differentiation_msg(n_predictions, first_date):
+    return (
+        f"{n_predictions} backtesting predictions are NaN at dates with observed "
+        f"values (first: {first_date}), so the metrics cannot be calculated. The "
+        f"most likely causes are a missing value in the series or in `exog`, "
+        f"used as a predictor of these dates, with an estimator that does not "
+        f"accept NaN (for example, a linear model), or a missing last value of "
+        f"the series before the fold, from which the differentiation is "
+        f"reverted (with any estimator). Fill the missing values, or, in the "
+        f"first case, use an estimator that accepts them, for example "
+        f"HistGradientBoostingRegressor or LGBMRegressor."
+    )
+
+
 @pytest.mark.parametrize(
     "forecaster, expected_metric",
     [(ForecasterRecursive(Ridge(), lags=[10]), 7.409637384641371),
@@ -189,14 +204,16 @@ def test_backtesting_forecaster_output_when_exog_has_NaN_only_in_gap_steps(
 
 
 @pytest.mark.parametrize(
-    "forecaster",
-    [ForecasterRecursive(Ridge(), lags=[1]),
-     ForecasterRecursive(Ridge(), lags=[10], differentiation=1),
-     ForecasterDirect(Ridge(), lags=[10], steps=7, differentiation=1)],
+    "forecaster, err_msg",
+    [(ForecasterRecursive(Ridge(), lags=[1]), nan_predictions_msg),
+     (ForecasterRecursive(Ridge(), lags=[10], differentiation=1),
+      nan_predictions_differentiation_msg(5, "2020-02-12 00:00:00")),
+     (ForecasterDirect(Ridge(), lags=[10], steps=7, differentiation=1),
+      nan_predictions_differentiation_msg(5, "2020-02-12 00:00:00"))],
     ids=["recursive_lags_1", "recursive_differentiation", "direct_differentiation"]
 )
 def test_backtesting_forecaster_ValueError_when_exog_NaN_in_gap_reaches_scored_steps(
-    forecaster
+    forecaster, err_msg
 ):
     """
     Test backtesting_forecaster raises a ValueError before the metrics, with
@@ -209,7 +226,7 @@ def test_backtesting_forecaster_ValueError_when_exog_NaN_in_gap_reaches_scored_s
     """
     cv = TimeSeriesFold(steps=5, initial_train_size=40, gap=2, refit=False)
 
-    with pytest.raises(ValueError, match=re.escape(nan_predictions_msg)):
+    with pytest.raises(ValueError, match=re.escape(err_msg)):
         backtesting_forecaster(
             forecaster    = forecaster,
             y             = y_gap,
@@ -231,3 +248,52 @@ def test_backtesting_forecaster_ValueError_when_exog_NaN_in_gap_reaches_scored_s
         forecaster.predict(
             steps=7, exog=exog_gap.iloc[40:], suppress_warnings=True
         )
+
+
+# Series with a missing value at position 44, the last value before the second
+# fold (positions 45 to 49) when `initial_train_size=40` and `steps=5`.
+y_nan_before_fold = y_gap.copy()
+y_nan_before_fold.iloc[44] = np.nan
+
+
+@pytest.mark.parametrize(
+    "forecaster",
+    [ForecasterRecursive(Ridge(), lags=[3], differentiation=1),
+     ForecasterRecursive(
+         HistGradientBoostingRegressor(max_iter=10, random_state=123),
+         lags=[3], differentiation=1
+     ),
+     ForecasterDirect(Ridge(), lags=[3], steps=5, differentiation=1),
+     ForecasterDirect(
+         HistGradientBoostingRegressor(max_iter=10, random_state=123),
+         lags=[3], steps=5, differentiation=1
+     )],
+    ids=["recursive_Ridge", "recursive_HGBR", "direct_Ridge", "direct_HGBR"]
+)
+def test_backtesting_forecaster_ValueError_when_NaN_last_value_before_fold_and_differentiation(
+    forecaster
+):
+    """
+    Test backtesting_forecaster raises the ValueError of the NaN predictions,
+    with differentiation as a cause, when the last value of the series before
+    a fold is NaN and `differentiation=1`, with any estimator. No predictor
+    of the fold reads it (`lags=[3]`), but the differentiation is reverted
+    from it: `predict` of the copy used by backtesting does not raise, the
+    predictions of the fold are NaN and the error is raised before the
+    metrics.
+    """
+    cv = TimeSeriesFold(steps=5, initial_train_size=40, refit=False)
+
+    err_msg = nan_predictions_differentiation_msg(5, "2020-02-15 00:00:00")
+    with pytest.raises(ValueError, match=re.escape(err_msg)):
+        backtesting_forecaster(
+            forecaster    = forecaster,
+            y             = y_nan_before_fold,
+            cv            = cv,
+            metric        = 'mean_absolute_error',
+            verbose       = False,
+            show_progress = False
+        )
+
+    assert forecaster._allow_nan_predictions is False
+

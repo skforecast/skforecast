@@ -692,7 +692,9 @@ def _backtesting_forecaster(
     
     y_true = y.loc[backtest_predictions_for_metrics.index]
     y_pred = backtest_predictions_for_metrics['pred']
-    _check_nan_predictions_backtesting(y_true=y_true, y_pred=y_pred)
+    _check_nan_predictions_backtesting(
+        y_true=y_true, y_pred=y_pred, differentiation=forecaster.differentiation
+    )
 
     if _any_metric_needs_y_train(metrics):
         train_indexes = []

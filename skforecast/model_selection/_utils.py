@@ -1371,7 +1371,8 @@ def _calculate_interval_metrics(
 def _check_nan_predictions_backtesting(
     y_true: pd.Series,
     y_pred: pd.Series,
-    estimator_id: str | None = None
+    estimator_id: str | None = None,
+    differentiation: int | None = None
 ) -> None:
     """
     Raise an error if a backtesting prediction of a single series is NaN at a
@@ -1387,6 +1388,11 @@ def _check_nan_predictions_backtesting(
     estimator_id : str, default None
         Identifier of the estimator that made the predictions, included in
         the message when the forecaster has several estimators.
+    differentiation : int, default None
+        Order of the differentiation of the forecaster. If not `None`, the
+        message also includes a missing value among the last values of the
+        series before a fold, from which the differentiation is reverted, as
+        a cause.
 
     Returns
     -------
@@ -1400,14 +1406,37 @@ def _check_nan_predictions_backtesting(
             f" of estimator '{estimator_id}'" if estimator_id is not None else ""
         )
         dates = y_pred.index[is_nan_prediction]
+        nan_predictors = (
+            "a missing value in the series or in `exog`, used as a predictor of "
+            "these dates, with an estimator that does not accept NaN (for "
+            "example, a linear model)"
+        )
+        if differentiation is None:
+            cause = f"The most likely cause is {nan_predictors}"
+            remedy = "Fill the missing values, or use an estimator that accepts them"
+        else:
+            # NOTE: The differentiation is reverted from the last values of the
+            # series, which no predictor reads, so a missing one gives NaN
+            # predictions with any estimator.
+            last_values = (
+                "a missing last value of the series" if differentiation == 1
+                else f"a missing value among the last {differentiation} values "
+                     f"of the series"
+            )
+            cause = (
+                f"The most likely causes are {nan_predictors}, or {last_values} "
+                f"before the fold, from which the differentiation is reverted "
+                f"(with any estimator)"
+            )
+            remedy = (
+                "Fill the missing values, or, in the first case, use an "
+                "estimator that accepts them"
+            )
         raise ValueError(
             f"{len(dates)} backtesting predictions{of_estimator} are NaN at "
             f"dates with observed values (first: {dates[0]}), so the metrics "
-            f"cannot be calculated. The most likely cause is a missing value in "
-            f"the series or in `exog`, used as a predictor of these dates, with "
-            f"an estimator that does not accept NaN (for example, a linear "
-            f"model). Fill the missing values, or use an estimator that accepts "
-            f"them, for example HistGradientBoostingRegressor or LGBMRegressor."
+            f"cannot be calculated. {cause}. {remedy}, for example "
+            f"HistGradientBoostingRegressor or LGBMRegressor."
         )
 
 

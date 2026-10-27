@@ -1288,3 +1288,73 @@ def test_predict_ValueError_with_date_when_exog_has_NaN_and_differentiation_with
     )
     with pytest.raises(ValueError, match=err_msg):
         forecaster.predict(steps=steps, exog=exog_pred, suppress_warnings=True)
+
+
+# Series with a trend, so that the differentiation is needed, and a daily
+# index, so that the error names the date of the missing value.
+series_diff = pd.DataFrame(
+    {
+        'l1': np.arange(30, dtype=float) + np.random.default_rng(123).normal(size=30),
+        'l2': np.arange(30, dtype=float) + np.random.default_rng(456).normal(size=30)
+    },
+    index=pd.date_range("2020-01-01", periods=30, freq="D")
+)
+
+
+@pytest.mark.parametrize(
+    "method",
+    ["predict", "predict_interval", "predict_quantiles"],
+    ids=lambda method: f"method: {method}"
+)
+@pytest.mark.parametrize(
+    "estimator",
+    [LinearRegression(), HistGradientBoostingRegressor(max_iter=10, random_state=123)],
+    ids=lambda estimator: f"estimator: {type(estimator).__name__}"
+)
+def test_predict_ValueError_when_last_value_of_level_is_NaN_and_differentiation(
+    estimator, method
+):
+    """
+    Test predict methods raise a ValueError naming the series and the date
+    when the last value of the series predicted (`level`) is NaN and
+    `differentiation=1`. No predictor reads it (`lags=[3]`), but the
+    differentiation is reverted from it, so all the predictions were NaN,
+    with any estimator, without error.
+    """
+    series = series_diff.copy()
+    series.iloc[-1, 0] = np.nan
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator=estimator, level='l1', lags=[3], steps=2,
+                     differentiation=1, dropna_from_series=True
+                 )
+    forecaster.fit(series=series, store_in_sample_residuals=True)
+
+    err_msg = re.escape(
+        "The series 'l1' (or `last_window`) has missing values (NaN) at "
+        "['2020-01-30 00:00:00']. With `differentiation`, the predictions are "
+        "reverted to the original scale from the last value of the series, so "
+        "all of them would be NaN, with any estimator. Fill the missing values "
+        "of the series (or `last_window`)."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        getattr(forecaster, method)(steps=2, suppress_warnings=True)
+
+
+def test_predict_output_when_last_value_of_other_series_is_NaN_and_differentiation():
+    """
+    Test predict output when the last value of a series that is not the
+    `level` is NaN and `differentiation=1`: only the differentiation of the
+    level is reverted, so no error is raised and, with an estimator that
+    accepts NaN, the predictions are not NaN.
+    """
+    series = series_diff.copy()
+    series.iloc[-1, 1] = np.nan
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator=HistGradientBoostingRegressor(max_iter=10, random_state=123),
+                     level='l1', lags=[3], steps=2, differentiation=1,
+                     dropna_from_series=True
+                 )
+    forecaster.fit(series=series)
+    predictions = forecaster.predict(steps=2, suppress_warnings=True)
+
+    assert not predictions['pred'].isna().any()

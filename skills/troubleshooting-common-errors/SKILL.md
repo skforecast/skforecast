@@ -130,14 +130,20 @@ forecaster = ForecasterRecursive(
 )
 ```
 
-Backtesting does not raise this error with a linear model: the dates that
-cannot be predicted get NaN predictions, so a missing value that only affects
-the discarded steps of the `gap` does not matter. If NaN predictions reach the
-scored dates:
+With `differentiation`, any estimator (also HistGradientBoostingRegressor)
+raises `The series (or last_window) has missing values (NaN) at [...]` when
+one of the last `differentiation` values of the series or of `last_window` is
+missing: the predictions are reverted to the original scale from them, so all
+of them would be NaN. Fill that value (an estimator that accepts NaN does not
+help).
+
+Backtesting does not raise these errors: the dates that cannot be predicted
+get NaN predictions, so a missing value that only affects the discarded steps
+of the `gap` does not matter. If NaN predictions reach the scored dates:
 
 - `backtesting_forecaster` (one series) raises
   `N backtesting predictions are NaN at dates with observed values ...`,
-  with the first date, the likely cause and the remedy (same fixes as above).
+  with the first date, the likely causes and the remedy (same fixes as above).
 - `backtesting_forecaster_multiseries` leaves them out of the metrics with a
   `MissingValuesWarning` that gives their number per series. Read it: the
   metrics use fewer values than predicted.

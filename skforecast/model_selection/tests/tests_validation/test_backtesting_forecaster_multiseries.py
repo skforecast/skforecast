@@ -5880,12 +5880,22 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
-def test_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_MissingValuesWarning_when_NaN_last_window_and_differentiation():
+@pytest.mark.parametrize(
+    "estimator",
+    [LinearRegression(), HistGradientBoostingRegressor(max_iter=5, random_state=123)],
+    ids=lambda estimator: f"estimator: {type(estimator).__name__}"
+)
+def test_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_MissingValuesWarning_when_NaN_last_window_and_differentiation(
+    estimator
+):
     """
     Test backtesting_forecaster_multiseries for ForecasterRecursiveMultiSeries
-    with differentiation when the last window of a fold has missing values.
-    The level is dropped from that fold even if the estimator supports NaN
-    natively, and the MissingValuesWarning gives differentiation as the reason.
+    with differentiation when the last value of the last window of a fold has
+    a missing value, from which the differentiation is reverted. The level is
+    dropped from that fold even if the estimator supports NaN natively, the
+    MissingValuesWarning gives differentiation as the reason, and the other
+    levels are predicted. The backtesting does not raise, although `predict`
+    with that last window would.
     """
 
     series = {
@@ -5894,9 +5904,7 @@ def test_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_Missi
     }
     series['l1'].iloc[44] = np.nan
     forecaster = ForecasterRecursiveMultiSeries(
-                     estimator          = HistGradientBoostingRegressor(
-                                              max_iter=5, random_state=123
-                                          ),
+                     estimator          = estimator,
                      lags               = 3,
                      differentiation    = 1,
                      encoding           = 'ordinal',
@@ -5923,12 +5931,73 @@ def test_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_Missi
                                   )
 
     folds_l1 = backtest_predictions.loc[backtest_predictions['level'] == 'l1', 'fold']
+    folds_l2 = backtest_predictions.loc[backtest_predictions['level'] == 'l2', 'fold']
     assert 2 not in folds_l1.to_numpy()
+    assert 2 in folds_l2.to_numpy()
 
 
 # ******************************************************************************
 # * Test backtesting ForecasterDirectMultiVariate with NaN values              *
 # ******************************************************************************
+
+@pytest.mark.parametrize(
+    "estimator",
+    [Ridge(random_state=123), HistGradientBoostingRegressor(max_iter=5, random_state=123)],
+    ids=lambda estimator: f"estimator: {type(estimator).__name__}"
+)
+def test_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_NaN_last_value_before_fold_and_differentiation(
+    estimator
+):
+    """
+    Test backtesting_forecaster_multiseries for ForecasterDirectMultiVariate
+    with differentiation when the last value of the level before a fold is
+    NaN. No predictor reads it (`lags=[3]`), but the differentiation is
+    reverted from it, so the predictions of that fold are NaN, with any
+    estimator. The backtesting does not raise, although `predict` would: they
+    are left out of the metric with a MissingValuesWarning and the other folds
+    are evaluated.
+    """
+
+    series_nan = series_wide_range.copy()
+    series_nan.loc[41, 'l1'] = np.nan
+
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator          = estimator,
+                     level              = 'l1',
+                     lags               = [3],
+                     steps              = 4,
+                     differentiation    = 1,
+                     transformer_series = None
+                 )
+    cv = TimeSeriesFold(
+             steps              = 4,
+             initial_train_size = len(series_nan) - 12,
+             refit              = False
+         )
+
+    warn_msg = re.escape(
+        "4 predictions are NaN at dates with observed values and are left out "
+        "of the metrics, which are calculated with fewer values than "
+        "predicted. Number of NaN predictions per series: {'l1': 4}."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
+                                                   forecaster    = forecaster,
+                                                   series        = series_nan,
+                                                   cv            = cv,
+                                                   metric        = 'mean_absolute_error',
+                                                   n_jobs        = 1,
+                                                   show_progress = False
+                                               )
+
+    is_nan_fold = backtest_predictions.groupby('fold')['pred'].apply(
+        lambda pred: pred.isna().all()
+    )
+    np.testing.assert_array_equal(is_nan_fold.to_numpy(), [False, True, False])
+    assert not metrics_levels['mean_absolute_error'].isna().any()
+    assert forecaster._allow_nan_predictions is False
+
+
 
 def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_no_refit_y_with_NaN_dropna_False():
     """

@@ -52,6 +52,7 @@ from ..utils import (
     get_style_repr_html,
     set_cpu_gpu_device,
     _build_predict_function,
+    _check_differentiation_last_values,
     _NonFinitePredictorsError,
     manage_warnings,
     scale_correction_factor_differentiation
@@ -1603,6 +1604,15 @@ class ForecasterRecursive(ForecasterBase):
                                  inverse_transform = False
                              )
         if self.differentiation is not None:
+            # NOTE: Backtesting allows NaN predictions, which it handles when
+            # calculating the metrics. `getattr` keeps forecasters saved with
+            # previous versions, which do not have this attribute, working.
+            if not getattr(self, '_allow_nan_predictions', False):
+                _check_differentiation_last_values(
+                    last_window_values = last_window_values,
+                    last_window_index  = last_window.index[-self.window_size:],
+                    order              = self.differentiation
+                )
             differentiator = copy(self.differentiator)
             last_window_values = differentiator.fit_transform(last_window_values)
         else:

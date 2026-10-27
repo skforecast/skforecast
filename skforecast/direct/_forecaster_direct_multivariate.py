@@ -58,6 +58,7 @@ from ..utils import (
     manage_warnings,
     get_style_repr_html,
     _build_predict_function,
+    _check_differentiation_last_values,
     _NonFinitePredictorsError,
     scale_correction_factor_differentiation
 )
@@ -2323,9 +2324,20 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             
             if self.differentiation is not None:
                 differentiator = copy(self.differentiator_[series])
-                last_window_series = differentiator.fit_transform(last_window_series)
                 if series == self.level:
+                    # NOTE: Only the differentiation of the level is reverted.
+                    # Backtesting allows NaN predictions, which it handles
+                    # when calculating the metrics. `getattr` keeps forecasters
+                    # saved with previous versions working.
+                    if not getattr(self, '_allow_nan_predictions', False):
+                        _check_differentiation_last_values(
+                            last_window_values = last_window_series,
+                            last_window_index  = last_window.index,
+                            order              = differentiator.order,
+                            series             = series
+                        )
                     differentiator_level = differentiator
+                last_window_series = differentiator.fit_transform(last_window_series)
 
             if self.lags is not None:
                 X_lags = last_window_series[-self.lags_[series]]

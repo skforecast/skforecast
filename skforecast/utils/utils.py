@@ -3981,6 +3981,48 @@ def set_cpu_gpu_device(
     return original_device
 
 
+def _check_differentiation_last_values(
+    last_window_values: np.ndarray,
+    last_window_index: pd.Index,
+    order: int,
+    series: str | None = None
+) -> None:
+    """
+    Check that the last `order` values of the last window, from which the
+    differentiation is reverted, are not missing. If any is NaN, all the
+    predictions are NaN, with any estimator, since no predictor reads it.
+
+    Parameters
+    ----------
+    last_window_values : numpy ndarray
+        Values of the last window, before the differentiation.
+    last_window_index : pandas Index
+        Index of the last window, aligned with `last_window_values`.
+    order : int
+        Order of the differentiation.
+    series : str, default None
+        Name of the series, for multi-series forecasters.
+
+    Returns
+    -------
+    None
+
+    """
+
+    is_nan = np.isnan(last_window_values[-order:])
+    if is_nan.any():
+        dates = [str(date) for date in last_window_index[-order:][is_nan]]
+        of_series = f" '{series}'" if series is not None else ""
+        last_values = "last value" if order == 1 else f"last {order} values"
+        raise ValueError(
+            f"The series{of_series} (or `last_window`) has missing values (NaN) "
+            f"at {dates}. With `differentiation`, the predictions are reverted "
+            f"to the original scale from the {last_values} of the series, so "
+            f"all of them would be NaN, with any estimator. Fill the missing "
+            f"values of the series (or `last_window`)."
+        )
+
+
 class _NonFinitePredictorsError(ValueError):
     """
     Raised by the fast path of linear models in `_build_predict_function` when
