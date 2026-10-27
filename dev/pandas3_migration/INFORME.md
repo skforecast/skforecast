@@ -36,6 +36,7 @@ fichero y línea de las fuentes RST (`doc/source/whatsnew/v3.0.0.rst` y
 7. Plan de implementación por PRs
 8. Decisiones que debes tomar tú
 9. Preguntas abiertas y lo no verificado
+10. Pendiente para retomar
 
 ## 1. Resumen ejecutivo
 
@@ -1264,6 +1265,45 @@ salida en pandas 2 salvo las tres correcciones señaladas (F26, D12 y el
 - **Notebooks de la documentación**: no se han ejecutado con pandas 3; el
   recuento de alias de frecuencia retirados y de salidas `dtype: object`
   impresas está en 3.4/3.5 (grep), no su ejecución.
+
+## 10. Pendiente para retomar
+
+Lo que quedó sin cerrar por el límite de uso de la sesión, con lo necesario
+para continuarlo en otra sesión (el espacio temporal de esta no se conserva;
+los scripts se reconstruyen a partir del anexo y de las descripciones de la
+sección 7):
+
+1. **Segunda verificación de cinco dimensiones del inventario** (3.1
+   `direct/base/utils` y `model_selection`, 3.2 ya verificada, 3.3 fechas,
+   3.4 APIs retiradas, 3.5 tests/CI). Método que funcionó en las dos
+   dimensiones verificadas: un agente por dimensión que, para cada hallazgo
+   de la sección 3 (todos llevan `fichero:línea` y la afirmación sobre
+   pandas 2 y 3), abre el fichero, reejecuta un fragmento mínimo en los dos
+   entornos del anexo y da un veredicto confirmado/corregido/refutado; en las
+   dos dimensiones completadas no se refutó ninguno y se corrigieron matices
+   de líneas. Prioridad: 3.3 y 3.4 (contienen los fallos reales y las
+   deprecaciones).
+2. **Crítico de completitud**: comprobar contra los puntos obligatorios del
+   encargo (compatibilidad dual, CoW y copias, rendimiento, resultados
+   idénticos) qué ficheros de `skforecast/` con uso de pandas no aparecen en
+   ningún hallazgo (`rg -l "pd\." skforecast --type py -g '!**/tests*/**'`
+   frente a los ficheros citados en la sección 3) y cuántos de los 114
+   `.copy()` quedan sin clasificar (3.1 cubre 37 explícitamente; el resto
+   está en los JSON no versionados: rehacer el recuento con
+   `rg -n "\.copy\(\)"`).
+3. **Los dos A/B sin causa** (3.6): medir con el cambio real en los ficheros
+   (no por monkeypatch) `create_train_X_y` de `ForecasterRecursive` y
+   `ForecasterDirect` en pandas 2 con el `astype` reducido, y las matrices de
+   `ForecasterRecursiveMultiSeries` en pandas 3 sin `copy=False` en los dos
+   `pd.concat`; criterio: dentro de la banda del control nulo (0,94 a 1,14).
+   Si el segundo se confirma, sustituir los `pd.concat` por el ensamblado en
+   numpy de la ruta de bloque único.
+4. **Tres avisos pendientes de la suite sobre el prototipo** (2.3): renombrar
+   `dayofweek`/`dayofyear` en `foundation/_adapters.py:4995-5001`, el helper
+   de `pd.infer_freq` (3.3) y la ruta numpy de `_calendar.py:849-850`; son
+   parte de las PR 1 y 2.
+5. **Dataset `australia_tourism`** (`datasets.py:209`, `'freq': 'Q'`): el
+   único fallo de datos; una línea en la PR 1.
 
 ## Anexo: cómo reproducir los números
 
