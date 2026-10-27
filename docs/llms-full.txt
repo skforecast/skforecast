@@ -4253,7 +4253,14 @@ lags_grid = {
     'long': 24,
     'custom': [1, 2, 3, 23, 24],
 }
+
+# None as an element: a candidate without lags, only the forecaster's window_features
+# (the forecaster must have window_features, otherwise a ValueError is raised)
+lags_grid = [None, 3, 24]
 ```
+
+`lags_grid=None` (the default) uses the lags of the forecaster, also when the
+forecaster was created with `lags=None` and only `window_features`.
 
 For Bayesian search, lags are included in the `search_space` function:
 
@@ -7379,7 +7386,7 @@ grid_search_forecaster(
     param_grid,              # dict, sklearn-style parameter grid
     metric,                  # str | Callable | list[str | Callable]
     exog=None,               # pd.Series | pd.DataFrame | None
-    lags_grid=None,          # list[int | list | np.ndarray | range] | dict | None
+    lags_grid=None,          # list[int | list | np.ndarray | range | None] | dict | None
     return_best=True,        # bool
     n_jobs='auto',           # int | str
     verbose=False,           # bool
@@ -7395,7 +7402,7 @@ random_search_forecaster(
     param_distributions,     # dict, parameter distributions for sampling
     metric,                  # str | Callable | list[str | Callable]
     exog=None,               # pd.Series | pd.DataFrame | None
-    lags_grid=None,          # list[int | list | np.ndarray | range] | dict | None
+    lags_grid=None,          # list[int | list | np.ndarray | range | None] | dict | None
     n_iter=10,               # int, number of random parameter combinations
     random_state=123,        # int
     return_best=True,        # bool
@@ -7438,7 +7445,7 @@ grid_search_forecaster_multiseries(
     aggregate_metric=['weighted_average', 'average', 'pooling'],  # str | list[str]
     levels=None,             # str | list[str] | None
     exog=None,               # pd.Series | pd.DataFrame | dict | None
-    lags_grid=None,          # list | dict | None
+    lags_grid=None,          # list[int | list | np.ndarray | range | None] | dict | None
     return_best=True,        # bool
     n_jobs='auto',           # int | str
     verbose=False,           # bool
@@ -7456,7 +7463,7 @@ random_search_forecaster_multiseries(
     aggregate_metric=['weighted_average', 'average', 'pooling'],  # str | list[str]
     levels=None,             # str | list[str] | None
     exog=None,               # pd.Series | pd.DataFrame | dict | None
-    lags_grid=None,          # list | dict | None
+    lags_grid=None,          # list[int | list | np.ndarray | range | None] | dict | None
     n_iter=10,               # int
     random_state=123,        # int
     return_best=True,        # bool

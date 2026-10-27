@@ -4120,23 +4120,18 @@ def test_create_train_X_y_output_when_categorical_features_and_already_trained(
 
 
 @pytest.mark.parametrize(
-    "encoding, expected_X_train_series_names_in_",
-    [
-        ('ordinal', ['a', 'b', 'c']),
-        ('ordinal_category', ['a', 'b', 'c']),
-        ('onehot', ['c', 'a', 'b']),
-        (None, ['a', 'b', 'c'])
-    ],
-    ids=lambda value: f'encoding, X_train_series_names_in_: {value}'
+    "encoding",
+    ['ordinal', 'ordinal_category', 'onehot', None],
+    ids=lambda encoding: f'encoding: {encoding}'
 )
 def test_create_train_X_y_X_train_series_names_in_when_series_unordered_and_one_series_dropped(
-    encoding, expected_X_train_series_names_in_
+    encoding
 ):
     """
     Test `X_train_series_names_in_` when the series are not in alphabetical order
     ('c', 'a', 'd', 'b') and all the rows of series 'd' are removed because it
-    has no exog and `dropna_from_series=True`. With 'onehot' the names follow the
-    order of the series and with the other encodings the alphabetical order of
+    has no exog and `dropna_from_series=True`. With every encoding the names
+    follow the order of the series, not the alphabetical order of
     `encoding_mapping_`. The column of 'd' is kept in the one-hot block.
     """
     forecaster = ForecasterRecursiveMultiSeries(
@@ -4153,7 +4148,7 @@ def test_create_train_X_y_X_train_series_names_in_when_series_unordered_and_one_
     )
 
     assert results[3] == ['c', 'a', 'd', 'b']
-    assert results[4] == expected_X_train_series_names_in_
+    assert results[4] == ['c', 'a', 'b']
     assert results[0].columns.to_list() == expected_columns
     assert len(results[0]) == 17
 

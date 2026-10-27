@@ -47,11 +47,11 @@ INTERVAL_METRIC_NAMES = ['coverage', 'interval_width']
 def initialize_lags_grid(
     forecaster: object, 
     lags_grid: (
-        list[int | list[int] | np.ndarray | range]
-        | dict[str, int | list[int] | np.ndarray | range]
+        list[int | list[int] | np.ndarray | range | None]
+        | dict[str, int | list[int] | np.ndarray | range | None]
         | None
     ) = None,
-) -> tuple[dict[str, int], str]:
+) -> tuple[dict[str, int | list[int] | np.ndarray | range | None], str]:
     """
     Initialize lags grid and lags label for model selection. 
 
@@ -61,9 +61,12 @@ def initialize_lags_grid(
         Forecaster model. ForecasterRecursive, ForecasterDirect, 
         ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate.
     lags_grid : list, dict, default None
-        Lists of lags to try, containing int, lists, numpy ndarray, or range 
-        objects. If `dict`, the keys are used as labels in the `results` 
-        DataFrame, and the values are used as the lists of lags to try.
+        Lists of lags to try, containing int, lists, numpy ndarray, range
+        objects or `None`. A `None` element evaluates the forecaster without
+        lags, using only its `window_features` (a `ValueError` is raised if
+        it has none). If `dict`, the keys are used as labels in the `results`
+        DataFrame, and the values are used as the lists of lags to try. If
+        `None`, the lags of the forecaster are used.
 
     Returns
     -------
@@ -84,10 +87,23 @@ def initialize_lags_grid(
     if isinstance(lags_grid, list):
         lags_grid = {f'{lags}': lags for lags in lags_grid}
     elif lags_grid is None:
-        lags = [int(lag) for lag in forecaster.lags]  # Required since numpy 2.0
-        lags_grid = {f'{lags}': lags}
+        if forecaster.lags is None:
+            lags_grid = {'None': None}
+        else:
+            lags = [int(lag) for lag in forecaster.lags]  # Required since numpy 2.0
+            lags_grid = {f'{lags}': lags}
     else:
         lags_label = 'keys'
+
+    if (
+        any(lags is None for lags in lags_grid.values())
+        and forecaster.window_features is None
+    ):
+        raise ValueError(
+            "`lags_grid` contains `None`, a candidate without lags, but the "
+            "forecaster has no `window_features` to create the predictors. Set "
+            "`window_features` in the forecaster or remove `None` from `lags_grid`."
+        )
 
     return lags_grid, lags_label
 

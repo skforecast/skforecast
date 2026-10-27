@@ -755,7 +755,7 @@ def test_fit_in_sample_residuals_by_level_when_series_unordered_different_length
     each level when the series are not in alphabetical order, have different
     lengths and an interspersed NaN, and one series ('d') loses all its rows
     because it has no exog and `dropna_from_series=True`. The order of the keys
-    is also checked: it follows `X_train_series_names_in_`.
+    is also checked: it follows the order of the series with every encoding.
     """
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=2, encoding=encoding, dropna_from_series=True,
@@ -767,7 +767,6 @@ def test_fit_in_sample_residuals_by_level_when_series_unordered_different_length
     )
 
     if encoding == 'onehot':
-        expected_levels = ['c', 'a', 'b']
         expected_residuals = {
             'c': np.array([2.35785357, -0.66170765, -1.19700919, -3.45838688,
                            -0.08898634, 3.04823649]),
@@ -807,7 +806,6 @@ def test_fit_in_sample_residuals_by_level_when_series_unordered_different_length
                                1: (9.192255430557589, 12.626295879716096)}
         }
     else:
-        expected_levels = ['a', 'b', 'c']
         expected_residuals = {
             'a': np.array([2.49700869, 1.45587963, 1.20052686, 0.5560771,
                            1.4645523, 0.65310967, -2.95745736]),
@@ -847,6 +845,7 @@ def test_fit_in_sample_residuals_by_level_when_series_unordered_different_length
                                1: (8.927457363589692, 11.43689033146482)}
         }
 
+    expected_levels = ['c', 'a', 'b']
     expected_keys = expected_levels + ['_unknown_level']
 
     assert forecaster.series_names_in_ == ['c', 'a', 'd', 'b']

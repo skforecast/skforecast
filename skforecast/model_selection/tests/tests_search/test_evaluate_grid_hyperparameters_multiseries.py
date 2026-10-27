@@ -535,6 +535,67 @@ def test_output_evaluate_grid_hyperparameters_ForecasterRecursiveMultiSeries_lag
     pd.testing.assert_frame_equal(results, expected_results)
 
 
+@pytest.mark.parametrize(
+    "cv, expected_metric",
+    [(TimeSeriesFold(steps=3, initial_train_size=len(series_dict_range['l1']) - 12, refit=False),
+      np.array([0.21043602991610974, 0.21061383703517822, 0.21064405145051132])),
+     (OneStepAheadFold(initial_train_size=len(series_dict_range['l1']) - 12),
+      np.array([0.21088437764824652, 0.2113636838391947, 0.21144760769988624]))],
+    ids=['TimeSeriesFold', 'OneStepAheadFold']
+)
+@pytest.mark.parametrize("lags_grid",
+                         [None, [None]],
+                         ids=lambda lg: f'lags_grid: {lg}')
+def test_output_evaluate_grid_hyperparameters_multiseries_when_forecaster_lags_is_None(
+    cv, expected_metric, lags_grid
+):
+    """
+    Test output of _evaluate_grid_hyperparameters_multiseries when the forecaster
+    has `lags=None` and only window features: `lags_grid=None` uses the lags of
+    the forecaster and `lags_grid=[None]` evaluates the forecaster without lags.
+    With `return_best=True`, the forecaster is refitted without lags.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = Ridge(random_state=123),
+                     lags               = None,
+                     window_features    = RollingFeatures(stats=['mean'], window_sizes=3),
+                     encoding           = 'onehot',
+                     transformer_series = None
+                 )
+    param_grid = [{'alpha': 0.01}, {'alpha': 0.1}, {'alpha': 1}]
+
+    results = _evaluate_grid_hyperparameters_multiseries(
+                  forecaster         = forecaster,
+                  series             = series_long_dt,
+                  param_grid         = param_grid,
+                  cv                 = cv,
+                  metric             = mean_absolute_error,
+                  aggregate_metric   = 'weighted_average',
+                  levels             = ['l1', 'l2'],
+                  exog               = None,
+                  lags_grid          = lags_grid,
+                  return_best        = True,
+                  verbose            = False
+              )
+
+    expected_results = pd.DataFrame(
+        {
+            "levels": [["l1", "l2"], ["l1", "l2"], ["l1", "l2"]],
+            "lags": [None, None, None],
+            "lags_label": [None, None, None],
+            "params": [{"alpha": 1}, {"alpha": 0.1}, {"alpha": 0.01}],
+            "mean_absolute_error__weighted_average": expected_metric,
+            "alpha": np.array([1.0, 0.1, 0.01]),
+        },
+        index=pd.RangeIndex(start=0, stop=3, step=1),
+    )
+
+    pd.testing.assert_frame_equal(results, expected_results)
+    assert forecaster.lags is None
+    assert forecaster.estimator.alpha == 1
+    assert forecaster.is_fitted
+
+
 @pytest.mark.parametrize("levels", 
                          ['l1', ['l1']], 
                          ids = lambda value: f'levels: {value}')
@@ -1374,6 +1435,69 @@ def test_evaluate_grid_hyperparameters_multiseries_when_return_best_ForecasterDi
     for i in forecaster.steps:
         assert expected_alpha == forecaster.estimators_[i].alpha
     assert expected_series_names_in_ == forecaster.series_names_in_
+
+
+def test_evaluate_grid_hyperparameters_multiseries_when_lags_grid_has_None_and_return_best():
+    """
+    Test that `None` in `lags_grid` evaluates the forecaster without lags (only
+    window features) next to the other candidates, and that the forecaster is
+    refitted with the best lags when `return_best=True`.
+    """
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator          = Ridge(random_state=123),
+                     level              = 'l1',
+                     lags               = None,
+                     steps              = 3,
+                     window_features    = RollingFeatures(stats=['mean'], window_sizes=3),
+                     transformer_series = None
+                 )
+    cv = TimeSeriesFold(
+            initial_train_size = len(series_wide_range) - 12,
+            steps              = 3,
+            refit              = False
+         )
+    param_grid = [{'alpha': 0.01}, {'alpha': 0.1}, {'alpha': 1}]
+
+    results = _evaluate_grid_hyperparameters_multiseries(
+                  forecaster         = forecaster,
+                  series             = series_wide_range,
+                  param_grid         = param_grid,
+                  cv                 = cv,
+                  metric             = 'mean_absolute_error',
+                  aggregate_metric   = 'weighted_average',
+                  levels             = None,
+                  exog               = None,
+                  lags_grid          = [None, 2],
+                  return_best        = True,
+                  verbose            = False,
+                  show_progress      = False
+              )
+
+    expected_lags = [[1, 2], None, [1, 2], None, None, [1, 2]]
+    expected_params = [
+        {'alpha': 1}, {'alpha': 1}, {'alpha': 0.1},
+        {'alpha': 0.1}, {'alpha': 0.01}, {'alpha': 0.01}
+    ]
+    expected_metric = np.array(
+        [0.204584, 0.209270, 0.209546, 0.210975, 0.211978, 0.215558]
+    )
+
+    results_lags = [
+        None if lags is None else lags.tolist() for lags in results['lags']
+    ]
+    results_lags_label = [
+        None if lags is None else lags.tolist() for lags in results['lags_label']
+    ]
+    assert results_lags == expected_lags
+    assert results_lags_label == expected_lags
+    assert results['params'].to_list() == expected_params
+    np.testing.assert_array_almost_equal(
+        results['mean_absolute_error'].to_numpy(), expected_metric
+    )
+    np.testing.assert_array_equal(forecaster.lags, np.array([1, 2]))
+    for i in forecaster.steps:
+        assert forecaster.estimators_[i].alpha == 1
+    assert forecaster.series_names_in_ == ['l1', 'l2']
 
 
 def test_evaluate_grid_hyperparameters_multiseries_ForecasterDirectMultiVariate_output_file_single_level():
