@@ -1331,6 +1331,19 @@ sección 7):
    parte de las PR 1 y 2.
 5. **Dataset `australia_tourism`** (`datasets.py:209`, `'freq': 'Q'`): el
    único fallo de datos; una línea en la PR 1.
+6. **Perfilado de la brecha de tiempo que queda en pandas 3** (3.6, tabla
+   "pandas 3 con los cambios frente a pandas 2"): `cProfile` de
+   `create_train_X_y` y de 200 llamadas a `predict` en los dos entornos,
+   comparando función a función, para separar el coste de los constructores
+   de `DataFrame`/`Series`, de los cortes de `exog` (`iloc`/`loc`), de la
+   copia profunda de `last_window` y de `transform_dataframe`. Según el
+   resultado: (a) construir la matriz pública desde el bloque float con
+   `copy=False` y añadir las columnas no float ya construidas, sin `astype`
+   ni `insert`; (b) un camino de `predict` que mantenga `last_window` y
+   `exog` como arrays de numpy entre llamadas y construya la salida una sola
+   vez (beneficia a las dos versiones; es la única vía con recorrido para
+   el backtesting de folds pequeños). Lo que quede es coste por objeto de
+   pandas 3 y no se puede evitar desde skforecast.
 
 ## Anexo: cómo reproducir los números
 
