@@ -1,5 +1,6 @@
 # Unit test grid_search_forecaster_multiseries
 # ==============================================================================
+import re
 import pytest
 import numpy as np
 import pandas as pd
@@ -15,6 +16,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_percentage_error
 from sklearn.metrics import r2_score
 from skforecast.metrics import mean_absolute_scaled_error
+from skforecast.exceptions import MissingValuesWarning
 
 # Fixtures
 from ..fixtures_model_selection_multiseries import (
@@ -880,3 +882,44 @@ def test_grid_search_forecaster_multiseries_maximizes_metric_when_greater_is_bet
     assert results[metric_name].nunique() > 1
     assert results[metric_name].is_monotonic_decreasing
     assert forecaster.estimator.alpha == results.loc[0, "alpha"]
+
+
+def test_grid_search_forecaster_multiseries_when_exog_has_NaN_in_test_fold_and_estimator_is_linear_model():
+    """
+    Test grid_search_forecaster_multiseries evaluates every candidate when
+    `exog` has a missing value in the test set of a fold and the estimator is a
+    linear model: the backtesting of each candidate returns NaN predictions for
+    the dates that cannot be predicted, which are left out of the metrics with
+    a MissingValuesWarning, instead of skipping the candidate.
+    """
+    idx = pd.date_range("2020-01-01", periods=120, freq="D")
+    rng = np.random.default_rng(0)
+    series = {
+        "a": pd.Series(rng.normal(100, 5, 120), index=idx, name="a"),
+        "b": pd.Series(rng.normal(100, 5, 120), index=idx, name="b"),
+    }
+    exog = pd.Series(rng.normal(0, 1, 120), index=idx, name="x")
+    exog.iloc[95] = np.nan
+    forecaster = ForecasterRecursiveMultiSeries(Ridge(), lags=3)
+    cv = TimeSeriesFold(steps=10, initial_train_size=60, refit=False)
+
+    warn_msg = re.escape(
+        "Number of NaN predictions per series: {'a': 5, 'b': 5}."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        results = grid_search_forecaster_multiseries(
+                      forecaster    = forecaster,
+                      series        = series,
+                      exog          = exog,
+                      cv            = cv,
+                      param_grid    = {'alpha': [0.1, 1.]},
+                      metric        = 'mean_absolute_error',
+                      return_best   = False,
+                      n_jobs        = 1,
+                      verbose       = False,
+                      show_progress = False
+                  )
+
+    assert len(results) == 2
+    assert sorted(params['alpha'] for params in results['params']) == [0.1, 1.]
+    assert not results['mean_absolute_error__average'].isna().any()

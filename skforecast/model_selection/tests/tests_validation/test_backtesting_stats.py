@@ -1814,3 +1814,44 @@ def test_output_backtesting_stats_alpha_is_alias_of_interval():
 
     pd.testing.assert_frame_equal(metric, expected_metric)
     pd.testing.assert_frame_equal(backtest_predictions, expected_predictions)
+
+
+@pytest.mark.parametrize(
+    "estimators, of_estimator",
+    [([Arima(order=(1, 0, 0))], ""),
+     ([Arima(order=(1, 0, 0)), Arima(order=(0, 0, 1))],
+      " of estimator 'skforecast.Arima'")],
+    ids=lambda x: f"{x}"
+)
+def test_backtesting_stats_ValueError_when_NaN_predictions_at_observed_dates(
+    estimators, of_estimator
+):
+    """
+    Test backtesting_stats raises a ValueError with the number of NaN
+    predictions and the first date when `exog` has a missing value in the
+    test set of a fold and the model predicts NaN at a date with observed
+    value. Before, the metric raised 'Input contains NaN.'.
+    """
+    idx = pd.date_range("2020-01-01", periods=60, freq="D")
+    rng = np.random.default_rng(0)
+    y = pd.Series(rng.normal(100, 5, 60), index=idx, name="y")
+    exog = pd.Series(rng.normal(0, 1, 60), index=idx, name="x")
+    exog.iloc[45] = np.nan
+    forecaster = ForecasterStats(estimators)
+    cv = TimeSeriesFold(steps=5, initial_train_size=40, refit=False)
+
+    err_msg = re.escape(
+        f"1 backtesting predictions{of_estimator} are NaN at dates with "
+        f"observed values (first: 2020-02-15 00:00:00), so the metrics cannot "
+        f"be calculated."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        backtesting_stats(
+            forecaster        = forecaster,
+            y                 = y,
+            exog              = exog,
+            cv                = cv,
+            metric            = 'mean_absolute_error',
+            show_progress     = False,
+            suppress_warnings = True
+        )

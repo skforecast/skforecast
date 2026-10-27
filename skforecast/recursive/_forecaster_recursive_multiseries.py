@@ -64,6 +64,8 @@ from ..utils import (
     get_style_repr_html,
     set_cpu_gpu_device,
     _build_predict_function,
+    _check_differentiation_last_values,
+    _NonFinitePredictorsError,
     scale_correction_factor_differentiation
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
@@ -389,6 +391,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     _probabilistic_mode: str, bool
         Private attribute used to indicate whether the forecaster should perform 
         some calculations during backtesting.
+    _allow_nan_predictions : bool
+        Private attribute. If `True`, a linear model of scikit-learn returns NaN
+        predictions when a predictor is NaN, instead of raising a `ValueError`.
+        It is set to `True` only by `backtesting_forecaster_multiseries`, in
+        its copy of the forecaster, to evaluate the series and dates that can
+        be predicted; the NaN predictions are warned when calculating the
+        metrics.
 
     Notes
     -----
@@ -475,6 +484,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.python_version                       = sys.version.split(" ")[0]
         self.forecaster_id                        = forecaster_id
         self._probabilistic_mode                  = "binned"
+        self._allow_nan_predictions               = False
 
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
         self.lags_are_contiguous = (
@@ -2864,6 +2874,21 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             shape=last_window.shape, fill_value=np.nan, order='F', dtype=float
         )
 
+        # NOTE: The differentiation of each level is reverted from its last
+        # values. They are checked for all levels at once, and level by level,
+        # to name the series and the dates, only where one is missing.
+        # Backtesting allows NaN predictions, which it handles when calculating
+        # the metrics. `getattr` keeps forecasters saved with previous versions
+        # working.
+        levels_nan_last_values = None
+        if (
+            self.differentiation is not None
+            and not getattr(self, '_allow_nan_predictions', False)
+        ):
+            levels_nan_last_values = pd.isna(
+                last_window_values[-self.differentiation_max:]
+            ).any(axis=0)
+
         differentiators = {}
         exog_values_all_levels = []
         for idx_level, level in enumerate(levels):
@@ -2881,6 +2906,16 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 else:
                     differentiators[level] = copy(self.differentiator_['_unknown_level'])
                 if differentiators[level] is not None:
+                    if (
+                        levels_nan_last_values is not None
+                        and levels_nan_last_values[idx_level]
+                    ):
+                        _check_differentiation_last_values(
+                            last_window_values = last_window_level,
+                            last_window_index  = last_window.index,
+                            order              = differentiators[level].order,
+                            series             = level
+                        )
                     last_window_level = (
                         differentiators[level].fit_transform(last_window_level)
                     )
@@ -2989,7 +3024,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         levels: list,
         last_window: pd.DataFrame,
         exog_values_dict: dict[str, np.ndarray] | None = None,
-        calendar_values: np.ndarray | None = None
+        calendar_values: np.ndarray | None = None,
+        prediction_index: pd.Index | None = None
     ) -> np.ndarray:
         """
         Predict n steps for one or multiple levels. It is an iterative process
@@ -3019,6 +3055,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             datetime index, the same values are shared by all series (levels).
             Each row corresponds to a prediction step and each column to a
             calendar feature.
+        prediction_index : pandas Index, default None
+            Index of the predictions, used to give the date of the step in the
+            error raised when a linear model gets NaN predictors.
 
         Returns
         -------
@@ -3064,7 +3103,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         )
         last_window = np.concatenate((last_window.to_numpy(), predictions), axis=0)
 
-        predict_fn = _build_predict_function(self.estimator)
+        predict_fn = _build_predict_function(
+                         estimator  = self.estimator,
+                         forecaster = self
+                     )
 
         has_lags = self.lags is not None
         has_window_features = self.window_features is not None
@@ -3104,7 +3146,17 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 # Same calendar row is broadcast across all series (levels).
                 features[:, exog_end:] = calendar_values[i]
 
-            pred = predict_fn(features)
+            try:
+                pred = predict_fn(features)
+            except _NonFinitePredictorsError as e:
+                date = prediction_index[i] if prediction_index is not None else None
+                raise ValueError(
+                    e.message(
+                        series = [levels[row] for row in e.rows],
+                        step   = i + 1,
+                        date   = date
+                    )
+                ) from None
 
             predictions[i, :] = pred
 
@@ -3126,6 +3178,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         use_binned_residuals: bool,
         exog_values_dict: dict[str, np.ndarray] | None = None,
         calendar_values: np.ndarray | None = None,
+        prediction_index: pd.Index | None = None
     ) -> np.ndarray:
         """
         Vectorized bootstrap prediction for multiple series. Instead of looping
@@ -3169,6 +3222,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             datetime index, the same values are shared by all series (levels) and
             bootstrap samples. Each row corresponds to a prediction step and each
             column to a calendar feature.
+        prediction_index : pandas Index, default None
+            Index of the predictions, used to give the date of the step in the
+            error raised when a linear model gets NaN predictors.
 
         Returns
         -------
@@ -3230,7 +3286,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         last_window_boot[:window_size, :, :] = last_window[:, np.newaxis, :]
         last_window_boot[window_size:, :, :] = np.nan
 
-        predict_fn = _build_predict_function(self.estimator)
+        predict_fn = _build_predict_function(
+                         estimator  = self.estimator,
+                         forecaster = self
+                     )
 
         has_lags = self.lags is not None
         has_window_features = self.window_features is not None
@@ -3282,7 +3341,19 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 # Same calendar row is broadcast across all series and bootstrap samples.
                 features[:, exog_end:] = calendar_values[step]
 
-            pred = predict_fn(features)
+            try:
+                pred = predict_fn(features)
+            except _NonFinitePredictorsError as e:
+                # Rows are ordered as [level0_boot0, level1_boot0, ...]
+                rows_levels = np.unique(e.rows % n_levels)
+                date = prediction_index[step] if prediction_index is not None else None
+                raise ValueError(
+                    e.message(
+                        series = [levels[row] for row in rows_levels],
+                        step   = step + 1,
+                        date   = date
+                    )
+                ) from None
 
             # Reshape from (n_boot × n_levels,) to (n_levels, n_boot)
             pred = pred.reshape(n_boot, n_levels).T
@@ -3385,7 +3456,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                               levels           = levels,
                               last_window      = last_window,
                               exog_values_dict = exog_values_dict,
-                              calendar_values  = calendar_values
+                              calendar_values  = calendar_values,
+                              prediction_index = prediction_index
                           )
         
         if self.lags is not None:
@@ -3565,7 +3637,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                               levels           = levels,
                               last_window      = last_window,
                               exog_values_dict = exog_values_dict,
-                              calendar_values  = calendar_values
+                              calendar_values  = calendar_values,
+                              prediction_index = prediction_index
                           )
         
         for i, level in enumerate(levels):
@@ -3742,6 +3815,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 use_binned_residuals = use_binned_residuals,
                 exog_values_dict     = exog_values_dict,
                 calendar_values      = calendar_values,
+                prediction_index     = prediction_index
             )
 
         for i, level in enumerate(levels):
@@ -3870,7 +3944,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                               levels           = levels,
                               last_window      = last_window,
                               exog_values_dict = exog_values_dict,
-                              calendar_values  = calendar_values
+                              calendar_values  = calendar_values,
+                              prediction_index = prediction_index
                           )
         
         n_levels = len(levels)

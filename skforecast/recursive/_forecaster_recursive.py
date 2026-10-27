@@ -52,6 +52,8 @@ from ..utils import (
     get_style_repr_html,
     set_cpu_gpu_device,
     _build_predict_function,
+    _check_differentiation_last_values,
+    _NonFinitePredictorsError,
     manage_warnings,
     scale_correction_factor_differentiation
 )
@@ -289,6 +291,13 @@ class ForecasterRecursive(ForecasterBase):
     _probabilistic_mode: str, bool
         Private attribute used to indicate whether the forecaster should perform 
         some calculations during backtesting.
+    _allow_nan_predictions : bool
+        Private attribute. If `True`, a linear model of scikit-learn returns NaN
+        predictions when a predictor is NaN, instead of raising a `ValueError`.
+        It is set to `True` only by `backtesting_forecaster`, in its copy of
+        the forecaster, so that a missing value that only affects the steps of
+        the `gap`, which are predicted and discarded, does not stop the
+        backtesting; NaN predictions of scored dates raise before the metrics.
     
     """
 
@@ -349,6 +358,7 @@ class ForecasterRecursive(ForecasterBase):
         self.python_version                       = sys.version.split(" ")[0]
         self.forecaster_id                        = forecaster_id
         self._probabilistic_mode                  = "binned"
+        self._allow_nan_predictions               = False
 
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
         self.lags_are_contiguous = (
@@ -1594,6 +1604,15 @@ class ForecasterRecursive(ForecasterBase):
                                  inverse_transform = False
                              )
         if self.differentiation is not None:
+            # NOTE: Backtesting allows NaN predictions, which it handles when
+            # calculating the metrics. `getattr` keeps forecasters saved with
+            # previous versions, which do not have this attribute, working.
+            if not getattr(self, '_allow_nan_predictions', False):
+                _check_differentiation_last_values(
+                    last_window_values = last_window_values,
+                    last_window_index  = last_window.index[-self.window_size:],
+                    order              = self.differentiation
+                )
             differentiator = copy(self.differentiator)
             last_window_values = differentiator.fit_transform(last_window_values)
         else:
@@ -1659,7 +1678,8 @@ class ForecasterRecursive(ForecasterBase):
         steps: int,
         last_window_values: np.ndarray,
         exog_values: np.ndarray | None = None,
-        calendar_values: np.ndarray | None = None
+        calendar_values: np.ndarray | None = None,
+        prediction_index: pd.Index | None = None
     ) -> np.ndarray:
         """
         Predict n steps ahead. It is an iterative process in which, each prediction,
@@ -1682,6 +1702,9 @@ class ForecasterRecursive(ForecasterBase):
             Exogenous variable/s included as predictor/s.
         calendar_values : numpy ndarray, default None
             Calendar features included as predictor/s.
+        prediction_index : pandas Index, default None
+            Index of the predictions, used to give the date of the step in the
+            error raised when a linear model gets NaN predictors.
 
         Returns
         -------
@@ -1706,7 +1729,10 @@ class ForecasterRecursive(ForecasterBase):
         predictions = np.full(shape=steps, fill_value=np.nan, dtype=float)
         last_window = np.concatenate((last_window_values, predictions))
 
-        predict_fn = _build_predict_function(self.estimator)
+        predict_fn = _build_predict_function(
+                         estimator  = self.estimator,
+                         forecaster = self
+                     )
 
         has_lags = self.lags is not None
         has_window_features = self.window_features is not None
@@ -1744,7 +1770,11 @@ class ForecasterRecursive(ForecasterBase):
             if has_calendar:
                 X[exog_end:] = calendar_values[i]
         
-            pred = predict_fn(X.reshape(1, -1)).item()
+            try:
+                pred = predict_fn(X.reshape(1, -1)).item()
+            except _NonFinitePredictorsError as e:
+                date = prediction_index[i] if prediction_index is not None else None
+                raise ValueError(e.message(step=i + 1, date=date)) from None
             predictions[i] = pred
 
             # Update `last_window` values. The first position is discarded and 
@@ -1763,7 +1793,8 @@ class ForecasterRecursive(ForecasterBase):
         use_binned_residuals: bool,
         n_boot: int,
         exog_values: np.ndarray | None = None,
-        calendar_values: np.ndarray | None = None
+        calendar_values: np.ndarray | None = None,
+        prediction_index: pd.Index | None = None
     ) -> np.ndarray:
         """
         Vectorized bootstrap prediction - predict all n_boot iterations per step.
@@ -1796,6 +1827,9 @@ class ForecasterRecursive(ForecasterBase):
             Exogenous variable/s included as predictor/s.
         calendar_values : numpy ndarray, default None
             Calendar features included as predictor/s.
+        prediction_index : pandas Index, default None
+            Index of the predictions, used to give the date of the step in the
+            error raised when a linear model gets NaN predictors.
 
         Returns
         -------
@@ -1831,7 +1865,10 @@ class ForecasterRecursive(ForecasterBase):
         last_window = np.tile(last_window_values[:, np.newaxis], (1, n_boot))
         last_window = np.vstack([last_window, np.full((steps, n_boot), np.nan)])
 
-        predict_fn = _build_predict_function(self.estimator)
+        predict_fn = _build_predict_function(
+                         estimator  = self.estimator,
+                         forecaster = self
+                     )
 
         has_lags = self.lags is not None
         has_window_features = self.window_features is not None
@@ -1875,7 +1912,11 @@ class ForecasterRecursive(ForecasterBase):
             if has_calendar:
                 X[:, exog_end:] = calendar_values[i]
         
-            pred = predict_fn(X)
+            try:
+                pred = predict_fn(X)
+            except _NonFinitePredictorsError as e:
+                date = prediction_index[i] if prediction_index is not None else None
+                raise ValueError(e.message(step=i + 1, date=date)) from None
 
             if use_binned_residuals:
                 # sampled_residuals is a 3D array: (n_bins, steps, n_boot)
@@ -1957,7 +1998,8 @@ class ForecasterRecursive(ForecasterBase):
                               steps              = steps,
                               last_window_values = last_window_values,
                               exog_values        = exog_values,
-                              calendar_values    = calendar_values
+                              calendar_values    = calendar_values,
+                              prediction_index   = prediction_index
                           )
 
         X_predict = []
@@ -2080,7 +2122,8 @@ class ForecasterRecursive(ForecasterBase):
                               steps              = steps,
                               last_window_values = last_window_values,
                               exog_values        = exog_values,
-                              calendar_values    = calendar_values
+                              calendar_values    = calendar_values,
+                              prediction_index   = prediction_index
                           )
 
         if differentiator is not None:
@@ -2223,7 +2266,8 @@ class ForecasterRecursive(ForecasterBase):
                 calendar_values      = calendar_values,
                 sampled_residuals    = sampled_residuals,
                 use_binned_residuals = use_binned_residuals,
-                n_boot               = n_boot
+                n_boot               = n_boot,
+                prediction_index     = prediction_index
             )
 
         if differentiator is not None:
@@ -2339,7 +2383,8 @@ class ForecasterRecursive(ForecasterBase):
                               steps              = steps,
                               last_window_values = last_window_values,
                               exog_values        = exog_values,
-                              calendar_values    = calendar_values
+                              calendar_values    = calendar_values,
+                              prediction_index   = prediction_index
                           )
         
         if use_binned_residuals:

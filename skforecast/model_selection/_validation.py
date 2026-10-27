@@ -28,6 +28,7 @@ from ..model_selection._utils import (
     _select_fit_folds_multiseries,
     _warn_levels_not_predicted_multiseries,
     _calculate_metrics_backtesting_multiseries,
+    _check_nan_predictions_backtesting,
     _get_interval_columns,
     _calculate_interval_metrics,
     INTERVAL_METRIC_NAMES
@@ -570,6 +571,16 @@ def _backtesting_forecaster(
     else:
         forecaster._probabilistic_mode = 'no_binned'
 
+    # NOTE: The steps of the `gap` are predicted and then discarded, so a
+    # missing predictor (for example, a gap in `exog`) that only affects them
+    # must not stop the backtesting: a linear model returns NaN predictions
+    # instead of raising. NaN predictions of scored dates raise before the
+    # metrics, in `_check_nan_predictions_backtesting`. The forecaster is a
+    # copy, so the attribute does not reach the user's forecaster. It is set
+    # even if the forecaster does not have it: forecasters saved with previous
+    # versions lack it, and the rest of forecasters do not read it.
+    forecaster._allow_nan_predictions = True
+
     folds = cv.split(X=y, as_pandas=False)
     initial_train_size = cv.initial_train_size_as_int
     window_size = cv.window_size
@@ -681,6 +692,9 @@ def _backtesting_forecaster(
     
     y_true = y.loc[backtest_predictions_for_metrics.index]
     y_pred = backtest_predictions_for_metrics['pred']
+    _check_nan_predictions_backtesting(
+        y_true=y_true, y_pred=y_pred, differentiation=forecaster.differentiation
+    )
 
     if _any_metric_needs_y_train(metrics):
         train_indexes = []
@@ -1388,6 +1402,17 @@ def _backtesting_forecaster_multiseries(
         forecaster._probabilistic_mode = 'binned'
     else:
         forecaster._probabilistic_mode = 'no_binned'
+
+    # NOTE: A missing predictor (for example, a gap in `exog`, or in the last
+    # window of ForecasterDirectMultiVariate) does not stop the backtesting: a
+    # linear model returns NaN predictions for the dates that cannot be
+    # predicted, instead of raising, so the rest of series and dates are still
+    # evaluated. The NaN predictions of dates with observed values are warned
+    # in `_calculate_metrics_backtesting_multiseries`. The forecaster is a copy,
+    # so the attribute does not reach the user's forecaster. It is set even if
+    # the forecaster does not have it: forecasters saved with previous versions
+    # lack it, and ForecasterRnn does not read it.
+    forecaster._allow_nan_predictions = True
 
     folds = cv.split(X=series, as_pandas=False)
     span_index = cv._extract_index(X=series)
@@ -2351,6 +2376,7 @@ def _backtesting_stats(
     if forecaster.n_estimators == 1:
         y_true = y.loc[backtest_predictions_for_metrics.index]
         y_pred = backtest_predictions_for_metrics['pred']
+        _check_nan_predictions_backtesting(y_true=y_true, y_pred=y_pred)
         metric_values = [
             m(y_true=y_true, y_pred=y_pred, y_train=y_train)
             for m in metrics
@@ -2374,7 +2400,12 @@ def _backtesting_stats(
 
         grouped = backtest_predictions_for_metrics.groupby('estimator_id', sort=False)
         metric_values = []
-        for _, group in grouped:
+        for estimator_id, group in grouped:
+            _check_nan_predictions_backtesting(
+                y_true       = y_true,
+                y_pred       = group['pred'],
+                estimator_id = estimator_id
+            )
             metric_values_estimator = [
                 m(y_true=y_true, y_pred=group['pred'], y_train=y_train)
                 for m in metrics
@@ -2954,6 +2985,7 @@ def _backtesting_foundation(
             y_pred = backtest_predictions_for_metrics['q_0.5']
         else:
             y_pred = backtest_predictions_for_metrics['pred']
+        _check_nan_predictions_backtesting(y_true=y_true, y_pred=y_pred)
         
         if _any_metric_needs_y_train(metrics):
             train_indexes = []

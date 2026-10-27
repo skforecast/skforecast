@@ -1157,3 +1157,204 @@ def test_predict_with_exog_window_features_and_calendar():
     predictions_no_cal = forecaster_no_cal.predict(steps=10, exog=exog_predict_calendar)
 
     pd.testing.assert_frame_equal(predictions, predictions_no_cal)
+
+
+@pytest.mark.parametrize(
+    "method",
+    ["predict", "predict_bootstrapping"],
+    ids=lambda method: f"method: {method}"
+)
+def test_predict_ValueError_when_exog_has_NaN_and_estimator_is_linear_model(method):
+    """
+    Test predict and predict_bootstrapping raise a ValueError naming the
+    predictor and the step when `exog` has a missing value and the estimator
+    is a linear model, which does not accept them (as its `predict` method).
+    Before, the fast path of linear models returned a NaN prediction.
+    """
+    series = pd.DataFrame({
+        'l1': np.arange(50, dtype=float), 'l2': np.arange(50, 100, dtype=float)
+    })
+    exog = pd.Series(np.arange(50, dtype=float), name='exog')
+    exog_pred = pd.Series(
+        [50., np.nan, 52.], index=pd.RangeIndex(50, 53), name='exog'
+    )
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level='l1', lags=3, steps=3
+    )
+    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
+
+    err_msg = re.escape(
+        "Input X contains NaN in the predictors ['exog'] at step 2 (51). "
+        "LinearRegression does not accept missing values encoded as NaN, so "
+        "its predictions would be NaN."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        getattr(forecaster, method)(steps=3, exog=exog_pred, suppress_warnings=True)
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    [HistGradientBoostingRegressor(max_iter=10, random_state=123),
+     LGBMRegressor(n_estimators=10, random_state=123, verbose=-1)],
+    ids=lambda estimator: f"estimator: {type(estimator).__name__}"
+)
+def test_predict_output_when_exog_has_NaN_and_estimator_accepts_NaN(estimator):
+    """
+    Test predict output when `exog` has a missing value and the estimator
+    accepts them: the predictions are not NaN and are the same as those of the
+    estimator of each step with the predictors of `create_predict_X`.
+    """
+    rng = np.random.default_rng(123)
+    series = pd.DataFrame({'l1': rng.normal(size=50), 'l2': rng.normal(size=50)})
+    exog = pd.Series(np.arange(50, dtype=float), name='exog')
+    exog_pred = pd.Series(
+        [50., np.nan, 52.], index=pd.RangeIndex(50, 53), name='exog'
+    )
+    forecaster = ForecasterDirectMultiVariate(
+        estimator, level='l1', lags=3, steps=3, transformer_series=None
+    )
+    forecaster.fit(series=series, exog=exog)
+    predictions = forecaster.predict(steps=3, exog=exog_pred, suppress_warnings=True)
+    X_predict = forecaster.create_predict_X(
+        steps=3, exog=exog_pred, suppress_warnings=True
+    ).drop(columns='level')
+    expected = np.array([
+        forecaster.estimators_[step].predict(X_predict.iloc[[step - 1]]).item()
+        for step in [1, 2, 3]
+    ])
+
+    assert not predictions['pred'].isna().any()
+    np.testing.assert_array_almost_equal(predictions['pred'].to_numpy(), expected)
+
+
+def test_predict_output_when_allow_nan_predictions_and_exog_has_NaN():
+    """
+    Test predict output when `_allow_nan_predictions=True` (set only by
+    multi-series backtesting) and `exog` has a missing value: the linear
+    model returns a NaN prediction for that step, instead of raising, and the
+    other steps are predicted.
+    """
+    series = pd.DataFrame({
+        'l1': np.arange(50, dtype=float), 'l2': np.arange(50, 100, dtype=float)
+    })
+    exog = pd.Series(np.arange(50, dtype=float), name='exog')
+    exog_pred = pd.Series(
+        [50., np.nan, 52.], index=pd.RangeIndex(50, 53), name='exog'
+    )
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level='l1', lags=3, steps=3
+    )
+    forecaster.fit(series=series, exog=exog)
+    forecaster._allow_nan_predictions = True
+    predictions = forecaster.predict(steps=3, exog=exog_pred, suppress_warnings=True)
+
+    np.testing.assert_array_equal(
+        predictions['pred'].isna().to_numpy(), [False, True, False]
+    )
+
+
+@pytest.mark.parametrize(
+    "steps",
+    [[3], [2, 1, 3], [3, 1, 2]],
+    ids=lambda steps: f"steps: {steps}"
+)
+def test_predict_ValueError_with_date_when_exog_has_NaN_and_differentiation_with_steps_not_consecutive(
+    steps
+):
+    """
+    Test predict raises a ValueError naming the step and its date when the
+    forecaster uses differentiation, `exog` has a missing value in step 2 and
+    the steps are not consecutive from 1 or not ordered. The predictors of
+    every step up to `max(steps)` are needed to revert the differentiation,
+    so the date comes from their index, not from the prediction index of the
+    requested steps. Before, the date was missing or was the one of another
+    step.
+    """
+    series = pd.DataFrame({
+        'l1': np.arange(50, dtype=float) ** 1.5, 'l2': np.arange(50, dtype=float)
+    })
+    exog = pd.Series(np.arange(50, dtype=float), name='exog')
+    exog_pred = pd.Series(
+        [50., np.nan, 52.], index=pd.RangeIndex(50, 53), name='exog'
+    )
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level='l1', lags=3, steps=3, differentiation=1
+    )
+    forecaster.fit(series=series, exog=exog)
+
+    err_msg = re.escape(
+        "Input X contains NaN in the predictors ['exog'] at step 2 (51). "
+        "LinearRegression does not accept missing values encoded as NaN"
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        forecaster.predict(steps=steps, exog=exog_pred, suppress_warnings=True)
+
+
+# Series with a trend, so that the differentiation is needed, and a daily
+# index, so that the error names the date of the missing value.
+series_diff = pd.DataFrame(
+    {
+        'l1': np.arange(30, dtype=float) + np.random.default_rng(123).normal(size=30),
+        'l2': np.arange(30, dtype=float) + np.random.default_rng(456).normal(size=30)
+    },
+    index=pd.date_range("2020-01-01", periods=30, freq="D")
+)
+
+
+@pytest.mark.parametrize(
+    "method",
+    ["predict", "predict_interval", "predict_quantiles"],
+    ids=lambda method: f"method: {method}"
+)
+@pytest.mark.parametrize(
+    "estimator",
+    [LinearRegression(), HistGradientBoostingRegressor(max_iter=10, random_state=123)],
+    ids=lambda estimator: f"estimator: {type(estimator).__name__}"
+)
+def test_predict_ValueError_when_last_value_of_level_is_NaN_and_differentiation(
+    estimator, method
+):
+    """
+    Test predict methods raise a ValueError naming the series and the date
+    when the last value of the series predicted (`level`) is NaN and
+    `differentiation=1`. No predictor reads it (`lags=[3]`), but the
+    differentiation is reverted from it, so all the predictions were NaN,
+    with any estimator, without error.
+    """
+    series = series_diff.copy()
+    series.iloc[-1, 0] = np.nan
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator=estimator, level='l1', lags=[3], steps=2,
+                     differentiation=1, dropna_from_series=True
+                 )
+    forecaster.fit(series=series, store_in_sample_residuals=True)
+
+    err_msg = re.escape(
+        "The series 'l1' (or `last_window`) has missing values (NaN) at "
+        "['2020-01-30 00:00:00']. With `differentiation`, the predictions are "
+        "reverted to the original scale from the last value of the series, so "
+        "all of them would be NaN, with any estimator. Fill the missing values "
+        "of the series (or `last_window`)."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        getattr(forecaster, method)(steps=2, suppress_warnings=True)
+
+
+def test_predict_output_when_last_value_of_other_series_is_NaN_and_differentiation():
+    """
+    Test predict output when the last value of a series that is not the
+    `level` is NaN and `differentiation=1`: only the differentiation of the
+    level is reverted, so no error is raised and, with an estimator that
+    accepts NaN, the predictions are not NaN.
+    """
+    series = series_diff.copy()
+    series.iloc[-1, 1] = np.nan
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator=HistGradientBoostingRegressor(max_iter=10, random_state=123),
+                     level='l1', lags=[3], steps=2, differentiation=1,
+                     dropna_from_series=True
+                 )
+    forecaster.fit(series=series)
+    predictions = forecaster.predict(steps=2, suppress_warnings=True)
+
+    assert not predictions['pred'].isna().any()

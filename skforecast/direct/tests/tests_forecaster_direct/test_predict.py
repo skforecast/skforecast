@@ -1032,3 +1032,256 @@ def test_predict_ValueError_when_steps_is_zero_or_empty_list(steps, err_msg):
 
     with pytest.raises(ValueError, match=re.escape(err_msg)):
         forecaster.predict(steps=steps)
+
+
+@pytest.mark.parametrize(
+    "method",
+    ["predict", "predict_bootstrapping"],
+    ids=lambda method: f"method: {method}"
+)
+def test_predict_ValueError_when_exog_has_NaN_and_estimator_is_linear_model(method):
+    """
+    Test predict and predict_bootstrapping raise a ValueError naming the
+    predictor and the step when `exog` has a missing value and the estimator
+    is a linear model, which does not accept them (as its `predict` method).
+    Before, the fast path of linear models returned a NaN prediction.
+    """
+    y = pd.Series(np.arange(50, dtype=float))
+    exog = pd.Series(np.arange(50, dtype=float), name='exog')
+    exog_pred = pd.Series(
+        [50., np.nan, 52.], index=pd.RangeIndex(50, 53), name='exog'
+    )
+    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=3)
+    forecaster.fit(y=y, exog=exog, store_in_sample_residuals=True)
+
+    err_msg = re.escape(
+        "Input X contains NaN in the predictors ['exog'] at step 2 (51). "
+        "LinearRegression does not accept missing values encoded as NaN, so "
+        "its predictions would be NaN."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        getattr(forecaster, method)(steps=3, exog=exog_pred, suppress_warnings=True)
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    [HistGradientBoostingRegressor(max_iter=10, random_state=123),
+     LGBMRegressor(n_estimators=10, random_state=123, verbose=-1)],
+    ids=lambda estimator: f"estimator: {type(estimator).__name__}"
+)
+def test_predict_output_when_exog_has_NaN_and_estimator_accepts_NaN(estimator):
+    """
+    Test predict output when `exog` has a missing value and the estimator
+    accepts them: the predictions are not NaN and are the same as those of the
+    estimator of each step with the predictors of `create_predict_X`.
+    """
+    y = pd.Series(np.random.default_rng(123).normal(size=50))
+    exog = pd.Series(np.arange(50, dtype=float), name='exog')
+    exog_pred = pd.Series(
+        [50., np.nan, 52.], index=pd.RangeIndex(50, 53), name='exog'
+    )
+    forecaster = ForecasterDirect(estimator, lags=3, steps=3)
+    forecaster.fit(y=y, exog=exog)
+    predictions = forecaster.predict(steps=3, exog=exog_pred, suppress_warnings=True)
+    X_predict = forecaster.create_predict_X(
+        steps=3, exog=exog_pred, suppress_warnings=True
+    )
+    expected = np.array([
+        forecaster.estimators_[step].predict(X_predict.iloc[[step - 1]]).item()
+        for step in [1, 2, 3]
+    ])
+
+    assert not predictions.isna().any()
+    np.testing.assert_array_almost_equal(predictions.to_numpy(), expected)
+
+
+@pytest.mark.parametrize(
+    "steps",
+    [[3], [2, 1, 3], [3, 1, 2]],
+    ids=lambda steps: f"steps: {steps}"
+)
+def test_predict_ValueError_with_date_when_exog_has_NaN_and_differentiation_with_steps_not_consecutive(
+    steps
+):
+    """
+    Test predict raises a ValueError naming the step and its date when the
+    forecaster uses differentiation, `exog` has a missing value in step 2 and
+    the steps are not consecutive from 1 or not ordered. The predictors of
+    every step up to `max(steps)` are needed to revert the differentiation,
+    so the date comes from their index, not from the prediction index of the
+    requested steps. Before, the date was missing or was the one of another
+    step.
+    """
+    y = pd.Series(np.arange(50, dtype=float) ** 1.5)
+    exog = pd.Series(np.arange(50, dtype=float), name='exog')
+    exog_pred = pd.Series(
+        [50., np.nan, 52.], index=pd.RangeIndex(50, 53), name='exog'
+    )
+    forecaster = ForecasterDirect(
+        LinearRegression(), lags=3, steps=3, differentiation=1
+    )
+    forecaster.fit(y=y, exog=exog)
+
+    err_msg = re.escape(
+        "Input X contains NaN in the predictors ['exog'] at step 2 (51). "
+        "LinearRegression does not accept missing values encoded as NaN"
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        forecaster.predict(steps=steps, exog=exog_pred, suppress_warnings=True)
+
+
+def test_predict_output_when_allow_nan_predictions_and_exog_has_NaN():
+    """
+    Test predict output when `_allow_nan_predictions=True` (set only by
+    backtesting) and `exog` has a missing value: the linear model returns a
+    NaN prediction for that step, instead of raising, and the other steps are
+    predicted.
+    """
+    y = pd.Series(np.arange(50, dtype=float))
+    exog = pd.Series(np.arange(50, dtype=float), name='exog')
+    exog_pred = pd.Series(
+        [50., np.nan, 52.], index=pd.RangeIndex(50, 53), name='exog'
+    )
+    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=3)
+    forecaster.fit(y=y, exog=exog)
+    forecaster._allow_nan_predictions = True
+    predictions = forecaster.predict(steps=3, exog=exog_pred, suppress_warnings=True)
+
+    np.testing.assert_array_equal(
+        predictions.isna().to_numpy(), [False, True, False]
+    )
+
+
+# Series with a trend, so that the differentiation is needed, and a daily
+# index, so that the error names the date of the missing value.
+y_diff = pd.Series(
+    np.arange(30, dtype=float) + np.random.default_rng(123).normal(size=30),
+    index=pd.date_range("2020-01-01", periods=30, freq="D"),
+    name="y"
+)
+
+
+def differentiation_last_values_msg(dates, last_values="last value"):
+    return re.escape(
+        f"The series (or `last_window`) has missing values (NaN) at {dates}. "
+        f"With `differentiation`, the predictions are reverted to the original "
+        f"scale from the {last_values} of the series, so all of them would be "
+        f"NaN, with any estimator. Fill the missing values of the series (or "
+        f"`last_window`)."
+    )
+
+
+@pytest.mark.parametrize(
+    "method",
+    ["predict", "predict_interval", "predict_quantiles"],
+    ids=lambda method: f"method: {method}"
+)
+@pytest.mark.parametrize(
+    "estimator",
+    [LinearRegression(), HistGradientBoostingRegressor(max_iter=10, random_state=123)],
+    ids=lambda estimator: f"estimator: {type(estimator).__name__}"
+)
+def test_predict_ValueError_when_last_value_of_series_is_NaN_and_differentiation(
+    estimator, method
+):
+    """
+    Test predict methods raise a ValueError naming the date when the last
+    value of the series is NaN and `differentiation=1`. No predictor of the 2
+    steps reads it (`lags=[3]`), but the differentiation is reverted from it,
+    so all the predictions were NaN, with any estimator, without error.
+    """
+    y = y_diff.copy()
+    y.iloc[-1] = np.nan
+    forecaster = ForecasterDirect(
+                     estimator=estimator, lags=[3], steps=3, differentiation=1,
+                     dropna_from_series=True
+                 )
+    forecaster.fit(y=y, store_in_sample_residuals=True)
+
+    err_msg = differentiation_last_values_msg(["2020-01-30 00:00:00"])
+    with pytest.raises(ValueError, match=err_msg):
+        getattr(forecaster, method)(steps=2, suppress_warnings=True)
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    [LinearRegression(), HistGradientBoostingRegressor(max_iter=10, random_state=123)],
+    ids=lambda estimator: f"estimator: {type(estimator).__name__}"
+)
+def test_predict_ValueError_when_second_last_value_of_series_is_NaN_and_differentiation_2(
+    estimator
+):
+    """
+    Test predict raises a ValueError naming the date when the second last
+    value of the series is NaN and `differentiation=2`, which reverts the
+    predictions from the last 2 values. No predictor of the step reads it
+    (`lags=[3]`).
+    """
+    y = y_diff.copy()
+    y.iloc[-2] = np.nan
+    forecaster = ForecasterDirect(
+                     estimator=estimator, lags=[3], steps=3, differentiation=2,
+                     dropna_from_series=True
+                 )
+    forecaster.fit(y=y)
+
+    err_msg = differentiation_last_values_msg(
+        ["2020-01-29 00:00:00"], last_values="last 2 values"
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        forecaster.predict(steps=1, suppress_warnings=True)
+
+
+def test_predict_ValueError_when_last_window_last_value_is_NaN_and_differentiation():
+    """
+    Test predict raises a ValueError naming the date when the last value of
+    `last_window` is NaN and `differentiation=1`.
+    """
+    forecaster = ForecasterDirect(
+                     LinearRegression(), lags=[3], steps=3, differentiation=1
+                 )
+    forecaster.fit(y=y_diff.iloc[:20])
+    last_window = y_diff.iloc[-6:].copy()
+    last_window.iloc[-1] = np.nan
+
+    err_msg = differentiation_last_values_msg(["2020-01-30 00:00:00"])
+    with pytest.raises(ValueError, match=err_msg):
+        forecaster.predict(steps=3, last_window=last_window, suppress_warnings=True)
+
+
+def test_predict_output_when_last_value_of_series_is_NaN_and_differentiation_and_allow_nan_predictions():
+    """
+    Test predict output when `_allow_nan_predictions=True` (set only by
+    backtesting), the last value of the series is NaN and `differentiation=1`:
+    all the predictions are NaN, instead of raising.
+    """
+    y = y_diff.copy()
+    y.iloc[-1] = np.nan
+    forecaster = ForecasterDirect(
+                     estimator=HistGradientBoostingRegressor(max_iter=10, random_state=123),
+                     lags=[1], steps=3, differentiation=1, dropna_from_series=True
+                 )
+    forecaster.fit(y=y)
+    forecaster._allow_nan_predictions = True
+    predictions = forecaster.predict(steps=3, suppress_warnings=True)
+
+    assert predictions.isna().all()
+
+
+def test_predict_output_when_NaN_is_not_in_last_values_of_series_and_differentiation():
+    """
+    Test predict output when the series has a missing value before the last
+    value and `differentiation=1`: the differentiation is reverted from the
+    last value, so no error is raised and, with an estimator that accepts
+    NaN, the predictions are not NaN.
+    """
+    y = y_diff.copy()
+    y.iloc[-3] = np.nan
+    forecaster = ForecasterDirect(
+                     estimator=HistGradientBoostingRegressor(max_iter=10, random_state=123),
+                     lags=[1], steps=3, differentiation=1, dropna_from_series=True
+                 )
+    forecaster.fit(y=y)
+    predictions = forecaster.predict(steps=3, suppress_warnings=True)
+
+    assert not predictions.isna().any()

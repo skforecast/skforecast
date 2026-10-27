@@ -50,6 +50,8 @@ from ..utils import (
     select_n_jobs_fit_forecaster,
     get_style_repr_html,
     _build_predict_function,
+    _check_differentiation_last_values,
+    _NonFinitePredictorsError,
     manage_warnings,
     configure_estimator_categorical_features,
     cast_catboost_categorical_columns,
@@ -451,6 +453,13 @@ class ForecasterDirect(ForecasterBase):
     _probabilistic_mode: str, bool
         Private attribute used to indicate whether the forecaster should perform 
         some calculations during backtesting.
+    _allow_nan_predictions : bool
+        Private attribute. If `True`, a linear model of scikit-learn returns NaN
+        predictions when a predictor is NaN, instead of raising a `ValueError`.
+        It is set to `True` only by `backtesting_forecaster`, in its copy of
+        the forecaster, so that a missing value that only affects the steps of
+        the `gap`, which are predicted and discarded, does not stop the
+        backtesting; NaN predictions of scored dates raise before the metrics.
 
     Notes
     -----
@@ -522,6 +531,7 @@ class ForecasterDirect(ForecasterBase):
         self.python_version                       = sys.version.split(" ")[0]
         self.forecaster_id                        = forecaster_id
         self._probabilistic_mode                  = "binned"
+        self._allow_nan_predictions               = False
 
         if not isinstance(steps, int):
             raise TypeError(
@@ -2087,6 +2097,10 @@ class ForecasterDirect(ForecasterBase):
             `None` if no differentiation is applied. This is used to reverse
             the differentiation of predictions without mutating the forecaster's
             internal state.
+        Xs_index : pandas Index
+            Index of the rows of `Xs`, one per step predicted. With
+            differentiation, it has the dates of all the steps from 1 to
+            `max(steps)`, as `Xs`.
         
         """
 
@@ -2134,6 +2148,15 @@ class ForecasterDirect(ForecasterBase):
                                  inverse_transform = False
                              )
         if self.differentiation is not None:
+            # NOTE: Backtesting allows NaN predictions, which it handles when
+            # calculating the metrics. `getattr` keeps forecasters saved with
+            # previous versions, which do not have this attribute, working.
+            if not getattr(self, '_allow_nan_predictions', False):
+                _check_differentiation_last_values(
+                    last_window_values = last_window_values,
+                    last_window_index  = last_window.index[-self.window_size:],
+                    order              = self.differentiation
+                )
             differentiator = copy(self.differentiator)
             last_window_values = differentiator.fit_transform(last_window_values)
         else:
@@ -2246,12 +2269,13 @@ class ForecasterDirect(ForecasterBase):
 
             Xs = [Xs_array[i:i + 1] for i in range(len(Xs_steps))]
 
-        return Xs, Xs_col_names, steps, prediction_index, differentiator
+        return Xs, Xs_col_names, steps, prediction_index, differentiator, Xs_index
 
     def _direct_predict(
         self,
         steps: list[int],
-        Xs: list[np.ndarray]
+        Xs: list[np.ndarray],
+        Xs_index: pd.Index | None = None
     ) -> np.ndarray:
         """
         Generate predictions for the specified steps using the fitted estimators.
@@ -2270,6 +2294,10 @@ class ForecasterDirect(ForecasterBase):
         Xs : list[np.ndarray]
             List of numpy arrays with the predictors for each step.
             Each array has shape (1, n_features).
+        Xs_index : pandas Index, default None
+            Index of the rows of `Xs`, one per step in `steps`, used to give
+            the date of the step in the error raised when a linear model gets
+            NaN predictors.
 
         Returns
         -------
@@ -2286,10 +2314,17 @@ class ForecasterDirect(ForecasterBase):
                 message="X does not have valid feature names", 
                 category=UserWarning
             )
-            predict_fns = [_build_predict_function(est) for est in estimators]
-            predictions = np.array(
-                [fn(X).item() for fn, X in zip(predict_fns, Xs)]
-            )
+            predict_fns = [
+                _build_predict_function(estimator=est, forecaster=self)
+                for est in estimators
+            ]
+            predictions = np.empty(len(steps), dtype=float)
+            for i, (fn, X, step) in enumerate(zip(predict_fns, Xs, steps)):
+                try:
+                    predictions[i] = fn(X).item()
+                except _NonFinitePredictorsError as e:
+                    date = Xs_index[i] if Xs_index is not None else None
+                    raise ValueError(e.message(step=step, date=date)) from None
 
         return predictions
 
@@ -2346,7 +2381,8 @@ class ForecasterDirect(ForecasterBase):
             Xs_col_names,
             steps,
             prediction_index,
-            differentiator
+            differentiator,
+            _
         ) = self._create_predict_inputs(
                 steps        = steps,
                 last_window  = last_window,
@@ -2435,7 +2471,8 @@ class ForecasterDirect(ForecasterBase):
             _,
             steps,
             prediction_index,
-            differentiator
+            differentiator,
+            Xs_index
         ) = self._create_predict_inputs(
                 steps        = steps,
                 last_window  = last_window,
@@ -2446,7 +2483,11 @@ class ForecasterDirect(ForecasterBase):
         # NOTE: With differentiation, `Xs` has the predictors of all the steps
         # from 1 to `max(steps)`.
         Xs_steps = steps if differentiator is None else list(range(1, max(steps) + 1))
-        predictions = self._direct_predict(steps=Xs_steps, Xs=Xs)
+        predictions = self._direct_predict(
+                          steps    = Xs_steps,
+                          Xs       = Xs,
+                          Xs_index = Xs_index
+                      )
 
         if differentiator is not None:
             predictions = differentiator.inverse_transform_next_window(predictions)
@@ -2542,7 +2583,8 @@ class ForecasterDirect(ForecasterBase):
             _,
             steps,
             prediction_index,
-            differentiator
+            differentiator,
+            Xs_index
         ) = self._create_predict_inputs(
                 steps                   = steps, 
                 last_window             = last_window, 
@@ -2563,7 +2605,11 @@ class ForecasterDirect(ForecasterBase):
         # With differentiation, `Xs` has the predictors of all the steps from 1
         # to `max(steps)`.
         Xs_steps = steps if differentiator is None else list(range(1, max(steps) + 1))
-        predictions = self._direct_predict(steps=Xs_steps, Xs=Xs)
+        predictions = self._direct_predict(
+                          steps    = Xs_steps,
+                          Xs       = Xs,
+                          Xs_index = Xs_index
+                      )
         
         rng = np.random.default_rng(seed=random_state)
         if not use_binned_residuals:
@@ -2676,7 +2722,8 @@ class ForecasterDirect(ForecasterBase):
             _,
             steps,
             prediction_index,
-            differentiator
+            differentiator,
+            Xs_index
         ) = self._create_predict_inputs(
                 steps                   = steps, 
                 last_window             = last_window, 
@@ -2697,7 +2744,11 @@ class ForecasterDirect(ForecasterBase):
         # With differentiation, `Xs` has the predictors of all the steps from 1
         # to `max(steps)`.
         Xs_steps = steps if differentiator is None else list(range(1, max(steps) + 1))
-        predictions = self._direct_predict(steps=Xs_steps, Xs=Xs)
+        predictions = self._direct_predict(
+                          steps    = Xs_steps,
+                          Xs       = Xs,
+                          Xs_index = Xs_index
+                      )
         
         if use_binned_residuals:
             correction_factor_by_bin = {

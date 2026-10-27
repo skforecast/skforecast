@@ -1368,6 +1368,78 @@ def _calculate_interval_metrics(
     return [float(coverage), float(interval_width)]
 
 
+def _check_nan_predictions_backtesting(
+    y_true: pd.Series,
+    y_pred: pd.Series,
+    estimator_id: str | None = None,
+    differentiation: int | None = None
+) -> None:
+    """
+    Raise an error if a backtesting prediction of a single series is NaN at a
+    date with an observed value. The metrics cannot be calculated with it, and
+    leaving it out would calculate them with fewer values than predicted.
+
+    Parameters
+    ----------
+    y_true : pandas Series
+        True values of the series, aligned by position with `y_pred`.
+    y_pred : pandas Series
+        Backtesting predictions.
+    estimator_id : str, default None
+        Identifier of the estimator that made the predictions, included in
+        the message when the forecaster has several estimators.
+    differentiation : int, default None
+        Order of the differentiation of the forecaster. If not `None`, the
+        message also includes a missing value among the last values of the
+        series before a fold, from which the differentiation is reverted, as
+        a cause.
+
+    Returns
+    -------
+    None
+
+    """
+
+    is_nan_prediction = y_pred.isna().to_numpy() & y_true.notna().to_numpy()
+    if is_nan_prediction.any():
+        of_estimator = (
+            f" of estimator '{estimator_id}'" if estimator_id is not None else ""
+        )
+        dates = y_pred.index[is_nan_prediction]
+        nan_predictors = (
+            "a missing value in the series or in `exog`, used as a predictor of "
+            "these dates, with an estimator that does not accept NaN (for "
+            "example, a linear model)"
+        )
+        if differentiation is None:
+            cause = f"The most likely cause is {nan_predictors}"
+            remedy = "Fill the missing values, or use an estimator that accepts them"
+        else:
+            # NOTE: The differentiation is reverted from the last values of the
+            # series, which no predictor reads, so a missing one gives NaN
+            # predictions with any estimator.
+            last_values = (
+                "a missing last value of the series" if differentiation == 1
+                else f"a missing value among the last {differentiation} values "
+                     f"of the series"
+            )
+            cause = (
+                f"The most likely causes are {nan_predictors}, or {last_values} "
+                f"before the fold, from which the differentiation is reverted "
+                f"(with any estimator)"
+            )
+            remedy = (
+                "Fill the missing values, or, in the first case, use an "
+                "estimator that accepts them"
+            )
+        raise ValueError(
+            f"{len(dates)} backtesting predictions{of_estimator} are NaN at "
+            f"dates with observed values (first: {dates[0]}), so the metrics "
+            f"cannot be calculated. {cause}. {remedy}, for example "
+            f"HistGradientBoostingRegressor or LGBMRegressor."
+        )
+
+
 def _calculate_metrics_backtesting_multiseries(
     series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
     predictions: pd.DataFrame,
@@ -1479,7 +1551,35 @@ def _calculate_metrics_backtesting_multiseries(
         left_index  = True,
         right_index = True,
         how         = "inner",
-    ).dropna(axis=0, how="any", subset=['y_true', 'y_pred'])
+    )
+
+    # NOTE: The predictions of the dates without observed values are expected
+    # to be NaN. A NaN prediction of a date with an observed value (the
+    # forecaster could not predict it) is left out of the metrics, which are
+    # then calculated with fewer values than predicted, so it is warned.
+    is_nan_prediction = (
+        y_true_y_pred['y_true'].notna() & y_true_y_pred['y_pred'].isna()
+    )
+    if is_nan_prediction.any():
+        n_nan_predictions = (
+            is_nan_prediction[is_nan_prediction]
+            .groupby(level='level', sort=False)
+            .size()
+            .to_dict()
+        )
+        warnings.warn(
+            f"{int(is_nan_prediction.sum())} predictions are NaN at dates with "
+            f"observed values and are left out of the metrics, which are "
+            f"calculated with fewer values than predicted. Number of NaN "
+            f"predictions per series: {n_nan_predictions}. The forecaster "
+            f"could not predict these dates, for example because of missing "
+            f"values in the last window or in `exog`.",
+            MissingValuesWarning
+        )
+
+    y_true_y_pred = y_true_y_pred.dropna(
+        axis=0, how="any", subset=['y_true', 'y_pred']
+    )
 
     if needs_y_train:
         train_indexes = []
