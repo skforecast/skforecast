@@ -1260,6 +1260,23 @@ iguales a las del código anterior en pandas 2 y 3) y los tests que cambian
 ejecutados con pandas 2.2.0, 2.3.3 y 3.1.0. Esfuerzo total estimado: 3 a 4
 días de trabajo (la mitad en los tests), más un ciclo de CI por PR.
 
+**Criterio de rendimiento común a todas las PRs.** Cada PR, antes de
+mezclar, mide tiempo y memoria pico con el protocolo del anexo (los 20
+benchmarks de `bench_hotspots.py`, medidas una a una, A/B intercalado del
+código anterior y el nuevo, mínimo y mediana, tracemalloc y VmHWM, máquina
+en reposo, versiones en la cabecera) en pandas 2.3.3 y 3.1.0, y pega la
+tabla resultante en la descripción de la PR. Se acepta solo si en pandas 2
+ningún benchmark empeora más que el ruido del control nulo (4.4: 0,93 a
+1,07 en tiempo, memoria idéntica) y en pandas 3 ninguno empeora respecto al
+código anterior. Esto incluye las PRs que no deberían tener efecto (1, 4,
+5, 6, 7): en ellas la tabla es el control de que de verdad no lo tienen,
+y basta con los cinco benchmarks de matrices más `predict_loop` y
+`backtesting_recursive`. Un empeoramiento en pandas 2 se corrige o se
+retira el cambio; no se compensa con una mejora en pandas 3. Las dos
+medidas A/B sin explicar de 3.6 (prototipo más lento en pandas 2,
+`no_copy_keyword` más lento en pandas 3) son el ejemplo de por qué: la PR 2
+las repite con el cambio real en el fichero antes de mezclar.
+
 | # | PR | Cambios (fichero:línea) | Tests que cambian | Verificación | Bit a bit en pandas 2 |
 |---|---|---|---|---|---|
 | 1 | Renombrados sin cambio de comportamiento | `dayofweek`/`dayofyear` → `day_of_week`/`day_of_year` en `preprocessing/_calendar.py:199-202` y `foundation/_adapters.py:4995-5001`; `isinstance(x, pd.DateOffset)` → `pd.offsets.BaseOffset` en `model_selection/_split.py:304, 1051`, `model_selection/_utils.py:319-321`, `recursive/_forecaster_equivalent_date.py:218, 382, 412, 506, 670, 892`, `drift_detection/_population_drift.py:238, 288, 318, 394`; `'freq': 'Q'` → `'QE'` en `datasets/datasets.py:209`; `freq='d'` → `'D'` en `experimental/_splitter.py:67`; `groupby(..., observed=True)` en `_population_drift.py:682, 857` y `foundation/_foundation_model.py:738`; `fillna(False)` + `future.no_silent_downcasting` → ruta numpy en `_calendar.py:849-850`; `stack(future_stack=True)` en `model_selection/_search.py:1576, 1935, 2036, 2456` | Fixtures y tests que usan `dayofweek` (`fixtures_model_selection_multiseries.py:140-143`, 10 tests de `direct`/`recursive` listados en 2.3); el test de `_calendar` que usa `future.no_silent_downcasting`; el test de `fetch_dataset` de `australia_tourism` si comprueba `freq` | Tests tocados en los tres pandas; identidad | Sí |
