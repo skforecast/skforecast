@@ -48,9 +48,13 @@ Optional: statsmodels>=0.13.2,<0.16 (stats), matplotlib>=3.7,<3.12 (plotting), k
 Local machines: environments are managed with conda. Run every Python command
 (tests, scripts, notebooks, `pip install`, etc.) in the conda environment that
 is currently active. Do not run `conda env list` to ask which environment to
-use, and do not use the `.venv` directory at the repository root. If the shell
-does not inherit the active environment (`$CONDA_DEFAULT_ENV` is empty), source
-your shell profile first, or call the interpreter through `conda run -n <env>`.
+use, and do not use the `.venv` directory at the repository root. Agent shells
+usually do not inherit the active environment, and sourcing the shell profile
+does not fix it. In Claude Code, set `SKFORECAST_PYTHON_ENV` to the prefix of
+the environment in the `env` of `.claude/settings.local.json`: a SessionStart
+hook then puts it on `PATH` (plus `SKFORECAST_DYLD_LIBRARY_PATH`, exported as
+`DYLD_LIBRARY_PATH`, for macOS library clashes). Otherwise, call the interpreter
+through `conda run -n <env>`.
 
 Cloud sessions (`CLAUDE_CODE_REMOTE=true`, e.g. claude.ai/code): there is no
 conda. A SessionStart hook installs the package with the `test` extras into a
@@ -84,13 +88,13 @@ suite keeps its own pinned requirements.
 
 > Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models
 
-This document is for skforecast v0.26.0+. If you are using an older version, check the documentation at skforecast.org.
+This document is for skforecast v0.27.0+. If you are using an older version, check the documentation at skforecast.org.
 
 Skforecast is a Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. It works with any estimator compatible with the scikit-learn API (LightGBM, XGBoost, CatBoost, Keras, etc.).
 
 ## Quick Info
 
-- Version: 0.26.0
+- Version: 0.27.0
 - License: BSD-3-Clause
 - Python: 3.10, 3.11, 3.12, 3.13, 3.14
 - Repository: https://github.com/skforecast/skforecast
@@ -158,6 +162,8 @@ skforecast/
 | ForecasterFoundation | Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL) |
 | ForecasterRecursiveClassifier | Classification-based forecasting |
 | ForecasterEquivalentDate | Baseline forecaster using equivalent past dates |
+
+To choose between model families, compare them on the same folds: each family has its own backtesting function (`backtesting_forecaster`, `backtesting_forecaster_multiseries`, `backtesting_stats`, `backtesting_foundation`), and passing the same `TimeSeriesFold` to all of them makes the results comparable. The user guide [Comparing forecasting models](https://skforecast.org/latest/user_guides/comparing-forecasting-models.html) does this for the seasonal naive, Ridge, LightGBM, Chronos-2, AutoARIMA, AutoETS and an LSTM on three datasets, reporting MASE, interval coverage and computation time.
 
 ## Basic Usage Example
 
@@ -399,7 +405,10 @@ metric, predictions = backtesting_forecaster(
     show_progress=True,                         # Show progress bar
     suppress_warnings=False                     # Suppress skforecast warnings
 )
+# metric columns: mean_absolute_error, coverage, interval_width
 ```
+
+When the predictions define one interval, the backtesting functions add two columns to `metric`, after the requested metrics: `coverage` (share of true values inside the interval) and `interval_width` (mean width of the interval, in the units of the series). One interval means a float `interval` such as `0.8`, or two quantiles, optionally with the median: `interval=[0.1, 0.9]` or `[0.1, 0.5, 0.9]`, and the same in `quantiles` of `backtesting_foundation`. Compare `coverage` with the nominal level (0.8 for `[0.1, 0.9]`) and read it together with `interval_width`: a wide interval covers more. Multi-series backtesting reports them per level and in the aggregated rows, and `backtesting_stats` per estimator (also with `alpha`). With other quantiles (for example `[0.05, 0.1, 0.9, 0.95]`), `interval='bootstrapping'` or a distribution, they are not added; use CRPS or the pinball loss instead. A custom metric cannot be named `coverage` or `interval_width` when they are added.
 
 ## Cross-Validation Strategies
 
@@ -416,12 +425,11 @@ cv = TimeSeriesFold(
     steps=12,                        # (required) Number of observations to predict in each fold (forecast horizon)
     initial_train_size=100,          # Number of observations for initial training. Can be int, str (date), or pd.Timestamp
     fold_stride=None,                # Observations between consecutive test set starts. If None, equals steps (no overlap)
-    window_size=None,                # Observations needed for autoregressive predictors (set automatically by forecaster)
-    differentiation=None,            # Differencing order to extend last_window (set automatically by forecaster)
+    window_size=None,                # Observations needed for autoregressive predictors (set automatically by forecaster; when calling split() directly, use forecaster.window_size, which includes differentiation)
     refit=False,                     # Whether to refit forecaster each fold: True, False, or int (refit every n folds)
-    fixed_train_size=True,           # If True, training size is fixed; if False, expands each fold
+    fixed_train_size=True,           # If True, the training window rolls with a fixed size; if False, it expands each fold (only with refit)
     gap=0,                           # Observations between end of training and start of test set
-    skip_folds=None,                 # Folds to skip: int (every n-th fold) or list of fold indexes to skip
+    skip_folds=None,                 # Folds to leave out: int (keep one of every n folds, starting with the first) or list of fold indexes to skip
     allow_incomplete_fold=True,      # Whether to allow last fold with fewer observations than steps
     return_all_indexes=False,        # Whether to return all indexes or only start/end of each fold
     verbose=True                     # Whether to print information about generated folds
@@ -436,6 +444,7 @@ print(folds)
 - If `fold_stride == steps`: test sets are back-to-back without overlap
 - If `fold_stride < steps`: test sets overlap (multiple forecasts for same observations)
 - If `fold_stride > steps`: gaps between consecutive test sets
+- `differentiation` (both folds) and `window_size` (`OneStepAheadFold`) are deprecated since 0.27.0: they have no effect, emit a `FutureWarning` and will be removed in 0.29.0
 
 ### OneStepAheadFold
 
@@ -446,8 +455,6 @@ from skforecast.model_selection import OneStepAheadFold
 
 cv = OneStepAheadFold(
     initial_train_size=100,          # (required) Number of observations for initial training. Can be int, str (date), or pd.Timestamp
-    window_size=None,                # Observations needed for autoregressive predictors (set automatically by forecaster)
-    differentiation=None,            # Differencing order to extend last_window (set automatically by forecaster)
     return_all_indexes=False,        # Whether to return all indexes or only start/end of each fold
     verbose=True                     # Whether to print information about generated folds
 )
@@ -464,6 +471,8 @@ print(fold)
 ## Hyperparameter Tuning
 
 Three search strategies are available: `grid_search_forecaster`, `random_search_forecaster`, and `bayesian_search_forecaster` (Optuna-based). All accept `TimeSeriesFold` or `OneStepAheadFold`. Multi-series variants: `grid_search_forecaster_multiseries`, `random_search_forecaster_multiseries`, `bayesian_search_forecaster_multiseries`.
+
+Results are sorted by the first metric, best first, and `return_best=True` refits the forecaster with the first row. The direction comes from the metric: scikit-learn metrics ending in `_score` (`r2_score`, `accuracy_score`) are maximized; errors and losses are minimized. A custom callable is minimized in regression and maximized in classification unless it sets the attribute `greater_is_better` (`True` or `False`). In the Bayesian searches, `kwargs_create_study={'direction': ...}` overrides it.
 
 ```python
 from skforecast.model_selection import bayesian_search_forecaster, TimeSeriesFold

@@ -31,6 +31,7 @@ from ..exceptions import (
     UnknownLevelWarning
 )
 from ..utils import (
+    _all_samples_removed_message,
     _date_range_from_index,
     initialize_lags,
     initialize_window_features,
@@ -51,6 +52,7 @@ from ..utils import (
     check_interval,
     configure_estimator_categorical_features,
     cast_catboost_categorical_columns_dataframe,
+    _get_catboost_cat_feature_indices,
     _copy_rows_to_check,
     _check_in_place_fit,
     estimator_has_native_nan_support,
@@ -62,6 +64,8 @@ from ..utils import (
     get_style_repr_html,
     set_cpu_gpu_device,
     _build_predict_function,
+    _check_differentiation_last_values,
+    _NonFinitePredictorsError,
     scale_correction_factor_differentiation
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
@@ -221,7 +225,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         series are identified as an integer from 0 to n_series - 1, but no column
         is created in the training matrices.
     encoding_mapping_ : dict
-        Mapping of the encoding used to identify the different series.
+        Mapping of the encoding used to identify the different series. The
+        keys are the series names as given in `series` (for example, integers).
     transformer_series : transformer (preprocessor), dict
         An instance of a transformer (preprocessor) compatible with the scikit-learn
         preprocessing API with methods: fit, transform, fit_transform and 
@@ -309,9 +314,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         is equal to `exog_dtypes_in_`.
     X_train_series_names_in_ : list
         Names of the series (levels) included in the matrix `X_train` created
-        internally for training. It can be different from `series_names_in_` if
-        some series are dropped during the training process because of NaNs or 
-        because they are not present in the training period.
+        internally for training, in the same order as `series_names_in_`. It can
+        be different from `series_names_in_` if some series are dropped during
+        the training process because of NaNs or because they are not present in
+        the training period.
     X_train_window_features_names_out_ : list
         Names of the window features included in the matrix `X_train` created
         internally for training.
@@ -385,6 +391,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     _probabilistic_mode: str, bool
         Private attribute used to indicate whether the forecaster should perform 
         some calculations during backtesting.
+    _allow_nan_predictions : bool
+        Private attribute. If `True`, a linear model of scikit-learn returns NaN
+        predictions when a predictor is NaN, instead of raising a `ValueError`.
+        It is set to `True` only by `backtesting_forecaster_multiseries`, in
+        its copy of the forecaster, to evaluate the series and dates that can
+        be predicted; the NaN predictions are warned when calculating the
+        metrics.
 
     Notes
     -----
@@ -471,6 +484,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.python_version                       = sys.version.split(" ")[0]
         self.forecaster_id                        = forecaster_id
         self._probabilistic_mode                  = "binned"
+        self._allow_nan_predictions               = False
 
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
         self.lags_are_contiguous = (
@@ -1225,7 +1239,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             if self.encoding == 'onehot':
                 # One column per series, in the order of `encoding_mapping_`.
                 X_train[np.arange(total_rows), n_autoreg_cols + encoded_values] = 1.
-                block_col_names.extend(self.encoding_mapping_.keys())
+                block_col_names.extend(self._get_onehot_col_names())
             elif level_in_block:
                 block_col_names.append('_level_skforecast')
             for i, in_block in enumerate(exog_cols_in_block):
@@ -1282,7 +1296,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                       )
 
             if self.encoding == 'onehot':
-                encoding_col_names = list(self.encoding_mapping_.keys())
+                encoding_col_names = self._get_onehot_col_names()
                 onehot_values = np.eye(n_level_cols, dtype=float)[encoded_values]
                 encoded_values = pd.DataFrame(
                                      data    = onehot_values,
@@ -1375,9 +1389,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             Names of the series (levels) provided by the user during training.
         X_train_series_names_in_ : list
             Names of the series (levels) included in the matrix `X_train` created
-            internally for training. It can be different from `series_names_in_` if
-            some series are dropped during the training process because of NaNs or
-            because they are not present in the training period.
+            internally for training, in the same order as `series_names_in_`. It
+            can be different from `series_names_in_` if some series are dropped
+            during the training process because of NaNs or because they are not
+            present in the training period.
         exog_names_in_ : list
             Names of the exogenous variables used during training.
         categorical_features_names_in_ : list
@@ -1513,11 +1528,19 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         index_parts = [v.index[self.window_size:] for v in series_dict.values()]
         train_index = index_parts[0].append(index_parts[1:])
 
-        # Build encoding mapping (sorted alphabetically for consistency). It is
-        # rebuilt, not updated, so that no level of a previous fit is kept.
+        # Build encoding mapping (sorted for consistency). It is rebuilt, not
+        # updated, so that no level of a previous fit is kept. Its keys are the
+        # series names as given (e.g. integers).
         if not self.is_fitted:
+            try:
+                sorted_series_names = sorted(series_names_in_)
+            except TypeError:
+                raise TypeError(
+                    f"The series names must be comparable with each other, for "
+                    f"example all strings or all integers. Got: {series_names_in_}."
+                )
             self.encoding_mapping_ = {
-                str(level): i for i, level in enumerate(sorted(series_names_in_))
+                level: i for i, level in enumerate(sorted_series_names)
             }
 
         exog_dtypes_in_ = None
@@ -1689,22 +1712,21 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         if X_train.empty:
             raise ValueError(
-                "All samples have been removed due to NaNs. Set "
-                "`forecaster.dropna_from_series = False` or review `series` "
-                "and `exog` values."
+                _all_samples_removed_message(
+                    series_name              = "`series`",
+                    dropna_from_series       = self.dropna_from_series,
+                    max_lag                  = self.max_lag,
+                    max_size_window_features = self.max_size_window_features,
+                    estimator                = self.estimator
+                )
             )
         
-        if self.encoding == 'onehot':
-            level_slices = self._get_level_row_slices(X_train=X_train)
-            X_train_series_names_in_ = [
-                col for col in series_names_in_ if col in level_slices
-            ]
-        else:
-            unique_levels = X_train['_level_skforecast'].unique()
-            X_train_series_names_in_ = [
-                k for k, v in self.encoding_mapping_.items()
-                if v in unique_levels
-            ]
+        # Series with rows in `X_train`, in the order of `series_names_in_`
+        # whatever the encoding.
+        level_slices = self._get_level_row_slices(X_train=X_train)
+        X_train_series_names_in_ = [
+            col for col in series_names_in_ if col in level_slices
+        ]
 
         # The last time window of training data is stored so that lags needed as
         # predictors in the first iteration of `predict()` can be calculated.
@@ -1931,14 +1953,35 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         externally_fitted  = False
                     )
         series_train, _, levels_last_window, exog_train, exog_test, _ = next(data_fold)
+        if not series_train:
+            raise ValueError(
+                f"No series can be used to train the forecaster: none has more "
+                f"than `window_size` ({self.window_size}) observations in the "
+                f"first `initial_train_size` ({initial_train_size}) positions of "
+                f"the span of `series`. Review `initial_train_size` of `cv` or "
+                f"the span of the series."
+            )
 
+        # NOTE: A series is evaluated only if it can be predicted after the
+        # training set (it is in `levels_last_window`) and it has observed
+        # values in the test set. A series that ends at the end of the training
+        # set has nothing to evaluate.
+        levels_last_window = set(levels_last_window)
         start_test_date = span_index[initial_train_size - self.window_size]
+        first_test_date = span_index[initial_train_size]
         series_test = {
             k: v.loc[start_test_date:]
             for k, v in series.items()
-            if k in levels_last_window and not v.empty and not v.isna().to_numpy().all()
+            if k in levels_last_window and v.loc[first_test_date:].notna().to_numpy().any()
         }
-       
+        if not series_test:
+            raise ValueError(
+                "No series can be evaluated in the test set: none of the series "
+                "used to train can be predicted after the training set and has "
+                "observed values in the test set. Review `initial_train_size` of "
+                "`cv` or the span of the series."
+            )
+
         forecaster_state = (self.is_fitted, self.series_names_in_, self.exog_names_in_)
         # NOTE: `encoding_mapping_` is rebuilt with the series of the train set.
         # The one of the forecaster is restored at the end, once the weights
@@ -1980,17 +2023,18 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         )
 
         if self.encoding == 'onehot':
-            encoding_keys = list(self.encoding_mapping_.keys())
-            keys_arr = np.array(encoding_keys)
+            encoding_cols = self._get_onehot_col_names()
+            # NOTE: `object` keeps the type of each series name (e.g. integers).
+            keys_arr = np.array(list(self.encoding_mapping_.keys()), dtype=object)
             # Dot product with range recovers the column index of the active
             # one-hot column (faster than argmax for large arrays). One-hot
             # columns are float, so the result is cast to be used as an index.
-            level_indices = np.arange(len(encoding_keys))
+            level_indices = np.arange(len(encoding_cols))
             X_train_encoding = keys_arr[
-                (X_train[encoding_keys].to_numpy() @ level_indices).astype(int)
+                (X_train[encoding_cols].to_numpy() @ level_indices).astype(int)
             ]
             X_test_encoding = keys_arr[
-                (X_test[encoding_keys].to_numpy() @ level_indices).astype(int)
+                (X_test[encoding_cols].to_numpy() @ level_indices).astype(int)
             ]
         else:
             reverse_mapping = {v: k for k, v in self.encoding_mapping_.items()}
@@ -2063,6 +2107,26 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         return weights
 
+    def _get_onehot_col_names(self) -> list[str]:
+        """
+        Names of the one-hot columns of the training matrices, one per series
+        in the order of `encoding_mapping_`. They are the series names as
+        text, since estimators such as scikit-learn ones only accept text
+        feature names (series names can be, for example, integers).
+
+        Parameters
+        ----------
+        self
+
+        Returns
+        -------
+        onehot_col_names : list
+            Names of the one-hot columns.
+
+        """
+
+        return [str(level) for level in self.encoding_mapping_]
+
     def _get_level_row_slices(
         self,
         X_train: pd.DataFrame
@@ -2101,18 +2165,18 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             # matrices created by `_create_train_X_y` the one-hot columns are
             # contiguous and in the order of `encoding_mapping_`, so they are
             # read as a slice (a view). Selecting them by name copies them all.
-            encoding_keys = list(self.encoding_mapping_.keys())
-            missing_cols = [col for col in encoding_keys if col not in X_train.columns]
+            encoding_cols = self._get_onehot_col_names()
+            missing_cols = [col for col in encoding_cols if col not in X_train.columns]
             if missing_cols:
                 raise ValueError(
                     f"`X_train` must have the one-hot column of every series, as "
                     f"returned by `create_train_X_y`. Missing columns: {missing_cols}."
                 )
-            start = X_train.columns.get_loc(encoding_keys[0])
-            X_onehot = X_train.iloc[:, start:start + len(encoding_keys)]
-            if X_onehot.columns.to_list() != encoding_keys:
-                X_onehot = X_train[encoding_keys]
-            codes = X_onehot.to_numpy() @ np.arange(len(encoding_keys))
+            start = X_train.columns.get_loc(encoding_cols[0])
+            X_onehot = X_train.iloc[:, start:start + len(encoding_cols)]
+            if X_onehot.columns.to_list() != encoding_cols:
+                X_onehot = X_train[encoding_cols]
+            codes = X_onehot.to_numpy() @ np.arange(len(encoding_cols))
         else:
             codes = X_train["_level_skforecast"].to_numpy()
 
@@ -2810,6 +2874,21 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             shape=last_window.shape, fill_value=np.nan, order='F', dtype=float
         )
 
+        # NOTE: The differentiation of each level is reverted from its last
+        # values. They are checked for all levels at once, and level by level,
+        # to name the series and the dates, only where one is missing.
+        # Backtesting allows NaN predictions, which it handles when calculating
+        # the metrics. `getattr` keeps forecasters saved with previous versions
+        # working.
+        levels_nan_last_values = None
+        if (
+            self.differentiation is not None
+            and not getattr(self, '_allow_nan_predictions', False)
+        ):
+            levels_nan_last_values = pd.isna(
+                last_window_values[-self.differentiation_max:]
+            ).any(axis=0)
+
         differentiators = {}
         exog_values_all_levels = []
         for idx_level, level in enumerate(levels):
@@ -2827,6 +2906,16 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 else:
                     differentiators[level] = copy(self.differentiator_['_unknown_level'])
                 if differentiators[level] is not None:
+                    if (
+                        levels_nan_last_values is not None
+                        and levels_nan_last_values[idx_level]
+                    ):
+                        _check_differentiation_last_values(
+                            last_window_values = last_window_level,
+                            last_window_index  = last_window.index,
+                            order              = differentiators[level].order,
+                            series             = level
+                        )
                     last_window_level = (
                         differentiators[level].fit_transform(last_window_level)
                     )
@@ -2935,7 +3024,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         levels: list,
         last_window: pd.DataFrame,
         exog_values_dict: dict[str, np.ndarray] | None = None,
-        calendar_values: np.ndarray | None = None
+        calendar_values: np.ndarray | None = None,
+        prediction_index: pd.Index | None = None
     ) -> np.ndarray:
         """
         Predict n steps for one or multiple levels. It is an iterative process
@@ -2965,6 +3055,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             datetime index, the same values are shared by all series (levels).
             Each row corresponds to a prediction step and each column to a
             calendar feature.
+        prediction_index : pandas Index, default None
+            Index of the predictions, used to give the date of the step in the
+            error raised when a linear model gets NaN predictors.
 
         Returns
         -------
@@ -3010,7 +3103,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         )
         last_window = np.concatenate((last_window.to_numpy(), predictions), axis=0)
 
-        predict_fn = _build_predict_function(self.estimator)
+        predict_fn = _build_predict_function(
+                         estimator  = self.estimator,
+                         forecaster = self
+                     )
 
         has_lags = self.lags is not None
         has_window_features = self.window_features is not None
@@ -3050,7 +3146,17 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 # Same calendar row is broadcast across all series (levels).
                 features[:, exog_end:] = calendar_values[i]
 
-            pred = predict_fn(features)
+            try:
+                pred = predict_fn(features)
+            except _NonFinitePredictorsError as e:
+                date = prediction_index[i] if prediction_index is not None else None
+                raise ValueError(
+                    e.message(
+                        series = [levels[row] for row in e.rows],
+                        step   = i + 1,
+                        date   = date
+                    )
+                ) from None
 
             predictions[i, :] = pred
 
@@ -3072,6 +3178,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         use_binned_residuals: bool,
         exog_values_dict: dict[str, np.ndarray] | None = None,
         calendar_values: np.ndarray | None = None,
+        prediction_index: pd.Index | None = None
     ) -> np.ndarray:
         """
         Vectorized bootstrap prediction for multiple series. Instead of looping
@@ -3115,6 +3222,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             datetime index, the same values are shared by all series (levels) and
             bootstrap samples. Each row corresponds to a prediction step and each
             column to a calendar feature.
+        prediction_index : pandas Index, default None
+            Index of the predictions, used to give the date of the step in the
+            error raised when a linear model gets NaN predictors.
 
         Returns
         -------
@@ -3176,7 +3286,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         last_window_boot[:window_size, :, :] = last_window[:, np.newaxis, :]
         last_window_boot[window_size:, :, :] = np.nan
 
-        predict_fn = _build_predict_function(self.estimator)
+        predict_fn = _build_predict_function(
+                         estimator  = self.estimator,
+                         forecaster = self
+                     )
 
         has_lags = self.lags is not None
         has_window_features = self.window_features is not None
@@ -3228,7 +3341,19 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 # Same calendar row is broadcast across all series and bootstrap samples.
                 features[:, exog_end:] = calendar_values[step]
 
-            pred = predict_fn(features)
+            try:
+                pred = predict_fn(features)
+            except _NonFinitePredictorsError as e:
+                # Rows are ordered as [level0_boot0, level1_boot0, ...]
+                rows_levels = np.unique(e.rows % n_levels)
+                date = prediction_index[step] if prediction_index is not None else None
+                raise ValueError(
+                    e.message(
+                        series = [levels[row] for row in rows_levels],
+                        step   = step + 1,
+                        date   = date
+                    )
+                ) from None
 
             # Reshape from (n_boot × n_levels,) to (n_levels, n_boot)
             pred = pred.reshape(n_boot, n_levels).T
@@ -3331,7 +3456,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                               levels           = levels,
                               last_window      = last_window,
                               exog_values_dict = exog_values_dict,
-                              calendar_values  = calendar_values
+                              calendar_values  = calendar_values,
+                              prediction_index = prediction_index
                           )
         
         if self.lags is not None:
@@ -3511,7 +3637,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                               levels           = levels,
                               last_window      = last_window,
                               exog_values_dict = exog_values_dict,
-                              calendar_values  = calendar_values
+                              calendar_values  = calendar_values,
+                              prediction_index = prediction_index
                           )
         
         for i, level in enumerate(levels):
@@ -3688,6 +3815,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 use_binned_residuals = use_binned_residuals,
                 exog_values_dict     = exog_values_dict,
                 calendar_values      = calendar_values,
+                prediction_index     = prediction_index
             )
 
         for i, level in enumerate(levels):
@@ -3816,7 +3944,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                               levels           = levels,
                               last_window      = last_window,
                               exog_values_dict = exog_values_dict,
-                              calendar_values  = calendar_values
+                              calendar_values  = calendar_values,
+                              prediction_index = prediction_index
                           )
         
         n_levels = len(levels)
@@ -4485,6 +4614,18 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.in_sample_residuals_ = {}
         self.in_sample_residuals_by_bin_ = {}
         y_train = y_train.to_numpy()
+
+        # NOTE: Same cast as in `fit`, with the categorical features of the
+        # fitted estimator.
+        cat_indices = _get_catboost_cat_feature_indices(self.estimator)
+        if len(cat_indices) > 0:
+            X_train_estimator = cast_catboost_categorical_columns_dataframe(
+                X             = X_train_estimator,
+                fit_kwargs    = {'cat_features': cat_indices},
+                estimator     = self.estimator,
+                feature_names = X_train_features_names_out_,
+            )
+
         y_pred = self.estimator.predict(X_train_estimator)
         if self.encoding is not None:
             level_slices = self._get_level_row_slices(X_train=X_train)

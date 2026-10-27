@@ -10,9 +10,10 @@ from typing import Callable
 import numpy as np
 import pandas as pd
 import inspect
-from functools import wraps
+from functools import partial, wraps
 from sklearn.metrics import (
     mean_squared_error,
+    root_mean_squared_error,
     mean_absolute_error,
     mean_absolute_percentage_error,
     mean_squared_log_error,
@@ -45,6 +46,7 @@ def _get_metric(metric: str) -> Callable:
     allowed_metrics = [
         # Regression metrics
         "mean_squared_error",
+        "root_mean_squared_error",
         "mean_absolute_error",
         "mean_absolute_percentage_error",
         "mean_squared_log_error",
@@ -66,6 +68,7 @@ def _get_metric(metric: str) -> Callable:
 
     metrics = {
         "mean_squared_error": mean_squared_error,
+        "root_mean_squared_error": root_mean_squared_error,
         "mean_absolute_error":  mean_absolute_error,
         "mean_absolute_percentage_error":  mean_absolute_percentage_error,
         "mean_squared_log_error":  mean_squared_log_error,
@@ -100,6 +103,12 @@ def add_y_train_argument(func: Callable) -> Callable:
         Function with `y_train` argument added.
     
     """
+
+    # NOTE: Functions already processed (for example, metrics converted by a
+    # search before calling the backtesting) are returned as they are, so that
+    # `_needs_y_train` is not overwritten.
+    if hasattr(func, "_needs_y_train"):
+        return func
 
     sig = inspect.signature(func)
     
@@ -554,7 +563,7 @@ def create_mean_pinball_loss(alpha: float) -> Callable:
 
     def mean_pinball_loss_q(y_true, y_pred):
         return mean_pinball_loss(y_true, y_pred, alpha=alpha)
-    
+
     return mean_pinball_loss_q
 
 
@@ -862,3 +871,58 @@ def weighted_interval_score(
     wis_per_obs = (1.0 / (n_intervals + 0.5)) * (0.5 * abs_error + weighted_sum)
 
     return float(np.mean(wis_per_obs))
+
+
+def _metric_greater_is_better(metric: Callable) -> bool | None:
+    """
+    Infer whether greater values of a metric are better. The direction is
+    resolved in this order:
+
+    - The attribute `greater_is_better` of the metric (or of the function it
+    wraps), if it is defined.
+    - The metrics of scikit-learn, following its naming convention: functions
+    ending in `_score` (and `matthews_corrcoef`) are maximized, and functions
+    ending in `_error`, `_loss` or `_deviance` are minimized.
+
+    Wrappers created with `functools.wraps` (such as `add_y_train_argument`)
+    and `functools.partial` objects are unwrapped to find the original function.
+
+    Parameters
+    ----------
+    metric : Callable
+        Metric function.
+
+    Returns
+    -------
+    greater_is_better : bool, None
+        `True` if greater values of the metric are better, `False` if lower
+        values are better and `None` if the direction is unknown.
+
+    """
+
+    func = metric
+    while True:
+        greater_is_better = getattr(func, "greater_is_better", None)
+        if greater_is_better is not None:
+            if not isinstance(greater_is_better, (bool, np.bool_)):
+                raise TypeError(
+                    f"The attribute `greater_is_better` of the metric must be a "
+                    f"boolean: `True` or `False`. Got {type(greater_is_better)}."
+                )
+            return bool(greater_is_better)
+        if isinstance(func, partial):
+            func = func.func
+        elif hasattr(func, "__wrapped__"):
+            func = func.__wrapped__
+        else:
+            break
+
+    module = getattr(func, "__module__", None) or ""
+    name = getattr(func, "__name__", "")
+    if module == "sklearn.metrics" or module.startswith("sklearn.metrics."):
+        if name.endswith("_score") or name == "matthews_corrcoef":
+            return True
+        if name.endswith(("_error", "_loss", "_deviance")):
+            return False
+
+    return None

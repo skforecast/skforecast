@@ -151,8 +151,10 @@ dmypy.json
 .github/agents
 .github/prompts
 
-# Claude Code (personal settings; the shared .claude/ harness is tracked)
+# Claude Code (personal settings and local worktrees; the shared .claude/
+# harness is tracked)
 .claude/settings.local.json
+.claude/worktrees/
 CLAUDE.local.md
 
 # Docs execution logs

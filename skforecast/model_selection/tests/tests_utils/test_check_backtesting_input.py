@@ -22,7 +22,8 @@ from skforecast.model_selection.tests.fixtures_model_selection import y
 from skforecast.model_selection.tests.fixtures_model_selection_multiseries import (
     series_wide_range,
     series_dict_range,
-    series_dict_dt
+    series_dict_dt,
+    series_dict_dt_different_periods
 )
 from skforecast.foundation.tests.tests_forecaster_foundation.fixtures_forecaster_foundation import (
     make_forecaster,
@@ -180,99 +181,6 @@ def test_check_backtesting_input_TypeError_when_not_valid_exog_type():
         )
 
 
-@pytest.mark.parametrize("differentiation", 
-    [{'l1': 1, 'l2': 2, '_unknown_level': 1}, {'l1': 2, 'l2': None, '_unknown_level': 1}], 
-     ids = lambda diff: f'differentiation: {diff}')
-def test_check_backtesting_input_ValueError_when_ForecasterRecursiveMultiSeries_diff_dict_not_cv_diff(differentiation):
-    """
-    Test ValueError is raised in check_backtesting_input if `differentiation`
-    of the ForecasterRecursiveMultiSeries as dict is different from 
-    `differentiation` of the cv.
-    """
-    forecaster = ForecasterRecursiveMultiSeries(
-        estimator=Ridge(), lags=2, differentiation=differentiation
-    )
-
-    cv = TimeSeriesFold(
-             steps                 = 3,
-             initial_train_size    = len(series_dict_range['l1']) - 12,
-             refit                 = False,
-             fixed_train_size      = False,
-             gap                   = 0,
-             allow_incomplete_fold = True,
-             differentiation       = 1,
-             verbose               = False
-         )
-    
-    err_msg = re.escape(
-        "When using a dict as `differentiation` in ForecasterRecursiveMultiSeries, "
-        "the `differentiation` included in the cv (1) must be "
-        "the same as the maximum `differentiation` included in the forecaster "
-        "(2). Set the same value "
-        "for both using the `differentiation` argument."
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        check_backtesting_input(
-            forecaster              = forecaster,
-            cv                      = cv,
-            metric                  = 'mean_absolute_error',
-            series                  = series_dict_range,
-            interval                = None,
-            n_boot                  = 500,
-            random_state            = 123,
-            use_in_sample_residuals = True,
-            show_progress           = False,
-            suppress_warnings       = False
-        )
-
-
-@pytest.mark.parametrize("forecaster", 
-    [ForecasterRecursive(estimator=Ridge(), lags=2, differentiation=2),
-     ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2, differentiation=2)], 
-     ids = lambda fr: f'forecaster: {type(fr).__name__}')
-def test_check_backtesting_input_ValueError_when_forecaster_diff_not_cv_diff(forecaster):
-    """
-    Test ValueError is raised in check_backtesting_input if `differentiation`
-    of the forecaster is different from `differentiation` of the cv.
-    """
-    if type(forecaster).__name__ == 'ForecasterRecursive':
-        data_length = len(y)
-    else:
-        data_length = len(series_dict_range['l1'])
-    
-    cv = TimeSeriesFold(
-             steps                 = 3,
-             initial_train_size    = data_length - 12,
-             refit                 = False,
-             fixed_train_size      = False,
-             gap                   = 0,
-             allow_incomplete_fold = True,
-             differentiation       = 1,
-             verbose               = False
-         )
-    
-    err_msg = re.escape(
-        "The differentiation included in the forecaster "
-        "(2) differs from the differentiation "
-        "included in the cv (1). Set the same value "
-        "for both using the `differentiation` argument."
-    )
-    with pytest.raises(ValueError, match = err_msg):
-        check_backtesting_input(
-            forecaster              = forecaster,
-            cv                      = cv,
-            metric                  = 'mean_absolute_error',
-            y                       = y,
-            series                  = series_dict_range,
-            interval                = None,
-            n_boot                  = 500,
-            random_state            = 123,
-            use_in_sample_residuals = True,
-            show_progress           = False,
-            suppress_warnings       = False
-        )
-
-
 def test_check_backtesting_input_TypeError_when_metric_not_correct_type():
     """
     Test TypeError is raised in check_backtesting_input if `metric` is not string, 
@@ -311,6 +219,83 @@ def test_check_backtesting_input_TypeError_when_metric_not_correct_type():
             show_progress           = False,
             suppress_warnings       = False
         )
+
+
+def coverage(y_true, y_pred):  # pragma: no cover
+    """
+    Custom metric whose name is reserved for the interval metrics.
+    """
+    return 0.0
+
+
+@pytest.mark.parametrize(
+    "kwargs_interval",
+    [{'interval': 0.8}, {'interval': [0.1, 0.9]}, {'interval': (0.1, 0.9)},
+     {'interval': [0.1, 0.5, 0.9]}, {'alpha': 0.2}],
+    ids = lambda kwargs: f'{kwargs}'
+)
+def test_check_backtesting_input_ValueError_when_metric_name_is_reserved_for_interval_metrics(kwargs_interval):
+    """
+    Test ValueError is raised in check_backtesting_input if a metric is named
+    as one of the interval metrics (`coverage`, `interval_width`) and `interval`
+    has a lower and an upper bound (2 quantiles, optionally with the median),
+    or `alpha` is used.
+    """
+    forecaster = ForecasterRecursive(
+                     estimator = Ridge(random_state=123),
+                     lags      = 2
+                 )
+    cv = TimeSeriesFold(
+             steps              = 5,
+             initial_train_size = len(y[:-12]),
+             refit              = False
+         )
+
+    err_msg = re.escape(
+        "When `interval` has a lower and an upper bound, or `alpha` is used, "
+        "the backtesting metrics include ['coverage', 'interval_width']. Rename "
+        "the metric(s) ['coverage', 'interval_width'] passed in `metric`."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_backtesting_input(
+            forecaster    = forecaster,
+            cv            = cv,
+            metric        = ['mean_absolute_error', coverage, 'interval_width'],
+            y             = y,
+            show_progress = False,
+            **kwargs_interval
+        )
+
+
+@pytest.mark.parametrize(
+    "interval",
+    [None, [0.1, 0.3, 0.9], [0.05, 0.1, 0.9, 0.95], 'bootstrapping'],
+    ids = lambda interval: f'interval: {interval}'
+)
+def test_check_backtesting_input_no_error_when_metric_name_is_reserved_and_interval_has_not_two_bounds(interval):
+    """
+    Test no error is raised in check_backtesting_input if a metric is named
+    as one of the interval metrics but `interval` does not have a lower and
+    an upper bound, so the interval metrics are not calculated.
+    """
+    forecaster = ForecasterRecursive(
+                     estimator = Ridge(random_state=123),
+                     lags      = 2
+                 )
+    cv = TimeSeriesFold(
+             steps              = 5,
+             initial_train_size = len(y[:-12]),
+             refit              = False
+         )
+
+    check_backtesting_input(
+        forecaster    = forecaster,
+        cv            = cv,
+        metric        = coverage,
+        y             = y,
+        interval      = interval,
+        show_progress = False
+    )
 
 
 def test_check_backtesting_input_ValueError_when_initial_train_size_is_None_ForecasterEquivalentDate():
@@ -367,17 +352,18 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_is_None_Fore
 def test_check_backtesting_input_ValueError_when_initial_train_size_not_correct_value(initial_train_size, forecaster):
     """
     Test ValueError is raised in check_backtesting_input when 
-    initial_train_size >= length `y` or `series` or initial_train_size < window_size.
+    initial_train_size >= length `y` or span of `series` or initial_train_size
+    < window_size.
     """
     y_datetime = y.copy()
     y_datetime.index = pd.date_range(start='2020-01-01', periods=len(y), freq='D')
 
     if type(forecaster).__name__ == 'ForecasterRecursive':
         data_length = len(y_datetime)
-        data_name = 'y'
+        data_length_name = 'the length of `y`'
     else:
         data_length = len(series_dict_dt['l1'])
-        data_name = 'series'
+        data_length_name = 'the length of the span of `series`'
 
     if initial_train_size == 'greater':
         initial_train_size = data_length
@@ -398,7 +384,7 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_not_correct_
     err_msg = re.escape(
         f"If `initial_train_size` is an integer, it must be greater than "
         f"the `window_size` of the forecaster ({forecaster.window_size}) "
-        f"and smaller than the length of `{data_name}` ({data_length}). If "
+        f"and smaller than {data_length_name} ({data_length}). If "
         f"it is a date, it must be within this range of the index."
     )
     with pytest.raises(ValueError, match = err_msg):
@@ -542,9 +528,85 @@ def test_check_backtesting_input_ValueError_when_not_enough_data_to_create_a_fol
         )
 
 
-@pytest.mark.parametrize("forecaster", 
+@pytest.mark.parametrize("initial_train_size",
+                         [50, '2020-02-19'],
+                         ids = lambda initial: f'initial_train_size: {initial}')
+@pytest.mark.parametrize("forecaster_name, lower_bound",
+                         [('ForecasterRecursiveMultiSeries', 'the `window_size` of the forecaster (3)'),
+                          ('ForecasterFoundation', '0')],
+                         ids = lambda fr: f'{fr}')
+def test_check_backtesting_input_ValueError_when_initial_train_size_not_smaller_than_span_of_series_dict(initial_train_size, forecaster_name, lower_bound):
+    """
+    Test ValueError is raised in check_backtesting_input when `series` is a
+    dict of series that do not cover the same period and `initial_train_size`
+    is not smaller than the length of the span of the series (50), which is
+    longer than any of them (30).
+    """
+    if forecaster_name == 'ForecasterRecursiveMultiSeries':
+        forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=3)
+    else:
+        forecaster = make_forecaster(context_length=2048)
+
+    cv = TimeSeriesFold(
+             steps                 = 3,
+             initial_train_size    = initial_train_size,
+             refit                 = False,
+             fixed_train_size      = False,
+             gap                   = 0,
+             allow_incomplete_fold = True
+         )
+
+    err_msg = re.escape(
+        f"If `initial_train_size` is an integer, it must be greater than "
+        f"{lower_bound} and smaller than the length of the span of "
+        f"`series` (50). If it is a date, it must be within this range of "
+        f"the index."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_backtesting_input(
+            forecaster        = forecaster,
+            cv                = cv,
+            metric            = 'mean_absolute_error',
+            series            = series_dict_dt_different_periods,
+            show_progress     = False,
+            suppress_warnings = False
+        )
+
+
+def test_check_backtesting_input_ValueError_when_initial_train_size_is_None_ForecasterFoundation_series_dict():
+    """
+    Test ValueError is raised in check_backtesting_input when initial_train_size
+    is None with a ForecasterFoundation. The message reports the length of the
+    span of the series (50), not the length of the longest one (30).
+    """
+    forecaster = make_forecaster(context_length=2048)
+    cv = TimeSeriesFold(
+             steps                 = 3,
+             initial_train_size    = None,
+             refit                 = False,
+             fixed_train_size      = False,
+             gap                   = 0,
+             allow_incomplete_fold = True
+         )
+
+    err_msg = re.escape(
+        "When using ForecasterFoundation, `initial_train_size` must be an "
+        "integer smaller than the length of the span of `series` (50)."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_backtesting_input(
+            forecaster        = forecaster,
+            cv                = cv,
+            metric            = 'mean_absolute_error',
+            series            = series_dict_dt_different_periods,
+            show_progress     = False,
+            suppress_warnings = False
+        )
+
+
+@pytest.mark.parametrize("forecaster",
                          [ForecasterStats(estimator=Sarimax(order=(1, 1, 1))),
-                          ForecasterEquivalentDate(offset=1, n_offsets=1)], 
+                          ForecasterEquivalentDate(offset=1, n_offsets=1)],
                          ids = lambda fr: f'{type(fr).__name__}')
 def test_check_backtesting_input_ValueError_Sarimax_Equivalent_when_initial_train_size_is_None(forecaster):
     """
@@ -1024,7 +1086,6 @@ def test_check_backtesting_input_ValueError_when_Direct_forecaster_not_enough_st
              steps                 = 1,
              initial_train_size    = len(y[:-12]),
              window_size           = None,
-             differentiation       = None,
              refit                 = False,
              fixed_train_size      = True,
              gap                   = 5,
@@ -1104,7 +1165,7 @@ def test_check_backtesting_input_ForecasterFoundation_ValueError_when_initial_tr
 
     err_msg = re.escape(
         f"If `initial_train_size` is an integer, it must be greater than "
-        f"0 and smaller than the length of `series` ({data_length}). "
+        f"0 and smaller than the length of the span of `series` ({data_length}). "
         f"If it is a date, it must be within this range of the index."
     )
     with pytest.raises(ValueError, match=err_msg):
@@ -1117,3 +1178,42 @@ def test_check_backtesting_input_ForecasterFoundation_ValueError_when_initial_tr
             suppress_warnings = False,
         )
 
+
+
+@pytest.mark.parametrize("initial_train_size, gap, allow_incomplete_fold", 
+                         [(40, 0, False),
+                          ('2020-02-04', 5, False),
+                          (45, 4, True)], 
+                         ids = lambda params: f'{params}')
+@pytest.mark.parametrize("forecaster_name", 
+                         ['ForecasterRecursiveMultiSeries', 'ForecasterFoundation'], 
+                         ids = lambda fr: f'{fr}')
+def test_check_backtesting_input_no_error_when_initial_train_size_greater_than_longest_series_but_smaller_than_span(initial_train_size, gap, allow_incomplete_fold, forecaster_name):
+    """
+    Test no error is raised in check_backtesting_input when `series` is a dict 
+    of series that do not cover the same period and `initial_train_size` (and 
+    `gap` and `steps`) is greater than the length of the longest series (30) 
+    but fits in the span of the series (50), over which the folds are built.
+    """
+    if forecaster_name == 'ForecasterRecursiveMultiSeries':
+        forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=3)
+    else:
+        forecaster = make_forecaster(context_length=2048)
+
+    cv = TimeSeriesFold(
+             steps                 = 10,
+             initial_train_size    = initial_train_size,
+             refit                 = False,
+             fixed_train_size      = False,
+             gap                   = gap,
+             allow_incomplete_fold = allow_incomplete_fold
+         )
+
+    check_backtesting_input(
+        forecaster        = forecaster,
+        cv                = cv,
+        metric            = 'mean_absolute_error',
+        series            = series_dict_dt_different_periods,
+        show_progress     = False,
+        suppress_warnings = False
+    )

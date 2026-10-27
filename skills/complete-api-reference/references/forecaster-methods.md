@@ -237,8 +237,8 @@ forecaster.predict_interval(
     last_window=None,                   # pd.Series | None
     last_window_exog=None,              # pd.Series | pd.DataFrame | None
     exog=None,                          # pd.Series | pd.DataFrame | None
-    alpha=0.05,                         # float, significance level
-    interval=None,                      # list[float] | tuple[float] | None, quantiles 0-1
+    interval=None,                      # list[float] | tuple[float] | None, symmetric quantiles 0-1 (both None: 95%)
+    alpha=None,                         # float | None, alias of interval (alpha=0.05 is interval=[0.025, 0.975])
     suppress_warnings=False             # bool
 ) -> pd.DataFrame
 

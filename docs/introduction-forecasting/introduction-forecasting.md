@@ -187,6 +187,8 @@ There are **several types of forecasters**, each suited to a different combinati
 [ForecasterRecursiveClassifier]: ../user_guides/autoregressive-classification-forecasting.ipynb
 [ForecasterEquivalentDate]: ../user_guides/forecasting-baseline.ipynb
 
+To see how these model families compare on real data, read [Comparing forecasting models](../user_guides/comparing-forecasting-models.ipynb).
+
 To understand what can be done when initializing a forecaster with **skforecast** visit [Forecaster parameters](../quick-start/forecaster-parameters.md) and [Forecaster attributes](../quick-start/forecaster-attributes.ipynb).
 
 

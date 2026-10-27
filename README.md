@@ -102,7 +102,7 @@ predictions.head()
 - **[Statistical models](https://skforecast.org/latest/user_guides/forecasting-statistical-models.html)**: ARIMA, SARIMAX, ETS and ARAR, with automatic model selection.
 - **[Deep learning](https://skforecast.org/latest/user_guides/forecasting-with-deep-learning-rnn-lstm.html)**: recurrent neural networks (RNN, LSTM) built with Keras.
 
-Train, predict, tune and backtest the same way, whatever the model.
+Train, predict, tune and backtest the same way, whatever the model: see them [compared on three datasets](https://skforecast.org/latest/user_guides/comparing-forecasting-models.html).
 
 ### Built for production
 

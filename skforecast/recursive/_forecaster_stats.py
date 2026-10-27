@@ -1007,8 +1007,8 @@ class ForecasterStats(MultiEstimatorMixin):
         last_window: pd.Series | None = None,
         last_window_exog: pd.Series | pd.DataFrame | None = None,
         exog: pd.Series | pd.DataFrame | None = None,
-        alpha: float = 0.05,
         interval: list[float] | tuple[float, ...] | None = None,
+        alpha: float | None = None,
         suppress_warnings: bool = False
     ) -> pd.DataFrame:
         """
@@ -1044,19 +1044,27 @@ class ForecasterStats(MultiEstimatorMixin):
             trained including exogenous variables.
         exog : pandas Series, pandas DataFrame, default None
             Exogenous variable/s included as predictor/s.
-        alpha : float, default 0.05
-            The confidence intervals for the forecasts are (1 - alpha) %.
-            If both, `alpha` and `interval` are provided, `alpha` will be used.
         interval : list, tuple, default None
             Confidence of the prediction interval estimated. The values must be
             symmetric. Sequence of quantiles to compute, which must be between 
             0 and 1 inclusive. For example, interval of 95% should be as 
-            `interval = [0.025, 0.975]`. If both, `alpha` and `interval` are 
-            provided, `alpha` will be used.
+            `interval = [0.025, 0.975]`. If both `alpha` and `interval` are
+            `None`, the 95% interval is returned.
 
             **Changed in version 0.23.0:** `interval` is now expressed as
             quantiles (0-1) instead of percentiles (0-100). Passing percentiles
             is not longer supported and will raise a `ValueError`.
+
+            **Changed in version 0.27.0:** `interval` is no longer ignored
+            when `alpha` is not provided (previously, `alpha` defaulted to 0.05
+            and took precedence, so the 95% interval was always returned).
+            Passing both `alpha` and `interval` raises a `ValueError`, and
+            `interval` comes before `alpha` in the signature.
+        alpha : float, default None
+            Alias of `interval` expressed as the significance level: the
+            confidence intervals for the forecasts are (1 - alpha) %. For
+            example, `alpha=0.05` is equivalent to `interval=[0.025, 0.975]`.
+            It cannot be used together with `interval`.
         suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
@@ -1075,13 +1083,22 @@ class ForecasterStats(MultiEstimatorMixin):
 
         """
 
-        # If interval and alpha take alpha, if interval transform to alpha
-        if alpha is None:
+        # `alpha` is an alias of `interval`, so only one of them can be used.
+        if alpha is not None and interval is not None:
+            raise ValueError(
+                "`alpha` and `interval` cannot be used together. Use only one "
+                "of them: `alpha=0.05` is equivalent to `interval=[0.025, 0.975]`."
+            )
+        if alpha is not None:
+            check_interval(alpha=alpha)
+        elif interval is not None:
             check_interval(
                 interval                   = interval,
                 ensure_symmetric_intervals = True
             )
             alpha = 2 * (1 - interval[1])
+        else:
+            alpha = 0.05
 
         last_window, last_window_exog, exog, prediction_index = (
             self._create_predict_inputs(

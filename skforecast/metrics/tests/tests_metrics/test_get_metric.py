@@ -5,6 +5,7 @@ import pytest
 import numpy as np
 from sklearn.metrics import (
     mean_squared_error,
+    root_mean_squared_error,
     mean_absolute_error,
     mean_absolute_percentage_error,
     mean_squared_log_error,
@@ -33,6 +34,7 @@ def test_get_metric_ValueError_when_metric_not_in_metrics_allowed():
     allowed_metrics = [
         # Regression metrics
         "mean_squared_error",
+        "root_mean_squared_error",
         "mean_absolute_error",
         "mean_absolute_percentage_error",
         "mean_squared_log_error",
@@ -56,6 +58,7 @@ def test_get_metric_ValueError_when_metric_not_in_metrics_allowed():
 
 @pytest.mark.parametrize("metric_str, metric_callable", 
                          [('mean_squared_error', mean_squared_error),
+                          ('root_mean_squared_error', root_mean_squared_error),
                           ('mean_absolute_error', mean_absolute_error),
                           ('mean_absolute_percentage_error', mean_absolute_percentage_error),
                           ('mean_squared_log_error', mean_squared_log_error),

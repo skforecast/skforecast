@@ -39,11 +39,11 @@ skforecast is installed from the checkout with its core dependencies only, in th
 
 | Trigger | Code checked | Notes |
 |:--------|:-------------|:---------|
-| Schedule (Mondays) | The highest release branch (`X.Y.x`), where the development happens | A failure opens or updates the issue labeled `backend-compat`. |
+| Schedule (Mondays) | The highest release branch (`X.Y.x`), where the development happens | A failure opens or updates the issue labeled `backend-compat`; the first run in which every environment passes closes it. |
 | Pull request to `main` (the release one) that touches `skforecast/foundation/**` or this folder | The branch of the pull request | A failing check does not prevent the merge unless it is marked as required. |
 | Manual (`workflow_dispatch`) | Any branch | |
 
-Pull requests to the release branches (`*.x`) do not run the workflow: their changes are checked by the next scheduled run. To check a change of an adapter right away, run `run.py` locally or launch the workflow by hand on the branch (Actions > Foundation Backends Compatibility > Run workflow), which is possible once the workflow is on `main`.
+Pull requests to the release branches (`*.x`) do not run the workflow: their changes are checked by the next scheduled run. Neither do the pull requests of Dependabot. To check a change of an adapter right away, run `run.py` locally or launch the workflow by hand on the branch (Actions > Foundation Backends Compatibility > Run workflow), which is possible once the workflow is on `main`.
 
 Secrets of the repository: `HF_TOKEN` and `TABPFN_TOKEN`. They are exposed to third-party packages that are not pinned, so use read-only tokens of a dedicated account. Without `TABPFN_TOKEN` (for example in pull requests from forks), the smoke tests of TabPFN are reported as skipped.
 

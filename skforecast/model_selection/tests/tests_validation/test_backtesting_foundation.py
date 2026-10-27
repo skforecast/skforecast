@@ -1,6 +1,7 @@
 # Unit test backtesting_foundation
 # ==============================================================================
 import re
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
@@ -508,6 +509,8 @@ def test_output_backtesting_foundation_single_quantiles_auto_add_median_no_refit
         backtest_predictions["q_0.9"].values, np.full(12, 0.9)
     )
     expected_metric = pd.DataFrame({"mean_absolute_error": [43.0]})
+    expected_metric["coverage"] = [0.0]
+    expected_metric["interval_width"] = [0.8000000000000002]
     pd.testing.assert_frame_equal(expected_metric, metric)
 
 
@@ -589,6 +592,8 @@ def test_output_backtesting_foundation_single_quantiles_no_refit():
         backtest_predictions["q_0.9"].values, np.full(12, 0.9)
     )
     expected_metric = pd.DataFrame({"mean_absolute_error": [43.0]})
+    expected_metric["coverage"] = [0.0]
+    expected_metric["interval_width"] = [0.8000000000000002]
     pd.testing.assert_frame_equal(expected_metric, metric)
 
 
@@ -906,6 +911,58 @@ def test_output_backtesting_foundation_multiseries_quantiles_auto_add_median():
     np.testing.assert_array_almost_equal(
         backtest_predictions["q_0.9"].values, np.full(24, 0.9)
     )
+
+
+@pytest.mark.parametrize(
+    "quantiles, expected_interval_width",
+    [([0.1, 0.9], 0.8),
+     ([0.1, 0.5, 0.9], 0.8),
+     ([0.5, 0.9], 0.4),
+     ([0.05, 0.1, 0.9, 0.95], None)],
+    ids=lambda dt: f"quantiles, expected_interval_width: {dt}"
+)
+def test_output_backtesting_foundation_multiseries_interval_metrics_when_quantiles(
+    quantiles, expected_interval_width
+):
+    """
+    Test that the interval metrics (`coverage`, `interval_width`) are added,
+    for each level and aggregated, when `quantiles` has 2 quantiles, optionally
+    with the median, with the bounds taken from those 2 quantiles. With more
+    quantiles they are not added. The fake model predicts each quantile as
+    its own value, so the series (values >= 0.9) are never covered.
+    """
+    forecaster = make_forecaster()
+    cv = TimeSeriesFold(
+        steps=3,
+        initial_train_size=38,
+        refit=False,
+        verbose=False,
+    )
+    with patch(
+        "skforecast.model_selection._validation.deepcopy_forecaster",
+        side_effect=deepcopy,
+    ):
+        metric, _ = backtesting_foundation(
+            forecaster=forecaster,
+            series=series_wide,
+            cv=cv,
+            metric="mean_absolute_error",
+            quantiles=quantiles,
+            verbose=False,
+            show_progress=False,
+        )
+
+    expected_metric = pd.DataFrame({
+        "levels": [
+            "series_1", "series_2", "average", "weighted_average", "pooling"
+        ],
+        "mean_absolute_error": [43.0, 93.0, 68.0, 68.0, 68.0],
+    })
+    if expected_interval_width is not None:
+        expected_metric["coverage"] = [0.0, 0.0, 0.0, 0.0, 0.0]
+        expected_metric["interval_width"] = [expected_interval_width] * 5
+
+    pd.testing.assert_frame_equal(metric, expected_metric)
 
 
 def test_output_backtesting_foundation_multiseries_quantiles():
@@ -1300,9 +1357,10 @@ def test_output_backtesting_foundation_multiseries_heterogeneous_series():
 def test_output_backtesting_foundation_fold_skipped_when_no_levels_to_predict():
     """
     Test that a fold where none of the requested levels has an observed value
-    in the test window is skipped with a MissingValuesWarning and contributes
-    no rows, while the other folds are predicted and the metric is computed
-    (`s2` has a NaN block covering the whole test window of fold 1).
+    in the test window is skipped and contributes no rows, while the other
+    folds are predicted and the metric is computed (`s2` has a NaN block
+    covering the whole test window of fold 1). No MissingValuesWarning is
+    raised, there is nothing to evaluate in that fold.
     """
     forecaster = make_forecaster()
     cv = TimeSeriesFold(
@@ -1311,15 +1369,11 @@ def test_output_backtesting_foundation_fold_skipped_when_no_levels_to_predict():
         refit=False,
         verbose=False,
     )
-    warn_msg = re.escape(
-        "Fold 1 has been skipped because none of the levels to predict ['s2'] "
-        "have observed values in both its context window and its test window. "
-        "No predictions are generated for this fold."
-    )
     with patch(
         "skforecast.model_selection._validation.deepcopy_forecaster",
         side_effect=deepcopy,
-    ), pytest.warns(MissingValuesWarning, match=warn_msg):
+    ), warnings.catch_warnings():
+        warnings.simplefilter("error", category=MissingValuesWarning)
         metric, backtest_predictions = backtesting_foundation(
             forecaster=forecaster,
             series=series_dict_hetero,
@@ -1354,9 +1408,10 @@ def test_output_backtesting_foundation_fold_skipped_when_no_levels_to_predict():
 def test_output_backtesting_foundation_all_folds_skipped():
     """
     Test that, when the requested level ends before every test window, every
-    fold is skipped with a MissingValuesWarning, the predictions DataFrame is
-    empty but keeps its columns and the metric is None, as in
-    backtesting_forecaster_multiseries.
+    fold is skipped without a MissingValuesWarning (there is nothing to
+    evaluate), the predictions DataFrame is empty but keeps its columns and
+    the metric is None (backtesting_forecaster_multiseries raises a
+    ValueError instead).
     """
     forecaster = make_forecaster()
     cv = TimeSeriesFold(
@@ -1368,7 +1423,8 @@ def test_output_backtesting_foundation_all_folds_skipped():
     with patch(
         "skforecast.model_selection._validation.deepcopy_forecaster",
         side_effect=deepcopy,
-    ), pytest.warns(MissingValuesWarning, match="Fold 0 has been skipped"):
+    ), warnings.catch_warnings():
+        warnings.simplefilter("error", category=MissingValuesWarning)
         metric, backtest_predictions = backtesting_foundation(
             forecaster=forecaster,
             series=series_dict_hetero,
@@ -1396,8 +1452,8 @@ def test_output_backtesting_foundation_series_skipped_when_context_window_all_na
     it has observed values in the test window (`s5` has NaN at positions
     20..37 and `context_length=10`, so its fold 0 context is entirely NaN),
     that it is predicted in the later folds once its context has values, and
-    that the fold is skipped with a MissingValuesWarning when it was the only
-    level to predict.
+    that a MissingValuesWarning names it, also when the fold is skipped
+    because it was the only level to predict.
     """
     _s5_values = np.arange(100, 150, dtype=float)
     _s5_values[20:38] = np.nan
@@ -1412,15 +1468,19 @@ def test_output_backtesting_foundation_series_skipped_when_context_window_all_na
         refit=False,
         verbose=False,
     )
-    metric, backtest_predictions = backtesting_foundation(
-        forecaster=forecaster,
-        series=series_dict_nan_context,
-        cv=cv,
-        metric="mean_absolute_error",
-        add_aggregated_metric=False,
-        verbose=False,
-        show_progress=False,
+    warn_msg = re.escape(
+        "  - No observed values in the context window: 's5' (folds 0)."
     )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        metric, backtest_predictions = backtesting_foundation(
+            forecaster=forecaster,
+            series=series_dict_nan_context,
+            cv=cv,
+            metric="mean_absolute_error",
+            add_aggregated_metric=False,
+            verbose=False,
+            show_progress=False,
+        )
 
     expected_metric = pd.DataFrame(
         {"levels": ["s1", "s5"], "mean_absolute_error": [43.0, 144.5]}
@@ -1443,11 +1503,6 @@ def test_output_backtesting_foundation_series_skipped_when_context_window_all_na
     pd.testing.assert_frame_equal(metric, expected_metric)
     pd.testing.assert_frame_equal(backtest_predictions, expected_predictions)
 
-    warn_msg = re.escape(
-        "Fold 0 has been skipped because none of the levels to predict ['s5'] "
-        "have observed values in both its context window and its test window. "
-        "No predictions are generated for this fold."
-    )
     with pytest.warns(MissingValuesWarning, match=warn_msg):
         backtesting_foundation(
             forecaster=forecaster,
@@ -1459,3 +1514,168 @@ def test_output_backtesting_foundation_series_skipped_when_context_window_all_na
             verbose=False,
             show_progress=False,
         )
+
+
+def test_output_backtesting_foundation_series_predicted_when_context_has_one_observation():
+    """
+    Test a series with a single observation in the context window of a fold
+    is predicted in that fold: foundation models need no window to create
+    predictors, so one observation is enough. `series_2` starts at the last
+    position of the training set of fold 0.
+    """
+    series = {
+        "series_1": series_dict["series_1"],
+        "series_2": series_dict["series_2"].iloc[37:],
+    }
+    forecaster = make_forecaster()
+    cv = TimeSeriesFold(
+        steps=3,
+        initial_train_size=38,
+        refit=False,
+        verbose=False,
+    )
+    with patch(
+        "skforecast.model_selection._validation.deepcopy_forecaster",
+        side_effect=deepcopy,
+    ):
+        metric, backtest_predictions = backtesting_foundation(
+            forecaster=forecaster,
+            series=series,
+            cv=cv,
+            metric="mean_absolute_error",
+            add_aggregated_metric=False,
+            verbose=False,
+            show_progress=False,
+        )
+
+    expected_metric = pd.DataFrame(
+        {
+            "levels": ["series_1", "series_2"],
+            "mean_absolute_error": [43.0, 93.0],
+        }
+    )
+    expected_predictions = pd.DataFrame(
+        {
+            "level": ["series_1", "series_2"] * 12,
+            "fold": np.repeat([0, 1, 2, 3], 6),
+            "pred": np.full(24, 0.5),
+        },
+        index=_test_index.repeat(2),
+    )
+
+    pd.testing.assert_frame_equal(metric, expected_metric)
+    pd.testing.assert_frame_equal(backtest_predictions, expected_predictions)
+
+
+def test_output_backtesting_foundation_initial_train_size_greater_than_longest_series():
+    """
+    Test backtesting when the series do not cover the same period and
+    `initial_train_size` (35) is greater than the length of the longest series
+    (30) but smaller than the span of the series (50), over which the folds
+    are built. `series_1` ends before the end of the training set, so it is
+    never predicted and its metric is NaN.
+    """
+    series = {
+        "series_1": series_dict["series_1"].iloc[:30],
+        "series_2": series_dict["series_2"].iloc[20:],
+    }
+    forecaster = make_forecaster()
+    cv = TimeSeriesFold(
+        steps=5,
+        initial_train_size=35,
+        refit=False,
+        verbose=False,
+    )
+    with patch(
+        "skforecast.model_selection._validation.deepcopy_forecaster",
+        side_effect=deepcopy,
+    ):
+        metric, backtest_predictions = backtesting_foundation(
+            forecaster=forecaster,
+            series=series,
+            cv=cv,
+            metric="mean_absolute_error",
+            add_aggregated_metric=False,
+            verbose=False,
+            show_progress=False,
+        )
+
+    expected_metric = pd.DataFrame(
+        {
+            "levels": ["series_1", "series_2"],
+            "mean_absolute_error": [np.nan, 91.5],
+        }
+    )
+    expected_predictions = pd.DataFrame(
+        {
+            "level": ["series_2"] * 15,
+            "fold": np.repeat([0, 1, 2], 5),
+            "pred": np.full(15, 0.5),
+        },
+        index=_index[35:],
+    )
+
+    pd.testing.assert_frame_equal(metric, expected_metric)
+    pd.testing.assert_frame_equal(backtest_predictions, expected_predictions)
+
+
+def test_output_backtesting_foundation_fold_skipped_when_series_end_and_start_late():
+    """
+    Test a panel where a series ends ('s4' ends in the test set of fold 0)
+    and another starts late ('s6' starts at the test start of fold 1). No
+    series has a context window in fold 1, so it is skipped and listed in the
+    MissingValuesWarning, while the folds before and after it are predicted.
+    """
+    series_dict_end_start = {
+        "s4": pd.Series(
+            np.arange(200, 240, dtype=float), index=_hetero_index[:40], name="s4"
+        ),
+        "s6": pd.Series(
+            np.arange(300, 309, dtype=float), index=_hetero_index[41:], name="s6"
+        ),
+    }
+    forecaster = make_forecaster()
+    cv = TimeSeriesFold(
+        steps=3,
+        initial_train_size=38,
+        refit=False,
+        verbose=False,
+    )
+    warn_msg = re.escape(
+        "  - No observed values in the context window: 's6' (folds 1).\n"
+        "  - Folds skipped, no level can be predicted in them: 1."
+    )
+    with patch(
+        "skforecast.model_selection._validation.deepcopy_forecaster",
+        side_effect=deepcopy,
+    ), pytest.warns(MissingValuesWarning, match=warn_msg):
+        metric, backtest_predictions = backtesting_foundation(
+            forecaster=forecaster,
+            series=series_dict_end_start,
+            cv=cv,
+            metric="mean_absolute_error",
+            verbose=False,
+            show_progress=False,
+        )
+
+    expected_metric = pd.DataFrame(
+        {
+            "levels": ["s4", "s6", "average", "weighted_average", "pooling"],
+            "mean_absolute_error": [238.0, 305.0, 271.5, 288.25, 288.25],
+        }
+    )
+    expected_predictions = pd.DataFrame(
+        {
+            "level": ["s4"] * 3 + ["s6"] * 6,
+            "fold": [0] * 3 + [2] * 3 + [3] * 3,
+            "pred": [0.5, 0.5, np.nan, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
+        },
+        index=pd.DatetimeIndex(
+            ["2023-03-31", "2023-04-30", "2023-05-31",
+             "2023-09-30", "2023-10-31", "2023-11-30",
+             "2023-12-31", "2024-01-31", "2024-02-29"]
+        ),
+    )
+
+    pd.testing.assert_frame_equal(metric, expected_metric)
+    pd.testing.assert_frame_equal(backtest_predictions, expected_predictions)

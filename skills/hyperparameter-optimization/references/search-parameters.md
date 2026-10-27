@@ -236,7 +236,14 @@ lags_grid = {
     'long': 24,
     'custom': [1, 2, 3, 23, 24],
 }
+
+# None as an element: a candidate without lags, only the forecaster's window_features
+# (the forecaster must have window_features, otherwise a ValueError is raised)
+lags_grid = [None, 3, 24]
 ```
+
+`lags_grid=None` (the default) uses the lags of the forecaster, also when the
+forecaster was created with `lags=None` and only `window_features`.
 
 For Bayesian search, lags are included in the `search_space` function:
 
@@ -329,7 +336,9 @@ results, study = bayesian_search_forecaster(
     ...,
     kwargs_create_study={
         'sampler': optuna.samplers.TPESampler(seed=123),
-        'direction': 'minimize',
+        # 'direction' defaults to the direction of the first metric (maximize
+        # for scikit-learn `*_score` metrics, minimize for errors and losses).
+        # If set, results and return_best follow it.
     },
     kwargs_study_optimize={
         'timeout': 600,  # seconds

@@ -59,12 +59,12 @@ forecaster.predict_interval(
 ```python
 forecaster.predict_interval(
     steps,
-    alpha=0.05,                      # significance level → 95% interval
-    interval=None,                   # list[float] | None — quantiles, alternative to alpha
+    interval=[0.025, 0.975],         # symmetric quantiles → 95% interval (default if None)
+    alpha=None,                      # alias of interval: alpha=0.05 is interval=[0.025, 0.975]
 )
 # NOTE: No `method`, `n_boot`, `use_in_sample_residuals`, `use_binned_residuals`,
 #       or `random_state` parameters.
-# Use EITHER `alpha` OR `interval`, not both.
+# Use EITHER `alpha` OR `interval`: passing both raises a ValueError.
 ```
 
 ### ForecasterEquivalentDate (conformal only)

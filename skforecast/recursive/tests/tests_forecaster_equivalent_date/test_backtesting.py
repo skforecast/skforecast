@@ -81,6 +81,8 @@ def test_backtesting_with_ForecasterEquivalentDate_interval(initial_train_size):
     )
     
     expected_metric = pd.DataFrame({'mean_absolute_error': [0.2273233665]})
+    expected_metric['coverage'] = [0.55]
+    expected_metric['interval_width'] = [0.5699479935999998]
     expected = pd.DataFrame(
                    data = np.array([
                               [0.60004613,  0.1257829 ,  1.07430936],

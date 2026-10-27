@@ -299,8 +299,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equival
     cv = TimeSeriesFold(
              initial_train_size = initial_train_size,
              steps              = 1,
-             refit              = False,
-             differentiation    = forecaster.differentiation_max
+             refit              = False
          )
 
     metrics_backtesting, pred_backtesting = backtesting_forecaster_multiseries(

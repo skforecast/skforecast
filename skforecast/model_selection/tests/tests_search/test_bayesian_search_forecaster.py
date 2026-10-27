@@ -7,12 +7,14 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import Ridge
-from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error
+from sklearn.linear_model import Ridge, LogisticRegression
+from sklearn.metrics import (
+    mean_absolute_error, mean_absolute_percentage_error, r2_score, zero_one_loss
+)
 from xgboost import XGBRegressor
 from skforecast.exceptions import OneStepAheadValidationWarning
 from skforecast.metrics import mean_absolute_scaled_error, root_mean_squared_scaled_error
-from skforecast.recursive import ForecasterRecursive
+from skforecast.recursive import ForecasterRecursive, ForecasterRecursiveClassifier
 from skforecast.direct import ForecasterDirect
 from skforecast.model_selection import backtesting_forecaster
 from skforecast.model_selection import bayesian_search_forecaster
@@ -25,7 +27,7 @@ from tqdm import tqdm
 from functools import partialmethod
 
 # Fixtures
-from ..fixtures_model_selection import y
+from ..fixtures_model_selection import y, y_clf
 from ..fixtures_model_selection import y_feature_selection
 from ..fixtures_model_selection import exog_feature_selection
 
@@ -88,7 +90,6 @@ def test_ValueError_bayesian_search_forecaster_metric_list_duplicate_names():
             steps                 = 3,
             initial_train_size    = len(y_train),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -184,7 +185,6 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive():
             steps                 = 3,
             initial_train_size    = len(y_train),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -304,7 +304,6 @@ def test_results_output_bayesian_search_forecaster_window_features_ForecasterRec
             steps                 = 3,
             initial_train_size    = len(y_train),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -420,7 +419,6 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive_with_kwar
             steps                 = 3,
             initial_train_size    = len(y_train),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -517,7 +515,6 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive_with_kwar
             steps                 = 3,
             initial_train_size    = len(y_train),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -605,7 +602,6 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive_when_lags
             steps                 = 3,
             initial_train_size    = len(y_train),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -695,7 +691,6 @@ def test_evaluate_bayesian_search_forecaster_when_return_best_ForecasterRecursiv
             steps                 = 3,
             initial_train_size    = len(y_train),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -748,7 +743,6 @@ def test_results_opt_best_output_bayesian_search_forecaster_with_output_study_be
             steps                 = 3,
             initial_train_size    = len(y_train),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -833,7 +827,6 @@ def test_results_output_bayesian_search_forecaster_ForecasterDirect():
             steps                 = 3,
             initial_train_size    = len(y_train),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -960,7 +953,6 @@ def test_results_output_bayesian_search_forecaster_window_features_ForecasterDir
             steps                 = 3,
             initial_train_size    = len(y_train),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -1073,7 +1065,6 @@ def test_bayesian_search_forecaster_output_file():
             steps                 = 3,
             initial_train_size    = len(y_train),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -1173,7 +1164,6 @@ def test_bayesian_search_forecaster_outputs_backtesting_one_step_ahead(
             steps                 = 1,
             initial_train_size    = initial_train_size,
             window_size           = None,
-            differentiation       = None,
             refit                 = False,
             fixed_train_size      = False,
             gap                   = 0,
@@ -1236,7 +1226,6 @@ def test_ValueError_bayesian_search_forecaster_when_return_best_and_len_y_exog_d
             steps                 = 3,
             initial_train_size    = len(y[:-12]),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -1287,7 +1276,6 @@ def test_results_output_bayesian_search_forecaster_optuna_ForecasterRecursive_wi
             steps                 = 3,
             initial_train_size    = len(y[:-12]),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -1380,7 +1368,6 @@ def test_results_output_bayesian_search_forecaster_optuna_ForecasterRecursive_wi
             steps                 = 3,
             initial_train_size    = len(y[:-12]),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -1537,3 +1524,106 @@ def test_bayesian_search_forecaster_xgboost_categorical_no_ValueError_on_cache_h
     pd.testing.assert_frame_equal(
         results.drop(columns=['trial_number']), expected_results, atol=1e-4
     )
+
+
+@pytest.mark.parametrize(
+    "cv",
+    [
+        TimeSeriesFold(steps=3, initial_train_size=len(y) - 12, refit=False),
+        OneStepAheadFold(initial_train_size=len(y) - 12),
+    ],
+    ids=lambda cv: f"cv: {type(cv).__name__}",
+)
+@pytest.mark.parametrize(
+    "kwargs_create_study, expected_direction",
+    [
+        (None, "maximize"),
+        ({"direction": "maximize"}, "maximize"),
+        ({"direction": "minimize"}, "minimize"),
+    ],
+    ids=lambda dt: f"{dt}",
+)
+def test_bayesian_search_forecaster_direction_when_metric_greater_is_better(
+    cv, kwargs_create_study, expected_direction
+):
+    """
+    Test that, with a metric in which greater values are better (`r2_score`),
+    the study is maximized by default, and that the results and `return_best`
+    follow the direction of the study, also when it is set in
+    `kwargs_create_study`. A direction that contradicts the metric raises a
+    warning. Before the fix, the default direction was 'minimize' and the
+    results were always sorted in ascending order.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(random_state=123), lags=2)
+
+    def search_space(trial):
+        return {
+            "alpha": trial.suggest_float("alpha", 1e-2, 1e2, log=True),
+            "lags": trial.suggest_categorical("lags", [2, 4]),
+        }
+
+    kwargs = dict(
+        forecaster=forecaster,
+        y=y,
+        cv=cv,
+        search_space=search_space,
+        metric=r2_score,
+        n_trials=10,
+        random_state=123,
+        return_best=True,
+        kwargs_create_study=kwargs_create_study,
+    )
+    warn_msg = "The optuna study direction is 'minimize'"
+    if expected_direction == "minimize":
+        with pytest.warns(UserWarning, match=warn_msg):
+            results, study = bayesian_search_forecaster(**kwargs)
+    else:
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always")
+            results, study = bayesian_search_forecaster(**kwargs)
+        assert not any(warn_msg in str(w.message) for w in record)
+
+    assert study.direction.name.lower() == expected_direction
+    assert results["r2_score"].nunique() > 1
+    if expected_direction == "maximize":
+        assert results["r2_score"].is_monotonic_decreasing
+    else:
+        assert results["r2_score"].is_monotonic_increasing
+    assert results.loc[0, "trial_number"] == study.best_trial.number
+    assert results.loc[0, "r2_score"] == study.best_value
+    assert forecaster.estimator.alpha == study.best_params["alpha"]
+    np.testing.assert_array_equal(forecaster.lags, results.loc[0, "lags"])
+
+
+def test_bayesian_search_forecaster_ForecasterRecursiveClassifier_minimizes_loss():
+    """
+    Test that a classification forecaster minimizes a loss (`zero_one_loss`)
+    by default and that `return_best` refits it with the best trial. Before
+    the fix, every metric was maximized in classification tasks.
+    """
+    forecaster = ForecasterRecursiveClassifier(
+        estimator=LogisticRegression(max_iter=1000), lags=2
+    )
+    cv = TimeSeriesFold(steps=3, initial_train_size=len(y_clf) - 12, refit=False)
+
+    def search_space(trial):
+        return {
+            "C": trial.suggest_float("C", 1e-4, 10, log=True),
+            "lags": trial.suggest_categorical("lags", [2, 4]),
+        }
+
+    results, study = bayesian_search_forecaster(
+        forecaster=forecaster,
+        y=y_clf,
+        cv=cv,
+        search_space=search_space,
+        metric=zero_one_loss,
+        n_trials=10,
+        random_state=123,
+        return_best=True,
+    )
+
+    assert study.direction == optuna.study.StudyDirection.MINIMIZE
+    assert results["zero_one_loss"].is_monotonic_increasing
+    assert results.loc[0, "zero_one_loss"] == study.best_value
+    assert forecaster.estimator.C == results.loc[0, "C"]

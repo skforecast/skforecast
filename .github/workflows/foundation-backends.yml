@@ -14,7 +14,8 @@ name: Foundation Backends Compatibility
 # an adapter is checked every week before it is released.
 # Pull requests to main (the release ones) run it too. Pull requests to the
 # release branches (`*.x`) do not:
-# their changes are checked by the next scheduled run.
+# their changes are checked by the next scheduled run. Neither do the pull
+# requests of Dependabot, which only bump the versions of the actions.
 
 permissions:
   contents: read
@@ -39,6 +40,8 @@ concurrency:
 jobs:
   setup:
     name: Resolve the branch to check
+    # Skipped on the pull requests of Dependabot, and with it the rest of the jobs.
+    if: github.event_name != 'pull_request' || github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -113,12 +116,12 @@ jobs:
   summary:
     name: Summary
     needs: [setup, backend]
-    if: always()
+    if: always() && needs.setup.result != 'skipped'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
-      issues: write  # Only for the issue opened by the scheduled run
+      issues: write  # Only for the issue of the scheduled run
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -141,7 +144,8 @@ jobs:
           cat summary.md >> "$GITHUB_STEP_SUMMARY"
 
       # One open issue with the label `backend-compat`. It is updated, with a
-      # comment, only when what fails changes, not every week.
+      # comment, only when what fails changes, not every week, and closed by
+      # the first scheduled run in which every environment passes.
       - name: Open or update the issue
         if: github.event_name == 'schedule' && steps.summary.outputs.failures != '0'
         env:
@@ -171,4 +175,19 @@ jobs:
             gh issue edit "$number" --body-file issue.md
             gh issue comment "$number" \
               --body "The failures changed in $RUN_URL. The description of the issue has the new results."
+          fi
+
+      - name: Close the issue
+        if: github.event_name == 'schedule' && steps.summary.outputs.failures == '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          BRANCH: ${{ needs.setup.outputs.ref || github.ref_name }}
+        run: |
+          number=$(gh issue list --label backend-compat --state open --json number --jq '.[0].number // empty')
+          if [ -n "$number" ]; then
+            gh issue comment "$number" \
+              --body "All environments pass in $RUN_URL (branch \`$BRANCH\`, commit $(git rev-parse HEAD))."
+            gh issue close "$number" --reason completed
           fi

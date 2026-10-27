@@ -8,6 +8,7 @@
 from __future__ import annotations
 from typing import Callable, Generator, Any
 import warnings
+from itertools import chain
 import numpy as np
 import pandas as pd
 from joblib import cpu_count
@@ -16,8 +17,18 @@ from sklearn.linear_model._base import LinearModel, LinearClassifierMixin
 from sklearn.pipeline import Pipeline
 from tqdm.auto import tqdm
 
-from ..exceptions import IgnoredArgumentWarning, OneStepAheadValidationWarning
-from ..metrics import add_y_train_argument, _any_metric_needs_y_train, _get_metric
+from ..exceptions import (
+    IgnoredArgumentWarning,
+    MissingValuesWarning,
+    OneStepAheadValidationWarning
+)
+from ..metrics import (
+    add_y_train_argument,
+    _any_metric_needs_y_train,
+    _get_metric,
+    calculate_coverage
+)
+from ..metrics.metrics import _metric_greater_is_better
 from ..utils import (
     _date_range_from_index,
     check_interval,
@@ -27,15 +38,20 @@ from ..utils import (
     _check_in_place_fit,
 )
 
+# NOTE: Names of the metrics added to the backtesting metrics when the
+# predictions include `lower_bound` and `upper_bound`, see
+# `_calculate_interval_metrics`.
+INTERVAL_METRIC_NAMES = ['coverage', 'interval_width']
+
 
 def initialize_lags_grid(
     forecaster: object, 
     lags_grid: (
-        list[int | list[int] | np.ndarray | range]
-        | dict[str, int | list[int] | np.ndarray | range]
+        list[int | list[int] | np.ndarray | range | None]
+        | dict[str, int | list[int] | np.ndarray | range | None]
         | None
     ) = None,
-) -> tuple[dict[str, int], str]:
+) -> tuple[dict[str, int | list[int] | np.ndarray | range | None], str]:
     """
     Initialize lags grid and lags label for model selection. 
 
@@ -45,9 +61,12 @@ def initialize_lags_grid(
         Forecaster model. ForecasterRecursive, ForecasterDirect, 
         ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate.
     lags_grid : list, dict, default None
-        Lists of lags to try, containing int, lists, numpy ndarray, or range 
-        objects. If `dict`, the keys are used as labels in the `results` 
-        DataFrame, and the values are used as the lists of lags to try.
+        Lists of lags to try, containing int, lists, numpy ndarray, range
+        objects or `None`. A `None` element evaluates the forecaster without
+        lags, using only its `window_features` (a `ValueError` is raised if
+        it has none). If `dict`, the keys are used as labels in the `results`
+        DataFrame, and the values are used as the lists of lags to try. If
+        `None`, the lags of the forecaster are used.
 
     Returns
     -------
@@ -68,10 +87,23 @@ def initialize_lags_grid(
     if isinstance(lags_grid, list):
         lags_grid = {f'{lags}': lags for lags in lags_grid}
     elif lags_grid is None:
-        lags = [int(lag) for lag in forecaster.lags]  # Required since numpy 2.0
-        lags_grid = {f'{lags}': lags}
+        if forecaster.lags is None:
+            lags_grid = {'None': None}
+        else:
+            lags = [int(lag) for lag in forecaster.lags]  # Required since numpy 2.0
+            lags_grid = {f'{lags}': lags}
     else:
         lags_label = 'keys'
+
+    if (
+        any(lags is None for lags in lags_grid.values())
+        and forecaster.window_features is None
+    ):
+        raise ValueError(
+            "`lags_grid` contains `None`, a candidate without lags, but the "
+            "forecaster has no `window_features` to create the predictors. Set "
+            "`window_features` in the forecaster or remove `None` from `lags_grid`."
+        )
 
     return lags_grid, lags_label
 
@@ -162,16 +194,19 @@ def check_backtesting_input(
         skforecast.utils.select_n_jobs_fit_forecaster.
     freeze_params : bool, default True
         Determines whether to freeze the model parameters after the first fit
-        for estimators that perform automatic model selection.
+        for estimators that perform automatic model selection (`Arima` with
+        `order=None` or `seasonal_order=None`, `Ets` with `model='ZZZ'`).
 
-        - If `True`, the model parameters found during the first fit (e.g., order 
-        and seasonal_order for Arima, or smoothing parameters for Ets) are reused
-        in all subsequent refits. This avoids re-running the automatic selection
-        procedure in each fold and reduces runtime.
+        - If `True`, the parameters selected in the first fit (`best_params_`)
+        are reused in all subsequent refits, so the automatic selection runs only
+        once. Arima keeps the orders, intercept, drift and Box-Cox lambda, and
+        re-estimates the coefficients in each refit. Ets keeps the model type,
+        smoothing parameters and Box-Cox lambda, and re-estimates the initial
+        states.
         - If `False`, automatic model selection is performed independently in each
         refit, allowing parameters to adapt across folds. This increases runtime
-        and adds a `params` column to the output with the parameters selected per
-        fold.
+        and adds an `estimator_params` column to the output with the model
+        selected in each fold.
     show_progress : bool, default True
         Whether to show a progress bar.
     suppress_warnings: bool, default False
@@ -238,53 +273,41 @@ def check_backtesting_input(
         if not isinstance(y, pd.Series):
             raise TypeError("`y` must be a pandas Series.")
         data_name = 'y'
-        data_length = len(y)
+        data_length_name = "the length of `y`"
+        index = cv._extract_index(y)
 
     elif forecaster_name in forecasters_multi_no_dict:
         if not isinstance(series, pd.DataFrame):
             raise TypeError("`series` must be a pandas DataFrame.")
         data_name = 'series'
-        data_length = len(series)
-        
+        data_length_name = "the length of `series`"
+        index = cv._extract_index(series)
+
     elif forecaster_name in forecasters_multi_dict:
-        
-        # NOTE: Checks are not need as they are done in the function 
+
+        # NOTE: Checks are not need as they are done in the function
         # `check_preprocess_series` that is used before `check_backtesting_input`
         # in the backtesting function.
-        
+
+        # NOTE: The folds are built over the span of all series (from the
+        # earliest to the latest index), which is longer than any of them when
+        # they do not cover the same period.
         data_name = 'series'
-        data_length = max([len(series[serie]) for serie in series])
+        data_length_name = "the length of the span of `series`"
+        index = cv._extract_index(series)
+
+    data_length = len(index)
 
     if exog is not None:
         if forecaster_name in forecasters_multi_dict:
-            # NOTE: Checks are not need as they are done in the function 
-            # `check_preprocess_exog_multiseries` that is used before 
+            # NOTE: Checks are not need as they are done in the function
+            # `check_preprocess_exog_multiseries` that is used before
             # `check_backtesting_input` in the backtesting function.
             pass
         else:
             if not isinstance(exog, (pd.Series, pd.DataFrame)):
                 raise TypeError(
                     f"`exog` must be a pandas Series, DataFrame or None. Got {type(exog)}."
-                )
-
-    if hasattr(forecaster, 'differentiation'):
-        if forecaster.differentiation_max != cv.differentiation:
-            if forecaster_name == "ForecasterRecursiveMultiSeries" and isinstance(
-                forecaster.differentiation, dict
-            ):
-                raise ValueError(
-                    f"When using a dict as `differentiation` in ForecasterRecursiveMultiSeries, "
-                    f"the `differentiation` included in the cv ({cv.differentiation}) must be "
-                    f"the same as the maximum `differentiation` included in the forecaster "
-                    f"({forecaster.differentiation_max}). Set the same value "
-                    f"for both using the `differentiation` argument."
-                )
-            else:
-                raise ValueError(
-                    f"The differentiation included in the forecaster "
-                    f"({forecaster.differentiation_max}) differs from the differentiation "
-                    f"included in the cv ({cv.differentiation}). Set the same value "
-                    f"for both using the `differentiation` argument."
                 )
 
     if not isinstance(metric, (str, Callable, list)):
@@ -303,15 +326,10 @@ def check_backtesting_input(
             raise ValueError(
                 f"`initial_train_size` must be an integer greater than "
                 f"the `window_size` of the forecaster ({forecaster.window_size}) "
-                f"and smaller than the length of `{data_name}` ({data_length}) or "
+                f"and smaller than {data_length_name} ({data_length}) or "
                 f"a date within this range of the index."
             )
     elif initial_train_size is not None:
-        if forecaster_name in forecasters_uni:
-            index = cv._extract_index(y)
-        else:
-            index = cv._extract_index(series)
-
         initial_train_size = date_to_index_position(
                                  index        = index, 
                                  date_input   = initial_train_size, 
@@ -326,14 +344,14 @@ def check_backtesting_input(
             if initial_train_size < 1 or initial_train_size >= data_length:
                 raise ValueError(
                     f"If `initial_train_size` is an integer, it must be greater than "
-                    f"0 and smaller than the length of `{data_name}` ({data_length}). "
+                    f"0 and smaller than {data_length_name} ({data_length}). "
                     f"If it is a date, it must be within this range of the index."
                 )
         elif initial_train_size < forecaster.window_size or initial_train_size >= data_length:
             raise ValueError(
                 f"If `initial_train_size` is an integer, it must be greater than "
                 f"the `window_size` of the forecaster ({forecaster.window_size}) "
-                f"and smaller than the length of `{data_name}` ({data_length}). If "
+                f"and smaller than {data_length_name} ({data_length}). If "
                 f"it is a date, it must be within this range of the index."
             )
         if allow_incomplete_fold:
@@ -366,7 +384,7 @@ def check_backtesting_input(
         ]:
             raise ValueError(
                 f"When using {forecaster_name}, `initial_train_size` must be an "
-                f"integer smaller than the length of `{data_name}` ({data_length})."
+                f"integer smaller than {data_length_name} ({data_length})."
             )
         else:
             if not forecaster.is_fitted:
@@ -383,6 +401,20 @@ def check_backtesting_input(
         raise ValueError(
             "`skip_folds` is not allowed for ForecasterStats. Set it to `None`."
         )
+
+    # NOTE: `backtesting_foundation` passes its `quantiles` as `interval`.
+    if _get_interval_bound_quantiles(interval) is not None or alpha is not None:
+        metric_names = [
+            m if isinstance(m, str) else getattr(m, '__name__', None)
+            for m in (metric if isinstance(metric, list) else [metric])
+        ]
+        reserved_names = [name for name in metric_names if name in INTERVAL_METRIC_NAMES]
+        if reserved_names:
+            raise ValueError(
+                f"When `interval` has a lower and an upper bound, or `alpha` is "
+                f"used, the backtesting metrics include {INTERVAL_METRIC_NAMES}. "
+                f"Rename the metric(s) {reserved_names} passed in `metric`."
+            )
 
     if not isinstance(add_aggregated_metric, bool):
         raise TypeError("`add_aggregated_metric` must be a boolean: `True`, `False`.")
@@ -569,23 +601,28 @@ def check_one_step_ahead_input(
     if forecaster_name in forecasters_uni:
         if not isinstance(y, pd.Series):
             raise TypeError(f"`y` must be a pandas Series. Got {type(y)}")
-        data_name = 'y'
-        data_length = len(y)
+        data_length_name = "the length of `y`"
+        index = cv._extract_index(y)
 
     elif forecaster_name in forecasters_multi_no_dict:
         if not isinstance(series, pd.DataFrame):
             raise TypeError(f"`series` must be a pandas DataFrame. Got {type(series)}")
-        data_name = 'series'
-        data_length = len(series)
-    
+        data_length_name = "the length of `series`"
+        index = cv._extract_index(series)
+
     elif forecaster_name in forecasters_multi_dict:
-        
-        # NOTE: Checks are not need as they are done in the function 
+
+        # NOTE: Checks are not need as they are done in the function
         # `check_preprocess_series` that is used before `check_one_step_ahead_input`
         # in the backtesting function.
-        
-        data_name = 'series'
-        data_length = max([len(series[serie]) for serie in series])
+
+        # NOTE: The training and test sets are split over the span of all series
+        # (from the earliest to the latest index), which is longer than any of
+        # them when they do not cover the same period.
+        data_length_name = "the length of the span of `series`"
+        index = cv._extract_index(series)
+
+    data_length = len(index)
 
     if exog is not None:
         if forecaster_name in forecasters_multi_dict:
@@ -599,40 +636,15 @@ def check_one_step_ahead_input(
                     f"`exog` must be a pandas Series, DataFrame or None. Got {type(exog)}."
                 )
 
-    if hasattr(forecaster, 'differentiation'):
-        if forecaster.differentiation_max != cv.differentiation:
-            if forecaster_name == "ForecasterRecursiveMultiSeries" and isinstance(
-                forecaster.differentiation, dict
-            ):
-                raise ValueError(
-                    f"When using a dict as `differentiation` in ForecasterRecursiveMultiSeries, "
-                    f"the `differentiation` included in the cv ({cv.differentiation}) must be "
-                    f"the same as the maximum `differentiation` included in the forecaster "
-                    f"({forecaster.differentiation_max}). Set the same value "
-                    f"for both using the `differentiation` argument."
-                )
-            else:
-                raise ValueError(
-                    f"The differentiation included in the forecaster "
-                    f"({forecaster.differentiation_max}) differs from the differentiation "
-                    f"included in the cv ({cv.differentiation}). Set the same value "
-                    f"for both using the `differentiation` argument."
-                )
-
     if not isinstance(metric, (str, Callable, list)):
         raise TypeError(
             f"`metric` must be a string, a callable function, or a list containing "
             f"multiple strings and/or callables. Got {type(metric)}."
         )
 
-    if forecaster_name in forecasters_uni:
-        index = cv._extract_index(y)
-    else:
-        index = cv._extract_index(series)
-
     initial_train_size = date_to_index_position(
-                             index        = index, 
-                             date_input   = initial_train_size, 
+                             index        = index,
+                             date_input   = initial_train_size,
                              method       = 'validation',
                              date_literal = 'initial_train_size'
                          )
@@ -640,7 +652,7 @@ def check_one_step_ahead_input(
         raise ValueError(
             f"If `initial_train_size` is an integer, it must be greater than "
             f"the `window_size` of the forecaster ({forecaster.window_size}) "
-            f"and smaller than the length of `{data_name}` ({data_length}). If "
+            f"and smaller than {data_length_name} ({data_length}). If "
             f"it is a date, it must be within this range of the index."
         )
 
@@ -945,7 +957,10 @@ def _extract_data_folds_multiseries(
     span_index : pandas DatetimeIndex, pandas RangeIndex
         Full index from the minimum to the maximum index among all series.
     window_size : int
-        Size of the window needed to create the predictors.
+        Size of the window needed to create the predictors. A series with
+        `window_size` values or fewer in the training set of a fold is left
+        out of that fold, since `fit` needs more than `window_size` values to
+        create at least one training row.
     exog : pandas Series, pandas DataFrame, dict, default None
         Exogenous variables.
     dropna_last_window : bool, default False
@@ -1003,7 +1018,7 @@ def _extract_data_folds_multiseries(
                     last_valid_index = series_train[col].last_valid_index()
                     if (
                         len(series_train[col].loc[first_valid_index:last_valid_index])
-                        < window_size
+                        <= window_size
                     ):
                         series_to_drop.append(col)
 
@@ -1024,7 +1039,7 @@ def _extract_data_folds_multiseries(
                     last_valid_index  = v_train.last_valid_index()
                     if first_valid_index is not None and last_valid_index is not None:
                         v_train = v_train.loc[first_valid_index : last_valid_index]
-                        if len(v_train) >= window_size:
+                        if len(v_train) > window_size:
                             series_train[k] = v_train
                 
                 v_last_window = v.loc[last_window_loc_start:last_window_loc_end]
@@ -1064,6 +1079,367 @@ def _extract_data_folds_multiseries(
         yield series_train, series_last_window, levels_last_window, exog_train, exog_test, fold
 
 
+def _select_fit_folds_multiseries(
+    folds: list,
+    levels_predict_folds: list[list[str]]
+) -> list[bool]:
+    """
+    Select the folds of a multi-series backtesting in which the forecaster is
+    fitted. A fold with refit (`fold[5]` is `True`) trains the model that
+    predicts it and the following folds without refit. That model is only
+    fitted if at least one of these folds has a level to predict, so no
+    forecaster is trained with an empty training set (no series with more
+    than `window_size` values) or only to be discarded.
+
+    Parameters
+    ----------
+    folds : list
+        Folds created using the split method of the TimeSeriesFold object,
+        before the initial fit sets `fold[5]` of the first fold to `False`.
+    levels_predict_folds : list
+        Levels predicted in each fold.
+
+    Returns
+    -------
+    fit_folds : list
+        `True` for the folds in which the forecaster is fitted.
+
+    """
+
+    fit_folds = [False] * len(folds)
+    refit_fold = None
+    for i, (fold, levels_predict) in enumerate(zip(folds, levels_predict_folds)):
+        if fold[5] is True:
+            refit_fold = i
+        if refit_fold is not None and levels_predict:
+            fit_folds[refit_fold] = True
+
+    return fit_folds
+
+
+def _warn_levels_not_predicted_multiseries(
+    forecaster: object,
+    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
+    folds: list,
+    span_index: pd.DatetimeIndex | pd.RangeIndex,
+    levels: list[str],
+    levels_predict_folds: list[list[str]],
+    levels_train_folds: list[list[str]] | None = None
+) -> None:
+    """
+    Warn about the levels that are not predicted in a fold of the multi-series
+    backtesting although they have observed values in its test set, so their
+    metrics, and the aggregated metrics, do not include that fold. The levels
+    are grouped by the reason why they are not predicted:
+
+    - The level is not in the training set of the fold: it has `window_size`
+    observations or fewer, so the forecaster is not trained with it.
+    - The level is in the training set of the fold, or the training set is not
+    used, but its last window cannot be used to predict: it has missing values
+    and the estimator does not support them natively or the forecaster uses
+    differentiation. For `ForecasterFoundation`, its context window has no
+    observed values.
+
+    A level without observed values in the test set of a fold (for example, a
+    series that starts after it) is not reported, there is nothing to evaluate.
+    A fold in which no level is predicted is skipped (no predictions). If a
+    level has observed values in its test set, the fold is also listed.
+
+    Parameters
+    ----------
+    forecaster : object
+        Forecaster used in the backtesting.
+    series : pandas DataFrame, dict
+        Time series.
+    folds : list
+        Folds created using the split method of the TimeSeriesFold object.
+    span_index : pandas DatetimeIndex, pandas RangeIndex
+        Full index from the minimum to the maximum index among all series.
+    levels : list
+        Levels to predict.
+    levels_predict_folds : list
+        Levels predicted in each fold.
+    levels_train_folds : list, default None
+        Levels of the training set of each fold. If `None`, the training set
+        is not used (the forecaster is fitted before the backtesting, or it is
+        not trained) and every level not predicted is attributed to the last
+        window.
+
+    Returns
+    -------
+    None
+
+    """
+
+    if levels_train_folds is None:
+        levels_train_folds = [None] * len(folds)
+
+    not_predicted = {'train': {}, 'last_window': {}}
+    skipped_folds = []
+    for fold, levels_train, levels_predict in zip(
+        folds, levels_train_folds, levels_predict_folds
+    ):
+        levels_train = set(levels_train) if levels_train is not None else None
+        levels_predict = set(levels_predict)
+        test_no_gap_loc_start = span_index[fold[4][0]]
+        test_no_gap_loc_end   = span_index[fold[4][1] - 1]
+        for level in levels:
+            if level in levels_predict:
+                continue
+            y_test = series[level].loc[test_no_gap_loc_start:test_no_gap_loc_end]
+            if not y_test.notna().to_numpy().any():
+                continue
+            reason = (
+                'train' if levels_train is not None and level not in levels_train
+                else 'last_window'
+            )
+            not_predicted[reason].setdefault(level, []).append(fold[0])
+            if not levels_predict and fold[0] not in skipped_folds:
+                skipped_folds.append(fold[0])
+
+    if not not_predicted['train'] and not not_predicted['last_window']:
+        return
+
+    if type(forecaster).__name__ == 'ForecasterFoundation':
+        reason_last_window = "No observed values in the context window"
+    elif forecaster.differentiation_max is not None:
+        reason_last_window = (
+            "Missing values in the last window, they are not allowed with "
+            "differentiation"
+        )
+    else:
+        reason_last_window = (
+            f"Missing values in the last window, "
+            f"{type(forecaster.estimator).__name__} does not support them"
+        )
+    reason_messages = {
+        'train': (
+            f"`window_size` ({forecaster.window_size}) observations or fewer "
+            f"in the training set"
+        ),
+        'last_window': reason_last_window
+    }
+
+    levels_predicted = set(chain(*levels_predict_folds))
+    lines = []
+    for reason, levels_folds in not_predicted.items():
+        if levels_folds:
+            levels_info = [
+                f"{level!r} (never predicted)" if level not in levels_predicted
+                else f"{level!r} (folds {', '.join(map(str, fold_numbers))})"
+                for level, fold_numbers in levels_folds.items()
+            ]
+            lines.append(f"  - {reason_messages[reason]}: {', '.join(levels_info)}.")
+    if skipped_folds:
+        lines.append(
+            f"  - Folds skipped, no level can be predicted in them: "
+            f"{', '.join(map(str, skipped_folds))}."
+        )
+
+    warnings.warn(
+        "Some levels are not predicted in folds where they have observed values, "
+        "so their metrics, and the aggregated metrics, do not include those "
+        "folds. Levels never predicted have NaN metrics and are left out of the "
+        "aggregated metrics.\n" + "\n".join(lines),
+        MissingValuesWarning
+    )
+
+
+def _get_interval_bound_quantiles(
+    interval: float | list[float] | tuple[float, ...] | str | object | None
+) -> list[float] | None:
+    """
+    Quantiles of the lower and upper bounds of the prediction interval defined
+    by `interval`: a float (nominal coverage), or a list or tuple of two
+    quantiles, optionally with the median (0.5). Any other value (more
+    quantiles, 'bootstrapping', a distribution or None) does not define a
+    single interval and returns None.
+
+    Parameters
+    ----------
+    interval : float, list, tuple, str, object, None
+        Argument `interval` of the backtesting functions (or `quantiles` in
+        `backtesting_foundation`).
+
+    Returns
+    -------
+    bound_quantiles : list, None
+        Quantiles of the lower and upper bounds, sorted, or None.
+
+    """
+
+    if isinstance(interval, float):
+        return [0.5 - interval / 2, 0.5 + interval / 2]
+
+    if isinstance(interval, (list, tuple)):
+        bound_quantiles = list(interval)
+        if len(bound_quantiles) == 3 and 0.5 in bound_quantiles:
+            bound_quantiles.remove(0.5)
+        if len(bound_quantiles) == 2:
+            return sorted(bound_quantiles)
+
+    return None
+
+
+def _get_interval_columns(
+    columns: pd.Index | list[str],
+    interval: float | list[float] | tuple[float, ...] | str | object | None
+) -> list[str] | None:
+    """
+    Columns of the backtesting predictions with the lower and upper bounds of
+    the prediction interval, used to calculate the interval metrics
+    (`INTERVAL_METRIC_NAMES`): `lower_bound` and `upper_bound` if they exist,
+    otherwise the quantile columns (`q_<quantile>`) of the bounds defined by
+    `interval` (see `_get_interval_bound_quantiles`).
+
+    Parameters
+    ----------
+    columns : pandas Index, list
+        Columns of the backtesting predictions.
+    interval : float, list, tuple, str, object, None
+        Argument `interval` of the backtesting functions (or `quantiles` in
+        `backtesting_foundation`).
+
+    Returns
+    -------
+    interval_columns : list, None
+        Names of the lower and upper bound columns, or None if the predictions
+        do not define a single interval.
+
+    """
+
+    if {'lower_bound', 'upper_bound'}.issubset(columns):
+        return ['lower_bound', 'upper_bound']
+
+    bound_quantiles = _get_interval_bound_quantiles(interval)
+    if bound_quantiles is not None:
+        interval_columns = [f"q_{q}" for q in bound_quantiles]
+        if set(interval_columns).issubset(columns):
+            return interval_columns
+
+    return None
+
+
+def _calculate_interval_metrics(
+    y_true: np.ndarray | pd.Series,
+    lower_bound: np.ndarray | pd.Series,
+    upper_bound: np.ndarray | pd.Series,
+) -> list[float]:
+    """
+    Calculate the coverage and the mean width of a prediction interval
+    defined by its lower and upper bounds.
+
+    Rows with a missing value in `y_true`, `lower_bound` or `upper_bound`
+    are ignored. If no row is left, both metrics are NaN.
+
+    Parameters
+    ----------
+    y_true : numpy ndarray, pandas Series
+        True values of the target variable.
+    lower_bound : numpy ndarray, pandas Series
+        Lower bound of the interval.
+    upper_bound : numpy ndarray, pandas Series
+        Upper bound of the interval.
+
+    Returns
+    -------
+    interval_metrics : list
+        Coverage (share of true values inside the interval, bounds included)
+        and mean width (mean of `upper_bound - lower_bound`, in the units of
+        the series), in the order of `INTERVAL_METRIC_NAMES`.
+
+    """
+
+    y_true = np.asarray(y_true, dtype=float)
+    lower_bound = np.asarray(lower_bound, dtype=float)
+    upper_bound = np.asarray(upper_bound, dtype=float)
+
+    mask = ~(np.isnan(y_true) | np.isnan(lower_bound) | np.isnan(upper_bound))
+    if not mask.any():
+        return [np.nan, np.nan]
+
+    coverage = calculate_coverage(
+                   y_true      = y_true[mask],
+                   lower_bound = lower_bound[mask],
+                   upper_bound = upper_bound[mask]
+               )
+    interval_width = np.mean(upper_bound[mask] - lower_bound[mask])
+
+    return [float(coverage), float(interval_width)]
+
+
+def _check_nan_predictions_backtesting(
+    y_true: pd.Series,
+    y_pred: pd.Series,
+    estimator_id: str | None = None,
+    differentiation: int | None = None
+) -> None:
+    """
+    Raise an error if a backtesting prediction of a single series is NaN at a
+    date with an observed value. The metrics cannot be calculated with it, and
+    leaving it out would calculate them with fewer values than predicted.
+
+    Parameters
+    ----------
+    y_true : pandas Series
+        True values of the series, aligned by position with `y_pred`.
+    y_pred : pandas Series
+        Backtesting predictions.
+    estimator_id : str, default None
+        Identifier of the estimator that made the predictions, included in
+        the message when the forecaster has several estimators.
+    differentiation : int, default None
+        Order of the differentiation of the forecaster. If not `None`, the
+        message also includes a missing value among the last values of the
+        series before a fold, from which the differentiation is reverted, as
+        a cause.
+
+    Returns
+    -------
+    None
+
+    """
+
+    is_nan_prediction = y_pred.isna().to_numpy() & y_true.notna().to_numpy()
+    if is_nan_prediction.any():
+        of_estimator = (
+            f" of estimator '{estimator_id}'" if estimator_id is not None else ""
+        )
+        dates = y_pred.index[is_nan_prediction]
+        nan_predictors = (
+            "a missing value in the series or in `exog`, used as a predictor of "
+            "these dates, with an estimator that does not accept NaN (for "
+            "example, a linear model)"
+        )
+        if differentiation is None:
+            cause = f"The most likely cause is {nan_predictors}"
+            remedy = "Fill the missing values, or use an estimator that accepts them"
+        else:
+            # NOTE: The differentiation is reverted from the last values of the
+            # series, which no predictor reads, so a missing one gives NaN
+            # predictions with any estimator.
+            last_values = (
+                "a missing last value of the series" if differentiation == 1
+                else f"a missing value among the last {differentiation} values "
+                     f"of the series"
+            )
+            cause = (
+                f"The most likely causes are {nan_predictors}, or {last_values} "
+                f"before the fold, from which the differentiation is reverted "
+                f"(with any estimator)"
+            )
+            remedy = (
+                "Fill the missing values, or, in the first case, use an "
+                "estimator that accepts them"
+            )
+        raise ValueError(
+            f"{len(dates)} backtesting predictions{of_estimator} are NaN at "
+            f"dates with observed values (first: {dates[0]}), so the metrics "
+            f"cannot be calculated. {cause}. {remedy}, for example "
+            f"HistGradientBoostingRegressor or LGBMRegressor."
+        )
+
+
 def _calculate_metrics_backtesting_multiseries(
     series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
     predictions: pd.DataFrame,
@@ -1084,12 +1460,18 @@ def _calculate_metrics_backtesting_multiseries(
     - 'pooling': the values of all levels are pooled and then the metric is
     calculated.
 
+    If `predictions` includes the columns `lower_bound` and `upper_bound`, the
+    coverage and the mean width of the interval (`INTERVAL_METRIC_NAMES`) are
+    added after the metrics, for each level and aggregated in the same way.
+
     Parameters
     ----------
     series : pandas DataFrame, dict
         Series data used for backtesting.
     predictions : pandas DataFrame
-        MultiIndex DataFrame generated during the backtesting multiseries process. 
+        MultiIndex DataFrame generated during the backtesting multiseries process.
+        The first column is the point prediction used to calculate the metrics.
+        It may also include the columns `lower_bound` and `upper_bound`.
     folds : list, tqdm
         Folds created during the backtesting process.
     span_index : pandas DatetimeIndex, pandas RangeIndex
@@ -1143,6 +1525,10 @@ def _calculate_metrics_backtesting_multiseries(
     
     metric_names = [m.__name__ for m in metrics]
     needs_y_train = _any_metric_needs_y_train(metrics)
+    add_interval_metrics = {'lower_bound', 'upper_bound'}.issubset(predictions.columns)
+    output_names = (
+        metric_names + INTERVAL_METRIC_NAMES if add_interval_metrics else metric_names
+    )
 
     levels_in_predictions = predictions.index.get_level_values('level').unique()
 
@@ -1155,15 +1541,45 @@ def _calculate_metrics_backtesting_multiseries(
         series = pd.concat(series, names = ['level', 'idx']).to_frame('y_true')
     
     predictions = predictions.swaplevel()
-    predictions.columns = ['y_pred']
+    predictions = predictions.rename(columns={predictions.columns[0]: 'y_pred'})
 
+    # NOTE: Rows are dropped only by `y_true` and `y_pred`, so the metrics are
+    # the same with and without the interval bounds.
     y_true_y_pred = pd.merge(
         series,
         predictions,
         left_index  = True,
         right_index = True,
         how         = "inner",
-    ).dropna(axis=0, how="any")
+    )
+
+    # NOTE: The predictions of the dates without observed values are expected
+    # to be NaN. A NaN prediction of a date with an observed value (the
+    # forecaster could not predict it) is left out of the metrics, which are
+    # then calculated with fewer values than predicted, so it is warned.
+    is_nan_prediction = (
+        y_true_y_pred['y_true'].notna() & y_true_y_pred['y_pred'].isna()
+    )
+    if is_nan_prediction.any():
+        n_nan_predictions = (
+            is_nan_prediction[is_nan_prediction]
+            .groupby(level='level', sort=False)
+            .size()
+            .to_dict()
+        )
+        warnings.warn(
+            f"{int(is_nan_prediction.sum())} predictions are NaN at dates with "
+            f"observed values and are left out of the metrics, which are "
+            f"calculated with fewer values than predicted. Number of NaN "
+            f"predictions per series: {n_nan_predictions}. The forecaster "
+            f"could not predict these dates, for example because of missing "
+            f"values in the last window or in `exog`.",
+            MissingValuesWarning
+        )
+
+    y_true_y_pred = y_true_y_pred.dropna(
+        axis=0, how="any", subset=['y_true', 'y_pred']
+    )
 
     if needs_y_train:
         train_indexes = []
@@ -1208,22 +1624,30 @@ def _calculate_metrics_backtesting_multiseries(
             else:
                 y_train = None
             metrics_level = [
-                m(y_true=y_true, y_pred=y_pred, y_train=y_train) 
+                m(y_true=y_true, y_pred=y_pred, y_train=y_train)
                 for m in metrics
             ]
+            if add_interval_metrics:
+                metrics_level.extend(
+                    _calculate_interval_metrics(
+                        y_true      = y_true,
+                        lower_bound = group['lower_bound'],
+                        upper_bound = group['upper_bound']
+                    )
+                )
             metrics_levels.append(metrics_level)
         else:
-            metrics_levels.append([None for _ in metrics])
+            metrics_levels.append([None for _ in output_names])
 
     metrics_levels = pd.DataFrame(
                          data    = metrics_levels,
-                         columns = metric_names
+                         columns = output_names
                      )
     metrics_levels.insert(0, 'levels', levels)
 
     if len(levels) < 2:
         add_aggregated_metric = False
-    
+
     if add_aggregated_metric:
 
         # aggregation: average
@@ -1239,14 +1663,25 @@ def _calculate_metrics_backtesting_multiseries(
             .reset_index(name="n_predictions")
             .rename(columns={"level": "levels"})
         )
+        # NOTE: A level predicted without observed values in its test set (for
+        # example, a series that ends at the end of the training set) has no
+        # metric, so it is left out of the weighted average, as it is of the
+        # average and the pooling.
+        n_predictions_levels = n_predictions_levels[
+            n_predictions_levels['levels'].isin(y_true_y_pred_grouped.groups)
+        ]
         metrics_levels_no_missing = (
             metrics_levels.merge(n_predictions_levels, on='levels', how='inner')
         )
         weighted_averages = {}
-        for col in metric_names:
-            weighted_averages[col] = np.average(
-                metrics_levels_no_missing[col],
-                weights = metrics_levels_no_missing['n_predictions']
+        for col in output_names:
+            weighted_averages[col] = (
+                np.average(
+                    metrics_levels_no_missing[col],
+                    weights = metrics_levels_no_missing['n_predictions']
+                )
+                if not metrics_levels_no_missing.empty
+                else np.nan
             )
         weighted_average = pd.DataFrame(weighted_averages, index=[0])
         weighted_average['levels'] = 'weighted_average'
@@ -1279,8 +1714,17 @@ def _calculate_metrics_backtesting_multiseries(
                 pooled.append(
                     m(y_true=y_true, y_pred=y_pred, y_train=y_train)
                 )
-        
-        pooled = pd.DataFrame([pooled], columns=metric_names)
+
+        if add_interval_metrics:
+            pooled.extend(
+                _calculate_interval_metrics(
+                    y_true      = y_true,
+                    lower_bound = y_true_y_pred['lower_bound'],
+                    upper_bound = y_true_y_pred['upper_bound']
+                )
+            )
+
+        pooled = pd.DataFrame([pooled], columns=output_names)
         pooled['levels'] = 'pooling'
 
         metrics_levels = pd.concat(
@@ -1792,3 +2236,75 @@ def _make_lags_hashable(lags, sentinel: object) -> int | tuple | None:
             for k, v in sorted(lags.items())
         )
     return lags
+
+
+def _get_search_direction(metric: Callable, forecaster: object) -> str:
+    """
+    Get the direction in which a hyperparameter search optimizes a metric.
+    It is inferred from the metric (see `_metric_greater_is_better`). If the
+    direction of the metric is unknown, it is set from the task of the
+    forecaster: `'minimize'` for regression and `'maximize'` for
+    classification.
+
+    Parameters
+    ----------
+    metric : Callable
+        Metric used to rank the candidates of the search, as returned by
+        `_get_metric` or `add_y_train_argument`.
+    forecaster : object
+        Forecaster model.
+
+    Returns
+    -------
+    direction : str
+        `'minimize'` or `'maximize'`.
+
+    """
+
+    greater_is_better = _metric_greater_is_better(metric)
+    if greater_is_better is None:
+        greater_is_better = (
+            forecaster.__skforecast_tags__['forecaster_task'] != 'regression'
+        )
+
+    return 'maximize' if greater_is_better else 'minimize'
+
+
+def _check_study_direction(study: object, metric: Callable) -> str:
+    """
+    Get the direction of an optuna study, which is the direction used to rank
+    the trials of a bayesian search. A warning is raised if it contradicts the
+    known direction of the metric (for example, `'minimize'` with
+    `accuracy_score`), usually because of the `direction` passed in
+    `kwargs_create_study`.
+
+    Parameters
+    ----------
+    study : optuna Study
+        Optuna study of the search.
+    metric : Callable
+        Metric optimized by the study.
+
+    Returns
+    -------
+    direction : str
+        `'minimize'` or `'maximize'`.
+
+    """
+
+    direction = study.direction.name.lower()
+    greater_is_better = _metric_greater_is_better(metric)
+    if greater_is_better is not None:
+        metric_direction = 'maximize' if greater_is_better else 'minimize'
+        if direction != metric_direction:
+            warnings.warn(
+                f"The optuna study direction is '{direction}', but greater values "
+                f"of the metric `{getattr(metric, '__name__', metric)}` are "
+                f"{'better' if greater_is_better else 'worse'}, so it should be "
+                f"'{metric_direction}'. The search, the order of the results and "
+                f"`return_best` follow the study direction. Remove `direction` "
+                f"from `kwargs_create_study` to use the direction of the metric.",
+                UserWarning
+            )
+
+    return direction

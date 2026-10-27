@@ -17,8 +17,7 @@ from tqdm.auto import tqdm
 from ..metrics import add_y_train_argument, _any_metric_needs_y_train, _get_metric
 from ..exceptions import (
     LongTrainingWarning,
-    IgnoredArgumentWarning,
-    MissingValuesWarning
+    IgnoredArgumentWarning
 )
 from ..model_selection._split import TimeSeriesFold
 from ..model_selection._utils import (
@@ -26,7 +25,13 @@ from ..model_selection._utils import (
     check_backtesting_input,
     select_n_jobs_backtesting,
     _extract_data_folds_multiseries,
-    _calculate_metrics_backtesting_multiseries
+    _select_fit_folds_multiseries,
+    _warn_levels_not_predicted_multiseries,
+    _calculate_metrics_backtesting_multiseries,
+    _check_nan_predictions_backtesting,
+    _get_interval_columns,
+    _calculate_interval_metrics,
+    INTERVAL_METRIC_NAMES
 )
 from ..utils import (
     check_preprocess_series,
@@ -381,13 +386,15 @@ def _backtesting_forecaster(
     y : pandas Series
         Training time series.
     cv : TimeSeriesFold
-        TimeSeriesFold object with the information needed to split the data into folds.
+        TimeSeriesFold object with the information needed to split the data into
+        folds. Its `window_size` is taken from the forecaster, and the object
+        passed is not modified.
     metric : str, Callable, list
         Metric used to quantify the goodness of fit of the model.
         
-        - If `string`: {'mean_squared_error', 'mean_absolute_error',
-        'mean_absolute_percentage_error', 'mean_squared_log_error',
-        'mean_absolute_scaled_error', 'root_mean_squared_scaled_error'}
+        - If `string`: name of the metric, for example `'mean_absolute_error'`
+        or `'root_mean_squared_error'`. All accepted names are listed in
+        https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
         (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
@@ -450,7 +457,15 @@ def _backtesting_forecaster(
     Returns
     -------
     metric_values : pandas DataFrame
-        Value(s) of the metric(s).
+        Value(s) of the metric(s). If `interval` has a lower and an upper bound
+        (a `float`, or a `list` or `tuple` of 2 quantiles, optionally with the
+        median 0.5), two more columns are added after the metrics:
+
+        - coverage: share of true values inside the interval (bounds included).
+        - interval_width: mean of `upper_bound - lower_bound`, in the units of
+        the series.
+
+        **New in version 0.27.0**
     backtest_predictions : pandas DataFrame
         Value of predictions. The DataFrame includes the following columns:
 
@@ -512,7 +527,6 @@ def _backtesting_forecaster(
 
     cv.set_params({
         'window_size': forecaster.window_size,
-        'differentiation': forecaster.differentiation_max,
         'return_all_indexes': False,
         'verbose': verbose
     })
@@ -556,6 +570,16 @@ def _backtesting_forecaster(
         forecaster._probabilistic_mode = 'binned'
     else:
         forecaster._probabilistic_mode = 'no_binned'
+
+    # NOTE: The steps of the `gap` are predicted and then discarded, so a
+    # missing predictor (for example, a gap in `exog`) that only affects them
+    # must not stop the backtesting: a linear model returns NaN predictions
+    # instead of raising. NaN predictions of scored dates raise before the
+    # metrics, in `_check_nan_predictions_backtesting`. The forecaster is a
+    # copy, so the attribute does not reach the user's forecaster. It is set
+    # even if the forecaster does not have it: forecasters saved with previous
+    # versions lack it, and the rest of forecasters do not read it.
+    forecaster._allow_nan_predictions = True
 
     folds = cv.split(X=y, as_pandas=False)
     initial_train_size = cv.initial_train_size_as_int
@@ -668,6 +692,9 @@ def _backtesting_forecaster(
     
     y_true = y.loc[backtest_predictions_for_metrics.index]
     y_pred = backtest_predictions_for_metrics['pred']
+    _check_nan_predictions_backtesting(
+        y_true=y_true, y_pred=y_pred, differentiation=forecaster.differentiation
+    )
 
     if _any_metric_needs_y_train(metrics):
         train_indexes = []
@@ -685,14 +712,29 @@ def _backtesting_forecaster(
     else:
         y_train = None
 
-    metric_values = [[
-        m(y_true=y_true, y_pred=y_pred, y_train=y_train) 
+    metric_values = [
+        m(y_true=y_true, y_pred=y_pred, y_train=y_train)
         for m in metrics
-    ]]
+    ]
+    metric_names = [m.__name__ for m in metrics]
+
+    interval_columns = _get_interval_columns(
+                           columns  = backtest_predictions_for_metrics.columns,
+                           interval = interval
+                       )
+    if interval_columns is not None:
+        metric_values.extend(
+            _calculate_interval_metrics(
+                y_true      = y_true,
+                lower_bound = backtest_predictions_for_metrics[interval_columns[0]],
+                upper_bound = backtest_predictions_for_metrics[interval_columns[1]]
+            )
+        )
+        metric_names += INTERVAL_METRIC_NAMES
 
     metric_values = pd.DataFrame(
-        data    = metric_values,
-        columns = [m.__name__ for m in metrics]
+        data    = [metric_values],
+        columns = metric_names
     )
 
     return metric_values, backtest_predictions
@@ -736,13 +778,15 @@ def backtesting_forecaster(
     y : pandas Series
         Training time series.
     cv : TimeSeriesFold
-        TimeSeriesFold object with the information needed to split the data into folds.
+        TimeSeriesFold object with the information needed to split the data into
+        folds. Its `window_size` is taken from the forecaster, and the object
+        passed is not modified.
     metric : str, Callable, list
         Metric used to quantify the goodness of fit of the model.
         
-        - If `string`: {'mean_squared_error', 'mean_absolute_error',
-        'mean_absolute_percentage_error', 'mean_squared_log_error',
-        'mean_absolute_scaled_error', 'root_mean_squared_scaled_error'}
+        - If `string`: name of the metric, for example `'mean_absolute_error'`
+        or `'root_mean_squared_error'`. All accepted names are listed in
+        https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
         (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
@@ -809,7 +853,15 @@ def backtesting_forecaster(
     Returns
     -------
     metric_values : pandas DataFrame
-        Value(s) of the metric(s).
+        Value(s) of the metric(s). If `interval` has a lower and an upper bound
+        (a `float`, or a `list` or `tuple` of 2 quantiles, optionally with the
+        median 0.5), two more columns are added after the metrics:
+
+        - coverage: share of true values inside the interval (bounds included).
+        - interval_width: mean of `upper_bound - lower_bound`, in the units of
+        the series.
+
+        **New in version 0.27.0**
     backtest_predictions : pandas DataFrame
         Value of predictions. The DataFrame includes the following columns:
 
@@ -942,7 +994,8 @@ def _fit_predict_forecaster_multiseries(
         `_extract_data_folds_multiseries`. Contains:
         `(series_train, last_window_series, last_window_levels,
         exog_train, exog_test, fold)`.
-        For `refit=False` folds, `series_train` and `exog_train` are `None`.
+        The forecaster is fitted only if `series_train` is not `None`. For
+        the folds without fit, `series_train` and `exog_train` are `None`.
     forecaster : object
         Forecaster model.
     store_in_sample_residuals : bool
@@ -979,10 +1032,9 @@ def _fit_predict_forecaster_multiseries(
 
     Returns
     -------
-    pred : pandas DataFrame
-        Predictions for the fold.
-    levels_predict : list of str
-        Levels predicted in this fold.
+    pred : pandas DataFrame, None
+        Predictions for the fold. `None` if no level is predicted in the fold
+        (it is only fitted for the following folds without refit).
     
     """
 
@@ -995,7 +1047,7 @@ def _fit_predict_forecaster_multiseries(
         fold
     ) = data_fold
 
-    if fold[5] is True:
+    if series_train is not None:
         forecaster.fit(
             series                    = series_train, 
             exog                      = exog_train,
@@ -1021,16 +1073,13 @@ def _fit_predict_forecaster_multiseries(
         steps = fold[3][1] - fold[3][0]
 
     preds = []
-    levels_predict = [level for level in levels if level in last_window_levels]
+    # NOTE: The levels not predicted in the fold are reported once, after all
+    # folds, by `_warn_levels_not_predicted_multiseries`. A warning raised here
+    # would be lost when the folds run in parallel worker processes.
+    last_window_levels_set = set(last_window_levels)
+    levels_predict = [level for level in levels if level in last_window_levels_set]
     if not levels_predict:
-        warnings.warn(
-            f"Fold {fold[0]} has been skipped because none of the levels to predict "
-            f"{levels} have a last window free of missing values. "
-            f"{type(forecaster.estimator).__name__} cannot predict when NaNs are "
-            f"present, so these levels are excluded. No predictions are generated for "
-            f"this fold.",
-            MissingValuesWarning
-        )
+        return None
 
     if interval is not None:
         kwargs_interval = {
@@ -1100,7 +1149,7 @@ def _fit_predict_forecaster_multiseries(
     if type(forecaster).__name__ != 'ForecasterDirectMultiVariate' and gap > 0:
         pred = pred.iloc[len(levels_predict) * gap:, :]
 
-    return pred, levels_predict
+    return pred
 
 
 @manage_warnings
@@ -1144,13 +1193,15 @@ def _backtesting_forecaster_multiseries(
     series : pandas DataFrame, dict
         Training time series.
     cv : TimeSeriesFold
-        TimeSeriesFold object with the information needed to split the data into folds.
+        TimeSeriesFold object with the information needed to split the data into
+        folds. Its `window_size` is taken from the forecaster, and the object
+        passed is not modified.
     metric : str, Callable, list
         Metric used to quantify the goodness of fit of the model.
         
-        - If `string`: {'mean_squared_error', 'mean_absolute_error',
-        'mean_absolute_percentage_error', 'mean_squared_log_error',
-        'mean_absolute_scaled_error', 'root_mean_squared_scaled_error'}
+        - If `string`: name of the metric, for example `'mean_absolute_error'`
+        or `'root_mean_squared_error'`. All accepted names are listed in
+        https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
         (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
@@ -1223,6 +1274,23 @@ def _backtesting_forecaster_multiseries(
     -------
     metrics_levels : pandas DataFrame
         Value(s) of the metric(s). Index are the levels and columns the metrics.
+        A level that is not predicted in any fold (for example, a series
+        shorter than the window size of the forecaster) has NaN metrics and is
+        left out of the aggregated metrics. A `MissingValuesWarning` names the
+        levels not predicted in a fold where they have observed values. A fold
+        in which no level can be predicted is skipped (no predictions, and the
+        forecaster is not trained only for it). If no fold can be predicted, a
+        `ValueError` is raised.
+        If `interval` has a lower and an upper bound (a `float`, or a `list` or
+        `tuple` of 2 quantiles, optionally with the median 0.5), two more 
+        columns are added after the metrics, for each level and aggregated in 
+        the same way as the other metrics:
+
+        - coverage: share of true values inside the interval (bounds included).
+        - interval_width: mean of `upper_bound - lower_bound`, in the units of
+        the series.
+
+        **New in version 0.27.0**
     backtest_predictions : pandas DataFrame
         Long-format DataFrame containing the predicted values for each series. The 
         DataFrame includes the following columns:
@@ -1285,7 +1353,6 @@ def _backtesting_forecaster_multiseries(
 
     cv.set_params({
         'window_size': forecaster.window_size,
-        'differentiation': forecaster.differentiation_max,
         'return_all_indexes': False,
         'verbose': verbose
     })
@@ -1336,6 +1403,17 @@ def _backtesting_forecaster_multiseries(
     else:
         forecaster._probabilistic_mode = 'no_binned'
 
+    # NOTE: A missing predictor (for example, a gap in `exog`, or in the last
+    # window of ForecasterDirectMultiVariate) does not stop the backtesting: a
+    # linear model returns NaN predictions for the dates that cannot be
+    # predicted, instead of raising, so the rest of series and dates are still
+    # evaluated. The NaN predictions of dates with observed values are warned
+    # in `_calculate_metrics_backtesting_multiseries`. The forecaster is a copy,
+    # so the attribute does not reach the user's forecaster. It is set even if
+    # the forecaster does not have it: forecasters saved with previous versions
+    # lack it, and ForecasterRnn does not read it.
+    forecaster._allow_nan_predictions = True
+
     folds = cv.split(X=series, as_pandas=False)
     span_index = cv._extract_index(X=series)
     initial_train_size = cv.initial_train_size_as_int
@@ -1373,36 +1451,77 @@ def _backtesting_forecaster_multiseries(
         out_sample_residuals_by_bin_ = forecaster.out_sample_residuals_by_bin_
         binner_ = deepcopy(forecaster.binner)
 
-    if initial_train_size is not None:
-        # NOTE: This allows for parallelization when `refit` is `False`. The initial 
-        # Forecaster fit occurs outside of the auxiliary function.
-        data_fold = _extract_data_folds_multiseries(
-                        series             = series,
-                        folds              = [folds[0]],
-                        span_index         = span_index,
-                        window_size        = forecaster.window_size,
-                        exog               = exog,
-                        dropna_last_window = dropna_last_window,
-                        externally_fitted  = False
-                    )
-        series_train, _, last_window_levels, exog_train, _, _ = next(data_fold)
-        forecaster.fit(
-            series                    = series_train,
-            exog                      = exog_train,
-            store_last_window         = last_window_levels,
-            store_in_sample_residuals = store_in_sample_residuals,
-            suppress_warnings         = suppress_warnings
+    externally_fitted = True if initial_train_size is None else False
+    data_folds_generator = _extract_data_folds_multiseries(
+                               series             = series,
+                               folds              = folds,
+                               span_index         = span_index,
+                               window_size        = forecaster.window_size,
+                               exog               = exog,
+                               dropna_last_window = dropna_last_window,
+                               externally_fitted  = externally_fitted
+                           )
+
+    # NOTE: A fold without levels to predict (no level is in its training set
+    # or has a valid last window) is skipped. The forecaster is only fitted in a
+    # refit fold if its model predicts at least one level, in that fold or in
+    # the following folds without refit, so `fit` never receives an empty
+    # training set. The levels of the training set of each fold are kept to
+    # report why a level is not predicted. Only the training sets of the refit
+    # folds are kept, the other folds are predicted with the model of the
+    # previous refit.
+    data_folds = []
+    levels_train_folds = []
+    levels_predict_folds = []
+    for s_train, lw, levels_lw, e_train, e_test, fold in data_folds_generator:
+        levels_train_folds.append(list(s_train))
+        levels_lw_set = set(levels_lw)
+        levels_predict_folds.append(
+            [level for level in levels if level in levels_lw_set]
         )
-        _restore_out_sample_residuals(
-            forecaster                   = forecaster,
-            out_sample_residuals_        = out_sample_residuals_,
-            out_sample_residuals_by_bin_ = out_sample_residuals_by_bin_,
-            binner_                      = binner_
+        if fold[5] is not True:
+            s_train, e_train = None, None
+        data_folds.append((s_train, lw, levels_lw, e_train, e_test, fold))
+
+    if not any(levels_predict_folds):
+        n_folds_no_train = 0 if externally_fitted else sum(
+            not set(levels).intersection(levels_train)
+            for levels_train in levels_train_folds
         )
-        folds[0][5] = False
-        
+        raise ValueError(
+            f"No fold of the backtesting has a level to predict. In every fold, "
+            f"each level has `window_size` ({forecaster.window_size}) observations "
+            f"or fewer in the training set, or its last window cannot be used to "
+            f"predict (fewer than `window_size` observations, or missing values "
+            f"that are not supported). Folds without levels in the training set: "
+            f"{n_folds_no_train} of {len(folds)}. Review `initial_train_size`, "
+            f"`fixed_train_size` and `refit` of `cv`, `levels`, or the span of "
+            f"the series."
+        )
+    # NOTE: A level predicted in a fold is evaluated only if it has observed
+    # values in its test set (for example, not if the series ends at the end
+    # of the training set). If no level is evaluated, no metric can be
+    # calculated, so it fails before fitting any forecaster.
+    levels_evaluate_any = any(
+        series[level].loc[span_index[fold[4][0]]:span_index[fold[4][1] - 1]].notna().any()
+        for fold, levels_predict in zip(folds, levels_predict_folds)
+        for level in levels_predict
+    )
+    if not levels_evaluate_any:
+        raise ValueError(
+            "No level predicted in the backtesting has observed values in the "
+            "test set of the folds in which it is predicted, so the metrics "
+            "cannot be calculated. Review `initial_train_size`, `fixed_train_size` "
+            "and `refit` of `cv`, `levels`, or the span of the series."
+        )
+    fit_folds = _select_fit_folds_multiseries(
+                    folds                = folds,
+                    levels_predict_folds = levels_predict_folds
+                )
+
     if refit:
-        n_of_fits = int(len(folds) / refit)
+        # NOTE: The initial fit is included, the skipped fits are not.
+        n_of_fits = sum(fit_folds)
         if type(forecaster).__name__ != 'ForecasterDirectMultiVariate' and n_of_fits > 50:
             warnings.warn(
                 f"The forecaster will be fit {n_of_fits} times. This can take substantial "
@@ -1417,25 +1536,40 @@ def _backtesting_forecaster_multiseries(
                 LongTrainingWarning
             )
 
-    externally_fitted = True if initial_train_size is None else False
-    data_folds = _extract_data_folds_multiseries(
-                     series             = series,
-                     folds              = folds,
-                     span_index         = span_index,
-                     window_size        = forecaster.window_size,
-                     exog               = exog,
-                     dropna_last_window = dropna_last_window,
-                     externally_fitted  = externally_fitted
-                 )
+    if initial_train_size is not None:
+        # NOTE: This allows for parallelization when `refit` is `False`. The initial 
+        # Forecaster fit occurs outside of the auxiliary function.
+        if fit_folds[0]:
+            series_train, _, last_window_levels, exog_train, _, _ = data_folds[0]
+            forecaster.fit(
+                series                    = series_train,
+                exog                      = exog_train,
+                store_last_window         = last_window_levels,
+                store_in_sample_residuals = store_in_sample_residuals,
+                suppress_warnings         = suppress_warnings
+            )
+            _restore_out_sample_residuals(
+                forecaster                   = forecaster,
+                out_sample_residuals_        = out_sample_residuals_,
+                out_sample_residuals_by_bin_ = out_sample_residuals_by_bin_,
+                binner_                      = binner_
+            )
+        fit_folds[0] = False
+        folds[0][5] = False
 
-    # Strip series_train and exog_train for refit=False folds to minimize
-    # IPC serialization cost when using joblib.Parallel.
-    data_folds_list = [
-        (None, lw, levels_lw, None, e_test, fold) if fold[5] is False
-        else (s_train, lw, levels_lw, e_train, e_test, fold)
-        for s_train, lw, levels_lw, e_train, e_test, fold in data_folds
-    ]
+    # Strip series_train and exog_train for the folds without fit to minimize
+    # IPC serialization cost when using joblib.Parallel. Skipped folds (no fit
+    # and no levels to predict) are not sent to the workers.
+    data_folds_list = []
+    for (s_train, lw, levels_lw, e_train, e_test, fold), fit_fold, levels_predict in zip(
+        data_folds, fit_folds, levels_predict_folds
+    ):
+        if fit_fold:
+            data_folds_list.append((s_train, lw, levels_lw, e_train, e_test, fold))
+        elif levels_predict:
+            data_folds_list.append((None, lw, levels_lw, None, e_test, fold))
 
+    fold_numbers = [data_fold[5][0] for data_fold in data_folds_list]
     if show_progress:
         data_folds_list = tqdm(data_folds_list)
 
@@ -1463,14 +1597,29 @@ def _backtesting_forecaster_multiseries(
         for data_fold in data_folds_list
     )
 
-    backtest_predictions = [result[0] for result in results]
+    # NOTE: A fold that is only fitted, because its model predicts the
+    # following folds without refit, returns no predictions (`None`).
     fold_labels = [
-        np.repeat(fold[0], backtest_predictions[i].shape[0]) for i, fold in enumerate(folds)
+        np.repeat(fold_number, pred.shape[0])
+        for fold_number, pred in zip(fold_numbers, results)
+        if pred is not None
     ]
-    backtest_predictions = pd.concat(backtest_predictions, axis=0)
+    backtest_predictions = pd.concat(
+        [pred for pred in results if pred is not None], axis=0
+    )
     backtest_predictions.insert(0, 'fold', np.concatenate(fold_labels))
-    backtest_levels = set(chain(*[result[1] for result in results]))
-    
+    backtest_levels = set(chain(*levels_predict_folds))
+
+    _warn_levels_not_predicted_multiseries(
+        forecaster           = forecaster,
+        series               = series,
+        folds                = folds,
+        span_index           = span_index,
+        levels               = levels,
+        levels_predict_folds = levels_predict_folds,
+        levels_train_folds   = None if externally_fitted else levels_train_folds
+    )
+
     backtest_predictions = (
         backtest_predictions
         .rename_axis('idx', axis=0)
@@ -1492,9 +1641,20 @@ def _backtesting_forecaster_multiseries(
             .loc[~backtest_predictions_for_metrics.index.duplicated(keep='last')]
         )
 
+    predictions_for_metrics = backtest_predictions_for_metrics[['pred']]
+    interval_columns = _get_interval_columns(
+                           columns  = backtest_predictions_for_metrics.columns,
+                           interval = interval
+                       )
+    if interval_columns is not None:
+        predictions_for_metrics = (
+            backtest_predictions_for_metrics[['pred', *interval_columns]]
+            .set_axis(['pred', 'lower_bound', 'upper_bound'], axis=1)
+        )
+
     metrics_levels = _calculate_metrics_backtesting_multiseries(
         series                = series,
-        predictions           = backtest_predictions_for_metrics[['pred']],
+        predictions           = predictions_for_metrics,
         folds                 = folds,
         span_index            = span_index,
         window_size           = forecaster.window_size,
@@ -1553,13 +1713,15 @@ def backtesting_forecaster_multiseries(
     series : pandas DataFrame, dict
         Training time series.
     cv : TimeSeriesFold
-        TimeSeriesFold object with the information needed to split the data into folds.
+        TimeSeriesFold object with the information needed to split the data into
+        folds. Its `window_size` is taken from the forecaster, and the object
+        passed is not modified.
     metric : str, Callable, list
         Metric used to quantify the goodness of fit of the model.
         
-        - If `string`: {'mean_squared_error', 'mean_absolute_error',
-        'mean_absolute_percentage_error', 'mean_squared_log_error',
-        'mean_absolute_scaled_error', 'root_mean_squared_scaled_error'}
+        - If `string`: name of the metric, for example `'mean_absolute_error'`
+        or `'root_mean_squared_error'`. All accepted names are listed in
+        https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
         (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
@@ -1636,6 +1798,23 @@ def backtesting_forecaster_multiseries(
     -------
     metrics_levels : pandas DataFrame
         Value(s) of the metric(s). Index are the levels and columns the metrics.
+        A level that is not predicted in any fold (for example, a series
+        shorter than the window size of the forecaster) has NaN metrics and is
+        left out of the aggregated metrics. A `MissingValuesWarning` names the
+        levels not predicted in a fold where they have observed values. A fold
+        in which no level can be predicted is skipped (no predictions, and the
+        forecaster is not trained only for it). If no fold can be predicted, a
+        `ValueError` is raised.
+        If `interval` has a lower and an upper bound (a `float`, or a `list` or
+        `tuple` of 2 quantiles, optionally with the median 0.5), two more 
+        columns are added after the metrics, for each level and aggregated in 
+        the same way as the other metrics:
+
+        - coverage: share of true values inside the interval (bounds included).
+        - interval_width: mean of `upper_bound - lower_bound`, in the units of
+        the series.
+
+        **New in version 0.27.0**
     backtest_predictions : pandas DataFrame
         Long-format DataFrame containing the predicted values for each series. The 
         DataFrame includes the following columns:
@@ -1761,7 +1940,6 @@ def _fit_predict_forecaster_stats(
     exog: pd.Series | pd.DataFrame | None,
     steps: int,
     gap: int,
-    alpha: float | None,
     interval: list[float] | tuple[float, ...] | None,
     refit: bool | int,
     folds: list,
@@ -1790,10 +1968,9 @@ def _fit_predict_forecaster_stats(
         Number of steps to predict.
     gap : int
         Number of observations between training end and test start.
-    alpha : float or None
-        Confidence level for prediction intervals.
     interval : list, tuple, or None
-        Percentiles for prediction intervals.
+        Quantiles of the prediction interval (`alpha` is already translated
+        into `interval` by `backtesting_stats`).
     refit : bool or int
         Whether to refit in each fold.
     folds : list
@@ -1854,7 +2031,7 @@ def _fit_predict_forecaster_stats(
         last_window_exog = None
 
     steps = len(range(test_iloc_start, test_iloc_end))
-    if alpha is None and interval is None:
+    if interval is None:
         pred = forecaster.predict(
                    steps             = steps,
                    last_window       = last_window_y,
@@ -1866,7 +2043,6 @@ def _fit_predict_forecaster_stats(
         pred = forecaster.predict_interval(
                    steps             = steps,
                    exog              = exog_test,
-                   alpha             = alpha,
                    interval          = interval,
                    last_window       = last_window_y,
                    last_window_exog  = last_window_exog,
@@ -1893,7 +2069,6 @@ def _backtesting_stats(
     cv: TimeSeriesFold,
     metric: str | Callable | list[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
-    alpha: float | None = None,
     interval: list[float] | tuple[float, ...] | None = None,
     freeze_params: bool = True,
     n_jobs: int | str = 'auto',
@@ -1914,13 +2089,16 @@ def _backtesting_stats(
     y : pandas Series
         Training time series.
     cv : TimeSeriesFold
-        TimeSeriesFold object with the information needed to split the data into folds.
+        TimeSeriesFold object with the information needed to split the data into
+        folds. Its `window_size` is taken from the forecaster, and the object
+        passed is not modified. With estimators other than `Sarimax`,
+        `refit` is set to `True`.
     metric : str, Callable, list
         Metric used to quantify the goodness of fit of the model.
         
-        - If `string`: {'mean_squared_error', 'mean_absolute_error',
-        'mean_absolute_percentage_error', 'mean_squared_log_error',
-        'mean_absolute_scaled_error', 'root_mean_squared_scaled_error'}
+        - If `string`: name of the metric, for example `'mean_absolute_error'`
+        or `'root_mean_squared_error'`. All accepted names are listed in
+        https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
         (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
@@ -1928,27 +2106,28 @@ def _backtesting_stats(
         Exogenous variable/s included as predictor/s. Must have the same
         number of observations as `y` and should be aligned so that y[i] is
         regressed on exog[i].
-    alpha : float, default None
-        The confidence intervals for the forecasts are (1 - alpha) %.
-        If both, `alpha` and `interval` are provided, `alpha` will be used.
     interval : list, tuple, default None
         Confidence of the prediction interval estimated. The values must be
-        symmetric. Sequence of quantiles to compute, which must be between 
-        0 and 1 inclusive. For example, interval of 95% should be as 
-        `interval = [0.025, 0.975]`. If both, `alpha` and `interval` are 
-        provided, `alpha` will be used.
+        symmetric. Sequence of quantiles to compute, which must be between
+        0 and 1 inclusive. For example, interval of 95% should be as
+        `interval = [0.025, 0.975]`. If `None`, no intervals are estimated.
+        `backtesting_stats` translates its `alpha` argument into `interval`
+        before calling this function.
     freeze_params : bool, default True
         Determines whether to freeze the model parameters after the first fit
-        for estimators that perform automatic model selection.
+        for estimators that perform automatic model selection (`Arima` with
+        `order=None` or `seasonal_order=None`, `Ets` with `model='ZZZ'`).
 
-        - If `True`, the model parameters found during the first fit (e.g., order 
-        and seasonal_order for Arima, or smoothing parameters for Ets) are reused
-        in all subsequent refits. This avoids re-running the automatic selection
-        procedure in each fold and reduces runtime.
+        - If `True`, the parameters selected in the first fit (`best_params_`)
+        are reused in all subsequent refits, so the automatic selection runs only
+        once. Arima keeps the orders, intercept, drift and Box-Cox lambda, and
+        re-estimates the coefficients in each refit. Ets keeps the model type,
+        smoothing parameters and Box-Cox lambda, and re-estimates the initial
+        states.
         - If `False`, automatic model selection is performed independently in each
         refit, allowing parameters to adapt across folds. This increases runtime
-        and adds a `params` column to the output with the parameters selected per
-        fold.
+        and adds an `estimator_params` column to the output with the model
+        selected in each fold.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
@@ -1966,7 +2145,15 @@ def _backtesting_stats(
     Returns
     -------
     metric_values : pandas DataFrame
-        Value(s) of the metric(s).
+        Value(s) of the metric(s), one row per estimator if the forecaster
+        has several. If `interval` (or `alpha`) is not `None`, two more 
+        columns are added after the metrics:
+
+        - coverage: share of true values inside the interval (bounds included).
+        - interval_width: mean of `upper_bound - lower_bound`, in the units of
+        the series.
+
+        **New in version 0.27.0**
     backtest_predictions : pandas DataFrame
         Value of predictions. The DataFrame includes the following columns:
 
@@ -2072,7 +2259,7 @@ def _backtesting_stats(
     steps = cv.steps
     gap = cv.gap
 
-    if alpha is not None or interval is not None:
+    if interval is not None:
         ids_not_support_interval = [
             est_id for est_id, est_type in zip(forecaster.estimator_ids, forecaster.estimator_types)
             if est_type not in forecaster.estimators_support_interval
@@ -2094,11 +2281,17 @@ def _backtesting_stats(
     )
     folds[0][5] = False
 
+    # NOTE: Each refit clones the unfitted estimators in `forecaster.estimators`,
+    # so the parameters selected in the first fit are set on them (the forecaster
+    # is a copy). Both lists follow the same order.
     if freeze_params and refit:
-        for estimator in forecaster.estimators_:
-            if hasattr(estimator, 'best_params_') and estimator.best_params_:
-                estimator._set_params(**estimator.best_params_)
-    
+        for estimator, fitted_estimator in zip(
+            forecaster.estimators, forecaster.estimators_
+        ):
+            best_params = getattr(fitted_estimator, 'best_params_', None)
+            if best_params:
+                estimator.set_params(**best_params)
+
     if refit:
         n_of_fits = int(len(folds) / refit)
         if n_of_fits > 50:
@@ -2116,7 +2309,6 @@ def _backtesting_stats(
         "exog": exog,
         "steps": steps,
         "gap": gap,
-        "alpha": alpha,
         "interval": interval,
         "refit": refit,
         "folds": folds,
@@ -2158,39 +2350,79 @@ def _backtesting_stats(
 
     backtest_predictions_for_metrics = backtest_predictions
     if overlapping_folds:
+        # With several estimators, each date has one row per estimator, so the
+        # duplicates are identified by the pair (date, estimator_id).
+        if forecaster.n_estimators == 1:
+            is_duplicated = backtest_predictions_for_metrics.index.duplicated(keep='last')
+        else:
+            is_duplicated = (
+                backtest_predictions_for_metrics
+                .set_index('estimator_id', append=True)
+                .index.duplicated(keep='last')
+            )
         backtest_predictions_for_metrics = (
-            backtest_predictions_for_metrics
-            .loc[~backtest_predictions_for_metrics.index.duplicated(keep='last')]
+            backtest_predictions_for_metrics.loc[~is_duplicated]
         )
+
+    interval_columns = _get_interval_columns(
+                           columns  = backtest_predictions_for_metrics.columns,
+                           interval = interval
+                       )
+    add_interval_metrics = interval_columns is not None
+    metric_names = [m.__name__ for m in metrics]
+    if add_interval_metrics:
+        metric_names += INTERVAL_METRIC_NAMES
 
     if forecaster.n_estimators == 1:
         y_true = y.loc[backtest_predictions_for_metrics.index]
         y_pred = backtest_predictions_for_metrics['pred']
-        metric_values = [[
+        _check_nan_predictions_backtesting(y_true=y_true, y_pred=y_pred)
+        metric_values = [
             m(y_true=y_true, y_pred=y_pred, y_train=y_train)
             for m in metrics
-        ]]
+        ]
+        if add_interval_metrics:
+            metric_values.extend(
+                _calculate_interval_metrics(
+                    y_true      = y_true,
+                    lower_bound = backtest_predictions_for_metrics[interval_columns[0]],
+                    upper_bound = backtest_predictions_for_metrics[interval_columns[1]]
+                )
+            )
 
         metric_values = pd.DataFrame(
-            data    = metric_values,
-            columns = [m.__name__ for m in metrics]
+            data    = [metric_values],
+            columns = metric_names
         )
     else:
         unique_indices = backtest_predictions_for_metrics.index.unique()
         y_true = y.loc[unique_indices]
 
         grouped = backtest_predictions_for_metrics.groupby('estimator_id', sort=False)
-        metric_values = [
-            [
+        metric_values = []
+        for estimator_id, group in grouped:
+            _check_nan_predictions_backtesting(
+                y_true       = y_true,
+                y_pred       = group['pred'],
+                estimator_id = estimator_id
+            )
+            metric_values_estimator = [
                 m(y_true=y_true, y_pred=group['pred'], y_train=y_train)
                 for m in metrics
             ]
-            for _, group in grouped
-        ]
+            if add_interval_metrics:
+                metric_values_estimator.extend(
+                    _calculate_interval_metrics(
+                        y_true      = y_true,
+                        lower_bound = group[interval_columns[0]],
+                        upper_bound = group[interval_columns[1]]
+                    )
+                )
+            metric_values.append(metric_values_estimator)
 
         metric_values = pd.DataFrame(
             data    = metric_values,
-            columns = [m.__name__ for m in metrics]
+            columns = metric_names
         )
         metric_values.insert(0, 'estimator_id', forecaster.estimator_ids)
 
@@ -2203,8 +2435,8 @@ def backtesting_stats(
     cv: TimeSeriesFold,
     metric: str | Callable | list[str | Callable],
     exog: pd.Series | pd.DataFrame | None = None,
-    alpha: float | None = None,
     interval: list[float] | tuple[float, ...] | None = None,
+    alpha: float | None = None,
     freeze_params: bool = True,
     n_jobs: int | str = 'auto',
     verbose: bool = False,
@@ -2224,13 +2456,16 @@ def backtesting_stats(
     y : pandas Series
         Training time series.
     cv : TimeSeriesFold
-        TimeSeriesFold object with the information needed to split the data into folds.
+        TimeSeriesFold object with the information needed to split the data into
+        folds. Its `window_size` is taken from the forecaster, and the object
+        passed is not modified. With estimators other than `Sarimax`,
+        `refit` is set to `True`.
     metric : str, Callable, list
         Metric used to quantify the goodness of fit of the model.
         
-        - If `string`: {'mean_squared_error', 'mean_absolute_error',
-        'mean_absolute_percentage_error', 'mean_squared_log_error',
-        'mean_absolute_scaled_error', 'root_mean_squared_scaled_error'}
+        - If `string`: name of the metric, for example `'mean_absolute_error'`
+        or `'root_mean_squared_error'`. All accepted names are listed in
+        https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
         (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
@@ -2238,31 +2473,40 @@ def backtesting_stats(
         Exogenous variable/s included as predictor/s. Must have the same
         number of observations as `y` and should be aligned so that y[i] is
         regressed on exog[i].
-    alpha : float, default None
-        The confidence intervals for the forecasts are (1 - alpha) %.
-        If both, `alpha` and `interval` are provided, `alpha` will be used.
     interval : list, tuple, default None
         Confidence of the prediction interval estimated. The values must be
         symmetric. Sequence of quantiles to compute, which must be between 
         0 and 1 inclusive. For example, interval of 95% should be as 
-        `interval = [0.025, 0.975]`. If both, `alpha` and `interval` are 
-        provided, `alpha` will be used.
+        `interval = [0.025, 0.975]`. If both `alpha` and `interval` are
+        `None`, no intervals are estimated.
 
         **Changed in version 0.23.0:** `interval` is now expressed as
         quantiles (0-1) instead of percentiles (0-100). Passing percentiles
         is not longer supported and will raise a `ValueError`.
+
+        **Changed in version 0.27.0:** passing both `alpha` and `interval`
+        raises a `ValueError` (previously, `alpha` took precedence), and
+        `interval` comes before `alpha` in the signature.
+    alpha : float, default None
+        Alias of `interval` expressed as the significance level: the
+        confidence intervals for the forecasts are (1 - alpha) %. For
+        example, `alpha=0.05` is equivalent to `interval=[0.025, 0.975]`.
+        It cannot be used together with `interval`.
     freeze_params : bool, default True
         Determines whether to freeze the model parameters after the first fit
-        for estimators that perform automatic model selection.
+        for estimators that perform automatic model selection (`Arima` with
+        `order=None` or `seasonal_order=None`, `Ets` with `model='ZZZ'`).
 
-        - If `True`, the model parameters found during the first fit (e.g., order 
-        and seasonal_order for Arima, or smoothing parameters for Ets) are reused
-        in all subsequent refits. This avoids re-running the automatic selection
-        procedure in each fold and reduces runtime.
+        - If `True`, the parameters selected in the first fit (`best_params_`)
+        are reused in all subsequent refits, so the automatic selection runs only
+        once. Arima keeps the orders, intercept, drift and Box-Cox lambda, and
+        re-estimates the coefficients in each refit. Ets keeps the model type,
+        smoothing parameters and Box-Cox lambda, and re-estimates the initial
+        states.
         - If `False`, automatic model selection is performed independently in each
         refit, allowing parameters to adapt across folds. This increases runtime
-        and adds a `params` column to the output with the parameters selected per
-        fold.
+        and adds an `estimator_params` column to the output with the model
+        selected in each fold.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
@@ -2280,7 +2524,15 @@ def backtesting_stats(
     Returns
     -------
     metric_values : pandas DataFrame
-        Value(s) of the metric(s).
+        Value(s) of the metric(s), one row per estimator if the forecaster
+        has several. If `interval` (or `alpha`) is not `None`, two more 
+        columns are added after the metrics:
+
+        - coverage: share of true values inside the interval (bounds included).
+        - interval_width: mean of `upper_bound - lower_bound`, in the units of
+        the series.
+
+        **New in version 0.27.0**
     backtest_predictions : pandas DataFrame
         Value of predictions. The DataFrame includes the following columns:
 
@@ -2322,6 +2574,12 @@ def backtesting_stats(
             "`model_selection` module."
         )
     
+    if alpha is not None and interval is not None:
+        raise ValueError(
+            "`alpha` and `interval` cannot be used together. Use only one "
+            "of them: `alpha=0.05` is equivalent to `interval=[0.025, 0.975]`."
+        )
+
     check_backtesting_input(
         forecaster        = forecaster,
         cv                = cv,
@@ -2334,14 +2592,18 @@ def backtesting_stats(
         show_progress     = show_progress,
         suppress_warnings = suppress_warnings
     )
-    
+
+    # NOTE: `alpha` is an alias of `interval`. It is translated into the
+    # equivalent `interval` so that the rest of the process only uses `interval`.
+    if alpha is not None:
+        interval = [alpha / 2, 1 - alpha / 2]
+
     metric_values, backtest_predictions = _backtesting_stats(
         forecaster        = forecaster,
         y                 = y,
         cv                = cv,
         metric            = metric,
         exog              = exog,
-        alpha             = alpha,
         interval          = interval,
         freeze_params     = freeze_params,
         n_jobs            = n_jobs,
@@ -2385,14 +2647,16 @@ def _backtesting_foundation(
         mode; a wide `pd.DataFrame` or `dict[str, pd.Series]` runs in
         multi-series mode.
     cv : TimeSeriesFold
-        TimeSeriesFold object with the information needed to split the data
-        into folds.
+        TimeSeriesFold object with the information needed to split the data into
+        folds. Its `window_size` is taken from the forecaster (the context
+        length), and the object passed is not modified. `refit` and
+        `fixed_train_size` are ignored: the context grows with each fold.
     metric : str, Callable, list
         Metric used to quantify the goodness of fit of the model.
 
-        - If `string`: {'mean_squared_error', 'mean_absolute_error',
-        'mean_absolute_percentage_error', 'mean_squared_log_error',
-        'mean_absolute_scaled_error', 'root_mean_squared_scaled_error'}
+        - If `string`: name of the metric, for example `'mean_absolute_error'`
+        or `'root_mean_squared_error'`. All accepted names are listed in
+        https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and
         `y_train` (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
@@ -2430,6 +2694,21 @@ def _backtesting_foundation(
     -------
     metrics_levels : pandas DataFrame
         Value(s) of the metric(s).
+        In multi-series mode, a level that is not predicted in any fold (for
+        example, a series with no observed values in its context window) has
+        NaN metrics and is left out of the aggregated metrics. A
+        `MissingValuesWarning` names the levels not predicted in a fold where
+        they have observed values.
+        If `quantiles` has 2 quantiles, optionally with the median 0.5 (for
+        example, `[0.1, 0.9]` or `[0.1, 0.5, 0.9]`), two more columns are 
+        added after the metrics, computed with those 2 quantiles as the bounds
+        of the interval (for each level and aggregated in multi-series mode):
+
+        - coverage: share of true values inside the interval (bounds included).
+        - interval_width: mean of `upper_bound - lower_bound`, in the units of
+        the series.
+
+        **New in version 0.27.0**
     backtest_predictions : pandas DataFrame
         Value of predictions. The DataFrame includes the following columns:
 
@@ -2504,12 +2783,16 @@ def _backtesting_foundation(
     folds = cv.split(X=series, as_pandas=False)
     span_index = cv._extract_index(X=series)
     gap = cv.gap
-    
+
+    # NOTE: Foundation models create no predictors from past values, so their
+    # window size is 0: a series with at least one observed value in the train
+    # span of a fold is used as context. `forecaster.window_size` is the maximum
+    # context length, not the minimum, and it must not be used here.
     data_folds = _extract_data_folds_multiseries(
                      series             = series,
                      folds              = folds,
                      span_index         = span_index,
-                     window_size        = 1,  # Minimum 1 observation as context.
+                     window_size        = 0,
                      exog               = exog,
                      dropna_last_window = False,
                      externally_fitted  = False
@@ -2518,6 +2801,7 @@ def _backtesting_foundation(
     data_folds_tqdm = tqdm(data_folds, total=len(folds)) if show_progress else data_folds
     
     backtest_predictions = []
+    levels_predict_folds = []
     for context, _, _, context_exog, exog_test, fold in data_folds_tqdm:
 
         fold_number = fold[0]
@@ -2552,17 +2836,14 @@ def _backtesting_foundation(
             if level_series.notna().any()
         }
         levels_predict = [level for level in levels if level in context]
+        levels_predict_folds.append(levels_predict)
         if not levels_predict:
-            # NOTE: Same behaviour as `_backtesting_forecaster_multiseries`: the
-            # fold is skipped with a warning and contributes an empty frame so
-            # that the output keeps its columns and the metrics are `None`.
-            warnings.warn(
-                f"Fold {fold_number} has been skipped because none of the levels "
-                f"to predict {levels} have observed values in both its context "
-                f"window and its test window. No predictions are generated for "
-                f"this fold.",
-                MissingValuesWarning
-            )
+            # NOTE: As in `_backtesting_forecaster_multiseries`, the fold is
+            # skipped. It contributes an empty frame so that the output keeps
+            # its columns and the metrics are `None` if every fold is skipped
+            # (`_backtesting_forecaster_multiseries` raises a ValueError
+            # instead, it has no forecaster to train). The levels not
+            # predicted are reported after all folds.
             col_names = ["pred"] if quantiles is None else [f"q_{q}" for q in quantiles]
             pred = pd.DataFrame(
                 {
@@ -2614,6 +2895,15 @@ def _backtesting_foundation(
 
     backtest_predictions = pd.concat(backtest_predictions, axis=0)
 
+    _warn_levels_not_predicted_multiseries(
+        forecaster           = forecaster,
+        series               = series,
+        folds                = folds,
+        span_index           = span_index,
+        levels               = levels,
+        levels_predict_folds = levels_predict_folds
+    )
+
     if is_multiseries:
         backtest_levels = set(backtest_predictions['level'].unique())
 
@@ -2653,9 +2943,20 @@ def _backtesting_foundation(
         else:
             metric_col = 'pred'
 
+        predictions_for_metrics = backtest_predictions_for_metrics[[metric_col]]
+        interval_columns = _get_interval_columns(
+                               columns  = backtest_predictions_for_metrics.columns,
+                               interval = quantiles
+                           )
+        if interval_columns is not None:
+            predictions_for_metrics = (
+                backtest_predictions_for_metrics[[metric_col, *interval_columns]]
+                .set_axis([metric_col, 'lower_bound', 'upper_bound'], axis=1)
+            )
+
         metrics_levels = _calculate_metrics_backtesting_multiseries(
             series                = series,
-            predictions           = backtest_predictions_for_metrics[[metric_col]],
+            predictions           = predictions_for_metrics,
             folds                 = folds,
             span_index            = span_index,
             window_size           = 0,  # Not used here 
@@ -2684,6 +2985,7 @@ def _backtesting_foundation(
             y_pred = backtest_predictions_for_metrics['q_0.5']
         else:
             y_pred = backtest_predictions_for_metrics['pred']
+        _check_nan_predictions_backtesting(y_true=y_true, y_pred=y_pred)
         
         if _any_metric_needs_y_train(metrics):
             train_indexes = []
@@ -2695,14 +2997,29 @@ def _backtesting_foundation(
         else:
             y_train = None
 
-        metric_values = [[
+        metric_values = [
             m(y_true=y_true, y_pred=y_pred, y_train=y_train)
             for m in metrics
-        ]]
+        ]
+        metric_names = [m.__name__ for m in metrics]
+
+        interval_columns = _get_interval_columns(
+                               columns  = backtest_predictions_for_metrics.columns,
+                               interval = quantiles
+                           )
+        if interval_columns is not None:
+            metric_values.extend(
+                _calculate_interval_metrics(
+                    y_true      = y_true,
+                    lower_bound = backtest_predictions_for_metrics[interval_columns[0]],
+                    upper_bound = backtest_predictions_for_metrics[interval_columns[1]]
+                )
+            )
+            metric_names += INTERVAL_METRIC_NAMES
 
         metrics_levels = pd.DataFrame(
-            data    = metric_values,
-            columns = [m.__name__ for m in metrics],
+            data    = [metric_values],
+            columns = metric_names,
         )
 
     return metrics_levels, backtest_predictions
@@ -2745,14 +3062,16 @@ def backtesting_foundation(
         Long-format DataFrames are normalised internally to a dict before
         processing.
     cv : TimeSeriesFold
-        TimeSeriesFold object with the information needed to split the data
-        into folds.
+        TimeSeriesFold object with the information needed to split the data into
+        folds. Its `window_size` is taken from the forecaster (the context
+        length), and the object passed is not modified. `refit` and
+        `fixed_train_size` are ignored: the context grows with each fold.
     metric : str, Callable, list
         Metric used to quantify the goodness of fit of the model.
 
-        - If `string`: {'mean_squared_error', 'mean_absolute_error',
-        'mean_absolute_percentage_error', 'mean_squared_log_error',
-        'mean_absolute_scaled_error', 'root_mean_squared_scaled_error'}
+        - If `string`: name of the metric, for example `'mean_absolute_error'`
+        or `'root_mean_squared_error'`. All accepted names are listed in
+        https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and
         `y_train` (Optional) that returns a float.
         - If `list`: List containing multiple strings and/or Callables.
@@ -2792,6 +3111,21 @@ def backtesting_foundation(
     -------
     metrics_levels : pandas DataFrame
         Value(s) of the metric(s).
+        In multi-series mode, a level that is not predicted in any fold (for
+        example, a series with no observed values in its context window) has
+        NaN metrics and is left out of the aggregated metrics. A
+        `MissingValuesWarning` names the levels not predicted in a fold where
+        they have observed values.
+        If `quantiles` has 2 quantiles, optionally with the median 0.5 (for
+        example, `[0.1, 0.9]` or `[0.1, 0.5, 0.9]`), two more columns are 
+        added after the metrics, computed with those 2 quantiles as the bounds
+        of the interval (for each level and aggregated in multi-series mode):
+
+        - coverage: share of true values inside the interval (bounds included).
+        - interval_width: mean of `upper_bound - lower_bound`, in the units of
+        the series.
+
+        **New in version 0.27.0**
     backtest_predictions : pandas DataFrame
         Value of predictions. The DataFrame includes the following columns:
 

@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import Ridge
+from sklearn.metrics import r2_score
 from skforecast.recursive import ForecasterRecursive
 from skforecast.model_selection._search import random_search_forecaster
 from skforecast.model_selection._split import TimeSeriesFold
@@ -33,7 +34,6 @@ def test_output_random_search_forecaster_ForecasterRecursive_with_mocked():
             steps                 = 3,
             initial_train_size    = len(y_train),
             window_size           = None,
-            differentiation       = None,
             refit                 = False,
             fixed_train_size      = False,
             gap                   = 0,
@@ -92,3 +92,29 @@ def test_output_random_search_forecaster_ForecasterRecursive_with_mocked():
     )
 
     pd.testing.assert_frame_equal(results, expected_results)
+
+
+def test_random_search_forecaster_maximizes_metric_when_greater_is_better():
+    """
+    Test that, with a metric in which greater values are better (`r2_score`),
+    the results are sorted in descending order and `return_best` refits the
+    forecaster with the candidate with the greatest value.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(random_state=123), lags=2)
+    cv = TimeSeriesFold(steps=3, initial_train_size=len(y) - 12, refit=False)
+    results = random_search_forecaster(
+        forecaster=forecaster,
+        y=y,
+        cv=cv,
+        param_distributions={"alpha": [0.01, 1, 100]},
+        lags_grid=[2, 4],
+        metric=r2_score,
+        n_iter=3,
+        random_state=123,
+        return_best=True,
+    )
+
+    assert results["r2_score"].nunique() > 1
+    assert results["r2_score"].is_monotonic_decreasing
+    assert forecaster.estimator.alpha == results.loc[0, "alpha"]
+    np.testing.assert_array_equal(forecaster.lags, results.loc[0, "lags"])

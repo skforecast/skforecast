@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Ridge
-from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.preprocessing import StandardScaler
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirectMultiVariate
@@ -2933,3 +2933,56 @@ def test_bayesian_search_forecaster_multiseries_xgboost_categorical_no_ValueErro
     pd.testing.assert_frame_equal(
         results.drop(columns=['trial_number']), expected_results, atol=1e-4
     )
+
+
+@pytest.mark.parametrize(
+    "kwargs_create_study, expected_direction",
+    [(None, "maximize"), ({"direction": "minimize"}, "minimize")],
+    ids=lambda dt: f"{dt}",
+)
+def test_bayesian_search_forecaster_multiseries_direction_when_metric_greater_is_better(
+    kwargs_create_study, expected_direction
+):
+    """
+    Test that, with a metric in which greater values are better (`r2_score`),
+    the study is maximized by default, and that the results (sorted by the
+    aggregated metric) and `return_best` follow the direction of the study,
+    also when it is set in `kwargs_create_study` (with a warning when it
+    contradicts the metric).
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=Ridge(random_state=123), lags=2
+    )
+    cv = TimeSeriesFold(
+        steps=3, initial_train_size=len(series_wide_range) - 12, refit=False
+    )
+
+    def search_space(trial):
+        return {"alpha": trial.suggest_float("alpha", 1e-2, 1e2, log=True)}
+
+    kwargs = dict(
+        forecaster=forecaster,
+        series=series_wide_range,
+        cv=cv,
+        search_space=search_space,
+        metric=r2_score,
+        aggregate_metric="average",
+        n_trials=8,
+        random_state=123,
+        return_best=True,
+        kwargs_create_study=kwargs_create_study,
+    )
+    if expected_direction == "minimize":
+        with pytest.warns(UserWarning, match="The optuna study direction is 'minimize'"):
+            results, study = bayesian_search_forecaster_multiseries(**kwargs)
+    else:
+        results, study = bayesian_search_forecaster_multiseries(**kwargs)
+
+    assert study.direction.name.lower() == expected_direction
+    assert results["r2_score__average"].nunique() > 1
+    if expected_direction == "maximize":
+        assert results["r2_score__average"].is_monotonic_decreasing
+    else:
+        assert results["r2_score__average"].is_monotonic_increasing
+    assert results.loc[0, "trial_number"] == study.best_trial.number
+    assert forecaster.estimator.alpha == study.best_params["alpha"]

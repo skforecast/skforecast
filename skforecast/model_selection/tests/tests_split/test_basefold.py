@@ -295,35 +295,18 @@ def test_basefold_validate_params_raise_invalid_return_all_indexes():
         cv._validate_params(cv_name="TimeSeriesFold", **params)
 
 
-def test_basefold_validate_params_raise_invalid_differentiation():
+@pytest.mark.parametrize(
+    "differentiation", ["invalid", -1, 1.0], ids=lambda diff: f'differentiation: {diff}'
+)
+def test_basefold_validate_params_does_not_validate_deprecated_differentiation(differentiation):
     """
-    Test that ValueError is raised when differentiation is invalid.
+    Test that `differentiation` is not validated because it is deprecated and
+    its value is ignored.
     """
     cv = BaseFold()
     params = dict(valid_params)
-    params["differentiation"] = "invalid"
-    msg = (
-        f"`differentiation` must be None or an integer greater than or equal to 0. "
-        f"Got {params['differentiation']}."
-    )
-    with pytest.raises(ValueError, match=msg):
-        cv._validate_params(cv_name="TimeSeriesFold", **params)
-
-    params["differentiation"] = -1
-    msg = (
-        f"`differentiation` must be None or an integer greater than or equal to 0. "
-        f"Got {params['differentiation']}."
-    )
-    with pytest.raises(ValueError, match=msg):
-        cv._validate_params(cv_name="TimeSeriesFold", **params)
-
-    params["differentiation"] = 1.0
-    msg = (
-        f"`differentiation` must be None or an integer greater than or equal to 0. "
-        f"Got {params['differentiation']}."
-    )
-    with pytest.raises(ValueError, match=msg):
-        cv._validate_params(cv_name="TimeSeriesFold", **params)
+    params["differentiation"] = differentiation
+    cv._validate_params(cv_name="TimeSeriesFold", **params)
 
 
 def test_basefold_validate_params_raise_invalid_verbose():

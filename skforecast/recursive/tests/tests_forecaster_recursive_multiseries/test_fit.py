@@ -88,6 +88,25 @@ def test_fit_ValueError_when_estimator_modifies_X_train_in_place(estimator, enco
         forecaster.fit(series=series_wide_range)
 
 
+def test_fit_TypeError_when_series_names_are_not_comparable():
+    """
+    Test TypeError is raised when the series names cannot be sorted, for
+    example an integer and a string.
+    """
+    series = {
+        1: series_dict_range['l1'].rename(1),
+        '1': series_dict_range['l2'].rename('1')
+    }
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
+
+    err_msg = re.escape(
+        "The series names must be comparable with each other, for example "
+        "all strings or all integers. Got: [1, '1']."
+    )
+    with pytest.raises(TypeError, match=err_msg):
+        forecaster.fit(series=series)
+
+
 @pytest.mark.parametrize(
     "encoding",
     ['ordinal', 'onehot', None],
@@ -478,6 +497,51 @@ def test_forecaster_index_step_stored():
     assert results == expected
 
 
+@pytest.mark.parametrize(
+    "series_format",
+    ['dict', 'wide'],
+    ids=lambda series_format: f'series_format: {series_format}'
+)
+@pytest.mark.parametrize(
+    "encoding",
+    ['ordinal', 'ordinal_category', 'onehot', None],
+    ids=lambda encoding: f'encoding: {encoding}'
+)
+def test_fit_when_series_names_are_integers(encoding, series_format):
+    """
+    Test that the forecaster is fitted when the series names are integers
+    (keys of a dict or columns of a wide DataFrame), and that the names are
+    kept as integers. Before, the encoding mapping was built with the names
+    as strings and `fit` raised a `KeyError`.
+    """
+    series = {
+        10: series_dict_range['l1'].rename(10),
+        2: series_dict_range['l2'].rename(2),
+        1: series_dict_range['l1'].rename(1) * 2
+    }
+    if series_format == 'wide':
+        series = pd.DataFrame(series)
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, encoding=encoding
+    )
+    forecaster.fit(series=series, store_in_sample_residuals=True, suppress_warnings=True)
+
+    assert forecaster.is_fitted
+    assert forecaster.encoding_mapping_ == {1: 0, 2: 1, 10: 2}
+    assert forecaster.series_names_in_ == [10, 2, 1]
+    assert set(forecaster.X_train_series_names_in_) == {1, 2, 10}
+    assert set(forecaster.last_window_.keys()) == {1, 2, 10}
+    if encoding is None:
+        assert list(forecaster.in_sample_residuals_.keys()) == ['_unknown_level']
+    else:
+        assert set(forecaster.in_sample_residuals_.keys()) == {1, 2, 10, '_unknown_level'}
+    if encoding == 'onehot':
+        assert forecaster.X_train_features_names_out_ == [
+            'lag_1', 'lag_2', 'lag_3', '1', '2', '10'
+        ]
+
+
 @pytest.mark.parametrize("encoding", 
                          ['ordinal', 'ordinal_category', 'onehot'], 
                          ids = lambda encoding: f'encoding: {encoding}')
@@ -691,7 +755,7 @@ def test_fit_in_sample_residuals_by_level_when_series_unordered_different_length
     each level when the series are not in alphabetical order, have different
     lengths and an interspersed NaN, and one series ('d') loses all its rows
     because it has no exog and `dropna_from_series=True`. The order of the keys
-    is also checked: it follows `X_train_series_names_in_`.
+    is also checked: it follows the order of the series with every encoding.
     """
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=2, encoding=encoding, dropna_from_series=True,
@@ -703,7 +767,6 @@ def test_fit_in_sample_residuals_by_level_when_series_unordered_different_length
     )
 
     if encoding == 'onehot':
-        expected_levels = ['c', 'a', 'b']
         expected_residuals = {
             'c': np.array([2.35785357, -0.66170765, -1.19700919, -3.45838688,
                            -0.08898634, 3.04823649]),
@@ -743,7 +806,6 @@ def test_fit_in_sample_residuals_by_level_when_series_unordered_different_length
                                1: (9.192255430557589, 12.626295879716096)}
         }
     else:
-        expected_levels = ['a', 'b', 'c']
         expected_residuals = {
             'a': np.array([2.49700869, 1.45587963, 1.20052686, 0.5560771,
                            1.4645523, 0.65310967, -2.95745736]),
@@ -783,6 +845,7 @@ def test_fit_in_sample_residuals_by_level_when_series_unordered_different_length
                                1: (8.927457363589692, 11.43689033146482)}
         }
 
+    expected_levels = ['c', 'a', 'b']
     expected_keys = expected_levels + ['_unknown_level']
 
     assert forecaster.series_names_in_ == ['c', 'a', 'd', 'b']

@@ -75,6 +75,12 @@ user_guides/datasets.ipynb:
     Time series datasets for forecasting practice: load the skforecast datasets
     with fetch_dataset, each with a description and a reference to its source.
 
+user_guides/comparing-forecasting-models.ipynb:
+  title: ML vs statistical vs foundation models
+  description: >-
+    Machine learning vs statistical vs foundation models for time series:
+    LightGBM, Ridge, ARIMA, ETS, Chronos-2 and LSTM compared with the same backtesting.
+
 user_guides/autoregressive-forecaster.ipynb:
   title: Recursive multi-step forecasting in Python
   description: >-
@@ -350,6 +356,12 @@ user_guides/forecasting-xgboost-lightgbm.ipynb:
   description: >-
     Forecasting with XGBoost and LightGBM in Python: gradient boosting models
     for time series with lags, exogenous variables and backtesting in skforecast.
+
+user_guides/migrate-from-prophet.ipynb:
+  title: "Prophet alternative: migrate to skforecast"
+  description: >-
+    Migrate from Prophet to skforecast in Python: equivalents for seasonality,
+    holidays, regressors and cross-validation, with side-by-side backtests.
 
 # FAQ and forecasting tips
 faq/table-of-contents.md:

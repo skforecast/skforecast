@@ -68,10 +68,10 @@ forecaster.fit(y=data['target'])
 predictions = forecaster.predict(steps=12)
 
 # 3. Prediction intervals (all stat models support this natively,
-#    no bootstrapping needed). Accepts both `interval` and `alpha`.
+#    no bootstrapping needed). Default (no `interval` nor `alpha`): 95%.
 predictions_interval = forecaster.predict_interval(
     steps=12,
-    interval=[0.1, 0.9],  # quantiles (0-1). Or use alpha=0.2 for 80% interval
+    interval=[0.1, 0.9],  # symmetric quantiles (0-1), or its alias alpha=0.2
 )
 ```
 
@@ -161,7 +161,7 @@ metric, predictions_bt = backtesting_stats(
     y=data['target'],
     cv=cv,
     metric='mean_absolute_error',
-    freeze_params=True,  # Params from first fit reused in refits (avoids re-running auto selection)
+    freeze_params=True,  # Model selected in the first fit reused in refits (auto selection runs once)
 )
 # If freeze_params=False, auto selection runs independently each fold and output
 # includes an extra 'estimator_params' column with the parameters selected per fold.

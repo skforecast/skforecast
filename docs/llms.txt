@@ -1,6 +1,6 @@
 # Skforecast
 
-> Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. Works with any scikit-learn compatible estimator (LightGBM, XGBoost, CatBoost, Keras, etc.). Version 0.26.0+. Python 3.10-3.14. BSD-3-Clause.
+> Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. Works with any scikit-learn compatible estimator (LightGBM, XGBoost, CatBoost, Keras, etc.). Version 0.27.0+. Python 3.10-3.14. BSD-3-Clause.
 
 - [Documentation](https://skforecast.org/latest/): Full documentation site
 - [PyPI](https://pypi.org/project/skforecast/): pip install skforecast
@@ -25,6 +25,7 @@ Skforecast supports recursive and direct multi-step forecasting strategies, glob
 
 ## User Guides
 
+- [Comparing forecasting models](https://skforecast.org/latest/user_guides/comparing-forecasting-models.html): Machine learning (Ridge, LightGBM), foundation (Chronos-2), statistical (AutoARIMA, AutoETS) and deep learning (LSTM) models compared with the same backtesting on three datasets
 - [Recursive multi-step forecasting](https://skforecast.org/latest/user_guides/autoregressive-forecaster.html): Complete guide to single series forecasting with ForecasterRecursive
 - [Direct multi-step forecasting](https://skforecast.org/latest/user_guides/direct-multi-step-forecasting.html): Direct strategy with one model per forecast step
 - [Global forecasting overview](https://skforecast.org/latest/user_guides/global-forecasting-overview.html): Local vs global models and which global forecaster to use
@@ -87,6 +88,7 @@ Skforecast supports recursive and direct multi-step forecasting strategies, glob
 - [Save and load forecaster](https://skforecast.org/latest/user_guides/save-load-forecaster.html): Serialization with joblib and pickle
 - [Forecaster in production](https://skforecast.org/latest/user_guides/forecaster-in-production.html): Deployment patterns and retraining strategies
 - [Skforecast Studio](https://skforecast.org/latest/skforecast-studio/skforecast-studio.html): Interactive application for time series forecasting
+- [Skforecast AI](https://skforecast.org/latest/skforecast-ai/skforecast-ai.html): AI forecasting assistant built on skforecast, with an MCP server that lets coding agents (Claude Code, VS Code, Codex) profile, backtest and forecast CSV files as tools
 
 ## API Reference
 

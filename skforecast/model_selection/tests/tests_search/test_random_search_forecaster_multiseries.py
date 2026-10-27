@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import Ridge
+from sklearn.metrics import r2_score
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirectMultiVariate
 from skforecast.model_selection import random_search_forecaster_multiseries
@@ -185,3 +186,32 @@ def test_output_random_search_forecaster_multiseries_ForecasterDirectMultiVariat
     )
 
     pd.testing.assert_frame_equal(results, expected_results)
+
+
+def test_random_search_forecaster_multiseries_maximizes_metric_when_greater_is_better():
+    """
+    Test that, with a metric in which greater values are better (`r2_score`),
+    the results are sorted in descending order by the aggregated metric and
+    `return_best` refits the forecaster with the best candidate.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=Ridge(random_state=123), lags=2
+    )
+    cv = TimeSeriesFold(
+        steps=3, initial_train_size=len(series_wide_range) - 12, refit=False
+    )
+    results = random_search_forecaster_multiseries(
+        forecaster=forecaster,
+        series=series_wide_range,
+        cv=cv,
+        param_distributions={"alpha": [0.01, 1, 100]},
+        metric=r2_score,
+        aggregate_metric="average",
+        n_iter=3,
+        random_state=123,
+        return_best=True,
+    )
+
+    assert results["r2_score__average"].nunique() > 1
+    assert results["r2_score__average"].is_monotonic_decreasing
+    assert forecaster.estimator.alpha == results.loc[0, "alpha"]

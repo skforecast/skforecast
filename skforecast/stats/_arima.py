@@ -752,8 +752,7 @@ class Arima(BaseEstimator, RegressorMixin):
         # NOTE: forecast_arima is used for both manual and automatic models
         # because it adds the future drift term and reverts the Box-Cox
         # transformation when the fitted model includes them. The fitted model
-        # determines this, not the current parameters, which may change after
-        # fitting (e.g. `_set_params` when freezing parameters in backtesting).
+        # determines this, not the current parameters.
         predictions = forecast_arima(
             model   = self.model_,
             h       = steps,
@@ -1063,39 +1062,6 @@ class Arima(BaseEstimator, RegressorMixin):
             "biasadj": self.biasadj,
         }
     
-    def _set_params(self, **params) -> None:
-        """
-        Set the parameters of this estimator. Internal method without resetting 
-        the fitted state. This method is intended for internal use only, please 
-        use `set_params()` instead.
-
-        Parameters
-        ----------
-        **params : dict
-            Estimator parameters.
-        
-        Returns
-        -------
-        None
-        
-        """
-        
-        for key, value in params.items():
-            setattr(self, key, value)
-        
-        self.is_auto = self.order is None or self.seasonal_order is None
-        if self.is_auto:
-            estimator_name_ = "AutoArima()"
-        else:
-            p, d, q = self.order
-            P, D, Q = self.seasonal_order
-            if P == 0 and D == 0 and Q == 0:
-                estimator_name_ = f"Arima({p},{d},{q})"
-            else:
-                estimator_name_ = f"Arima({p},{d},{q})({P},{D},{Q})[{self.m}]"
-
-        self.estimator_name_ = estimator_name_
-    
     def set_params(self, **params) -> "Arima":
         """
         Set the parameters of this estimator and reset the fitted state.
@@ -1128,8 +1094,22 @@ class Arima(BaseEstimator, RegressorMixin):
                     f"Invalid parameter '{key}'. Valid parameters are: {valid_params}"
                 )
 
-        self._set_params(**params)
-        
+        for key, value in params.items():
+            setattr(self, key, value)
+
+        self.is_auto = self.order is None or self.seasonal_order is None
+        if self.is_auto:
+            estimator_name_ = "AutoArima()"
+        else:
+            p, d, q = self.order
+            P, D, Q = self.seasonal_order
+            if P == 0 and D == 0 and Q == 0:
+                estimator_name_ = f"Arima({p},{d},{q})"
+            else:
+                estimator_name_ = f"Arima({p},{d},{q})({P},{D},{Q})[{self.m}]"
+
+        self.estimator_name_ = estimator_name_
+
         fitted_attrs = [
             'model_', 'y_train_', 'coef_', 'coef_names_', 'sigma2_', 'loglik_',
             'aic_', 'bic_', 'arma_', 'converged_', 'fitted_values_', 'in_sample_residuals_',

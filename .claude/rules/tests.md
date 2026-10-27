@@ -16,7 +16,7 @@ The suite has more than 6000 tests; collecting all of them alone takes about 30 
    pytest skforecast/recursive/tests/tests_forecaster_recursive/test_predict.py -x -q
    pytest skforecast/recursive/tests/tests_forecaster_recursive/ -q --lf
    ```
-2. Once, when the change is done (`verify` skill): the test folder of each module you touched (`skforecast/<pkg>/tests/tests_<module>/`).
+2. Once, when the change is done (`verify` skill): the test folder of each module you touched (`skforecast/<pkg>/tests/tests_<module>/`), without repeating the files already run in step 1. `python .claude/skills/verify/affected.py` prints the exact paths, including the modules whose tests do not follow that naming.
 3. Shared code (`skforecast/utils/`, `skforecast/base/`, `skforecast/model_selection/_utils.py`, `skforecast/preprocessing/`): also run the test folders of the callers whose behavior you changed, and list the packages you did not run in the report.
 4. Never launch the full suite on your own. If you think it is needed (broad refactor, dependency change), say so and let the user decide.
 

@@ -6,13 +6,13 @@
 
 > Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models
 
-This document is for skforecast v0.26.0+. If you are using an older version, check the documentation at skforecast.org.
+This document is for skforecast v0.27.0+. If you are using an older version, check the documentation at skforecast.org.
 
 Skforecast is a Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. It works with any estimator compatible with the scikit-learn API (LightGBM, XGBoost, CatBoost, Keras, etc.).
 
 ## Quick Info
 
-- Version: 0.26.0
+- Version: 0.27.0
 - License: BSD-3-Clause
 - Python: 3.10, 3.11, 3.12, 3.13, 3.14
 - Repository: https://github.com/skforecast/skforecast
@@ -80,6 +80,8 @@ skforecast/
 | ForecasterFoundation | Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL) |
 | ForecasterRecursiveClassifier | Classification-based forecasting |
 | ForecasterEquivalentDate | Baseline forecaster using equivalent past dates |
+
+To choose between model families, compare them on the same folds: each family has its own backtesting function (`backtesting_forecaster`, `backtesting_forecaster_multiseries`, `backtesting_stats`, `backtesting_foundation`), and passing the same `TimeSeriesFold` to all of them makes the results comparable. The user guide [Comparing forecasting models](https://skforecast.org/latest/user_guides/comparing-forecasting-models.html) does this for the seasonal naive, Ridge, LightGBM, Chronos-2, AutoARIMA, AutoETS and an LSTM on three datasets, reporting MASE, interval coverage and computation time.
 
 ## Basic Usage Example
 
@@ -321,7 +323,10 @@ metric, predictions = backtesting_forecaster(
     show_progress=True,                         # Show progress bar
     suppress_warnings=False                     # Suppress skforecast warnings
 )
+# metric columns: mean_absolute_error, coverage, interval_width
 ```
+
+When the predictions define one interval, the backtesting functions add two columns to `metric`, after the requested metrics: `coverage` (share of true values inside the interval) and `interval_width` (mean width of the interval, in the units of the series). One interval means a float `interval` such as `0.8`, or two quantiles, optionally with the median: `interval=[0.1, 0.9]` or `[0.1, 0.5, 0.9]`, and the same in `quantiles` of `backtesting_foundation`. Compare `coverage` with the nominal level (0.8 for `[0.1, 0.9]`) and read it together with `interval_width`: a wide interval covers more. Multi-series backtesting reports them per level and in the aggregated rows, and `backtesting_stats` per estimator (also with `alpha`). With other quantiles (for example `[0.05, 0.1, 0.9, 0.95]`), `interval='bootstrapping'` or a distribution, they are not added; use CRPS or the pinball loss instead. A custom metric cannot be named `coverage` or `interval_width` when they are added.
 
 ## Cross-Validation Strategies
 
@@ -338,12 +343,11 @@ cv = TimeSeriesFold(
     steps=12,                        # (required) Number of observations to predict in each fold (forecast horizon)
     initial_train_size=100,          # Number of observations for initial training. Can be int, str (date), or pd.Timestamp
     fold_stride=None,                # Observations between consecutive test set starts. If None, equals steps (no overlap)
-    window_size=None,                # Observations needed for autoregressive predictors (set automatically by forecaster)
-    differentiation=None,            # Differencing order to extend last_window (set automatically by forecaster)
+    window_size=None,                # Observations needed for autoregressive predictors (set automatically by forecaster; when calling split() directly, use forecaster.window_size, which includes differentiation)
     refit=False,                     # Whether to refit forecaster each fold: True, False, or int (refit every n folds)
-    fixed_train_size=True,           # If True, training size is fixed; if False, expands each fold
+    fixed_train_size=True,           # If True, the training window rolls with a fixed size; if False, it expands each fold (only with refit)
     gap=0,                           # Observations between end of training and start of test set
-    skip_folds=None,                 # Folds to skip: int (every n-th fold) or list of fold indexes to skip
+    skip_folds=None,                 # Folds to leave out: int (keep one of every n folds, starting with the first) or list of fold indexes to skip
     allow_incomplete_fold=True,      # Whether to allow last fold with fewer observations than steps
     return_all_indexes=False,        # Whether to return all indexes or only start/end of each fold
     verbose=True                     # Whether to print information about generated folds
@@ -358,6 +362,7 @@ print(folds)
 - If `fold_stride == steps`: test sets are back-to-back without overlap
 - If `fold_stride < steps`: test sets overlap (multiple forecasts for same observations)
 - If `fold_stride > steps`: gaps between consecutive test sets
+- `differentiation` (both folds) and `window_size` (`OneStepAheadFold`) are deprecated since 0.27.0: they have no effect, emit a `FutureWarning` and will be removed in 0.29.0
 
 ### OneStepAheadFold
 
@@ -368,8 +373,6 @@ from skforecast.model_selection import OneStepAheadFold
 
 cv = OneStepAheadFold(
     initial_train_size=100,          # (required) Number of observations for initial training. Can be int, str (date), or pd.Timestamp
-    window_size=None,                # Observations needed for autoregressive predictors (set automatically by forecaster)
-    differentiation=None,            # Differencing order to extend last_window (set automatically by forecaster)
     return_all_indexes=False,        # Whether to return all indexes or only start/end of each fold
     verbose=True                     # Whether to print information about generated folds
 )
@@ -386,6 +389,8 @@ print(fold)
 ## Hyperparameter Tuning
 
 Three search strategies are available: `grid_search_forecaster`, `random_search_forecaster`, and `bayesian_search_forecaster` (Optuna-based). All accept `TimeSeriesFold` or `OneStepAheadFold`. Multi-series variants: `grid_search_forecaster_multiseries`, `random_search_forecaster_multiseries`, `bayesian_search_forecaster_multiseries`.
+
+Results are sorted by the first metric, best first, and `return_best=True` refits the forecaster with the first row. The direction comes from the metric: scikit-learn metrics ending in `_score` (`r2_score`, `accuracy_score`) are maximized; errors and losses are minimized. A custom callable is minimized in regression and maximized in classification unless it sets the attribute `greater_is_better` (`True` or `False`). In the Bayesian searches, `kwargs_create_study={'direction': ...}` overrides it.
 
 ```python
 from skforecast.model_selection import bayesian_search_forecaster, TimeSeriesFold
@@ -839,7 +844,7 @@ Zero-shot / no training data / cold-start (single or multi-series)?
 | Estimators | Any sklearn-compatible (LightGBM, XGBoost, RF, etc.) | Arima, Sarimax, Ets, Arar |
 | Lags / window features | Full support (`lags`, `RollingFeatures`) | No (model handles its own structure) |
 | Differentiation | Built-in (`differentiation` param) | Handled within model (e.g., ARIMA `d` parameter) |
-| Exogenous variables | Full support | Only SARIMAX |
+| Exogenous variables | Full support | Arima, Sarimax and Arar (not Ets) |
 | Prediction intervals | Bootstrapping (binned residuals) + conformal | Built-in parametric |
 | Tuning | `grid_search_forecaster`, `random_search_forecaster`, `bayesian_search_forecaster` | `grid_search_stats`, `random_search_stats` |
 | Backtesting | `backtesting_forecaster` / `backtesting_forecaster_multiseries` | `backtesting_stats` |
@@ -847,24 +852,28 @@ Zero-shot / no training data / cold-start (single or multi-series)?
 
 ## Feature Support Matrix
 
-| Feature | Recursive | Direct | RecursiveMultiSeries | DirectMultiVariate | Rnn | Stats | EquivalentDate | Classifier |
-|---------|:---------:|:------:|:-------------------:|:-----------------:|:---:|:-----:|:--------------:|:----------:|
-| Lags | ✓ | ✓ | ✓ | ✓ (per-series dict) | ✓ | — | — | ✓ |
-| Window features (`RollingFeatures`) | ✓ | ✓ | ✓ | ✓ | — | — | — | ✓ |
-| Exogenous variables | ✓ | ✓ | ✓ | ✓ | ✓ | SARIMAX only | — | ✓ |
-| Differentiation | ✓ | ✓ | ✓ (per-series) | ✓ (per-series) | — | Within model | — | — |
-| Transformer y/series | ✓ | ✓ | ✓ (per-series) | ✓ (per-series) | ✓ | ✓ | — | — |
-| Transformer exog | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ |
-| Weight function | ✓ | ✓ | ✓ (per-series) | ✓ | — | — | — | ✓ |
-| Bootstrapping intervals | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
-| Conformal intervals | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — |
-| Binned residuals | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — |
-| Quantile predictions | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
-| Distribution fitting | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
-| Class probabilities | — | — | — | — | — | — | — | ✓ |
-| Feature importances | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
+| Feature | Recursive | Direct | RecursiveMultiSeries | DirectMultiVariate | Foundation | Rnn | Stats | EquivalentDate | Classifier |
+|---------|:---------:|:------:|:-------------------:|:-----------------:|:----------:|:---:|:-----:|:--------------:|:----------:|
+| Lags | ✓ | ✓ | ✓ | ✓ (per-series dict) | — (context window) | ✓ | — | — | ✓ |
+| Window features (`RollingFeatures`) | ✓ | ✓ | ✓ | ✓ | — | — | — | — | ✓ |
+| Exogenous variables | ✓ | ✓ | ✓ | ✓ | ✓ (model-dependent) | ✓ | Arima, Sarimax, Arar | — | ✓ |
+| Differentiation | ✓ | ✓ | ✓ (per-series) | ✓ (per-series) | — | — | Within model | — | — |
+| Transformer y/series | ✓ | ✓ | ✓ (per-series) | ✓ (per-series) | — | ✓ | ✓ | — | — |
+| Transformer exog | ✓ | ✓ | ✓ | ✓ | — | ✓ | ✓ | — | ✓ |
+| Weight function | ✓ | ✓ | ✓ (per-series) | ✓ | — | — | — | — | ✓ |
+| Bootstrapping intervals | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — |
+| Conformal intervals | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | ✓ | — |
+| Binned residuals | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | ✓ | — |
+| Quantile predictions | ✓ | ✓ | ✓ | ✓ | ✓ (native) | — | — | — | — |
+| Distribution fitting | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — |
+| Class probabilities | — | — | — | — | — | — | — | — | ✓ |
+| Feature importances | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — |
 
 > **Legend:** ✓ = supported, — = not supported/not applicable.
+
+## Measured Comparison
+
+The user guide [Comparing forecasting models](https://skforecast.org/latest/user_guides/comparing-forecasting-models.html) evaluates the seasonal naive, Ridge, LightGBM, Chronos-2, AutoARIMA, AutoETS and an LSTM with the same backtesting on three datasets: one series with exogenous variables, a short monthly series and 50 daily series that share the same patterns. Use it to show users how each family behaves (accuracy, interval coverage and computation time) and as a template to compare candidates on their own data with the same `TimeSeriesFold`.
 
 ## Next Steps
 
@@ -2513,7 +2522,13 @@ metric, predictions = backtesting_foundation(
     metric='mean_absolute_error',
     quantiles=[0.1, 0.5, 0.9],   # Native model quantiles; no bootstrapping
 )
+# metric columns: levels, mean_absolute_error, coverage, interval_width
 ```
+
+The metrics use `q_0.5` as the point forecast. With two quantiles, optionally
+with the median (`[0.1, 0.9]` or `[0.1, 0.5, 0.9]`), `metric` also reports the
+empirical `coverage` of the interval they define and its mean width
+(`interval_width`). With other quantiles they are not added.
 
 ## Tuning Inference-Time Parameters
 
@@ -3056,11 +3071,11 @@ What is your forecaster producing?
 | Criterion | Recommended metric | Avoid |
 |-----------|-------------------|-------|
 | **General purpose** | MAE (`'mean_absolute_error'`) | — |
-| **Penalize large errors more** | MSE (`'mean_squared_error'`) | — |
+| **Penalize large errors more** | MSE (`'mean_squared_error'`) or RMSE (`'root_mean_squared_error'`, same units as the target) | — |
 | **Robust to outliers** | MAE or MedAE (`'median_absolute_error'`) | MSE (inflated by outliers) |
 | **Need percentage interpretation** | SMAPE (`'symmetric_mean_absolute_percentage_error'`) | MAPE if data has zeros |
-| **Data contains zeros or near-zero values** | MAE, MASE, RMSSE | MAPE (divides by y_true → infinite) |
-| **Compare across different-scale series** | MASE (`'mean_absolute_scaled_error'`) or RMSSE (`'root_mean_squared_scaled_error'`) | MAE, MSE (scale-dependent) |
+| **Data contains zeros or near-zero values** | MAE, MASE, RMSSE | MAPE (divides by y_true → extremely large values) |
+| **Compare across different-scale series** | MASE (`'mean_absolute_scaled_error'`) or RMSSE (`'root_mean_squared_scaled_error'`) | MAE, MSE, RMSE (scale-dependent) |
 | **Target is always positive** | MSLE (`'mean_squared_log_error'`) | — (use when relative errors matter more than absolute) |
 | **Interpretable baseline comparison** | MASE (value < 1 means better than naive forecast) | — |
 
@@ -3151,6 +3166,13 @@ Use these metrics when evaluating prediction intervals or quantile forecasts.
 
 Coverage measures the proportion of true values that fall within the predicted
 interval. **Target: match the nominal level** (e.g., 90% interval should have ~90% coverage).
+
+Backtesting functions add `coverage` and `interval_width` (mean width of the
+interval, in the units of the series) to `metric` when the predictions define
+one interval: a float `interval`, or two quantiles optionally with the median
+(`interval` or, in `backtesting_foundation`, `quantiles`). There is no need to
+pass them in `metric`. Use
+`calculate_coverage` for predictions made outside backtesting:
 
 ```python
 from skforecast.metrics import calculate_coverage
@@ -3366,11 +3388,26 @@ Skforecast automatically wraps callables via `add_y_train_argument`. If the func
 already has a `y_train` parameter, it will receive the training data. If not, the
 argument is silently ignored.
 
+In hyperparameter searches, the first metric ranks the candidates, and its direction
+is inferred from the metric: scikit-learn metrics ending in `_score` (`r2_score`,
+`accuracy_score`) are maximized; errors and losses are minimized.
+A custom metric is minimized in regression and maximized in classification, unless
+it defines the attribute `greater_is_better`:
+
+```python
+def forecast_skill(y_true, y_pred, y_train):
+    naive_mae = np.mean(np.abs(np.diff(y_train)))
+    return 1 - np.mean(np.abs(y_true - y_pred)) / naive_mae
+
+forecast_skill.greater_is_better = True  # Maximized by the searches
+```
+
 ## Common Mistakes
 
 | Mistake | Problem | Fix |
 |---------|---------|-----|
-| Using MAPE with data containing zeros | Division by zero → infinite error | Use SMAPE, MAE, or MASE instead |
+| Using MAPE with data containing zeros | Division by (almost) zero → extremely large error | Use SMAPE, MAE, or MASE instead |
+| Reading sklearn's MAPE as a percentage | It returns a fraction (0.1 = 10 %), while SMAPE is already × 100 | Multiply MAPE by 100 before reporting or comparing it with SMAPE |
 | Using MSE when data has outliers | A few large errors dominate the metric | Use MAE or MedAE for robustness |
 | Comparing MAE across differently-scaled series | MAE = 10 on sales vs MAE = 10 on temperature means nothing | Use MASE or RMSSE for cross-series comparison |
 | Interpreting high coverage as "good" | 99% coverage with a 90% interval means intervals are too wide | Target coverage ≈ nominal level; combine with CRPS for sharpness |
@@ -3405,8 +3442,9 @@ Complete reference for all metrics available in skforecast: properties, compatib
 |--------|-------------|--------|:-------------------:|:-----------------:|:------------------:|:-------------:|-------|----------------|
 | Mean Absolute Error | `'mean_absolute_error'` | sklearn | — | — | ✓ | ✓ | [0, ∞) | Average absolute deviation from truth |
 | Mean Squared Error | `'mean_squared_error'` | sklearn | — | — | — | ✓ | [0, ∞) | Average squared deviation; penalizes large errors |
+| Root Mean Squared Error | `'root_mean_squared_error'` | sklearn | — | — | — | ✓ | [0, ∞) | Square root of MSE; same units as the target |
 | Median Absolute Error | `'median_absolute_error'` | sklearn | — | — | ✓✓ | ✓ | [0, ∞) | Median of absolute deviations; very robust |
-| Mean Absolute Percentage Error | `'mean_absolute_percentage_error'` | sklearn | — | ✓ | — | — | [0, ∞) | Percentage error; undefined when y_true = 0 |
+| Mean Absolute Percentage Error | `'mean_absolute_percentage_error'` | sklearn | — | ✓ | — | — | [0, ∞) fraction | Relative error as a fraction (0.1 = 10 %), not × 100; explodes when y_true = 0 |
 | Mean Squared Log Error | `'mean_squared_log_error'` | sklearn | — | — | — | ✓* | [0, ∞) | Log-scale MSE; penalizes under-predictions more |
 | Symmetric MAPE | `'symmetric_mean_absolute_percentage_error'` | skforecast | — | ✓ | — | ✓ | [0, 200] % | Symmetric percentage; avoids MAPE's asymmetry |
 | Mean Absolute Scaled Error | `'mean_absolute_scaled_error'` | skforecast | ✓ | ✓ | ✓ | ✓ | [0, ∞) | Ratio vs naive forecast; < 1 = better than naive |
@@ -3414,11 +3452,16 @@ Complete reference for all metrics available in skforecast: properties, compatib
 
 *MSLE requires y_true ≥ 0 and y_pred ≥ 0 (typically used with positive data).
 
+sklearn's MAPE returns a fraction (0.1 means 10 %), while skforecast's SMAPE is
+already multiplied by 100 (10 means 10 %). Multiply MAPE by 100 before comparing
+or reporting the two side by side. When y_true = 0, sklearn divides by a tiny
+epsilon, so MAPE is not infinite but an extremely large number (about 1e16).
+
 ## Probabilistic Forecast Metrics
 
 | Metric | Function | Input signature | Use with | Measures |
 |--------|----------|-----------------|----------|----------|
-| Coverage | `calculate_coverage` | `(y_true, lower_bound, upper_bound)` | Any forecaster with intervals | Calibration (proportion of truths in interval) |
+| Coverage | `calculate_coverage` | `(y_true, lower_bound, upper_bound)` | Any forecaster with intervals | Calibration (proportion of truths in interval). Backtesting with one interval (two quantiles, optionally with the median) reports it as `coverage`, next to `interval_width` (mean width) |
 | CRPS (bootstrap) | `crps_from_predictions` | `(y_true: float, y_pred: ndarray)` | Bootstrapped predictions | Calibration + sharpness (single observation) |
 | CRPS (quantiles) | `crps_from_quantiles` | `(y_true: float, pred_quantiles: ndarray, quantile_levels: ndarray)` | Foundation models, quantile predictions | Calibration + sharpness (single observation) |
 | Winkler Score | `winkler_score` | `(y_true, lower_bound, upper_bound, alpha)` | Any single interval | Calibration + sharpness of one interval; miscoverage penalty scaled by `alpha` |
@@ -3461,7 +3504,7 @@ Complete reference for all metrics available in skforecast: properties, compatib
 | MSLE | Positive data where relative errors matter more than absolute | Data has zeros or negative values |
 | MASE | Comparing across series with different scales; need baseline reference | Very short training series (naive denominator unreliable) |
 | RMSSE | Same as MASE but want to penalize large errors more | Same as MASE |
-| Coverage | Evaluating prediction interval calibration | Want to measure interval width/sharpness (use CRPS) |
+| Coverage | Evaluating prediction interval calibration, always next to the mean width (`interval_width` in backtesting) | Want a single score of calibration and sharpness (use Winkler, WIS or CRPS) |
 | CRPS | Comprehensive interval/quantile evaluation (calibration + sharpness) | Only have point forecasts |
 | Winkler score | Scoring a single interval with a tunable miscoverage penalty (`alpha`) | Comparing full distributions (use WIS or CRPS) |
 | Weighted interval score (WIS) | Scoring several quantile intervals + median as one CRPS-like number | Only have a single interval (use Winkler) or only point forecasts |
@@ -3639,19 +3682,21 @@ skip_folds = 2  # Keep every 2nd fold
 ### "I retrain at the end of every month and forecast the whole next month" (daily data)
 
 Folds count observations, not calendar months. Create one candidate fold per day
-and skip those that do not start on day 1 of a month:
+and skip those that do not start predicting on day 1 of a month:
 
 ```python
-first_origin = '2025-09-30'  # must be a month end: fold 0 cannot be skipped
+gap = 0
+first_origin = '2025-09-30'  # month end (minus `gap` days): fold 0 cannot be skipped
 n_train = y.index.get_loc(first_origin) + 1
 skip_folds = [
-    i for i, date in enumerate(y.index[n_train:]) if not date.is_month_start
-]  # with gap=0, fold i starts at position n_train + i
+    i for i, date in enumerate(y.index[n_train + gap:]) if not date.is_month_start
+]  # fold i predicts from position n_train + gap + i
 
 cv = TimeSeriesFold(
     steps=31,                  # longest month
     initial_train_size=first_origin,
     fold_stride=1,
+    gap=gap,
     skip_folds=skip_folds,
     refit=True,
     fixed_train_size=False,
@@ -3659,12 +3704,21 @@ cv = TimeSeriesFold(
 )
 ```
 
-- Needs a regular index without missing dates.
-- The metric is correct: overlapping folds are scored with the last prediction of
-  each date, the one of its own month.
+- Needs a regular index without missing dates. With sub-daily data, `is_month_start`
+  is `True` for every hour of day 1: also require `date == date.normalize()` and set
+  `steps` to the observations of the longest month (744 for hourly data).
+- `ForecasterDirect` and `ForecasterDirectMultiVariate` need `steps >= 31 + gap`.
+- Use `refit=True` (retrain every month) or `refit=False` (train once). An integer
+  `refit` counts the daily candidate folds, not months: `refit=3` does not retrain
+  every 3 months.
+- The metric needs no correction: overlapping folds are scored with the last
+  prediction of each date, the one of its own month. It works the same in the
+  multi-series backtesting and in the hyperparameter search functions.
 - `predictions` repeats the dates where months shorter than 31 days spill into the
-  next month. Filter with `predictions[~predictions.index.duplicated(keep='last')]`
-  before grouping by month or plotting.
+  next month. Remove them before grouping by month or plotting:
+  `predictions[~predictions.index.duplicated(keep='last')]` for a single series;
+  with multiple series (long format with a `level` column), deduplicate by date and
+  level, `predictions[~predictions.set_index('level', append=True).index.duplicated(keep='last')]`.
 - The `fold` column keeps the numbering of the daily folds (0, 31, 61, ...).
 - Use `verbose=False`: `verbose=True` prints every skipped fold.
 
@@ -4199,7 +4253,14 @@ lags_grid = {
     'long': 24,
     'custom': [1, 2, 3, 23, 24],
 }
+
+# None as an element: a candidate without lags, only the forecaster's window_features
+# (the forecaster must have window_features, otherwise a ValueError is raised)
+lags_grid = [None, 3, 24]
 ```
+
+`lags_grid=None` (the default) uses the lags of the forecaster, also when the
+forecaster was created with `lags=None` and only `window_features`.
 
 For Bayesian search, lags are included in the `search_space` function:
 
@@ -4292,7 +4353,9 @@ results, study = bayesian_search_forecaster(
     ...,
     kwargs_create_study={
         'sampler': optuna.samplers.TPESampler(seed=123),
-        'direction': 'minimize',
+        # 'direction' defaults to the direction of the first metric (maximize
+        # for scikit-learn `*_score` metrics, minimize for errors and losses).
+        # If set, results and return_best follow it.
     },
     kwargs_study_optimize={
         'timeout': 600,  # seconds
@@ -4643,8 +4706,17 @@ metric, predictions = backtesting_forecaster(
     use_in_sample_residuals=True,
     use_binned_residuals=True,
 )
-# predictions has columns: pred, lower_bound, upper_bound
+# predictions has columns: fold, pred, lower_bound, upper_bound
+# metric has columns: mean_absolute_error, coverage, interval_width
 ```
+
+When `interval` defines one interval (a float, or two quantiles optionally with
+the median, such as `[0.1, 0.5, 0.9]`), `metric` also reports its empirical
+`coverage` and its mean width (`interval_width`, in the units of the series),
+per level and aggregated in multi-series backtesting. `backtesting_foundation`
+does the same with `quantiles`. A coverage
+well below the nominal level (0.8 for `[0.1, 0.9]`) is common with in-sample
+residuals and complex estimators: switch to out-of-sample residuals (see below).
 
 ## Multi-Series Intervals
 
@@ -4695,6 +4767,10 @@ creating the forecaster, or predict with `use_binned_residuals=False`.
 
 ## Evaluating Interval Quality
 
+Backtesting with one interval (two quantiles, optionally with the median) already returns `coverage` and
+`interval_width` in `metric`. For predictions made outside backtesting (for
+example `predict_interval` on a test set), compute it with `calculate_coverage`:
+
 ```python
 from skforecast.metrics import calculate_coverage
 
@@ -4737,8 +4813,8 @@ See [references/interval-compatibility.md](references/interval-compatibility.md)
 1. **Passing percentiles instead of quantiles**: `interval` is on the 0-1 scale. Use `interval=[0.1, 0.9]`, not `[10, 90]` (percentiles are deprecated and emit a `FutureWarning`). Mixing scales, e.g. `[0.1, 90]`, raises a `ValueError`.
 2. **Forgetting `store_in_sample_residuals=True`**: Required in `fit()` before using `predict_interval(method='bootstrapping')`.
 3. **Wrong default method for multi-series**: `ForecasterRecursiveMultiSeries` and `ForecasterDirectMultiVariate` default to `method='conformal'`, not `'bootstrapping'`.
-4. **Mixing `alpha` and `interval`**: `ForecasterStats` supports both `alpha` (e.g., `alpha=0.05` for 95% interval) and `interval=[lo, hi]` (quantiles). ML forecasters only support `interval`.
-5. **Not evaluating coverage**: Always check if actual coverage matches nominal interval width.
+4. **Mixing `alpha` and `interval`**: in `ForecasterStats` and `backtesting_stats`, `alpha` is an alias of `interval` (`alpha=0.05` is `interval=[0.025, 0.975]`). Pass only one of them; passing both raises a `ValueError`. ML forecasters only support `interval`.
+5. **Not evaluating coverage**: Always check if actual coverage matches the nominal level. Backtesting with one interval (a float `interval`, or two quantiles optionally with the median) reports it in the `coverage` column of `metric`, next to `interval_width`.
 6. **Ignoring physical bounds**: neither the model nor the intervals know that a series cannot be negative (counts, sales, demand), so predictions and lower bounds can fall below zero. Clip them after predicting, e.g. `predictions.clip(lower=0)`. See the FAQ [Non-negative predictions](https://skforecast.org/latest/faq/non-negative-predictions.html).
 
 ## References
@@ -4809,12 +4885,12 @@ forecaster.predict_interval(
 ```python
 forecaster.predict_interval(
     steps,
-    alpha=0.05,                      # significance level → 95% interval
-    interval=None,                   # list[float] | None — quantiles, alternative to alpha
+    interval=[0.025, 0.975],         # symmetric quantiles → 95% interval (default if None)
+    alpha=None,                      # alias of interval: alpha=0.05 is interval=[0.025, 0.975]
 )
 # NOTE: No `method`, `n_boot`, `use_in_sample_residuals`, `use_binned_residuals`,
 #       or `random_state` parameters.
-# Use EITHER `alpha` OR `interval`, not both.
+# Use EITHER `alpha` OR `interval`: passing both raises a ValueError.
 ```
 
 ### ForecasterEquivalentDate (conformal only)
@@ -5024,10 +5100,10 @@ forecaster.fit(y=data['target'])
 predictions = forecaster.predict(steps=12)
 
 # 3. Prediction intervals (all stat models support this natively,
-#    no bootstrapping needed). Accepts both `interval` and `alpha`.
+#    no bootstrapping needed). Default (no `interval` nor `alpha`): 95%.
 predictions_interval = forecaster.predict_interval(
     steps=12,
-    interval=[0.1, 0.9],  # quantiles (0-1). Or use alpha=0.2 for 80% interval
+    interval=[0.1, 0.9],  # symmetric quantiles (0-1), or its alias alpha=0.2
 )
 ```
 
@@ -5117,7 +5193,7 @@ metric, predictions_bt = backtesting_stats(
     y=data['target'],
     cv=cv,
     metric='mean_absolute_error',
-    freeze_params=True,  # Params from first fit reused in refits (avoids re-running auto selection)
+    freeze_params=True,  # Model selected in the first fit reused in refits (auto selection runs once)
 )
 # If freeze_params=False, auto selection runs independently each fold and output
 # includes an extra 'estimator_params' column with the parameters selected per fold.
@@ -5401,11 +5477,17 @@ backtesting_stats(
     y=data,
     cv=cv,
     metric='mean_absolute_error',
-    freeze_params=True,     # Default. Reuse params from first fit in all folds.
+    freeze_params=True,     # Default. Auto selection runs only in the first fit.
     # freeze_params=False,  # Re-run auto selection each fold (slow but more realistic).
     #                       # Output includes extra 'estimator_params' column.
 )
 ```
+
+With `freeze_params=True` and `refit=True`, the `best_params_` of the first fit
+are used in every refit: Arima keeps the orders, intercept, drift and Box-Cox
+lambda and re-estimates the coefficients; Ets keeps the model type, smoothing
+parameters and Box-Cox lambda and re-estimates the initial states. `grid_search_stats`
+and `random_search_stats` always backtest each candidate this way.
 
 ## Exogenous Variables Support
 
@@ -6304,6 +6386,52 @@ data = data.ffill()                      # Forward fill
 data = data.interpolate(method='linear') # Linear interpolation
 ```
 
+### "ValueError: Input X contains NaN" when predicting or backtesting
+
+A predictor has a missing value when predicting and the estimator does not
+accept them. Usually a gap in `exog` in the forecast horizon, or in the last
+window.
+
+- Linear models of scikit-learn (`LinearRegression`, `Ridge`, `Lasso`...):
+  `Input X contains NaN in the predictors ['x'] ... at step 6 (2020-04-05)`,
+  with the predictor, the step, the date and, in
+  `ForecasterRecursiveMultiSeries`, the series.
+- Other estimators that reject NaN (SVR, KNN...): scikit-learn's own
+  `Input X contains NaN.`, without those details.
+
+If the predictor is `_level_skforecast`, the NaN is not in the data: a series
+not seen during training gets NaN with an ordinal encoding. Predict it with
+`encoding='onehot'` or `encoding=None`, or with an estimator that accepts NaN.
+
+```python
+# Fix 1: fill the gaps of exog before predicting or backtesting
+exog = exog.interpolate(method='linear')
+
+# Fix 2: use an estimator that accepts missing values
+forecaster = ForecasterRecursive(
+    estimator=HistGradientBoostingRegressor(),  # or LGBMRegressor(verbose=-1)
+    lags=14,
+)
+```
+
+With `differentiation`, any estimator (also HistGradientBoostingRegressor)
+raises `The series (or last_window) has missing values (NaN) at [...]` when
+one of the last `differentiation` values of the series or of `last_window` is
+missing: the predictions are reverted to the original scale from them, so all
+of them would be NaN. Fill that value (an estimator that accepts NaN does not
+help).
+
+Backtesting does not raise these errors: the dates that cannot be predicted
+get NaN predictions, so a missing value that only affects the discarded steps
+of the `gap` does not matter. If NaN predictions reach the scored dates:
+
+- `backtesting_forecaster` (one series) raises
+  `N backtesting predictions are NaN at dates with observed values ...`,
+  with the first date, the likely causes and the remedy (same fixes as above).
+- `backtesting_forecaster_multiseries` leaves them out of the metrics with a
+  `MissingValuesWarning` that gives their number per series. Read it: the
+  metrics use fewer values than predicted.
+
 ### "ValueError: exog must have the same index as y" / "exog does not cover forecast horizon"
 
 ```python
@@ -6952,8 +7080,8 @@ forecaster.predict_interval(
     last_window=None,                   # pd.Series | None
     last_window_exog=None,              # pd.Series | pd.DataFrame | None
     exog=None,                          # pd.Series | pd.DataFrame | None
-    alpha=0.05,                         # float, significance level
-    interval=None,                      # list[float] | tuple[float] | None, quantiles 0-1
+    interval=None,                      # list[float] | tuple[float] | None, symmetric quantiles 0-1 (both None: 95%)
+    alpha=None,                         # float | None, alias of interval (alpha=0.05 is interval=[0.025, 0.975])
     suppress_warnings=False             # bool
 ) -> pd.DataFrame
 
@@ -7238,9 +7366,9 @@ backtesting_stats(
     cv,                                 # TimeSeriesFold
     metric,                             # str | Callable | list[str | Callable]
     exog=None,                          # pd.Series | pd.DataFrame | None
-    alpha=None,                         # float | None, significance level
-    interval=None,                      # list[float] | tuple[float] | None
-    freeze_params=True,                 # bool, if True only first fold fits the model
+    interval=None,                      # list[float] | tuple[float] | None, symmetric quantiles 0-1
+    alpha=None,                         # float | None, alias of interval, not both
+    freeze_params=True,                 # bool, if True auto selection (Arima, Ets) runs only in the first fit
     n_jobs='auto',                      # int | str
     verbose=False,                      # bool
     show_progress=True,                 # bool
@@ -7274,7 +7402,7 @@ grid_search_forecaster(
     param_grid,              # dict, sklearn-style parameter grid
     metric,                  # str | Callable | list[str | Callable]
     exog=None,               # pd.Series | pd.DataFrame | None
-    lags_grid=None,          # list[int | list | np.ndarray | range] | dict | None
+    lags_grid=None,          # list[int | list | np.ndarray | range | None] | dict | None
     return_best=True,        # bool
     n_jobs='auto',           # int | str
     verbose=False,           # bool
@@ -7290,7 +7418,7 @@ random_search_forecaster(
     param_distributions,     # dict, parameter distributions for sampling
     metric,                  # str | Callable | list[str | Callable]
     exog=None,               # pd.Series | pd.DataFrame | None
-    lags_grid=None,          # list[int | list | np.ndarray | range] | dict | None
+    lags_grid=None,          # list[int | list | np.ndarray | range | None] | dict | None
     n_iter=10,               # int, number of random parameter combinations
     random_state=123,        # int
     return_best=True,        # bool
@@ -7333,7 +7461,7 @@ grid_search_forecaster_multiseries(
     aggregate_metric=['weighted_average', 'average', 'pooling'],  # str | list[str]
     levels=None,             # str | list[str] | None
     exog=None,               # pd.Series | pd.DataFrame | dict | None
-    lags_grid=None,          # list | dict | None
+    lags_grid=None,          # list[int | list | np.ndarray | range | None] | dict | None
     return_best=True,        # bool
     n_jobs='auto',           # int | str
     verbose=False,           # bool
@@ -7351,7 +7479,7 @@ random_search_forecaster_multiseries(
     aggregate_metric=['weighted_average', 'average', 'pooling'],  # str | list[str]
     levels=None,             # str | list[str] | None
     exog=None,               # pd.Series | pd.DataFrame | dict | None
-    lags_grid=None,          # list | dict | None
+    lags_grid=None,          # list[int | list | np.ndarray | range | None] | dict | None
     n_iter=10,               # int
     random_state=123,        # int
     return_best=True,        # bool
@@ -7466,7 +7594,6 @@ TimeSeriesFold(
     initial_train_size=None,        # int | str | pd.Timestamp | None
     fold_stride=None,               # int | None, if None equals steps
     window_size=None,               # int | None, set automatically by forecaster
-    differentiation=None,           # int | None, set automatically by forecaster
     refit=False,                    # bool | int, refit model each fold or every n folds
     fixed_train_size=True,          # bool, fixed vs expanding window
     gap=0,                          # int, observations between train end and test start
@@ -7478,8 +7605,6 @@ TimeSeriesFold(
 
 OneStepAheadFold(
     initial_train_size,             # int | str | pd.Timestamp (required)
-    window_size=None,               # int | None, set automatically by forecaster
-    differentiation=None,           # int | None, set automatically by forecaster
     return_all_indexes=False,       # bool
     verbose=True                    # bool
 )

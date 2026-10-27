@@ -159,19 +159,21 @@ skip_folds = 2  # Keep every 2nd fold
 ### "I retrain at the end of every month and forecast the whole next month" (daily data)
 
 Folds count observations, not calendar months. Create one candidate fold per day
-and skip those that do not start on day 1 of a month:
+and skip those that do not start predicting on day 1 of a month:
 
 ```python
-first_origin = '2025-09-30'  # must be a month end: fold 0 cannot be skipped
+gap = 0
+first_origin = '2025-09-30'  # month end (minus `gap` days): fold 0 cannot be skipped
 n_train = y.index.get_loc(first_origin) + 1
 skip_folds = [
-    i for i, date in enumerate(y.index[n_train:]) if not date.is_month_start
-]  # with gap=0, fold i starts at position n_train + i
+    i for i, date in enumerate(y.index[n_train + gap:]) if not date.is_month_start
+]  # fold i predicts from position n_train + gap + i
 
 cv = TimeSeriesFold(
     steps=31,                  # longest month
     initial_train_size=first_origin,
     fold_stride=1,
+    gap=gap,
     skip_folds=skip_folds,
     refit=True,
     fixed_train_size=False,
@@ -179,12 +181,21 @@ cv = TimeSeriesFold(
 )
 ```
 
-- Needs a regular index without missing dates.
-- The metric is correct: overlapping folds are scored with the last prediction of
-  each date, the one of its own month.
+- Needs a regular index without missing dates. With sub-daily data, `is_month_start`
+  is `True` for every hour of day 1: also require `date == date.normalize()` and set
+  `steps` to the observations of the longest month (744 for hourly data).
+- `ForecasterDirect` and `ForecasterDirectMultiVariate` need `steps >= 31 + gap`.
+- Use `refit=True` (retrain every month) or `refit=False` (train once). An integer
+  `refit` counts the daily candidate folds, not months: `refit=3` does not retrain
+  every 3 months.
+- The metric needs no correction: overlapping folds are scored with the last
+  prediction of each date, the one of its own month. It works the same in the
+  multi-series backtesting and in the hyperparameter search functions.
 - `predictions` repeats the dates where months shorter than 31 days spill into the
-  next month. Filter with `predictions[~predictions.index.duplicated(keep='last')]`
-  before grouping by month or plotting.
+  next month. Remove them before grouping by month or plotting:
+  `predictions[~predictions.index.duplicated(keep='last')]` for a single series;
+  with multiple series (long format with a `level` column), deduplicate by date and
+  level, `predictions[~predictions.set_index('level', append=True).index.duplicated(keep='last')]`.
 - The `fold` column keeps the numbering of the daily folds (0, 31, 61, ...).
 - Use `verbose=False`: `verbose=True` prints every skipped fold.
 

@@ -1,6 +1,7 @@
 # Unit test predict_interval ForecasterStats
 # ==============================================================================
 import re
+import warnings
 import pytest
 import platform
 import numpy as np
@@ -47,10 +48,7 @@ def test_predict_NotFittedError_when_fitted_is_False():
         "appropriate arguments before using predict."
     )
     with pytest.raises(NotFittedError, match = err_msg):
-        forecaster.predict_interval(
-            steps = 5, 
-            alpha = 0.05
-        )
+        forecaster.predict_interval(steps=5)
 
 
 def test_predict_interval_ValueError_when_interval_is_not_symmetrical():
@@ -75,7 +73,7 @@ def test_predict_interval_ValueError_when_interval_is_not_symmetrical():
 
 
 @pytest.mark.parametrize("alpha, interval", 
-                         [(0.05, [0.01, 0.99]), 
+                         [(None, None), 
                           (None, [0.025, 0.975])], 
                          ids = lambda values: f'alpha, interval: {values}')
 def test_predict_interval_output_ForecasterStats_skforecast_Sarimax(alpha, interval):
@@ -101,7 +99,7 @@ def test_predict_interval_output_ForecasterStats_skforecast_Sarimax(alpha, inter
 
 
 @pytest.mark.parametrize("alpha, interval", 
-                         [(0.05, [0.01, 0.99]), 
+                         [(None, None), 
                           (None, [0.025, 0.975])], 
                          ids = lambda values: f'alpha, interval: {values}')
 def test_predict_interval_output_ForecasterStats_with_exog(alpha, interval):
@@ -127,7 +125,7 @@ def test_predict_interval_output_ForecasterStats_with_exog(alpha, interval):
 
 
 @pytest.mark.parametrize("alpha, interval", 
-                         [(0.05, [0.01, 0.99]), 
+                         [(None, None), 
                           (None, [0.025, 0.975])], 
                          ids = lambda values: f'alpha, interval: {values}')
 @pytest.mark.skipif(
@@ -201,7 +199,7 @@ def test_predict_interval_output_ForecasterStats_multiple_estimators_exog(alpha,
 
 
 @pytest.mark.parametrize("alpha, interval", 
-                         [(0.05, [0.01, 0.99]), 
+                         [(None, None), 
                           (None, [0.025, 0.975])], 
                          ids = lambda values: f'alpha, interval: {values}')
 def test_predict_interval_output_ForecasterStats_with_transform_y(alpha, interval):
@@ -228,7 +226,7 @@ def test_predict_interval_output_ForecasterStats_with_transform_y(alpha, interva
 
 
 @pytest.mark.parametrize("alpha, interval", 
-                         [(0.05, [0.01, 0.99]), 
+                         [(None, None), 
                           (None, [0.025, 0.975])], 
                          ids = lambda values: f'alpha, interval: {values}')
 @pytest.mark.skipif(
@@ -304,7 +302,7 @@ def test_predict_interval_output_ForecasterStats_multiple_estimators_exog_transf
 
 
 @pytest.mark.parametrize("alpha, interval", 
-                         [(0.05, [0.01, 0.99]), 
+                         [(None, None), 
                           (None, [0.025, 0.975])], 
                          ids = lambda values: f'alpha, interval: {values}')
 def test_predict_interval_output_ForecasterStats_with_transform_y_and_transform_exog(alpha, interval):
@@ -340,7 +338,7 @@ def test_predict_interval_output_ForecasterStats_with_transform_y_and_transform_
 
 
 @pytest.mark.parametrize("alpha, interval", 
-                         [(0.05, [0.01, 0.99]), 
+                         [(None, None), 
                           (None, [0.025, 0.975])], 
                          ids = lambda values: f'alpha, interval: {values}')
 def test_predict_interval_output_ForecasterStats_with_last_window(alpha, interval):
@@ -372,7 +370,7 @@ def test_predict_interval_output_ForecasterStats_with_last_window(alpha, interva
 
 
 @pytest.mark.parametrize("alpha, interval", 
-                         [(0.05, [0.01, 0.99]), 
+                         [(None, None), 
                           (None, [0.025, 0.975])], 
                          ids = lambda values: f'alpha, interval: {values}')
 def test_predict_interval_output_ForecasterStats_with_last_window_and_exog(alpha, interval):
@@ -406,7 +404,7 @@ def test_predict_interval_output_ForecasterStats_with_last_window_and_exog(alpha
 
 
 @pytest.mark.parametrize("alpha, interval", 
-                         [(0.05, [0.01, 0.99]), 
+                         [(None, None), 
                           (None, [0.025, 0.975])], 
                          ids = lambda values: f'alpha, interval: {values}')
 def test_predict_interval_output_ForecasterStats_with_last_window_and_exog_and_transformers(alpha, interval):
@@ -462,12 +460,12 @@ def test_predict_interval_ForecasterStats_updates_extended_index_twice(y, idx):
     forecaster.fit(y=y_fit)
 
     lw_1 = y.iloc[30:40].copy()
-    forecaster.predict_interval(steps=5, alpha = 0.05, last_window=lw_1)
+    forecaster.predict_interval(steps=5, interval=[0.025, 0.975], last_window=lw_1)
     result_1 = forecaster.extended_index_.copy()
     expected_1 = idx[:40]
 
     lw_2 = y.iloc[40:].copy()
-    forecaster.predict_interval(steps=5, alpha = 0.05, last_window=lw_2)
+    forecaster.predict_interval(steps=5, interval=[0.025, 0.975], last_window=lw_2)
 
     pd.testing.assert_index_equal(result_1, expected_1)
     pd.testing.assert_index_equal(forecaster.extended_index_, idx)
@@ -526,7 +524,7 @@ def test_predict_interval_output_ForecasterStats_multiple_estimators(estimator, 
     y.index = pd.date_range(start='2000-01-01', periods=len(y), freq='D')
     forecaster = ForecasterStats(estimator=estimator)
     forecaster.fit(y=y)
-    predictions = forecaster.predict_interval(steps=10, alpha=0.05)
+    predictions = forecaster.predict_interval(steps=10, interval=[0.025, 0.975])
 
     if isinstance(estimator, Sarimax) and WINDOWS_LEGACY_BLAS:
         expected_data = np.array([
@@ -559,7 +557,7 @@ def test_predict_interval_output_ForecasterStats_skforecast_Arima():
                      estimator=Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
                  )
     forecaster.fit(y=y)
-    predictions = forecaster.predict_interval(steps=5, alpha=0.05)
+    predictions = forecaster.predict_interval(steps=5, interval=[0.025, 0.975])
 
     expected = pd.DataFrame(
                    data=np.array(
@@ -577,3 +575,94 @@ def test_predict_interval_output_ForecasterStats_skforecast_Arima():
     # Verify ordering: lower_bound <= pred <= upper_bound for all steps
     assert (predictions['lower_bound'] <= predictions['pred']).all()
     assert (predictions['pred'] <= predictions['upper_bound']).all()
+
+
+def test_predict_interval_output_ForecasterStats_interval_used_when_alpha_is_None():
+    """
+    Test predict_interval returns the interval requested in `interval` when
+    `alpha` is not provided. Before 0.27.0, `alpha` defaulted to 0.05 and took
+    precedence, so the 95% interval was always returned.
+    """
+    forecaster = ForecasterStats(
+                     estimator=Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
+                 )
+    forecaster.fit(y=y)
+    predictions = forecaster.predict_interval(steps=5, interval=[0.1, 0.9])
+
+    expected = pd.DataFrame(
+                   data=np.array(
+                       [[0.6192376 , 0.47059136, 0.76788384],
+                        [0.6093831 , 0.41880415, 0.79996205],
+                        [0.60478761, 0.40625865, 0.80331656],
+                        [0.60264456, 0.40242852, 0.80286061],
+                        [0.60164519, 0.40106414, 0.80222624]]
+                   ),
+                   columns=['pred', 'lower_bound', 'upper_bound'],
+                   index=pd.RangeIndex(start=50, stop=55, step=1)
+               )
+
+    pd.testing.assert_frame_equal(predictions, expected, atol=1e-4)
+
+
+def test_predict_interval_output_ForecasterStats_default_is_95_interval():
+    """
+    Test predict_interval returns the 95% interval when neither `alpha` nor
+    `interval` are provided.
+    """
+    forecaster = ForecasterStats(
+                     estimator=Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
+                 )
+    forecaster.fit(y=y)
+    predictions = forecaster.predict_interval(steps=5)
+    expected = forecaster.predict_interval(steps=5, interval=[0.025, 0.975])
+
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
+def test_predict_interval_output_ForecasterStats_alpha_is_alias_of_interval():
+    """
+    Test predict_interval returns the same output with `alpha` as with the
+    equivalent `interval`, without warnings.
+    """
+    forecaster = ForecasterStats(
+                     estimator=Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
+                 )
+    forecaster.fit(y=y)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        predictions = forecaster.predict_interval(steps=5, alpha=0.2)
+    expected = forecaster.predict_interval(steps=5, interval=[0.1, 0.9])
+
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
+def test_predict_interval_ValueError_when_alpha_and_interval_are_provided():
+    """
+    Test ValueError is raised when both `alpha` and `interval` are provided.
+    """
+    forecaster = ForecasterStats(
+                     estimator=Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
+                 )
+    forecaster.fit(y=y)
+
+    err_msg = re.escape(
+        "`alpha` and `interval` cannot be used together. Use only one "
+        "of them: `alpha=0.05` is equivalent to `interval=[0.025, 0.975]`."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        forecaster.predict_interval(steps=5, alpha=0.05, interval=[0.1, 0.9])
+
+
+def test_predict_interval_ValueError_when_alpha_is_not_between_0_and_1():
+    """
+    Test ValueError is raised when `alpha` is not between 0 and 1.
+    """
+    forecaster = ForecasterStats(
+                     estimator=Arima(order=(1, 0, 1), seasonal_order=(0, 0, 0))
+                 )
+    forecaster.fit(y=y)
+
+    err_msg = re.escape("`alpha` must have a value between 0 and 1. Got 1.5.")
+    with pytest.raises(ValueError, match=err_msg):
+        forecaster.predict_interval(steps=5, alpha=1.5)

@@ -717,3 +717,45 @@ def test_bayesian_search_foundation_verbose_return_best(capsys):
     captured = capsys.readouterr()
     assert "best-found parameters" in captured.out
     assert forecaster.is_fitted
+
+
+def test_bayesian_search_foundation_maximizes_metric_when_greater_is_better():
+    """
+    Test that a metric with `greater_is_better = True` is maximized: the
+    study direction is 'maximize', the results are sorted in descending
+    order and `return_best` refits the forecaster with the best trial. The
+    fake pipeline predicts the same values in every trial, so the metric
+    returns the number of calls to give each trial a different value.
+    """
+    forecaster = make_forecaster()
+    cv = TimeSeriesFold(steps=5, initial_train_size=40)
+    calls = []
+
+    def increasing_metric(y_true, y_pred):
+        calls.append(1)
+        return float(len(calls))
+
+    increasing_metric.greater_is_better = True
+
+    def search_space(trial):
+        return {
+            "context_length": trial.suggest_categorical("context_length", [24, 48])
+        }
+
+    with patch(PATCH_DEEPCOPY, side_effect=deepcopy):
+        results, study = bayesian_search_foundation(
+            forecaster=forecaster,
+            series=y,
+            cv=cv,
+            search_space=search_space,
+            metric=increasing_metric,
+            n_trials=3,
+            return_best=True,
+            show_progress=False,
+        )
+
+    assert study.direction == optuna.study.StudyDirection.MAXIMIZE
+    assert results["increasing_metric"].is_monotonic_decreasing
+    assert results["increasing_metric"].nunique() == 3
+    assert results.loc[0, "trial_number"] == study.best_trial.number
+    assert forecaster.context_length == results.loc[0, "context_length"]

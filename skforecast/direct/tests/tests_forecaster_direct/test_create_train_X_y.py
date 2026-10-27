@@ -3543,8 +3543,14 @@ def test_filter_nan_X_y_step_ValueError_when_all_samples_removed_due_to_NaN():
                  )
 
     err_msg = re.escape(
-        "All samples have been removed due to NaNs. Set "
-        "`forecaster.dropna_from_series = False` or review `y` and `exog` values."
+        "All samples have been removed due to NaNs: every row has a missing "
+        "value in the target or in the predictors (largest lag: 2). This can "
+        "happen when the missing values of `y` are closer together than the "
+        "lags, or when `exog` has a missing value in every row. To keep "
+        "training samples, fill the missing values of `y` and `exog`, use "
+        "fewer lags, or use an estimator that accepts NaNs (for example, "
+        "LightGBM or scikit-learn HistGradientBoosting models) and set "
+        "`dropna_from_series = False`."
     )
     with pytest.raises(ValueError, match=err_msg):
         # _create_train_X_y creates the matrices, then _filter_nan_X_y_step

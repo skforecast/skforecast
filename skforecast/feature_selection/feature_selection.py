@@ -493,7 +493,7 @@ def select_features_multiseries(
         window_features_cols = output[7]  # X_train_window_features_names_out_ output
         if forecaster.encoding == 'onehot':
             # One column per series, also for series without rows in X_train.
-            encoding_cols = list(forecaster.encoding_mapping_)
+            encoding_cols = forecaster._get_onehot_col_names()
         else:
             encoding_cols = ['_level_skforecast']
     

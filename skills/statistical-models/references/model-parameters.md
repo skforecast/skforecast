@@ -241,11 +241,17 @@ backtesting_stats(
     y=data,
     cv=cv,
     metric='mean_absolute_error',
-    freeze_params=True,     # Default. Reuse params from first fit in all folds.
+    freeze_params=True,     # Default. Auto selection runs only in the first fit.
     # freeze_params=False,  # Re-run auto selection each fold (slow but more realistic).
     #                       # Output includes extra 'estimator_params' column.
 )
 ```
+
+With `freeze_params=True` and `refit=True`, the `best_params_` of the first fit
+are used in every refit: Arima keeps the orders, intercept, drift and Box-Cox
+lambda and re-estimates the coefficients; Ets keeps the model type, smoothing
+parameters and Box-Cox lambda and re-estimates the initial states. `grid_search_stats`
+and `random_search_stats` always backtest each candidate this way.
 
 ## Exogenous Variables Support
 

@@ -4,7 +4,9 @@ PostToolUse hook (Edit|Write): report ruff errors introduced in an edited .py fi
 The repository has pre-existing ruff findings, so the hook compares the edited
 file against its version in HEAD and only reports findings that are new. It
 never blocks and never formats: the code base aligns assignments on purpose,
-which `ruff format` would undo. If ruff is not installed, the hook does nothing.
+which `ruff format` would undo. Files under dev/ (scratch) are skipped. Ruff is
+taken from the project environment (SKFORECAST_PYTHON_ENV locally, the cloud
+virtual environment) or from PATH; if it is not found, the hook does nothing.
 Standard library only (runs on any Python 3).
 """
 
@@ -17,6 +19,18 @@ from collections import Counter
 
 
 def find_ruff():
+    # Hooks do not see $CLAUDE_ENV_FILE, so the PATH of the project environment
+    # is not theirs: look first in the environments the session hooks set up.
+    candidates = [
+        os.environ.get("SKFORECAST_PYTHON_ENV"),
+        os.environ.get("VIRTUAL_ENV"),
+        os.path.join(os.path.expanduser("~"), ".venvs", "skforecast"),
+    ]
+    for prefix in candidates:
+        if prefix:
+            ruff = os.path.join(prefix, "bin", "ruff")
+            if os.path.isfile(ruff) and os.access(ruff, os.X_OK):
+                return [ruff]
     ruff = shutil.which("ruff")
     if ruff:
         return [ruff]
@@ -62,7 +76,7 @@ def main():
     except ValueError:
         return 0
     rel_path = rel_path.replace(os.sep, "/")
-    if rel_path.startswith("../"):
+    if rel_path.startswith(("../", "dev/")):  # dev/ holds scratch files
         return 0
 
     with open(file_path, encoding="utf-8") as f:

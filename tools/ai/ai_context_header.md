@@ -44,9 +44,13 @@ Optional: statsmodels>=0.13.2,<0.16 (stats), matplotlib>=3.7,<3.12 (plotting), k
 Local machines: environments are managed with conda. Run every Python command
 (tests, scripts, notebooks, `pip install`, etc.) in the conda environment that
 is currently active. Do not run `conda env list` to ask which environment to
-use, and do not use the `.venv` directory at the repository root. If the shell
-does not inherit the active environment (`$CONDA_DEFAULT_ENV` is empty), source
-your shell profile first, or call the interpreter through `conda run -n <env>`.
+use, and do not use the `.venv` directory at the repository root. Agent shells
+usually do not inherit the active environment, and sourcing the shell profile
+does not fix it. In Claude Code, set `SKFORECAST_PYTHON_ENV` to the prefix of
+the environment in the `env` of `.claude/settings.local.json`: a SessionStart
+hook then puts it on `PATH` (plus `SKFORECAST_DYLD_LIBRARY_PATH`, exported as
+`DYLD_LIBRARY_PATH`, for macOS library clashes). Otherwise, call the interpreter
+through `conda run -n <env>`.
 
 Cloud sessions (`CLAUDE_CODE_REMOTE=true`, e.g. claude.ai/code): there is no
 conda. A SessionStart hook installs the package with the `test` extras into a

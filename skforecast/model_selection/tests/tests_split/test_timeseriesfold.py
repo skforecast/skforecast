@@ -1,6 +1,7 @@
 # Unit test TimeSeriesFold
 # ==============================================================================
 import re
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
@@ -237,7 +238,6 @@ def test_TimeSeriesFold_split_no_refit_no_gap_no_remainder(capfd, return_all_ind
             steps                 = 10,
             initial_train_size    = 70,
             window_size           = 3,
-            differentiation       = None,
             refit                 = False,
             fixed_train_size      = False,
             gap                   = 0,
@@ -289,7 +289,6 @@ def test_TimeSeriesFold_split_no_refit_no_gap_allow_incomplete_fold_False(capfd,
             steps                 = 10,
             initial_train_size    = 65,
             window_size           = 4,
-            differentiation       = None,
             refit                 = 0,
             fixed_train_size      = False,
             gap                   = 0,
@@ -345,7 +344,6 @@ def test_TimeSeriesFold_split_no_refit_gap_allow_incomplete_fold_True(capfd, ret
             steps                 = 7,
             initial_train_size    = 70,
             window_size           = 5,
-            differentiation       = None,
             refit                 = False,
             fixed_train_size      = False,
             gap                   = 5,
@@ -411,7 +409,6 @@ def test_TimeSeriesFold_split_no_refit_initial_train_size_None_gap(capfd, return
              steps                 = 10,
              initial_train_size    = None,
              window_size           = 15,
-             differentiation       = None,
              refit                 = False,
              fixed_train_size      = False,
              gap                   = 5,
@@ -480,7 +477,6 @@ def test_TimeSeriesFold_split_refit_no_fixed_no_gap_no_remainder(capfd, return_a
             steps                 = 10,
             initial_train_size    = 70,
             window_size           = 2,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = False,
             gap                   = 0,
@@ -534,7 +530,6 @@ def test_TimeSeriesFold_split_refit_fixed_train_size_no_gap_no_remainder(capfd, 
             steps                 = 10,
             initial_train_size    = 70,
             window_size           = 6,
-            differentiation       = None,
             refit                 = 1,
             fixed_train_size      = True,
             gap                   = 0,
@@ -589,7 +584,6 @@ def test_TimeSeriesFold_split_refit_no_fixed_gap_allow_incomplete_fold_True(capf
             steps                 = 7,
             initial_train_size    = 70,
             window_size           = 3,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = False,
             gap                   = 5,
@@ -647,7 +641,6 @@ def test_TimeSeriesFold_split_refit_fixed_train_size_gap_allow_incomplete_fold_T
             steps                 = 7,
             initial_train_size    = 70,
             window_size           = 5,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 5,
@@ -704,7 +697,6 @@ def test_TimeSeriesFold_split_refit_no_fixed_gap_allow_incomplete_fold_False(cap
             steps                 = 7,
             initial_train_size    = 70,
             window_size           = 3,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = False,
             gap                   = 5,
@@ -757,7 +749,6 @@ def test_TimeSeriesFold_split_refit_fixed_train_size_gap_allow_incomplete_fold_F
             steps                 = 7,
             initial_train_size    = 70,
             window_size           = 4,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 5,
@@ -813,7 +804,6 @@ def test_TimeSeriesFold_split_refit_int_no_fixed_no_gap_no_remainder(capfd, retu
             steps                 = 10,
             initial_train_size    = 60,
             window_size           = 4,
-            differentiation       = None,
             refit                 = 2,
             fixed_train_size      = False,
             gap                   = 0,
@@ -871,7 +861,6 @@ def test_TimeSeriesFold_split_refit_int_fixed_train_size_no_gap_no_remainder(cap
             steps                 = 10,
             initial_train_size    = 60,
             window_size           = 2,
-            differentiation       = None,
             refit                 = 3,
             fixed_train_size      = True,
             gap                   = 0,
@@ -929,7 +918,6 @@ def test_TimeSeriesFold_split_refit_int_no_fixed_gap_allow_incomplete_fold_True(
             steps                 = 7,
             initial_train_size    = 70,
             window_size           = 10,
-            differentiation       = None,
             refit                 = 2,
             fixed_train_size      = False,
             gap                   = 5,
@@ -987,7 +975,6 @@ def test_TimeSeriesFold_split_refit_int_fixed_train_size_gap_allow_incomplete_fo
             steps                 = 7,
             initial_train_size    = 70,
             window_size           = 15,
-            differentiation       = None,
             refit                 = 3,
             fixed_train_size      = True,
             gap                   = 5,
@@ -1044,7 +1031,6 @@ def test_TimeSeriesFold_split_refit_int_no_fixed_gap_allow_incomplete_fold_False
             steps                 = 7,
             initial_train_size    = 70,
             window_size           = 20,
-            differentiation       = None,
             refit                 = 3,
             fixed_train_size      = False,
             gap                   = 5,
@@ -1097,7 +1083,6 @@ def test_TimeSeriesFold_split_refit_int_fixed_train_size_gap_allow_incomplete_fo
             steps                 = 7,
             initial_train_size    = 70,
             window_size           = 10,
-            differentiation       = None,
             refit                 = 2,
             fixed_train_size      = True,
             gap                   = 5,
@@ -1143,44 +1128,47 @@ def test_TimeSeriesFold_split_refit_int_fixed_train_size_gap_allow_incomplete_fo
 def test_TimeSeriesFold_split_refit_no_fixed_no_gap_no_remainder_differentiation(capfd, return_all_indexes, expected):
     """
     Test TimeSeriesFold split method output when refit is True, fixed_train_size is 
-    False, gap=0, not remainder and differentiation=1.
+    False, gap=0, not remainder and differentiation=1. The deprecated argument
+    `differentiation` raises a FutureWarning and has no effect: the
+    `window_size` of a forecaster with `lags=2` and `differentiation=1` is 3,
+    and the training sets include the observations used to differentiate.
     """
     y = pd.Series(np.arange(100))
     y.index = pd.date_range(start='2022-01-01', periods=100, freq='D')
     differentiation = 1
-    cv = TimeSeriesFold(
-            steps                 = 10,
-            initial_train_size    = 70,
-            window_size           = 2 + differentiation,
-            differentiation       = differentiation,
-            refit                 = True,
-            fixed_train_size      = False,
-            gap                   = 0,
-            skip_folds            = None,
-            allow_incomplete_fold = True,
-            return_all_indexes    = return_all_indexes,
-        )
+    with pytest.warns(FutureWarning, match="`differentiation` is deprecated"):
+        cv = TimeSeriesFold(
+                steps                 = 10,
+                initial_train_size    = 70,
+                window_size           = 2 + differentiation,
+                differentiation       = differentiation,
+                refit                 = True,
+                fixed_train_size      = False,
+                gap                   = 0,
+                skip_folds            = None,
+                allow_incomplete_fold = True,
+                return_all_indexes    = return_all_indexes,
+            )
     folds = cv.split(X=y)
     
     out, _ = capfd.readouterr()
     expected_out = (
         "Information of folds\n"
         "--------------------\n"
-        "Number of observations used for initial training: 69\n"
-        "    First 1 observation/s in training sets are used for differentiation\n"
+        "Number of observations used for initial training: 70\n"
         "Number of observations used for backtesting: 30\n"
         "    Number of folds: 3\n"
         "    Number skipped folds: 0 \n"
         "    Number of steps per fold: 10\n"
         "    Number of steps to exclude between last observed data (last window) and predictions (gap): 0\n\n"
         "Fold: 0\n"
-        "    Training:   2022-01-02 00:00:00 -- 2022-03-11 00:00:00  (n=69)\n"
+        "    Training:   2022-01-01 00:00:00 -- 2022-03-11 00:00:00  (n=70)\n"
         "    Validation: 2022-03-12 00:00:00 -- 2022-03-21 00:00:00  (n=10)\n"
         "Fold: 1\n"
-        "    Training:   2022-01-02 00:00:00 -- 2022-03-21 00:00:00  (n=79)\n"
+        "    Training:   2022-01-01 00:00:00 -- 2022-03-21 00:00:00  (n=80)\n"
         "    Validation: 2022-03-22 00:00:00 -- 2022-03-31 00:00:00  (n=10)\n"
         "Fold: 2\n"
-        "    Training:   2022-01-02 00:00:00 -- 2022-03-31 00:00:00  (n=89)\n"
+        "    Training:   2022-01-01 00:00:00 -- 2022-03-31 00:00:00  (n=90)\n"
         "    Validation: 2022-04-01 00:00:00 -- 2022-04-10 00:00:00  (n=10)\n\n"
     )
 
@@ -1209,7 +1197,6 @@ def test_TimeSeriesFold_split_refit_fixed_no_gap_no_remainder_skip_folds_3(capfd
             steps                 = 10,
             initial_train_size    = 70,
             window_size           = 2,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -1267,7 +1254,6 @@ def test_TimeSeriesFold_split_as_pandas_return_all_indexes_True(window_size):
             steps                 = 10,
             initial_train_size    = 70,
             window_size           = window_size,
-            differentiation       = None,
             refit                 = False,
             fixed_train_size      = False,
             gap                   = 0,
@@ -1306,7 +1292,6 @@ def test_TimeSeriesFold_split_as_pandas_return_all_indexes_False(window_size):
             steps                 = 10,
             initial_train_size    = 70,
             window_size           = window_size,
-            differentiation       = None,
             refit                 = False,
             fixed_train_size      = False,
             gap                   = 0,
@@ -1465,7 +1450,6 @@ def test_TimeSeriesFold_split_no_refit_no_gap_allow_incomplete_fold_False_fold_s
             initial_train_size    = 70,
             fold_stride           = 5,
             window_size           = 4,
-            differentiation       = None,
             refit                 = 0,
             fixed_train_size      = False,
             gap                   = 0,
@@ -1529,7 +1513,6 @@ def test_TimeSeriesFold_split_no_refit_gap_allow_incomplete_fold_True_fold_strid
             initial_train_size    = 70,
             fold_stride           = 5,
             window_size           = 6,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = False,
             gap                   = 2,
@@ -1608,3 +1591,32 @@ def test_TimeSeriesFold_split_window_size_greater_than_initial_train_size(window
     for fold in folds[1:]:
         lw_start, lw_end = fold[2]
         assert lw_start == max(0, lw_end - window_size)
+
+
+def test_TimeSeriesFold_FutureWarning_when_differentiation_is_set():
+    """
+    Test FutureWarning is raised when `differentiation` is set, in `__init__`
+    or with `set_params`, and not when it is `None`. It is not shown in the
+    representation of the object, and `window_size` is not deprecated.
+    """
+    warn_msg = re.escape(
+        "`differentiation` is deprecated since version 0.27.0 and has no "
+        "effect on the folds of `TimeSeriesFold`: the `window_size` of the "
+        "forecaster already includes its differentiation order. It will "
+        "be removed in version 0.29.0."
+    )
+    with pytest.warns(FutureWarning, match=warn_msg):
+        TimeSeriesFold(steps=10, initial_train_size=70, differentiation=1)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", category=FutureWarning)
+        cv = TimeSeriesFold(
+            steps=10, initial_train_size=70, window_size=3, differentiation=None
+        )
+        cv.set_params({'window_size': 4, 'differentiation': None})
+
+    with pytest.warns(FutureWarning, match=warn_msg):
+        cv.set_params({'differentiation': 1})
+
+    assert "differentiation" not in repr(cv)
+    assert "Differentiation" not in cv._repr_html_()

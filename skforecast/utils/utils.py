@@ -12,6 +12,7 @@ from functools import partial, wraps
 from importlib.metadata import PackageNotFoundError, version
 from importlib.util import find_spec
 import inspect
+import math
 from packaging.requirements import Requirement
 from pathlib import Path
 import platform
@@ -3980,8 +3981,150 @@ def set_cpu_gpu_device(
     return original_device
 
 
+def _check_differentiation_last_values(
+    last_window_values: np.ndarray,
+    last_window_index: pd.Index,
+    order: int,
+    series: str | None = None
+) -> None:
+    """
+    Check that the last `order` values of the last window, from which the
+    differentiation is reverted, are not missing. If any is NaN, all the
+    predictions are NaN, with any estimator, since no predictor reads it.
+
+    Parameters
+    ----------
+    last_window_values : numpy ndarray
+        Values of the last window, before the differentiation.
+    last_window_index : pandas Index
+        Index of the last window, aligned with `last_window_values`.
+    order : int
+        Order of the differentiation.
+    series : str, default None
+        Name of the series, for multi-series forecasters.
+
+    Returns
+    -------
+    None
+
+    """
+
+    is_nan = np.isnan(last_window_values[-order:])
+    if is_nan.any():
+        dates = [str(date) for date in last_window_index[-order:][is_nan]]
+        of_series = f" '{series}'" if series is not None else ""
+        last_values = "last value" if order == 1 else f"last {order} values"
+        raise ValueError(
+            f"The series{of_series} (or `last_window`) has missing values (NaN) "
+            f"at {dates}. With `differentiation`, the predictions are reverted "
+            f"to the original scale from the {last_values} of the series, so "
+            f"all of them would be NaN, with any estimator. Fill the missing "
+            f"values of the series (or `last_window`)."
+        )
+
+
+class _NonFinitePredictorsError(ValueError):
+    """
+    Raised by the fast path of linear models in `_build_predict_function` when
+    the predictors contain NaN or infinite values, which scikit-learn's
+    `predict` rejects. The prediction loops catch it to add the series, the
+    step and the date to the message with `message`.
+
+    Parameters
+    ----------
+    estimator_name : str
+        Name of the estimator class.
+    rows : numpy ndarray
+        Positions of the rows of `X` with non-finite values.
+    predictors : list
+        Names of the predictors (columns of `X`) with non-finite values.
+    has_nan : bool
+        `True` if `X` has NaN values, `False` if it only has infinite values.
+
+    """
+
+    def __init__(
+        self,
+        estimator_name: str,
+        rows: np.ndarray,
+        predictors: list[str],
+        has_nan: bool
+    ) -> None:
+
+        self.estimator_name = estimator_name
+        self.rows = rows
+        self.predictors = predictors
+        self.has_nan = has_nan
+        super().__init__(self.message())
+
+    def message(
+        self,
+        series: list[str] | None = None,
+        step: int | None = None,
+        date: Any = None
+    ) -> str:
+        """
+        Build the error message, with the context known by the caller.
+
+        Parameters
+        ----------
+        series : list, default None
+            Series whose predictors have non-finite values.
+        step : int, default None
+            Step (horizon) predicted, starting at 1.
+        date : object, default None
+            Date (index value) of the step predicted.
+
+        Returns
+        -------
+        message : str
+            Error message.
+
+        """
+
+        value = "NaN" if self.has_nan else "infinity"
+        context = f"Input X contains {value} in the predictors {self.predictors}"
+        if series is not None:
+            context += f" of series {series}"
+        if step is not None:
+            context += f" at step {step}"
+            if date is not None:
+                context += f" ({date})"
+
+        if self.has_nan:
+            # NOTE: `_level_skforecast` is NaN for the series not seen during
+            # training with an ordinal encoding, which no missing value of the
+            # data explains, so it gets its own remedy.
+            remedies = []
+            if any(p != "_level_skforecast" for p in self.predictors):
+                remedies.append(
+                    "fill the missing values of the series (or `last_window`) "
+                    "and `exog`"
+                )
+            if "_level_skforecast" in self.predictors:
+                remedies.append(
+                    "predict the series not seen during training with "
+                    "`encoding='onehot'` or `encoding=None` (an ordinal "
+                    "encoding gives them NaN)"
+                )
+            remedy = "; ".join(remedies)
+            return (
+                f"{context}. {self.estimator_name} does not accept missing "
+                f"values encoded as NaN, so its predictions would be NaN. "
+                f"{remedy[0].upper()}{remedy[1:]}, or use an estimator that "
+                f"accepts them, for example HistGradientBoostingRegressor or "
+                f"LGBMRegressor."
+            )
+
+        return (
+            f"{context}. {self.estimator_name} does not accept infinite values. "
+            f"Review the values of the series (or `last_window`) and `exog`."
+        )
+
+
 def _build_predict_function(
     estimator: object,
+    forecaster: object | None = None
 ) -> Callable:
     """
     Build an optimized predict callable for a fitted estimator. The returned
@@ -4012,10 +4155,28 @@ def _build_predict_function(
     This includes user subclasses of scikit-learn estimators, since they may
     override `predict`.
 
+    The fast path of linear models skips the input validation of their
+    `predict` method, so it raises `_NonFinitePredictorsError` (a `ValueError`)
+    when `X` contains NaN or infinite values, as `predict` does, instead of
+    returning NaN predictions, unless the forecaster allows NaN predictions.
+    The rest of fast paths belong to estimators that accept NaN values.
+
     Parameters
     ----------
     estimator : object
         A fitted scikit-learn compatible estimator.
+    forecaster : object, default None
+        Forecaster that predicts with `estimator`. Two of its attributes are
+        used by the fast path of linear models:
+
+        - `X_train_features_names_out_`: names of the columns of `X`, used to
+        name the predictors with non-finite values in the error. If the
+        forecaster is `None`, they are named by their column position.
+        - `_allow_nan_predictions`: if `True` (set by backtesting in its copy
+        of the forecaster), NaN predictions are returned instead of raising,
+        to evaluate the series and dates that can be predicted. If the
+        forecaster is `None`, or was saved with a previous version that does
+        not have it, it is `False`.
 
     Returns
     -------
@@ -4033,12 +4194,41 @@ def _build_predict_function(
     if is_sklearn_class and isinstance(estimator, LinearModel):
         coef = estimator.coef_
         intercept = estimator.intercept_
+        feature_names = getattr(forecaster, 'X_train_features_names_out_', None)
+        # NOTE: `getattr` keeps forecasters saved with previous versions, which
+        # do not have this attribute, working.
+        allow_nan_predictions = getattr(forecaster, '_allow_nan_predictions', False)
 
-        # NOTE: np.dot does not validate its input, so NaN in `X` propagates to the
-        # prediction instead of raising as sklearn's `predict` would. Inputs must be
-        # validated upstream (see `check_predict_input`).
+        if allow_nan_predictions:
+            def predict_fn(X):
+                return np.dot(X, coef) + intercept
+
+            return predict_fn
+
+        # NOTE: np.dot does not validate its input, so NaN in `X` would give NaN
+        # predictions instead of raising as sklearn's `predict` does. A non-finite
+        # value in `X` gives a non-finite prediction, and so a non-finite sum of
+        # the predictions, which is the cheapest check. `X` is only inspected
+        # when the sum is not finite (it can also overflow with finite values).
         def predict_fn(X):
-            return np.dot(X, coef) + intercept
+            pred = np.dot(X, coef) + intercept
+            if not math.isfinite(pred.sum()):
+                is_finite_X = np.isfinite(X)
+                if not is_finite_X.all():
+                    is_not_finite_X = ~is_finite_X
+                    columns = np.flatnonzero(is_not_finite_X.any(axis=0))
+                    predictors = (
+                        [feature_names[i] for i in columns]
+                        if feature_names is not None
+                        else [f"column {i}" for i in columns]
+                    )
+                    raise _NonFinitePredictorsError(
+                        estimator_name = estimator_name,
+                        rows           = np.flatnonzero(is_not_finite_X.any(axis=1)),
+                        predictors     = predictors,
+                        has_nan        = bool(np.isnan(X).any())
+                    )
+            return pred
 
         return predict_fn
 
@@ -5128,3 +5318,88 @@ def estimator_has_native_nan_support(estimator: object) -> bool:
         return True
 
     return False
+
+
+def _all_samples_removed_message(
+    series_name: str,
+    dropna_from_series: bool,
+    max_lag: int | None,
+    max_size_window_features: int | None,
+    estimator: object
+) -> str:
+    """
+    Create the message of the error raised when no training sample is left
+    after removing the rows with NaN values.
+
+    Rows with NaN in the target are always removed, so if `dropna_from_series`
+    is `False`, the target is the only possible cause. Otherwise, the message
+    gives the size of the largest lag and window feature, since missing values
+    closer together than them can leave a NaN in every row, and the ways to
+    keep training samples. Setting `dropna_from_series = False` is suggested
+    directly only if the estimator natively supports NaN values.
+
+    Parameters
+    ----------
+    series_name : str
+        Name of the input series used in the message, "`y`" or "`series`".
+    dropna_from_series : bool
+        Value of `dropna_from_series` of the forecaster.
+    max_lag : int, None
+        Largest lag of the forecaster. `None` if no lags are used.
+    max_size_window_features : int, None
+        Largest window size of the window features. `None` if no window
+        features are used.
+    estimator : object
+        Estimator of the forecaster.
+
+    Returns
+    -------
+    message : str
+        Error message.
+
+    """
+
+    if not dropna_from_series:
+        return (
+            "All samples have been removed due to NaNs: the target is NaN in "
+            f"every row. Review {series_name} or fill its missing values."
+        )
+
+    sizes = []
+    predictors = []
+    shorten = []
+    if max_lag is not None:
+        sizes.append(f"largest lag: {max_lag}")
+        predictors.append("lags")
+        shorten.append("fewer lags")
+    if max_size_window_features is not None:
+        sizes.append(f"largest window feature: {max_size_window_features}")
+        predictors.append("window features")
+        shorten.append(
+            "shorter window features (or a smaller `min_periods` if they are "
+            "`RollingFeatures`)"
+        )
+    sizes = f" ({', '.join(sizes)})"
+    predictors = " or ".join(predictors)
+    shorten = f"use {' or '.join(shorten)}"
+
+    fill = f"fill the missing values of {series_name} and `exog`"
+    if estimator_has_native_nan_support(estimator):
+        fixes = (
+            "set `dropna_from_series = False` (the estimator accepts NaNs), "
+            f"{fill}, or {shorten}"
+        )
+    else:
+        fixes = (
+            f"{fill}, {shorten}, or use an estimator that accepts NaNs (for "
+            "example, LightGBM or scikit-learn HistGradientBoosting models) "
+            "and set `dropna_from_series = False`"
+        )
+
+    return (
+        "All samples have been removed due to NaNs: every row has a missing "
+        f"value in the target or in the predictors{sizes}. This can happen "
+        f"when the missing values of {series_name} are closer together than "
+        f"the {predictors}, or when `exog` has a missing value in every row. "
+        f"To keep training samples, {fixes}."
+    )

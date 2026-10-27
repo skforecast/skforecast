@@ -17,8 +17,9 @@ Complete reference for all metrics available in skforecast: properties, compatib
 |--------|-------------|--------|:-------------------:|:-----------------:|:------------------:|:-------------:|-------|----------------|
 | Mean Absolute Error | `'mean_absolute_error'` | sklearn | — | — | ✓ | ✓ | [0, ∞) | Average absolute deviation from truth |
 | Mean Squared Error | `'mean_squared_error'` | sklearn | — | — | — | ✓ | [0, ∞) | Average squared deviation; penalizes large errors |
+| Root Mean Squared Error | `'root_mean_squared_error'` | sklearn | — | — | — | ✓ | [0, ∞) | Square root of MSE; same units as the target |
 | Median Absolute Error | `'median_absolute_error'` | sklearn | — | — | ✓✓ | ✓ | [0, ∞) | Median of absolute deviations; very robust |
-| Mean Absolute Percentage Error | `'mean_absolute_percentage_error'` | sklearn | — | ✓ | — | — | [0, ∞) | Percentage error; undefined when y_true = 0 |
+| Mean Absolute Percentage Error | `'mean_absolute_percentage_error'` | sklearn | — | ✓ | — | — | [0, ∞) fraction | Relative error as a fraction (0.1 = 10 %), not × 100; explodes when y_true = 0 |
 | Mean Squared Log Error | `'mean_squared_log_error'` | sklearn | — | — | — | ✓* | [0, ∞) | Log-scale MSE; penalizes under-predictions more |
 | Symmetric MAPE | `'symmetric_mean_absolute_percentage_error'` | skforecast | — | ✓ | — | ✓ | [0, 200] % | Symmetric percentage; avoids MAPE's asymmetry |
 | Mean Absolute Scaled Error | `'mean_absolute_scaled_error'` | skforecast | ✓ | ✓ | ✓ | ✓ | [0, ∞) | Ratio vs naive forecast; < 1 = better than naive |
@@ -26,11 +27,16 @@ Complete reference for all metrics available in skforecast: properties, compatib
 
 *MSLE requires y_true ≥ 0 and y_pred ≥ 0 (typically used with positive data).
 
+sklearn's MAPE returns a fraction (0.1 means 10 %), while skforecast's SMAPE is
+already multiplied by 100 (10 means 10 %). Multiply MAPE by 100 before comparing
+or reporting the two side by side. When y_true = 0, sklearn divides by a tiny
+epsilon, so MAPE is not infinite but an extremely large number (about 1e16).
+
 ## Probabilistic Forecast Metrics
 
 | Metric | Function | Input signature | Use with | Measures |
 |--------|----------|-----------------|----------|----------|
-| Coverage | `calculate_coverage` | `(y_true, lower_bound, upper_bound)` | Any forecaster with intervals | Calibration (proportion of truths in interval) |
+| Coverage | `calculate_coverage` | `(y_true, lower_bound, upper_bound)` | Any forecaster with intervals | Calibration (proportion of truths in interval). Backtesting with one interval (two quantiles, optionally with the median) reports it as `coverage`, next to `interval_width` (mean width) |
 | CRPS (bootstrap) | `crps_from_predictions` | `(y_true: float, y_pred: ndarray)` | Bootstrapped predictions | Calibration + sharpness (single observation) |
 | CRPS (quantiles) | `crps_from_quantiles` | `(y_true: float, pred_quantiles: ndarray, quantile_levels: ndarray)` | Foundation models, quantile predictions | Calibration + sharpness (single observation) |
 | Winkler Score | `winkler_score` | `(y_true, lower_bound, upper_bound, alpha)` | Any single interval | Calibration + sharpness of one interval; miscoverage penalty scaled by `alpha` |
@@ -73,7 +79,7 @@ Complete reference for all metrics available in skforecast: properties, compatib
 | MSLE | Positive data where relative errors matter more than absolute | Data has zeros or negative values |
 | MASE | Comparing across series with different scales; need baseline reference | Very short training series (naive denominator unreliable) |
 | RMSSE | Same as MASE but want to penalize large errors more | Same as MASE |
-| Coverage | Evaluating prediction interval calibration | Want to measure interval width/sharpness (use CRPS) |
+| Coverage | Evaluating prediction interval calibration, always next to the mean width (`interval_width` in backtesting) | Want a single score of calibration and sharpness (use Winkler, WIS or CRPS) |
 | CRPS | Comprehensive interval/quantile evaluation (calibration + sharpness) | Only have point forecasts |
 | Winkler score | Scoring a single interval with a tunable miscoverage penalty (`alpha`) | Comparing full distributions (use WIS or CRPS) |
 | Weighted interval score (WIS) | Scoring several quantile intervals + median as one CRPS-like number | Only have a single interval (use Winkler) or only point forecasts |

@@ -144,5 +144,10 @@ def test_backtesting_forecaster_multiseries_ForecasterRnn_with_exog_and_interval
                          verbose              = False
                      )
 
-    assert metrics.shape == (5, 2)
+    assert list(metrics.columns) == [
+        'levels', 'mean_absolute_error', 'coverage', 'interval_width'
+    ]
+    assert metrics.shape == (5, 4)
+    assert metrics['coverage'].between(0, 1).all()
+    assert (metrics['interval_width'] > 0).all()
     assert preds.shape == (52, 5)

@@ -16,16 +16,98 @@ All significant changes to this project are documented in this release file.
 
 The main changes in this release are:
 
++ <span class="badge text-bg-feature">Feature</span> Backtesting with a prediction interval reports its empirical `coverage` and mean `interval_width` next to the other metrics, per series and aggregated in multi-series backtesting, for machine learning, statistical and foundation models. ([#1409](https://github.com/skforecast/skforecast/issues/1409))
+
++ <span class="badge text-bg-api-change">API Change</span> Backtesting and hyperparameter search no longer require repeating the `differentiation` of the forecaster in <code>[TimeSeriesFold]</code> or <code>[OneStepAheadFold]</code>. The `differentiation` argument of both folds, and `window_size` of <code>[OneStepAheadFold]</code>, are deprecated: they have no effect, emit a `FutureWarning` and will be removed in 0.29.0. ([#1423](https://github.com/skforecast/skforecast/pull/1423))
+
++ <span class="badge text-bg-fix">Fix</span> The `predict_interval` method of <code>[ForecasterStats]</code> returns the interval requested in `interval`; it always returned the 95% interval. ([#1416](https://github.com/skforecast/skforecast/pull/1416))
+
++ <span class="badge text-bg-fix">Fix</span> Forecasters with a linear model of scikit-learn raise a `ValueError` naming the predictor and the date when a predictor has a missing value when predicting, as the `predict` method of the estimator does, instead of returning NaN predictions, and so do all forecasters with `differentiation` when the series ends with a missing value; backtesting, which left them out of the metrics silently with multiple series, now warns about them or, with one series, raises a clear error. ([#1432](https://github.com/skforecast/skforecast/pull/1432))
+
++ <span class="badge text-bg-fix">Fix</span> `freeze_params=True`, the default of <code>[backtesting_stats]</code>, reuses the model selected by automatic <code>[Arima]</code> and <code>[Ets]</code> in the first fit, as documented: the automatic selection runs once instead of in every fold (3.6 times faster with Arima and 8.4 with Ets over 20 folds). ([#1425](https://github.com/skforecast/skforecast/pull/1425))
+
++ <span class="badge text-bg-fix">Fix</span> Hyperparameter searches follow the direction of the metric: with a metric in which greater is better, such as `r2_score`, they ranked the worst candidate first and `return_best=True` refitted the forecaster with it. ([#1431](https://github.com/skforecast/skforecast/pull/1431))
+
+!!! warning "Before upgrading"
+
+    Some results change with this version, without any change in your code:
+
+    + <code>[ForecasterStats]</code>: `predict_interval(interval=...)` without `alpha` returns the requested interval instead of the 95% one.
+
+    + <code>[backtesting_stats]</code>, <code>[grid_search_stats]</code> and <code>[random_search_stats]</code> with automatic <code>[Arima]</code> or <code>[Ets]</code>: predictions and metrics change from the second fold, because the model selected in the first fit is reused. `freeze_params=False` in <code>[backtesting_stats]</code> gives the previous results; the searches have no such argument, so their previous results cannot be reproduced.
+
+    + <code>[Ets]</code> with `lambda_auto=True`: `best_params_` contains the Box-Cox lambda selected in the fit and `lambda_auto=False`, so the model rebuilt from it keeps that lambda.
+
+    + Hyperparameter searches with a scikit-learn metric in which greater is better (`r2_score`, `explained_variance_score`...) or, with <code>[ForecasterRecursiveClassifier]</code>, a loss (`zero_one_loss`): the order of the results and the model selected with `return_best` change, now to the best candidate.
+
+    + <code>[ForecasterRecursiveMultiSeries]</code> with `encoding='ordinal'` (the default), `'ordinal_category'` or `None` and series not given in alphabetical order: the rows of each step in the output of `predict` and the other predict methods with `levels=None`, and the keys of `in_sample_residuals_`, follow the order of the series instead of the alphabetical order. The values are the same; pass `levels` to fix an order.
+
+    And some code needs to be updated: forecasters with a linear model of scikit-learn (`LinearRegression`, `Ridge`, `Lasso`...) raise a `ValueError` in `predict` when a predictor has a missing value, for example a gap in `exog`, instead of returning NaN predictions: fill the gaps or use an estimator that accepts missing values. With `differentiation`, any estimator also raises when one of the last `differentiation` values of the series (or of `last_window`) is missing: fill it. Backtesting keeps predicting those dates as NaN: with one series it raises a clear error if they are scored (as the metric did before, and not if they only affect the discarded steps of the `gap`), and with several series it leaves them out of the metrics with a `MissingValuesWarning`. This includes <code>[ForecasterRecursiveMultiSeries]</code> with `encoding='ordinal'` predicting a series not seen in training: it returned NaN for that series and predicted the rest, and now the whole call raises; use `encoding='onehot'` or `None` to predict it. Passing both `alpha` and `interval` to <code>[ForecasterStats]</code> or <code>[backtesting_stats]</code> raises a `ValueError`; and the metrics of backtesting with one prediction interval (`interval`, or `quantiles` in <code>[backtesting_foundation]</code>) have two more columns, `coverage` and `interval_width`, so code that selects them by position may need to change. See **Added** and **Changed**.
+
 
 **Added**
 
++ <code>[backtesting_forecaster]</code>, <code>[backtesting_forecaster_multiseries]</code>, <code>[backtesting_stats]</code> and <code>[backtesting_foundation]</code> add `coverage` and `interval_width` (mean width of the interval, in the units of the series) to the metrics when the predictions define one interval: a float `interval`, or two quantiles optionally with the median (`[0.1, 0.9]` or `[0.1, 0.5, 0.9]`, in `interval` or `quantiles`). In multi-series backtesting they are reported per series and in the aggregated rows. ([#1409](https://github.com/skforecast/skforecast/issues/1409))
+
++ `metric='root_mean_squared_error'` (RMSE, from scikit-learn) is accepted by name in backtesting and hyperparameter search, as `'mean_squared_error'` already was. Before, it had to be passed as a function. ([#1424](https://github.com/skforecast/skforecast/pull/1424))
+
 
 **Changed**
+
++ In the `predict_interval` method of <code>[ForecasterStats]</code> and in <code>[backtesting_stats]</code>, `alpha` is an alias of `interval` (`alpha=0.05` is equivalent to `interval=[0.025, 0.975]`), and passing both raises a `ValueError`. Previously, `alpha` took precedence over `interval`. `interval` now comes before `alpha` in the signature. ([#1416](https://github.com/skforecast/skforecast/pull/1416))
+
++ Backtesting and hyperparameter search with a forecaster with `differentiation` no longer require repeating it in <code>[TimeSeriesFold]</code> or <code>[OneStepAheadFold]</code>; it raised a `ValueError`, and grid and random search returned an empty DataFrame. The `differentiation` argument of both folds, and `window_size` of <code>[OneStepAheadFold]</code>, have no effect on the folds and are deprecated (`FutureWarning`, removed in 0.29.0). With `verbose=True`, the training size now includes the observations used to differentiate. ([#1423](https://github.com/skforecast/skforecast/pull/1423))
+
++ Removed the `externally_fitted` argument of the `split` method of <code>[OneStepAheadFold]</code>, which was not used. ([#1423](https://github.com/skforecast/skforecast/pull/1423))
+
++ <code>[grid_search_stats]</code>, <code>[random_search_stats]</code> and <code>[grid_search_equivalent_date]</code> raise a `ValueError` with the accepted names, before evaluating any candidate, when a metric name is not valid. They skipped every candidate with a warning and returned an empty DataFrame. ([#1431](https://github.com/skforecast/skforecast/pull/1431))
+
++ The hyperparameter searches of multi-series forecasters are faster with metrics that do not use `y_train` (most of them): 19% less time with <code>[OneStepAheadFold]</code> and 8% with <code>[TimeSeriesFold]</code> (200 series, Ridge). The training values were prepared in every fold even when the metric did not need them. ([#1431](https://github.com/skforecast/skforecast/pull/1431))
+
++ The first fit of <code>[Ets]</code> in a new environment, when numba compiles its functions, takes about 40% less time (7 s instead of 12 s on a 4-core CPU). Estimates and selected models are unchanged. ([#1400](https://github.com/skforecast/skforecast/pull/1400))
 
 
 **Fixed**
 
 + Fixed two issues in <code>[fetch_dataset]</code> where the `website_visits` and `m5` datasets were returned without a `DatetimeIndex`, with the warning `Could not preprocess dataset`. In addition, large parquet datasets such as `m5` need less memory to load (about 10 GB instead of more than 15 GB). ([#1402](https://github.com/skforecast/skforecast/pull/1402))
+
++ Fixed an issue in the `predict_interval` method of <code>[ForecasterStats]</code> where `interval` was ignored unless `alpha=None` was also passed, because `alpha` defaulted to 0.05 and took precedence: `interval=[0.1, 0.9]` returned the 95% interval. <code>[backtesting_stats]</code> was not affected. ([#1416](https://github.com/skforecast/skforecast/pull/1416))
+
++ <code>[backtesting_stats]</code> raised `ValueError: Length of values (2) does not match length of index (1)` with a <code>[ForecasterStats]</code> with several estimators and overlapping folds (`fold_stride < steps`). Each estimator now gets its own metrics, the same as when it is backtested alone. ([#1419](https://github.com/skforecast/skforecast/pull/1419))
+
++ `freeze_params=True` (the default) in <code>[backtesting_stats]</code>, also used by <code>[grid_search_stats]</code> and <code>[random_search_stats]</code>, did not freeze anything: the automatic selection of <code>[Arima]</code> and <code>[Ets]</code> was repeated in every refit. The model selected in the first fit is now reused, 3.6 times faster with automatic Arima and 8.4 times with Ets (20 folds). With `lambda_auto=True`, `best_params_` of <code>[Ets]</code> stores the selected Box-Cox lambda, as R's `ets(y, model = fit)` reuses it. ([#1425](https://github.com/skforecast/skforecast/pull/1425))
+
++ <code>[ForecasterRecursiveMultiSeries]</code> raised a `KeyError` in `fit` and in backtesting when the series names were integers (dict keys, wide DataFrame columns or numeric ids in long data). The names are now kept as given; with `encoding='onehot'` the one-hot columns are named after the series as strings. ([#1357](https://github.com/skforecast/skforecast/issues/1357), [#1412](https://github.com/skforecast/skforecast/pull/1412))
+
++ In <code>[ForecasterRecursiveMultiSeries]</code>, the order of `X_train_series_names_in_`, of the keys of `in_sample_residuals_` and `in_sample_residuals_by_bin_`, and of the series in the output of the predict methods with `levels=None` depended on `encoding`: the order of the series with `'onehot'`, alphabetical with the other encodings. It now always follows the order in which the series were given, as `series_names_in_` and `last_window_` already did. ([#1356](https://github.com/skforecast/skforecast/issues/1356))
+
++ When missing values left no training sample, <code>[ForecasterRecursive]</code>, <code>[ForecasterDirect]</code> and the other machine learning forecasters advised `dropna_from_series = False`, which then failed with estimators that do not accept NaNs. The error now gives the largest lag and window feature and the fixes that work for the estimator. ([#1411](https://github.com/skforecast/skforecast/issues/1411), [#1422](https://github.com/skforecast/skforecast/pull/1422))
+
++ The `set_in_sample_residuals` method of <code>[ForecasterRecursive]</code>, <code>[ForecasterDirect]</code>, <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> raised a `CatBoostError` about `cat_features` with a `CatBoostRegressor` and categorical exogenous variables, while `fit(store_in_sample_residuals=True)` worked with the same data. The residuals are now the same as those stored by `fit`.
+
++ <code>[backtesting_forecaster_multiseries]</code> and <code>[backtesting_foundation]</code> silently left out of the metrics, including the aggregated ones, the series that could not be predicted in a fold (shorter than the window size, missing values in the last window, or no observed values in the context window). A `MissingValuesWarning` now names those series and folds. ([#1406](https://github.com/skforecast/skforecast/issues/1406))
+
++ Forecasters with a linear model of scikit-learn (`LinearRegression`, `Ridge`, `Lasso`...) returned NaN predictions without any error when a predictor had a missing value (for example, a gap in `exog`, or a series not seen in training with `encoding='ordinal'`). They now raise a `ValueError`, as the `predict` method of the estimator does, naming the predictor, the step, the date and the series. Backtesting still returns NaN for those dates, to evaluate the rest. ([#1432](https://github.com/skforecast/skforecast/pull/1432))
+
++ With `differentiation`, <code>[ForecasterRecursive]</code>, <code>[ForecasterDirect]</code>, <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> returned NaN predictions without any error, with any estimator, when one of the last `differentiation` values of the series (or of `last_window`) was missing: no predictor reads it, but the predictions are reverted to the original scale from it. They now raise a `ValueError` naming the series and the date. Backtesting still returns NaN for that fold. ([#1432](https://github.com/skforecast/skforecast/pull/1432))
+
++ <code>[backtesting_forecaster_multiseries]</code> and <code>[backtesting_foundation]</code> silently left out of the metrics the NaN predictions of dates with observed values. A `MissingValuesWarning` now gives their number per series. With a single series, <code>[backtesting_forecaster]</code>, <code>[backtesting_stats]</code> and <code>[backtesting_foundation]</code> raised `ValueError: Input contains NaN.` in the metric; the error now gives the number of NaN predictions, the first date, the likely cause and the remedy. ([#1432](https://github.com/skforecast/skforecast/pull/1432))
+
++ <code>[backtesting_forecaster_multiseries]</code> and the hyperparameter search of <code>[ForecasterRecursiveMultiSeries]</code> raised `ValueError: Length of '<series>' must be greater than the maximum window size needed by the forecaster` when a series that starts late or ends early had exactly `window_size` values in the training set of a fold. That series is now left out of the fold. ([#1410](https://github.com/skforecast/skforecast/issues/1410), [#1418](https://github.com/skforecast/skforecast/pull/1418))
+
++ <code>[backtesting_forecaster_multiseries]</code> and the hyperparameter search of multi-series forecasters raised an unrelated `ValueError` (`Found frequencies: []`, or `` `last_window` must have as many values as needed ``) when no series could be trained or predicted in a fold, for example in panels where some series end and others start later. That fold is now skipped and listed in the `MissingValuesWarning`; if no fold can be predicted or evaluated, a `ValueError` explains why. ([#1427](https://github.com/skforecast/skforecast/pull/1427))
+
++ The `weighted_average` metric of <code>[backtesting_forecaster_multiseries]</code> was NaN when a level was predicted but had no observed values in its test set, for example a series that ends at the end of the training set. It is also the metric that ranks the candidates of the hyperparameter searches of <code>[ForecasterRecursiveMultiSeries]</code> by default. That level is now left out of the weighted average, as it already was of the average and the pooling. ([#1427](https://github.com/skforecast/skforecast/pull/1427))
+
++ <code>[backtesting_forecaster_multiseries]</code>, <code>[backtesting_foundation]</code> and the hyperparameter search of <code>[ForecasterRecursiveMultiSeries]</code> rejected a valid `initial_train_size` when every series was shorter than the span of all series. The `split` method of <code>[OneStepAheadFold]</code> also returned a wrong test end with a dict of series. ([#1430](https://github.com/skforecast/skforecast/pull/1430))
+
++ The hyperparameter search of <code>[ForecasterRecursiveMultiSeries]</code> with <code>[OneStepAheadFold]</code> failed with `ValueError: Length of '<series>' must be greater than the maximum window size needed by the forecaster` when a series ended at the end of the training set. That series is now left out of the test set. ([#1430](https://github.com/skforecast/skforecast/pull/1430))
+
++ Hyperparameter searches ranked the candidates by the task of the forecaster (minimize in regression, maximize in classification), not by the metric: with `r2_score`, or `zero_one_loss` in classification, `return_best=True` refitted the worst candidate. The direction is now inferred from the metric (scikit-learn `*_score` metrics are maximized), a custom callable can set `greater_is_better`, and `direction` in `kwargs_create_study` also orders the results. ([#1431](https://github.com/skforecast/skforecast/pull/1431))
+
++ <code>[grid_search_forecaster]</code>, <code>[random_search_forecaster]</code> and their multiseries versions failed with a forecaster created with `lags=None` and only `window_features` (`TypeError: 'NoneType' object is not iterable`), and with a `None` element in `lags_grid` (`AttributeError`). A `None` element now evaluates a candidate without lags; if the forecaster has no `window_features`, a `ValueError` is raised before any candidate is evaluated. ([#1355](https://github.com/skforecast/skforecast/issues/1355), [#1388](https://github.com/skforecast/skforecast/pull/1388), [#1433](https://github.com/skforecast/skforecast/pull/1433), [#1434](https://github.com/skforecast/skforecast/pull/1434))
+
++ <code>[plot_residuals]</code> ignored the `fig` argument when another figure was active: the subplots were drawn on the active figure and `fig` was returned empty. ([#1386](https://github.com/skforecast/skforecast/issues/1386), [#1387](https://github.com/skforecast/skforecast/pull/1387))
 
 
 ## 0.26.0 <small>Oct 8, 2026</small> { id="0.26.0" }
@@ -145,7 +227,15 @@ The main changes in this release are:
 
 + The [probabilistic forecasting overview](../user_guides/probabilistic-forecasting-overview.md) explains which residuals to use (in-sample or out-of-sample, binned), compares the methods in a table and adds a section on how to evaluate prediction intervals. Three new animations show how each method builds the interval, how the type of residuals changes its coverage, and how coverage and width measure the quality of an interval. ([#1393](https://github.com/skforecast/skforecast/pull/1393))
 
++ The backtesting user guide shows how to align the folds with calendar months (retrain at the end of each month and forecast the whole next month), combining `fold_stride` and `skip_folds`. [User guide](../user_guides/backtesting.ipynb#backtesting-with-calendar-month-folds) ([#1401](https://github.com/skforecast/skforecast/pull/1401))
+
 + The [user guides index](../user_guides/table-of-contents.md) is a card grid with one card per section, and the navigation of the user guides is reorganised: new Data section, and the migration guide, drift detection, GPU and training matrices guides move to the section they belong to. ([#1393](https://github.com/skforecast/skforecast/pull/1393))
+
++ The [FAQ and forecasting tips index](../faq/table-of-contents.md) is a card grid like the user guides index, and the FAQ navigation is grouped in four sections: forecasting tips, model evaluation, feature engineering and performance optimization. The FAQ pages are no longer repeated inside the user guides navigation. ([#1403](https://github.com/skforecast/skforecast/pull/1403))
+
++ New user guide [Migrating from Prophet to skforecast](../user_guides/migrate-from-prophet.ipynb): how seasonalities, holidays, regressors, prediction intervals and cross-validation translate to skforecast, with side-by-side backtests of both libraries on the same folds. ([#1398](https://github.com/skforecast/skforecast/pull/1398))
+
++ New user guide [Comparing forecasting models](../user_guides/comparing-forecasting-models.ipynb): machine learning (Ridge, LightGBM), foundation (Chronos-2), statistical (AutoARIMA, AutoETS) and deep learning (LSTM) models evaluated with the same backtesting on three datasets, with their accuracy, interval coverage and computation time.
 
 
 **Fixed**

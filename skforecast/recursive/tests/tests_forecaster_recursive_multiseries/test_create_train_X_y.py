@@ -368,7 +368,84 @@ def test_create_train_X_y_output_when_series_and_exog_is_None():
         pd.testing.assert_series_equal(results[12][k], expected[12][k])
 
 
-@pytest.mark.parametrize("encoding, dtype", 
+def test_create_train_X_y_output_when_series_names_are_integers_and_encoding_onehot():
+    """
+    Test the output of _create_train_X_y when the series names are integers
+    and `encoding='onehot'`. The one-hot columns are named after the series
+    as strings, while the series names are kept as integers in the rest of
+    the outputs.
+    """
+    index = pd.date_range(start='2000-01-01', periods=7, freq='D')
+    series = {
+        1: pd.Series(np.arange(7, dtype=float), index=index, name=1),
+        2: pd.Series(np.arange(7, dtype=float), index=index, name=2)
+    }
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(),
+        transformer_series=StandardScaler(),
+        lags=3,
+        encoding="onehot"
+    )
+
+    results = forecaster._create_train_X_y(series=series)
+    expected = (
+        pd.DataFrame(
+            data = np.array([[-0.5, -1. , -1.5, 1, 0],
+                             [ 0. , -0.5, -1. , 1, 0],
+                             [ 0.5,  0. , -0.5, 1, 0],
+                             [ 1. ,  0.5,  0. , 1, 0],
+                             [-0.5, -1. , -1.5, 0, 1],
+                             [ 0. , -0.5, -1. , 0, 1],
+                             [ 0.5,  0. , -0.5, 0, 1],
+                             [ 1. ,  0.5,  0. , 0, 1]]),
+            index   = pd.DatetimeIndex([
+                "2000-01-04", "2000-01-05", "2000-01-06", "2000-01-07",
+                "2000-01-04", "2000-01-05", "2000-01-06", "2000-01-07"
+            ]),
+            columns = ['lag_1', 'lag_2', 'lag_3', '1', '2']
+        ),
+        pd.Series(
+            data  = np.array([0., 0.5, 1., 1.5, 0., 0.5, 1., 1.5]),
+            index   = pd.DatetimeIndex([
+                "2000-01-04", "2000-01-05", "2000-01-06", "2000-01-07",
+                "2000-01-04", "2000-01-05", "2000-01-06", "2000-01-07"
+            ]),
+            name  = 'y',
+            dtype = float
+        ),
+        {1: index, 2: index},
+        [1, 2],
+        [1, 2],
+        {1: pd.Series(
+                  data  = np.array([4., 5., 6.]),
+                  index = pd.date_range(start='2000-01-05', periods=3, freq='D'),
+                  name  = 1,
+                  dtype = float
+              ),
+         2: pd.Series(
+                  data  = np.array([4., 5., 6.]),
+                  index = pd.date_range(start='2000-01-05', periods=3, freq='D'),
+                  name  = 2,
+                  dtype = float
+              )
+        }
+    )
+
+    pd.testing.assert_frame_equal(results[0], expected[0])
+    pd.testing.assert_series_equal(results[1], expected[1])
+    assert results[2].keys() == expected[2].keys()
+    for k in results[2].keys():
+        pd.testing.assert_index_equal(results[2][k], expected[2][k])
+    assert results[3] == expected[3]
+    assert results[4] == expected[4]
+    assert forecaster.encoding_mapping_ == {1: 0, 2: 1}
+    assert list(results[12].keys()) == [1, 2]
+    for k in results[12].keys():
+        pd.testing.assert_series_equal(results[12][k], expected[5][k])
+
+
+@pytest.mark.parametrize("encoding, dtype",
                          [('ordinal'         , float), 
                           ('ordinal_category', 'category'),
                           (None              , float)], 
@@ -2761,9 +2838,14 @@ def test_ValueError_create_train_X_series_DataFrame_exog_dict_and_empty_X_train_
     )
     
     error_msg = re.escape(
-        "All samples have been removed due to NaNs. Set "
-        "`forecaster.dropna_from_series = False` or review `series` "
-        "and `exog` values."
+        "All samples have been removed due to NaNs: every row has a missing "
+        "value in the target or in the predictors (largest lag: 5). This can "
+        "happen when the missing values of `series` are closer together than the "
+        "lags, or when `exog` has a missing value in every row. To keep "
+        "training samples, fill the missing values of `series` and `exog`, use "
+        "fewer lags, or use an estimator that accepts NaNs (for example, "
+        "LightGBM or scikit-learn HistGradientBoosting models) and set "
+        "`dropna_from_series = False`."
     )
     with pytest.raises(ValueError, match = error_msg):
         forecaster._create_train_X_y(series=series, exog=exog_dict)
@@ -4038,23 +4120,18 @@ def test_create_train_X_y_output_when_categorical_features_and_already_trained(
 
 
 @pytest.mark.parametrize(
-    "encoding, expected_X_train_series_names_in_",
-    [
-        ('ordinal', ['a', 'b', 'c']),
-        ('ordinal_category', ['a', 'b', 'c']),
-        ('onehot', ['c', 'a', 'b']),
-        (None, ['a', 'b', 'c'])
-    ],
-    ids=lambda value: f'encoding, X_train_series_names_in_: {value}'
+    "encoding",
+    ['ordinal', 'ordinal_category', 'onehot', None],
+    ids=lambda encoding: f'encoding: {encoding}'
 )
 def test_create_train_X_y_X_train_series_names_in_when_series_unordered_and_one_series_dropped(
-    encoding, expected_X_train_series_names_in_
+    encoding
 ):
     """
     Test `X_train_series_names_in_` when the series are not in alphabetical order
     ('c', 'a', 'd', 'b') and all the rows of series 'd' are removed because it
-    has no exog and `dropna_from_series=True`. With 'onehot' the names follow the
-    order of the series and with the other encodings the alphabetical order of
+    has no exog and `dropna_from_series=True`. With every encoding the names
+    follow the order of the series, not the alphabetical order of
     `encoding_mapping_`. The column of 'd' is kept in the one-hot block.
     """
     forecaster = ForecasterRecursiveMultiSeries(
@@ -4071,7 +4148,7 @@ def test_create_train_X_y_X_train_series_names_in_when_series_unordered_and_one_
     )
 
     assert results[3] == ['c', 'a', 'd', 'b']
-    assert results[4] == expected_X_train_series_names_in_
+    assert results[4] == ['c', 'a', 'b']
     assert results[0].columns.to_list() == expected_columns
     assert len(results[0]) == 17
 

@@ -171,8 +171,17 @@ metric, predictions = backtesting_forecaster(
     use_in_sample_residuals=True,
     use_binned_residuals=True,
 )
-# predictions has columns: pred, lower_bound, upper_bound
+# predictions has columns: fold, pred, lower_bound, upper_bound
+# metric has columns: mean_absolute_error, coverage, interval_width
 ```
+
+When `interval` defines one interval (a float, or two quantiles optionally with
+the median, such as `[0.1, 0.5, 0.9]`), `metric` also reports its empirical
+`coverage` and its mean width (`interval_width`, in the units of the series),
+per level and aggregated in multi-series backtesting. `backtesting_foundation`
+does the same with `quantiles`. A coverage
+well below the nominal level (0.8 for `[0.1, 0.9]`) is common with in-sample
+residuals and complex estimators: switch to out-of-sample residuals (see below).
 
 ## Multi-Series Intervals
 
@@ -223,6 +232,10 @@ creating the forecaster, or predict with `use_binned_residuals=False`.
 
 ## Evaluating Interval Quality
 
+Backtesting with one interval (two quantiles, optionally with the median) already returns `coverage` and
+`interval_width` in `metric`. For predictions made outside backtesting (for
+example `predict_interval` on a test set), compute it with `calculate_coverage`:
+
 ```python
 from skforecast.metrics import calculate_coverage
 
@@ -265,8 +278,8 @@ See [references/interval-compatibility.md](references/interval-compatibility.md)
 1. **Passing percentiles instead of quantiles**: `interval` is on the 0-1 scale. Use `interval=[0.1, 0.9]`, not `[10, 90]` (percentiles are deprecated and emit a `FutureWarning`). Mixing scales, e.g. `[0.1, 90]`, raises a `ValueError`.
 2. **Forgetting `store_in_sample_residuals=True`**: Required in `fit()` before using `predict_interval(method='bootstrapping')`.
 3. **Wrong default method for multi-series**: `ForecasterRecursiveMultiSeries` and `ForecasterDirectMultiVariate` default to `method='conformal'`, not `'bootstrapping'`.
-4. **Mixing `alpha` and `interval`**: `ForecasterStats` supports both `alpha` (e.g., `alpha=0.05` for 95% interval) and `interval=[lo, hi]` (quantiles). ML forecasters only support `interval`.
-5. **Not evaluating coverage**: Always check if actual coverage matches nominal interval width.
+4. **Mixing `alpha` and `interval`**: in `ForecasterStats` and `backtesting_stats`, `alpha` is an alias of `interval` (`alpha=0.05` is `interval=[0.025, 0.975]`). Pass only one of them; passing both raises a `ValueError`. ML forecasters only support `interval`.
+5. **Not evaluating coverage**: Always check if actual coverage matches the nominal level. Backtesting with one interval (a float `interval`, or two quantiles optionally with the median) reports it in the `coverage` column of `metric`, next to `interval_width`.
 6. **Ignoring physical bounds**: neither the model nor the intervals know that a series cannot be negative (counts, sales, demand), so predictions and lower bounds can fall below zero. Clip them after predicting, e.g. `predictions.clip(lower=0)`. See the FAQ [Non-negative predictions](https://skforecast.org/latest/faq/non-negative-predictions.html).
 
 ## References

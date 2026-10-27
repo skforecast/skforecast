@@ -131,7 +131,7 @@ Zero-shot / no training data / cold-start (single or multi-series)?
 | Estimators | Any sklearn-compatible (LightGBM, XGBoost, RF, etc.) | Arima, Sarimax, Ets, Arar |
 | Lags / window features | Full support (`lags`, `RollingFeatures`) | No (model handles its own structure) |
 | Differentiation | Built-in (`differentiation` param) | Handled within model (e.g., ARIMA `d` parameter) |
-| Exogenous variables | Full support | Only SARIMAX |
+| Exogenous variables | Full support | Arima, Sarimax and Arar (not Ets) |
 | Prediction intervals | Bootstrapping (binned residuals) + conformal | Built-in parametric |
 | Tuning | `grid_search_forecaster`, `random_search_forecaster`, `bayesian_search_forecaster` | `grid_search_stats`, `random_search_stats` |
 | Backtesting | `backtesting_forecaster` / `backtesting_forecaster_multiseries` | `backtesting_stats` |
@@ -139,24 +139,28 @@ Zero-shot / no training data / cold-start (single or multi-series)?
 
 ## Feature Support Matrix
 
-| Feature | Recursive | Direct | RecursiveMultiSeries | DirectMultiVariate | Rnn | Stats | EquivalentDate | Classifier |
-|---------|:---------:|:------:|:-------------------:|:-----------------:|:---:|:-----:|:--------------:|:----------:|
-| Lags | ✓ | ✓ | ✓ | ✓ (per-series dict) | ✓ | — | — | ✓ |
-| Window features (`RollingFeatures`) | ✓ | ✓ | ✓ | ✓ | — | — | — | ✓ |
-| Exogenous variables | ✓ | ✓ | ✓ | ✓ | ✓ | SARIMAX only | — | ✓ |
-| Differentiation | ✓ | ✓ | ✓ (per-series) | ✓ (per-series) | — | Within model | — | — |
-| Transformer y/series | ✓ | ✓ | ✓ (per-series) | ✓ (per-series) | ✓ | ✓ | — | — |
-| Transformer exog | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ |
-| Weight function | ✓ | ✓ | ✓ (per-series) | ✓ | — | — | — | ✓ |
-| Bootstrapping intervals | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
-| Conformal intervals | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — |
-| Binned residuals | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — |
-| Quantile predictions | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
-| Distribution fitting | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
-| Class probabilities | — | — | — | — | — | — | — | ✓ |
-| Feature importances | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
+| Feature | Recursive | Direct | RecursiveMultiSeries | DirectMultiVariate | Foundation | Rnn | Stats | EquivalentDate | Classifier |
+|---------|:---------:|:------:|:-------------------:|:-----------------:|:----------:|:---:|:-----:|:--------------:|:----------:|
+| Lags | ✓ | ✓ | ✓ | ✓ (per-series dict) | — (context window) | ✓ | — | — | ✓ |
+| Window features (`RollingFeatures`) | ✓ | ✓ | ✓ | ✓ | — | — | — | — | ✓ |
+| Exogenous variables | ✓ | ✓ | ✓ | ✓ | ✓ (model-dependent) | ✓ | Arima, Sarimax, Arar | — | ✓ |
+| Differentiation | ✓ | ✓ | ✓ (per-series) | ✓ (per-series) | — | — | Within model | — | — |
+| Transformer y/series | ✓ | ✓ | ✓ (per-series) | ✓ (per-series) | — | ✓ | ✓ | — | — |
+| Transformer exog | ✓ | ✓ | ✓ | ✓ | — | ✓ | ✓ | — | ✓ |
+| Weight function | ✓ | ✓ | ✓ (per-series) | ✓ | — | — | — | — | ✓ |
+| Bootstrapping intervals | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — |
+| Conformal intervals | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | ✓ | — |
+| Binned residuals | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | ✓ | — |
+| Quantile predictions | ✓ | ✓ | ✓ | ✓ | ✓ (native) | — | — | — | — |
+| Distribution fitting | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — |
+| Class probabilities | — | — | — | — | — | — | — | — | ✓ |
+| Feature importances | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — |
 
 > **Legend:** ✓ = supported, — = not supported/not applicable.
+
+## Measured Comparison
+
+The user guide [Comparing forecasting models](https://skforecast.org/latest/user_guides/comparing-forecasting-models.html) evaluates the seasonal naive, Ridge, LightGBM, Chronos-2, AutoARIMA, AutoETS and an LSTM with the same backtesting on three datasets: one series with exogenous variables, a short monthly series and 50 daily series that share the same patterns. Use it to show users how each family behaves (accuracy, interval coverage and computation time) and as a template to compare candidates on their own data with the same `TimeSeriesFold`.
 
 ## Next Steps
 

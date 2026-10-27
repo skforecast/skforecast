@@ -75,11 +75,11 @@ What is your forecaster producing?
 | Criterion | Recommended metric | Avoid |
 |-----------|-------------------|-------|
 | **General purpose** | MAE (`'mean_absolute_error'`) | — |
-| **Penalize large errors more** | MSE (`'mean_squared_error'`) | — |
+| **Penalize large errors more** | MSE (`'mean_squared_error'`) or RMSE (`'root_mean_squared_error'`, same units as the target) | — |
 | **Robust to outliers** | MAE or MedAE (`'median_absolute_error'`) | MSE (inflated by outliers) |
 | **Need percentage interpretation** | SMAPE (`'symmetric_mean_absolute_percentage_error'`) | MAPE if data has zeros |
-| **Data contains zeros or near-zero values** | MAE, MASE, RMSSE | MAPE (divides by y_true → infinite) |
-| **Compare across different-scale series** | MASE (`'mean_absolute_scaled_error'`) or RMSSE (`'root_mean_squared_scaled_error'`) | MAE, MSE (scale-dependent) |
+| **Data contains zeros or near-zero values** | MAE, MASE, RMSSE | MAPE (divides by y_true → extremely large values) |
+| **Compare across different-scale series** | MASE (`'mean_absolute_scaled_error'`) or RMSSE (`'root_mean_squared_scaled_error'`) | MAE, MSE, RMSE (scale-dependent) |
 | **Target is always positive** | MSLE (`'mean_squared_log_error'`) | — (use when relative errors matter more than absolute) |
 | **Interpretable baseline comparison** | MASE (value < 1 means better than naive forecast) | — |
 
@@ -170,6 +170,13 @@ Use these metrics when evaluating prediction intervals or quantile forecasts.
 
 Coverage measures the proportion of true values that fall within the predicted
 interval. **Target: match the nominal level** (e.g., 90% interval should have ~90% coverage).
+
+Backtesting functions add `coverage` and `interval_width` (mean width of the
+interval, in the units of the series) to `metric` when the predictions define
+one interval: a float `interval`, or two quantiles optionally with the median
+(`interval` or, in `backtesting_foundation`, `quantiles`). There is no need to
+pass them in `metric`. Use
+`calculate_coverage` for predictions made outside backtesting:
 
 ```python
 from skforecast.metrics import calculate_coverage
@@ -385,11 +392,26 @@ Skforecast automatically wraps callables via `add_y_train_argument`. If the func
 already has a `y_train` parameter, it will receive the training data. If not, the
 argument is silently ignored.
 
+In hyperparameter searches, the first metric ranks the candidates, and its direction
+is inferred from the metric: scikit-learn metrics ending in `_score` (`r2_score`,
+`accuracy_score`) are maximized; errors and losses are minimized.
+A custom metric is minimized in regression and maximized in classification, unless
+it defines the attribute `greater_is_better`:
+
+```python
+def forecast_skill(y_true, y_pred, y_train):
+    naive_mae = np.mean(np.abs(np.diff(y_train)))
+    return 1 - np.mean(np.abs(y_true - y_pred)) / naive_mae
+
+forecast_skill.greater_is_better = True  # Maximized by the searches
+```
+
 ## Common Mistakes
 
 | Mistake | Problem | Fix |
 |---------|---------|-----|
-| Using MAPE with data containing zeros | Division by zero → infinite error | Use SMAPE, MAE, or MASE instead |
+| Using MAPE with data containing zeros | Division by (almost) zero → extremely large error | Use SMAPE, MAE, or MASE instead |
+| Reading sklearn's MAPE as a percentage | It returns a fraction (0.1 = 10 %), while SMAPE is already × 100 | Multiply MAPE by 100 before reporting or comparing it with SMAPE |
 | Using MSE when data has outliers | A few large errors dominate the metric | Use MAE or MedAE for robustness |
 | Comparing MAE across differently-scaled series | MAE = 10 on sales vs MAE = 10 on temperature means nothing | Use MASE or RMSSE for cross-series comparison |
 | Interpreting high coverage as "good" | 99% coverage with a 90% interval means intervals are too wide | Target coverage ≈ nominal level; combine with CRPS for sharpness |

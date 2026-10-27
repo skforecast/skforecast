@@ -20,6 +20,7 @@ import skforecast
 from ..base import ForecasterBase
 from ..exceptions import DataTransformationWarning, MissingValuesWarning
 from ..utils import (
+    _all_samples_removed_message,
     initialize_lags,
     initialize_window_features,
     initialize_weights,    
@@ -1008,9 +1009,13 @@ class ForecasterRecursiveClassifier(ForecasterBase):
 
         if len(y_train) == 0:
             raise ValueError(
-                "All samples have been removed due to NaNs. Set "
-                "`forecaster.dropna_from_series = False` or review `y` and "
-                "`exog` values."
+                _all_samples_removed_message(
+                    series_name              = "`y`",
+                    dropna_from_series       = self.dropna_from_series,
+                    max_lag                  = self.max_lag,
+                    max_size_window_features = self.max_size_window_features,
+                    estimator                = self.estimator
+                )
             )
 
         last_window_ = None
