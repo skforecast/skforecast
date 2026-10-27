@@ -5,11 +5,11 @@
 **Entornos usados:** versión 1: Linux, Python 3.12.3, pandas 2.3.3, pyarrow 26.0.0. Versión 2: Windows, `skforecast_27_py13` (Python 3.13, pandas 2.3.3, numpy 2.5.4).
 
 > **Cómo usar este documento**
-> 1. Vive en `dev/review_datasets_module/` (sin seguimiento en git): no lo añadas a ningún commit.
-> 2. Para ejecutar una PR: «Lee `dev/review_datasets_module/PLAN_DatasetsModuleReview.md` y ejecuta la PR 1».
+> 1. Vive en `0.27.x`, en `dev/review_datasets_module/`, para que lo vean todas las ramas y sesiones. Sus cambios se suben directamente a `0.27.x` (solo toca `dev/`: sin PR ni `verify`), nunca dentro de una PR del plan.
+> 2. Para ejecutar una PR: «Lee `dev/review_datasets_module/PLAN_DatasetsModuleReview.md` y ejecuta la PR N». La columna «Estado» de la tabla 0.1 dice cuál toca; el flujo de trabajo está en la sección 2.1.
 > 3. Todas las PRs parten de `origin/0.27.x` **con la 1402 ya fusionada**. Si sigue abierta, crea la rama desde `origin/fix/fetch-dataset-website-visits-m5` y dilo en la descripción de la PR.
 > 4. Las decisiones están tomadas (sección 3) salvo DEC6 y DEC7, que solo bloquean las PRs 5c y 5d.
-> 5. Antes de empezar, repite el apéndice A sobre un clon reciente de `skforecast-datasets`: los ficheros pueden haber cambiado.
+> 5. Antes de empezar una PR, repite el apéndice A sobre un clon reciente de `skforecast-datasets`: los ficheros pueden haber cambiado.
 
 ---
 
@@ -17,15 +17,21 @@
 
 ### 0.1 PRs
 
-| PR | Repo | Rama | Contenido | Bloqueada por | Nota de versión |
-|---|---|---|---|---|---|
-| **1** | skforecast | `fix/datasets-module-small-fixes` | Bugs pequeños, textos del registro, docstrings, test del registro sin red | nada | Fixed |
-| **2** | skforecast | `feature/datasets-version-deprecation` | Deprecar `version`; `load_demo_dataset` sobre `fetch_dataset` | nada | Changed |
-| **3** | skforecast | `feature/fetch-dataset-gaps-and-long-format` | Aviso cuando `asfreq` añade o quita filas; orden estable del formato largo; documentación | nada | Changed |
-| **4** | skforecast | `chore/datasets-regression-test` | Test de regresión contra los ficheros reales, opt-in | nada | ninguna |
-| **5** | skforecast-datasets | `main` (commits directos) | 5a README generado y BOM; 5b parquet de HF ordenados; 5c ficheros huérfanos; 5d licencias | 5b: token de HF; 5c: DEC6; 5d: DEC7 | ninguna (la reordenación de HF se menciona en la release en la que se suba) |
+| PR | Estado | Repo | Rama | Contenido | Bloqueada por | Nota de versión |
+|---|---|---|---|---|---|---|
+| **0** | pendiente | skforecast | `fix/fetch-dataset-website-visits-m5` | PR #1402 (base de todo el plan) | revisión y merge | ya incluida |
+| **1** | pendiente | skforecast | `fix/datasets-module-small-fixes` | Bugs pequeños, textos del registro, docstrings, test del registro sin red | PR 0 | Fixed |
+| **2** | pendiente | skforecast | `feature/datasets-version-deprecation` | Deprecar `version`; `load_demo_dataset` sobre `fetch_dataset` | PR 1 | Changed |
+| **3** | pendiente | skforecast | `feature/fetch-dataset-gaps-and-long-format` | Aviso cuando `asfreq` añade o quita filas; orden estable del formato largo; documentación | PR 2 | Changed |
+| **4** | pendiente | skforecast | `chore/datasets-regression-test` | Test de regresión contra los ficheros reales, opt-in | PR 3 | ninguna |
+| **5a** | pendiente | skforecast-datasets | `main` (commits directos) | README generado y BOM | PR 1 | ninguna |
+| **5b** | pendiente | skforecast-datasets / HF | (subida a HF) | Parquet de HF ordenados por fecha | token de HF | se menciona en la release en la que se suba |
+| **5c** | pendiente | skforecast-datasets | `main` (commits directos) | Ficheros huérfanos | DEC6 | ninguna |
+| **5d** | pendiente | skforecast-datasets | `main` (commits directos) | Licencias | DEC7 | ninguna |
 
-Dependencias: PR 1 primero (las demás tocan los mismos ficheros). PR 2 y PR 3 son independientes entre sí. PR 4 después de PR 3, para que fije el comportamiento final. PR 5a cuando el registro esté estable tras PR 1.
+Valores de «Estado»: `pendiente`, `en curso (#NNNN)`, `fusionada (#NNNN, AAAA-MM-DD)`. Se actualiza al abrir y al fusionar cada PR (sección 2.1).
+
+Orden: las PRs 1 a 4 van en secuencia, cada una cuando la anterior esté fusionada, porque tocan `datasets.py` y `test_fetch_dataset.py` (PR 2 y PR 3 no dependen funcionalmente entre sí, pero en paralelo darían conflictos). La PR 4 va la última para fijar el comportamiento final. Las PRs 5 van por su lado: 5a cuando el registro esté estable tras la PR 1; 5b en cualquier momento.
 
 ### 0.2 Decisiones
 
@@ -121,9 +127,24 @@ Lo que importa para cada PR (búsqueda de `fetch_dataset(`, `load_demo_dataset(`
 
 ## 2. Reglas de trabajo
 
+### 2.1 Flujo de trabajo de cada PR
+
+Las PRs se hacen en días distintos, en sesiones sin memoria de la anterior: el plan es la única fuente de estado.
+
+1. **Arrancar:** comprobar en la tabla 0.1 que la PR anterior está fusionada y que no hay otra `en curso`. Actualizar la base: `git fetch origin` y `git switch 0.27.x && git pull --ff-only`.
+2. **Crear la rama sin seguimiento**, para que una sincronización de VS Code no empuje a `0.27.x`: `git switch -c <rama> --no-track origin/0.27.x`. La primera subida, con `git push -u origin <rama>`.
+3. **Implementar** la sección de la PR, con `verify` antes de cada commit de código, tests o docs. Abrir la PR contra `0.27.x` y pasar su fila de la tabla 0.1 a `en curso (#NNNN)`.
+4. **Si la rama se queda atrás**, actualizarla con `git merge origin/0.27.x`, nunca con rebase (el force push está bloqueado).
+5. **Si una sesión acaba con la PR a medias**, ejecutar `/handoff` (escribe un `dev/handoff_*.md`) y empezar la siguiente sesión leyendo ese fichero además del plan.
+6. **Al fusionar:** pasar la fila a `fusionada (#NNNN, fecha)`, anotar en el apéndice C cualquier desviación del plan y subir el cambio del plan directamente a `0.27.x`. Borrar la rama local.
+7. **Antes de la release 0.27.0:** `/release-note consolidate` (las PRs 1 a 3 añaden entradas parecidas) y el test opt-in de la PR 4 con `SKFORECAST_TEST_DATASETS=1`.
+8. **Al terminar el plan** (PRs 1 a 5 cerradas, o DEC6/DEC7 descartadas): borrar `dev/review_datasets_module/` de `0.27.x`, o dejarlo como histórico.
+
+### 2.2 Reglas
+
 Las del repo están en `CLAUDE.md` y `tools/ai/ai_context_header.md` y se cargan solas. Lo específico de este plan:
 
-- **Ramas y PRs:** `<type>/<topic>` con `type` en `feature`, `fix`, `docs`, `chore`, `perf`, desde `origin/0.27.x` y contra `0.27.x` (nunca `main`). Crear la rama con `--no-track` o hacer `push -u` antes de sincronizar desde VS Code. Sin force push, sin trailers de IA.
+- **Ramas y PRs:** `<type>/<topic>` con `type` en `feature`, `fix`, `docs`, `chore`, `perf`, desde `origin/0.27.x` y contra `0.27.x` (nunca `main`), una a la vez (2.1). Sin force push, sin trailers de IA.
 - **Commits:** uno por problema y un último commit con la nota de versión (preferencia, no regla del repo).
 - **Estilo:** `datasets.py` y sus tests usan comillas simples; mantenerlas. ruff solo comprueba `E` y `F` (ignora `E501`), pero el código nuevo respeta 88 columnas. Sin guiones largos en comentarios, docstrings ni docs.
 - **Docstrings:** `.github/instructions/docstrings.instructions.md`: línea de tipo `name : type, default value` (con espacio antes de los dos puntos), tipos como `pandas DataFrame`, parámetros obsoletos con `**Deprecated**`.
@@ -760,6 +781,7 @@ Comprobados el 2026-10-27 contra el código, los notebooks, la CI y un clon del 
 - `load_demo_dataset` pasa a la PR 2 (comparte la gestión de `version`); el test de regresión queda solo en la PR 4.
 - Ramas con tipos válidos (`change/` y `test/` no lo son).
 - Se quitan las referencias a sesiones cloud y a comandos solo de Linux (`/usr/bin/time -v`, `sed -i`).
+- El plan pasa a vivir en `0.27.x` (antes, sin seguimiento en git), con una columna «Estado» en la tabla 0.1 y el flujo de trabajo de la sección 2.1, porque las PRs se hacen en días y sesiones distintos.
 
 **Decisiones tomadas (2026-10-27)**
 - DEC1, DEC3, DEC4, DEC5 y DEC8 con la opción recomendada; DEC2 con orden estable y además parquet de HF ordenados (la PR 5b deja de ser opcional). Se eliminan las alternativas descartadas: versionar los datos (antigua 2.3 y tag 5e), no ordenar el formato largo, generador en skforecast, reguardar `vic_electricity` en hora local, script o workflow en lugar del test opt-in.
