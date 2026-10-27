@@ -1260,22 +1260,25 @@ iguales a las del código anterior en pandas 2 y 3) y los tests que cambian
 ejecutados con pandas 2.2.0, 2.3.3 y 3.1.0. Esfuerzo total estimado: 3 a 4
 días de trabajo (la mitad en los tests), más un ciclo de CI por PR.
 
-**Criterio de rendimiento común a todas las PRs.** Cada PR, antes de
-mezclar, mide tiempo y memoria pico con el protocolo del anexo (los 20
-benchmarks de `bench_hotspots.py`, medidas una a una, A/B intercalado del
-código anterior y el nuevo, mínimo y mediana, tracemalloc y VmHWM, máquina
-en reposo, versiones en la cabecera) en pandas 2.3.3 y 3.1.0, y pega la
-tabla resultante en la descripción de la PR. Se acepta solo si en pandas 2
-ningún benchmark empeora más que el ruido del control nulo (4.4: 0,93 a
-1,07 en tiempo, memoria idéntica) y en pandas 3 ninguno empeora respecto al
-código anterior. Esto incluye las PRs que no deberían tener efecto (1, 4,
-5, 6, 7): en ellas la tabla es el control de que de verdad no lo tienen,
-y basta con los cinco benchmarks de matrices más `predict_loop` y
-`backtesting_recursive`. Un empeoramiento en pandas 2 se corrige o se
-retira el cambio; no se compensa con una mejora en pandas 3. Las dos
-medidas A/B sin explicar de 3.6 (prototipo más lento en pandas 2,
-`no_copy_keyword` más lento en pandas 3) son el ejemplo de por qué: la PR 2
-las repite con el cambio real en el fichero antes de mezclar.
+**Medida de rendimiento en todas las PRs (para informar, no como criterio
+automático).** Cada PR, antes de mezclar, mide tiempo y memoria pico con el
+protocolo del anexo (los 20 benchmarks de `bench_hotspots.py`, medidas una
+a una, A/B intercalado del código anterior y el nuevo, mínimo y mediana,
+tracemalloc y VmHWM, máquina en reposo, versiones en la cabecera) en pandas
+2.3.3 y 3.1.0, y pega la tabla en la descripción de la PR junto con una
+lectura breve: qué benchmarks cambian más que el ruido del control nulo
+(4.4: 0,93 a 1,07 en tiempo, memoria idéntica), en qué versión, y la causa
+que se le atribuye. La decisión de aceptar el cambio con ese impacto es del
+mantenedor, que valora cada caso (por ejemplo, un coste pequeño en pandas 2
+a cambio de retirar un keyword que desaparece en pandas 4 puede compensar;
+un coste en una ruta caliente, no). Lo que no se acepta es una PR sin la
+tabla o con un empeoramiento sin causa identificada: las dos medidas A/B
+sin explicar de 3.6 (prototipo más lento en pandas 2, `no_copy_keyword`
+más lento en pandas 3) son el ejemplo, y la PR 2 las repite con el cambio
+real en el fichero antes de mezclar. Esto incluye las PRs que no deberían
+tener efecto (1, 4, 5, 6, 7): en ellas la tabla es el control de que de
+verdad no lo tienen, y basta con los cinco benchmarks de matrices más
+`predict_loop` y `backtesting_recursive`.
 
 | # | PR | Cambios (fichero:línea) | Tests que cambian | Verificación | Bit a bit en pandas 2 |
 |---|---|---|---|---|---|
