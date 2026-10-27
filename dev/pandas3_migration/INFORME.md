@@ -84,7 +84,12 @@ veces en tiempo en la construcción de matrices y 1,4 en `predict` en bucle
 y en el backtesting de folds de un paso, con la misma memoria (1,00 a 1,09):
 lo que resta es coste propio de pandas 3 por llamada (seguimiento de
 referencias de Copy-on-Write, constructores e indexación), no copias
-evitables desde skforecast. En otros caminos pandas 3 ya gana (`fit`
+evitables desde skforecast. El perfilado posterior (final de 3.6) matiza la
+primera cifra: en `ForecasterRecursive` la brecha del código actual es la
+copia del constructor de `DataFrame` y, con `copy=False`, una medida aislada
+da paridad con pandas 2 (0,95 a 1,03); el 1,25 a 1,74 de la tabla de
+benchmarks hay que repetirlo en la PR 2 con el cambio real, y en `predict`
+en bucle la brecha de 1,1 a 1,4 no tiene punto caliente. En otros caminos pandas 3 ya gana (`fit`
 univariante 0,84; multiseries con dicts y window features con un 20 % a 27 %
 menos de memoria). Dos resultados A/B quedan sin explicar y la PR debe
 medirlos con el cambio real (3.6). Las cifras, con su protocolo y versiones,
@@ -932,6 +937,65 @@ sección 4):
   corrección (F26).
 
 
+**Perfilado de la brecha de tiempo (hecho después de la tabla anterior).**
+`cProfile` sobre `ForecasterRecursive(LinearRegression(), lags=24)`,
+`create_train_X_y` con 200k observaciones horarias y `exog` de 3 float + 1
+category (y la variante solo float), y 200 llamadas a
+`predict(steps=1, exog=..., last_window=...)` con 2000 observaciones y
+`exog` de 3 float + 1 int, en los dos entornos, con la máquina en reposo
+(load average < 0,3). Resultados:
+
+- **Código actual, `create_train_X_y`**: en pandas 3 la función que más
+  tiempo propio acumula es `numpy.array` (0,038 s de 0,072 s en el caso
+  float; 0,044 de 0,102 s con category), llamada una sola vez desde el
+  constructor de `DataFrame` (`internals/construction.py:ndarray_to_mgr`).
+  Es la copia que Copy-on-Write hace de la matriz F de 200k × 27 (43 MB) al
+  construir la matriz pública (`_forecaster_recursive.py:1100-1104`). En
+  pandas 2 la misma línea no copia (0,000 s). El microbenchmark aislado lo
+  confirma: `pd.DataFrame(X_F, index, columns)` cuesta 12,1 ms en pandas 3 y
+  0,0 ms en pandas 2; con `copy=False`, 0,1 ms en las dos. El resto del
+  perfil es equivalente en las dos versiones (`_create_train_X_y` propio:
+  0,015 a 0,019 s en pandas 3 frente a 0,023 a 0,026 s en pandas 2;
+  `_unique_hash` del `OneHotEncoder`, `_isna_array`, `_interleave`).
+- **Prototipo completo (`all_proposed`), `create_train_X_y`**: la llamada a
+  `numpy.array` desaparece del perfil en pandas 3 y, medido sin perfilador
+  (9 repeticiones, dos rondas intercaladas pandas 2 / pandas 3), la matriz
+  queda a la par:
+
+  | Caso | pandas 2 actual (min / mediana, ms) | pandas 3 actual | pandas 3 prototipo | pandas 2 prototipo |
+  |---|---|---|---|---|
+  | `create_train_X_y`, 3 float + 1 category | 45,2 / 49,7 y 45,7 / 49,2 | 78,5 / 89,4 y 104,5 / 112,1 | 42,9 / 44,1 y 47,2 / 50,3 | 41,8 / 52,0 y 47,3 / 51,0 |
+  | `create_train_X_y`, 3 float | 26,7 / 27,7 y 23,0 / 24,5 | 65,2 / 73,2 y 65,9 / 82,4 | 21,3 / 22,2 y 22,7 / 24,0 | 20,0 / 21,3 y 24,7 / 29,5 |
+  | 200 × `predict(steps=1)` | 95,9 / 97,7 y 104,6 / 122,1 | 128,9 / 150,9 y 116,5 / 154,1 | 124,4 / 137,7 y 118,3 / 155,8 | 109,6 / 118,9 y 110,1 / 139,9 |
+
+  Con esta forma de datos, el prototipo deja `create_train_X_y` de pandas 3
+  igual que pandas 2 (relación 0,95 a 1,03 en mínimos), no 1,25 a 1,39 como
+  en la tabla anterior. Las dos medidas no se contradicen en el mecanismo
+  (la copia del constructor es el coste dominante y `copy=False` la elimina)
+  pero sí en lo que queda: la tabla anterior se midió con el harness de
+  benchmarks (otros tamaños y, en los casos `direct`, `classifier` y
+  multiseries, con `astype` e `insert` de columnas no float) y en una sesión
+  con más carga. Queda para la PR 2 repetir la medida con el cambio real en
+  el fichero; la expectativa, a la vista de este perfil, es que la brecha de
+  las matrices de `recursive` sea cero y la de `direct`/multiseries se deba a
+  las columnas no float (opción (a) del punto 6 de la sección 10).
+- **Bucle de `predict`**: la brecha es de 1,1 a 1,3 en pandas 3 con o sin
+  prototipo (ningún cambio propuesto toca ese camino) y no tiene un punto
+  caliente: `check_predict_input` (0,098 a 0,118 s propio+hijos de 0,27 a
+  0,32 s), `expand_index`/`date_range` (400 llamadas, 0,04 s), `_interleave`
+  de los `to_numpy()` (600 llamadas, 0,03 s), `isinstance` (47 400 frente a
+  41 200 llamadas) y, nuevo en pandas 3, las conversiones de las columnas de
+  `exog` desde arrow (`ArrowStringArray.to_numpy`, 400 llamadas, y
+  `__iter__`, 1000 llamadas: 0,02 s en total, el 7 % del bucle), porque con
+  el dtype `str` por defecto `exog.columns` es un índice arrow y cada
+  `list(df.columns)` o `columns.to_numpy()` pasa por pyarrow. Son los costes
+  por objeto que preveía el punto 6 de la sección 10: el único camino con
+  recorrido sigue siendo la opción (b) (mantener `last_window` y `exog` en
+  numpy entre llamadas), que beneficia a las dos versiones; evitar las
+  conversiones arrow de los nombres de columna (cachear
+  `exog_names_in_` como lista en `fit`, que ya existe, en lugar de volver a
+  leer `exog.columns` en cada `predict`) recortaría como mucho ese 7 %.
+
 ## 4. Tabla de medidas
 
 Mediana y mínimo en milisegundos, memoria pico en MiB (`tracemalloc`); 5
@@ -1331,19 +1395,22 @@ sección 7):
    parte de las PR 1 y 2.
 5. **Dataset `australia_tourism`** (`datasets.py:209`, `'freq': 'Q'`): el
    único fallo de datos; una línea en la PR 1.
-6. **Perfilado de la brecha de tiempo que queda en pandas 3** (3.6, tabla
-   "pandas 3 con los cambios frente a pandas 2"): `cProfile` de
-   `create_train_X_y` y de 200 llamadas a `predict` en los dos entornos,
-   comparando función a función, para separar el coste de los constructores
-   de `DataFrame`/`Series`, de los cortes de `exog` (`iloc`/`loc`), de la
-   copia profunda de `last_window` y de `transform_dataframe`. Según el
-   resultado: (a) construir la matriz pública desde el bloque float con
-   `copy=False` y añadir las columnas no float ya construidas, sin `astype`
-   ni `insert`; (b) un camino de `predict` que mantenga `last_window` y
-   `exog` como arrays de numpy entre llamadas y construya la salida una sola
-   vez (beneficia a las dos versiones; es la única vía con recorrido para
-   el backtesting de folds pequeños). Lo que quede es coste por objeto de
-   pandas 3 y no se puede evitar desde skforecast.
+6. **Perfilado de la brecha de tiempo que queda en pandas 3**: hecho, ver
+   el bloque "Perfilado de la brecha de tiempo" al final de 3.6. Resultado:
+   en `create_train_X_y` de `ForecasterRecursive` la brecha del código
+   actual es la copia del constructor de `DataFrame` y desaparece con
+   `copy=False` (paridad con pandas 2 en una medida aislada, frente al 1,25
+   a 1,39 de la tabla de 3.6, que la PR 2 debe repetir con el cambio real).
+   Queda por hacer: (a) para `direct`, `classifier` y multiseries, construir
+   la matriz pública desde el bloque float con `copy=False` y añadir las
+   columnas no float ya construidas, sin `astype` ni `insert`; (b) un camino
+   de `predict` que mantenga `last_window` y `exog` como arrays de numpy
+   entre llamadas y construya la salida una sola vez (beneficia a las dos
+   versiones; es la única vía con recorrido para el backtesting de folds
+   pequeños), y leer los nombres de columna de `exog` desde
+   `exog_names_in_` en lugar de `exog.columns` en cada `predict` (evita las
+   conversiones arrow, como mucho un 7 % del bucle). El bucle de `predict`
+   no tiene punto caliente: lo que queda es coste por objeto de pandas 3.
 
 ## Anexo: cómo reproducir los números
 
