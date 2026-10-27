@@ -1397,9 +1397,10 @@ def _backtesting_forecaster_multiseries(
     # predicted, instead of raising, so the rest of series and dates are still
     # evaluated. The NaN predictions of dates with observed values are warned
     # in `_calculate_metrics_backtesting_multiseries`. The forecaster is a copy,
-    # so the attribute does not reach the user's forecaster.
-    if hasattr(forecaster, '_allow_nan_predictions'):
-        forecaster._allow_nan_predictions = True
+    # so the attribute does not reach the user's forecaster. It is set even if
+    # the forecaster does not have it: forecasters saved with previous versions
+    # lack it, and ForecasterRnn does not read it.
+    forecaster._allow_nan_predictions = True
 
     folds = cv.split(X=series, as_pandas=False)
     span_index = cv._extract_index(X=series)

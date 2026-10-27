@@ -6844,3 +6844,38 @@ def test_backtesting_forecaster_multiseries_when_exog_has_NaN_in_test_fold(estim
     else:
         assert not predictions["pred"].isna().any()
         assert warnings_nan_predictions == []
+
+
+def test_backtesting_forecaster_multiseries_when_forecaster_has_no_allow_nan_predictions_attribute():
+    """
+    Test backtesting_forecaster_multiseries completes with NaN predictions and
+    a MissingValuesWarning, instead of raising, when the forecaster does not
+    have the attribute `_allow_nan_predictions` (saved with a previous
+    version), a linear model and a missing value in `exog` in a test set.
+    """
+    idx = pd.date_range("2020-01-01", periods=120, freq="D")
+    rng = np.random.default_rng(0)
+    series = {
+        "a": pd.Series(rng.normal(100, 5, 120), index=idx, name="a"),
+        "b": pd.Series(rng.normal(100, 5, 120), index=idx, name="b"),
+    }
+    exog = pd.Series(rng.normal(0, 1, 120), index=idx, name="x")
+    exog.iloc[95] = np.nan
+    forecaster = ForecasterRecursiveMultiSeries(Ridge(), lags=3)
+    del forecaster._allow_nan_predictions
+    cv = TimeSeriesFold(steps=10, initial_train_size=60, refit=False)
+
+    warn_msg = re.escape("Number of NaN predictions per series: {'a': 5, 'b': 5}.")
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        _, predictions = backtesting_forecaster_multiseries(
+            forecaster    = forecaster,
+            series        = series,
+            exog          = exog,
+            cv            = cv,
+            metric        = "mean_absolute_error",
+            n_jobs        = 1,
+            show_progress = False
+        )
+
+    assert predictions["pred"].isna().sum() == 10
+    assert not hasattr(forecaster, '_allow_nan_predictions')
