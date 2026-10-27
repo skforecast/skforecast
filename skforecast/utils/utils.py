@@ -4050,12 +4050,28 @@ class _NonFinitePredictorsError(ValueError):
                 context += f" ({date})"
 
         if self.has_nan:
+            # NOTE: `_level_skforecast` is NaN for the series not seen during
+            # training with an ordinal encoding, which no missing value of the
+            # data explains, so it gets its own remedy.
+            remedies = []
+            if any(p != "_level_skforecast" for p in self.predictors):
+                remedies.append(
+                    "fill the missing values of the series (or `last_window`) "
+                    "and `exog`"
+                )
+            if "_level_skforecast" in self.predictors:
+                remedies.append(
+                    "predict the series not seen during training with "
+                    "`encoding='onehot'` or `encoding=None` (an ordinal "
+                    "encoding gives them NaN)"
+                )
+            remedy = "; ".join(remedies)
             return (
                 f"{context}. {self.estimator_name} does not accept missing "
-                f"values encoded as NaN, so its predictions would be NaN. Fill "
-                f"the missing values of the series (or `last_window`) and "
-                f"`exog`, or use an estimator that accepts them, for example "
-                f"HistGradientBoostingRegressor or LGBMRegressor."
+                f"values encoded as NaN, so its predictions would be NaN. "
+                f"{remedy[0].upper()}{remedy[1:]}, or use an estimator that "
+                f"accepts them, for example HistGradientBoostingRegressor or "
+                f"LGBMRegressor."
             )
 
         return (

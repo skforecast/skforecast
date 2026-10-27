@@ -1775,10 +1775,10 @@ def test_predict_ValueError_when_unknown_level_with_ordinal_encoding_and_estimat
     err_msg = re.escape(
         "Input X contains NaN in the predictors ['_level_skforecast'] of series "
         "['l3'] at step 1 (50). LinearRegression does not accept missing values "
-        "encoded as NaN, so its predictions would be NaN. Fill the missing "
-        "values of the series (or `last_window`) and `exog`, or use an "
-        "estimator that accepts them, for example HistGradientBoostingRegressor "
-        "or LGBMRegressor."
+        "encoded as NaN, so its predictions would be NaN. Predict the series not "
+        "seen during training with `encoding='onehot'` or `encoding=None` (an "
+        "ordinal encoding gives them NaN), or use an estimator that accepts "
+        "them, for example HistGradientBoostingRegressor or LGBMRegressor."
     )
     with pytest.raises(ValueError, match=err_msg):
         forecaster.predict(

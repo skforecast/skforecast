@@ -1095,13 +1095,22 @@ def test_predict_output_when_exog_has_NaN_and_estimator_accepts_NaN(estimator):
     np.testing.assert_array_almost_equal(predictions.to_numpy(), expected)
 
 
-def test_predict_ValueError_without_date_when_exog_has_NaN_in_intermediate_step_with_differentiation():
+@pytest.mark.parametrize(
+    "steps",
+    [[3], [2, 1, 3], [3, 1, 2]],
+    ids=lambda steps: f"steps: {steps}"
+)
+def test_predict_ValueError_with_date_when_exog_has_NaN_and_differentiation_with_steps_not_consecutive(
+    steps
+):
     """
-    Test predict raises a ValueError naming the step, but not the date, when
-    the forecaster uses differentiation, the steps are not consecutive from 1
-    and `exog` has a missing value in an intermediate step. The predictors of
+    Test predict raises a ValueError naming the step and its date when the
+    forecaster uses differentiation, `exog` has a missing value in step 2 and
+    the steps are not consecutive from 1 or not ordered. The predictors of
     every step up to `max(steps)` are needed to revert the differentiation,
-    but the prediction index only has the dates of the requested steps.
+    so the date comes from their index, not from the prediction index of the
+    requested steps. Before, the date was missing or was the one of another
+    step.
     """
     y = pd.Series(np.arange(50, dtype=float) ** 1.5)
     exog = pd.Series(np.arange(50, dtype=float), name='exog')
@@ -1114,8 +1123,8 @@ def test_predict_ValueError_without_date_when_exog_has_NaN_in_intermediate_step_
     forecaster.fit(y=y, exog=exog)
 
     err_msg = re.escape(
-        "Input X contains NaN in the predictors ['exog'] at step 2. "
+        "Input X contains NaN in the predictors ['exog'] at step 2 (51). "
         "LinearRegression does not accept missing values encoded as NaN"
     )
     with pytest.raises(ValueError, match=err_msg):
-        forecaster.predict(steps=[3], exog=exog_pred, suppress_warnings=True)
+        forecaster.predict(steps=steps, exog=exog_pred, suppress_warnings=True)

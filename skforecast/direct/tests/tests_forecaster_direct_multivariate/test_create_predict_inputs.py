@@ -1020,3 +1020,35 @@ def test_create_predict_inputs_when_calendar_and_categorical_features_auto_with_
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
     assert results[4] is None
+
+
+@pytest.mark.parametrize(
+    "differentiation, expected_Xs_index",
+    [(None, pd.RangeIndex(start=50, stop=53)[[2, 0]]),
+     (1, pd.RangeIndex(start=50, stop=53))],
+    ids=lambda x: f"{x}"
+)
+def test_create_predict_inputs_Xs_index_when_steps_unordered(
+    differentiation, expected_Xs_index
+):
+    """
+    Test the last output of _create_predict_inputs, `Xs_index`, has one value
+    per row of `Xs`: the requested steps in their order without
+    differentiation, and all the steps from 1 to `max(steps)` with
+    differentiation. `prediction_index` follows the requested steps.
+    """
+    series = pd.DataFrame({
+        'l1': np.arange(50, dtype=float) ** 1.5, 'l2': np.arange(50, dtype=float)
+    })
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=3,
+        differentiation=differentiation
+    )
+    forecaster.fit(series=series)
+    results = forecaster._create_predict_inputs(steps=[3, 1])
+
+    assert len(results[0]) == len(expected_Xs_index)
+    pd.testing.assert_index_equal(
+        results[3], pd.RangeIndex(start=50, stop=53)[[2, 0]]
+    )
+    pd.testing.assert_index_equal(results[5], expected_Xs_index)

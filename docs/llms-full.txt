@@ -6399,6 +6399,10 @@ window.
 - Other estimators that reject NaN (SVR, KNN...): scikit-learn's own
   `Input X contains NaN.`, without those details.
 
+If the predictor is `_level_skforecast`, the NaN is not in the data: a series
+not seen during training gets NaN with an ordinal encoding. Predict it with
+`encoding='onehot'` or `encoding=None`, or with an estimator that accepts NaN.
+
 ```python
 # Fix 1: fill the gaps of exog before predicting or backtesting
 exog = exog.interpolate(method='linear')

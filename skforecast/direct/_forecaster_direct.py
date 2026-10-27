@@ -2087,6 +2087,10 @@ class ForecasterDirect(ForecasterBase):
             `None` if no differentiation is applied. This is used to reverse
             the differentiation of predictions without mutating the forecaster's
             internal state.
+        Xs_index : pandas Index
+            Index of the rows of `Xs`, one per step predicted. With
+            differentiation, it has the dates of all the steps from 1 to
+            `max(steps)`, as `Xs`.
         
         """
 
@@ -2246,13 +2250,13 @@ class ForecasterDirect(ForecasterBase):
 
             Xs = [Xs_array[i:i + 1] for i in range(len(Xs_steps))]
 
-        return Xs, Xs_col_names, steps, prediction_index, differentiator
+        return Xs, Xs_col_names, steps, prediction_index, differentiator, Xs_index
 
     def _direct_predict(
         self,
         steps: list[int],
         Xs: list[np.ndarray],
-        prediction_index: pd.Index | None = None
+        Xs_index: pd.Index | None = None
     ) -> np.ndarray:
         """
         Generate predictions for the specified steps using the fitted estimators.
@@ -2271,12 +2275,10 @@ class ForecasterDirect(ForecasterBase):
         Xs : list[np.ndarray]
             List of numpy arrays with the predictors for each step.
             Each array has shape (1, n_features).
-        prediction_index : pandas Index, default None
-            Index of the predictions, used to give the date of the step in the
-            error raised when a linear model gets NaN predictors. It is only
-            used when it has one value per step in `steps` (with
-            `differentiation` and steps that are not consecutive from 1,
-            `steps` also includes the intermediate steps).
+        Xs_index : pandas Index, default None
+            Index of the rows of `Xs`, one per step in `steps`, used to give
+            the date of the step in the error raised when a linear model gets
+            NaN predictors.
 
         Returns
         -------
@@ -2305,12 +2307,7 @@ class ForecasterDirect(ForecasterBase):
                 try:
                     predictions[i] = fn(X).item()
                 except _NonFinitePredictorsError as e:
-                    date = (
-                        prediction_index[i]
-                        if prediction_index is not None
-                        and len(prediction_index) == len(steps)
-                        else None
-                    )
+                    date = Xs_index[i] if Xs_index is not None else None
                     raise ValueError(e.message(step=step, date=date)) from None
 
         return predictions
@@ -2368,7 +2365,8 @@ class ForecasterDirect(ForecasterBase):
             Xs_col_names,
             steps,
             prediction_index,
-            differentiator
+            differentiator,
+            _
         ) = self._create_predict_inputs(
                 steps        = steps,
                 last_window  = last_window,
@@ -2457,7 +2455,8 @@ class ForecasterDirect(ForecasterBase):
             _,
             steps,
             prediction_index,
-            differentiator
+            differentiator,
+            Xs_index
         ) = self._create_predict_inputs(
                 steps        = steps,
                 last_window  = last_window,
@@ -2469,9 +2468,9 @@ class ForecasterDirect(ForecasterBase):
         # from 1 to `max(steps)`.
         Xs_steps = steps if differentiator is None else list(range(1, max(steps) + 1))
         predictions = self._direct_predict(
-                          steps            = Xs_steps,
-                          Xs               = Xs,
-                          prediction_index = prediction_index
+                          steps    = Xs_steps,
+                          Xs       = Xs,
+                          Xs_index = Xs_index
                       )
 
         if differentiator is not None:
@@ -2568,7 +2567,8 @@ class ForecasterDirect(ForecasterBase):
             _,
             steps,
             prediction_index,
-            differentiator
+            differentiator,
+            Xs_index
         ) = self._create_predict_inputs(
                 steps                   = steps, 
                 last_window             = last_window, 
@@ -2590,9 +2590,9 @@ class ForecasterDirect(ForecasterBase):
         # to `max(steps)`.
         Xs_steps = steps if differentiator is None else list(range(1, max(steps) + 1))
         predictions = self._direct_predict(
-                          steps            = Xs_steps,
-                          Xs               = Xs,
-                          prediction_index = prediction_index
+                          steps    = Xs_steps,
+                          Xs       = Xs,
+                          Xs_index = Xs_index
                       )
         
         rng = np.random.default_rng(seed=random_state)
@@ -2706,7 +2706,8 @@ class ForecasterDirect(ForecasterBase):
             _,
             steps,
             prediction_index,
-            differentiator
+            differentiator,
+            Xs_index
         ) = self._create_predict_inputs(
                 steps                   = steps, 
                 last_window             = last_window, 
@@ -2728,9 +2729,9 @@ class ForecasterDirect(ForecasterBase):
         # to `max(steps)`.
         Xs_steps = steps if differentiator is None else list(range(1, max(steps) + 1))
         predictions = self._direct_predict(
-                          steps            = Xs_steps,
-                          Xs               = Xs,
-                          prediction_index = prediction_index
+                          steps    = Xs_steps,
+                          Xs       = Xs,
+                          Xs_index = Xs_index
                       )
         
         if use_binned_residuals:

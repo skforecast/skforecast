@@ -414,3 +414,33 @@ def test_build_predict_function_linear_models_NaN_predictions_when_allow_nan_pre
     np.testing.assert_allclose(
         result[[0, 2, 3]], estimator.predict(X_nan[[0, 2, 3]])
     )
+
+
+@pytest.mark.parametrize(
+    "predictors, expected_remedy",
+    [(["_level_skforecast"],
+      "Predict the series not seen during training with `encoding='onehot'` "
+      "or `encoding=None` (an ordinal encoding gives them NaN), or use"),
+     (["exog", "_level_skforecast"],
+      "Fill the missing values of the series (or `last_window`) and `exog`; "
+      "predict the series not seen during training with `encoding='onehot'` "
+      "or `encoding=None` (an ordinal encoding gives them NaN), or use")],
+    ids=lambda x: f"{x}"
+)
+def test_NonFinitePredictorsError_message_when_level_skforecast_is_NaN(
+    predictors, expected_remedy
+):
+    """
+    Test the message of `_NonFinitePredictorsError` when `_level_skforecast`
+    is NaN (a series not seen during training with an ordinal encoding): it
+    points to the encoding, and keeps the remedy for the missing values of
+    the data when other predictors are NaN too.
+    """
+    error = _NonFinitePredictorsError(
+        estimator_name = "Ridge",
+        rows           = np.array([0]),
+        predictors     = predictors,
+        has_nan        = True
+    )
+
+    assert expected_remedy in error.message()
