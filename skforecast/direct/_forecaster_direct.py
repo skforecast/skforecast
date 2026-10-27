@@ -451,6 +451,13 @@ class ForecasterDirect(ForecasterBase):
     _probabilistic_mode: str, bool
         Private attribute used to indicate whether the forecaster should perform 
         some calculations during backtesting.
+    _allow_nan_predictions : bool
+        Private attribute. If `True`, a linear model of scikit-learn returns NaN
+        predictions when a predictor is NaN, instead of raising a `ValueError`.
+        It is set to `True` only by `backtesting_forecaster`, in its copy of
+        the forecaster, so that a missing value that only affects the steps of
+        the `gap`, which are predicted and discarded, does not stop the
+        backtesting; NaN predictions of scored dates raise before the metrics.
 
     Notes
     -----
@@ -522,6 +529,7 @@ class ForecasterDirect(ForecasterBase):
         self.python_version                       = sys.version.split(" ")[0]
         self.forecaster_id                        = forecaster_id
         self._probabilistic_mode                  = "binned"
+        self._allow_nan_predictions               = False
 
         if not isinstance(steps, int):
             raise TypeError(
@@ -2295,10 +2303,14 @@ class ForecasterDirect(ForecasterBase):
                 message="X does not have valid feature names", 
                 category=UserWarning
             )
+            # NOTE: `getattr` keeps forecasters saved with previous versions,
+            # which do not have this attribute, working.
+            allow_nan_predictions = getattr(self, '_allow_nan_predictions', False)
             predict_fns = [
                 _build_predict_function(
-                    estimator     = est,
-                    feature_names = self.X_train_features_names_out_
+                    estimator             = est,
+                    feature_names         = self.X_train_features_names_out_,
+                    allow_nan_predictions = allow_nan_predictions
                 )
                 for est in estimators
             ]

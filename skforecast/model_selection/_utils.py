@@ -1403,9 +1403,11 @@ def _check_nan_predictions_backtesting(
         raise ValueError(
             f"{len(dates)} backtesting predictions{of_estimator} are NaN at "
             f"dates with observed values (first: {dates[0]}), so the metrics "
-            f"cannot be calculated. The forecaster could not predict these "
-            f"dates, for example because of missing values in `exog`. Review "
-            f"the inputs of the folds that include them."
+            f"cannot be calculated. The most likely cause is a missing value in "
+            f"the series or in `exog`, used as a predictor of these dates, with "
+            f"an estimator that does not accept NaN (for example, a linear "
+            f"model). Fill the missing values, or use an estimator that accepts "
+            f"them, for example HistGradientBoostingRegressor or LGBMRegressor."
         )
 
 

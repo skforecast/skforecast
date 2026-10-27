@@ -130,11 +130,17 @@ forecaster = ForecasterRecursive(
 )
 ```
 
-Multi-series backtesting (`backtesting_forecaster_multiseries` and its
-searches) does not raise with a linear model: the dates that cannot be
-predicted get NaN predictions, which are left out of the metrics with a
-`MissingValuesWarning` that gives their number per series. Read it: the
-metrics use fewer values than predicted.
+Backtesting does not raise this error with a linear model: the dates that
+cannot be predicted get NaN predictions, so a missing value that only affects
+the discarded steps of the `gap` does not matter. If NaN predictions reach the
+scored dates:
+
+- `backtesting_forecaster` (one series) raises
+  `N backtesting predictions are NaN at dates with observed values ...`,
+  with the first date, the likely cause and the remedy (same fixes as above).
+- `backtesting_forecaster_multiseries` leaves them out of the metrics with a
+  `MissingValuesWarning` that gives their number per series. Read it: the
+  metrics use fewer values than predicted.
 
 ### "ValueError: exog must have the same index as y" / "exog does not cover forecast horizon"
 

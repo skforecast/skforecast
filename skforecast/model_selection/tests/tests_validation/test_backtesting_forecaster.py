@@ -6,10 +6,10 @@ import pytest
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
-from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.linear_model import Ridge
 from skforecast.recursive import ForecasterRecursive
 from skforecast.recursive import ForecasterRecursiveMultiSeries
+from skforecast.direct import ForecasterDirect
 from skforecast.model_selection import backtesting_forecaster
 from skforecast.model_selection._split import TimeSeriesFold
 
@@ -136,60 +136,98 @@ def test_backtesting_forecaster_cv_differentiation_is_deprecated_and_ignored():
     assert cv.window_size is None
 
 
-class RidgeNoInputValidation(RegressorMixin, BaseEstimator):
-    """
-    Ridge regression whose `predict` does not validate its input, so a NaN
-    predictor gives a NaN prediction instead of an error.
-    """
+# Series with a missing value in `exog` at position 41: with `gap=2`, the first
+# fold predicts positions 40 to 46 and scores 42 to 46, so 41 is a gap row.
+rng_gap = np.random.default_rng(0)
+idx_gap = pd.date_range("2020-01-01", periods=60, freq="D")
+y_gap = pd.Series(rng_gap.normal(size=60).cumsum(), index=idx_gap, name="y")
+exog_gap = pd.DataFrame({"x": rng_gap.normal(size=60)}, index=idx_gap)
+exog_gap.iloc[41, 0] = np.nan
 
-    def __init__(self, random_state=None):
-        self.random_state = random_state
-
-    def fit(self, X, y):
-        self.estimator_ = Ridge(random_state=self.random_state).fit(X, y)
-        return self
-
-    def predict(self, X):
-        return np.asarray(X) @ self.estimator_.coef_ + self.estimator_.intercept_
+nan_predictions_msg = (
+    "5 backtesting predictions are NaN at dates with observed values (first: "
+    "2020-02-12 00:00:00), so the metrics cannot be calculated. The most likely "
+    "cause is a missing value in the series or in `exog`, used as a predictor "
+    "of these dates, with an estimator that does not accept NaN (for example, "
+    "a linear model). Fill the missing values, or use an estimator that "
+    "accepts them, for example HistGradientBoostingRegressor or LGBMRegressor."
+)
 
 
 @pytest.mark.parametrize(
-    "estimator, err_msg",
-    [(Ridge(random_state=123),
-      "Input X contains NaN in the predictors ['x'] at step 6 "
-      "(2020-04-05 00:00:00). Ridge does not accept missing values encoded as "
-      "NaN, so its predictions would be NaN."),
-     (RidgeNoInputValidation(random_state=123),
-      "5 backtesting predictions are NaN at dates with observed values "
-      "(first: 2020-04-05 00:00:00), so the metrics cannot be calculated.")],
+    "forecaster, expected_metric",
+    [(ForecasterRecursive(Ridge(), lags=[10]), 7.409637384641371),
+     (ForecasterDirect(Ridge(), lags=[10], steps=7), 8.101181293781048)],
     ids=lambda x: f"{type(x).__name__}"
 )
-def test_backtesting_forecaster_ValueError_when_exog_has_NaN_in_test_fold(
-    estimator, err_msg
+def test_backtesting_forecaster_output_when_exog_has_NaN_only_in_gap_steps(
+    forecaster, expected_metric
 ):
     """
-    Test backtesting_forecaster raises a ValueError when `exog` has a missing
-    value in the test set of a fold. A linear model, which does not accept
-    missing values, raises when predicting, naming the predictor and the step.
-    An estimator that returns NaN predictions raises before calculating the
-    metrics, with the number of NaN predictions and the first date. Before,
-    the metric raised 'Input contains NaN.'.
+    Test backtesting_forecaster output when `exog` has a missing value in a
+    step of the `gap`, which is predicted and discarded, and the estimator is
+    a linear model. The missing value does not reach any lag of the scored
+    steps (`lags=[10]`), so the backtesting completes without NaN predictions
+    and with the same metric as before the check of NaN predictors. Before
+    the fix of the gap, ForecasterRecursive raised when predicting the gap
+    step. ForecasterDirect does not predict the steps of the gap.
     """
-    idx = pd.date_range("2020-01-01", periods=120, freq="D")
-    rng = np.random.default_rng(0)
-    y = pd.Series(rng.normal(100, 5, 120), index=idx, name="y")
-    exog = pd.Series(rng.normal(0, 1, 120), index=idx, name="x")
-    exog.iloc[95] = np.nan
-    forecaster = ForecasterRecursive(estimator, lags=3)
-    cv = TimeSeriesFold(steps=10, initial_train_size=60, refit=False)
+    cv = TimeSeriesFold(steps=5, initial_train_size=40, gap=2, refit=False)
+    metric, predictions = backtesting_forecaster(
+                              forecaster    = forecaster,
+                              y             = y_gap,
+                              exog          = exog_gap,
+                              cv            = cv,
+                              metric        = 'mean_absolute_error',
+                              verbose       = False,
+                              show_progress = False
+                          )
 
-    with pytest.raises(ValueError, match=re.escape(err_msg)):
+    assert len(predictions) == 18
+    assert not predictions['pred'].isna().any()
+    np.testing.assert_almost_equal(metric.iloc[0, 0], expected_metric)
+
+
+@pytest.mark.parametrize(
+    "forecaster",
+    [ForecasterRecursive(Ridge(), lags=[1]),
+     ForecasterRecursive(Ridge(), lags=[10], differentiation=1),
+     ForecasterDirect(Ridge(), lags=[10], steps=7, differentiation=1)],
+    ids=["recursive_lags_1", "recursive_differentiation", "direct_differentiation"]
+)
+def test_backtesting_forecaster_ValueError_when_exog_NaN_in_gap_reaches_scored_steps(
+    forecaster
+):
+    """
+    Test backtesting_forecaster raises a ValueError before the metrics, with
+    the number of NaN predictions, the first date, the likely cause and the
+    remedy, when a missing value of `exog` in a step of the `gap` reaches the
+    scored steps: as a lag of the following steps (`lags=[1]`), or when the
+    differentiation is reverted. Before, the metric raised 'Input contains
+    NaN.'. The forecaster of the user is not modified, so its `predict` still
+    raises with the missing value.
+    """
+    cv = TimeSeriesFold(steps=5, initial_train_size=40, gap=2, refit=False)
+
+    with pytest.raises(ValueError, match=re.escape(nan_predictions_msg)):
         backtesting_forecaster(
-            forecaster        = forecaster,
-            y                 = y,
-            exog              = exog,
-            cv                = cv,
-            metric            = 'mean_absolute_error',
-            show_progress     = False,
-            suppress_warnings = True
+            forecaster    = forecaster,
+            y             = y_gap,
+            exog          = exog_gap,
+            cv            = cv,
+            metric        = 'mean_absolute_error',
+            verbose       = False,
+            show_progress = False
+        )
+
+    assert forecaster._allow_nan_predictions is False
+    forecaster.fit(y=y_gap.iloc[:40], exog=exog_gap.iloc[:40])
+    err_msg = re.escape(
+        "Input X contains NaN in the predictors ['x'] at step 2 "
+        "(2020-02-11 00:00:00). Ridge does not accept missing values encoded "
+        "as NaN, so its predictions would be NaN."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        forecaster.predict(
+            steps=7, exog=exog_gap.iloc[40:], suppress_warnings=True
         )

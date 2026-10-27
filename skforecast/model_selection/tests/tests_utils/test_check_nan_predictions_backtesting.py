@@ -20,17 +20,20 @@ def test_check_nan_predictions_backtesting_ValueError_when_NaN_predictions_at_ob
     estimator_id, of_estimator
 ):
     """
-    Test ValueError is raised, with the number of NaN predictions and the
-    first date, when some predictions are NaN at dates with observed values.
+    Test ValueError is raised, with the number of NaN predictions, the first
+    date, the likely cause and the remedy, when some predictions are NaN at
+    dates with observed values.
     """
     y_pred = pd.Series([1., np.nan, np.nan, 4., 5.], index=index)
 
     err_msg = re.escape(
         f"2 backtesting predictions{of_estimator} are NaN at dates with "
         f"observed values (first: 2020-01-02 00:00:00), so the metrics cannot "
-        f"be calculated. The forecaster could not predict these dates, for "
-        f"example because of missing values in `exog`. Review the inputs of "
-        f"the folds that include them."
+        f"be calculated. The most likely cause is a missing value in the "
+        f"series or in `exog`, used as a predictor of these dates, with an "
+        f"estimator that does not accept NaN (for example, a linear model). "
+        f"Fill the missing values, or use an estimator that accepts them, for "
+        f"example HistGradientBoostingRegressor or LGBMRegressor."
     )
     with pytest.raises(ValueError, match=err_msg):
         _check_nan_predictions_backtesting(

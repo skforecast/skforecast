@@ -289,6 +289,13 @@ class ForecasterRecursive(ForecasterBase):
     _probabilistic_mode: str, bool
         Private attribute used to indicate whether the forecaster should perform 
         some calculations during backtesting.
+    _allow_nan_predictions : bool
+        Private attribute. If `True`, a linear model of scikit-learn returns NaN
+        predictions when a predictor is NaN, instead of raising a `ValueError`.
+        It is set to `True` only by `backtesting_forecaster`, in its copy of
+        the forecaster, so that a missing value that only affects the steps of
+        the `gap`, which are predicted and discarded, does not stop the
+        backtesting; NaN predictions of scored dates raise before the metrics.
     
     """
 
@@ -349,6 +356,7 @@ class ForecasterRecursive(ForecasterBase):
         self.python_version                       = sys.version.split(" ")[0]
         self.forecaster_id                        = forecaster_id
         self._probabilistic_mode                  = "binned"
+        self._allow_nan_predictions               = False
 
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
         self.lags_are_contiguous = (
@@ -1710,9 +1718,13 @@ class ForecasterRecursive(ForecasterBase):
         predictions = np.full(shape=steps, fill_value=np.nan, dtype=float)
         last_window = np.concatenate((last_window_values, predictions))
 
+        # NOTE: `getattr` keeps forecasters saved with previous versions, which
+        # do not have this attribute, working.
+        allow_nan_predictions = getattr(self, '_allow_nan_predictions', False)
         predict_fn = _build_predict_function(
-                         estimator     = self.estimator,
-                         feature_names = self.X_train_features_names_out_
+                         estimator             = self.estimator,
+                         feature_names         = self.X_train_features_names_out_,
+                         allow_nan_predictions = allow_nan_predictions
                      )
 
         has_lags = self.lags is not None
@@ -1846,9 +1858,13 @@ class ForecasterRecursive(ForecasterBase):
         last_window = np.tile(last_window_values[:, np.newaxis], (1, n_boot))
         last_window = np.vstack([last_window, np.full((steps, n_boot), np.nan)])
 
+        # NOTE: `getattr` keeps forecasters saved with previous versions, which
+        # do not have this attribute, working.
+        allow_nan_predictions = getattr(self, '_allow_nan_predictions', False)
         predict_fn = _build_predict_function(
-                         estimator     = self.estimator,
-                         feature_names = self.X_train_features_names_out_
+                         estimator             = self.estimator,
+                         feature_names         = self.X_train_features_names_out_,
+                         allow_nan_predictions = allow_nan_predictions
                      )
 
         has_lags = self.lags is not None

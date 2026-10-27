@@ -924,3 +924,24 @@ def test_predict_output_when_exog_has_NaN_and_estimator_accepts_NaN(estimator):
     np.testing.assert_array_almost_equal(
         predictions.to_numpy(), forecaster.estimator.predict(X_predict)
     )
+
+
+def test_predict_output_when_allow_nan_predictions_and_exog_has_NaN():
+    """
+    Test predict output when `_allow_nan_predictions=True` (set only by
+    backtesting) and `exog` has a missing value: the linear model returns NaN
+    predictions from that step on, instead of raising.
+    """
+    y = pd.Series(np.arange(50, dtype=float))
+    exog = pd.Series(np.arange(50, dtype=float), name='exog')
+    exog_pred = pd.Series(
+        [50., np.nan, 52.], index=pd.RangeIndex(50, 53), name='exog'
+    )
+    forecaster = ForecasterRecursive(LinearRegression(), lags=3)
+    forecaster.fit(y=y, exog=exog)
+    forecaster._allow_nan_predictions = True
+    predictions = forecaster.predict(steps=3, exog=exog_pred, suppress_warnings=True)
+
+    np.testing.assert_array_equal(
+        predictions.isna().to_numpy(), [False, True, True]
+    )

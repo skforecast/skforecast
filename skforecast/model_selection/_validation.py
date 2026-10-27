@@ -571,6 +571,16 @@ def _backtesting_forecaster(
     else:
         forecaster._probabilistic_mode = 'no_binned'
 
+    # NOTE: The steps of the `gap` are predicted and then discarded, so a
+    # missing predictor (for example, a gap in `exog`) that only affects them
+    # must not stop the backtesting: a linear model returns NaN predictions
+    # instead of raising. NaN predictions of scored dates raise before the
+    # metrics, in `_check_nan_predictions_backtesting`. The forecaster is a
+    # copy, so the attribute does not reach the user's forecaster. It is set
+    # even if the forecaster does not have it: forecasters saved with previous
+    # versions lack it, and the rest of forecasters do not read it.
+    forecaster._allow_nan_predictions = True
+
     folds = cv.split(X=y, as_pandas=False)
     initial_train_size = cv.initial_train_size_as_int
     window_size = cv.window_size
