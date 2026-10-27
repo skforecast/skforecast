@@ -1,0 +1,121 @@
+# Identity check: pandas 3.1.0 (A) vs pandas 3.1.0 no_copy_keyword (B)
+
+Totals: {'outputs': 110, 'strict_equal': 108, 'normalized_equal': 0, 'different': 2, 'errors': 0}
+
+| case | output | result | dtype/index differences |
+|---|---|---|---|
+| recursive_numeric_exog | X_train | identical |  |
+| recursive_numeric_exog | y_train | identical |  |
+| recursive_numeric_exog | exog_dtypes_in_ | identical |  |
+| recursive_numeric_exog | exog_dtypes_out_ | identical |  |
+| recursive_numeric_exog | predict | identical |  |
+| recursive_numeric_exog | predict_interval_bootstrapping | identical |  |
+| recursive_numeric_exog | predict_interval_binned | identical |  |
+| recursive_numeric_exog | predict_interval_conformal | identical |  |
+| recursive_numeric_exog | in_sample_residuals_ | identical |  |
+| recursive_numeric_exog | in_sample_residuals_by_bin_ | identical |  |
+| recursive_numeric_exog | create_predict_X | identical |  |
+| recursive_calendar_features | X_train | identical |  |
+| recursive_calendar_features | predict | identical |  |
+| recursive_categorical_exog_lgbm | X_train | identical |  |
+| recursive_categorical_exog_lgbm | exog_dtypes_in_ | identical |  |
+| recursive_categorical_exog_lgbm | exog_dtypes_out_ | identical |  |
+| recursive_categorical_exog_lgbm | predict | identical |  |
+| recursive_text_exog_lgbm | X_train | identical |  |
+| recursive_text_exog_lgbm | exog_dtypes_in_ | identical |  |
+| recursive_text_exog_lgbm | exog_dtypes_out_ | identical |  |
+| recursive_text_exog_lgbm | predict | identical |  |
+| recursive_text_exog_linear_no_categorical | error | identical |  |
+| direct | X_train | identical |  |
+| direct | y_train | identical |  |
+| direct | predict | identical |  |
+| direct | predict_interval_conformal | identical |  |
+| direct | predict_interval_bootstrapping | identical |  |
+| multiseries_wide_ordinal | X_train | identical |  |
+| multiseries_wide_ordinal | y_train | identical |  |
+| multiseries_wide_ordinal | exog_dtypes_in_ | identical |  |
+| multiseries_wide_ordinal | exog_dtypes_out_ | identical |  |
+| multiseries_wide_ordinal | series_names_in_ | identical |  |
+| multiseries_wide_ordinal | predict | identical |  |
+| multiseries_wide_ordinal | predict_interval_bootstrapping | identical |  |
+| multiseries_wide_ordinal | predict_interval_conformal | identical |  |
+| multiseries_wide_ordinal | in_sample_residuals_ | identical |  |
+| multiseries_wide_ordinal | level_row_slices | identical |  |
+| multiseries_wide_ordinal_category | X_train | identical |  |
+| multiseries_wide_ordinal_category | y_train | identical |  |
+| multiseries_wide_ordinal_category | exog_dtypes_in_ | identical |  |
+| multiseries_wide_ordinal_category | exog_dtypes_out_ | identical |  |
+| multiseries_wide_ordinal_category | series_names_in_ | identical |  |
+| multiseries_wide_ordinal_category | predict | identical |  |
+| multiseries_wide_ordinal_category | predict_interval_bootstrapping | identical |  |
+| multiseries_wide_ordinal_category | predict_interval_conformal | identical |  |
+| multiseries_wide_ordinal_category | in_sample_residuals_ | identical |  |
+| multiseries_wide_ordinal_category | level_row_slices | identical |  |
+| multiseries_wide_onehot | X_train | identical |  |
+| multiseries_wide_onehot | y_train | identical |  |
+| multiseries_wide_onehot | exog_dtypes_in_ | identical |  |
+| multiseries_wide_onehot | exog_dtypes_out_ | identical |  |
+| multiseries_wide_onehot | series_names_in_ | identical |  |
+| multiseries_wide_onehot | predict | identical |  |
+| multiseries_wide_onehot | predict_interval_bootstrapping | identical |  |
+| multiseries_wide_onehot | predict_interval_conformal | identical |  |
+| multiseries_wide_onehot | in_sample_residuals_ | identical |  |
+| multiseries_wide_onehot | level_row_slices | identical |  |
+| multiseries_dict_ordinal | X_train | identical |  |
+| multiseries_dict_ordinal | y_train | identical |  |
+| multiseries_dict_ordinal | exog_dtypes_in_ | identical |  |
+| multiseries_dict_ordinal | exog_dtypes_out_ | identical |  |
+| multiseries_dict_ordinal | series_names_in_ | identical |  |
+| multiseries_dict_ordinal | predict | identical |  |
+| multiseries_dict_ordinal | predict_interval_bootstrapping | identical |  |
+| multiseries_dict_ordinal | predict_interval_conformal | identical |  |
+| multiseries_dict_ordinal | in_sample_residuals_ | identical |  |
+| multiseries_dict_ordinal | level_row_slices | identical |  |
+| multiseries_long_format | X_train | identical |  |
+| multiseries_long_format | y_train | identical |  |
+| multiseries_long_format | exog_dtypes_in_ | identical |  |
+| multiseries_long_format | exog_dtypes_out_ | identical |  |
+| multiseries_long_format | series_names_in_ | identical |  |
+| multiseries_long_format | predict | identical |  |
+| multiseries_long_format | predict_interval_bootstrapping | identical |  |
+| multiseries_long_format | predict_interval_conformal | identical |  |
+| multiseries_long_format | in_sample_residuals_ | identical |  |
+| multiseries_long_format | level_row_slices | identical |  |
+| multiseries_long_format | reshaped_series | identical |  |
+| multiseries_long_format | reshaped_exog | identical |  |
+| direct_multivariate | X_train | identical |  |
+| direct_multivariate | y_train | identical |  |
+| direct_multivariate | predict | identical |  |
+| direct_multivariate | predict_interval_conformal | identical |  |
+| recursive_classifier | X_train | identical |  |
+| recursive_classifier | y_train | identical |  |
+| recursive_classifier | predict | identical |  |
+| recursive_classifier | predict_proba | identical |  |
+| stats_arima | predict | identical |  |
+| stats_arima | predict_interval | identical |  |
+| equivalent_date | predict | identical |  |
+| backtesting_recursive | metric | identical |  |
+| backtesting_recursive | predictions | identical |  |
+| backtesting_multiseries | metric | identical |  |
+| backtesting_multiseries | predictions | identical |  |
+| backtesting_stats | metric | identical |  |
+| backtesting_stats | predictions | identical |  |
+| grid_search_recursive | results | identical |  |
+| grid_search_multiseries | results | identical |  |
+| save_load_joblib_skops | joblib_recursive_predict_after_load | identical |  |
+| save_load_joblib_skops | joblib_recursive_exog_dtypes_in_after_load | identical |  |
+| save_load_joblib_skops | joblib_recursive_file_size | identical |  |
+| save_load_joblib_skops | joblib_multiseries_predict_after_load | identical |  |
+| save_load_joblib_skops | joblib_multiseries_exog_dtypes_in_after_load | identical |  |
+| save_load_joblib_skops | joblib_multiseries_file_size | identical |  |
+| save_load_joblib_skops | skops_recursive_predict_after_load | identical |  |
+| save_load_joblib_skops | skops_recursive_exog_dtypes_in_after_load | identical |  |
+| save_load_joblib_skops | skops_recursive_file_size | DIFFERENT VALUES |  |
+| save_load_joblib_skops | skops_multiseries_predict_after_load | identical |  |
+| save_load_joblib_skops | skops_multiseries_exog_dtypes_in_after_load | identical |  |
+| save_load_joblib_skops | skops_multiseries_file_size | DIFFERENT VALUES |  |
+
+## Deprecation warnings present in only one run
+
+| case | run | warning |
+|---|---|---|

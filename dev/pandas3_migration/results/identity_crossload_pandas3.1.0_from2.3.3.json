@@ -1,0 +1,260 @@
+{
+ "env": {
+  "python": "3.12.3",
+  "executable": "/root/.venvs/skforecast-p3/bin/python",
+  "platform": "Linux-6.18.44-fc-v165-x86_64-with-glibc2.39",
+  "cpu_count": "4",
+  "pandas": "3.1.0",
+  "numpy": "2.5.4",
+  "sklearn": "1.9.1",
+  "scipy": "1.18.1",
+  "numba": "0.68.0",
+  "statsmodels": "0.15.0",
+  "lightgbm": "4.7.0",
+  "skops": "0.16.0",
+  "joblib": "1.6.0",
+  "pyarrow": "26.0.0",
+  "skforecast": "0.27.0",
+  "skforecast_path": "/home/user/skforecast/skforecast"
+ },
+ "other_pandas": "2.3.3",
+ "index_unit": null,
+ "cases": {
+  "joblib_recursive": {
+   "own": {
+    "strict": "8c43890df94a940a7a60e8ae49d00a5c8c495c97bb8a2d22652fbd3df58101aa",
+    "normalized": "6621f0e68241c01808ab1a0a2823cb7feffd9327e2f128a6e4b7900513a396c1",
+    "describe": {
+     "type": "Series",
+     "shape": [
+      10
+     ],
+     "index_dtype": "datetime64[ns]",
+     "index_freq": "D",
+     "dtype": "float64"
+    },
+    "exog_dtypes_in_": {
+     "exog_float": "float64",
+     "exog_float2": "float64",
+     "exog_int": "int64",
+     "exog_text": "str"
+    },
+    "index_freq_": "<Day>",
+    "last_window_index_dtype": "datetime64[ns]",
+    "skforecast_version_in_file": "0.27.0",
+    "error": null,
+    "warnings": []
+   },
+   "other": {
+    "strict": "8c43890df94a940a7a60e8ae49d00a5c8c495c97bb8a2d22652fbd3df58101aa",
+    "normalized": "6621f0e68241c01808ab1a0a2823cb7feffd9327e2f128a6e4b7900513a396c1",
+    "describe": {
+     "type": "Series",
+     "shape": [
+      10
+     ],
+     "index_dtype": "datetime64[ns]",
+     "index_freq": "D",
+     "dtype": "float64"
+    },
+    "exog_dtypes_in_": {
+     "exog_float": "float64",
+     "exog_float2": "float64",
+     "exog_int": "int64",
+     "exog_text": "object"
+    },
+    "index_freq_": "<Day>",
+    "last_window_index_dtype": "datetime64[ns]",
+    "skforecast_version_in_file": "0.27.0",
+    "error": null,
+    "warnings": []
+   },
+   "summary": "identical"
+  },
+  "joblib_multiseries": {
+   "own": {
+    "strict": "9a84e335bbae0f067cd3afad3681c49655b5f50ed62ba495b4d38d0c45835a8b",
+    "normalized": "bd0ab639a1c353224cc0ab496a3e01f33362030b2aeff6a1a723fda3e8409dfb",
+    "describe": {
+     "type": "DataFrame",
+     "shape": [
+      30,
+      2
+     ],
+     "index_dtype": "datetime64[ns]",
+     "index_freq": null,
+     "dtypes": {
+      "level": "str",
+      "pred": "float64"
+     }
+    },
+    "exog_dtypes_in_": {
+     "exog_float": "float64",
+     "exog_float2": "float64",
+     "exog_int": "int64",
+     "exog_cat": "category"
+    },
+    "index_freq_": "<Day>",
+    "last_window_index_dtype": {
+     "s1": "datetime64[ns]",
+     "s2": "datetime64[ns]",
+     "s3": "datetime64[ns]"
+    },
+    "skforecast_version_in_file": "0.27.0",
+    "error": null,
+    "warnings": []
+   },
+   "other": {
+    "strict": "9a84e335bbae0f067cd3afad3681c49655b5f50ed62ba495b4d38d0c45835a8b",
+    "normalized": "bd0ab639a1c353224cc0ab496a3e01f33362030b2aeff6a1a723fda3e8409dfb",
+    "describe": {
+     "type": "DataFrame",
+     "shape": [
+      30,
+      2
+     ],
+     "index_dtype": "datetime64[ns]",
+     "index_freq": null,
+     "dtypes": {
+      "level": "str",
+      "pred": "float64"
+     }
+    },
+    "exog_dtypes_in_": {
+     "exog_float": "float64",
+     "exog_float2": "float64",
+     "exog_int": "int64",
+     "exog_cat": "category"
+    },
+    "index_freq_": "<Day>",
+    "last_window_index_dtype": {
+     "s1": "datetime64[ns]",
+     "s2": "datetime64[ns]",
+     "s3": "datetime64[ns]"
+    },
+    "skforecast_version_in_file": "0.27.0",
+    "error": null,
+    "warnings": []
+   },
+   "summary": "identical"
+  },
+  "skops_recursive": {
+   "own": {
+    "strict": "8c43890df94a940a7a60e8ae49d00a5c8c495c97bb8a2d22652fbd3df58101aa",
+    "normalized": "6621f0e68241c01808ab1a0a2823cb7feffd9327e2f128a6e4b7900513a396c1",
+    "describe": {
+     "type": "Series",
+     "shape": [
+      10
+     ],
+     "index_dtype": "datetime64[ns]",
+     "index_freq": "D",
+     "dtype": "float64"
+    },
+    "exog_dtypes_in_": {
+     "exog_float": "float64",
+     "exog_float2": "float64",
+     "exog_int": "int64",
+     "exog_text": "str"
+    },
+    "index_freq_": "<Day>",
+    "last_window_index_dtype": "datetime64[ns]",
+    "skforecast_version_in_file": "0.27.0",
+    "error": null,
+    "warnings": []
+   },
+   "other": {
+    "strict": "8c43890df94a940a7a60e8ae49d00a5c8c495c97bb8a2d22652fbd3df58101aa",
+    "normalized": "6621f0e68241c01808ab1a0a2823cb7feffd9327e2f128a6e4b7900513a396c1",
+    "describe": {
+     "type": "Series",
+     "shape": [
+      10
+     ],
+     "index_dtype": "datetime64[ns]",
+     "index_freq": "D",
+     "dtype": "float64"
+    },
+    "exog_dtypes_in_": {
+     "exog_float": "float64",
+     "exog_float2": "float64",
+     "exog_int": "int64",
+     "exog_text": "object"
+    },
+    "index_freq_": "<Day>",
+    "last_window_index_dtype": "datetime64[ns]",
+    "skforecast_version_in_file": "0.27.0",
+    "error": null,
+    "warnings": []
+   },
+   "summary": "identical"
+  },
+  "skops_multiseries": {
+   "own": {
+    "strict": "9a84e335bbae0f067cd3afad3681c49655b5f50ed62ba495b4d38d0c45835a8b",
+    "normalized": "bd0ab639a1c353224cc0ab496a3e01f33362030b2aeff6a1a723fda3e8409dfb",
+    "describe": {
+     "type": "DataFrame",
+     "shape": [
+      30,
+      2
+     ],
+     "index_dtype": "datetime64[ns]",
+     "index_freq": null,
+     "dtypes": {
+      "level": "str",
+      "pred": "float64"
+     }
+    },
+    "exog_dtypes_in_": {
+     "exog_float": "float64",
+     "exog_float2": "float64",
+     "exog_int": "int64",
+     "exog_cat": "category"
+    },
+    "index_freq_": "<Day>",
+    "last_window_index_dtype": {
+     "s1": "datetime64[ns]",
+     "s2": "datetime64[ns]",
+     "s3": "datetime64[ns]"
+    },
+    "skforecast_version_in_file": "0.27.0",
+    "error": null,
+    "warnings": []
+   },
+   "other": {
+    "strict": "9a84e335bbae0f067cd3afad3681c49655b5f50ed62ba495b4d38d0c45835a8b",
+    "normalized": "bd0ab639a1c353224cc0ab496a3e01f33362030b2aeff6a1a723fda3e8409dfb",
+    "describe": {
+     "type": "DataFrame",
+     "shape": [
+      30,
+      2
+     ],
+     "index_dtype": "datetime64[ns]",
+     "index_freq": null,
+     "dtypes": {
+      "level": "str",
+      "pred": "float64"
+     }
+    },
+    "exog_dtypes_in_": {
+     "exog_float": "float64",
+     "exog_float2": "float64",
+     "exog_int": "int64",
+     "exog_cat": "category"
+    },
+    "index_freq_": "<Day>",
+    "last_window_index_dtype": {
+     "s1": "datetime64[ns]",
+     "s2": "datetime64[ns]",
+     "s3": "datetime64[ns]"
+    },
+    "skforecast_version_in_file": "0.27.0",
+    "error": null,
+    "warnings": []
+   },
+   "summary": "identical"
+  }
+ }
+}

@@ -1,0 +1,19 @@
+pandas 3.1.0
+ctor copy=False warns: []
+ctor copy=False shares: True
+ctor default warns: []
+ctor default shares: False
+to_numpy writeable: False F: True C: False
+values writeable: False
+series to_numpy writeable: False np.asarray writeable: False
+concat warns: []
+concat nblocks: 2
+concat to_numpy shares with a: False shares with c col a: False
+concat copy=False warns: ['Pandas4Warning: The copy keyword is deprecated and will be removed in a future version. Copy-on-']
+after 5 inserts nblocks: 6
+df[list] shares: True
+iloc slice shares: True
+astype copy=False warns: ['Pandas4Warning: The copy keyword is deprecated and will be removed in a future version. Copy-on-']
+Series ctor copy=False warns: []
+mixed to_numpy writeable: True
+single block to_numpy shares: True writeable: False

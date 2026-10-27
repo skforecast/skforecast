@@ -1,0 +1,1950 @@
+{
+ "env": {
+  "python": "3.12.3",
+  "executable": "/root/.venvs/skforecast-p3/bin/python",
+  "platform": "Linux-6.18.44-fc-v165-x86_64-with-glibc2.39",
+  "cpu_count": "4",
+  "pandas": "3.1.0",
+  "numpy": "2.5.4",
+  "sklearn": "1.9.1",
+  "scipy": "1.18.1",
+  "numba": "0.68.0",
+  "statsmodels": "0.15.0",
+  "lightgbm": "4.7.0",
+  "skops": "0.16.0",
+  "joblib": "1.6.0",
+  "pyarrow": "26.0.0",
+  "skforecast": "0.27.0",
+  "skforecast_path": "/home/user/skforecast/skforecast"
+ },
+ "tag": "",
+ "patch": null,
+ "index_unit": null,
+ "input_index_dtype": "datetime64[us]",
+ "cases": {
+  "recursive_numeric_exog": {
+   "outputs": {
+    "X_train": {
+     "strict": "cb2c5222e04d73b0b5886554f771e93058dc6ec1e0c684f3ead6a6107859d3f8",
+     "normalized": "30a340209b6f89c48a86d36684e133c1b70b87461244f719b3b4069980824a19",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       243,
+       12
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtypes": {
+       "lag_1": "float64",
+       "lag_2": "float64",
+       "lag_3": "float64",
+       "lag_4": "float64",
+       "lag_5": "float64",
+       "lag_6": "float64",
+       "lag_7": "float64",
+       "roll_mean_7": "float64",
+       "roll_std_7": "float64",
+       "exog_float": "float64",
+       "exog_float2": "float64",
+       "exog_int": "int64"
+      }
+     }
+    },
+    "y_train": {
+     "strict": "0dccaababa8ea642aa6d4b625767ef19f15cc73322a4b49291578109cf8960f5",
+     "normalized": "8a6258a21759cbba4c890b2588c0d8cbfdc581218c0d72bf9f716c0d11b2c6cf",
+     "describe": {
+      "type": "Series",
+      "shape": [
+       243
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtype": "float64"
+     }
+    },
+    "exog_dtypes_in_": {
+     "strict": "0c6838d1c65e91bf772df2d54ae307210c65cd80c4d6a8286c8068fb47577527",
+     "normalized": "e3f8748d03081ed4d26e770be5c4003e9c08ccefb96b138917cd283fb3e118d8",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "exog_float",
+       "exog_float2",
+       "exog_int"
+      ]
+     }
+    },
+    "exog_dtypes_out_": {
+     "strict": "0c6838d1c65e91bf772df2d54ae307210c65cd80c4d6a8286c8068fb47577527",
+     "normalized": "e3f8748d03081ed4d26e770be5c4003e9c08ccefb96b138917cd283fb3e118d8",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "exog_float",
+       "exog_float2",
+       "exog_int"
+      ]
+     }
+    },
+    "predict": {
+     "strict": "eefb2907423c6985a1e54ece574c2e45dc6ea3f74229b465e8190e88caab9076",
+     "normalized": "dd113f6118d0e12a738bc5927c8ccd9e942785446ef40350640082c23aafa453",
+     "describe": {
+      "type": "Series",
+      "shape": [
+       10
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtype": "float64"
+     }
+    },
+    "predict_interval_bootstrapping": {
+     "strict": "4d51c10a48a867ca2cb171405761602fb44a6de4b12871ff9d2c9a9f85dc89dc",
+     "normalized": "e55ca496f26dfe55611f86280d47004039ffb3c7981a04e06938b2b4e836d8ed",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       10,
+       3
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtypes": {
+       "pred": "float64",
+       "lower_bound": "float64",
+       "upper_bound": "float64"
+      }
+     }
+    },
+    "predict_interval_binned": {
+     "strict": "4a939312c1e30fc1f5adf3a042d6ae6bee1984cae0574d103c7fd2b2aa3c2ea1",
+     "normalized": "5e353eed13baef7207ea044dba58e85d840205811144cccd57cdeda1ed7752b8",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       10,
+       3
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtypes": {
+       "pred": "float64",
+       "lower_bound": "float64",
+       "upper_bound": "float64"
+      }
+     }
+    },
+    "predict_interval_conformal": {
+     "strict": "76c6f2710c6d2283d6d4ccfa7a115c4e0e669d3fe44effd765c13bb276e86891",
+     "normalized": "ac16a54a3d36b9fa5a6fb7f046fd861eea66702c31451bbd4361d2db24f141bb",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       10,
+       3
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtypes": {
+       "pred": "float64",
+       "lower_bound": "float64",
+       "upper_bound": "float64"
+      }
+     }
+    },
+    "in_sample_residuals_": {
+     "strict": "1f113f00f41f8d23259250514311e5b3a3192cf36530e7fd16c8f631c31a5830",
+     "normalized": "1f113f00f41f8d23259250514311e5b3a3192cf36530e7fd16c8f631c31a5830",
+     "describe": {
+      "type": "ndarray",
+      "shape": [
+       243
+      ],
+      "dtype": "float64"
+     }
+    },
+    "in_sample_residuals_by_bin_": {
+     "strict": "7aaf8a2acbdad23c62a97478863ed3c224621c6efc6f4ebabd685537c038afe1",
+     "normalized": "7aaf8a2acbdad23c62a97478863ed3c224621c6efc6f4ebabd685537c038afe1",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "0",
+       "1",
+       "2",
+       "3",
+       "4",
+       "5",
+       "6",
+       "7",
+       "8",
+       "9"
+      ]
+     }
+    },
+    "create_predict_X": {
+     "strict": "207a435c54784655fb4496b30e7c46332a33e548ef7cd035d795c979358cee6d",
+     "normalized": "29ceb49d9f764d089453d7f46cb8ec97da582b418ccdbdae306990141990b799",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       10,
+       12
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtypes": {
+       "lag_1": "float64",
+       "lag_2": "float64",
+       "lag_3": "float64",
+       "lag_4": "float64",
+       "lag_5": "float64",
+       "lag_6": "float64",
+       "lag_7": "float64",
+       "roll_mean_7": "float64",
+       "roll_std_7": "float64",
+       "exog_float": "float64",
+       "exog_float2": "float64",
+       "exog_int": "int64"
+      }
+     }
+    }
+   },
+   "pandas_warnings": [
+    "Pandas4Warning: The copy keyword is deprecated and will be removed in a future version. Copy-on-Write is active in pandas since 3.0 whic (_forecaster_recursive.py:1109)",
+    "Pandas4Warning: The copy keyword is deprecated and will be removed in a future version. Copy-on-Write is active in pandas since 3.0 whic (_forecaster_recursive.py:2042)"
+   ],
+   "error": null
+  },
+  "recursive_calendar_features": {
+   "outputs": {
+    "X_train": {
+     "strict": "54903325b6aac7ded00ecb88725e648320f77326c43004bee6c1967fccb0e676",
+     "normalized": "b62a98c7846bf8ced7fc25b14259be16a3c1fd4890c3de99a5921cb47e603fbb",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       243,
+       9
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtypes": {
+       "lag_1": "float64",
+       "lag_2": "float64",
+       "lag_3": "float64",
+       "lag_4": "float64",
+       "lag_5": "float64",
+       "lag_6": "float64",
+       "lag_7": "float64",
+       "day_of_week": "float64",
+       "month": "float64"
+      }
+     }
+    },
+    "predict": {
+     "strict": "44b1591de65a9f949020dbf97e1c82e3d06a7c0075fa7b27edb9415937983bc2",
+     "normalized": "95278ae2c45f2b0a9f42f79153c74c1df676eda571af6678d768d20d2b598536",
+     "describe": {
+      "type": "Series",
+      "shape": [
+       10
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtype": "float64"
+     }
+    }
+   },
+   "pandas_warnings": [
+    "Pandas4Warning: DatetimeIndex.dayofweek is deprecated and will be removed in a future version. Use DatetimeIndex.day_of_week instead. (_calendar.py:247)"
+   ],
+   "error": null
+  },
+  "recursive_categorical_exog_lgbm": {
+   "outputs": {
+    "X_train": {
+     "strict": "3ef595e8992b51b3f35e9394cc06055272daba4534f1f39cc15f765278ef3175",
+     "normalized": "55aec290a6a322d91d5e7bac5046d4c86122b8204230bbd986f2e9b921c39bd3",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       243,
+       11
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtypes": {
+       "lag_1": "float64",
+       "lag_2": "float64",
+       "lag_3": "float64",
+       "lag_4": "float64",
+       "lag_5": "float64",
+       "lag_6": "float64",
+       "lag_7": "float64",
+       "exog_float": "float64",
+       "exog_float2": "float64",
+       "exog_int": "int64",
+       "exog_cat": "float64"
+      }
+     }
+    },
+    "exog_dtypes_in_": {
+     "strict": "5cc09cbaeae2d1c5fdbaa1be27e67e83bf79ba2283ee997fc5436e03da0e0034",
+     "normalized": "ec00b6a9aafbf47b7f3d6b7a19ba874582e358ea235191eb909a680307631585",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "exog_float",
+       "exog_float2",
+       "exog_int",
+       "exog_cat"
+      ]
+     }
+    },
+    "exog_dtypes_out_": {
+     "strict": "d692b9ab0c1b92efa7345bb72f03bf8d002defedbfb2d10db45cd421a5924a2e",
+     "normalized": "ec00b6a9aafbf47b7f3d6b7a19ba874582e358ea235191eb909a680307631585",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "exog_float",
+       "exog_float2",
+       "exog_int",
+       "exog_cat"
+      ]
+     }
+    },
+    "predict": {
+     "strict": "be988d03c4ab1551a5619f6bf063cd49178f21b7c0d79c1bbad62bd2e47aa857",
+     "normalized": "b067b043c55f358a92fef1471b9e2629ad0da94f665e05b7bc82e89f16ad90e1",
+     "describe": {
+      "type": "Series",
+      "shape": [
+       10
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtype": "float64"
+     }
+    }
+   },
+   "pandas_warnings": [
+    "Pandas4Warning: The copy keyword is deprecated and will be removed in a future version. Copy-on-Write is active in pandas since 3.0 whic (_forecaster_recursive.py:1109)"
+   ],
+   "error": null
+  },
+  "recursive_text_exog_lgbm": {
+   "outputs": {
+    "X_train": {
+     "strict": "82995bb7ca0f76f94221ebd765b63a1d0b815fccd011bef4f3a9c974cccc859c",
+     "normalized": "63835c8ca93e698e83306c0e028168a43f9970acdcd34fd2ac099d1d5822aad2",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       243,
+       11
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtypes": {
+       "lag_1": "float64",
+       "lag_2": "float64",
+       "lag_3": "float64",
+       "lag_4": "float64",
+       "lag_5": "float64",
+       "lag_6": "float64",
+       "lag_7": "float64",
+       "exog_float": "float64",
+       "exog_float2": "float64",
+       "exog_int": "int64",
+       "exog_text": "float64"
+      }
+     }
+    },
+    "exog_dtypes_in_": {
+     "strict": "eb24c8b238d9661549d5f323d465be61095362cf4d2825f74e43798c1ceb0ea2",
+     "normalized": "92b77f2d59cd1f5d48a70b346a9718ef425455b928cd92d0e84221a20159a0b4",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "exog_float",
+       "exog_float2",
+       "exog_int",
+       "exog_text"
+      ]
+     }
+    },
+    "exog_dtypes_out_": {
+     "strict": "368b00afcb07a8c22439817e0086d2f5222eb89f4c3264274428fcdc6a9efd7f",
+     "normalized": "92b77f2d59cd1f5d48a70b346a9718ef425455b928cd92d0e84221a20159a0b4",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "exog_float",
+       "exog_float2",
+       "exog_int",
+       "exog_text"
+      ]
+     }
+    },
+    "predict": {
+     "strict": "be988d03c4ab1551a5619f6bf063cd49178f21b7c0d79c1bbad62bd2e47aa857",
+     "normalized": "b067b043c55f358a92fef1471b9e2629ad0da94f665e05b7bc82e89f16ad90e1",
+     "describe": {
+      "type": "Series",
+      "shape": [
+       10
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtype": "float64"
+     }
+    }
+   },
+   "pandas_warnings": [
+    "Pandas4Warning: The copy keyword is deprecated and will be removed in a future version. Copy-on-Write is active in pandas since 3.0 whic (_forecaster_recursive.py:1109)"
+   ],
+   "error": null
+  },
+  "recursive_text_exog_linear_no_categorical": {
+   "outputs": {
+    "error": {
+     "strict": "994d8cf027ace2f73640fdffcd7d0095d6b301597b6719c7df870f042aeb06ba",
+     "normalized": "994d8cf027ace2f73640fdffcd7d0095d6b301597b6719c7df870f042aeb06ba",
+     "describe": {
+      "type": "str"
+     }
+    }
+   },
+   "pandas_warnings": [],
+   "error": null
+  },
+  "direct": {
+   "outputs": {
+    "X_train": {
+     "strict": "1cb91378eb4094ee2296ec6e1032d9c04454596ebc7a4237cd7db840e582ac44",
+     "normalized": "564a176f9674fe1fcbf5c63e8dde4a1994b33c5cb11daaa371be662df9288653",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       239,
+       22
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtypes": {
+       "lag_1": "float64",
+       "lag_2": "float64",
+       "lag_3": "float64",
+       "lag_4": "float64",
+       "lag_5": "float64",
+       "lag_6": "float64",
+       "lag_7": "float64",
+       "exog_float_step_1": "float64",
+       "exog_float2_step_1": "float64",
+       "exog_int_step_1": "int64",
+       "exog_float_step_2": "float64",
+       "exog_float2_step_2": "float64",
+       "exog_int_step_2": "int64",
+       "exog_float_step_3": "float64",
+       "exog_float2_step_3": "float64",
+       "exog_int_step_3": "int64",
+       "exog_float_step_4": "float64",
+       "exog_float2_step_4": "float64",
+       "exog_int_step_4": "int64",
+       "exog_float_step_5": "float64",
+       "exog_float2_step_5": "float64",
+       "exog_int_step_5": "int64"
+      }
+     }
+    },
+    "y_train": {
+     "strict": "db6e79ca2ec244bbc5da40da4df75f54c95392daae947a5c7b6e6d88761f5290",
+     "normalized": "c371c1d53f34a0e8ccd5267bee4bc42582f22c505a6f902a9170044b67aad2fd",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "1",
+       "2",
+       "3",
+       "4",
+       "5"
+      ]
+     }
+    },
+    "predict": {
+     "strict": "fa3ce61ac018283994b825ef720cbb2a4f49cffe84e49390df9e463fbe091186",
+     "normalized": "bcfd9d146bebf8e4084fa2010a2d8c0783b77cedfcad487efb8dfdd66b6558b7",
+     "describe": {
+      "type": "Series",
+      "shape": [
+       5
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtype": "float64"
+     }
+    },
+    "predict_interval_conformal": {
+     "strict": "4423af5cb04cdfa807b3c0cf993119e54fb6d0cddbb526b925942e8ee79536d2",
+     "normalized": "ca11a309dc4458f617f7d579c48f700cf7f1936da821ae49bac6dac33cd3cf9d",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       5,
+       3
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtypes": {
+       "pred": "float64",
+       "lower_bound": "float64",
+       "upper_bound": "float64"
+      }
+     }
+    },
+    "predict_interval_bootstrapping": {
+     "strict": "5cdb779a086624b20a85f7c41ed86ac8dad305c9696596ceae8e093db77413ca",
+     "normalized": "d645970b5da07b6ccd97a3054cc37b2f664219ed65a11e4866b5cc6fb1c20cdc",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       5,
+       3
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtypes": {
+       "pred": "float64",
+       "lower_bound": "float64",
+       "upper_bound": "float64"
+      }
+     }
+    }
+   },
+   "pandas_warnings": [
+    "Pandas4Warning: The copy keyword is deprecated and will be removed in a future version. Copy-on-Write is active in pandas since 3.0 whic (_forecaster_direct.py:1520)"
+   ],
+   "error": null
+  },
+  "multiseries_wide_ordinal": {
+   "outputs": {
+    "X_train": {
+     "strict": "619758852a5f35e1a5dad8270a6e3d2ad1a17eb8b0794c55c2b4d9698fdc518f",
+     "normalized": "63f588b5f44978a226fd41585bacacb7033551ad8f68f7de2297fe39a6af7080",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       729,
+       13
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtypes": {
+       "lag_1": "float64",
+       "lag_2": "float64",
+       "lag_3": "float64",
+       "lag_4": "float64",
+       "lag_5": "float64",
+       "lag_6": "float64",
+       "lag_7": "float64",
+       "roll_mean_7": "float64",
+       "_level_skforecast": "float64",
+       "exog_float": "float64",
+       "exog_float2": "float64",
+       "exog_int": "int64",
+       "exog_cat": "float64"
+      }
+     }
+    },
+    "y_train": {
+     "strict": "a38e7133fc5ff2d40a103c0f1e270d9366b82ff47a833c905666ccdf89ecee91",
+     "normalized": "dec417c0485b94c6c32a9b284355f130dac7746f12b63a6a13d948af39bb510e",
+     "describe": {
+      "type": "Series",
+      "shape": [
+       729
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtype": "float64"
+     }
+    },
+    "exog_dtypes_in_": {
+     "strict": "5cc09cbaeae2d1c5fdbaa1be27e67e83bf79ba2283ee997fc5436e03da0e0034",
+     "normalized": "ec00b6a9aafbf47b7f3d6b7a19ba874582e358ea235191eb909a680307631585",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "exog_float",
+       "exog_float2",
+       "exog_int",
+       "exog_cat"
+      ]
+     }
+    },
+    "exog_dtypes_out_": {
+     "strict": "d692b9ab0c1b92efa7345bb72f03bf8d002defedbfb2d10db45cd421a5924a2e",
+     "normalized": "ec00b6a9aafbf47b7f3d6b7a19ba874582e358ea235191eb909a680307631585",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "exog_float",
+       "exog_float2",
+       "exog_int",
+       "exog_cat"
+      ]
+     }
+    },
+    "series_names_in_": {
+     "strict": "0e2ff721de32f59181a5346b2447a6ad3b9e22ec114ba29e6a4ef87d612d53c2",
+     "normalized": "0e2ff721de32f59181a5346b2447a6ad3b9e22ec114ba29e6a4ef87d612d53c2",
+     "describe": {
+      "type": "list"
+     }
+    },
+    "predict": {
+     "strict": "4623f8e0c5b92975b023a160924a11246f92f4c2ee8bd57b4046a6ea63c38433",
+     "normalized": "8e519358a3bc405daf971aa6ffd341df618595c73fdfea4d1f290dfa13d385b7",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       30,
+       2
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtypes": {
+       "level": "str",
+       "pred": "float64"
+      }
+     }
+    },
+    "predict_interval_bootstrapping": {
+     "strict": "f647cd25960f9bb034c8c5799bf98b9ca9090b4539c61f8e505c7584c956a364",
+     "normalized": "a96775b7b4392e1798a2a87a1395de38d9b40cd2f43dc00b5d9003271c235b80",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       30,
+       4
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtypes": {
+       "level": "str",
+       "pred": "float64",
+       "lower_bound": "float64",
+       "upper_bound": "float64"
+      }
+     }
+    },
+    "predict_interval_conformal": {
+     "strict": "c3a781ccbe316f7c9d32b0f799d1ef3011becc377fd27a059ce418347c35655b",
+     "normalized": "f8f6ace59ae52419594dce2c6c5f4c2ce0809af26ac372f64fadd6a1f5120ccd",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       30,
+       4
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtypes": {
+       "level": "str",
+       "pred": "float64",
+       "lower_bound": "float64",
+       "upper_bound": "float64"
+      }
+     }
+    },
+    "in_sample_residuals_": {
+     "strict": "b06c2201d1c23a39ca63d8f1ab5c5614bbdcd6ca8757d35192734b9035dfeeb4",
+     "normalized": "b06c2201d1c23a39ca63d8f1ab5c5614bbdcd6ca8757d35192734b9035dfeeb4",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "s1",
+       "s2",
+       "s3",
+       "_unknown_level"
+      ]
+     }
+    },
+    "level_row_slices": {
+     "strict": "65ef4aa3e452e83bf7dcd445013a861fdb83d8fd7fc28109b2a2140f0a112655",
+     "normalized": "65ef4aa3e452e83bf7dcd445013a861fdb83d8fd7fc28109b2a2140f0a112655",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "s1",
+       "s2",
+       "s3"
+      ]
+     }
+    }
+   },
+   "pandas_warnings": [
+    "Pandas4Warning: The copy keyword is deprecated and will be removed in a future version. Copy-on-Write is active in pandas since 3.0 whic (_forecaster_recursive_multiseries.py:1567)"
+   ],
+   "error": null
+  },
+  "multiseries_wide_ordinal_category": {
+   "outputs": {
+    "X_train": {
+     "strict": "1bd76636c9e303ccf1d7ea9a200bdf847111a7f44401bd251fa03cce30676d1d",
+     "normalized": "43c30dd0972ecabbf635ba53cc5aecda3560a30c771001dc05fe302ffdc86de2",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       729,
+       13
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtypes": {
+       "lag_1": "float64",
+       "lag_2": "float64",
+       "lag_3": "float64",
+       "lag_4": "float64",
+       "lag_5": "float64",
+       "lag_6": "float64",
+       "lag_7": "float64",
+       "roll_mean_7": "float64",
+       "_level_skforecast": "category",
+       "exog_float": "float64",
+       "exog_float2": "float64",
+       "exog_int": "int64",
+       "exog_cat": "float64"
+      }
+     }
+    },
+    "y_train": {
+     "strict": "a38e7133fc5ff2d40a103c0f1e270d9366b82ff47a833c905666ccdf89ecee91",
+     "normalized": "dec417c0485b94c6c32a9b284355f130dac7746f12b63a6a13d948af39bb510e",
+     "describe": {
+      "type": "Series",
+      "shape": [
+       729
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtype": "float64"
+     }
+    },
+    "exog_dtypes_in_": {
+     "strict": "5cc09cbaeae2d1c5fdbaa1be27e67e83bf79ba2283ee997fc5436e03da0e0034",
+     "normalized": "ec00b6a9aafbf47b7f3d6b7a19ba874582e358ea235191eb909a680307631585",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "exog_float",
+       "exog_float2",
+       "exog_int",
+       "exog_cat"
+      ]
+     }
+    },
+    "exog_dtypes_out_": {
+     "strict": "d692b9ab0c1b92efa7345bb72f03bf8d002defedbfb2d10db45cd421a5924a2e",
+     "normalized": "ec00b6a9aafbf47b7f3d6b7a19ba874582e358ea235191eb909a680307631585",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "exog_float",
+       "exog_float2",
+       "exog_int",
+       "exog_cat"
+      ]
+     }
+    },
+    "series_names_in_": {
+     "strict": "0e2ff721de32f59181a5346b2447a6ad3b9e22ec114ba29e6a4ef87d612d53c2",
+     "normalized": "0e2ff721de32f59181a5346b2447a6ad3b9e22ec114ba29e6a4ef87d612d53c2",
+     "describe": {
+      "type": "list"
+     }
+    },
+    "predict": {
+     "strict": "4623f8e0c5b92975b023a160924a11246f92f4c2ee8bd57b4046a6ea63c38433",
+     "normalized": "8e519358a3bc405daf971aa6ffd341df618595c73fdfea4d1f290dfa13d385b7",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       30,
+       2
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtypes": {
+       "level": "str",
+       "pred": "float64"
+      }
+     }
+    },
+    "predict_interval_bootstrapping": {
+     "strict": "f647cd25960f9bb034c8c5799bf98b9ca9090b4539c61f8e505c7584c956a364",
+     "normalized": "a96775b7b4392e1798a2a87a1395de38d9b40cd2f43dc00b5d9003271c235b80",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       30,
+       4
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtypes": {
+       "level": "str",
+       "pred": "float64",
+       "lower_bound": "float64",
+       "upper_bound": "float64"
+      }
+     }
+    },
+    "predict_interval_conformal": {
+     "strict": "c3a781ccbe316f7c9d32b0f799d1ef3011becc377fd27a059ce418347c35655b",
+     "normalized": "f8f6ace59ae52419594dce2c6c5f4c2ce0809af26ac372f64fadd6a1f5120ccd",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       30,
+       4
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtypes": {
+       "level": "str",
+       "pred": "float64",
+       "lower_bound": "float64",
+       "upper_bound": "float64"
+      }
+     }
+    },
+    "in_sample_residuals_": {
+     "strict": "b06c2201d1c23a39ca63d8f1ab5c5614bbdcd6ca8757d35192734b9035dfeeb4",
+     "normalized": "b06c2201d1c23a39ca63d8f1ab5c5614bbdcd6ca8757d35192734b9035dfeeb4",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "s1",
+       "s2",
+       "s3",
+       "_unknown_level"
+      ]
+     }
+    },
+    "level_row_slices": {
+     "strict": "65ef4aa3e452e83bf7dcd445013a861fdb83d8fd7fc28109b2a2140f0a112655",
+     "normalized": "65ef4aa3e452e83bf7dcd445013a861fdb83d8fd7fc28109b2a2140f0a112655",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "s1",
+       "s2",
+       "s3"
+      ]
+     }
+    }
+   },
+   "pandas_warnings": [
+    "Pandas4Warning: The copy keyword is deprecated and will be removed in a future version. Copy-on-Write is active in pandas since 3.0 whic (_forecaster_recursive_multiseries.py:1567)"
+   ],
+   "error": null
+  },
+  "multiseries_wide_onehot": {
+   "outputs": {
+    "X_train": {
+     "strict": "05d16fc70a895b961646c8badf22f6a92b8aaf58018c9e8c231651a0640d821b",
+     "normalized": "a4f5470616d09b2970c0c276e972b8192dbf7b26f8ad054376570da6bd959f31",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       729,
+       15
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtypes": {
+       "lag_1": "float64",
+       "lag_2": "float64",
+       "lag_3": "float64",
+       "lag_4": "float64",
+       "lag_5": "float64",
+       "lag_6": "float64",
+       "lag_7": "float64",
+       "roll_mean_7": "float64",
+       "s1": "float64",
+       "s2": "float64",
+       "s3": "float64",
+       "exog_float": "float64",
+       "exog_float2": "float64",
+       "exog_int": "int64",
+       "exog_cat": "float64"
+      }
+     }
+    },
+    "y_train": {
+     "strict": "a38e7133fc5ff2d40a103c0f1e270d9366b82ff47a833c905666ccdf89ecee91",
+     "normalized": "dec417c0485b94c6c32a9b284355f130dac7746f12b63a6a13d948af39bb510e",
+     "describe": {
+      "type": "Series",
+      "shape": [
+       729
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtype": "float64"
+     }
+    },
+    "exog_dtypes_in_": {
+     "strict": "5cc09cbaeae2d1c5fdbaa1be27e67e83bf79ba2283ee997fc5436e03da0e0034",
+     "normalized": "ec00b6a9aafbf47b7f3d6b7a19ba874582e358ea235191eb909a680307631585",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "exog_float",
+       "exog_float2",
+       "exog_int",
+       "exog_cat"
+      ]
+     }
+    },
+    "exog_dtypes_out_": {
+     "strict": "d692b9ab0c1b92efa7345bb72f03bf8d002defedbfb2d10db45cd421a5924a2e",
+     "normalized": "ec00b6a9aafbf47b7f3d6b7a19ba874582e358ea235191eb909a680307631585",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "exog_float",
+       "exog_float2",
+       "exog_int",
+       "exog_cat"
+      ]
+     }
+    },
+    "series_names_in_": {
+     "strict": "0e2ff721de32f59181a5346b2447a6ad3b9e22ec114ba29e6a4ef87d612d53c2",
+     "normalized": "0e2ff721de32f59181a5346b2447a6ad3b9e22ec114ba29e6a4ef87d612d53c2",
+     "describe": {
+      "type": "list"
+     }
+    },
+    "predict": {
+     "strict": "5c24348dcc25e3d6abe6355790838edad02412cdaa4197254f0127123a8aaf6f",
+     "normalized": "1f34bd20b7a4866dad2c35821651b3060f0b9d70abe960f23fcd09ad14ea14b3",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       30,
+       2
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtypes": {
+       "level": "str",
+       "pred": "float64"
+      }
+     }
+    },
+    "predict_interval_bootstrapping": {
+     "strict": "97e0644049aa05ab03053b148ce780906af31be80cbe6812f637383d8ab01dcf",
+     "normalized": "499dccb4b95f4b4d58682fa4597a7f499f87b89faf5801dd79d47061e4234a8f",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       30,
+       4
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtypes": {
+       "level": "str",
+       "pred": "float64",
+       "lower_bound": "float64",
+       "upper_bound": "float64"
+      }
+     }
+    },
+    "predict_interval_conformal": {
+     "strict": "944d7e6cb3d778c9d709d7a73977c3b1c3c1a826338e9da2da40bca294f5deaa",
+     "normalized": "399f0f9fee344f3179a667da0a795e241eaf4c57a8b811cfa89a85e77613826a",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       30,
+       4
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtypes": {
+       "level": "str",
+       "pred": "float64",
+       "lower_bound": "float64",
+       "upper_bound": "float64"
+      }
+     }
+    },
+    "in_sample_residuals_": {
+     "strict": "5521f8e7c5957a8211036f4957b52654f54d5527e688a1497c6d1b4b0ab3d31b",
+     "normalized": "5521f8e7c5957a8211036f4957b52654f54d5527e688a1497c6d1b4b0ab3d31b",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "s1",
+       "s2",
+       "s3",
+       "_unknown_level"
+      ]
+     }
+    },
+    "level_row_slices": {
+     "strict": "65ef4aa3e452e83bf7dcd445013a861fdb83d8fd7fc28109b2a2140f0a112655",
+     "normalized": "65ef4aa3e452e83bf7dcd445013a861fdb83d8fd7fc28109b2a2140f0a112655",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "s1",
+       "s2",
+       "s3"
+      ]
+     }
+    }
+   },
+   "pandas_warnings": [
+    "Pandas4Warning: The copy keyword is deprecated and will be removed in a future version. Copy-on-Write is active in pandas since 3.0 whic (_forecaster_recursive_multiseries.py:1567)"
+   ],
+   "error": null
+  },
+  "multiseries_dict_ordinal": {
+   "outputs": {
+    "X_train": {
+     "strict": "df6655904eb8734e7d5263829cd4f2aa863b7402cf641bc35044c2a69f55c03a",
+     "normalized": "f8e2679236b4c966f767106f7963ef2c22d204ef38e8fbd0569db737c0847eea",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       699,
+       13
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtypes": {
+       "lag_1": "float64",
+       "lag_2": "float64",
+       "lag_3": "float64",
+       "lag_4": "float64",
+       "lag_5": "float64",
+       "lag_6": "float64",
+       "lag_7": "float64",
+       "roll_mean_7": "float64",
+       "_level_skforecast": "float64",
+       "exog_float": "float64",
+       "exog_float2": "float64",
+       "exog_int": "int64",
+       "exog_cat": "float64"
+      }
+     }
+    },
+    "y_train": {
+     "strict": "27a78a177956f66f58980f8d2ef69d098d184bdfc142744109ebbc53c6021e66",
+     "normalized": "70a8b0533aa67a30a5eaab03cf7aec1ad27f3f159df6887c474fc1b65541b283",
+     "describe": {
+      "type": "Series",
+      "shape": [
+       699
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtype": "float64"
+     }
+    },
+    "exog_dtypes_in_": {
+     "strict": "5cc09cbaeae2d1c5fdbaa1be27e67e83bf79ba2283ee997fc5436e03da0e0034",
+     "normalized": "ec00b6a9aafbf47b7f3d6b7a19ba874582e358ea235191eb909a680307631585",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "exog_float",
+       "exog_float2",
+       "exog_int",
+       "exog_cat"
+      ]
+     }
+    },
+    "exog_dtypes_out_": {
+     "strict": "d692b9ab0c1b92efa7345bb72f03bf8d002defedbfb2d10db45cd421a5924a2e",
+     "normalized": "ec00b6a9aafbf47b7f3d6b7a19ba874582e358ea235191eb909a680307631585",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "exog_float",
+       "exog_float2",
+       "exog_int",
+       "exog_cat"
+      ]
+     }
+    },
+    "series_names_in_": {
+     "strict": "0e2ff721de32f59181a5346b2447a6ad3b9e22ec114ba29e6a4ef87d612d53c2",
+     "normalized": "0e2ff721de32f59181a5346b2447a6ad3b9e22ec114ba29e6a4ef87d612d53c2",
+     "describe": {
+      "type": "list"
+     }
+    },
+    "predict": {
+     "strict": "76b8d793851844331ad3b9581241e403e2bdf0b6c30cd561bf401b62da98f347",
+     "normalized": "e0a1db4601f0bccc831d2252e1bdef6c55142075d0ae32aadec6cc858941da77",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       30,
+       2
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtypes": {
+       "level": "str",
+       "pred": "float64"
+      }
+     }
+    },
+    "predict_interval_bootstrapping": {
+     "strict": "abd39b099302a47948d4653851ce6c0a700569d7341cb32a50c95e8341be1c08",
+     "normalized": "54e5f94897e11f5cb984d58872c4e33610259b040a7872ad753547286aa2a407",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       30,
+       4
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtypes": {
+       "level": "str",
+       "pred": "float64",
+       "lower_bound": "float64",
+       "upper_bound": "float64"
+      }
+     }
+    },
+    "predict_interval_conformal": {
+     "strict": "68730575f9e4449d07deb6ce02dc8d7670c33eed85891bca1be86f3679683904",
+     "normalized": "d1a062adba0a48f2688ae501279347fe6e02fcf271f04f59868a8f1528fec320",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       30,
+       4
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtypes": {
+       "level": "str",
+       "pred": "float64",
+       "lower_bound": "float64",
+       "upper_bound": "float64"
+      }
+     }
+    },
+    "in_sample_residuals_": {
+     "strict": "4aa94f7795823f06fe3cdaecc171c7faeb7648d54901ed2047c9a99608323c90",
+     "normalized": "4aa94f7795823f06fe3cdaecc171c7faeb7648d54901ed2047c9a99608323c90",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "s1",
+       "s2",
+       "s3",
+       "_unknown_level"
+      ]
+     }
+    },
+    "level_row_slices": {
+     "strict": "02fa70125a6128af9d24c4509e53898d1028665380ae5cc02257d6386ce0ae94",
+     "normalized": "02fa70125a6128af9d24c4509e53898d1028665380ae5cc02257d6386ce0ae94",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "s1",
+       "s2",
+       "s3"
+      ]
+     }
+    }
+   },
+   "pandas_warnings": [
+    "Pandas4Warning: The copy keyword is deprecated and will be removed in a future version. Copy-on-Write is active in pandas since 3.0 whic (_forecaster_recursive_multiseries.py:1567)"
+   ],
+   "error": null
+  },
+  "multiseries_long_format": {
+   "outputs": {
+    "X_train": {
+     "strict": "619758852a5f35e1a5dad8270a6e3d2ad1a17eb8b0794c55c2b4d9698fdc518f",
+     "normalized": "63f588b5f44978a226fd41585bacacb7033551ad8f68f7de2297fe39a6af7080",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       729,
+       13
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtypes": {
+       "lag_1": "float64",
+       "lag_2": "float64",
+       "lag_3": "float64",
+       "lag_4": "float64",
+       "lag_5": "float64",
+       "lag_6": "float64",
+       "lag_7": "float64",
+       "roll_mean_7": "float64",
+       "_level_skforecast": "float64",
+       "exog_float": "float64",
+       "exog_float2": "float64",
+       "exog_int": "int64",
+       "exog_cat": "float64"
+      }
+     }
+    },
+    "y_train": {
+     "strict": "a38e7133fc5ff2d40a103c0f1e270d9366b82ff47a833c905666ccdf89ecee91",
+     "normalized": "dec417c0485b94c6c32a9b284355f130dac7746f12b63a6a13d948af39bb510e",
+     "describe": {
+      "type": "Series",
+      "shape": [
+       729
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtype": "float64"
+     }
+    },
+    "exog_dtypes_in_": {
+     "strict": "5cc09cbaeae2d1c5fdbaa1be27e67e83bf79ba2283ee997fc5436e03da0e0034",
+     "normalized": "ec00b6a9aafbf47b7f3d6b7a19ba874582e358ea235191eb909a680307631585",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "exog_float",
+       "exog_float2",
+       "exog_int",
+       "exog_cat"
+      ]
+     }
+    },
+    "exog_dtypes_out_": {
+     "strict": "d692b9ab0c1b92efa7345bb72f03bf8d002defedbfb2d10db45cd421a5924a2e",
+     "normalized": "ec00b6a9aafbf47b7f3d6b7a19ba874582e358ea235191eb909a680307631585",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "exog_float",
+       "exog_float2",
+       "exog_int",
+       "exog_cat"
+      ]
+     }
+    },
+    "series_names_in_": {
+     "strict": "0e2ff721de32f59181a5346b2447a6ad3b9e22ec114ba29e6a4ef87d612d53c2",
+     "normalized": "0e2ff721de32f59181a5346b2447a6ad3b9e22ec114ba29e6a4ef87d612d53c2",
+     "describe": {
+      "type": "list"
+     }
+    },
+    "predict": {
+     "strict": "4623f8e0c5b92975b023a160924a11246f92f4c2ee8bd57b4046a6ea63c38433",
+     "normalized": "8e519358a3bc405daf971aa6ffd341df618595c73fdfea4d1f290dfa13d385b7",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       30,
+       2
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtypes": {
+       "level": "str",
+       "pred": "float64"
+      }
+     }
+    },
+    "predict_interval_bootstrapping": {
+     "strict": "f647cd25960f9bb034c8c5799bf98b9ca9090b4539c61f8e505c7584c956a364",
+     "normalized": "a96775b7b4392e1798a2a87a1395de38d9b40cd2f43dc00b5d9003271c235b80",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       30,
+       4
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtypes": {
+       "level": "str",
+       "pred": "float64",
+       "lower_bound": "float64",
+       "upper_bound": "float64"
+      }
+     }
+    },
+    "predict_interval_conformal": {
+     "strict": "c3a781ccbe316f7c9d32b0f799d1ef3011becc377fd27a059ce418347c35655b",
+     "normalized": "f8f6ace59ae52419594dce2c6c5f4c2ce0809af26ac372f64fadd6a1f5120ccd",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       30,
+       4
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtypes": {
+       "level": "str",
+       "pred": "float64",
+       "lower_bound": "float64",
+       "upper_bound": "float64"
+      }
+     }
+    },
+    "in_sample_residuals_": {
+     "strict": "b06c2201d1c23a39ca63d8f1ab5c5614bbdcd6ca8757d35192734b9035dfeeb4",
+     "normalized": "b06c2201d1c23a39ca63d8f1ab5c5614bbdcd6ca8757d35192734b9035dfeeb4",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "s1",
+       "s2",
+       "s3",
+       "_unknown_level"
+      ]
+     }
+    },
+    "level_row_slices": {
+     "strict": "65ef4aa3e452e83bf7dcd445013a861fdb83d8fd7fc28109b2a2140f0a112655",
+     "normalized": "65ef4aa3e452e83bf7dcd445013a861fdb83d8fd7fc28109b2a2140f0a112655",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "s1",
+       "s2",
+       "s3"
+      ]
+     }
+    },
+    "reshaped_series": {
+     "strict": "f49a546f2e5c86584b80865a15a8ea0076fba53d7694b9934d560964082284e0",
+     "normalized": "b631027e76f88a6df478e3d20c5120092e891cc55f2c0ca49cfe543a13b112c7",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "s1",
+       "s2",
+       "s3"
+      ]
+     }
+    },
+    "reshaped_exog": {
+     "strict": "7dc1bd6906d22ab952df20ff823fd15e897b23b47827b75fc3e19cd9d87e6e19",
+     "normalized": "aa8b74de4163170bd943c7c119e48fe09683e0942570e4dff18b54e8d06bc370",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "s1",
+       "s2",
+       "s3"
+      ]
+     }
+    }
+   },
+   "pandas_warnings": [
+    "Pandas4Warning: The copy keyword is deprecated and will be removed in a future version. Copy-on-Write is active in pandas since 3.0 whic (_forecaster_recursive_multiseries.py:1567)"
+   ],
+   "error": null
+  },
+  "direct_multivariate": {
+   "outputs": {
+    "X_train": {
+     "strict": "3b92a24bd0f68f659fbbbd98312d46223b5e55e0fc7174d28984eeba2ba75d99",
+     "normalized": "3488f47d9fa6acf61d8bc9ada8576393b45b1a232da765f95a0df49f5c1279d2",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       241,
+       30
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtypes": {
+       "s1_lag_1": "float64",
+       "s1_lag_2": "float64",
+       "s1_lag_3": "float64",
+       "s1_lag_4": "float64",
+       "s1_lag_5": "float64",
+       "s1_lag_6": "float64",
+       "s1_lag_7": "float64",
+       "s2_lag_1": "float64",
+       "s2_lag_2": "float64",
+       "s2_lag_3": "float64",
+       "s2_lag_4": "float64",
+       "s2_lag_5": "float64",
+       "s2_lag_6": "float64",
+       "s2_lag_7": "float64",
+       "s3_lag_1": "float64",
+       "s3_lag_2": "float64",
+       "s3_lag_3": "float64",
+       "s3_lag_4": "float64",
+       "s3_lag_5": "float64",
+       "s3_lag_6": "float64",
+       "s3_lag_7": "float64",
+       "exog_float_step_1": "float64",
+       "exog_float2_step_1": "float64",
+       "exog_int_step_1": "int64",
+       "exog_float_step_2": "float64",
+       "exog_float2_step_2": "float64",
+       "exog_int_step_2": "int64",
+       "exog_float_step_3": "float64",
+       "exog_float2_step_3": "float64",
+       "exog_int_step_3": "int64"
+      }
+     }
+    },
+    "y_train": {
+     "strict": "0711e202800f7ec59525a44f3f752fac97683888f1dda965a3575cd827d3f924",
+     "normalized": "78957727cca9765367eb50ef27f80d73d4c9ee9204b779d840d706fe27324870",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "1",
+       "2",
+       "3"
+      ]
+     }
+    },
+    "predict": {
+     "strict": "e49ec4bf206e4b7bed27d6c1319096741fbf49acf2a081096e5fcb208cb721ec",
+     "normalized": "3d3bfa6287e0e7e6690a674149ef9e4aa14421a3e76d94eb304b88c4aea91c4f",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       3,
+       2
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtypes": {
+       "level": "str",
+       "pred": "float64"
+      }
+     }
+    },
+    "predict_interval_conformal": {
+     "strict": "ea589b04b7620e009d56ec9aa5b24cb55735264574b3f2e652b8d2f6f13107d3",
+     "normalized": "e475de240a93a2864d1f223e45b4dce67fb3cafe98e9d76af77cdcdb2278cec8",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       3,
+       4
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtypes": {
+       "level": "str",
+       "pred": "float64",
+       "lower_bound": "float64",
+       "upper_bound": "float64"
+      }
+     }
+    }
+   },
+   "pandas_warnings": [
+    "Pandas4Warning: The copy keyword is deprecated and will be removed in a future version. Copy-on-Write is active in pandas since 3.0 whic (_forecaster_direct_multivariate.py:1637)"
+   ],
+   "error": null
+  },
+  "recursive_classifier": {
+   "outputs": {
+    "X_train": {
+     "strict": "aab41972ec22ef960d28eca2ab807ec78d74dc6110cf433466b2eeb9f6bfc170",
+     "normalized": "c5e5b4bf4b7696edab7301542b8396f102a22709e5c6d779e553b4f927ce2c78",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       243,
+       11
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtypes": {
+       "lag_1": "float64",
+       "lag_2": "float64",
+       "lag_3": "float64",
+       "lag_4": "float64",
+       "lag_5": "float64",
+       "lag_6": "float64",
+       "lag_7": "float64",
+       "exog_float": "float64",
+       "exog_float2": "float64",
+       "exog_int": "int64",
+       "exog_cat": "float64"
+      }
+     }
+    },
+    "y_train": {
+     "strict": "19f93d31d12bb5dd0ffed5154351a01e701f85c3aabf91c0342f41953185aa46",
+     "normalized": "ff3a9336faef938b335b94c0d63d7219df0546ddfc2631c229179ce8aee024e4",
+     "describe": {
+      "type": "Series",
+      "shape": [
+       243
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtype": "int64"
+     }
+    },
+    "predict": {
+     "strict": "c088e6c2f038c6db1b805da532b23d3f9baf9cf3245ff7e49baa049d37fdc84c",
+     "normalized": "092d18b85e410e809993a201f72408b598d2917176fa4f68d5d7add9d44d67f8",
+     "describe": {
+      "type": "Series",
+      "shape": [
+       10
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtype": "int64"
+     }
+    },
+    "predict_proba": {
+     "strict": "e7693b31caf2bebfbfc10dd723892463764ac1c39cb9ff9225da7615cd42dd01",
+     "normalized": "5b89033da0d2d15d65879ed338f2c93b42ba133f7e6f1df449166e023df90e22",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       10,
+       2
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtypes": {
+       "0_proba": "float64",
+       "1_proba": "float64"
+      }
+     }
+    }
+   },
+   "pandas_warnings": [
+    "Pandas4Warning: The copy keyword is deprecated and will be removed in a future version. Copy-on-Write is active in pandas since 3.0 whic (_forecaster_recursive_classifier.py:1129)"
+   ],
+   "error": null
+  },
+  "stats_arima": {
+   "outputs": {
+    "predict": {
+     "strict": "d65a1d006004db7cfcfafc11142ad63268e660ca9453315f5b1662ea615c60ba",
+     "normalized": "daf40f1618b4fd30cd054663dc4b0ec8f3bd84952977f3fa104332204d051c88",
+     "describe": {
+      "type": "Series",
+      "shape": [
+       10
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtype": "float64"
+     }
+    },
+    "predict_interval": {
+     "strict": "9d75fad93e8bf50d813280c19b7a588b0517c5d9824d050adb7feb7b03046b02",
+     "normalized": "b3a7554378876b519cfa69f745f8d6e2012a9cb60f9614a6334cc299fc133d20",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       10,
+       3
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtypes": {
+       "pred": "float64",
+       "lower_bound": "float64",
+       "upper_bound": "float64"
+      }
+     }
+    }
+   },
+   "pandas_warnings": [],
+   "error": null
+  },
+  "equivalent_date": {
+   "outputs": {
+    "predict": {
+     "strict": "c386a041e347c624a33ce85a7e13fd8527905df9a4a2ba8267676424ed50c52e",
+     "normalized": "f9eb89aae6866fdd4ec57aef9c3fb21da97a19431edb07c57174a0caf8b5282b",
+     "describe": {
+      "type": "Series",
+      "shape": [
+       10
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtype": "float64"
+     }
+    }
+   },
+   "pandas_warnings": [
+    "Pandas4Warning: isinstance(obj, DateOffset) is deprecated for offsets that are not DateOffset instances and will return False in a futur (_forecaster_equivalent_date.py:218)",
+    "Pandas4Warning: isinstance(obj, DateOffset) is deprecated for offsets that are not DateOffset instances and will return False in a futur (_forecaster_equivalent_date.py:382)",
+    "Pandas4Warning: isinstance(obj, DateOffset) is deprecated for offsets that are not DateOffset instances and will return False in a futur (_forecaster_equivalent_date.py:412)",
+    "Pandas4Warning: isinstance(obj, DateOffset) is deprecated for offsets that are not DateOffset instances and will return False in a futur (_forecaster_equivalent_date.py:506)",
+    "Pandas4Warning: isinstance(obj, DateOffset) is deprecated for offsets that are not DateOffset instances and will return False in a futur (_forecaster_equivalent_date.py:670)"
+   ],
+   "error": null
+  },
+  "backtesting_recursive": {
+   "outputs": {
+    "metric": {
+     "strict": "a497d9b9b618ab22d89142b626efda7ba3bb4fdcd7286d1c55679f659086fcb6",
+     "normalized": "8f13d31290ebe7dea97923b8f17a6260aeb48937b86cb84ad6618271907d95b8",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       1,
+       4
+      ],
+      "index_dtype": "int64",
+      "index_freq": null,
+      "dtypes": {
+       "mean_absolute_error": "float64",
+       "mean_squared_error": "float64",
+       "coverage": "float64",
+       "interval_width": "float64"
+      }
+     }
+    },
+    "predictions": {
+     "strict": "625693a45046b186ca88152d6e8430e16333df7c0615958d970255e8af9a4f60",
+     "normalized": "367568b033d45844716a0986c8a7d75ace7434202cb3ac5bce1f80e890c165f9",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       100,
+       4
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtypes": {
+       "fold": "int64",
+       "pred": "float64",
+       "lower_bound": "float64",
+       "upper_bound": "float64"
+      }
+     }
+    }
+   },
+   "pandas_warnings": [],
+   "error": null
+  },
+  "backtesting_multiseries": {
+   "outputs": {
+    "metric": {
+     "strict": "a44e7c1af179afc5d891df4bfae38c03d646bc1b3edf3499cefbde61c2107d5a",
+     "normalized": "f5498170961c2beeb4126f26a7af51c3c4e2c2f06eb3be0e493b37e6b26dab3d",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       6,
+       4
+      ],
+      "index_dtype": "int64",
+      "index_freq": null,
+      "dtypes": {
+       "levels": "str",
+       "mean_absolute_error": "float64",
+       "coverage": "float64",
+       "interval_width": "float64"
+      }
+     }
+    },
+    "predictions": {
+     "strict": "7c7aa0a4c2e855ad3433426b66f932223c44bebeec571fad8ea1feafe1b6bdd5",
+     "normalized": "f5641cbc4149a5c1ca69d24b29cdc01adbaf5a47aeaacaf00766ef71daed63ec",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       290,
+       5
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtypes": {
+       "level": "str",
+       "fold": "int64",
+       "pred": "float64",
+       "lower_bound": "float64",
+       "upper_bound": "float64"
+      }
+     }
+    }
+   },
+   "pandas_warnings": [
+    "Pandas4Warning: The copy keyword is deprecated and will be removed in a future version. Copy-on-Write is active in pandas since 3.0 whic (_forecaster_recursive_multiseries.py:1567)"
+   ],
+   "error": null
+  },
+  "backtesting_stats": {
+   "outputs": {
+    "metric": {
+     "strict": "f861a2ee5c38a4960cecebfe9b7325330ca6eceb151c57aad9bd699238901378",
+     "normalized": "e7b1cf9c91d9d7d9c4468183fe357ee3ff3640c3a7bba95dc50b93e31b0e3061",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       1,
+       3
+      ],
+      "index_dtype": "int64",
+      "index_freq": null,
+      "dtypes": {
+       "mean_absolute_error": "float64",
+       "coverage": "float64",
+       "interval_width": "float64"
+      }
+     }
+    },
+    "predictions": {
+     "strict": "f6d4327fb6875a376b2e49b08198d600f145bbb6c1ab7bea874b33b72fa06270",
+     "normalized": "509bbcb7f0ac6774e31fbcbce5466498e455037a5e43419424946c78adb51833",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       50,
+       4
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtypes": {
+       "fold": "int64",
+       "pred": "float64",
+       "lower_bound": "float64",
+       "upper_bound": "float64"
+      }
+     }
+    }
+   },
+   "pandas_warnings": [],
+   "error": null
+  },
+  "grid_search_recursive": {
+   "outputs": {
+    "results": {
+     "strict": "cd6f5e4e6d3a257100550aacac9f92f6c04ee756b1477491334720e05a94b86f",
+     "normalized": "2ff9e352fa284dce6c0f9ed6b6416508ea6d71b6425f4dee6c5893edc2c6345a",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       4,
+       5
+      ],
+      "index_dtype": "int64",
+      "index_freq": null,
+      "dtypes": {
+       "lags": "str",
+       "lags_label": "object",
+       "params": "str",
+       "mean_absolute_error": "float64",
+       "alpha": "float64"
+      }
+     }
+    }
+   },
+   "pandas_warnings": [],
+   "error": null
+  },
+  "grid_search_multiseries": {
+   "outputs": {
+    "results": {
+     "strict": "d713e8a287f1dda88c961a0e00535b129ec902ad9c38c47bf517318a777e5495",
+     "normalized": "31b20930c003aac318b0fdf5951dfb1e778cf3948e5ce7529efdfadd8fa1ac61",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       4,
+       8
+      ],
+      "index_dtype": "int64",
+      "index_freq": null,
+      "dtypes": {
+       "levels": "str",
+       "lags": "str",
+       "lags_label": "object",
+       "params": "str",
+       "mean_absolute_error__weighted_average": "float64",
+       "mean_absolute_error__average": "float64",
+       "mean_absolute_error__pooling": "float64",
+       "alpha": "float64"
+      }
+     }
+    }
+   },
+   "pandas_warnings": [
+    "Pandas4Warning: The copy keyword is deprecated and will be removed in a future version. Copy-on-Write is active in pandas since 3.0 whic (_forecaster_recursive_multiseries.py:1567)"
+   ],
+   "error": null
+  },
+  "save_load_joblib_skops": {
+   "outputs": {
+    "joblib_recursive_predict_after_load": {
+     "strict": "17a706ed6b9e89a757ad8dcfbb5238860aa60ad01c837f4671bc93984586120f",
+     "normalized": "6621f0e68241c01808ab1a0a2823cb7feffd9327e2f128a6e4b7900513a396c1",
+     "describe": {
+      "type": "Series",
+      "shape": [
+       10
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtype": "float64"
+     }
+    },
+    "joblib_recursive_exog_dtypes_in_after_load": {
+     "strict": "eb24c8b238d9661549d5f323d465be61095362cf4d2825f74e43798c1ceb0ea2",
+     "normalized": "92b77f2d59cd1f5d48a70b346a9718ef425455b928cd92d0e84221a20159a0b4",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "exog_float",
+       "exog_float2",
+       "exog_int",
+       "exog_text"
+      ]
+     }
+    },
+    "joblib_recursive_file_size": {
+     "strict": "d5b493c6873a54073e371b3375fc674be04a5d7fc56dd8525f2751176b35723e",
+     "normalized": "d5b493c6873a54073e371b3375fc674be04a5d7fc56dd8525f2751176b35723e",
+     "describe": {
+      "type": "int"
+     }
+    },
+    "joblib_multiseries_predict_after_load": {
+     "strict": "75e7ff8a1425b03ee02a49ee89bd281d81a4c987933ac2bed62e6fdc147dfc02",
+     "normalized": "bd0ab639a1c353224cc0ab496a3e01f33362030b2aeff6a1a723fda3e8409dfb",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       30,
+       2
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtypes": {
+       "level": "str",
+       "pred": "float64"
+      }
+     }
+    },
+    "joblib_multiseries_exog_dtypes_in_after_load": {
+     "strict": "5cc09cbaeae2d1c5fdbaa1be27e67e83bf79ba2283ee997fc5436e03da0e0034",
+     "normalized": "ec00b6a9aafbf47b7f3d6b7a19ba874582e358ea235191eb909a680307631585",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "exog_float",
+       "exog_float2",
+       "exog_int",
+       "exog_cat"
+      ]
+     }
+    },
+    "joblib_multiseries_file_size": {
+     "strict": "3d8f5556fecfa5daeadcc8c568c0d760e1a21c886699fd1707fae2d4a8a52e56",
+     "normalized": "3d8f5556fecfa5daeadcc8c568c0d760e1a21c886699fd1707fae2d4a8a52e56",
+     "describe": {
+      "type": "int"
+     }
+    },
+    "skops_recursive_predict_after_load": {
+     "strict": "17a706ed6b9e89a757ad8dcfbb5238860aa60ad01c837f4671bc93984586120f",
+     "normalized": "6621f0e68241c01808ab1a0a2823cb7feffd9327e2f128a6e4b7900513a396c1",
+     "describe": {
+      "type": "Series",
+      "shape": [
+       10
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": "D",
+      "dtype": "float64"
+     }
+    },
+    "skops_recursive_exog_dtypes_in_after_load": {
+     "strict": "eb24c8b238d9661549d5f323d465be61095362cf4d2825f74e43798c1ceb0ea2",
+     "normalized": "92b77f2d59cd1f5d48a70b346a9718ef425455b928cd92d0e84221a20159a0b4",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "exog_float",
+       "exog_float2",
+       "exog_int",
+       "exog_text"
+      ]
+     }
+    },
+    "skops_recursive_file_size": {
+     "strict": "5a5abbafbfbbc1bcf1216489c0d00fe1979011024cdce68640b06178d66af989",
+     "normalized": "5a5abbafbfbbc1bcf1216489c0d00fe1979011024cdce68640b06178d66af989",
+     "describe": {
+      "type": "int"
+     }
+    },
+    "skops_multiseries_predict_after_load": {
+     "strict": "75e7ff8a1425b03ee02a49ee89bd281d81a4c987933ac2bed62e6fdc147dfc02",
+     "normalized": "bd0ab639a1c353224cc0ab496a3e01f33362030b2aeff6a1a723fda3e8409dfb",
+     "describe": {
+      "type": "DataFrame",
+      "shape": [
+       30,
+       2
+      ],
+      "index_dtype": "datetime64[us]",
+      "index_freq": null,
+      "dtypes": {
+       "level": "str",
+       "pred": "float64"
+      }
+     }
+    },
+    "skops_multiseries_exog_dtypes_in_after_load": {
+     "strict": "5cc09cbaeae2d1c5fdbaa1be27e67e83bf79ba2283ee997fc5436e03da0e0034",
+     "normalized": "ec00b6a9aafbf47b7f3d6b7a19ba874582e358ea235191eb909a680307631585",
+     "describe": {
+      "type": "dict",
+      "keys": [
+       "exog_float",
+       "exog_float2",
+       "exog_int",
+       "exog_cat"
+      ]
+     }
+    },
+    "skops_multiseries_file_size": {
+     "strict": "e3b8bc7accea044010f5fd3e0af6cfddf54c95091655077199d567d8f747263c",
+     "normalized": "e3b8bc7accea044010f5fd3e0af6cfddf54c95091655077199d567d8f747263c",
+     "describe": {
+      "type": "int"
+     }
+    }
+   },
+   "pandas_warnings": [
+    "Pandas4Warning: The copy keyword is deprecated and will be removed in a future version. Copy-on-Write is active in pandas since 3.0 whic (_forecaster_recursive_multiseries.py:1567)"
+   ],
+   "error": null
+  }
+ }
+}

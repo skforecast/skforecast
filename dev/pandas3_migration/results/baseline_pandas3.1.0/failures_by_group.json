@@ -1,0 +1,614 @@
+{
+ "groups": {
+  "G1_index_resolution": [
+   "skforecast/model_selection/tests/tests_utils/test_predict_and_calculate_metrics_one_step_ahead_multiseries.py::test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_ForecasterRecursiveMultiSeries_differentiation_dict[return_predictions=True]",
+   "skforecast/model_selection/tests/tests_utils/test_predict_and_calculate_metrics_one_step_ahead_multiseries.py::test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_ForecasterDirectMultiVariate_differentiation[return_predictions=True]",
+   "skforecast/model_selection/tests/tests_validation/test_backtesting_forecaster_multiseries.py::test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_with_mocked",
+   "skforecast/model_selection/tests/tests_validation/test_backtesting_forecaster_multiseries.py::test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_with_window_features[initial_train_size: 213]",
+   "skforecast/model_selection/tests/tests_validation/test_backtesting_forecaster_multiseries.py::test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_with_window_features[initial_train_size: 2016-07-31 00:00:00]",
+   "skforecast/model_selection/tests/tests_validation/test_backtesting_forecaster_multiseries.py::test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_with_mocked_multiple_aggregated_metrics",
+   "skforecast/model_selection/tests/tests_validation/test_backtesting_forecaster_multiseries.py::test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_encoding_None_differentiation",
+   "skforecast/model_selection/tests/tests_validation/test_backtesting_forecaster_multiseries.py::test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_differentiation_dict",
+   "skforecast/model_selection/tests/tests_validation/test_backtesting_forecaster_multiseries.py::test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_window_features[initial_train_size: 38-n_jobs: 1]",
+   "skforecast/model_selection/tests/tests_validation/test_backtesting_forecaster_multiseries.py::test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_window_features[initial_train_size: 38-n_jobs: -1]",
+   "skforecast/model_selection/tests/tests_validation/test_backtesting_forecaster_multiseries.py::test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_window_features[initial_train_size: 38-n_jobs: auto]",
+   "skforecast/model_selection/tests/tests_validation/test_backtesting_forecaster_multiseries.py::test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_window_features[initial_train_size: 2020-02-07 00:00:00-n_jobs: 1]",
+   "skforecast/model_selection/tests/tests_validation/test_backtesting_forecaster_multiseries.py::test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_window_features[initial_train_size: 2020-02-07 00:00:00-n_jobs: -1]",
+   "skforecast/model_selection/tests/tests_validation/test_backtesting_forecaster_multiseries.py::test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_window_features[initial_train_size: 2020-02-07 00:00:00-n_jobs: auto]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_predict_X.py::test_create_predict_X_output_when_series_and_exog_dict",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_predict_X.py::test_create_predict_X_output_when_series_and_exog_dict_encoding_None",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_predict_X.py::test_create_predict_X_output_when_series_and_exog_dict_unknown_level",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_predict_X.py::test_create_predict_X_output_when_series_and_exog_dict_encoding_None_unknown_level",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_predict_inputs.py::test_create_predict_inputs_output_when_series_and_exog_dict",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_predict_inputs.py::test_create_predict_inputs_when_series_and_exog_dict_unknown_level_calendar_features[levels: None]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_predict_inputs.py::test_create_predict_inputs_when_series_and_exog_dict_unknown_level_calendar_features[levels: ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_predict_inputs.py::test_create_predict_inputs_when_series_and_exog_dict_unknown_level_encoding_None[levels: None]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_predict_inputs.py::test_create_predict_inputs_when_series_and_exog_dict_unknown_level_encoding_None[levels: ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_predict_inputs.py::test_create_predict_inputs_when_unknown_level_and_differentiation[differentiation: 1]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_predict_inputs.py::test_create_predict_inputs_when_unknown_level_and_differentiation[differentiation: {'id_1000': 1, 'id_1001': 1, 'id_1003': 1, 'id_1004': 1, '_unknown_level': 1}]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict.py::test_predict_output_when_series_and_exog_dict",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict.py::test_predict_output_when_series_and_exog_dict_encoding_None_unknown_level[levels: None]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict.py::test_predict_output_when_series_and_exog_dict_encoding_None_unknown_level[levels: ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict.py::test_predict_output_when_series_and_exog_dict_encoding_None_transformer_series_unknown_level[levels: None]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict.py::test_predict_output_when_series_and_exog_dict_encoding_None_transformer_series_unknown_level[levels: ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict.py::test_predict_output_when_series_and_exog_dict_unknown_level[levels: None]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict.py::test_predict_output_when_series_and_exog_dict_unknown_level[levels: ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict_interval.py::test_predict_interval_output_when_series_and_exog_dict",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict_interval.py::test_predict_interval_output_when_series_and_exog_dict_unknown_level",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict_interval.py::test_predict_interval_output_when_series_and_exog_dict_unknown_level_binned_residuals",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict_interval.py::test_predict_interval_output_when_series_and_exog_dict_encoding_None_unknown_level",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict_interval.py::test_predict_interval_output_when_series_and_exog_dict_encoding_None_unknown_level_binned_residuals",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict_interval.py::test_predict_interval_conformal_output_when_series_and_exog_dict[interval: 0.95]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict_interval.py::test_predict_interval_conformal_output_when_series_and_exog_dict[interval: (0.025, 0.975)]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict_interval_conformal.py::test_predict_interval_conformal_output_when_series_and_exog_dict",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict_interval_conformal.py::test_predict_interval_conformal_output_when_series_and_exog_dict_unknown_level",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict_interval_conformal.py::test_predict_interval_conformal_output_when_series_and_exog_dict_unknown_level_binned_residuals",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict_interval_conformal.py::test_predict_interval_conformal_output_when_series_and_exog_dict_encoding_None_unknown_level",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict_interval_conformal.py::test_predict_interval_conformal_output_when_series_and_exog_dict_encoding_None_unknown_level_binned_residuals",
+   "skforecast/recursive/tests/tests_forecaster_stats/test_predict.py::test_predict_output_ForecasterStats_with_exog_multiple_estimators",
+   "skforecast/utils/tests/tests_utils/test_expand_index.py::test_output_expand_index_when_index_is_tz_aware_and_utc_anchored[MS-2025-06-01-America/New_York-4-8]"
+  ],
+  "G2_string_dtype": [
+   "skforecast/drift_detection/tests/tests_population_drift/test_predict.py::test_predict_output_when_multiple_series",
+   "skforecast/preprocessing/tests/tests_preprocessing/test_reshape_exog_long_to_dict.py::test_check_output_reshape_exog_long_to_dict_dropna_False",
+   "skforecast/preprocessing/tests/tests_preprocessing/test_reshape_exog_long_to_dict.py::test_check_output_reshape_exog_long_to_dict_dropna_False_when_multiindex",
+   "skforecast/preprocessing/tests/tests_preprocessing/test_reshape_exog_long_to_dict.py::test_MissingValuesWarning_when_exog_are_incomplete_and_dropna_False",
+   "skforecast/preprocessing/tests/tests_preprocessing/test_reshape_series_exog_dict_to_long.py::test_TypeError_series_exog_dict_to_long_different_index_type",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_series_10_and_exog_is_series_of_bool_str[values, dtype: ['string']-values, dtype: <class 'str'>]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_series_10_and_exog_is_dataframe_of_bool_str[values, dtype: ['string']-values, dtype: ['string']-values, dtype: <class 'str'>]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_transformer_series_and_transformer_exog[transformer_series type: <class 'sklearn.preprocessing._data.StandardScaler'>]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_transformer_series_and_transformer_exog[transformer_series type: <class 'dict'>]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_transformer_series_and_transformer_exog_with_different_series_lengths[transformer_series type: <class 'sklearn.preprocessing._data.StandardScaler'>]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_transformer_series_and_transformer_exog_with_different_series_lengths[transformer_series type: <class 'dict'>]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_series_dict_and_exog_dict",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_series_dict_and_exog_dict_ordinal_encoding[encoding, dtype: ordinal-encoding, dtype: <class 'float'>]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_series_dict_and_exog_dict_ordinal_encoding[encoding, dtype: ordinal_category-encoding, dtype: category]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_series_dict_and_exog_dict_ordinal_encoding[encoding, dtype: None-encoding, dtype: <class 'float'>]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_series_dict_and_exog_dict_window_and_calendar_features",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_exog_dict_object_column_with_different_values_by_series",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_int_exog_columns_are_inserted_or_concatenated[encoding, n_float_exog, n_int_exog: ordinal-encoding, n_float_exog, n_int_exog: 0-encoding, n_float_exog, n_int_exog: 3]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_int_exog_columns_are_inserted_or_concatenated[encoding, n_float_exog, n_int_exog: ordinal-encoding, n_float_exog, n_int_exog: 0-encoding, n_float_exog, n_int_exog: 4]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_int_exog_columns_are_inserted_or_concatenated[encoding, n_float_exog, n_int_exog: ordinal_category-encoding, n_float_exog, n_int_exog: 0-encoding, n_float_exog, n_int_exog: 1]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_int_exog_columns_are_inserted_or_concatenated[encoding, n_float_exog, n_int_exog: ordinal_category-encoding, n_float_exog, n_int_exog: 0-encoding, n_float_exog, n_int_exog: 2]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_int_exog_columns_are_inserted_or_concatenated[encoding, n_float_exog, n_int_exog: onehot-encoding, n_float_exog, n_int_exog: 0-encoding, n_float_exog, n_int_exog: 4]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_int_exog_columns_are_inserted_or_concatenated[encoding, n_float_exog, n_int_exog: onehot-encoding, n_float_exog, n_int_exog: 0-encoding, n_float_exog, n_int_exog: 5]",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_exog_dict_window_features_transformers_and_differentiation_2",
+   "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_fit.py::test_forecaster_series_exog_features_stored",
+   "skforecast/utils/tests/tests_utils/test_align_series_and_exog_multiseries.py::test_output_align_series_and_exog_multiseries_when_series_is_dict_and_different_length_intersection_with_exog",
+   "skforecast/utils/tests/tests_utils/test_check_preprocess_exog_multiseries.py::test_TypeError_check_preprocess_exog_multiseries_when_exog_is_not_dict_and_series_is_dict",
+   "skforecast/utils/tests/tests_utils/test_check_preprocess_exog_multiseries.py::test_TypeError_check_preprocess_exog_multiseries_when_exog_pandas_with_different_index_type_from_series",
+   "skforecast/utils/tests/tests_utils/test_check_preprocess_exog_multiseries.py::test_output_check_preprocess_exog_multiseries_when_exog_MultiIndex_with_different_lengths",
+   "skforecast/utils/tests/tests_utils/test_check_preprocess_series.py::test_TypeError_check_preprocess_series_when_series_is_pandas_DataFrame_MultiIndex_without_datetime",
+   "skforecast/utils/tests/tests_utils/test_check_preprocess_series.py::test_ValueError_check_preprocess_series_when_series_is_dict_with_different_freqs_or_None",
+   "skforecast/utils/tests/tests_utils/test_check_preprocess_series.py::test_ValueError_check_preprocess_series_when_series_is_DataFrame_MultiIndex_different_freqs_or_None"
+  ],
+  "G3_tz_freq_offsets": [
+   "skforecast/direct/tests/tests_forecaster_direct/test_predict.py::test_predict_output_index_when_index_is_tz_aware_and_utc_anchored[steps: None]",
+   "skforecast/direct/tests/tests_forecaster_direct/test_predict.py::test_predict_output_index_when_index_is_tz_aware_and_utc_anchored[steps: [1, 5, 10]]",
+   "skforecast/model_selection/tests/tests_split/test_basefold.py::test_basefold_extract_index_when_X_is_dict_tz_aware_and_utc_anchored[start: 2025-10-01]",
+   "skforecast/model_selection/tests/tests_split/test_basefold.py::test_basefold_extract_index_when_X_is_dict_tz_aware_and_utc_anchored[start: 2026-03-01]",
+   "skforecast/model_selection/tests/tests_split/test_basefold.py::test_basefold_extract_index_raise_error_when_X_is_dict_with_series_with_different_freq",
+   "skforecast/model_selection/tests/tests_utils/test_predict_and_calculate_metrics_one_step_ahead_multiseries.py::test_predict_and_calculate_metrics_one_step_ahead_multiseries_when_index_is_tz_aware_and_utc_anchored",
+   "skforecast/preprocessing/tests/tests_preprocessing/test_reshape_series_wide_to_long.py::test_reshape_series_wide_to_long_output_when_index_is_tz_aware_and_utc_anchored[start: 2025-10-01]",
+   "skforecast/preprocessing/tests/tests_preprocessing/test_reshape_series_wide_to_long.py::test_reshape_series_wide_to_long_output_when_index_is_tz_aware_and_utc_anchored[start: 2026-03-01]",
+   "skforecast/utils/tests/tests_utils/test_date_to_index_position.py::test_output_date_to_index_position_when_index_is_tz_aware_and_crosses_dst_change[2025-10-01-True]",
+   "skforecast/utils/tests/tests_utils/test_date_to_index_position.py::test_output_date_to_index_position_when_index_is_tz_aware_and_crosses_dst_change[2026-03-01-True]",
+   "skforecast/utils/tests/tests_utils/test_skops_decompose_compose.py::test_decompose_index_output[datetime]",
+   "skforecast/utils/tests/tests_utils/test_skops_decompose_compose.py::test_decompose_index_output[datetime_tz]"
+  ],
+  "G4_torch_missing": [
+   "skforecast/foundation/tests/tests_foundation_models/test_TSICLAdapter.py::test_TSICLAdapter_predict_point_forecast_single_series",
+   "skforecast/foundation/tests/tests_foundation_models/test_TSICLAdapter.py::test_TSICLAdapter_predict_quantile_forecast_single_series",
+   "skforecast/foundation/tests/tests_foundation_models/test_TSICLAdapter.py::test_TSICLAdapter_predict_point_forecast_multi_series[wide_dataframe]",
+   "skforecast/foundation/tests/tests_foundation_models/test_TSICLAdapter.py::test_TSICLAdapter_predict_point_forecast_multi_series[dict]",
+   "skforecast/foundation/tests/tests_foundation_models/test_TSICLAdapter.py::test_TSICLAdapter_predict_quantile_forecast_multi_series",
+   "skforecast/foundation/tests/tests_foundation_models/test_TSICLAdapter.py::test_TSICLAdapter_predict_model_receives_correct_args",
+   "skforecast/foundation/tests/tests_foundation_models/test_TSICLAdapter.py::test_TSICLAdapter_predict_caches_resolved_device_across_calls",
+   "skforecast/foundation/tests/tests_foundation_models/test_TSICLAdapter.py::test_TSICLAdapter_predict_past_and_future_covariates_forwarded",
+   "skforecast/foundation/tests/tests_foundation_models/test_TSICLAdapter.py::test_TSICLAdapter_predict_context_length_trims_history",
+   "skforecast/foundation/tests/tests_foundation_models/test_TSICLAdapter.py::test_TSICLAdapter_predict_series_without_exog_key_has_no_covariates"
+  ]
+ },
+ "records": [
+  {
+   "nodeid": "skforecast/direct/tests/tests_forecaster_direct/test_predict.py::test_predict_output_index_when_index_is_tz_aware_and_utc_anchored[steps: None]",
+   "group": "G3_tz_freq_offsets",
+   "message_first_line": "ValueError: `y` has a pandas DatetimeIndex without a frequency. To avoid this error, set the frequency of the DatetimeIndex."
+  },
+  {
+   "nodeid": "skforecast/direct/tests/tests_forecaster_direct/test_predict.py::test_predict_output_index_when_index_is_tz_aware_and_utc_anchored[steps: [1, 5, 10]]",
+   "group": "G3_tz_freq_offsets",
+   "message_first_line": "ValueError: `y` has a pandas DatetimeIndex without a frequency. To avoid this error, set the frequency of the DatetimeIndex."
+  },
+  {
+   "nodeid": "skforecast/drift_detection/tests/tests_population_drift/test_predict.py::test_predict_output_when_multiple_series",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: DataFrame.columns are different"
+  },
+  {
+   "nodeid": "skforecast/foundation/tests/tests_foundation_models/test_TSICLAdapter.py::test_TSICLAdapter_predict_point_forecast_single_series",
+   "group": "G4_torch_missing",
+   "message_first_line": "ModuleNotFoundError: No module named 'torch'"
+  },
+  {
+   "nodeid": "skforecast/foundation/tests/tests_foundation_models/test_TSICLAdapter.py::test_TSICLAdapter_predict_quantile_forecast_single_series",
+   "group": "G4_torch_missing",
+   "message_first_line": "ModuleNotFoundError: No module named 'torch'"
+  },
+  {
+   "nodeid": "skforecast/foundation/tests/tests_foundation_models/test_TSICLAdapter.py::test_TSICLAdapter_predict_point_forecast_multi_series[wide_dataframe]",
+   "group": "G4_torch_missing",
+   "message_first_line": "ModuleNotFoundError: No module named 'torch'"
+  },
+  {
+   "nodeid": "skforecast/foundation/tests/tests_foundation_models/test_TSICLAdapter.py::test_TSICLAdapter_predict_point_forecast_multi_series[dict]",
+   "group": "G4_torch_missing",
+   "message_first_line": "ModuleNotFoundError: No module named 'torch'"
+  },
+  {
+   "nodeid": "skforecast/foundation/tests/tests_foundation_models/test_TSICLAdapter.py::test_TSICLAdapter_predict_quantile_forecast_multi_series",
+   "group": "G4_torch_missing",
+   "message_first_line": "ModuleNotFoundError: No module named 'torch'"
+  },
+  {
+   "nodeid": "skforecast/foundation/tests/tests_foundation_models/test_TSICLAdapter.py::test_TSICLAdapter_predict_model_receives_correct_args",
+   "group": "G4_torch_missing",
+   "message_first_line": "ModuleNotFoundError: No module named 'torch'"
+  },
+  {
+   "nodeid": "skforecast/foundation/tests/tests_foundation_models/test_TSICLAdapter.py::test_TSICLAdapter_predict_caches_resolved_device_across_calls",
+   "group": "G4_torch_missing",
+   "message_first_line": "ModuleNotFoundError: No module named 'torch'"
+  },
+  {
+   "nodeid": "skforecast/foundation/tests/tests_foundation_models/test_TSICLAdapter.py::test_TSICLAdapter_predict_past_and_future_covariates_forwarded",
+   "group": "G4_torch_missing",
+   "message_first_line": "ModuleNotFoundError: No module named 'torch'"
+  },
+  {
+   "nodeid": "skforecast/foundation/tests/tests_foundation_models/test_TSICLAdapter.py::test_TSICLAdapter_predict_context_length_trims_history",
+   "group": "G4_torch_missing",
+   "message_first_line": "ModuleNotFoundError: No module named 'torch'"
+  },
+  {
+   "nodeid": "skforecast/foundation/tests/tests_foundation_models/test_TSICLAdapter.py::test_TSICLAdapter_predict_series_without_exog_key_has_no_covariates",
+   "group": "G4_torch_missing",
+   "message_first_line": "ModuleNotFoundError: No module named 'torch'"
+  },
+  {
+   "nodeid": "skforecast/model_selection/tests/tests_split/test_basefold.py::test_basefold_extract_index_when_X_is_dict_tz_aware_and_utc_anchored[start: 2025-10-01]",
+   "group": "G3_tz_freq_offsets",
+   "message_first_line": "ValueError: If `X` is a dictionary, all series must have a Pandas RangeIndex or DatetimeIndex with the same step/frequency. Found series with no frequency or step."
+  },
+  {
+   "nodeid": "skforecast/model_selection/tests/tests_split/test_basefold.py::test_basefold_extract_index_when_X_is_dict_tz_aware_and_utc_anchored[start: 2026-03-01]",
+   "group": "G3_tz_freq_offsets",
+   "message_first_line": "ValueError: If `X` is a dictionary, all series must have a Pandas RangeIndex or DatetimeIndex with the same step/frequency. Found series with no frequency or step."
+  },
+  {
+   "nodeid": "skforecast/model_selection/tests/tests_split/test_basefold.py::test_basefold_extract_index_raise_error_when_X_is_dict_with_series_with_different_freq",
+   "group": "G3_tz_freq_offsets",
+   "message_first_line": "TypeError: '<' not supported between instances of 'pandas._libs.tslibs.offsets.Day' and 'pandas._libs.tslibs.offsets.Day'"
+  },
+  {
+   "nodeid": "skforecast/model_selection/tests/tests_utils/test_predict_and_calculate_metrics_one_step_ahead_multiseries.py::test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_ForecasterRecursiveMultiSeries_differentiation_dict[return_predictions=True]",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/model_selection/tests/tests_utils/test_predict_and_calculate_metrics_one_step_ahead_multiseries.py::test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_ForecasterDirectMultiVariate_differentiation[return_predictions=True]",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/model_selection/tests/tests_utils/test_predict_and_calculate_metrics_one_step_ahead_multiseries.py::test_predict_and_calculate_metrics_one_step_ahead_multiseries_when_index_is_tz_aware_and_utc_anchored",
+   "group": "G3_tz_freq_offsets",
+   "message_first_line": "ValueError: If `series` is a dictionary, all series must have a Pandas RangeIndex or DatetimeIndex with the same step/frequency. If it a MultiIndex DataFrame, the second level must be a DatetimeIndex with the same frequency for each series. Found series with no frequency or step."
+  },
+  {
+   "nodeid": "skforecast/model_selection/tests/tests_validation/test_backtesting_forecaster_multiseries.py::test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_with_mocked",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/model_selection/tests/tests_validation/test_backtesting_forecaster_multiseries.py::test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_with_window_features[initial_train_size: 213]",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/model_selection/tests/tests_validation/test_backtesting_forecaster_multiseries.py::test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_with_window_features[initial_train_size: 2016-07-31 00:00:00]",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/model_selection/tests/tests_validation/test_backtesting_forecaster_multiseries.py::test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_with_mocked_multiple_aggregated_metrics",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/model_selection/tests/tests_validation/test_backtesting_forecaster_multiseries.py::test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_encoding_None_differentiation",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/model_selection/tests/tests_validation/test_backtesting_forecaster_multiseries.py::test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_series_and_exog_dict_differentiation_dict",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/model_selection/tests/tests_validation/test_backtesting_forecaster_multiseries.py::test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_window_features[initial_train_size: 38-n_jobs: 1]",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/model_selection/tests/tests_validation/test_backtesting_forecaster_multiseries.py::test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_window_features[initial_train_size: 38-n_jobs: -1]",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/model_selection/tests/tests_validation/test_backtesting_forecaster_multiseries.py::test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_window_features[initial_train_size: 38-n_jobs: auto]",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/model_selection/tests/tests_validation/test_backtesting_forecaster_multiseries.py::test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_window_features[initial_train_size: 2020-02-07 00:00:00-n_jobs: 1]",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/model_selection/tests/tests_validation/test_backtesting_forecaster_multiseries.py::test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_window_features[initial_train_size: 2020-02-07 00:00:00-n_jobs: -1]",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/model_selection/tests/tests_validation/test_backtesting_forecaster_multiseries.py::test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_window_features[initial_train_size: 2020-02-07 00:00:00-n_jobs: auto]",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/preprocessing/tests/tests_preprocessing/test_reshape_exog_long_to_dict.py::test_check_output_reshape_exog_long_to_dict_dropna_False",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: Attributes of DataFrame.iloc[:, 1] (column name=\"exog_2\") are different"
+  },
+  {
+   "nodeid": "skforecast/preprocessing/tests/tests_preprocessing/test_reshape_exog_long_to_dict.py::test_check_output_reshape_exog_long_to_dict_dropna_False_when_multiindex",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: Attributes of DataFrame.iloc[:, 1] (column name=\"exog_2\") are different"
+  },
+  {
+   "nodeid": "skforecast/preprocessing/tests/tests_preprocessing/test_reshape_exog_long_to_dict.py::test_MissingValuesWarning_when_exog_are_incomplete_and_dropna_False",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: Attributes of DataFrame.iloc[:, 1] (column name=\"exog_2\") are different"
+  },
+  {
+   "nodeid": "skforecast/preprocessing/tests/tests_preprocessing/test_reshape_series_exog_dict_to_long.py::test_TypeError_series_exog_dict_to_long_different_index_type",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: Regex pattern did not match."
+  },
+  {
+   "nodeid": "skforecast/preprocessing/tests/tests_preprocessing/test_reshape_series_wide_to_long.py::test_reshape_series_wide_to_long_output_when_index_is_tz_aware_and_utc_anchored[start: 2025-10-01]",
+   "group": "G3_tz_freq_offsets",
+   "message_first_line": "ValueError: Cannot infer dst time from 2025-10-26 02:00:00, try using the 'ambiguous' argument"
+  },
+  {
+   "nodeid": "skforecast/preprocessing/tests/tests_preprocessing/test_reshape_series_wide_to_long.py::test_reshape_series_wide_to_long_output_when_index_is_tz_aware_and_utc_anchored[start: 2026-03-01]",
+   "group": "G3_tz_freq_offsets",
+   "message_first_line": "assert np.False_"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_predict_X.py::test_create_predict_X_output_when_series_and_exog_dict",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_predict_X.py::test_create_predict_X_output_when_series_and_exog_dict_encoding_None",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_predict_X.py::test_create_predict_X_output_when_series_and_exog_dict_unknown_level",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_predict_X.py::test_create_predict_X_output_when_series_and_exog_dict_encoding_None_unknown_level",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_predict_inputs.py::test_create_predict_inputs_output_when_series_and_exog_dict",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_predict_inputs.py::test_create_predict_inputs_when_series_and_exog_dict_unknown_level_calendar_features[levels: None]",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_predict_inputs.py::test_create_predict_inputs_when_series_and_exog_dict_unknown_level_calendar_features[levels: ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']]",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_predict_inputs.py::test_create_predict_inputs_when_series_and_exog_dict_unknown_level_encoding_None[levels: None]",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_predict_inputs.py::test_create_predict_inputs_when_series_and_exog_dict_unknown_level_encoding_None[levels: ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']]",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_predict_inputs.py::test_create_predict_inputs_when_unknown_level_and_differentiation[differentiation: 1]",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_predict_inputs.py::test_create_predict_inputs_when_unknown_level_and_differentiation[differentiation: {'id_1000': 1, 'id_1001': 1, 'id_1003': 1, 'id_1004': 1, '_unknown_level': 1}]",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_series_10_and_exog_is_series_of_bool_str[values, dtype: ['string']-values, dtype: <class 'str'>]",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: assert {'exog': <Str...a_value=nan)>} == {'exog': dtype('O')}"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_series_10_and_exog_is_dataframe_of_bool_str[values, dtype: ['string']-values, dtype: ['string']-values, dtype: <class 'str'>]",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: assert <StringDtype(na_value=nan)> == dtype('O')"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_transformer_series_and_transformer_exog[transformer_series type: <class 'sklearn.preprocessing._data.StandardScaler'>]",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: assert <StringDtype(na_value=nan)> == dtype('O')"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_transformer_series_and_transformer_exog[transformer_series type: <class 'dict'>]",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: assert <StringDtype(na_value=nan)> == dtype('O')"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_transformer_series_and_transformer_exog_with_different_series_lengths[transformer_series type: <class 'sklearn.preprocessing._data.StandardScaler'>]",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: assert <StringDtype(na_value=nan)> == dtype('O')"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_transformer_series_and_transformer_exog_with_different_series_lengths[transformer_series type: <class 'dict'>]",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: assert <StringDtype(na_value=nan)> == dtype('O')"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_series_dict_and_exog_dict",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: assert <StringDtype(na_value=nan)> == dtype('O')"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_series_dict_and_exog_dict_ordinal_encoding[encoding, dtype: ordinal-encoding, dtype: <class 'float'>]",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: assert <StringDtype(na_value=nan)> == dtype('O')"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_series_dict_and_exog_dict_ordinal_encoding[encoding, dtype: ordinal_category-encoding, dtype: category]",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: assert <StringDtype(na_value=nan)> == dtype('O')"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_series_dict_and_exog_dict_ordinal_encoding[encoding, dtype: None-encoding, dtype: <class 'float'>]",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: assert <StringDtype(na_value=nan)> == dtype('O')"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_series_dict_and_exog_dict_window_and_calendar_features",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: assert <StringDtype(na_value=nan)> == dtype('O')"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_exog_dict_object_column_with_different_values_by_series",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: assert {'exog_1': dt...a_value=nan)>} == {'exog_1': dt...': dtype('O')}"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_int_exog_columns_are_inserted_or_concatenated[encoding, n_float_exog, n_int_exog: ordinal-encoding, n_float_exog, n_int_exog: 0-encoding, n_float_exog, n_int_exog: 3]",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: DataFrame.columns are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_int_exog_columns_are_inserted_or_concatenated[encoding, n_float_exog, n_int_exog: ordinal-encoding, n_float_exog, n_int_exog: 0-encoding, n_float_exog, n_int_exog: 4]",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: DataFrame.columns are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_int_exog_columns_are_inserted_or_concatenated[encoding, n_float_exog, n_int_exog: ordinal_category-encoding, n_float_exog, n_int_exog: 0-encoding, n_float_exog, n_int_exog: 1]",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: DataFrame.columns are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_int_exog_columns_are_inserted_or_concatenated[encoding, n_float_exog, n_int_exog: ordinal_category-encoding, n_float_exog, n_int_exog: 0-encoding, n_float_exog, n_int_exog: 2]",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: DataFrame.columns are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_int_exog_columns_are_inserted_or_concatenated[encoding, n_float_exog, n_int_exog: onehot-encoding, n_float_exog, n_int_exog: 0-encoding, n_float_exog, n_int_exog: 4]",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: DataFrame.columns are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_int_exog_columns_are_inserted_or_concatenated[encoding, n_float_exog, n_int_exog: onehot-encoding, n_float_exog, n_int_exog: 0-encoding, n_float_exog, n_int_exog: 5]",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: DataFrame.columns are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_train_X_y.py::test_create_train_X_y_output_when_exog_dict_window_features_transformers_and_differentiation_2",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: assert <StringDtype(na_value=nan)> == dtype('O')"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_fit.py::test_forecaster_series_exog_features_stored",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: assert {'exog_1': dt...a_value=nan)>} == {'exog_1': dt...': dtype('O')}"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict.py::test_predict_output_when_series_and_exog_dict",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict.py::test_predict_output_when_series_and_exog_dict_encoding_None_unknown_level[levels: None]",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict.py::test_predict_output_when_series_and_exog_dict_encoding_None_unknown_level[levels: ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']]",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict.py::test_predict_output_when_series_and_exog_dict_encoding_None_transformer_series_unknown_level[levels: None]",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict.py::test_predict_output_when_series_and_exog_dict_encoding_None_transformer_series_unknown_level[levels: ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']]",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict.py::test_predict_output_when_series_and_exog_dict_unknown_level[levels: None]",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict.py::test_predict_output_when_series_and_exog_dict_unknown_level[levels: ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005']]",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict_interval.py::test_predict_interval_output_when_series_and_exog_dict",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict_interval.py::test_predict_interval_output_when_series_and_exog_dict_unknown_level",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict_interval.py::test_predict_interval_output_when_series_and_exog_dict_unknown_level_binned_residuals",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict_interval.py::test_predict_interval_output_when_series_and_exog_dict_encoding_None_unknown_level",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict_interval.py::test_predict_interval_output_when_series_and_exog_dict_encoding_None_unknown_level_binned_residuals",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict_interval.py::test_predict_interval_conformal_output_when_series_and_exog_dict[interval: 0.95]",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict_interval.py::test_predict_interval_conformal_output_when_series_and_exog_dict[interval: (0.025, 0.975)]",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict_interval_conformal.py::test_predict_interval_conformal_output_when_series_and_exog_dict",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict_interval_conformal.py::test_predict_interval_conformal_output_when_series_and_exog_dict_unknown_level",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict_interval_conformal.py::test_predict_interval_conformal_output_when_series_and_exog_dict_unknown_level_binned_residuals",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict_interval_conformal.py::test_predict_interval_conformal_output_when_series_and_exog_dict_encoding_None_unknown_level",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_predict_interval_conformal.py::test_predict_interval_conformal_output_when_series_and_exog_dict_encoding_None_unknown_level_binned_residuals",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/recursive/tests/tests_forecaster_stats/test_predict.py::test_predict_output_ForecasterStats_with_exog_multiple_estimators",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: DataFrame.index are different"
+  },
+  {
+   "nodeid": "skforecast/utils/tests/tests_utils/test_align_series_and_exog_multiseries.py::test_output_align_series_and_exog_multiseries_when_series_is_dict_and_different_length_intersection_with_exog",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: Attributes of DataFrame.iloc[:, 1] (column name=\"exog_2\") are different"
+  },
+  {
+   "nodeid": "skforecast/utils/tests/tests_utils/test_check_preprocess_exog_multiseries.py::test_TypeError_check_preprocess_exog_multiseries_when_exog_is_not_dict_and_series_is_dict",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: Regex pattern did not match."
+  },
+  {
+   "nodeid": "skforecast/utils/tests/tests_utils/test_check_preprocess_exog_multiseries.py::test_TypeError_check_preprocess_exog_multiseries_when_exog_pandas_with_different_index_type_from_series",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: Regex pattern did not match."
+  },
+  {
+   "nodeid": "skforecast/utils/tests/tests_utils/test_check_preprocess_exog_multiseries.py::test_output_check_preprocess_exog_multiseries_when_exog_MultiIndex_with_different_lengths",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: Attributes of DataFrame.iloc[:, 1] (column name=\"exog_2\") are different"
+  },
+  {
+   "nodeid": "skforecast/utils/tests/tests_utils/test_check_preprocess_series.py::test_TypeError_check_preprocess_series_when_series_is_pandas_DataFrame_MultiIndex_without_datetime",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: Regex pattern did not match."
+  },
+  {
+   "nodeid": "skforecast/utils/tests/tests_utils/test_check_preprocess_series.py::test_ValueError_check_preprocess_series_when_series_is_dict_with_different_freqs_or_None",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: Regex pattern did not match."
+  },
+  {
+   "nodeid": "skforecast/utils/tests/tests_utils/test_check_preprocess_series.py::test_ValueError_check_preprocess_series_when_series_is_DataFrame_MultiIndex_different_freqs_or_None",
+   "group": "G2_string_dtype",
+   "message_first_line": "AssertionError: Regex pattern did not match."
+  },
+  {
+   "nodeid": "skforecast/utils/tests/tests_utils/test_date_to_index_position.py::test_output_date_to_index_position_when_index_is_tz_aware_and_crosses_dst_change[2025-10-01-True]",
+   "group": "G3_tz_freq_offsets",
+   "message_first_line": "ValueError: If `steps` is a date, the index must have a frequency to compute the number of steps until that date."
+  },
+  {
+   "nodeid": "skforecast/utils/tests/tests_utils/test_date_to_index_position.py::test_output_date_to_index_position_when_index_is_tz_aware_and_crosses_dst_change[2026-03-01-True]",
+   "group": "G3_tz_freq_offsets",
+   "message_first_line": "ValueError: If `steps` is a date, the index must have a frequency to compute the number of steps until that date."
+  },
+  {
+   "nodeid": "skforecast/utils/tests/tests_utils/test_expand_index.py::test_output_expand_index_when_index_is_tz_aware_and_utc_anchored[MS-2025-06-01-America/New_York-4-8]",
+   "group": "G1_index_resolution",
+   "message_first_line": "AssertionError: Index are different"
+  },
+  {
+   "nodeid": "skforecast/utils/tests/tests_utils/test_skops_decompose_compose.py::test_decompose_index_output[datetime]",
+   "group": "G3_tz_freq_offsets",
+   "message_first_line": "AssertionError: "
+  },
+  {
+   "nodeid": "skforecast/utils/tests/tests_utils/test_skops_decompose_compose.py::test_decompose_index_output[datetime_tz]",
+   "group": "G3_tz_freq_offsets",
+   "message_first_line": "AssertionError: "
+  }
+ ]
+}

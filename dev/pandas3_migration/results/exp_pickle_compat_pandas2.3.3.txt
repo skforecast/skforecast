@@ -1,0 +1,17 @@
+--- loading pickles written by pandas3.1.0 in pandas 2.3.3
+  date_range_D.pkl           FAIL NotImplementedError: (dtype('<M8[us]'), array(['2020-01-01T00:00:00.000000', '2020-01-02T00:00:00.000000',
+    
+  date_range_D_ns.pkl        FAIL NotImplementedError: (dtype('<M8[ns]'), array(['2020-01-01T00:00:00.000000000', '2020-01-02T00:00:00.000000000'
+  date_range_MS.pkl          FAIL NotImplementedError: (dtype('<M8[us]'), array(['2020-01-01T00:00:00.000000', '2020-02-01T00:00:00.000000',
+    
+  date_range_h.pkl           FAIL NotImplementedError: (dtype('<M8[us]'), array(['2020-01-01T00:00:00.000000', '2020-01-01T01:00:00.000000',
+    
+  date_range_nofreq.pkl      FAIL NotImplementedError: (dtype('<M8[us]'), array(['2020-01-01T00:00:00.000000', '2020-01-02T00:00:00.000000',
+    
+  df_cat.pkl                 FAIL NotImplementedError: (CategoricalDtype(categories=['a', 'b'], ordered=False, categories_dtype=str), array([0, 1
+  df_float_dt_index.pkl      FAIL NotImplementedError: (dtype('<M8[us]'), array(['2020-01-01T00:00:00.000000', '2020-01-02T00:00:00.000000'],
+   
+  offset_Day.pkl             OK   Day  freq=
+  offset_Hour.pkl            OK   Hour  freq=
+  range_index_series.pkl     OK   Series float64 freq=
+  series_str.pkl             OK   Series str freq=
