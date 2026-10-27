@@ -53,6 +53,7 @@ from ..utils import (
     manage_warnings,
     configure_estimator_categorical_features,
     cast_catboost_categorical_columns,
+    _get_catboost_cat_feature_indices,
     scale_correction_factor_differentiation
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
@@ -3355,6 +3356,16 @@ class ForecasterDirect(ForecasterBase):
                                                 X_train_step = X_train_step,
                                                 y_train_step = y_train_step,
                                             )
+
+            # NOTE: Same cast as in `fit`, with the categorical features of the
+            # fitted estimator of the step.
+            cat_indices = _get_catboost_cat_feature_indices(self.estimators_[step])
+            if len(cat_indices) > 0:
+                X_train_step = cast_catboost_categorical_columns(
+                    X          = X_train_step,
+                    fit_kwargs = {'cat_features': cat_indices},
+                    estimator  = self.estimators_[step]
+                )
 
             with warnings.catch_warnings():
                 warnings.filterwarnings(

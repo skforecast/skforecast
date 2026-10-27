@@ -1,5 +1,6 @@
 # Unit test set_in_sample_residuals ForecasterDirectMultiVariate
 # ==============================================================================
+import copy
 import re
 import pytest
 import numpy as np
@@ -8,6 +9,7 @@ from sklearn.exceptions import NotFittedError
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
+from catboost import CatBoostRegressor
 from skforecast.direct import ForecasterDirectMultiVariate
 
 # Fixtures
@@ -180,3 +182,40 @@ def test_set_in_sample_residuals_store_same_residuals_as_fit_when_series_has_NaN
                 forecaster_2.in_sample_residuals_by_bin_[level][k],
             )
     assert forecaster_1.binner_intervals_ == forecaster_2.binner_intervals_
+
+
+def test_set_in_sample_residuals_same_as_fit_when_catboost_and_categorical_exog():
+    """
+    Test that set_in_sample_residuals stores exactly the same residuals and
+    residuals by bin as fit with a CatBoostRegressor and a categorical exog.
+    The categorical columns of the training matrix are cast as in fit before
+    predicting with each step estimator, otherwise CatBoost raises a
+    CatBoostError.
+    """
+    exog_cat = exog.assign(exog_cat=pd.Categorical(np.arange(len(exog)) % 3))
+
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=CatBoostRegressor(
+            iterations=10, random_seed=123, verbose=0, allow_writing_files=False
+        ),
+        level='l1', steps=2, lags=3, binner_kwargs={'n_bins': 3}
+    )
+    forecaster.fit(series=series, exog=exog_cat, store_in_sample_residuals=True)
+    residuals_fit = copy.deepcopy(forecaster.in_sample_residuals_)
+    residuals_bin_fit = copy.deepcopy(forecaster.in_sample_residuals_by_bin_)
+
+    forecaster.set_in_sample_residuals(series=series, exog=exog_cat)
+
+    residuals = forecaster.in_sample_residuals_
+    assert list(residuals) == list(residuals_fit)
+    for level in residuals_fit.keys():
+        np.testing.assert_array_equal(residuals[level], residuals_fit[level])
+
+    residuals_bin = forecaster.in_sample_residuals_by_bin_
+    assert list(residuals_bin) == list(residuals_bin_fit)
+    for level in residuals_bin_fit.keys():
+        assert residuals_bin[level].keys() == residuals_bin_fit[level].keys()
+        for k in residuals_bin_fit[level].keys():
+            np.testing.assert_array_equal(
+                residuals_bin[level][k], residuals_bin_fit[level][k]
+            )

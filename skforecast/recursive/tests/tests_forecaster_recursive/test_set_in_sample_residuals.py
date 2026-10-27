@@ -1,5 +1,6 @@
 # Unit test set_in_sample_residuals ForecasterRecursive
 # ==============================================================================
+import copy
 import re
 import pytest
 import numpy as np
@@ -7,6 +8,7 @@ import pandas as pd
 from sklearn.exceptions import NotFittedError
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
+from catboost import CatBoostRegressor
 from skforecast.recursive import ForecasterRecursive
 
 # Fixtures
@@ -109,3 +111,34 @@ def test_set_in_sample_residuals_store_same_residuals_as_fit():
     for k in forecaster_1.in_sample_residuals_by_bin_.keys():
         np.testing.assert_almost_equal(forecaster_1.in_sample_residuals_by_bin_[k], forecaster_2.in_sample_residuals_by_bin_[k])
     assert forecaster_1.binner_intervals_ == forecaster_2.binner_intervals_
+
+
+def test_set_in_sample_residuals_same_as_fit_when_catboost_and_categorical_exog():
+    """
+    Test that set_in_sample_residuals stores exactly the same residuals and
+    residuals by bin as fit with a CatBoostRegressor and a categorical exog.
+    The categorical columns of the training matrix are cast as in fit before
+    predicting with the estimator, otherwise CatBoost raises a CatBoostError.
+    """
+    exog_cat = pd.DataFrame({
+        'exog_1': exog,
+        'exog_cat': pd.Categorical(np.arange(len(exog)) % 3)
+    })
+
+    forecaster = ForecasterRecursive(
+        estimator=CatBoostRegressor(
+            iterations=10, random_seed=123, verbose=0, allow_writing_files=False
+        ),
+        lags=3, binner_kwargs={'n_bins': 3}
+    )
+    forecaster.fit(y=y, exog=exog_cat, store_in_sample_residuals=True)
+    residuals_fit = copy.deepcopy(forecaster.in_sample_residuals_)
+    residuals_bin_fit = copy.deepcopy(forecaster.in_sample_residuals_by_bin_)
+
+    forecaster.set_in_sample_residuals(y=y, exog=exog_cat)
+
+    np.testing.assert_array_equal(forecaster.in_sample_residuals_, residuals_fit)
+    residuals_bin = forecaster.in_sample_residuals_by_bin_
+    assert residuals_bin.keys() == residuals_bin_fit.keys()
+    for k in residuals_bin_fit.keys():
+        np.testing.assert_array_equal(residuals_bin[k], residuals_bin_fit[k])
