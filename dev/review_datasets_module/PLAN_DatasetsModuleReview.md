@@ -8,7 +8,7 @@
 > 1. Vive en `dev/review_datasets_module/` (sin seguimiento en git): no lo añadas a ningún commit.
 > 2. Para ejecutar una PR: «Lee `dev/review_datasets_module/PLAN_DatasetsModuleReview.md` y ejecuta la PR 1».
 > 3. Todas las PRs parten de `origin/0.27.x` **con la 1402 ya fusionada**. Si sigue abierta, crea la rama desde `origin/fix/fetch-dataset-website-visits-m5` y dilo en la descripción de la PR.
-> 4. Una tarea que depende de una decisión (sección 3) no se implementa hasta que Joaquín la tome. La opción recomendada va primero.
+> 4. Las decisiones están tomadas (sección 3) salvo DEC6 y DEC7, que solo bloquean las PRs 5c y 5d.
 > 5. Antes de empezar, repite el apéndice A sobre un clon reciente de `skforecast-datasets`: los ficheros pueden haber cambiado.
 
 ---
@@ -17,30 +17,19 @@
 
 ### 0.1 PRs
 
-| PR | Repo | Rama | Contenido | Decisiones | Nota de versión |
+| PR | Repo | Rama | Contenido | Bloqueada por | Nota de versión |
 |---|---|---|---|---|---|
-| **1** | skforecast | `fix/datasets-module-small-fixes` | Bugs pequeños, textos del registro, docstrings, test del registro sin red | ninguna (DEC5 recomendada ya incluida) | Fixed |
-| **2** | skforecast | `feature/datasets-version-deprecation` | Deprecar `version`; `load_demo_dataset` sobre `fetch_dataset` | DEC1 | Changed |
-| **3** | skforecast | `feature/fetch-dataset-gaps-and-long-format` | Aviso cuando `asfreq` añade o quita filas; orden estable del formato largo; documentación | DEC2, DEC3 | Changed |
-| **4** | skforecast | `chore/datasets-regression-test` | Test de regresión contra los ficheros reales, fuera de la CI por defecto | DEC8 | ninguna |
-| **5** | skforecast-datasets | `main` (commits directos) | README generado, BOM, parquet de HF ordenados, ficheros huérfanos, licencias | DEC2, DEC4, DEC6, DEC7 | ninguna (la reordenación de HF se menciona en la release en la que se suba) |
+| **1** | skforecast | `fix/datasets-module-small-fixes` | Bugs pequeños, textos del registro, docstrings, test del registro sin red | nada | Fixed |
+| **2** | skforecast | `feature/datasets-version-deprecation` | Deprecar `version`; `load_demo_dataset` sobre `fetch_dataset` | nada | Changed |
+| **3** | skforecast | `feature/fetch-dataset-gaps-and-long-format` | Aviso cuando `asfreq` añade o quita filas; orden estable del formato largo; documentación | nada | Changed |
+| **4** | skforecast | `chore/datasets-regression-test` | Test de regresión contra los ficheros reales, opt-in | nada | ninguna |
+| **5** | skforecast-datasets | `main` (commits directos) | 5a README generado y BOM; 5b parquet de HF ordenados; 5c ficheros huérfanos; 5d licencias | 5b: token de HF; 5c: DEC6; 5d: DEC7 | ninguna (la reordenación de HF se menciona en la release en la que se suba) |
 
-Dependencias: PR 1 primero (las demás tocan los mismos ficheros). PR 2 y PR 3 son independientes entre sí. PR 4 después de PR 1 (y de PR 3 si se quiere que fije el comportamiento final). PR 5a (README) cuando el registro esté estable tras PR 1; PR 5b (HF) requiere DEC2 y el token de HF.
+Dependencias: PR 1 primero (las demás tocan los mismos ficheros). PR 2 y PR 3 son independientes entre sí. PR 4 después de PR 3, para que fije el comportamiento final. PR 5a cuando el registro esté estable tras PR 1.
 
-### 0.2 Decisiones pendientes
+### 0.2 Decisiones
 
-| Id | Pregunta | Recomendada | Afecta a |
-|---|---|---|---|
-| DEC1 | ¿Qué hacer con `version`? | Deprecar en 0.27.0, retirar en 0.29.0 | PR 2, PR 5 |
-| DEC2 | Formato largo: ¿ordenar por fecha? | Sí, con orden estable | PR 3, PR 5b |
-| DEC3 | ¿Avisar cuando `asfreq` inserta filas NaN? | Sí, `MissingValuesWarning` | PR 3 |
-| DEC4 | ¿Dónde vive el generador del README de datos? | En `skforecast-datasets` | PR 5a |
-| DEC5 | Zona horaria de `vic_electricity` | Documentarlo en `description` | PR 1 |
-| DEC6 | Siete ficheros huérfanos en `data/` | Decidir uno a uno | PR 5c |
-| DEC7 | Licencias por dataset | Las aporta Joaquín | PR 5d |
-| DEC8 | ¿Dónde corre el test que descarga todos los datasets? | Test opt-in por variable de entorno | PR 4 |
-
-Detalle de cada decisión en la sección 3.
+Tomadas el 2026-10-27: DEC1 (deprecar `version`), DEC2 (orden estable y parquet de HF ordenados), DEC3 (avisar), DEC4 (generador en el repo de datos), DEC5 (documentar la zona horaria) y DEC8 (test opt-in). Pendientes: DEC6 (ficheros huérfanos) y DEC7 (licencias). Detalle en la sección 3.
 
 ---
 
@@ -144,34 +133,22 @@ Las del repo están en `CLAUDE.md` y `tools/ai/ai_context_header.md` y se cargan
 
 ---
 
-## 3. Decisiones pendientes
+## 3. Decisiones
 
-### DEC1. ¿Qué hacer con `version`?
+### 3.1 Tomadas (2026-10-27)
 
-- **A (recomendada).** Deprecar en 0.27.0 con `FutureWarning` y retirar en 0.29.0. Nunca se publicaron versiones (sin tags), ningún notebook ni ejemplo lo usa, HF lo ignora y el único valor útil, distinto de `'latest'`, sería un nombre de rama de trabajo.
-- **B.** Mantenerlo y crear un tag en `skforecast-datasets` en cada release (`v0.27.0`, ...), con revisiones equivalentes en los cuatro repos de HF. Coste en cada release.
+| Id | Pregunta | Decisión | Motivo | Se aplica en |
+|---|---|---|---|---|
+| DEC1 | ¿Qué hacer con `version`? | Deprecar en 0.27.0 (valor por defecto `None`, `FutureWarning` siempre que se pase) y retirar en 0.29.0 haciendo keyword-only los argumentos que siguen | Nunca se publicaron versiones (sin tags), ningún notebook ni ejemplo lo usa y HF lo ignora; versionar los datos costaría un tag por release en cinco repos | PR 2 |
+| DEC2 | Formato largo (fechas repetidas): ¿cómo se ordena? | Por fecha con `sort_index(kind='stable')`, y subir a HF `m5`, `bdg2_daily` y `bdg2_hourly` ya ordenados por fecha | Conserva el orden de las series dentro de cada fecha sin cambiar el resultado actual; con los parquet ordenados, `is_monotonic_increasing` evita la copia de `sort_index` y baja el pico de memoria | PR 3 (3.2), PR 5b |
+| DEC3 | ¿Avisar cuando `asfreq` cambia las filas? | Sí: `MissingValuesWarning` al insertar filas NaN, `UserWarning` al descartar filas | Hoy los 59 días ausentes de `wikipedia_visits` aparecen como NaN sin aviso | PR 3 (3.1) |
+| DEC4 | ¿Dónde vive el generador del README de datos? | En `skforecast-datasets` (`tools/generate_readme.py`), sin CI, ejecutado a mano | El README es del repo de datos; el script importa el registro del skforecast instalado | PR 5a |
+| DEC5 | Zona horaria de `vic_electricity` | Documentarla en `description`; el fichero no cambia | Cinco notebooks y dos scripts de docs lo usan, y todas las versiones de skforecast leen el mismo fichero | PR 1 (1.7) |
+| DEC8 | ¿Dónde corre el test que descarga todos los datasets? | Test de pytest opt-in (`SKFORECAST_TEST_DATASETS=1`), ejecutado a mano antes de cada release y tras cambiar el repo de datos | `slow` no lo saca de la CI, que descargaría unos 175 MB en 15 trabajos | PR 4 |
 
-### DEC2. Formato largo (índice con fechas repetidas): ¿ordenar por fecha?
+### 3.2 Pendientes
 
-- **A (recomendada).** Mantener el orden por fecha, pero con `sort_index(kind='stable')` para conservar el orden de las series dentro de cada fecha (determinista y algo más rápido, sección 1.4). Documentarlo. Opcional (PR 5b): subir a HF `m5`, `bdg2_daily` y `bdg2_hourly` ya ordenados por fecha para que `is_monotonic_increasing` evite la copia de `sort_index` y baje el pico de memoria.
-- **B.** No ordenar cuando el índice no es único (se conserva el orden del fichero, agrupado por serie). Cambia el resultado para usuarios actuales y obliga a reescribir `test_fetch_dataset_m5_long_format_unsorted` de 1402.
-
-### DEC3. ¿Avisar cuando `asfreq` cambia las filas?
-
-- **A (recomendada).** Sí: `MissingValuesWarning` si se insertan filas NaN (hoy solo `wikipedia_visits`, 59 días) y `UserWarning` si se descartan filas no alineadas con la frecuencia (hoy ninguno).
-- **B.** Solo documentarlo en el docstring y en la descripción del dataset.
-
-### DEC4. ¿Dónde vive el generador del README de `skforecast-datasets`?
-
-- **A (recomendada).** En el repositorio de datos (`tools/generate_readme.py`), importando el registro del skforecast instalado. Sin CI; se ejecuta a mano cuando cambia el registro.
-- **B.** En `skforecast/tools/datasets/` y copiar el README generado al otro repo.
-
-### DEC5. Zona horaria de `vic_electricity`
-
-- **A (recomendada, incluida en PR 1).** Explicarlo en `description` sin tocar el fichero (cinco notebooks y dos scripts de docs lo usan).
-- **B.** Reguardar `Time` en hora local de Melbourne (con cuidado del cambio de hora, que crea duplicados y huecos) y reejecutar los notebooks. Si se elige, quitar la frase de `vic_electricity` del punto 1.7.
-
-### DEC6. Ficheros huérfanos de `data/`
+#### DEC6. Ficheros huérfanos de `data/`
 
 Para cada uno: registrarlo en `datasets` (con `description`, `source`, `index_col`, `freq`) o solo listarlo en una sección `## Other files` del README. Datos para decidir:
 
@@ -187,17 +164,9 @@ Para cada uno: registrarlo en `datasets` (con `description`, `source`, `index_co
 
 Antes de borrar alguno, buscar su nombre en `docs/`, en el blog de cienciadedatos.net y en notebooks de versiones anteriores: la URL `.../main/data/<fichero>` puede estar enlazada desde fuera.
 
-### DEC7. Licencias por dataset
+#### DEC7. Licencias por dataset
 
 Joaquín indica la licencia de cada fuente (Kaggle, UCI, ABS, EUROCONTROL/ONS, tsibbledata, Monash, ...). La sesión solo prepara la estructura (PR 5d).
-
-### DEC8. ¿Dónde corre el test que descarga todos los datasets?
-
-`slow` no basta para sacarlo de la CI (1.2): en cada PR a `main` se descargarían unos 175 MB y se cargarían 10 M de filas de `m4_daily` en 15 trabajos.
-
-- **A (recomendada).** Test en pytest marcado `slow` y además omitido salvo que `SKFORECAST_TEST_DATASETS=1`. Se ejecuta a mano antes de cada release y tras cambiar el repo de datos.
-- **B.** Sin test: promover el script del apéndice A a `tools/datasets/check_datasets.py` (local o contra las URL) y ejecutarlo a mano.
-- **C.** Workflow programado (`schedule` semanal o `workflow_dispatch`) que fija la variable de la opción A en un solo trabajo.
 
 ---
 
@@ -340,7 +309,7 @@ Test en `test_print_dataset_info.py`: con `monkeypatch.setenv('COLUMNS', '200')`
 
 Todos son cambios de `description` o `source`; el README generado (PR 5a) los hereda, así que conviene hacerlos antes.
 
-- `vic_electricity` (DEC5 A): añadir «`Time` is in UTC (suffix Z, parsed as a naive datetime); `Date` and `Holiday` refer to local time in Melbourne (UTC+10, UTC+11 in summer).» y el punto final que falta.
+- `vic_electricity` (DEC5): añadir «`Time` is in UTC (suffix Z, parsed as a naive datetime); `Date` and `Holiday` refer to local time in Melbourne (UTC+10, UTC+11 in summer).» y el punto final que falta.
 - `m4_daily`/`m4_hourly`: «Timestamps are artificial (the M4 series have no real dates): all at 12:00 and spanning 1959 to 2039. Long format: one row per series and timestamp.».
 - `m5`: «Series ids keep the `_evaluation` suffix of the Kaggle files; `sell_price` is NaN before the product was first sold. Long format: one row per series and date.».
 - `store_sales`, `ashrae_daily`, `bdg2_daily`, `bdg2_hourly`: añadir «Long format: one row per <unidad> and date.» (lo usa la PR 3 en lugar de enumerar los datasets en el docstring).
@@ -386,7 +355,7 @@ Más el apéndice A: «PREPROCESS OK» en los 26 datasets de GitHub y `asfreq_in
 
 ## 5. PR 2: deprecar `version` y apoyar `load_demo_dataset` en `fetch_dataset` (DEC1)
 
-**Rama:** `feature/datasets-version-deprecation`. La parte 2.1 no depende de DEC1 y puede ir sola si DEC1 se retrasa.
+**Rama:** `feature/datasets-version-deprecation`.
 
 ### 2.1 `load_demo_dataset` sobre `fetch_dataset`
 
@@ -403,11 +372,11 @@ Hoy lee `h2o.csv` por su cuenta con `names=['y', 'datetime']` (depende del orden
     return y
 ```
 
-No pasa `version` a `fetch_dataset`: así, con 2.2, el aviso sale una sola vez y desde `load_demo_dataset`. Si 2.1 va sin 2.2, pasar `version=version` hasta que llegue la deprecación.
+No pasa `version` a `fetch_dataset`: así el aviso de 2.2 sale una sola vez y desde `load_demo_dataset`.
 
 Test: ampliar `test_load_demo_dataset_returns_correct_series` con `y.name == 'y'`, `y.index.name == 'datetime'`, `y.dtype == float` y los cinco primeros valores escritos a mano (`0.429795, 0.400906, 0.432159, 0.492543, 0.502369`; comprobarlos antes con `fetch_dataset('h2o', raw=True).head()`).
 
-### 2.2 Deprecar `version` (DEC1 A)
+### 2.2 Deprecar `version` (DEC1)
 
 Mismo patrón que `differentiation` en `skforecast/model_selection/_split.py`: **valor por defecto `None` y aviso cuando no es `None`**. Avisar solo para valores distintos de `'latest'` dejaría sin aviso a quien escribe `version='latest'` (todos los tests del módulo lo hacen) y su código fallaría sin previo aviso en 0.29.0.
 
@@ -442,17 +411,13 @@ def _warn_deprecated_version(version: str | int | None) -> None:
 6. `ai-context-sync`: ni `tools/ai/llms-base.txt` ni `skills/` usan `version`; ejecutar `--check` igualmente.
 7. **Al retirarlo en 0.29.0:** `version` es el segundo parámetro posicional. Si solo se borra, `fetch_dataset('h2o', 'latest')` pasaría `'latest'` a `raw` (verdadero) y devolvería datos sin preprocesar sin error. Al retirarlo, hacer keyword-only todo lo que sigue a `name` (`def fetch_dataset(name, *, raw=False, ...)`) y lo mismo en `load_demo_dataset(*, verbose=True)`. Anotarlo en el `TODO`.
 
-### 2.3 Si DEC1 es B (mantener y versionar)
-
-Crear el tag `v0.27.0` en `skforecast-datasets` en cada release (añadirlo a la checklist de `/release-bump`), documentar que `version` es un tag o una rama (`'v0.27.0'`), y en HF cambiar las URL a `.../resolve/{version}/...` con `main` por defecto y crear las mismas etiquetas en los cuatro repos. 2.1 se mantiene.
-
 ---
 
 ## 6. PR 3: huecos de `asfreq` y formato largo (DEC2, DEC3)
 
 **Rama:** `feature/fetch-dataset-gaps-and-long-format`.
 
-### 3.1 Aviso cuando `asfreq` cambia las filas (DEC3 A)
+### 3.1 Aviso cuando `asfreq` cambia las filas (DEC3)
 
 En el bloque `if not raw:` de `fetch_dataset`, sustituir `if df.index.is_unique: df = df.asfreq(freq)` por:
 
@@ -486,11 +451,11 @@ Tests (`test_fetch_dataset.py`, `patch('pandas.read_csv', return_value=...)` sob
 
 Notebook: `migrate-from-prophet.ipynb` carga `wikipedia_visits` y mostrará el aviso (el texto del notebook ya explica que interpola los huecos). Reejecutarlo, o dejar que lo recoja la próxima ejecución de docs y decirlo en la PR.
 
-### 3.2 Orden estable del formato largo (DEC2 A)
+### 3.2 Orden estable del formato largo (DEC2)
 
 `df = df.sort_index()` pasa a `df = df.sort_index(kind='stable')` (dentro del `if not df.index.is_monotonic_increasing:` de 1402). Conserva el orden de las series del fichero dentro de cada fecha y es algo más rápido (sección 1.4). Ampliar `test_fetch_dataset_m5_long_format_unsorted`: con ids `A, A, B, B` y fechas `29, 30, 29, 30`, el resultado es `id == ['A', 'B', 'A', 'B']` y `sales == [1, 3, 2, 4]`.
 
-Si DEC2 es B: sustituir la condición por `if df.index.is_unique and not df.index.is_monotonic_increasing:` (en la práctica la ordenación desaparece, porque `asfreq` ya devuelve ordenado), reescribir el test para que compruebe el orden del fichero y añadir la nota a «Before upgrading».
+La otra mitad de DEC2 (parquet de HF ya ordenados) está en la PR 5b y no cambia código.
 
 ### 3.3 Documentación
 
@@ -529,7 +494,7 @@ Como la PR 1, más el apéndice A: `wikipedia_visits` muestra el nuevo aviso y n
 
 ## 7. PR 4: test de regresión contra los ficheros reales (DEC8)
 
-**Rama:** `chore/datasets-regression-test`. Sin nota de versión. Nuevo fichero `skforecast/datasets/tests/tests_datasets/test_fetch_dataset_all_datasets.py` (separado para poder lanzarlo solo).
+**Rama:** `chore/datasets-regression-test`. Sin nota de versión. Va después de la PR 3, cuyo comportamiento fija. Nuevo fichero `skforecast/datasets/tests/tests_datasets/test_fetch_dataset_all_datasets.py` (separado para poder lanzarlo solo).
 
 ```python
 # Unit test fetch_dataset on every dataset hosted on GitHub
@@ -622,7 +587,7 @@ En PowerShell: `$env:SKFORECAST_TEST_DATASETS = '1'; pytest ...`. HF queda fuera
 
 Opcional en la misma PR: marcar con un marcador `network` (declarado en `pyproject.toml`) los nueve tests actuales que descargan, para poder deseleccionarlos sin red con `-m "not network"`. No cambia la CI.
 
-Si DEC8 es B o C, ver la sección 3.
+Añadir a la checklist de `/release-bump` el paso «ejecutar el test de regresión de datasets con `SKFORECAST_TEST_DATASETS=1`».
 
 ---
 
@@ -630,7 +595,7 @@ Si DEC8 es B o C, ver la sección 3.
 
 Repositorio separado (`https://github.com/skforecast/skforecast-datasets`, rama `main`). Cada punto es un commit. Lo que necesita credenciales de HF o licencias queda para Joaquín.
 
-### 5a. README generado desde el registro (DEC4 A) y BOM
+### 5a. README generado desde el registro (DEC4) y BOM
 
 Nuevo `tools/generate_readme.py` (Python 3.10+, depende solo de `skforecast`):
 
@@ -638,13 +603,13 @@ Nuevo `tools/generate_readme.py` (Python 3.10+, depende solo de `skforecast`):
 - Sección final `## Other files` con los ficheros huérfanos no registrados (DEC6), una línea cada uno.
 - Opción `--check`: regenera en memoria y sale con código 1 si difiere.
 
-La primera ejecución corrige de golpe las entradas desalineadas (sección 1.4). Revisar el diff línea a línea antes del commit. Si DEC4 es B, el script vive en `skforecast/tools/datasets/generate_datasets_readme.py` y escribe en una ruta pasada por argumento.
+La primera ejecución corrige de golpe las entradas desalineadas (sección 1.4). Revisar el diff línea a línea antes del commit.
 
 Commit aparte: quitar el BOM UTF-8 de `data/uk_daily_flights.csv`. pandas ya lo ignoraba, así que `fetch_dataset` no cambia; comprobar con el apéndice A.
 
-**No cambiar** el formato de fecha de `data/visitas_por_dia_web_cienciadedatos.csv`: el registro (1402) y dos notebooks parsean `%d/%m/%y`, y skforecast 0.26 y anteriores leen el mismo fichero de `main`. Si algún día se cambia, publicarlo con otro nombre. Tampoco reordenar las columnas de `h2o.csv` (sección 1.5) ni tocar `vic_electricity.csv` (DEC5 A).
+**No cambiar** el formato de fecha de `data/visitas_por_dia_web_cienciadedatos.csv`: el registro (1402) y dos notebooks parsean `%d/%m/%y`, y skforecast 0.26 y anteriores leen el mismo fichero de `main`. Si algún día se cambia, publicarlo con otro nombre. Tampoco reordenar las columnas de `h2o.csv` (sección 1.5) ni tocar `vic_electricity.csv` (DEC5).
 
-### 5b. Parquet de HF ordenados por fecha (DEC2 A, opcional, requiere token)
+### 5b. Parquet de HF ordenados por fecha (DEC2, requiere el token de HF de Joaquín)
 
 Descargar `m5_daily.parquet`, `bdg2_daily.parquet` y `bdg2_hourly.parquet`; leer con `pq.read_table`, ordenar con `table.sort_by([(col, 'ascending')])` (`datetime` en m5, `timestamp` en bdg2; conserva los tipos `dictionary`), guardar con el mismo tamaño de row group (57, 2 y 27 row groups), comprobar `is_monotonic_increasing` y subir con `huggingface_hub.upload_file`. Medir después el pico de `fetch_dataset('m5')` (en la PR 1402 fue 10.3 GB): debe bajar porque `sort_index` deja de copiar. Todas las versiones de skforecast leen `main` de HF; las que ordenan devuelven lo mismo, y con `raw=True` cambia el orden de filas (anotarlo en la nota de la release en la que se suba).
 
@@ -655,10 +620,6 @@ Aplicar lo que Joaquín decida en DEC6: registrar en `skforecast` (PR aparte en 
 ### 5d. Licencias (DEC7)
 
 Añadir `+ license:` a cada sección del README. Si además se añade una clave `license` al registro, actualizar `REQUIRED_KEYS` del test 1.1, el generador y `show_datasets_info`.
-
-### 5e. Tag (solo si DEC1 B)
-
-`git tag v0.27.0 && git push origin v0.27.0` en `skforecast-datasets` al publicar skforecast 0.27.0, y anotarlo en el skill `/release-bump`.
 
 ---
 
@@ -783,7 +744,7 @@ Comprobados el 2026-10-27 contra el código, los notebooks, la CI y un clon del 
 - Deprecación de `version`: valor por defecto `None` y aviso siempre que se pase, como `differentiation`; la v1 no avisaba con `version='latest'`. Se añade el riesgo posicional al retirarlo y la interacción con `load_demo_dataset`.
 - `show_datasets_info`: aceptar cualquier iterable que no sea string; la v1 rompía `set`, `dict_keys` o `pandas Index`, que hoy funcionan.
 - Tipo de fichero desconocido: se valida antes de descargar, no después.
-- Formato largo: `sort_index(kind='stable')` como parte de DEC2 A; conserva el orden de las series y no requiere resubir los parquet.
+- Formato largo: `sort_index(kind='stable')` como parte de DEC2; conserva el orden de las series aunque los parquet no se vuelvan a subir.
 - El docstring de `fetch_dataset` no enumera datasets de formato largo; cada `description` lo indica.
 
 **Mejoras que faltaban**
@@ -799,3 +760,7 @@ Comprobados el 2026-10-27 contra el código, los notebooks, la CI y un clon del 
 - `load_demo_dataset` pasa a la PR 2 (comparte la gestión de `version`); el test de regresión queda solo en la PR 4.
 - Ramas con tipos válidos (`change/` y `test/` no lo son).
 - Se quitan las referencias a sesiones cloud y a comandos solo de Linux (`/usr/bin/time -v`, `sed -i`).
+
+**Decisiones tomadas (2026-10-27)**
+- DEC1, DEC3, DEC4, DEC5 y DEC8 con la opción recomendada; DEC2 con orden estable y además parquet de HF ordenados (la PR 5b deja de ser opcional). Se eliminan las alternativas descartadas: versionar los datos (antigua 2.3 y tag 5e), no ordenar el formato largo, generador en skforecast, reguardar `vic_electricity` en hora local, script o workflow en lugar del test opt-in.
+- Quedan pendientes DEC6 (ficheros huérfanos, uno a uno) y DEC7 (licencias), que solo afectan a las PRs 5c y 5d.
