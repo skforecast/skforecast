@@ -90,6 +90,7 @@ def test_create_predict_inputs_output(steps):
         ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 
          'l2_lag_1', 'l2_lag_2', 'l2_lag_3'],
         [1, 2, 3],
+        pd.date_range(start='2020-02-20', periods=3, freq='D'),
         pd.date_range(start='2020-02-20', periods=3, freq='D')
     )
     
@@ -99,6 +100,7 @@ def test_create_predict_inputs_output(steps):
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
     assert results[4] is None
+    pd.testing.assert_index_equal(results[5], expected[4])
 
 
 def test_create_predict_inputs_output_when_list_interspersed():
@@ -120,6 +122,7 @@ def test_create_predict_inputs_output_when_list_interspersed():
         ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 
          'l2_lag_1', 'l2_lag_2', 'l2_lag_3'],
         [1, 4],
+        pd.RangeIndex(start=50, stop=54, step=1)[[0, 3]],
         pd.RangeIndex(start=50, stop=54, step=1)[[0, 3]]
     )
     
@@ -129,6 +132,7 @@ def test_create_predict_inputs_output_when_list_interspersed():
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
     assert results[4] is None
+    pd.testing.assert_index_equal(results[5], expected[4])
 
 
 def test_create_predict_inputs_output_when_different_lags():
@@ -153,6 +157,7 @@ def test_create_predict_inputs_output_when_different_lags():
         ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5', 
          'l2_lag_1', 'l2_lag_7'],
         [1, 2, 3],
+        pd.RangeIndex(start=50, stop=53, step=1),
         pd.RangeIndex(start=50, stop=53, step=1)
     )
     
@@ -162,6 +167,7 @@ def test_create_predict_inputs_output_when_different_lags():
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
     assert results[4] is None
+    pd.testing.assert_index_equal(results[5], expected[4])
 
 
 def test_create_predict_inputs_output_when_lags_dict_with_None_in_level_lags():
@@ -182,6 +188,7 @@ def test_create_predict_inputs_output_when_lags_dict_with_None_in_level_lags():
          np.array([[0.61289453, 0.51948512, 0.98555979, 0.48303426, 0.25045537]])],
         ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5'],
         [1, 2, 3],
+        pd.RangeIndex(start=50, stop=53, step=1),
         pd.RangeIndex(start=50, stop=53, step=1)
     )
     
@@ -191,6 +198,7 @@ def test_create_predict_inputs_output_when_lags_dict_with_None_in_level_lags():
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
     assert results[4] is None
+    pd.testing.assert_index_equal(results[5], expected[4])
 
 
 def test_create_predict_inputs_output_when_lags_dict_with_None_but_no_in_level():
@@ -211,6 +219,7 @@ def test_create_predict_inputs_output_when_lags_dict_with_None_but_no_in_level()
          np.array([[0.61289453, 0.51948512, 0.98555979, 0.48303426, 0.25045537]])],
         ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5'],
         [1, 2, 3],
+        pd.RangeIndex(start=50, stop=53, step=1),
         pd.RangeIndex(start=50, stop=53, step=1)
     )
     
@@ -220,6 +229,7 @@ def test_create_predict_inputs_output_when_lags_dict_with_None_but_no_in_level()
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
     assert results[4] is None
+    pd.testing.assert_index_equal(results[5], expected[4])
 
 
 def test_create_predict_inputs_output_when_last_window():
@@ -248,6 +258,7 @@ def test_create_predict_inputs_output_when_last_window():
         ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 
          'l2_lag_1', 'l2_lag_2', 'l2_lag_3'],
         [1, 2],
+        pd.RangeIndex(start=50, stop=52, step=1),
         pd.RangeIndex(start=50, stop=52, step=1)
     )
     
@@ -257,6 +268,7 @@ def test_create_predict_inputs_output_when_last_window():
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
     assert results[4] is None
+    pd.testing.assert_index_equal(results[5], expected[4])
 
 
 def test_create_predict_inputs_output_when_exog():
@@ -280,6 +292,7 @@ def test_create_predict_inputs_output_when_exog():
         ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 
          'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'exog_1'],
         [1, 2, 3],
+        pd.RangeIndex(start=40, stop=43, step=1),
         pd.RangeIndex(start=40, stop=43, step=1)
     )
     
@@ -289,6 +302,7 @@ def test_create_predict_inputs_output_when_exog():
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
     assert results[4] is None
+    pd.testing.assert_index_equal(results[5], expected[4])
 
 
 def test_create_predict_inputs_output_with_transform_series():
@@ -319,6 +333,7 @@ def test_create_predict_inputs_output_with_transform_series():
         ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5',
          'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5'],
         [1, 2, 3, 4, 5],
+        pd.RangeIndex(start=50, stop=55, step=1),
         pd.RangeIndex(start=50, stop=55, step=1)
     )
     
@@ -328,6 +343,7 @@ def test_create_predict_inputs_output_with_transform_series():
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
     assert results[4] is None
+    pd.testing.assert_index_equal(results[5], expected[4])
 
 
 def test_create_predict_inputs_output_with_transform_series_as_dict():
@@ -359,6 +375,7 @@ def test_create_predict_inputs_output_with_transform_series_as_dict():
         ['l1_lag_1', 'l1_lag_2', 'l1_lag_3', 'l1_lag_4', 'l1_lag_5',
          'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5'],
         [1, 2, 3, 4, 5],
+        pd.RangeIndex(start=50, stop=55, step=1),
         pd.RangeIndex(start=50, stop=55, step=1)
     )
     
@@ -368,6 +385,7 @@ def test_create_predict_inputs_output_with_transform_series_as_dict():
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
     assert results[4] is None
+    pd.testing.assert_index_equal(results[5], expected[4])
 
 
 @pytest.mark.parametrize("n_jobs", [1, -1, 'auto'], 
@@ -409,6 +427,7 @@ def test_create_predict_inputs_output_with_transform_series_and_transform_exog(n
          'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5',
          'exog_1', 'exog_2_a', 'exog_2_b'],
         [1, 2, 3, 4, 5],
+        pd.RangeIndex(start=50, stop=55, step=1),
         pd.RangeIndex(start=50, stop=55, step=1)
     )
     
@@ -418,6 +437,7 @@ def test_create_predict_inputs_output_with_transform_series_and_transform_exog(n
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
     assert results[4] is None
+    pd.testing.assert_index_equal(results[5], expected[4])
 
 
 def test_create_predict_inputs_output_when_categorical_features_native_implementation_HistGradientBoostingRegressor():
@@ -498,6 +518,7 @@ def test_create_predict_inputs_output_when_categorical_features_native_implement
          'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5',
          'exog_2', 'exog_3', 'exog_1'],
         [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        pd.RangeIndex(start=50, stop=60, step=1),
         pd.RangeIndex(start=50, stop=60, step=1)
     )
     
@@ -507,6 +528,7 @@ def test_create_predict_inputs_output_when_categorical_features_native_implement
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
     assert results[4] is None
+    pd.testing.assert_index_equal(results[5], expected[4])
 
 
 def test_create_predict_inputs_when_with_exog_differentiation_is_1():
@@ -584,6 +606,7 @@ def test_create_predict_inputs_when_with_exog_differentiation_is_1():
          'l2_lag_11', 'l2_lag_12', 'l2_lag_13', 'l2_lag_14', 'l2_lag_15',
          'exog'],
         [1, 2, 3, 4, 5],
+        pd.date_range(start='2003-04-01', periods=5, freq='MS'),
         pd.date_range(start='2003-04-01', periods=5, freq='MS')
     )
     
@@ -594,6 +617,7 @@ def test_create_predict_inputs_when_with_exog_differentiation_is_1():
     pd.testing.assert_index_equal(results[3], expected[3])
     assert isinstance(results[4], TimeSeriesDifferentiator)
     assert results[4] is not forecaster.differentiator_[forecaster.level]
+    pd.testing.assert_index_equal(results[5], expected[4])
 
 
 def test_create_predict_inputs_output_window_features():
@@ -630,6 +654,7 @@ def test_create_predict_inputs_output_window_features():
          'l2_lag_1', 'l2_lag_2', 'l2_lag_3',
          'l2_roll_mean_4', 'l2_roll_median_5', 'l2_roll_sum_6'],
         [1, 2, 3],
+        pd.date_range(start='2020-02-20', periods=3, freq='D'),
         pd.date_range(start='2020-02-20', periods=3, freq='D')
     )
     
@@ -639,6 +664,7 @@ def test_create_predict_inputs_output_window_features():
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
     assert results[4] is None
+    pd.testing.assert_index_equal(results[5], expected[4])
 
 
 def test_create_predict_inputs_output_with_2_window_features():
@@ -674,6 +700,7 @@ def test_create_predict_inputs_output_with_2_window_features():
          'l2_lag_1', 'l2_lag_2', 'l2_lag_3',
          'l2_roll_mean_4', 'l2_roll_median_5', 'l2_roll_sum_6'],
         [1, 2, 3],
+        pd.date_range(start='2020-02-20', periods=3, freq='D'),
         pd.date_range(start='2020-02-20', periods=3, freq='D')
     )
     
@@ -683,6 +710,7 @@ def test_create_predict_inputs_output_with_2_window_features():
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
     assert results[4] is None
+    pd.testing.assert_index_equal(results[5], expected[4])
 
 
 def test_create_predict_inputs_output_window_features_no_lags_and_calendar_features():
@@ -719,6 +747,7 @@ def test_create_predict_inputs_output_window_features_no_lags_and_calendar_featu
          'l2_roll_mean_4', 'l2_roll_median_5', 'l2_roll_sum_6',
          'day_of_week', 'weekend'],
         [1, 2, 3],
+        pd.date_range(start='2020-02-20', periods=3, freq='D'),
         pd.date_range(start='2020-02-20', periods=3, freq='D')
     )
 
@@ -728,6 +757,7 @@ def test_create_predict_inputs_output_window_features_no_lags_and_calendar_featu
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
     assert results[4] is None
+    pd.testing.assert_index_equal(results[5], expected[4])
 
 
 def test_create_predict_inputs_does_not_mutate_differentiator():
@@ -814,6 +844,7 @@ def test_create_predict_inputs_output_with_transform_series_and_transform_exog_s
         ['l1_lag_1', 'l1_lag_2', 'l1_lag_3',
          'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'exog'],
         [1, 2, 3],
+        pd.RangeIndex(start=8, stop=11, step=1),
         pd.RangeIndex(start=8, stop=11, step=1)
     )
 
@@ -823,6 +854,7 @@ def test_create_predict_inputs_output_with_transform_series_and_transform_exog_s
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
     assert results[4] is None
+    pd.testing.assert_index_equal(results[5], expected[4])
 
 
 @pytest.mark.parametrize(
@@ -894,6 +926,7 @@ def test_create_predict_inputs_when_categorical_features_auto_and_explicit_no_tr
          'l2_lag_1', 'l2_lag_2', 'l2_lag_3', 'l2_lag_4', 'l2_lag_5',
          'exog_1', 'exog_2', 'exog_3'],
         [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        pd.RangeIndex(start=50, stop=60, step=1),
         pd.RangeIndex(start=50, stop=60, step=1)
     )
 
@@ -903,6 +936,7 @@ def test_create_predict_inputs_when_categorical_features_auto_and_explicit_no_tr
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
     assert results[4] is None
+    pd.testing.assert_index_equal(results[5], expected[4])
 
 
 def test_create_predict_inputs_when_calendar_and_categorical_features_auto_with_transformer_exog():
@@ -1011,6 +1045,7 @@ def test_create_predict_inputs_when_calendar_and_categorical_features_auto_with_
          'weekend', 'day_of_week_0', 'day_of_week_1', 'day_of_week_2',
          'day_of_week_3', 'day_of_week_4', 'day_of_week_5', 'day_of_week_6'],
         [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        pd.date_range(start='2020-02-20', periods=10, freq='D'),
         pd.date_range(start='2020-02-20', periods=10, freq='D')
     )
 
@@ -1020,6 +1055,7 @@ def test_create_predict_inputs_when_calendar_and_categorical_features_auto_with_
     assert results[2] == expected[2]
     pd.testing.assert_index_equal(results[3], expected[3])
     assert results[4] is None
+    pd.testing.assert_index_equal(results[5], expected[4])
 
 
 @pytest.mark.parametrize(
