@@ -1,6 +1,7 @@
 # Unit test _build_predict_function
 # ==============================================================================
 import re
+from types import SimpleNamespace
 import numpy as np
 import pandas as pd
 import pytest
@@ -278,20 +279,24 @@ def test_build_predict_function_linear_models_ValueError_when_X_not_finite(
     Test that the fast path of linear models raises a ValueError
     (`_NonFinitePredictorsError`) naming the predictors and storing the rows
     with non-finite values, as `estimator.predict()` raises, instead of
-    returning NaN predictions. The predictors are named by their position when
-    `feature_names` is not given.
+    returning NaN predictions. The predictors are named after the
+    `X_train_features_names_out_` of the forecaster, or by their position
+    without forecaster. A forecaster without `_allow_nan_predictions` (saved
+    with a previous version) raises.
     """
     X, y = regression_data
     estimator.fit(X, y)
     X_bad = X[:4].copy()
     X_bad[1, 2] = value
     X_bad[3, 4] = value
-    feature_names = [f"x_{i}" for i in range(X.shape[1])]
+    forecaster = SimpleNamespace(
+        X_train_features_names_out_=[f"x_{i}" for i in range(X.shape[1])]
+    )
 
     with pytest.raises(ValueError):
         estimator.predict(X_bad)
 
-    predict_fn = _build_predict_function(estimator, feature_names=feature_names)
+    predict_fn = _build_predict_function(estimator, forecaster=forecaster)
     with pytest.raises(_NonFinitePredictorsError) as exc_info:
         predict_fn(X_bad)
     np.testing.assert_array_equal(exc_info.value.rows, [1, 3])
@@ -400,14 +405,19 @@ def test_build_predict_function_linear_models_NaN_predictions_when_allow_nan_pre
     """
     Test that the fast path of linear models returns NaN predictions for the
     rows with NaN values, and the predictions of `estimator.predict()` for the
-    rest, when `allow_nan_predictions=True` (used by multi-series backtesting).
+    rest, when the forecaster has `_allow_nan_predictions=True` (set by
+    backtesting in its copy of the forecaster).
     """
     X, y = regression_data
     estimator = Ridge(alpha=1.0).fit(X, y)
     X_nan = X[:4].copy()
     X_nan[1, 2] = np.nan
 
-    predict_fn = _build_predict_function(estimator, allow_nan_predictions=True)
+    forecaster = SimpleNamespace(
+        X_train_features_names_out_=[f"x_{i}" for i in range(X.shape[1])],
+        _allow_nan_predictions=True
+    )
+    predict_fn = _build_predict_function(estimator, forecaster=forecaster)
     result = predict_fn(X_nan)
 
     np.testing.assert_array_equal(np.isnan(result), [False, True, False, False])

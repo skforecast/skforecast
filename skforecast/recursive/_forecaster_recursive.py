@@ -1718,13 +1718,9 @@ class ForecasterRecursive(ForecasterBase):
         predictions = np.full(shape=steps, fill_value=np.nan, dtype=float)
         last_window = np.concatenate((last_window_values, predictions))
 
-        # NOTE: `getattr` keeps forecasters saved with previous versions, which
-        # do not have this attribute, working.
-        allow_nan_predictions = getattr(self, '_allow_nan_predictions', False)
         predict_fn = _build_predict_function(
-                         estimator             = self.estimator,
-                         feature_names         = self.X_train_features_names_out_,
-                         allow_nan_predictions = allow_nan_predictions
+                         estimator  = self.estimator,
+                         forecaster = self
                      )
 
         has_lags = self.lags is not None
@@ -1858,13 +1854,9 @@ class ForecasterRecursive(ForecasterBase):
         last_window = np.tile(last_window_values[:, np.newaxis], (1, n_boot))
         last_window = np.vstack([last_window, np.full((steps, n_boot), np.nan)])
 
-        # NOTE: `getattr` keeps forecasters saved with previous versions, which
-        # do not have this attribute, working.
-        allow_nan_predictions = getattr(self, '_allow_nan_predictions', False)
         predict_fn = _build_predict_function(
-                         estimator             = self.estimator,
-                         feature_names         = self.X_train_features_names_out_,
-                         allow_nan_predictions = allow_nan_predictions
+                         estimator  = self.estimator,
+                         forecaster = self
                      )
 
         has_lags = self.lags is not None

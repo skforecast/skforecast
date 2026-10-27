@@ -4082,8 +4082,7 @@ class _NonFinitePredictorsError(ValueError):
 
 def _build_predict_function(
     estimator: object,
-    feature_names: list[str] | None = None,
-    allow_nan_predictions: bool = False
+    forecaster: object | None = None
 ) -> Callable:
     """
     Build an optimized predict callable for a fitted estimator. The returned
@@ -4117,22 +4116,25 @@ def _build_predict_function(
     The fast path of linear models skips the input validation of their
     `predict` method, so it raises `_NonFinitePredictorsError` (a `ValueError`)
     when `X` contains NaN or infinite values, as `predict` does, instead of
-    returning NaN predictions (unless `allow_nan_predictions=True`). The rest of fast
-    paths belong to estimators that accept NaN values.
+    returning NaN predictions, unless the forecaster allows NaN predictions.
+    The rest of fast paths belong to estimators that accept NaN values.
 
     Parameters
     ----------
     estimator : object
         A fitted scikit-learn compatible estimator.
-    feature_names : list, default None
-        Names of the columns of `X`, used to name the predictors with
-        non-finite values in the error of the fast path of linear models. If
-        `None`, the predictors are named by their column position.
-    allow_nan_predictions : bool, default False
-        If `False`, the fast path of linear models raises when `X` contains NaN
-        or infinite values. If `True`, it returns NaN predictions instead,
-        which multi-series backtesting uses to evaluate the series and dates
-        that can be predicted (it warns about the NaN predictions).
+    forecaster : object, default None
+        Forecaster that predicts with `estimator`. Two of its attributes are
+        used by the fast path of linear models:
+
+        - `X_train_features_names_out_`: names of the columns of `X`, used to
+        name the predictors with non-finite values in the error. If the
+        forecaster is `None`, they are named by their column position.
+        - `_allow_nan_predictions`: if `True` (set by backtesting in its copy
+        of the forecaster), NaN predictions are returned instead of raising,
+        to evaluate the series and dates that can be predicted. If the
+        forecaster is `None`, or was saved with a previous version that does
+        not have it, it is `False`.
 
     Returns
     -------
@@ -4150,6 +4152,10 @@ def _build_predict_function(
     if is_sklearn_class and isinstance(estimator, LinearModel):
         coef = estimator.coef_
         intercept = estimator.intercept_
+        feature_names = getattr(forecaster, 'X_train_features_names_out_', None)
+        # NOTE: `getattr` keeps forecasters saved with previous versions, which
+        # do not have this attribute, working.
+        allow_nan_predictions = getattr(forecaster, '_allow_nan_predictions', False)
 
         if allow_nan_predictions:
             def predict_fn(X):
