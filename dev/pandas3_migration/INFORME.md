@@ -794,11 +794,11 @@ fragmentos de `pd.testing` en las dos versiones):
 
 | Patrón | Ocurrencias | Efecto con pandas 3 |
 |---|---|---|
-| `assert_frame_equal` / `assert_series_equal` / `assert_index_equal` | 1239 / 332 / 352 | Solo fallan las 90 de la sección 2; `check_dtype=False` (12 usos) absorbe `object`/`str` pero **no** la unidad `[ns]`/`[us]` (verificado) |
+| `assert_frame_equal` / `assert_series_equal` / `assert_index_equal` | 1239 / 332 / 352 | Solo fallan las 90 de la sección 2; `check_dtype=False` (12 usos) absorbe `object`/`str` y también `[ns]`/`[us]` en los valores de las columnas, pero **no** en el índice: `assert_frame_equal`/`assert_series_equal` comparan el `DatetimeIndex` con `exact="equiv"` y un índice `[ns]` frente a `[us]` falla aunque se pase `check_dtype=False` (segunda verificación) |
 | `dtype=object` en expectativas | 53 líneas en 11 ficheros (`test_bayesian_search_forecaster_multiseries.py` 14, `test_create_train_X_y.py` multiseries 9, `test_bayesian_search_forecaster.py` 7...) | Fallan solo las `Series`/`DataFrame` con `object` explícito comparadas con texto; los `np.array(..., dtype=object)` se reinfieren a `str` |
-| `np.dtype("O")` para `exog_dtypes_in_` | 4 (`test_create_train_X_y.py:917, 1002, 1963, 2196`) | Fallan: esperar `exog["col"].dtype` |
+| `np.dtype("O")` / `np.dtype(object)` para `exog_dtypes_in_` | 10 que fallan: 8 `np.dtype('O')` en `test_create_train_X_y.py` de multiseries (l. 917, 1002, 1963, 2196, 2933, 3101, 3596, 5169) y `np.dtype(object)` en `test_create_train_X_y.py:4347` y `test_fit.py:290` (multiseries); el de `test_create_train_X_y.py:4693` pasa porque su `exog` es `object` explícito | Fallan: esperar `exog["col"].dtype` |
 | Literales `dtype="datetime64[ns]"` | 18 en 7 ficheros (`test_backtesting_forecaster_multiseries.py` 8, `test_create_sample_weights.py` ×5 ficheros, `test_predict.py` de stats) | Fallan aunque haya `check_dtype=False`; quitar el literal |
-| `pd.DatetimeIndex([cadenas])` / `pd.to_datetime([...])` / listas de `pd.Timestamp` | 95 / 9 / 3 (frente a 1721 `pd.date_range`, uno con `unit=`) | `Pandas4Warning` de `freq` y de `exact` en `assert_index_equal` (3.1); el esperado debe llevar `freq`; `check_freq` no existe en `assert_index_equal` de pandas 2 |
+| `pd.DatetimeIndex([cadenas])` / `pd.to_datetime([...])` / listas de `pd.Timestamp` | 95 / 9 / 3 (frente a 1721 `pd.date_range`, uno con `unit=`) | `Pandas4Warning` de `freq` en `assert_index_equal` (3.1) cuando los `freq` difieren (el aviso de `exact` solo salta al comparar un `RangeIndex` con un `Index` de enteros); el esperado debe llevar `freq`; `check_freq` no existe en `assert_index_equal` de pandas 2 |
 | `pytest.warns(FutureWarning)` / `DeprecationWarning` | 14 / 1, todos de avisos propios de skforecast | `Pandas4Warning` hereda de `DeprecationWarning`: un test que espere `DeprecationWarning` podría capturar el de pandas; revisar el único caso |
 | `pd.option_context("future.no_silent_downcasting")` | 1 (`test_calculate_distance_from_holiday.py:416-417`) | Deprecado en 3.1; desaparece con el cambio de `_calendar.py:849` |
 | Fixtures binarios | 10 (9 joblib, 1 parquet de pandas 2.2.2; 1,9 MB en total) | Cargan sin avisos en ambas versiones y conservan `object` y `[ns]`; `tests_population_drift/test_predict.py:218-219` falla por dtype de columnas |
@@ -811,13 +811,14 @@ Cómo queda hoy la CI (`.github/workflows/`):
 |---|---|---|---|---|
 | `unit-tests.yml` | PR a `main` | Python 3.10 a 3.14 × ubuntu, macOS, Windows | `uv pip install -e ".[test]"` | 2.3.3 en todas (pin `<3.0`) |
 | `unit-tests-min-deps.yml` | PR a `main` | Python 3.10, ubuntu | `uv pip install --resolution lowest-direct -e ".[test]"` | 2.2.0 con numpy 1.26.1 |
-| `unit-tests-latest-deps.yml` | lunes 07:00 UTC | Python 3.12 a 3.14, ubuntu | `-e ".[test]"` y después `uv pip install --upgrade numpy pandas scikit-learn ...` | **3.1.0**: `uv pip install --upgrade pandas` no respeta el pin del paquete ya instalado (dry run verificado: "- pandas==2.3.3, + pandas==3.1.0"). El job semanal lleva ejecutando pandas 3 desde que salió 3.0.0 (enero de 2026): sus últimas 8 ejecuciones programadas (del 2026-09-07 al 2026-10-26, runs 10 a 17 sobre `main`) terminaron en `failure`; no se ha revisado si el motivo es solo pandas 3 |
+| `unit-tests-latest-deps.yml` | lunes 07:00 UTC | Python 3.12 a 3.14, ubuntu | `-e ".[test]"` y después `uv pip install --upgrade numpy pandas scikit-learn ...` | **3.1.0**: `uv pip install --upgrade pandas` no respeta el pin del paquete ya instalado (dry run verificado: "- pandas==2.3.3, + pandas==3.1.0"). El workflow existe desde el 2026-07-05 y sus 17 ejecuciones programadas (del 2026-07-06 al 2026-10-26; las 1 a 5 sobre `master`, las 6 a 17 sobre `main`) terminaron en `failure`; el log del run 17 (Python 3.14) acaba en `91 failed, 6732 passed, 46 skipped` y los fallos visibles son los de pandas 3 (`[ns]` frente a `[us]`, `StringDtype` frente a `object`, `pandas.RangeIndex` en mensajes de error): el job ya es, de hecho, la suite con pandas 3 |
 | `codecov.yml` | push y PR a `main` | Python 3.14 | `-e ".[test]"` | 2.3.3 |
 | `benchmarks.yml` | manual | ubuntu, `OMP_NUM_THREADS=1` | `benchmarks/requirements_benchmarks.txt` | 2.3.3 (pin exacto) |
 
 Restricciones de pandas 3: Python ≥ 3.11 (v3.0.0 l. 868, metadatos de PyPI
 `requires_python >=3.11` en 3.0.0, 3.0.6 y 3.1.0) y numpy ≥ 2.0.2 desde 3.1
-(v3.1.0 l. 594; 3.0.x acepta numpy ≥ 1.26). pandas 2.2.x y 2.3.x funcionan con
+para Python < 3.14 (v3.1.0 l. 594; 3.0.x acepta numpy ≥ 1.26.0; en Python
+3.14 tanto 3.0.x como 3.1 exigen numpy ≥ 2.3.3, metadatos de PyPI). pandas 2.2.x y 2.3.x funcionan con
 numpy 2.x (los entornos `p22` y `p2` de este estudio usan numpy 2.5.4).
 
 Propuesta de matriz con el pin `pandas>=2.2, <4.0` (sección 7):
