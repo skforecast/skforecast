@@ -74,7 +74,8 @@ PR-1388 y conserva su commit) y #1434 (2026-10-26: con un `None` en `lags_grid` 
 `predict` con `levels=None` sigue siempre el orden de entrada (antes dependía de `encoding`).
 **ISSUE-1354** hecho en el commit `6a5d933a4` (Joaquín, directo a `0.27.x` el 2026-10-27, sin
 PR): `set_in_sample_residuals` con CatBoost y exógenas categóricas aplica la misma conversión
-a enteros que `fit`, en los cuatro forecasters de ML. Sustituye a PR-1389.
+a enteros que `fit`, en los cuatro forecasters de ML. Sustituye a PR-1389 (cerrado por
+Joaquín el 2026-10-27); el issue #1354 se cerró el 2026-10-28 y la nota de la versión lo enlaza.
 **Predicciones NaN silenciosas con modelos lineales** (2026-10-27, sin elemento previo en el
 roadmap): #1432. El atajo `np.dot` de los modelos lineales de scikit-learn devolvía NaN sin
 error cuando un predictor tenía un hueco (por ejemplo en `exog`), y el NaN se propagaba por
@@ -89,9 +90,6 @@ antes de las métricas. Va en "Before upgrading". Añade QW-12 (sección 2) y an
 - (BUG-08) Volver a ejecutar `docs/user_guides/comparing-forecasting-models.ipynb`: usa
   AutoARIMA y AutoETS (con `refit` forzado a `True`), así que sus métricas y tiempos cambian
   con #1425. No se ejecutó en el PR porque también corre modelos foundation, RNN y LightGBM.
-- (ISSUE-1354) Cerrar PR-1389 en GitHub como sustituido por `6a5d933a4`, agradeciendo la
-  contribución, y cerrar el issue #1354 si no se cerró solo. La nota de la versión de ese
-  arreglo no enlaza el issue: añadir `([#1354](https://github.com/skforecast/skforecast/issues/1354))`.
 
 **Orden recomendado para lo que queda:**
 
@@ -148,7 +146,7 @@ antes de las métricas. Va en "Before upgrading". Añade QW-12 (sección 2) y an
 | **Búsquedas multiserie con series cortas (MUY IMPORTANTE)** | BUG-search-short-series, QW-12 | M a L. Resultado erróneo silencioso en un uso habitual de los modelos globales. Diseño en [`BUG-search-short-series.md`](BUG-search-short-series.md); antes o durante la implementación, las mediciones de su sección 8.2 (sobre todo los intervalos con residuos out-of-sample). No bloquea QW-09, pero cambia qué puntos entran en sus métricas |
 | Paneles multiserie | QW-01, BUG-07, ISSUE-1410 | Hechos: ISSUE-1357 (IDs enteros) con #1412, que sustituye a PR-1408 (cerrado), e ISSUE-1410 con #1418 (2026-10-19); folds sin series con #1427 y `initial_train_size` contra el span con #1430 (2026-10-21, sección 6) |
 | Stats: corrección y rendimiento | BUG-08, PERF-02, PR-1400 | PR-1400 ya está fusionado en `0.27.x`. BUG-08 hecho con #1425 (fusionado el 2026-10-20). Volver a medir PERF-02 después de BUG-08 |
-| PRs externos | PR-1402, PR-1387, PR-1388, PR-1389 | Hecho: PR-1387 fusionado en `0.27.x` (2026-10-20); PR-1388 sustituido por #1433, que conserva su commit (fusionado el 2026-10-26); PR-1389 sustituido por el commit `6a5d933a4` (ISSUE-1354, 2026-10-27), queda cerrarlo en GitHub. PR-1402 sigue abierto y apunta a `0.26.x`, no revisado línea a línea |
+| PRs externos | PR-1402, PR-1387, PR-1388, PR-1389 | Hecho: PR-1387 fusionado en `0.27.x` (2026-10-20); PR-1388 sustituido por #1433, que conserva su commit (fusionado el 2026-10-26); PR-1389 sustituido por el commit `6a5d933a4` (ISSUE-1354, 2026-10-27) y cerrado. PR-1402 sigue abierto y apunta a `0.26.x`, no revisado línea a línea |
 | Pequeños | QW-07, DEP-python310 (anunciar la retirada en 0.28), DEP-arima-dictstyle | |
 
 El orden dentro de cada tema sigue las dependencias de la sección 1. En particular:
@@ -1063,7 +1061,7 @@ BUG-stats-interval-ignored son hallazgos laterales (verificación de FE-02, de F
 | PR-1402 (rama `fix/fetch-dataset-website-visits-m5`) | https://github.com/skforecast/skforecast/pull/1402 | Terminada, con tests, etiquetada 0.27.0; sigue abierta y apunta a `0.26.x` (cambiar la base a `0.27.x`) | Fusionar: `website_visits` y `m5` sin `DatetimeIndex`; m5 de más de 15 GB a ~10 GB |
 | PR-1407 / ISSUE-1406 | https://github.com/skforecast/skforecast/pull/1407, https://github.com/skforecast/skforecast/pull/1415, https://github.com/skforecast/skforecast/issues/1406 | Resuelto: PR-1407 se cerró el 2026-10-19 y lo sustituyó #1415, fusionado en `0.27.x` el mismo día, que cubre más casos (series omitidas solo en algunos folds, NaN en la última ventana, foundation) | Nada. Un único `MissingValuesWarning` con las series no predichas por causa y fold; las nunca predichas tienen métricas NaN y quedan fuera de los agregados |
 | PR-1408 / ISSUE-1357 | https://github.com/skforecast/skforecast/pull/1408, https://github.com/skforecast/skforecast/pull/1412, https://github.com/skforecast/skforecast/issues/1357 | Resuelto: PR-1408 se cerró sin fusionar el 2026-10-18 y lo sustituyó #1412, fusionado en `0.27.x` el mismo día (#1357 cerrada) | Nada que hacer. Los nombres enteros se conservan como enteros: QW-04 debe usar la serie ya preprocesada |
-| PR-1389 / ISSUE-1354 | https://github.com/skforecast/skforecast/pull/1389, https://github.com/skforecast/skforecast/issues/1354 | PR externo, sustituido | Hecho en el commit `6a5d933a4` (directo a `0.27.x` el 2026-10-27): `set_in_sample_residuals` con CatBoost y exog categórica aplica la conversión de `fit`. Queda cerrar PR-1389 como sustituido y enlazar #1354 en la nota de la versión |
+| PR-1389 / ISSUE-1354 | https://github.com/skforecast/skforecast/pull/1389, https://github.com/skforecast/skforecast/issues/1354 | PR externo, sustituido | Hecho en el commit `6a5d933a4` (directo a `0.27.x` el 2026-10-27): `set_in_sample_residuals` con CatBoost y exog categórica aplica la conversión de `fit`. PR-1389 y #1354 cerrados, #1354 enlazado en la nota de la versión |
 | PR-1388 / ISSUE-1355 | https://github.com/skforecast/skforecast/pull/1388, https://github.com/skforecast/skforecast/issues/1355 | PR externo | Hecho con #1433 (fusionado en `0.27.x` el 2026-10-26): búsquedas con `lags=None` y solo window features; #1388 se fusionó en una rama intermedia y se conservó en la historia con `-s ours` |
 | PR-1387 / ISSUE-1386 | https://github.com/skforecast/skforecast/pull/1387, https://github.com/skforecast/skforecast/issues/1386 | Resuelto: fusionado en `0.27.x` el 2026-10-20 con la autoría del contribuidor, más un commit nuestro (nota de la versión en la 0.27.0 y test de `fig=None`); #1386 cerrada | Nada. `plot_residuals` usa `fig.add_subplot`; ninguna otra función que acepte `fig` o `ax` (`plot_multivariate_time_series_corr`, `plot_prediction_intervals`, `ForecasterRnn.plot_history`) tiene el mismo bug |
 | ISSUE-1410 | https://github.com/skforecast/skforecast/issues/1410, https://github.com/skforecast/skforecast/pull/1418 | Resuelto: #1418, fusionado en `0.27.x` el 2026-10-19 | Nada. Una serie con `window_size` valores o menos en el entrenamiento de un fold queda fuera de ese fold; `backtesting_foundation` usa `window_size=0`. FE-04 debe usar la misma frontera |
