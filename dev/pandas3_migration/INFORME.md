@@ -72,29 +72,30 @@ construyen la matriz en numpy es entre 1,6 y 3,1 veces más lento en pandas 3
 y usa entre un 43 % y un 75 % más de memoria pico; `fit` univariante es un
 16 % más rápido, `predict` en bucle un 40 % más lento (0,2 ms por llamada),
 y el backtesting se mueve entre 0,97 y 1,41 veces. Con `copy=False` en esos
-constructores y el `astype` solo de las columnas que cambian, aplicados
-únicamente bajo pandas 3 desde el módulo de compatibilidad, pandas 3 baja a
-entre 0,47 y 0,74 del tiempo y entre 0,57 y 0,76 de la memoria en esas
-funciones, y pandas 2 conserva exactamente su ruta de hoy (quitar el
-keyword `copy=False` sin más costaría hasta 1,9 veces el tiempo y un 22 %
-más de memoria, medido). Algunos caminos ya mejoran con pandas 3 sin tocar
-nada: `ForecasterRecursiveMultiSeries` con `onehot` y dicts (27 % menos
-memoria pico), la ruta `pd.concat` (20 % menos) y las window features (25 %
-menos). Comparado con pandas 2, pandas 3 con los cambios queda entre 1,25 y 1,74
-veces en tiempo en la construcción de matrices y 1,4 en `predict` en bucle
-y en el backtesting de folds de un paso, con la misma memoria (1,00 a 1,09):
-lo que resta es coste propio de pandas 3 por llamada (seguimiento de
-referencias de Copy-on-Write, constructores e indexación), no copias
-evitables desde skforecast. El perfilado posterior (final de 3.6) matiza la
-primera cifra: en `ForecasterRecursive` la brecha del código actual es la
-copia del constructor de `DataFrame` y, con `copy=False`, una medida aislada
-da paridad con pandas 2 (0,95 a 1,03); el 1,25 a 1,74 de la tabla de
-benchmarks hay que repetirlo en la PR 2 con el cambio real, y en `predict`
-en bucle la brecha de 1,1 a 1,4 no tiene punto caliente. En otros caminos pandas 3 ya gana (`fit`
-univariante 0,84; multiseries con dicts y window features con un 20 % a 27 %
-menos de memoria). Dos resultados A/B quedan sin explicar y la PR debe
-medirlos con el cambio real (3.6). Las cifras, con su protocolo y versiones,
-están en 3.6 y 4.
+constructores y el `astype` solo de las columnas que cambian (el keyword
+`copy=False` del `astype` lo pone el módulo de compatibilidad solo bajo
+pandas 2), el mismo código en las dos versiones y medido con el cambio real
+en los ficheros (4.8), pandas 3 baja a entre 0,33 y 0,82 del tiempo en esas
+funciones (y a entre 0,57 y 0,76 de la memoria, medido con el prototipo), y
+pandas 2 queda igual (0,85 a 1,01 en mínimos, dentro del ruido). Quitar el
+keyword `copy=False` sin más en pandas 2 costaría hasta 1,9 veces el tiempo
+y un 22 % más de memoria (medido): por eso existe el helper. Algunos caminos
+ya mejoran con pandas 3 sin tocar nada: `ForecasterRecursiveMultiSeries`
+con `onehot` y dicts (27 % menos memoria pico), la ruta `pd.concat` (20 %
+menos) y las window features (25 % menos). Comparado con pandas 2, pandas 3
+con los cambios queda entre 0,96 y 1,17 veces en tiempo en la construcción
+de matrices (mínimos con el cambio real; la tabla de prototipos daba 1,25 a
+1,74 y era un artefacto del arnés de monkeypatch, 4.8), y entre 1,1 y 1,4 en
+`predict` en bucle y en el backtesting de folds de un paso, con la misma
+memoria (1,00 a 1,09): lo que resta es coste propio de pandas 3 por llamada
+(seguimiento de referencias de Copy-on-Write, constructores e indexación),
+no copias evitables desde skforecast; el bucle de `predict` no tiene punto
+caliente (perfilado al final de 3.6) y reducirlo es el camino en numpy de la
+sección 11, posterior a la migración. En otros caminos pandas 3 ya gana
+(`fit` univariante 0,84; multiseries con dicts y window features con un 20 %
+a 27 % menos de memoria). Los dos resultados A/B que quedaron sin explicar
+se repitieron con el cambio real en los ficheros y no se reproducen (4.8).
+Las cifras, con su protocolo y versiones, están en 3.6 y 4.
 
 **¿Se mantiene la compatibilidad de resultados? Sí, bit a bit.** 21 casos
 que cubren los cinco forecasters autorregresivos, `ForecasterStats`,
@@ -480,7 +481,7 @@ leídos sin ejecutar):
   en las dos.
 
 Recomendación de conjunto: (1) un módulo `skforecast/utils/_pandas_compat.py`
-con `concat`, `astype`, `frame_from_array`, `writable_array`,
+con `concat`, `astype`, `writable_array`,
 `is_string_dtype` e `infer_freq` (borrador en `prototypes/pandas_compat_draft.py`),
 único sitio que mira `pd.__version__`; (2) quitar `copy=False` de los dos
 `pd.concat`; (3) `astype` solo de las columnas que cambian; (4) `copy=False`
@@ -889,16 +890,20 @@ sección 4):
   llamada cuesta más de lo que ahorra en frames pequeños, así que en
   `create_predict_X` no debe hacerse el escaneo (usar un indicador calculado
   en `fit`, o el `astype` perezoso de pandas 3 sin más).
-- El mismo prototipo en **pandas 2** sale entre 1,07 y 1,59 veces más lento
-  con memoria idéntica, por encima del ruido del control en los forecasters
-  directos y el clasificador, y sin una causa identificada (el constructor
-  no copia en pandas 2 en ningún caso y el `astype` hace el mismo trabajo).
-  Conclusión práctica: **en pandas 2 no se toca la ruta actual**; el módulo
-  de compatibilidad aplica `copy=False` en el constructor y el `astype`
-  reducido solo bajo pandas 3, y bajo pandas 2 deja exactamente las llamadas
-  de hoy (`astype(todas, copy=False)`). Así pandas 2 no puede empeorar y
-  pandas 3 obtiene las ganancias medidas. La PR debe repetir esta medida con
-  el cambio real en el fichero (sin monkeypatch).
+- El mismo prototipo en **pandas 2** salía por monkeypatch entre 1,07 y 1,59
+  veces más lento con memoria idéntica, sin causa (el constructor no copia en
+  pandas 2 y el `astype` hace el mismo trabajo). **Repetido con el cambio
+  real en los ficheros** (copia del paquete con el cambio aplicado, procesos
+  alternos; tablas y protocolo en 4.8) el coste no existe: mínimos entre
+  0,85 y 1,01 y medianas entre 0,79 y 1,17, dentro de la banda del control
+  nulo entre procesos (mínimos 1,01 a 1,04; medianas 0,80 a 1,04). El
+  empeoramiento era un artefacto del arnés (reejecución del código fuente
+  del método con `exec`), cuya causa no se ha perseguido porque el cambio
+  real no lo muestra. Conclusión práctica: **el mismo código en las dos
+  versiones**: `pd.DataFrame(..., copy=False)` en el constructor (keyword no
+  deprecado, sin helper ni rama) y el `astype` reducido a las columnas que
+  cambian, con el keyword `copy=False` puesto por el helper solo bajo
+  pandas 2. La PR 2 repite la medida de 4.8 sobre la rama antes de mezclar.
 - **pandas 3 con los cambios frente a pandas 2 con el código actual** (lo
   que verá un usuario al cambiar de versión una vez hecha la migración):
 
@@ -914,10 +919,18 @@ sección 4):
   | `recursive_fit_linear` | 0,84 | 1,00 |
   | multiseries `onehot` con dicts, ruta `concat`, window features | 1,00 a 1,23 | 0,73 a 0,80 |
 
-  La memoria queda igualada; el tiempo restante es coste por llamada de
-  pandas 3 (Copy-on-Write, constructores, indexación) que skforecast no
-  puede evitar sin reescribir los caminos de `predict` en numpy puro, fuera
-  del alcance de esta migración.
+  Repetida con el cambio real en los ficheros (4.8; mínimos de 20 muestras
+  en procesos alternos, pandas 3 con el cambio frente a pandas 2 con el
+  código actual) la primera columna baja a `recursive_create_train_X_y`
+  1,10 (83,1 frente a 75,8 ms), `recursive_create_train_X_y_float` 1,13,
+  `direct_create_train_X_y_float` 0,96, `direct_create_train_X_y` 1,16,
+  `direct_multivariate_create_train_X_y` 1,00 y
+  `classifier_create_train_X_y` 1,17: los 1,25 a 1,74 de la tabla eran en
+  su mayor parte el artefacto del arnés. La memoria queda igualada; el
+  tiempo restante es coste por llamada de pandas 3 (Copy-on-Write,
+  constructores, indexación) que skforecast no puede evitar sin reescribir
+  los caminos de `predict` en numpy puro (sección 11), fuera del alcance de
+  esta migración.
 - `no_copy_keyword_both` (quitar `copy=False` también en pandas 2, lo que
   costaría no tener el helper): entre 1,10 y 1,90 veces más lento y hasta un
   22 % más de memoria en las matrices multiseries de pandas 2 (confirma la
@@ -927,12 +940,14 @@ sección 4):
 - `no_copy_keyword` en pandas 3 (quitar el keyword donde pandas 3 avisa):
   el microbenchmark aislado da tiempos iguales con y sin keyword (`concat`
   0,15 frente a 0,14 ms; `astype` 9,3 frente a 8,8 ms) y la memoria es
-  idéntica, pero el A/B sobre las funciones completas de multiseries sale
-  entre 1,05 y 1,59 veces más lento, sin causa identificada (el control nulo
-  descarta el mecanismo de parcheo en `recursive/`, no en multiseries). Como
-  el keyword hay que quitarlo de todos modos (desaparece en pandas 4), la PR
-  2 debe medir el cambio real y, si el coste se confirma, sustituir los dos
-  `pd.concat` por el ensamblado en numpy que ya usa la ruta de bloque único.
+  idéntica, pero el A/B por monkeypatch sobre las funciones completas de
+  multiseries salía entre 1,05 y 1,59 veces más lento. **Repetido con el
+  cambio real en los ficheros** (helpers `concat` y `astype` del módulo de
+  compatibilidad en `_forecaster_recursive_multiseries.py`, 4.8) queda entre
+  0,91 y 1,00 en mínimos y entre 0,77 y 1,05 en medianas, dentro del ruido:
+  no hay coste, y no hace falta sustituir los `pd.concat` por el ensamblado
+  en numpy de la ruta de bloque único. El cambio se adopta tal cual en la
+  PR 2 (el keyword desaparece en pandas 4).
 - `multiseries_y_copy` (copiar cada serie antes del transformador): 1,04 a
   1,10 en tiempo, memoria idéntica, dentro del ruido; se adopta por
   corrección (F26).
@@ -1042,7 +1057,7 @@ reposo. "Salida idéntica" compara la huella normalizada de las salidas.
 | predict_loop | 148.4 | 174.9 | 1.178 | 139.6 | 136.0 | 0.7 | 0.8 | 1.177 | sí |
 | backtesting_recursive | 1158.5 | 1044.3 | 0.901 | 985.2 | 985.7 | 11.7 | 11.8 | 1.006 | sí |
 
-### 4.3 El mismo prototipo en pandas 2 (no se adopta en pandas 2: ver 3.6)
+### 4.3 El mismo prototipo en pandas 2 (artefacto del arnés: no se reproduce con el cambio real, ver 4.8)
 
 | benchmark | current mediana ms | patched mediana ms | ratio | current mín ms | patched mín ms | current pico MiB | patched pico MiB | ratio memoria | salida idéntica |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1074,7 +1089,7 @@ reposo. "Salida idéntica" compara la huella normalizada de las salidas.
 | ms_fit_linear | 315.1 | 399.0 | 1.266 | 282.4 | 322.6 | 136.0 | 136.2 | 1.001 | sí |
 | ms_fit_linear_encoding_none | 239.3 | 262.9 | 1.098 | 230.5 | 256.9 | 133.6 | 133.8 | 1.001 | sí |
 
-### 4.6 Quitar `copy=False` solo en pandas 3 (`no_copy_keyword`)
+### 4.6 Quitar `copy=False` solo en pandas 3 (`no_copy_keyword`; artefacto del arnés: no se reproduce con el cambio real, ver 4.8)
 
 | benchmark | current mediana ms | patched mediana ms | ratio | current mín ms | patched mín ms | current pico MiB | patched pico MiB | ratio memoria | salida idéntica |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1099,6 +1114,74 @@ pandas 3:
 |---|---|---|---|---|---|---|---|---|---|
 | ms_create_train_X_y_block | 87.8 | 93.7 | 1.067 | 84.7 | 86.1 | 69.6 | 69.6 | 1.000 | sí |
 | ms_fit_linear | 317.2 | 346.3 | 1.092 | 282.2 | 284.5 | 136.1 | 136.1 | 1.000 | sí |
+
+### 4.8 Las dos medidas A/B repetidas con el cambio real en los ficheros
+
+Protocolo distinto del resto de la sección, porque el cambio no se puede
+aplicar y retirar dentro de un mismo proceso: copia del paquete
+`skforecast/` fuera del repositorio con el cambio aplicado por script
+(módulo `utils/_pandas_compat.py` con `astype` y `concat` que pasan
+`copy=False` solo bajo pandas 2; `pd.DataFrame(..., copy=False)` y `astype`
+reducido en los cuatro forecasters de matriz numpy; helpers en los dos
+`pd.concat` y el `astype` de `create_predict_X` de multiseries), árbol
+elegido con `PYTHONPATH`, procesos alternos actual/cambio en 4 rondas (3 en
+la última tabla) de 2 calentamientos y 5 medidas cada uno, mínimo y mediana
+de las 20 muestras por variante, huella SHA-256 de la salida, máquina en
+reposo. Las medianas entre procesos son más ruidosas que las del A/B
+intercalado (el control nulo entre procesos, última tabla, da 0,80 a 1,04 en
+medianas y 1,01 a 1,04 en mínimos); el mínimo es el estadístico fiable. Sin
+medida de memoria (ya idéntica en 4.3 y 4.6).
+
+Cambio de la matriz pública (`DataFrame(copy=False)` + `astype` reducido),
+**pandas 2.3.3** (la medida de 4.3 con el cambio real):
+
+| benchmark | current mediana ms | patched mediana ms | ratio | current mín ms | patched mín ms | ratio mín | salida idéntica |
+|---|---|---|---|---|---|---|---|
+| recursive_create_train_X_y | 95.4 | 111.6 | 1.170 | 75.8 | 76.7 | 1.011 | sí |
+| recursive_create_train_X_y_float | 33.0 | 30.3 | 0.918 | 23.9 | 23.4 | 0.977 | sí |
+| direct_create_train_X_y_float | 24.4 | 23.9 | 0.978 | 20.1 | 17.0 | 0.845 | sí |
+| direct_create_train_X_y | 33.7 | 33.6 | 0.996 | 28.8 | 28.6 | 0.992 | sí |
+| direct_multivariate_create_train_X_y | 58.0 | 45.9 | 0.792 | 41.9 | 36.3 | 0.866 | sí |
+| classifier_create_train_X_y | 44.8 | 40.6 | 0.906 | 37.2 | 36.6 | 0.985 | sí |
+
+El mismo cambio, **pandas 3.1.0** (la medida de 4.2 con el cambio real):
+
+| benchmark | current mediana ms | patched mediana ms | ratio | current mín ms | patched mín ms | ratio mín | salida idéntica |
+|---|---|---|---|---|---|---|---|
+| recursive_create_train_X_y | 181.4 | 113.0 | 0.623 | 134.0 | 83.1 | 0.620 | sí |
+| recursive_create_train_X_y_float | 97.6 | 32.2 | 0.330 | 64.6 | 26.9 | 0.416 | sí |
+| direct_create_train_X_y_float | 62.9 | 24.1 | 0.383 | 40.5 | 19.3 | 0.476 | sí |
+| direct_create_train_X_y | 60.4 | 49.3 | 0.816 | 46.0 | 33.5 | 0.728 | sí |
+| direct_multivariate_create_train_X_y | 81.3 | 52.2 | 0.642 | 60.0 | 41.9 | 0.698 | sí |
+| classifier_create_train_X_y | 78.9 | 50.2 | 0.636 | 54.9 | 43.4 | 0.789 | sí |
+
+Helpers `concat`/`astype` en multiseries (sin `copy=False` bajo pandas 3),
+**pandas 3.1.0** (la medida de 4.6 con el cambio real):
+
+| benchmark | current mediana ms | patched mediana ms | ratio | current mín ms | patched mín ms | ratio mín | salida idéntica |
+|---|---|---|---|---|---|---|---|
+| ms_create_train_X_y_block | 129.3 | 99.2 | 0.767 | 82.2 | 74.7 | 0.909 | sí |
+| ms_create_train_X_y_concat | 46.6 | 40.4 | 0.867 | 32.3 | 32.1 | 0.992 | sí |
+| ms_create_train_X_y_onehot_dict | 174.9 | 138.8 | 0.794 | 118.4 | 118.1 | 0.998 | sí |
+| ms_fit_linear | 371.3 | 389.4 | 1.049 | 329.0 | 304.6 | 0.926 | sí |
+
+El mismo cambio en **pandas 2.3.3**, donde los helpers pasan `copy=False` y
+el código ejecutado es el actual: control nulo entre procesos (15 muestras):
+
+| benchmark | current mediana ms | patched mediana ms | ratio | current mín ms | patched mín ms | ratio mín | salida idéntica |
+|---|---|---|---|---|---|---|---|
+| ms_create_train_X_y_block | 111.1 | 93.6 | 0.843 | 69.6 | 71.7 | 1.031 | sí |
+| ms_create_train_X_y_concat | 39.9 | 41.6 | 1.042 | 31.9 | 33.3 | 1.044 | sí |
+| ms_create_train_X_y_onehot_dict | 184.5 | 147.7 | 0.800 | 124.9 | 126.5 | 1.013 | sí |
+| ms_fit_linear | 354.6 | 344.3 | 0.971 | 299.8 | 301.6 | 1.006 | sí |
+
+Lectura: ninguna de las dos anomalías de 4.3 y 4.6 se reproduce con el
+cambio real; en pandas 3 el cambio de la matriz da ganancias mayores que
+las del prototipo (0,42 a 0,79 en mínimos frente a 0,47 a 0,96) porque el
+arnés también penalizaba la variante parcheada. Consecuencias para el plan
+(sección 7): el constructor con `copy=False` y el `astype` reducido se
+aplican en las dos versiones sin rama (desaparece `frame_from_array`), y los
+dos `pd.concat` de multiseries se quedan como están, con el helper.
 
 Identidad de salidas entre pandas 2 y pandas 3 y entre antes y después de
 cada cambio: sección 5 (106 de 106 salidas con los mismos valores).
@@ -1273,9 +1356,10 @@ mantenedor, que valora cada caso (por ejemplo, un coste pequeño en pandas 2
 a cambio de retirar un keyword que desaparece en pandas 4 puede compensar;
 un coste en una ruta caliente, no). Lo que no se acepta es una PR sin la
 tabla o con un empeoramiento sin causa identificada: las dos medidas A/B
-sin explicar de 3.6 (prototipo más lento en pandas 2, `no_copy_keyword`
-más lento en pandas 3) son el ejemplo, y la PR 2 las repite con el cambio
-real en el fichero antes de mezclar. Esto incluye las PRs que no deberían
+que quedaron sin explicar en el estudio (prototipo más lento en pandas 2,
+`no_copy_keyword` más lento en pandas 3) son el ejemplo; repetidas con el
+cambio real en los ficheros resultaron artefactos del arnés de monkeypatch
+(4.8), y la PR 2 las vuelve a medir sobre la rama antes de mezclar. Esto incluye las PRs que no deberían
 tener efecto (1, 4, 5, 6, 7): en ellas la tabla es el control de que de
 verdad no lo tienen, y basta con los cinco benchmarks de matrices más
 `predict_loop` y `backtesting_recursive`.
@@ -1283,8 +1367,8 @@ verdad no lo tienen, y basta con los cinco benchmarks de matrices más
 | # | PR | Cambios (fichero:línea) | Tests que cambian | Verificación | Bit a bit en pandas 2 |
 |---|---|---|---|---|---|
 | 1 | Renombrados sin cambio de comportamiento | `dayofweek`/`dayofyear` → `day_of_week`/`day_of_year` en `preprocessing/_calendar.py:199-202` y `foundation/_adapters.py:4995-5001`; `isinstance(x, pd.DateOffset)` → `pd.offsets.BaseOffset` en `model_selection/_split.py:304, 1051`, `model_selection/_utils.py:319-321`, `recursive/_forecaster_equivalent_date.py:218, 382, 412, 506, 670, 892`, `drift_detection/_population_drift.py:238, 288, 318, 394`; `'freq': 'Q'` → `'QE'` en `datasets/datasets.py:209`; `freq='d'` → `'D'` en `experimental/_splitter.py:67`; `groupby(..., observed=True)` en `_population_drift.py:682, 857` y `foundation/_foundation_model.py:738`; `fillna(False)` + `future.no_silent_downcasting` → ruta numpy en `_calendar.py:849-850`; `stack(future_stack=True)` en `model_selection/_search.py:1576, 1935, 2036, 2456` | Fixtures y tests que usan `dayofweek` (`fixtures_model_selection_multiseries.py:140-143`, 10 tests de `direct`/`recursive` listados en 2.3); el test de `_calendar` que usa `future.no_silent_downcasting`; el test de `fetch_dataset` de `australia_tourism` si comprueba `freq` | Tests tocados en los tres pandas; identidad | Sí |
-| 2 | Módulo de compatibilidad y keyword `copy` | Nuevo `skforecast/utils/_pandas_compat.py` (`PANDAS_GE_3`, `concat`, `astype`, `frame_from_array`, `writable_array`, `is_string_dtype`, `infer_freq`; borrador en `prototypes/pandas_compat_draft.py`); `pd.concat(copy=False)` → `compat.concat` en `_forecaster_recursive_multiseries.py:1333, 1567`; `astype(..., copy=False)` → `compat.astype` (bajo pandas 2 exactamente la llamada actual, `astype(todas, copy=False)`; bajo pandas 3 solo las columnas cuyo dtype cambia, saltando la llamada si no cambia ninguna, y en `create_predict_X` sin escaneo por llamada: indicador calculado en `fit` o `astype` perezoso) en `_forecaster_recursive.py:1109, 2042`, `_forecaster_recursive_classifier.py:1129, 1843`, `_forecaster_direct.py:1520, 2407`, `_forecaster_direct_multivariate.py:1637, 2586`, `_forecaster_recursive_multiseries.py:3552`, `_preprocessing.py:774`; `Series.astype("float64", copy=False)` → `to_numpy(dtype="float64")` en `_population_drift.py:502`; `pd.infer_freq` → `compat.infer_freq` en `utils.py:2458` y `_calendar.py:862` (con `to_offset(...).freqstr` en `_freq_to_timedelta_unit`) | Ninguno (sin cambio de resultados) | Identidad en p2 y p3; `-W error::pandas.errors.Pandas4Warning` sobre `recursive/`, `direct/`, `preprocessing/` en p3; benchmark de 3.6 (`train_matrix_combo` en p2: tiempo y memoria iguales o mejores) | Sí (medido) |
-| 3 | Copias evitables | `compat.frame_from_array` (`copy=False` solo bajo pandas 3; bajo pandas 2 el constructor por defecto, que ya no copia) sobre arrays privados en `create_train_X_y` de `_forecaster_recursive.py:1100-1104` (materializando antes la vista de lags cuando no hay exógenas: `np.ascontiguousarray`), `_forecaster_recursive_classifier.py:1120-1124`, `_forecaster_direct.py:1497-1510`, `_forecaster_direct_multivariate.py:1614-1627`; `copy=False` en los `DataFrame`/`Series` de los caminos de `predict` listados en 3.1; `y.to_numpy(copy=True)` en `_forecaster_recursive_multiseries.py:990` (corrección F26, nota de versión); copias redundantes a `copy(deep=False)` o eliminadas (`_forecaster_equivalent_date.py:640, 668, 672, 868, 894`, `_forecaster_recursive_multiseries.py:2756-2761, 2793-2795, 2934-2935`, `_range_drift.py:427-428`, `utils.py:812-818, 4387-4392`, `_preprocessing.py:538-540, 656-657, 674, 744`) | Test nuevo para F26 (`transformer_series=StandardScaler(copy=False)` predice igual que `copy=True`); test de que `create_train_X_y` sin exógenas devuelve una matriz escribible | Identidad; benchmark 3.6 (`dataframe_copy_false`, `multiseries_y_copy`); tracemalloc de las copias eliminadas | Sí (medido); F26 cambia solo el caso con transformador in situ |
+| 2 | Módulo de compatibilidad y keyword `copy` | Nuevo `skforecast/utils/_pandas_compat.py` (`PANDAS_GE_3`, `concat`, `astype`, `writable_array`, `is_string_dtype`, `infer_freq`; borrador en `prototypes/pandas_compat_draft.py`); `pd.concat(copy=False)` → `compat.concat` en `_forecaster_recursive_multiseries.py:1333, 1567`; `astype(..., copy=False)` → `compat.astype` (pasa `copy=False` solo bajo pandas 2) sobre solo las columnas cuyo dtype cambia, saltando la llamada si no cambia ninguna, igual en las dos versiones (pandas 2 dentro del ruido con el cambio real, 4.8); en `create_predict_X` sin escaneo por llamada: indicador calculado en `fit` o `astype` perezoso en `_forecaster_recursive.py:1109, 2042`, `_forecaster_recursive_classifier.py:1129, 1843`, `_forecaster_direct.py:1520, 2407`, `_forecaster_direct_multivariate.py:1637, 2586`, `_forecaster_recursive_multiseries.py:3552`, `_preprocessing.py:774`; `Series.astype("float64", copy=False)` → `to_numpy(dtype="float64")` en `_population_drift.py:502`; `pd.infer_freq` → `compat.infer_freq` en `utils.py:2458` y `_calendar.py:862` (con `to_offset(...).freqstr` en `_freq_to_timedelta_unit`) | Ninguno (sin cambio de resultados) | Identidad en p2 y p3; `-W error::pandas.errors.Pandas4Warning` sobre `recursive/`, `direct/`, `preprocessing/` en p3; tabla de 4.8 repetida sobre la rama (pandas 2 dentro del ruido) | Sí (medido) |
+| 3 | Copias evitables | `pd.DataFrame(..., copy=False)` directamente (keyword no deprecado; en pandas 2 no cambia nada, medido con el cambio real en 4.8; sin helper ni rama) sobre arrays privados en `create_train_X_y` de `_forecaster_recursive.py:1100-1104` (materializando antes la vista de lags cuando no hay exógenas: `np.ascontiguousarray`), `_forecaster_recursive_classifier.py:1120-1124`, `_forecaster_direct.py:1497-1510`, `_forecaster_direct_multivariate.py:1614-1627`; `copy=False` en los `DataFrame`/`Series` de los caminos de `predict` listados en 3.1; `y.to_numpy(copy=True)` en `_forecaster_recursive_multiseries.py:990` (corrección F26, nota de versión); copias redundantes a `copy(deep=False)` o eliminadas (`_forecaster_equivalent_date.py:640, 668, 672, 868, 894`, `_forecaster_recursive_multiseries.py:2756-2761, 2793-2795, 2934-2935`, `_range_drift.py:427-428`, `utils.py:812-818, 4387-4392`, `_preprocessing.py:538-540, 656-657, 674, 744`) | Test nuevo para F26 (`transformer_series=StandardScaler(copy=False)` predice igual que `copy=True`); test de que `create_train_X_y` sin exógenas devuelve una matriz escribible | Identidad; benchmark 3.6 (`dataframe_copy_false`, `multiseries_y_copy`); tracemalloc de las copias eliminadas | Sí (medido); F26 cambia solo el caso con transformador in situ |
 | 4 | Robustez con pandas 3 (código) | Clave de ordenación de offsets en `_split.py:383-388` (con `try/except` como `utils.py:4466-4471`) y en `utils.py:4466-4471`; guardia `freq is None` en `_preprocessing.py:471`; `object`/`str` equivalentes en `check_preprocess_exog_multiseries` (`utils.py:4645-4660`); inferencia en UTC en `expand_index` (`utils.py:2456-2463`) y, si se adopta D6, mensaje con `freq="24h"` en `utils.py:2047-2051`; `pd.Series(dtype=str)` en `_validation.py:2850`; `dtype=object` antes del `fillna` en `_forecaster_recursive_multiseries.py:2026-2056`; `stack(future_stack=True)` en `_utils.py:1536` (D12, nota de versión); mensaje claro en `load_forecaster` para ficheros joblib de pandas 3 cargados en pandas 2 (D8) | Tests nuevos: `_split.py` con `Day`/`MonthBegin` y `Day`/paso (hoy `TypeError` también en pandas 2), `reshape_series_wide_to_long` sin `freq`, exógena de texto `object`/`str` entre series, `expand_index` `MS`/`QS` anclado en UTC sin `freq`, MASE/RMSSE con NaN en la serie objetivo ancha | Tests nuevos en los tres pandas; identidad | Sí salvo D12 y los mensajes de `_split.py` (antes `TypeError`) |
 | 5 | Tests neutrales entre versiones | `STR_DTYPE = pd.Series(["a"]).dtype` compartido y expectativas con él (19 tests de G2-RC1, ficheros en 2.2); `columns=pd.Index(float_cols, dtype=STR_DTYPE)` y `check_column_type=False` o fixture regenerado (G2-RC2, 7); mensajes construidos con `f"{pd.RangeIndex}"`/`{type(x.index.levels[1])}` (G2-RC3/RC4, 6); `unit="ns"` en las expectativas que comparan con fixtures persistidos (G1-RC1a, 38: `test_create_predict_inputs.py` 8 `date_range`, `test_predict.py`, `test_create_predict_X.py`, `test_predict_interval*.py`, `test_backtesting_forecaster_multiseries.py`, `test_predict_and_calculate_metrics_one_step_ahead_multiseries.py`) y sin el pin `[ns]` donde la entrada se construye con `date_range` (G1-RC1b, 7); `unit="ns"` y `tz_zoneinfo` calculado en `test_skops_decompose_compose.py:60-90`; `freq="24h"` en los 7 tests de índices anclados en UTC (G3-RC1a) y en `test_reshape_series_wide_to_long.py:72-74`; `exact=`/`check_freq=` explícitos donde 3.1 avisa | 90 tests (la lista exacta en `results/baseline_pandas3.1.0/failures_by_group.json`) | Suite completa en p3 **en verde** (salvo torch) y en p2; `unit-tests-min-deps.yml` | n/a |
 | 6 | `pyproject.toml` y CI | `pandas>=2.2, <4.0`; `"pandas[parquet]>=2.2"` sin cambio; matriz de 3.5 (`include` de pandas 2 en Python 3.12; opcional `-W error::pandas.errors.Pandas4Warning` en `unit-tests-latest-deps.yml`); `benchmarks/requirements_benchmarks.txt` según D9 | - | CI en verde en las 15 combinaciones; `unit-tests-min-deps.yml` | n/a |
@@ -1310,7 +1394,7 @@ salida en pandas 2 salvo las tres correcciones señaladas (F26, D12 y el
 |---|---|---|---|
 | D1 | Pin de pandas y de Python | (a) `pandas>=2.2, <4.0` y `requires-python >=3.10` (pandas 3 solo se instala en 3.11+, pandas 2.3 queda para 3.10); (b) además subir `requires-python` a 3.11 y `pandas>=2.2`; (c) esperar a 0.28 | **(a)**: no deja fuera a nadie, la CI cubre ambos mayores (3.5) y el código no necesita ramas salvo el módulo de compatibilidad. Subir Python a 3.11 no aporta nada hoy (la rama 3.10 + pandas 2.3 seguirá existiendo mientras numpy y scikit-learn la soporten) |
 | D2 | Mínimo de pandas 2 | (a) mantener 2.2.0; (b) subir a 2.2.3 (última 2.2, 2024-09); (c) subir a 2.3 (última serie 2.x, la única que aún recibe correcciones) | **(a)** para esta migración: nada del plan necesita una API posterior a 2.2 (`date_range(unit=)`, `as_unit`, `day_of_week`, `pd.offsets.BaseOffset`, `stack(future_stack=True)` existen en 2.2), `unit-tests-min-deps.yml` sigue en verde con 2.2.0 y numpy 1.26.1, y las 106 salidas del estudio son idénticas en 2.2.3 y 2.3.3. (c) solo aporta `StringDtype(na_value=nan)` (opción de skops neutros, 3.2) y una serie menos que mantener, a cambio de dejar fuera entornos fijados en 2.2; si se quiere, anunciarlo para 0.28 o para cuando se retire Python 3.10 |
-| D3 | Dónde vive la rama por versión | (a) un módulo `skforecast/utils/_pandas_compat.py` con `PANDAS_GE_3` y los helpers (`concat`, `astype`, `frame_from_array`, `writable_array`, `is_string_dtype`, `infer_freq`); (b) comprobaciones `pd.__version__` donde hagan falta; (c) sin rama, aceptando la copia extra de `astype` en pandas 2 | **(a)**; con el prototipo `astype_changed_only` la única rama real que queda es la de `infer_freq` (opción `future.infer_freq_returns_offset`) |
+| D3 | Dónde vive la rama por versión | (a) un módulo `skforecast/utils/_pandas_compat.py` con `PANDAS_GE_3` y los helpers (`concat`, `astype`, `writable_array`, `is_string_dtype`, `infer_freq`); (b) comprobaciones `pd.__version__` donde hagan falta; (c) sin rama, aceptando la copia extra de `astype` en pandas 2 | **(a)**; con el prototipo `astype_changed_only` la única rama real que queda es la de `infer_freq` (opción `future.infer_freq_returns_offset`) |
 | D4 | dtype `str` en salidas y atributos | (a) aceptar y documentar; (b) normalizar a `object` en `exog_dtypes_in_`, columna `level`, columnas de `X_train` | **(a)**: (b) cuesta conversiones, va contra pandas 3 y no cambia ningún valor |
 | D5 | Avisos de deprecación en CI | (a) `-W error::pandas.errors.Pandas4Warning` solo en `unit-tests-latest-deps.yml` (semanal); (b) también en `unit-tests.yml`; (c) nada | **(a)**: el job semanal avisa de deprecaciones nuevas sin bloquear PRs; con el plan de la sección 7 el paquete no emite ninguna hoy |
 | D6 | Índices tz-aware anclados en UTC sin `freq` (G3-RC1a) | (a) documentar `freq="24h"` y mejorar el mensaje de error de `check_extract_values_and_index` (`utils.py:2047-2051`) con esa sugerencia; (b) además inferir la frecuencia en UTC en las validaciones (como el arreglo de `expand_index`) y aceptar la serie sin `freq`; (c) nada | **(a)**: la librería ya exige `freq` explícita por diseño; (b) adivina la convención del usuario y añade una rama en cuatro sitios |
@@ -1356,13 +1440,16 @@ salida en pandas 2 salvo las tres correcciones señaladas (F26, D12 y el
   crítico de completitud no se ejecutaron. Los hallazgos de esas dimensiones
   están verificados por fragmento por su propio agente, pero no por un
   segundo agente.
-- **Dos resultados A/B sin causa identificada** (3.6): el prototipo de la
-  matriz pública sale más lento en pandas 2 (1,07 a 1,59) con memoria
-  idéntica, y quitar `copy=False` en pandas 3 sale más lento en las
-  funciones completas de multiseries (1,05 a 1,59) aunque el microbenchmark
-  aislado da tiempos iguales. El plan los neutraliza (pandas 2 conserva su
-  ruta; la PR 2 mide el cambio real sin monkeypatch), pero la causa no está
-  establecida.
+- **Dos resultados A/B del arnés que no se reproducen con el cambio real**
+  (3.6, 4.8): el prototipo de la matriz pública salía más lento en pandas 2
+  (1,07 a 1,59) y quitar `copy=False` en pandas 3 salía más lento en
+  multiseries (1,05 a 1,59); con el cambio aplicado en los ficheros ambos
+  quedan dentro del ruido. La causa dentro del arnés (reejecución del código
+  fuente con `exec`) no se ha establecido; no afecta al plan, porque las
+  medidas que lo sustentan se han repetido con el código real y cada PR
+  vuelve a medir sobre la rama. Las tablas 4.2 a 4.7 que dependen del arnés
+  conservan su valor para la memoria (independiente del arnés) y como cota
+  pesimista del tiempo.
 - **Interferencia en las medidas.** Las medidas definitivas (sección 4) se
   tomaron con la máquina en reposo tras detener todos los agentes; el arnés
   registra la carga media del minuto antes y después de cada benchmark y
@@ -1403,13 +1490,11 @@ sección 7):
    `.copy()` quedan sin clasificar (3.1 cubre 37 explícitamente; el resto
    está en los JSON no versionados: rehacer el recuento con
    `rg -n "\.copy\(\)"`).
-3. **Los dos A/B sin causa** (3.6): medir con el cambio real en los ficheros
-   (no por monkeypatch) `create_train_X_y` de `ForecasterRecursive` y
-   `ForecasterDirect` en pandas 2 con el `astype` reducido, y las matrices de
-   `ForecasterRecursiveMultiSeries` en pandas 3 sin `copy=False` en los dos
-   `pd.concat`; criterio: dentro de la banda del control nulo (0,94 a 1,14).
-   Si el segundo se confirma, sustituir los `pd.concat` por el ensamblado en
-   numpy de la ruta de bloque único.
+3. **Los dos A/B sin causa** (3.6): hecho, ver 4.8. Medidos con el cambio
+   real en una copia del paquete, ninguno se reproduce (pandas 2 con la
+   matriz nueva 0,85 a 1,01 en mínimos; multiseries en pandas 3 sin
+   `copy=False` 0,91 a 1,00). El plan se simplifica: sin `frame_from_array`,
+   sin ruta distinta para pandas 2 y sin ensamblado numpy de los `pd.concat`.
 4. **Tres avisos pendientes de la suite sobre el prototipo** (2.3): renombrar
    `dayofweek`/`dayofyear` en `foundation/_adapters.py:4995-5001`, el helper
    de `pd.infer_freq` (3.3) y la ruta numpy de `_calendar.py:849-850`; son
@@ -1567,7 +1652,13 @@ clasificador 100k; `predict` 200 llamadas de 1 paso + 1 de 500; backtesting
 series × 1500 obs/100 folds; window features 300k obs. Los prototipos se
 aplicaron por monkeypatch del código fuente del método (reejecución del
 texto modificado en el espacio de nombres del módulo), con un control nulo
-sin cambios para acotar el ruido.
+sin cambios para acotar el ruido. Las medidas de 4.8 no usan el arnés: una
+copia de `skforecast/` (sin tests) fuera del repositorio con el cambio
+aplicado por script, `PYTHONPATH` apuntando a la raíz del repositorio o a la
+copia, y un bucle de shell que alterna un proceso por variante (4 rondas de
+2 calentamientos y 5 medidas; mínimo y mediana de las 20 muestras; huella de
+la salida en cada proceso); el mismo bucle con un cambio que es un no-op en
+pandas 2 da el control nulo entre procesos.
 
 Persistencia: `save_forecaster`/`load_forecaster` con `backend="joblib"` y
 `"skops"` en cada versión, carga cruzada en la otra y comparación de las
