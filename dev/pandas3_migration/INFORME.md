@@ -40,7 +40,7 @@ fichero y línea de las fuentes RST (`doc/source/whatsnew/v3.0.0.rst` y
 8. Decisiones que debes tomar tú
 9. Preguntas abiertas y lo no verificado
 10. Pendiente para retomar
-11. Siguientes pasos después de la migración: el camino de `predict` en numpy
+11. Siguientes pasos después de la migración: el camino de `predict` en numpy (11.5 dónde va el tiempo de un fold de backtesting; 11.6 lo que falta decidir antes de implementarlo)
 
 ## 1. Resumen ejecutivo
 
@@ -1752,7 +1752,10 @@ sección 7):
 Esta sección no forma parte de la migración. Recoge la decisión tomada tras
 el perfilado de 3.6: la brecha de `predict` en bucle no se cierra haciendo
 más baratos los objetos de pandas, sino creando menos. Se deja aquí para
-abrirla como una PR de rendimiento propia, después de la migración.
+abrirla como una PR de rendimiento propia, después de la migración. La
+motivación y el criterio de aceptación están en 11.1 a 11.4; la medida
+previa que pide 11.4 está hecha (11.5), pero el diseño no: 11.6 recoge lo
+que hay que decidir y medir antes de escribir código.
 
 ### 11.1 Qué queda y por qué no es de la migración
 
@@ -1803,6 +1806,10 @@ la predicción domina y la ganancia relativa será modesta.
   primera. Lo que hoy hacen `_create_predict_inputs` más
   `_recursive_predict` es la base; el trabajo es dejar de construir pandas
   dentro de ellos.
+- El bucle de backtesting entra en el alcance: fuera de `predict` se va
+  hasta un tercio del tiempo con folds de un paso (11.5), en los cortes
+  `iloc` de cada fold y el `pd.concat` de las predicciones. Un camino en
+  numpy limitado a `predict` lo deja intacto.
 - Alcance inicial: `ForecasterRecursive` y `ForecasterDirect`. Multiseries
   (diccionarios por serie, codificación de niveles, `exog` por serie) se
   aborda cuando el patrón esté probado en los univariantes.
@@ -1819,7 +1826,9 @@ en pandas 2" y cuyas PRs ya son bastante grandes. Con la opción (b) además
 quedan subsumidos: en un camino sin objetos de pandas no hay `expand_index`
 duplicado que ahorrar. Si se hace la PR de rendimiento, son su primer
 commit, medidos uno a uno; si no se hace, no merecen una PR propia (como
-mucho cubren la mitad de 0,1 ms por llamada, estimación sin medir). La
+mucho ahorran el segundo `expand_index`, unos 0,08 ms por llamada en
+pandas 3 según 11.5, más lo que se cachee de `check_predict_input`, sin
+medir). La
 conversión arrow de los nombres de columna (7 % del bucle) no es evitable
 mientras se validen las columnas de entrada: hay que leerlas.
 
@@ -1834,12 +1843,114 @@ de 11.1), en las dos versiones de pandas.
    (`backtesting_forecaster`, `refit=False`, 1000 a 5000 folds de 1 a 24
    pasos, regresor lineal y LightGBM pequeño) en pandas 2 y 3 con el
    protocolo del anexo. Si la sobrecarga de pandas no es al menos la mitad
-   del tiempo del fold con el regresor lineal, la PR no compensa.
+   del tiempo del fold con el regresor lineal, la PR no compensa. Hecho
+   con datos sintéticos en 11.5: fuera del modelo se va el 95 % del fold
+   con el regresor lineal y folds de un paso, así que el criterio se
+   cumple; la PR lo repite con el arnés de la PR 1 y una serie real.
 2. Identidad bit a bit con `identity_cases.py` (anexo) entre el `predict`
    actual y el nuevo camino, en los dos entornos.
 3. Medida antes y después en los dos entornos, una a una, intercaladas,
    como en 3.6: la PR se acepta solo si pandas 2 no empeora en ningún
    benchmark.
+
+### 11.5 Medida previa: dónde va el tiempo de un fold de backtesting
+
+Medido el 2026-10-28 (el paso 1 de 11.4). `backtesting_forecaster` con
+`refit=False`, `n_jobs=1`, `ForecasterRecursive` con 24 lags y 3 exógenas
+float, sobre una serie horaria sintética de 6000 observaciones, en pandas
+2.3.3 y 3.1.0 (Python 3.12.3, numpy 2.5.4, scikit-learn 1.9.1, LightGBM
+4.7.0, BLAS de un hilo). Cada función se cronometra con un envoltorio de
+`time.perf_counter` (sin perfilador). Se toma el mínimo de 6 ejecuciones (3
+por proceso en 2 procesos por versión). `check_predict_input` incluye su
+propio `expand_index`; la columna `expand_index` es el segundo, el de
+`_create_predict_inputs`. El `fit` inicial se mide aparte y se resta.
+Tiempos en ms, pandas 3.1.0 (pandas 2.3.3 entre paréntesis):
+
+| Caso | Total | `fit` inicial | Modelo (`_recursive_predict`) | `check_predict_input` | `expand_index` | Resto de `predict` | Backtesting fuera de `predict` |
+|---|---|---|---|---|---|---|---|
+| Lineal, 1000 folds de 1 paso | 821 (698) | 9 (14) | 33 (33) | 220 (171) | 83 (72) | 242 (207) | 233 (201) |
+| Lineal, 200 folds de 24 pasos | 179 (149) | 6 (4) | 22 (24) | 46 (37) | 18 (15) | 53 (45) | 34 (23) |
+| LightGBM de 100 árboles, 1000 folds de 1 paso | 1245 (971) | 362 (293) | 124 (120) | 257 (186) | 90 (73) | 287 (236) | 126 (64) |
+| LightGBM de 100 árboles, 200 folds de 24 pasos | 609 (593) | 209 (217) | 233 (235) | 58 (48) | 21 (17) | 65 (58) | 22 (17) |
+
+El "resto de `predict`" es `transform_numpy` y `transform_dataframe`,
+`input_to_frame`, la selección de columnas de `exog`, `check_exog`, los
+`to_numpy()`, la diferenciación y la `Series` de salida. El "backtesting
+fuera de `predict`" son los cortes `iloc` de cada fold
+(`_prepare_fold_data`), el `pd.concat` de las predicciones, las etiquetas de
+fold y la métrica.
+
+Lectura:
+
+- **El criterio de 11.4 se cumple con folds cortos.** Descontado el `fit`
+  inicial, lo que no es el modelo es el 95 % del tiempo de los folds con el
+  regresor lineal y folds de un paso (pandas 2: 95 %), el 87 % con folds de
+  24 pasos (83 %), el 86 % con LightGBM y folds de un paso (82 %) y el 42 %
+  con LightGBM y folds de 24 pasos (38 %). En este último caso la ganancia
+  sería modesta.
+- **La validación es la pieza más grande de `predict`.** `check_predict_input`
+  cuesta unos 0,22 ms por llamada en pandas 3 y 0,17 ms en pandas 2.
+  Es el 38 % de `predict` en el caso lineal de un paso.
+- **Un tercio del tiempo está fuera de `predict`.** En el caso lineal de un
+  paso, 233 de 821 ms. La propuesta de 11.2 no lo cubría (añadido).
+- **pandas 3 frente a pandas 2 en el total:** 1,18 y 1,20 con el regresor
+  lineal, 1,28 y 1,03 con LightGBM. Esta medida es entre procesos, y el 1,28
+  incluye un `fit` inicial 1,24 veces más lento que no es de `predict`.
+- **Techo teórico**, si solo quedaran el `fit` y el modelo: unas 20 veces
+  más rápido en el caso lineal de un paso, 6 veces con folds de 24 pasos,
+  2,6 veces con LightGBM y folds de un paso y 1,4 veces con folds de 24
+  pasos. Lo alcanzable depende de las decisiones de 11.6 y no está medido.
+
+### 11.6 Lo que falta decidir y medir antes de implementarla
+
+Con 11.1 a 11.5 la mejora está justificada, pero no diseñada. Estos puntos
+se resuelven antes de escribir código, cada uno con su prueba de identidad
+o su medida:
+
+1. **Qué se valida una vez y qué en cada fold.** Las folds las genera el
+   propio backtesting, así que el alineamiento de índices entre
+   `last_window` y `exog` y la longitud de `exog` están garantizados por
+   construcción. Hay que listar las comprobaciones de `check_predict_input`
+   que se conservan y dónde. El caso delicado son los NaN de `exog` en las
+   folds del `gap`, que hoy se toleran con `_allow_nan_predictions`. Los
+   errores y avisos tienen que ser los mismos: tests con `exog` con NaN,
+   con columnas desordenadas y con dtypes distintos de los de `fit`.
+2. **Transformadores y codificador categórico.** `transformer_exog` y el
+   `OrdinalEncoder` trabajan con `DataFrame`. Hay dos opciones:
+   - (a) aplicarlos una vez a toda la `exog` antes del bucle;
+   - (b) aplicarlos en cada fold, como hoy.
+   (a) da el mismo resultado fila a fila con `StandardScaler` o
+   `OneHotEncoder`, pero no con un transformador que mire filas vecinas (un
+   `FunctionTransformer` con una media móvil). Se decide junto con D14 y se
+   prueba con los transformadores de los tests de F26. `transformer_y` y la
+   diferenciación ya trabajan sobre arrays.
+3. **El índice de las predicciones.** Dentro del backtesting puede salir por
+   posición de `y.index` en lugar de `expand_index`/`date_range`, porque
+   cada fold está dentro de `y`. Hay que comprobar que es idéntico con
+   `RangeIndex`, `DatetimeIndex` con `freq` y tz-aware (3.3, G3-RC1a). Las
+   calendar features necesitan ese índice.
+4. **El bucle de backtesting.** Hay que sustituir los cortes `iloc` por fold
+   (`_prepare_fold_data`) por posiciones sobre arrays convertidos una vez, y
+   el `pd.concat` de las predicciones por un único array con un único
+   índice. Hay que medirlo con `n_jobs > 1`: hoy cada fold serializa trozos
+   de pandas a los procesos de joblib.
+5. **Los caminos que no se han analizado:**
+   - `_recursive_predict_bootstrapping`, `predict_quantiles`, `predict_dist`
+     y el conformal (`_predict_interval_conformal`);
+   - `ForecasterDirect`, con sus pasos seleccionados cuando hay `gap`;
+   - `return_predictors=True`, que llama a `create_predict_X` y devuelve un
+     `DataFrame`;
+   - la búsqueda de hiperparámetros, que llama al backtesting.
+   Hay que decidir cuáles entran en la primera PR: como mínimo `predict` y
+   el backtesting puntual de `ForecasterRecursive`.
+6. **Sin atributos nuevos obligatorios.** Igual que en la PR 2 de la
+   migración, un forecaster guardado con una versión anterior tiene que
+   seguir prediciendo al cargarlo. Lo que se cachee en `fit` necesita un
+   valor por defecto.
+7. **Dependencias.** El arnés de identidad (`identity_cases.py`) y el de
+   benchmarks que usa 11.4 se versionan en la PR 1 de la migración. Esta PR
+   va después de ella.
+8. **Esfuerzo.** Sin estimar. Depende sobre todo de los puntos 2 y 5.
 
 ## Anexo: cómo reproducir los números
 
