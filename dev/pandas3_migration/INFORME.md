@@ -39,7 +39,7 @@ fichero y línea de las fuentes RST (`doc/source/whatsnew/v3.0.0.rst` y
 7. Plan de implementación por PRs
 8. Decisiones que debes tomar tú
 9. Preguntas abiertas y lo no verificado
-10. Pendiente para retomar
+10. Pendiente para retomar (empieza por "Cómo retomarlo": decisiones, punto de partida, arnés y orden de PRs)
 11. Siguientes pasos después de la migración: el camino de `predict` en numpy (11.5 dónde va el tiempo de un fold de backtesting; 11.6 lo que falta decidir antes de implementarlo)
 
 ## 1. Resumen ejecutivo
@@ -1694,6 +1694,47 @@ con categorías sin usar (PR 1), D12 en métricas y búsquedas con NaN, el
   impresas está en 3.4/3.5 (grep), no su ejecución.
 
 ## 10. Pendiente para retomar
+
+### Cómo retomarlo
+
+Punto de entrada para quien retome la migración. El estudio describe el
+código de `12b7e14` y pandas 3.1.0. En `skforecast/` y `pyproject.toml`,
+ese commit es idéntico a `ba37ae6` y a `origin/0.27.x` del 2026-10-28.
+
+1. **Decidir D11, D1, D2 y D3** (sección 8): sin ellas la PR 1 no puede
+   empezar. En D1, Python 3.10 llega al fin de soporte en octubre de 2026.
+   Si la migración se retoma después de esa fecha, la opción (b) (mínimo
+   3.11) ya no deja fuera a nadie con soporte y simplifica la matriz de CI.
+   D14 y D15 pueden esperar a las PR 3 y 4.
+2. **Medir cuánto ha cambiado el punto de partida:**
+   - Ejecutar `git diff --stat 12b7e14 origin/<rama> -- skforecast pyproject.toml`.
+     En los ficheros que hayan cambiado, los `fichero:línea` de las
+     secciones 3 y 7 se vuelven a localizar buscando el código citado, no
+     el número de línea.
+   - Rehacer la línea base con la última pandas 3.x: el entorno y la suite
+     del anexo. Comparar los fallos y avisos con 2.1 a 2.4, y clasificar lo
+     nuevo por causa raíz con el mismo esquema antes de tocar el plan.
+   - Leer las notas de versión de pandas posteriores a 3.1.0, buscando
+     deprecaciones nuevas que afecten a D5 y a la PR 2.
+3. **Reconstruir el arnés en la PR 1 antes que nada.** Los scripts y
+   ficheros que cita el informe no se versionaron y ya no existen:
+   - `identity_cases.py`, `bench_hotspots.py` y `common.py`;
+   - el plugin `warnrec` y `failing_nodeids.txt`;
+   - `prototypes/pandas_compat_draft.py` y los ficheros de `results/`.
+
+   Se reconstruyen a partir del anexo y de las secciones 3.6 y 5. El arnés
+   está listo cuando, sobre el código sin cambios, reproduce las 106 salidas
+   con huellas iguales en pandas 2 y pandas 3 (sección 5) y los benchmarks
+   dan órdenes de magnitud como los de 4.1. Si no los reproduce, se
+   investiga antes de seguir.
+4. **Seguir el orden de la sección 7**: 1 → 2 → 4 → 5 → 6 (con 7), y la 3 y
+   la 8 en paralelo tras la 2. Cada PR con su verificación, su CI lanzada a
+   mano y su tabla de rendimiento. Las cifras de rendimiento del informe son
+   una referencia de orden de magnitud: cada PR vuelve a medir.
+5. **La sección 11 es posterior a la migración** y su diseño empieza por
+   11.6.
+
+### Historial de lo pendiente entre sesiones
 
 Lo que quedó sin cerrar por el límite de uso de la primera sesión; los
 puntos 1, 2, 3 y 6 se cerraron en la segunda, y quedan los puntos 4 y 5, que
