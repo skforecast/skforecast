@@ -69,6 +69,8 @@ The main changes in this release are:
 
 **Fixed**
 
++ Fixed two issues in <code>[fetch_dataset]</code> where the `website_visits` and `m5` datasets were returned without a `DatetimeIndex`, with the warning `Could not preprocess dataset`. In addition, large parquet datasets such as `m5` need less memory to load (about 10 GB instead of more than 15 GB). ([#1402](https://github.com/skforecast/skforecast/pull/1402))
+
 + Fixed an issue in the `predict_interval` method of <code>[ForecasterStats]</code> where `interval` was ignored unless `alpha=None` was also passed, because `alpha` defaulted to 0.05 and took precedence: `interval=[0.1, 0.9]` returned the 95% interval. <code>[backtesting_stats]</code> was not affected. ([#1416](https://github.com/skforecast/skforecast/pull/1416))
 
 + <code>[backtesting_stats]</code> raised `ValueError: Length of values (2) does not match length of index (1)` with a <code>[ForecasterStats]</code> with several estimators and overlapping folds (`fold_stride < steps`). Each estimator now gets its own metrics, the same as when it is backtested alone. ([#1419](https://github.com/skforecast/skforecast/pull/1419))
