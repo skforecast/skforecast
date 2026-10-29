@@ -6,6 +6,12 @@ contra skforecast y medido con datos reales (M5). Quedan las mediciones de la se
 antes o durante la implementación.** Prioridad: **muy alta**; da resultados erróneos en
 silencio en un uso habitual de los modelos globales.
 
+> **2026-10-29: la propuesta c2 queda sustituida** por la de
+> [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md)
+> (informar de cuántos puntos evalúa cada candidato y ordenar los avisos de las búsquedas).
+> Este documento queda como investigación: el problema, los experimentos 1 a 5 y las
+> opciones descartadas. c2 queda aparcada como posible opción explícita del usuario.
+
 Actualizado el 2026-10-22 con su relación con #1432 (NaN en los predictores de los modelos
 lineales y aviso de predicciones NaN en las métricas): secciones 2.2, 7, 7.1, 8.2 y 10.
 
@@ -419,7 +425,7 @@ MAE en los puntos de cold start (los que `lags=56` deja fuera hoy):
 | Búsqueda con `OneStepAheadFold` (`_evaluate_grid_hyperparameters_multiseries` y `_objective` de bayesian, `_search.py`) | `_train_test_split_one_step_ahead` se llama por candidato de `lags` fuera del `try`: un candidato sin nada que evaluar aborta toda la búsqueda | tratarlo por candidato ("Parameters skipped"), como con `TimeSeriesFold`; hace falta para los estimadores sin NaN, que mantienen el descarte |
 | Camino rápido de los modelos lineales en `_build_predict_function` (#1432) | `predict` lanza `ValueError` (`Input X contains NaN in the predictors [...] at step ... (fecha)`) si un predictor es NaN. `_backtesting_forecaster_multiseries` y `_backtesting_forecaster` activan `_allow_nan_predictions` en su copia del forecaster, que `_build_predict_function` lee del forecaster, y entonces obtienen predicciones NaN en lugar del error | sin cambios, siempre que el relleno con NaN de la última ventana se limite a estimadores con `estimator_has_native_nan_support`. Si una serie rellenada llegara a un modelo lineal, `predict` daría ese error y el backtesting multiserie predicciones NaN con aviso, en lugar del descarte con aviso temprano que pide c2. Añadir un test: modelo lineal con una serie corta, que se sigue descartando |
 | Aviso de predicciones NaN en las métricas multiserie (#1432, `_calculate_metrics_backtesting_multiseries`) | avisa del número de predicciones NaN por serie en fechas con valor real. Con estimadores sin NaN, las series cortas se descartan antes de predecir, así que no lo disparan | con c2 las series cortas se predicen con valores finitos y no deben dispararlo (comprobarlo en los tests). Su texto ("missing values in the last window or in `exog`") sigue valiendo |
-| Silenciado de avisos en grid y random tras el primer candidato (sección 2.2) | oculta también el aviso de #1432 | el aviso temprano y único de c2 debería cubrir también los candidatos con predicciones NaN, o agregarse por candidato, para que el usuario sepa en cuáles faltan puntos (sección 7.1). Señal robusta, que no depende de avisos: QW-12 del roadmap, el número de predicciones evaluadas por serie y por candidato, a hacer con este bug |
+| Silenciado de avisos en grid y random tras el primer candidato (sección 2.2) | oculta también el aviso de #1432 | el aviso temprano y único de c2 debería cubrir también los candidatos con predicciones NaN, o agregarse por candidato, para que el usuario sepa en cuáles faltan puntos (sección 7.1). Señal robusta, que no depende de avisos: QW-12 del roadmap, el número de predicciones evaluadas por serie en el backtesting; va antes y bloquea este bug, que lo lleva a las búsquedas por candidato (decisión del 2026-10-29) |
 | Docs, `llms-base.txt`, skills (`forecasting-multiple-series`, `hyperparameter-optimization`, `backtesting-configuration`), release note con "Before upgrading" | | cambio de comportamiento público: `ai-context-sync` |
 
 Fuera de alcance: `ForecasterDirectMultiVariate` y `ForecasterRnn` (usan todas las series como

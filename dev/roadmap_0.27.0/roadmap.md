@@ -26,10 +26,17 @@ secciones 1 a 7 quedan como referencia: evidencia, antes y después, y esbozos d
 > `OneStepAheadFold`) evalúan cada candidato sobre las series y folds que puede predecir.
 > Con distintos `lags`, una ventana grande deja fuera las series cortas y la búsqueda elige
 > por una métrica calculada sobre puntos distintos, sin ningún aviso. Medido: el ranking se
-> invierte, también con ventas reales de M5. Diseño propuesto (opción c2: predecir con los
-> lags que faltan a NaN cuando el estimador los acepta, con escalado propio de cada serie),
-> prototipo validado contra skforecast, opciones descartadas y mediciones pendientes en
-> [`BUG-search-short-series.md`](BUG-search-short-series.md).
+> invierte, también con ventas reales de M5. **Propuesta vigente (2026-10-29):** no cambiar
+> cómo se evalúa, sino informar de cuántos puntos evalúa cada candidato (la columna de
+> QW-12, que **va antes y bloquea este arreglo**) con un solo aviso al final de la búsqueda, y ordenar los avisos y
+> errores de las búsquedas (hoy dependen del orden del grid, se repiten en cada trial de
+> bayesian o abortan la búsqueda con `OneStepAheadFold`). En
+> [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md). La
+> opción c2 queda aparcada; la investigación, en
+> [`BUG-search-short-series.md`](BUG-search-short-series.md). Tamaño medido con M5 completo:
+> despreciable en paneles maduros con lags cortos (0.03% de puntos fuera con `lags=56`),
+> relevante con rotación de catálogo o lags anuales (13% con `lags=365` en un periodo con
+> lanzamientos).
 
 **Comprobado en local** (Python 3.14.3, numpy 2.5.3, pandas 2.3.3, scikit-learn 1.9.1,
 numba 0.68.0, statsmodels 0.14.6): BUG-03, BUG-01 y BUG-stats-interval-ignored se
@@ -95,8 +102,12 @@ antes de las métricas. Va en "Before upgrading". Añade QW-12 (sección 2) y an
 
 1. **BUG-search-short-series: aplazado (decisión del 2026-10-20)** hasta terminar los
    arreglos rápidos (S) de los puntos 2 a 8. Sigue siendo el resultado erróneo silencioso más
-   grave que queda y el elemento más largo (M a L), así que conviene retomarlo pronto para que
-   no retrase la release.
+   grave que queda. Con la propuesta del 2026-10-29
+   ([`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md):
+   columna por candidato, aviso único y avisos de las búsquedas) baja de M a L a S a M.
+   **Bloqueado por QW-12** (decisión del 2026-10-29): primero la columna de observaciones
+   en las métricas del backtesting, en su propio PR; después este arreglo la lleva a las
+   búsquedas.
 2. ~~**BUG-03**~~ **Hecho con #1431** (fusionado el 2026-10-22). La
    dirección sale de la métrica (decisión 6): atributo `greater_is_better` y convención de
    nombres solo para `sklearn.metrics`; si no se conoce, la dirección de la tarea, que ya
@@ -143,7 +154,7 @@ antes de las métricas. Va en "Before upgrading". Añade QW-12 (sección 2) y an
 | Comparar modelos | FE-05 | M. Nuevo (2026-10-20). Una llamada para el backtesting de varios forecasters de cualquier familia sobre los mismos puntos. Sustituye el código que hoy repite la guía `comparing-forecasting-models.ipynb`. Diseño analizado y prototipado (sección 3). Requisitos: QW-03 (hecho, #1423) y BUG-06 |
 | Feature engineering | QW-11 | S. Nuevo (2026-10-20). `hour_of_week` y el número de días de fin de semana del mes en `CalendarFeatures`, siempre opcionales, más un aviso y una guía de codificación. Medido en 18 series: `hour_of_week` reduce el MAE una mediana del 24% con Ridge en series horarias. Los festivos, que son lo que más aporta en series diarias, quedan como feature aparte (FE-06) |
 | Foundation para producción | QW-05, BUG-06, QW-02 | QW-02 pendiente de decisión |
-| **Búsquedas multiserie con series cortas (MUY IMPORTANTE)** | BUG-search-short-series, QW-12 | M a L. Resultado erróneo silencioso en un uso habitual de los modelos globales. Diseño en [`BUG-search-short-series.md`](BUG-search-short-series.md); antes o durante la implementación, las mediciones de su sección 8.2 (sobre todo los intervalos con residuos out-of-sample). No bloquea QW-09, pero cambia qué puntos entran en sus métricas |
+| **Búsquedas multiserie con series cortas (MUY IMPORTANTE)** | QW-12, después BUG-search-short-series | S (QW-12) y S a M (el arreglo). Resultado erróneo silencioso en un uso habitual de los modelos globales. QW-12 va antes y bloquea el arreglo. Propuesta vigente (2026-10-29) en [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md): la columna de QW-12 en el backtesting y, después, por candidato en las búsquedas, un solo aviso al final cuando los candidatos no se evalúan sobre los mismos puntos, y avisos y errores de las búsquedas que salgan una vez y donde deben. No cambia resultados. Investigación y opción c2 (aparcada) en [`BUG-search-short-series.md`](BUG-search-short-series.md) |
 | Paneles multiserie | QW-01, BUG-07, ISSUE-1410 | Hechos: ISSUE-1357 (IDs enteros) con #1412, que sustituye a PR-1408 (cerrado), e ISSUE-1410 con #1418 (2026-10-19); folds sin series con #1427 y `initial_train_size` contra el span con #1430 (2026-10-21, sección 6) |
 | Stats: corrección y rendimiento | BUG-08, PERF-02, PR-1400 | PR-1400 ya está fusionado en `0.27.x`. BUG-08 hecho con #1425 (fusionado el 2026-10-20). Volver a medir PERF-02 después de BUG-08 |
 | PRs externos | PR-1402, PR-1387, PR-1388, PR-1389 | Hecho: PR-1387 fusionado en `0.27.x` (2026-10-20); PR-1388 sustituido por #1433, que conserva su commit (fusionado el 2026-10-26); PR-1389 sustituido por el commit `6a5d933a4` (ISSUE-1354, 2026-10-27) y cerrado. PR-1402 sigue abierto y apunta a `0.26.x`, no revisado línea a línea |
@@ -210,12 +221,12 @@ Orden de QW-09: ~~ISSUE-1406 (#1415) → BUG-stats-interval-ignored (#1416) → 
    invierte un silencio documentado. Propuesta: hacerlo; en ML el mismo olvido ya da error.
 4. **HANDOFF-T2/T3/T4** (`dev/handoff_utils_pendiente.md`): pendientes de decisión de Joaquín.
 5. **PR-1341** (TiRex-2): aceptarlo o no; la revisión es grande (L).
-6. **BUG-search-short-series**: confirmar la opción c2 (o pasar a c1) con las mediciones de
-   la sección 8.2 de [`BUG-search-short-series.md`](BUG-search-short-series.md). También
-   decidir si `predict` admite una `last_window` más corta que la ventana y si `fit` acepta
-   series con `window_size` valores o menos para ajustar su transformer (requisito medido).
-   Cambia métricas y rankings existentes con estimadores que aceptan NaN: necesita una línea
-   en "Before upgrading".
+6. **BUG-search-short-series**: decidido el 2026-10-29 informar en lugar de cambiar la
+   evaluación (c2 aparcada). Quedan las decisiones de la sección 8 de
+   [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md):
+   umbral del aviso, si `suppress_warnings` silencia "Parameters skipped" y qué hacer en
+   bayesian. El nombre de la columna (`n_evaluated` o `n_predictions`, compartido con FE-05)
+   se decide en QW-12, que va antes.
 7. **FE-05** (comparar modelos): diseño recomendado en "FE-05: análisis de diseño"
    (sección 3). Falta decidir: el nombre (propuesta: `compare_forecasters` en
    `model_selection`); si las métricas se calculan por defecto sobre los puntos comunes
@@ -326,7 +337,7 @@ sección 5.
 | **QW-08** RMSE como string y nombres de métrica únicos | metrics | `metric='root_mean_squared_error'` sin importar sklearn; nombres de pinball con el cuantil; error claro en backtesting con dos métricas del mismo nombre | RMSE: flujo habitual (ahorro diario pequeño); pinball con varios cuantiles: nicho | S (+7/-1 y validación) | `skforecast/metrics/metrics.py:45-62` (solo la variante escalada, `:52`) y `:555-558`; medido: dos pinball dan columnas duplicadas, y en multiserie `TypeError` (`_utils.py:1247`); las búsquedas ya validan nombres únicos (`_search.py:394-400`) | Añadir RMSE a `allowed_metrics`; validar unicidad en los backtesting; `__name__ = f"mean_pinball_loss_q_{alpha}"` (Changed: renombra una columna). Completar los docstrings de `metric` (MedAE, sMAPE) |
 | **QW-06** Alinear `exog` por índice en `predict` de Recursive y Direct | recursive / direct | Pasar un único DataFrame de exog (pasado y futuro) sin recortarlo, como ya hacen MultiSeries y Foundation | Flujo habitual de producción con calendario o meteo; coherencia entre forecasters | S (+36/-1 en el prototipo) | `utils.py:1656` (`align_by_index` solo en MultiSeries) y `:1738-1745`; prototipo: mismos resultados que el recorte manual, 871 tests pasan (1 a adaptar); con RangeIndex reseteado daría `[-1.331, ...]` frente a `[1.005, ...]` en silencio | Solo con `DatetimeIndex`: si el índice contiene el primer paso esperado, `exog.iloc[pos:]` antes del chequeo de NaN y de `transform_dataframe`; también Classifier y DirectMultiVariate; RangeIndex mantiene el chequeo estricto; `fit` no cambia. Toca el mismo camino de `predict` que HANDOFF-DOUBLE-WARN (sección 5): resolver el doble aviso a la vez si sale barato |
 | **QW-11** Más features en `CalendarFeatures` (añadido el 2026-10-20, revisado con el análisis de abajo) | preprocessing | La hora de la semana (día de la semana por hora) en series horarias y los días de fin de semana del mes en series mensuales, que hoy hay que construir a mano como exógenas; un aviso cuando una feature anual se usa con menos de un año de datos; y una guía de codificación por tipo de modelo | Series horarias con modelos lineales (el mayor efecto medido) y series mensuales con modelos lineales; con árboles el efecto es pequeño | S (cada feature es una entrada en `datetime_attrs` y en `_FEATURE_KNOWN_CATEGORIES`; tests y docs) | `skforecast/preprocessing/_calendar.py:20-30,193-205` (11 features: `year`, `month`, `week`, `day_of_week`, `day_of_month`, `day_of_year`, `weekend`, `hour`, `minute`, `second`, `quarter`); análisis medido en 18 series (`repro/QW-11-calendar-analysis.py`, resultados en `.csv`) y revisión de 7 librerías, ver "QW-11: análisis" debajo. Sin peticiones en GitHub | Añadir, sin cambiar la lista por defecto: `hour_of_week` (0 a 167, codificable con 168) y `weekend_days_in_month` (8 a 10, sin codificar; además, valorar el conteo de cada día de la semana en el mes, 7 columnas). Opcional por paridad: `is_month_start`, `is_month_end` y `days_in_month`. No añadir `is_quarter_*` ni `is_year_*` (redundantes con `month` y `day_of_year`), ni Fourier con K armónicos (la codificación spline ya existente rinde igual). Aviso en `fit` si una feature anual (`month`, `week`, `day_of_year`, `quarter`) se usa con menos de un año de datos. Guía: one-hot o spline con modelos lineales, enteros (`encoding=None`) con árboles |
-| **QW-12** Número de predicciones evaluadas por serie en las métricas del backtesting multiserie (añadido el 2026-10-27, a hacer con BUG-search-short-series) | model_selection | Señal robusta de que una serie o un candidato se evaluó con menos puntos de los predichos. Hoy la única señal es un aviso: `suppress_warnings=True` lo silencia y grid y random search solo lo muestran para el primer candidato | Backtesting y búsquedas multiserie con series cortas, huecos en las series o, desde #1432, modelos lineales con huecos en `exog` | S | #1432: con `suppress_warnings=True`, 10 predicciones NaN y 0 avisos; `_evaluate_grid_hyperparameters_multiseries` (`_search.py`) silencia los avisos tras el primer candidato (BUG-search-short-series, sección 2.2); `_calculate_metrics_backtesting_multiseries` (`model_selection/_utils.py`) ya cuenta las predicciones por nivel para `weighted_average`, pero no las devuelve | Columna (por ejemplo `n_evaluated`) en la tabla de métricas con los puntos que entran en las métricas de cada nivel (predicción y valor real no NaN), y la suma en los agregados; en las búsquedas, la del agregado por candidato. Hacerlo junto a BUG-search-short-series: c2 cambia qué puntos entran y la columna es la que comprueba que todos los candidatos se evalúan sobre los mismos puntos (secciones 2.2 y 7.1 de su documento). Cambio de salida anunciado, como QW-09; nombre reservado frente a las métricas del usuario, como `coverage` |
+| **QW-12** Número de predicciones evaluadas por serie en las métricas del backtesting multiserie (añadido el 2026-10-27; va antes y bloquea BUG-search-short-series, decisión del 2026-10-29) | model_selection | Señal robusta de que una serie o un candidato se evaluó con menos puntos de los predichos. Hoy la única señal es un aviso: `suppress_warnings=True` lo silencia y grid y random search solo lo muestran para el primer candidato | Backtesting y búsquedas multiserie con series cortas, huecos en las series o, desde #1432, modelos lineales con huecos en `exog` | S | #1432: con `suppress_warnings=True`, 10 predicciones NaN y 0 avisos; `_evaluate_grid_hyperparameters_multiseries` (`_search.py`) silencia los avisos tras el primer candidato (BUG-search-short-series, sección 2.2); `_calculate_metrics_backtesting_multiseries` (`model_selection/_utils.py`) ya cuenta las predicciones por nivel para `weighted_average`, pero no las devuelve | Columna (por ejemplo `n_evaluated`) en la tabla de métricas con los puntos que entran en las métricas de cada nivel (predicción y valor real no NaN), y la suma en los agregados. Solo backtesting, en su propio PR: llevarla a las búsquedas (por candidato, también con `OneStepAheadFold`) es parte de BUG-search-short-series, que depende de esta. Es la pieza central de su propuesta vigente (2026-10-29, [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md), sección 4.2): la columna por candidato es la que dice si todos los candidatos se evalúan sobre los mismos puntos, así que QW-12 fija el nombre y la cuenta (predicción y valor real no NaN; suma en los agregados). Cambio de salida anunciado, como QW-09; nombre reservado frente a las métricas del usuario, como `coverage` |
 
 ### QW-03: antes y después
 
@@ -791,8 +802,10 @@ metrics, predictions = compare_forecasters(
 3. **Puntos comunes:** en un panel en el que una serie empieza tarde, el modelo con
    `lags=72` no puede predecirla y el resto sí. Si se evalúa a cada modelo sobre sus puntos,
    la comparación no es justa; si se usan los puntos comunes, esa serie desaparece de la
-   comparación para todos. Es el mismo dilema que BUG-search-short-series, y la opción c2 de
-   ese documento lo reduciría.
+   comparación para todos. Es el mismo dilema que BUG-search-short-series: con su propuesta
+   vigente (2026-10-29), la tabla de comparación lleva la columna de puntos evaluados de
+   QW-12 con el mismo nombre, y el usuario ve si los modelos se comparan sobre los mismos
+   puntos.
 4. **La cobertura compara configuraciones, no solo modelos:** LightGBM con los residuos
    in-sample por defecto cubre un 11% con un intervalo nominal del 80%, frente al 58% de
    ARIMA o el 78% de Chronos-2. Una tabla de comparación lo pone a la vista; hay que
@@ -1066,7 +1079,7 @@ BUG-stats-interval-ignored son hallazgos laterales (verificación de FE-02, de F
 | PR-1387 / ISSUE-1386 | https://github.com/skforecast/skforecast/pull/1387, https://github.com/skforecast/skforecast/issues/1386 | Resuelto: fusionado en `0.27.x` el 2026-10-20 con la autoría del contribuidor, más un commit nuestro (nota de la versión en la 0.27.0 y test de `fig=None`); #1386 cerrada | Nada. `plot_residuals` usa `fig.add_subplot`; ninguna otra función que acepte `fig` o `ax` (`plot_multivariate_time_series_corr`, `plot_prediction_intervals`, `ForecasterRnn.plot_history`) tiene el mismo bug |
 | ISSUE-1410 | https://github.com/skforecast/skforecast/issues/1410, https://github.com/skforecast/skforecast/pull/1418 | Resuelto: #1418, fusionado en `0.27.x` el 2026-10-19 | Nada. Una serie con `window_size` valores o menos en el entrenamiento de un fold queda fuera de ese fold; `backtesting_foundation` usa `window_size=0`. FE-04 debe usar la misma frontera |
 | Folds sin series | https://github.com/skforecast/skforecast/pull/1427 | Resuelto: fusionado en `0.27.x` el 2026-10-21; sin issue (hallado desde skforecast-ai) | Nada. Un fold sin series que entrenar o predecir se salta y se lista en el `MissingValuesWarning`; si no se puede predecir ni evaluar ningún fold, `ValueError` antes de entrenar. También: `weighted_average` ya no es NaN cuando un nivel se predice sin valores observados (es la métrica que ordena las búsquedas por defecto), y la extracción de folds no retiene el entrenamiento de los folds sin refit (2000 series y 100 folds: pico de memoria de 1383 a 1022 MB) |
-| `initial_train_size` contra el span | https://github.com/skforecast/skforecast/pull/1430 | Resuelto: fusionado en `0.27.x` el 2026-10-21; sin issue (hallado desde skforecast-ai) | Nada. `check_backtesting_input` y `check_one_step_ahead_input` validan contra el span de un dict de series, no contra la serie más larga; `OneStepAheadFold.split` devolvía el número de series como final del test con un dict; el test del one-step-ahead deja fuera las series sin valores tras el entrenamiento (antes la búsqueda entera fallaba), con `ValueError` claro si no hay nada que entrenar o evaluar. Pendiente con BUG-search-short-series: tratar por candidato el error de la búsqueda one-step-ahead (nota en su sección 7) |
+| `initial_train_size` contra el span | https://github.com/skforecast/skforecast/pull/1430 | Resuelto: fusionado en `0.27.x` el 2026-10-21; sin issue (hallado desde skforecast-ai) | Nada. `check_backtesting_input` y `check_one_step_ahead_input` validan contra el span de un dict de series, no contra la serie más larga; `OneStepAheadFold.split` devolvía el número de series como final del test con un dict; el test del one-step-ahead deja fuera las series sin valores tras el entrenamiento (antes la búsqueda entera fallaba), con `ValueError` claro si no hay nada que entrenar o evaluar. Pendiente con BUG-search-short-series: tratar por candidato el error de la búsqueda one-step-ahead (sección 5.2, punto 4, de [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md)) |
 | ISSUE-1385 (T0) | https://github.com/skforecast/skforecast/issues/1385; `skforecast/foundation/_adapters.py:3724-3729` | Sin PR; no reproducido aquí (sin `tfc-t0`) | Adaptar a `tfc-t0>=0.4` (`predict` sin `context` ni `quantiles`; torch como extra desde 0.6.0) |
 | ISSUE-1409 + DISC-1119 + GAP-backtesting-interval-metrics | https://github.com/skforecast/skforecast/issues/1409, https://github.com/skforecast/skforecast/discussions/1119 | Sin PR | Se implementan por separado como QW-09 (`coverage` e `interval_width`, #1409) y QW-10 (columna `step`, D1119) (sección 2). Sin aviso de infracobertura (sección 7) |
 | GAP-foundation-backtesting-interval | `skforecast/model_selection/_validation.py:2712-2720` (`backtesting_foundation` solo tiene `quantiles`); `skforecast/model_selection/_search.py:2091` (única búsqueda foundation) | Asimetría de API, comprobada en las firmas; sin medir | Aceptar `interval` en `backtesting_foundation` después de BUG-06; `grid_search_foundation` opcional |
