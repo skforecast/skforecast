@@ -8,7 +8,6 @@
 from __future__ import annotations
 from typing import Callable, Any
 from copy import deepcopy
-from itertools import chain
 import warnings
 import numpy as np
 import pandas as pd
@@ -31,7 +30,10 @@ from ..model_selection._utils import (
     _check_nan_predictions_backtesting,
     _get_interval_columns,
     _calculate_interval_metrics,
-    INTERVAL_METRIC_NAMES
+    _count_evaluated,
+    _get_y_true_multiseries,
+    INTERVAL_METRIC_NAMES,
+    N_EVALUATED_NAME
 )
 from ..utils import (
     check_preprocess_series,
@@ -668,9 +670,9 @@ def _backtesting_forecaster(
         )
         for fold, fold_data in fold_items
     )
-    fold_labels = [
-        np.repeat(fold[0], backtest_predictions[i].shape[0]) for i, fold in enumerate(folds)
-    ]
+    n_predictions_folds = [pred.shape[0] for pred in backtest_predictions]
+    fold_labels = np.repeat([fold[0] for fold in folds], n_predictions_folds)
+    test_iloc_starts = np.repeat([fold[3][0] for fold in folds], n_predictions_folds)
 
     backtest_predictions = pd.concat(backtest_predictions)
     if isinstance(backtest_predictions, pd.Series):
@@ -681,7 +683,13 @@ def _backtesting_forecaster(
         idx_max = backtest_predictions[proba_cols].to_numpy().argmax(axis=1)
         backtest_predictions.insert(0, "pred", np.array(forecaster.classes_)[idx_max])
 
-    backtest_predictions.insert(0, 'fold', np.concatenate(fold_labels))
+    # NOTE: The step of each prediction is the position of its date in the test
+    # set of its fold, gap included, so it goes from `gap + 1` to `gap + steps`
+    # (fewer in an incomplete last fold).
+    positions = y.index.get_indexer(backtest_predictions.index)
+    backtest_predictions.insert(0, 'y_true', y.iloc[positions].to_numpy())
+    backtest_predictions.insert(0, 'step', positions - test_iloc_starts + 1)
+    backtest_predictions.insert(0, 'fold', fold_labels)
 
     backtest_predictions_for_metrics = backtest_predictions
     if overlapping_folds:
@@ -690,7 +698,7 @@ def _backtesting_forecaster(
             .loc[~backtest_predictions_for_metrics.index.duplicated(keep='last')]
         )
     
-    y_true = y.loc[backtest_predictions_for_metrics.index]
+    y_true = backtest_predictions_for_metrics['y_true']
     y_pred = backtest_predictions_for_metrics['pred']
     _check_nan_predictions_backtesting(
         y_true=y_true, y_pred=y_pred, differentiation=forecaster.differentiation
@@ -731,6 +739,9 @@ def _backtesting_forecaster(
             )
         )
         metric_names += INTERVAL_METRIC_NAMES
+
+    metric_values.append(_count_evaluated(y_true=y_true, y_pred=y_pred))
+    metric_names.append(N_EVALUATED_NAME)
 
     metric_values = pd.DataFrame(
         data    = [metric_values],
@@ -978,7 +989,7 @@ def _fit_predict_forecaster_multiseries(
     random_state: int,
     return_predictors: bool,
     suppress_warnings: bool
-) -> tuple[pd.DataFrame, list[str]]:
+) -> tuple[pd.DataFrame, pd.DataFrame | None] | None:
     """
     Fit the forecaster and predict `steps` ahead. This is a module-level
     auxiliary function used to parallelize `_backtesting_forecaster_multiseries`.
@@ -1032,9 +1043,16 @@ def _fit_predict_forecaster_multiseries(
 
     Returns
     -------
-    pred : pandas DataFrame, None
-        Predictions for the fold. `None` if no level is predicted in the fold
-        (it is only fitted for the following folds without refit).
+    pred : pandas DataFrame
+        Predictions for the fold.
+    X_predict : pandas DataFrame, None
+        Predictors used to make the predictions, aligned by position with
+        `pred`. `None` if `return_predictors` is `False`. They are returned
+        apart so that only the prediction columns are set to NaN at the dates
+        without observed values.
+
+    If no level is predicted in the fold (it is only fitted for the following
+    folds without refit), `None` is returned instead of the tuple.
     
     """
 
@@ -1126,19 +1144,19 @@ def _fit_predict_forecaster_multiseries(
                )
         preds.insert(0, pred)
 
+    X_predict = None
     if return_predictors:
         # NOTE: ForecasterRnn is not allowed for return_predictors as it 
         # returns two DataFrames, X_predict, exog_predict.
         # NOTE: Remove column 'level' as it already exists from predict()
-        pred = forecaster.create_predict_X(
-                   steps             = steps,
-                   levels            = levels_predict, 
-                   last_window       = last_window_series,
-                   exog              = exog_test,
-                   suppress_warnings = suppress_warnings,
-                   check_inputs      = False
-               ).iloc[:, 1:]
-        preds.append(pred)
+        X_predict = forecaster.create_predict_X(
+                        steps             = steps,
+                        levels            = levels_predict, 
+                        last_window       = last_window_series,
+                        exog              = exog_test,
+                        suppress_warnings = suppress_warnings,
+                        check_inputs      = False
+                    ).iloc[:, 1:]
 
     if len(preds) == 1:
         pred = preds[0]
@@ -1148,8 +1166,10 @@ def _fit_predict_forecaster_multiseries(
     # TODO: Check when long format with multiple levels in multivariate
     if type(forecaster).__name__ != 'ForecasterDirectMultiVariate' and gap > 0:
         pred = pred.iloc[len(levels_predict) * gap:, :]
+        if X_predict is not None:
+            X_predict = X_predict.iloc[len(levels_predict) * gap:, :]
 
-    return pred
+    return pred, X_predict
 
 
 @manage_warnings
@@ -1213,7 +1233,7 @@ def _backtesting_forecaster_multiseries(
 
         - 'average': the average (arithmetic mean) of all levels.
         - 'weighted_average': the average of the metrics weighted by the number of
-        predicted values of each level.
+        points evaluated in each level.
         - 'pooling': the values of all levels are pooled and then the metric is
         calculated.
     exog : pandas Series, pandas DataFrame, dict, default None
@@ -1570,6 +1590,7 @@ def _backtesting_forecaster_multiseries(
             data_folds_list.append((None, lw, levels_lw, None, e_test, fold))
 
     fold_numbers = [data_fold[5][0] for data_fold in data_folds_list]
+    test_iloc_starts = [data_fold[5][3][0] for data_fold in data_folds_list]
     if show_progress:
         data_folds_list = tqdm(data_folds_list)
 
@@ -1599,16 +1620,23 @@ def _backtesting_forecaster_multiseries(
 
     # NOTE: A fold that is only fitted, because its model predicts the
     # following folds without refit, returns no predictions (`None`).
-    fold_labels = [
-        np.repeat(fold_number, pred.shape[0])
-        for fold_number, pred in zip(fold_numbers, results)
-        if pred is not None
+    n_predictions_folds = [
+        0 if result is None else result[0].shape[0] for result in results
     ]
-    backtest_predictions = pd.concat(
-        [pred for pred in results if pred is not None], axis=0
+    results = [result for result in results if result is not None]
+    backtest_predictions = pd.concat([pred for pred, _ in results], axis=0)
+    X_predict = (
+        pd.concat([X_predict for _, X_predict in results], axis=0)
+        if return_predictors else None
     )
-    backtest_predictions.insert(0, 'fold', np.concatenate(fold_labels))
-    backtest_levels = set(chain(*levels_predict_folds))
+
+    # NOTE: The step of each prediction is the position of its date in the test
+    # set of its fold, gap included, so it goes from `gap + 1` to `gap + steps`
+    # (fewer in an incomplete last fold).
+    positions = span_index.get_indexer(backtest_predictions.index)
+    steps = positions - np.repeat(test_iloc_starts, n_predictions_folds) + 1
+    backtest_predictions.insert(0, 'fold', np.repeat(fold_numbers, n_predictions_folds))
+    backtest_predictions.insert(1, 'step', steps)
 
     _warn_levels_not_predicted_multiseries(
         forecaster           = forecaster,
@@ -1626,13 +1654,23 @@ def _backtesting_forecaster_multiseries(
         .set_index('level', append=True)
     )
 
-    backtest_predictions_grouped = backtest_predictions.groupby('level', sort=False)
-    for level, indices in backtest_predictions_grouped.groups.items():
-        if level in backtest_levels:
-            valid_index = series[level].dropna().index
-            valid_index = pd.MultiIndex.from_product([valid_index, [level]], names=['idx', 'level'])
-            no_valid_index = indices.difference(valid_index, sort=False)
-            backtest_predictions.loc[no_valid_index, 'pred'] = np.nan
+    # NOTE: The predictions of the dates without an observed value (missing
+    # values, or dates before the start or after the end of the series) are
+    # not evaluated, so all their prediction columns are set to NaN. The
+    # predictors, if returned, are kept.
+    y_true = _get_y_true_multiseries(series=series, index=backtest_predictions.index)
+    prediction_columns = backtest_predictions.columns.difference(
+        ['fold', 'step'], sort=False
+    )
+    is_not_observed = np.isnan(y_true)
+    if is_not_observed.any():
+        backtest_predictions.loc[is_not_observed, prediction_columns] = np.nan
+    backtest_predictions.insert(2, 'y_true', y_true)
+    if X_predict is not None:
+        backtest_predictions = pd.concat(
+            [backtest_predictions, X_predict.set_axis(backtest_predictions.index)],
+            axis=1
+        )
 
     backtest_predictions_for_metrics = backtest_predictions
     if overlapping_folds:
@@ -1641,15 +1679,18 @@ def _backtesting_forecaster_multiseries(
             .loc[~backtest_predictions_for_metrics.index.duplicated(keep='last')]
         )
 
-    predictions_for_metrics = backtest_predictions_for_metrics[['pred']]
+    predictions_for_metrics = (
+        backtest_predictions_for_metrics[['y_true', 'pred']]
+        .set_axis(['y_true', 'y_pred'], axis=1)
+    )
     interval_columns = _get_interval_columns(
                            columns  = backtest_predictions_for_metrics.columns,
                            interval = interval
                        )
     if interval_columns is not None:
         predictions_for_metrics = (
-            backtest_predictions_for_metrics[['pred', *interval_columns]]
-            .set_axis(['pred', 'lower_bound', 'upper_bound'], axis=1)
+            backtest_predictions_for_metrics[['y_true', 'pred', *interval_columns]]
+            .set_axis(['y_true', 'y_pred', 'lower_bound', 'upper_bound'], axis=1)
         )
 
     metrics_levels = _calculate_metrics_backtesting_multiseries(
@@ -1733,7 +1774,7 @@ def backtesting_forecaster_multiseries(
 
         - 'average': the average (arithmetic mean) of all levels.
         - 'weighted_average': the average of the metrics weighted by the number of
-        predicted values of each level.
+        points evaluated in each level.
         - 'pooling': the values of all levels are pooled and then the metric is
         calculated.
     exog : pandas Series, pandas DataFrame, dict, default None
@@ -2323,13 +2364,26 @@ def _backtesting_stats(
     )
 
     backtest_predictions = [result[0] for result in results]
-    fold_labels = [
-        np.repeat(fold[0], backtest_predictions[i].shape[0]) for i, fold in enumerate(folds)
-    ]
+    n_predictions_folds = [pred.shape[0] for pred in backtest_predictions]
+    fold_labels = np.repeat([fold[0] for fold in folds], n_predictions_folds)
+    test_iloc_starts = np.repeat([fold[3][0] for fold in folds], n_predictions_folds)
     backtest_predictions = pd.concat(backtest_predictions, axis=0)
     if isinstance(backtest_predictions, pd.Series):
         backtest_predictions = pd.DataFrame(backtest_predictions)
-    backtest_predictions.insert(0, 'fold', np.concatenate(fold_labels))
+
+    # NOTE: The step of each prediction is the position of its date in the test
+    # set of its fold, gap included, so it goes from `gap + 1` to `gap + steps`
+    # (fewer in an incomplete last fold). With several estimators, each date
+    # has one row per estimator, and `estimator_id` goes first, as `level` in
+    # the multi-series backtesting and in the metrics table.
+    positions = y.index.get_indexer(backtest_predictions.index)
+    backtest_predictions.insert(0, 'y_true', y.iloc[positions].to_numpy())
+    backtest_predictions.insert(0, 'step', positions - test_iloc_starts + 1)
+    backtest_predictions.insert(0, 'fold', fold_labels)
+    if 'estimator_id' in backtest_predictions.columns:
+        backtest_predictions.insert(
+            0, 'estimator_id', backtest_predictions.pop('estimator_id')
+        )
     if not freeze_params:
         estimator_names_ = [result[1] for result in results]
         backtest_predictions['estimator_params'] = np.concatenate(estimator_names_)
@@ -2373,8 +2427,10 @@ def _backtesting_stats(
     if add_interval_metrics:
         metric_names += INTERVAL_METRIC_NAMES
 
+    metric_names.append(N_EVALUATED_NAME)
+
     if forecaster.n_estimators == 1:
-        y_true = y.loc[backtest_predictions_for_metrics.index]
+        y_true = backtest_predictions_for_metrics['y_true']
         y_pred = backtest_predictions_for_metrics['pred']
         _check_nan_predictions_backtesting(y_true=y_true, y_pred=y_pred)
         metric_values = [
@@ -2389,25 +2445,25 @@ def _backtesting_stats(
                     upper_bound = backtest_predictions_for_metrics[interval_columns[1]]
                 )
             )
+        metric_values.append(_count_evaluated(y_true=y_true, y_pred=y_pred))
 
         metric_values = pd.DataFrame(
             data    = [metric_values],
             columns = metric_names
         )
     else:
-        unique_indices = backtest_predictions_for_metrics.index.unique()
-        y_true = y.loc[unique_indices]
-
         grouped = backtest_predictions_for_metrics.groupby('estimator_id', sort=False)
         metric_values = []
         for estimator_id, group in grouped:
+            y_true = group['y_true']
+            y_pred = group['pred']
             _check_nan_predictions_backtesting(
                 y_true       = y_true,
-                y_pred       = group['pred'],
+                y_pred       = y_pred,
                 estimator_id = estimator_id
             )
             metric_values_estimator = [
-                m(y_true=y_true, y_pred=group['pred'], y_train=y_train)
+                m(y_true=y_true, y_pred=y_pred, y_train=y_train)
                 for m in metrics
             ]
             if add_interval_metrics:
@@ -2418,6 +2474,9 @@ def _backtesting_stats(
                         upper_bound = group[interval_columns[1]]
                     )
                 )
+            metric_values_estimator.append(
+                _count_evaluated(y_true=y_true, y_pred=y_pred)
+            )
             metric_values.append(metric_values_estimator)
 
         metric_values = pd.DataFrame(
@@ -2670,7 +2729,7 @@ def _backtesting_foundation(
 
         - 'average': the average (arithmetic mean) of all levels.
         - 'weighted_average': the average of the metrics weighted by the number of
-        predicted values of each level.
+        points evaluated in each level.
         - 'pooling': the values of all levels are pooled and then the metric is
         calculated.
     exog : dict[str, pd.Series | pd.DataFrame | None] | None, default None
@@ -2893,7 +2952,16 @@ def _backtesting_foundation(
         pred.insert(1, 'fold', fold_number)
         backtest_predictions.append(pred)
 
+    # NOTE: Each fold adds one DataFrame, empty if it is skipped.
+    n_predictions_folds = [pred.shape[0] for pred in backtest_predictions]
+    test_iloc_starts = np.repeat([fold[3][0] for fold in folds], n_predictions_folds)
     backtest_predictions = pd.concat(backtest_predictions, axis=0)
+
+    # NOTE: The step of each prediction is the position of its date in the test
+    # set of its fold, gap included, so it goes from `gap + 1` to `gap + steps`
+    # (fewer in an incomplete last fold).
+    positions = span_index.get_indexer(backtest_predictions.index)
+    backtest_predictions.insert(2, 'step', positions - test_iloc_starts + 1)
 
     _warn_levels_not_predicted_multiseries(
         forecaster           = forecaster,
@@ -2905,7 +2973,6 @@ def _backtesting_foundation(
     )
 
     if is_multiseries:
-        backtest_levels = set(backtest_predictions['level'].unique())
 
         # Convert to (idx, level) MultiIndex required by
         # _calculate_metrics_backtesting_multiseries.
@@ -2920,15 +2987,14 @@ def _backtesting_foundation(
         else:
             mask_cols = ['pred']
 
-        backtest_predictions_grouped = backtest_predictions.groupby('level', sort=False)
-        for level, indices in backtest_predictions_grouped.groups.items():
-            if level in backtest_levels:
-                valid_index = series[level].dropna().index
-                valid_index = pd.MultiIndex.from_product(
-                    [valid_index, [level]], names=['idx', 'level']
-                )
-                no_valid_index = indices.difference(valid_index, sort=False)
-                backtest_predictions.loc[no_valid_index, mask_cols] = np.nan
+        # NOTE: The predictions of the dates without an observed value (missing
+        # values, or dates before the start or after the end of the series)
+        # are not evaluated, so they are set to NaN.
+        y_true = _get_y_true_multiseries(series=series, index=backtest_predictions.index)
+        is_not_observed = np.isnan(y_true)
+        if is_not_observed.any():
+            backtest_predictions.loc[is_not_observed, mask_cols] = np.nan
+        backtest_predictions.insert(2, 'y_true', y_true)
 
         backtest_predictions_for_metrics = backtest_predictions
         if overlapping_folds:
@@ -2943,15 +3009,18 @@ def _backtesting_foundation(
         else:
             metric_col = 'pred'
 
-        predictions_for_metrics = backtest_predictions_for_metrics[[metric_col]]
+        predictions_for_metrics = (
+            backtest_predictions_for_metrics[['y_true', metric_col]]
+            .set_axis(['y_true', 'y_pred'], axis=1)
+        )
         interval_columns = _get_interval_columns(
                                columns  = backtest_predictions_for_metrics.columns,
                                interval = quantiles
                            )
         if interval_columns is not None:
             predictions_for_metrics = (
-                backtest_predictions_for_metrics[[metric_col, *interval_columns]]
-                .set_axis([metric_col, 'lower_bound', 'upper_bound'], axis=1)
+                backtest_predictions_for_metrics[['y_true', metric_col, *interval_columns]]
+                .set_axis(['y_true', 'y_pred', 'lower_bound', 'upper_bound'], axis=1)
             )
 
         metrics_levels = _calculate_metrics_backtesting_multiseries(
@@ -2972,6 +3041,11 @@ def _backtesting_foundation(
         )
     else:
 
+        y = series[series_names[0]]
+        backtest_predictions.insert(
+            3, 'y_true', y.reindex(backtest_predictions.index).to_numpy()
+        )
+
         backtest_predictions_for_metrics = backtest_predictions
         if overlapping_folds:
             backtest_predictions_for_metrics = (
@@ -2979,7 +3053,7 @@ def _backtesting_foundation(
                 .loc[~backtest_predictions_for_metrics.index.duplicated(keep='last')]
             )
         
-        y_true = series[series_names[0]].loc[backtest_predictions_for_metrics.index]
+        y_true = backtest_predictions_for_metrics['y_true']
         # For quantile-only output, derive 'pred' from the median quantile.
         if quantiles is not None:
             y_pred = backtest_predictions_for_metrics['q_0.5']
@@ -3016,6 +3090,9 @@ def _backtesting_foundation(
                 )
             )
             metric_names += INTERVAL_METRIC_NAMES
+
+        metric_values.append(_count_evaluated(y_true=y_true, y_pred=y_pred))
+        metric_names.append(N_EVALUATED_NAME)
 
         metrics_levels = pd.DataFrame(
             data    = [metric_values],
@@ -3085,7 +3162,7 @@ def backtesting_foundation(
 
         - 'average': the average (arithmetic mean) of all levels.
         - 'weighted_average': the average of the metrics weighted by the
-        number of predicted values of each level.
+        number of points evaluated in each level.
         - 'pooling': the values of all levels are pooled and then the metric
         is calculated.
     exog : pandas Series, pandas DataFrame, dict, default None

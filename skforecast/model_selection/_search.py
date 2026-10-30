@@ -496,7 +496,7 @@ def _evaluate_grid_hyperparameters(
                                         show_progress     = False,
                                         suppress_warnings = suppress_warnings
                                     )[0]
-                    metric_values = metric_values.iloc[0, :].to_list()
+                    metric_values = metric_values.loc[0, list(metric_dict)].to_list()
 
                 else:
 
@@ -801,7 +801,7 @@ def bayesian_search_forecaster(
                              show_progress     = False,
                              suppress_warnings = suppress_warnings
                          )
-            metrics = metrics.iloc[0, :].to_list()
+            metrics = metrics.loc[0, list(metric_dict)].to_list()
             
             # Store all metrics in the trial using optuna's user_attrs mechanism.
             for m_name, m_val in zip(metric_dict, metrics):
@@ -1061,7 +1061,7 @@ def grid_search_forecaster_multiseries(
 
         - 'average': the average (arithmetic mean) of all levels.
         - 'weighted_average': the average of the metrics weighted by the number of
-        predicted values of each level.
+        points evaluated in each level.
         - 'pooling': the values of all levels are pooled and then the metric is
         calculated.
     levels : str, list, default None
@@ -1197,7 +1197,7 @@ def random_search_forecaster_multiseries(
 
         - 'average': the average (arithmetic mean) of all levels.
         - 'weighted_average': the average of the metrics weighted by the number of
-        predicted values of each level.
+        points evaluated in each level.
         - 'pooling': the values of all levels are pooled and then the metric is
         calculated.
     levels : str, list, default None
@@ -1338,7 +1338,7 @@ def _evaluate_grid_hyperparameters_multiseries(
 
         - 'average': the average (arithmetic mean) of all levels.
         - 'weighted_average': the average of the metrics weighted by the number of
-        predicted values of each level.
+        points evaluated in each level.
         - 'pooling': the values of all levels are pooled and then the metric is
         calculated.
     levels : str, list, default None
@@ -1729,7 +1729,7 @@ def bayesian_search_forecaster_multiseries(
 
         - 'average': the average (arithmetic mean) of all levels.
         - 'weighted_average': the average of the metrics weighted by the number of
-        predicted values of each level.
+        points evaluated in each level.
         - 'pooling': the values of all levels are pooled and then the metric is
         calculated.
     levels : str, list, default None
@@ -2286,8 +2286,8 @@ def bayesian_search_foundation(
         `['weighted_average', 'average', 'pooling']` is used.
 
         - 'average': the arithmetic mean of all levels.
-        - 'weighted_average': the mean weighted by the number of predicted values
-        of each level.
+        - 'weighted_average': the mean weighted by the number of points evaluated
+        in each level.
         - 'pooling': values of all levels are pooled and then the metric is
         calculated.
     levels : str, list, default None
@@ -2471,7 +2471,7 @@ def bayesian_search_foundation(
             )
         else:
             metrics = pd.DataFrame(
-                data    = [metrics.values.ravel()],
+                data    = [metrics[metric_columns].to_numpy().ravel()],
                 columns = metric_names,
             )
         metrics = metrics.reset_index(drop=True)
@@ -2941,7 +2941,7 @@ def _evaluate_grid_hyperparameters_stats(
             warnings.warn(f"Parameters skipped: {params}. {e}", RuntimeWarning)
             continue
         
-        metric_values = metric_values.iloc[0, :].to_list()
+        metric_values = metric_values.loc[0, list(metric_dict)].to_list()
         warnings.filterwarnings(
             'ignore', category=RuntimeWarning, message= "The forecaster will be fit.*"
         )
@@ -3210,7 +3210,7 @@ def grid_search_equivalent_date(
             warnings.warn(f"Parameters skipped: {params}. {e}", RuntimeWarning)
             continue
 
-        metric_values = metric_values.iloc[0, :].to_list()
+        metric_values = metric_values.loc[0, list(metric_dict)].to_list()
 
         params_list.append(params)
         alias_list.append(alias)
