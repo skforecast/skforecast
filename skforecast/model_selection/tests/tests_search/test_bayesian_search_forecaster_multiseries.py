@@ -2208,14 +2208,14 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_mult
                 {"n_estimators": 4, "max_depth": 3},
             ],
             "mean_absolute_error__weighted_average": [
-                749.8761502029433,
-                760.659082077477,
-                777.6874712018467,
-            ],
-            "mean_absolute_error__average": [
                 709.8836514262415,
                 721.1848222120482,
                 754.3537196425694,
+            ],
+            "mean_absolute_error__average": [
+                749.8761502029433,
+                760.659082077477,
+                777.6874712018467,
             ],
             "mean_absolute_error__pooling": [
                 709.8836514262414,
@@ -2223,14 +2223,14 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_mult
                 754.3537196425694,
             ],
             "mean_absolute_scaled_error__weighted_average": [
-                1.720281630023928,
-                1.7468333254211739,
-                1.7217882951816943,
-            ],
-            "mean_absolute_scaled_error__average": [
                 2.0713511786893473,
                 2.104173580194738,
                 2.06373433155371,
+            ],
+            "mean_absolute_scaled_error__average": [
+                1.720281630023928,
+                1.7468333254211739,
+                1.7217882951816943,
             ],
             "mean_absolute_scaled_error__pooling": [
                 1.7240004031507636,
@@ -2488,13 +2488,13 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_with
     expected = pd.DataFrame(
         np.array([[list(['id_1000', 'id_1001', 'id_1002', 'id_1003', 'id_1004']),
         np.array([1,  7, 14]), {'n_estimators': 4, 'max_depth': 3}, 
-            718.447039241195, 694.843611295513, 694.843611295513, 4, 3],
+            694.843611295513, 718.447039241195, 694.843611295513, 4, 3],
         [list(['id_1000', 'id_1001', 'id_1002', 'id_1003', 'id_1004']),
         np.array([1,  7, 14]), {'n_estimators': 3, 'max_depth': 3},
-            726.7646039380159, 704.8898538858386, 704.8898538858386, 3, 3],
+            704.8898538858386, 726.7646039380159, 704.8898538858386, 3, 3],
         [list(['id_1000', 'id_1001', 'id_1002', 'id_1003', 'id_1004']),
          np.array([5]), {'n_estimators': 4, 'max_depth': 3},
-            735.3584948212444, 730.1888301097707, 730.1888301097707, 4, 3]], dtype=object),
+            730.1888301097707, 735.3584948212444, 730.1888301097707, 4, 3]], dtype=object),
         columns=['levels', 'lags', 'params', 
                  'mean_absolute_error__weighted_average', 
                  'mean_absolute_error__average', 
@@ -2986,3 +2986,54 @@ def test_bayesian_search_forecaster_multiseries_direction_when_metric_greater_is
         assert results["r2_score__average"].is_monotonic_increasing
     assert results.loc[0, "trial_number"] == study.best_trial.number
     assert forecaster.estimator.alpha == study.best_params["alpha"]
+
+
+@pytest.mark.parametrize(
+    "cv",
+    [
+        TimeSeriesFold(steps=10, initial_train_size=213, refit=False),
+        OneStepAheadFold(initial_train_size=213),
+    ],
+    ids=lambda cv: f"cv: {type(cv).__name__}",
+)
+def test_bayesian_search_forecaster_multiseries_aggregated_metrics_match_their_column(cv):
+    """
+    Test that each column `<metric>__<aggregation>` of the results, and the
+    value optimized by optuna (the first one), contain the metric of their
+    aggregation with the default `aggregate_metric` (weighted average first).
+    The series are evaluated on different numbers of points, so the weighted
+    average differs from the average. The expected values are those of a
+    search with each aggregation alone (the first trials are random, so all
+    the searches evaluate the same parameters).
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=LGBMRegressor(n_estimators=5, random_state=123, verbose=-1),
+        lags=3,
+    )
+
+    def search_space(trial):
+        return {"n_estimators": trial.suggest_int("n_estimators", 2, 20)}
+
+    def search(aggregate_metric):
+        results, _ = bayesian_search_forecaster_multiseries(
+            forecaster       = forecaster,
+            series           = series_dict_nans,
+            cv               = cv,
+            search_space     = search_space,
+            metric           = "mean_absolute_error",
+            aggregate_metric = aggregate_metric,
+            n_trials         = 3,
+            random_state     = 123,
+            return_best      = False,
+            show_progress    = False,
+        )
+        return results.set_index(results["params"].astype(str)).sort_index()
+
+    results = search(["weighted_average", "average", "pooling"])
+    for aggregation in ["weighted_average", "average", "pooling"]:
+        column = f"mean_absolute_error__{aggregation}"
+        pd.testing.assert_series_equal(results[column], search(aggregation)[column])
+    assert not np.allclose(
+        results["mean_absolute_error__weighted_average"],
+        results["mean_absolute_error__average"],
+    )

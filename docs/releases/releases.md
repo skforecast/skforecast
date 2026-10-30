@@ -28,6 +28,8 @@ The main changes in this release are:
 
 + <span class="badge text-bg-fix">Fix</span> Hyperparameter searches follow the direction of the metric: with a metric in which greater is better, such as `r2_score`, they ranked the worst candidate first and `return_best=True` refitted the forecaster with it. ([#1431](https://github.com/skforecast/skforecast/pull/1431))
 
++ <span class="badge text-bg-fix">Fix</span> Multi-series hyperparameter searches rank the candidates by the weighted average of the metric, the default: the columns of the aggregated metrics were swapped, so they ranked by the simple average when the series were evaluated on different numbers of points.
+
 !!! warning "Before upgrading"
 
     Some results change with this version, without any change in your code:
@@ -39,6 +41,8 @@ The main changes in this release are:
     + <code>[Ets]</code> with `lambda_auto=True`: `best_params_` contains the Box-Cox lambda selected in the fit and `lambda_auto=False`, so the model rebuilt from it keeps that lambda.
 
     + Hyperparameter searches with a scikit-learn metric in which greater is better (`r2_score`, `explained_variance_score`...) or, with <code>[ForecasterRecursiveClassifier]</code>, a loss (`zero_one_loss`): the order of the results and the model selected with `return_best` change, now to the best candidate.
+
+    + <code>[grid_search_forecaster_multiseries]</code>, <code>[random_search_forecaster_multiseries]</code>, <code>[bayesian_search_forecaster_multiseries]</code> and <code>[bayesian_search_foundation]</code> with series evaluated on different numbers of points (series of different lengths or with gaps): the values of the `__weighted_average` and `__average` columns (or of the aggregations passed in `aggregate_metric`) move to their right column, so the order of the results and the model selected with `return_best` may change.
 
     + <code>[ForecasterRecursiveMultiSeries]</code> with `encoding='ordinal'` (the default), `'ordinal_category'` or `None` and series not given in alphabetical order: the rows of each step in the output of `predict` and the other predict methods with `levels=None`, and the keys of `in_sample_residuals_`, follow the order of the series instead of the alphabetical order. The values are the same; pass `levels` to fix an order.
 
@@ -98,6 +102,8 @@ The main changes in this release are:
 + <code>[backtesting_forecaster_multiseries]</code> and the hyperparameter search of multi-series forecasters raised an unrelated `ValueError` (`Found frequencies: []`, or `` `last_window` must have as many values as needed ``) when no series could be trained or predicted in a fold, for example in panels where some series end and others start later. That fold is now skipped and listed in the `MissingValuesWarning`; if no fold can be predicted or evaluated, a `ValueError` explains why. ([#1427](https://github.com/skforecast/skforecast/pull/1427))
 
 + The `weighted_average` metric of <code>[backtesting_forecaster_multiseries]</code> was NaN when a level was predicted but had no observed values in its test set, for example a series that ends at the end of the training set. It is also the metric that ranks the candidates of the hyperparameter searches of <code>[ForecasterRecursiveMultiSeries]</code> by default. That level is now left out of the weighted average, as it already was of the average and the pooling. ([#1427](https://github.com/skforecast/skforecast/pull/1427))
+
++ <code>[grid_search_forecaster_multiseries]</code>, <code>[random_search_forecaster_multiseries]</code>, <code>[bayesian_search_forecaster_multiseries]</code> and <code>[bayesian_search_foundation]</code> filled the aggregated metric columns in the wrong order: with the default `aggregate_metric`, `<metric>__weighted_average` held the average and `<metric>__average` the weighted average, and the candidates were ranked by the average. It only changed the results when the series were evaluated on different numbers of points.
 
 + <code>[backtesting_forecaster_multiseries]</code>, <code>[backtesting_foundation]</code> and the hyperparameter search of <code>[ForecasterRecursiveMultiSeries]</code> rejected a valid `initial_train_size` when every series was shorter than the span of all series. The `split` method of <code>[OneStepAheadFold]</code> also returned a wrong test end with a dict of series. ([#1430](https://github.com/skforecast/skforecast/pull/1430))
 

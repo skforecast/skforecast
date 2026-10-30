@@ -1905,3 +1905,69 @@ def test_evaluate_grid_hyperparameters_multiseries_warns_when_all_params_raise_e
         'mean_squared_error__pooling',
     ]
     assert list(results.columns) == expected_columns
+
+
+@pytest.mark.parametrize(
+    "cv",
+    [
+        TimeSeriesFold(steps=10, initial_train_size=213, refit=False),
+        OneStepAheadFold(initial_train_size=213),
+    ],
+    ids=lambda cv: f"cv: {type(cv).__name__}",
+)
+@pytest.mark.parametrize(
+    "aggregate_metric",
+    [
+        ["weighted_average", "average", "pooling"],
+        ["pooling", "average"],
+    ],
+    ids=lambda agg: f"aggregate_metric: {agg}",
+)
+def test_evaluate_grid_hyperparameters_multiseries_aggregated_metrics_match_their_column(
+    cv, aggregate_metric
+):
+    """
+    Test that each column `<metric>__<aggregation>` of the results contains
+    the metric of its aggregation, whatever the order of `aggregate_metric`.
+    The series are evaluated on different numbers of points, so the weighted
+    average differs from the average. The expected values are those of a
+    search with each aggregation alone.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=LGBMRegressor(n_estimators=5, random_state=123, verbose=-1),
+        lags=3,
+    )
+    kwargs = {
+        "forecaster": forecaster,
+        "series": series_dict_nans,
+        "param_grid": [{"n_estimators": 5}, {"n_estimators": 10}],
+        "cv": cv,
+        "metric": ["mean_absolute_error", "mean_squared_error"],
+        "return_best": False,
+        "verbose": False,
+        "show_progress": False,
+    }
+
+    def by_params(results, column):
+        return results.set_index(results["params"].astype(str))[column].sort_index()
+
+    results = _evaluate_grid_hyperparameters_multiseries(
+        aggregate_metric=aggregate_metric, **kwargs
+    )
+
+    for aggregation in aggregate_metric:
+        expected = _evaluate_grid_hyperparameters_multiseries(
+            aggregate_metric=aggregation, **kwargs
+        )
+        for metric in ["mean_absolute_error", "mean_squared_error"]:
+            column = f"{metric}__{aggregation}"
+            pd.testing.assert_series_equal(
+                by_params(results, column), by_params(expected, column)
+            )
+    weighted_average = _evaluate_grid_hyperparameters_multiseries(
+        aggregate_metric="weighted_average", **kwargs
+    )
+    assert not np.allclose(
+        by_params(results, "mean_absolute_error__average"),
+        by_params(weighted_average, "mean_absolute_error__weighted_average"),
+    )

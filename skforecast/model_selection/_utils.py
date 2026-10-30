@@ -2308,3 +2308,47 @@ def _check_study_direction(study: object, metric: Callable) -> str:
             )
 
     return direction
+
+
+def _select_metrics_search_multiseries(
+    metrics: pd.DataFrame,
+    metric_names: list[str],
+    rows: list
+) -> np.ndarray:
+    """
+    Values of the metrics of a multi-series backtesting used by the searches:
+    the columns `metric_names` of the rows `rows` (aggregations, or a level if
+    the metrics are not aggregated), flattened metric by metric and, within
+    each metric, in the order of `rows`. It is the order of the columns
+    `<metric>__<aggregation>` of the search results. Metrics are selected by
+    name, so other columns of the metrics table are ignored.
+
+    Parameters
+    ----------
+    metrics : pandas DataFrame
+        Metrics table of `backtesting_forecaster_multiseries`,
+        `backtesting_foundation` or
+        `_predict_and_calculate_metrics_one_step_ahead_multiseries`, with the
+        column `levels`.
+    metric_names : list
+        Names of the metrics, columns of `metrics`.
+    rows : list
+        Values of the column `levels` to select, in the order of the results.
+
+    Returns
+    -------
+    metric_values : numpy ndarray
+        Values of the metrics, of length `len(metric_names) * len(rows)`.
+
+    """
+
+    metric_values = (
+        metrics
+        .set_index('levels')
+        .loc[rows, metric_names]
+        .to_numpy()
+        .T
+        .ravel()
+    )
+
+    return metric_values
