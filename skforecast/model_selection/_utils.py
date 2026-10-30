@@ -402,12 +402,27 @@ def check_backtesting_input(
             "`skip_folds` is not allowed for ForecasterStats. Set it to `None`."
         )
 
+    # NOTE: The names are those of the columns of the metrics table. A callable
+    # without `__name__` (for example, a `functools.partial`) is named after
+    # the wrapper of `add_y_train_argument`.
+    metric_names = [
+        m if isinstance(m, str) else getattr(add_y_train_argument(m), '__name__', None)
+        for m in (metric if isinstance(metric, list) else [metric])
+    ]
+    duplicated_names = list(dict.fromkeys(
+        name for name in metric_names
+        if name is not None and metric_names.count(name) > 1
+    ))
+    if duplicated_names:
+        raise ValueError(
+            f"Each metric name must be unique, they are the columns of the "
+            f"metrics table. Duplicated names: {duplicated_names}. Give each "
+            f"function a distinct `__name__` (for example, "
+            f"`create_mean_pinball_loss` includes the quantile in the name)."
+        )
+
     # NOTE: `backtesting_foundation` passes its `quantiles` as `interval`.
     if _get_interval_bound_quantiles(interval) is not None or alpha is not None:
-        metric_names = [
-            m if isinstance(m, str) else getattr(m, '__name__', None)
-            for m in (metric if isinstance(metric, list) else [metric])
-        ]
         reserved_names = [name for name in metric_names if name in INTERVAL_METRIC_NAMES]
         if reserved_names:
             raise ValueError(

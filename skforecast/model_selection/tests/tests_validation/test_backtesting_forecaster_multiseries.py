@@ -326,7 +326,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                                                series                = series,
                                                cv                    = cv,
                                                levels                = 'l1',
-                                               metric                = ['mean_absolute_error', mean_absolute_error],
+                                               metric                = ['mean_absolute_error', custom_metric],
                                                add_aggregated_metric = False,
                                                exog                  = None,
                                                verbose               = False
@@ -334,7 +334,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     
     expected_metric = pd.DataFrame(
         data    = [['l1', 0.2124129141233719, 0.2124129141233719]],
-        columns = ['levels', 'mean_absolute_error', 'mean_absolute_error']
+        columns = ['levels', 'mean_absolute_error', 'custom_metric']
     )
     expected_predictions = pd.DataFrame({
         'l1': np.array([0.4978838984103099, 0.46288426670127997, 0.48433446479429937, 
@@ -374,7 +374,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                                                series                = series_dict_range,
                                                cv                    = cv,
                                                levels                = None,
-                                               metric                = ['mean_absolute_error', mean_absolute_error],
+                                               metric                = ['mean_absolute_error', custom_metric],
                                                add_aggregated_metric = False,
                                                exog                  = None,
                                                verbose               = False
@@ -383,7 +383,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     expected_metric = pd.DataFrame(
         data    = [['l1', 0.21143995953996186, 0.21143995953996186],
                    ['l2', 0.2194174144550234, 0.2194174144550234]],
-        columns = ['levels', 'mean_absolute_error', 'mean_absolute_error']
+        columns = ['levels', 'mean_absolute_error', 'custom_metric']
     )
     expected_predictions = pd.DataFrame({
         'l1': np.array([0.4978839 , 0.46288427, 0.48433446, 0.48677605, 0.48562473,
@@ -425,7 +425,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                                                series                = series_dict_range,
                                                cv                    = cv,
                                                levels                = None,
-                                               metric                = ['mean_absolute_error', mean_absolute_error],
+                                               metric                = ['mean_absolute_error', custom_metric],
                                                add_aggregated_metric = False,
                                                exog                  = None,
                                                verbose               = False
@@ -434,7 +434,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
     expected_metric = pd.DataFrame(
         data    = [['l1', 0.20809130188099298, 0.20809130188099298],
                    ['l2', 0.22082212805693338, 0.22082212805693338]],
-        columns = ['levels', 'mean_absolute_error', 'mean_absolute_error']
+        columns = ['levels', 'mean_absolute_error', 'custom_metric']
     )
     expected_predictions = pd.DataFrame({
         'l1': np.array([0.4978839 , 0.46288427, 0.48433446, 0.48677605, 0.48562473,
@@ -4256,7 +4256,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                                                series                = series_wide_range,
                                                cv                    = cv,
                                                levels                = 'l1',
-                                               metric                = ['mean_absolute_error', mean_absolute_error],
+                                               metric                = ['mean_absolute_error', custom_metric],
                                                add_aggregated_metric = False,
                                                exog                  = None,
                                                verbose               = False
@@ -4264,7 +4264,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     
     expected_metric = pd.DataFrame(
         data    = [['l1', 0.20733067815663564, 0.20733067815663564]],
-        columns = ['levels', 'mean_absolute_error', 'mean_absolute_error']
+        columns = ['levels', 'mean_absolute_error', 'custom_metric']
     )
     expected_predictions = pd.DataFrame({
                                'l1': np.array([0.55397908, 0.48026456, 0.52368724, 
