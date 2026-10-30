@@ -95,7 +95,7 @@ multi-series search functions (via `aggregate_metric` parameter).
 | Aggregation | Behavior | Best for |
 |-------------|----------|----------|
 | `'average'` | Arithmetic mean of per-series metric values | All series equally important |
-| `'weighted_average'` | Weighted by number of predicted values per level | Series with more observations contribute more |
+| `'weighted_average'` | Weighted by the points evaluated per level (`n_evaluated`) | Series with more observations contribute more |
 | `'pooling'` | Metric computed on all predictions concatenated | Global accuracy regardless of series identity |
 
 In backtesting, set `add_aggregated_metric=True` (default) to include all three.

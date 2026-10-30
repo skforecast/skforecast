@@ -319,7 +319,19 @@ metric, predictions = backtesting_forecaster(
     show_progress=True,                         # Show progress bar
     suppress_warnings=False                     # Suppress skforecast warnings
 )
-# metric columns: mean_absolute_error, coverage, interval_width
+# predictions columns: fold, step, y_true, pred, lower_bound, upper_bound
+# metric columns: mean_absolute_error, coverage, interval_width, n_evaluated
+```
+
+The predictions of the four backtesting functions (`backtesting_forecaster`, `backtesting_forecaster_multiseries`, `backtesting_stats` and `backtesting_foundation`) always include, after `fold`, the column `step` (step of the forecast horizon at which each prediction was made, from `gap + 1` to `gap + steps`) and `y_true` (true value), before the predictions: `level, fold, step, y_true, pred, ...` with multiple series, and `estimator_id, fold, step, y_true, pred, ...` in `backtesting_stats` with several estimators. In the multi-series backtesting, the dates without an observed value have NaN in `y_true` and in every prediction column. With overlapping folds (`fold_stride < steps`) every prediction is kept, so a date can appear several times with different `step`. The last column of `metric` is `n_evaluated`: the points used for the metrics (true value and prediction not missing, each date once with the prediction of its last fold), per level in multi-series and the sum in the aggregated rows; `weighted_average` is weighted by it. Metric names must be unique (they are the columns of `metric`; `create_mean_pinball_loss(alpha)` is named `mean_pinball_loss_q_{alpha}`) and cannot be `n_evaluated`.
+
+```python
+# Error and coverage by step of the horizon (group by ['level', 'step'] with multiple series)
+predictions = predictions.dropna(subset=['y_true'])
+predictions.assign(
+    absolute_error=(predictions['y_true'] - predictions['pred']).abs(),
+    covered=predictions['y_true'].between(predictions['lower_bound'], predictions['upper_bound']),
+).groupby('step')[['absolute_error', 'covered']].mean()
 ```
 
 When the predictions define one interval, the backtesting functions add two columns to `metric`, after the requested metrics: `coverage` (share of true values inside the interval) and `interval_width` (mean width of the interval, in the units of the series). One interval means a float `interval` such as `0.8`, or two quantiles, optionally with the median: `interval=[0.1, 0.9]` or `[0.1, 0.5, 0.9]`, and the same in `quantiles` of `backtesting_foundation`. Compare `coverage` with the nominal level (0.8 for `[0.1, 0.9]`) and read it together with `interval_width`: a wide interval covers more. Multi-series backtesting reports them per level and in the aggregated rows, and `backtesting_stats` per estimator (also with `alpha`). With other quantiles (for example `[0.05, 0.1, 0.9, 0.95]`), `interval='bootstrapping'` or a distribution, they are not added; use CRPS or the pinball loss instead. A custom metric cannot be named `coverage` or `interval_width` when they are added.

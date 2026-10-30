@@ -171,8 +171,8 @@ metric, predictions = backtesting_forecaster(
     use_in_sample_residuals=True,
     use_binned_residuals=True,
 )
-# predictions has columns: fold, pred, lower_bound, upper_bound
-# metric has columns: mean_absolute_error, coverage, interval_width
+# predictions has columns: fold, step, y_true, pred, lower_bound, upper_bound
+# metric has columns: mean_absolute_error, coverage, interval_width, n_evaluated
 ```
 
 When `interval` defines one interval (a float, or two quantiles optionally with
@@ -211,7 +211,7 @@ metric, predictions_bt = backtesting_forecaster(
 
 # Set out-of-sample residuals on the forecaster
 forecaster.set_out_sample_residuals(
-    y_true=data['target'].loc[predictions_bt.index],
+    y_true=predictions_bt['y_true'],
     y_pred=predictions_bt['pred'],
 )
 

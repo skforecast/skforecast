@@ -300,12 +300,12 @@ cv_cal = TimeSeriesFold(steps=forecaster.max_step, initial_train_size=None, refi
 _, pred_cal = backtesting_forecaster_multiseries(
     forecaster=forecaster, series=series_val, cv=cv_cal, metric='mean_absolute_error'
 )
-pred_target = pred_cal.loc[pred_cal['level'] == 'target', 'pred']
+pred_target = pred_cal.loc[pred_cal['level'] == 'target']
 
 # y_true and y_pred in the original scale, the forecaster applies the transformation
 forecaster.set_out_sample_residuals(
-    y_true={'target': series_val.loc[pred_target.index, 'target']},
-    y_pred={'target': pred_target},
+    y_true={'target': pred_target['y_true']},
+    y_pred={'target': pred_target['pred']},
 )
 
 predictions = forecaster.predict_interval(

@@ -126,11 +126,13 @@ forecaster.predict_interval(
 
 ```python
 # Step 1: Get predictions via backtesting
-metric, preds = backtesting_forecaster(forecaster=forecaster, y=data, cv=cv, metric='mae')
+metric, preds = backtesting_forecaster(
+    forecaster=forecaster, y=data, cv=cv, metric='mean_absolute_error'
+)
 
 # Step 2: Store residuals
 forecaster.set_out_sample_residuals(
-    y_true=data.loc[preds.index],
+    y_true=preds['y_true'],
     y_pred=preds['pred'],
 )
 

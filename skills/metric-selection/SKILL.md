@@ -139,7 +139,7 @@ metric, predictions = backtesting_forecaster(
     cv=cv,
     metric=['mean_absolute_error', 'mean_absolute_scaled_error'],
 )
-# metric is a DataFrame with one column per metric
+# metric is a DataFrame with one column per metric, plus `n_evaluated` (points evaluated)
 ```
 
 **MASE and RMSSE** require training data to compute the naive forecast baseline.
@@ -323,7 +323,7 @@ can aggregate them into a single score. The aggregation options are:
 | Aggregation | Formula | Use when |
 |-------------|---------|----------|
 | `'average'` | Arithmetic mean of per-series metrics | All series equally important |
-| `'weighted_average'` | Weighted by number of predicted values per level | Series with more observations contribute more |
+| `'weighted_average'` | Weighted by the points evaluated per level (`n_evaluated`) | Series with more observations contribute more |
 | `'pooling'` | Metric computed on all predictions pooled together | Want a single global error regardless of series identity |
 
 ### In backtesting
@@ -340,7 +340,8 @@ metric, predictions = backtesting_forecaster_multiseries(
     metric='mean_absolute_error',
     add_aggregated_metric=True,  # Default: includes average, weighted_average, pooling
 )
-# metric DataFrame has rows for each level + aggregated rows
+# metric DataFrame has rows for each level + aggregated rows, and a last column
+# `n_evaluated` (points evaluated per level, summed in the aggregated rows)
 ```
 
 ### In hyperparameter search
