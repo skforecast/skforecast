@@ -34,3 +34,20 @@ def test_create_pinball_loss_output_equivalent_to_sklearn():
     for alpha in [0.1, 0.5, 0.9]:
         pinball_loss = create_mean_pinball_loss(alpha=alpha)
         assert pinball_loss(y_true, y_pred) == mean_pinball_loss(y_true, y_pred, alpha=alpha)
+
+
+@pytest.mark.parametrize(
+    "alpha, expected_name",
+    [(0.1, "mean_pinball_loss_q_0.1"), (0.9, "mean_pinball_loss_q_0.9"),
+     (0, "mean_pinball_loss_q_0"), (1, "mean_pinball_loss_q_1")],
+    ids=lambda x: f"{x}"
+)
+def test_create_mean_pinball_loss_name_includes_quantile(alpha, expected_name):
+    """
+    Check that the name of the function includes the quantile, so that the
+    losses of several quantiles are different columns of the backtesting
+    metrics.
+    """
+    pinball_loss = create_mean_pinball_loss(alpha=alpha)
+
+    assert pinball_loss.__name__ == expected_name
