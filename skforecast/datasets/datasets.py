@@ -9,10 +9,12 @@
 from __future__ import annotations
 import warnings
 import pandas as pd
-import textwrap
 from rich.console import Console
+from rich.markup import escape
 from rich.panel import Panel
 
+# Parquet entries: date_format is ignored, the column is already datetime64 in
+# the file.
 datasets = {
     'h2o': {
         'url': (
@@ -26,11 +28,11 @@ datasets = {
         'file_type': 'csv',
         'description': (
             'Monthly expenditure ($AUD) on corticosteroid drugs that the '
-            'Australian health system had between 1991 and 2008. '
+            'Australian health system had between 1991 and 2008.'
         ),
         'source': (
-            'Hyndman R (2023). fpp3: Data for Forecasting: Principles and Practice'
-            '(3rd Edition). http://pkg.robjhyndman.com/fpp3package/,'
+            'Hyndman R (2023). fpp3: Data for Forecasting: Principles and Practice '
+            '(3rd Edition). http://pkg.robjhyndman.com/fpp3package/, '
             'https://github.com/robjhyndman/fpp3package, http://OTexts.com/fpp3.'
         )
     },
@@ -99,7 +101,7 @@ datasets = {
         'freq': 'h',
         'file_type': 'csv',
         'description': (
-            'Hourly measures of several air chemical pollutant at Valencia city '
+            'Hourly measures of several air chemical pollutants at Valencia city '
             '(Avd. Francia) from 2019-01-01 to 2023-12-31. Including the following '
             'variables: pm2.5 (µg/m³), CO (mg/m³), NO (µg/m³), NO2 (µg/m³), '
             'PM10 (µg/m³), NOx (µg/m³), O3 (µg/m³), Veloc. (m/s), Direc. (degrees), '
@@ -122,7 +124,7 @@ datasets = {
         'freq': 'h',
         'file_type': 'csv',
         'description': (
-            'Hourly measures of several air chemical pollutant at Valencia city '
+            'Hourly measures of several air chemical pollutants at Valencia city '
             '(Avd. Francia) from 2019-01-01 to 2023-12-31. Including the following '
             'variables: pm2.5 (µg/m³), CO (mg/m³), NO (µg/m³), NO2 (µg/m³), '
             'PM10 (µg/m³), NOx (µg/m³), O3 (µg/m³), Veloc. (m/s), Direc. (degrees), '
@@ -206,14 +208,15 @@ datasets = {
         'sep': ',',
         'index_col': 'date_time',
         'date_format': '%Y-%m-%d',
-        'freq': 'Q',
+        'freq': 'QS',
         'file_type': 'csv',
         'description': (
-            "Quarterly overnight trips (in thousands) from 1998 Q1 to 2016 Q4 "
+            "Quarterly overnight trips (in thousands) from 1998 Q1 to 2017 Q4 "
             "across Australia. The tourism regions are formed through the "
             "aggregation of Statistical Local Areas (SLAs) which are defined by "
             "the various State and Territory tourism authorities according to "
-            "their research and marketing needs."
+            "their research and marketing needs. Long format: one row per "
+            "region, state, purpose and quarter (304 series)."
         ),
         'source': (
             "Wang, E, D Cook, and RJ Hyndman (2020). A new tidy data structure to "
@@ -272,10 +275,14 @@ datasets = {
         'date_format': '%Y-%m-%dT%H:%M:%SZ',
         'freq': '30min',
         'file_type': 'csv',
-        'description': 'Half-hourly electricity demand for Victoria, Australia',
+        'description': (
+            'Half-hourly electricity demand for Victoria, Australia. `Time` is in '
+            'UTC (suffix Z, parsed as a naive datetime); `Date` and `Holiday` refer '
+            'to local time in Melbourne (UTC+10, UTC+11 in summer).'
+        ),
         'source': (
-            "O'Hara-Wild M, Hyndman R, Wang E, Godahewa R (2022).tsibbledata: Diverse "
-            "Datasets for 'tsibble'. https://tsibbledata.tidyverts.org/, "
+            "O'Hara-Wild M, Hyndman R, Wang E, Godahewa R (2022). tsibbledata: "
+            "Diverse Datasets for 'tsibble'. https://tsibbledata.tidyverts.org/, "
             "https://github.com/tidyverts/tsibbledata/. "
             "https://tsibbledata.tidyverts.org/reference/vic_elec.html"
         )
@@ -296,8 +303,8 @@ datasets = {
             "The dataset also includes temperature, holiday indicator and hour of the day as features."
         ),
         'source': (
-            "O'Hara-Wild M, Hyndman R, Wang E, Godahewa R (2022).tsibbledata: Diverse "
-            "Datasets for 'tsibble'. https://tsibbledata.tidyverts.org/, "
+            "O'Hara-Wild M, Hyndman R, Wang E, Godahewa R (2022). tsibbledata: "
+            "Diverse Datasets for 'tsibble'. https://tsibbledata.tidyverts.org/, "
             "https://github.com/tidyverts/tsibbledata/. "
             "https://tsibbledata.tidyverts.org/reference/vic_elec.html"
         )
@@ -314,7 +321,8 @@ datasets = {
         'file_type': 'csv',
         'description': (
             'This dataset contains 913,000 sales transactions from 2013-01-01 to '
-            '2017-12-31 for 50 products (SKU) in 10 stores.'
+            '2017-12-31 for 50 products (SKU) in 10 stores. Long format: one row '
+            'per store, item and date.'
         ),
         'source': (
             'The original data was obtained from: inversion. (2018). Store Item '
@@ -352,16 +360,21 @@ datasets = {
         'date_format': '%Y-%m-%d %H:%M:%S',
         'freq': 'D',
         'file_type': 'parquet',
-        'description': "Time series with daily frequency from the M4 competition.",
+        'description': (
+            "Time series with daily frequency from the M4 competition. Timestamps "
+            "are artificial (the M4 series have no real dates): all at 12:00 and "
+            "spanning 1959 to 2039. Long format: one row per series and timestamp."
+        ),
         'source': (
-            "Monash Time Series Forecasting Repository  "
+            "Monash Time Series Forecasting Repository "
             "(https://zenodo.org/communities/forecasting) Godahewa, R., Bergmeir, "
             "C., Webb, G. I., Hyndman, R. J., & Montero-Manso, P. (2021). Monash "
             "Time Series Forecasting Archive. In Neural Information Processing "
-            "Systems Track on Datasets and Benchmarks. \n"
+            "Systems Track on Datasets and Benchmarks.\n"
             "Raw data, available in .tsf format, has been converted to Pandas "
             "format using the code provided by the authors in "
-            "https://github.com/rakshitha123/TSForecasting/blob/master/utils/data_loader.py \n"
+            "https://github.com/rakshitha123/TSForecasting/blob/master/utils/"
+            "data_loader.py\n"
             "The category of each time series has been included in the dataset. This "
             "information has been obtained from the Kaggle competition page: "
             "https://www.kaggle.com/datasets/yogesh94/m4-forecasting-competition-dataset"
@@ -377,16 +390,22 @@ datasets = {
         'date_format': '%Y-%m-%d %H:%M:%S',
         'freq': 'h',
         'file_type': 'parquet',
-        'description': "Time series with hourly frequency from the M4 competition.",
+        'description': (
+            "Time series with hourly frequency from the M4 competition. Timestamps "
+            "are artificial (the M4 series have no real dates): every series starts "
+            "at 12:00, and they span 2009 to 2017. Long format: one row per series "
+            "and timestamp."
+        ),
         'source': (
-            "Monash Time Series Forecasting Repository  "
+            "Monash Time Series Forecasting Repository "
             "(https://zenodo.org/communities/forecasting) Godahewa, R., Bergmeir, "
             "C., Webb, G. I., Hyndman, R. J., & Montero-Manso, P. (2021). Monash "
             "Time Series Forecasting Archive. In Neural Information Processing "
-            "Systems Track on Datasets and Benchmarks. \n"
+            "Systems Track on Datasets and Benchmarks.\n"
             "Raw data, available in .tsf format, has been converted to Pandas "
             "format using the code provided by the authors in "
-            "https://github.com/rakshitha123/TSForecasting/blob/master/utils/data_loader.py \n"
+            "https://github.com/rakshitha123/TSForecasting/blob/master/utils/"
+            "data_loader.py\n"
             "The category of each time series has been included in the dataset. This "
             "information has been obtained from the Kaggle competition page: "
             "https://www.kaggle.com/datasets/yogesh94/m4-forecasting-competition-dataset"
@@ -401,7 +420,8 @@ datasets = {
         'file_type': 'parquet',
         'description': (
             "Daily energy consumption data from the ASHRAE competition with "
-            "building metadata and weather data."
+            "building metadata and weather data. Long format: one row per "
+            "building and date."
         ),
         'source': (
             "Kaggle competition Addison Howard, Chris Balbach, Clayton Miller, "
@@ -417,8 +437,9 @@ datasets = {
         'freq': 'D',
         'file_type': 'parquet',
         'description': (
-            "Daily energy consumption data from the The Building Data Genome Project 2 "
-            "with building metadata and weather data. "
+            "Daily energy consumption data from the Building Data Genome Project 2 "
+            "with building metadata and weather data. Long format: one row per "
+            "building and date. "
             "https://github.com/buds-lab/building-data-genome-project-2"
         ),
         'source': (
@@ -437,7 +458,7 @@ datasets = {
         'file_type': 'csv',
         'description': (
             "Daily energy consumption data of two buildings sampled from the "
-            "The Building Data Genome Project 2. "
+            "Building Data Genome Project 2. "
             "https://github.com/buds-lab/building-data-genome-project-2"
         ),
         'source': (
@@ -455,8 +476,9 @@ datasets = {
         'freq': 'h',
         'file_type': 'parquet',
         'description': (
-            "Hourly energy consumption data from the The Building Data Genome Project 2 "
-            "with building metadata and weather data. "
+            "Hourly energy consumption data from the Building Data Genome Project 2 "
+            "with building metadata and weather data. Long format: one row per "
+            "building and timestamp. "
             "https://github.com/buds-lab/building-data-genome-project-2"
         ),
         'source': (
@@ -475,7 +497,7 @@ datasets = {
         'file_type': 'csv',
         'description': (
             "Hourly energy consumption data of two buildings sampled from the "
-            "The Building Data Genome Project 2. "
+            "Building Data Genome Project 2. "
             "https://github.com/buds-lab/building-data-genome-project-2"
         ),
         'source': (
@@ -493,7 +515,10 @@ datasets = {
         'freq': 'D',
         'file_type': 'parquet',
         'description': (
-            "Daily sales data from the M5 competition with product metadata and calendar data."
+            "Daily sales data from the M5 competition with product metadata and "
+            "calendar data. Series ids keep the `_evaluation` suffix of the Kaggle "
+            "files; `sell_price` is NaN before the product was first sold. Long "
+            "format: one row per series and date."
         ),
         'source': (
             "Addison Howard, inversion, Spyros Makridakis, and vangelis. "
@@ -511,9 +536,9 @@ datasets = {
         'freq': '15min',
         'file_type': 'csv',
         'description': (
-            'Data from an electricity transformer station was collected between July '
-            '2016 and July 2018 (2 years x 365 days x 24 hours x 4 intervals per '
-            'hour = 70,080 data points). Each data point consists of 8 features, '
+            'Data from an electricity transformer station was collected from '
+            '2016-07-01 to 2018-06-26 (69,680 data points every 15 minutes). '
+            'Each data point consists of 8 features, '
             'including the date of the point, the predictive value "Oil Temperature (OT)", '
             'and 6 different types of external power load features: High UseFul Load (HUFL), '
             'High UseLess Load (HULL), Middle UseFul Load (MUFL), Middle UseLess Load (MULL), '
@@ -538,9 +563,9 @@ datasets = {
         'freq': '15min',
         'file_type': 'csv',
         'description': (
-            'Data from an electricity transformer station was collected between July '
-            '2016 and July 2018 (2 years x 365 days x 24 hours x 4 intervals per '
-            'hour = 70,080 data points). Each data point consists of 8 features, '
+            'Data from an electricity transformer station was collected from '
+            '2016-07-01 to 2018-06-26 (69,680 data points every 15 minutes). '
+            'Each data point consists of 8 features, '
             'including the date of the point, the predictive value "Oil Temperature (OT)", '
             'and 6 different types of external power load features: High UseFul Load (HUFL), '
             'High UseLess Load (HULL), Middle UseFul Load (MUFL), Middle UseLess Load (MULL), '
@@ -565,9 +590,9 @@ datasets = {
         'freq': '15min',
         'file_type': 'csv',
         'description': (
-            'Data from an electricity transformer station was collected between July '
-            '2016 and July 2018 (2 years x 365 days x 24 hours x 4 intervals per '
-            'hour = 70,080 data points). Each data point consists of 8 features, '
+            'Data from an electricity transformer station was collected from '
+            '2016-07-01 to 2018-06-26 (69,680 data points every 15 minutes). '
+            'Each data point consists of 8 features, '
             'including the date of the point, the predictive value "Oil Temperature (OT)", '
             'and 6 different types of external power load features: High UseFul Load (HUFL), '
             'High UseLess Load (HULL), Middle UseFul Load (MUFL), Middle UseLess Load (MULL), '
@@ -651,8 +676,8 @@ datasets = {
 
 
 def show_datasets_info(
-    datasets_names: list[str] | None = None,
-    version: str = 'latest'
+    datasets_names: str | list[str] | None = None,
+    version: str | int = 'latest'
 ) -> None:
     """
     Print information about available datasets. If `datasets_names` is provided,
@@ -660,10 +685,10 @@ def show_datasets_info(
 
     Parameters
     ----------
-    datasets_names: list, default None
-        List of dataset names to display information about. If None, information 
-        about all datasets will be displayed.
-    version: str, default 'latest'
+    datasets_names : str, list, default None
+        Name or list of names of the datasets to display information about. If
+        None, information about all datasets will be displayed.
+    version : str, int, default 'latest'
         Version of the datasets to display information about. If 'latest', the
         latest version will be used (the one in the main branch). For a list of
         available versions, see the repository branches.
@@ -674,7 +699,12 @@ def show_datasets_info(
 
     """
 
-    datasets_names = datasets_names or sorted(datasets)
+    if datasets_names is None:
+        datasets_names = sorted(datasets)
+    elif isinstance(datasets_names, str):
+        datasets_names = [datasets_names]
+    else:
+        datasets_names = list(datasets_names)
     version = 'main' if version == 'latest' else f'{version}'
 
     for dataset_name in datasets_names:
@@ -697,13 +727,13 @@ def _print_dataset_info(
 
     Parameters
     ----------
-    dataset_name: str
+    dataset_name : str
         Name of the dataset to display information about.
-    version: str, int, default `'latest'`
+    version : str, int, default 'latest'
         Version of the dataset. If 'latest', the latest version will be used
         (the one in the main branch). For a list of available versions, see
         the repository branches.
-    shape: tuple, default None
+    shape : tuple, default None
         Shape of the dataset (rows, columns). If provided, it will be
         displayed in the panel.
 
@@ -722,17 +752,14 @@ def _print_dataset_info(
         )
     
     console = Console()
-    description = textwrap.fill(info['description'], width=80)
-    source = info['source']
-    source = textwrap.fill(source, width=80)
     url = info['url']
     if '{version}' in url:
         url = url.format(version=version)
-    url = textwrap.fill(url, width=80)
+    # rich wraps the text to the width of the console
     content = (
-        f"[bold]Description:[/bold]\n{description}\n\n"
-        f"[bold]Source:[/bold]\n{source}\n\n"
-        f"[bold]URL:[/bold]\n{url}"
+        f"[bold]Description:[/bold]\n{escape(info['description'])}\n\n"
+        f"[bold]Source:[/bold]\n{escape(info['source'])}\n\n"
+        f"[bold]URL:[/bold]\n{escape(url)}"
     )
 
     if shape is not None:
@@ -756,26 +783,26 @@ def fetch_dataset(
 
     Parameters
     ----------
-    name: str
+    name : str
         Name of the dataset to fetch.
-    version: str, int, default 'latest'
-        Version of the dataset to fetch. If 'latest', the latest version will be 
-        fetched (the one in the main branch). For a list of available versions, 
+    version : str, int, default 'latest'
+        Version of the dataset to fetch. If 'latest', the latest version will be
+        fetched (the one in the main branch). For a list of available versions,
         see the repository branches.
-    raw: bool, default False
-        If True, the raw dataset is fetched. If False, the preprocessed dataset 
-        is fetched. The preprocessing consists of setting the column with the 
-        date/time as index and converting the index to datetime. A frequency is 
-        also set to the index.
-    kwargs_read: dict, default None
-        Kwargs to pass to pandas `pd.read_csv` or `pd.read_parquet` function 
+    raw : bool, default False
+        If `True`, the raw dataset is fetched. If `False`, the preprocessed
+        dataset is fetched: the column with the date/time is set as index,
+        converted to datetime and sorted. The frequency of the dataset is set
+        only when the dates of the index are unique.
+    kwargs_read : dict, default None
+        Kwargs to pass to pandas `pd.read_csv` or `pd.read_parquet` function
         depending on the dataset file type.
-    verbose: bool, default True
-        If True, print information about the dataset.
-    
+    verbose : bool, default True
+        If `True`, print information about the dataset.
+
     Returns
     -------
-    df: pandas DataFrame
+    df : pandas DataFrame
         Dataset.
     
     """
@@ -788,27 +815,38 @@ def fetch_dataset(
             f"Dataset '{name}' not found. "
             f"Available datasets are: {sorted(datasets)}"
         )
-    
+
+    file_type = datasets[name]['file_type']
+    if file_type not in ('csv', 'parquet'):
+        raise ValueError(
+            f"Unknown file type '{file_type}' for dataset '{name}'. "
+            f"Supported file types are 'csv' and 'parquet'."
+        )
+
     url = datasets[name]['url']
     if '{version}' in url:
         url = url.format(version=version)
-    file_type = datasets[name]['file_type']
 
     if file_type == 'csv':
+        kwargs_read = {'sep': datasets[name]['sep'], **kwargs_read}
         try:
-            sep = datasets[name]['sep']
-            df = pd.read_csv(url, sep=sep, **kwargs_read)
+            df = pd.read_csv(url, **kwargs_read)
         except Exception as e:
             raise ValueError(
                 f"Error reading dataset '{name}' from {url}: {str(e)}."
-            )
+            ) from e
     elif file_type == 'parquet':
         try:
             df = pd.read_parquet(url, **kwargs_read)
+        except ImportError as e:
+            raise ImportError(
+                f"Reading dataset '{name}' requires pyarrow or fastparquet: "
+                f"pip install pyarrow. Original error: {e}"
+            ) from e
         except Exception as e:
             raise ValueError(
                 f"Error reading dataset '{name}' from {url}: {str(e)}."
-            )
+            ) from e
         # pyarrow keeps the memory used while reading in its pool. Returning it
         # to the OS lets the preprocessing of large datasets (e.g. m5) fit in
         # memory.
@@ -844,7 +882,7 @@ def fetch_dataset(
 
 
 def load_demo_dataset(
-    version: str = 'latest', 
+    version: str | int = 'latest',
     verbose: bool = True
 ) -> pd.Series:
     """
@@ -855,18 +893,18 @@ def load_demo_dataset(
 
     Parameters
     ----------
-    version: str, default 'latest'
+    version : str, int, default 'latest'
         Version of the dataset to fetch. If 'latest', the latest version will be
         fetched (the one in the main branch). For a list of available versions,
         see the repository branches.
-    verbose: bool, default True
-        If True, print information about the dataset.
+    verbose : bool, default True
+        If `True`, print information about the dataset.
 
     Returns
     -------
-    df: pandas Series
+    y : pandas Series
         Dataset.
-    
+
     """
 
     version = 'main' if version == 'latest' else f'{version}'

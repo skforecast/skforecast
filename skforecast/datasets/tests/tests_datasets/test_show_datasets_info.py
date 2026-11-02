@@ -33,6 +33,35 @@ def test_show_datasets_info_specific_datasets(capsys):
     assert 'items_sales' in captured.out
 
 
+def test_show_datasets_info_string_and_tuple(capsys):
+    """
+    `show_datasets_info` with a single dataset name as a string prints the
+    panel of that dataset instead of iterating over its characters, and a
+    tuple of names works as a list.
+    """
+    show_datasets_info(datasets_names='h2o')
+    captured = capsys.readouterr()
+    assert 'h2o' in captured.out
+    assert 'Description' in captured.out
+    assert 'not available' not in captured.out
+
+    show_datasets_info(datasets_names=('h2o', 'items_sales'))
+    captured = capsys.readouterr()
+    assert 'h2o' in captured.out
+    assert 'items_sales' in captured.out
+    assert 'not available' not in captured.out
+
+
+def test_show_datasets_info_empty_list_prints_nothing(capsys):
+    """
+    `show_datasets_info` with an empty list prints nothing, unlike
+    `datasets_names=None`, which prints every dataset.
+    """
+    show_datasets_info(datasets_names=[])
+    captured = capsys.readouterr()
+    assert captured.out == ''
+
+
 def test_show_datasets_info_version_in_url(capsys):
     """
     `show_datasets_info` substitutes the `version` argument into the URL
