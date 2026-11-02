@@ -28,7 +28,7 @@ The main changes in this release are:
 
 + <span class="badge text-bg-fix">Fix</span> Hyperparameter searches follow the direction of the metric: with a metric in which greater is better, such as `r2_score`, they ranked the worst candidate first and `return_best=True` refitted the forecaster with it. ([#1431](https://github.com/skforecast/skforecast/pull/1431))
 
-+ <span class="badge text-bg-fix">Fix</span> Multi-series hyperparameter searches rank the candidates by the weighted average of the metric, the default: the columns of the aggregated metrics were swapped, so they ranked by the simple average when the series were evaluated on different numbers of points.
++ <span class="badge text-bg-fix">Fix</span> Multi-series hyperparameter searches rank the candidates by the weighted average of the metric, the default: the columns of the aggregated metrics were swapped, so they ranked by the simple average when the series were evaluated on different numbers of points. ([#1438](https://github.com/skforecast/skforecast/pull/1438))
 
 !!! warning "Before upgrading"
 
@@ -64,7 +64,7 @@ The main changes in this release are:
 
 + Removed the `externally_fitted` argument of the `split` method of <code>[OneStepAheadFold]</code>, which was not used. ([#1423](https://github.com/skforecast/skforecast/pull/1423))
 
-+ The function returned by <code>[create_mean_pinball_loss]</code> is named after its quantile (`mean_pinball_loss_q_0.9` instead of `mean_pinball_loss_q`), so the pinball losses of several quantiles are different columns of the backtesting metrics and of the search results.
++ The function returned by <code>[create_mean_pinball_loss]</code> is named after its quantile (`mean_pinball_loss_q_0.9` instead of `mean_pinball_loss_q`), so the pinball losses of several quantiles are different columns of the backtesting metrics and of the search results. ([#1438](https://github.com/skforecast/skforecast/pull/1438))
 
 + <code>[grid_search_stats]</code>, <code>[random_search_stats]</code> and <code>[grid_search_equivalent_date]</code> raise a `ValueError` with the accepted names, before evaluating any candidate, when a metric name is not valid. They skipped every candidate with a warning and returned an empty DataFrame. ([#1431](https://github.com/skforecast/skforecast/pull/1431))
 
@@ -105,7 +105,7 @@ The main changes in this release are:
 
 + The `weighted_average` metric of <code>[backtesting_forecaster_multiseries]</code> was NaN when a level was predicted but had no observed values in its test set, for example a series that ends at the end of the training set. It is also the metric that ranks the candidates of the hyperparameter searches of <code>[ForecasterRecursiveMultiSeries]</code> by default. That level is now left out of the weighted average, as it already was of the average and the pooling. ([#1427](https://github.com/skforecast/skforecast/pull/1427))
 
-+ <code>[grid_search_forecaster_multiseries]</code>, <code>[random_search_forecaster_multiseries]</code>, <code>[bayesian_search_forecaster_multiseries]</code> and <code>[bayesian_search_foundation]</code> filled the aggregated metric columns in the wrong order: with the default `aggregate_metric`, `<metric>__weighted_average` held the average and `<metric>__average` the weighted average, and the candidates were ranked by the average. It only changed the results when the series were evaluated on different numbers of points.
++ <code>[grid_search_forecaster_multiseries]</code>, <code>[random_search_forecaster_multiseries]</code>, <code>[bayesian_search_forecaster_multiseries]</code> and <code>[bayesian_search_foundation]</code> filled the aggregated metric columns in the wrong order: with the default `aggregate_metric`, `<metric>__weighted_average` held the average and `<metric>__average` the weighted average, and the candidates were ranked by the average. It only changed the results when the series were evaluated on different numbers of points. ([#1438](https://github.com/skforecast/skforecast/pull/1438))
 
 + <code>[backtesting_forecaster_multiseries]</code>, <code>[backtesting_foundation]</code> and the hyperparameter search of <code>[ForecasterRecursiveMultiSeries]</code> rejected a valid `initial_train_size` when every series was shorter than the span of all series. The `split` method of <code>[OneStepAheadFold]</code> also returned a wrong test end with a dict of series. ([#1430](https://github.com/skforecast/skforecast/pull/1430))
 
@@ -115,7 +115,7 @@ The main changes in this release are:
 
 + <code>[grid_search_forecaster]</code>, <code>[random_search_forecaster]</code> and their multiseries versions failed with a forecaster created with `lags=None` and only `window_features` (`TypeError: 'NoneType' object is not iterable`), and with a `None` element in `lags_grid` (`AttributeError`). A `None` element now evaluates a candidate without lags; if the forecaster has no `window_features`, a `ValueError` is raised before any candidate is evaluated. ([#1355](https://github.com/skforecast/skforecast/issues/1355), [#1388](https://github.com/skforecast/skforecast/pull/1388), [#1433](https://github.com/skforecast/skforecast/pull/1433), [#1434](https://github.com/skforecast/skforecast/pull/1434))
 
-+ Backtesting with two metrics of the same name (a name and the function it names, two lambdas, the pinball losses of two quantiles) returned duplicated columns, and <code>[backtesting_forecaster_multiseries]</code> raised a `TypeError`. A `ValueError` now names the duplicated metrics, as the hyperparameter searches already did.
++ Backtesting with two metrics of the same name (a name and the function it names, two lambdas, the pinball losses of two quantiles) returned duplicated columns, and <code>[backtesting_forecaster_multiseries]</code> raised a `TypeError`. A `ValueError` now names the duplicated metrics, as the hyperparameter searches already did. ([#1438](https://github.com/skforecast/skforecast/pull/1438))
 
 + <code>[plot_residuals]</code> ignored the `fig` argument when another figure was active: the subplots were drawn on the active figure and `fig` was returned empty. ([#1386](https://github.com/skforecast/skforecast/issues/1386), [#1387](https://github.com/skforecast/skforecast/pull/1387))
 
