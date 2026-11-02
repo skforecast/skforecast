@@ -86,6 +86,16 @@ def test_fetch_dataset_kwargs_read():
     assert isinstance(df, pd.DataFrame)
     assert df.shape == (10, 2)
 
+    # CSV: `sep` in kwargs_read overrides the separator of the registry
+    mock_df = pd.DataFrame({'x': [1.0], 'fecha': ['1991-07-01']})
+    with patch('pandas.read_csv', return_value=mock_df) as mock_read:
+        fetch_dataset('h2o', raw=True, kwargs_read={'sep': ';'}, verbose=False)
+    assert mock_read.call_args.kwargs['sep'] == ';'
+
+    with patch('pandas.read_csv', return_value=mock_df) as mock_read:
+        fetch_dataset('h2o', raw=True, verbose=False)
+    assert mock_read.call_args.kwargs['sep'] == ','
+
     # Parquet: pass columns kwarg
     mock_df = pd.DataFrame({
         'timestamp': ['2019-01-01 00:00:00', '2019-01-02 00:00:00'],
@@ -173,6 +183,23 @@ def test_fetch_dataset_invalid_name_raises():
         fetch_dataset(
             'non_existent_dataset', version='latest', raw=False, verbose=False
         )
+
+
+def test_fetch_dataset_unknown_file_type_raises():
+    """
+    `fetch_dataset` raises `ValueError` before downloading anything when the
+    registry entry of the dataset declares an unsupported file type.
+    """
+    entry = {**datasets['h2o'], 'file_type': 'xlsx'}
+    err_msg = re.escape(
+        "Unknown file type 'xlsx' for dataset '_tmp'. "
+        "Supported file types are 'csv' and 'parquet'."
+    )
+    with patch.dict(datasets, {'_tmp': entry}):
+        with patch('pandas.read_csv') as mock_read:
+            with pytest.raises(ValueError, match=err_msg):
+                fetch_dataset('_tmp', raw=False, verbose=False)
+    mock_read.assert_not_called()
 
 
 def test_fetch_dataset_parquet_already_indexed():
@@ -284,8 +311,27 @@ def test_fetch_dataset_invalid_version_raises():
         )
 
     # Parquet dataset
+    err_msg = re.escape("Error reading dataset 'm4_daily'")
     with patch('pandas.read_parquet', side_effect=Exception("404 Client Error")):
-        with pytest.raises(ValueError, match="Error reading dataset 'm4_daily'"):
+        with pytest.raises(ValueError, match=err_msg) as excinfo:
             fetch_dataset(
                 'm4_daily', version='non_existent_version', raw=False, verbose=False
             )
+    assert excinfo.value.__cause__ is not None
+
+
+def test_fetch_dataset_parquet_engine_missing_raises_ImportError():
+    """
+    `fetch_dataset` raises an `ImportError` suggesting to install pyarrow when
+    pandas cannot find an engine to read a parquet dataset.
+    """
+    err_msg = re.escape(
+        "Reading dataset 'm4_daily' requires pyarrow or fastparquet: "
+        "pip install pyarrow. Original error: Unable to find a usable engine"
+    )
+    with patch(
+        'pandas.read_parquet', side_effect=ImportError('Unable to find a usable engine')
+    ):
+        with pytest.raises(ImportError, match=err_msg) as excinfo:
+            fetch_dataset('m4_daily', raw=False, verbose=False)
+    assert isinstance(excinfo.value.__cause__, ImportError)
