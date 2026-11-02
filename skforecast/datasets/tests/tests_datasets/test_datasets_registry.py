@@ -1,6 +1,7 @@
 # Unit test datasets registry
 # ==============================================================================
 import warnings
+from urllib.parse import urlparse
 import pytest
 import pandas as pd
 from pandas.tseries.frequencies import to_offset
@@ -30,7 +31,8 @@ def test_datasets_registry_entry_is_consistent(name):
     with warnings.catch_warnings():
         warnings.simplefilter('error')
         to_offset(info['freq'])
-    assert ('{version}' in info['url']) == ('raw.githubusercontent.com' in info['url'])
+    is_github = urlparse(info['url']).netloc == 'raw.githubusercontent.com'
+    assert ('{version}' in info['url']) == is_github
     assert info['description'].strip() and info['source'].strip()
 
 
