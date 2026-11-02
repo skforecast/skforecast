@@ -2,10 +2,12 @@
 # ==============================================================================
 import re
 import pytest
+from functools import partial
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import Ridge, LogisticRegression
 from sklearn.exceptions import NotFittedError
+from sklearn.metrics import mean_absolute_error
 from skforecast.stats import Sarimax
 from skforecast.recursive import ForecasterRecursive
 from skforecast.recursive import ForecasterRecursiveClassifier
@@ -16,6 +18,7 @@ from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirectMultiVariate
 from skforecast.model_selection._split import TimeSeriesFold
 from skforecast.model_selection._utils import check_backtesting_input
+from skforecast.metrics import create_mean_pinball_loss
 
 # Fixtures
 from skforecast.model_selection.tests.fixtures_model_selection import y
@@ -265,6 +268,82 @@ def test_check_backtesting_input_ValueError_when_metric_name_is_reserved_for_int
             show_progress = False,
             **kwargs_interval
         )
+
+
+def absolute_error_quantile(y_true, y_pred, quantile):  # pragma: no cover
+    """
+    Custom metric with an extra argument, to create partials.
+    """
+    return 0.0
+
+
+@pytest.mark.parametrize(
+    "metric, duplicated_names",
+    [
+        (['mean_absolute_error', mean_absolute_error], ['mean_absolute_error']),
+        ([lambda y_true, y_pred: 0.0, lambda y_true, y_pred: 1.0], ['<lambda>']),
+        ([partial(absolute_error_quantile, quantile=0.1),
+          partial(absolute_error_quantile, quantile=0.9)], ['wrapper']),
+        (['mean_squared_error', 'mean_squared_error', 'mean_absolute_error',
+          'mean_absolute_error'], ['mean_squared_error', 'mean_absolute_error']),
+    ],
+    ids = ['string and callable', 'lambdas', 'partials', 'strings']
+)
+def test_check_backtesting_input_ValueError_when_metric_names_are_duplicated(
+    metric, duplicated_names
+):
+    """
+    Test ValueError is raised in check_backtesting_input if two metrics have
+    the same name, the column of the metrics table: a string and the function
+    it names, two lambdas, or two partials (named after the wrapper of
+    `add_y_train_argument`).
+    """
+    forecaster = ForecasterRecursive(
+                     estimator = Ridge(random_state=123),
+                     lags      = 2
+                 )
+    cv = TimeSeriesFold(
+             steps              = 5,
+             initial_train_size = len(y[:-12]),
+             refit              = False
+         )
+
+    err_msg = re.escape(
+        f"Each metric name must be unique, they are the columns of the "
+        f"metrics table. Duplicated names: {duplicated_names}."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_backtesting_input(
+            forecaster    = forecaster,
+            cv            = cv,
+            metric        = metric,
+            y             = y,
+            show_progress = False
+        )
+
+
+def test_check_backtesting_input_no_error_when_pinball_losses_of_different_quantiles():
+    """
+    Test no error is raised in check_backtesting_input with the pinball losses
+    of several quantiles: their names include the quantile.
+    """
+    forecaster = ForecasterRecursive(
+                     estimator = Ridge(random_state=123),
+                     lags      = 2
+                 )
+    cv = TimeSeriesFold(
+             steps              = 5,
+             initial_train_size = len(y[:-12]),
+             refit              = False
+         )
+
+    check_backtesting_input(
+        forecaster    = forecaster,
+        cv            = cv,
+        metric        = [create_mean_pinball_loss(0.1), create_mean_pinball_loss(0.9)],
+        y             = y,
+        show_progress = False
+    )
 
 
 @pytest.mark.parametrize(

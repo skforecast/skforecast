@@ -35,7 +35,8 @@ from ..model_selection._utils import (
     _predict_and_calculate_metrics_one_step_ahead_multiseries,
     _make_lags_hashable,
     _get_search_direction,
-    _check_study_direction
+    _check_study_direction,
+    _select_metrics_search_multiseries
 )
 from ..utils import (
     initialize_lags, 
@@ -1466,6 +1467,10 @@ def _evaluate_grid_hyperparameters_multiseries(
              )
     
     add_aggregated_metric = True if len(levels) > 1 else False
+    # NOTE: Columns of the metrics table of the backtesting, and rows selected
+    # from it, in the order of the columns of the results.
+    metric_columns = metric_names
+    metrics_rows = aggregate_metric if add_aggregated_metric else [levels[0]]
     if add_aggregated_metric:
         metric_names = [
             f"{metric_name}__{aggregation}"
@@ -1568,12 +1573,12 @@ def _evaluate_grid_hyperparameters_multiseries(
                 warnings.warn(f"Parameters skipped: {params}. {e}", RuntimeWarning)
                 continue
 
-            if add_aggregated_metric:
-                metrics = metrics.loc[metrics['levels'].isin(aggregate_metric), :]
-            else:
-                metrics = metrics.loc[metrics['levels'] == levels[0], :]
             metrics = pd.DataFrame(
-                          data    = [metrics.iloc[:, 1:].transpose().stack().to_numpy()],
+                          data    = [_select_metrics_search_multiseries(
+                                         metrics      = metrics,
+                                         metric_names = metric_columns,
+                                         rows         = metrics_rows
+                                     )],
                           columns = metric_names
                       )
 
@@ -1873,6 +1878,10 @@ def bayesian_search_forecaster_multiseries(
                  levels     = levels
              )
     add_aggregated_metric = True if len(levels) > 1 else False
+    # NOTE: Columns of the metrics table of the backtesting, and rows selected
+    # from it, in the order of the columns of the results.
+    metric_columns = metric_names
+    metrics_rows = aggregate_metric if add_aggregated_metric else [levels[0]]
     if add_aggregated_metric:
         metric_names = [
             f"{metric_name}__{aggregation}"
@@ -1927,12 +1936,12 @@ def bayesian_search_forecaster_multiseries(
                              suppress_warnings     = suppress_warnings
                          )
 
-            if add_aggregated_metric:
-                metrics = metrics.loc[metrics['levels'].isin(aggregate_metric), :]
-            else:
-                metrics = metrics.loc[metrics['levels'] == levels[0], :]
             metrics = pd.DataFrame(
-                          data    = [metrics.iloc[:, 1:].transpose().stack().to_numpy()],
+                          data    = [_select_metrics_search_multiseries(
+                                         metrics      = metrics,
+                                         metric_names = metric_columns,
+                                         rows         = metrics_rows
+                                     )],
                           columns = metric_names
                       )
             
@@ -2028,12 +2037,12 @@ def bayesian_search_forecaster_multiseries(
                              return_predictions    = False
                          )
 
-            if add_aggregated_metric:
-                metrics = metrics.loc[metrics['levels'].isin(aggregate_metric), :]
-            else:
-                metrics = metrics.loc[metrics['levels'] == levels[0], :]
             metrics = pd.DataFrame(
-                          data    = [metrics.iloc[:, 1:].transpose().stack().to_numpy()],
+                          data    = [_select_metrics_search_multiseries(
+                                         metrics      = metrics,
+                                         metric_names = metric_columns,
+                                         rows         = metrics_rows
+                                     )],
                           columns = metric_names
                       )
             
@@ -2390,6 +2399,10 @@ def bayesian_search_foundation(
                           )
 
     add_aggregated_metric = len(levels_resolved) > 1
+    # NOTE: Columns of the metrics table of the backtesting, and rows selected
+    # from it, in the order of the columns of the results.
+    metric_columns = metric_names
+    metrics_rows = aggregate_metric if add_aggregated_metric else [levels_resolved[0]]
     if add_aggregated_metric:
         metric_names = [
             f"{metric_name}__{aggregation}"
@@ -2448,12 +2461,12 @@ def bayesian_search_foundation(
         )
 
         if "levels" in metrics.columns:
-            if add_aggregated_metric:
-                metrics = metrics.loc[metrics["levels"].isin(aggregate_metric), :]
-            else:
-                metrics = metrics.loc[metrics["levels"] == levels[0], :]
             metrics = pd.DataFrame(
-                data    = [metrics.iloc[:, 1:].transpose().stack().to_numpy()],
+                data    = [_select_metrics_search_multiseries(
+                              metrics      = metrics,
+                              metric_names = metric_columns,
+                              rows         = metrics_rows
+                          )],
                 columns = metric_names,
             )
         else:

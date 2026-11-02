@@ -540,7 +540,10 @@ def create_mean_pinball_loss(alpha: float) -> Callable:
     Returns
     -------
     mean_pinball_loss_q: callable
-        Mean Pinball loss for the given quantile.
+        Mean Pinball loss for the given quantile. Its name includes the
+        quantile, `mean_pinball_loss_q_{alpha}` (for example,
+        `mean_pinball_loss_q_0.9`), so that the losses of several quantiles
+        are different columns of the backtesting metrics.
 
     Examples
     --------
@@ -563,6 +566,9 @@ def create_mean_pinball_loss(alpha: float) -> Callable:
 
     def mean_pinball_loss_q(y_true, y_pred):
         return mean_pinball_loss(y_true, y_pred, alpha=alpha)
+
+    mean_pinball_loss_q.__name__ = f"mean_pinball_loss_q_{alpha}"
+    mean_pinball_loss_q.__qualname__ = f"mean_pinball_loss_q_{alpha}"
 
     return mean_pinball_loss_q
 
