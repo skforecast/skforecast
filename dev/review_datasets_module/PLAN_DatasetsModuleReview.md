@@ -20,8 +20,8 @@
 | PR | Estado | Repo | Rama | Contenido | Bloqueada por | Nota de versión |
 |---|---|---|---|---|---|---|
 | **0** | fusionada (#1402, 2026-10-28) | skforecast | `fix/fetch-dataset-website-visits-m5` | PR #1402 (base de todo el plan) | nada | ya incluida |
-| **1** | pendiente | skforecast | `fix/datasets-module-small-fixes` | Bugs pequeños, textos del registro, docstrings, test del registro sin red | nada | Fixed |
-| **2** | pendiente | skforecast | `feature/datasets-version-deprecation` | Deprecar `version`; `load_demo_dataset` sobre `fetch_dataset` | PR 1 | Changed |
+| **1** | fusionada (#1439, 2026-11-02) | skforecast | `fix/datasets-module-small-fixes` | Bugs pequeños, textos del registro, docstrings, test del registro sin red | nada | Fixed |
+| **2** | en curso (#1440) | skforecast | `feature/datasets-version-deprecation` | Deprecar `version`; `load_demo_dataset` sobre `fetch_dataset` | PR 1 | Changed |
 | **3** | pendiente | skforecast | `feature/fetch-dataset-gaps-and-long-format` | Aviso cuando `asfreq` añade o quita filas; orden estable del formato largo; documentación | PR 2 | Changed |
 | **4** | pendiente | skforecast | `chore/datasets-regression-test` | Test de regresión contra los ficheros reales, opt-in | PR 3 | ninguna |
 | **5a** | pendiente | skforecast-datasets | `main` (commits directos) | README generado y BOM | PR 1 | ninguna |
@@ -137,7 +137,7 @@ Las PRs se hacen en días distintos, en sesiones sin memoria de la anterior: el 
 3. **Implementar** la sección de la PR, con `verify` antes de cada commit de código, tests o docs. Abrir la PR contra `0.27.x` y pasar su fila de la tabla 0.1 a `en curso (#NNNN)`.
 4. **Si la rama se queda atrás**, actualizarla con `git merge origin/0.27.x`, nunca con rebase (el force push está bloqueado).
 5. **Si una sesión acaba con la PR a medias**, ejecutar `/handoff` (escribe un `dev/handoff_*.md`) y empezar la siguiente sesión leyendo ese fichero además del plan.
-6. **Al fusionar:** pasar la fila a `fusionada (#NNNN, fecha)`, anotar en el apéndice C cualquier desviación del plan y subir el cambio del plan directamente a `0.27.x`. Borrar la rama local.
+6. **Al fusionar:** pasar la fila a `fusionada (#NNNN, fecha)`, anotar en el apéndice C cualquier desviación del plan y subir el cambio del plan directamente a `0.27.x`, o llevarlo sin commit a la rama de la PR siguiente y subirlo con ella (así se hizo tras la PR 1). Borrar la rama local.
 7. **Antes de la release 0.27.0:** `/release-note consolidate` (las PRs 1 a 3 añaden entradas parecidas) y el test opt-in de la PR 4 con `SKFORECAST_TEST_DATASETS=1`.
 8. **Al terminar el plan** (PRs 1 a 5 cerradas, o DEC6/DEC7 descartadas): borrar `dev/review_datasets_module/` de `0.27.x`, o dejarlo como histórico.
 
@@ -793,3 +793,5 @@ Comprobados el 2026-10-27 contra el código, los notebooks, la CI y un clon del 
 - 2026-10-28: el commit `9b5f1f3e8` (estudio de pandas 3) borró este plan de `0.27.x`. Se restauró desde `5f4e2f3a6`, con la PR 0 (#1402) marcada como fusionada.
 - 2026-10-28 (arranque de la PR 1): el apéndice A coincide con la tabla 1.3, pero el repositorio de datos recibió `europe_electricity_load` (1.4) y el texto de 1.7 para `m4_hourly` era falso (copiado de `m4_daily`); se separa en dos entradas.
 - 2026-10-28 (PR 1, 1.6): se descarta `[link=...]` en la URL del panel: en Jupyter rich guarda en `text/plain` un código OSC 8 con un id aleatorio, que cambiaría en cada reejecución de los notebooks con paneles. Se queda `escape(url)`. Sin `textwrap`, en Jupyter el panel ocupa el ancho de rich (115 columnas) en lugar de 83; se acepta.
+- 2026-11-02 (PR 1, #1439, `43cadfa0d`): CodeQL marcó como «Incomplete URL substring sanitization» el `'raw.githubusercontent.com' in url` del test del registro (falso positivo); se compara el host con `urlparse(url).netloc`. Úsese igual en la PR 4. El script del apéndice A no se subió.
+- 2026-11-02 (PR 2): `test_fetch_dataset_invalid_version_raises` descargaba una versión inexistente para provocar el 404; sin efecto `version`, pasa a `test_fetch_dataset_read_error_raises_ValueError` con `patch` de `read_csv` y `read_parquet` (sin red). Los tests del aviso comprueban además `record[0].filename == __file__` (el `stacklevel=3` apunta a quien llama). Con el cambio, `load_demo_dataset` da el `ValueError` de `fetch_dataset` en un fallo de descarga en lugar del `HTTPError` de urllib.

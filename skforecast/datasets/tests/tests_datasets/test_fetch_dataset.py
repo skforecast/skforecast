@@ -13,7 +13,7 @@ def test_fetch_dataset_csv_raw_false():
     `fetch_dataset` with a CSV dataset and `raw=False` returns a DataFrame
     with a DatetimeIndex and the expected frequency.
     """
-    df = fetch_dataset('h2o', version='latest', raw=False, verbose=False)
+    df = fetch_dataset('h2o', raw=False, verbose=False)
 
     assert isinstance(df, pd.DataFrame)
     assert df.shape == (204, 1)
@@ -30,7 +30,7 @@ def test_fetch_dataset_csv_raw_true():
     manipulation: the date column is kept as a regular column and no
     frequency is assigned.
     """
-    df = fetch_dataset('h2o', version='latest', raw=True, verbose=False)
+    df = fetch_dataset('h2o', raw=True, verbose=False)
 
     assert isinstance(df, pd.DataFrame)
     assert df.shape == (204, 2)
@@ -44,7 +44,7 @@ def test_fetch_dataset_csv_multiple_series():
     `fetch_dataset` returns the expected shape and frequency for a multi-column
     CSV dataset.
     """
-    df = fetch_dataset('items_sales', version='latest', raw=False, verbose=False)
+    df = fetch_dataset('items_sales', raw=False, verbose=False)
 
     assert isinstance(df, pd.DataFrame)
     assert df.shape == (1097, 3)
@@ -60,7 +60,7 @@ def test_fetch_dataset_website_visits_day_first_dates():
     """
     with warnings.catch_warnings():
         warnings.simplefilter('error', UserWarning)
-        df = fetch_dataset('website_visits', version='latest', raw=False, verbose=False)
+        df = fetch_dataset('website_visits', raw=False, verbose=False)
 
     assert isinstance(df.index, pd.DatetimeIndex)
     assert df.shape == (421, 1)
@@ -78,7 +78,6 @@ def test_fetch_dataset_kwargs_read():
     # CSV: limit rows with nrows
     df = fetch_dataset(
         'h2o',
-        version='latest',
         raw=True,
         kwargs_read={'nrows': 10},
         verbose=False
@@ -104,7 +103,6 @@ def test_fetch_dataset_kwargs_read():
     with patch('pandas.read_parquet', return_value=mock_df) as mock_read:
         fetch_dataset(
             'm4_daily',
-            version='latest',
             raw=True,
             kwargs_read={'columns': ['timestamp', 'value']},
             verbose=False
@@ -126,7 +124,7 @@ def test_fetch_dataset_parquet_raw_false():
     })
 
     with patch('pandas.read_parquet', return_value=mock_df) as mock_read:
-        df = fetch_dataset('m4_daily', version='latest', raw=False, verbose=False)
+        df = fetch_dataset('m4_daily', raw=False, verbose=False)
 
     expected_url = (
         'https://raw.githubusercontent.com/skforecast/'
@@ -149,7 +147,7 @@ def test_fetch_dataset_parquet_raw_true():
     })
 
     with patch('pandas.read_parquet', return_value=mock_df):
-        df = fetch_dataset('m4_daily', version='latest', raw=True, verbose=False)
+        df = fetch_dataset('m4_daily', raw=True, verbose=False)
 
     assert isinstance(df, pd.DataFrame)
     assert 'timestamp' in df.columns
@@ -160,12 +158,12 @@ def test_fetch_dataset_verbose(capsys):
     `fetch_dataset` prints dataset info when `verbose=True` and produces
     no output when `verbose=False`.
     """
-    fetch_dataset('h2o', version='latest', raw=False, verbose=True)
+    fetch_dataset('h2o', raw=False, verbose=True)
     captured = capsys.readouterr()
     assert 'h2o' in captured.out
     assert '204' in captured.out
 
-    fetch_dataset('h2o', version='latest', raw=False, verbose=False)
+    fetch_dataset('h2o', raw=False, verbose=False)
     captured = capsys.readouterr()
     assert captured.out == ''
 
@@ -181,7 +179,7 @@ def test_fetch_dataset_invalid_name_raises():
     )
     with pytest.raises(ValueError, match=err_msg):
         fetch_dataset(
-            'non_existent_dataset', version='latest', raw=False, verbose=False
+            'non_existent_dataset', raw=False, verbose=False
         )
 
 
@@ -215,7 +213,7 @@ def test_fetch_dataset_parquet_already_indexed():
     )
 
     with patch('pandas.read_parquet', return_value=mock_df):
-        df = fetch_dataset('m4_daily', version='latest', raw=False, verbose=False)
+        df = fetch_dataset('m4_daily', raw=False, verbose=False)
 
     assert isinstance(df.index, pd.DatetimeIndex)
     assert df.index.name == 'timestamp'
@@ -238,7 +236,7 @@ def test_fetch_dataset_duplicate_index_skips_asfreq():
     })
 
     with patch('pandas.read_parquet', return_value=mock_df):
-        df = fetch_dataset('m4_daily', version='latest', raw=False, verbose=False)
+        df = fetch_dataset('m4_daily', raw=False, verbose=False)
 
     assert isinstance(df.index, pd.DatetimeIndex)
     assert not df.index.is_unique
@@ -262,7 +260,7 @@ def test_fetch_dataset_m5_long_format_unsorted():
     with patch('pandas.read_parquet', return_value=mock_df):
         with warnings.catch_warnings():
             warnings.simplefilter('error', UserWarning)
-            df = fetch_dataset('m5', version='latest', raw=False, verbose=False)
+            df = fetch_dataset('m5', raw=False, verbose=False)
 
     assert isinstance(df.index, pd.DatetimeIndex)
     assert df.index.name == 'datetime'
@@ -286,38 +284,76 @@ def test_fetch_dataset_preprocessing_failure_warns():
     warn_msg = re.escape("Could not preprocess dataset 'm4_daily':")
     with patch('pandas.read_parquet', return_value=mock_df):
         with pytest.warns(UserWarning, match=warn_msg):
-            df = fetch_dataset('m4_daily', version='latest', raw=False, verbose=False)
+            df = fetch_dataset('m4_daily', raw=False, verbose=False)
 
     assert isinstance(df, pd.DataFrame)
     assert 'wrong_col' in df.columns
 
 
-def test_fetch_dataset_invalid_version_raises():
+def test_fetch_dataset_read_error_raises_ValueError():
     """
-    `fetch_dataset` raises `ValueError` when the requested version does not
-    exist, for both CSV and parquet datasets.
+    `fetch_dataset` raises `ValueError` with the URL of the file, keeping the
+    original error as its cause, when the file cannot be read, for both CSV
+    and parquet datasets.
     """
     # CSV dataset
-    bad_url = (
+    url = (
         'https://raw.githubusercontent.com/skforecast/'
-        'skforecast-datasets/non_existent_version/data/h2o.csv'
+        'skforecast-datasets/main/data/h2o.csv'
     )
     err_msg = re.escape(
-        f"Error reading dataset 'h2o' from {bad_url}: HTTP Error 404: Not Found."
+        f"Error reading dataset 'h2o' from {url}: HTTP Error 404: Not Found."
     )
-    with pytest.raises(ValueError, match=err_msg):
-        fetch_dataset(
-            'h2o', version='non_existent_version', raw=False, verbose=False
-        )
+    with patch('pandas.read_csv', side_effect=Exception('HTTP Error 404: Not Found')):
+        with pytest.raises(ValueError, match=err_msg) as excinfo:
+            fetch_dataset('h2o', raw=False, verbose=False)
+    assert excinfo.value.__cause__ is not None
 
     # Parquet dataset
     err_msg = re.escape("Error reading dataset 'm4_daily'")
     with patch('pandas.read_parquet', side_effect=Exception("404 Client Error")):
         with pytest.raises(ValueError, match=err_msg) as excinfo:
-            fetch_dataset(
-                'm4_daily', version='non_existent_version', raw=False, verbose=False
-            )
+            fetch_dataset('m4_daily', raw=False, verbose=False)
     assert excinfo.value.__cause__ is not None
+
+
+@pytest.mark.parametrize(
+    'version', ['latest', 'non_existent_version', 14], ids=lambda v: f'version: {v}'
+)
+def test_fetch_dataset_version_FutureWarning(version):
+    """
+    `fetch_dataset` emits a `FutureWarning` pointing to the caller whenever
+    `version` is passed, including 'latest', and always reads the file of the
+    main branch.
+    """
+    warn_msg = re.escape(
+        "`version` is deprecated since version 0.27.0 and has no effect: "
+        "datasets are always fetched from the main branch of "
+        "skforecast-datasets. It will be removed in version 0.29.0."
+    )
+    mock_df = pd.DataFrame({'x': [1.0], 'fecha': ['1991-07-01']})
+    with patch('pandas.read_csv', return_value=mock_df) as mock_read:
+        with pytest.warns(FutureWarning, match=warn_msg) as record:
+            fetch_dataset('h2o', version=version, raw=True, verbose=False)
+
+    expected_url = (
+        'https://raw.githubusercontent.com/skforecast/'
+        'skforecast-datasets/main/data/h2o.csv'
+    )
+    assert mock_read.call_args.args[0] == expected_url
+    assert len(record) == 1
+    assert record[0].filename == __file__
+
+
+def test_fetch_dataset_no_FutureWarning_without_version():
+    """
+    `fetch_dataset` emits no `FutureWarning` when `version` is not passed.
+    """
+    mock_df = pd.DataFrame({'x': [1.0], 'fecha': ['1991-07-01']})
+    with patch('pandas.read_csv', return_value=mock_df):
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', FutureWarning)
+            fetch_dataset('h2o', raw=True, verbose=False)
 
 
 def test_fetch_dataset_parquet_engine_missing_raises_ImportError():

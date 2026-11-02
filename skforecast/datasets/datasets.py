@@ -675,9 +675,38 @@ datasets = {
 }
 
 
+def _warn_deprecated_version(version: str | int | None) -> None:
+    """
+    Warn that `version` is deprecated when it is passed.
+
+    Parameters
+    ----------
+    version : str, int, None
+        Value of the deprecated `version` argument of the public function.
+
+    Returns
+    -------
+    None
+
+    """
+
+    # TODO: Remove in version 0.29.0 together with the `version` argument. Then
+    # make keyword-only the arguments that follow it (`fetch_dataset(name, *,
+    # raw=False, ...)`, `load_demo_dataset(*, verbose=True)`), otherwise a
+    # positional `fetch_dataset('h2o', 'latest')` would pass 'latest' to `raw`.
+    if version is not None:
+        warnings.warn(
+            "`version` is deprecated since version 0.27.0 and has no effect: "
+            "datasets are always fetched from the main branch of "
+            "skforecast-datasets. It will be removed in version 0.29.0.",
+            FutureWarning,
+            stacklevel=3
+        )
+
+
 def show_datasets_info(
     datasets_names: str | list[str] | None = None,
-    version: str | int = 'latest'
+    version: str | int | None = None
 ) -> None:
     """
     Print information about available datasets. If `datasets_names` is provided,
@@ -688,10 +717,10 @@ def show_datasets_info(
     datasets_names : str, list, default None
         Name or list of names of the datasets to display information about. If
         None, information about all datasets will be displayed.
-    version : str, int, default 'latest'
-        Version of the datasets to display information about. If 'latest', the
-        latest version will be used (the one in the main branch). For a list of
-        available versions, see the repository branches.
+    version : str, int, default None
+        **Deprecated** since version 0.27.0, it has no effect and will be removed
+        in version 0.29.0. Datasets are always fetched from the main branch of
+        skforecast-datasets.
 
     Returns
     -------
@@ -699,17 +728,17 @@ def show_datasets_info(
 
     """
 
+    _warn_deprecated_version(version)
     if datasets_names is None:
         datasets_names = sorted(datasets)
     elif isinstance(datasets_names, str):
         datasets_names = [datasets_names]
     else:
         datasets_names = list(datasets_names)
-    version = 'main' if version == 'latest' else f'{version}'
 
     for dataset_name in datasets_names:
         if dataset_name in datasets:
-            _print_dataset_info(dataset_name, version=version)
+            _print_dataset_info(dataset_name)
         else:
             print(
                 f"Dataset '{dataset_name}' not available. Set argument "
@@ -719,7 +748,6 @@ def show_datasets_info(
 
 def _print_dataset_info(
     dataset_name: str,
-    version: str | int = 'latest',
     shape: tuple[int, int] | None = None
 ) -> None:
     """
@@ -729,10 +757,6 @@ def _print_dataset_info(
     ----------
     dataset_name : str
         Name of the dataset to display information about.
-    version : str, int, default 'latest'
-        Version of the dataset. If 'latest', the latest version will be used
-        (the one in the main branch). For a list of available versions, see
-        the repository branches.
     shape : tuple, default None
         Shape of the dataset (rows, columns). If provided, it will be
         displayed in the panel.
@@ -743,7 +767,6 @@ def _print_dataset_info(
 
     """
 
-    version = 'main' if version == 'latest' else f'{version}'
     info = datasets.get(dataset_name, None)
     if info is None:
         raise ValueError(
@@ -754,7 +777,7 @@ def _print_dataset_info(
     console = Console()
     url = info['url']
     if '{version}' in url:
-        url = url.format(version=version)
+        url = url.format(version='main')
     # rich wraps the text to the width of the console
     content = (
         f"[bold]Description:[/bold]\n{escape(info['description'])}\n\n"
@@ -773,7 +796,7 @@ def _print_dataset_info(
 
 def fetch_dataset(
     name: str,
-    version: str | int = 'latest',
+    version: str | int | None = None,
     raw: bool = False,
     kwargs_read: dict | None = None,
     verbose: bool = True
@@ -785,10 +808,10 @@ def fetch_dataset(
     ----------
     name : str
         Name of the dataset to fetch.
-    version : str, int, default 'latest'
-        Version of the dataset to fetch. If 'latest', the latest version will be
-        fetched (the one in the main branch). For a list of available versions,
-        see the repository branches.
+    version : str, int, default None
+        **Deprecated** since version 0.27.0, it has no effect and will be removed
+        in version 0.29.0. Datasets are always fetched from the main branch of
+        skforecast-datasets.
     raw : bool, default False
         If `True`, the raw dataset is fetched. If `False`, the preprocessed
         dataset is fetched: the column with the date/time is set as index,
@@ -807,8 +830,8 @@ def fetch_dataset(
     
     """
 
+    _warn_deprecated_version(version)
     kwargs_read = kwargs_read or {}
-    version = 'main' if version == 'latest' else f'{version}'
 
     if name not in datasets:
         raise ValueError(
@@ -825,7 +848,7 @@ def fetch_dataset(
 
     url = datasets[name]['url']
     if '{version}' in url:
-        url = url.format(version=version)
+        url = url.format(version='main')
 
     if file_type == 'csv':
         kwargs_read = {'sep': datasets[name]['sep'], **kwargs_read}
@@ -876,13 +899,13 @@ def fetch_dataset(
             )
     
     if verbose:
-        _print_dataset_info(name, version=version, shape=df.shape)
+        _print_dataset_info(name, shape=df.shape)
 
     return df
 
 
 def load_demo_dataset(
-    version: str | int = 'latest',
+    version: str | int | None = None,
     verbose: bool = True
 ) -> pd.Series:
     """
@@ -893,10 +916,10 @@ def load_demo_dataset(
 
     Parameters
     ----------
-    version : str, int, default 'latest'
-        Version of the dataset to fetch. If 'latest', the latest version will be
-        fetched (the one in the main branch). For a list of available versions,
-        see the repository branches.
+    version : str, int, default None
+        **Deprecated** since version 0.27.0, it has no effect and will be removed
+        in version 0.29.0. Datasets are always fetched from the main branch of
+        skforecast-datasets.
     verbose : bool, default True
         If `True`, print information about the dataset.
 
@@ -907,21 +930,14 @@ def load_demo_dataset(
 
     """
 
-    version = 'main' if version == 'latest' else f'{version}'
+    _warn_deprecated_version(version)
 
-    url = (
-        f'https://raw.githubusercontent.com/skforecast/skforecast-datasets/{version}/'
-        'data/h2o.csv'
-    )
-
-    df = pd.read_csv(url, sep=',', header=0, names=['y', 'datetime'])
-    df['datetime'] = pd.to_datetime(df['datetime'], format='%Y-%m-%d')
-    df = df.set_index('datetime')
-    df = df.asfreq('MS')
-    df = df['y']
-    df = df.sort_index()
+    # `version` is not passed, so the deprecation warning is raised only once
+    y = fetch_dataset('h2o', raw=False, verbose=False)['x']
+    y = y.rename('y')
+    y.index.name = 'datetime'
 
     if verbose:
-        _print_dataset_info('h2o', version=version, shape=df.shape)
+        _print_dataset_info('h2o', shape=y.shape)
 
-    return df
+    return y
