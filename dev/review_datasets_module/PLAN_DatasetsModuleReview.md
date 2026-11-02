@@ -21,7 +21,7 @@
 |---|---|---|---|---|---|---|
 | **0** | fusionada (#1402, 2026-10-28) | skforecast | `fix/fetch-dataset-website-visits-m5` | PR #1402 (base de todo el plan) | nada | ya incluida |
 | **1** | fusionada (#1439, 2026-11-02) | skforecast | `fix/datasets-module-small-fixes` | Bugs pequeños, textos del registro, docstrings, test del registro sin red | nada | Fixed |
-| **2** | pendiente | skforecast | `feature/datasets-version-deprecation` | Deprecar `version`; `load_demo_dataset` sobre `fetch_dataset` | PR 1 | Changed |
+| **2** | en curso (#1440) | skforecast | `feature/datasets-version-deprecation` | Deprecar `version`; `load_demo_dataset` sobre `fetch_dataset` | PR 1 | Changed |
 | **3** | pendiente | skforecast | `feature/fetch-dataset-gaps-and-long-format` | Aviso cuando `asfreq` añade o quita filas; orden estable del formato largo; documentación | PR 2 | Changed |
 | **4** | pendiente | skforecast | `chore/datasets-regression-test` | Test de regresión contra los ficheros reales, opt-in | PR 3 | ninguna |
 | **5a** | pendiente | skforecast-datasets | `main` (commits directos) | README generado y BOM | PR 1 | ninguna |
