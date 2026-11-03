@@ -36,17 +36,33 @@ def test_print_dataset_info_shape(capsys):
     assert 'columns' not in captured.out
 
 
-def test_print_dataset_info_version_substituted_in_url(capsys):
+def test_print_dataset_info_url_of_main_branch(capsys, monkeypatch):
     """
-    `_print_dataset_info` substitutes the `version` argument into the URL
-    `{version}` placeholder when printing.
+    `_print_dataset_info` replaces the `{version}` placeholder of the URL with
+    the main branch.
     """
-    _print_dataset_info('h2o', version='latest')
+    monkeypatch.setenv('COLUMNS', '200')
+    _print_dataset_info('h2o')
 
     captured = capsys.readouterr()
-    # 'latest' is normalised to 'main' inside the function
-    assert 'main' in captured.out
+    assert 'skforecast-datasets/main/data/h2o.csv' in captured.out
     assert '{version}' not in captured.out
+
+
+def test_print_dataset_info_url_not_wrapped_in_wide_console(capsys, monkeypatch):
+    """
+    `_print_dataset_info` does not wrap the text before rich renders it: in a
+    console wide enough, the URL is printed whole in a single line.
+    """
+    monkeypatch.setenv('COLUMNS', '200')
+    _print_dataset_info('bike_sharing_extended_features')
+
+    captured = capsys.readouterr()
+    url = (
+        'https://raw.githubusercontent.com/skforecast/skforecast-datasets/main/'
+        'data/bike_sharing_extended_features.csv'
+    )
+    assert any(url in line for line in captured.out.splitlines())
 
 
 def test_print_dataset_info_invalid_name_raises():

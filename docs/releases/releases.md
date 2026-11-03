@@ -28,7 +28,7 @@ The main changes in this release are:
 
 + <span class="badge text-bg-fix">Fix</span> Hyperparameter searches follow the direction of the metric: with a metric in which greater is better, such as `r2_score`, they ranked the worst candidate first and `return_best=True` refitted the forecaster with it. ([#1431](https://github.com/skforecast/skforecast/pull/1431))
 
-+ <span class="badge text-bg-fix">Fix</span> Multi-series hyperparameter searches rank the candidates by the weighted average of the metric, the default: the columns of the aggregated metrics were swapped, so they ranked by the simple average when the series were evaluated on different numbers of points. ([#1437](https://github.com/skforecast/skforecast/pull/1437))
++ <span class="badge text-bg-fix">Fix</span> Multi-series hyperparameter searches rank the candidates by the weighted average of the metric, the default: the columns of the aggregated metrics were swapped, so they ranked by the simple average when the series were evaluated on different numbers of points. ([#1438](https://github.com/skforecast/skforecast/pull/1438))
 
 !!! warning "Before upgrading"
 
@@ -70,7 +70,7 @@ The main changes in this release are:
 
 + In <code>[backtesting_stats]</code> with several estimators, `estimator_id` is the first column of the predictions, as in its metrics. In <code>[backtesting_forecaster_multiseries]</code>, all the prediction columns, not only `pred`, are NaN at the dates without an observed value. ([#1437](https://github.com/skforecast/skforecast/pull/1437))
 
-+ The function returned by <code>[create_mean_pinball_loss]</code> is named after its quantile (`mean_pinball_loss_q_0.9` instead of `mean_pinball_loss_q`), so the pinball losses of several quantiles are different columns of the backtesting metrics and of the search results. ([#1437](https://github.com/skforecast/skforecast/pull/1437))
++ The function returned by <code>[create_mean_pinball_loss]</code> is named after its quantile (`mean_pinball_loss_q_0.9` instead of `mean_pinball_loss_q`), so the pinball losses of several quantiles are different columns of the backtesting metrics and of the search results. ([#1438](https://github.com/skforecast/skforecast/pull/1438))
 
 + <code>[grid_search_stats]</code>, <code>[random_search_stats]</code> and <code>[grid_search_equivalent_date]</code> raise a `ValueError` with the accepted names, before evaluating any candidate, when a metric name is not valid. They skipped every candidate with a warning and returned an empty DataFrame. ([#1431](https://github.com/skforecast/skforecast/pull/1431))
 
@@ -78,10 +78,14 @@ The main changes in this release are:
 
 + The first fit of <code>[Ets]</code> in a new environment, when numba compiles its functions, takes about 40% less time (7 s instead of 12 s on a 4-core CPU). Estimates and selected models are unchanged. ([#1400](https://github.com/skforecast/skforecast/pull/1400))
 
++ The `version` argument of <code>[fetch_dataset]</code>, <code>[load_demo_dataset]</code> and <code>[show_datasets_info]</code> is deprecated and has no effect: datasets are always fetched from the main branch of skforecast-datasets, which has no published versions. Passing it emits a `FutureWarning`; it will be removed in version 0.29.0. ([#1440](https://github.com/skforecast/skforecast/pull/1440))
+
 
 **Fixed**
 
 + Fixed two issues in <code>[fetch_dataset]</code> where the `website_visits` and `m5` datasets were returned without a `DatetimeIndex`, with the warning `Could not preprocess dataset`. In addition, large parquet datasets such as `m5` need less memory to load (about 10 GB instead of more than 15 GB). ([#1402](https://github.com/skforecast/skforecast/pull/1402))
+
++ Fixed several issues in <code>[fetch_dataset]</code> and <code>[show_datasets_info]</code>: `kwargs_read` could not include `sep`; a missing parquet engine raised a generic `ValueError` instead of an `ImportError` suggesting `pip install pyarrow`; `show_datasets_info` with a string instead of a list printed one error per character, and with an empty list printed every dataset; the information panel wrapped its text twice in narrow terminals; and the metadata of `australia_tourism` declared the deprecated quarter-end frequency `Q` instead of `QS` and the wrong last quarter. ([#1439](https://github.com/skforecast/skforecast/pull/1439))
 
 + Fixed an issue in the `predict_interval` method of <code>[ForecasterStats]</code> where `interval` was ignored unless `alpha=None` was also passed, because `alpha` defaulted to 0.05 and took precedence: `interval=[0.1, 0.9]` returned the 95% interval. <code>[backtesting_stats]</code> was not affected. ([#1416](https://github.com/skforecast/skforecast/pull/1416))
 
@@ -111,7 +115,7 @@ The main changes in this release are:
 
 + The `weighted_average` metric of <code>[backtesting_forecaster_multiseries]</code> was NaN when a level was predicted but had no observed values in its test set, for example a series that ends at the end of the training set. It is also the metric that ranks the candidates of the hyperparameter searches of <code>[ForecasterRecursiveMultiSeries]</code> by default. That level is now left out of the weighted average, as it already was of the average and the pooling. ([#1427](https://github.com/skforecast/skforecast/pull/1427))
 
-+ <code>[grid_search_forecaster_multiseries]</code>, <code>[random_search_forecaster_multiseries]</code>, <code>[bayesian_search_forecaster_multiseries]</code> and <code>[bayesian_search_foundation]</code> filled the aggregated metric columns in the wrong order: with the default `aggregate_metric`, `<metric>__weighted_average` held the average and `<metric>__average` the weighted average, and the candidates were ranked by the average. It only changed the results when the series were evaluated on different numbers of points. ([#1437](https://github.com/skforecast/skforecast/pull/1437))
++ <code>[grid_search_forecaster_multiseries]</code>, <code>[random_search_forecaster_multiseries]</code>, <code>[bayesian_search_forecaster_multiseries]</code> and <code>[bayesian_search_foundation]</code> filled the aggregated metric columns in the wrong order: with the default `aggregate_metric`, `<metric>__weighted_average` held the average and `<metric>__average` the weighted average, and the candidates were ranked by the average. It only changed the results when the series were evaluated on different numbers of points. ([#1438](https://github.com/skforecast/skforecast/pull/1438))
 
 + <code>[backtesting_forecaster_multiseries]</code>, <code>[backtesting_foundation]</code> and the hyperparameter search of <code>[ForecasterRecursiveMultiSeries]</code> rejected a valid `initial_train_size` when every series was shorter than the span of all series. The `split` method of <code>[OneStepAheadFold]</code> also returned a wrong test end with a dict of series. ([#1430](https://github.com/skforecast/skforecast/pull/1430))
 
@@ -121,7 +125,7 @@ The main changes in this release are:
 
 + <code>[grid_search_forecaster]</code>, <code>[random_search_forecaster]</code> and their multiseries versions failed with a forecaster created with `lags=None` and only `window_features` (`TypeError: 'NoneType' object is not iterable`), and with a `None` element in `lags_grid` (`AttributeError`). A `None` element now evaluates a candidate without lags; if the forecaster has no `window_features`, a `ValueError` is raised before any candidate is evaluated. ([#1355](https://github.com/skforecast/skforecast/issues/1355), [#1388](https://github.com/skforecast/skforecast/pull/1388), [#1433](https://github.com/skforecast/skforecast/pull/1433), [#1434](https://github.com/skforecast/skforecast/pull/1434))
 
-+ Backtesting with two metrics of the same name (a name and the function it names, two lambdas, the pinball losses of two quantiles) returned duplicated columns, and <code>[backtesting_forecaster_multiseries]</code> raised a `TypeError`. A `ValueError` now names the duplicated metrics, as the hyperparameter searches already did. ([#1437](https://github.com/skforecast/skforecast/pull/1437))
++ Backtesting with two metrics of the same name (a name and the function it names, two lambdas, the pinball losses of two quantiles) returned duplicated columns, and <code>[backtesting_forecaster_multiseries]</code> raised a `TypeError`. A `ValueError` now names the duplicated metrics, as the hyperparameter searches already did. ([#1438](https://github.com/skforecast/skforecast/pull/1438))
 
 + <code>[plot_residuals]</code> ignored the `fig` argument when another figure was active: the subplots were drawn on the active figure and `fig` was returned empty. ([#1386](https://github.com/skforecast/skforecast/issues/1386), [#1387](https://github.com/skforecast/skforecast/pull/1387))
 
