@@ -82,6 +82,37 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 - When `fixed_train_size=True`, the window rolls forward (oldest data discarded). Use for concept drift or when old data is less relevant.
 - When `fixed_train_size=False`, the window expands (all history retained). Use when more data always helps.
 
+## Reading the Output
+
+`predictions` has, before the predicted values, the columns `fold`, `step`
+(step of the forecast horizon at which each prediction was made, from
+`gap + 1` to `gap + steps`, fewer in an incomplete last fold) and `y_true`
+(true value). Order: `fold, step, y_true, pred, ...`; with multiple series
+`level` goes first, and in `backtesting_stats` with several estimators
+`estimator_id` goes first. In the multi-series backtesting, the dates without
+an observed value have NaN in `y_true` and in every prediction column.
+
+The last column of `metric` is `n_evaluated`: the points used for the metrics
+(true value and prediction not missing). With overlapping folds
+(`fold_stride < steps`) each date is evaluated once, with the prediction of its
+last fold, so `n_evaluated` is smaller than the rows of `predictions`. In
+multi-series backtesting it is reported per level and summed in the aggregated
+rows, and `weighted_average` is weighted by it. A level with fewer points than
+the others was not predicted in some folds (short series, missing values).
+
+Error and coverage by forecast horizon use every row, including the repeated
+dates of overlapping folds:
+
+```python
+predictions = predictions.dropna(subset=['y_true'])
+by_step = predictions.assign(
+    absolute_error=(predictions['y_true'] - predictions['pred']).abs(),
+    covered=predictions['y_true'].between(
+        predictions['lower_bound'], predictions['upper_bound']
+    ),
+).groupby('step')[['absolute_error', 'covered']].mean()   # ['level', 'step'] with multiple series
+```
+
 ## Business Scenario Mapping
 
 ### Retraining frequency
@@ -192,7 +223,8 @@ cv = TimeSeriesFold(
   prediction of each date, the one of its own month. It works the same in the
   multi-series backtesting and in the hyperparameter search functions.
 - `predictions` repeats the dates where months shorter than 31 days spill into the
-  next month. Remove them before grouping by month or plotting:
+  next month. Remove them before grouping by month or plotting (the error of
+  each month is then `(predictions['pred'] - predictions['y_true']).abs()`):
   `predictions[~predictions.index.duplicated(keep='last')]` for a single series;
   with multiple series (long format with a `level` column), deduplicate by date and
   level, `predictions[~predictions.set_index('level', append=True).index.duplicated(keep='last')]`.

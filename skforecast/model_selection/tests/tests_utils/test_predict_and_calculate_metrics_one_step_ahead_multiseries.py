@@ -351,7 +351,11 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equival
         fit_kwargs = fit_kwargs
     )
 
-    pd.testing.assert_frame_equal(metrics_one_step_ahead, metrics_backtesting)
+    # NOTE: The one-step-ahead metrics do not include the number of points
+    # evaluated of the backtesting (`n_evaluated`).
+    pd.testing.assert_frame_equal(
+        metrics_one_step_ahead, metrics_backtesting.drop(columns='n_evaluated')
+    )
     pd.testing.assert_frame_equal(pred_one_step_ahead, pred_backtesting)
 
 
@@ -760,7 +764,11 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_equivalence_ba
         fit_kwargs = fit_kwargs
     )
 
-    pd.testing.assert_frame_equal(metrics_one_step_ahead, metrics_backtesting)
+    # NOTE: The one-step-ahead metrics do not include the number of points
+    # evaluated of the backtesting (`n_evaluated`).
+    pd.testing.assert_frame_equal(
+        metrics_one_step_ahead, metrics_backtesting.drop(columns='n_evaluated')
+    )
     pd.testing.assert_frame_equal(pred_one_step_ahead, pred_backtesting)
 
 
@@ -849,7 +857,11 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_equivalence_ba
         fit_kwargs = fit_kwargs
     )
 
-    pd.testing.assert_frame_equal(metrics_one_step_ahead, metrics_backtesting)
+    # NOTE: The one-step-ahead metrics do not include the number of points
+    # evaluated of the backtesting (`n_evaluated`).
+    pd.testing.assert_frame_equal(
+        metrics_one_step_ahead, metrics_backtesting.drop(columns='n_evaluated')
+    )
     pd.testing.assert_frame_equal(pred_one_step_ahead, pred_backtesting)
 
 
@@ -961,7 +973,11 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_equivalence_ba
         fit_kwargs=fit_kwargs
     )
 
-    pd.testing.assert_frame_equal(metrics_one_step_ahead, metrics_backtesting)
+    # NOTE: The one-step-ahead metrics do not include the number of points
+    # evaluated of the backtesting (`n_evaluated`).
+    pd.testing.assert_frame_equal(
+        metrics_one_step_ahead, metrics_backtesting.drop(columns='n_evaluated')
+    )
     pd.testing.assert_frame_equal(pred_one_step_ahead, pred_backtesting, check_dtype=False)
 
 
@@ -1074,7 +1090,11 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_equivalence_ba
         fit_kwargs=fit_kwargs
     )
 
-    pd.testing.assert_frame_equal(metrics_one_step_ahead, metrics_backtesting)
+    # NOTE: The one-step-ahead metrics do not include the number of points
+    # evaluated of the backtesting (`n_evaluated`).
+    pd.testing.assert_frame_equal(
+        metrics_one_step_ahead, metrics_backtesting.drop(columns='n_evaluated')
+    )
     pd.testing.assert_frame_equal(pred_one_step_ahead, pred_backtesting, check_dtype=False)
 
 

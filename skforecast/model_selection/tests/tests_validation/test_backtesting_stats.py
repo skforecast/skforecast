@@ -102,7 +102,13 @@ def test_output_backtesting_stats_no_refit_no_exog_no_remainder_with_mocked(n_jo
     )
     expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -148,7 +154,13 @@ def test_output_backtesting_stats_no_refit_no_exog_remainder_with_mocked(initial
     )
     expected_preds.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2])
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -194,7 +206,13 @@ def test_output_backtesting_stats_yes_refit_no_exog_no_remainder_with_mocked(n_j
     )
     expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -240,7 +258,13 @@ def test_output_backtesting_stats_yes_refit_no_exog_remainder_with_mocked(n_jobs
     )
     expected_preds.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2])
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -283,7 +307,13 @@ def test_output_backtesting_stats_yes_refit_fixed_train_size_no_exog_no_remainde
     )
     expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -326,7 +356,13 @@ def test_output_backtesting_stats_yes_refit_fixed_train_size_no_exog_remainder_w
     )
     expected_preds.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2])
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
     
 
@@ -370,7 +406,13 @@ def test_output_backtesting_stats_no_refit_yes_exog_with_mocked():
     )
     expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -414,7 +456,13 @@ def test_output_backtesting_stats_yes_refit_yes_exog_with_mocked():
     )
     expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -458,7 +506,13 @@ def test_output_backtesting_stats_yes_refit_fixed_train_size_yes_exog_with_mocke
     )
     expected_preds.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2])
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -511,7 +565,13 @@ def test_output_backtesting_stats_no_refit_yes_exog_callable_metric_with_mocked(
     )
     expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -555,7 +615,13 @@ def test_output_backtesting_stats_no_refit_no_exog_list_of_metrics_with_mocked()
     )
     expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
+    expected_metric.insert(2, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -598,7 +664,13 @@ def test_output_backtesting_stats_yes_refit_no_exog_callable_metric_with_mocked(
     )
     expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -643,7 +715,13 @@ def test_output_backtesting_stats_yes_refit_fixed_train_size_yes_exog_list_of_me
     )
     expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
+    expected_metric.insert(2, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
     
 
@@ -699,7 +777,13 @@ def test_output_backtesting_stats_no_refit_yes_exog_interval_with_mocked():
                                     )  
     expected_backtest_predictions.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])                                                   
 
+    expected_metric.insert(3, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_backtest_predictions.insert(1, 'step', [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3])
+    expected_backtest_predictions.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_backtest_predictions, backtest_predictions, atol=0.0001)
 
 
@@ -755,7 +839,13 @@ def test_output_backtesting_stats_yes_refit_yes_exog_interval_with_mocked():
                                     )  
     expected_backtest_predictions.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])                                                     
 
+    expected_metric.insert(3, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_backtest_predictions.insert(1, 'step', [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3])
+    expected_backtest_predictions.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_backtest_predictions, backtest_predictions, atol=0.0001)
 
 
@@ -811,7 +901,13 @@ def test_output_backtesting_stats_yes_refit_fixed_train_size_yes_exog_interval_w
                                     )
     expected_backtest_predictions.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])                                                    
 
+    expected_metric.insert(3, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_backtest_predictions.insert(1, 'step', [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3])
+    expected_backtest_predictions.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_backtest_predictions, backtest_predictions, atol=0.0001)
 
 
@@ -881,7 +977,17 @@ def test_output_backtesting_stats_fold_stride_with_mocked():
                 ])
     ).astype({'fold': int})
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [
+        1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6, 1, 2, 3
+    ])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.72537176, 0.81580302, 0.81400947, 0.92665305, 0.93727594, 0.52876165,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741,
+        0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -932,7 +1038,12 @@ def test_output_backtesting_stats_fold_stride_greater_than_steps_with_mocked():
                 ])
     ).astype({'fold': int})
 
+    expected_metric.insert(1, 'n_evaluated', [6])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 1, 2, 1, 2])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.81580302, 0.81400947, 0.52876165, 0.55933994
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -1137,7 +1248,8 @@ def test_output_backtesting_stats_multiple_estimators_refit_False_interval_with_
     
     # Check metric structure
     assert list(metric.columns) == [
-        'estimator_id', 'mean_squared_error', 'coverage', 'interval_width'
+        'estimator_id', 'mean_squared_error', 'coverage', 'interval_width',
+        'n_evaluated'
     ]
     assert metric['coverage'].between(0, 1).all()
     assert (metric['interval_width'] > 0).all()
@@ -1149,7 +1261,8 @@ def test_output_backtesting_stats_multiple_estimators_refit_False_interval_with_
     
     # Check predictions structure
     assert list(backtest_predictions.columns) == [
-        'fold', 'estimator_id', 'pred', 'lower_bound', 'upper_bound'
+        'estimator_id', 'fold', 'step', 'y_true', 'pred', 'lower_bound',
+        'upper_bound'
     ]
     assert len(backtest_predictions) == 48  # 12 timesteps x 4 estimators
     assert set(backtest_predictions['estimator_id']) == {
@@ -1197,7 +1310,8 @@ def test_output_backtesting_stats_multiple_estimators_refit_True_interval_with_m
     
     # Check metric structure
     assert list(metric.columns) == [
-        'estimator_id', 'mean_squared_error', 'coverage', 'interval_width'
+        'estimator_id', 'mean_squared_error', 'coverage', 'interval_width',
+        'n_evaluated'
     ]
     assert metric['coverage'].between(0, 1).all()
     assert (metric['interval_width'] > 0).all()
@@ -1209,7 +1323,8 @@ def test_output_backtesting_stats_multiple_estimators_refit_True_interval_with_m
     
     # Check predictions structure
     assert list(backtest_predictions.columns) == [
-        'fold', 'estimator_id', 'pred', 'lower_bound', 'upper_bound'
+        'estimator_id', 'fold', 'step', 'y_true', 'pred', 'lower_bound',
+        'upper_bound'
     ]
     assert len(backtest_predictions) == 48  # 12 timesteps x 4 estimators
     assert set(backtest_predictions['estimator_id']) == {
@@ -1272,7 +1387,7 @@ def test_output_backtesting_stats_multiple_estimators_overlapping_folds(fold_str
                                     )
         estimator_id = forecaster_alone.estimator_ids[0]
         metric_alone.insert(0, 'estimator_id', estimator_id)
-        preds_alone.insert(1, 'estimator_id', estimator_id)
+        preds_alone.insert(0, 'estimator_id', estimator_id)
         expected_metric.append(metric_alone)
         expected_preds.append(preds_alone)
 
@@ -1445,7 +1560,20 @@ def test_output_backtesting_stats_auto_arima_arar_freeze_params_False_gap_air_pa
                           142, 142, 143, 143])
     )
 
+    expected_metric.insert(2, 'n_evaluated', [23, 23])
     pd.testing.assert_frame_equal(expected_metric, metric, rtol=0.01)
+    expected_preds.insert(0, 'estimator_id', expected_preds.pop('estimator_id'))
+    expected_preds.insert(2, 'step', [
+        3, 3, 4, 4, 5, 5, 6, 6, 3, 3, 4, 4, 5, 5, 6, 6, 3, 3, 4, 4, 5, 5, 6, 6, 3, 3,
+        4, 4, 5, 5, 6, 6, 3, 3, 4, 4, 5, 5, 6, 6, 3, 3, 4, 4, 5, 5
+    ])
+    expected_preds.insert(3, 'y_true', [
+        342.0, 342.0, 406.0, 406.0, 396.0, 396.0, 420.0, 420.0, 472.0, 472.0, 548.0,
+        548.0, 559.0, 559.0, 463.0, 463.0, 407.0, 407.0, 362.0, 362.0, 405.0, 405.0,
+        417.0, 417.0, 391.0, 391.0, 419.0, 419.0, 461.0, 461.0, 472.0, 472.0, 535.0,
+        535.0, 622.0, 622.0, 606.0, 606.0, 508.0, 508.0, 461.0, 461.0, 390.0, 390.0,
+        432.0, 432.0
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, rtol=0.01)
 
 
@@ -1503,7 +1631,16 @@ def test_output_backtesting_stats_single_estimator_gap_no_interval(freeze_params
     })
 
     assert backtest_predictions.shape[0] == 23
+    expected_preds.insert(1, 'step', [
+        3, 4, 5, 6, 3, 4, 5, 6, 3, 4, 5, 6, 3, 4, 5, 6, 3, 4, 5, 6, 3, 4, 5
+    ])
+    expected_preds.insert(2, 'y_true', [
+        342.0, 406.0, 396.0, 420.0, 472.0, 548.0, 559.0, 463.0, 407.0, 362.0, 405.0,
+        417.0, 391.0, 419.0, 461.0, 472.0, 535.0, 622.0, 606.0, 508.0, 461.0, 390.0,
+        432.0
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions)
+    expected_metric.insert(1, 'n_evaluated', [23])
     pd.testing.assert_frame_equal(expected_metric, metric)
 
 
@@ -1855,3 +1992,53 @@ def test_backtesting_stats_ValueError_when_NaN_predictions_at_observed_dates(
             show_progress     = False,
             suppress_warnings = True
         )
+
+
+@pytest.mark.parametrize(
+    "fold_stride",
+    [None, 2],
+    ids=lambda fold_stride: f"fold_stride: {fold_stride}"
+)
+def test_output_backtesting_stats_step_y_true_and_n_evaluated_multiple_estimators(fold_stride):
+    """
+    Test the columns `estimator_id` (first, as `level` in the multi-series
+    backtesting), `step` and `y_true` of the predictions, and `n_evaluated`
+    of the metrics, with several estimators, `gap`, an incomplete last fold
+    and, optionally, overlapping folds. Each date has one row per estimator,
+    with the same step and true value.
+    """
+    forecaster = ForecasterStats(estimator=[Arima(order=(1, 0, 0)), Ets()])
+    cv = TimeSeriesFold(
+             steps                 = 4,
+             initial_train_size    = len(y_datetime) - 11,
+             fold_stride           = fold_stride,
+             gap                   = 2,
+             refit                 = True,
+             allow_incomplete_fold = True
+         )
+    metric, backtest_predictions = backtesting_stats(
+                                       forecaster    = forecaster,
+                                       y             = y_datetime,
+                                       cv            = cv,
+                                       metric        = 'mean_absolute_error',
+                                       interval      = [0.1, 0.9],
+                                       show_progress = False
+                                   )
+
+    assert backtest_predictions.columns.tolist() == [
+        'estimator_id', 'fold', 'step', 'y_true', 'pred', 'lower_bound', 'upper_bound'
+    ]
+    for estimator_id, preds in backtest_predictions.groupby('estimator_id'):
+        expected_step = preds.groupby('fold').cumcount() + 3
+        np.testing.assert_array_equal(preds['step'], expected_step)
+        np.testing.assert_array_equal(
+            preds['y_true'], y_datetime.loc[preds.index].to_numpy()
+        )
+    assert backtest_predictions['step'].min() == 3
+    assert backtest_predictions['step'].max() == 6
+
+    # The test set has 11 dates; the first 2 are the gap of the first fold.
+    assert metric.columns.tolist() == [
+        'estimator_id', 'mean_absolute_error', 'coverage', 'interval_width', 'n_evaluated'
+    ]
+    assert metric['n_evaluated'].tolist() == [9, 9]

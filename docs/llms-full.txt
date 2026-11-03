@@ -323,7 +323,19 @@ metric, predictions = backtesting_forecaster(
     show_progress=True,                         # Show progress bar
     suppress_warnings=False                     # Suppress skforecast warnings
 )
-# metric columns: mean_absolute_error, coverage, interval_width
+# predictions columns: fold, step, y_true, pred, lower_bound, upper_bound
+# metric columns: mean_absolute_error, coverage, interval_width, n_evaluated
+```
+
+The predictions of the four backtesting functions (`backtesting_forecaster`, `backtesting_forecaster_multiseries`, `backtesting_stats` and `backtesting_foundation`) always include, after `fold`, the column `step` (step of the forecast horizon at which each prediction was made, from `gap + 1` to `gap + steps`) and `y_true` (true value), before the predictions: `level, fold, step, y_true, pred, ...` with multiple series, and `estimator_id, fold, step, y_true, pred, ...` in `backtesting_stats` with several estimators. In the multi-series backtesting, the dates without an observed value have NaN in `y_true` and in every prediction column. With overlapping folds (`fold_stride < steps`) every prediction is kept, so a date can appear several times with different `step`. The last column of `metric` is `n_evaluated`: the points used for the metrics (true value and prediction not missing, each date once with the prediction of its last fold), per level in multi-series and the sum in the aggregated rows; `weighted_average` is weighted by it. Metric names must be unique (they are the columns of `metric`; `create_mean_pinball_loss(alpha)` is named `mean_pinball_loss_q_{alpha}`) and cannot be `n_evaluated`.
+
+```python
+# Error and coverage by step of the horizon (group by ['level', 'step'] with multiple series)
+predictions = predictions.dropna(subset=['y_true'])
+predictions.assign(
+    absolute_error=(predictions['y_true'] - predictions['pred']).abs(),
+    covered=predictions['y_true'].between(predictions['lower_bound'], predictions['upper_bound']),
+).groupby('step')[['absolute_error', 'covered']].mean()
 ```
 
 When the predictions define one interval, the backtesting functions add two columns to `metric`, after the requested metrics: `coverage` (share of true values inside the interval) and `interval_width` (mean width of the interval, in the units of the series). One interval means a float `interval` such as `0.8`, or two quantiles, optionally with the median: `interval=[0.1, 0.9]` or `[0.1, 0.5, 0.9]`, and the same in `quantiles` of `backtesting_foundation`. Compare `coverage` with the nominal level (0.8 for `[0.1, 0.9]`) and read it together with `interval_width`: a wide interval covers more. Multi-series backtesting reports them per level and in the aggregated rows, and `backtesting_stats` per estimator (also with `alpha`). With other quantiles (for example `[0.05, 0.1, 0.9, 0.95]`), `interval='bootstrapping'` or a distribution, they are not added; use CRPS or the pinball loss instead. A custom metric cannot be named `coverage` or `interval_width` when they are added.
@@ -2522,10 +2534,11 @@ metric, predictions = backtesting_foundation(
     metric='mean_absolute_error',
     quantiles=[0.1, 0.5, 0.9],   # Native model quantiles; no bootstrapping
 )
-# metric columns: levels, mean_absolute_error, coverage, interval_width
+# metric columns: levels, mean_absolute_error, coverage, interval_width, n_evaluated
+# predictions columns: level, fold, step, y_true, q_0.1, q_0.5, q_0.9
 ```
 
-The metrics use `q_0.5` as the point forecast. With two quantiles, optionally
+The metrics (and `n_evaluated`) use `q_0.5` as the point forecast. With two quantiles, optionally
 with the median (`[0.1, 0.9]` or `[0.1, 0.5, 0.9]`), `metric` also reports the
 empirical `coverage` of the interval they define and its mean width
 (`interval_width`). With other quantiles they are not added.
@@ -3135,7 +3148,7 @@ metric, predictions = backtesting_forecaster(
     cv=cv,
     metric=['mean_absolute_error', 'mean_absolute_scaled_error'],
 )
-# metric is a DataFrame with one column per metric
+# metric is a DataFrame with one column per metric, plus `n_evaluated` (points evaluated)
 ```
 
 **MASE and RMSSE** require training data to compute the naive forecast baseline.
@@ -3319,7 +3332,7 @@ can aggregate them into a single score. The aggregation options are:
 | Aggregation | Formula | Use when |
 |-------------|---------|----------|
 | `'average'` | Arithmetic mean of per-series metrics | All series equally important |
-| `'weighted_average'` | Weighted by number of predicted values per level | Series with more observations contribute more |
+| `'weighted_average'` | Weighted by the points evaluated per level (`n_evaluated`) | Series with more observations contribute more |
 | `'pooling'` | Metric computed on all predictions pooled together | Want a single global error regardless of series identity |
 
 ### In backtesting
@@ -3336,7 +3349,8 @@ metric, predictions = backtesting_forecaster_multiseries(
     metric='mean_absolute_error',
     add_aggregated_metric=True,  # Default: includes average, weighted_average, pooling
 )
-# metric DataFrame has rows for each level + aggregated rows
+# metric DataFrame has rows for each level + aggregated rows, and a last column
+# `n_evaluated` (points evaluated per level, summed in the aggregated rows)
 ```
 
 ### In hyperparameter search
@@ -3520,7 +3534,7 @@ multi-series search functions (via `aggregate_metric` parameter).
 | Aggregation | Behavior | Best for |
 |-------------|----------|----------|
 | `'average'` | Arithmetic mean of per-series metric values | All series equally important |
-| `'weighted_average'` | Weighted by number of predicted values per level | Series with more observations contribute more |
+| `'weighted_average'` | Weighted by the points evaluated per level (`n_evaluated`) | Series with more observations contribute more |
 | `'pooling'` | Metric computed on all predictions concatenated | Global accuracy regardless of series identity |
 
 In backtesting, set `add_aggregated_metric=True` (default) to include all three.
@@ -3604,6 +3618,37 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 - `gap` simulates real-world delay between data availability and forecast usage
 - When `fixed_train_size=True`, the window rolls forward (oldest data discarded). Use for concept drift or when old data is less relevant.
 - When `fixed_train_size=False`, the window expands (all history retained). Use when more data always helps.
+
+## Reading the Output
+
+`predictions` has, before the predicted values, the columns `fold`, `step`
+(step of the forecast horizon at which each prediction was made, from
+`gap + 1` to `gap + steps`, fewer in an incomplete last fold) and `y_true`
+(true value). Order: `fold, step, y_true, pred, ...`; with multiple series
+`level` goes first, and in `backtesting_stats` with several estimators
+`estimator_id` goes first. In the multi-series backtesting, the dates without
+an observed value have NaN in `y_true` and in every prediction column.
+
+The last column of `metric` is `n_evaluated`: the points used for the metrics
+(true value and prediction not missing). With overlapping folds
+(`fold_stride < steps`) each date is evaluated once, with the prediction of its
+last fold, so `n_evaluated` is smaller than the rows of `predictions`. In
+multi-series backtesting it is reported per level and summed in the aggregated
+rows, and `weighted_average` is weighted by it. A level with fewer points than
+the others was not predicted in some folds (short series, missing values).
+
+Error and coverage by forecast horizon use every row, including the repeated
+dates of overlapping folds:
+
+```python
+predictions = predictions.dropna(subset=['y_true'])
+by_step = predictions.assign(
+    absolute_error=(predictions['y_true'] - predictions['pred']).abs(),
+    covered=predictions['y_true'].between(
+        predictions['lower_bound'], predictions['upper_bound']
+    ),
+).groupby('step')[['absolute_error', 'covered']].mean()   # ['level', 'step'] with multiple series
+```
 
 ## Business Scenario Mapping
 
@@ -3715,7 +3760,8 @@ cv = TimeSeriesFold(
   prediction of each date, the one of its own month. It works the same in the
   multi-series backtesting and in the hyperparameter search functions.
 - `predictions` repeats the dates where months shorter than 31 days spill into the
-  next month. Remove them before grouping by month or plotting:
+  next month. Remove them before grouping by month or plotting (the error of
+  each month is then `(predictions['pred'] - predictions['y_true']).abs()`):
   `predictions[~predictions.index.duplicated(keep='last')]` for a single series;
   with multiple series (long format with a `level` column), deduplicate by date and
   level, `predictions[~predictions.set_index('level', append=True).index.duplicated(keep='last')]`.
@@ -4706,8 +4752,8 @@ metric, predictions = backtesting_forecaster(
     use_in_sample_residuals=True,
     use_binned_residuals=True,
 )
-# predictions has columns: fold, pred, lower_bound, upper_bound
-# metric has columns: mean_absolute_error, coverage, interval_width
+# predictions has columns: fold, step, y_true, pred, lower_bound, upper_bound
+# metric has columns: mean_absolute_error, coverage, interval_width, n_evaluated
 ```
 
 When `interval` defines one interval (a float, or two quantiles optionally with
@@ -4746,7 +4792,7 @@ metric, predictions_bt = backtesting_forecaster(
 
 # Set out-of-sample residuals on the forecaster
 forecaster.set_out_sample_residuals(
-    y_true=data['target'].loc[predictions_bt.index],
+    y_true=predictions_bt['y_true'],
     y_pred=predictions_bt['pred'],
 )
 
@@ -4952,11 +4998,13 @@ forecaster.predict_interval(
 
 ```python
 # Step 1: Get predictions via backtesting
-metric, preds = backtesting_forecaster(forecaster=forecaster, y=data, cv=cv, metric='mae')
+metric, preds = backtesting_forecaster(
+    forecaster=forecaster, y=data, cv=cv, metric='mean_absolute_error'
+)
 
 # Step 2: Store residuals
 forecaster.set_out_sample_residuals(
-    y_true=data.loc[preds.index],
+    y_true=preds['y_true'],
     y_pred=preds['pred'],
 )
 
@@ -5802,12 +5850,12 @@ cv_cal = TimeSeriesFold(steps=forecaster.max_step, initial_train_size=None, refi
 _, pred_cal = backtesting_forecaster_multiseries(
     forecaster=forecaster, series=series_val, cv=cv_cal, metric='mean_absolute_error'
 )
-pred_target = pred_cal.loc[pred_cal['level'] == 'target', 'pred']
+pred_target = pred_cal.loc[pred_cal['level'] == 'target']
 
 # y_true and y_pred in the original scale, the forecaster applies the transformation
 forecaster.set_out_sample_residuals(
-    y_true={'target': series_val.loc[pred_target.index, 'target']},
-    y_pred={'target': pred_target},
+    y_true={'target': pred_target['y_true']},
+    y_pred={'target': pred_target['pred']},
 )
 
 predictions = forecaster.predict_interval(

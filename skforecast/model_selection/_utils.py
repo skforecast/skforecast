@@ -43,6 +43,11 @@ from ..utils import (
 # `_calculate_interval_metrics`.
 INTERVAL_METRIC_NAMES = ['coverage', 'interval_width']
 
+# NOTE: Name of the column of the backtesting metrics with the number of
+# points that enter the metrics (prediction and true value not missing, after
+# removing the predictions of overlapping folds), see `_count_evaluated`.
+N_EVALUATED_NAME = 'n_evaluated'
+
 
 def initialize_lags_grid(
     forecaster: object, 
@@ -419,6 +424,12 @@ def check_backtesting_input(
             f"metrics table. Duplicated names: {duplicated_names}. Give each "
             f"function a distinct `__name__` (for example, "
             f"`create_mean_pinball_loss` includes the quantile in the name)."
+        )
+    if N_EVALUATED_NAME in metric_names:
+        raise ValueError(
+            f"The backtesting metrics include the column '{N_EVALUATED_NAME}' "
+            f"with the number of points evaluated. Rename the metric "
+            f"'{N_EVALUATED_NAME}' passed in `metric`."
         )
 
     # NOTE: `backtesting_foundation` passes its `quantiles` as `interval`.
@@ -1383,6 +1394,88 @@ def _calculate_interval_metrics(
     return [float(coverage), float(interval_width)]
 
 
+def _count_evaluated(
+    y_true: np.ndarray | pd.Series,
+    y_pred: np.ndarray | pd.Series
+) -> int:
+    """
+    Number of points that enter the backtesting metrics: those with a true
+    value and a prediction, both not missing. The predictions must be those
+    used for the metrics, after removing the repeated dates of overlapping
+    folds (`fold_stride < steps`).
+
+    Parameters
+    ----------
+    y_true : numpy ndarray, pandas Series
+        True values of the target variable.
+    y_pred : numpy ndarray, pandas Series
+        Predicted values, aligned by position with `y_true`.
+
+    Returns
+    -------
+    n_evaluated : int
+        Number of points evaluated.
+
+    """
+
+    is_evaluated = pd.notna(np.asarray(y_true)) & pd.notna(np.asarray(y_pred))
+
+    return int(is_evaluated.sum())
+
+
+def _get_y_true_multiseries(
+    series: pd.DataFrame | dict[str, pd.Series],
+    index: pd.MultiIndex
+) -> np.ndarray:
+    """
+    True values of the multi-series backtesting predictions: the value of
+    the series `level` at the date `idx` of each pair of `index`. Pairs
+    without an observed value (missing values, or dates outside the series)
+    are NaN.
+
+    Parameters
+    ----------
+    series : pandas DataFrame, dict
+        Time series, in wide format or as a dict of pandas Series.
+    index : pandas MultiIndex
+        Index of the predictions, with levels `idx` (date) and `level`
+        (series). It may include repeated pairs (overlapping folds).
+
+    Returns
+    -------
+    y_true : numpy ndarray
+        True values, aligned by position with `index`.
+
+    """
+
+    # NOTE: The codes of the MultiIndex are used to group the rows by series,
+    # so the dates and the names of the series of every row are not
+    # materialized. Each series is looked up only at the dates of its rows:
+    # time and memory grow with the number of rows, also with series that
+    # only cover part of the test set.
+    position_idx = index.names.index('idx')
+    position_level = index.names.index('level')
+    dates = index.levels[position_idx]
+    date_codes = index.codes[position_idx]
+    levels = index.levels[position_level]
+    level_codes = index.codes[position_level]
+
+    y_true = np.full(len(index), np.nan)
+    rows_by_level = np.split(
+        np.argsort(level_codes, kind='stable'),
+        np.cumsum(np.bincount(level_codes, minlength=len(levels)))[:-1]
+    )
+    for level, rows in zip(levels, rows_by_level):
+        if rows.size == 0:
+            continue
+        level_series = series[level]
+        locations = level_series.index.get_indexer(dates[date_codes[rows]])
+        is_found = locations >= 0
+        y_true[rows[is_found]] = level_series.to_numpy(dtype=float)[locations[is_found]]
+
+    return y_true
+
+
 def _check_nan_predictions_backtesting(
     y_true: pd.Series,
     y_pred: pd.Series,
@@ -1471,7 +1564,7 @@ def _calculate_metrics_backtesting_multiseries(
 
     - 'average': the average (arithmetic mean) of all levels.
     - 'weighted_average': the average of the metrics weighted by the number of
-    predicted values of each level.
+    points evaluated in each level (`n_evaluated`).
     - 'pooling': the values of all levels are pooled and then the metric is
     calculated.
 
@@ -1479,14 +1572,21 @@ def _calculate_metrics_backtesting_multiseries(
     coverage and the mean width of the interval (`INTERVAL_METRIC_NAMES`) are
     added after the metrics, for each level and aggregated in the same way.
 
+    The last column, `n_evaluated` (`N_EVALUATED_NAME`), is the number of
+    points that enter the metrics of each level: those with a true value and
+    a prediction, both not missing. Its aggregated value is the sum over the
+    levels.
+
     Parameters
     ----------
     series : pandas DataFrame, dict
-        Series data used for backtesting.
+        Series data used for backtesting. Only used to build `y_train` for the
+        metrics that need it.
     predictions : pandas DataFrame
-        MultiIndex DataFrame generated during the backtesting multiseries process.
-        The first column is the point prediction used to calculate the metrics.
-        It may also include the columns `lower_bound` and `upper_bound`.
+        MultiIndex (`idx`, `level`) DataFrame generated during the backtesting
+        multiseries process, without the repeated dates of overlapping folds.
+        Columns `y_true` (true values) and `y_pred` (point predictions), and
+        optionally `lower_bound` and `upper_bound`.
     folds : list, tqdm
         Folds created during the backtesting process.
     span_index : pandas DatetimeIndex, pandas RangeIndex
@@ -1505,39 +1605,17 @@ def _calculate_metrics_backtesting_multiseries(
 
         - 'average': the average (arithmetic mean) of all levels.
         - 'weighted_average': the average of the metrics weighted by the number of
-        predicted values of each level.
+        points evaluated in each level.
         - 'pooling': the values of all levels are pooled and then the metric is
         calculated.
 
     Returns
     -------
     metrics_levels : pandas DataFrame
-        Value(s) of the metric(s).
+        Value(s) of the metric(s) and number of points evaluated.
     
     """
 
-    # NOTE: All this checks can be deleted as they are done in the public
-    # function that calls this private function.
-    # if not isinstance(series, (pd.DataFrame, dict)):
-    #     raise TypeError(
-    #         "`series` must be a pandas DataFrame or a dictionary of pandas "
-    #         "DataFrames."
-    #     )
-    # if not isinstance(predictions, pd.DataFrame):
-    #     raise TypeError("`predictions` must be a pandas DataFrame.")
-    # if not isinstance(folds, (list, tqdm)):
-    #     raise TypeError("`folds` must be a list or a tqdm object.")
-    # if not isinstance(span_index, (pd.DatetimeIndex, pd.RangeIndex)):
-    #     raise TypeError("`span_index` must be a pandas DatetimeIndex or pandas RangeIndex.")
-    # if not isinstance(window_size, (int, np.integer)):
-    #     raise TypeError("`window_size` must be an integer.")
-    # if not isinstance(metrics, list):
-    #     raise TypeError("`metrics` must be a list.")
-    # if not isinstance(levels, list):
-    #     raise TypeError("`levels` must be a list.")
-    # if not isinstance(add_aggregated_metric, bool):
-    #     raise TypeError("`add_aggregated_metric` must be a boolean.")
-    
     metric_names = [m.__name__ for m in metrics]
     needs_y_train = _any_metric_needs_y_train(metrics)
     add_interval_metrics = {'lower_bound', 'upper_bound'}.issubset(predictions.columns)
@@ -1546,34 +1624,14 @@ def _calculate_metrics_backtesting_multiseries(
     )
 
     levels_in_predictions = predictions.index.get_level_values('level').unique()
-
-    if isinstance(series, pd.DataFrame) and not isinstance(series.index, pd.MultiIndex):
-        series = series.stack()
-        series.index = series.index.swaplevel()
-        series.index.names = ['level', 'idx']
-        series = series.to_frame('y_true')
-    else:
-        series = pd.concat(series, names = ['level', 'idx']).to_frame('y_true')
-    
     predictions = predictions.swaplevel()
-    predictions = predictions.rename(columns={predictions.columns[0]: 'y_pred'})
-
-    # NOTE: Rows are dropped only by `y_true` and `y_pred`, so the metrics are
-    # the same with and without the interval bounds.
-    y_true_y_pred = pd.merge(
-        series,
-        predictions,
-        left_index  = True,
-        right_index = True,
-        how         = "inner",
-    )
 
     # NOTE: The predictions of the dates without observed values are expected
     # to be NaN. A NaN prediction of a date with an observed value (the
     # forecaster could not predict it) is left out of the metrics, which are
     # then calculated with fewer values than predicted, so it is warned.
     is_nan_prediction = (
-        y_true_y_pred['y_true'].notna() & y_true_y_pred['y_pred'].isna()
+        predictions['y_true'].notna() & predictions['y_pred'].isna()
     )
     if is_nan_prediction.any():
         n_nan_predictions = (
@@ -1592,11 +1650,22 @@ def _calculate_metrics_backtesting_multiseries(
             MissingValuesWarning
         )
 
-    y_true_y_pred = y_true_y_pred.dropna(
+    # NOTE: Rows are dropped only by `y_true` and `y_pred`, so the metrics are
+    # the same with and without the interval bounds. The rows left are the
+    # points evaluated (`n_evaluated`).
+    y_true_y_pred = predictions.dropna(
         axis=0, how="any", subset=['y_true', 'y_pred']
     )
 
     if needs_y_train:
+        if isinstance(series, pd.DataFrame) and not isinstance(series.index, pd.MultiIndex):
+            series = series.stack()
+            series.index = series.index.swaplevel()
+            series.index.names = ['level', 'idx']
+            series = series.to_frame('y_true')
+        else:
+            series = pd.concat(series, names = ['level', 'idx']).to_frame('y_true')
+
         train_indexes = []
         for i, fold in enumerate(folds):
             fit_fold = fold[-1]
@@ -1628,6 +1697,7 @@ def _calculate_metrics_backtesting_multiseries(
         .groupby(by="level", sort=False, as_index=False)
     )
     metrics_levels = []
+    n_evaluated_levels = []
     for level in levels:
         if level in levels_in_predictions and level in y_true_y_pred_grouped.groups:
             group = y_true_y_pred_grouped.get_group(level)
@@ -1651,55 +1721,54 @@ def _calculate_metrics_backtesting_multiseries(
                     )
                 )
             metrics_levels.append(metrics_level)
+            n_evaluated_levels.append(len(group))
         else:
             metrics_levels.append([None for _ in output_names])
+            n_evaluated_levels.append(0)
 
     metrics_levels = pd.DataFrame(
                          data    = metrics_levels,
                          columns = output_names
                      )
     metrics_levels.insert(0, 'levels', levels)
+    metrics_levels[N_EVALUATED_NAME] = n_evaluated_levels
 
     if len(levels) < 2:
         add_aggregated_metric = False
 
     if add_aggregated_metric:
 
+        # NOTE: The aggregated number of points evaluated is the sum over the
+        # levels, the same for the three aggregations.
+        n_evaluated = int(metrics_levels[N_EVALUATED_NAME].sum())
+
         # aggregation: average
-        average = metrics_levels.drop(columns='levels').mean(skipna=True)
+        average = metrics_levels[output_names].mean(skipna=True)
         average = average.to_frame().transpose()
         average['levels'] = 'average'
+        average[N_EVALUATED_NAME] = n_evaluated
 
         # aggregation: weighted_average
-        n_predictions_levels = (
-            predictions
-            .groupby(level="level", sort=False)["y_pred"]
-            .apply(lambda x: x.notna().sum())
-            .reset_index(name="n_predictions")
-            .rename(columns={"level": "levels"})
-        )
-        # NOTE: A level predicted without observed values in its test set (for
-        # example, a series that ends at the end of the training set) has no
-        # metric, so it is left out of the weighted average, as it is of the
-        # average and the pooling.
-        n_predictions_levels = n_predictions_levels[
-            n_predictions_levels['levels'].isin(y_true_y_pred_grouped.groups)
-        ]
+        # NOTE: The weights are the points evaluated in each level. A level
+        # without points evaluated (not predicted, or predicted without
+        # observed values in its test set) has no metric, so it is left out of
+        # the weighted average, as it is of the average and the pooling.
         metrics_levels_no_missing = (
-            metrics_levels.merge(n_predictions_levels, on='levels', how='inner')
+            metrics_levels.loc[metrics_levels[N_EVALUATED_NAME] > 0]
         )
         weighted_averages = {}
         for col in output_names:
             weighted_averages[col] = (
                 np.average(
                     metrics_levels_no_missing[col],
-                    weights = metrics_levels_no_missing['n_predictions']
+                    weights = metrics_levels_no_missing[N_EVALUATED_NAME]
                 )
                 if not metrics_levels_no_missing.empty
                 else np.nan
             )
         weighted_average = pd.DataFrame(weighted_averages, index=[0])
         weighted_average['levels'] = 'weighted_average'
+        weighted_average[N_EVALUATED_NAME] = n_evaluated
 
         # aggregation: pooling
         scaled_metrics = [
@@ -1741,6 +1810,7 @@ def _calculate_metrics_backtesting_multiseries(
 
         pooled = pd.DataFrame([pooled], columns=output_names)
         pooled['levels'] = 'pooling'
+        pooled[N_EVALUATED_NAME] = n_evaluated
 
         metrics_levels = pd.concat(
             [metrics_levels, average, weighted_average, pooled],
@@ -1774,7 +1844,7 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
 
     - 'average': the average (arithmetic mean) of all levels.
     - 'weighted_average': the average of the metrics weighted by the number of
-    predicted values of each level.
+    points evaluated in each level.
     - 'pooling': the values of all levels are pooled and then the metric is
     calculated.
 
@@ -1808,7 +1878,7 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
 
         - 'average': the average (arithmetic mean) of all levels.
         - 'weighted_average': the average of the metrics weighted by the number of
-        predicted values of each level.
+        points evaluated in each level.
         - 'pooling': the values of all levels are pooled and then the metric is
         calculated.
     sample_weight : numpy ndarray, default None
@@ -2118,8 +2188,10 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         average['levels'] = 'average'
 
         # aggregation: weighted_average
+        # NOTE: Weighted by the points evaluated in each level, as in
+        # `_calculate_metrics_backtesting_multiseries`.
         n_predictions_levels = {
-            k: v['y_pred'].notna().sum()
+            k: _count_evaluated(y_true=v['y_true'], y_pred=v['y_pred'])
             for k, v in predictions_per_level.items()
         }
         n_predictions_levels = pd.DataFrame(

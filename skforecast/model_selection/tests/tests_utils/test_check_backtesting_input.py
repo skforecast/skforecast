@@ -270,6 +270,13 @@ def test_check_backtesting_input_ValueError_when_metric_name_is_reserved_for_int
         )
 
 
+def n_evaluated(y_true, y_pred):  # pragma: no cover
+    """
+    Custom metric whose name is reserved for the number of points evaluated.
+    """
+    return 0.0
+
+
 def absolute_error_quantile(y_true, y_pred, quantile):  # pragma: no cover
     """
     Custom metric with an extra argument, to create partials.
@@ -344,6 +351,43 @@ def test_check_backtesting_input_no_error_when_pinball_losses_of_different_quant
         y             = y,
         show_progress = False
     )
+
+
+@pytest.mark.parametrize(
+    "interval",
+    [None, [0.1, 0.9]],
+    ids = lambda interval: f'interval: {interval}'
+)
+def test_check_backtesting_input_ValueError_when_metric_name_is_n_evaluated(interval):
+    """
+    Test ValueError is raised in check_backtesting_input if a metric is named
+    `n_evaluated`, the column with the number of points evaluated, with or
+    without `interval`.
+    """
+    forecaster = ForecasterRecursive(
+                     estimator = Ridge(random_state=123),
+                     lags      = 2
+                 )
+    cv = TimeSeriesFold(
+             steps              = 5,
+             initial_train_size = len(y[:-12]),
+             refit              = False
+         )
+
+    err_msg = re.escape(
+        "The backtesting metrics include the column 'n_evaluated' with the "
+        "number of points evaluated. Rename the metric 'n_evaluated' passed "
+        "in `metric`."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_backtesting_input(
+            forecaster    = forecaster,
+            cv            = cv,
+            metric        = ['mean_absolute_error', n_evaluated],
+            y             = y,
+            interval      = interval,
+            show_progress = False
+        )
 
 
 @pytest.mark.parametrize(

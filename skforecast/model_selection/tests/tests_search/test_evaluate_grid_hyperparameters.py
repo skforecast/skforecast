@@ -13,6 +13,7 @@ from skforecast.metrics import mean_absolute_scaled_error, root_mean_squared_sca
 from skforecast.exceptions import OneStepAheadValidationWarning
 from skforecast.recursive import ForecasterRecursive
 from skforecast.direct import ForecasterDirect
+from skforecast.model_selection import backtesting_forecaster
 from skforecast.model_selection._search import _evaluate_grid_hyperparameters
 from skforecast.model_selection._split import TimeSeriesFold, OneStepAheadFold
 from skforecast.preprocessing import RollingFeatures
@@ -1187,3 +1188,43 @@ def test_evaluate_grid_hyperparameters_equivalent_outputs_backtesting_one_step_a
         )
 
     pd.testing.assert_frame_equal(results_backtesting, results_one_step_ahead)
+
+
+def test_evaluate_grid_hyperparameters_metrics_equal_to_backtesting_by_name():
+    """
+    Test that the metrics of each candidate are those of its backtesting,
+    selected by name: the column `n_evaluated` of the backtesting metrics is
+    not added to the results, and the output file has the same columns.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(random_state=123), lags=3)
+    cv = TimeSeriesFold(steps=5, initial_train_size=len(y) - 12, refit=False)
+    metric = ['mean_absolute_error', mean_absolute_scaled_error]
+    param_grid = [{'alpha': 0.1}, {'alpha': 10}]
+    output_file = 'test_evaluate_grid_hyperparameters_metrics_by_name.txt'
+
+    results = _evaluate_grid_hyperparameters(
+                  forecaster    = forecaster,
+                  y             = y,
+                  cv            = cv,
+                  param_grid    = param_grid,
+                  metric        = metric,
+                  return_best   = False,
+                  verbose       = False,
+                  show_progress = False,
+                  output_file   = output_file
+              )
+    output_file_header = pd.read_csv(output_file, sep='\t', nrows=0).columns.tolist()
+    os.remove(output_file)
+
+    assert 'n_evaluated' not in results.columns
+    assert output_file_header == [
+        'lags', 'lags_label', 'params', 'mean_absolute_error',
+        'mean_absolute_scaled_error', 'alpha'
+    ]
+    for _, row in results.iterrows():
+        forecaster.set_params(row['params'])
+        metric_backtesting, _ = backtesting_forecaster(
+            forecaster=forecaster, y=y, cv=cv, metric=metric, show_progress=False
+        )
+        for name in ['mean_absolute_error', 'mean_absolute_scaled_error']:
+            assert row[name] == metric_backtesting.loc[0, name]

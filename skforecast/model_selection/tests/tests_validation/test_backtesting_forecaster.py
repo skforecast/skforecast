@@ -6,16 +6,18 @@ import pytest
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
-from sklearn.linear_model import Ridge
+from sklearn.linear_model import Ridge, LogisticRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.metrics import mean_absolute_error
 from skforecast.recursive import ForecasterRecursive
+from skforecast.recursive import ForecasterRecursiveClassifier
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirect
 from skforecast.model_selection import backtesting_forecaster
 from skforecast.model_selection._split import TimeSeriesFold
 
 # Fixtures
-from ..fixtures_model_selection import y
+from ..fixtures_model_selection import y, y_clf
 
 
 def test_backtesting_forecaster_TypeError_when_forecaster_not_supported_types():
@@ -94,7 +96,7 @@ def test_backtesting_forecaster_no_interval_metrics_when_interval_has_not_two_bo
                     show_progress = False
                 )
 
-    assert list(metric.columns) == ['mean_absolute_error']
+    assert list(metric.columns) == ['mean_absolute_error', 'n_evaluated']
 
 
 def test_backtesting_forecaster_cv_differentiation_is_deprecated_and_ignored():
@@ -297,3 +299,149 @@ def test_backtesting_forecaster_ValueError_when_NaN_last_value_before_fold_and_d
 
     assert forecaster._allow_nan_predictions is False
 
+
+
+@pytest.mark.parametrize(
+    "forecaster",
+    [ForecasterRecursive(estimator=Ridge(), lags=3),
+     ForecasterDirect(estimator=Ridge(), lags=3, steps=6)],
+    ids=lambda forecaster: f"forecaster: {type(forecaster).__name__}"
+)
+@pytest.mark.parametrize(
+    "cv_kwargs, expected_index, expected_fold, expected_step",
+    [
+        # gap=2 and an incomplete last fold: the steps start at gap + 1.
+        ({"steps": 4, "initial_train_size": 38, "gap": 2},
+         range(40, 50),
+         [0, 0, 0, 0, 1, 1, 1, 1, 2, 2],
+         [3, 4, 5, 6, 3, 4, 5, 6, 3, 4]),
+        # fold_stride < steps: the predictions of overlapping folds are kept.
+        ({"steps": 4, "initial_train_size": 42, "fold_stride": 2},
+         [42, 43, 44, 45, 44, 45, 46, 47, 46, 47, 48, 49, 48, 49],
+         [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3],
+         [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2]),
+        # skip_folds: the folds kept have all their steps.
+        ({"steps": 3, "initial_train_size": 38, "skip_folds": 2},
+         [38, 39, 40, 44, 45, 46],
+         [0, 0, 0, 2, 2, 2],
+         [1, 2, 3, 1, 2, 3]),
+    ],
+    ids=["gap and incomplete fold", "fold_stride < steps", "skip_folds"]
+)
+def test_backtesting_forecaster_step_y_true_and_n_evaluated(
+    forecaster, cv_kwargs, expected_index, expected_fold, expected_step
+):
+    """
+    Test the columns `step` (position of the date in the test set of its fold,
+    gap included) and `y_true` of the predictions, and `n_evaluated` of the
+    metrics (dates evaluated once, with the prediction of the last fold that
+    predicts them), with `gap`, an incomplete last fold, overlapping folds
+    and `skip_folds`, for recursive and direct forecasters.
+    """
+    cv = TimeSeriesFold(refit=False, allow_incomplete_fold=True, **cv_kwargs)
+    metric, backtest_predictions = backtesting_forecaster(
+        forecaster    = forecaster,
+        y             = y,
+        cv            = cv,
+        metric        = "mean_absolute_error",
+        show_progress = False
+    )
+
+    assert backtest_predictions.columns.tolist() == ["fold", "step", "y_true", "pred"]
+    np.testing.assert_array_equal(backtest_predictions.index, expected_index)
+    np.testing.assert_array_equal(backtest_predictions["fold"], expected_fold)
+    np.testing.assert_array_equal(backtest_predictions["step"], expected_step)
+    np.testing.assert_array_equal(
+        backtest_predictions["y_true"], y.loc[expected_index].to_numpy()
+    )
+
+    last_predictions = backtest_predictions.loc[
+        ~backtest_predictions.index.duplicated(keep="last")
+    ]
+    assert metric.columns.tolist() == ["mean_absolute_error", "n_evaluated"]
+    assert metric.loc[0, "n_evaluated"] == len(set(expected_index))
+    assert metric.loc[0, "mean_absolute_error"] == pytest.approx(
+        mean_absolute_error(y.loc[last_predictions.index], last_predictions["pred"])
+    )
+
+
+def test_backtesting_forecaster_columns_order_when_interval_and_return_predictors():
+    """
+    Test the order of the columns of the predictions with an interval and
+    `return_predictors=True`: `fold`, `step` and `y_true` first, then the
+    predictions and the predictors.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=3)
+    cv = TimeSeriesFold(steps=4, initial_train_size=38, gap=1)
+    metric, backtest_predictions = backtesting_forecaster(
+        forecaster        = forecaster,
+        y                 = y,
+        cv                = cv,
+        metric            = "mean_absolute_error",
+        interval          = [0.1, 0.9],
+        interval_method   = "conformal",
+        return_predictors = True,
+        show_progress     = False
+    )
+
+    assert backtest_predictions.columns.tolist() == [
+        "fold", "step", "y_true", "pred", "lower_bound", "upper_bound",
+        "lag_1", "lag_2", "lag_3"
+    ]
+    assert metric.columns.tolist() == [
+        "mean_absolute_error", "coverage", "interval_width", "n_evaluated"
+    ]
+    assert backtest_predictions["step"].tolist() == [2, 3, 4, 5] * 2 + [2, 3, 4]
+    assert metric.loc[0, "n_evaluated"] == 11
+
+
+def test_backtesting_forecaster_n_evaluated_when_true_values_are_missing():
+    """
+    Test that the dates without a true value are not evaluated: their `y_true`
+    is NaN and they are not counted in `n_evaluated`. A metric that ignores
+    missing values is needed, the metrics of scikit-learn raise an error.
+    """
+    y_nan = y.copy()
+    y_nan.iloc[[42, 47]] = np.nan
+
+    def nan_mean_absolute_error(y_true, y_pred):
+        return np.nanmean(np.abs(y_true - y_pred))
+
+    forecaster = ForecasterRecursive(
+        estimator=HistGradientBoostingRegressor(max_iter=5, random_state=123), lags=3
+    )
+    cv = TimeSeriesFold(steps=5, initial_train_size=40)
+    metric, backtest_predictions = backtesting_forecaster(
+        forecaster    = forecaster,
+        y             = y_nan,
+        cv            = cv,
+        metric        = nan_mean_absolute_error,
+        show_progress = False
+    )
+
+    assert backtest_predictions["y_true"].isna().tolist() == (
+        [False, False, True] + [False] * 4 + [True] + [False] * 2
+    )
+    assert backtest_predictions["pred"].notna().all()
+    assert metric.loc[0, "n_evaluated"] == 8
+
+
+def test_backtesting_forecaster_y_true_ForecasterRecursiveClassifier():
+    """
+    Test that `y_true` contains the classes of the series with
+    ForecasterRecursiveClassifier, before the predicted class and the
+    probabilities.
+    """
+    forecaster = ForecasterRecursiveClassifier(estimator=LogisticRegression(), lags=3)
+    cv = TimeSeriesFold(steps=5, initial_train_size=40)
+    metric, backtest_predictions = backtesting_forecaster(
+        forecaster    = forecaster,
+        y             = y_clf,
+        cv            = cv,
+        metric        = "accuracy_score",
+        show_progress = False
+    )
+
+    assert backtest_predictions.columns.tolist()[:4] == ["fold", "step", "y_true", "pred"]
+    assert backtest_predictions["y_true"].tolist() == y_clf.iloc[40:].tolist()
+    assert metric.loc[0, "n_evaluated"] == 10

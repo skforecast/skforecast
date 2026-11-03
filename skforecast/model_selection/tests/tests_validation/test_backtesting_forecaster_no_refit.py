@@ -72,7 +72,13 @@ def test_output_backtesting_forecaster_no_exog_no_remainder_ForecasterRecursive_
                                        verbose    = False
                                    )
                                    
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4])
+    expected_predictions.insert(2, 'y_true', [
+        0.94416002, 0.50183668, 0.62395295, 0.1156184, 0.31728548, 0.41482621,
+        0.86630916, 0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -172,7 +178,13 @@ def test_output_backtesting_forecaster_ForecasterRecursiveClassifier_with_mocked
                                         verbose    = False
                                    )
 
+    expected_metrics.insert(2, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metrics, metric)
+    expected_predictions.insert(1, 'step', [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2])
+    expected_predictions.insert(2, 'y_true', [
+        'bus', 'train', 'bus', 'train', 'car', 'bus', 'train', 'train', 'bus', 'car',
+        'car', 'bus'
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -266,7 +278,13 @@ def test_output_backtesting_forecaster_ForecasterRecursiveClassifier_CatBoostCla
                                         verbose    = False
                                    )
 
+    expected_metrics.insert(2, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metrics, metric)
+    expected_predictions.insert(1, 'step', [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2])
+    expected_predictions.insert(2, 'y_true', [
+        'bus', 'train', 'bus', 'train', 'car', 'bus', 'train', 'train', 'bus', 'car',
+        'car', 'bus'
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -328,7 +346,13 @@ def test_output_backtesting_forecaster_no_exog_no_remainder_ForecasterDirect_wit
                                         verbose    = False
                                    )
                                    
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4])
+    expected_predictions.insert(2, 'y_true', [
+        0.94416002, 0.50183668, 0.62395295, 0.1156184, 0.31728548, 0.41482621,
+        0.86630916, 0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -381,7 +405,22 @@ def test_output_backtesting_forecaster_no_exog_no_initial_train_size_with_mocked
                                         verbose    = False
                                    )
                  
+    expected_metric.insert(1, 'n_evaluated', [47])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+    ])
+    expected_predictions.insert(2, 'y_true', [
+        0.55131477, 0.71946897, 0.42310646, 0.9807642, 0.68482974, 0.4809319,
+        0.39211752, 0.34317802, 0.72904971, 0.43857224, 0.0596779, 0.39804426,
+        0.73799541, 0.18249173, 0.17545176, 0.53155137, 0.53182759, 0.63440096,
+        0.84943179, 0.72445532, 0.61102351, 0.72244338, 0.32295891, 0.36178866,
+        0.22826323, 0.29371405, 0.63097612, 0.09210494, 0.43370117, 0.43086276,
+        0.4936851, 0.42583029, 0.31226122, 0.42635131, 0.89338916, 0.94416002,
+        0.50183668, 0.62395295, 0.1156184, 0.31728548, 0.41482621, 0.86630916,
+        0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -436,7 +475,13 @@ def test_output_backtesting_forecaster_no_exog_yes_remainder_with_mocked():
                                         metric     = 'mean_squared_error',
                                         verbose    = False
                                    )         
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2])
+    expected_predictions.insert(2, 'y_true', [
+        0.94416002, 0.50183668, 0.62395295, 0.1156184, 0.31728548, 0.41482621,
+        0.86630916, 0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -493,7 +538,13 @@ def test_output_backtesting_forecaster_yes_exog_no_remainder_with_mocked():
                                         verbose    = False
                                    )
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4])
+    expected_predictions.insert(2, 'y_true', [
+        0.94416002, 0.50183668, 0.62395295, 0.1156184, 0.31728548, 0.41482621,
+        0.86630916, 0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -549,7 +600,13 @@ def test_output_backtesting_forecaster_yes_exog_yes_remainder_with_mocked():
                                         metric             = 'mean_squared_error',
                                         verbose            = False
                                    )
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2])
+    expected_predictions.insert(2, 'y_true', [
+        0.94416002, 0.50183668, 0.62395295, 0.1156184, 0.31728548, 0.41482621,
+        0.86630916, 0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -637,7 +694,13 @@ def test_output_backtesting_forecaster_yes_exog_yes_remainder_skip_folds_with_mo
         verbose           = True,
     )
 
+    expected_metric.insert(1, 'n_evaluated', [7])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [1, 2, 3, 4, 5, 1, 2])
+    expected_predictions.insert(2, 'y_true', [
+        0.94416002, 0.50183668, 0.62395295, 0.1156184, 0.31728548, 0.51948512,
+        0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -701,7 +764,13 @@ def test_output_backtesting_forecaster_yes_exog_yes_remainder_fold_stride_with_m
         verbose           = True,
     )
 
+    expected_metric.insert(1, 'n_evaluated', [10])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [1, 2, 3, 4, 5, 1, 2, 3, 4, 5])
+    expected_predictions.insert(2, 'y_true', [
+        0.94416002, 0.50183668, 0.62395295, 0.1156184, 0.31728548, 0.86630916,
+        0.25045537, 0.48303426, 0.98555979, 0.51948512
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -768,7 +837,13 @@ def test_output_backtesting_forecaster_interval_no_exog_no_remainder_with_mocked
                                        show_progress           = False
                                    )
                             
+    expected_metric.insert(3, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4])
+    expected_predictions.insert(2, 'y_true', [
+        0.94416002, 0.50183668, 0.62395295, 0.1156184, 0.31728548, 0.41482621,
+        0.86630916, 0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -830,7 +905,13 @@ def test_output_backtesting_forecaster_interval_no_exog_yes_remainder_with_mocke
                                        verbose                 = False
                                    )
     
+    expected_metric.insert(3, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2])
+    expected_predictions.insert(2, 'y_true', [
+        0.94416002, 0.50183668, 0.62395295, 0.1156184, 0.31728548, 0.41482621,
+        0.86630916, 0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -893,7 +974,13 @@ def test_output_backtesting_forecaster_interval_yes_exog_no_remainder_with_mocke
                                        verbose                 = False
                                    )
 
+    expected_metric.insert(3, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4])
+    expected_predictions.insert(2, 'y_true', [
+        0.94416002, 0.50183668, 0.62395295, 0.1156184, 0.31728548, 0.41482621,
+        0.86630916, 0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -956,7 +1043,13 @@ def test_output_backtesting_forecaster_interval_yes_exog_yes_remainder_with_mock
                                        show_progress           = False
                                    )
     
+    expected_metric.insert(3, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2])
+    expected_predictions.insert(2, 'y_true', [
+        0.94416002, 0.50183668, 0.62395295, 0.1156184, 0.31728548, 0.41482621,
+        0.86630916, 0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -1061,7 +1154,17 @@ def test_output_backtesting_forecaster_no_refit_interval_yes_exog_bootstrapping(
                                        verbose                 = False
                                    )
 
+    expected_metric.insert(1, 'n_evaluated', [20])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [
+        1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5
+    ])
+    expected_predictions.insert(2, 'y_true', [
+        0.09210494, 0.43370117, 0.43086276, 0.4936851, 0.42583029, 0.31226122,
+        0.42635131, 0.89338916, 0.94416002, 0.50183668, 0.62395295, 0.1156184,
+        0.31728548, 0.41482621, 0.86630916, 0.25045537, 0.48303426, 0.98555979,
+        0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -1123,7 +1226,17 @@ def test_output_backtesting_forecaster_no_refit_interval_distribution_yes_exog()
                                        verbose                 = False
                                    )
 
+    expected_metric.insert(1, 'n_evaluated', [20])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [
+        1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5
+    ])
+    expected_predictions.insert(2, 'y_true', [
+        0.09210494, 0.43370117, 0.43086276, 0.4936851, 0.42583029, 0.31226122,
+        0.42635131, 0.89338916, 0.94416002, 0.50183668, 0.62395295, 0.1156184,
+        0.31728548, 0.41482621, 0.86630916, 0.25045537, 0.48303426, 0.98555979,
+        0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -1189,7 +1302,13 @@ def test_output_backtesting_forecaster_interval_conformal_and_binned_with_mocked
                                         show_progress           = False
                                    )
     
+    expected_metric.insert(3, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2])
+    expected_predictions.insert(2, 'y_true', [
+        0.94416002, 0.50183668, 0.62395295, 0.1156184, 0.31728548, 0.41482621,
+        0.86630916, 0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -1256,7 +1375,13 @@ def test_output_backtesting_forecaster_interval_conformal_and_binned_with_mocked
                                         show_progress           = False
                                    )
     
+    expected_metric.insert(3, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2])
+    expected_predictions.insert(2, 'y_true', [
+        0.94416002, 0.50183668, 0.62395295, 0.1156184, 0.31728548, 0.41482621,
+        0.86630916, 0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -1334,7 +1459,13 @@ def test_output_backtesting_forecaster_interval_out_sample_residuals_no_exog_no_
                                        verbose                 = False
                                    )
 
+    expected_metric.insert(3, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4])
+    expected_predictions.insert(2, 'y_true', [
+        0.94416002, 0.50183668, 0.62395295, 0.1156184, 0.31728548, 0.41482621,
+        0.86630916, 0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -1406,7 +1537,13 @@ def test_output_backtesting_forecaster_interval_out_sample_residuals_binned_no_e
                                        show_progress           = False
                                    )
 
+    expected_metric.insert(3, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4])
+    expected_predictions.insert(2, 'y_true', [
+        0.94416002, 0.50183668, 0.62395295, 0.1156184, 0.31728548, 0.41482621,
+        0.86630916, 0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -1476,7 +1613,13 @@ def test_callable_metric_backtesting_forecaster_no_exog_no_remainder_with_mocked
                                        verbose    = False
                                    )
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4])
+    expected_predictions.insert(2, 'y_true', [
+        0.94416002, 0.50183668, 0.62395295, 0.1156184, 0.31728548, 0.41482621,
+        0.86630916, 0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -1538,7 +1681,13 @@ def test_list_metrics_backtesting_forecaster_no_exog_no_remainder_with_mocked():
                                         verbose    = False
                                     )
 
+    expected_metrics.insert(2, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metrics, metrics)
+    expected_predictions.insert(1, 'step', [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4])
+    expected_predictions.insert(2, 'y_true', [
+        0.94416002, 0.50183668, 0.62395295, 0.1156184, 0.31728548, 0.41482621,
+        0.86630916, 0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -1614,7 +1763,16 @@ def test_output_backtesting_forecaster_interval_yes_exog_yes_remainder_gap_with_
                                        verbose                 = False
                                    )
     
+    expected_metric.insert(3, 'n_evaluated', [17])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [
+        4, 5, 6, 7, 8, 4, 5, 6, 7, 8, 4, 5, 6, 7, 8, 4, 5
+    ])
+    expected_predictions.insert(2, 'y_true', [
+        0.4936851, 0.42583029, 0.31226122, 0.42635131, 0.89338916, 0.94416002,
+        0.50183668, 0.62395295, 0.1156184, 0.31728548, 0.41482621, 0.86630916,
+        0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -1686,7 +1844,16 @@ def test_output_backtesting_forecaster_interval_yes_exog_not_allow_remainder_gap
                                    )
     backtest_predictions = backtest_predictions.asfreq('D')
 
+    expected_metric.insert(3, 'n_evaluated', [15])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [
+        4, 5, 6, 7, 8, 4, 5, 6, 7, 8, 4, 5, 6, 7, 8
+    ])
+    expected_predictions.insert(2, 'y_true', [
+        0.4936851, 0.42583029, 0.31226122, 0.42635131, 0.89338916, 0.94416002,
+        0.50183668, 0.62395295, 0.1156184, 0.31728548, 0.41482621, 0.86630916,
+        0.25045537, 0.48303426, 0.98555979
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -1750,7 +1917,13 @@ def test_output_backtesting_forecaster_ForecasterDirect_differentiation_gap_with
                                        verbose    = False
                                    )
 
+    expected_metric.insert(1, 'n_evaluated', [10])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [3, 4, 5, 3, 4, 5, 3, 4, 5, 3])
+    expected_predictions.insert(2, 'y_true', [
+        0.62395295, 0.1156184, 0.31728548, 0.41482621, 0.86630916, 0.25045537,
+        0.48303426, 0.98555979, 0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -1789,6 +1962,7 @@ def test_output_backtesting_forecaster_return_predictors_same_predictions_as_pre
         backtest_predictions[forecaster.X_train_features_names_out_]
     )
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric)
     np.testing.assert_array_almost_equal(
         expected_predictions, 
@@ -1832,6 +2006,7 @@ def test_output_backtesting_forecaster_return_predictors_same_predictions_as_pre
             ]
         ).item()
     
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric)
     np.testing.assert_array_almost_equal(results, backtest_predictions['pred'].to_numpy())
 
@@ -1904,7 +2079,13 @@ def test_output_backtesting_forecaster_no_refit_ForecasterRecursive_categorical_
                                         verbose    = False
                                    )
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4])
+    expected_predictions.insert(2, 'y_true', [
+        0.94416002, 0.50183668, 0.62395295, 0.1156184, 0.31728548, 0.41482621,
+        0.86630916, 0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -1972,7 +2153,13 @@ def test_output_backtesting_forecaster_no_refit_ForecasterDirect_categorical_fea
                                         verbose    = False
                                    )
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4])
+    expected_predictions.insert(2, 'y_true', [
+        0.94416002, 0.50183668, 0.62395295, 0.1156184, 0.31728548, 0.41482621,
+        0.86630916, 0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -2032,7 +2219,13 @@ def test_output_backtesting_forecaster_ForecasterRecursive_no_refit_y_exog_with_
         index = pd.RangeIndex(start=38, stop=50, step=1),
     )
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4])
+    expected_predictions.insert(2, 'y_true', [
+        0.94416002, 0.50183668, 0.62395295, 0.1156184, 0.31728548, 0.41482621,
+        0.86630916, 0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -2088,7 +2281,13 @@ def test_output_backtesting_forecaster_ForecasterRecursive_no_refit_y_exog_with_
         index = pd.RangeIndex(start=38, stop=50, step=1),
     )
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4])
+    expected_predictions.insert(2, 'y_true', [
+        0.94416002, 0.50183668, 0.62395295, 0.1156184, 0.31728548, 0.41482621,
+        0.86630916, 0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -2148,7 +2347,13 @@ def test_output_backtesting_forecaster_ForecasterDirect_no_refit_y_exog_with_NaN
         index = pd.RangeIndex(start=38, stop=50, step=1),
     )
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4])
+    expected_predictions.insert(2, 'y_true', [
+        0.94416002, 0.50183668, 0.62395295, 0.1156184, 0.31728548, 0.41482621,
+        0.86630916, 0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
@@ -2208,5 +2413,11 @@ def test_output_backtesting_forecaster_ForecasterDirect_no_refit_y_exog_with_NaN
         index = pd.RangeIndex(start=38, stop=50, step=1),
     )
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric)
+    expected_predictions.insert(1, 'step', [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4])
+    expected_predictions.insert(2, 'y_true', [
+        0.94416002, 0.50183668, 0.62395295, 0.1156184, 0.31728548, 0.41482621,
+        0.86630916, 0.25045537, 0.48303426, 0.98555979, 0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)

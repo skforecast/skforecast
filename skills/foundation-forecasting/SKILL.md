@@ -212,10 +212,11 @@ metric, predictions = backtesting_foundation(
     metric='mean_absolute_error',
     quantiles=[0.1, 0.5, 0.9],   # Native model quantiles; no bootstrapping
 )
-# metric columns: levels, mean_absolute_error, coverage, interval_width
+# metric columns: levels, mean_absolute_error, coverage, interval_width, n_evaluated
+# predictions columns: level, fold, step, y_true, q_0.1, q_0.5, q_0.9
 ```
 
-The metrics use `q_0.5` as the point forecast. With two quantiles, optionally
+The metrics (and `n_evaluated`) use `q_0.5` as the point forecast. With two quantiles, optionally
 with the median (`[0.1, 0.9]` or `[0.1, 0.5, 0.9]`), `metric` also reports the
 empirical `coverage` of the interval they define and its mean width
 (`interval_width`). With other quantiles they are not added.
