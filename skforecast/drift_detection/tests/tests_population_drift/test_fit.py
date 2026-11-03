@@ -328,6 +328,7 @@ def test_empirical_distributions_match_nannyml():
             err_msg=f"Chi2 statistics mismatch for feature '{feature}'"
         )
 
+
 @pytest.mark.parametrize(
     'threshold_method, threshold, expected_chi2, expected_threshold',
     [

@@ -814,10 +814,10 @@ class PopulationDriftDetector:
                             ref_probs=ref_probs_aligned, new_probs=new_probs
                         )
 
-                        # Reference categories first, then the unseen ones in order
-                        # of appearance: a stable order keeps the statistic
-                        # identical between runs (a set made it depend on
-                        # PYTHONHASHSEED in the last bits).
+                        # Reference categories first, then the unseen ones in the
+                        # order `value_counts` returns them: a stable order keeps
+                        # the statistic identical between runs (a set made it
+                        # depend on PYTHONHASHSEED in the last bits).
                         ref_categories_set = set(ref_categories)
                         all_cats = ref_categories + [
                             cat for cat in new_counts_dict
