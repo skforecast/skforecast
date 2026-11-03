@@ -31,7 +31,7 @@ Then grep the old version across the repository (excluding `docs/releases/`, `de
 
 ## 3. Release notes
 
-The section of the version being closed must not stay as `In development`: check that it went through the consolidation pass of the `release-note` skill (`/release-note consolidate`) and that its heading has the release date (`<small>Oct 8, 2026</small>`). If not, tell the user before going on.
+The section of the version being closed must not stay as `In development`: check that it went through the consolidation pass of the `release-note` skill (`/release-note consolidate`) and that its heading has the release date (`<small>Oct 8, 2026</small>`). If not, tell the user before going on. Also ask whether the regression test of the datasets ran on the version being closed (`SKFORECAST_TEST_DATASETS=1 pytest skforecast/datasets/tests/tests_datasets/test_fetch_dataset_all_datasets.py -q`): it downloads every dataset hosted on GitHub, so it does not run in CI.
 
 Then, in `docs/releases/releases.md`, add a section above the previous one following the existing format:
 
