@@ -12,6 +12,7 @@ import pandas as pd
 from rich.console import Console
 from rich.markup import escape
 from rich.panel import Panel
+from ..exceptions import MissingValuesWarning
 
 # Parquet entries: date_format is ignored, the column is already datetime64 in
 # the file.
@@ -815,8 +816,9 @@ def fetch_dataset(
     raw : bool, default False
         If `True`, the raw dataset is fetched. If `False`, the preprocessed
         dataset is fetched: the column with the date/time is set as index,
-        converted to datetime and sorted. The frequency of the dataset is set
-        only when the dates of the index are unique.
+        converted to datetime and sorted. When the dates are unique, the
+        frequency of the dataset is set with `asfreq` (rows with NaN are
+        introduced for missing dates, with a `MissingValuesWarning`).
     kwargs_read : dict, default None
         Kwargs to pass to pandas `pd.read_csv` or `pd.read_parquet` function
         depending on the dataset file type.
@@ -827,7 +829,16 @@ def fetch_dataset(
     -------
     df : pandas DataFrame
         Dataset.
-    
+
+    Notes
+    -----
+    Datasets with several series in long format (one row per series and date,
+    see their description in `show_datasets_info`) have repeated dates in the
+    index, so no frequency is set and the rows are sorted by date, keeping the
+    order of the series within each date. Use `reshape_series_long_to_dict`
+    (after `reset_index`, it needs the dates as a column) or `pivot_table` to
+    get one series per key or column.
+
     """
 
     _warn_deprecated_version(version)
@@ -880,6 +891,7 @@ def fetch_dataset(
             pass
 
     if not raw:
+        n_inserted = n_dropped = 0
         try:
             index_col = datasets[name]['index_col']
             freq = datasets[name]['freq']
@@ -889,15 +901,39 @@ def fetch_dataset(
                 df.index = df.pop(index_col)
             df.index = pd.to_datetime(df.index, format=date_format)
             if df.index.is_unique:
+                index_before = df.index
                 df = df.asfreq(freq)
+                n_inserted = len(df.index.difference(index_before))
+                n_dropped = len(index_before.difference(df.index))
             if not df.index.is_monotonic_increasing:
-                df = df.sort_index()
+                # Stable, to keep the order of the series of long-format datasets
+                # within each date
+                df = df.sort_index(kind='stable')
         except Exception as e:
             warnings.warn(
                 f"Could not preprocess dataset '{name}': {e}",
                 stacklevel=2
             )
-    
+
+        # Outside the `try`, so that a warning turned into an error is not
+        # reported as a preprocessing failure
+        if n_inserted > 0:
+            warnings.warn(
+                f"Dataset '{name}' has {n_inserted} missing dates for frequency "
+                f"'{freq}'. Rows with NaN values have been introduced after "
+                f"setting the frequency.",
+                MissingValuesWarning,
+                stacklevel=2
+            )
+        if n_dropped > 0:
+            warnings.warn(
+                f"{n_dropped} rows of dataset '{name}' are not aligned with "
+                f"frequency '{freq}' and have been dropped after setting the "
+                f"frequency. The frequency of the dataset may be wrong, use "
+                f"`raw=True` to get the original data.",
+                stacklevel=2
+            )
+
     if verbose:
         _print_dataset_info(name, shape=df.shape)
 

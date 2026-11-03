@@ -6,6 +6,7 @@ import pytest
 import pandas as pd
 from unittest.mock import patch
 from skforecast.datasets import datasets, fetch_dataset
+from skforecast.exceptions import MissingValuesWarning
 
 
 def test_fetch_dataset_csv_raw_false():
@@ -288,6 +289,83 @@ def test_fetch_dataset_preprocessing_failure_warns():
 
     assert isinstance(df, pd.DataFrame)
     assert 'wrong_col' in df.columns
+
+
+def test_fetch_dataset_missing_dates_MissingValuesWarning():
+    """
+    `fetch_dataset` emits a `MissingValuesWarning` when setting the frequency
+    introduces rows with NaN for missing dates. When the warning is turned into
+    an error, it is raised as is, not as a preprocessing failure.
+    """
+    mock_df = pd.DataFrame({
+        'x': [1.0, 2.0, 4.0],
+        'fecha': ['1991-07-01', '1991-08-01', '1991-10-01'],
+    })
+
+    warn_msg = re.escape(
+        "Dataset 'h2o' has 1 missing dates for frequency 'MS'. Rows with NaN "
+        "values have been introduced after setting the frequency."
+    )
+    with patch('pandas.read_csv', return_value=mock_df):
+        with pytest.warns(MissingValuesWarning, match=warn_msg):
+            df = fetch_dataset('h2o', raw=False, verbose=False)
+
+    assert df.shape == (4, 1)
+    assert df.index.freq == 'MS'
+    assert df['x'].isna().tolist() == [False, False, True, False]
+    assert pd.isna(df.loc['1991-09-01', 'x'])
+
+    with patch('pandas.read_csv', return_value=mock_df):
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', MissingValuesWarning)
+            with pytest.raises(MissingValuesWarning, match=warn_msg):
+                fetch_dataset('h2o', raw=False, verbose=False)
+
+
+def test_fetch_dataset_dates_not_aligned_with_freq_warns():
+    """
+    `fetch_dataset` emits a `UserWarning` when setting the frequency drops the
+    rows whose dates are not aligned with it.
+    """
+    mock_df = pd.DataFrame({
+        'x': [1.0, 2.0],
+        'fecha': ['1991-07-01', '1991-07-15'],
+    })
+
+    warn_msg = re.escape(
+        "1 rows of dataset 'h2o' are not aligned with frequency 'MS' and have "
+        "been dropped after setting the frequency. The frequency of the dataset "
+        "may be wrong, use `raw=True` to get the original data."
+    )
+    with patch('pandas.read_csv', return_value=mock_df):
+        with pytest.warns(UserWarning, match=warn_msg):
+            df = fetch_dataset('h2o', raw=False, verbose=False)
+
+    assert df.shape == (1, 1)
+    assert df.index.tolist() == [pd.Timestamp('1991-07-01')]
+
+
+def test_fetch_dataset_long_format_keeps_order_of_series():
+    """
+    `fetch_dataset` sorts a long-format dataset by date keeping the order of
+    the series of the file within each date.
+    """
+    ids = ['A'] * 8 + ['B'] * 8 + ['C'] * 8
+    dates = list(pd.date_range('2011-01-29', periods=8, freq='D')) * 3
+    mock_df = pd.DataFrame({
+        'id': ids,
+        'datetime': dates,
+        'sales': list(range(24)),
+    })
+
+    with patch('pandas.read_parquet', return_value=mock_df):
+        df = fetch_dataset('m5', raw=False, verbose=False)
+
+    assert df.index.is_monotonic_increasing
+    assert df['id'].tolist() == ['A', 'B', 'C'] * 8
+    assert df['sales'].tolist() == [
+        sales for date in range(8) for sales in (date, date + 8, date + 16)
+    ]
 
 
 def test_fetch_dataset_read_error_raises_ValueError():

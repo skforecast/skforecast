@@ -74,6 +74,8 @@ The main changes in this release are:
 
 + The `version` argument of <code>[fetch_dataset]</code>, <code>[load_demo_dataset]</code> and <code>[show_datasets_info]</code> is deprecated and has no effect: datasets are always fetched from the main branch of skforecast-datasets, which has no published versions. Passing it emits a `FutureWarning`; it will be removed in version 0.29.0. ([#1440](https://github.com/skforecast/skforecast/pull/1440))
 
++ <code>[fetch_dataset]</code> warns with a `MissingValuesWarning` when setting the frequency introduces rows with NaN for missing dates (currently only `wikipedia_visits`, with 59 missing days), keeps the order of the series within each date when sorting long-format datasets, and documents that these datasets have repeated dates and therefore no frequency. ([#NNNN](https://github.com/skforecast/skforecast/pull/NNNN))
+
 
 **Fixed**
 
