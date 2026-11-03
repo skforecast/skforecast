@@ -263,8 +263,8 @@ el estimador los acepta. Medido: hacerlo coherente mejora un 2% en el experiment
    ejemplo 1%) o un número mínimo de puntos. Medir con M5 completo en el periodo habitual
    (0.03% con `lags=56`) y en uno con rotación (1.5%), y con el experimento 2 (34%).
 2. **`suppress_warnings` y "Parameters skipped"** (sección 5.2, punto 3).
-3. **Nombre:** decidido el 2026-10-30, `n_evaluated` (QW-12, hecho en la rama local
-   `feature/backtesting-output-columns` el 2026-10-31: última columna de la tabla de
+3. **Nombre:** decidido el 2026-10-30, `n_evaluated` (QW-12, hecho con #1437,
+   fusionado en `0.27.x` el 2026-11-03: última columna de la tabla de
    métricas, la suma en los agregados). Aquí se reutiliza. Es un nombre reservado en los
    backtesting (`ValueError`): sin reservarlo, con una serie salen dos columnas
    `n_evaluated`, y en multiserie la cuenta sustituye en silencio a la métrica del usuario.
