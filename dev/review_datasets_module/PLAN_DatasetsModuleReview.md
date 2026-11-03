@@ -8,7 +8,7 @@
 > 1. Vive en `0.27.x`, en `dev/review_datasets_module/`, para que lo vean todas las ramas y sesiones. Sus cambios se suben directamente a `0.27.x` (solo toca `dev/`: sin PR ni `verify`), nunca dentro de una PR del plan.
 > 2. Para ejecutar una PR: «Lee `dev/review_datasets_module/PLAN_DatasetsModuleReview.md` y ejecuta la PR N». La columna «Estado» de la tabla 0.1 dice cuál toca; el flujo de trabajo está en la sección 2.1.
 > 3. Todas las PRs parten de `origin/0.27.x`, que ya incluye la 1402.
-> 4. Las decisiones están tomadas (sección 3) salvo DEC6 y DEC7, que solo bloquean las PRs 5c y 5d.
+> 4. Todas las decisiones están tomadas (sección 3). Solo quedan las tareas de antes de la release (sección 2.1, paso 7) y la revisión de las reglas de Kaggle (sección 3.2, DEC7).
 > 5. Antes de empezar una PR, repite el apéndice A sobre un clon reciente de `skforecast-datasets`: los ficheros pueden haber cambiado.
 
 ---
@@ -24,18 +24,18 @@
 | **2** | fusionada (#1440, 2026-11-02) | skforecast | `feature/datasets-version-deprecation` | Deprecar `version`; `load_demo_dataset` sobre `fetch_dataset` | PR 1 | Changed |
 | **3** | fusionada (#1441, 2026-11-03) | skforecast | `feature/fetch-dataset-gaps-and-long-format` | Aviso cuando `asfreq` añade o quita filas; orden estable del formato largo; documentación | PR 2 | Changed |
 | **4** | fusionada (#1442, 2026-11-03) | skforecast | `chore/datasets-regression-test` | Test de regresión contra los ficheros reales, opt-in | PR 3 | ninguna |
-| **5a** | pendiente | skforecast-datasets | `main` (commits directos) | README generado y BOM | PR 1 | ninguna |
-| **5b** | pendiente | skforecast-datasets / HF | (subida a HF) | Parquet de HF ordenados por fecha | token de HF | se menciona en la release en la que se suba |
-| **5c** | pendiente | skforecast-datasets | `main` (commits directos) | Ficheros huérfanos | DEC6 | ninguna |
-| **5d** | pendiente | skforecast-datasets | `main` (commits directos) | Licencias | DEC7 | ninguna |
+| **5a** | hecha (`2002bbf`, `f0ebe26`, 2026-11-03) | skforecast-datasets | `main` (commits directos) | README corregido a mano y BOM | PR 1 | ninguna |
+| **5b** | descartada (2026-11-03) | skforecast-datasets / HF | (subida a HF) | Parquet de HF ordenados por fecha: medido, no compensa (sección 8) | nada | ninguna |
+| **5c** | hecha (`135e9b4`, 2026-11-03) | skforecast-datasets | `main` (commits directos) | Ficheros huérfanos listados en `## Other files` | DEC6 | ninguna |
+| **5d** | hecha (`135e9b4`, 2026-11-03) | skforecast-datasets | `main` (commits directos) | Nota de licencias en `## Licenses` | DEC7 | ninguna |
 
-Valores de «Estado»: `pendiente`, `en curso (#NNNN)`, `fusionada (#NNNN, AAAA-MM-DD)`. Se actualiza al abrir y al fusionar cada PR (sección 2.1).
+Valores de «Estado»: `pendiente`, `en curso (#NNNN)`, `fusionada (#NNNN, AAAA-MM-DD)`, `hecha` (commits directos), `descartada (AAAA-MM-DD)`. Se actualiza al abrir y al fusionar cada PR (sección 2.1).
 
-Orden: las PRs 1 a 4 van en secuencia, cada una cuando la anterior esté fusionada, porque tocan `datasets.py` y `test_fetch_dataset.py` (PR 2 y PR 3 no dependen funcionalmente entre sí, pero en paralelo darían conflictos). La PR 4 va la última para fijar el comportamiento final. Las PRs 5 van por su lado: 5a cuando el registro esté estable tras la PR 1; 5b en cualquier momento.
+Orden: las PRs 1 a 4 van en secuencia, cada una cuando la anterior esté fusionada, porque tocan `datasets.py` y `test_fetch_dataset.py` (PR 2 y PR 3 no dependen funcionalmente entre sí, pero en paralelo darían conflictos). La PR 4 va la última para fijar el comportamiento final. Las PRs 5 van por su lado: 5a cuando el registro esté estable tras la PR 1; 5c y 5d tras DEC6 y DEC7.
 
 ### 0.2 Decisiones
 
-Tomadas el 2026-10-27: DEC1 (deprecar `version`), DEC2 (orden estable y parquet de HF ordenados), DEC3 (avisar), DEC4 (generador en el repo de datos), DEC5 (documentar la zona horaria) y DEC8 (test opt-in). Pendientes: DEC6 (ficheros huérfanos) y DEC7 (licencias). Detalle en la sección 3.
+Tomadas el 2026-10-27: DEC1 (deprecar `version`), DEC2 (orden estable; los parquet de HF ordenados se descartaron el 2026-11-03 tras medirlos), DEC3 (avisar), DEC4 (README de datos corregido a mano; revisada el 2026-11-03), DEC5 (documentar la zona horaria) y DEC8 (test opt-in). Tomadas el 2026-11-03: DEC6 (listar los ficheros huérfanos, sin registrarlos ni borrarlos) y DEC7 (una nota de licencias en el README de datos). Detalle en la sección 3.
 
 ---
 
@@ -101,7 +101,7 @@ Obtenida cargando cada fichero real con el preprocesado de `0.27.x` + 1402. «Fi
 ### 1.4 Otros hechos sobre los datos
 
 - **`skforecast-datasets`**: sin tags y con dos ramas (`main` y `feature_public_transport_madrid`). `version` solo funciona con un nombre de rama; cualquier otro valor da `HTTP Error 404`. Sin CI; contiene `LICENSE`, `README.md`, `data/` y, desde el 2026-10-28, `scripts/`.
-- **`europe_electricity_load`** (PR #9 de `skforecast-datasets`, fusionada el 2026-10-28, `0b0b6e56e`): añade `data/europe_electricity_load.csv` (4.2 MB, horario, UTC), su sección en el README y `scripts/build_europe_electricity_load.py`. **No está en el registro de skforecast** (el apéndice B da `README only: ['europe_electricity_load']`). Registrarlo es una PR aparte de fecha incierta: chocará con la PR o PRs del plan que estén abiertas (todas tocan `datasets.py`), y debe ampliar `EXPECTED_DATASETS` (PR 4) y estar registrado antes de la PR 5a, cuyo generador borraría su sección del README. Los 26 ficheros que usa el registro suman unos 175 MB (`m4_daily.parquet` 66 MB, los tres `ETT*` 40 MB, `store_sales.csv` 17 MB, `bike_sharing_extended_features.csv` 16 MB).
+- **`europe_electricity_load`** (PR #9 de `skforecast-datasets`, fusionada el 2026-10-28, `0b0b6e56e`): añade `data/europe_electricity_load.csv` (4.2 MB, horario, UTC), su sección en el README y `scripts/build_europe_electricity_load.py`. **No está en el registro de skforecast** (el apéndice B da `README only: ['europe_electricity_load']`). Registrarlo es una PR aparte de fecha incierta: debe ampliar `EXPECTED_DATASETS` (PR 4). La PR 5a no depende de ello: corrige el README a mano y mantiene su sección. Los 26 ficheros que usa el registro suman unos 175 MB (`m4_daily.parquet` 66 MB, los tres `ETT*` 40 MB, `store_sales.csv` 17 MB, `bike_sharing_extended_features.csv` 16 MB).
 - **Siete ficheros de `data/` no están en el registro ni en el README:** `bitcoin.csv`, `demo_multi_series.csv`, `demo_multi_series_exog.csv`, `energy_production_shutdown.csv`, `generacion_energia_US_source.csv`, `intermittent_demand.csv`, `visitas_por_dia_web_cienciadedatos_2020_2021.csv`.
 - **README de datos desalineado con el registro:** 18 entradas difieren hoy (19 tras 1402, por `website_visits`) según el apéndice B: formatos de `uk_daily_flights`, `vic_electricity_classification`, `bdg2_daily_sample`; `index_col`, `freq` y `date_format` de `m4_*`; URL de Google Drive en `ashrae_daily`, `bdg2_daily`, `bdg2_hourly` y «(4 partitions)» en `m5`; `date_format: date_format:` en `air_quality_valencia*`; `H` mayúscula en nueve entradas; `sep` vacío en `bdg2_*_sample`; URL con `refs/heads/main` en seis entradas (equivalentes, pero distintas del registro).
 - **`australia_tourism`**: 80 trimestres (1998-01-01 a 2017-10-01, inicios de trimestre) y 304 series. La `description` dice «from 1998 Q1 to 2016 Q4»: es **2017 Q4**. `to_offset('Q')` emite `FutureWarning` en pandas 2.3.3 (alias obsoleto, `QE`); `QS` no avisa.
@@ -139,7 +139,7 @@ Las PRs se hacen en días distintos, en sesiones sin memoria de la anterior: el 
 5. **Si una sesión acaba con la PR a medias**, ejecutar `/handoff` (escribe un `dev/handoff_*.md`) y empezar la siguiente sesión leyendo ese fichero además del plan.
 6. **Al fusionar:** pasar la fila a `fusionada (#NNNN, fecha)`, anotar en el apéndice C cualquier desviación del plan y subir el cambio del plan directamente a `0.27.x`, o llevarlo sin commit a la rama de la PR siguiente y subirlo con ella (así se hizo tras la PR 1). Borrar la rama local.
 7. **Antes de la release 0.27.0:** `/release-note consolidate` (las PRs 1 a 3 añaden entradas parecidas) y el test opt-in de la PR 4 con `SKFORECAST_TEST_DATASETS=1`.
-8. **Al terminar el plan** (PRs 1 a 5 cerradas, o DEC6/DEC7 descartadas): borrar `dev/review_datasets_module/` de `0.27.x`, o dejarlo como histórico.
+8. **Al terminar el plan** (PRs 1 a 5 cerradas y el paso 7 hecho): borrar `dev/review_datasets_module/` de `0.27.x`, o dejarlo como histórico.
 
 ### 2.2 Reglas
 
@@ -162,17 +162,19 @@ Las del repo están en `CLAUDE.md` y `tools/ai/ai_context_header.md` y se cargan
 | Id | Pregunta | Decisión | Motivo | Se aplica en |
 |---|---|---|---|---|
 | DEC1 | ¿Qué hacer con `version`? | Deprecar en 0.27.0 (valor por defecto `None`, `FutureWarning` siempre que se pase) y retirar en 0.29.0 haciendo keyword-only los argumentos que siguen | Nunca se publicaron versiones (sin tags), ningún notebook ni ejemplo lo usa y HF lo ignora; versionar los datos costaría un tag por release en cinco repos | PR 2 |
-| DEC2 | Formato largo (fechas repetidas): ¿cómo se ordena? | Por fecha con `sort_index(kind='stable')`, y subir a HF `m5`, `bdg2_daily` y `bdg2_hourly` ya ordenados por fecha | Conserva el orden de las series dentro de cada fecha sin cambiar el resultado actual; con los parquet ordenados, `is_monotonic_increasing` evita la copia de `sort_index` y baja el pico de memoria | PR 3 (3.2), PR 5b |
+| DEC2 | Formato largo (fechas repetidas): ¿cómo se ordena? | Por fecha con `sort_index(kind='stable')`. Subir a HF `m5`, `bdg2_daily` y `bdg2_hourly` ya ordenados se descartó el 2026-11-03 tras medirlo (sección 8, 5b) | Conserva el orden de las series dentro de cada fecha sin cambiar el resultado actual | PR 3 (3.2) |
 | DEC3 | ¿Avisar cuando `asfreq` cambia las filas? | Sí: `MissingValuesWarning` al insertar filas NaN, `UserWarning` al descartar filas | Hoy los 59 días ausentes de `wikipedia_visits` aparecen como NaN sin aviso | PR 3 (3.1) |
-| DEC4 | ¿Dónde vive el generador del README de datos? | En `skforecast-datasets` (`tools/generate_readme.py`), sin CI, ejecutado a mano | El README es del repo de datos; el script importa el registro del skforecast instalado | PR 5a |
+| DEC4 | ¿Cómo se alinea el README de datos con el registro? | Corrigiéndolo a mano una vez; el script del apéndice B lo compara cuando haga falta (revisado el 2026-11-03: sin generador) | Los datasets casi nunca cambian (uno nuevo cada varios meses): un generador sin CI cuesta más que el desajuste que evita | PR 5a |
 | DEC5 | Zona horaria de `vic_electricity` | Documentarla en `description`; el fichero no cambia | Cinco notebooks y dos scripts de docs lo usan, y todas las versiones de skforecast leen el mismo fichero | PR 1 (1.7) |
 | DEC8 | ¿Dónde corre el test que descarga todos los datasets? | Test de pytest opt-in (`SKFORECAST_TEST_DATASETS=1`), ejecutado a mano antes de cada release y tras cambiar el repo de datos | `slow` no lo saca de la CI, que descargaría unos 175 MB en 15 trabajos | PR 4 |
 
-### 3.2 Pendientes
+### 3.2 Tomadas (2026-11-03)
 
 #### DEC6. Ficheros huérfanos de `data/`
 
-Para cada uno: registrarlo en `datasets` (con `description`, `source`, `index_col`, `freq`) o solo listarlo en una sección `## Other files` del README. Datos para decidir:
+**Decisión:** listar los siete en una sección `## Other files` del README de datos, sin registrarlos ni borrarlos (PR 5c). Borrar es lo único con riesgo (las URL están enlazadas) y registrarlos exige `description`, `source`, `EXPECTED_DATASETS` y una PR en skforecast para unos ficheros que ya se leen con `read_csv`. Uso en la documentación de skforecast: `demo_multi_series.csv` y `demo_multi_series_exog.csv` en tres notebooks (`multi-series-with-different-length-and-different_exog`, `foundation-forecasting-with-heterogeneous-series`, FAQ `parameters-search-backtesting-vs-one-step-ahead`), `energy_production_shutdown.csv` en `weighted-time-series-forecasting`; los otros cuatro, ninguno (probablemente artículos de cienciadedatos.net).
+
+Datos de los ficheros:
 
 | fichero | columnas | filas | observación |
 |---|---|---|---|
@@ -184,11 +186,16 @@ Para cada uno: registrarlo en `datasets` (con `description`, `source`, `index_co
 | intermittent_demand.csv | date_time, users | 17544 | horario 2011 a 2012, demanda intermitente |
 | visitas_por_dia_web_cienciadedatos_2020_2021.csv | date, users | 522 | extensión de `website_visits` hasta 2021-12-04, mismo formato `%d/%m/%y` |
 
-Antes de borrar alguno, buscar su nombre en `docs/`, en el blog de cienciadedatos.net y en notebooks de versiones anteriores: la URL `.../main/data/<fichero>` puede estar enlazada desde fuera.
-
 #### DEC7. Licencias por dataset
 
-Joaquín indica la licencia de cada fuente (Kaggle, UCI, ABS, EUROCONTROL/ONS, tsibbledata, Monash, ...). La sesión solo prepara la estructura (PR 5d).
+**Decisión:** una nota `## Licenses` en el README de datos (PR 5d), sin campo de licencia por dataset ni clave `license` en el registro. El `LICENSE` del repositorio (BSD 3-Clause, «Copyright (c) 2023, Joaquín Amat Rodrigo») parecía cubrir datos de terceros; la nota dice que cubre los scripts y el README, y que cada dataset conserva las condiciones de su fuente, enlazada en `source`. Investigar las 20 fuentes daría respuestas inciertas (muchos portales no declaran licencia).
+
+Revisado el 2026-11-03:
+- **BDG2** (`bdg2_*`): Creative Commons Attribution-ShareAlike (su `LICENSE` dice «4.0» en la cabecera, con el texto de la 3.0 Unported); los ficheros derivados deben conservarla, y la nota lo indica.
+- **`m5`**: los organizadores publican los datos completos en `github.com/Mcompetitions/M5-methods` (sin licencia declarada).
+- **`ashrae_daily`**: son los contadores de BDG2 («energy meter data from the ASHRAE Great Energy Predictor III competition»), así que tienen una vía abierta; falta confirmar que los metadatos y el clima de Kaggle coinciden.
+- **`store_sales`**: datos sintéticos de una competición «playground» de Kaggle, sin otra fuente abierta.
+- **Pendiente (Joaquín):** las reglas de las tres competiciones de Kaggle («Subject to Competition Rules») solo se leen con navegador y sesión. Revisar «Data Access and Use» y la redistribución, sobre todo de `store_sales`; si la prohíben, retirarlo del registro rompería a quien lo use.
 
 ---
 
@@ -329,7 +336,7 @@ Test en `test_print_dataset_info.py`: con `monkeypatch.setenv('COLUMNS', '200')`
 
 ### 1.7 Textos del registro
 
-Todos son cambios de `description` o `source`; el README generado (PR 5a) los hereda, así que conviene hacerlos antes.
+Todos son cambios de `description` o `source`; el README de datos (PR 5a) los copia, así que conviene hacerlos antes.
 
 - `vic_electricity` (DEC5): añadir «`Time` is in UTC (suffix Z, parsed as a naive datetime); `Date` and `Holiday` refer to local time in Melbourne (UTC+10, UTC+11 in summer).» y el punto final que falta.
 - `m4_daily`: «Timestamps are artificial (the M4 series have no real dates): all at 12:00 and spanning 1959 to 2039. Long format: one row per series and timestamp.».
@@ -478,7 +485,7 @@ Notebook: `migrate-from-prophet.ipynb` carga `wikipedia_visits` y mostrará el a
 
 `df = df.sort_index()` pasa a `df = df.sort_index(kind='stable')` (dentro del `if not df.index.is_monotonic_increasing:` de 1402). Conserva el orden de las series del fichero dentro de cada fecha y es algo más rápido (sección 1.4). Ampliar `test_fetch_dataset_m5_long_format_unsorted`: con ids `A, A, B, B` y fechas `29, 30, 29, 30`, el resultado es `id == ['A', 'B', 'A', 'B']` y `sales == [1, 3, 2, 4]`.
 
-La otra mitad de DEC2 (parquet de HF ya ordenados) está en la PR 5b y no cambia código.
+La otra mitad de DEC2 (parquet de HF ya ordenados, PR 5b) se descartó tras medirla.
 
 ### 3.3 Documentación
 
@@ -616,33 +623,45 @@ Añadir a la checklist de `/release-bump` el paso «ejecutar el test de regresi�
 
 ## 8. PR 5: repositorio `skforecast-datasets`
 
-Repositorio separado (`https://github.com/skforecast/skforecast-datasets`, rama `main`). Cada punto es un commit. Lo que necesita credenciales de HF o licencias queda para Joaquín.
+Repositorio separado (`https://github.com/skforecast/skforecast-datasets`, rama `main`). Commits directos: dos en la 5a y uno para la 5c y la 5d juntas; la 5b se descartó.
 
-### 5a. README generado desde el registro (DEC4) y BOM
+### 5a. README corregido a mano (DEC4) y BOM
 
-Nuevo `tools/generate_readme.py` (Python 3.10+, depende solo de `skforecast`):
+Commit 1, `README.md` editado a mano (el registro de `0.27.x` manda: el test de la PR 4 lo comprueba contra los ficheros reales):
 
-- `from skforecast.datasets import datasets`; escribe `README.md` con: cabecera (los dos párrafos actuales corregidos y el ejemplo `from skforecast.datasets import fetch_dataset` / `data = fetch_dataset(name="h2o")`); el aviso «Generated by tools/generate_readme.py from the `datasets` registry of skforecast X.Y.Z; do not edit by hand»; una nota para quien cambie `data/`: los ficheros se leen de `main` en todas las versiones de skforecast, así que antes de fusionar hay que ejecutar el test de regresión de skforecast (`SKFORECAST_TEST_DATASETS=1 pytest skforecast/datasets/tests/tests_datasets/test_fetch_dataset_all_datasets.py -q`, sección 7) y, si cambia la forma de un dataset, actualizar `EXPECTED_DATASETS`; y una sección `### <name>` por dataset en orden alfabético con `+ url` (con `{version}` sustituido por `main`), `+ sep`, `+ index_col`, `+ date_format`, `+ freq`, `+ file_type`, `+ description`, `+ source`.
-- Sección final `## Other files` con los ficheros huérfanos no registrados (DEC6), una línea cada uno.
-- Opción `--check`: regenera en memoria y sale con código 1 si difiere.
+- Cabecera: corregir el ejemplo (`from skforecast.datasets import fetch_dataset` / `data = fetch_dataset(name="h2o")`) y «sort description». Añadir una nota para quien cambie `data/`: los ficheros se leen de `main` en todas las versiones de skforecast, así que antes de fusionar hay que ejecutar el test de regresión de skforecast (`SKFORECAST_TEST_DATASETS=1 pytest skforecast/datasets/tests/tests_datasets/test_fetch_dataset_all_datasets.py -q`, sección 7) y mantener alineados esta sección, el registro y `EXPECTED_DATASETS`.
+- Secciones de los 30 datasets del registro, en el orden actual, con el formato actual (`+ url`, `+ sep`, `+ index_col`, `+ date_format`, `+ freq`, `+ file_type`, `+ description`, `+ source`) y los valores del registro (`{version}` sustituido por `main`): corrige las 19 entradas de la sección 1.4 y copia los textos de la PR 1.
+- `europe_electricity_load` (no registrado) se queda tal cual, salvo la URL sin `refs/heads/`.
+- Comprobación: el script del apéndice B debe dar `README only: ['europe_electricity_load']`, `registry only: []` y `0 entries differ`. Revisar el diff línea a línea antes del commit.
 
-La primera ejecución corrige de golpe las entradas desalineadas (sección 1.4). Revisar el diff línea a línea antes del commit.
-
-Commit aparte: quitar el BOM UTF-8 de `data/uk_daily_flights.csv`. pandas ya lo ignoraba, así que `fetch_dataset` no cambia; comprobar con el apéndice A.
+Commit 2: quitar el BOM UTF-8 de `data/uk_daily_flights.csv` (el resto del fichero, idéntico byte a byte). pandas ya lo ignoraba, así que `fetch_dataset` no cambia; comprobar con el apéndice A o con el test de la PR 4 tras subirlo.
 
 **No cambiar** el formato de fecha de `data/visitas_por_dia_web_cienciadedatos.csv`: el registro (1402) y dos notebooks parsean `%d/%m/%y`, y skforecast 0.26 y anteriores leen el mismo fichero de `main`. Si algún día se cambia, publicarlo con otro nombre. Tampoco reordenar las columnas de `h2o.csv` (sección 1.5) ni tocar `vic_electricity.csv` (DEC5).
 
-### 5b. Parquet de HF ordenados por fecha (DEC2, requiere el token de HF de Joaquín)
+### 5b. Parquet de HF ordenados por fecha (descartada el 2026-11-03)
 
-Descargar `m5_daily.parquet`, `bdg2_daily.parquet` y `bdg2_hourly.parquet`; leer con `pq.read_table`, ordenar con `table.sort_by([(col, 'ascending')])` (`datetime` en m5, `timestamp` en bdg2; conserva los tipos `dictionary`), guardar con el mismo tamaño de row group (57, 2 y 27 row groups), comprobar `is_monotonic_increasing` y subir con `huggingface_hub.upload_file`. Medir después el pico de `fetch_dataset('m5')` (en la PR 1402 fue 10.3 GB): debe bajar porque `sort_index` deja de copiar. Todas las versiones de skforecast leen `main` de HF; las que ordenan devuelven lo mismo, y con `raw=True` cambia el orden de filas (anotarlo en la nota de la release en la que se suba).
+La idea era subir `m5_daily`, `bdg2_daily` y `bdg2_hourly` ya ordenados por fecha para que `fetch_dataset` se ahorrase el `sort_index` y bajase el pico de memoria. Se preparó sin subir nada: `table.sort_by` (estable) con el mismo esquema, tipos `dictionary`, metadatos de pandas y row groups (57, 2 y 27). `fetch_dataset` devolvía un DataFrame idéntico, incluido el orden de las categorías; con `raw=True` cambiaba el orden de filas. `ashrae_daily` ya estaba ordenado.
+
+Medido (Windows, `skforecast_27_py13`, pyarrow 26.0.0, ficheros locales, un proceso por caso, dos repeticiones):
+
+| dataset | tiempo de `fetch_dataset` | pico de memoria | tamaño del fichero |
+|---|---|---|---|
+| `m5` | 15.8 → 3.3 s | 9.83 → 8.85 GB | 110 → 191 MB |
+| `bdg2_hourly` | 4.6 → 2.5 s | 6.8 → 6.7 GB | 193 → 188 MB |
+| `bdg2_daily` | 0.3 → 0.2 s | 0.45 GB, igual | 10.3 → 9.9 MB |
+
+Se descarta porque:
+- **El pico apenas baja:** lo domina la lectura del parquet, no el `sort_index`. Era el motivo de DEC2 para subirlos.
+- **`m5` crece 81 MB:** ordenado por fecha se rompen las rachas de cada serie; zstd no lo compensa (163 MB, frente a 86 MB sin ordenar). A unos 10 MB/s desde HF, la descarga extra se come buena parte de los 12 s ganados.
+- **Cambiaría datos publicados** que leen todas las versiones (orden de filas con `raw=True`), con nota de versión, para unos datasets que solo usan un par de notebooks. Desde la PR 3, el resultado ya es correcto con los ficheros actuales.
 
 ### 5c. Ficheros huérfanos (DEC6)
 
-Aplicar lo que Joaquín decida en DEC6: registrar en `skforecast` (PR aparte en skforecast, ampliando `EXPECTED_DATASETS` de la PR 4) o listar en `## Other files`.
+Hecha en `135e9b4` (2026-11-03), junto con la 5d: sección `## Other files` antes de `## Changing the data`, con cómo leerlos (`read_csv` de la URL de `main`), que no se borren ni renombren, y una línea por fichero con datos comprobados sobre los ficheros (columnas, frecuencia, periodo, huecos) y si los usa la documentación. Si algún día se registra uno, ampliar `EXPECTED_DATASETS` (PR 4) y quitarlo de esta sección.
 
 ### 5d. Licencias (DEC7)
 
-Añadir `+ license:` a cada sección del README. Si además se añade una clave `license` al registro, actualizar `REQUIRED_KEYS` del test 1.1, el generador y `show_datasets_info`.
+Hecha en `135e9b4` (2026-11-03): sección `## Licenses` con la nota de DEC7 y, como ejemplos, BDG2 (Attribution-ShareAlike) y `europe_electricity_load` (CC BY 4.0). El apéndice B sigue dando `0 entries differ`.
 
 ---
 
@@ -653,6 +672,7 @@ No se proponen para 0.27.0; se anotan para no perderlas.
 - **Caché local:** cada llamada descarga el fichero (66 MB `m4_daily`, cientos de MB `m5`). Un `data_home` como el de scikit-learn (`~/skforecast_data`, variable `SKFORECAST_DATA`) evitaría descargas repetidas y permitiría trabajar sin red.
 - **Tiempo de espera:** `pd.read_csv(url)` no tiene timeout; una red lenta bloquea indefinidamente.
 - **Metadatos de formato largo en el registro:** una clave como `series_id` permitiría a `fetch_dataset` y a la documentación saber qué datasets son largos sin buscarlo en el texto, y ofrecer `reshape_series_long_to_dict` directamente.
+- **Tiempo de ordenar `m5`:** unos 12 de los 16 s de `fetch_dataset('m5')` (fichero local) son el `sort_index(kind='stable')` de 59 millones de filas. Si llega a molestar, se estudia en el código (por ejemplo, qué columnas encarecen la reordenación), sin tocar los datos publicados (sección 8, 5b).
 - **pandas 3:** el módulo no se ha revisado con pandas 3 (columnas de texto como `str` en lugar de `object`, alias de frecuencia obsoletos). Incluirlo en el estudio de migración en curso.
 
 ---
@@ -663,7 +683,6 @@ No se proponen para 0.27.0; se anotan para no perderlas.
 - `show_datasets_info([])` deja de mostrar todos (PR 1). Ningún notebook lo llama así.
 - La deprecación de `version` (PR 2) convierte un 404 en un aviso con datos de `main`. En 0.29.0, sin parámetros keyword-only, una llamada posicional cambiaría de significado en silencio (2.2, punto 7).
 - El test de regresión (PR 4) depende de que los ficheros del repositorio de datos no cambien; si cambian, actualizar `EXPECTED_DATASETS` en el mismo cambio.
-- La reordenación de los parquet de HF (PR 5b) cambia el orden de filas con `raw=True` para todas las versiones de skforecast.
 - `docs/user_guides/datasets.ipynb` queda desactualizado si la PR 1 se fusiona sin reejecutarlo (1.9).
 
 ---
@@ -723,7 +742,7 @@ Para clonar sin bajar los 175 MB: `git clone --depth 1 --filter=blob:none --no-c
 
 ## Apéndice B. Comparación del README de datos con el registro
 
-Para repetir la comparación de la sección 1.4 antes de que exista el generador:
+Para repetir la comparación de la sección 1.4 (y comprobar el README tras corregirlo, PR 5a):
 
 ```python
 # Compare the README of skforecast-datasets with the registry
@@ -806,4 +825,15 @@ Comprobados el 2026-10-27 contra el código, los notebooks, la CI y un clon del 
   - **Sin marcador `network`** (opcional en la sección 7): no cambia la CI y nadie lo necesita hoy.
   - **`/release-bump`:** se ejecuta al empezar la versión siguiente, no antes de publicar. En su paso 3, que ya revisa la versión que se cierra, se pregunta si se ejecutó el test.
   - **Ejecución (Windows, 2026-11-03):** 27 tests pasan en 37 s (`m4_daily`, 15 s). Sin la variable se saltan los 26 de descarga.
-  - **Dónde vive el test:** se queda en skforecast. Lo que más lo rompe (cambios en `datasets.py`, versiones de pandas) ocurre aquí, el test de cobertura necesita el registro y `skforecast-datasets` no tiene CI (DEC4). Para los cambios de datos, que son raros, la 5a añade al README generado una nota que pide ejecutarlo antes de fusionar.
+  - **Dónde vive el test:** se queda en skforecast. Lo que más lo rompe (cambios en `datasets.py`, versiones de pandas) ocurre aquí, el test de cobertura necesita el registro y `skforecast-datasets` no tiene CI (DEC4). Para los cambios de datos, que son raros, la 5a añade al README de datos una nota que pide ejecutarlo antes de fusionar.
+- 2026-11-03 (revisión de la PR 5a):
+  - **Sin generador del README (DEC4 revisada):** los datasets casi nunca cambian, así que se corrige el README a mano una vez y el apéndice B sirve de comprobación. Desaparecen `tools/generate_readme.py`, su `--check` y la dependencia de registrar antes `europe_electricity_load` (el generador habría borrado su sección y su línea `build script`).
+  - **`## Other files`** pasa a la 5c: sin la decisión DEC6 solo tendría nombres de fichero.
+  - **Descripciones más completas en el README:** `fuel_consumption` (unidad, toneladas) y `bike_sharing`, `bike_sharing_extended_features` (preprocesado del dato original) se quedan con el texto del README; el apéndice B no compara `description`. El resto de `description` y `source` se copian del registro (los `\n` de `source` en `m4_*` pasan a frases separadas por punto).
+  - **Sección final `## Changing the data`** en el README: test de regresión antes de fusionar, README, registro y `EXPECTED_DATASETS` alineados, y no renombrar ni cambiar el formato de un fichero (publicar uno nuevo).
+  - **Comprobado (2026-11-03):** apéndice B con `0 entries differ`; `uk_daily_flights` sin BOM da el mismo DataFrame con `fetch_dataset` (fichero local) y el resto del fichero es idéntico byte a byte.
+- 2026-11-03 (PR 5b, descartada): se prepararon y midieron los parquet ordenados sin subirlos. El pico de memoria, motivo de DEC2 para ordenarlos, apenas baja (`m5` 9.83 → 8.85 GB, `bdg2_*` igual) y `m5` pasaría de 110 a 191 MB; solo mejora el tiempo (`m5` 15.8 → 3.3 s sin contar la descarga). No compensa cambiar datos publicados para todas las versiones: medidas en la sección 8, 5b; el tiempo de ordenar `m5` queda en la sección 9.
+- 2026-11-03 (DEC6, DEC7, PRs 5c y 5d):
+  - **Uso de los ficheros huérfanos:** la tabla de DEC6 no decía que cuatro notebooks de la documentación leen `demo_multi_series*.csv` y `energy_production_shutdown.csv`; por eso no se borra ninguno.
+  - **`LICENSE` del repositorio de datos:** BSD 3-Clause a nombre de Joaquín, que parecía cubrir datos de terceros. En lugar de una licencia por dataset (la estructura que preveía la 5d), una nota que la limita a los scripts y el README.
+  - **Kaggle:** las reglas de `m5`, `ashrae_daily` y `store_sales` no se pudieron leer sin navegador; queda su revisión para Joaquín (sección 3.2, DEC7).
