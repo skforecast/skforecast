@@ -1894,7 +1894,11 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
     Returns
     -------
     metrics_levels : pandas DataFrame
-        Value(s) of the metric(s).
+        Value(s) of the metric(s). The last column, `n_evaluated`
+        (`N_EVALUATED_NAME`), is the number of points that enter the metrics
+        of each level: those with a true value and a prediction, both not
+        missing. Its aggregated value is the sum over the levels, as in
+        `_calculate_metrics_backtesting_multiseries`.
     predictions : pandas DataFrame, None
         Value of predictions for each level. `None` if `return_predictions`
         is `False`.
@@ -2021,6 +2025,9 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
             data=[metrics_level], columns=metric_names
         )
         metrics_levels.insert(0, 'levels', [level])
+        metrics_levels[N_EVALUATED_NAME] = _count_evaluated(
+            y_true=y_true, y_pred=y_pred
+        )
 
         if return_predictions:
             predictions = pd.DataFrame({level: y_pred}, index=test_index)
@@ -2155,6 +2162,7 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
                 )
 
     metrics_levels = []
+    n_evaluated_levels = []
     for level in levels:
         if level in predictions_per_level:
             y_true = predictions_per_level[level].loc[:, 'y_true']
@@ -2168,60 +2176,69 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
                 for m in metrics
             ]
             metrics_levels.append(metrics_level)
+            n_evaluated_levels.append(_count_evaluated(y_true=y_true, y_pred=y_pred))
         else:
             metrics_levels.append([None for _ in metrics])
+            n_evaluated_levels.append(0)
 
     metrics_levels = pd.DataFrame(
                          data    = metrics_levels,
                          columns = metric_names
                      )
     metrics_levels.insert(0, 'levels', levels)
+    metrics_levels[N_EVALUATED_NAME] = n_evaluated_levels
 
     if len(levels) < 2:
         add_aggregated_metric = False
 
     if add_aggregated_metric:
 
+        # NOTE: The aggregated number of points evaluated is the sum over the
+        # levels, the same for the three aggregations.
+        n_evaluated = int(metrics_levels[N_EVALUATED_NAME].sum())
+
         # aggregation: average
-        average = metrics_levels.drop(columns='levels').mean(skipna=True)
+        average = metrics_levels[metric_names].mean(skipna=True)
         average = average.to_frame().transpose()
         average['levels'] = 'average'
+        average[N_EVALUATED_NAME] = n_evaluated
 
         # aggregation: weighted_average
         # NOTE: Weighted by the points evaluated in each level, as in
         # `_calculate_metrics_backtesting_multiseries`.
-        n_predictions_levels = {
-            k: _count_evaluated(y_true=v['y_true'], y_pred=v['y_pred'])
-            for k, v in predictions_per_level.items()
-        }
-        n_predictions_levels = pd.DataFrame(
-            n_predictions_levels.items(),
-            columns=['levels', 'n_predictions']
-        )
         metrics_levels_no_missing = (
-            metrics_levels.merge(n_predictions_levels, on='levels', how='inner')
+            metrics_levels.loc[metrics_levels[N_EVALUATED_NAME] > 0]
         )
         weighted_averages = {}
         for col in metric_names:
-            weighted_averages[col] = np.average(
-                metrics_levels_no_missing[col],
-                weights = metrics_levels_no_missing['n_predictions']
+            weighted_averages[col] = (
+                np.average(
+                    metrics_levels_no_missing[col],
+                    weights = metrics_levels_no_missing[N_EVALUATED_NAME]
+                )
+                if not metrics_levels_no_missing.empty
+                else np.nan
             )
         weighted_average = pd.DataFrame(weighted_averages, index=[0])
         weighted_average['levels'] = 'weighted_average'
+        weighted_average[N_EVALUATED_NAME] = n_evaluated
 
         # aggregation: pooling
+        # NOTE: `X_test` includes every series of the forecaster, so only the
+        # predictions of `levels` are pooled.
         scaled_metrics = ['mean_absolute_scaled_error', 'root_mean_squared_scaled_error']
-        predictions_pooled = pd.concat(predictions_per_level.values())
+        levels_pooled = [k for k in predictions_per_level if k in levels]
+        predictions_pooled = pd.concat(
+            [predictions_per_level[k] for k in levels_pooled]
+        )
         if needs_y_train:
             y_train_pooled = pd.concat(
-                [v for k, v in y_train_per_level.items() if k in predictions_per_level]
+                [y_train_per_level[k] for k in levels_pooled]
             )
             if any(name in scaled_metrics for name in metric_names):
                 list_y_train_by_level = [
-                    v['y_train'].to_numpy()
-                    for k, v in y_train_per_level.items()
-                    if k in predictions_per_level
+                    y_train_per_level[k]['y_train'].to_numpy()
+                    for k in levels_pooled
                 ]
         else:
             y_train_pooled = None
@@ -2248,6 +2265,7 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
                 )
         pooled = pd.DataFrame([pooled], columns=metric_names)
         pooled['levels'] = 'pooling'
+        pooled[N_EVALUATED_NAME] = n_evaluated
 
         metrics_levels = pd.concat(
             [metrics_levels, average, weighted_average, pooled],
