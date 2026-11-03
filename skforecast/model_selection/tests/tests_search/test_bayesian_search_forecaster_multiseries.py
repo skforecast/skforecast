@@ -3166,18 +3166,21 @@ def test_bayesian_search_forecaster_multiseries_n_evaluated_user_attr_and_Missin
     messages = [
         str(w.message) for w in record
         if w.category is MissingValuesWarning
-        and "The candidates are not evaluated on the same points" in str(w.message)
+        and "evaluated on fewer points than the most complete one" in str(w.message)
     ]
     n_affected = (results['n_evaluated'] == 30).sum()
     assert 0 < n_affected < len(results)
     assert len(messages) == 1
     assert (
-        f"The most complete candidate evaluates 45 points (all series and folds); "
-        f"{n_affected} of 6 candidates evaluate fewer than 43 (95%):\n"
-        f"  - trial {results.loc[0, 'trial_number']}, lags: [1, 2, ..., 8], "
-        f"params: {results.loc[0, 'params']}: 30 points (66.7%)"
+        f"{n_affected} of 6 candidates are evaluated on fewer points than the "
+        f"most complete one"
     ) in messages[0]
     assert (
-        "pass in `levels` the 2 of 3 series that every candidate evaluates on the "
-        "same points, all except:\n  ['short']\n"
+        f"Candidates with less than 95% of the 45 points of the most complete one:\n"
+        f"  - trial {results.loc[0, 'trial_number']}, lags: [1, 2, ..., 8], "
+        f"params: {results.loc[0, 'params']}: 30 (66.7%)"
+    ) in messages[0]
+    assert (
+        "Series that every candidate evaluates on the same points:\n"
+        "  levels=['l1', 'l2']"
     ) in messages[0]

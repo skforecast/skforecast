@@ -39,7 +39,6 @@ from ..model_selection._utils import (
     _select_metrics_search_multiseries,
     _check_metric_names_search,
     _get_n_evaluated_search_multiseries,
-    _get_last_train_date_search,
     _format_lags_warning,
     _warn_n_evaluated_search_multiseries,
     N_EVALUATED_NAME
@@ -1510,7 +1509,6 @@ def _evaluate_grid_hyperparameters_multiseries(
         params_list = []
         metrics_list = []
         n_evaluated_levels_list = []
-        window_size_list = []
         for lags_k, lags_v in lags_grid_tqdm:
 
             forecaster_search.set_lags(lags_v)
@@ -1610,7 +1608,6 @@ def _evaluate_grid_hyperparameters_multiseries(
                 params_list.append(params)
                 metrics_list.append(metrics)
                 n_evaluated_levels_list.append(n_evaluated_levels)
-                window_size_list.append(forecaster_search.window_size)
 
                 if output_file is not None:
                     header = [
@@ -1698,9 +1695,7 @@ def _evaluate_grid_hyperparameters_multiseries(
             f"lags: {_format_lags_warning(lags_k)}, params: {params}"
             for lags_k, params in zip(results['lags_label'], results['params'])
         ],
-        levels             = levels,
-        window_size        = max(window_size_list),
-        last_train_date    = _get_last_train_date_search(cv=cv, series=series)
+        levels             = levels
     )
 
     return results
@@ -1930,10 +1925,9 @@ def bayesian_search_forecaster_multiseries(
             for aggregation in aggregate_metric
         ]
 
-    # NOTE: Points evaluated of each level and window size of each trial, for
-    # the warning about the points evaluated at the end of the search.
+    # NOTE: Points evaluated of each level of each trial, for the warning about
+    # the points evaluated at the end of the search.
     n_evaluated_levels_trials = {}
-    window_size_trials = {}
 
     # Objective function using backtesting_forecaster_multiseries
     if cv_name == 'TimeSeriesFold':
@@ -1988,7 +1982,6 @@ def bayesian_search_forecaster_multiseries(
                                                   levels  = levels
                                               )
             n_evaluated_levels_trials[trial.number] = n_evaluated_levels
-            window_size_trials[trial.number] = forecaster_search.window_size
             metrics = pd.DataFrame(
                           data    = [_select_metrics_search_multiseries(
                                          metrics      = metrics,
@@ -2098,7 +2091,6 @@ def bayesian_search_forecaster_multiseries(
                                                   levels  = levels
                                               )
             n_evaluated_levels_trials[trial.number] = n_evaluated_levels
-            window_size_trials[trial.number] = forecaster_search.window_size
             metrics = pd.DataFrame(
                           data    = [_select_metrics_search_multiseries(
                                          metrics      = metrics,
@@ -2271,9 +2263,7 @@ def bayesian_search_forecaster_multiseries(
                 results['trial_number'], results['lags'], results['params']
             )
         ],
-        levels             = levels,
-        window_size        = max(window_size_trials.values(), default=None),
-        last_train_date    = _get_last_train_date_search(cv=cv, series=series)
+        levels             = levels
     )
 
     return results, study

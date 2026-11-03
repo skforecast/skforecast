@@ -53,7 +53,7 @@ series_short = {
     'l2': pd.Series(20 + 2 * np.cos(np.arange(60) / 2), index=index_short),
     'short': pd.Series(5 + np.arange(20) % 3, index=index_short[-20:], dtype=float),
 }
-N_EVALUATED_WARNING_MSG = "The candidates are not evaluated on the same points"
+N_EVALUATED_WARNING_MSG = "evaluated on fewer points than the most complete one"
 
 
 def test_ValueError_evaluate_grid_hyperparameters_multiseries_when_return_best_and_len_series_exog_different():
@@ -2162,19 +2162,19 @@ def test_evaluate_grid_hyperparameters_multiseries_MissingValuesWarning_once_whe
     ]
     assert len(messages) == 1
     assert (
-        "The most complete candidate evaluates 45 points (all series and folds); "
-        "2 of 4 candidates evaluate fewer than 43 (95%):\n"
-        "  - lags: [1, 2, ..., 8], params: {'alpha': 0.1}: 30 points (66.7%)\n"
-        "  - lags: [1, 2, ..., 8], params: {'alpha': 1}: 30 points (66.7%)\n"
-        "The best candidate of the ranking (first row of the results) is one "
-        "of them, so the ranking may favor it.\n"
-        "To compare the candidates on the same points, pass in `levels` the 2 of "
-        "3 series that every candidate evaluates on the same points, all except:\n"
-        "  ['short']\n"
-        "or remove the candidates with larger windows.\n"
-        "Common causes: series with 8 observations or fewer up to 2020-02-14 (the "
-        "largest `window_size`), missing values in the last window or NaN "
-        "predictions. See the column `n_evaluated` of the results."
+        "2 of 4 candidates are evaluated on fewer points than the most complete "
+        "one, so their metrics are not comparable. The best candidate of the "
+        "ranking is one of them, so the ranking may favor it. To compare the "
+        "candidates on the same points, pass the series listed below in `levels` "
+        "or remove the candidates with larger windows. See the column "
+        "`n_evaluated` of the results.\n"
+        "\n"
+        "Candidates with less than 95% of the 45 points of the most complete one:\n"
+        "  - lags: [1, 2, ..., 8], params: {'alpha': 0.1}: 30 (66.7%)\n"
+        "  - lags: [1, 2, ..., 8], params: {'alpha': 1}: 30 (66.7%)\n"
+        "\n"
+        "Series that every candidate evaluates on the same points:\n"
+        "  levels=['l1', 'l2']"
     ) in messages[0]
     assert results['n_evaluated'].to_list() == [30, 30, 45, 45]
 

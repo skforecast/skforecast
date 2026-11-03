@@ -2535,44 +2535,6 @@ def _get_n_evaluated_search_multiseries(
     return n_evaluated, n_evaluated_levels
 
 
-def _get_last_train_date_search(
-    cv: object,
-    series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame]
-) -> Any:
-    """
-    Last date (or position) of the training set of the first fold of a search:
-    the observation before `initial_train_size`. `None` if `initial_train_size`
-    is `None`.
-
-    Parameters
-    ----------
-    cv : TimeSeriesFold, OneStepAheadFold
-        Object used to split the data in the search.
-    series : pandas DataFrame, dict
-        Time series of the search.
-
-    Returns
-    -------
-    last_train_date : pandas Timestamp, int, None
-        Last index value of the training set of the first fold.
-
-    """
-
-    if cv.initial_train_size is None:
-        return None
-
-    index = cv._extract_index(series)
-    initial_train_size = date_to_index_position(
-                             index        = index,
-                             date_input   = cv.initial_train_size,
-                             method       = 'validation',
-                             date_literal = 'initial_train_size'
-                         )
-    last_train_date = index[initial_train_size - 1]
-
-    return last_train_date
-
-
 def _format_lags_warning(lags: Any) -> str:
     """
     Short representation of the lags of a candidate for the warnings of the
@@ -2636,8 +2598,6 @@ def _warn_n_evaluated_search_multiseries(
     n_evaluated_levels: list[list[int]] | np.ndarray,
     candidates: list[str],
     levels: list[str],
-    window_size: int | None = None,
-    last_train_date: Any = None,
     max_candidates: int = 5,
     max_levels: int = 10
 ) -> None:
@@ -2652,9 +2612,9 @@ def _warn_n_evaluated_search_multiseries(
     The warning also gives the levels that every candidate evaluates on the
     same points (the same number of points as the most complete candidate in
     that level): passing them in `levels` makes the candidates comparable.
-    The shortest list is shown (those levels, or the rest), if it has at most
-    `max_levels` names. Levels without points evaluated in any candidate are
-    left out.
+    They are listed if they are at most `max_levels`; otherwise, if the rest
+    are at most `max_levels`, the rest are listed instead. Levels without
+    points evaluated in any candidate are left out.
 
     Parameters
     ----------
@@ -2668,11 +2628,6 @@ def _warn_n_evaluated_search_multiseries(
         Description of each candidate, in the order of the ranking.
     levels : list
         Levels of the search.
-    window_size : int, default None
-        Largest `window_size` of the candidates. If `None`, it is not shown.
-    last_train_date : pandas Timestamp, int, default None
-        Last index value of the training set of the first fold. If `None`, it
-        is not shown.
     max_candidates : int, default 5
         Maximum number of candidates listed in the warning.
     max_levels : int, default 10
@@ -2689,37 +2644,38 @@ def _warn_n_evaluated_search_multiseries(
         return
 
     n_evaluated_max = int(n_evaluated.max())
-    # NOTE: Smallest number of points not reported, so the bound shown in the
-    # warning is an integer. The epsilon avoids rounding up an exact product.
-    n_evaluated_bound = int(
-        np.ceil(N_EVALUATED_WARNING_THRESHOLD * n_evaluated_max - 1e-9)
-    )
-    is_affected = n_evaluated < n_evaluated_bound
+    is_affected = n_evaluated < N_EVALUATED_WARNING_THRESHOLD * n_evaluated_max
     if not is_affected.any():
         return
 
     affected = np.flatnonzero(is_affected)
-    lines = [
-        f"  - {candidates[i]}: {int(n_evaluated[i]):,} points "
-        f"({n_evaluated[i] / n_evaluated_max:.1%})"
-        for i in affected[:max_candidates]
-    ]
-    if len(affected) > max_candidates:
-        lines.append(f"  ... and {len(affected) - max_candidates} more")
-
-    best_message = (
-        "The best candidate of the ranking (first row of the results) is one "
-        "of them, so the ranking may favor it."
-        if is_affected[0]
-        else "The best candidate of the ranking (first row of the results) is "
-        "not one of them."
-    )
+    if len(affected) == 1:
+        summary = (
+            f"1 of {len(n_evaluated)} candidates is evaluated on fewer points than "
+            f"the most complete one, so its metrics are not comparable. "
+        )
+        summary += (
+            "It is the best candidate of the ranking, so the ranking may favor it."
+            if is_affected[0]
+            else "It is not the best candidate of the ranking."
+        )
+    else:
+        summary = (
+            f"{len(affected)} of {len(n_evaluated)} candidates are evaluated on "
+            f"fewer points than the most complete one, so their metrics are not "
+            f"comparable. "
+        )
+        summary += (
+            "The best candidate of the ranking is one of them, so the ranking may "
+            "favor it."
+            if is_affected[0]
+            else "The best candidate of the ranking is not one of them."
+        )
 
     remove_message = "remove the candidates with larger windows"
+    levels_block = None
     if len(levels) < 2:
-        levels_message = (
-            f"To compare the candidates on the same points, {remove_message}."
-        )
+        action = f"To compare the candidates on the same points, {remove_message}."
     else:
         n_evaluated_levels = np.asarray(n_evaluated_levels)
         n_evaluated_levels_max = n_evaluated_levels.max(axis=0)
@@ -2733,64 +2689,52 @@ def _warn_n_evaluated_search_multiseries(
             level for level, same, evaluated
             in zip(levels, is_same_points, is_evaluated) if not same and evaluated
         ]
-        n_levels = len(levels_same) + len(levels_other)
-        levels_same_message = (
-            f"To compare the candidates on the same points, pass in `levels` the "
-            f"{len(levels_same):,} of {n_levels:,} series that every candidate "
-            f"evaluates on the same points"
-        )
         if not levels_same:
-            levels_message = (
+            action = (
                 f"No series is evaluated on the same points by every candidate, "
                 f"so restricting `levels` does not help: {remove_message}."
             )
-        elif len(levels_same) <= len(levels_other) and len(levels_same) <= max_levels:
-            levels_message = (
-                f"{levels_same_message}:\n  [{_format_names_warning(levels_same)}]\n"
-                f"or {remove_message}."
-            )
-        elif len(levels_other) <= max_levels:
-            levels_message = (
-                f"{levels_same_message}, all except:\n"
-                f"  [{_format_names_warning(levels_other)}]\nor {remove_message}."
-            )
         else:
-            levels_message = (
-                f"{levels_same_message} (the other {len(levels_other):,} include "
-                f"{_format_names_warning(levels_other, max_names=max_levels)}), "
-                f"or {remove_message}."
+            action = (
+                f"To compare the candidates on the same points, pass the series "
+                f"listed below in `levels` or {remove_message}."
+            )
+            if len(levels_same) <= max_levels:
+                levels_line = f"levels=[{_format_names_warning(levels_same)}]"
+            elif len(levels_other) <= max_levels:
+                levels_line = (
+                    f"levels: every series except "
+                    f"[{_format_names_warning(levels_other)}]"
+                )
+            else:
+                levels_line = (
+                    f"levels: {len(levels_same):,} of "
+                    f"{len(levels_same) + len(levels_other):,} series (the series "
+                    f"left out include "
+                    f"{_format_names_warning(levels_other, max_names=max_levels)})"
+                )
+            levels_block = (
+                f"Series that every candidate evaluates on the same points:\n"
+                f"  {levels_line}"
             )
 
-    if window_size is not None and last_train_date is not None:
-        if isinstance(last_train_date, pd.Timestamp):
-            last_train_date = (
-                str(last_train_date.date())
-                if last_train_date == last_train_date.normalize()
-                else str(last_train_date)
-            )
-        else:
-            last_train_date = f"position {last_train_date}"
-        short_series = (
-            f"series with {window_size} observations or fewer up to "
-            f"{last_train_date} (the largest `window_size`)"
-        )
-    elif window_size is not None:
-        short_series = (
-            f"series with {window_size} observations or fewer (the largest "
-            f"`window_size`) before the first fold"
-        )
-    else:
-        short_series = "series shorter than the window of the candidate"
-
-    scope = 'all series and folds' if len(levels) > 1 else 'all folds'
-    warnings.warn(
-        f"The candidates are not evaluated on the same points, so their metrics "
-        f"are not comparable. The most complete candidate evaluates "
-        f"{n_evaluated_max:,} points ({scope}); "
-        f"{len(affected)} of {len(n_evaluated)} candidates evaluate fewer than "
-        f"{n_evaluated_bound:,} ({N_EVALUATED_WARNING_THRESHOLD:.0%}):\n"
-        + "\n".join(lines) + "\n" + best_message + "\n" + levels_message + "\n"
-        f"Common causes: {short_series}, missing values in the last window or "
-        f"NaN predictions. See the column `{N_EVALUATED_NAME}` of the results.",
-        MissingValuesWarning
+    lines = [
+        f"  - {candidates[i]}: {int(n_evaluated[i]):,} "
+        f"({n_evaluated[i] / n_evaluated_max:.1%})"
+        for i in affected[:max_candidates]
+    ]
+    if len(affected) > max_candidates:
+        lines.append(f"  ... and {len(affected) - max_candidates} more")
+    candidates_block = (
+        f"Candidates with less than {N_EVALUATED_WARNING_THRESHOLD:.0%} of the "
+        f"{n_evaluated_max:,} points of the most complete one:\n" + "\n".join(lines)
     )
+
+    blocks = [
+        f"{summary} {action} See the column `{N_EVALUATED_NAME}` of the results.",
+        candidates_block,
+    ]
+    if levels_block is not None:
+        blocks.append(levels_block)
+
+    warnings.warn("\n\n".join(blocks), MissingValuesWarning)
