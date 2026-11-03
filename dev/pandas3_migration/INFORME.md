@@ -1863,8 +1863,40 @@ Orden de arranque acordado, antes de la PR 1:
    solo cambios en `dev/`. Las huellas de referencia salen del código sin
    cambios, y la PR 1 queda solo con los renombrados y sus tests.
    Adaptaciones a Windows, la máquina local: `os.getloadavg()` y VmHWM
-   no existen allí. La memoria pico se mide con `tracemalloc` y el RSS
-   pico de `psutil` sirve de contraste.
+   no existen allí. La memoria pico se mide con `tracemalloc`.
+
+   **Hecho el 2026-11-03** (rama `chore/pandas3-harness`; uso en
+   `harness/README.md`). 30 casos de identidad, 205 salidas, más las
+   comprobaciones de entradas intactas, `predict` repetido y memoria
+   compartida; 24 benchmarks (los 20 del estudio y el `fit` de los cuatro
+   forecasters de matriz numpy); `run_ab.py` compara una rama con
+   `origin/0.27.x` exportada con `git archive`, en procesos alternos. El RSS
+   pico no se mide: en Windows solo existe el pico de toda la vida del
+   proceso, que no se puede reiniciar entre benchmarks. Criterio de
+   "arnés listo" cumplido sobre `9d1a657`:
+   - Identidad: 205 de 205 salidas con la misma huella estricta entre dos
+     ejecuciones en p2, entre p22 y p2, y entre base y rama en p2 y p3. p2
+     frente a p3 con índice `[ns]`: 0 valores distintos y 68 salidas que
+     solo cambian de dtype (`object` frente a `str` en columnas, nombres de
+     columna y `exog_dtypes_in_`), como en la sección 5.
+   - Rendimiento, mismas razones que 4.1 en pandas 3 frente a pandas 2
+     (mínimos de la base): `recursive_create_train_X_y_float` 2,9,
+     `recursive_create_train_X_y` 1,8, `direct_create_train_X_y_float` 1,6,
+     `classifier_create_train_X_y` 1,3, `predict_loop` 1,2,
+     `backtesting_recursive` 1,08 (1,41 en el estudio) y los `fit` entre
+     0,97 y 1,05.
+   - **Control nulo en esta máquina** (24 benchmarks, 4 rondas, 20 muestras
+     por árbol, la misma rama como base y como cabeza): razón de mínimos
+     entre 0,94 y 1,09, de medianas entre 0,93 y 1,11, memoria idéntica. Una
+     diferencia dentro de esa banda no es significativa.
+
+   Dos hallazgos ajenos a pandas, en `PopulationDriftDetector`, encontrados
+   al construir los casos: `fit` lanza un `ValueError` de
+   `chi2_contingency` si una columna categórica tiene categorías sin usar,
+   y `predict` construye la tabla chi2 desde un `set`
+   (`_population_drift.py:787`), así que los últimos bits de
+   `chi2_statistic` cambian entre procesos (por eso el arnés fija
+   `PYTHONHASHSEED=0`).
 
 Entornos locales (Windows, conda, Python 3.13), clones del de desarrollo
 que solo cambian pandas, ejecutados con `python.exe -m pytest` y
