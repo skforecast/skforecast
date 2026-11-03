@@ -21,8 +21,8 @@
 |---|---|---|---|---|---|---|
 | **0** | fusionada (#1402, 2026-10-28) | skforecast | `fix/fetch-dataset-website-visits-m5` | PR #1402 (base de todo el plan) | nada | ya incluida |
 | **1** | fusionada (#1439, 2026-11-02) | skforecast | `fix/datasets-module-small-fixes` | Bugs pequeños, textos del registro, docstrings, test del registro sin red | nada | Fixed |
-| **2** | en curso (#1440) | skforecast | `feature/datasets-version-deprecation` | Deprecar `version`; `load_demo_dataset` sobre `fetch_dataset` | PR 1 | Changed |
-| **3** | pendiente | skforecast | `feature/fetch-dataset-gaps-and-long-format` | Aviso cuando `asfreq` añade o quita filas; orden estable del formato largo; documentación | PR 2 | Changed |
+| **2** | fusionada (#1440, 2026-11-02) | skforecast | `feature/datasets-version-deprecation` | Deprecar `version`; `load_demo_dataset` sobre `fetch_dataset` | PR 1 | Changed |
+| **3** | en curso (#1441) | skforecast | `feature/fetch-dataset-gaps-and-long-format` | Aviso cuando `asfreq` añade o quita filas; orden estable del formato largo; documentación | PR 2 | Changed |
 | **4** | pendiente | skforecast | `chore/datasets-regression-test` | Test de regresión contra los ficheros reales, opt-in | PR 3 | ninguna |
 | **5a** | pendiente | skforecast-datasets | `main` (commits directos) | README generado y BOM | PR 1 | ninguna |
 | **5b** | pendiente | skforecast-datasets / HF | (subida a HF) | Parquet de HF ordenados por fecha | token de HF | se menciona en la release en la que se suba |
@@ -795,3 +795,7 @@ Comprobados el 2026-10-27 contra el código, los notebooks, la CI y un clon del 
 - 2026-10-28 (PR 1, 1.6): se descarta `[link=...]` en la URL del panel: en Jupyter rich guarda en `text/plain` un código OSC 8 con un id aleatorio, que cambiaría en cada reejecución de los notebooks con paneles. Se queda `escape(url)`. Sin `textwrap`, en Jupyter el panel ocupa el ancho de rich (115 columnas) en lugar de 83; se acepta.
 - 2026-11-02 (PR 1, #1439, `43cadfa0d`): CodeQL marcó como «Incomplete URL substring sanitization» el `'raw.githubusercontent.com' in url` del test del registro (falso positivo); se compara el host con `urlparse(url).netloc`. Úsese igual en la PR 4. El script del apéndice A no se subió.
 - 2026-11-02 (PR 2): `test_fetch_dataset_invalid_version_raises` descargaba una versión inexistente para provocar el 404; sin efecto `version`, pasa a `test_fetch_dataset_read_error_raises_ValueError` con `patch` de `read_csv` y `read_parquet` (sin red). Los tests del aviso comprueban además `record[0].filename == __file__` (el `stacklevel=3` apunta a quien llama). Con el cambio, `load_demo_dataset` da el `ValueError` de `fetch_dataset` en un fallo de descarga en lugar del `HTTPError` de urllib.
+- 2026-11-02 (PR 3):
+  - **3.1:** los avisos de `asfreq` salen después del `except`, no dentro del `try`. Si se convierten en error (`-W error`), dentro del `try` el `except Exception` los capturaba y salía «Could not preprocess dataset». Se cuentan las filas dentro del `try` y se avisa después; el test lo comprueba con `simplefilter('error', MissingValuesWarning)`, y falla con los avisos dentro del `try`.
+  - **3.2:** con 2 series y 2 fechas, el `sort_index()` por defecto ya daba `A, B, A, B` (numpy ordena así los arrays pequeños), así que el test no fallaba antes del arreglo. Pasa a un test nuevo, `test_fetch_dataset_long_format_keeps_order_of_series`, con 3 series y 8 fechas, que sí falla. Con los ficheros reales, el orden por defecto desordenaba las series de los cuatro datasets en formato largo de GitHub.
+  - **`migrate-from-prophet.ipynb`:** está en `EXCLUDE_NOTEBOOKS` porque necesita prophet, que no está en el entorno. No se reejecuta y su salida no muestra el aviso nuevo.
