@@ -7,6 +7,9 @@ investigación: el problema, los experimentos 1 a 5 y por qué se descartaron la
 opciones. Este documento solo trata la solución elegida y la revisión de los avisos y errores
 de las búsquedas.
 
+**PR 1 hecho en local el 2026-11-03** (rama `fix/search-short-series-n-evaluated`, sin push
+ni PR): ver la sección 11. Queda el PR 2 (sección 8.1).
+
 **Desbloqueado el 2026-11-03:** QW-12 está hecho con #1437. Antes estaba **bloqueado por
 QW-12** (decisión del 2026-10-29): antes se hace, por separado, la columna con
 el número de observaciones que entran en cada métrica del backtesting (por nivel en
@@ -273,7 +276,7 @@ el estimador los acepta. Medido: hacerlo coherente mejora un 2% en el experiment
    métricas, la suma en los agregados). Aquí se reutiliza. Es un nombre reservado en los
    backtesting (`ValueError`): sin reservarlo, con una serie salen dos columnas
    `n_evaluated`, y en multiserie la cuenta sustituye en silencio a la métrica del usuario.
-   **Pendiente aquí:** en las búsquedas, una métrica llamada `n_evaluated` hace fallar el
+   **Hecho en el PR 1 (sección 11).** Antes era pendiente: en las búsquedas, una métrica llamada `n_evaluated` hace fallar el
    backtesting de cada candidato, así que todos se saltan con un "Parameters skipped" y el
    resultado está vacío. Validarlo al principio de las búsquedas, junto a la unicidad de los
    nombres que ya comprueban, cuando la columna llegue a sus resultados.
@@ -324,3 +327,132 @@ Los scripts 3 a 5 (c1 y c2) están descritos en el documento anterior.
 - **#1431 (BUG-03):** la dirección de la búsqueda no cambia; el aviso usa el mismo criterio
   para decir cuál es el mejor candidato.
 - **FE-04:** mismo principio de comparar sobre los mismos puntos.
+
+## 11. PR 1: implementación (2026-11-03)
+
+Rama local `fix/search-short-series-n-evaluated`, desde `0.27.x` con los commits del roadmap
+sin subir. Cinco commits: (1) `pooling` y `n_evaluated` en las métricas del one-step-ahead
+multiserie, (2) nombre `n_evaluated` validado en todas las búsquedas, (3) columna por
+candidato, `user_attr` y aviso, (4) guía, contexto de IA y nota de la versión, (5) este
+documento y el roadmap. Entorno: Python 3.14.3, numpy 2.5.4, pandas 2.3.3, scikit-learn
+1.9.1, optuna 5.0.0.
+
+### 11.1 Línea base (antes de tocar nada, después de #1437 y #1438)
+
+- Script 01: los mismos números que la sección 2.3 del documento anterior (`average` 2.45
+  frente a 4.07 con `TimeSeriesFold`, 1.79 frente a 4.19 con `OneStepAheadFold`, gana
+  `lags_24`, 0 avisos). #1438 cambió el agregado que ordena por defecto, pero el script usa
+  `aggregate_metric=["average"]`, así que no le afecta.
+- Script 06: los once escenarios dan los mismos avisos y el mismo `ValueError` que la tabla
+  de la sección 5.1.
+- Script 07 (M5): los mismos porcentajes que la sección 3.
+
+### 11.2 Qué hace
+
+- **Columna `n_evaluated`** en los resultados de grid, random y bayesian multiserie, después
+  de las métricas y antes de las columnas de los parámetros, como en el backtesting (última
+  columna de las métricas). También en el `output_file` de grid y random (escrita como entero:
+  `metrics.loc[0, :]` la convertía en float). Es la fila de la primera agregación (la suma por
+  nivel; es la misma en las tres) o la del nivel si solo hay uno, y es la misma para todas las
+  métricas: una sola columna aunque haya varias métricas o varios `aggregate_metric`.
+- **`OneStepAheadFold`:** `_predict_and_calculate_metrics_one_step_ahead_multiseries` devuelve
+  `n_evaluated` con la misma definición (`_count_evaluated`) y en la misma posición que el
+  backtesting; las tablas de los dos coinciden con `steps=1` y `refit=False` (tests de
+  equivalencia, ahora sin quitar la columna).
+- **Bayesian:** `n_evaluated` como `user_attr` de cada trial; el valor optimizado no cambia.
+  El `output_file` de bayesian es el log de Optuna, así que la columna no va ahí.
+- **Aviso:** un `MissingValuesWarning` al final, cuando algún candidato evalúa menos del 99%
+  de los puntos del más completo. Texto (ejemplo del experimento 2):
+
+  ```
+  The candidates are not evaluated on the same points, so their metrics are not
+  comparable. The most complete candidate evaluates 600 points; 2 of 3 candidates
+  evaluate less than 99% of them:
+    - lags: lags_24, params: {'alpha': 1.0}: 396 points (66.0%)
+    - lags: lags_12, params: {'alpha': 1.0}: 540 points (90.0%)
+  The best candidate of the ranking (first row of the results) is one of them, so the
+  ranking may favor it. Common causes: series shorter than the window of the candidate
+  (`window_size`), missing values in the last window or NaN predictions. To compare the
+  candidates on the same points, pass in `levels` only the series that every candidate
+  predicts in every fold (for short series, those with more observations than the
+  largest `window_size` before the first fold), or remove the candidates with larger
+  windows. See the column `n_evaluated` of the results.
+  ```
+
+  Los candidatos van en el orden del ranking (máximo 5 y "... and N more"); en bayesian, con
+  el número de trial. Arrays de más de 6 lags se abrevian (`[1, 2, ..., 24]`). Si el mejor no
+  está afectado, lo dice ("is not one of them"). Respeta `suppress_warnings` (decorador
+  `manage_warnings`).
+- **Silenciado:** en grid y random, la evaluación de los candidatos y el reajuste van dentro
+  de su propio `warnings.catch_warnings()`, así que el silenciado de las categorías de
+  skforecast tras el primer candidato no alcanza al aviso, y el reajuste sigue silenciado como
+  antes. Un test comprueba que `warnings.filters` es el mismo después de la búsqueda.
+- **Nombre reservado:** `_check_metric_names_search` sustituye a la comprobación de nombres
+  únicos en las siete funciones que la hacían (grid/random y bayesian de una serie y
+  multiserie, `_evaluate_grid_hyperparameters_stats`, `grid_search_equivalent_date` y
+  `bayesian_search_foundation`), con el mismo mensaje de unicidad y el del backtesting para
+  `n_evaluated`. Antes: DataFrame vacío en grid, random, stats y equivalent date; fallo del
+  primer trial con la traza de Optuna en las bayesianas. `coverage` e `interval_width` no hace
+  falta reservarlos: las búsquedas llaman al backtesting con `interval=None` (comprobado).
+
+### 11.3 Comprobaciones
+
+- Script 01 (con un script propio sobre sus datos): `n_evaluated` 132 frente a 198 con los
+  dos `cv`, igual que el backtesting de `lags=24` (132), y un aviso con el grid en los dos
+  órdenes y en bayesian. El script 01 sigue imprimiendo 0 porque solo cuenta los avisos "not
+  predicted".
+- Experimento 2 (34% de puntos fuera): avisa. Con `TimeSeriesFold`, 396 / 540 / 600 (66%,
+  90%, 100%, como la sección 2.4 del documento anterior); con `OneStepAheadFold`, 240 / 450 /
+  600 (40%, 75%), más que con backtesting porque el one-step-ahead entrena una vez con el
+  entrenamiento inicial. Con `levels` restringido a las 8 series con más de 24 observaciones
+  antes del primer fold, los tres candidatos evalúan 240 puntos, no hay aviso y con
+  `TimeSeriesFold` gana `lags_12` (8.85 frente a 8.87 de `lags_24`).
+- M5 (script 07, sin modelo): con el umbral relativo al candidato más completo (`lags=7`), el
+  periodo habitual no avisa con `lags=56` (99.97%) y avisa con `lags=365` (98.4%); el segundo
+  semestre de 2014 avisa con `lags=56` (98.6%). Es aritmética sobre las fracciones del
+  script: la búsqueda real sobre 30 490 series no cabe en memoria.
+- Coste, 200 series de 730 días, Ridge, `OneStepAheadFold`, mediana de 7 repeticiones en dos
+  rondas alternas (base `0.27.x` en un worktree aparte):
+
+  | búsqueda | `0.27.x` | rama |
+  |---|---|---|
+  | grid, 6 candidatos | 0.342 s / 0.331 s | 0.361 s / 0.337 s |
+  | bayesian, 6 trials | 0.336 s / 0.337 s | 0.343 s / 0.339 s |
+
+  Entre +1% y +5%, de 1 a 3 ms por candidato, del orden del ruido entre rondas.
+- Tests: 655 en `tests_search` y `tests_utils` de `model_selection` y el del split
+  one-step-ahead de `ForecasterRecursiveMultiSeries`. Nuevos: columna igual a la del
+  backtesting (con `levels` None, parcial y un nivel; los dos `cv`, también el `pooling` con
+  `OneStepAheadFold` y `levels` parcial), aviso una vez con el grid invertido, sin aviso por
+  debajo del umbral o con `suppress_warnings=True`, `user_attr` en bayesian, `ValueError` en
+  cada familia y tests unitarios de los helpers. Los DataFrames esperados de 65 tests se
+  actualizaron de forma mecánica (valores sacados de la propia salida).
+
+### 11.4 No previsto
+
+1. **`pooling` del one-step-ahead con `levels` parcial (bug, arreglado aquí por decisión
+   del 2026-11-03).** `_predict_and_calculate_metrics_one_step_ahead_multiseries` agregaba en
+   `pooling` todas las series de `X_test`, no solo `levels` (`levels=['a', 'b']` de tres
+   series daba 2.90, el valor de las tres; los niveles, 0.74 y 0.92). Con `TimeSeriesFold`
+   estaba bien. Sin arreglarlo, `n_evaluated` (suma de `levels`) no habría sido el número de
+   puntos de `pooling`. Cambia resultados solo en ese caso: línea en "Before upgrading".
+2. **El consejo de `levels` del aviso, tal como lo proponía la sección 4.3, no basta.** En el
+   experimento 2 las 20 series tienen métricas en los tres candidatos: el sesgo está en los
+   pares (serie, fold). Hay que restringir a las series que todos predicen **en todos los
+   folds** (las que tienen más observaciones que el mayor `window_size` antes del primer
+   fold). Texto cambiado y medido (11.3).
+3. **La búsqueda vacía con una métrica `n_evaluated` es de este ciclo** (el nombre se reservó
+   en #1437/#1438), así que en la nota de la versión no va en Fixed, sino en la entrada de
+   Changed de la columna, según la convención de la skill `release-note`.
+4. **Ningún test existente cubría el one-step-ahead con `levels` parcial y `pooling`**: el
+   arreglo no cambió ningún resultado esperado; lo cubre el test nuevo de equivalencia.
+5. **La guía de búsqueda solo trataba una serie**: la sección nueva usa `items_sales` con
+   `item_3` recortado a octubre de 2014 (61 observaciones antes de la validación); con las
+   tres series gana `lags=90` evaluado sobre 64 puntos de 96, con `levels` de las dos largas
+   gana `lags=7`. Las salidas de otros notebooks con búsquedas multiserie (multi-series,
+   métricas, paralelización...) no se reejecutaron: mostrarán la columna en su próxima
+   ejecución.
+6. **No comprobado:** `bayesian_search_foundation` con `context_length` en el `search_space`
+   podría evaluar puntos distintos por candidato (series sin valores observados en la ventana
+   de contexto). Según la sección 5.3 no tiene el problema y aquí solo lleva la validación.
+

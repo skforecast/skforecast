@@ -37,6 +37,11 @@ secciones 1 a 7 quedan como referencia: evidencia, antes y después, y esbozos d
 > despreciable en paneles maduros con lags cortos (0.03% de puntos fuera con `lags=56`),
 > relevante con rotación de catálogo o lags anuales (13% con `lags=365` en un periodo con
 > lanzamientos).
+> **PR 1 hecho en local (2026-11-03)**, rama `fix/search-short-series-n-evaluated`, sin
+> subir: columna `n_evaluated` por candidato, aviso único al final y nombre reservado
+> validado en todas las búsquedas; de paso, el `pooling` del one-step-ahead con `levels`
+> parcial (hallazgo). Queda el PR 2 (avisos de las búsquedas). Detalle en la sección 11
+> de [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md).
 
 **Comprobado en local** (Python 3.14.3, numpy 2.5.3, pandas 2.3.3, scikit-learn 1.9.1,
 numba 0.68.0, statsmodels 0.14.6): BUG-03, BUG-01 y BUG-stats-interval-ignored se
@@ -156,7 +161,17 @@ efecto, con `FutureWarning` y eliminación en la 0.29.0; `load_demo_dataset` se 
    vacío. Validar el nombre reservado al principio de las búsquedas, junto a la unicidad que
    ya comprueban, cuando la columna llegue a sus resultados (ver
    [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md),
-   sección 8).
+   sección 8). **Hecho en el PR 1.**
+   **PR 1 hecho en local el 2026-11-03** (rama `fix/search-short-series-n-evaluated`, 5
+   commits, sin push ni PR): `n_evaluated` por candidato en grid, random y bayesian
+   multiserie (`TimeSeriesFold` y `OneStepAheadFold`, también como `user_attr`), un solo
+   `MissingValuesWarning` al final con el umbral del 99%, el nombre `n_evaluated` validado
+   al principio de todas las búsquedas, guía, skills y nota de la versión. **Hallazgo
+   arreglado en el mismo PR (decisión del 2026-11-03):** con `OneStepAheadFold` y `levels`
+   parcial, el `pooling` de las búsquedas multiserie mezclaba todas las series; cambia
+   resultados en ese caso ("Before upgrading"). Línea base, mediciones y lo no previsto, en
+   la sección 11 de ese documento. **Siguiente: PR 2** (avisos de las búsquedas, sección
+   5.2 puntos 1, 3, 4, 5 y 6).
 2. ~~**BUG-03**~~ **Hecho con #1431** (fusionado el 2026-10-22). La
    dirección sale de la métrica (decisión 6): atributo `greater_is_better` y convención de
    nombres solo para `sklearn.metrics`; si no se conoce, la dirección de la tarea, que ya
@@ -205,7 +220,7 @@ efecto, con `FutureWarning` y eliminación en la 0.29.0; `load_demo_dataset` se 
 | Comparar modelos | FE-05 | M. Nuevo (2026-10-20). Una llamada para el backtesting de varios forecasters de cualquier familia sobre los mismos puntos. Sustituye el código que hoy repite la guía `comparing-forecasting-models.ipynb`. Diseño analizado y prototipado (sección 3). Requisitos: QW-03 (hecho, #1423) y BUG-06 |
 | Feature engineering | QW-11 | S. Nuevo (2026-10-20). `hour_of_week` y el número de días de fin de semana del mes en `CalendarFeatures`, siempre opcionales, más un aviso y una guía de codificación. Medido en 18 series: `hour_of_week` reduce el MAE una mediana del 24% con Ridge en series horarias. Los festivos, que son lo que más aporta en series diarias, quedan como feature aparte (FE-06) |
 | Foundation para producción | QW-05, BUG-06, QW-02 | QW-02 pendiente de decisión |
-| **Búsquedas multiserie con series cortas (MUY IMPORTANTE)** | QW-12, después BUG-search-short-series | S (QW-12) y S a M (el arreglo). Resultado erróneo silencioso en un uso habitual de los modelos globales. QW-12 va antes y bloquea el arreglo. Propuesta vigente (2026-10-29) en [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md): la columna de QW-12 en el backtesting y, después, por candidato en las búsquedas, un solo aviso al final cuando los candidatos no se evalúan sobre los mismos puntos, y avisos y errores de las búsquedas que salgan una vez y donde deben. No cambia resultados. Investigación y opción c2 (aparcada) en [`BUG-search-short-series.md`](BUG-search-short-series.md). QW-12 hecho con #1437 (2026-11-03): el arreglo ya no está bloqueado |
+| **Búsquedas multiserie con series cortas (MUY IMPORTANTE)** | QW-12, después BUG-search-short-series | QW-12 hecho (#1437); PR 1 del arreglo hecho en local el 2026-11-03 (rama `fix/search-short-series-n-evaluated`), falta el PR 2 (avisos). S (QW-12) y S a M (el arreglo). Resultado erróneo silencioso en un uso habitual de los modelos globales. QW-12 va antes y bloquea el arreglo. Propuesta vigente (2026-10-29) en [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md): la columna de QW-12 en el backtesting y, después, por candidato en las búsquedas, un solo aviso al final cuando los candidatos no se evalúan sobre los mismos puntos, y avisos y errores de las búsquedas que salgan una vez y donde deben. No cambia resultados. Investigación y opción c2 (aparcada) en [`BUG-search-short-series.md`](BUG-search-short-series.md). QW-12 hecho con #1437 (2026-11-03): el arreglo ya no está bloqueado |
 | Paneles multiserie | QW-01, BUG-07, ISSUE-1410 | Hechos: ISSUE-1357 (IDs enteros) con #1412, que sustituye a PR-1408 (cerrado), e ISSUE-1410 con #1418 (2026-10-19); folds sin series con #1427 y `initial_train_size` contra el span con #1430 (2026-10-21, sección 6) |
 | Stats: corrección y rendimiento | BUG-08, PERF-02, PR-1400 | PR-1400 ya está fusionado en `0.27.x`. BUG-08 hecho con #1425 (fusionado el 2026-10-20). Volver a medir PERF-02 después de BUG-08 |
 | PRs externos | PR-1402, PR-1387, PR-1388, PR-1389 | Hecho: PR-1387 fusionado en `0.27.x` (2026-10-20); PR-1388 sustituido por #1433, que conserva su commit (fusionado el 2026-10-26); PR-1389 sustituido por el commit `6a5d933a4` (ISSUE-1354, 2026-10-27) y cerrado. PR-1402 fusionado en `0.27.x` el 2026-10-28. Queda abierto PR-1341 (TiRex-2, decisión pendiente 5), que apunta a `0.26.x` |
@@ -296,6 +311,9 @@ Revisado el 2026-10-30: QW-08 (lo que quedaba), QW-04, QW-10 y QW-12 van en un s
    después. El nombre de la columna se decidió el 2026-10-30: **`n_evaluated`**, también en
    FE-05 (`n_predictions` es ambiguo justo cuando importa: con folds solapados o valores
    reales NaN se predicen más puntos de los que se evalúan).
+   **PR 1 hecho en local el 2026-11-03** con esas decisiones; el texto del aviso cambió
+   respecto a la sección 4.3: el consejo de `levels` dice "en todos los folds", porque en
+   el experimento 2 las 20 series tienen métricas en todos los candidatos (sección 11).
 7. **FE-05** (comparar modelos): diseño recomendado en "FE-05: análisis de diseño"
    (sección 3). Falta decidir: el nombre (propuesta: `compare_forecasters` en
    `model_selection`); si las métricas se calculan por defecto sobre los puntos comunes
