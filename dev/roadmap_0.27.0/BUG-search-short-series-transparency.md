@@ -263,11 +263,10 @@ el estimador los acepta. Medido: hacerlo coherente mejora un 2% en el experiment
 
 ## 8. Decisiones pendientes y qué medir al implementar
 
-1. **Umbral del aviso de la sección 4.3. Decidido el 2026-11-03:** avisar cuando algún
-   candidato evalúa menos del 99% de los puntos del candidato más completo (más de un 1% de
-   diferencia); la columna da siempre el dato exacto. Confirmarlo al implementar con el
-   experimento 2 (34%) y con M5 en el periodo habitual (0.03% con `lags=56`, sin aviso) y en
-   uno con rotación (1.5%, con aviso).
+1. **Umbral del aviso de la sección 4.3. Decidido el 2026-11-03: 95%** (primero se decidió
+   el 99% y se cambió el mismo día, tras implementarlo; sección 11.5). Avisar cuando algún
+   candidato evalúa menos del 95% de los puntos del candidato más completo; la columna da
+   siempre el dato exacto. Con M5, el 1.5% de `lags=56` en 2014 ya no avisa.
 2. **`suppress_warnings` y "Parameters skipped". Decidido el 2026-11-03:** no lo silencia (un
    candidato que falta en los resultados es información importante); se agrupa en un solo
    aviso en el PR 2 (sección 5.2, punto 3).
@@ -361,22 +360,25 @@ documento y el roadmap. Entorno: Python 3.14.3, numpy 2.5.4, pandas 2.3.3, sciki
   equivalencia, ahora sin quitar la columna).
 - **Bayesian:** `n_evaluated` como `user_attr` de cada trial; el valor optimizado no cambia.
   El `output_file` de bayesian es el log de Optuna, así que la columna no va ahí.
-- **Aviso:** un `MissingValuesWarning` al final, cuando algún candidato evalúa menos del 99%
-  de los puntos del más completo. Texto (ejemplo del experimento 2):
+- **Aviso:** un `MissingValuesWarning` al final, cuando algún candidato evalúa menos del 95%
+  de los puntos del más completo. Texto final (ejemplo del experimento 2; versión de la
+  sección 11.5):
 
   ```
   The candidates are not evaluated on the same points, so their metrics are not
-  comparable. The most complete candidate evaluates 600 points; 2 of 3 candidates
-  evaluate less than 99% of them:
+  comparable. The most complete candidate evaluates 600 points (all series and folds);
+  2 of 3 candidates evaluate fewer than 570 (95%):
     - lags: lags_24, params: {'alpha': 1.0}: 396 points (66.0%)
     - lags: lags_12, params: {'alpha': 1.0}: 540 points (90.0%)
   The best candidate of the ranking (first row of the results) is one of them, so the
-  ranking may favor it. Common causes: series shorter than the window of the candidate
-  (`window_size`), missing values in the last window or NaN predictions. To compare the
-  candidates on the same points, pass in `levels` only the series that every candidate
-  predicts in every fold (for short series, those with more observations than the
-  largest `window_size` before the first fold), or remove the candidates with larger
-  windows. See the column `n_evaluated` of the results.
+  ranking may favor it.
+  To compare the candidates on the same points, pass in `levels` the 8 of 20 series
+  that every candidate evaluates on the same points:
+    ['long_0', 'long_1', 'long_2', 'long_3', 'long_4', 'new_06', 'new_07', 'new_12']
+  or remove the candidates with larger windows.
+  Common causes: series with 24 observations or fewer up to 2021-06-01 (the largest
+  `window_size`), missing values in the last window or NaN predictions. See the column
+  `n_evaluated` of the results.
   ```
 
   Los candidatos van en el orden del ranking (máximo 5 y "... and N more"); en bayesian, con
@@ -455,4 +457,30 @@ documento y el roadmap. Entorno: Python 3.14.3, numpy 2.5.4, pandas 2.3.3, sciki
 6. **No comprobado:** `bayesian_search_foundation` con `context_length` en el `search_space`
    podría evaluar puntos distintos por candidato (series sin valores observados en la ventana
    de contexto). Según la sección 5.3 no tiene el problema y aquí solo lleva la validación.
+
+### 11.5 Revisión del aviso (2026-11-03, sexto commit)
+
+1. **Umbral al 95%.** El sesgo de la métrica es aproximadamente f × (r − 1), con f la
+   fracción de puntos que faltan y r el error de esos puntos frente al resto. Medido en el
+   experimento 2, con `lags_3` (predice todo) sobre los puntos de los otros candidatos:
+   r = 1.1 (puntos de `lags_12`) y 1.3 (de `lags_24`), aunque las series nuevas tienen el
+   triple de ruido; en M5, r < 1. Con un 1% fuera el sesgo es del 0.1% al 1%, por debajo de
+   la diferencia habitual entre candidatos (1% a 3%), y cuando están tan cerca equivocarse
+   cuesta poco (experimento 5: 0.3%). Con un 5%, del 0.5% al 5%: puede invertir el ranking.
+   En M5 avisan `lags=365` en 2014 (13%); ya no avisan `lags=56` en 2014 (1.5%) ni
+   `lags=365` en el periodo habitual (1.6%). Experimentos 1 y 2: avisan igual.
+2. **Series para `levels`.** Con el `n_evaluated` por nivel de cada candidato (ya está en la
+   tabla de métricas de cada candidato), las series que todos evalúan sobre los mismos puntos
+   son las que tienen en todos el máximo; pasarlas en `levels` iguala los totales. En el
+   experimento 2 son 8 de 20, las mismas que la regla "más de 24 observaciones antes del
+   primer fold", y cubre también huecos y predicciones NaN. El aviso muestra la lista más
+   corta (esas series, o "all except" las demás) si tiene 10 nombres o menos; si no, el
+   recuento y algunos ejemplos de las demás. Sin series comunes, dice que restringir
+   `levels` no ayuda; con un solo nivel (`ForecasterDirectMultiVariate`), no sugiere
+   `levels`. No se devuelve la lista en código (`results.attrs` es experimental en pandas y
+   un valor de retorno nuevo rompería la API); queda para FE-05 si hace falta.
+3. **Causas concretas:** el mayor `window_size` de los candidatos y la última fecha del
+   entrenamiento del primer fold (`initial_train_size`, igual con los dos `cv`).
+4. **Texto:** el límite se da como número de puntos ("fewer than 570 (95%)") y sin
+   definir los puntos (true value and prediction), que ya define la columna.
 

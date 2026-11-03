@@ -165,7 +165,7 @@ efecto, con `FutureWarning` y eliminación en la 0.29.0; `load_demo_dataset` se 
    **PR 1 hecho en local el 2026-11-03** (rama `fix/search-short-series-n-evaluated`, 5
    commits, sin push ni PR): `n_evaluated` por candidato en grid, random y bayesian
    multiserie (`TimeSeriesFold` y `OneStepAheadFold`, también como `user_attr`), un solo
-   `MissingValuesWarning` al final con el umbral del 99%, el nombre `n_evaluated` validado
+   `MissingValuesWarning` al final con el umbral del 95% y la lista de series para `levels`, el nombre `n_evaluated` validado
    al principio de todas las búsquedas, guía, skills y nota de la versión. **Hallazgo
    arreglado en el mismo PR (decisión del 2026-11-03):** con `OneStepAheadFold` y `levels`
    parcial, el `pooling` de las búsquedas multiserie mezclaba todas las series; cambia
@@ -304,16 +304,18 @@ Revisado el 2026-10-30: QW-08 (lo que quedaba), QW-04, QW-10 y QW-12 van en un s
 6. **BUG-search-short-series**: decidido el 2026-10-29 informar en lugar de cambiar la
    evaluación (c2 aparcada). Las decisiones de la sección 8 de
    [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md) se
-   cerraron el 2026-11-03: aviso cuando un candidato evalúa menos del 99% de los puntos del
+   cerraron el 2026-11-03: aviso cuando un candidato evalúa menos del 95% de los puntos del
    más completo; `suppress_warnings` no silencia "Parameters skipped" (agrupado en un aviso);
    en bayesian, aviso al final y `n_evaluated` como `user_attr`, sin tocar Optuna. Se hace en
    dos PRs (sección 8.1 de ese documento): el bug primero y los avisos de las búsquedas
    después. El nombre de la columna se decidió el 2026-10-30: **`n_evaluated`**, también en
    FE-05 (`n_predictions` es ambiguo justo cuando importa: con folds solapados o valores
    reales NaN se predicen más puntos de los que se evalúan).
-   **PR 1 hecho en local el 2026-11-03** con esas decisiones; el texto del aviso cambió
-   respecto a la sección 4.3: el consejo de `levels` dice "en todos los folds", porque en
-   el experimento 2 las 20 series tienen métricas en todos los candidatos (sección 11).
+   **PR 1 hecho en local el 2026-11-03** con esas decisiones. El umbral se decidió primero en
+   el 99% y se bajó al 95% el mismo día, tras medir el sesgo (sección 11.5). El aviso da
+   además las series que todos los candidatos evalúan sobre los mismos puntos, para
+   pasarlas en `levels` (en el experimento 2 las 20 series tienen métricas en todos los
+   candidatos: el sesgo está en los pares serie y fold).
 7. **FE-05** (comparar modelos): diseño recomendado en "FE-05: análisis de diseño"
    (sección 3). Falta decidir: el nombre (propuesta: `compare_forecasters` en
    `model_selection`); si las métricas se calculan por defecto sobre los puntos comunes
