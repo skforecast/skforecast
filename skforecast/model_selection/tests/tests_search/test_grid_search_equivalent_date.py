@@ -127,6 +127,33 @@ def test_grid_search_equivalent_date_ValueError_when_duplicated_metric():
         )
 
 
+def test_grid_search_equivalent_date_ValueError_when_metric_named_n_evaluated():
+    """
+    Test ValueError is raised, before evaluating any candidate, when a metric
+    is named `n_evaluated`, the column of the backtesting metrics with the
+    number of points evaluated.
+    """
+    forecaster = ForecasterEquivalentDate(offset=1, n_offsets=1)
+    cv = TimeSeriesFold(steps=3, initial_train_size=len(y) - 12, refit=False)
+
+    def n_evaluated(y_true, y_pred):  # pragma: no cover
+        return float(np.mean(np.abs(np.asarray(y_true) - np.asarray(y_pred))))
+
+    err_msg = re.escape(
+        "The backtesting metrics include the column 'n_evaluated' with the "
+        "number of points evaluated. Rename the metric 'n_evaluated' passed in "
+        "`metric`."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        grid_search_equivalent_date(
+            forecaster = forecaster,
+            y          = y,
+            cv         = cv,
+            param_grid = [{'offset': 1, 'n_offsets': 7}],
+            metric     = ['mean_absolute_error', n_evaluated]
+        )
+
+
 def test_output_grid_search_equivalent_date_dict_param_grid():
     """
     Test output when param_grid is a dict (Cartesian product).

@@ -36,7 +36,8 @@ from ..model_selection._utils import (
     _make_lags_hashable,
     _get_search_direction,
     _check_study_direction,
-    _select_metrics_search_multiseries
+    _select_metrics_search_multiseries,
+    _check_metric_names_search
 )
 from ..utils import (
     initialize_lags, 
@@ -425,15 +426,9 @@ def _evaluate_grid_hyperparameters(
         else add_y_train_argument(m) 
         for m in metric
     ]
-    metric_dict = {
-        (m if isinstance(m, str) else m.__name__): [] 
-        for m in metric
-    }
-    
-    if len(metric_dict) != len(metric):
-        raise ValueError(
-            "When `metric` is a `list`, each metric name must be unique."
-        )
+    metric_names = [(m if isinstance(m, str) else m.__name__) for m in metric]
+    _check_metric_names_search(metric_names=metric_names)
+    metric_dict = {metric_name: [] for metric_name in metric_names}
 
     lags_grid, lags_label = initialize_lags_grid(forecaster_search, lags_grid)
     if verbose:
@@ -751,15 +746,9 @@ def bayesian_search_forecaster(
         else add_y_train_argument(m) 
         for m in metric
     ]
-    metric_dict = {
-        (m if isinstance(m, str) else m.__name__): [] 
-        for m in metric
-    }
-    
-    if len(metric_dict) != len(metric):
-        raise ValueError(
-            "When `metric` is a `list`, each metric name must be unique."
-        )
+    metric_names = [(m if isinstance(m, str) else m.__name__) for m in metric]
+    _check_metric_names_search(metric_names=metric_names)
+    metric_dict = {metric_name: [] for metric_name in metric_names}
         
     # Objective function using backtesting_forecaster
     if cv_name == 'TimeSeriesFold':
@@ -1455,10 +1444,7 @@ def _evaluate_grid_hyperparameters_multiseries(
         for m in metric
     ]
     metric_names = [(m if isinstance(m, str) else m.__name__) for m in metric]
-    if len(metric_names) != len(set(metric_names)):
-        raise ValueError(
-            "When `metric` is a `list`, each metric name must be unique."
-        )
+    _check_metric_names_search(metric_names=metric_names)
     
     levels = _initialize_levels_model_selection_multiseries(
                  forecaster = forecaster_search,
@@ -1867,10 +1853,7 @@ def bayesian_search_forecaster_multiseries(
         for m in metric
     ]
     metric_names = [(m if isinstance(m, str) else m.__name__) for m in metric]
-    if len(metric_names) != len(set(metric_names)):
-        raise ValueError(
-            "When `metric` is a `list`, each metric name must be unique."
-        )
+    _check_metric_names_search(metric_names=metric_names)
     
     levels = _initialize_levels_model_selection_multiseries(
                  forecaster = forecaster_search,
@@ -2384,10 +2367,7 @@ def bayesian_search_foundation(
         for m in metric
     ]
     metric_names = [(m if isinstance(m, str) else m.__name__) for m in metric]
-    if len(metric_names) != len(set(metric_names)):
-        raise ValueError(
-            "When `metric` is a `list`, each metric name must be unique."
-        )
+    _check_metric_names_search(metric_names=metric_names)
 
     if isinstance(series, pd.Series):
         levels_resolved = [series.name]
@@ -2899,15 +2879,9 @@ def _evaluate_grid_hyperparameters_stats(
         else add_y_train_argument(m)
         for m in metric
     ]
-    metric_dict = {
-        (m if isinstance(m, str) else m.__name__): [] 
-        for m in metric
-    }
-    
-    if len(metric_dict) != len(metric):
-        raise ValueError(
-            "When `metric` is a `list`, each metric name must be unique."
-        )
+    metric_names = [(m if isinstance(m, str) else m.__name__) for m in metric]
+    _check_metric_names_search(metric_names=metric_names)
+    metric_dict = {metric_name: [] for metric_name in metric_names}
 
     if verbose:
         print(f"Number of models compared: {len(param_grid)}.")
@@ -3168,15 +3142,9 @@ def grid_search_equivalent_date(
         else add_y_train_argument(m)
         for m in metric
     ]
-    metric_dict = {
-        (m if isinstance(m, str) else m.__name__): []
-        for m in metric
-    }
-
-    if len(metric_dict) != len(metric):
-        raise ValueError(
-            "When `metric` is a `list`, each metric name must be unique."
-        )
+    metric_names = [(m if isinstance(m, str) else m.__name__) for m in metric]
+    _check_metric_names_search(metric_names=metric_names)
+    metric_dict = {metric_name: [] for metric_name in metric_names}
 
     if verbose:
         print(f"Number of models compared: {len(param_grid)}.")

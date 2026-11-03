@@ -170,6 +170,45 @@ def test_ValueError_bayesian_search_forecaster_multiseries_metric_list_duplicate
         )
 
 
+def test_ValueError_bayesian_search_forecaster_multiseries_when_metric_named_n_evaluated():
+    """
+    Test ValueError is raised in bayesian_search_forecaster_multiseries, before
+    the first trial, when a metric is named `n_evaluated`, the column of the
+    backtesting metrics with the number of points evaluated.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator = Ridge(random_state=123),
+                     lags      = 2,
+                     encoding  = 'onehot'
+                 )
+    cv = TimeSeriesFold(initial_train_size=len(series_dict_range['l1']) - 12, steps=3)
+
+    def search_space(trial):  # pragma: no cover
+        search_space  = {'alpha': trial.suggest_float('alpha', 1e-2, 1.0)}
+
+        return search_space
+
+    def n_evaluated(y_true, y_pred):  # pragma: no cover
+        return mean_absolute_error(y_true, y_pred)
+
+    err_msg = re.escape(
+        "The backtesting metrics include the column 'n_evaluated' with the "
+        "number of points evaluated. Rename the metric 'n_evaluated' passed in "
+        "`metric`."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        bayesian_search_forecaster_multiseries(
+            forecaster         = forecaster,
+            series             = series_dict_range,
+            search_space       = search_space,
+            cv                 = cv,
+            metric             = n_evaluated,
+            n_trials           = 10,
+            return_best        = False,
+            verbose            = False,
+        )
+
+
 def test_ValueError_bayesian_search_forecaster_multiseries_when_search_space_names_do_not_match():
     """
     Test ValueError is raised when search_space key name do not match the trial 

@@ -187,6 +187,40 @@ def test_evaluate_grid_hyperparameters_multiseries_exception_when_metric_list_du
         )
 
 
+def test_evaluate_grid_hyperparameters_multiseries_ValueError_when_metric_named_n_evaluated():
+    """
+    Test ValueError is raised in _evaluate_grid_hyperparameters_multiseries,
+    before evaluating any candidate, when a metric is named `n_evaluated`,
+    the column of the backtesting metrics with the number of points evaluated.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator = Ridge(random_state=123),
+                     lags      = 3,
+                     encoding  = 'onehot'
+                 )
+    cv = TimeSeriesFold(initial_train_size=12, steps=4, refit=False)
+
+    def n_evaluated(y_true, y_pred):  # pragma: no cover
+        return mean_absolute_error(y_true, y_pred)
+
+    err_msg = re.escape(
+        "The backtesting metrics include the column 'n_evaluated' with the "
+        "number of points evaluated. Rename the metric 'n_evaluated' passed in "
+        "`metric`."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        _evaluate_grid_hyperparameters_multiseries(
+            forecaster         = forecaster,
+            series             = series_dict_range,
+            cv                 = cv,
+            param_grid         = [{'alpha': 0.01}, {'alpha': 0.1}],
+            metric             = ['mean_absolute_error', n_evaluated],
+            lags_grid          = [2, 4],
+            return_best        = False,
+            verbose            = False
+        )
+
+
 # ForecasterRecursiveMultiSeries
 # ======================================================================================================================
 def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMultiSeries_with_mocked():

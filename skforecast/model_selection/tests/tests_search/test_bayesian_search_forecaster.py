@@ -121,6 +121,41 @@ def test_ValueError_bayesian_search_forecaster_metric_list_duplicate_names():
         )
 
 
+def test_ValueError_bayesian_search_forecaster_when_metric_named_n_evaluated():
+    """
+    Test ValueError is raised in bayesian_search_forecaster, before the first
+    trial, when a metric is named `n_evaluated`, the column of the backtesting
+    metrics with the number of points evaluated.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(random_state=123), lags=2)
+    cv = TimeSeriesFold(steps=3, initial_train_size=len(y[:-12]), refit=False)
+
+    def search_space(trial):  # pragma: no cover
+        search_space  = {'alpha': trial.suggest_float('alpha', 1e-2, 1.0)}
+
+        return search_space
+
+    def n_evaluated(y_true, y_pred):  # pragma: no cover
+        return float(np.mean(np.abs(np.asarray(y_true) - np.asarray(y_pred))))
+
+    err_msg = re.escape(
+        "The backtesting metrics include the column 'n_evaluated' with the "
+        "number of points evaluated. Rename the metric 'n_evaluated' passed in "
+        "`metric`."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        bayesian_search_forecaster(
+            forecaster         = forecaster,
+            y                  = y,
+            cv                 = cv,
+            search_space       = search_space,
+            metric             = n_evaluated,
+            n_trials           = 10,
+            return_best        = False,
+            verbose            = False,
+        )
+
+
 @pytest.mark.parametrize(
     'cv',
     [TimeSeriesFold(steps=3, initial_train_size=len(y) - 12, refit=True, fixed_train_size=True),

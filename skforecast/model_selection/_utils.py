@@ -2457,3 +2457,33 @@ def _select_metrics_search_multiseries(
     )
 
     return metric_values
+
+
+def _check_metric_names_search(metric_names: list[str]) -> None:
+    """
+    Check the names of the metrics of a search before evaluating any
+    candidate: they must be unique, and `n_evaluated` (`N_EVALUATED_NAME`) is
+    reserved for the number of points evaluated of the backtesting. Otherwise,
+    the backtesting of every candidate would raise an error.
+
+    Parameters
+    ----------
+    metric_names : list
+        Names of the metrics.
+
+    Returns
+    -------
+    None
+
+    """
+
+    if len(metric_names) != len(set(metric_names)):
+        raise ValueError(
+            "When `metric` is a `list`, each metric name must be unique."
+        )
+    if N_EVALUATED_NAME in metric_names:
+        raise ValueError(
+            f"The backtesting metrics include the column '{N_EVALUATED_NAME}' "
+            f"with the number of points evaluated. Rename the metric "
+            f"'{N_EVALUATED_NAME}' passed in `metric`."
+        )
