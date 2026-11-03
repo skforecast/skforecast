@@ -489,7 +489,12 @@ def _check_url_once(url: str, label: str, allow_redirect: bool) -> list[str]:
 
 
 def check_url(url: str, label: str) -> list[str]:
-    """Check a URL, retrying transient network failures before reporting an error."""
+    """Check a URL, retrying transient network failures before reporting an error.
+
+    A failure that is still transient after the last attempt (a server error,
+    a rate limit or a timeout) is reported as a warning, not an error: the
+    server is down at the moment, which says nothing about the link.
+    """
     allow_redirect = any(
         url.startswith(prefix) for prefix in ALLOWED_REDIRECT_PREFIXES
     )
@@ -498,7 +503,14 @@ def check_url(url: str, label: str) -> list[str]:
             return _check_url_once(url, label, allow_redirect)
         except Exception as exc:
             last_attempt = attempt == URL_CHECK_ATTEMPTS
-            if not last_attempt and _is_transient_error(exc):
+            if _is_transient_error(exc):
+                if last_attempt:
+                    print(
+                        f"  {label}: WARNING, still a transient failure ({exc}) "
+                        f"on {url} after {URL_CHECK_ATTEMPTS} attempts; not "
+                        f"reported as a broken link."
+                    )
+                    return []
                 print(
                     f"  {label}: transient failure ({exc}) on {url}, "
                     f"retrying ({attempt}/{URL_CHECK_ATTEMPTS - 1}) ..."
