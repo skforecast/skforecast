@@ -327,3 +327,65 @@ def test_empirical_distributions_match_nannyml():
             decimal=5,
             err_msg=f"Chi2 statistics mismatch for feature '{feature}'"
         )
+
+
+@pytest.mark.parametrize(
+    'threshold_method, threshold, expected_chi2, expected_threshold',
+    [
+        ('std', 3,
+         [0.0762873490146218, 0.0762873490146218, 0.2479338842975207,
+          0.4250295159386069, 0.0762873490146218, 0.2479338842975207,
+          0.0762873490146218, 0.0762873490146218, 0.4250295159386069,
+          0.2479338842975207, 0.0762873490146218],
+         0.5889958737974672),
+        ('quantile', 0.95,
+         [0.0916666666666667, 0.0916666666666667, 0.2933333333333333,
+          0.4949999999999999, 0.0916666666666667, 0.2933333333333333,
+          0.0916666666666667, 0.0916666666666667, 0.4949999999999999,
+          0.2933333333333333, 0.0916666666666667],
+         0.49499999999999994),
+    ],
+    ids=['threshold_method: std', 'threshold_method: quantile']
+)
+def test_fit_categorical_feature_with_unused_categories(
+    threshold_method, threshold, expected_chi2, expected_threshold
+):
+    """
+    Test that fit does not raise a ValueError from `chi2_contingency` when a
+    `category` feature has unused categories (counted as 0 by `value_counts`),
+    and that the Chi2 statistics are the same as without the unused categories.
+    """
+    pattern = ['A', 'B', 'C', 'A', 'A', 'B', 'A', 'C', 'B', 'A', 'A']
+    index = pd.date_range('2020-01-01', periods=110, freq='D')
+    X_unused = pd.DataFrame(
+        {'category': pd.Categorical(pattern * 10, categories=['A', 'B', 'C', 'D'])},
+        index=index
+    )
+    X_observed = pd.DataFrame(
+        {'category': pd.Categorical(pattern * 10, categories=['A', 'B', 'C'])},
+        index=index
+    )
+
+    detector_unused = PopulationDriftDetector(
+        chunk_size=10, threshold=threshold, threshold_method=threshold_method
+    )
+    detector_unused.fit(X_unused)
+    detector_observed = PopulationDriftDetector(
+        chunk_size=10, threshold=threshold, threshold_method=threshold_method
+    )
+    detector_observed.fit(X_observed)
+
+    np.testing.assert_array_almost_equal(
+        detector_unused.empirical_dist_chi2_['category'], expected_chi2
+    )
+    assert np.isclose(
+        detector_unused.empirical_threshold_chi2_['category'], expected_threshold
+    )
+    np.testing.assert_array_equal(
+        detector_unused.empirical_dist_chi2_['category'],
+        detector_observed.empirical_dist_chi2_['category']
+    )
+    assert (
+        detector_unused.empirical_threshold_chi2_['category']
+        == detector_observed.empirical_threshold_chi2_['category']
+    )

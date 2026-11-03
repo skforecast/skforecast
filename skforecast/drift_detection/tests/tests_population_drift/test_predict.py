@@ -275,3 +275,49 @@ def test_predict_out_of_range_detection():
     results_subset = results[cols_to_check].reset_index(drop=True)
     
     pd.testing.assert_frame_equal(results_subset, expected)
+
+
+def test_predict_categorical_feature_with_unused_and_unseen_categories():
+    """
+    Test predict when a `category` feature has unused categories (counted as 0
+    by `value_counts`, which made `chi2_contingency` raise a ValueError) and the
+    new data has a category not seen in the reference data. The Chi2 and
+    Jensen-Shannon statistics are the same as without the unused categories.
+    """
+    pattern = ['A', 'B', 'C', 'A', 'A', 'B', 'A', 'C', 'B', 'A', 'A']
+    index_ref = pd.date_range('2020-01-01', periods=110, freq='D')
+    new_values = ['C', 'C', 'B', 'A', 'E'] * 8
+    index_new = pd.date_range('2020-04-20', periods=40, freq='D')
+
+    detector = PopulationDriftDetector(chunk_size=10, threshold=3)
+    detector.fit(pd.DataFrame(
+        {'category': pd.Categorical(pattern * 10, categories=['A', 'B', 'C', 'D'])},
+        index=index_ref
+    ))
+    results, _ = detector.predict(pd.DataFrame(
+        {'category': pd.Categorical(new_values, categories=['A', 'B', 'C', 'D', 'E'])},
+        index=index_new
+    ))
+
+    detector_observed = PopulationDriftDetector(chunk_size=10, threshold=3)
+    detector_observed.fit(pd.DataFrame(
+        {'category': pd.Categorical(pattern * 10, categories=['A', 'B', 'C'])},
+        index=index_ref
+    ))
+    results_observed, _ = detector_observed.predict(pd.DataFrame(
+        {'category': pd.Categorical(new_values, categories=['A', 'B', 'C', 'E'])},
+        index=index_new
+    ))
+
+    expected = pd.DataFrame({
+        'chi2_statistic': [26.480938416422287] * 4,
+        'js_statistic': [0.4407976665328458] * 4,
+        'drift_detected': [True] * 4,
+    })
+    cols_to_check = ['chi2_statistic', 'js_statistic', 'drift_detected']
+    pd.testing.assert_frame_equal(
+        results[cols_to_check].reset_index(drop=True), expected
+    )
+    pd.testing.assert_frame_equal(
+        results[cols_to_check], results_observed[cols_to_check], check_exact=True
+    )
