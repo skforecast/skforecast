@@ -2130,10 +2130,11 @@ def test_evaluate_grid_hyperparameters_multiseries_MissingValuesWarning_once_whe
 ):
     """
     Test that a single MissingValuesWarning is raised at the end of the search
-    when some candidates evaluate less than 99% of the points of the most
+    when some candidates evaluate less than 95% of the points of the most
     complete one, whatever the order of the grid (the skforecast warnings are
-    silenced after the first candidate). It lists the candidates affected and
-    says that the best candidate is one of them. The warning filters are the
+    silenced after the first candidate). It lists the candidates affected,
+    says that the best candidate is one of them and gives the series that
+    every candidate evaluates on the same points. The warning filters are the
     same after the search.
     """
     forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
@@ -2161,14 +2162,20 @@ def test_evaluate_grid_hyperparameters_multiseries_MissingValuesWarning_once_whe
     ]
     assert len(messages) == 1
     assert (
-        "The most complete candidate evaluates 45 points; 2 of 4 candidates "
-        "evaluate less than 99% of them:\n"
+        "The most complete candidate evaluates 45 points (all series and folds); "
+        "2 of 4 candidates evaluate fewer than 43 (95%):\n"
         "  - lags: [1, 2, ..., 8], params: {'alpha': 0.1}: 30 points (66.7%)\n"
         "  - lags: [1, 2, ..., 8], params: {'alpha': 1}: 30 points (66.7%)\n"
         "The best candidate of the ranking (first row of the results) is one "
-        "of them, so the ranking may favor it."
+        "of them, so the ranking may favor it.\n"
+        "To compare the candidates on the same points, pass in `levels` the 2 of "
+        "3 series that every candidate evaluates on the same points, all except:\n"
+        "  ['short']\n"
+        "or remove the candidates with larger windows.\n"
+        "Common causes: series with 8 observations or fewer up to 2020-02-14 (the "
+        "largest `window_size`), missing values in the last window or NaN "
+        "predictions. See the column `n_evaluated` of the results."
     ) in messages[0]
-    assert "See the column `n_evaluated` of the results." in messages[0]
     assert results['n_evaluated'].to_list() == [30, 30, 45, 45]
 
 

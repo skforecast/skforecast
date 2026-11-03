@@ -3123,7 +3123,7 @@ def test_bayesian_search_forecaster_multiseries_n_evaluated_user_attr_and_Missin
     `user_attr` `n_evaluated` and in the column `n_evaluated` of the results,
     without changing the value optimized by optuna, and that a single
     MissingValuesWarning is raised at the end of the search when some trials
-    evaluate less than 99% of the points of the most complete one.
+    evaluate less than 95% of the points of the most complete one.
     """
     forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
 
@@ -3172,8 +3172,12 @@ def test_bayesian_search_forecaster_multiseries_n_evaluated_user_attr_and_Missin
     assert 0 < n_affected < len(results)
     assert len(messages) == 1
     assert (
-        f"The most complete candidate evaluates 45 points; {n_affected} of 6 "
-        f"candidates evaluate less than 99% of them:\n"
+        f"The most complete candidate evaluates 45 points (all series and folds); "
+        f"{n_affected} of 6 candidates evaluate fewer than 43 (95%):\n"
         f"  - trial {results.loc[0, 'trial_number']}, lags: [1, 2, ..., 8], "
         f"params: {results.loc[0, 'params']}: 30 points (66.7%)"
+    ) in messages[0]
+    assert (
+        "pass in `levels` the 2 of 3 series that every candidate evaluates on the "
+        "same points, all except:\n  ['short']\n"
     ) in messages[0]

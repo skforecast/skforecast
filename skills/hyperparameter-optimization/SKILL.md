@@ -190,13 +190,14 @@ and win the ranking without being better.
 - The column `n_evaluated` of the results (and the `user_attr` `n_evaluated` of
   each trial) is the number of points in the metrics of each candidate, summed
   over the levels.
-- When some candidates evaluate less than 99% of the points of the most
+- When some candidates evaluate less than 95% of the points of the most
   complete one, a single `MissingValuesWarning` is raised at the end of the
-  search, saying whether the best candidate is one of them.
-- To compare on the same points, pass in `levels` only the series that every
-  candidate predicts in every fold (for short series, those with more
-  observations than the largest `window_size` before the first fold), or
-  remove the candidates with larger windows.
+  search, saying whether the best candidate is one of them and which series
+  every candidate evaluates on the same points (the list, or the series to
+  leave out, when it is short).
+- To compare on the same points, pass those series in `levels` (for short
+  series, those with more observations than the largest `window_size` before
+  the first fold), or remove the candidates with larger windows.
 - How to forecast series with less history than the selected window (cold
   start) is a decision outside the search: fewer lags for them, a baseline or a
   foundation model.

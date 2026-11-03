@@ -39,6 +39,7 @@ from ..model_selection._utils import (
     _select_metrics_search_multiseries,
     _check_metric_names_search,
     _get_n_evaluated_search_multiseries,
+    _get_last_train_date_search,
     _format_lags_warning,
     _warn_n_evaluated_search_multiseries,
     N_EVALUATED_NAME
@@ -1102,7 +1103,7 @@ def grid_search_forecaster_multiseries(
         - column n_evaluated: number of points that enter the metrics of each
         iteration (true value and prediction not missing), summed over the
         levels. A `MissingValuesWarning` is raised at the end of the search if
-        some iterations evaluate less than 99% of the points of the most
+        some iterations evaluate less than 95% of the points of the most
         complete one, their metrics are not comparable.
         - additional n columns with param = value.
     
@@ -1248,7 +1249,7 @@ def random_search_forecaster_multiseries(
         - column n_evaluated: number of points that enter the metrics of each
         iteration (true value and prediction not missing), summed over the
         levels. A `MissingValuesWarning` is raised at the end of the search if
-        some iterations evaluate less than 99% of the points of the most
+        some iterations evaluate less than 95% of the points of the most
         complete one, their metrics are not comparable.
         - additional n columns with param = value.
     
@@ -1390,7 +1391,7 @@ def _evaluate_grid_hyperparameters_multiseries(
         - column n_evaluated: number of points that enter the metrics of each
         iteration (true value and prediction not missing), summed over the
         levels. A `MissingValuesWarning` is raised at the end of the search if
-        some iterations evaluate less than 99% of the points of the most
+        some iterations evaluate less than 95% of the points of the most
         complete one, their metrics are not comparable.
         - additional n columns with param = value.
     
@@ -1508,6 +1509,8 @@ def _evaluate_grid_hyperparameters_multiseries(
         lags_label_list = []
         params_list = []
         metrics_list = []
+        n_evaluated_levels_list = []
+        window_size_list = []
         for lags_k, lags_v in lags_grid_tqdm:
 
             forecaster_search.set_lags(lags_v)
@@ -1584,10 +1587,11 @@ def _evaluate_grid_hyperparameters_multiseries(
                     warnings.warn(f"Parameters skipped: {params}. {e}", RuntimeWarning)
                     continue
 
-                n_evaluated = _get_n_evaluated_search_multiseries(
-                                  metrics = metrics,
-                                  row     = metrics_rows[0]
-                              )
+                n_evaluated, n_evaluated_levels = _get_n_evaluated_search_multiseries(
+                                                      metrics = metrics,
+                                                      row     = metrics_rows[0],
+                                                      levels  = levels
+                                                  )
                 metrics = pd.DataFrame(
                               data    = [_select_metrics_search_multiseries(
                                              metrics      = metrics,
@@ -1605,6 +1609,8 @@ def _evaluate_grid_hyperparameters_multiseries(
                 lags_label_list.append(lags_k)
                 params_list.append(params)
                 metrics_list.append(metrics)
+                n_evaluated_levels_list.append(n_evaluated_levels)
+                window_size_list.append(forecaster_search.window_size)
 
                 if output_file is not None:
                     header = [
@@ -1639,16 +1645,17 @@ def _evaluate_grid_hyperparameters_multiseries(
             return pd.DataFrame(columns=columns)
 
         direction = _get_search_direction(metric=metric[0], forecaster=forecaster_search)
-        results = pd.concat(metrics_list, axis=0)
+        results = pd.concat(metrics_list, axis=0, ignore_index=True)
         results.insert(0, 'levels', [levels] * len(results))
         results.insert(1, 'lags', lags_list)
         results.insert(2, 'lags_label', lags_label_list)
         results.insert(3, 'params', params_list)
-        results = (
-            results
-            .sort_values(by=metric_names[0], ascending=direction == 'minimize')
-            .reset_index(drop=True)
-        )
+        results = results.sort_values(
+                      by=metric_names[0], ascending=direction == 'minimize'
+                  )
+        # NOTE: Points evaluated of each level, in the order of the ranking.
+        n_evaluated_levels = np.vstack(n_evaluated_levels_list)[results.index]
+        results = results.reset_index(drop=True)
         results = pd.concat([results, results['params'].apply(pd.Series)], axis=1)
     
         if return_best:
@@ -1685,11 +1692,15 @@ def _evaluate_grid_hyperparameters_multiseries(
                 )
 
     _warn_n_evaluated_search_multiseries(
-        n_evaluated = results[N_EVALUATED_NAME].to_numpy(),
-        candidates  = [
+        n_evaluated        = results[N_EVALUATED_NAME].to_numpy(),
+        n_evaluated_levels = n_evaluated_levels,
+        candidates         = [
             f"lags: {_format_lags_warning(lags_k)}, params: {params}"
             for lags_k, params in zip(results['lags_label'], results['params'])
-        ]
+        ],
+        levels             = levels,
+        window_size        = max(window_size_list),
+        last_train_date    = _get_last_train_date_search(cv=cv, series=series)
     )
 
     return results
@@ -1822,7 +1833,7 @@ def bayesian_search_forecaster_multiseries(
         - column n_evaluated: number of points that enter the metrics of each
         iteration (true value and prediction not missing), summed over the
         levels. A `MissingValuesWarning` is raised at the end of the search if
-        some iterations evaluate less than 99% of the points of the most
+        some iterations evaluate less than 95% of the points of the most
         complete one, their metrics are not comparable.
         - additional n columns with param = value.
     study : optuna Study
@@ -1919,6 +1930,11 @@ def bayesian_search_forecaster_multiseries(
             for aggregation in aggregate_metric
         ]
 
+    # NOTE: Points evaluated of each level and window size of each trial, for
+    # the warning about the points evaluated at the end of the search.
+    n_evaluated_levels_trials = {}
+    window_size_trials = {}
+
     # Objective function using backtesting_forecaster_multiseries
     if cv_name == 'TimeSeriesFold':
         
@@ -1966,10 +1982,13 @@ def bayesian_search_forecaster_multiseries(
                              suppress_warnings     = suppress_warnings
                          )
 
-            n_evaluated = _get_n_evaluated_search_multiseries(
-                              metrics = metrics,
-                              row     = metrics_rows[0]
-                          )
+            n_evaluated, n_evaluated_levels = _get_n_evaluated_search_multiseries(
+                                                  metrics = metrics,
+                                                  row     = metrics_rows[0],
+                                                  levels  = levels
+                                              )
+            n_evaluated_levels_trials[trial.number] = n_evaluated_levels
+            window_size_trials[trial.number] = forecaster_search.window_size
             metrics = pd.DataFrame(
                           data    = [_select_metrics_search_multiseries(
                                          metrics      = metrics,
@@ -2073,10 +2092,13 @@ def bayesian_search_forecaster_multiseries(
                              return_predictions    = False
                          )
 
-            n_evaluated = _get_n_evaluated_search_multiseries(
-                              metrics = metrics,
-                              row     = metrics_rows[0]
-                          )
+            n_evaluated, n_evaluated_levels = _get_n_evaluated_search_multiseries(
+                                                  metrics = metrics,
+                                                  row     = metrics_rows[0],
+                                                  levels  = levels
+                                              )
+            n_evaluated_levels_trials[trial.number] = n_evaluated_levels
+            window_size_trials[trial.number] = forecaster_search.window_size
             metrics = pd.DataFrame(
                           data    = [_select_metrics_search_multiseries(
                                          metrics      = metrics,
@@ -2237,14 +2259,21 @@ def bayesian_search_forecaster_multiseries(
             )
 
     _warn_n_evaluated_search_multiseries(
-        n_evaluated = results[N_EVALUATED_NAME].to_numpy(),
-        candidates  = [
+        n_evaluated        = results[N_EVALUATED_NAME].to_numpy(),
+        n_evaluated_levels = [
+            n_evaluated_levels_trials[trial_number]
+            for trial_number in results['trial_number']
+        ],
+        candidates         = [
             f"trial {trial_number}, lags: {_format_lags_warning(lags)}, "
             f"params: {params}"
             for trial_number, lags, params in zip(
                 results['trial_number'], results['lags'], results['params']
             )
-        ]
+        ],
+        levels             = levels,
+        window_size        = max(window_size_trials.values(), default=None),
+        last_train_date    = _get_last_train_date_search(cv=cv, series=series)
     )
 
     return results, study
