@@ -93,6 +93,7 @@ def test_output_random_search_forecaster_multiseries_ForecasterRecursiveMultiSer
                     0.2107879393001434,
                 ]
             ),
+            "n_evaluated": [24] * 6,
             "alpha": np.array(
                 [
                     1e-05,
@@ -171,6 +172,7 @@ def test_output_random_search_forecaster_multiseries_ForecasterDirectMultiVariat
             "mean_absolute_error": np.array(
                 [0.20107097, 0.20135665, 0.20991177, 0.21121154, 0.22640335, 0.22645387]
             ),
+            "n_evaluated": [12] * 6,
             "alpha": np.array(
                 [
                     1.00000000e-05,

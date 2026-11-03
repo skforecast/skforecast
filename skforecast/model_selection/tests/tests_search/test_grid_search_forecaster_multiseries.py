@@ -79,7 +79,8 @@ def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSerie
         'mean_absolute_error__weighted_average':  np.array(
             [0.20968100463227382, 0.20969259779858337, 0.20977945312386406, 
              0.21077344827205086, 0.21078653113227208, 0.21078779824759553]
-        ),                                                               
+        ),
+        'n_evaluated': [24] * 6,
         'alpha' : np.array([0.01, 0.1, 1., 1., 0.1, 0.01])
         },
         index = pd.Index([0, 1, 2, 3, 4, 5], dtype='int64')
@@ -184,6 +185,7 @@ def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSerie
         3: 0.7988421945907456,
         4: 0.7988917793592797,
         5: 0.7988965817986066},
+        'n_evaluated': {0: 24, 1: 24, 2: 24, 3: 24, 4: 24, 5: 24},
         'alpha': {0: 0.01, 1: 0.1, 2: 1.0, 3: 1.0, 4: 0.1, 5: 0.01}
     })
 
@@ -233,7 +235,8 @@ def test_output_grid_search_forecaster_multiseries_ForecasterDirectMultiVariate_
         'params': [{'alpha': 0.01}, {'alpha': 0.1}, {'alpha': 1}, {'alpha': 1}, {'alpha': 0.1}, {'alpha': 0.01}],
         'mean_absolute_error':  np.array(
             [0.20115194, 0.20183032, 0.20566862, 0.22224269, 0.22625017, 0.22644284]
-        ),                                                               
+        ),
+        'n_evaluated': [12] * 6,
         'alpha': np.array([0.01, 0.1, 1., 1., 0.1, 0.01])
         },
         index = pd.Index([0, 1, 2, 3, 4, 5], dtype='int64')
@@ -389,6 +392,7 @@ def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSerie
             1.041533293296968,
             1.041695551804101,
         ],
+        "n_evaluated": [291] * 6,
         "alpha": [10.0, 1.0, 0.1, 10.0, 1.0, 0.1],
     },
     index = pd.RangeIndex(start=0, stop=6, step=1)
@@ -494,6 +498,7 @@ def test_output_grid_search_forecaster_multiseries_ForecasterDirectMultiVariate_
                 0.5482785168914454,
                 0.5494840109433957,
             ],
+            "n_evaluated": [88] * 6,
             "alpha": [10.0, 0.1, 1.0, 0.1, 1.0, 10.0],
         },
         index=pd.RangeIndex(start=0, stop=6, step=1),
@@ -675,6 +680,7 @@ def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSerie
             1.6386889129680593,
             1.6291942735674578,
         ],
+        "n_evaluated": [417] * 8,
         "max_depth": [3, 3, 2, 2, 3, 3, 2, 2],
         "n_estimators": [10, 10, 10, 10, 5, 5, 5, 5],
         },
@@ -740,6 +746,7 @@ def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSerie
         'mean_absolute_error__average': expected_mae,
         'mean_absolute_error__weighted_average': expected_mae,
         'mean_absolute_error__pooling': expected_mae,
+        'n_evaluated': [15] * 4,
         'alpha': [1., 0.01, 1., 0.01]
     })
 
@@ -798,6 +805,7 @@ def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSerie
         'mean_absolute_error__average': expected_mae,
         'mean_absolute_error__weighted_average': expected_mae,
         'mean_absolute_error__pooling': expected_mae,
+        'n_evaluated': [20] * 4,
         'alpha': [1., 1., 0.01, 0.01]
     })
 

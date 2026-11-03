@@ -2,6 +2,7 @@
 # ==============================================================================
 import re
 import os
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
@@ -12,12 +13,13 @@ from sklearn.metrics import mean_squared_error
 from sklearn.metrics import mean_absolute_percentage_error
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import ParameterGrid
-from skforecast.exceptions import OneStepAheadValidationWarning
+from skforecast.exceptions import MissingValuesWarning, OneStepAheadValidationWarning
 from skforecast.metrics import mean_absolute_scaled_error
 from skforecast.metrics import root_mean_squared_scaled_error
 from skforecast.preprocessing import RollingFeatures
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirectMultiVariate
+from skforecast.model_selection import backtesting_forecaster_multiseries
 from skforecast.model_selection._search import _evaluate_grid_hyperparameters_multiseries
 from skforecast.model_selection._split import TimeSeriesFold, OneStepAheadFold
 
@@ -41,6 +43,17 @@ pytestmark = [
     pytest.mark.filterwarnings("ignore::skforecast.exceptions.MissingExogWarning"),
     pytest.mark.filterwarnings("ignore::skforecast.exceptions.MissingValuesWarning"),
 ]
+
+# NOTE: `short` has 20 values, 5 of them in the training set of
+# `initial_train_size=45`, so the candidates with more than 4 lags do not
+# predict it and evaluate fewer points than the others.
+index_short = pd.date_range('2020-01-01', periods=60, freq='D')
+series_short = {
+    'l1': pd.Series(10 + np.sin(np.arange(60)), index=index_short),
+    'l2': pd.Series(20 + 2 * np.cos(np.arange(60) / 2), index=index_short),
+    'short': pd.Series(5 + np.arange(20) % 3, index=index_short[-20:], dtype=float),
+}
+N_EVALUATED_WARNING_MSG = "The candidates are not evaluated on the same points"
 
 
 def test_ValueError_evaluate_grid_hyperparameters_multiseries_when_return_best_and_len_series_exog_different():
@@ -288,6 +301,7 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMul
                     0.21078779824759553,
                 ]
             ),
+            "n_evaluated": [24] * 6,
             "alpha": np.array([0.01, 0.1, 1.0, 1.0, 0.1, 0.01]),
         },
         index=pd.Index([0, 1, 2, 3, 4, 5], dtype="int64"),
@@ -368,6 +382,7 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMul
                     0.21677673611895729,
                     0.22004258621311923,
                     0.22107598684517502],
+         'n_evaluated': [24] * 6,
          'alpha': [1.0, 0.1, 1.0, 0.1, 0.01, 0.01]}
     )
 
@@ -442,6 +457,7 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMul
                                                   673.8431369197542,
                                                   761.8926543280367,
                                                   775.090407239743],
+        'n_evaluated': [654] * 4,
         'n_estimators': [15, 15, 10, 10],
         'max_depth': [5, 5, 3, 3]
     })
@@ -507,6 +523,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterRecursiveMultiSeries_lag
                     0.21078779824759553,
                 ]
             ),
+            "n_evaluated": [24] * 6,
             "alpha": np.array([0.01, 0.1, 1.0, 1.0, 0.1, 0.01]),
         },
         index=pd.Index([0, 1, 2, 3, 4, 5], dtype="int64"),
@@ -561,6 +578,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterRecursiveMultiSeries_lag
             "mean_absolute_error__weighted_average": np.array(
                 [0.21077344827205086, 0.21078653113227208, 0.21078779824759553]
             ),
+            "n_evaluated": [24] * 3,
             "alpha": np.array([1.0, 0.1, 0.01]),
         },
         index=pd.Index([0, 1, 2], dtype="int64"),
@@ -619,6 +637,7 @@ def test_output_evaluate_grid_hyperparameters_multiseries_when_forecaster_lags_i
             "lags_label": [None, None, None],
             "params": [{"alpha": 1}, {"alpha": 0.1}, {"alpha": 0.01}],
             "mean_absolute_error__weighted_average": expected_metric,
+            "n_evaluated": [24] * 3,
             "alpha": np.array([1.0, 0.1, 0.01]),
         },
         index=pd.RangeIndex(start=0, stop=3, step=1),
@@ -698,6 +717,7 @@ def test_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMultiSerie
                     0.2075484707375347,
                 ]
             ),
+            "n_evaluated": [12] * 6,
             "alpha": np.array([0.01, 0.1, 1.0, 0.01, 0.1, 1.0]),
         },
         index=pd.Index([0, 1, 2, 3, 4, 5], dtype="int64"),
@@ -781,6 +801,7 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMul
                     0.21077344827205086,
                 ]
             ),
+            "n_evaluated": [24] * 6,
             "alpha": np.array([0.01, 0.1, 1.0, 0.01, 0.1, 1.0]),
         },
         index=pd.Index([0, 1, 2, 3, 4, 5], dtype="int64"),
@@ -1046,6 +1067,7 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMul
             4: 0.7988917793592797,
             5: 0.7988965817986066
         },
+        'n_evaluated': {0: 24, 1: 24, 2: 24, 3: 24, 4: 24, 5: 24},
         "alpha": {0: 0.01, 1: 0.1, 2: 1.0, 3: 1.0, 4: 0.1, 5: 0.01},
     })
 
@@ -1098,7 +1120,8 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterDirectMultiV
         'mean_absolute_error': np.array(
             [0.20115194, 0.20183032, 0.20566862,
              0.22224269, 0.22625017, 0.22644284]
-        ),                                                               
+        ),
+        'n_evaluated': [12] * 6,
         'alpha': np.array([0.01, 0.1, 1., 1., 0.1, 0.01])
         },
         index = pd.Index([0, 1, 2, 3, 4, 5], dtype='int64')
@@ -1151,7 +1174,8 @@ def test_output_evaluate_grid_hyperparameters_ForecasterDirectMultiVariate_lags_
         'mean_absolute_error': np.array(
             [0.20115194, 0.20183032, 0.20566862,
              0.22224269, 0.22625017, 0.22644284]
-            ),                                                               
+            ),
+        'n_evaluated': [12] * 6,
         'alpha': np.array([0.01, 0.1, 1., 1., 0.1, 0.01])
         },
         index = pd.Index([0, 1, 2, 3, 4, 5], dtype='int64')
@@ -1201,7 +1225,8 @@ def test_output_evaluate_grid_hyperparameters_ForecasterDirectMultiVariate_lags_
         'lags': [[1, 2], [1, 2], [1, 2]],
         'lags_label': [[1, 2], [1, 2], [1, 2]],
         'params': [{'alpha': 0.01}, {'alpha': 0.1}, {'alpha': 1.}],
-        'mean_absolute_error': np.array([0.20115194, 0.20183032, 0.20566862]),                                                               
+        'mean_absolute_error': np.array([0.20115194, 0.20183032, 0.20566862]),
+        'n_evaluated': [12] * 3,
         'alpha': np.array([0.01, 0.1, 1.])
     },
         index = pd.Index([0, 1, 2], dtype='int64')
@@ -1272,7 +1297,8 @@ def test_output_evaluate_grid_hyperparameters_ForecasterDirectMultiVariate_lags_
             [0.2053202, 0.20555199, 0.20677802, 
              0.21443621, 0.21801147, 0.21863968, 
              0.22401526, 0.22830217, 0.22878132]
-            ),                                                               
+            ),
+        'n_evaluated': [12] * 9,
         'alpha': np.array([0.01, 0.1, 1., 1., 0.1, 0.01, 1., 0.1, 0.01])
         },
         index = pd.Index([0, 1, 2, 3, 4, 5, 6, 7, 8], dtype='int64')
@@ -1360,6 +1386,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterDirectMultiVariate_lags_
              0.20677802, 0.21005165, 0.21007475, 0.21071924, 0.21353688,
              0.21443621, 0.21622784, 0.2166998, 0.21801147, 0.21863968,
              0.22401526, 0.22830217, 0.22878132]),
+        'n_evaluated': [12] * 18,
         'alpha': np.array([0.01, 0.1, 1., 0.01, 0.1, 1., 0.01, 0.1, 1., 1., 1.,
        0.1, 0.01, 0.1, 0.01, 1., 0.1, 0.01])
         },
@@ -1414,6 +1441,7 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterDirectMultiV
                                         0.08032378, 0.08400047, 0.08448937]),
         'mean_absolute_error': np.array(
             [0.20115194, 0.20183032, 0.20566862, 0.22224269, 0.22625017, 0.22644284]),
+        'n_evaluated': [12] * 6,
         'alpha': np.array([0.01, 0.1, 1., 1., 0.1, 0.01])
         },
         index = pd.Index([0, 1, 2, 3, 4, 5], dtype='int64')
@@ -1854,6 +1882,7 @@ def test_evaluate_grid_hyperparameters_multiseries_warn_when_non_valid_params():
             "mean_squared_error__weighted_average": {0: 0.06321861327736888},
             "mean_squared_error__average": {0: 0.06321861327736888},
             "mean_squared_error__pooling": {0: 0.06321861327736888},
+            "n_evaluated": {0: 40},
             "alpha": {0: 0.1},
             "l1_ratio": {0: 0.5},
         }
@@ -1898,6 +1927,7 @@ def test_evaluate_grid_hyperparameters_multiseries_warns_when_all_params_raise_e
         'mean_squared_error__weighted_average',
         'mean_squared_error__average',
         'mean_squared_error__pooling',
+        'n_evaluated',
     ]
     assert list(results.columns) == expected_columns
 
@@ -1937,6 +1967,7 @@ def test_evaluate_grid_hyperparameters_multiseries_warns_when_all_params_raise_e
         'mean_squared_error__weighted_average',
         'mean_squared_error__average',
         'mean_squared_error__pooling',
+        'n_evaluated',
     ]
     assert list(results.columns) == expected_columns
 
@@ -2005,3 +2036,171 @@ def test_evaluate_grid_hyperparameters_multiseries_aggregated_metrics_match_thei
         by_params(results, "mean_absolute_error__average"),
         by_params(weighted_average, "mean_absolute_error__weighted_average"),
     )
+
+
+@pytest.mark.parametrize(
+    "cv",
+    [
+        TimeSeriesFold(initial_train_size=45, steps=5, refit=False),
+        OneStepAheadFold(initial_train_size=45),
+    ],
+    ids=lambda cv: f"cv: {type(cv).__name__}",
+)
+@pytest.mark.parametrize(
+    "levels, expected_n_evaluated",
+    [
+        (None, [30, 45]),
+        (['l1', 'l2'], [30]),
+        ('l1', [15]),
+    ],
+    ids=lambda x: f"{x}",
+)
+def test_evaluate_grid_hyperparameters_multiseries_n_evaluated_equal_to_backtesting(
+    cv, levels, expected_n_evaluated
+):
+    """
+    Test that the column `n_evaluated` of each candidate is the `n_evaluated`
+    of the backtesting of the same configuration: the row of the aggregation
+    (sum over the levels), or the level if only one is evaluated. With
+    `OneStepAheadFold`, the backtesting with `steps=1` and `refit=False`
+    evaluates the same points, also when `levels` is a subset of the series,
+    and so do the metrics (`pooling` included).
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
+    results = _evaluate_grid_hyperparameters_multiseries(
+                  forecaster         = forecaster,
+                  series             = series_short,
+                  cv                 = cv,
+                  param_grid         = [{'alpha': 0.1}, {'alpha': 1}],
+                  metric             = 'mean_absolute_error',
+                  aggregate_metric   = ['pooling', 'average'],
+                  levels             = levels,
+                  lags_grid          = [2, 8],
+                  return_best        = False,
+                  verbose            = False,
+                  show_progress      = False,
+                  suppress_warnings  = True
+              )
+
+    if isinstance(cv, OneStepAheadFold):
+        cv_backtesting = TimeSeriesFold(initial_train_size=45, steps=1, refit=False)
+    else:
+        cv_backtesting = cv
+    metric_column = (
+        'mean_absolute_error' if levels == 'l1' else 'mean_absolute_error__pooling'
+    )
+    row = 'l1' if levels == 'l1' else 'pooling'
+    for lags, params, metric_value, n_evaluated in zip(
+        results['lags'], results['params'], results[metric_column], results['n_evaluated']
+    ):
+        metrics, _ = backtesting_forecaster_multiseries(
+            forecaster        = ForecasterRecursiveMultiSeries(
+                                    estimator=Ridge(**params), lags=lags
+                                ),
+            series            = series_short,
+            cv                = cv_backtesting,
+            metric            = 'mean_absolute_error',
+            levels            = levels,
+            show_progress     = False,
+            suppress_warnings = True
+        )
+        metrics = metrics.set_index('levels')
+        assert n_evaluated == metrics.loc[row, 'n_evaluated']
+        assert metric_value == pytest.approx(metrics.loc[row, 'mean_absolute_error'])
+
+    assert results['n_evaluated'].dtype == 'int64'
+    assert sorted(results['n_evaluated'].unique()) == expected_n_evaluated
+
+
+@pytest.mark.parametrize(
+    "cv",
+    [
+        TimeSeriesFold(initial_train_size=45, steps=5, refit=False),
+        OneStepAheadFold(initial_train_size=45),
+    ],
+    ids=lambda cv: f"cv: {type(cv).__name__}",
+)
+@pytest.mark.parametrize(
+    "lags_grid",
+    [[2, 8], [8, 2]],
+    ids=lambda lags_grid: f"lags_grid: {lags_grid}",
+)
+def test_evaluate_grid_hyperparameters_multiseries_MissingValuesWarning_once_when_candidates_evaluate_different_points(
+    cv, lags_grid
+):
+    """
+    Test that a single MissingValuesWarning is raised at the end of the search
+    when some candidates evaluate less than 99% of the points of the most
+    complete one, whatever the order of the grid (the skforecast warnings are
+    silenced after the first candidate). It lists the candidates affected and
+    says that the best candidate is one of them. The warning filters are the
+    same after the search.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        filters_before = list(warnings.filters)
+        results = _evaluate_grid_hyperparameters_multiseries(
+                      forecaster         = forecaster,
+                      series             = series_short,
+                      cv                 = cv,
+                      param_grid         = [{'alpha': 0.1}, {'alpha': 1}],
+                      metric             = 'mean_absolute_error',
+                      lags_grid          = lags_grid,
+                      return_best        = False,
+                      verbose            = False,
+                      show_progress      = False
+                  )
+        filters_after = list(warnings.filters)
+
+    assert filters_after == filters_before
+    messages = [
+        str(w.message) for w in record
+        if w.category is MissingValuesWarning and N_EVALUATED_WARNING_MSG in str(w.message)
+    ]
+    assert len(messages) == 1
+    assert (
+        "The most complete candidate evaluates 45 points; 2 of 4 candidates "
+        "evaluate less than 99% of them:\n"
+        "  - lags: [1, 2, ..., 8], params: {'alpha': 0.1}: 30 points (66.7%)\n"
+        "  - lags: [1, 2, ..., 8], params: {'alpha': 1}: 30 points (66.7%)\n"
+        "The best candidate of the ranking (first row of the results) is one "
+        "of them, so the ranking may favor it."
+    ) in messages[0]
+    assert "See the column `n_evaluated` of the results." in messages[0]
+    assert results['n_evaluated'].to_list() == [30, 30, 45, 45]
+
+
+@pytest.mark.parametrize(
+    "levels, suppress_warnings",
+    [(['l1', 'l2'], False), (None, True)],
+    ids=lambda x: f"{x}",
+)
+def test_evaluate_grid_hyperparameters_multiseries_no_MissingValuesWarning_n_evaluated(
+    levels, suppress_warnings
+):
+    """
+    Test that the warning about the points evaluated is not raised when every
+    candidate evaluates the same points (`levels` without the short series),
+    or when `suppress_warnings=True`.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        _evaluate_grid_hyperparameters_multiseries(
+            forecaster         = forecaster,
+            series             = series_short,
+            cv                 = TimeSeriesFold(initial_train_size=45, steps=5, refit=False),
+            param_grid         = [{'alpha': 0.1}, {'alpha': 1}],
+            metric             = 'mean_absolute_error',
+            levels             = levels,
+            lags_grid          = [2, 8],
+            return_best        = True,
+            verbose            = False,
+            show_progress      = False,
+            suppress_warnings  = suppress_warnings
+        )
+
+    assert not any(N_EVALUATED_WARNING_MSG in str(w.message) for w in record)

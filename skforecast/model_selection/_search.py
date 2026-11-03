@@ -37,7 +37,11 @@ from ..model_selection._utils import (
     _get_search_direction,
     _check_study_direction,
     _select_metrics_search_multiseries,
-    _check_metric_names_search
+    _check_metric_names_search,
+    _get_n_evaluated_search_multiseries,
+    _format_lags_warning,
+    _warn_n_evaluated_search_multiseries,
+    N_EVALUATED_NAME
 )
 from ..utils import (
     initialize_lags, 
@@ -1095,6 +1099,11 @@ def grid_search_forecaster_multiseries(
         - column params: parameters configuration for each iteration.
         - column metric: metric value estimated for each iteration. The resulting 
         metric will be the average of the optimization of all levels.
+        - column n_evaluated: number of points that enter the metrics of each
+        iteration (true value and prediction not missing), summed over the
+        levels. A `MissingValuesWarning` is raised at the end of the search if
+        some iterations evaluate less than 99% of the points of the most
+        complete one, their metrics are not comparable.
         - additional n columns with param = value.
     
     """
@@ -1236,6 +1245,11 @@ def random_search_forecaster_multiseries(
         - column params: parameters configuration for each iteration.
         - column metric: metric value estimated for each iteration. The resulting 
         metric will be the average of the optimization of all levels.
+        - column n_evaluated: number of points that enter the metrics of each
+        iteration (true value and prediction not missing), summed over the
+        levels. A `MissingValuesWarning` is raised at the end of the search if
+        some iterations evaluate less than 99% of the points of the most
+        complete one, their metrics are not comparable.
         - additional n columns with param = value.
     
     """
@@ -1373,6 +1387,11 @@ def _evaluate_grid_hyperparameters_multiseries(
         - n columns with metrics: metric/s value/s estimated for each iteration.
         There is one column for each metric and aggregation method. The name of
         the column follows the pattern `metric__aggregation`.
+        - column n_evaluated: number of points that enter the metrics of each
+        iteration (true value and prediction not missing), summed over the
+        levels. A `MissingValuesWarning` is raised at the end of the search if
+        some iterations evaluate less than 99% of the points of the most
+        complete one, their metrics are not comparable.
         - additional n columns with param = value.
     
     """
@@ -1479,176 +1498,199 @@ def _evaluate_grid_hyperparameters_multiseries(
     if output_file is not None and os.path.isfile(output_file):
         os.remove(output_file)
 
-    lags_list = []
-    lags_label_list = []
-    params_list = []
-    metrics_list = []
-    for lags_k, lags_v in lags_grid_tqdm:
+    # NOTE: After the first candidate, the skforecast warnings are silenced
+    # for the rest of the search, the refit included. The filters are
+    # restored at the end of the block, so the warning about the points
+    # evaluated is not silenced (it is if `suppress_warnings=True`).
+    with warnings.catch_warnings():
 
-        forecaster_search.set_lags(lags_v)
-        lags_v = (
-            forecaster_search.lags.copy()
-            if forecaster_search.lags is not None
-            else None
-        )
-        if lags_label == 'values':
-            lags_k = lags_v
+        lags_list = []
+        lags_label_list = []
+        params_list = []
+        metrics_list = []
+        for lags_k, lags_v in lags_grid_tqdm:
 
-        if cv_name == 'OneStepAheadFold':
-
-            (
-                X_train,
-                y_train,
-                X_test,
-                y_test,
-                X_train_encoding,
-                X_test_encoding,
-                sample_weight,
-                fit_kwargs
-            ) = forecaster_search._train_test_split_one_step_ahead(
-                series=series, exog=exog, initial_train_size=initial_train_size
+            forecaster_search.set_lags(lags_v)
+            lags_v = (
+                forecaster_search.lags.copy()
+                if forecaster_search.lags is not None
+                else None
             )
+            if lags_label == 'values':
+                lags_k = lags_v
 
-        if show_progress:
-            param_grid_tqdm = tqdm(param_grid, desc='params grid', position=1, leave=False)
-        else:
-            param_grid_tqdm = param_grid
+            if cv_name == 'OneStepAheadFold':
+
+                (
+                    X_train,
+                    y_train,
+                    X_test,
+                    y_test,
+                    X_train_encoding,
+                    X_test_encoding,
+                    sample_weight,
+                    fit_kwargs
+                ) = forecaster_search._train_test_split_one_step_ahead(
+                    series=series, exog=exog, initial_train_size=initial_train_size
+                )
+
+            if show_progress:
+                param_grid_tqdm = tqdm(param_grid, desc='params grid', position=1, leave=False)
+            else:
+                param_grid_tqdm = param_grid
         
-        for params in param_grid_tqdm:
+            for params in param_grid_tqdm:
             
-            try:
-                forecaster_search.set_params(params)
+                try:
+                    forecaster_search.set_params(params)
             
-                if cv_name == 'TimeSeriesFold':
+                    if cv_name == 'TimeSeriesFold':
 
-                    metrics, _ = backtesting_forecaster_multiseries(
-                        forecaster            = forecaster_search,
-                        series                = series,
-                        cv                    = cv,
-                        exog                  = exog,
-                        levels                = levels,
-                        metric                = metric,
-                        add_aggregated_metric = add_aggregated_metric,
-                        interval              = None,
-                        verbose               = verbose,
-                        n_jobs                = n_jobs,
-                        show_progress         = False,
-                        suppress_warnings     = suppress_warnings
-                    )
+                        metrics, _ = backtesting_forecaster_multiseries(
+                            forecaster            = forecaster_search,
+                            series                = series,
+                            cv                    = cv,
+                            exog                  = exog,
+                            levels                = levels,
+                            metric                = metric,
+                            add_aggregated_metric = add_aggregated_metric,
+                            interval              = None,
+                            verbose               = verbose,
+                            n_jobs                = n_jobs,
+                            show_progress         = False,
+                            suppress_warnings     = suppress_warnings
+                        )
 
-                else:
+                    else:
 
-                    metrics, _ = _predict_and_calculate_metrics_one_step_ahead_multiseries(
-                        forecaster            = forecaster_search,
-                        series                = series,
-                        X_train               = X_train,
-                        y_train               = y_train,
-                        X_test                = X_test,
-                        y_test                = y_test,
-                        X_train_encoding      = X_train_encoding,
-                        X_test_encoding       = X_test_encoding,
-                        levels                = levels,
-                        metrics               = metric,
-                        add_aggregated_metric = add_aggregated_metric,
-                        sample_weight         = sample_weight,
-                        fit_kwargs            = fit_kwargs,
-                        return_predictions    = False
-                    )
+                        metrics, _ = _predict_and_calculate_metrics_one_step_ahead_multiseries(
+                            forecaster            = forecaster_search,
+                            series                = series,
+                            X_train               = X_train,
+                            y_train               = y_train,
+                            X_test                = X_test,
+                            y_test                = y_test,
+                            X_train_encoding      = X_train_encoding,
+                            X_test_encoding       = X_test_encoding,
+                            levels                = levels,
+                            metrics               = metric,
+                            add_aggregated_metric = add_aggregated_metric,
+                            sample_weight         = sample_weight,
+                            fit_kwargs            = fit_kwargs,
+                            return_predictions    = False
+                        )
             
-            except Exception as e:
-                warnings.warn(f"Parameters skipped: {params}. {e}", RuntimeWarning)
-                continue
+                except Exception as e:
+                    warnings.warn(f"Parameters skipped: {params}. {e}", RuntimeWarning)
+                    continue
 
-            metrics = pd.DataFrame(
-                          data    = [_select_metrics_search_multiseries(
-                                         metrics      = metrics,
-                                         metric_names = metric_columns,
-                                         rows         = metrics_rows
-                                     )],
-                          columns = metric_names
-                      )
+                n_evaluated = _get_n_evaluated_search_multiseries(
+                                  metrics = metrics,
+                                  row     = metrics_rows[0]
+                              )
+                metrics = pd.DataFrame(
+                              data    = [_select_metrics_search_multiseries(
+                                             metrics      = metrics,
+                                             metric_names = metric_columns,
+                                             rows         = metrics_rows
+                                         )],
+                              columns = metric_names
+                          )
+                metrics[N_EVALUATED_NAME] = n_evaluated
 
-            for warn_category in warn_skforecast_categories:
-                warnings.filterwarnings('ignore', category=warn_category)
+                for warn_category in warn_skforecast_categories:
+                    warnings.filterwarnings('ignore', category=warn_category)
 
-            lags_list.append(lags_v)
-            lags_label_list.append(lags_k)
-            params_list.append(params)
-            metrics_list.append(metrics)
+                lags_list.append(lags_v)
+                lags_label_list.append(lags_k)
+                params_list.append(params)
+                metrics_list.append(metrics)
 
-            if output_file is not None:
-                header = [
-                    'levels', 'lags', 'lags_label', 'params', *metric_names, *params.keys()
-                ]
-                row = [
-                    levels,
-                    lags_v,
-                    lags_k,
-                    params,
-                    *metrics.loc[0, :].to_list(),
-                    *params.values()
-                ]
-                if not os.path.isfile(output_file):
-                    with open(output_file, 'w', newline='') as f:
-                        f.write('\t'.join(header) + '\n')
-                        f.write('\t'.join([str(r) for r in row]) + '\n')
-                else:
-                    with open(output_file, 'a', newline='') as f:
-                        f.write('\t'.join([str(r) for r in row]) + '\n')
+                if output_file is not None:
+                    header = [
+                        'levels', 'lags', 'lags_label', 'params', *metric_names,
+                        N_EVALUATED_NAME, *params.keys()
+                    ]
+                    row = [
+                        levels,
+                        lags_v,
+                        lags_k,
+                        params,
+                        *metrics.loc[0, metric_names].to_list(),
+                        n_evaluated,
+                        *params.values()
+                    ]
+                    if not os.path.isfile(output_file):
+                        with open(output_file, 'w', newline='') as f:
+                            f.write('\t'.join(header) + '\n')
+                            f.write('\t'.join([str(r) for r in row]) + '\n')
+                    else:
+                        with open(output_file, 'a', newline='') as f:
+                            f.write('\t'.join([str(r) for r in row]) + '\n')
 
-    if not metrics_list:
-        warnings.warn(
-            "No valid parameter combinations found. All combinations raised exceptions.",
-            RuntimeWarning
+        if not metrics_list:
+            warnings.warn(
+                "No valid parameter combinations found. All combinations raised exceptions.",
+                RuntimeWarning
+            )
+            columns = [
+                'levels', 'lags', 'lags_label', 'params', *metric_names, N_EVALUATED_NAME
+            ]
+            return pd.DataFrame(columns=columns)
+
+        direction = _get_search_direction(metric=metric[0], forecaster=forecaster_search)
+        results = pd.concat(metrics_list, axis=0)
+        results.insert(0, 'levels', [levels] * len(results))
+        results.insert(1, 'lags', lags_list)
+        results.insert(2, 'lags_label', lags_label_list)
+        results.insert(3, 'params', params_list)
+        results = (
+            results
+            .sort_values(by=metric_names[0], ascending=direction == 'minimize')
+            .reset_index(drop=True)
         )
-        columns = ['levels', 'lags', 'lags_label', 'params', *metric_names]
-        return pd.DataFrame(columns=columns)
-
-    direction = _get_search_direction(metric=metric[0], forecaster=forecaster_search)
-    results = pd.concat(metrics_list, axis=0)
-    results.insert(0, 'levels', [levels] * len(results))
-    results.insert(1, 'lags', lags_list)
-    results.insert(2, 'lags_label', lags_label_list)
-    results.insert(3, 'params', params_list)
-    results = (
-        results
-        .sort_values(by=metric_names[0], ascending=direction == 'minimize')
-        .reset_index(drop=True)
-    )
-    results = pd.concat([results, results['params'].apply(pd.Series)], axis=1)
+        results = pd.concat([results, results['params'].apply(pd.Series)], axis=1)
     
-    if return_best:
+        if return_best:
         
-        best_lags = results.loc[0, 'lags']
-        best_params = results.loc[0, 'params']
-        best_metric = results.loc[0, metric_names[0]]
+            best_lags = results.loc[0, 'lags']
+            best_params = results.loc[0, 'params']
+            best_metric = results.loc[0, metric_names[0]]
         
-        # NOTE: Here we use the actual forecaster passed by the user
-        forecaster.set_lags(best_lags)
-        forecaster.set_params(best_params)
+            # NOTE: Here we use the actual forecaster passed by the user
+            forecaster.set_lags(best_lags)
+            forecaster.set_params(best_params)
 
-        forecaster.fit(
-            series                    = series, 
-            exog                      = exog, 
-            store_in_sample_residuals = True, 
-            suppress_warnings         = suppress_warnings
-        )
-
-        if len(levels) > 20:
-            levels_print = levels[:10] + ["..."] + levels[-10:]
-        else:
-            levels_print = levels
-        
-        if verbose:
-            print(
-                f"`Forecaster` refitted using the best-found lags and parameters, "
-                f"and the whole data set: \n"
-                f"  Lags: {best_lags} \n"
-                f"  Parameters: {best_params}\n"
-                f"  {'Backtesting' if cv_name == 'TimeSeriesFold' else 'One-step-ahead'} "
-                f"metric: {best_metric}\n"
-                f"  Levels: {levels_print}"
+            forecaster.fit(
+                series                    = series, 
+                exog                      = exog, 
+                store_in_sample_residuals = True, 
+                suppress_warnings         = suppress_warnings
             )
+
+            if len(levels) > 20:
+                levels_print = levels[:10] + ["..."] + levels[-10:]
+            else:
+                levels_print = levels
+        
+            if verbose:
+                print(
+                    f"`Forecaster` refitted using the best-found lags and parameters, "
+                    f"and the whole data set: \n"
+                    f"  Lags: {best_lags} \n"
+                    f"  Parameters: {best_params}\n"
+                    f"  {'Backtesting' if cv_name == 'TimeSeriesFold' else 'One-step-ahead'} "
+                    f"metric: {best_metric}\n"
+                    f"  Levels: {levels_print}"
+                )
+
+    _warn_n_evaluated_search_multiseries(
+        n_evaluated = results[N_EVALUATED_NAME].to_numpy(),
+        candidates  = [
+            f"lags: {_format_lags_warning(lags_k)}, params: {params}"
+            for lags_k, params in zip(results['lags_label'], results['params'])
+        ]
+    )
 
     return results
 
@@ -1777,6 +1819,11 @@ def bayesian_search_forecaster_multiseries(
         - column params: parameters configuration for each iteration.
         - column metric: metric value estimated for each iteration. The resulting 
         metric will be the average of the optimization of all levels.
+        - column n_evaluated: number of points that enter the metrics of each
+        iteration (true value and prediction not missing), summed over the
+        levels. A `MissingValuesWarning` is raised at the end of the search if
+        some iterations evaluate less than 99% of the points of the most
+        complete one, their metrics are not comparable.
         - additional n columns with param = value.
     study : optuna Study
         The optuna study object containing all optimization trials. Access the
@@ -1919,6 +1966,10 @@ def bayesian_search_forecaster_multiseries(
                              suppress_warnings     = suppress_warnings
                          )
 
+            n_evaluated = _get_n_evaluated_search_multiseries(
+                              metrics = metrics,
+                              row     = metrics_rows[0]
+                          )
             metrics = pd.DataFrame(
                           data    = [_select_metrics_search_multiseries(
                                          metrics      = metrics,
@@ -1929,8 +1980,10 @@ def bayesian_search_forecaster_multiseries(
                       )
             
             # Store all metrics in the trial using optuna's user_attrs mechanism.
+            # The number of points evaluated is stored, but not optimized.
             for m_name in metric_names:
                 trial.set_user_attr(m_name, float(metrics.loc[0, m_name]))
+            trial.set_user_attr(N_EVALUATED_NAME, n_evaluated)
 
             return metrics.loc[0, metric_names[0]]
     
@@ -2020,6 +2073,10 @@ def bayesian_search_forecaster_multiseries(
                              return_predictions    = False
                          )
 
+            n_evaluated = _get_n_evaluated_search_multiseries(
+                              metrics = metrics,
+                              row     = metrics_rows[0]
+                          )
             metrics = pd.DataFrame(
                           data    = [_select_metrics_search_multiseries(
                                          metrics      = metrics,
@@ -2030,8 +2087,10 @@ def bayesian_search_forecaster_multiseries(
                       )
             
             # Store all metrics in the trial using optuna's user_attrs mechanism.
+            # The number of points evaluated is stored, but not optimized.
             for m_name in metric_names:
                 trial.set_user_attr(m_name, float(metrics.loc[0, m_name]))
+            trial.set_user_attr(N_EVALUATED_NAME, n_evaluated)
 
             return metrics.loc[0, metric_names[0]]
     
@@ -2100,7 +2159,10 @@ def bayesian_search_forecaster_multiseries(
         lags_list.append(lags)
         trial_number_list.append(trial.number)
         metrics_data.append(
-            {m_name: trial.user_attrs[m_name] for m_name in metric_names}
+            {
+                **{m_name: trial.user_attrs[m_name] for m_name in metric_names},
+                N_EVALUATED_NAME: trial.user_attrs[N_EVALUATED_NAME]
+            }
         )
     
     if forecaster_name not in ['ForecasterDirectMultiVariate']:
@@ -2173,6 +2235,17 @@ def bayesian_search_forecaster_multiseries(
                 f"metric: {best_metric}\n"
                 f"  Levels: {levels_print}"
             )
+
+    _warn_n_evaluated_search_multiseries(
+        n_evaluated = results[N_EVALUATED_NAME].to_numpy(),
+        candidates  = [
+            f"trial {trial_number}, lags: {_format_lags_warning(lags)}, "
+            f"params: {params}"
+            for trial_number, lags, params in zip(
+                results['trial_number'], results['lags'], results['params']
+            )
+        ]
+    )
 
     return results, study
 

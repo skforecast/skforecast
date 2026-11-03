@@ -48,6 +48,11 @@ INTERVAL_METRIC_NAMES = ['coverage', 'interval_width']
 # removing the predictions of overlapping folds), see `_count_evaluated`.
 N_EVALUATED_NAME = 'n_evaluated'
 
+# NOTE: The multi-series searches warn when a candidate evaluates fewer points
+# than this fraction of the points of the most complete candidate, see
+# `_warn_n_evaluated_search_multiseries`.
+N_EVALUATED_WARNING_THRESHOLD = 0.99
+
 
 def initialize_lags_grid(
     forecaster: object, 
@@ -2487,3 +2492,140 @@ def _check_metric_names_search(metric_names: list[str]) -> None:
             f"with the number of points evaluated. Rename the metric "
             f"'{N_EVALUATED_NAME}' passed in `metric`."
         )
+
+
+def _get_n_evaluated_search_multiseries(
+    metrics: pd.DataFrame,
+    row: str
+) -> int:
+    """
+    Number of points evaluated of a candidate of a multi-series search: the
+    column `n_evaluated` (`N_EVALUATED_NAME`) of the metrics table, in the row
+    used for the metrics of the results (an aggregation, whose value is the
+    sum over the levels, or the level if the metrics are not aggregated).
+
+    Parameters
+    ----------
+    metrics : pandas DataFrame
+        Metrics table of `backtesting_forecaster_multiseries` or
+        `_predict_and_calculate_metrics_one_step_ahead_multiseries`, with the
+        columns `levels` and `n_evaluated`.
+    row : str
+        Value of the column `levels` to select.
+
+    Returns
+    -------
+    n_evaluated : int
+        Number of points evaluated.
+
+    """
+
+    n_evaluated = int(
+        metrics.loc[metrics['levels'] == row, N_EVALUATED_NAME].iloc[0]
+    )
+
+    return n_evaluated
+
+
+def _format_lags_warning(lags: Any) -> str:
+    """
+    Short representation of the lags of a candidate for the warnings of the
+    searches: arrays with more than 6 lags show the first two and the last.
+
+    Parameters
+    ----------
+    lags : Any
+        Lags of the candidate: numpy ndarray, dict of them
+        (`ForecasterDirectMultiVariate`), a label or `None`.
+
+    Returns
+    -------
+    lags_repr : str
+        Representation of the lags.
+
+    """
+
+    if isinstance(lags, dict):
+        return (
+            "{" + ", ".join(f"{k!r}: {_format_lags_warning(v)}" for k, v in lags.items())
+            + "}"
+        )
+    if isinstance(lags, (np.ndarray, list, range)):
+        lags = [int(lag) for lag in lags]
+        if len(lags) > 6:
+            return f"[{lags[0]}, {lags[1]}, ..., {lags[-1]}]"
+        return str(lags)
+
+    return str(lags)
+
+
+def _warn_n_evaluated_search_multiseries(
+    n_evaluated: list[int] | np.ndarray,
+    candidates: list[str],
+    max_candidates: int = 5
+) -> None:
+    """
+    Warn, once at the end of a multi-series search, when some candidates
+    evaluate fewer points than the most complete one, so their metrics are
+    not comparable. A candidate is reported when it evaluates less than
+    `N_EVALUATED_WARNING_THRESHOLD` (99%) of the points of the most complete
+    candidate. The candidates must be in the order of the ranking, the first
+    one is the best.
+
+    Parameters
+    ----------
+    n_evaluated : list, numpy ndarray
+        Number of points evaluated of each candidate, in the order of the
+        ranking.
+    candidates : list
+        Description of each candidate, in the same order.
+    max_candidates : int, default 5
+        Maximum number of candidates listed in the warning.
+
+    Returns
+    -------
+    None
+
+    """
+
+    n_evaluated = np.asarray(n_evaluated)
+    if n_evaluated.size == 0:
+        return
+
+    n_evaluated_max = int(n_evaluated.max())
+    is_affected = n_evaluated < N_EVALUATED_WARNING_THRESHOLD * n_evaluated_max
+    if not is_affected.any():
+        return
+
+    affected = np.flatnonzero(is_affected)
+    lines = [
+        f"  - {candidates[i]}: {int(n_evaluated[i]):,} points "
+        f"({n_evaluated[i] / n_evaluated_max:.1%})"
+        for i in affected[:max_candidates]
+    ]
+    if len(affected) > max_candidates:
+        lines.append(f"  ... and {len(affected) - max_candidates} more")
+
+    best_message = (
+        "The best candidate of the ranking (first row of the results) is one "
+        "of them, so the ranking may favor it."
+        if is_affected[0]
+        else "The best candidate of the ranking (first row of the results) is "
+        "not one of them."
+    )
+
+    warnings.warn(
+        f"The candidates are not evaluated on the same points, so their metrics "
+        f"are not comparable. The most complete candidate evaluates "
+        f"{n_evaluated_max:,} points; {len(affected)} of {len(n_evaluated)} "
+        f"candidates evaluate less than {N_EVALUATED_WARNING_THRESHOLD:.0%} of "
+        f"them:\n" + "\n".join(lines) + "\n" + best_message + " Common causes: "
+        f"series shorter than the window of the candidate (`window_size`), "
+        f"missing values in the last window or NaN predictions. To compare the "
+        f"candidates on the same points, pass in `levels` only the series that "
+        f"every candidate predicts in every fold (for short series, those with "
+        f"more observations than the largest `window_size` before the first "
+        f"fold), or remove the candidates with larger windows. See the column "
+        f"`{N_EVALUATED_NAME}` of the results.",
+        MissingValuesWarning
+    )
