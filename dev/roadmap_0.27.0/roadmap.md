@@ -287,10 +287,13 @@ Revisado el 2026-10-30: QW-08 (lo que quedaba), QW-04, QW-10 y QW-12 van en un s
 4. **HANDOFF-T2/T3/T4** (`dev/handoff_utils_pendiente.md`): pendientes de decisión de Joaquín.
 5. **PR-1341** (TiRex-2): aceptarlo o no; la revisión es grande (L).
 6. **BUG-search-short-series**: decidido el 2026-10-29 informar en lugar de cambiar la
-   evaluación (c2 aparcada). Quedan las decisiones de la sección 8 de
-   [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md):
-   umbral del aviso, si `suppress_warnings` silencia "Parameters skipped" y qué hacer en
-   bayesian. El nombre de la columna se decidió el 2026-10-30: **`n_evaluated`**, también en
+   evaluación (c2 aparcada). Las decisiones de la sección 8 de
+   [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md) se
+   cerraron el 2026-11-03: aviso cuando un candidato evalúa menos del 99% de los puntos del
+   más completo; `suppress_warnings` no silencia "Parameters skipped" (agrupado en un aviso);
+   en bayesian, aviso al final y `n_evaluated` como `user_attr`, sin tocar Optuna. Se hace en
+   dos PRs (sección 8.1 de ese documento): el bug primero y los avisos de las búsquedas
+   después. El nombre de la columna se decidió el 2026-10-30: **`n_evaluated`**, también en
    FE-05 (`n_predictions` es ambiguo justo cuando importa: con folds solapados o valores
    reales NaN se predicen más puntos de los que se evalúan).
 7. **FE-05** (comparar modelos): diseño recomendado en "FE-05: análisis de diseño"

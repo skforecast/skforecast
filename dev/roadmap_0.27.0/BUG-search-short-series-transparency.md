@@ -260,10 +260,14 @@ el estimador los acepta. Medido: hacerlo coherente mejora un 2% en el experiment
 
 ## 8. Decisiones pendientes y qué medir al implementar
 
-1. **Umbral del aviso de la sección 4.3**: cualquier diferencia, o un porcentaje (por
-   ejemplo 1%) o un número mínimo de puntos. Medir con M5 completo en el periodo habitual
-   (0.03% con `lags=56`) y en uno con rotación (1.5%), y con el experimento 2 (34%).
-2. **`suppress_warnings` y "Parameters skipped"** (sección 5.2, punto 3).
+1. **Umbral del aviso de la sección 4.3. Decidido el 2026-11-03:** avisar cuando algún
+   candidato evalúa menos del 99% de los puntos del candidato más completo (más de un 1% de
+   diferencia); la columna da siempre el dato exacto. Confirmarlo al implementar con el
+   experimento 2 (34%) y con M5 en el periodo habitual (0.03% con `lags=56`, sin aviso) y en
+   uno con rotación (1.5%, con aviso).
+2. **`suppress_warnings` y "Parameters skipped". Decidido el 2026-11-03:** no lo silencia (un
+   candidato que falta en los resultados es información importante); se agrupa en un solo
+   aviso en el PR 2 (sección 5.2, punto 3).
 3. **Nombre:** decidido el 2026-10-30, `n_evaluated` (QW-12, hecho con #1437,
    fusionado en `0.27.x` el 2026-11-03: última columna de la tabla de
    métricas, la suma en los agregados). Aquí se reutiliza. Es un nombre reservado en los
@@ -273,10 +277,8 @@ el estimador los acepta. Medido: hacerlo coherente mejora un 2% en el experiment
    backtesting de cada candidato, así que todos se saltan con un "Parameters skipped" y el
    resultado está vacío. Validarlo al principio de las búsquedas, junto a la unicidad de los
    nombres que ya comprueban, cuando la columna llegue a sus resultados.
-4. **Bayesian:** la columna informa al final, pero Optuna ya se ha guiado por métricas
-   calculadas sobre puntos distintos. Decidir si basta con avisar (propuesta) o si un trial
-   con menos puntos debería marcarse en Optuna (`user_attr` ya lo permite sin cambiar la
-   optimización).
+4. **Bayesian. Decidido el 2026-11-03:** avisar al final y guardar `n_evaluated` como
+   `user_attr` de cada trial, sin penalizar el trial en Optuna ni cambiar la optimización.
 5. **Coste:** contar puntos y recoger avisos por candidato no debería notarse; medirlo con
    200 series y `OneStepAheadFold`, el camino más rápido.
 6. **Tests:** el orden del grid no cambia los avisos; bayesian no repite; `OneStepAheadFold`
@@ -285,6 +287,16 @@ el estimador los acepta. Medido: hacerlo coherente mejora un 2% en el experiment
    `OneStepAheadFold` con los puntos de sus métricas. Los casos de la cuenta en sí
    (`fold_stride < steps`, con puntos duplicados que las métricas deduplican, y `gap > 0`)
    son tests de QW-12.
+
+### 8.1 División en dos PRs (2026-11-03)
+
+- **PR 1, el bug:** `n_evaluated` por candidato en grid, random y bayesian multiserie (con
+  `TimeSeriesFold` y `OneStepAheadFold`), el aviso único de la sección 4.3, la validación
+  del nombre reservado al principio de las búsquedas, docs y nota de la versión.
+- **PR 2, los avisos de las búsquedas:** sección 5.2, puntos 1, 3, 4, 5 y 6 (recoger en
+  lugar de silenciar, "Parameters skipped" agrupado, `OneStepAheadFold` por candidato,
+  `LongTrainingWarning` una vez, `ParameterSampler`), también en las búsquedas de una serie,
+  `*_stats` y `grid_search_equivalent_date`.
 
 ## 9. Scripts
 
