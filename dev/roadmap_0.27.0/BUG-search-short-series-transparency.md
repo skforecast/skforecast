@@ -7,7 +7,8 @@ investigación: el problema, los experimentos 1 a 5 y por qué se descartaron la
 opciones. Este documento solo trata la solución elegida y la revisión de los avisos y errores
 de las búsquedas.
 
-**Bloqueado por QW-12** (decisión del 2026-10-29): antes se hace, por separado, la columna con
+**Desbloqueado el 2026-11-03:** QW-12 está hecho con #1437. Antes estaba **bloqueado por
+QW-12** (decisión del 2026-10-29): antes se hace, por separado, la columna con
 el número de observaciones que entran en cada métrica del backtesting (por nivel en
 multiserie). Este arreglo la reutiliza en las búsquedas y no la redefine: el nombre, la
 cuenta y su documentación son de QW-12.
