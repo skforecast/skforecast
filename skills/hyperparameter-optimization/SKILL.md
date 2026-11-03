@@ -176,7 +176,30 @@ results, study = bayesian_search_forecaster_multiseries(
     show_progress=True,
 )
 # Access the best trial with study.best_trial
+# results includes `n_evaluated` after the metrics (points evaluated per candidate)
 ```
+
+### Series of different length: compare candidates on the same points
+
+Each candidate is evaluated on the series and folds it can predict: a series
+with `window_size` observations or fewer before a fold is not predicted by a
+candidate with that window. Candidates with more lags (or longer window
+features) can then compute their metric on fewer points, often the easy ones,
+and win the ranking without being better.
+
+- The column `n_evaluated` of the results (and the `user_attr` `n_evaluated` of
+  each trial) is the number of points in the metrics of each candidate, summed
+  over the levels.
+- When some candidates evaluate less than 99% of the points of the most
+  complete one, a single `MissingValuesWarning` is raised at the end of the
+  search, saying whether the best candidate is one of them.
+- To compare on the same points, pass in `levels` only the series that every
+  candidate predicts in every fold (for short series, those with more
+  observations than the largest `window_size` before the first fold), or
+  remove the candidates with larger windows.
+- How to forecast series with less history than the selected window (cold
+  start) is a decision outside the search: fewer lags for them, a baseline or a
+  foundation model.
 
 ## Statistical Models Search
 
@@ -276,7 +299,9 @@ results, study = bayesian_search_forecaster(
 3. **Using TimeSeriesFold for initial tuning**: Use `OneStepAheadFold` first for fast screening, then validate the top candidates with `TimeSeriesFold`.
 4. **Forgetting to include lags in search space**: For Bayesian search, lags can be included in `search_space()`; this is often the most impactful parameter.
 5. **Putting `lags` in a foundation `search_space`**: `bayesian_search_foundation` has no lag concept; any key that is not an adapter parameter raises `ValueError`.
-6. **Passing the test set to the search**: give the search only the training and validation data (e.g. `y=data.loc[:end_validation]`). With `return_best=True` the forecaster is refitted on everything the search receives, so keep the test set out and evaluate the refitted forecaster with `backtesting_forecaster` on it.
+6. **Comparing candidates evaluated on different points (multi-series)**: if `n_evaluated` differs between candidates (`MissingValuesWarning` at the end of the search), their metrics are not comparable. Restrict `levels` or the range of windows as described in [Series of different length](#series-of-different-length-compare-candidates-on-the-same-points).
+7. **Naming a custom metric `n_evaluated`**: it is the column with the points evaluated, so every search raises `ValueError`.
+8. **Passing the test set to the search**: give the search only the training and validation data (e.g. `y=data.loc[:end_validation]`). With `return_best=True` the forecaster is refitted on everything the search receives, so keep the test set out and evaluate the refitted forecaster with `backtesting_forecaster` on it.
 
 ## References
 

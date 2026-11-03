@@ -16,7 +16,7 @@ All significant changes to this project are documented in this release file.
 
 The main changes in this release are:
 
-+ <span class="badge text-bg-feature">Feature</span> Backtesting returns, for machine learning, statistical and foundation models, the step of the forecast horizon (`step`) and the true value (`y_true`) of each prediction, and next to the metrics the number of points evaluated (`n_evaluated`) and, with a prediction interval, its empirical `coverage` and mean `interval_width`, per series and aggregated. [User guide](../user_guides/backtesting.ipynb#error-and-coverage-by-forecast-horizon) ([#1409](https://github.com/skforecast/skforecast/issues/1409), [#1437](https://github.com/skforecast/skforecast/pull/1437))
++ <span class="badge text-bg-feature">Feature</span> Backtesting returns, for machine learning, statistical and foundation models, the step of the forecast horizon (`step`) and the true value (`y_true`) of each prediction, and next to the metrics the number of points evaluated (`n_evaluated`) and, with a prediction interval, its empirical `coverage` and mean `interval_width`, per series and aggregated. Multi-series searches report it per candidate and warn when they differ. [User guide](../user_guides/backtesting.ipynb#error-and-coverage-by-forecast-horizon) ([#1409](https://github.com/skforecast/skforecast/issues/1409), [#1437](https://github.com/skforecast/skforecast/pull/1437))
 
 + <span class="badge text-bg-api-change">API Change</span> Backtesting and hyperparameter search no longer require repeating the `differentiation` of the forecaster in <code>[TimeSeriesFold]</code> or <code>[OneStepAheadFold]</code>. The `differentiation` argument of both folds, and `window_size` of <code>[OneStepAheadFold]</code>, are deprecated: they have no effect, emit a `FutureWarning` and will be removed in 0.29.0. ([#1423](https://github.com/skforecast/skforecast/pull/1423))
 
@@ -44,6 +44,8 @@ The main changes in this release are:
 
     + <code>[grid_search_forecaster_multiseries]</code>, <code>[random_search_forecaster_multiseries]</code>, <code>[bayesian_search_forecaster_multiseries]</code> and <code>[bayesian_search_foundation]</code> with series evaluated on different numbers of points (series of different lengths or with gaps): the values of the aggregated metric columns move to their right column, so the order of the results and the model selected with `return_best` may change.
 
+    + <code>[grid_search_forecaster_multiseries]</code>, <code>[random_search_forecaster_multiseries]</code> and <code>[bayesian_search_forecaster_multiseries]</code> with <code>[OneStepAheadFold]</code> and `levels` a subset of the series: the `pooling` columns use only the series in `levels`, so with `pooling` first in `aggregate_metric` the order of the results and the model selected with `return_best` may change.
+
     + <code>[backtesting_forecaster_multiseries]</code>: the interval columns (`lower_bound`, `upper_bound`, quantiles...) of the dates without an observed value are NaN, as `pred` already was.
 
     + <code>[ForecasterRecursiveMultiSeries]</code> with `encoding='ordinal'` (the default), `'ordinal_category'` or `None` and series not given in alphabetical order: the rows of each step in the output of `predict` and the other predict methods with `levels=None`, and the keys of `in_sample_residuals_`, follow the order of the series instead of the alphabetical order. The values are the same; pass `levels` to fix an order.
@@ -58,7 +60,7 @@ The main changes in this release are:
 
     + Passing both `alpha` and `interval` to <code>[ForecasterStats]</code> or <code>[backtesting_stats]</code> raises a `ValueError`.
 
-    + The outputs of the four backtesting functions have new columns: `step` and `y_true` before `pred` in the predictions (`estimator_id` moves first in <code>[backtesting_stats]</code> with several estimators), and `n_evaluated` at the end of the metrics, after `coverage` and `interval_width` when there is one prediction interval. Code that compares the whole DataFrame, renames all its columns or selects them by position must be updated; `metric.iloc[0, 0]` is still the first metric.
+    + The outputs of the four backtesting functions have new columns: `step` and `y_true` before `pred` in the predictions (`estimator_id` moves first in <code>[backtesting_stats]</code> with several estimators), and `n_evaluated` at the end of the metrics, after `coverage` and `interval_width` when there is one prediction interval. The results of the multi-series searches have `n_evaluated` after the metrics. Code that compares the whole DataFrame, renames all its columns or selects them by position must be updated; `metric.iloc[0, 0]` is still the first metric.
 
     + The pinball loss of <code>[create_mean_pinball_loss]</code> is renamed to `mean_pinball_loss_q_<alpha>`, and a metric cannot be named `n_evaluated` or share its name with another metric.
 
@@ -89,6 +91,8 @@ The main changes in this release are:
 + <code>[grid_search_stats]</code>, <code>[random_search_stats]</code> and <code>[grid_search_equivalent_date]</code> raise a `ValueError` with the accepted names, before evaluating any candidate, when a metric name is not valid. They skipped every candidate with a warning and returned an empty DataFrame. ([#1431](https://github.com/skforecast/skforecast/pull/1431))
 
 + The hyperparameter searches of multi-series forecasters are faster with metrics that do not use `y_train` (most of them): 19% less time with <code>[OneStepAheadFold]</code> and 8% with <code>[TimeSeriesFold]</code> (200 series, Ridge). ([#1431](https://github.com/skforecast/skforecast/pull/1431))
+
++ The results of <code>[grid_search_forecaster_multiseries]</code>, <code>[random_search_forecaster_multiseries]</code> and <code>[bayesian_search_forecaster_multiseries]</code> include `n_evaluated`, the points evaluated by each candidate. A single `MissingValuesWarning` at the end of the search lists the candidates with less than 99% of the points of the most complete one (for example, more lags than a short series has), whose metrics are not comparable. Every search raises a `ValueError` when a metric is named `n_evaluated`. [User guide](../user_guides/hyperparameter-tuning-and-lags-selection.ipynb#series-of-different-length-compare-candidates-on-the-same-points)
 
 + The first fit of <code>[Ets]</code> in a new environment, when numba compiles its functions, takes about 40% less time (7 s instead of 12 s on a 4-core CPU). Estimates and selected models are unchanged. ([#1400](https://github.com/skforecast/skforecast/pull/1400))
 
@@ -134,6 +138,8 @@ The main changes in this release are:
 + <code>[backtesting_forecaster_multiseries]</code>, <code>[backtesting_foundation]</code> and the hyperparameter search of <code>[ForecasterRecursiveMultiSeries]</code> rejected a valid `initial_train_size` when every series was shorter than the span of all series. The `split` method of <code>[OneStepAheadFold]</code> also returned a wrong test end with a dict of series. ([#1430](https://github.com/skforecast/skforecast/pull/1430))
 
 + The hyperparameter search of <code>[ForecasterRecursiveMultiSeries]</code> with <code>[OneStepAheadFold]</code> failed with `ValueError: Length of '<series>' must be greater than the maximum window size needed by the forecaster` when a series ended at the end of the training set. That series is now left out of the test set. ([#1430](https://github.com/skforecast/skforecast/pull/1430))
+
++ The hyperparameter searches of multi-series forecasters with <code>[OneStepAheadFold]</code> computed the `pooling` metric with every series, not only those in `levels`, when `levels` was a subset of the series.
 
 + Hyperparameter searches ranked the candidates by the task of the forecaster (minimize in regression, maximize in classification), not by the metric: with `r2_score`, or `zero_one_loss` in classification, `return_best=True` refitted the worst candidate. The direction is now inferred from the metric (scikit-learn `*_score` metrics are maximized), a custom callable can set `greater_is_better`, and `direction` in `kwargs_create_study` also orders the results. ([#1431](https://github.com/skforecast/skforecast/pull/1431))
 

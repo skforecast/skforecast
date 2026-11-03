@@ -486,6 +486,8 @@ Three search strategies are available: `grid_search_forecaster`, `random_search_
 
 Results are sorted by the first metric, best first, and `return_best=True` refits the forecaster with the first row. The direction comes from the metric: scikit-learn metrics ending in `_score` (`r2_score`, `accuracy_score`) are maximized; errors and losses are minimized. A custom callable is minimized in regression and maximized in classification unless it sets the attribute `greater_is_better` (`True` or `False`). In the Bayesian searches, `kwargs_create_study={'direction': ...}` overrides it.
 
+The results of the multi-series searches include, after the metrics, the column `n_evaluated` (the `n_evaluated` of the backtesting metrics: points in the metrics of each candidate, summed over the levels; also a `user_attr` of each Optuna trial). A candidate with a larger `window_size` does not predict a series with `window_size` observations or fewer before a fold, so its metrics can use fewer points; a single `MissingValuesWarning` at the end of the search reports the candidates with less than 99% of the points of the most complete one. To compare them on the same points, pass in `levels` only the series that every candidate predicts in every fold, or remove the larger windows. Metric names must be unique and cannot be `n_evaluated` in any search (`ValueError`).
+
 ```python
 from skforecast.model_selection import bayesian_search_forecaster, TimeSeriesFold
 

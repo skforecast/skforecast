@@ -360,4 +360,7 @@ results, study = bayesian_search_forecaster(
 
 When `return_best=True`, the forecaster is automatically updated with the
 best parameters found. The results DataFrame always has rows sorted by
-metric (best first). Access the best Optuna trial with `study.best_trial`.
+metric (best first). The multi-series searches add the column `n_evaluated`
+after the metrics (points evaluated by each candidate, summed over the levels;
+also in the `output_file` of grid and random search and as a `user_attr` of each
+Bayesian trial). Access the best Optuna trial with `study.best_trial`.
