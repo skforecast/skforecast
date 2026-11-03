@@ -365,20 +365,18 @@ documento y el roadmap. Entorno: Python 3.14.3, numpy 2.5.4, pandas 2.3.3, sciki
   sección 11.5):
 
   ```
-  The candidates are not evaluated on the same points, so their metrics are not
-  comparable. The most complete candidate evaluates 600 points (all series and folds);
-  2 of 3 candidates evaluate fewer than 570 (95%):
-    - lags: lags_24, params: {'alpha': 1.0}: 396 points (66.0%)
-    - lags: lags_12, params: {'alpha': 1.0}: 540 points (90.0%)
-  The best candidate of the ranking (first row of the results) is one of them, so the
-  ranking may favor it.
-  To compare the candidates on the same points, pass in `levels` the 8 of 20 series
-  that every candidate evaluates on the same points:
-    ['long_0', 'long_1', 'long_2', 'long_3', 'long_4', 'new_06', 'new_07', 'new_12']
-  or remove the candidates with larger windows.
-  Common causes: series with 24 observations or fewer up to 2021-06-01 (the largest
-  `window_size`), missing values in the last window or NaN predictions. See the column
+  2 of 3 candidates are evaluated on fewer points than the most complete one, so their
+  metrics are not comparable. The best candidate of the ranking is one of them, so the
+  ranking may favor it. To compare the candidates on the same points, pass the series
+  listed below in `levels` or remove the candidates with larger windows. See the column
   `n_evaluated` of the results.
+
+  Candidates with less than 95% of the 600 points of the most complete one:
+    - lags: lags_24, params: {'alpha': 1.0}: 396 (66.0%)
+    - lags: lags_12, params: {'alpha': 1.0}: 540 (90.0%)
+
+  Series that every candidate evaluates on the same points:
+    levels=['long_0', 'long_1', 'long_2', 'long_3', 'long_4', 'new_06', 'new_07', 'new_12']
   ```
 
   Los candidatos van en el orden del ranking (máximo 5 y "... and N more"); en bayesian, con
@@ -479,8 +477,15 @@ documento y el roadmap. Entorno: Python 3.14.3, numpy 2.5.4, pandas 2.3.3, sciki
    `levels` no ayuda; con un solo nivel (`ForecasterDirectMultiVariate`), no sugiere
    `levels`. No se devuelve la lista en código (`results.attrs` es experimental en pandas y
    un valor de retorno nuevo rompería la API); queda para FE-05 si hace falta.
-3. **Causas concretas:** el mayor `window_size` de los candidatos y la última fecha del
-   entrenamiento del primer fold (`initial_train_size`, igual con los dos `cv`).
-4. **Texto:** el límite se da como número de puntos ("fewer than 570 (95%)") y sin
-   definir los puntos (true value and prediction), que ya define la columna.
+3. **Formato (séptimo commit), siguiendo el `FitFailedWarning` de scikit-learn** (qué
+   pasa, la consecuencia y una acción; el detalle al final, tras una línea en blanco):
+   primer párrafo con el recuento, si el mejor está afectado (en singular con un solo
+   candidato: "It is (not) the best candidate of the ranking") y la acción; después, la
+   lista de candidatos, con el 95% y los puntos del más completo en su cabecera (sin el
+   "fewer than 570", que repetía lo que dicen los porcentajes); al final, las series para
+   `levels` como `levels=[...]` si son 10 o menos, `levels: every series except [...]` si
+   lo son las demás, o su número con ejemplos de las que quedan fuera. Se quitaron las
+   "Common causes" (no deciden nada; la guía las explica) y, con ellas, la fecha y el
+   `window_size` del texto. Sin series comunes, la acción dice que restringir `levels` no
+   ayuda y no hay bloque de series.
 
