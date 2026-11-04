@@ -37,11 +37,14 @@ secciones 1 a 7 quedan como referencia: evidencia, antes y después, y esbozos d
 > despreciable en paneles maduros con lags cortos (0.03% de puntos fuera con `lags=56`),
 > relevante con rotación de catálogo o lags anuales (13% con `lags=365` en un periodo con
 > lanzamientos).
-> **PR 1 hecho en local (2026-11-03)**, rama `fix/search-short-series-n-evaluated`, sin
-> subir: columna `n_evaluated` por candidato, aviso único al final y nombre reservado
-> validado en todas las búsquedas; de paso, el `pooling` del one-step-ahead con `levels`
-> parcial (hallazgo). Queda el PR 2 (avisos de las búsquedas). Detalle en la sección 11
-> de [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md).
+> **PR 1 fusionado (#1447, 2026-11-04):** columna `n_evaluated` por candidato, aviso único
+> al final y nombre reservado validado en todas las búsquedas; de paso, el `pooling` del
+> one-step-ahead con `levels` parcial (hallazgo). **PR 2a hecho en local (2026-11-04)**,
+> rama `fix/search-warnings`, sin subir: los avisos de todas las búsquedas se muestran una
+> vez al final con el número de candidatos, "Parameters skipped" agrupado,
+> `LongTrainingWarning` una vez y el aviso de `ParameterSampler`. Queda el PR 2b (candidatos
+> que fallan: one-step-ahead por candidato y trials de bayesian). Detalle en las secciones
+> 11 y 12 de [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md).
 
 **Comprobado en local** (Python 3.14.3, numpy 2.5.3, pandas 2.3.3, scikit-learn 1.9.1,
 numba 0.68.0, statsmodels 0.14.6): BUG-03, BUG-01 y BUG-stats-interval-ignored se

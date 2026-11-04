@@ -7,8 +7,9 @@ investigación: el problema, los experimentos 1 a 5 y por qué se descartaron la
 opciones. Este documento solo trata la solución elegida y la revisión de los avisos y errores
 de las búsquedas.
 
-**PR 1 hecho en local el 2026-11-03** (rama `fix/search-short-series-n-evaluated`, sin push
-ni PR): ver la sección 11. Queda el PR 2 (sección 8.1).
+**PR 1 fusionado en `0.27.x` el 2026-11-04 (#1447):** ver la sección 11. El PR 2 se divide en
+dos (sección 8.1): **PR 2a hecho en local el 2026-11-04** (rama `fix/search-warnings`, sin
+push ni PR; sección 12) y queda el PR 2b (candidatos que fallan, sección 12.5).
 
 **Desbloqueado el 2026-11-03:** QW-12 está hecho con #1437. Antes estaba **bloqueado por
 QW-12** (decisión del 2026-10-29): antes se hace, por separado, la columna con
@@ -299,6 +300,10 @@ el estimador los acepta. Medido: hacerlo coherente mejora un 2% en el experiment
   lugar de silenciar, "Parameters skipped" agrupado, `OneStepAheadFold` por candidato,
   `LongTrainingWarning` una vez, `ParameterSampler`), también en las búsquedas de una serie,
   `*_stats` y `grid_search_equivalent_date`.
+- **El PR 2 se divide en dos (decisión del 2026-11-04):** PR 2a, los avisos (puntos 1, 3, 5
+  y 6; no cambia ningún resultado), y PR 2b, los candidatos que fallan (punto 4, los trials
+  de bayesian que fallan y el one-step-ahead sin ningún nivel de `levels` en el test), que
+  reutiliza el "Parameters skipped" agrupado del 2a. Ver la sección 12.
 
 ## 9. Scripts
 
@@ -497,3 +502,103 @@ documento y el roadmap. Entorno: Python 3.14.3, numpy 2.5.4, pandas 2.3.3, sciki
    `levels` está en el test falla igual que en `0.27.x` (antes, en la media ponderada); el
    candidato se salta, y queda para el PR 2 (one-step-ahead por candidato).
 
+## 12. PR 2a: avisos de las búsquedas (2026-11-04)
+
+Rama `fix/search-warnings` desde `0.27.x` (con #1447), en local, sin push ni PR. Tres commits:
+la primera frase fija del aviso de #1432, el registro de los avisos en las búsquedas (con los
+tests) y la documentación.
+
+### 12.1 Línea base y resultado (script 06)
+
+| Escenario | `0.27.x` | PR 2a |
+|---|---|---|
+| grid multi, serie corta, lags [3, 24] | `MissingValuesWarning` ×1 (solo `n_evaluated`; el de #1415 silenciado) | ×2: #1415 "(in 2 of 4 candidates)" y `n_evaluated` |
+| el mismo grid, lags [24, 3] | ×2 | ×2, el mismo texto que en [3, 24] |
+| bayesian multi, serie corta, 10 trials | ×7 | ×2: #1415 agrupado "(in 6 of 10 trials)" y `n_evaluated` |
+| bayesian multi, hueco en `exog` (#1432), 10 trials | ×10 | ×1, tal cual (mismo texto en todos los trials) |
+| grid multi, 2 de 3 lags fallan | `RuntimeWarning` ×6 | ×1, agrupado por error ("every params (3 candidates)") |
+| grid de una serie, `refit=True`, 6 candidatos | `LongTrainingWarning` ×6 | ×1: "Each candidate fits the forecaster about 60 times, so the search (6 candidates) fits it about 360 times..." |
+| bayesian de una serie, el mismo caso | ×6 | ×1 ("6 trials") |
+| random multi con `n_iter` mayor que el espacio | `UserWarning` que remite a `GridSearchCV` | ×1, remite a `grid_search_forecaster_multiseries` |
+| grid multi one-step-ahead, un candidato sin datos | `ValueError`, se aborta | sin cambios (PR 2b) |
+
+### 12.2 Qué hace
+
+- **Registro único por búsqueda** (`_SearchWarnings` en `_utils.py`): envuelve el bucle de
+  candidatos (en bayesian, `study.optimize`) y, aparte, el `fit` del refit. Sustituye
+  `warnings.showwarning` y marca cada aviso con el candidato del hilo (`threading.local`;
+  en bayesian, el número del trial, que fija el objetivo al empezar). Los avisos del refit
+  o de fuera de los candidatos (split del one-step-ahead) van sin candidato: salen, pero no
+  cuentan. Al final, fuera del contexto, cada grupo se emite con `warnings.warn`, que pasa
+  por los filtros del usuario y de `suppress_warnings`.
+- **Agrupación:** mismo texto en todos los candidatos, o solo fuera de ellos: tal cual; en
+  algunos: "(in N of M candidates)" tras la primera frase; textos distintos con la misma
+  primera frase: la frase, el recuento y "Run the backtesting of a candidate to see the
+  details." (decisión A, opción 2). El aviso de #1432 empieza ahora con una frase fija
+  ("Some predictions are NaN... (5 in total)"); #1432 es de este ciclo, sin "Before
+  upgrading".
+- **Filtros:** dentro del registro, las acciones que muestran un aviso una vez (`default`,
+  `module`, `once`) pasan a `always` y se añade `always` al final, para contar las
+  repeticiones; `ignore` y `error` se respetan (lo ignorado no se registra). Sin esto, un
+  filtro general `default` (`-W default`, `PYTHONWARNINGS`) daba recuentos falsos ("in 1 of
+  4").
+- **"Parameters skipped"** (decisión D): un solo `RuntimeWarning` al final, agrupado por
+  error (tipo y texto), con el prefijo de antes para no romper filtros; si todos los
+  parámetros de un `lags` fallan con el mismo error, una línea "every params (N
+  candidates)"; hasta 5 errores y 5 candidatos por error. Sustituye también a "No valid
+  parameter combinations found..." ("N of N candidates raise an error, so the results are
+  empty"). `suppress_warnings` no lo silencia. En `*_stats` y `grid_search_equivalent_date`,
+  solo `params`.
+- **`LongTrainingWarning`:** el primero se pasa en directo al `showwarning` anterior (rich
+  o el del usuario), reescrito con el total de la búsqueda (lee el número de ajustes del
+  texto del backtesting; con `ForecasterDirect`, "(60 folds * 10 estimators)"); los demás
+  se descartan. Se quitan los filtros con la categoría equivocada de
+  `_evaluate_grid_hyperparameters` y `_evaluate_grid_hyperparameters_stats`.
+- **`ParameterSampler`:** `_sample_param_grid` silencia el aviso de scikit-learn y emite uno
+  que remite a `grid_search_forecaster`, `grid_search_forecaster_multiseries` o
+  `grid_search_stats` ("for each value of `lags_grid`" solo si se pasa `lags_grid`).
+- Búsquedas cubiertas: grid y random de una serie y multiserie, las tres bayesian (también
+  `bayesian_search_foundation`), `*_stats` y `grid_search_equivalent_date`. El silenciado
+  tras el primer candidato del grid multiserie desaparece.
+- Docstrings de `suppress_warnings`, nota de la versión en Changed, punto 9 de "Common
+  mistakes" en la skill `hyperparameter-optimization`.
+
+### 12.3 Comprobaciones
+
+- Tests: 824 en `tests_search`, `tests_utils` y los backtesting multiserie y de foundation.
+  Nuevos: `_SearchWarnings` (tal cual, recuento, agrupado, `n_candidates` de `emit`,
+  filtros respetados y restaurados, filtros `default`/`module`/`once`,
+  `LongTrainingWarning`, hilos, saltados), `_warn_skipped_candidates_search`,
+  `_sample_param_grid`; en las búsquedas: el grid multiserie da los mismos avisos en los dos
+  órdenes (y el del refit sale tal cual), `suppress_warnings=True` conserva "Parameters
+  skipped", bayesian multiserie con `n_jobs` de Optuna 1 y 2 (repetido 8 veces sin fallos),
+  `LongTrainingWarning` una vez en grid y bayesian de una serie, y el aviso de `n_iter` en
+  random multiserie.
+- Coste (200 series × 730 días, Ridge, `OneStepAheadFold`, mediana de 7 en dos rondas
+  alternas frente a `0.27.x`): grid de 6 candidatos 0.346/0.350 s → 0.344/0.345 s; bayesian
+  de 6 trials 0.349/0.344 s → 0.344/0.347 s. Sin diferencia medible. Python 3.14.3, numpy
+  2.5.4, pandas 2.3.3, scikit-learn 1.9.1, optuna 5.0.0.
+
+### 12.4 Decisiones y no previsto
+
+1. **Hilos (decisión C):** un único contexto por búsqueda, abierto en el hilo principal, en
+   lugar de un `catch_warnings` por candidato (que toca el estado global en cada trial). Los
+   `catch_warnings` de `manage_warnings` dentro de los trials en hilos ya competían antes por
+   los filtros globales; no cambia. Con Python 3.14 free-threaded (`context_aware_warnings`)
+   no se ha probado.
+2. **Optuna (decisión B, para el PR 2b):** recomienda el argumento `catch` de
+   `study.optimize` o devolver NaN (el trial queda `FAIL` sin abortar). Propuesta: solo la
+   evaluación dentro del `try`, relanzada como una excepción privada que se añade al
+   `catch` del usuario; los errores de configuración siguen abortando.
+3. El `DataTransformationWarning` de un modelo lineal sin `transformer_series` sale al crear
+   el forecaster, fuera de la búsqueda: no se agrupa (no hace falta).
+4. Los avisos de los procesos de joblib (backtesting con `n_jobs` y `refit`) siguen sin
+   llegar, como antes.
+
+### 12.5 Pendiente: PR 2b (candidatos que fallan)
+
+1. `_train_test_split_one_step_ahead` dentro del `try` de cada candidato en grid y random,
+   de una serie y multiserie: un candidato sin datos se salta con el "Parameters skipped"
+   agrupado, también cuando ningún nivel de `levels` tiene puntos en el test.
+2. Bayesian deja de abortar cuando falla la evaluación de un trial (12.4, punto 2).
+3. Tests, nota de la versión (Fixed: el one-step-ahead abortaba la búsqueda) y roadmap.
