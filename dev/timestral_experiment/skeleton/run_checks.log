@@ -1,0 +1,36 @@
+PASS get_params
+PASS init rejects prefix: `model_id` must start with 'mistralai/Timestral' for TimestralAdapter. Got 'mistralai/Mistral-7B'.
+PASS init rejects context_length: `context_length` must be a positive integer. Got 0.
+PASS init rejects reserved: `predict_kwargs` cannot include ['known_covariates']. These arguments are managed internally by Time
+PASS set_params keeps model
+PASS set_params device resets model
+PASS explicit mps warns and falls back to cpu: MPS not supported
+PASS explicit mps allowed by default
+PASS ImportError: timestral is required for TimestralAdapter. Install it with `pip install "timestral @ git+https://github.com/mistralai/timestral.git"`.
+PASS LicenseWarning on load: The weights for 'mistralai/Timestral-28M' are released under Timestral Modified MIT License (no rights for companies wit
+PASS FoundationModel.predict shape: ['level', 'q_0.1', 'q_0.5', 'q_0.9']
+PASS point forecast is the median: ['level', 'pred']
+PASS ForecasterFoundation.predict_interval: ['level', 'pred', 'lower_bound', 'upper_bound']
+PASS backtesting_foundation: MAE 10.161
+PASS one backend call per exog group: [{'context': (2, 1, 900), 'categorical_known_covariates': (2, 1, 924), 'known_covariates': (2, 1, 924)}, {'context': (1, 1, 700), 'known_covariates': (1, 1, 724)}]
+PASS heterogeneous batch equals each series alone: max abs diff 3.05e-05
+   median means: {'a': 99.27, 'b': 127.52, 'c': 95.29}
+PASS quantile 0.33 rejected: Timestral only supports quantile levels [0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4,
+PASS all 21 levels accepted
+PASS bool, Int64 with NA, object, RangeIndex, padded batch
+PASS exog as pandas Series
+PASS FoundationModel rejects a column with different dtypes per series: Exog/s: ['shop'] have different dtypes in different series. If any of these vari
+PASS inf in a numeric covariate
+   all-NaN series rejected by FoundationModel: ValueError All values of series 'empty' are NaN.
+PASS FeatureOutOfRangeWarning for issue #7: Known covariates that are constant over the context and change over the forecast horizon, as (series, column): [('y', 'price')]. Timestral c
+PASS issue #7 warning through ForecasterFoundation points to the user's call: run_checks.py:273
+PASS no warning when the future stays constant
+PASS T0 arrays identical with FoundationModel padding (different end dates, DST at midnight): context (2, 130)
+PASS T0 arrays identical with FoundationModel padding (tz-aware daily across DST, bool exog): context (2, 200), covariates (2, 2, 212)
+PASS fake: one call per signature, NaN left padding, categorical codes: calls [(2, 1, 250), (1, 1, 100)]
+PASS fake: unknown predict_kwargs raise TypeError as the backend
+PASS left padding is positional and keeps the values and dtypes
+PASS left padding works without freq
+PASS auto with MPS available: warning at the user's call and model on CPU: run_checks.py:405
+
+32/32 checks passed

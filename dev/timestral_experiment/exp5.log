@@ -1,0 +1,30 @@
+1. 5M   no covariate                             median max      2.13  q99 max      6.41  series with q99 > 100: 0/32
+1. 5M   flat price                               median max      4.51  q99 max   9015.71  series with q99 > 100: 28/32
+1. 5M   flat price, symmetric_averaging=False    median max      6.99  q99 max  14581.06  series with q99 > 100: 27/32
+1. 5M   flat price, history set to NaN           median max      2.21  q99 max      6.71  series with q99 > 100: 0/32
+1. 28M  no covariate                             median max      2.05  q99 max      7.10  series with q99 > 100: 0/32
+1. 28M  flat price                               median max      2.86  q99 max  14955.49  series with q99 > 100: 32/32
+1. 28M  flat price, symmetric_averaging=False    median max      2.50  q99 max  14955.49  series with q99 > 100: 30/32
+1. 28M  flat price, history set to NaN           median max      2.06  q99 max      7.16  series with q99 > 100: 0/32
+1. 209M no covariate                             median max      2.02  q99 max      7.54  series with q99 > 100: 0/32
+1. 209M flat price                               median max    194.04  q99 max  14955.49  series with q99 > 100: 32/32
+1. 209M flat price, symmetric_averaging=False    median max      5.30  q99 max  14955.49  series with q99 > 100: 32/32
+1. 209M flat price, history set to NaN           median max      2.02  q99 max      7.70  series with q99 > 100: 0/32
+2. 5M   indicator                                median max      2.11  q99 max      6.49  series with q99 > 100: 0/32
+2. 5M   indicator, symmetric_averaging=False     median max      2.17  q99 max      6.67  series with q99 > 100: 0/32
+2. 5M   indicator, history set to NaN            median max      2.21  q99 max      6.71  series with q99 > 100: 0/32
+2. 28M  indicator                                median max     18.05  q99 max   9149.63  series with q99 > 100: 32/32
+2. 28M  indicator, symmetric_averaging=False     median max      9.72  q99 max   3752.83  series with q99 > 100: 26/32
+2. 28M  indicator, history set to NaN            median max      2.06  q99 max      7.16  series with q99 > 100: 0/32
+2. 209M indicator                                median max    136.06  q99 max   7481.13  series with q99 > 100: 32/32
+2. 209M indicator, symmetric_averaging=False     median max      2.02  q99 max      7.94  series with q99 > 100: 0/32
+2. 209M indicator, history set to NaN            median max      2.02  q99 max      7.70  series with q99 > 100: 0/32
+3. 28M no covariate     max |h=24 - h=100| on the first 24 steps: 1.53e-05
+3. 28M past covariate   max |h=24 - h=100| on the first 24 steps: 1.53e-05
+3. 28M known covariate  max |h=24 - h=100| on the first 24 steps: 2.28e-02
+4. 28M all-NaN known covariate vs none: max abs diff 0.022, median level 50.2
+5. 209M 50 series x 500, symmetric_averaging=True: 2.03s
+5. 209M 50 series x 500, symmetric_averaging=False: 0.92s
+6. 5M float32 vs float64 identical: True; repeated call identical: True
+7. 5M all-NaN context: no error, max |quantile| 0.010
+torch 2.14.1+cu130 threads 4
