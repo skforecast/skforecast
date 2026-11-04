@@ -321,3 +321,38 @@ def test_predict_categorical_feature_with_unused_and_unseen_categories():
     pd.testing.assert_frame_equal(
         results[cols_to_check], results_observed[cols_to_check], check_exact=True
     )
+
+
+def test_predict_multiple_series_with_categorical_level_and_unused_categories():
+    """
+    Test predict with multiple series when the series level of the index is a
+    `category` with unused categories (it raised a KeyError). The results and
+    the summary are the same as with a plain series level.
+    """
+    dates = pd.date_range('2020-01-01', periods=100, freq='D')
+
+    def make_X(level):
+        rng = np.random.default_rng(123)
+        return pd.DataFrame(
+            {'x': rng.normal(size=200), 'y': rng.integers(0, 3, size=200)},
+            index=pd.MultiIndex.from_arrays(
+                [level, np.tile(dates, 2)], names=['series_id', 'datetime']
+            )
+        )
+
+    X_categorical = make_X(
+        pd.Categorical(['s1'] * 100 + ['s2'] * 100, categories=['s1', 's2', 's3'])
+    )
+    X_plain = make_X(['s1'] * 100 + ['s2'] * 100)
+
+    detector = PopulationDriftDetector(chunk_size=10, threshold=3)
+    detector.fit(X_categorical)
+    results, summary = detector.predict(X_categorical)
+
+    detector_plain = PopulationDriftDetector(chunk_size=10, threshold=3)
+    detector_plain.fit(X_plain)
+    results_plain, summary_plain = detector_plain.predict(X_plain)
+
+    assert results['series_id'].unique().tolist() == ['s1', 's2']
+    pd.testing.assert_frame_equal(results, results_plain, check_exact=True)
+    pd.testing.assert_frame_equal(summary, summary_plain, check_exact=True)

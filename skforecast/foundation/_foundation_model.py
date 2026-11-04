@@ -735,7 +735,7 @@ class FoundationModel:
                 )
             per_series = {
                 sid: group.droplevel(0)
-                for sid, group in exog.groupby(level=0, sort=False)
+                for sid, group in exog.groupby(level=0, sort=False, observed=True)
             }
             warnings.warn(
                 "Passing a long-format DataFrame as `exog` requires "

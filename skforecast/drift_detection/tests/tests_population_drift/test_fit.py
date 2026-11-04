@@ -1,11 +1,13 @@
 # Unit test PopulationDriftDetector fit
 # ==============================================================================
+import warnings
 import pandas as pd
 import numpy as np
 import joblib
 from pathlib import Path
 import pytest
 from ....drift_detection import PopulationDriftDetector
+from ....exceptions import UnknownLevelWarning
 
 
 # fixtures
@@ -389,3 +391,28 @@ def test_fit_categorical_feature_with_unused_categories(
         detector_unused.empirical_threshold_chi2_['category']
         == detector_observed.empirical_threshold_chi2_['category']
     )
+
+
+def test_fit_multiple_series_with_categorical_level_and_unused_categories():
+    """
+    Test that fit with multiple series creates a detector only for the series
+    with data when the series level of the index is a `category` with unused
+    categories, without warnings about empty series.
+    """
+    rng = np.random.default_rng(123)
+    dates = pd.date_range('2020-01-01', periods=100, freq='D')
+    level = pd.Categorical(['s1'] * 100 + ['s2'] * 100, categories=['s1', 's2', 's3'])
+    X = pd.DataFrame(
+        {'x': rng.normal(size=200), 'y': rng.integers(0, 3, size=200)},
+        index=pd.MultiIndex.from_arrays(
+            [level, np.tile(dates, 2)], names=['series_id', 'datetime']
+        )
+    )
+
+    detector = PopulationDriftDetector(chunk_size=10, threshold=3)
+    with warnings.catch_warnings():
+        warnings.simplefilter('error', UnknownLevelWarning)
+        warnings.simplefilter('error', FutureWarning)
+        detector.fit(X)
+
+    assert list(detector.detectors_) == ['s1', 's2']

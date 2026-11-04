@@ -1599,7 +1599,7 @@ que las necesita.
 | D8 | Persistencia entre versiones | (a) documentar (joblib y pickle: solo hacia delante; skops: ambos sentidos entre pandas 2.3 y 3, ver D2); (b) añadir una comprobación en `load_forecaster` que convierta el `AssertionError`/`NotImplementedError` de pandas en un mensaje claro | **(a) + (b)**: (b) son unas líneas alrededor de las cargas de `utils.py:3700-3714` (`joblib.load`, `pickle.load` y cloudpickle: los tres fallan igual con un fichero de pandas 3 abierto en pandas 2; verificado con joblib y pickle) y evita un traceback opaco |
 | D9 | Benchmarks (`benchmarks/`) | (a) mantener `pandas==2.3.3` hasta la primera release con pandas 3 y después pasar a 3.1.x; (b) dos entornos | **(a)**, registrando la versión de pandas en los resultados |
 | D10 | Mensajes de error con tipos de índice y orden de offsets (G2-RC3, RC5) | (a) aceptar el texto de pandas 3; (b) estabilizar (`type(x).__name__`, clave de ordenación) | **(b)** solo para el orden de offsets (clave de la PR 4: mismo texto en las dos versiones en los 9 casos probados); (a) para los nombres de tipo |
-| D11 | Dónde aplicar el estudio | (a) todo en `0.27.x`; (b) en 0.27 la compatibilidad (PR 1, 2, 4, 5, 6 y 7) y la corrección F26 (sacada de la PR 3 a una PR propia); las copias de la PR 3 y la PR 8 en 0.28 | **(a)** si 0.27 no está cerrada: las optimizaciones son pequeñas y parte de ellas está medida (constructores y `astype`, 4.8); el resto (copias redundantes, `copy=False` en `predict`) se mide en su PR. Si no, (b). El 2026-11-03 0.27.0 sigue en desarrollo: (a) sigue abierta |
+| D11 | Dónde aplicar el estudio | (a) todo en `0.27.x`; (b) en 0.27 la compatibilidad (PR 1, 2, 4, 5, 6 y 7) y la corrección F26 (sacada de la PR 3 a una PR propia); las copias de la PR 3 y la PR 8 en 0.28; (c) todo en `0.28.x` | **(c), decidida el 2026-11-04** (sustituye a la (a) del 2026-11-03): la migración tardará semanas y solo tiene sentido completa (hasta la PR 6 ningún usuario nota nada), así que no retrasa la release 0.27.0; el mínimo Python 3.11 (D1) y los resultados que cambian (D12, D14, D15) encajan en una minor nueva con su "Before upgrading". Las correcciones de bugs de versiones publicadas que salgan de la migración van aparte a `0.27.x` (el `KeyError` del detector, sacado de la PR 1). Mientras `0.28.x` no exista, las ramas se crean desde `origin/0.27.x` y se rebasan después (nacerá de la punta de `0.27.x`, rebase limpio); el arnés pasa a `--base origin/0.28.x`. Las notas de versión van a la sección 0.28.0. Antes: **(a)** si 0.27 no está cerrada; si no, (b) |
 | D12 | `stack()` con NaN en las métricas multiseries (3.4) | (a) `stack(future_stack=True)` en `_utils.py:1662` (pandas 2 adopta el valor de pandas 3 para MASE/RMSSE con NaN en la serie objetivo ancha; nota de versión; la parte de las búsquedas con una métrica NaN la resolvió #1438 en las dos versiones); (b) `dropna()` tras el `stack` (pandas 3 adopta el valor de pandas 2, que cierra los huecos del entrenamiento); (c) nada (resultados distintos por versión) | **(a)**: es el valor del camino dict y el que respeta los huecos; (c) rompe la promesa de resultados iguales entre versiones |
 | D13 | La vista de lags sin exógenas (F36: `create_train_X_y` de `ForecasterRecursive`, `ForecasterRecursiveClassifier`, `ForecasterDirect` y `ForecasterDirectMultiVariate` con una serie devuelve hoy en pandas 2 una matriz de solo lectura, vista de la copia privada de `y` que hace `check_extract_values_and_index` (`utils.py:2061`, `to_numpy(copy=True)`), no de la `y` del usuario) | (a) conservar la vista y pasar `copy=False` (pandas 3 pasa a comportarse como pandas 2 hoy: sin copia, matriz de solo lectura, 4,2 ms frente a 15,2 ms con la copia actual de pandas 3 para 200k × 24); (b) materializar con `np.ascontiguousarray` (matriz escribible en ambas; pandas 2 pasa de 4,2 a 9,7 ms y +37 MiB; pandas 3 igual que hoy). Medida aislada, mínimo de 7 (`critic/noexog.py` del espacio temporal; repetida en la revisión final: 4,5, 16,8 y 9,1 ms), sin tabla en la sección 4 | **(a)**: no cambia nada para pandas 2 y quita la copia a pandas 3; documentar que la matriz sin exógenas es de solo lectura (ya lo es en pandas 2; PR 7). La matriz no comparte memoria con la `y` del usuario en ninguna versión (verificado en los tres forecasters con 2.3.3 y 3.1.0): modificar `y` después no cambia `X_train`, también con (a). (b) solo si se quiere cerrar F36 como error, aceptando el coste en pandas 2 |
 | D14 | Cuándo copiar la entrada del transformador (F26) | (a) copiar dentro de `transform_series`/`transform_dataframe` cuando `getattr(transformer, "copy", None) is not True` (copia con `Pipeline`, `ColumnTransformer`, `FunctionTransformer` y transformadores propios; no con los escaladores por defecto, que tienen `copy=True`); (b) copiar siempre; (c) copiar solo si `getattr(transformer, "copy", True) is False` | **(a)**: (c) no detecta `make_pipeline(StandardScaler(copy=False))` ni `FunctionTransformer` con una función in situ, que mutan `y`/`exog` del usuario en 2.2.3, 2.3.3 y 3.1.0, ni `make_column_transformer((StandardScaler(copy=False), cols))`, que solo muta con pandas 3.1.0 (regresión nueva de pandas 3); y con cualquiera de ellos dos `predict` seguidos con la misma `exog` dan resultados distintos, en las tres versiones (verificado). (b) es lo más simple y cuesta una copia de `y`/`exog` por llamada también con los escaladores por defecto; la PR 3 mide el coste de (a) en `predict_loop` con un `Pipeline` |
@@ -1857,7 +1857,8 @@ Orden de arranque acordado, antes de la PR 1:
 1. **Arreglo de `test_backtesting_stats`**, en una PR propia
    (`fix/...`): los dos tests
    `..._multiple_estimators_refit_{False,True}_with_mocked` sin las
-   columnas de #1437 (ver la revisión del 2026-11-03).
+   columnas de #1437 (ver la revisión del 2026-11-03). **Hecho el
+   2026-11-03** (#1443).
 2. **Arnés de verificación** en `dev/pandas3_migration/harness/`,
    versionado y en una rama propia (`chore/...`) anterior a la PR 1, con
    solo cambios en `dev/`. Las huellas de referencia salen del código sin
@@ -1865,7 +1866,7 @@ Orden de arranque acordado, antes de la PR 1:
    Adaptaciones a Windows, la máquina local: `os.getloadavg()` y VmHWM
    no existen allí. La memoria pico se mide con `tracemalloc`.
 
-   **Hecho el 2026-11-03** (rama `chore/pandas3-harness`; uso en
+   **Hecho el 2026-11-03** (#1444, rama `chore/pandas3-harness`; uso en
    `harness/README.md`). 30 casos de identidad, 205 salidas, más las
    comprobaciones de entradas intactas, `predict` repetido y memoria
    compartida; 24 benchmarks (los 20 del estudio y el `fit` de los cuatro
@@ -1896,7 +1897,11 @@ Orden de arranque acordado, antes de la PR 1:
    y `predict` construye la tabla chi2 desde un `set`
    (`_population_drift.py:787`), así que los últimos bits de
    `chi2_statistic` cambian entre procesos (por eso el arnés fija
-   `PYTHONHASHSEED=0`).
+   `PYTHONHASHSEED=0`). **Corregidos el 2026-11-03 en #1445**, antes de la
+   PR 1: un helper privado quita las columnas a cero de la tabla de
+   contingencia (atributos y distancia JS sin cambios) y `predict` ordena
+   las categorías de forma estable (las de referencia y después las nuevas
+   en el orden de `value_counts`). El arnés conserva `PYTHONHASHSEED=0`.
 
 Entornos locales (Windows, conda, Python 3.13), clones del de desarrollo
 que solo cambian pandas, ejecutados con `python.exe -m pytest` y
@@ -1911,6 +1916,56 @@ apuntan al intérprete del entorno original, así que no sirven.
 
 Antes de cada tanda de medidas se compara el `pip freeze` de los
 entornos: solo puede diferir pandas.
+
+**PR 1, hecha el 2026-11-03** (rama `chore/pandas3-renames`, creada desde
+`origin/0.27.x` en `5c2ff02`): los cinco grupos de cambios de la fila de la
+sección 7 (los 13 `isinstance` pasan a `pd.offsets.BaseOffset`; en
+`_population_drift.py` son hoy las líneas 270, 320, 350 y 426), los 20
+`.index.dayofweek` de 10 ficheros de tests, el test de `_calendar` sin
+`future.no_silent_downcasting` y tres tests nuevos que fallan sobre la base:
+detector con nivel categórico con categorías sin usar (`fit` y `predict`,
+resultados iguales bit a bit a los de un nivel de texto) y
+`FoundationModel._exog_to_dict` con el mismo nivel (la serie sin filas da
+`None`, no un `DataFrame` vacío). Nota de versión solo para el `KeyError`
+del detector. Los cuatro grupos son fuentes de `Pandas4Warning` en 3.1.0,
+comprobado. Verificación: ruff limpio (4 avisos preexistentes de
+importaciones en `test_recursive_predict_bootstrapping.py`, fuera de
+alcance); tests tocados 2329 en p2 (incluida toda `model_selection/tests`
+por el fixture), 1078 en p22 y 1077 en p3 (el fallo que queda es el de la
+línea base, `test_predict_output_when_multiple_series`); arnés con
+`--identity --bench control --memory`: 205 de 205 huellas estrictas iguales
+entre base y rama en p2 y p3, en p3 desaparecen los dos `Pandas4Warning` de
+`recursive_calendar`, 0 valores distintos entre p2 y p3 (106 salidas solo
+de dtype o unidad del índice, índice nativo); razones de mínimos entre 0,96
+y 1,03 en los dos entornos y memoria idéntica, dentro del control nulo. De
+paso, `run_ab.py` resuelve `--out-dir` a ruta absoluta: con una relativa,
+los subprocesos (que corren con `cwd=out_dir`) duplicaban la ruta de
+`base_tree`.
+
+**Reparto de la PR 1 el 2026-11-04** (D11 (c)): la corrección sale a
+`0.27.x` y los renombrados esperan a `0.28.x`.
+
+- Corrección, rama `fix/population-drift-categorical-level` (desde
+  `origin/0.27.x` en `3dfe9e4`, #1447): `groupby(level=0, observed=True)`
+  en `_population_drift.py:712, 893` y `_foundation_model.py:738`, los tres
+  tests nuevos y la nota de versión en 0.27.0 (`PopulationDriftDetector`
+  existe desde 0.26.0, y #1445 ya corrigió otro bug suyo en 0.27.0).
+  Verificación: ruff limpio; `tests_population_drift` y
+  `tests_foundation_models`, 786 en p2, 46 en p22 y 45 en p3 más el fallo
+  de la línea base; `page_meta` sin problemas. Los cambios de `dev/` (este
+  bloque, `run_ab.py`) van en la misma rama.
+- Renombrados (18 ficheros, 45 líneas: los 13 `isinstance`, los 6
+  `day_of_week`/`day_of_year` del paquete, el docstring de `_splitter.py`,
+  el relleno de festivos de `_calendar.py` y los 20 tests más el test de
+  `_calendar`), sin nota de versión: parche
+  `C:\tmp\skforecast_pandas3\pandas3_renames_only_2026-11-04.patch`, que
+  aplica limpio sobre `3dfe9e4` (`git apply --check`). Copias de seguridad
+  del árbol completo: `pr1_full_2026-11-04.patch` en la misma carpeta y el
+  stash "PR1 pandas3 renames + drift fix, full tree 2026-11-04". Cuando
+  exista `0.28.x`: `git checkout --no-track -b chore/pandas3-renames
+  origin/0.28.x`, `git apply <parche>`, verify y arnés de nuevo (la
+  verificación del 2026-11-03 vale como referencia). La rama local
+  `chore/pandas3-renames`, sin commits, se puede borrar.
 
 ### Historial de lo pendiente entre sesiones
 

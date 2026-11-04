@@ -90,6 +90,30 @@ def test_exog_to_dict_with_multiindex_dataframe():
     assert len(result["s2"]) == 3
 
 
+def test_exog_to_dict_with_multiindex_dataframe_categorical_level_unused_category():
+    """
+    Test _exog_to_dict with a long-format DataFrame whose series level is
+    categorical with an unused category: that series gets None, as a series
+    without rows, instead of an empty DataFrame.
+    """
+    idx = pd.date_range("2020-01-01", periods=3, freq="MS")
+    mi = pd.MultiIndex.from_arrays(
+        [
+            pd.Categorical(["s1"] * 3 + ["s2"] * 3, categories=["s1", "s2", "s3"]),
+            idx.tolist() * 2,
+        ]
+    )
+    df_long = pd.DataFrame({"feat": np.arange(6, dtype=float)}, index=mi)
+
+    with pytest.warns(InputTypeWarning, match="long-format DataFrame"):
+        result = FoundationModel._exog_to_dict(df_long, ["s1", "s2", "s3"])
+
+    assert list(result.keys()) == ["s1", "s2", "s3"]
+    assert len(result["s1"]) == 3
+    assert len(result["s2"]) == 3
+    assert result["s3"] is None
+
+
 def test_exog_to_dict_TypeError_multiindex_not_datetime():
     """
     Test _exog_to_dict raises TypeError when the second MultiIndex level

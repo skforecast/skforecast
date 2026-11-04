@@ -151,6 +151,8 @@ The main changes in this release are:
 
 + <code>[PopulationDriftDetector]</code> raised a `ValueError` from `chi2_contingency` in `fit` and `predict` when a `category` feature had categories with no observations. In addition, the `chi2_statistic` returned by `predict` could change in its last digits between Python sessions. ([#1445](https://github.com/skforecast/skforecast/pull/1445))
 
++ <code>[PopulationDriftDetector]</code> raised a `KeyError` in `predict` with multiple series when the series level of the index was a `category` with unused categories; `fit` also created an empty detector for each of them, with warnings. Only the categories with data are used now, as pandas 3 does.
+
 + <code>[plot_residuals]</code> ignored the `fig` argument when another figure was active: the subplots were drawn on the active figure and `fig` was returned empty. ([#1386](https://github.com/skforecast/skforecast/issues/1386), [#1387](https://github.com/skforecast/skforecast/pull/1387))
 
 
