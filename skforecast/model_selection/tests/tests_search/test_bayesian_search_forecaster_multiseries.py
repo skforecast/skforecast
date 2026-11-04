@@ -3184,3 +3184,63 @@ def test_bayesian_search_forecaster_multiseries_n_evaluated_user_attr_and_Missin
         "Series that every candidate evaluates on the same points:\n"
         "  levels=['l1', 'l2']"
     ) in messages[0]
+
+
+def test_bayesian_search_forecaster_multiseries_when_study_is_loaded_from_storage():
+    """
+    Test that a study loaded from storage with trials of a previous call
+    (`load_if_exists=True`) can be resumed: the results include every trial
+    with its `n_evaluated`, and the warning about the points evaluated only
+    uses the trials of this call (4 of the 8 trials of the study).
+    """
+    storage = optuna.storages.InMemoryStorage()
+
+    def search_space(trial):
+        search_space = {
+            'alpha': trial.suggest_float('alpha', 0.1, 1.0),
+            'lags': trial.suggest_categorical('lags', [2, 8]),
+        }
+
+        return search_space
+
+    kwargs = {
+        'series': series_short,
+        'search_space': search_space,
+        'cv': TimeSeriesFold(initial_train_size=45, steps=5, refit=False),
+        'metric': 'mean_absolute_error',
+        'n_trials': 4,
+        'return_best': False,
+        'show_progress': False,
+        'kwargs_create_study': {
+            'storage': storage, 'study_name': 'resumed', 'load_if_exists': True
+        },
+    }
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results_first, _ = bayesian_search_forecaster_multiseries(
+            forecaster   = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2),
+            random_state = 123,
+            **kwargs
+        )
+        results, study = bayesian_search_forecaster_multiseries(
+            forecaster   = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2),
+            random_state = 456,
+            **kwargs
+        )
+
+    assert len(results) == 8
+    assert len(study.trials) == 8
+    assert results['n_evaluated'].isin([30, 45]).all()
+    messages = [
+        str(w.message) for w in record
+        if w.category is MissingValuesWarning
+        and "evaluated on fewer points than the most complete one" in str(w.message)
+    ]
+    assert len(messages) == 2
+    assert results.loc[0, 'trial_number'] == 4
+    assert messages[-1].startswith(
+        "1 of 4 candidates is evaluated on fewer points than the most complete "
+        "one, so its metrics are not comparable. It is the best candidate of the "
+        "ranking"
+    )
+

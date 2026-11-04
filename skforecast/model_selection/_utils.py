@@ -2554,10 +2554,10 @@ def _format_lags_warning(lags: Any) -> str:
     """
 
     if isinstance(lags, dict):
-        return (
-            "{" + ", ".join(f"{k!r}: {_format_lags_warning(v)}" for k, v in lags.items())
-            + "}"
+        lags_repr = ", ".join(
+            f"{k!r}: {_format_lags_warning(v)}" for k, v in lags.items()
         )
+        return "{" + lags_repr + "}"
     if isinstance(lags, (np.ndarray, list, range)):
         lags = [int(lag) for lag in lags]
         if len(lags) > 6:
@@ -2598,6 +2598,7 @@ def _warn_n_evaluated_search_multiseries(
     n_evaluated_levels: list[list[int]] | np.ndarray,
     candidates: list[str],
     levels: list[str],
+    best_is_first: bool = True,
     max_candidates: int = 5,
     max_levels: int = 10
 ) -> None:
@@ -2628,6 +2629,10 @@ def _warn_n_evaluated_search_multiseries(
         Description of each candidate, in the order of the ranking.
     levels : list
         Levels of the search.
+    best_is_first : bool, default True
+        Whether the first candidate is the best of the ranking. If `False` (the
+        best candidate is not among `candidates`), the warning does not say
+        whether the best candidate is affected.
     max_candidates : int, default 5
         Maximum number of candidates listed in the warning.
     max_levels : int, default 10
@@ -2652,9 +2657,9 @@ def _warn_n_evaluated_search_multiseries(
     if len(affected) == 1:
         summary = (
             f"1 of {len(n_evaluated)} candidates is evaluated on fewer points than "
-            f"the most complete one, so its metrics are not comparable. "
+            f"the most complete one, so its metrics are not comparable."
         )
-        summary += (
+        best_message = (
             "It is the best candidate of the ranking, so the ranking may favor it."
             if is_affected[0]
             else "It is not the best candidate of the ranking."
@@ -2663,14 +2668,16 @@ def _warn_n_evaluated_search_multiseries(
         summary = (
             f"{len(affected)} of {len(n_evaluated)} candidates are evaluated on "
             f"fewer points than the most complete one, so their metrics are not "
-            f"comparable. "
+            f"comparable."
         )
-        summary += (
+        best_message = (
             "The best candidate of the ranking is one of them, so the ranking may "
             "favor it."
             if is_affected[0]
             else "The best candidate of the ranking is not one of them."
         )
+    if best_is_first:
+        summary += f" {best_message}"
 
     remove_message = "remove the candidates with larger windows"
     levels_block = None
@@ -2699,6 +2706,12 @@ def _warn_n_evaluated_search_multiseries(
                 f"To compare the candidates on the same points, pass the series "
                 f"listed below in `levels` or {remove_message}."
             )
+            if len(levels_same) > max_levels and len(levels_other) > max_levels:
+                action = (
+                    f"To compare the candidates on the same points, pass in "
+                    f"`levels` only the series that every candidate evaluates on "
+                    f"the same points (counted below) or {remove_message}."
+                )
             if len(levels_same) <= max_levels:
                 levels_line = f"levels=[{_format_names_warning(levels_same)}]"
             elif len(levels_other) <= max_levels:

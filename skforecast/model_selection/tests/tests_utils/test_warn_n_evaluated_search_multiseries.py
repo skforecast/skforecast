@@ -152,6 +152,11 @@ def test_warn_n_evaluated_search_multiseries_levels_when_both_lists_are_long():
         "It is the best candidate of the ranking, so the ranking may favor it."
     ) in message
     assert (
+        "To compare the candidates on the same points, pass in `levels` only the "
+        "series that every candidate evaluates on the same points (counted below) "
+        "or remove the candidates with larger windows."
+    ) in message
+    assert (
         "Series that every candidate evaluates on the same points:\n"
         "  levels: 15 of 30 series (the series left out include 'l15', 'l16', "
         "..., 'l29')"
@@ -181,3 +186,26 @@ def test_warn_n_evaluated_search_multiseries_one_level():
             candidates         = ["c0", "c1"],
             levels             = ['l1']
         )
+
+
+def test_warn_n_evaluated_search_multiseries_when_best_is_not_first():
+    """
+    Test that the warning does not say whether the best candidate is affected
+    when the best candidate is not among the candidates (`best_is_first=False`).
+    """
+    with pytest.warns(MissingValuesWarning) as record:
+        _warn_n_evaluated_search_multiseries(
+            n_evaluated        = [50, 100],
+            n_evaluated_levels = [[50], [100]],
+            candidates         = ["c0", "c1"],
+            levels             = ['l1'],
+            best_is_first      = False
+        )
+
+    message = str(record[0].message)
+    assert message.startswith(
+        "1 of 2 candidates is evaluated on fewer points than the most complete "
+        "one, so its metrics are not comparable. To compare the candidates"
+    )
+    assert "best candidate" not in message
+

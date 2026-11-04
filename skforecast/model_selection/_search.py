@@ -1637,11 +1637,14 @@ def _evaluate_grid_hyperparameters_multiseries(
                 RuntimeWarning
             )
             columns = [
-                'levels', 'lags', 'lags_label', 'params', *metric_names, N_EVALUATED_NAME
+                'levels', 'lags', 'lags_label', 'params', *metric_names,
+                N_EVALUATED_NAME
             ]
             return pd.DataFrame(columns=columns)
 
-        direction = _get_search_direction(metric=metric[0], forecaster=forecaster_search)
+        direction = _get_search_direction(
+                        metric=metric[0], forecaster=forecaster_search
+                    )
         results = pd.concat(metrics_list, axis=0, ignore_index=True)
         results.insert(0, 'levels', [levels] * len(results))
         results.insert(1, 'lags', lags_list)
@@ -2175,7 +2178,9 @@ def bayesian_search_forecaster_multiseries(
         metrics_data.append(
             {
                 **{m_name: trial.user_attrs[m_name] for m_name in metric_names},
-                N_EVALUATED_NAME: trial.user_attrs[N_EVALUATED_NAME]
+                # NOTE: A study loaded from storage can have trials of a
+                # previous version without `n_evaluated`.
+                N_EVALUATED_NAME: trial.user_attrs.get(N_EVALUATED_NAME, np.nan)
             }
         )
     
@@ -2250,20 +2255,28 @@ def bayesian_search_forecaster_multiseries(
                 f"  Levels: {levels_print}"
             )
 
+    # NOTE: Only the trials run in this call have the points evaluated of each
+    # level, a study loaded from storage (`load_if_exists`) can have others.
+    results_trials = results.loc[
+        results['trial_number'].isin(n_evaluated_levels_trials)
+    ]
     _warn_n_evaluated_search_multiseries(
-        n_evaluated        = results[N_EVALUATED_NAME].to_numpy(),
+        n_evaluated        = results_trials[N_EVALUATED_NAME].to_numpy(),
         n_evaluated_levels = [
             n_evaluated_levels_trials[trial_number]
-            for trial_number in results['trial_number']
+            for trial_number in results_trials['trial_number']
         ],
         candidates         = [
             f"trial {trial_number}, lags: {_format_lags_warning(lags)}, "
             f"params: {params}"
             for trial_number, lags, params in zip(
-                results['trial_number'], results['lags'], results['params']
+                results_trials['trial_number'],
+                results_trials['lags'],
+                results_trials['params']
             )
         ],
-        levels             = levels
+        levels             = levels,
+        best_is_first      = len(results_trials) > 0 and results_trials.index[0] == 0
     )
 
     return results, study
