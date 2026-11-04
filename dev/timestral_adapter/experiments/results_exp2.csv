@@ -1,0 +1,16 @@
+model_id,context_length,exog,mae,coverage_80,seconds
+autogluon/chronos-2-small,500,True,171.27,0.731,1.4
+amazon/chronos-2,500,True,137.49,0.74,4.3
+mistralai/Timestral-5M,500,True,176.04,0.772,1.1
+mistralai/Timestral-28M,500,True,170.95,0.769,2.9
+mistralai/Timestral-123M,500,True,142.96,0.778,8.9
+mistralai/Timestral-209M,500,True,135.67,0.746,12.8
+mistralai/Timestral-28M,500,False,193.63,0.722,1.4
+mistralai/Timestral-209M,500,False,177.65,0.704,5.4
+autogluon/chronos-2-small,4096,True,158.55,0.683,5.0
+amazon/chronos-2,4096,True,134.05,0.721,19.1
+mistralai/Timestral-28M,4096,True,134.9,0.764,11.6
+mistralai/Timestral-209M,4096,True,96.89,0.718,73.0
+amazon/chronos-2,8192,True,133.28,0.749,35.5
+mistralai/Timestral-28M,8192,True,129.76,0.765,19.5
+mistralai/Timestral-209M,8192,True,96.7,0.694,147.7

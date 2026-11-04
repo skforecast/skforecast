@@ -1,0 +1,3 @@
+_left_pad_context (pandas): 170.0 ms per call (400 series, 500 to 4096 points, 2 exog columns)
+numpy (T0 today): 48.0 ms per call (400 series, 500 to 4096 points, 2 exog columns)
+identical after stacking: target True | exog True | distinct end timestamps: 269

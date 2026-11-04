@@ -1,0 +1,9 @@
+# Environment of the experiments (Python 3.12). skforecast is installed
+# separately in editable mode from the repository (branch 0.27.x).
+timestral @ git+https://github.com/mistralai/timestral.git@a534bdbd244d64f3d9d743f46c7bf6fc330ed4ff
+torch==2.14.1
+numpy==2.5.4
+pandas==2.3.3
+chronos-forecasting==2.3.2
+huggingface-hub==2.4.0
+safetensors==0.8.0
