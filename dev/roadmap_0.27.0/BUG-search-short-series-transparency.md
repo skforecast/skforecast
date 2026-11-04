@@ -488,4 +488,12 @@ documento y el roadmap. Entorno: Python 3.14.3, numpy 2.5.4, pandas 2.3.3, sciki
    "Common causes" (no deciden nada; la guía las explica) y, con ellas, la fecha y el
    `window_size` del texto. Sin series comunes, la acción dice que restringir `levels` no
    ayuda y no hay bloque de series.
+4. **Revisión final (2026-11-04).** Una revisión independiente del diff encontró una
+   regresión: con `kwargs_create_study` que carga un study guardado (`load_if_exists`),
+   bayesian daba `KeyError` al final, porque los trials de llamadas anteriores no tienen la
+   cuenta por serie (ni `n_evaluated`, si son de una versión anterior). Arreglado: el aviso
+   usa solo los trials de la llamada y la columna lee `n_evaluated` con NaN por defecto.
+   Descartado tras comprobarlo: el `pooling` del one-step-ahead cuando ningún nivel de
+   `levels` está en el test falla igual que en `0.27.x` (antes, en la media ponderada); el
+   candidato se salta, y queda para el PR 2 (one-step-ahead por candidato).
 
