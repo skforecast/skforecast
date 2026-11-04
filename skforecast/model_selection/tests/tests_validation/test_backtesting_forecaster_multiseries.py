@@ -6555,9 +6555,10 @@ def test_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_NaN_las
          )
 
     warn_msg = re.escape(
-        "4 predictions are NaN at dates with observed values and are left out "
-        "of the metrics, which are calculated with fewer values than "
-        "predicted. Number of NaN predictions per series: {'l1': 4}."
+        "Some predictions are NaN at dates with observed values and are left "
+        "out of the metrics, which are calculated with fewer values than "
+        "predicted (4 in total). Number of NaN predictions per series: "
+        "{'l1': 4}."
     )
     with pytest.warns(MissingValuesWarning, match=warn_msg):
         metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
@@ -6774,9 +6775,10 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     )
     assert any(
         message.startswith(
-            "4 predictions are NaN at dates with observed values and are left "
-            "out of the metrics, which are calculated with fewer values than "
-            "predicted. Number of NaN predictions per series: {'l1': 4}."
+            "Some predictions are NaN at dates with observed values and are "
+            "left out of the metrics, which are calculated with fewer values "
+            "than predicted (4 in total). Number of NaN predictions per "
+            "series: {'l1': 4}."
         )
         for message in warnings_raised
     )
@@ -7547,9 +7549,10 @@ def test_backtesting_forecaster_multiseries_when_exog_has_NaN_in_test_fold(estim
         assert predictions.index[is_nan].min() == pd.Timestamp("2020-04-05")
         assert len(warnings_nan_predictions) == 1
         assert warnings_nan_predictions[0].startswith(
-            "10 predictions are NaN at dates with observed values and are left "
-            "out of the metrics, which are calculated with fewer values than "
-            "predicted. Number of NaN predictions per series: {'a': 5, 'b': 5}."
+            "Some predictions are NaN at dates with observed values and are "
+            "left out of the metrics, which are calculated with fewer values "
+            "than predicted (10 in total). Number of NaN predictions per "
+            "series: {'a': 5, 'b': 5}."
         )
     else:
         assert not predictions["pred"].isna().any()

@@ -1648,10 +1648,10 @@ def _calculate_metrics_backtesting_multiseries(
             .to_dict()
         )
         warnings.warn(
-            f"{int(is_nan_prediction.sum())} predictions are NaN at dates with "
-            f"observed values and are left out of the metrics, which are "
-            f"calculated with fewer values than predicted. Number of NaN "
-            f"predictions per series: {n_nan_predictions}. The forecaster "
+            f"Some predictions are NaN at dates with observed values and are "
+            f"left out of the metrics, which are calculated with fewer values "
+            f"than predicted ({int(is_nan_prediction.sum())} in total). Number "
+            f"of NaN predictions per series: {n_nan_predictions}. The forecaster "
             f"could not predict these dates, for example because of missing "
             f"values in the last window or in `exog`.",
             MissingValuesWarning

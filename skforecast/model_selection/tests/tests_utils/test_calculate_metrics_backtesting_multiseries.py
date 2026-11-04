@@ -391,9 +391,10 @@ def test_calculate_metrics_backtesting_multiseries_output_when_aggregated_metric
     """
     metrics = [add_y_train_argument(metric) for metric in metrics]
     warn_msg = re.escape(
-        "13 predictions are NaN at dates with observed values and are left out "
-        "of the metrics, which are calculated with fewer values than predicted. "
-        "Number of NaN predictions per series: {'item_3': 13}."
+        "Some predictions are NaN at dates with observed values and are left "
+        "out of the metrics, which are calculated with fewer values than "
+        "predicted (13 in total). Number of NaN predictions per series: "
+        "{'item_3': 13}."
     )
     with pytest.warns(MissingValuesWarning, match=warn_msg):
         results = _calculate_metrics_backtesting_multiseries(
@@ -1049,9 +1050,10 @@ def test_calculate_metrics_backtesting_multiseries_MissingValuesWarning_when_NaN
     metrics = [add_y_train_argument(mean_absolute_error)]
 
     warn_msg = re.escape(
-        "3 predictions are NaN at dates with observed values and are left out "
-        "of the metrics, which are calculated with fewer values than predicted. "
-        "Number of NaN predictions per series: {'item_1': 2, 'item_3': 1}. The "
+        "Some predictions are NaN at dates with observed values and are left "
+        "out of the metrics, which are calculated with fewer values than "
+        "predicted (3 in total). Number of NaN predictions per series: "
+        "{'item_1': 2, 'item_3': 1}. The "
         "forecaster could not predict these dates, for example because of "
         "missing values in the last window or in `exog`."
     )
