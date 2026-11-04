@@ -709,7 +709,7 @@ class PopulationDriftDetector:
             )
 
         if isinstance(X.index, pd.MultiIndex):
-            X = X.groupby(level=0)
+            X = X.groupby(level=0, observed=True)
 
             for idx, group in X:
                 group = group.droplevel(0)
@@ -890,7 +890,7 @@ class PopulationDriftDetector:
 
         if isinstance(X.index, pd.MultiIndex):
             results = []
-            for idx, group in X.groupby(level=0):
+            for idx, group in X.groupby(level=0, observed=True):
                 group = group.droplevel(0)
                 if idx not in self.detectors_:
                     warnings.warn(

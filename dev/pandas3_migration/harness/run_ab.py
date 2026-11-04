@@ -235,7 +235,7 @@ def main() -> None:
     args = parser.parse_args()
 
     pythons = dict(item.split("=", 1) for item in args.python)
-    out_dir = Path(args.out_dir) if args.out_dir else (
+    out_dir = Path(args.out_dir).resolve() if args.out_dir else (
         HARNESS / "results" / datetime.now().strftime("%Y%m%d_%H%M%S"))
     out_dir.mkdir(parents=True, exist_ok=True)
 
