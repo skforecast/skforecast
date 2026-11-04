@@ -1945,7 +1945,7 @@ los subprocesos (que corren con `cwd=out_dir`) duplicaban la ruta de
 **Reparto de la PR 1 el 2026-11-04** (D11 (c)): la corrección sale a
 `0.27.x` y los renombrados esperan a `0.28.x`.
 
-- Corrección, rama `fix/population-drift-categorical-level` (desde
+- Corrección, #1448, rama `fix/population-drift-categorical-level` (desde
   `origin/0.27.x` en `3dfe9e4`, #1447): `groupby(level=0, observed=True)`
   en `_population_drift.py:712, 893` y `_foundation_model.py:738`, los tres
   tests nuevos y la nota de versión en 0.27.0 (`PopulationDriftDetector`
