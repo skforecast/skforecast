@@ -3186,6 +3186,57 @@ def test_bayesian_search_forecaster_multiseries_n_evaluated_user_attr_and_Missin
     ) in messages[0]
 
 
+@pytest.mark.parametrize(
+    "n_jobs",
+    [1, 2],
+    ids=lambda n_jobs: f"n_jobs: {n_jobs}",
+)
+def test_bayesian_search_forecaster_multiseries_warnings_of_trials_once_with_count(n_jobs):
+    """
+    Test that the warning of the levels not predicted, raised in the trials
+    with 8 lags, is shown once at the end of the search with the number of
+    trials in which it is raised, also when optuna runs the trials in threads
+    (`n_jobs` of `study.optimize`).
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
+
+    def search_space(trial):
+        search_space = {
+            'alpha': trial.suggest_float('alpha', 0.1, 1.0),
+            'lags': trial.suggest_categorical('lags', [2, 8]),
+        }
+
+        return search_space
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        _, study = bayesian_search_forecaster_multiseries(
+            forecaster            = forecaster,
+            series                = series_short,
+            search_space          = search_space,
+            cv                    = TimeSeriesFold(initial_train_size=45, steps=5, refit=False),
+            metric                = 'mean_absolute_error',
+            n_trials              = 8,
+            random_state          = 123,
+            return_best           = False,
+            show_progress         = False,
+            kwargs_study_optimize = {'n_jobs': n_jobs}
+        )
+
+    n_lags_8 = sum(trial.params['lags'] == 8 for trial in study.trials)
+    assert 0 < n_lags_8 < 8
+    messages = [
+        w.message.message for w in record if w.category is MissingValuesWarning
+    ]
+    assert len(messages) == 2
+    assert messages[0].startswith(
+        f"Some levels are not predicted in folds where they have observed "
+        f"values, so their metrics, and the aggregated metrics, do not include "
+        f"those folds (in {n_lags_8} of 8 trials)."
+    )
+    assert "evaluated on fewer points than the most complete one" in messages[1]
+
+
 def test_bayesian_search_forecaster_multiseries_when_study_is_loaded_from_storage():
     """
     Test that a study loaded from storage with trials of a previous call

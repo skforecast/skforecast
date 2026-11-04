@@ -1,5 +1,6 @@
 # Unit test random_search_forecaster_multiseries
 # ==============================================================================
+import warnings
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import Ridge
@@ -217,3 +218,44 @@ def test_random_search_forecaster_multiseries_maximizes_metric_when_greater_is_b
     assert results["r2_score__average"].nunique() > 1
     assert results["r2_score__average"].is_monotonic_decreasing
     assert forecaster.estimator.alpha == results.loc[0, "alpha"]
+
+
+def test_random_search_forecaster_multiseries_UserWarning_when_space_smaller_than_n_iter():
+    """
+    Test that, when the total space of parameters is smaller than `n_iter`,
+    a single UserWarning refers to `grid_search_forecaster_multiseries`, not to
+    scikit-learn's `GridSearchCV`, and every combination is evaluated for each
+    value of `lags_grid`.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = Ridge(random_state=123),
+                     lags               = 2,
+                     transformer_series = None
+                 )
+    cv = TimeSeriesFold(
+            initial_train_size = len(series_dict_dt['l1']) - 12,
+            steps              = 3,
+            refit              = False
+         )
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results = random_search_forecaster_multiseries(
+                      forecaster          = forecaster,
+                      series              = series_dict_dt,
+                      param_distributions = {'alpha': [0.1, 1.0]},
+                      cv                  = cv,
+                      metric              = 'mean_absolute_error',
+                      lags_grid           = [2, 4],
+                      n_iter              = 5,
+                      return_best         = False,
+                      verbose             = False
+                  )
+
+    assert len(results) == 4
+    messages = [str(w.message) for w in record if w.category is UserWarning]
+    assert messages == [
+        "The total space of parameters (2) is smaller than `n_iter` (5), so the "
+        "search evaluates the 2 combinations for each value of `lags_grid`. For "
+        "an exhaustive search, use `grid_search_forecaster_multiseries`."
+    ]

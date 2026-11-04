@@ -350,7 +350,14 @@ def test_output_grid_search_equivalent_date_config_exceeding_training_size_skipp
     forecaster = ForecasterEquivalentDate(offset=1, n_offsets=1)
     cv = TimeSeriesFold(steps=3, initial_train_size=len(y) - 12, refit=False)
 
-    warn_msg = re.escape("Parameters skipped: {'offset': 20, 'n_offsets': 2}.")
+    warn_msg = (
+        re.escape(
+            "Parameters skipped: 1 of 2 candidates raises an error, so it is not "
+            "in the results.\n\n"
+        )
+        + r"\w+: .+\n"
+        + re.escape("  - params: {'offset': 20, 'n_offsets': 2}")
+    )
     with pytest.warns(RuntimeWarning, match=warn_msg):
         results = grid_search_equivalent_date(
                       forecaster  = forecaster,
@@ -385,7 +392,8 @@ def test_grid_search_equivalent_date_RuntimeWarning_when_all_configs_skipped():
     cv = TimeSeriesFold(steps=3, initial_train_size=len(y) - 12, refit=False)
 
     warn_msg = re.escape(
-        "No valid parameter combinations found. All combinations raised exceptions."
+        "Parameters skipped: 1 of 1 candidates raises an error, so the results "
+        "are empty."
     )
     with pytest.warns(RuntimeWarning, match=warn_msg):
         results = grid_search_equivalent_date(

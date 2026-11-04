@@ -12,7 +12,7 @@ from sklearn.metrics import (
     mean_absolute_error, mean_absolute_percentage_error, r2_score, zero_one_loss
 )
 from xgboost import XGBRegressor
-from skforecast.exceptions import OneStepAheadValidationWarning
+from skforecast.exceptions import LongTrainingWarning, OneStepAheadValidationWarning
 from skforecast.metrics import mean_absolute_scaled_error, root_mean_squared_scaled_error
 from skforecast.recursive import ForecasterRecursive, ForecasterRecursiveClassifier
 from skforecast.direct import ForecasterDirect
@@ -1662,3 +1662,41 @@ def test_bayesian_search_forecaster_ForecasterRecursiveClassifier_minimizes_loss
     assert results["zero_one_loss"].is_monotonic_increasing
     assert results.loc[0, "zero_one_loss"] == study.best_value
     assert forecaster.estimator.C == results.loc[0, "C"]
+
+
+def test_bayesian_search_forecaster_LongTrainingWarning_once_with_fits_of_the_search():
+    """
+    Test that LongTrainingWarning is raised once, with the number of fits of
+    each trial and of the whole search, instead of once per trial.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=2)
+    cv = TimeSeriesFold(steps=1, initial_train_size=440, refit=True)
+
+    def search_space(trial):
+        search_space = {'alpha': trial.suggest_float('alpha', 0.1, 1.0)}
+
+        return search_space
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        bayesian_search_forecaster(
+            forecaster    = forecaster,
+            y             = y_feature_selection,
+            cv            = cv,
+            search_space  = search_space,
+            metric        = 'mean_absolute_error',
+            n_trials      = 4,
+            random_state  = 123,
+            return_best   = False,
+            verbose       = False,
+            show_progress = False
+        )
+
+    messages = [
+        w.message.message for w in record if w.category is LongTrainingWarning
+    ]
+    assert messages == [
+        "Each trial fits the forecaster about 60 times, so the search (4 trials) "
+        "fits it about 240 times. This can take substantial amounts of time. If "
+        "not feasible, try with `refit = False`."
+    ]

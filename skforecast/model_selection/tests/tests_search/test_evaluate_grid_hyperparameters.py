@@ -2,6 +2,7 @@
 # ==============================================================================
 import re
 import os
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
@@ -10,7 +11,7 @@ from sklearn.model_selection import ParameterGrid
 from sklearn.linear_model import Ridge, ElasticNet
 from sklearn.preprocessing import StandardScaler
 from skforecast.metrics import mean_absolute_scaled_error, root_mean_squared_scaled_error
-from skforecast.exceptions import OneStepAheadValidationWarning
+from skforecast.exceptions import LongTrainingWarning, OneStepAheadValidationWarning
 from skforecast.recursive import ForecasterRecursive
 from skforecast.direct import ForecasterDirect
 from skforecast.model_selection import backtesting_forecaster
@@ -195,7 +196,8 @@ def test_ValueError_evaluate_grid_hyperparameters_when_metric_named_n_evaluated(
 
 def test_grid_hyperparameters_results_warn_when_non_valid_params():
     """
-    Test that a warning is raised when non valid params are included in param_grid.
+    Test that a single warning, grouped by error, is raised when non valid
+    params are included in param_grid, and the candidate is skipped.
     """
 
     param_grid = {
@@ -207,9 +209,12 @@ def test_grid_hyperparameters_results_warn_when_non_valid_params():
     forecaster = ForecasterRecursive(estimator=ElasticNet(), lags=5)
 
     msg = re.escape(
-        "Parameters skipped: {'alpha': 0.1, 'l1_ratio': 10}. The 'l1_ratio' "
-        "parameter of ElasticNet must be a float in the range [0.0, 1.0]. "
-        "Got 10 instead."
+        "Parameters skipped: 1 of 2 candidates raises an error, so it is not in "
+        "the results.\n"
+        "\n"
+        "InvalidParameterError: The 'l1_ratio' parameter of ElasticNet must be a "
+        "float in the range [0.0, 1.0]. Got 10 instead.\n"
+        "  - lags: [1, 2, 3, 4, 5], params: {'alpha': 0.1, 'l1_ratio': 10}"
     )
     with pytest.warns(RuntimeWarning, match=msg):
         results = _evaluate_grid_hyperparameters(
@@ -252,7 +257,8 @@ def test_evaluate_grid_hyperparameters_warns_when_all_params_raise_exceptions():
     forecaster = ForecasterRecursive(estimator=ElasticNet(), lags=5)
 
     warn_msg = re.escape(
-        "No valid parameter combinations found. All combinations raised exceptions."
+        "Parameters skipped: 2 of 2 candidates raise an error, so the results "
+        "are empty."
     )
     with pytest.warns(RuntimeWarning, match=warn_msg):
         results = _evaluate_grid_hyperparameters(
@@ -284,7 +290,8 @@ def test_evaluate_grid_hyperparameters_warns_when_all_params_raise_exceptions_On
     forecaster = ForecasterRecursive(estimator=ElasticNet(), lags=5)
 
     warn_msg = re.escape(
-        "No valid parameter combinations found. All combinations raised exceptions."
+        "Parameters skipped: 2 of 2 candidates raise an error, so the results "
+        "are empty."
     )
     with pytest.warns(RuntimeWarning, match=warn_msg):
         results = _evaluate_grid_hyperparameters(
@@ -1258,3 +1265,35 @@ def test_evaluate_grid_hyperparameters_metrics_equal_to_backtesting_by_name():
         )
         for name in ['mean_absolute_error', 'mean_absolute_scaled_error']:
             assert row[name] == metric_backtesting.loc[0, name]
+
+
+def test_evaluate_grid_hyperparameters_LongTrainingWarning_once_with_fits_of_the_search():
+    """
+    Test that LongTrainingWarning is raised once, with the number of fits of
+    each candidate and of the whole search, instead of once per candidate.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=2)
+    cv = TimeSeriesFold(steps=1, initial_train_size=440, refit=True)
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        _evaluate_grid_hyperparameters(
+            forecaster    = forecaster,
+            y             = y_feature_selection,
+            cv            = cv,
+            param_grid    = [{'alpha': 0.1}, {'alpha': 1.0}],
+            metric        = 'mean_absolute_error',
+            lags_grid     = [2, 3, 4],
+            return_best   = False,
+            verbose       = False,
+            show_progress = False
+        )
+
+    messages = [
+        w.message.message for w in record if w.category is LongTrainingWarning
+    ]
+    assert messages == [
+        "Each candidate fits the forecaster about 60 times, so the search (6 "
+        "candidates) fits it about 360 times. This can take substantial amounts "
+        "of time. If not feasible, try with `refit = False`."
+    ]

@@ -13,7 +13,11 @@ from sklearn.metrics import mean_squared_error
 from sklearn.metrics import mean_absolute_percentage_error
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import ParameterGrid
-from skforecast.exceptions import MissingValuesWarning, OneStepAheadValidationWarning
+from skforecast.exceptions import (
+    IgnoredArgumentWarning,
+    MissingValuesWarning,
+    OneStepAheadValidationWarning
+)
 from skforecast.metrics import mean_absolute_scaled_error
 from skforecast.metrics import root_mean_squared_scaled_error
 from skforecast.preprocessing import RollingFeatures
@@ -1844,7 +1848,8 @@ def test_evaluate_grid_hyperparameters_same_output_backtesting_and_one_step_ahea
 
 def test_evaluate_grid_hyperparameters_multiseries_warn_when_non_valid_params():
     """
-    Test that a warning is raised when non valid params are included in param_grid.
+    Test that a single warning, grouped by error, is raised when non valid
+    params are included in param_grid, and the candidate is skipped.
     """
 
     param_grid = {
@@ -1856,9 +1861,12 @@ def test_evaluate_grid_hyperparameters_multiseries_warn_when_non_valid_params():
     forecaster = ForecasterRecursiveMultiSeries(estimator=ElasticNet(), lags=5)
 
     msg = re.escape(
-        "Parameters skipped: {'alpha': 0.1, 'l1_ratio': 10}. The 'l1_ratio' "
-        "parameter of ElasticNet must be a float in the range [0.0, 1.0]. "
-        "Got 10 instead."
+        "Parameters skipped: 1 of 2 candidates raises an error, so it is not in "
+        "the results.\n"
+        "\n"
+        "InvalidParameterError: The 'l1_ratio' parameter of ElasticNet must be a "
+        "float in the range [0.0, 1.0]. Got 10 instead.\n"
+        "  - lags: [1, 2, 3, 4, 5], params: {'alpha': 0.1, 'l1_ratio': 10}"
     )
     with pytest.warns(RuntimeWarning, match=msg):
         results = _evaluate_grid_hyperparameters_multiseries(
@@ -1905,7 +1913,8 @@ def test_evaluate_grid_hyperparameters_multiseries_warns_when_all_params_raise_e
     forecaster = ForecasterRecursiveMultiSeries(estimator=ElasticNet(), lags=5)
 
     warn_msg = re.escape(
-        "No valid parameter combinations found. All combinations raised exceptions."
+        "Parameters skipped: 2 of 2 candidates raise an error, so the results "
+        "are empty."
     )
     with pytest.warns(RuntimeWarning, match=warn_msg):
         results = _evaluate_grid_hyperparameters_multiseries(
@@ -1946,7 +1955,8 @@ def test_evaluate_grid_hyperparameters_multiseries_warns_when_all_params_raise_e
     forecaster = ForecasterRecursiveMultiSeries(estimator=ElasticNet(), lags=5)
 
     warn_msg = re.escape(
-        "No valid parameter combinations found. All combinations raised exceptions."
+        "Parameters skipped: 2 of 2 candidates raise an error, so the results "
+        "are empty."
     )
     with pytest.warns(RuntimeWarning, match=warn_msg):
         results = _evaluate_grid_hyperparameters_multiseries(
@@ -2131,8 +2141,7 @@ def test_evaluate_grid_hyperparameters_multiseries_MissingValuesWarning_once_whe
     """
     Test that a single MissingValuesWarning is raised at the end of the search
     when some candidates evaluate less than 95% of the points of the most
-    complete one, whatever the order of the grid (the skforecast warnings are
-    silenced after the first candidate). It lists the candidates affected,
+    complete one, whatever the order of the grid. It lists the candidates affected,
     says that the best candidate is one of them and gives the series that
     every candidate evaluates on the same points. The warning filters are the
     same after the search.
@@ -2177,6 +2186,90 @@ def test_evaluate_grid_hyperparameters_multiseries_MissingValuesWarning_once_whe
         "  levels=['l1', 'l2']"
     ) in messages[0]
     assert results['n_evaluated'].to_list() == [30, 30, 45, 45]
+
+
+@pytest.mark.parametrize(
+    "lags_grid",
+    [[2, 8], [8, 2]],
+    ids=lambda lags_grid: f"lags_grid: {lags_grid}",
+)
+def test_evaluate_grid_hyperparameters_multiseries_warnings_of_candidates_once_with_count(
+    lags_grid
+):
+    """
+    Test that the warnings of the candidates and of the refit are shown once at
+    the end of the search, whatever the order of the grid: the warning of the
+    levels not predicted with the number of candidates in which it is raised,
+    and the warning of the bins of the residuals, raised only in the refit, as
+    it is.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        _evaluate_grid_hyperparameters_multiseries(
+            forecaster         = forecaster,
+            series             = series_short,
+            cv                 = TimeSeriesFold(initial_train_size=45, steps=5, refit=False),
+            param_grid         = [{'alpha': 0.1}, {'alpha': 1}],
+            metric             = 'mean_absolute_error',
+            lags_grid          = lags_grid,
+            return_best        = True,
+            verbose            = False,
+            show_progress      = False
+        )
+
+    assert [w.category for w in record] == [
+        MissingValuesWarning, IgnoredArgumentWarning, MissingValuesWarning
+    ]
+    assert record[1].message.message.startswith(
+        "The number of bins has been reduced from 10 to 3"
+    )
+    messages = [
+        w.message.message for w in record if w.category is MissingValuesWarning
+    ]
+    assert len(messages) == 2
+    assert messages[0].startswith(
+        "Some levels are not predicted in folds where they have observed values, "
+        "so their metrics, and the aggregated metrics, do not include those "
+        "folds (in 2 of 4 candidates). Levels never predicted have NaN metrics "
+        "and are left out of the aggregated metrics.\n"
+        "  - `window_size` (8) observations or fewer in the training set: "
+        "'short' (never predicted)."
+    )
+    assert N_EVALUATED_WARNING_MSG in messages[1]
+
+
+def test_evaluate_grid_hyperparameters_multiseries_suppress_warnings_keeps_parameters_skipped():
+    """
+    Test that, with `suppress_warnings=True`, the skforecast warnings of the
+    candidates are not shown, but the candidates skipped are.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results = _evaluate_grid_hyperparameters_multiseries(
+                      forecaster         = forecaster,
+                      series             = series_short,
+                      cv                 = TimeSeriesFold(initial_train_size=45, steps=5, refit=False),
+                      param_grid         = [{'alpha': 0.1}, {'alpha': 1}],
+                      metric             = 'mean_absolute_error',
+                      lags_grid          = [2, 8, 50],
+                      return_best        = True,
+                      verbose            = False,
+                      show_progress      = False,
+                      suppress_warnings  = True
+                  )
+
+    assert len(results) == 4
+    assert [w.category for w in record] == [RuntimeWarning]
+    message = str(record[0].message)
+    assert message.startswith(
+        "Parameters skipped: 2 of 6 candidates raise an error, so they are not "
+        "in the results.\n\nValueError: "
+    )
+    assert message.endswith("  - lags: [1, 2, ..., 50], every params (2 candidates)")
 
 
 @pytest.mark.parametrize(
