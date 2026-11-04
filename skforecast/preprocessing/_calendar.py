@@ -196,10 +196,10 @@ def create_calendar_features(
         "year": "year",
         "month": "month",
         "week": lambda idx: idx.isocalendar().week.astype(int),
-        "day_of_week": "dayofweek",
+        "day_of_week": "day_of_week",
         "day_of_month": "day",
-        "day_of_year": "dayofyear",
-        "weekend": lambda idx: (idx.dayofweek >= 5).astype(int),
+        "day_of_year": "day_of_year",
+        "weekend": lambda idx: (idx.day_of_week >= 5).astype(int),
         "hour": "hour",
         "minute": "minute",
         "second": "second",
@@ -846,8 +846,9 @@ def calculate_distance_from_holiday(
             stacklevel=2,
         )
         X = X.copy()
-        with pd.option_context("future.no_silent_downcasting", True):
-            X[holiday_column] = X[holiday_column].fillna(False).astype(bool)
+        is_holiday = X[holiday_column].to_numpy()
+        is_holiday = np.where(X[holiday_column].isna(), False, is_holiday)
+        X[holiday_column] = is_holiday.astype(bool)
 
     if date_column is None:
         if not isinstance(X.index, pd.DatetimeIndex):

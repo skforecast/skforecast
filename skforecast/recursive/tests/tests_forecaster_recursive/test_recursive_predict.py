@@ -243,10 +243,10 @@ def test_recursive_predict_fast_path_RandomForestRegressor_with_exog_window_feat
     )
 
     exog_calendar = exog_datetime.to_frame()
-    exog_calendar['day_of_week'] = exog_calendar.index.dayofweek
+    exog_calendar['day_of_week'] = exog_calendar.index.day_of_week
     exog_calendar['weekend'] = exog_calendar['day_of_week'] >= 5
     exog_predict_calendar = exog_predict_datetime.to_frame()
-    exog_predict_calendar['day_of_week'] = exog_predict_calendar.index.dayofweek
+    exog_predict_calendar['day_of_week'] = exog_predict_calendar.index.day_of_week
     exog_predict_calendar['weekend'] = exog_predict_calendar['day_of_week'] >= 5
 
     rolling = RollingFeatures(stats=['mean', 'std'], window_sizes=4)

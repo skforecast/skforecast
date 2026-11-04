@@ -327,18 +327,18 @@ def test_recursive_predict_with_exog_window_features_and_calendar_same_as_no_for
         'l1': exog_dict_dt['l1'].copy(),
         'l2': exog_dict_dt['l2'].to_frame(),
     }
-    exog_dict_dt_calendar['l1']['day_of_week'] = exog_dict_dt_calendar['l1'].index.dayofweek
+    exog_dict_dt_calendar['l1']['day_of_week'] = exog_dict_dt_calendar['l1'].index.day_of_week
     exog_dict_dt_calendar['l1']['weekend'] = exog_dict_dt_calendar['l1']['day_of_week'].isin([5, 6]).astype(int)
-    exog_dict_dt_calendar['l2']['day_of_week'] = exog_dict_dt_calendar['l2'].index.dayofweek
+    exog_dict_dt_calendar['l2']['day_of_week'] = exog_dict_dt_calendar['l2'].index.day_of_week
     exog_dict_dt_calendar['l2']['weekend'] = exog_dict_dt_calendar['l2']['day_of_week'].isin([5, 6]).astype(int)
 
     exog_pred_calendar = {
         'l1': exog_pred_dict_dt['l1'].copy(),
         'l2': exog_pred_dict_dt['l2'].to_frame(),
     }
-    exog_pred_calendar['l1']['day_of_week'] = exog_pred_calendar['l1'].index.dayofweek
+    exog_pred_calendar['l1']['day_of_week'] = exog_pred_calendar['l1'].index.day_of_week
     exog_pred_calendar['l1']['weekend'] = exog_pred_calendar['l1']['day_of_week'].isin([5, 6]).astype(int)
-    exog_pred_calendar['l2']['day_of_week'] = exog_pred_calendar['l2'].index.dayofweek
+    exog_pred_calendar['l2']['day_of_week'] = exog_pred_calendar['l2'].index.day_of_week
     exog_pred_calendar['l2']['weekend'] = exog_pred_calendar['l2']['day_of_week'].isin([5, 6]).astype(int)
 
     rolling = RollingFeatures(stats=['mean', 'std'], window_sizes=4)

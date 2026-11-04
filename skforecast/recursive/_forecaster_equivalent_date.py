@@ -215,7 +215,7 @@ class ForecasterEquivalentDate():
         self.differentiation              = None
         self.differentiation_max          = None
        
-        if not isinstance(self.offset, (int, pd.tseries.offsets.DateOffset)):
+        if not isinstance(self.offset, (int, pd.offsets.BaseOffset)):
             raise TypeError(
                 "`offset` must be an integer greater than 0 or a "
                 "pandas.tseries.offsets. Find more information about offsets in "
@@ -379,7 +379,7 @@ class ForecasterEquivalentDate():
                 f"Found {type(y)}."
             )
 
-        if isinstance(self.offset, pd.tseries.offsets.DateOffset):
+        if isinstance(self.offset, pd.offsets.BaseOffset):
             if not isinstance(y.index, pd.DatetimeIndex):
                 raise TypeError(
                     "If `offset` is a pandas DateOffset, the index of `y` must be a "
@@ -409,7 +409,7 @@ class ForecasterEquivalentDate():
             data=y, data_label='`y`', return_values=False
         )
 
-        if isinstance(self.offset, pd.tseries.offsets.DateOffset):
+        if isinstance(self.offset, pd.offsets.BaseOffset):
             # Calculate the window_size in steps for compatibility with the
             # check_predict_input function. This is not a exact calculation
             # because the offset follows the calendar rules and the distance
@@ -503,7 +503,7 @@ class ForecasterEquivalentDate():
         
         """
         
-        if isinstance(self.offset, pd.tseries.offsets.DateOffset):
+        if isinstance(self.offset, pd.offsets.BaseOffset):
             y_preds = []
             for n_off in range(1, self.n_offsets + 1):
                 idx = y.index - self.offset * n_off
@@ -667,7 +667,7 @@ class ForecasterEquivalentDate():
                               name  = 'pred'
                           )
 
-        if isinstance(self.offset, pd.tseries.offsets.DateOffset):
+        if isinstance(self.offset, pd.offsets.BaseOffset):
             
             last_window = last_window.copy()
             max_allowed_date = last_window.index[-1]
@@ -889,7 +889,7 @@ class ForecasterEquivalentDate():
                                   arr  = equivalent_values
                               )
 
-        if isinstance(self.offset, pd.tseries.offsets.DateOffset):
+        if isinstance(self.offset, pd.offsets.BaseOffset):
             
             last_window = last_window.copy()
             max_allowed_date = last_window.index[-1]

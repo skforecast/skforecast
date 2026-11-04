@@ -267,7 +267,7 @@ class PopulationDriftDetector:
             "`chunk_size` must be a positive integer, a string compatible with "
             "pandas frequencies (e.g., 'D', 'W', 'MS'), or None."
         )
-        if not (isinstance(chunk_size, (int, str, pd.DateOffset, type(None)))):
+        if not (isinstance(chunk_size, (int, str, pd.offsets.BaseOffset, type(None)))):
             raise TypeError(f"{error_msg} Got {type(chunk_size)}.")
         
         if isinstance(chunk_size, str):
@@ -317,7 +317,7 @@ class PopulationDriftDetector:
         """
         
         # Convert chunk_size to readable string for DateOffset objects
-        if isinstance(self.chunk_size, pd.DateOffset):
+        if isinstance(self.chunk_size, pd.offsets.BaseOffset):
             chunk_size_display = self.chunk_size.freqstr
         else:
             chunk_size_display = self.chunk_size
@@ -347,7 +347,7 @@ class PopulationDriftDetector:
         
         # Convert chunk_size to string representation safe for HTML
         # pd.DateOffset objects like <MonthBegin> contain < > which are interpreted as HTML tags
-        if isinstance(self.chunk_size, pd.DateOffset):
+        if isinstance(self.chunk_size, pd.offsets.BaseOffset):
             chunk_size_display = self.chunk_size.freqstr
         else:
             chunk_size_display = self.chunk_size
@@ -423,7 +423,7 @@ class PopulationDriftDetector:
         """
         
         if self.chunk_size is not None:
-            if isinstance(self.chunk_size, pd.offsets.DateOffset) and not isinstance(X.index, pd.DatetimeIndex):
+            if isinstance(self.chunk_size, pd.offsets.BaseOffset) and not isinstance(X.index, pd.DatetimeIndex):
                 raise ValueError(
                     "`chunk_size` is a pandas frequency but `X` does not have a DatetimeIndex."
                 )

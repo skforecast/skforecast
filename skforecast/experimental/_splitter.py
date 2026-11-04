@@ -64,7 +64,7 @@ class TimeSeriesSplitter:
     >>> # Single series (backward compatible)
     >>> df1 = pd.DataFrame(
     ...     {'series_a': range(100), 'series_b': range(100, 200)},
-    ...     index=pd.date_range('2023-01-01', periods=100, freq='d')
+    ...     index=pd.date_range('2023-01-01', periods=100, freq='D')
     ... )
     >>> splitter = TimeSeriesSplitter(df1)
     >>> train_set, test_set = splitter.split_by_date(

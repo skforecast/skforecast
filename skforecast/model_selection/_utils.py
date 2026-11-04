@@ -329,7 +329,7 @@ def check_backtesting_input(
         )
 
     if forecaster_name == "ForecasterEquivalentDate" and isinstance(
-        forecaster.offset, pd.tseries.offsets.DateOffset
+        forecaster.offset, pd.offsets.BaseOffset
     ):
         # NOTE: Checks when initial_train_size is not None cannot be done here
         # because the forecaster is not fitted yet and we don't know the
