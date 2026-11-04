@@ -1945,8 +1945,9 @@ los subprocesos (que corren con `cwd=out_dir`) duplicaban la ruta de
 **Reparto de la PR 1 el 2026-11-04** (D11 (c)): la corrección sale a
 `0.27.x` y los renombrados esperan a `0.28.x`.
 
-- Corrección, #1448, rama `fix/population-drift-categorical-level` (desde
-  `origin/0.27.x` en `3dfe9e4`, #1447): `groupby(level=0, observed=True)`
+- Corrección, #1448 (fusionada el 2026-11-04 en `d3db96f`), rama
+  `fix/population-drift-categorical-level` (desde `origin/0.27.x` en
+  `3dfe9e4`, #1447): `groupby(level=0, observed=True)`
   en `_population_drift.py:712, 893` y `_foundation_model.py:738`, los tres
   tests nuevos y la nota de versión en 0.27.0 (`PopulationDriftDetector`
   existe desde 0.26.0, y #1445 ya corrigió otro bug suyo en 0.27.0).
@@ -1966,6 +1967,16 @@ los subprocesos (que corren con `cwd=out_dir`) duplicaban la ruta de
   origin/0.28.x`, `git apply <parche>`, verify y arnés de nuevo (la
   verificación del 2026-11-03 vale como referencia). La rama local
   `chore/pandas3-renames`, sin commits, se puede borrar.
+
+**PR 1 y PR 2 en una sola PR, decidido el 2026-11-04**: las dos son
+invisibles para el usuario (sin cambio de resultados, sin nota de versión)
+y la verificación es la misma (identidad en p2 y p3, 0 `Pandas4Warning`
+del paquete con `warnrec`, tabla de 4.8 sobre la rama), así que van juntas
+en la rama `chore/pandas3-compat`, creada desde `origin/0.27.x` en
+`d3db96f` (#1448) con el parche de renombrados aplicado como primer commit
+propio, y los cambios de la PR 2 en commits posteriores, para revisar
+commit a commit. Cuando exista `0.28.x`, rebase de la rama y PR contra
+ella. La PR 3 sigue aparte (corrección F26 con nota de versión).
 
 ### Historial de lo pendiente entre sesiones
 

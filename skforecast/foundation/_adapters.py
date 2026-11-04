@@ -5078,13 +5078,13 @@ class NoriAdapter(_AdapterBase):
                 feats += [
                     ts.month.to_numpy(dtype=float),
                     ts.day.to_numpy(dtype=float),
-                    ts.dayofweek.to_numpy(dtype=float),
-                    ts.dayofyear.to_numpy(dtype=float),
+                    ts.day_of_week.to_numpy(dtype=float),
+                    ts.day_of_year.to_numpy(dtype=float),
                     ts.quarter.to_numpy(dtype=float),
                     ts.hour.to_numpy(dtype=float),
                 ]
-            doy = ts.dayofyear.to_numpy(dtype=float)
-            dow = ts.dayofweek.to_numpy(dtype=float)
+            doy = ts.day_of_year.to_numpy(dtype=float)
+            dow = ts.day_of_week.to_numpy(dtype=float)
             for k in range(1, self.n_fourier_terms + 1):
                 feats += [
                     np.sin(2 * np.pi * k * doy / 365.25),
