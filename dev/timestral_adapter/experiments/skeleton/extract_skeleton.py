@@ -1,5 +1,5 @@
 """
-Extract the skeleton from `dev/research_timestral_adapter.md` and write two
+Extract the skeleton from `dev/timestral_adapter/research_timestral_adapter.md` and write two
 importable modules next to this script:
 
 - `shared_changes.py`: the shared-code changes (blocks `shared_utils` and
@@ -19,7 +19,7 @@ from pathlib import Path
 
 HEADER_SHARED = '''"""
 Shared-code changes of the Timestral adapter, extracted from
-dev/research_timestral_adapter.md. Generated file, do not edit.
+dev/timestral_adapter/research_timestral_adapter.md. Generated file, do not edit.
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ import pandas as pd
 '''
 
 HEADER_ADAPTER = '''"""
-TimestralAdapter skeleton, extracted from dev/research_timestral_adapter.md.
+TimestralAdapter skeleton, extracted from dev/timestral_adapter/research_timestral_adapter.md.
 Generated file, do not edit.
 """
 

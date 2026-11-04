@@ -1,6 +1,6 @@
 # Timestral (Mistral AI): especificación de un adapter para `skforecast.foundation`
 
-Documento de trabajo, sin commit. Es la especificación completa para implementar el adapter en una sesión nueva: esa sesión no tendrá esta conversación, ni el scratchpad, ni el entorno del experimento, ni el clon de Timestral. Todo lo necesario está aquí o en `dev/timestral_experiment/`.
+Documento de trabajo. Es la especificación completa para implementar el adapter en una sesión nueva: esa sesión no tendrá esta conversación, ni el scratchpad, ni el entorno del experimento, ni el clon de Timestral. Todo lo necesario está aquí o en `dev/timestral_adapter/experiments/`.
 
 Leyenda de la procedencia de cada dato:
 
@@ -13,8 +13,8 @@ Leyenda de la procedencia de cada dato:
 
 - **Fecha:** 29/10/2026.
 - **Rama de referencia:** `0.27.x` (skforecast 0.27.0 en desarrollo), commit `9fc0fa12b9d0db55f695755d034f312c88233280` de `origin/0.27.x` (29/10/2026 12:58 +0100). Todas las referencias al código de skforecast son a ese commit. Revalidado el 04/11/2026 sobre `d3db96f` (59 commits más tarde): en `skforecast/foundation/` solo cambió una línea ajena al plan (`observed=True` en `FoundationModel._exog_to_dict`), `_backtesting_foundation` sigue descartando las ventanas de contexto enteras a NaN y `run_checks.py` pasa los 32 chequeos.
-- **Qué está commiteado:** nada. Este documento y `dev/timestral_experiment/` están sin commit (sin rama publicada). No se ha modificado nada en `skforecast/`, `docs/`, `tools/` ni en el harness.
-- **Qué hay en `dev/timestral_experiment/`:** el prototipo inicial, los seis experimentos (`exp1` a `exp6`) con sus logs y resultados, los requisitos del entorno y `skeleton/`, que extrae el esqueleto de este documento y lo ejecuta contra el backend real (sección 12).
+- **Qué está commiteado:** este documento y `dev/timestral_adapter/experiments/`, en la rama `chore/timestral-adapter-research` (04/11/2026), que se fusiona en `0.27.x` con un PR propio antes del PR A. Los logs van incluidos con `git add -f`, porque `.gitignore` excluye `*.log`. No se ha modificado nada en `skforecast/`, `docs/`, `tools/` ni en el harness.
+- **Qué hay en `dev/timestral_adapter/experiments/`:** el prototipo inicial, los seis experimentos (`exp1` a `exp6`) con sus logs y resultados, los requisitos del entorno y `skeleton/`, que extrae el esqueleto de este documento y lo ejecuta contra el backend real (sección 12).
 - **Estado del diseño:** el esqueleto de la sección 4, extraído de este documento, pasa los 32 chequeos de `skeleton/run_checks.py` con los pesos reales y `ruff check` con la configuración del repo **[probado]**. D5 y D11 están aceptadas (30/10/2026); las otras nueve decisiones de la sección 6 siguen abiertas, todas con una recomendación, y se pueden tomar al implementar.
 
 **Primer paso de la próxima sesión:**
@@ -23,7 +23,7 @@ Leyenda de la procedencia de cada dato:
 2. Repasar la checklist de upstream (sección 10). Si algo ha cambiado (release en PyPI, cambio de API o de licencia, respuesta a los issues #6 o #7), ajustar el diseño como indica esa sección antes de empezar.
 3. Crear la rama del PR A desde `origin/0.27.x` (o la `X.Y.x` vigente) y seguir el plan de la sección 7 en orden. La rama del PR B se crea después de fusionar el PR A (sección 7).
 
-**Antes del PR A (recomendado):** subir este documento y `dev/timestral_experiment/` directamente a `0.27.x`, como se hace con otras notas de `dev/` (el informe de pandas 3 o el roadmap), para que la sesión del PR B, probablemente otra, los tenga. Los logs `exp*.log` y `run_checks.log` están excluidos por `.gitignore` (`*.log`): hay que añadirlos con `git add -f`. Solo con el permiso explícito de quien lleve el trabajo.
+**Antes del PR A:** el PR de la rama `chore/timestral-adapter-research` lleva este documento y `dev/timestral_adapter/experiments/` a `0.27.x`, así que las ramas del plan salen de `0.27.x` con la especificación dentro. Si se añaden logs nuevos, `.gitignore` excluye `*.log`: hay que añadirlos con `git add -f`.
 
 ## 1. Resumen y recomendación
 
@@ -288,7 +288,7 @@ Nota al margen: `TSICLAdapter` declara `SUPPORTED_QUANTILES`, pero no llama a `_
 
 ## 4. Propuesta de diseño
 
-El esqueleto de esta sección es código completo, no un resumen. `dev/timestral_experiment/skeleton/` lo extrae de este documento y lo ejecuta contra el backend real (sección 12). Las versiones anteriores del diseño están en `dev/timestral_experiment/timestral_proto.py` (prototipo de los experimentos), que ya no coincide con este esqueleto.
+El esqueleto de esta sección es código completo, no un resumen. `dev/timestral_adapter/experiments/skeleton/` lo extrae de este documento y lo ejecuta contra el backend real (sección 12). Las versiones anteriores del diseño están en `dev/timestral_adapter/experiments/timestral_proto.py` (prototipo de los experimentos), que ya no coincide con este esqueleto.
 
 ### Plantilla
 
@@ -1568,7 +1568,7 @@ Sigue a `FakeT0Forecaster`/`FakeT0Forecast` (objeto de salida cuyo último eje s
   - `forecast(self, context, prediction_length, observation_mask=None, past_covariates=None, known_covariates=None, categorical_past_covariates=None, categorical_known_covariates=None, symmetric_averaging=True, clip_nonnegative=True)`: la misma firma que el backend, sin `**kwargs`, para que una clave desconocida de `predict_kwargs` dé `TypeError` como con el backend real. Guarda `symmetric_averaging` y `clip_nonnegative` en `last_kwargs`.
   - Como el backend real, exige `context.ndim == 3`, `(B, C, T)` en las pasadas y `(B, C, T + prediction_length)` en las conocidas, y lanza `AssertionError` si no se cumplen.
 
-Un borrador de este fake, probado con el esqueleto de la sección 4 (chequeos `fake: ...` del bloque 7 de `run_checks.py`), está en `dev/timestral_experiment/skeleton/fake_timestral.py`.
+Un borrador de este fake, probado con el esqueleto de la sección 4 (chequeos `fake: ...` del bloque 7 de `run_checks.py`), está en `dev/timestral_adapter/experiments/skeleton/fake_timestral.py`.
 
 ### `test_TimestralAdapter.py` (nuevo)
 
@@ -1778,7 +1778,7 @@ La sesión de implementación debe revisar esto primero. Estado a 29/10/2026 **[
 | safetensors | 0.8.0 |
 | skforecast | 0.27.0, editable, commit `9fc0fa1` de `0.27.x` |
 
-`dev/timestral_experiment/requirements.txt` fija lo necesario y `requirements-freeze.txt` es el `uv pip freeze` completo del entorno (Linux x86_64, incluye los paquetes `nvidia-*` del wheel de torch).
+`dev/timestral_adapter/experiments/requirements.txt` fija lo necesario y `requirements-freeze.txt` es el `uv pip freeze` completo del entorno (Linux x86_64, incluye los paquetes `nvidia-*` del wheel de torch).
 
 ### Recrear el entorno en la nube (claude.ai/code)
 
@@ -1789,7 +1789,7 @@ uv venv ~/.venvs/timestral-exp --python 3.12
 ```
 
 ```bash
-uv pip install --python ~/.venvs/timestral-exp/bin/python -r dev/timestral_experiment/requirements.txt
+uv pip install --python ~/.venvs/timestral-exp/bin/python -r dev/timestral_adapter/experiments/requirements.txt
 ```
 
 ```bash
@@ -1815,7 +1815,7 @@ pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu
 ```
 
 ```bash
-pip install -r dev/timestral_experiment/requirements.txt
+pip install -r dev/timestral_adapter/experiments/requirements.txt
 ```
 
 ```bash
@@ -1824,7 +1824,7 @@ pip install -e .
 
 ## 12. Reproducción de los experimentos
 
-Todo se ejecuta desde `dev/timestral_experiment/` con el entorno de la sección 11; ningún script depende de rutas del scratchpad. Los pesos se descargan la primera vez a la caché del Hub (21 MB el 5M, 111 MB el 28M, 490 MB el 123M, 837 MB el 209M; Chronos-2 para `exp2`). Con los pesos ya en caché, `HF_HUB_OFFLINE=1` evita las consultas al Hub. Tiempos aproximados en CPU con 4 hilos.
+Todo se ejecuta desde `dev/timestral_adapter/experiments/` con el entorno de la sección 11; ningún script depende de rutas del scratchpad. Los pesos se descargan la primera vez a la caché del Hub (21 MB el 5M, 111 MB el 28M, 490 MB el 123M, 837 MB el 209M; Chronos-2 para `exp2`). Con los pesos ya en caché, `HF_HUB_OFFLINE=1` evita las consultas al Hub. Tiempos aproximados en CPU con 4 hilos.
 
 | Archivo | Qué hace | Cómo se ejecuta | Resultado esperado |
 |:--------|:---------|:----------------|:-------------------|
@@ -1838,7 +1838,7 @@ Todo se ejecuta desde `dev/timestral_experiment/` con el entorno de la sección 
 | `skeleton/extract_skeleton.py` | Extrae de este documento los bloques marcados `<!-- skeleton:... -->` y escribe `timestral_skeleton.py` y `shared_changes.py` (con importaciones absolutas) y `foundation_loop.txt` (el bucle de `FoundationModel.predict`) | `cd skeleton && ~/.venvs/timestral-exp/bin/python extract_skeleton.py ../../research_timestral_adapter.md` | Los tres archivos generados (no se guardan) |
 | `skeleton/run_checks.py` | 32 chequeos del esqueleto con el backend real: contrato y parámetros, smoke test con `FoundationModel`, `ForecasterFoundation` y `backtesting_foundation`, lote heterogéneo, cuantiles, tipos de covariables, MPS (también a través de `ForecasterFoundation`, con `torch.backends.mps.is_available` parcheado), aviso del issue #7, extensión de índices, T0 con el relleno de `FoundationModel` (backend falso) y el fake. Inserta el bucle de `foundation_loop.txt` en el código actual de `FoundationModel.predict` | `cd skeleton && HF_HUB_OFFLINE=1 ~/.venvs/timestral-exp/bin/python -W ignore run_checks.py` (unos 2 minutos; usa el 28M y el 5M) | `32/32 checks passed` (`run_checks.log`) |
 | `skeleton/fake_timestral.py` | Borrador de `FakeTimestralForecaster` (sección 8), probado con el esqueleto en `run_checks.py` | Referencia para `fixtures_adapters.py` | No aplica |
-| Lint | `ruff` sobre los módulos extraídos | `cd skeleton && ~/.venvs/skforecast/bin/ruff check --config ../../../pyproject.toml timestral_skeleton.py shared_changes.py` | `All checks passed!` |
+| Lint | `ruff` sobre los módulos extraídos | `cd skeleton && ~/.venvs/skforecast/bin/ruff check --config ../../../../pyproject.toml timestral_skeleton.py shared_changes.py` | `All checks passed!` |
 
 ## 13. Definición de terminado de la implementación
 
@@ -1986,7 +1986,7 @@ Comprobado y correcto, sin cambios: todas las celdas de los adapters existentes 
 | 52 | "Entre 7 y 8 veces" con un 6,8, filas de la tabla con covariables distintas, y el promedio simétrico contado dos veces | Recalculado | Texto corregido |
 | 53 | La capa `time_variate` también tiene atención temporal | Confirmado en `config.LAYER_KIND_AXES` | Texto corregido |
 | 54 | Con `context_length` mayor que 32.768, el backend recorta sin avisar | Confirmado en `_assemble_rows` | Docstring del adapter |
-| 55 | Varias cifras marcadas como probadas sin script ni log en `dev/timestral_experiment/` (0,039; 0,043; 3,5 s frente a 1,8 s; 4 hilos; 239 ms) | Confirmado | `exp5.log` y `exp6.log` con las cifras nuevas; la de los hilos se ha quitado |
+| 55 | Varias cifras marcadas como probadas sin script ni log en `dev/timestral_adapter/experiments/` (0,039; 0,043; 3,5 s frente a 1,8 s; 4 hilos; 239 ms) | Confirmado | `exp5.log` y `exp6.log` con las cifras nuevas; la de los hilos se ha quitado |
 | 56 | Tres filas de `results_exp2.csv` (las de 4096) sin log | Confirmado | Superado por el 77: el backtesting se ha repetido entero en una sola ejecución con log |
 | 57 | La mediana del 209M con `symmetric_averaging=False` (5.30) no está "arreglada" frente a 2.02 | Confirmado | Texto corregido |
 | 58 | El resumen hablaba de dos cambios compartidos y hay cuatro; D11 hablaba de diez adapters en el PR A | Confirmado | Corregido |
