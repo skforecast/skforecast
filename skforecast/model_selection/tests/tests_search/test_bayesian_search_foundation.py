@@ -469,6 +469,38 @@ def test_ValueError_bayesian_search_foundation_duplicate_metric_names():
         )
 
 
+def test_ValueError_bayesian_search_foundation_when_metric_named_n_evaluated():
+    """
+    ValueError is raised, before the first trial, when a metric is named
+    `n_evaluated`, the column of the backtesting metrics with the number of
+    points evaluated.
+    """
+    forecaster = make_forecaster()
+    cv = TimeSeriesFold(steps=5, initial_train_size=40)
+
+    def search_space(trial):  # pragma: no cover
+        return {"context_length": trial.suggest_categorical("context_length", [24, 48])}
+
+    def n_evaluated(y_true, y_pred):  # pragma: no cover
+        return float(np.mean(np.abs(np.asarray(y_true) - np.asarray(y_pred))))
+
+    err_msg = re.escape(
+        "The backtesting metrics include the column 'n_evaluated' with the "
+        "number of points evaluated. Rename the metric 'n_evaluated' passed in "
+        "`metric`."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        bayesian_search_foundation(
+            forecaster=forecaster,
+            series=y,
+            cv=cv,
+            search_space=search_space,
+            metric=["mean_absolute_error", n_evaluated],
+            n_trials=2,
+            return_best=False,
+        )
+
+
 # ==============================================================================
 # return_best with multi-series: forecaster refitted on multi-series data
 # ==============================================================================

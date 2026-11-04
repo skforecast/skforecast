@@ -48,6 +48,13 @@ INTERVAL_METRIC_NAMES = ['coverage', 'interval_width']
 # removing the predictions of overlapping folds), see `_count_evaluated`.
 N_EVALUATED_NAME = 'n_evaluated'
 
+# NOTE: The multi-series searches warn when a candidate evaluates fewer points
+# than this fraction of the points of the most complete candidate, see
+# `_warn_n_evaluated_search_multiseries`. Below 5% of the points left out, the
+# bias of the metric is usually smaller than the differences between
+# candidates.
+N_EVALUATED_WARNING_THRESHOLD = 0.95
+
 
 def initialize_lags_grid(
     forecaster: object, 
@@ -1894,7 +1901,11 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
     Returns
     -------
     metrics_levels : pandas DataFrame
-        Value(s) of the metric(s).
+        Value(s) of the metric(s). The last column, `n_evaluated`
+        (`N_EVALUATED_NAME`), is the number of points that enter the metrics
+        of each level: those with a true value and a prediction, both not
+        missing. Its aggregated value is the sum over the levels, as in
+        `_calculate_metrics_backtesting_multiseries`.
     predictions : pandas DataFrame, None
         Value of predictions for each level. `None` if `return_predictions`
         is `False`.
@@ -2021,6 +2032,9 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
             data=[metrics_level], columns=metric_names
         )
         metrics_levels.insert(0, 'levels', [level])
+        metrics_levels[N_EVALUATED_NAME] = _count_evaluated(
+            y_true=y_true, y_pred=y_pred
+        )
 
         if return_predictions:
             predictions = pd.DataFrame({level: y_pred}, index=test_index)
@@ -2155,6 +2169,7 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
                 )
 
     metrics_levels = []
+    n_evaluated_levels = []
     for level in levels:
         if level in predictions_per_level:
             y_true = predictions_per_level[level].loc[:, 'y_true']
@@ -2168,60 +2183,69 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
                 for m in metrics
             ]
             metrics_levels.append(metrics_level)
+            n_evaluated_levels.append(_count_evaluated(y_true=y_true, y_pred=y_pred))
         else:
             metrics_levels.append([None for _ in metrics])
+            n_evaluated_levels.append(0)
 
     metrics_levels = pd.DataFrame(
                          data    = metrics_levels,
                          columns = metric_names
                      )
     metrics_levels.insert(0, 'levels', levels)
+    metrics_levels[N_EVALUATED_NAME] = n_evaluated_levels
 
     if len(levels) < 2:
         add_aggregated_metric = False
 
     if add_aggregated_metric:
 
+        # NOTE: The aggregated number of points evaluated is the sum over the
+        # levels, the same for the three aggregations.
+        n_evaluated = int(metrics_levels[N_EVALUATED_NAME].sum())
+
         # aggregation: average
-        average = metrics_levels.drop(columns='levels').mean(skipna=True)
+        average = metrics_levels[metric_names].mean(skipna=True)
         average = average.to_frame().transpose()
         average['levels'] = 'average'
+        average[N_EVALUATED_NAME] = n_evaluated
 
         # aggregation: weighted_average
         # NOTE: Weighted by the points evaluated in each level, as in
         # `_calculate_metrics_backtesting_multiseries`.
-        n_predictions_levels = {
-            k: _count_evaluated(y_true=v['y_true'], y_pred=v['y_pred'])
-            for k, v in predictions_per_level.items()
-        }
-        n_predictions_levels = pd.DataFrame(
-            n_predictions_levels.items(),
-            columns=['levels', 'n_predictions']
-        )
         metrics_levels_no_missing = (
-            metrics_levels.merge(n_predictions_levels, on='levels', how='inner')
+            metrics_levels.loc[metrics_levels[N_EVALUATED_NAME] > 0]
         )
         weighted_averages = {}
         for col in metric_names:
-            weighted_averages[col] = np.average(
-                metrics_levels_no_missing[col],
-                weights = metrics_levels_no_missing['n_predictions']
+            weighted_averages[col] = (
+                np.average(
+                    metrics_levels_no_missing[col],
+                    weights = metrics_levels_no_missing[N_EVALUATED_NAME]
+                )
+                if not metrics_levels_no_missing.empty
+                else np.nan
             )
         weighted_average = pd.DataFrame(weighted_averages, index=[0])
         weighted_average['levels'] = 'weighted_average'
+        weighted_average[N_EVALUATED_NAME] = n_evaluated
 
         # aggregation: pooling
+        # NOTE: `X_test` includes every series of the forecaster, so only the
+        # predictions of `levels` are pooled.
         scaled_metrics = ['mean_absolute_scaled_error', 'root_mean_squared_scaled_error']
-        predictions_pooled = pd.concat(predictions_per_level.values())
+        levels_pooled = [k for k in predictions_per_level if k in levels]
+        predictions_pooled = pd.concat(
+            [predictions_per_level[k] for k in levels_pooled]
+        )
         if needs_y_train:
             y_train_pooled = pd.concat(
-                [v for k, v in y_train_per_level.items() if k in predictions_per_level]
+                [y_train_per_level[k] for k in levels_pooled]
             )
             if any(name in scaled_metrics for name in metric_names):
                 list_y_train_by_level = [
-                    v['y_train'].to_numpy()
-                    for k, v in y_train_per_level.items()
-                    if k in predictions_per_level
+                    y_train_per_level[k]['y_train'].to_numpy()
+                    for k in levels_pooled
                 ]
         else:
             y_train_pooled = None
@@ -2248,6 +2272,7 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
                 )
         pooled = pd.DataFrame([pooled], columns=metric_names)
         pooled['levels'] = 'pooling'
+        pooled[N_EVALUATED_NAME] = n_evaluated
 
         metrics_levels = pd.concat(
             [metrics_levels, average, weighted_average, pooled],
@@ -2439,3 +2464,290 @@ def _select_metrics_search_multiseries(
     )
 
     return metric_values
+
+
+def _check_metric_names_search(metric_names: list[str]) -> None:
+    """
+    Check the names of the metrics of a search before evaluating any
+    candidate: they must be unique, and `n_evaluated` (`N_EVALUATED_NAME`) is
+    reserved for the number of points evaluated of the backtesting. Otherwise,
+    the backtesting of every candidate would raise an error.
+
+    Parameters
+    ----------
+    metric_names : list
+        Names of the metrics.
+
+    Returns
+    -------
+    None
+
+    """
+
+    if len(metric_names) != len(set(metric_names)):
+        raise ValueError(
+            "When `metric` is a `list`, each metric name must be unique."
+        )
+    if N_EVALUATED_NAME in metric_names:
+        raise ValueError(
+            f"The backtesting metrics include the column '{N_EVALUATED_NAME}' "
+            f"with the number of points evaluated. Rename the metric "
+            f"'{N_EVALUATED_NAME}' passed in `metric`."
+        )
+
+
+def _get_n_evaluated_search_multiseries(
+    metrics: pd.DataFrame,
+    row: str,
+    levels: list[str]
+) -> tuple[int, np.ndarray]:
+    """
+    Number of points evaluated of a candidate of a multi-series search: the
+    column `n_evaluated` (`N_EVALUATED_NAME`) of the metrics table, in the row
+    used for the metrics of the results (an aggregation, whose value is the
+    sum over the levels, or the level if the metrics are not aggregated), and
+    in the row of each level.
+
+    Parameters
+    ----------
+    metrics : pandas DataFrame
+        Metrics table of `backtesting_forecaster_multiseries` or
+        `_predict_and_calculate_metrics_one_step_ahead_multiseries`, with the
+        columns `levels` and `n_evaluated`.
+    row : str
+        Value of the column `levels` used for the metrics of the results.
+    levels : list
+        Levels of the search.
+
+    Returns
+    -------
+    n_evaluated : int
+        Number of points evaluated.
+    n_evaluated_levels : numpy ndarray
+        Number of points evaluated of each level, in the order of `levels`.
+
+    """
+
+    n_evaluated = metrics.set_index('levels')[N_EVALUATED_NAME]
+    n_evaluated_levels = n_evaluated.loc[levels].to_numpy(dtype=int)
+    n_evaluated = int(n_evaluated.loc[row])
+
+    return n_evaluated, n_evaluated_levels
+
+
+def _format_lags_warning(lags: Any) -> str:
+    """
+    Short representation of the lags of a candidate for the warnings of the
+    searches: arrays with more than 6 lags show the first two and the last.
+
+    Parameters
+    ----------
+    lags : Any
+        Lags of the candidate: numpy ndarray, dict of them
+        (`ForecasterDirectMultiVariate`), a label or `None`.
+
+    Returns
+    -------
+    lags_repr : str
+        Representation of the lags.
+
+    """
+
+    if isinstance(lags, dict):
+        lags_repr = ", ".join(
+            f"{k!r}: {_format_lags_warning(v)}" for k, v in lags.items()
+        )
+        return "{" + lags_repr + "}"
+    if isinstance(lags, (np.ndarray, list, range)):
+        lags = [int(lag) for lag in lags]
+        if len(lags) > 6:
+            return f"[{lags[0]}, {lags[1]}, ..., {lags[-1]}]"
+        return str(lags)
+
+    return str(lags)
+
+
+def _format_names_warning(names: list, max_names: int | None = None) -> str:
+    """
+    Representation of a list of names for the warnings of the searches. If
+    `max_names` is given and the list is longer, only the first two and the
+    last names are shown.
+
+    Parameters
+    ----------
+    names : list
+        Names to show.
+    max_names : int, default None
+        Maximum number of names shown in full.
+
+    Returns
+    -------
+    names_repr : str
+        Representation of the names, without brackets.
+
+    """
+
+    if max_names is not None and len(names) > max_names:
+        names = [*names[:2], ..., names[-1]]
+
+    return ", ".join("..." if name is ... else repr(name) for name in names)
+
+
+def _warn_n_evaluated_search_multiseries(
+    n_evaluated: list[int] | np.ndarray,
+    n_evaluated_levels: list[list[int]] | np.ndarray,
+    candidates: list[str],
+    levels: list[str],
+    best_is_first: bool = True,
+    max_candidates: int = 5,
+    max_levels: int = 10
+) -> None:
+    """
+    Warn, once at the end of a multi-series search, when some candidates
+    evaluate fewer points than the most complete one, so their metrics are
+    not comparable. A candidate is reported when it evaluates less than
+    `N_EVALUATED_WARNING_THRESHOLD` (95%) of the points of the most complete
+    candidate. The candidates must be in the order of the ranking, the first
+    one is the best.
+
+    The warning also gives the levels that every candidate evaluates on the
+    same points (the same number of points as the most complete candidate in
+    that level): passing them in `levels` makes the candidates comparable.
+    They are listed if they are at most `max_levels`; otherwise, if the rest
+    are at most `max_levels`, the rest are listed instead. Levels without
+    points evaluated in any candidate are left out.
+
+    Parameters
+    ----------
+    n_evaluated : list, numpy ndarray
+        Number of points evaluated of each candidate, in the order of the
+        ranking.
+    n_evaluated_levels : list, numpy ndarray
+        Number of points evaluated of each candidate (rows, in the order of the
+        ranking) and level (columns, in the order of `levels`).
+    candidates : list
+        Description of each candidate, in the order of the ranking.
+    levels : list
+        Levels of the search.
+    best_is_first : bool, default True
+        Whether the first candidate is the best of the ranking. If `False` (the
+        best candidate is not among `candidates`), the warning does not say
+        whether the best candidate is affected.
+    max_candidates : int, default 5
+        Maximum number of candidates listed in the warning.
+    max_levels : int, default 10
+        Maximum number of levels listed in the warning.
+
+    Returns
+    -------
+    None
+
+    """
+
+    n_evaluated = np.asarray(n_evaluated)
+    if n_evaluated.size == 0:
+        return
+
+    n_evaluated_max = int(n_evaluated.max())
+    is_affected = n_evaluated < N_EVALUATED_WARNING_THRESHOLD * n_evaluated_max
+    if not is_affected.any():
+        return
+
+    affected = np.flatnonzero(is_affected)
+    if len(affected) == 1:
+        summary = (
+            f"1 of {len(n_evaluated)} candidates is evaluated on fewer points than "
+            f"the most complete one, so its metrics are not comparable."
+        )
+        best_message = (
+            "It is the best candidate of the ranking, so the ranking may favor it."
+            if is_affected[0]
+            else "It is not the best candidate of the ranking."
+        )
+    else:
+        summary = (
+            f"{len(affected)} of {len(n_evaluated)} candidates are evaluated on "
+            f"fewer points than the most complete one, so their metrics are not "
+            f"comparable."
+        )
+        best_message = (
+            "The best candidate of the ranking is one of them, so the ranking may "
+            "favor it."
+            if is_affected[0]
+            else "The best candidate of the ranking is not one of them."
+        )
+    if best_is_first:
+        summary += f" {best_message}"
+
+    remove_message = "remove the candidates with larger windows"
+    levels_block = None
+    if len(levels) < 2:
+        action = f"To compare the candidates on the same points, {remove_message}."
+    else:
+        n_evaluated_levels = np.asarray(n_evaluated_levels)
+        n_evaluated_levels_max = n_evaluated_levels.max(axis=0)
+        is_evaluated = n_evaluated_levels_max > 0
+        is_same_points = (n_evaluated_levels == n_evaluated_levels_max).all(axis=0)
+        levels_same = [
+            level for level, same, evaluated
+            in zip(levels, is_same_points, is_evaluated) if same and evaluated
+        ]
+        levels_other = [
+            level for level, same, evaluated
+            in zip(levels, is_same_points, is_evaluated) if not same and evaluated
+        ]
+        if not levels_same:
+            action = (
+                f"No series is evaluated on the same points by every candidate, "
+                f"so restricting `levels` does not help: {remove_message}."
+            )
+        else:
+            action = (
+                f"To compare the candidates on the same points, pass the series "
+                f"listed below in `levels` or {remove_message}."
+            )
+            if len(levels_same) > max_levels and len(levels_other) > max_levels:
+                action = (
+                    f"To compare the candidates on the same points, pass in "
+                    f"`levels` only the series that every candidate evaluates on "
+                    f"the same points (counted below) or {remove_message}."
+                )
+            if len(levels_same) <= max_levels:
+                levels_line = f"levels=[{_format_names_warning(levels_same)}]"
+            elif len(levels_other) <= max_levels:
+                levels_line = (
+                    f"levels: every series except "
+                    f"[{_format_names_warning(levels_other)}]"
+                )
+            else:
+                levels_line = (
+                    f"levels: {len(levels_same):,} of "
+                    f"{len(levels_same) + len(levels_other):,} series (the series "
+                    f"left out include "
+                    f"{_format_names_warning(levels_other, max_names=max_levels)})"
+                )
+            levels_block = (
+                f"Series that every candidate evaluates on the same points:\n"
+                f"  {levels_line}"
+            )
+
+    lines = [
+        f"  - {candidates[i]}: {int(n_evaluated[i]):,} "
+        f"({n_evaluated[i] / n_evaluated_max:.1%})"
+        for i in affected[:max_candidates]
+    ]
+    if len(affected) > max_candidates:
+        lines.append(f"  ... and {len(affected) - max_candidates} more")
+    candidates_block = (
+        f"Candidates with less than {N_EVALUATED_WARNING_THRESHOLD:.0%} of the "
+        f"{n_evaluated_max:,} points of the most complete one:\n" + "\n".join(lines)
+    )
+
+    blocks = [
+        f"{summary} {action} See the column `{N_EVALUATED_NAME}` of the results.",
+        candidates_block,
+    ]
+    if levels_block is not None:
+        blocks.append(levels_block)
+
+    warnings.warn("\n\n".join(blocks), MissingValuesWarning)

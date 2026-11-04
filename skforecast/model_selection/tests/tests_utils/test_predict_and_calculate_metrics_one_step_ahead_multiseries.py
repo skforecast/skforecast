@@ -351,12 +351,51 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equival
         fit_kwargs = fit_kwargs
     )
 
-    # NOTE: The one-step-ahead metrics do not include the number of points
-    # evaluated of the backtesting (`n_evaluated`).
-    pd.testing.assert_frame_equal(
-        metrics_one_step_ahead, metrics_backtesting.drop(columns='n_evaluated')
-    )
+    pd.testing.assert_frame_equal(metrics_one_step_ahead, metrics_backtesting)
     pd.testing.assert_frame_equal(pred_one_step_ahead, pred_backtesting)
+
+
+@pytest.mark.parametrize(
+    "metrics",
+    [['mean_absolute_error'], ['mean_absolute_error', mean_absolute_scaled_error]],
+    ids=lambda metrics: f'n_metrics: {len(metrics)}'
+)
+def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_when_levels_is_a_subset_of_series(metrics):
+    """
+    Test that, when `levels` is a subset of the series, only the predictions of
+    `levels` are pooled and `n_evaluated` of the aggregations is their sum. The
+    output is equivalent to the backtesting with steps=1 and refit=False.
+    """
+
+    initial_train_size = 927
+    levels = ['item_1', 'item_3']
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator=Ridge(random_state=678), lags=3,
+                     transformer_series=StandardScaler()
+                 )
+
+    cv = TimeSeriesFold(initial_train_size=initial_train_size, steps=1, refit=False)
+    metrics_backtesting, _ = backtesting_forecaster_multiseries(
+        forecaster=forecaster, series=series_dict_dt_item_sales, cv=cv,
+        metric=metrics, levels=levels, show_progress=False
+    )
+
+    (
+        X_train, y_train, X_test, y_test,
+        X_train_encoding, X_test_encoding, sample_weight, fit_kwargs
+    ) = forecaster._train_test_split_one_step_ahead(
+            series=series_dict_dt_item_sales, initial_train_size=initial_train_size
+        )
+    metrics_one_step_ahead, _ = _predict_and_calculate_metrics_one_step_ahead_multiseries(
+        forecaster=forecaster, series=series_dict_dt_item_sales,
+        X_train=X_train, y_train=y_train, X_test=X_test, y_test=y_test,
+        X_train_encoding=X_train_encoding, X_test_encoding=X_test_encoding,
+        levels=levels, metrics=metrics, add_aggregated_metric=True,
+        sample_weight=sample_weight, fit_kwargs=fit_kwargs, return_predictions=False
+    )
+
+    pd.testing.assert_frame_equal(metrics_one_step_ahead, metrics_backtesting)
+    assert metrics_one_step_ahead['n_evaluated'].to_list() == [170, 170, 340, 340, 340]
 
 
 @pytest.mark.parametrize("differentiation", 
@@ -436,7 +475,8 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_ForecasterRecu
                                             3.441691599998732,
                                             3.7291616594788803,
                                             3.729161659478881,
-                                            3.732657654164705]}
+                                            3.732657654164705],
+            'n_evaluated': [170, 170, 170, 510, 510, 510]}
         ),
         pd.DataFrame(
             data = np.array([[25.6059407 , 10.6092054 , 11.74557632],
@@ -548,6 +588,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_Forecas
                     4: 12.431203835953964,
                     5: 17.347393898836998,
                 },
+                "n_evaluated": {0: 170, 1: 170, 2: 170, 3: 510, 4: 510, 5: 510},
             }
         ),
         pd.DataFrame(
@@ -635,7 +676,8 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_Forecas
             {'levels': ['item_1'],
              'mean_absolute_error': [3.246937481200051],
              'mean_absolute_percentage_error': [0.1604318346564821],
-             'mean_absolute_scaled_error': [2.1241244208766368]}
+             'mean_absolute_scaled_error': [2.1241244208766368],
+             'n_evaluated': [170]}
         ),
         pd.DataFrame(
             data = np.array([[26.77436694],
@@ -764,11 +806,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_equivalence_ba
         fit_kwargs = fit_kwargs
     )
 
-    # NOTE: The one-step-ahead metrics do not include the number of points
-    # evaluated of the backtesting (`n_evaluated`).
-    pd.testing.assert_frame_equal(
-        metrics_one_step_ahead, metrics_backtesting.drop(columns='n_evaluated')
-    )
+    pd.testing.assert_frame_equal(metrics_one_step_ahead, metrics_backtesting)
     pd.testing.assert_frame_equal(pred_one_step_ahead, pred_backtesting)
 
 
@@ -857,11 +895,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_equivalence_ba
         fit_kwargs = fit_kwargs
     )
 
-    # NOTE: The one-step-ahead metrics do not include the number of points
-    # evaluated of the backtesting (`n_evaluated`).
-    pd.testing.assert_frame_equal(
-        metrics_one_step_ahead, metrics_backtesting.drop(columns='n_evaluated')
-    )
+    pd.testing.assert_frame_equal(metrics_one_step_ahead, metrics_backtesting)
     pd.testing.assert_frame_equal(pred_one_step_ahead, pred_backtesting)
 
 
@@ -973,11 +1007,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_equivalence_ba
         fit_kwargs=fit_kwargs
     )
 
-    # NOTE: The one-step-ahead metrics do not include the number of points
-    # evaluated of the backtesting (`n_evaluated`).
-    pd.testing.assert_frame_equal(
-        metrics_one_step_ahead, metrics_backtesting.drop(columns='n_evaluated')
-    )
+    pd.testing.assert_frame_equal(metrics_one_step_ahead, metrics_backtesting)
     pd.testing.assert_frame_equal(pred_one_step_ahead, pred_backtesting, check_dtype=False)
 
 
@@ -1090,11 +1120,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_equivalence_ba
         fit_kwargs=fit_kwargs
     )
 
-    # NOTE: The one-step-ahead metrics do not include the number of points
-    # evaluated of the backtesting (`n_evaluated`).
-    pd.testing.assert_frame_equal(
-        metrics_one_step_ahead, metrics_backtesting.drop(columns='n_evaluated')
-    )
+    pd.testing.assert_frame_equal(metrics_one_step_ahead, metrics_backtesting)
     pd.testing.assert_frame_equal(pred_one_step_ahead, pred_backtesting, check_dtype=False)
 
 

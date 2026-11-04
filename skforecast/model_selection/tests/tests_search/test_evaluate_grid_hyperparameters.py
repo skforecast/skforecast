@@ -163,6 +163,36 @@ def test_ValueError_evaluate_grid_hyperparameters_metric_list_duplicate_names():
         )
 
 
+def test_ValueError_evaluate_grid_hyperparameters_when_metric_named_n_evaluated():
+    """
+    Test ValueError is raised in _evaluate_grid_hyperparameters, before
+    evaluating any candidate, when a metric is named `n_evaluated`, the column
+    of the backtesting metrics with the number of points evaluated.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(random_state=123), lags=2)
+    cv = TimeSeriesFold(steps=3, initial_train_size=len(y[:-12]), refit=False)
+
+    def n_evaluated(y_true, y_pred):  # pragma: no cover
+        return float(np.mean(np.abs(np.asarray(y_true) - np.asarray(y_pred))))
+
+    err_msg = re.escape(
+        "The backtesting metrics include the column 'n_evaluated' with the "
+        "number of points evaluated. Rename the metric 'n_evaluated' passed in "
+        "`metric`."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        _evaluate_grid_hyperparameters(
+            forecaster  = forecaster,
+            y           = y,
+            cv          = cv,
+            lags_grid   = [2, 4],
+            param_grid  = [{'alpha': 0.01}, {'alpha': 0.1}],
+            metric      = ['mean_absolute_error', n_evaluated],
+            return_best = False,
+            verbose     = False
+        )
+
+
 def test_grid_hyperparameters_results_warn_when_non_valid_params():
     """
     Test that a warning is raised when non valid params are included in param_grid.

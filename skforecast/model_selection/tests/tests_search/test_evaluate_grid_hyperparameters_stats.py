@@ -232,6 +232,37 @@ def test_exception_evaluate_grid_hyperparameters_stats_metric_list_duplicate_nam
         )
 
 
+def test_ValueError_evaluate_grid_hyperparameters_stats_when_metric_named_n_evaluated():
+    """
+    Test ValueError is raised in _evaluate_grid_hyperparameters_stats, before
+    evaluating any candidate, when a metric is named `n_evaluated`, the column
+    of the backtesting metrics with the number of points evaluated.
+    """
+    forecaster = ForecasterStats(
+                     estimator = Sarimax(order=(3, 2, 0), maxiter=1000, method='cg', disp=False)
+                 )
+    cv = TimeSeriesFold(steps=3, initial_train_size=len(y_datetime) - 12, refit=False)
+
+    def n_evaluated(y_true, y_pred):  # pragma: no cover
+        return float(np.mean(np.abs(np.asarray(y_true) - np.asarray(y_pred))))
+
+    err_msg = re.escape(
+        "The backtesting metrics include the column 'n_evaluated' with the "
+        "number of points evaluated. Rename the metric 'n_evaluated' passed in "
+        "`metric`."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        _evaluate_grid_hyperparameters_stats(
+            forecaster  = forecaster,
+            y           = y_datetime,
+            cv          = cv,
+            param_grid  = [{'order': (1, 1, 1)}, {'order': (1, 2, 2)}],
+            metric      = n_evaluated,
+            return_best = False,
+            verbose     = False
+        )
+
+
 def test_output_evaluate_grid_hyperparameters_stats_with_mocked():
     """
     Test output of _evaluate_grid_hyperparameters_stats in ForecasterStats with mocked
