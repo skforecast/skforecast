@@ -1,0 +1,34 @@
+Python 3.12.3 | torch 2.14.1+cpu | numpy 2.5.4 | pandas 2.3.3 | h2ofm 0.43.1 | huggingface-hub 2.4.0 | skforecast 0.27.0 | threads 4 | cpus 4 | x86_64 | Linux 6.18.44
+exp3_multiseries.py:58: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  idx = idx + pd.Timedelta(hours=int(37 * i))  # different end dates
+exp3_multiseries.py:58: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  idx = idx + pd.Timedelta(hours=int(37 * i))  # different end dates
+exp3_multiseries.py:58: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  idx = idx + pd.Timedelta(hours=int(37 * i))  # different end dates
+1. heterogeneous batch: calls to forecast_many [3]
+1. s1 (n=900, exog ['temp', 'kind']): batch vs alone max abs diff 7.63e-06 | same index True
+1. s2 (n=400, exog ['temp']): batch vs alone max abs diff 7.63e-06 | same index True
+1. s3 (n=700, exog None): batch vs alone max abs diff 7.63e-06 | same index True
+1. grouped by signature: calls [1, 1, 1] | max abs diff vs one call 7.63e-06
+2. levels [0.33, 0.02, 0.98, 0.5]: columns ['level', 'q_0.33', 'q_0.02', 'q_0.98', 'q_0.5'] | q_0.02 < q_0.33 < q_0.5 < q_0.98 at every step: True
+2. duplicated levels [0.5, 0.1, 0.5]: backend receives [0.1, 0.5] | FoundationModel columns ['level', 'q_0.5', 'q_0.1'] | q_0.5 equals the median True
+2. backend with duplicated levels: ValueError: quantile_levels must not contain duplicates
+2. quantiles [0.0, 0.5]: ValueError: quantile_levels must be non-empty and strictly between 0 and 1, got [0.0, 0.5]
+2. quantiles [0.5, 1.0]: ValueError: quantile_levels must be non-empty and strictly between 0 and 1, got [0.5, 1.0]
+2. predict_interval(interval=[0.1, 0.9]): columns ['level', 'pred', 'lower_bound', 'upper_bound'] | ordered True
+2. predict_interval(interval=0.9): columns ['level', 'pred', 'lower_bound', 'upper_bound'] | ordered True
+2. predict_interval(interval=0.98): columns ['level', 'pred', 'lower_bound', 'upper_bound'] | ordered True
+2. predict_interval(interval=[0.01, 0.99]): columns ['level', 'pred', 'lower_bound', 'upper_bound'] | ordered True
+2. predict() equals the q_0.5 column: True
+3. h2oai/timeh2o-v1 patch_ensemble=True 20 series x 512, 0 covariates: 10.22 s | peak RSS 2.15 GB
+3. h2oai/timeh2o-v1 patch_ensemble=True 20 series x 512, 1 covariates: 25.20 s | peak RSS 2.82 GB
+3. h2oai/timeh2o-v1 patch_ensemble=True 20 series x 512, 2 covariates: 42.93 s | peak RSS 2.82 GB
+3. h2oai/timeh2o-v1 patch_ensemble=False 20 series x 512, 0 covariates: 0.66 s | peak RSS 2.82 GB
+3. h2oai/timeh2o-v1 patch_ensemble=False 20 series x 512, 1 covariates: 1.47 s | peak RSS 2.82 GB
+3. h2oai/timeh2o-v1 patch_ensemble=False 20 series x 512, 2 covariates: 1.93 s | peak RSS 2.82 GB
+3. h2oai/timeh2o-v1 patch_ensemble=False 100 series x 512, 0 covariates: 3.63 s | peak RSS 2.82 GB
+3. h2oai/timeh2o-v1 patch_ensemble=False 100 series x 512, 1 covariates: 7.09 s | peak RSS 2.82 GB
+3. h2oai/timeh2o-v1 patch_ensemble=False 100 series x 512, 2 covariates: 10.94 s | peak RSS 2.82 GB
+3. h2oai/timeh2o-v1-tiny patch_ensemble=None 100 series x 512, 0 covariates: 0.58 s | peak RSS 2.82 GB
+3. h2oai/timeh2o-v1-tiny patch_ensemble=None 100 series x 512, 1 covariates: 0.57 s | peak RSS 2.82 GB | warnings ['This checkpoint does not use future covariates; they are validated and']
+3. h2oai/timeh2o-v1-tiny patch_ensemble=None 100 series x 512, 2 covariates: 0.59 s | peak RSS 2.82 GB

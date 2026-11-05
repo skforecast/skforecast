@@ -1,0 +1,15 @@
+Python 3.12.3 | torch 2.14.1+cpu | numpy 2.5.4 | pandas 2.3.3 | h2ofm 0.43.1 | huggingface-hub 2.4.0 | skforecast 0.27.0 | threads 4 | cpus 4 | x86_64 | Linux 6.18.44
+1. flat price (2.50 to 2.56 in the horizon)          median max     4.76 | q0.9 max   181.73 | q0.99 max   326.79 | series with q0.99 > 100: 28/32
+1. same, noise of 1e-6 in the context                median max     6.14 | q0.9 max   393.22 | q0.99 max   710.15 | series with q0.99 > 100: 31/32
+1. same, a step of 1e-7 at the end of the context    median max     4.76 | q0.9 max   181.73 | q0.99 max   326.79 | series with q0.99 > 100: 28/32
+1. flat price, step of 1e-4 in the horizon           median max     4.76 | q0.9 max   182.92 | q0.99 max   328.94 | series with q0.99 > 100: 28/32
+2. flat price, patch_ensemble=False                  median max    10.11 | q0.9 max   664.56 | q0.99 max  1200.17 | series with q0.99 > 100: 32/32
+2. price relative to the last context value          median max     4.76 | q0.9 max   181.73 | q0.99 max   326.79 | series with q0.99 > 100: 28/32
+2. price history set to NaN (row dropped)            median max     2.09 | q0.9 max     4.29 | q0.99 max     6.07 | series with q0.99 > 100: 0/32
+2. no covariate                                      median max     2.09 | q0.9 max     4.29 | q0.99 max     6.07 | series with q0.99 > 100: 0/32
+3. context 500: folds with Holiday flat in the context and changing in the horizon: [23]
+3. fold 23 (origin 2014-12-24 00:00:00), Temperature and Holiday: MAE  228.94 | mean width 80%  1365.3 | max q0.9   6512.9 | max demand  4496.4
+3. fold 23 (origin 2014-12-24 00:00:00), Holiday as bool        : MAE  271.90 | mean width 80%   456.3 | max q0.9   4978.3 | max demand  4496.4
+3. fold 23 (origin 2014-12-24 00:00:00), Temperature only       : MAE  275.77 | mean width 80%   479.2 | max q0.9   4986.1 | max demand  4496.4
+3. fold 23 (origin 2014-12-24 00:00:00), no exog                : MAE  309.08 | mean width 80%   591.1 | max q0.9   5261.0 | max demand  4496.4
+3. context 4096: folds with Holiday flat in the context and changing in the horizon: []
