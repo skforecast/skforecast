@@ -538,15 +538,15 @@ def _evaluate_grid_hyperparameters(
                     else:
 
                         metric_values, n_evaluated = _calculate_metrics_one_step_ahead(
-                                            forecaster    = forecaster_search,
-                                            metrics       = metric,
-                                            X_train       = X_train,
-                                            y_train       = y_train,
-                                            X_test        = X_test,
-                                            y_test        = y_test,
-                                            sample_weight = sample_weight,
-                                            fit_kwargs    = fit_kwargs
-                                        )
+                                                         forecaster    = forecaster_search,
+                                                         metrics       = metric,
+                                                         X_train       = X_train,
+                                                         y_train       = y_train,
+                                                         X_test        = X_test,
+                                                         y_test        = y_test,
+                                                         sample_weight = sample_weight,
+                                                         fit_kwargs    = fit_kwargs
+                                                     )
                 except Exception as e:
                     search_warnings.add_skipped(lags=lags_k, params=params, error=e)
                     continue

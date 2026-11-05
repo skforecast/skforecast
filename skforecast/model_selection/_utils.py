@@ -2738,13 +2738,11 @@ def _warn_n_evaluated_search_multiseries(
     """
 
     n_evaluated = np.asarray(n_evaluated)
-    if n_evaluated.size == 0:
-        return
-
-    n_evaluated_max = int(n_evaluated.max())
     is_affected = _is_affected_n_evaluated(n_evaluated)
     if not is_affected.any():
         return
+
+    n_evaluated_max = int(n_evaluated.max())
 
     candidates_name = f"{candidate_name}s"
     affected = np.flatnonzero(is_affected)
@@ -3069,7 +3067,7 @@ class _SearchWarnings:
     """
 
     def __init__(
-        self, n_candidates: int | None, candidate_name: str = "candidate"
+        self, n_candidates: int, candidate_name: str = "candidate"
     ) -> None:
 
         self.n_candidates = n_candidates
@@ -3222,7 +3220,7 @@ class _SearchWarnings:
 
         text = getattr(message, "message", str(message))
         match = re.search(r"fit (\d+) times( \(\d+ folds \* \d+ estimators\))?", text)
-        if match is None or self.n_candidates is None:
+        if match is None:
             return message
 
         n_fits = int(match.group(1))
@@ -3282,32 +3280,25 @@ class _SearchWarnings:
             if candidate is not None:
                 candidates.add(candidate)
 
-        for (category, first_sentence), texts in groups.items():
+        for (category, _), texts in groups.items():
 
-            if len(texts) == 1:
-                text, (candidates, message) = next(iter(texts.items()))
-                n = len(candidates)
-                if n in (0, n_candidates):
+            n = len(set().union(*(candidates for candidates, _ in texts.values())))
+            if n == 0:
+                for text, (_, message) in texts.items():
                     _warn_recorded(text, category, message)
-                    continue
-                first_sentence, rest = _split_first_sentence(text)
-                text = (
-                    f"{first_sentence[:-1]} (in {n} of {n_candidates} "
-                    f"{candidates_name}).{rest}"
-                )
-            else:
-                candidates = set().union(*(c for c, _ in texts.values()))
-                if not candidates:
-                    for text, (_, message) in texts.items():
-                        _warn_recorded(text, category, message)
-                    continue
-                text, (_, message) = next(iter(texts.items()))
-                first_sentence, rest = _split_first_sentence(text)
-                text = (
-                    f"{first_sentence[:-1]} (in {len(candidates)} of {n_candidates} "
-                    f"{candidates_name}; details of the first one).{rest}"
-                )
+                continue
 
+            text, (_, message) = next(iter(texts.items()))
+            if len(texts) == 1 and n == n_candidates:
+                _warn_recorded(text, category, message)
+                continue
+
+            details = "" if len(texts) == 1 else "; details of the first one"
+            first_sentence, rest = _split_first_sentence(text)
+            text = (
+                f"{first_sentence[:-1]} (in {n} of {n_candidates} "
+                f"{candidates_name}{details}).{rest}"
+            )
             _warn_recorded(text, category, message)
 
         _warn_skipped_candidates_search(
