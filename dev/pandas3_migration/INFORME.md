@@ -1978,6 +1978,79 @@ propio, y los cambios de la PR 2 en commits posteriores, para revisar
 commit a commit. Cuando exista `0.28.x`, rebase de la rama y PR contra
 ella. La PR 3 sigue aparte (corrección F26 con nota de versión).
 
+**PR 2, en curso el 2026-11-04** (rama `chore/pandas3-compat`; los
+renombrados están en el commit `e947903`, el resto sin commit):
+
+- Hecho: `skforecast/utils/_pandas_compat.py` (`PANDAS_GE_3`, `concat`,
+  `astype(obj, dtypes, changed_only=False)`, `infer_freq` que devuelve un
+  offset o `None` en todas las versiones usando la opción
+  `future.infer_freq_returns_offset` cuando existe) y
+  `utils/tests/tests_utils/test_pandas_compat.py` (11 tests, con
+  `simplefilter("error")`, en verde en 2.2.3, 2.3.3 y 3.1.0); los 14 sitios
+  de la fila 2: `compat.astype(..., changed_only=True)` en los 4
+  `create_train_X_y` y en `reshape_exog_long_to_dict`, `compat.astype` sin
+  escaneo en los 5 `create_predict_X`, `compat.concat` en los 2 `pd.concat`
+  de multiseries, `ref.to_numpy(dtype="float64")` en
+  `_population_drift.py:534`, `_pandas_compat.infer_freq` en `expand_index`
+  (sin el `to_offset`) y en `_calendar.py:863` (`.freqstr`). En `utils.py`
+  se importa como `_pandas_compat` para que el `import *` del paquete no
+  exporte `compat`. `affected.py` del skill verify mapea el módulo a su
+  test. Lint limpio. Tests de los métodos tocados (`create_train_X_y` y
+  `create_predict_X` de los 5 forecasters, `reshape_exog_long_to_dict`,
+  `expand_index`, `tests_calendar`, `tests_population_drift`): 833 en verde
+  en p2; en p3, 29 fallos idénticos a los de la base exportada (`git
+  archive HEAD` en el espacio temporal), es decir, la línea base de pandas 3
+  que resuelven las PR 4 y 5, y ninguno nuevo. Los 5 fallos de
+  `.claude/hooks/test_hooks.py` son los preexistentes de Windows.
+- Arnés `run_ab.py --identity --bench control --memory --base HEAD` en p2
+  y p3 (base = commit de los renombrados, para aislar el módulo), salida
+  en `harness/results/pr2_compat/summary.md`: identidad estricta OK en p2
+  y p3 (205 de 205 salidas), memoria idéntica (ratios 0.989 a 1.001) y en
+  p3 desaparece el `Pandas4Warning` en los 7 sitios que lo emitían. Tiempo
+  en p3: medianas 0.75 (`fit_recursive`) a 1.01, porque la base pagaba la
+  emisión del aviso en cada llamada. Tiempo en p2: medianas 0.94 a 1.10,
+  con `recursive_create_train_X_y` en 1.097 y mínimos ruidosos (1.44 ahí y
+  1.48 en `predict_loop`, cuyo código en p2 es el de la base más una
+  llamada); repetido solo en tiempo y solo en p2 en
+  `harness/results/pr2_compat_time_p2/summary.md`, aún más ruidoso (CPU
+  ajena hasta el 60 %): medianas 0.71 a 1.15 en los dos sentidos, con
+  `fit_classifier` en 0.709 sin cambio de código en p2, y mínimos con head
+  igual o más rápido en los 5 `create_train_X_y` (0.57 a 0.94, lo
+  esperable al saltarse el `astype` cuando ningún dtype cambia). Lectura:
+  ruido de máquina, sin regresión en p2; no se repite una tercera vez.
+- Revisión con ojos nuevos del 2026-11-04 (sin incidencias de fondo):
+  guardia `obj.columns.is_unique` en el atajo `changed_only` (con columnas
+  duplicadas `current[col]` era una Series y el `if` lanzaba `ValueError`;
+  pandas sí las tolera; skforecast no impide una exógena llamada `lag_1`),
+  con test nuevo (12 tests en verde en 2.2.3, 2.3.3 y 3.1.0); anotación de
+  `dtypes` sin la unión redundante con `Any`; docstring del módulo más
+  precisa (pandas 3 no copia solo lo que no cambia de dtype); comentario
+  del import sin alias en `utils.py`.
+- Suite completa en p3 con `warnrec` (`WARNREC_OUT=<fichero>.jsonl
+  PYTHONPATH="<raíz>;<raíz>/dev/pandas3_migration/harness" <python p3> -m
+  pytest skforecast -q -p warnrec`), rama y después base exportada:
+  fallos idénticos (94 y 94, ninguno solo en un lado; la rama tiene 12
+  tests más, los del módulo); `Pandas4Warning` atribuidos a `skforecast/`
+  fuera de `tests/`: 1086 en 14 sitios en la base (los 13 `copy=False` y
+  el `infer_freq` de `expand_index`) y 0 en la rama; los 12 que quedan en
+  la rama salen de ficheros de tests (`assert_index_equal` y `exact` de
+  `pandas.testing`, una operación con tupla en el test de pytorch), para
+  las PR 4 y 5. Lista de los 94 fallos de la base en
+  `dev/pandas3_migration/fallos_base_p3_2026-11-04.txt` (línea base de las
+  PR 4 y 5; incluye 3 de `test_fit_tensorflow.py` y 1 de `ForecasterStats`
+  que fallan en ambos árboles por el proceso compartido). Tiempos de la
+  suite: 29 min la rama, 25 min la base.
+- Verify: lint limpio para lo introducido (los 4 avisos de
+  `test_recursive_predict_bootstrapping.py` ya están en `origin/0.27.x`);
+  harness 144 en verde más los 5 fallos preexistentes de Windows; tests
+  afectados en p2 (`direct`, `drift_detection`, `experimental`,
+  `foundation`, `preprocessing`, `recursive`, `utils` y
+  `model_selection`): 5613 en verde, 1 omitido, 20 min; paquetes no
+  cubiertos por esa pasada (`stats`, `plot`, `deep_learning`, `metrics`,
+  `datasets`) sí lo están por la suite completa en p3 (fallos idénticos a
+  la base). Verify sellado. Queda el commit del usuario y, cuando exista
+  `0.28.x`, el rebase y la PR.
+
 ### Historial de lo pendiente entre sesiones
 
 Lo que quedó sin cerrar por el límite de uso de la primera sesión; los

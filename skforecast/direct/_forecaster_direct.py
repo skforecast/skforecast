@@ -25,6 +25,7 @@ from ..exceptions import (
     DataTransformationWarning,
     ResidualsUsageWarning
 )
+from ..utils import _pandas_compat as compat
 from ..utils import (
     _all_samples_removed_message,
     _prefers_c_contiguous_X,
@@ -1509,7 +1510,7 @@ class ForecasterDirect(ForecasterBase):
                 for i in range(self.max_step)
             }
             X_train_dtypes.update(exog_dtypes_direct)
-            X_train = X_train.astype(X_train_dtypes, copy=False)
+            X_train = compat.astype(X_train, X_train_dtypes, changed_only=True)
 
         y_train = {
             step: pd.Series(
@@ -2407,7 +2408,7 @@ class ForecasterDirect(ForecasterBase):
         if self.exog_in_:
             X_predict_dtypes = {col: float for col in Xs_col_names}
             X_predict_dtypes.update(self.exog_dtypes_out_)
-            X_predict = X_predict.astype(X_predict_dtypes, copy=False)
+            X_predict = compat.astype(X_predict, X_predict_dtypes)
         
         if self.transformer_y is not None or self.differentiation is not None:
             warnings.warn(

@@ -30,6 +30,7 @@ from ..exceptions import (
     ResidualsUsageWarning,
     UnknownLevelWarning
 )
+from ..utils import _pandas_compat as compat
 from ..utils import (
     _all_samples_removed_message,
     _filter_nan_train_X_y,
@@ -1332,7 +1333,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 )
 
             if len(X_train) > 1:
-                X_train = pd.concat(X_train, axis=1, copy=False)
+                X_train = compat.concat(X_train, axis=1)
                 # `pd.concat` drops the index name when series and exog do not
                 # share it. The name of the series index is kept.
                 X_train.index = train_index
@@ -1571,7 +1572,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         )
                     )
 
-            X_train_exog = pd.concat(X_train_exog_buffer, axis=0, copy=False)
+            X_train_exog = compat.concat(X_train_exog_buffer, axis=0)
 
             if isinstance(X_train_exog, pd.Series):
                 warnings.warn(
@@ -3533,7 +3534,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 for dtype in set(self.exog_dtypes_out_.values())
             )
             if categorical_features:
-                X_predict = X_predict.astype(self.exog_dtypes_out_, copy=False)
+                X_predict = compat.astype(X_predict, self.exog_dtypes_out_)
         
         if self.transformer_series is not None or self.differentiation is not None:
             warnings.warn(
