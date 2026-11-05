@@ -713,11 +713,45 @@ fuera el primero cuando el segundo lo cubre:
   serie de un punto en el test (solo #1415, con el recuento). Skill: el punto 9 ya no dice
   "run the backtesting of a candidate".
 
+### 12.8 `n_evaluated` en todas las búsquedas (2026-11-05, en #1452)
+
+Decisión del usuario: la columna sale siempre, también en las búsquedas de una serie, para que
+`results` tenga el mismo esquema en todas (como `cv_results_` de scikit-learn) y coincida con
+el backtesting, que ya la da siempre. El aviso sigue solo en las multiserie: la columna es un
+dato; el aviso, un problema.
+
+- Búsquedas: grid, random y bayesian de una serie, `grid_search_stats`, `random_search_stats`,
+  `grid_search_equivalent_date` y `bayesian_search_foundation` (una serie y multiserie). Tras
+  las métricas, también en el `output_file` y como `user_attr` (NaN para los trials de un
+  estudio de una versión anterior). `_calculate_metrics_one_step_ahead` devuelve
+  `(metric_values, n_evaluated)`.
+- Tests: 37 tests de una serie con `expected_results.insert(pos, 'n_evaluated', [n] * k)`
+  (valores tomados de los resultados; todos constantes, también con `OneStepAheadFold`); el
+  test que comprobaba que no estaba la columna ahora comprueba que coincide con el
+  backtesting; foundation (una serie y multiserie); el helper con NaN en `y`. 836 tests.
+- Docs: `llms-base.txt`, `references/search-parameters.md`, nota de #1447 (ahora "the
+  results of the hyperparameter searches include `n_evaluated`"), el highlight y "Before
+  upgrading".
+- **Hallazgo 1 (pendiente, PR 2b o aparte):** con una serie, `OneStepAheadFold`,
+  `dropna_from_series=True` y NaN en `y`, `n_evaluated` sí cambia entre candidatos: las filas
+  de test con NaN en los lags se eliminan, más cuanto mayor la ventana. Ejemplo: 200 días, 3
+  NaN, test de 57 puntos: `lags=14` evalúa 15 y `lags=3` 48, y gana `lags=14`. Es el mismo
+  problema de comparabilidad, sin aviso. El aviso multiserie no sirve tal cual (habla de
+  `levels`); haría falta una variante de una serie ("rellena los huecos o quita las ventanas
+  grandes"). Con `TimeSeriesFold` no pasa: los puntos de test son los mismos.
+- **Hallazgo 2 (pendiente, otro bug):** `backtesting_forecaster` con NaN en `y` dentro del
+  test falla con `ValueError: Input contains NaN.` de la métrica de scikit-learn (con
+  `Ridge` y con LightGBM): las fechas con `y_true` NaN no se quitan antes de las métricas,
+  como sí hace el multiserie. Por eso una búsqueda de una serie con NaN en el test se queda
+  vacía con `TimeSeriesFold`.
+
 ## 13. Al final de todas las PRs (2b, 2c)
 
 1. Volver a ejecutar `docs/user_guides/hyperparameter-tuning-and-lags-selection.ipynb`: su
    salida muestra el formato anterior del aviso de `n_evaluated` (una línea por candidato,
-   con `params`).
+   con `params`), y las tablas de las búsquedas de una serie no tienen
+   `n_evaluated` (12.8). Al volver a ejecutarla, decir en la primera búsqueda qué es la
+   columna. Otras guías con resultados de búsquedas también ganan la columna.
 2. Usar la columna `y_true` de las predicciones del backtesting (#1437) en **todas** las
    páginas con backtesting, en lugar de buscar los valores reales con `data.loc[...]` o de
    pintar el test entero aparte. Es grande, por eso va al final. Páginas que llaman a
