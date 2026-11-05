@@ -1,6 +1,7 @@
 # Unit test _prepare_future_exog FoundationModel
 # ==============================================================================
 import re
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
@@ -236,6 +237,84 @@ def test_prepare_future_exog_MissingValuesWarning_when_nan_gaps():
     assert result["s1"] is not None
     assert len(result["s1"]) == steps
     assert result["s1"].isnull().any(axis=None)
+
+
+@pytest.mark.parametrize(
+    "n_rows",
+    [3, 5],
+    ids=lambda n: f"exog_rows_{n}",
+)
+def test_prepare_future_exog_no_warning_when_nan_values_and_all_timestamps(
+    n_rows,
+):
+    """
+    Test _prepare_future_exog does not emit MissingValuesWarning when the
+    future exog covers every expected timestamp but holds missing values
+    supplied by the user (float NaN, nullable boolean NA, object None). With
+    3 rows the exog matches the horizon exactly (fast path); with 5 rows it
+    is reindexed but no timestamp is added.
+    """
+    m = _make_model()
+    steps = 3
+    future_idx = pd.date_range("2022-07-01", periods=n_rows, freq="MS")
+    future_exog = pd.DataFrame(
+        {
+            "feat_float": [1.0, np.nan] + [3.0] * (n_rows - 2),
+            "feat_bool": pd.array(
+                [True, None] + [False] * (n_rows - 2), dtype="boolean"
+            ),
+            "feat_object": ["a", None] + ["b"] * (n_rows - 2),
+        },
+        index=future_idx,
+    )
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", category=MissingValuesWarning)
+        result = m._prepare_future_exog(
+            steps=steps, context=_context_single, exog=future_exog,
+            series_names_in=_series_single,
+        )
+
+    expected = pd.DataFrame(
+        {
+            "feat_float": [1.0, np.nan, 3.0],
+            "feat_bool": pd.array([True, None, False], dtype="boolean"),
+            "feat_object": ["a", None, "b"],
+        },
+        index=pd.date_range("2022-07-01", periods=3, freq="MS"),
+    )
+    pd.testing.assert_frame_equal(result["s1"], expected)
+
+
+def test_prepare_future_exog_MissingValuesWarning_only_series_with_missing_timestamps():
+    """
+    Test _prepare_future_exog lists in the MissingValuesWarning only the
+    series whose exog lacks expected timestamps, not the series whose exog
+    has every timestamp but holds NaN values.
+    """
+    m = _make_model()
+    steps = 3
+    expected_idx = pd.date_range("2022-07-01", periods=steps, freq="MS")
+    exog_dict = {
+        "s1": pd.DataFrame({"feat": [1.0, np.nan, 3.0]}, index=expected_idx),
+        "s2": pd.DataFrame(
+            {"feat": [1.0, 3.0]}, index=expected_idx[[0, 2]]
+        ),
+    }
+
+    warn_msg = re.escape(
+        "`exog` for series ['s2'] has been reindexed to match the expected "
+        "forecast horizon. Missing timestamps were filled with NaN."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        result = m._prepare_future_exog(
+            steps=steps, context=_context_multi, exog=exog_dict,
+            series_names_in=_series_multi,
+        )
+
+    pd.testing.assert_frame_equal(result["s1"], exog_dict["s1"])
+    expected_s2 = pd.DataFrame({"feat": [1.0, np.nan, 3.0]}, index=expected_idx)
+    pd.testing.assert_frame_equal(result["s2"], expected_s2)
 
 
 def test_prepare_future_exog_broadcasts_dataframe_to_all_series():

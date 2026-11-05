@@ -866,18 +866,17 @@ class FoundationModel:
             label = f"`exog` for series '{series_name}'"
 
             # DatetimeIndex: reindex to the exact expected date range,
-            # filling gaps with NaN.
+            # filling gaps with NaN. Only timestamps missing from the user's
+            # exog trigger the warning, not missing values it already holds.
             if is_datetime_ctx and isinstance(series_exog.index, pd.DatetimeIndex):
                 expected_idx = expand_index(ctx.index, steps=steps)
-                # Fast path: exog already aligned, no reindex needed.
-                series_exog_aligned = (
-                    series_exog
-                    if series_exog.index.equals(expected_idx)
-                    else series_exog.reindex(expected_idx)
-                )
-                if series_exog_aligned.isnull().any(axis=None):
+                if series_exog.index.equals(expected_idx):
+                    # Fast path: exog already aligned, no reindex needed.
+                    exog_aligned[series_name] = series_exog
+                    continue
+                if not expected_idx.isin(series_exog.index).all():
                     nan_filled_series.append(series_name)
-                exog_aligned[series_name] = series_exog_aligned
+                exog_aligned[series_name] = series_exog.reindex(expected_idx)
             else:
                 # RangeIndex / other: length check + optional start validation,
                 # then truncate to the forecast horizon.
