@@ -604,7 +604,13 @@ tests) y la documentación.
 3. El `ValueError` de `initial_train_size` (12.6, punto 7): separar los casos y mostrar
    el valor recibido; comprobar el límite `initial_train_size == window_size` (el código
    lo acepta, el mensaje dice "greater than"). Nota en Changed.
-4. Tests, nota de la versión (Fixed: el one-step-ahead abortaba la búsqueda) y roadmap.
+4. El refit del mejor candidato falla con `ValueError: Length of 'short' must be greater
+   than the maximum window size...` cuando una serie tiene `window_size` observaciones o
+   menos en todos los datos: el backtesting la deja fuera en cada fold, pero `fit` la
+   rechaza, y la búsqueda termina con un error tras evaluar todos los candidatos. Visto en
+   los tests del 12.7 (serie de 6 valores, `lags=8`). Decidir: dejarla fuera del refit con
+   un aviso, como en el backtesting, o fallar antes.
+5. Tests, nota de la versión (Fixed: el one-step-ahead abortaba la búsqueda) y roadmap.
 
 ### 12.6 Revisión como usuario (notebook 08, 2026-11-04)
 
@@ -673,3 +679,30 @@ tienen la columna `params` duplicada.
   usuario. El notebook 08 se ha vuelto a ejecutar con los textos nuevos. La salida de la guía
   `hyperparameter-tuning-and-lags-selection.ipynb` muestra todavía el formato anterior del
   aviso de `n_evaluated`.
+
+### 12.7 Un solo aviso para las series cortas en las búsquedas (2026-11-05)
+
+En los escenarios 1 y 2 salían dos avisos que decían casi lo mismo: el de series no predichas
+(#1415, la causa: "'new_product' too short for the `window_size` (35)") y el de
+`n_evaluated` (la consecuencia para el ranking y la acción). Las búsquedas multiserie dejan
+fuera el primero cuando el segundo lo cubre:
+
+- **Regla** (`_n_evaluated_covers_levels_not_predicted`): sale el aviso de `n_evaluated` y
+  todas las series tienen puntos evaluados en algún candidato. Las series que algunos
+  candidatos no predicen son las que faltan en `levels=[...]`, y la acción es la misma.
+- **Se mantienen los dos** cuando una serie no tiene puntos en ningún candidato (más corta
+  que la ventana más pequeña): el aviso de `n_evaluated` la deja fuera a propósito, y sin el
+  otro desaparecería sin aviso. Con una serie sin datos en el test pasaría igual, pero el de
+  #1415 no la menciona (no hay nada que evaluar); queda como antes, con los dos.
+- **Sale solo el de #1415** cuando los candidatos son comparables (todos la misma ventana, o
+  diferencia menor del 5%): es el único que dice que una serie no entra en las métricas.
+  Escenario 1b del notebook 08: un producto de temporada con 2 puntos en el test.
+- Se pierde, en la búsqueda, la distinción entre ventana corta y huecos en la última ventana;
+  la acción del aviso de `n_evaluated` vale para las dos, y el backtesting de un candidato
+  muestra el detalle.
+- Código: `_SearchWarnings.discard(category, text_start)` y la constante
+  `LEVELS_NOT_PREDICTED_WARNING`, con la que empieza el aviso de #1415. Sin cambios en el
+  texto del aviso de `n_evaluated`. Tests: `discard`, la regla (4 casos), el grid con las
+  dos series cortas (solo `n_evaluated`) y el grid y bayesian (también con hilos) con una
+  serie de un punto en el test (solo #1415, con el recuento). Skill: el punto 9 ya no dice
+  "run the backtesting of a candidate".
