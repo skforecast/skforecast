@@ -24,6 +24,7 @@ from ._utils import (
     group_series_by_exog_signature,
     align_context_exog,
     _extract_exog_columns,
+    _left_pad_context,
 )
 from ..utils import (
     check_preprocess_exog_multiseries,
@@ -1093,7 +1094,12 @@ class FoundationModel:
         columns. When `supports_heterogeneous_covariates` is `False`, the
         series are grouped by their exog columns (past-only and future) and
         the adapter is called once per group, so the prediction of a series
-        never depends on the exog columns of the other series.
+        never depends on the exog columns of the other series. When
+        `requires_equal_length_context` is `True` (backends that take the
+        context of a call as a single array), the context and historical exog
+        of each group are left-padded with NaN to the length of its longest
+        series. The index of the predictions is built from the unpadded
+        context.
 
         """
 
@@ -1230,20 +1236,29 @@ class FoundationModel:
         # Adapter returns dict[str, np.ndarray] with shape (steps, n_q)
         raw_predictions: dict[str, np.ndarray] = {}
         for series_names_group in series_groups:
+            group_context = {
+                series_name: context[series_name]
+                for series_name in series_names_group
+            }
+            group_context_exog = (
+                {
+                    series_name: context_exog[series_name]
+                    for series_name in series_names_group
+                }
+                if context_exog is not None else None
+            )
+            # Backends that take the context of a call as one array need the
+            # same length for every series: left-pad the group with NaN.
+            if self.adapter.requires_equal_length_context:
+                group_context, group_context_exog = _left_pad_context(
+                                                        context      = group_context,
+                                                        context_exog = group_context_exog,
+                                                    )
             raw_predictions.update(
                 self.adapter.predict(
                     steps        = steps,
-                    context      = {
-                        series_name: context[series_name]
-                        for series_name in series_names_group
-                    },
-                    context_exog = (
-                        {
-                            series_name: context_exog[series_name]
-                            for series_name in series_names_group
-                        }
-                        if context_exog is not None else None
-                    ),
+                    context      = group_context,
+                    context_exog = group_context_exog,
                     exog         = (
                         {
                             series_name: exog[series_name]

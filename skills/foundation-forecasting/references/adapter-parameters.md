@@ -93,7 +93,7 @@ There is no compile step and no horizon ceiling. For each series, columns presen
 | `model_id`       | str  | —        | HuggingFace model ID (e.g. `Salesforce/moirai-2.0-R-small`).             |
 | `module`         | obj  | `None`   | Pre-loaded `Moirai2Module`. If `None`, loaded lazily.                    |
 | `context_length` | int  | `2048`   | Max historical observations kept as context.                             |
-| `device`         | str  | `'auto'` | Device placement: `'auto'` (CUDA > MPS > CPU), `'cuda'`, `'mps'`, `'cpu'`. |
+| `device`         | str  | `'auto'` | Device placement: `'auto'` (CUDA, otherwise CPU), `'cuda'`, `'cpu'`. MPS is not supported by uni2ts: `'mps'` (or `'auto'` on Apple Silicon without CUDA) falls back to CPU with a warning. |
 
 ## TabICLAdapter — Soda-INRIA TabICL
 

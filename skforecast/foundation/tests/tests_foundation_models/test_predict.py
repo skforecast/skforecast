@@ -8,7 +8,7 @@ from skforecast.exceptions import IgnoredArgumentWarning, MissingValuesWarning
 from skforecast.foundation._foundation_model import FoundationModel
 from .fixtures_adapters import (
     y, data, y_dict,
-    FakePipeline, FakeTimesFM25Model, FakeTimesFM3Forecaster,
+    FakePipeline, FakeTimesFM25Model, FakeTimesFM3Forecaster, FakeT0Forecaster,
 )
 
 
@@ -688,3 +688,147 @@ def test_predict_ValueError_when_context_has_nan_and_adapter_does_not_support_it
     )
     with pytest.raises(ValueError, match=err_msg):
         m.predict(steps=3)
+
+
+# Tests predict: left-padding of the context
+# ==============================================================================
+def _record_adapter_predict(monkeypatch, model):
+    """
+    Wrap `model.adapter.predict` so that every call stores the keyword
+    arguments it receives, and return the list of calls.
+    """
+    calls = []
+    original_predict = model.adapter.predict
+
+    def recording_predict(**kwargs):
+        calls.append(kwargs)
+        return original_predict(**kwargs)
+
+    monkeypatch.setattr(model.adapter, "predict", recording_predict)
+
+    return calls
+
+
+def _make_different_length_inputs():
+    """
+    Two daily series in America/Santiago of different length and end date,
+    on both sides of the daylight saving change at midnight of 2024-09-08,
+    with one historical exog column and its future values.
+    """
+    idx_long = pd.date_range("2024-08-30", periods=6, freq="D", tz="America/Santiago")
+    idx_short = pd.date_range("2024-09-09", periods=3, freq="D", tz="America/Santiago")
+    future_long = pd.date_range("2024-09-05", periods=2, freq="D", tz="America/Santiago")
+    future_short = pd.date_range("2024-09-12", periods=2, freq="D", tz="America/Santiago")
+    context = {
+        "long": pd.Series(np.arange(1.0, 7.0), index=idx_long, name="long"),
+        "short": pd.Series([10.0, 11.0, 12.0], index=idx_short, name="short"),
+    }
+    context_exog = {
+        "long": pd.DataFrame({"a": np.arange(6.0)}, index=idx_long),
+        "short": pd.DataFrame({"a": [20.0, 21.0, 22.0]}, index=idx_short),
+    }
+    exog = {
+        "long": pd.DataFrame({"a": [6.0, 7.0]}, index=future_long),
+        "short": pd.DataFrame({"a": [23.0, 24.0]}, index=future_short),
+    }
+
+    return context, context_exog, exog, future_long, future_short
+
+
+@pytest.mark.parametrize(
+    "check_inputs",
+    [True, False],
+    ids=lambda check_inputs: f"check_inputs: {check_inputs}",
+)
+def test_predict_left_pads_groups_when_adapter_requires_equal_length_context(
+    monkeypatch, check_inputs
+):
+    """
+    Test that, for an adapter with requires_equal_length_context=True (T0),
+    predict left-pads the context and the historical exog of every series
+    with NaN to the length of the longest one, on a common positional
+    RangeIndex (also across a daylight saving change and on the
+    check_inputs=False path), forwards the future exog with the index of the
+    forecast horizon, and builds the index of the predictions from the
+    unpadded context of each series.
+    """
+    context, context_exog, exog, future_long, future_short = (
+        _make_different_length_inputs()
+    )
+    m = FoundationModel("theforecastingcompany/t0-alpha", model=FakeT0Forecaster())
+    calls = _record_adapter_predict(monkeypatch, m)
+
+    if check_inputs:
+        m.fit(series=context, exog=context_exog)
+        predictions = m.predict(steps=2, exog=exog)
+    else:
+        predictions = m.predict(
+            steps        = 2,
+            context      = context,
+            context_exog = context_exog,
+            exog         = exog,
+            check_inputs = False,
+        )
+
+    assert len(calls) == 1
+    index = pd.RangeIndex(6)
+    padded_context = calls[0]["context"]
+    padded_context_exog = calls[0]["context_exog"]
+    pd.testing.assert_series_equal(
+        padded_context["long"], pd.Series(np.arange(1.0, 7.0), index=index, name="long")
+    )
+    pd.testing.assert_series_equal(
+        padded_context["short"],
+        pd.Series([np.nan, np.nan, np.nan, 10.0, 11.0, 12.0], index=index, name="short"),
+    )
+    pd.testing.assert_frame_equal(
+        padded_context_exog["long"], pd.DataFrame({"a": np.arange(6.0)}, index=index)
+    )
+    pd.testing.assert_frame_equal(
+        padded_context_exog["short"],
+        pd.DataFrame({"a": [np.nan, np.nan, np.nan, 20.0, 21.0, 22.0]}, index=index),
+    )
+    pd.testing.assert_index_equal(calls[0]["exog"]["long"].index, future_long)
+    pd.testing.assert_index_equal(calls[0]["exog"]["short"].index, future_short)
+    np.testing.assert_array_almost_equal(
+        m.adapter._model.last_context,
+        np.array([
+            [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            [np.nan, np.nan, np.nan, 10.0, 11.0, 12.0],
+        ]),
+    )
+    # The long-format index of several series has no `freq`.
+    pd.testing.assert_index_equal(
+        predictions.loc[predictions["level"] == "long"].index,
+        pd.DatetimeIndex(future_long, freq=None),
+    )
+    pd.testing.assert_index_equal(
+        predictions.loc[predictions["level"] == "short"].index,
+        pd.DatetimeIndex(future_short, freq=None),
+    )
+
+
+def test_predict_does_not_pad_when_adapter_does_not_require_equal_length_context(
+    monkeypatch
+):
+    """
+    Test that, for an adapter with requires_equal_length_context=False
+    (Chronos), predict forwards every series and its historical exog with its
+    own length and index.
+    """
+    context, context_exog, exog, _, _ = _make_different_length_inputs()
+    m = FoundationModel("autogluon/chronos-2-small", pipeline=FakePipeline())
+    calls = _record_adapter_predict(monkeypatch, m)
+    m.fit(series=context, exog=context_exog)
+
+    m.predict(steps=2, exog=exog)
+
+    assert len(calls) == 1
+    for series_name in context:
+        pd.testing.assert_series_equal(
+            calls[0]["context"][series_name], context[series_name]
+        )
+        pd.testing.assert_frame_equal(
+            calls[0]["context_exog"][series_name], context_exog[series_name]
+        )
+

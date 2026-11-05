@@ -29,7 +29,11 @@ from ._utils import (
 )
 
 
-def _resolve_torch_device(device: str) -> str:
+def _resolve_torch_device(
+    device: str,
+    mps_fallback_message: str | None = None,
+    stacklevel: int = 2,
+) -> str:
     """
     Resolve a device string to a concrete PyTorch device name.
 
@@ -41,6 +45,13 @@ def _resolve_torch_device(device: str) -> str:
     device : str
         Device string. Use `"auto"` for automatic selection, or an
         explicit name such as `"cuda"`, `"mps"`, or `"cpu"`.
+    mps_fallback_message : str, default None
+        For backends that do not run on MPS. If given and the resolved
+        device is MPS (`"auto"` on Apple Silicon without CUDA, or an
+        explicit `"mps"` or `"mps:<index>"`), this message is issued as a
+        `UserWarning` and `"cpu"` is returned. If `None`, MPS is allowed.
+    stacklevel : int, default 2
+        `stacklevel` of the warning, so that it points to the user's call.
 
     Returns
     -------
@@ -49,16 +60,21 @@ def _resolve_torch_device(device: str) -> str:
 
     """
 
-    if device != "auto":
-        return device
+    if device == "auto":
+        import torch
 
-    import torch
+        if torch.cuda.is_available():
+            device = "cuda"
+        elif torch.backends.mps.is_available():
+            device = "mps"
+        else:
+            device = "cpu"
 
-    if torch.cuda.is_available():
-        return "cuda"
-    if torch.backends.mps.is_available():
-        return "mps"
-    return "cpu"
+    if mps_fallback_message is not None and device.startswith("mps"):
+        warnings.warn(mps_fallback_message, stacklevel=stacklevel)
+        device = "cpu"
+
+    return device
 
 
 class ChronosAdapter(_AdapterBase):
@@ -119,6 +135,10 @@ class ChronosAdapter(_AdapterBase):
         Whether series with different covariate columns can be forecast in
         the same backend call. `False` for Chronos: `FoundationModel` groups
         the series by covariate signature and calls `predict` once per group.
+    requires_equal_length_context : bool
+        Whether the backend needs every series of a call to have the same
+        context length, so that `FoundationModel` left-pads them with NaN.
+        `False`: each series is passed with its own length.
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as
         context. `True` for Chronos, which treats them as missing values.
@@ -170,6 +190,7 @@ class ChronosAdapter(_AdapterBase):
     supports_past_only_covariates: bool = True
     supports_categorical_covariates: bool = True
     supports_heterogeneous_covariates: bool = False
+    requires_equal_length_context: bool = False
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
     requires_provider_auth: bool = False
@@ -621,6 +642,10 @@ class TimesFM25Adapter(_AdapterBase):
     supports_heterogeneous_covariates : bool
         Whether series with different covariate columns can be forecast in
         the same backend call. Always `True`, since covariates are ignored.
+    requires_equal_length_context : bool
+        Whether the backend needs every series of a call to have the same
+        context length, so that `FoundationModel` left-pads them with NaN.
+        `False`: each series is passed with its own length.
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as
         context. Always `True`.
@@ -686,6 +711,7 @@ class TimesFM25Adapter(_AdapterBase):
     supports_past_only_covariates: bool = False
     supports_categorical_covariates: bool = False
     supports_heterogeneous_covariates: bool = True
+    requires_equal_length_context: bool = False
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
     requires_provider_auth: bool = False
@@ -1080,6 +1106,10 @@ class TimesFM3Adapter(_AdapterBase):
         covariate arrays of every series in a call, so `FoundationModel`
         groups the series by covariate signature and calls `predict` once
         per group.
+    requires_equal_length_context : bool
+        Whether the backend needs every series of a call to have the same
+        context length, so that `FoundationModel` left-pads them with NaN.
+        `False`: each series is passed with its own length.
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as
         context. Always `True`.
@@ -1154,6 +1184,7 @@ class TimesFM3Adapter(_AdapterBase):
     supports_past_only_covariates: bool = True
     supports_categorical_covariates: bool = False
     supports_heterogeneous_covariates: bool = False
+    requires_equal_length_context: bool = False
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
     requires_provider_auth: bool = False
@@ -1738,9 +1769,12 @@ class MoiraiAdapter(_AdapterBase):
         it is trimmed to this length; if it is shorter, all available
         observations are used as-is. Must be a positive integer.
     device : str, default 'auto'
-        Device placement for the model. `"auto"` selects the best
-        available accelerator (CUDA > MPS > CPU). Also accepts explicit
-        values such as `"cuda"`, `"mps"`, or `"cpu"`.
+        Device placement for the model. `"auto"` selects CUDA when it is
+        available, otherwise CPU. Also accepts explicit values such as
+        `"cuda"` or `"cpu"`. MPS is not supported by Moirai (the uni2ts
+        library uses float64 operations internally): `"mps"` (also with an
+        index, or selected by `"auto"` on Apple Silicon without CUDA) falls
+        back to CPU with a warning.
 
     Attributes
     ----------
@@ -1760,6 +1794,10 @@ class MoiraiAdapter(_AdapterBase):
     supports_heterogeneous_covariates : bool
         Whether series with different covariate columns can be forecast in
         the same backend call. `True`, since covariates are ignored.
+    requires_equal_length_context : bool
+        Whether the backend needs every series of a call to have the same
+        context length, so that `FoundationModel` left-pads them with NaN.
+        `False`: each series is passed with its own length.
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as
         context.
@@ -1820,6 +1858,7 @@ class MoiraiAdapter(_AdapterBase):
     supports_past_only_covariates: bool = False
     supports_categorical_covariates: bool = False
     supports_heterogeneous_covariates: bool = True
+    requires_equal_length_context: bool = False
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
     requires_provider_auth: bool = False
@@ -1854,10 +1893,13 @@ class MoiraiAdapter(_AdapterBase):
             if it is shorter, all available observations are passed as-is.
             Must be a positive integer.
         device : str, default 'auto'
-            Device placement for the model. `"auto"` selects the best
-            available accelerator (CUDA > MPS > CPU). Also accepts
-            explicit values such as `"cuda"`, `"mps"`, or `"cpu"`.
-        
+            Device placement for the model. `"auto"` selects CUDA when it
+            is available, otherwise CPU. Also accepts explicit values such
+            as `"cuda"` or `"cpu"`. MPS is not supported by Moirai (the
+            uni2ts library uses float64 operations internally): `"mps"`
+            (also with an index, or selected by `"auto"` on Apple Silicon
+            without CUDA) falls back to CPU with a warning.
+
         """
 
         _validate_positive_int("context_length", context_length)
@@ -2083,15 +2125,15 @@ class MoiraiAdapter(_AdapterBase):
             past_feat_dynamic_real_dim = 0,
         ).eval()
 
-        resolved_device = _resolve_torch_device(self.device)
-        if resolved_device == "mps":
-            warnings.warn(
+        resolved_device = _resolve_torch_device(
+            self.device,
+            mps_fallback_message = (
                 "MPS device is not supported by Moirai because the uni2ts "
                 "library uses float64 operations internally. Falling back "
-                "to CPU.",
-                stacklevel=6,
-            )
-            resolved_device = "cpu"
+                "to CPU."
+            ),
+            stacklevel           = 7,
+        )
         self._forecast_obj.to(resolved_device)
 
     def _run_inference(
@@ -2184,6 +2226,10 @@ class TabICLAdapter(_AdapterBase):
         frame holds one column set for every series: `FoundationModel`
         groups the series by covariate signature and calls `predict` once
         per group.
+    requires_equal_length_context : bool
+        Whether the backend needs every series of a call to have the same
+        context length, so that `FoundationModel` left-pads them with NaN.
+        `False`: each series is passed with its own length.
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as
         context. `True`: TabICL drops the rows whose target is NaN.
@@ -2252,6 +2298,7 @@ class TabICLAdapter(_AdapterBase):
     supports_past_only_covariates: bool = False
     supports_categorical_covariates: bool = False
     supports_heterogeneous_covariates: bool = False
+    requires_equal_length_context: bool = False
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
     requires_provider_auth: bool = False
@@ -2820,6 +2867,10 @@ class TabPFNAdapter(_AdapterBase):
         Whether series with different covariate columns can be forecast in
         the same backend call. `True`: the library handles the missing cells
         of the long-format input frame.
+    requires_equal_length_context : bool
+        Whether the backend needs every series of a call to have the same
+        context length, so that `FoundationModel` left-pads them with NaN.
+        `False`: each series is passed with its own length.
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as
         context.
@@ -2893,6 +2944,7 @@ class TabPFNAdapter(_AdapterBase):
     supports_past_only_covariates: bool = False
     supports_categorical_covariates: bool = False
     supports_heterogeneous_covariates: bool = True
+    requires_equal_length_context: bool = False
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
     requires_provider_auth: bool = True
@@ -3459,6 +3511,13 @@ class T0Adapter(_AdapterBase):
         the same backend call. `True`: T0 defines NaN as an absent covariate
         value, so the adapter pools the columns of all series and fills the
         missing cells with NaN.
+    requires_equal_length_context : bool
+        Whether the backend needs every series of a call to have the same
+        context length. `True` for T0, which takes the context of all the
+        series as a single array: `FoundationModel` left-pads `context` and
+        `context_exog` with NaN, which T0 treats as missing, to the length
+        of the longest series of the call, and indexes them by a positional
+        pandas RangeIndex. History and future exog are joined by position.
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as
         context.
@@ -3517,6 +3576,7 @@ class T0Adapter(_AdapterBase):
     supports_past_only_covariates: bool = False
     supports_categorical_covariates: bool = False
     supports_heterogeneous_covariates: bool = True
+    requires_equal_length_context: bool = True
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
     requires_provider_auth: bool = False
@@ -3662,7 +3722,7 @@ class T0Adapter(_AdapterBase):
         """
         Generate predictions using the T0 model.
 
-        All input normalization, validation, and context trimming is
+        All input normalization, validation, context trimming and padding is
         performed upstream by `FoundationModel`; this method receives
         pre-processed dicts only.
 
@@ -3671,9 +3731,12 @@ class T0Adapter(_AdapterBase):
         steps : int
             Number of steps ahead to forecast.
         context : dict
-            Per-series context windows (already trimmed to `context_length`).
+            Per-series context windows (already trimmed to `context_length`),
+            left-padded with NaN to a common length and indexed by a
+            positional pandas RangeIndex.
         context_exog : dict
-            Per-series past covariates (already trimmed).
+            Per-series past covariates (already trimmed), left-padded and
+            indexed like `context`.
         exog : dict
             Per-series future covariates for the forecast horizon.
         quantiles : list of float or None
@@ -3697,21 +3760,17 @@ class T0Adapter(_AdapterBase):
         # reindex the columns back to the order the caller asked for.
         query_levels = sorted(set(requested))
 
+        # All series are forecast in a single batched call.
+        # `FoundationModel` left-pads the context of every series to the same
+        # length (`requires_equal_length_context=True`) with NaN, which T0
+        # treats as missing, so the forecast origin aligns at the end of the
+        # window for every series.
         series_names = list(context.keys())
-        arrays = [
-            np.asarray(context[series_name].to_numpy(), dtype=np.float32)
+        context_batch = np.stack([
+            context[series_name].to_numpy(dtype=np.float32)
             for series_name in series_names
-        ]
-        lengths = [a.shape[0] for a in arrays]
-        context_length = max(lengths)
-
-        # All series are forecast in a single batched call. Series shorter than
-        # the longest are left-padded with NaN, which T0 treats as MISSING; the
-        # forecast origin therefore aligns at the end of the window for every
-        # series.
-        context_batch = np.full((len(series_names), context_length), np.nan, dtype=np.float32)
-        for row, array in zip(context_batch, arrays):
-            row[context_length - array.shape[0]:] = array
+        ])
+        context_length = context_batch.shape[1]
 
         future_covariates = self._build_future_covariates(
             series_names   = series_names,
@@ -3966,6 +4025,10 @@ class TSICLAdapter(_AdapterBase):
         Whether series with different covariate columns can be forecast in
         the same backend call. `False` for TS-ICL: `FoundationModel` groups
         the series by covariate signature and calls `predict` once per group.
+    requires_equal_length_context : bool
+        Whether the backend needs every series of a call to have the same
+        context length, so that `FoundationModel` left-pads them with NaN.
+        `False`: each series is passed with its own length.
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as
         context.
@@ -4028,6 +4091,7 @@ class TSICLAdapter(_AdapterBase):
     supports_past_only_covariates: bool = True
     supports_categorical_covariates: bool = False
     supports_heterogeneous_covariates: bool = False
+    requires_equal_length_context: bool = False
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
     requires_provider_auth: bool = False
@@ -4458,6 +4522,10 @@ class NoriAdapter(_AdapterBase):
         Whether series with different covariate columns can be forecast in
         the same backend call. `True`: every series is fitted and predicted
         in its own `NoriRegressor` call.
+    requires_equal_length_context : bool
+        Whether the backend needs every series of a call to have the same
+        context length, so that `FoundationModel` left-pads them with NaN.
+        `False`: each series is passed with its own length.
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as
         context. `True`: `NoriRegressor` rejects NaN, so the adapter drops
@@ -4527,6 +4595,7 @@ class NoriAdapter(_AdapterBase):
     supports_past_only_covariates: bool = False
     supports_categorical_covariates: bool = False
     supports_heterogeneous_covariates: bool = True
+    requires_equal_length_context: bool = False
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
     requires_provider_auth: bool = False
