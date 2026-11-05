@@ -1769,9 +1769,12 @@ class MoiraiAdapter(_AdapterBase):
         it is trimmed to this length; if it is shorter, all available
         observations are used as-is. Must be a positive integer.
     device : str, default 'auto'
-        Device placement for the model. `"auto"` selects the best
-        available accelerator (CUDA > MPS > CPU). Also accepts explicit
-        values such as `"cuda"`, `"mps"`, or `"cpu"`.
+        Device placement for the model. `"auto"` selects CUDA when it is
+        available, otherwise CPU. Also accepts explicit values such as
+        `"cuda"` or `"cpu"`. MPS is not supported by Moirai (the uni2ts
+        library uses float64 operations internally): `"mps"` (also with an
+        index, or selected by `"auto"` on Apple Silicon without CUDA) falls
+        back to CPU with a warning.
 
     Attributes
     ----------
@@ -1890,10 +1893,13 @@ class MoiraiAdapter(_AdapterBase):
             if it is shorter, all available observations are passed as-is.
             Must be a positive integer.
         device : str, default 'auto'
-            Device placement for the model. `"auto"` selects the best
-            available accelerator (CUDA > MPS > CPU). Also accepts
-            explicit values such as `"cuda"`, `"mps"`, or `"cpu"`.
-        
+            Device placement for the model. `"auto"` selects CUDA when it
+            is available, otherwise CPU. Also accepts explicit values such
+            as `"cuda"` or `"cpu"`. MPS is not supported by Moirai (the
+            uni2ts library uses float64 operations internally): `"mps"`
+            (also with an index, or selected by `"auto"` on Apple Silicon
+            without CUDA) falls back to CPU with a warning.
+
         """
 
         _validate_positive_int("context_length", context_length)
