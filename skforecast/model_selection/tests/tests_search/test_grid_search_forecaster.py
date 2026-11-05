@@ -88,6 +88,7 @@ def test_output_grid_search_forecaster_ForecasterRecursive_with_mocked():
         index=pd.RangeIndex(start=0, stop=idx, step=1),
     )
 
+    expected_results.insert(4, 'n_evaluated', [12] * 6)
     pd.testing.assert_frame_equal(results, expected_results)
 
 

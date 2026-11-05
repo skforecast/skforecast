@@ -184,6 +184,7 @@ def test_output_grid_search_equivalent_date_dict_param_grid():
         index = pd.Index(np.array([0, 1, 2, 3]), dtype="int64")
     )
 
+    expected_results.insert(2, 'n_evaluated', [12] * 4)
     pd.testing.assert_frame_equal(results, expected_results, atol=0.0001)
 
 
@@ -221,6 +222,7 @@ def test_output_grid_search_equivalent_date_list_param_grid():
         index = pd.Index(np.array([0, 1, 2]), dtype="int64")
     )
 
+    expected_results.insert(2, 'n_evaluated', [12] * 3)
     pd.testing.assert_frame_equal(results, expected_results, atol=0.0001)
 
 
@@ -303,6 +305,7 @@ def test_output_grid_search_equivalent_date_agg_func_multiple_configs():
         index = pd.Index(np.array([0, 1]), dtype="int64")
     )
 
+    expected_results.insert(2, 'n_evaluated', [12] * 2)
     pd.testing.assert_frame_equal(results, expected_results, atol=0.0001)
 
 
@@ -339,6 +342,7 @@ def test_output_grid_search_equivalent_date_with_alias():
         index = pd.Index(np.array([0, 1]), dtype="int64")
     )
 
+    expected_results.insert(3, 'n_evaluated', [12] * 2)
     pd.testing.assert_frame_equal(results, expected_results, atol=0.0001)
 
 
@@ -380,6 +384,7 @@ def test_output_grid_search_equivalent_date_config_exceeding_training_size_skipp
         index = pd.Index(np.array([0]), dtype="int64")
     )
 
+    expected_results.insert(2, 'n_evaluated', [12] * 1)
     pd.testing.assert_frame_equal(results, expected_results, atol=0.0001)
 
 
@@ -439,6 +444,7 @@ def test_grid_search_equivalent_date_multiple_metrics():
         index = pd.Index(np.array([0, 1]), dtype="int64")
     )
 
+    expected_results.insert(3, 'n_evaluated', [12] * 2)
     pd.testing.assert_frame_equal(results, expected_results, atol=0.0001)
 
 

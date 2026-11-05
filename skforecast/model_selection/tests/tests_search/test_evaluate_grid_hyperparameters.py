@@ -239,6 +239,7 @@ def test_grid_hyperparameters_results_warn_when_non_valid_params():
             "l1_ratio": {0: 0.5},
         }
     )
+    expected_results.insert(4, 'n_evaluated', [20] * 1)
     pd.testing.assert_frame_equal(results, expected_results)
 
 
@@ -373,6 +374,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterRecursive_with_mocked():
         index=pd.RangeIndex(start=0, stop=idx, step=1),
     )
 
+    expected_results.insert(4, 'n_evaluated', [12] * 6)
     pd.testing.assert_frame_equal(results, expected_results)
 
 
@@ -446,6 +448,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterRecursive_with_window_fe
         'alpha': [1.0, 1.0, 0.1, 0.1, 0.01, 0.01]}
     )
 
+    expected_results.insert(4, 'n_evaluated', [12] * 6)
     pd.testing.assert_frame_equal(results, expected_results)
 
 
@@ -515,6 +518,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterRecursive_with_different
         index=pd.RangeIndex(start=0, stop=idx, step=1),
     )
 
+    expected_results.insert(4, 'n_evaluated', [12] * 6)
     pd.testing.assert_frame_equal(results, expected_results)
 
 
@@ -575,6 +579,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterRecursive_lags_grid_dict
         index=pd.RangeIndex(start=0, stop=idx, step=1),
     )
 
+    expected_results.insert(4, 'n_evaluated', [12] * 6)
     pd.testing.assert_frame_equal(results, expected_results)
 
 
@@ -626,6 +631,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterRecursive_lags_grid_is_N
         index=pd.RangeIndex(start=0, stop=3, step=1),
     )
 
+    expected_results.insert(4, 'n_evaluated', [12] * 3)
     pd.testing.assert_frame_equal(results, expected_results)
 
 
@@ -678,6 +684,7 @@ def test_output_evaluate_grid_hyperparameters_when_forecaster_lags_is_None(
         index=pd.RangeIndex(start=0, stop=3, step=1),
     )
 
+    expected_results.insert(4, 'n_evaluated', [12] * 3)
     pd.testing.assert_frame_equal(results, expected_results)
     assert forecaster.lags is None
     assert forecaster.estimator.alpha == 1
@@ -804,6 +811,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterRecursive_metric_list_wi
         index=pd.RangeIndex(start=0, stop=idx, step=1),
     )
 
+    expected_results.insert(5, 'n_evaluated', [12] * 6)
     pd.testing.assert_frame_equal(results, expected_results)
 
 
@@ -1116,6 +1124,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterDirect_with_window_featu
         'alpha': [1.0, 1.0, 0.1, 0.1, 0.01, 0.01]}
     )
 
+    expected_results.insert(4, 'n_evaluated', [12] * 6)
     pd.testing.assert_frame_equal(results, expected_results)
 
 
@@ -1230,8 +1239,8 @@ def test_evaluate_grid_hyperparameters_equivalent_outputs_backtesting_one_step_a
 def test_evaluate_grid_hyperparameters_metrics_equal_to_backtesting_by_name():
     """
     Test that the metrics of each candidate are those of its backtesting,
-    selected by name: the column `n_evaluated` of the backtesting metrics is
-    not added to the results, and the output file has the same columns.
+    selected by name, followed by the column `n_evaluated` of the backtesting,
+    and that the output file has the same columns.
     """
     forecaster = ForecasterRecursive(estimator=Ridge(random_state=123), lags=3)
     cv = TimeSeriesFold(steps=5, initial_train_size=len(y) - 12, refit=False)
@@ -1253,17 +1262,17 @@ def test_evaluate_grid_hyperparameters_metrics_equal_to_backtesting_by_name():
     output_file_header = pd.read_csv(output_file, sep='\t', nrows=0).columns.tolist()
     os.remove(output_file)
 
-    assert 'n_evaluated' not in results.columns
     assert output_file_header == [
         'lags', 'lags_label', 'params', 'mean_absolute_error',
-        'mean_absolute_scaled_error', 'alpha'
+        'mean_absolute_scaled_error', 'n_evaluated', 'alpha'
     ]
+    assert results.columns.tolist() == output_file_header
     for _, row in results.iterrows():
         forecaster.set_params(row['params'])
         metric_backtesting, _ = backtesting_forecaster(
             forecaster=forecaster, y=y, cv=cv, metric=metric, show_progress=False
         )
-        for name in ['mean_absolute_error', 'mean_absolute_scaled_error']:
+        for name in ['mean_absolute_error', 'mean_absolute_scaled_error', 'n_evaluated']:
             assert row[name] == metric_backtesting.loc[0, name]
 
 

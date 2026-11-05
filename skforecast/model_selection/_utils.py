@@ -805,7 +805,7 @@ def _calculate_metrics_one_step_ahead(
     y_test: np.ndarray,
     sample_weight: np.ndarray | None,
     fit_kwargs: dict[str, Any]
-) -> list:
+) -> tuple[list, int]:
     """
     Calculate metrics when predictions are one-step-ahead. When forecaster is
     of type ForecasterDirect only the estimator for step 1 is used. Data is
@@ -835,6 +835,9 @@ def _calculate_metrics_one_step_ahead(
     -------
     metric_values : list
         List with metric values.
+    n_evaluated : int
+        Number of points that enter the metrics: true value and prediction
+        not missing.
     
     """
 
@@ -888,8 +891,9 @@ def _calculate_metrics_one_step_ahead(
     metric_values = [
         m(y_true=y_true, y_pred=y_pred, y_train=y_train) for m in metrics
     ]
+    n_evaluated = _count_evaluated(y_true=y_true, y_pred=y_pred)
 
-    return metric_values
+    return metric_values, n_evaluated
 
 
 def _initialize_levels_model_selection_multiseries(

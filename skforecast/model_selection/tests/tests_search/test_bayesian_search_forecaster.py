@@ -316,6 +316,7 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive():
         index=pd.RangeIndex(start=0, stop=10, step=1)
     )
 
+    expected_results.insert(3, 'n_evaluated', [12] * 10)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results, check_dtype=False)
 
 
@@ -433,6 +434,7 @@ def test_results_output_bayesian_search_forecaster_window_features_ForecasterRec
         ],
     })
 
+    expected_results.insert(3, 'n_evaluated', [12] * 10)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results, check_dtype=False)
     
 
@@ -532,6 +534,7 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive_with_kwar
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error': float, 'alpha': float})
 
+    expected_results.insert(3, 'n_evaluated', [12] * 10)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
@@ -619,6 +622,7 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive_with_kwar
         index=pd.RangeIndex(start=0, stop=5, step=1)
     ).astype({'mean_absolute_error': float, 'n_estimators': int, 'max_depth': int})
 
+    expected_results.insert(3, 'n_evaluated', [12] * 5)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results, check_dtype=False)
 
 
@@ -708,6 +712,7 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive_when_lags
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error': float, 'alpha': float})
     
+    expected_results.insert(3, 'n_evaluated', [12] * 10)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
@@ -964,6 +969,7 @@ def test_results_output_bayesian_search_forecaster_ForecasterDirect():
         'min_samples_leaf': float
     })
 
+    expected_results.insert(3, 'n_evaluated', [12] * 10)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
@@ -1082,6 +1088,7 @@ def test_results_output_bayesian_search_forecaster_window_features_ForecasterDir
         ],
     })
 
+    expected_results.insert(3, 'n_evaluated', [12] * 10)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
     
@@ -1386,6 +1393,7 @@ def test_results_output_bayesian_search_forecaster_optuna_ForecasterRecursive_wi
         ],
     })
 
+    expected_results.insert(3, 'n_evaluated', [12] * 10)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
@@ -1473,6 +1481,7 @@ def test_results_output_bayesian_search_forecaster_optuna_ForecasterRecursive_wi
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error': float, 'alpha': float})
 
+    expected_results.insert(3, 'n_evaluated', [12] * 10)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
@@ -1556,6 +1565,7 @@ def test_bayesian_search_forecaster_xgboost_categorical_no_ValueError_on_cache_h
         index=pd.RangeIndex(start=0, stop=6, step=1)
     ).astype({'mean_absolute_error': float, 'n_estimators': int})
 
+    expected_results.insert(3, 'n_evaluated', [15] * 6)
     pd.testing.assert_frame_equal(
         results.drop(columns=['trial_number']), expected_results, atol=1e-4
     )

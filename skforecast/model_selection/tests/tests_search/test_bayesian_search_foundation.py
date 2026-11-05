@@ -158,10 +158,12 @@ def test_bayesian_search_foundation_single_series():
     assert isinstance(results, pd.DataFrame)
     assert len(results) == n_trials
 
-    expected_cols = {"trial_number", "levels", "params", "mean_absolute_error", "context_length"}
-    assert expected_cols.issubset(set(results.columns))
-
-    assert "lags" not in results.columns
+    assert results.columns.tolist() == [
+        "trial_number", "levels", "params", "mean_absolute_error", "n_evaluated",
+        "context_length"
+    ]
+    # 2 folds of 5 steps
+    assert results["n_evaluated"].tolist() == [10, 10]
 
     # Sorted ascending for regression
     metric_vals = results["mean_absolute_error"].tolist()
@@ -218,6 +220,9 @@ def test_bayesian_search_foundation_multi_series_aggregated_columns():
     assert "mean_absolute_error" not in results.columns
 
     assert "lags" not in results.columns
+
+    # 2 folds of 5 steps, summed over the 2 series
+    assert results["n_evaluated"].tolist() == [20, 20]
 
     assert isinstance(study, optuna.Study)
 

@@ -55,6 +55,7 @@ def test_output_random_search_stats_sarimax_with_mocked():
         index = pd.Index(np.array([0, 1]), dtype="int64")
     )
 
+    expected_results.insert(2, 'n_evaluated', [12] * 2)
     pd.testing.assert_frame_equal(results, expected_results, atol=0.001)
 
 

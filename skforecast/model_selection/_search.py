@@ -153,6 +153,8 @@ def grid_search_forecaster(
         - column lags_label: descriptive label or alias for the lags.
         - column params: parameters configuration for each iteration.
         - column metric: metric value estimated for each iteration.
+        - column n_evaluated: number of points that enter the metrics of each
+        iteration (true value and prediction not missing).
         - additional n columns with param = value.
     
     """
@@ -280,6 +282,8 @@ def random_search_forecaster(
         - column lags_label: descriptive label or alias for the lags.
         - column params: parameters configuration for each iteration.
         - column metric: metric value estimated for each iteration.
+        - column n_evaluated: number of points that enter the metrics of each
+        iteration (true value and prediction not missing).
         - additional n columns with param = value.
     
     """
@@ -406,6 +410,8 @@ def _evaluate_grid_hyperparameters(
         - column lags_label: descriptive label or alias for the lags.
         - column params: parameters configuration for each iteration.
         - column metric: metric value estimated for each iteration.
+        - column n_evaluated: number of points that enter the metrics of each
+        iteration (true value and prediction not missing).
         - additional n columns with param = value.
 
     """
@@ -476,6 +482,7 @@ def _evaluate_grid_hyperparameters(
         lags_list = []
         lags_label_list = []
         params_list = []
+        n_evaluated_list = []
         for lags_k, lags_v in lags_grid_tqdm:
         
             search_warnings.set_candidate(None)
@@ -525,11 +532,12 @@ def _evaluate_grid_hyperparameters(
                                             show_progress     = False,
                                             suppress_warnings = suppress_warnings
                                         )[0]
+                        n_evaluated = int(metric_values.loc[0, N_EVALUATED_NAME])
                         metric_values = metric_values.loc[0, list(metric_dict)].to_list()
 
                     else:
 
-                        metric_values = _calculate_metrics_one_step_ahead(
+                        metric_values, n_evaluated = _calculate_metrics_one_step_ahead(
                                             forecaster    = forecaster_search,
                                             metrics       = metric,
                                             X_train       = X_train,
@@ -546,16 +554,18 @@ def _evaluate_grid_hyperparameters(
                 lags_list.append(lags_v)
                 lags_label_list.append(lags_k)
                 params_list.append(params)
+                n_evaluated_list.append(n_evaluated)
                 for m, m_value in zip(metric, metric_values):
                     m_name = m if isinstance(m, str) else m.__name__
                     metric_dict[m_name].append(m_value)
         
                 if output_file is not None:
                     header = [
-                        'lags', 'lags_label', 'params', *metric_dict.keys(), *params.keys()
+                        'lags', 'lags_label', 'params', *metric_dict.keys(),
+                        N_EVALUATED_NAME, *params.keys()
                     ]
                     row = [lags_v, lags_k, params, 
-                           *metric_values, *params.values()]
+                           *metric_values, n_evaluated, *params.values()]
                     if not os.path.isfile(output_file):
                         with open(output_file, 'w', newline='') as f:
                             f.write('\t'.join(header) + '\n')
@@ -568,7 +578,8 @@ def _evaluate_grid_hyperparameters(
                   'lags': lags_list,
                   'lags_label': lags_label_list,
                   'params': params_list,
-                  **metric_dict
+                  **metric_dict,
+                  N_EVALUATED_NAME: n_evaluated_list
               })
     
     direction = _get_search_direction(metric=metric[0], forecaster=forecaster_search)
@@ -727,6 +738,8 @@ def bayesian_search_forecaster(
         - column lags: lags configuration for each iteration.
         - column params: parameters configuration for each iteration.
         - column metric: metric value estimated for each iteration.
+        - column n_evaluated: number of points that enter the metrics of each
+        iteration (true value and prediction not missing).
         - additional n columns with param = value.
     study : optuna Study
         The optuna study object containing all optimization trials. Access the
@@ -822,11 +835,13 @@ def bayesian_search_forecaster(
                              show_progress     = False,
                              suppress_warnings = suppress_warnings
                          )
+            n_evaluated = int(metrics.loc[0, N_EVALUATED_NAME])
             metrics = metrics.loc[0, list(metric_dict)].to_list()
             
             # Store all metrics in the trial using optuna's user_attrs mechanism.
             for m_name, m_val in zip(metric_dict, metrics):
                 trial.set_user_attr(m_name, float(m_val))
+            trial.set_user_attr(N_EVALUATED_NAME, n_evaluated)
 
             return metrics[0]
         
@@ -894,20 +909,21 @@ def bayesian_search_forecaster(
                     forecaster_search, _estimator_cat_params
                 )
 
-            metrics = _calculate_metrics_one_step_ahead(
-                          forecaster    = forecaster_search,
-                          metrics       = metric,
-                          X_train       = X_train,
-                          y_train       = y_train,
-                          X_test        = X_test,
-                          y_test        = y_test,
-                          sample_weight = sample_weight,
-                          fit_kwargs    = fit_kwargs
-                      )
+            metrics, n_evaluated = _calculate_metrics_one_step_ahead(
+                                       forecaster    = forecaster_search,
+                                       metrics       = metric,
+                                       X_train       = X_train,
+                                       y_train       = y_train,
+                                       X_test        = X_test,
+                                       y_test        = y_test,
+                                       sample_weight = sample_weight,
+                                       fit_kwargs    = fit_kwargs
+                                   )
 
             # Store all metrics in the trial using optuna's user_attrs mechanism.
             for m_name, m_val in zip(metric_dict, metrics):
                 trial.set_user_attr(m_name, float(m_val))
+            trial.set_user_attr(N_EVALUATED_NAME, n_evaluated)
 
             return metrics[0]
 
@@ -970,6 +986,7 @@ def bayesian_search_forecaster(
     lags_list = []
     params_list = []
     trial_number_list = []
+    n_evaluated_list = []
     for trial in study.get_trials(states=[TrialState.COMPLETE]):
         estimator_params = {k: v for k, v in trial.params.items() if k != 'lags'}
         lags = trial.params.get(
@@ -981,12 +998,16 @@ def bayesian_search_forecaster(
         trial_number_list.append(trial.number)
         for m_name in metric_dict:
             metric_dict[m_name].append(trial.user_attrs[m_name])
+        # NOTE: NaN for the trials of a study loaded from storage, run with a
+        # previous version without `n_evaluated`.
+        n_evaluated_list.append(trial.user_attrs.get(N_EVALUATED_NAME, np.nan))
 
     results = pd.DataFrame({
                   'trial_number': trial_number_list,
                   'lags': lags_list,
                   'params': params_list,
-                  **metric_dict
+                  **metric_dict,
+                  N_EVALUATED_NAME: n_evaluated_list
               })
     
     results = (
@@ -2503,6 +2524,8 @@ def bayesian_search_foundation(
         - column levels: levels evaluated in each trial.
         - column params: parameter configuration for each trial.
         - column metric: metric value estimated for each trial.
+        - column n_evaluated: number of points that enter the metrics of each
+        trial (true value and prediction not missing), summed over the levels.
         - additional columns with one column per searched parameter (expanded
         from `params`).
     study : optuna Study
@@ -2620,6 +2643,11 @@ def bayesian_search_foundation(
         )
 
         if "levels" in metrics.columns:
+            n_evaluated, _ = _get_n_evaluated_search_multiseries(
+                                 metrics = metrics,
+                                 row     = metrics_rows[0],
+                                 levels  = levels
+                             )
             metrics = pd.DataFrame(
                 data    = [_select_metrics_search_multiseries(
                               metrics      = metrics,
@@ -2629,6 +2657,7 @@ def bayesian_search_foundation(
                 columns = metric_names,
             )
         else:
+            n_evaluated = int(metrics[N_EVALUATED_NAME].iloc[0])
             metrics = pd.DataFrame(
                 data    = [metrics[metric_columns].to_numpy().ravel()],
                 columns = metric_names,
@@ -2637,6 +2666,7 @@ def bayesian_search_foundation(
 
         for m_name in metric_names:
             trial.set_user_attr(m_name, float(metrics.loc[0, m_name]))
+        trial.set_user_attr(N_EVALUATED_NAME, n_evaluated)
 
         return metrics.loc[0, metric_names[0]]
 
@@ -2702,7 +2732,14 @@ def bayesian_search_foundation(
     for trial in study.get_trials(states=[TrialState.COMPLETE]):
         trial_number_list.append(trial.number)
         params_list.append(trial.params)
-        metrics_data.append({m_name: trial.user_attrs[m_name] for m_name in metric_names})
+        metrics_data.append(
+            {
+                **{m_name: trial.user_attrs[m_name] for m_name in metric_names},
+                # NOTE: A study loaded from storage can have trials of a
+                # previous version without `n_evaluated`.
+                N_EVALUATED_NAME: trial.user_attrs.get(N_EVALUATED_NAME, np.nan)
+            }
+        )
 
     results = pd.DataFrame(metrics_data)
     results.insert(0, "trial_number", trial_number_list)
@@ -2827,6 +2864,8 @@ def grid_search_stats(
 
         - column params: parameters configuration for each iteration.
         - column metric: metric value estimated for each iteration.
+        - column n_evaluated: number of points that enter the metrics of each
+        iteration (true value and prediction not missing).
         - additional n columns with param = value.
     
     """
@@ -2939,6 +2978,8 @@ def random_search_stats(
 
         - column params: parameters configuration for each iteration.
         - column metric: metric value estimated for each iteration.
+        - column n_evaluated: number of points that enter the metrics of each
+        iteration (true value and prediction not missing).
         - additional n columns with param = value.
     
     """
@@ -3050,6 +3091,8 @@ def _evaluate_grid_hyperparameters_stats(
 
         - column params: parameters configuration for each iteration.
         - column metric: metric value estimated for each iteration.
+        - column n_evaluated: number of points that enter the metrics of each
+        iteration (true value and prediction not missing).
         - additional n columns with param = value.
 
     """
@@ -3105,6 +3148,7 @@ def _evaluate_grid_hyperparameters_stats(
 
         candidate = 0
         params_list = []
+        n_evaluated_list = []
         for params in param_grid:
 
             candidate += 1
@@ -3129,16 +3173,20 @@ def _evaluate_grid_hyperparameters_stats(
                 search_warnings.add_skipped(lags=None, params=params, error=e)
                 continue
         
+            n_evaluated = int(metric_values.loc[0, N_EVALUATED_NAME])
             metric_values = metric_values.loc[0, list(metric_dict)].to_list()
         
             params_list.append(params)
+            n_evaluated_list.append(n_evaluated)
             for m, m_value in zip(metric, metric_values):
                 m_name = m if isinstance(m, str) else m.__name__
                 metric_dict[m_name].append(m_value)
         
             if output_file is not None:
-                header = ['params', *metric_dict.keys(), *params.keys()]
-                row = [params, *metric_values, *params.values()]
+                header = [
+                    'params', *metric_dict.keys(), N_EVALUATED_NAME, *params.keys()
+                ]
+                row = [params, *metric_values, n_evaluated, *params.values()]
                 if not os.path.isfile(output_file):
                     with open(output_file, 'w', newline='') as f:
                         f.write('\t'.join(header) + '\n')
@@ -3149,7 +3197,8 @@ def _evaluate_grid_hyperparameters_stats(
 
     results = pd.DataFrame({
                   'params': params_list,
-                  **metric_dict
+                  **metric_dict,
+                  N_EVALUATED_NAME: n_evaluated_list
               })
     
     direction = _get_search_direction(metric=metric[0], forecaster=forecaster_search)
@@ -3290,6 +3339,8 @@ def grid_search_equivalent_date(
         `param_grid` is a list and at least one configuration defines an `alias`.
         - column params: parameters configuration for each iteration.
         - column metric: metric value estimated for each iteration.
+        - column n_evaluated: number of points that enter the metrics of each
+        iteration (true value and prediction not missing).
         - additional n columns with param = value.
 
     """
@@ -3380,6 +3431,7 @@ def grid_search_equivalent_date(
         candidate = 0
         params_list = []
         alias_list = []
+        n_evaluated_list = []
         for params, alias in param_alias_grid:
 
             candidate += 1
@@ -3402,21 +3454,26 @@ def grid_search_equivalent_date(
                 search_warnings.add_skipped(lags=None, params=params, error=e)
                 continue
 
+            n_evaluated = int(metric_values.loc[0, N_EVALUATED_NAME])
             metric_values = metric_values.loc[0, list(metric_dict)].to_list()
 
             params_list.append(params)
             alias_list.append(alias)
+            n_evaluated_list.append(n_evaluated)
             for m, m_value in zip(metric, metric_values):
                 m_name = m if isinstance(m, str) else m.__name__
                 metric_dict[m_name].append(m_value)
 
             if output_file is not None:
                 header = ['alias'] if use_alias else []
-                header += ['params', *metric_dict.keys(), *params.keys()]
+                header += [
+                    'params', *metric_dict.keys(), N_EVALUATED_NAME, *params.keys()
+                ]
                 row = [alias] if use_alias else []
                 row += [
                     params,
                     *metric_values,
+                    n_evaluated,
                     *[v.__name__ if callable(v) else v for v in params.values()]
                 ]
                 if not os.path.isfile(output_file):
@@ -3429,7 +3486,8 @@ def grid_search_equivalent_date(
 
     results = pd.DataFrame({
                   'params': params_list,
-                  **metric_dict
+                  **metric_dict,
+                  N_EVALUATED_NAME: n_evaluated_list
               })
     if use_alias:
         results.insert(0, 'alias', alias_list)

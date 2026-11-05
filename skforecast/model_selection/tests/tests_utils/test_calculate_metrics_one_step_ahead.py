@@ -47,7 +47,7 @@ def test_calculate_metrics_one_step_ahead_when_ForecasterRecursive():
     ) = forecaster._train_test_split_one_step_ahead(
         y=y, exog=exog, initial_train_size=10
     )
-    results = _calculate_metrics_one_step_ahead(
+    results, _ = _calculate_metrics_one_step_ahead(
         forecaster=forecaster,
         metrics=metrics,
         X_train=X_train,
@@ -89,7 +89,7 @@ def test_calculate_metrics_one_step_ahead_when_ForecasterDirect():
     ) = forecaster._train_test_split_one_step_ahead(
         y=y, exog=exog, initial_train_size=10
     )
-    results = _calculate_metrics_one_step_ahead(
+    results, _ = _calculate_metrics_one_step_ahead(
         forecaster=forecaster,
         metrics=metrics,
         X_train=X_train,
@@ -123,7 +123,7 @@ def test_calculate_metrics_one_step_ahead_when_ForecasterRecursive_only_differen
     ) = forecaster._train_test_split_one_step_ahead(
         y=y, exog=exog, initial_train_size=10
     )
-    results = _calculate_metrics_one_step_ahead(
+    results, _ = _calculate_metrics_one_step_ahead(
         forecaster=forecaster,
         metrics=metrics,
         X_train=X_train,
@@ -160,7 +160,7 @@ def test_calculate_metrics_one_step_ahead_when_metric_does_not_need_y_train():
     ) = forecaster._train_test_split_one_step_ahead(
         y=y, exog=exog, initial_train_size=10
     )
-    results = _calculate_metrics_one_step_ahead(
+    results, _ = _calculate_metrics_one_step_ahead(
         forecaster=forecaster,
         metrics=metrics,
         X_train=X_train,
@@ -216,13 +216,13 @@ def test_calculate_metrics_one_step_ahead_when_weight_func_non_uniform():
         y=y, initial_train_size=20
     )
 
-    results_weighted = _calculate_metrics_one_step_ahead(
+    results_weighted, _ = _calculate_metrics_one_step_ahead(
         forecaster=forecaster_weighted, metrics=metrics,
         X_train=X_train_w, y_train=y_train_w,
         X_test=X_test_w, y_test=y_test_w,
         sample_weight=sample_weight_w, fit_kwargs=fit_kwargs_w,
     )
-    results_unweighted = _calculate_metrics_one_step_ahead(
+    results_unweighted, _ = _calculate_metrics_one_step_ahead(
         forecaster=forecaster_unweighted, metrics=metrics,
         X_train=X_train_u, y_train=y_train_u,
         X_test=X_test_u, y_test=y_test_u,
@@ -263,7 +263,7 @@ def test_calculate_metrics_one_step_ahead_when_ForecasterRecursive_with_categori
 
     assert 'categorical_feature' in fit_kwargs
 
-    results = _calculate_metrics_one_step_ahead(
+    results, _ = _calculate_metrics_one_step_ahead(
         forecaster=forecaster,
         metrics=metrics,
         X_train=X_train,
@@ -308,7 +308,7 @@ def test_calculate_metrics_one_step_ahead_when_ForecasterDirect_with_categorical
 
     assert 'categorical_feature' in fit_kwargs
 
-    results = _calculate_metrics_one_step_ahead(
+    results, _ = _calculate_metrics_one_step_ahead(
         forecaster=forecaster,
         metrics=metrics,
         X_train=X_train,
@@ -353,7 +353,7 @@ def test_calculate_metrics_one_step_ahead_when_ForecasterRecursiveClassifier():
 
     assert 'categorical_feature' in fit_kwargs
 
-    results = _calculate_metrics_one_step_ahead(
+    results, _ = _calculate_metrics_one_step_ahead(
         forecaster=forecaster,
         metrics=metrics,
         X_train=X_train,
@@ -400,7 +400,7 @@ def test_calculate_metrics_one_step_ahead_when_catboost_categorical():
     assert 'cat_features' in fit_kwargs
     assert X_train.dtype == object
 
-    results = _calculate_metrics_one_step_ahead(
+    results, _ = _calculate_metrics_one_step_ahead(
         forecaster=forecaster,
         metrics=metrics,
         X_train=X_train,
@@ -415,3 +415,42 @@ def test_calculate_metrics_one_step_ahead_when_catboost_categorical():
 
     results = np.array([float(r) for r in results])
     np.testing.assert_array_almost_equal(results, expected)
+
+
+def test_calculate_metrics_one_step_ahead_n_evaluated_when_y_has_NaN_and_dropna_from_series():
+    """
+    Test the number of points evaluated returned by
+    _calculate_metrics_one_step_ahead when `y` has missing values and
+    `dropna_from_series=True`: the rows of the test set whose target or lags
+    are missing are removed, so a larger window evaluates fewer points. With
+    NaN at positions 25 and 35 and a test set from position 20 (30 rows),
+    lags=3 removes positions 25 to 28 and 35 to 38 (22 points left) and
+    lags=10 removes positions 25 to 45 (9 points left).
+    """
+    y_nan = y.copy()
+    y_nan.iloc[[25, 35]] = np.nan
+    metrics = [add_y_train_argument(mean_absolute_error)]
+
+    n_evaluated = []
+    for lags in [3, 10]:
+        forecaster = ForecasterRecursive(
+            estimator=LinearRegression(), lags=lags, dropna_from_series=True
+        )
+        (
+            X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+        ) = forecaster._train_test_split_one_step_ahead(
+            y=y_nan, initial_train_size=20
+        )
+        _, n = _calculate_metrics_one_step_ahead(
+            forecaster=forecaster,
+            metrics=metrics,
+            X_train=X_train,
+            y_train=y_train,
+            X_test=X_test,
+            y_test=y_test,
+            sample_weight=sample_weight,
+            fit_kwargs=fit_kwargs,
+        )
+        n_evaluated.append(n)
+
+    assert n_evaluated == [22, 9]

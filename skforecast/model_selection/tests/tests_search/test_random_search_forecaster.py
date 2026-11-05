@@ -91,6 +91,7 @@ def test_output_random_search_forecaster_ForecasterRecursive_with_mocked():
         index=pd.Index([0, 1, 2, 3, 4, 5], dtype="int64"),
     )
 
+    expected_results.insert(4, 'n_evaluated', [12] * 6)
     pd.testing.assert_frame_equal(results, expected_results)
 
 

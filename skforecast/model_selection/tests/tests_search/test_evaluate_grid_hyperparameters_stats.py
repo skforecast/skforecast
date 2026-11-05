@@ -174,6 +174,7 @@ def test_evaluate_grid_hyperparameters_stats_warn_when_non_valid_params():
             "trend": {0: None},
         }
     )
+    expected_results.insert(2, 'n_evaluated', [30] * 1)
     pd.testing.assert_frame_equal(results, expected_results)
 
 
@@ -314,6 +315,7 @@ def test_output_evaluate_grid_hyperparameters_stats_with_mocked():
         index = pd.Index(np.array([0, 1]), dtype='int64')
     )
 
+    expected_results.insert(2, 'n_evaluated', [12] * 2)
     pd.testing.assert_frame_equal(results, expected_results, atol=0.0001)
 
 
@@ -358,6 +360,7 @@ def test_output_evaluate_grid_hyperparameters_stats_exog_with_mocked():
         index = pd.Index(np.array([0, 1]), dtype='int64')
     )
 
+    expected_results.insert(2, 'n_evaluated', [12] * 2)
     pd.testing.assert_frame_equal(results, expected_results, atol=0.0001)
 
 
@@ -402,6 +405,7 @@ def test_output_evaluate_grid_hyperparameters_stats_metric_list_with_mocked():
         index = pd.Index(np.array([0, 1]), dtype='int64')
     )
 
+    expected_results.insert(3, 'n_evaluated', [12] * 2)
     pd.testing.assert_frame_equal(results, expected_results, atol=0.0001)
     
 
