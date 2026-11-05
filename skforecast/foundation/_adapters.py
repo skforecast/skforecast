@@ -29,7 +29,11 @@ from ._utils import (
 )
 
 
-def _resolve_torch_device(device: str) -> str:
+def _resolve_torch_device(
+    device: str,
+    mps_fallback_message: str | None = None,
+    stacklevel: int = 2,
+) -> str:
     """
     Resolve a device string to a concrete PyTorch device name.
 
@@ -41,6 +45,13 @@ def _resolve_torch_device(device: str) -> str:
     device : str
         Device string. Use `"auto"` for automatic selection, or an
         explicit name such as `"cuda"`, `"mps"`, or `"cpu"`.
+    mps_fallback_message : str, default None
+        For backends that do not run on MPS. If given and the resolved
+        device is MPS (`"auto"` on Apple Silicon without CUDA, or an
+        explicit `"mps"` or `"mps:<index>"`), this message is issued as a
+        `UserWarning` and `"cpu"` is returned. If `None`, MPS is allowed.
+    stacklevel : int, default 2
+        `stacklevel` of the warning, so that it points to the user's call.
 
     Returns
     -------
@@ -49,16 +60,21 @@ def _resolve_torch_device(device: str) -> str:
 
     """
 
-    if device != "auto":
-        return device
+    if device == "auto":
+        import torch
 
-    import torch
+        if torch.cuda.is_available():
+            device = "cuda"
+        elif torch.backends.mps.is_available():
+            device = "mps"
+        else:
+            device = "cpu"
 
-    if torch.cuda.is_available():
-        return "cuda"
-    if torch.backends.mps.is_available():
-        return "mps"
-    return "cpu"
+    if mps_fallback_message is not None and device.startswith("mps"):
+        warnings.warn(mps_fallback_message, stacklevel=stacklevel)
+        device = "cpu"
+
+    return device
 
 
 class ChronosAdapter(_AdapterBase):
@@ -2103,15 +2119,15 @@ class MoiraiAdapter(_AdapterBase):
             past_feat_dynamic_real_dim = 0,
         ).eval()
 
-        resolved_device = _resolve_torch_device(self.device)
-        if resolved_device == "mps":
-            warnings.warn(
+        resolved_device = _resolve_torch_device(
+            self.device,
+            mps_fallback_message = (
                 "MPS device is not supported by Moirai because the uni2ts "
                 "library uses float64 operations internally. Falling back "
-                "to CPU.",
-                stacklevel=6,
-            )
-            resolved_device = "cpu"
+                "to CPU."
+            ),
+            stacklevel           = 7,
+        )
         self._forecast_obj.to(resolved_device)
 
     def _run_inference(

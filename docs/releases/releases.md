@@ -149,6 +149,8 @@ The main changes in this release are:
 
 + Backtesting with two metrics of the same name (a name and the function it names, two lambdas, the pinball losses of two quantiles) returned duplicated columns, and <code>[backtesting_forecaster_multiseries]</code> raised a `TypeError`. A `ValueError` now names the duplicated metrics, as the hyperparameter searches already did. ([#1438](https://github.com/skforecast/skforecast/pull/1438))
 
++ <code>[FoundationModel]</code> and <code>[ForecasterFoundation]</code> with Moirai-2 and an MPS device with an index (`device='mps:0'`) moved the model to MPS, which uni2ts does not support, instead of falling back to CPU as with `device='mps'`. It now falls back to CPU with the same warning.
+
 + <code>[PopulationDriftDetector]</code> raised a `ValueError` from `chi2_contingency` in `fit` and `predict` when a `category` feature had categories with no observations. In addition, the `chi2_statistic` returned by `predict` could change in its last digits between Python sessions. ([#1445](https://github.com/skforecast/skforecast/pull/1445))
 
 + <code>[PopulationDriftDetector]</code> raised a `KeyError` in `predict` with multiple series when the series level of the index was a `category` with unused categories; `fit` also created an empty detector for each of them, with warnings. Only the categories with data are used now, as pandas 3 does. ([#1448](https://github.com/skforecast/skforecast/pull/1448))
