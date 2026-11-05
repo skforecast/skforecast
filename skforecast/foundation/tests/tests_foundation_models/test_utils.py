@@ -514,18 +514,25 @@ def test_left_pad_context_output():
     exog with NaN to the length of the longest series, on a common positional
     RangeIndex, whatever the end date, frequency or time zone of each series:
     two daily series in America/Santiago on both sides of the daylight saving
-    change at midnight of 2024-09-08 and a DatetimeIndex without `freq`.
-    Boolean columns become float in every series, NumPy integer columns only
-    in the padded series, the nullable Int64 and the other columns keep their
-    dtype, a series without exog stays None, and the inputs are not modified.
+    change at midnight of 2024-09-08 and a DatetimeIndex without `freq`. A
+    padded int64 series becomes float64, a float32 one and a nullable Float64
+    one keep their dtype, and every series keeps its name. Boolean columns
+    become float in every series, NumPy integer columns only in the padded
+    series, the nullable Int64 and the other columns keep their dtype, a
+    series without exog (None or missing key) stays None, and the inputs are
+    not modified.
     """
     idx_a = pd.date_range("2024-09-02", periods=6, freq="D", tz="America/Santiago")
     idx_b = pd.date_range("2024-09-09", periods=3, freq="D", tz="America/Santiago")
     idx_c = pd.DatetimeIndex(["2024-01-01", "2024-01-03", "2024-01-04", "2024-01-08"])
+    idx_d = pd.date_range("2024-03-01", periods=2, freq="h")
     context = {
         "a": pd.Series(np.arange(1.0, 7.0), index=idx_a, name="a"),
-        "b": pd.Series([10.0, 11.0, 12.0], index=idx_b, name="b"),
-        "c": pd.Series([20.0, 21.0, 22.0, 23.0], index=idx_c, name="c"),
+        "b": pd.Series([10, 11, 12], index=idx_b, name="b", dtype="int64"),
+        "c": pd.Series(
+            [20.0, 21.0, 22.0, 23.0], index=idx_c, name="series_c", dtype="float32"
+        ),
+        "d": pd.Series([30.0, None], index=idx_d, name="d", dtype="Float64"),
     }
 
     def make_exog(index, offset):
@@ -551,7 +558,14 @@ def test_left_pad_context_output():
     expected_context = {
         "a": pd.Series(np.arange(1.0, 7.0), index=index, name="a"),
         "b": pd.Series([np.nan, np.nan, np.nan, 10.0, 11.0, 12.0], index=index, name="b"),
-        "c": pd.Series([np.nan, np.nan, 20.0, 21.0, 22.0, 23.0], index=index, name="c"),
+        "c": pd.Series(
+            [np.nan, np.nan, 20.0, 21.0, 22.0, 23.0],
+            index=index, name="series_c", dtype="float32",
+        ),
+        "d": pd.Series(
+            pd.array([None, None, None, None, 30.0, None], dtype="Float64"),
+            index=index, name="d",
+        ),
     }
     expected_exog_a = pd.DataFrame(
         {
@@ -574,13 +588,14 @@ def test_left_pad_context_output():
         index=index,
     )
 
-    assert list(padded_context.keys()) == ["a", "b", "c"]
+    assert list(padded_context.keys()) == ["a", "b", "c", "d"]
     for series_name, expected in expected_context.items():
         pd.testing.assert_series_equal(padded_context[series_name], expected)
-    assert list(padded_exog.keys()) == ["a", "b", "c"]
+    assert list(padded_exog.keys()) == ["a", "b", "c", "d"]
     pd.testing.assert_frame_equal(padded_exog["a"], expected_exog_a)
     pd.testing.assert_frame_equal(padded_exog["b"], expected_exog_b)
     assert padded_exog["c"] is None
+    assert padded_exog["d"] is None
     for series_name in context:
         pd.testing.assert_series_equal(context[series_name], context_copy[series_name])
     pd.testing.assert_frame_equal(context_exog["a"], context_exog_copy["a"])

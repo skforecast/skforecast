@@ -624,14 +624,16 @@ def _left_pad_context(
     `FoundationModel` builds the index of the predictions from the unpadded
     context.
 
-    Boolean exog columns (also the nullable `boolean` dtype) are cast to
-    float in every series, because a bool column cannot hold NaN (pandas
-    would turn it into an `object` column). NumPy integer columns become
-    float only in the series that are padded, so within a group an integer
-    column can be int or float depending on the series; nullable extension
-    dtypes (`Int64`, `Float64`) keep their dtype and hold `pd.NA` in the
-    padded rows. Adapters must only rely on whether a column is numeric. The
-    other columns keep their dtype. The input objects are not modified.
+    A padded context series with a NumPy dtype is returned as float (a float
+    dtype is kept, any other becomes float64). Boolean exog columns (also the
+    nullable `boolean` dtype) are cast to float in every series, because a
+    bool column cannot hold NaN (pandas would turn it into an `object`
+    column). NumPy integer columns become float only in the series that are
+    padded, so within a group an integer column can be int or float depending
+    on the series. Nullable extension dtypes (`Int64`, `Float64`), in the
+    context and in the exog, keep their dtype and hold `pd.NA` in the padded
+    rows. Adapters must only rely on whether a column is numeric. The other
+    columns keep their dtype. The input objects are not modified.
 
     """
 
@@ -644,10 +646,22 @@ def _left_pad_context(
     for series_name, series_values in context.items():
         n_pad = width - len(series_values)
         positions = pd.RangeIndex(n_pad, width)
-        series_values = series_values.set_axis(positions)
-        padded_context[series_name] = (
-            series_values.reindex(index) if n_pad > 0 else series_values
-        )
+        if n_pad > 0 and isinstance(series_values.dtype, np.dtype):
+            # NumPy dtypes: fill an array by position, about 5 times faster
+            # than `reindex`. A float dtype is kept, any other becomes float64.
+            dtype = (
+                series_values.dtype if series_values.dtype.kind == "f" else np.float64
+            )
+            values = np.full(width, np.nan, dtype=dtype)
+            values[n_pad:] = series_values.to_numpy()
+            padded_context[series_name] = pd.Series(
+                values, index=index, name=series_values.name
+            )
+        else:
+            series_values = series_values.set_axis(positions)
+            padded_context[series_name] = (
+                series_values.reindex(index) if n_pad > 0 else series_values
+            )
         if padded_exog is not None:
             series_exog = context_exog.get(series_name)
             if series_exog is not None:

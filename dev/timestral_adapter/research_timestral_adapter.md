@@ -11,11 +11,11 @@ Leyenda de la procedencia de cada dato:
 
 ## 0. Estado y cómo retomar
 
-- **Fecha:** 29/10/2026 (última actualización: 04/11/2026, revisión final del PR A).
+- **Fecha:** 29/10/2026 (última actualización: 05/11/2026, revisión del PR A abierto, [skforecast/skforecast#1450](https://github.com/skforecast/skforecast/pull/1450)).
 - **Rama de referencia:** `0.27.x` (skforecast 0.27.0 en desarrollo), commit `9fc0fa12b9d0db55f695755d034f312c88233280` de `origin/0.27.x` (29/10/2026 12:58 +0100). Todas las referencias al código de skforecast son a ese commit. Revalidado el 04/11/2026 sobre `d3db96f` (59 commits más tarde): en `skforecast/foundation/` solo cambió una línea ajena al plan (`observed=True` en `FoundationModel._exog_to_dict`), `_backtesting_foundation` sigue descartando las ventanas de contexto enteras a NaN y `run_checks.py` pasa los 32 chequeos.
 - **Qué está commiteado:** este documento y `dev/timestral_adapter/experiments/`, fusionados en `0.27.x` con [skforecast/skforecast#1449](https://github.com/skforecast/skforecast/pull/1449) (merge `924ab7f`, 04/11/2026). Los logs van incluidos con `git add -f`, porque `.gitignore` excluye `*.log`. No se ha modificado nada en `skforecast/`, `docs/`, `tools/` ni en el harness.
 - **Qué hay en `dev/timestral_adapter/experiments/`:** el prototipo inicial, los seis experimentos (`exp1` a `exp6`) con sus logs y resultados, los requisitos del entorno y `skeleton/`, que extrae el esqueleto de este documento y lo ejecuta contra el backend real (sección 12).
-- **Estado del diseño:** el esqueleto de la sección 4, extraído de este documento, pasa los 32 chequeos de `skeleton/run_checks.py` con los pesos reales y `ruff check` con la configuración del repo **[probado]**. D5 y D11 están aceptadas (30/10/2026), y D7 (04/11/2026); las otras ocho decisiones de la sección 6 siguen abiertas, todas con una recomendación, y se pueden tomar al implementar: ninguna afecta al PR A (D6 es del PR C y las demás, del PR B). La revisión final del PR A (04/11/2026, anexo A, filas 91 a 96) aplicó el plan a una copia de `0.27.x` y ejecutó sus tests **[probado]**.
+- **Estado del diseño:** el esqueleto de la sección 4, extraído de este documento, pasa los 32 chequeos de `skeleton/run_checks.py` con los pesos reales y `ruff check` con la configuración del repo **[probado]**. D5 y D11 están aceptadas (30/10/2026), y D7 (04/11/2026); las otras ocho decisiones de la sección 6 siguen abiertas, todas con una recomendación, y se pueden tomar al implementar: ninguna afecta al PR A (D6 es del PR C y las demás, del PR B). La revisión final del PR A (04/11/2026, anexo A, filas 91 a 96) aplicó el plan a una copia de `0.27.x` y ejecutó sus tests **[probado]**. El PR A está abierto como #1450 (rama `chore/foundation-equal-length-context`, contra `0.27.x`); su revisión del 05/11/2026 (anexo A, fila 97) midió el coste con el modelo real de T0 y cambió el relleno de las series a NumPy **[probado]**.
 
 **Primer paso de la próxima sesión:**
 
@@ -357,6 +357,7 @@ El documento anterior decía que esto no se podía hacer a nivel de pandas porqu
 Detalles importantes:
 
 - Una columna booleana no admite NaN (pandas la convertiría en `object` y T0 la rechazaría por no numérica), así que `_left_pad_context` convierte las columnas booleanas (también las `boolean` nullable) a float en todas las series. Las columnas enteras de NumPy pasan a float solo en las series que se rellenan, así que dentro de un grupo una columna entera puede llegar como int o como float según la serie; las de tipos nullable (`Int64`, `Float64`) conservan su tipo y llevan `pd.NA` en el relleno (T0 las convierte igual que hoy, comprobado en la revisión final del PR A). Los adapters solo deben fijarse en si una columna es numérica. Las categóricas y de texto conservan su tipo. Comprobado también con pandas 2.2.0 (la mínima admitida) y 3.1.0, sin avisos, por un revisor **[probado]**.
+- Las series del contexto que se rellenan y tienen un dtype de NumPy se construyen con `np.full` y una asignación por posición, unas 5 veces más rápido que `reindex` (revisión del PR #1450, anexo A, fila 97): un dtype float se conserva y cualquier otro pasa a float64 (un `int64` sale como `float64`, igual que con `reindex`). Las de tipos nullable (`Float64`, `Int64`) y las que no necesitan relleno siguen por `set_axis`/`reindex`, que conserva su tipo. Las exog no cambian: su `reindex` es lo que conserva las categóricas y los nullable.
 - Una primera versión generaba fechas hacia atrás con la frecuencia de cada serie. Falló dos veces en la revisión independiente: desplazaba una hora el índice diario con zona horaria al cruzar un cambio de hora (la serie rellenada quedaba entera a NaN), y `pandas.date_range` lanza `NonExistentTimeError` cuando una fecha de relleno cae en un cambio de hora a medianoche (por ejemplo, el 08/09/2024 en `America/Santiago`), algo que T0 hoy no sufre porque rellena con numpy. Además necesitaba `freq`, que puede faltar en el camino de `check_inputs=False`. El relleno posicional evita los tres problemas, y `run_checks.py` cubre los dos casos de cambio de hora y el de un índice sin `freq` **[probado]**.
 
 <!-- skeleton:shared_utils -->
@@ -396,14 +397,16 @@ def _left_pad_context(
     `FoundationModel` builds the index of the predictions from the unpadded
     context.
 
-    Boolean exog columns (also the nullable `boolean` dtype) are cast to
-    float in every series, because a bool column cannot hold NaN (pandas
-    would turn it into an `object` column). NumPy integer columns become
-    float only in the series that are padded, so within a group an integer
-    column can be int or float depending on the series; nullable extension
-    dtypes (`Int64`, `Float64`) keep their dtype and hold `pd.NA` in the
-    padded rows. Adapters must only rely on whether a column is numeric. The
-    other columns keep their dtype. The input objects are not modified.
+    A padded context series with a NumPy dtype is returned as float (a float
+    dtype is kept, any other becomes float64). Boolean exog columns (also the
+    nullable `boolean` dtype) are cast to float in every series, because a
+    bool column cannot hold NaN (pandas would turn it into an `object`
+    column). NumPy integer columns become float only in the series that are
+    padded, so within a group an integer column can be int or float depending
+    on the series. Nullable extension dtypes (`Int64`, `Float64`), in the
+    context and in the exog, keep their dtype and hold `pd.NA` in the padded
+    rows. Adapters must only rely on whether a column is numeric. The other
+    columns keep their dtype. The input objects are not modified.
 
     """
 
@@ -416,10 +419,22 @@ def _left_pad_context(
     for series_name, series_values in context.items():
         n_pad = width - len(series_values)
         positions = pd.RangeIndex(n_pad, width)
-        series_values = series_values.set_axis(positions)
-        padded_context[series_name] = (
-            series_values.reindex(index) if n_pad > 0 else series_values
-        )
+        if n_pad > 0 and isinstance(series_values.dtype, np.dtype):
+            # NumPy dtypes: fill an array by position, about 5 times faster
+            # than `reindex`. A float dtype is kept, any other becomes float64.
+            dtype = (
+                series_values.dtype if series_values.dtype.kind == "f" else np.float64
+            )
+            values = np.full(width, np.nan, dtype=dtype)
+            values[n_pad:] = series_values.to_numpy()
+            padded_context[series_name] = pd.Series(
+                values, index=index, name=series_values.name
+            )
+        else:
+            series_values = series_values.set_axis(positions)
+            padded_context[series_name] = (
+                series_values.reindex(index) if n_pad > 0 else series_values
+            )
         if padded_exog is not None:
             series_exog = context_exog.get(series_name)
             if series_exog is not None:
@@ -2057,3 +2072,16 @@ Comprobado y correcto, sin cambios: todas las celdas de los adapters existentes 
 | 94 | El docstring del helper, el de A3 y la sección 4 decían que las columnas enteras de las series rellenadas llegan como float; las nullable `Int64` y `Float64` conservan su tipo con `pd.NA` | Reproducido; T0 las convierte igual que hoy | Textos corregidos |
 | 95 | A5 no concretaba el cambio, y `arrays` y `lengths` quedarían sin uso | Confirmado en el prototipo | A5 detallado |
 | 96 | D11 decía que el PR A toca TimesFM 3.0, y la sección 0 seguía diciendo que este documento estaba pendiente de fusionar | Confirmado | Corregido (#1449 fusionado) |
+
+**Revisión del PR #1450** (05/11/2026, PR A abierto contra `0.27.x`, rama al día con `origin/0.27.x`). En el entorno de desarrollo (Windows, Python 3.13.18, pandas 2.3.3, numpy 2.5.4, torch 2.14.1 CPU con 16 hilos), árbol base `924ab7f` exportado con `git archive` frente a la rama del PR:
+
+- `ruff check` limpio; `skforecast/foundation/tests`, `test_backtesting_foundation.py` y `test_bayesian_search_foundation.py` en verde (954 tests), y los tests cambiados también con pandas 3.1.0 y 2.2.3. Los archivos generados del contexto de IA al día.
+- T0 recibe los mismos arrays (contexto y covariables) y el mismo índice de predicciones en 13 escenarios con un backend falso: exog `float`, `int64`, `Int64` y `boolean` con y sin NA, `Float64`, `bool`, dos columnas, sin exog, `levels` parcial (2), índice horario con zona horaria y exog `Series` con una serie sin exog.
+- Moirai con `"auto"`, `"mps"` y `"mps:0"`: el aviso sale en la línea de la llamada del usuario (`stacklevel=7` correcto) y el modelo va a CPU; en el árbol base, `"mps:0"` iba a MPS sin aviso.
+- Coste con el modelo real (`tfc-t0` 0.3.2, T0-alpha de 101,6M de parámetros, CPU, mínimo de 3 procesos intercalados x 5 repeticiones, 24 pasos, 3 cuantiles). Parte de skforecast de `predict` (total menos el tiempo dentro de `T0Forecaster.predict`), base frente a PR antes de la fila 97: 1 serie de 512 sin exog, 1 ms frente a 1 ms (total 37 ms); 100 series iguales de 512 con 4 exog, 107 frente a 129 ms (total 5,4 s); 100 series de 300 a 512 sin exog, 10 frente a 22 ms (total 1,2 s); 100 series de 300 a 512 con 4 exog, 98 frente a 149 ms (total 5,7 s). Es decir, menos del 1 % de `predict`; la inferencia también varía entre procesos (hasta 0,6 s) por ruido de la máquina, no por el PR: las predicciones del modelo real son idénticas en base y PR en los cinco escenarios **[probado]**. Para el modelo real hace falta `tfc-t0<0.4`: la 0.6.0 cambia la firma de `predict` (issue #1385).
+- En el test nuevo de `test_predict.py`, las dos `assert_index_equal` que comparaban el índice de las predicciones (sin `freq`, como todo índice largo de varias series) con `future_long`/`future_short` (con `freq`) emitían `Pandas4Warning` en pandas 3.1 y fallarían cuando pandas 4 compruebe `freq` por defecto. `check_freq` no existe en `assert_index_equal` de pandas 2.x; el esperado se construye ahora con `pd.DatetimeIndex(future_long, freq=None)`, sin aviso en pandas 2.2.3, 2.3.3 y 3.1.0 **[probado]**. El mismo aviso sale en un test anterior del archivo (`assert_index_equal(result.index.unique(), expected_index)`, línea 275), ajeno al PR.
+- Pendiente, fuera del PR: el mensaje del `ImportError` de `T0Adapter._load_model` dice `pip install tfc-t0`, que instala una versión incompatible (issue #1385); la guía ya dice `pip install "tfc-t0<0.4"`. Fijar `backend_package = "tfc-t0<0.4"` arreglaría el mensaje, pero cambia el valor público de `FoundationModelInfo.backend_package`, obliga a cambiar `tools/foundation_compat/adapters.toml` (lo comprueba `test_backends_compat_config.py`) y el contexto de IA, y lleva release note. Es mejor resolverlo con el propio #1385 (adaptar `T0Adapter` a la API nueva de `tfc-t0`).
+
+| # | Hallazgo | Comprobación | Corrección |
+|--:|:---------|:-------------|:-----------|
+| 97 | `_left_pad_context` rellenaba cada serie con `set_axis` + `reindex`, unas 5 veces más lento que el `np.full` que T0 usaba antes (6,4 ms frente a 1,2 ms por 100 series sin exog; 74 frente a 16 ms con 1000) | Medido en el helper aislado y en `predict` completo; salidas idénticas con `assert_series_equal` | Camino de NumPy para las series con dtype de NumPy (float se conserva, el resto a float64; los nullable siguen por `reindex`), código de la sección 4. El helper pasa de 6,4 a 1,8 ms (100 series sin exog) y de 19,3 a 16,0 ms (con 4 exog); el test fija un `int64` que sale `float64` y un `float32` que se conserva |

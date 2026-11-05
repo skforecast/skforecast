@@ -797,11 +797,14 @@ def test_predict_left_pads_groups_when_adapter_requires_equal_length_context(
             [np.nan, np.nan, np.nan, 10.0, 11.0, 12.0],
         ]),
     )
+    # The long-format index of several series has no `freq`.
     pd.testing.assert_index_equal(
-        predictions.loc[predictions["level"] == "long"].index, future_long
+        predictions.loc[predictions["level"] == "long"].index,
+        pd.DatetimeIndex(future_long, freq=None),
     )
     pd.testing.assert_index_equal(
-        predictions.loc[predictions["level"] == "short"].index, future_short
+        predictions.loc[predictions["level"] == "short"].index,
+        pd.DatetimeIndex(future_short, freq=None),
     )
 
 
