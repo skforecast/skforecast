@@ -33,6 +33,8 @@ from sklearn.exceptions import NotFittedError
 from sklearn.linear_model._base import LinearModel
 from sklearn.pipeline import Pipeline
 from .. import __version__
+# Under its private name: `from .utils import *` would export a public alias.
+from . import _pandas_compat
 from ..exceptions import warn_skforecast_categories
 from ..exceptions import (
     DataTypeWarning,
@@ -2455,12 +2457,7 @@ def expand_index(
         if isinstance(index, pd.DatetimeIndex):
             freq = index.freq
             if freq is None:
-                inferred = pd.infer_freq(index) if len(index) >= 3 else None
-                freq = (
-                    pd.tseries.frequencies.to_offset(inferred)
-                    if inferred is not None
-                    else None
-                )
+                freq = _pandas_compat.infer_freq(index) if len(index) >= 3 else None
             if freq is None:
                 raise ValueError(
                     "Could not infer a frequency from `index`. This can happen "

@@ -531,7 +531,7 @@ class PopulationDriftDetector:
                 # This may not perfectly align with bins used in predict if new data
                 # extends the range, but it provides a reasonable approximation
                 # for efficiency.
-                bins_edges = np.histogram_bin_edges(ref.astype("float64", copy=False), bins='doane')
+                bins_edges = np.histogram_bin_edges(ref.to_numpy(dtype="float64"), bins='doane')
                 ref_hist = np.histogram(ref, bins=bins_edges)[0] / len(ref)
 
                 self.ref_bins_edges_[feature] = bins_edges

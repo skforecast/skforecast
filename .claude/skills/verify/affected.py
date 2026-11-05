@@ -53,6 +53,7 @@ EXCEPTIONS = {
     "skforecast/foundation/_utils.py": "skforecast/foundation/tests/tests_foundation_models",
     "skforecast/stats/seasonal/_differencing.py": "skforecast/stats/seasonal/tests/test_seasonal.py",
     "skforecast/stats/seasonal/_seasonal_strength.py": "skforecast/stats/seasonal/tests/test_seasonal.py",
+    "skforecast/utils/_pandas_compat.py": "skforecast/utils/tests/tests_utils/test_pandas_compat.py",
 }
 HARNESS_TESTS = ".claude/hooks .claude/skills"
 STAMP_FILE = "verify_stamp.json"  # Inside the git dir: per worktree, never committed.

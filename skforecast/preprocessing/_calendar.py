@@ -16,6 +16,7 @@ from sklearn.preprocessing import SplineTransformer
 from sklearn.utils.validation import check_is_fitted
 
 from ..exceptions import IgnoredArgumentWarning
+from ..utils import _pandas_compat as compat
 
 
 _FEATURE_KNOWN_CATEGORIES = {
@@ -860,7 +861,8 @@ def calculate_distance_from_holiday(
 
         freq_str = X.index.freqstr if X.index.freq is not None else None
         if freq_str is None:
-            freq_str = pd.infer_freq(X.index)
+            inferred = compat.infer_freq(X.index)
+            freq_str = inferred.freqstr if inferred is not None else None
         if freq_str is None:
             warnings.warn(
                 "Could not determine the frequency of the index. "

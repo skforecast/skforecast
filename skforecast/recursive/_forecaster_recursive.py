@@ -26,6 +26,7 @@ from ..exceptions import (
     ResidualsUsageWarning
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
+from ..utils import _pandas_compat as compat
 from ..utils import (
     _all_samples_removed_message,
     initialize_lags,
@@ -1106,7 +1107,7 @@ class ForecasterRecursive(ForecasterBase):
         if exog_dtypes_out_ is not None:
             X_train_dtypes = {col: float for col in X_train_features_names_out_}
             X_train_dtypes.update(exog_dtypes_out_)
-            X_train = X_train.astype(X_train_dtypes, copy=False)
+            X_train = compat.astype(X_train, X_train_dtypes, changed_only=True)
         
         y_train = pd.Series(
                       data  = y_train,
@@ -2039,7 +2040,7 @@ class ForecasterRecursive(ForecasterBase):
         if self.exog_in_:
             X_predict_dtypes = {col: float for col in self.X_train_features_names_out_}
             X_predict_dtypes.update(self.exog_dtypes_out_)
-            X_predict = X_predict.astype(X_predict_dtypes, copy=False)
+            X_predict = compat.astype(X_predict, X_predict_dtypes)
 
         if self.transformer_y is not None or self.differentiation is not None:
             warnings.warn(
