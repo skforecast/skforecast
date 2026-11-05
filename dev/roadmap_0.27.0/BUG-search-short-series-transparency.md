@@ -614,7 +614,8 @@ tests) y la documentación.
    fuera esas series a propósito (#1415) y la búsqueda solo falla si el mejor candidato es
    uno de los de ventana grande. **Propuesta:** el refit deja fuera, con un aviso, las series
    con `window_size` observaciones o menos (las mismas que el backtesting no predice nunca
-   con ese candidato); el forecaster devuelto no las conoce. Pendiente de confirmar.
+   con ese candidato); el forecaster devuelto no las conoce. Confirmado por el usuario
+   (2026-11-05).
 5. Tests, nota de la versión (Fixed: el one-step-ahead abortaba la búsqueda) y roadmap.
 
 ### 12.6 Revisión como usuario (notebook 08, 2026-11-04)
@@ -717,12 +718,19 @@ fuera el primero cuando el segundo lo cubre:
 1. Volver a ejecutar `docs/user_guides/hyperparameter-tuning-and-lags-selection.ipynb`: su
    salida muestra el formato anterior del aviso de `n_evaluated` (una línea por candidato,
    con `params`).
-2. Usar la columna `y_true` de las predicciones del backtesting (#1437) en los gráficos de
-   las guías, en lugar de buscar los valores reales con `data.loc[predictions.index, ...]`.
-   Guías con ese patrón (número de apariciones): `autoregressive-classification-forecasting`
-   (8), `probabilistic-forecasting-bootstrapped-residuals` (3), `comparing-forecasting-models`
+2. Usar la columna `y_true` de las predicciones del backtesting (#1437) en **todas** las
+   páginas con backtesting, en lugar de buscar los valores reales con `data.loc[...]` o de
+   pintar el test entero aparte. Es grande, por eso va al final. Páginas que llaman a
+   `backtesting_*(`: 32 guías de `docs/user_guides/`, 6 de `docs/faq/`
+   (`cyclical-features-time-series`, `forecasting-time-series-with-missing-values`,
+   `forecasting-with-delayed-historical-data`, `non-negative-predictions`,
+   `parameters-search-backtesting-vs-one-step-ahead`, `parallelization-skforecast`) y
+   `docs/quick-start/quick-start-skforecast`. Las que ya usan el patrón
+   `data.loc[predictions.index, ...]` (número de apariciones):
+   `autoregressive-classification-forecasting` (8),
+   `probabilistic-forecasting-bootstrapped-residuals` (3), `comparing-forecasting-models`
    (2), `forecasting-with-deep-learning-rnn-lstm` (2),
    `probabilistic-forecasting-conformal-prediction` (2), `probabilistic-forecasting-metrics`
    (2), `probabilistic-forecasting-global-models` (1). Revisar cada caso: `y_true` solo está
-   en las predicciones del backtesting, no en las de `predict`. La guía de búsqueda de
-   hiperparámetros no tiene gráficos de predicciones.
+   en las predicciones del backtesting, no en las de `predict`, y en multiserie va por fila
+   (formato largo). Volver a ejecutar cada página tocada.
