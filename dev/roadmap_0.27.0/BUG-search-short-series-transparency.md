@@ -8,8 +8,8 @@ opciones. Este documento solo trata la solución elegida y la revisión de los a
 de las búsquedas.
 
 **PR 1 fusionado en `0.27.x` el 2026-11-04 (#1447):** ver la sección 11. El PR 2 se divide en
-dos (sección 8.1): **PR 2a hecho en local el 2026-11-04** (rama `fix/search-warnings`, sin
-push ni PR; sección 12) y queda el PR 2b (candidatos que fallan, sección 12.5).
+dos (sección 8.1): **PR 2a abierto el 2026-11-05 (#1452,** rama `fix/search-warnings`;
+sección 12) y queda el PR 2b (candidatos que fallan, sección 12.5).
 
 **Desbloqueado el 2026-11-03:** QW-12 está hecho con #1437. Antes estaba **bloqueado por
 QW-12** (decisión del 2026-10-29): antes se hace, por separado, la columna con
@@ -504,7 +504,7 @@ documento y el roadmap. Entorno: Python 3.14.3, numpy 2.5.4, pandas 2.3.3, sciki
 
 ## 12. PR 2a: avisos de las búsquedas (2026-11-04)
 
-Rama `fix/search-warnings` desde `0.27.x` (con #1447), en local, sin push ni PR. Tres commits:
+Rama `fix/search-warnings` desde `0.27.x` (con #1447); PR #1452 abierto el 2026-11-05. Tres commits:
 la primera frase fija del aviso de #1432, el registro de los avisos en las búsquedas (con los
 tests) y la documentación.
 

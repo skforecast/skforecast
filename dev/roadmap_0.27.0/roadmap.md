@@ -175,6 +175,8 @@ efecto, con `FutureWarning` y eliminación en la 0.29.0; `load_demo_dataset` se 
    resultados en ese caso ("Before upgrading"). Línea base, mediciones y lo no previsto, en
    la sección 11 de ese documento. **Siguiente: PR 2** (avisos de las búsquedas, sección
    5.2 puntos 1, 3, 4, 5 y 6).
+   **PR 1 fusionado (#1447). PR 2a abierto el 2026-11-05 (#1452):** avisos de las búsquedas.
+   Quedan el PR 2b (candidatos que fallan) y el 2c (avisos de joblib).
 2. ~~**BUG-03**~~ **Hecho con #1431** (fusionado el 2026-10-22). La
    dirección sale de la métrica (decisión 6): atributo `greater_is_better` y convención de
    nombres solo para `sklearn.metrics`; si no se conoce, la dirección de la tarea, que ya
