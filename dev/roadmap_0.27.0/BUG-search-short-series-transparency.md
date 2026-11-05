@@ -601,4 +601,75 @@ tests) y la documentación.
    de una serie y multiserie: un candidato sin datos se salta con el "Parameters skipped"
    agrupado, también cuando ningún nivel de `levels` tiene puntos en el test.
 2. Bayesian deja de abortar cuando falla la evaluación de un trial (12.4, punto 2).
-3. Tests, nota de la versión (Fixed: el one-step-ahead abortaba la búsqueda) y roadmap.
+3. El `ValueError` de `initial_train_size` (12.6, punto 7): separar los casos y mostrar
+   el valor recibido; comprobar el límite `initial_train_size == window_size` (el código
+   lo acepta, el mensaje dice "greater than"). Nota en Changed.
+4. Tests, nota de la versión (Fixed: el one-step-ahead abortaba la búsqueda) y roadmap.
+
+### 12.6 Revisión como usuario (notebook 08, 2026-11-04)
+
+`repro/BUG-search-short-series_08_search_warnings.ipynb`: un escenario por aviso, con datos
+reales (`store_1`, `store_2` y `new_product` de 120 días). Revisado como un usuario que
+conoce skforecast pero no sus detalles.
+
+Bien: `LongTrainingWarning` (claro, a tiempo, accionable), "Parameters skipped" (error
+primero, candidatos debajo), `n_iter` (remite a la función de skforecast), #1432 tal cual, y
+los dos órdenes del grid dan los mismos avisos.
+
+**Aprobado para el PR 2a (implementado el 2026-11-05):**
+
+1. **Agrupado sin perder lo accionable:** con textos distintos y la misma primera frase, se
+   muestra el texto completo del primero con "(in N of M candidates; details of the first
+   one)" en lugar de "Run the backtesting of a candidate to see the details.". Antes se
+   perdía el consejo del `ConvergenceWarning` de scikit-learn y la serie del aviso de #1415.
+2. **Ubicación:** los avisos reemitidos ("Parameters skipped", `n_iter`, los de otras
+   librerías) apuntan a la línea del usuario, no a `_utils.py` con
+   `warnings.warn("\n\n".join(blocks), RuntimeWarning)`.
+3. "Parameters skipped": "lags: [1, 2, ..., 400], every params (2 candidates)" →
+   "lags: [1, 2, ..., 400] (2 candidates)" (la línea agrupada solo sale si fallan todos
+   los parámetros de esos `lags`).
+4. ~~Redondear los floats de `params` en el aviso de `n_evaluated` del PR 1~~: sobra con
+   el punto 6, que quita `params` de las líneas.
+
+**Propuesto después (5 y 6 implementados en el PR 2a el 2026-11-05; 7 y 8, pendientes):**
+
+5. **Texto del aviso de #1415 (aprobado)** (de este ciclo, sin publicar): la línea
+   "- `window_size` (35) observations or fewer in the training set: 'new_product' (never
+   predicted)." no se entiende ni se engancha con la frase anterior.
+6. **Aviso de `n_evaluated` agrupado por `lags` (aprobado):** en el grid salen tres líneas
+   iguales ("lags: [1, 2, ..., 35], params: {...}: 184 (66.7%)"), una por `alpha`. Se
+   agrupan los candidatos con los mismos `lags` y el mismo `n_evaluated`, sin `params`, con
+   el número de fila de la tabla de resultados (grid y random) o del trial (bayesian), como
+   mucho 5 por línea: "lags: [1, 2, ..., 35], 3 candidates (rows 0, 1, 2): 184 (66.7%)",
+   "lags: [1, 2, ..., 35], 60 trials (5, 7, 8, 12, 15, ...): 184 (66.7%)". Como mucho 5
+   líneas y "... and N more", como ahora. Sin `params`, el redondeo del punto 4 sobra.
+7. **`ValueError` de `initial_train_size`** (publicado, en `_utils.py` ×3 y `_split.py`):
+   con `lags=400` y 365 observaciones dice "If `initial_train_size` is an integer, it must
+   be greater than the `window_size` (400) and smaller than the length of `y` (365)..."
+   aunque se pasó una fecha, y no hay ningún valor que lo cumpla: el problema es la ventana.
+   Separar los casos (ventana mayor que la serie, `initial_train_size` menor que la
+   ventana, mayor que la serie) e incluir el valor recibido. **Va al PR 2b.**
+8. **Avisos de los procesos de joblib** (ya existía, también en el backtesting): con
+   `n_jobs='auto'` cada proceso imprime sus avisos (21 paneles en el escenario 3; 3 con
+   `n_jobs=1`). Arreglo posible: las funciones de cada fold en `_validation.py` registran
+   sus avisos y los devuelven, y el proceso principal los reemite tras `Parallel`.
+   **Va al PR 2c** (después del 2b).
+
+Fuera de alcance, ya existía: con todos los candidatos saltados, los resultados vacíos
+tienen la columna `params` duplicada.
+
+**Implementación (2026-11-05):**
+
+- La ubicación se calcula subiendo por la pila hasta el primer frame fuera del paquete
+  (`_first_frame_outside_skforecast`, `_stacklevel_user_code`); los tests de skforecast
+  cuentan como código del usuario. Vale para Python 3.10 (`skip_file_prefixes` es de 3.12 y
+  no excluye los tests). `LongTrainingWarning` usa la ubicación guardada al entrar en el
+  registro, en el hilo principal, porque los trials de Optuna pueden ir en hilos.
+- Con textos distintos y la misma primera frase, todos fuera de los candidatos (refit), se
+  muestran tal cual.
+- El aviso de `n_evaluated` usa el nombre del candidato también en el resumen y la cabecera
+  ("6 of 10 trials are evaluated...", "Trials with less than 95%...").
+- Nota de la versión: la entrada de Changed dice que los avisos apuntan a la línea del
+  usuario. El notebook 08 se ha vuelto a ejecutar con los textos nuevos. La salida de la guía
+  `hyperparameter-tuning-and-lags-selection.ipynb` muestra todavía el formato anterior del
+  aviso de `n_evaluated`.
