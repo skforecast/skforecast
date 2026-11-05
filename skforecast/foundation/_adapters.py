@@ -3700,7 +3700,7 @@ class T0Adapter(_AdapterBase):
         """
         Generate predictions using the T0 model.
 
-        All input normalization, validation, and context trimming is
+        All input normalization, validation, context trimming and padding is
         performed upstream by `FoundationModel`; this method receives
         pre-processed dicts only.
 
@@ -3709,9 +3709,12 @@ class T0Adapter(_AdapterBase):
         steps : int
             Number of steps ahead to forecast.
         context : dict
-            Per-series context windows (already trimmed to `context_length`).
+            Per-series context windows (already trimmed to `context_length`),
+            left-padded with NaN to a common length and indexed by a
+            positional pandas RangeIndex.
         context_exog : dict
-            Per-series past covariates (already trimmed).
+            Per-series past covariates (already trimmed), left-padded and
+            indexed like `context`.
         exog : dict
             Per-series future covariates for the forecast horizon.
         quantiles : list of float or None
@@ -3735,21 +3738,17 @@ class T0Adapter(_AdapterBase):
         # reindex the columns back to the order the caller asked for.
         query_levels = sorted(set(requested))
 
+        # All series are forecast in a single batched call.
+        # `FoundationModel` left-pads the context of every series to the same
+        # length (`requires_equal_length_context=True`) with NaN, which T0
+        # treats as missing, so the forecast origin aligns at the end of the
+        # window for every series.
         series_names = list(context.keys())
-        arrays = [
-            np.asarray(context[series_name].to_numpy(), dtype=np.float32)
+        context_batch = np.stack([
+            context[series_name].to_numpy(dtype=np.float32)
             for series_name in series_names
-        ]
-        lengths = [a.shape[0] for a in arrays]
-        context_length = max(lengths)
-
-        # All series are forecast in a single batched call. Series shorter than
-        # the longest are left-padded with NaN, which T0 treats as MISSING; the
-        # forecast origin therefore aligns at the end of the window for every
-        # series.
-        context_batch = np.full((len(series_names), context_length), np.nan, dtype=np.float32)
-        for row, array in zip(context_batch, arrays):
-            row[context_length - array.shape[0]:] = array
+        ])
+        context_length = context_batch.shape[1]
 
         future_covariates = self._build_future_covariates(
             series_names   = series_names,

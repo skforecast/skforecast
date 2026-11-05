@@ -5,6 +5,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from skforecast.foundation._adapters import T0Adapter
+from skforecast.foundation._foundation_model import FoundationModel
 from .fixtures_adapters import (
     y, exog,
     FakeT0Forecaster,
@@ -230,32 +231,28 @@ def test_T0Adapter_build_future_covariates_dedups_columns_preserving_order():
 
 def test_T0Adapter_predict_batches_all_series_in_one_call():
     """
-    Test that all series are forecast in a single batched call and that
-    shorter series are left-padded with NaN (forecast origin aligned at the
-    end), rather than looped over one at a time.
+    Test that all series are forecast in a single batched call, rather than
+    looped over one at a time, and that shorter series arrive left-padded
+    with NaN by FoundationModel (forecast origin aligned at the end).
     """
     fake = FakeT0Forecaster()
-    adapter = T0Adapter(model_id="theforecastingcompany/t0-alpha", model=fake)
+    model = FoundationModel("theforecastingcompany/t0-alpha", model=fake)
 
     long = pd.Series(np.arange(30, dtype=float),
                      index=pd.date_range("2020-01-01", periods=30, freq="ME"), name="long")
     short = pd.Series(np.arange(20, dtype=float),
                       index=pd.date_range("2020-01-01", periods=20, freq="ME"), name="short")
-    context, context_exog = prepare_fit_args({"long": long, "short": short})
-    adapter.fit(context, context_exog)
+    model.fit(series={"long": long, "short": short})
 
-    preds = adapter.predict(
-        steps=5, context=adapter.context_, context_exog=adapter.context_exog_,
-        exog=None, quantiles=[0.5],
-    )
+    preds = model.predict(steps=5)
 
     # One batched call, batch dimension covers both series.
     assert fake.last_context.shape == (2, 30)
     # Shorter series is left-padded: NaN at the front, data flush to the end.
     assert np.isnan(fake.last_context[1, :10]).all()
     np.testing.assert_allclose(fake.last_context[1, 10:], short.to_numpy())
-    assert set(preds) == {"long", "short"}
-    assert preds["long"].shape == (5, 1)
+    assert list(preds["level"].unique()) == ["long", "short"]
+    assert preds.shape == (10, 2)
 
 
 def test_T0Adapter_predict_no_exog_passes_none_covariates():
