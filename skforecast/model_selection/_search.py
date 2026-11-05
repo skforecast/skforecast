@@ -1166,7 +1166,7 @@ def grid_search_forecaster_multiseries(
         iteration (true value and prediction not missing), summed over the
         levels. A `MissingValuesWarning` is raised at the end of the search if
         some iterations evaluate less than 95% of the points of the most
-        complete one, their metrics are not comparable.
+        complete one, whose metrics are not comparable.
         - additional n columns with param = value.
     
     """
@@ -1316,7 +1316,7 @@ def random_search_forecaster_multiseries(
         iteration (true value and prediction not missing), summed over the
         levels. A `MissingValuesWarning` is raised at the end of the search if
         some iterations evaluate less than 95% of the points of the most
-        complete one, their metrics are not comparable.
+        complete one, whose metrics are not comparable.
         - additional n columns with param = value.
     
     """
@@ -1466,7 +1466,7 @@ def _evaluate_grid_hyperparameters_multiseries(
         iteration (true value and prediction not missing), summed over the
         levels. A `MissingValuesWarning` is raised at the end of the search if
         some iterations evaluate less than 95% of the points of the most
-        complete one, their metrics are not comparable.
+        complete one, whose metrics are not comparable.
         - additional n columns with param = value.
     
     """
@@ -1913,7 +1913,7 @@ def bayesian_search_forecaster_multiseries(
         iteration (true value and prediction not missing), summed over the
         levels. A `MissingValuesWarning` is raised at the end of the search if
         some iterations evaluate less than 95% of the points of the most
-        complete one, their metrics are not comparable.
+        complete one, whose metrics are not comparable.
         - additional n columns with param = value.
     study : optuna Study
         The optuna study object containing all optimization trials. Access the

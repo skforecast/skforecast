@@ -3045,9 +3045,9 @@ class _SearchWarnings:
     - The candidates skipped because their evaluation raised an error are
     added with `add_skipped` and reported in a single warning.
 
-    The warnings raised in other processes (for example, the backtesting with
-    `n_jobs` greater than 1 and `refit=True`) do not reach the main process,
-    so they are not collected.
+    The warnings raised in other processes (the backtesting with `n_jobs`
+    greater than 1, which `n_jobs='auto'` selects for some forecasters) do not
+    reach the main process, so they are not collected.
 
     Parameters
     ----------
@@ -3059,6 +3059,10 @@ class _SearchWarnings:
 
     Attributes
     ----------
+    n_candidates : int
+        Number of candidates (or trials) of the search.
+    candidate_name : str
+        Name of a candidate in the warnings ('candidate' or 'trial').
     records : list
         Warnings recorded, as tuples `(candidate, category, text, message)`.
     skipped : list
@@ -3189,7 +3193,28 @@ class _SearchWarnings:
     ) -> None:
         """
         Replacement of `warnings.showwarning` that records the warning with
-        the candidate of the current thread.
+        the candidate of the current thread. The first `LongTrainingWarning`
+        is shown at once and the rest are discarded.
+
+        Parameters
+        ----------
+        message : Warning, str
+            Warning raised.
+        category : Warning
+            Category of the warning.
+        filename : str
+            File where the warning is raised.
+        lineno : int
+            Line where the warning is raised.
+        file : file, default None
+            File where the warning is written, passed to `warnings.showwarning`.
+        line : str, default None
+            Line of code of the warning, passed to `warnings.showwarning`.
+
+        Returns
+        -------
+        None
+
         """
 
         if issubclass(category, LongTrainingWarning):
@@ -3216,6 +3241,17 @@ class _SearchWarnings:
         Rewrite the `LongTrainingWarning` of the backtesting of a candidate
         with the number of fits of the whole search. If the number of fits
         cannot be read from the message, it is returned unchanged.
+
+        Parameters
+        ----------
+        message : Warning, str
+            `LongTrainingWarning` of the backtesting of a candidate.
+
+        Returns
+        -------
+        message : Warning, str
+            Warning with the number of fits of the whole search.
+
         """
 
         text = getattr(message, "message", str(message))
@@ -3242,14 +3278,15 @@ class _SearchWarnings:
         Call it after exiting the context, so the warnings go through the
         filters of the user.
 
-        - A warning with the same text in every candidate, or only raised
-        outside them, is shown as it is.
+        - A warning with the same text in every candidate is shown as it is.
         - A warning with the same text in some candidates is shown with the
         number of candidates, after its first sentence.
         - Warnings with the same first sentence and different texts (for
         example, with the series or the counts of each candidate) are shown
-        once: the text of the first one, with the number of candidates after
-        its first sentence.
+        once: the text of the first one, with the number of candidates and
+        "details of the first one" after its first sentence.
+        - Warnings raised only outside the candidates (for example, in the
+        refit) are shown as they are.
 
         The warnings point to the code of the user that called the search.
 
@@ -3339,8 +3376,23 @@ def _split_first_sentence(text: str) -> tuple[str, str]:
 def _warn_recorded(text: str, category: type[Warning], message: Warning | str) -> None:
     """
     Show a warning recorded by `_SearchWarnings` with a new text and the same
-    category. If the category cannot be built with a text, the original
-    message is shown.
+    category, pointing to the code of the user. If the category cannot be
+    built with a text, the original message is shown.
+
+    Parameters
+    ----------
+    text : str
+        Text of the warning.
+    category : Warning
+        Category of the warning.
+    message : Warning, str
+        Original message of the warning, shown if the category cannot be built
+        with `text`.
+
+    Returns
+    -------
+    None
+
     """
 
     try:
