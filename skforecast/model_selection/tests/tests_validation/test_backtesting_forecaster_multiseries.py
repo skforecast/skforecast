@@ -6555,10 +6555,9 @@ def test_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_NaN_las
          )
 
     warn_msg = re.escape(
-        "Some predictions are NaN at dates with observed values and are left "
-        "out of the metrics, which are calculated with fewer values than "
-        "predicted (4 in total). Number of NaN predictions per series: "
-        "{'l1': 4}."
+        "Some predictions are NaN at dates with observed values, so the "
+        "metrics leave them out. NaN predictions per series: "
+        "{'l1': 4} (4 in total)."
     )
     with pytest.warns(MissingValuesWarning, match=warn_msg):
         metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(
@@ -6775,10 +6774,9 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     )
     assert any(
         message.startswith(
-            "Some predictions are NaN at dates with observed values and are "
-            "left out of the metrics, which are calculated with fewer values "
-            "than predicted (4 in total). Number of NaN predictions per "
-            "series: {'l1': 4}."
+            "Some predictions are NaN at dates with observed values, so the "
+            "metrics leave them out. NaN predictions per series: "
+            "{'l1': 4} (4 in total)."
         )
         for message in warnings_raised
     )
@@ -7549,10 +7547,9 @@ def test_backtesting_forecaster_multiseries_when_exog_has_NaN_in_test_fold(estim
         assert predictions.index[is_nan].min() == pd.Timestamp("2020-04-05")
         assert len(warnings_nan_predictions) == 1
         assert warnings_nan_predictions[0].startswith(
-            "Some predictions are NaN at dates with observed values and are "
-            "left out of the metrics, which are calculated with fewer values "
-            "than predicted (10 in total). Number of NaN predictions per "
-            "series: {'a': 5, 'b': 5}."
+            "Some predictions are NaN at dates with observed values, so the "
+            "metrics leave them out. NaN predictions per series: "
+            "{'a': 5, 'b': 5} (10 in total)."
         )
     else:
         assert not predictions["pred"].isna().any()
@@ -7578,7 +7575,7 @@ def test_backtesting_forecaster_multiseries_when_forecaster_has_no_allow_nan_pre
     del forecaster._allow_nan_predictions
     cv = TimeSeriesFold(steps=10, initial_train_size=60, refit=False)
 
-    warn_msg = re.escape("Number of NaN predictions per series: {'a': 5, 'b': 5}.")
+    warn_msg = re.escape("NaN predictions per series: {'a': 5, 'b': 5} (10 in total).")
     with pytest.warns(MissingValuesWarning, match=warn_msg):
         _, predictions = backtesting_forecaster_multiseries(
             forecaster    = forecaster,

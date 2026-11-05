@@ -1,6 +1,7 @@
 # Unit test calculate_metrics_multiseries
 # ==============================================================================
 import re
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
@@ -9,7 +10,8 @@ from skforecast.exceptions import MissingValuesWarning
 from skforecast.metrics import mean_absolute_scaled_error, add_y_train_argument
 from skforecast.model_selection._utils import (
     _calculate_metrics_backtesting_multiseries,
-    _get_y_true_multiseries
+    _get_y_true_multiseries,
+    _SearchWarnings
 )
 
 def add_y_true(predictions, series):
@@ -391,10 +393,9 @@ def test_calculate_metrics_backtesting_multiseries_output_when_aggregated_metric
     """
     metrics = [add_y_train_argument(metric) for metric in metrics]
     warn_msg = re.escape(
-        "Some predictions are NaN at dates with observed values and are left "
-        "out of the metrics, which are calculated with fewer values than "
-        "predicted (13 in total). Number of NaN predictions per series: "
-        "{'item_3': 13}."
+        "Some predictions are NaN at dates with observed values, so the "
+        "metrics leave them out. NaN predictions per series: "
+        "{'item_3': 13} (13 in total)."
     )
     with pytest.warns(MissingValuesWarning, match=warn_msg):
         results = _calculate_metrics_backtesting_multiseries(
@@ -502,7 +503,7 @@ def test_calculate_metrics_backtesting_multiseries_output_when_interval_and_pred
     are the same as without the bounds.
     """
     metrics = [add_y_train_argument(mean_absolute_error)]
-    warn_msg = re.escape("Number of NaN predictions per series: {'item_3': 13}.")
+    warn_msg = re.escape("NaN predictions per series: {'item_3': 13} (13 in total).")
     with pytest.warns(MissingValuesWarning, match=warn_msg):
         results = _calculate_metrics_backtesting_multiseries(
             series=data,
@@ -1050,10 +1051,9 @@ def test_calculate_metrics_backtesting_multiseries_MissingValuesWarning_when_NaN
     metrics = [add_y_train_argument(mean_absolute_error)]
 
     warn_msg = re.escape(
-        "Some predictions are NaN at dates with observed values and are left "
-        "out of the metrics, which are calculated with fewer values than "
-        "predicted (3 in total). Number of NaN predictions per series: "
-        "{'item_1': 2, 'item_3': 1}. The "
+        "Some predictions are NaN at dates with observed values, so the "
+        "metrics leave them out. NaN predictions per series: "
+        "{'item_1': 2, 'item_3': 1} (3 in total). The "
         "forecaster could not predict these dates, for example because of "
         "missing values in the last window or in `exog`."
     )
@@ -1081,6 +1081,48 @@ def test_calculate_metrics_backtesting_multiseries_MissingValuesWarning_when_NaN
     )
 
     pd.testing.assert_frame_equal(results, expected)
+
+
+def test_calculate_metrics_backtesting_multiseries_NaN_predictions_warning_grouped_in_searches():
+    """
+    Test that the MissingValuesWarning of the NaN predictions starts with a
+    fixed sentence, so that the warnings of the candidates of a search are
+    grouped in one even if the number of NaN predictions differs.
+    """
+    metrics = [add_y_train_argument(mean_absolute_error)]
+    search_warnings = _SearchWarnings(n_candidates=3)
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        with search_warnings:
+            for candidate, n_nan in enumerate([2, 1, 0]):
+                search_warnings.set_candidate(candidate)
+                predictions_nan = predictions.copy()
+                predictions_nan.loc[
+                    predictions_nan.index[:n_nan], 'pred'
+                ] = np.nan
+                _calculate_metrics_backtesting_multiseries(
+                    series=data,
+                    predictions=add_y_true(predictions_nan, data),
+                    folds=folds,
+                    span_index=span_index,
+                    window_size=window_size,
+                    metrics=metrics,
+                    levels=levels,
+                    add_aggregated_metric=True,
+                )
+        search_warnings.emit()
+
+    messages = [
+        w.message.message for w in record
+        if issubclass(w.category, MissingValuesWarning)
+    ]
+    assert len(messages) == 1
+    assert messages[0].startswith(
+        "Some predictions are NaN at dates with observed values, so the "
+        "metrics leave them out (in 2 of 3 candidates; details of the first "
+        "one). NaN predictions per series: {'item_1': 1, 'item_2': 1} (2 in "
+        "total)."
+    )
 
 
 def test_calculate_metrics_backtesting_multiseries_n_evaluated_and_weights():
