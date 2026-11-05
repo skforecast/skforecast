@@ -616,7 +616,14 @@ tests) y la documentación.
    con `window_size` observaciones o menos (las mismas que el backtesting no predice nunca
    con ese candidato); el forecaster devuelto no las conoce. Confirmado por el usuario
    (2026-11-05).
-5. Tests, nota de la versión (Fixed: el one-step-ahead abortaba la búsqueda) y roadmap.
+5. **Aviso de `n_evaluated` en las búsquedas de una serie** (12.8, hallazgo 1; decidido el
+   2026-11-05): con `OneStepAheadFold`, `dropna_from_series=True` y NaN en `y`, los
+   candidatos de ventana grande se evalúan sobre menos puntos. Variante del aviso sin
+   `levels`: qué candidatos tienen menos del 95% de los puntos y que la solución es rellenar
+   los huecos de `y` o quitar las ventanas grandes. Mismo umbral y agrupación por `lags` que
+   el multiserie (reutilizar `_warn_n_evaluated_search_multiseries` con un parámetro, o
+   separar el texto). En grid, random y bayesian de una serie; test con el ejemplo del 12.8.
+6. Tests, nota de la versión (Fixed: el one-step-ahead abortaba la búsqueda) y roadmap.
 
 ### 12.6 Revisión como usuario (notebook 08, 2026-11-04)
 
@@ -732,14 +739,14 @@ dato; el aviso, un problema.
 - Docs: `llms-base.txt`, `references/search-parameters.md`, nota de #1447 (ahora "the
   results of the hyperparameter searches include `n_evaluated`"), el highlight y "Before
   upgrading".
-- **Hallazgo 1 (pendiente, PR 2b o aparte):** con una serie, `OneStepAheadFold`,
+- **Hallazgo 1 (en el PR 2b, 12.5 punto 5):** con una serie, `OneStepAheadFold`,
   `dropna_from_series=True` y NaN en `y`, `n_evaluated` sí cambia entre candidatos: las filas
   de test con NaN en los lags se eliminan, más cuanto mayor la ventana. Ejemplo: 200 días, 3
   NaN, test de 57 puntos: `lags=14` evalúa 15 y `lags=3` 48, y gana `lags=14`. Es el mismo
   problema de comparabilidad, sin aviso. El aviso multiserie no sirve tal cual (habla de
   `levels`); haría falta una variante de una serie ("rellena los huecos o quita las ventanas
   grandes"). Con `TimeSeriesFold` no pasa: los puntos de test son los mismos.
-- **Hallazgo 2 (pendiente, otro bug):** `backtesting_forecaster` con NaN en `y` dentro del
+- **Hallazgo 2 (en el roadmap como BUG-backtesting-nan-y-true, sección 4):** `backtesting_forecaster` con NaN en `y` dentro del
   test falla con `ValueError: Input contains NaN.` de la métrica de scikit-learn (con
   `Ridge` y con LightGBM): las fechas con `y_true` NaN no se quitan antes de las métricas,
   como sí hace el multiserie. Por eso una búsqueda de una serie con NaN en el test se queda
@@ -750,9 +757,15 @@ dato; el aviso, un problema.
 1. Volver a ejecutar `docs/user_guides/hyperparameter-tuning-and-lags-selection.ipynb`: su
    salida muestra el formato anterior del aviso de `n_evaluated` (una línea por candidato,
    con `params`), y las tablas de las búsquedas de una serie no tienen
-   `n_evaluated` (12.8). Al volver a ejecutarla, decir en la primera búsqueda qué es la
-   columna. Otras guías con resultados de búsquedas también ganan la columna.
-2. Usar la columna `y_true` de las predicciones del backtesting (#1437) en **todas** las
+   `n_evaluated` (12.8).
+2. **`n_evaluated` en las búsquedas de una serie (12.8):** al volver a ejecutar la guía de
+   búsqueda, explicar la columna en la primera búsqueda (de una serie): los puntos sobre los
+   que se calcula la métrica de cada candidato, los mismos que da el backtesting; hoy solo
+   se explica en la sección multiserie. Las demás guías con resultados de búsquedas también
+   ganan la columna al volver a ejecutarlas (`forecasting-statistical-models`,
+   `forecasting-baseline` con `grid_search_equivalent_date`, foundation...): revisar que
+   ningún texto cuente las columnas o las seleccione por posición.
+3. Usar la columna `y_true` de las predicciones del backtesting (#1437) en **todas** las
    páginas con backtesting, en lugar de buscar los valores reales con `data.loc[...]` o de
    pintar el test entero aparte. Es grande, por eso va al final. Páginas que llaman a
    `backtesting_*(`: 32 guías de `docs/user_guides/`, 6 de `docs/faq/`
