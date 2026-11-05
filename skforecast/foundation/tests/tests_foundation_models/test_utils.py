@@ -16,6 +16,7 @@ from skforecast.foundation._utils import (
     _MODEL_LICENSES,
     _validate_model_id_prefix,
     _validate_supported_quantiles,
+    _left_pad_context,
 )
 from skforecast.foundation._adapters import _ADAPTER_REGISTRY
 from skforecast.exceptions import (
@@ -501,3 +502,112 @@ def test_align_context_exog_MissingValuesWarning_when_exog_shorter_than_context(
     expected_s2 = pd.DataFrame({"a": [np.nan, 0.0, 1.0, 2.0]}, index=ctx_idx)
     pd.testing.assert_frame_equal(results["s1"], expected_s1)
     pd.testing.assert_frame_equal(results["s2"], expected_s2)
+
+
+# ===========================================================================
+# _left_pad_context
+# ===========================================================================
+
+def test_left_pad_context_output():
+    """
+    Test that _left_pad_context left-pads every series and its historical
+    exog with NaN to the length of the longest series, on a common positional
+    RangeIndex, whatever the end date, frequency or time zone of each series:
+    two daily series in America/Santiago on both sides of the daylight saving
+    change at midnight of 2024-09-08 and a DatetimeIndex without `freq`.
+    Boolean columns become float in every series, NumPy integer columns only
+    in the padded series, the nullable Int64 and the other columns keep their
+    dtype, a series without exog stays None, and the inputs are not modified.
+    """
+    idx_a = pd.date_range("2024-09-02", periods=6, freq="D", tz="America/Santiago")
+    idx_b = pd.date_range("2024-09-09", periods=3, freq="D", tz="America/Santiago")
+    idx_c = pd.DatetimeIndex(["2024-01-01", "2024-01-03", "2024-01-04", "2024-01-08"])
+    context = {
+        "a": pd.Series(np.arange(1.0, 7.0), index=idx_a, name="a"),
+        "b": pd.Series([10.0, 11.0, 12.0], index=idx_b, name="b"),
+        "c": pd.Series([20.0, 21.0, 22.0, 23.0], index=idx_c, name="c"),
+    }
+
+    def make_exog(index, offset):
+        n = len(index)
+        return pd.DataFrame(
+            {
+                "flag": [True, False] * (n // 2) + [True] * (n % 2),
+                "int": np.arange(offset, offset + n, dtype="int64"),
+                "nullable_int": pd.array(np.arange(n), dtype="Int64"),
+                "cat": pd.Categorical(["x", "y", "x", "y", "x", "y"][:n], categories=["x", "y"]),
+                "text": np.array(["p", "q", "r", "s", "t", "u"][:n], dtype=object),
+            },
+            index=index,
+        )
+
+    context_exog = {"a": make_exog(idx_a, 0), "b": make_exog(idx_b, 100), "c": None}
+    context_copy = {k: v.copy() for k, v in context.items()}
+    context_exog_copy = {k: (v.copy() if v is not None else None) for k, v in context_exog.items()}
+
+    padded_context, padded_exog = _left_pad_context(context, context_exog)
+
+    index = pd.RangeIndex(6)
+    expected_context = {
+        "a": pd.Series(np.arange(1.0, 7.0), index=index, name="a"),
+        "b": pd.Series([np.nan, np.nan, np.nan, 10.0, 11.0, 12.0], index=index, name="b"),
+        "c": pd.Series([np.nan, np.nan, 20.0, 21.0, 22.0, 23.0], index=index, name="c"),
+    }
+    expected_exog_a = pd.DataFrame(
+        {
+            "flag": [1.0, 0.0, 1.0, 0.0, 1.0, 0.0],
+            "int": np.arange(6, dtype="int64"),
+            "nullable_int": pd.array(np.arange(6), dtype="Int64"),
+            "cat": pd.Categorical(["x", "y", "x", "y", "x", "y"], categories=["x", "y"]),
+            "text": np.array(["p", "q", "r", "s", "t", "u"], dtype=object),
+        },
+        index=index,
+    )
+    expected_exog_b = pd.DataFrame(
+        {
+            "flag": [np.nan, np.nan, np.nan, 1.0, 0.0, 1.0],
+            "int": [np.nan, np.nan, np.nan, 100.0, 101.0, 102.0],
+            "nullable_int": pd.array([None, None, None, 0, 1, 2], dtype="Int64"),
+            "cat": pd.Categorical([np.nan, np.nan, np.nan, "x", "y", "x"], categories=["x", "y"]),
+            "text": np.array([np.nan, np.nan, np.nan, "p", "q", "r"], dtype=object),
+        },
+        index=index,
+    )
+
+    assert list(padded_context.keys()) == ["a", "b", "c"]
+    for series_name, expected in expected_context.items():
+        pd.testing.assert_series_equal(padded_context[series_name], expected)
+    assert list(padded_exog.keys()) == ["a", "b", "c"]
+    pd.testing.assert_frame_equal(padded_exog["a"], expected_exog_a)
+    pd.testing.assert_frame_equal(padded_exog["b"], expected_exog_b)
+    assert padded_exog["c"] is None
+    for series_name in context:
+        pd.testing.assert_series_equal(context[series_name], context_copy[series_name])
+    pd.testing.assert_frame_equal(context_exog["a"], context_exog_copy["a"])
+    pd.testing.assert_frame_equal(context_exog["b"], context_exog_copy["b"])
+
+
+def test_left_pad_context_output_when_equal_lengths_and_no_exog():
+    """
+    Test that, when every series already has the same length, _left_pad_context
+    keeps the values unchanged, only replaces the index by a positional
+    RangeIndex, and returns None as exog when `context_exog` is None.
+    """
+    idx_a = pd.date_range("2020-01-01", periods=3, freq="D")
+    idx_b = pd.date_range("2021-06-01", periods=3, freq="h")
+    context = {
+        "a": pd.Series([1.0, 2.0, 3.0], index=idx_a, name="a"),
+        "b": pd.Series([4.0, np.nan, 6.0], index=idx_b, name="b"),
+    }
+
+    padded_context, padded_exog = _left_pad_context(context, None)
+
+    index = pd.RangeIndex(3)
+    pd.testing.assert_series_equal(
+        padded_context["a"], pd.Series([1.0, 2.0, 3.0], index=index, name="a")
+    )
+    pd.testing.assert_series_equal(
+        padded_context["b"], pd.Series([4.0, np.nan, 6.0], index=index, name="b")
+    )
+    assert padded_exog is None
+

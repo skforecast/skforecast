@@ -22,9 +22,10 @@ def test_AdapterBase_TypeError_when_subclass_misses_required_class_attributes():
     """
     err_msg = re.escape(
         "`IncompleteAdapter` must define the class attribute(s) "
-        "['supports_nan_in_series', 'requires_hf_auth', "
-        "'requires_provider_auth', 'weights_repo_id', 'weights_in_hf_cache', "
-        "'backend_package', 'default_model_id'] in its class body."
+        "['requires_equal_length_context', 'supports_nan_in_series', "
+        "'requires_hf_auth', 'requires_provider_auth', 'weights_repo_id', "
+        "'weights_in_hf_cache', 'backend_package', 'default_model_id'] in its "
+        "class body."
     )
     with pytest.raises(TypeError, match=err_msg):
 
@@ -51,9 +52,14 @@ def test_AdapterBase_every_registered_adapter_honors_the_contract(adapter_cls):
     every constructor parameter (except the injected backend object) through
     `get_params`, survives a `set_params(**get_params())` round trip without
     any change, and `fit` stores the context and historical exog it receives
-    (FoundationModel decides what to pass) and returns the adapter.
+    (FoundationModel decides what to pass) and returns the adapter. An adapter
+    that requires an equal-length context also accepts NaN in the series,
+    since FoundationModel left-pads the context with NaN.
     """
     assert issubclass(adapter_cls, _AdapterBase)
+    assert isinstance(adapter_cls.requires_equal_length_context, bool)
+    if adapter_cls.requires_equal_length_context:
+        assert adapter_cls.supports_nan_in_series is True
 
     adapter = adapter_cls(adapter_cls.default_model_id)
 

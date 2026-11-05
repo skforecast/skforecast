@@ -119,6 +119,10 @@ class ChronosAdapter(_AdapterBase):
         Whether series with different covariate columns can be forecast in
         the same backend call. `False` for Chronos: `FoundationModel` groups
         the series by covariate signature and calls `predict` once per group.
+    requires_equal_length_context : bool
+        Whether the backend needs every series of a call to have the same
+        context length, so that `FoundationModel` left-pads them with NaN.
+        `False`: each series is passed with its own length.
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as
         context. `True` for Chronos, which treats them as missing values.
@@ -170,6 +174,7 @@ class ChronosAdapter(_AdapterBase):
     supports_past_only_covariates: bool = True
     supports_categorical_covariates: bool = True
     supports_heterogeneous_covariates: bool = False
+    requires_equal_length_context: bool = False
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
     requires_provider_auth: bool = False
@@ -621,6 +626,10 @@ class TimesFM25Adapter(_AdapterBase):
     supports_heterogeneous_covariates : bool
         Whether series with different covariate columns can be forecast in
         the same backend call. Always `True`, since covariates are ignored.
+    requires_equal_length_context : bool
+        Whether the backend needs every series of a call to have the same
+        context length, so that `FoundationModel` left-pads them with NaN.
+        `False`: each series is passed with its own length.
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as
         context. Always `True`.
@@ -686,6 +695,7 @@ class TimesFM25Adapter(_AdapterBase):
     supports_past_only_covariates: bool = False
     supports_categorical_covariates: bool = False
     supports_heterogeneous_covariates: bool = True
+    requires_equal_length_context: bool = False
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
     requires_provider_auth: bool = False
@@ -1080,6 +1090,10 @@ class TimesFM3Adapter(_AdapterBase):
         covariate arrays of every series in a call, so `FoundationModel`
         groups the series by covariate signature and calls `predict` once
         per group.
+    requires_equal_length_context : bool
+        Whether the backend needs every series of a call to have the same
+        context length, so that `FoundationModel` left-pads them with NaN.
+        `False`: each series is passed with its own length.
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as
         context. Always `True`.
@@ -1154,6 +1168,7 @@ class TimesFM3Adapter(_AdapterBase):
     supports_past_only_covariates: bool = True
     supports_categorical_covariates: bool = False
     supports_heterogeneous_covariates: bool = False
+    requires_equal_length_context: bool = False
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
     requires_provider_auth: bool = False
@@ -1760,6 +1775,10 @@ class MoiraiAdapter(_AdapterBase):
     supports_heterogeneous_covariates : bool
         Whether series with different covariate columns can be forecast in
         the same backend call. `True`, since covariates are ignored.
+    requires_equal_length_context : bool
+        Whether the backend needs every series of a call to have the same
+        context length, so that `FoundationModel` left-pads them with NaN.
+        `False`: each series is passed with its own length.
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as
         context.
@@ -1820,6 +1839,7 @@ class MoiraiAdapter(_AdapterBase):
     supports_past_only_covariates: bool = False
     supports_categorical_covariates: bool = False
     supports_heterogeneous_covariates: bool = True
+    requires_equal_length_context: bool = False
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
     requires_provider_auth: bool = False
@@ -2184,6 +2204,10 @@ class TabICLAdapter(_AdapterBase):
         frame holds one column set for every series: `FoundationModel`
         groups the series by covariate signature and calls `predict` once
         per group.
+    requires_equal_length_context : bool
+        Whether the backend needs every series of a call to have the same
+        context length, so that `FoundationModel` left-pads them with NaN.
+        `False`: each series is passed with its own length.
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as
         context. `True`: TabICL drops the rows whose target is NaN.
@@ -2252,6 +2276,7 @@ class TabICLAdapter(_AdapterBase):
     supports_past_only_covariates: bool = False
     supports_categorical_covariates: bool = False
     supports_heterogeneous_covariates: bool = False
+    requires_equal_length_context: bool = False
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
     requires_provider_auth: bool = False
@@ -2820,6 +2845,10 @@ class TabPFNAdapter(_AdapterBase):
         Whether series with different covariate columns can be forecast in
         the same backend call. `True`: the library handles the missing cells
         of the long-format input frame.
+    requires_equal_length_context : bool
+        Whether the backend needs every series of a call to have the same
+        context length, so that `FoundationModel` left-pads them with NaN.
+        `False`: each series is passed with its own length.
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as
         context.
@@ -2893,6 +2922,7 @@ class TabPFNAdapter(_AdapterBase):
     supports_past_only_covariates: bool = False
     supports_categorical_covariates: bool = False
     supports_heterogeneous_covariates: bool = True
+    requires_equal_length_context: bool = False
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
     requires_provider_auth: bool = True
@@ -3459,6 +3489,13 @@ class T0Adapter(_AdapterBase):
         the same backend call. `True`: T0 defines NaN as an absent covariate
         value, so the adapter pools the columns of all series and fills the
         missing cells with NaN.
+    requires_equal_length_context : bool
+        Whether the backend needs every series of a call to have the same
+        context length. `True` for T0, which takes the context of all the
+        series as a single array: `FoundationModel` left-pads `context` and
+        `context_exog` with NaN, which T0 treats as missing, to the length
+        of the longest series of the call, and indexes them by a positional
+        pandas RangeIndex. History and future exog are joined by position.
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as
         context.
@@ -3517,6 +3554,7 @@ class T0Adapter(_AdapterBase):
     supports_past_only_covariates: bool = False
     supports_categorical_covariates: bool = False
     supports_heterogeneous_covariates: bool = True
+    requires_equal_length_context: bool = True
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
     requires_provider_auth: bool = False
@@ -3966,6 +4004,10 @@ class TSICLAdapter(_AdapterBase):
         Whether series with different covariate columns can be forecast in
         the same backend call. `False` for TS-ICL: `FoundationModel` groups
         the series by covariate signature and calls `predict` once per group.
+    requires_equal_length_context : bool
+        Whether the backend needs every series of a call to have the same
+        context length, so that `FoundationModel` left-pads them with NaN.
+        `False`: each series is passed with its own length.
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as
         context.
@@ -4028,6 +4070,7 @@ class TSICLAdapter(_AdapterBase):
     supports_past_only_covariates: bool = True
     supports_categorical_covariates: bool = False
     supports_heterogeneous_covariates: bool = False
+    requires_equal_length_context: bool = False
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
     requires_provider_auth: bool = False
@@ -4458,6 +4501,10 @@ class NoriAdapter(_AdapterBase):
         Whether series with different covariate columns can be forecast in
         the same backend call. `True`: every series is fitted and predicted
         in its own `NoriRegressor` call.
+    requires_equal_length_context : bool
+        Whether the backend needs every series of a call to have the same
+        context length, so that `FoundationModel` left-pads them with NaN.
+        `False`: each series is passed with its own length.
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as
         context. `True`: `NoriRegressor` rejects NaN, so the adapter drops
@@ -4527,6 +4574,7 @@ class NoriAdapter(_AdapterBase):
     supports_past_only_covariates: bool = False
     supports_categorical_covariates: bool = False
     supports_heterogeneous_covariates: bool = True
+    requires_equal_length_context: bool = False
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
     requires_provider_auth: bool = False

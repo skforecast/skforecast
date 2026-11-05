@@ -587,3 +587,76 @@ def align_context_exog(
         )
 
     return context_exog_aligned
+
+
+def _left_pad_context(
+    context: dict[str, pd.Series],
+    context_exog: dict[str, pd.DataFrame | None] | None,
+) -> tuple[dict[str, pd.Series], dict[str, pd.DataFrame | None] | None]:
+    """
+    Left-pad the context window of every series with NaN to the length of the
+    longest one, so that all of them end at their own forecast origin.
+
+    Parameters
+    ----------
+    context : dict
+        Per-series context windows.
+    context_exog : dict, None
+        Per-series historical exogenous variables, aligned to the index of
+        their context.
+
+    Returns
+    -------
+    context : dict
+        Per-series context windows, all of length `width` (the longest
+        context) and indexed by `pandas.RangeIndex(width)`.
+    context_exog : dict, None
+        Per-series historical exogenous variables padded and indexed in the
+        same way, or `None` if `context_exog` is `None`.
+
+    Notes
+    -----
+    The padding is positional: the original timestamps are replaced by a
+    `RangeIndex`, so the result does not depend on the frequency or on the
+    time zone of each series (no timestamps are generated, which could not
+    exist or be ambiguous around a daylight saving change). Adapters that
+    declare `requires_equal_length_context` only use the values;
+    `FoundationModel` builds the index of the predictions from the unpadded
+    context.
+
+    Boolean exog columns (also the nullable `boolean` dtype) are cast to
+    float in every series, because a bool column cannot hold NaN (pandas
+    would turn it into an `object` column). NumPy integer columns become
+    float only in the series that are padded, so within a group an integer
+    column can be int or float depending on the series; nullable extension
+    dtypes (`Int64`, `Float64`) keep their dtype and hold `pd.NA` in the
+    padded rows. Adapters must only rely on whether a column is numeric. The
+    other columns keep their dtype. The input objects are not modified.
+
+    """
+
+    width = max(len(series_values) for series_values in context.values())
+    index = pd.RangeIndex(width)
+    padded_context: dict[str, pd.Series] = {}
+    padded_exog: dict[str, pd.DataFrame | None] | None = (
+        {} if context_exog is not None else None
+    )
+    for series_name, series_values in context.items():
+        n_pad = width - len(series_values)
+        positions = pd.RangeIndex(n_pad, width)
+        series_values = series_values.set_axis(positions)
+        padded_context[series_name] = (
+            series_values.reindex(index) if n_pad > 0 else series_values
+        )
+        if padded_exog is not None:
+            series_exog = context_exog.get(series_name)
+            if series_exog is not None:
+                series_exog = series_exog.set_axis(positions)
+                for col, dtype in series_exog.dtypes.items():
+                    if pd.api.types.is_bool_dtype(dtype):
+                        series_exog[col] = series_exog[col].astype(float)
+                if n_pad > 0:
+                    series_exog = series_exog.reindex(index)
+            padded_exog[series_name] = series_exog
+
+    return padded_context, padded_exog
