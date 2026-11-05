@@ -592,7 +592,8 @@ tests) y la documentación.
    `catch` del usuario; los errores de configuración siguen abortando.
 3. El `DataTransformationWarning` de un modelo lineal sin `transformer_series` sale al crear
    el forecaster, fuera de la búsqueda: no se agrupa (no hace falta).
-4. Los avisos de los procesos de joblib (backtesting con `n_jobs` y `refit`) siguen sin
+4. Los avisos de los procesos de joblib (backtesting con `n_jobs` mayor que 1, que
+   `n_jobs='auto'` elige para algunos forecasters, también con `refit=False`) siguen sin
    llegar, como antes.
 
 ### 12.5 Pendiente: PR 2b (candidatos que fallan)
@@ -672,7 +673,10 @@ los dos órdenes del grid dan los mismos avisos.
    `n_jobs='auto'` cada proceso imprime sus avisos (21 paneles en el escenario 3; 3 con
    `n_jobs=1`). Arreglo posible: las funciones de cada fold en `_validation.py` registran
    sus avisos y los devuelven, y el proceso principal los reemite tras `Parallel`.
-   **Va al PR 2c** (después del 2b).
+   **Va al PR 2c** (después del 2b). Desde el proceso, rich no detecta Jupyter ni 256 colores: los paneles
+   salen amarillos (paleta de 16 colores), con 80 columnas y con `�` cuando un carácter del
+   borde se corta entre dos trozos de la salida (revisión del 2026-11-05). Reemitidos desde
+   el proceso principal, salen como los demás.
 
 Fuera de alcance, ya existía: con todos los candidatos saltados, los resultados vacíos
 tienen la columna `params` duplicada.
