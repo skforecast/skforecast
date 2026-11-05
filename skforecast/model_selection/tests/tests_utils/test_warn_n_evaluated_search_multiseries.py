@@ -5,7 +5,10 @@ import warnings
 import pytest
 import numpy as np
 from skforecast.exceptions import MissingValuesWarning
-from skforecast.model_selection._utils import _warn_n_evaluated_search_multiseries
+from skforecast.model_selection._utils import (
+    _warn_n_evaluated_search_multiseries,
+    _n_evaluated_covers_levels_not_predicted
+)
 
 
 @pytest.mark.parametrize(
@@ -297,3 +300,28 @@ def test_warn_n_evaluated_search_multiseries_max_ids_and_max_lines():
         )
 
     assert record[0].message.message.endswith(expected)
+
+
+@pytest.mark.parametrize(
+    "n_evaluated_levels, expected",
+    [
+        ([[10, 10], [10, 10]], False),
+        ([[10, 10], [10, 0]], True),
+        ([[10, 10, 0], [10, 0, 0]], False),
+        (np.zeros((0, 2)), False),
+    ],
+    ids=["no warning", "warning", "level never evaluated", "no candidates"],
+)
+def test_n_evaluated_covers_levels_not_predicted(n_evaluated_levels, expected):
+    """
+    Test that the warning of the points evaluated covers the warning of the
+    levels not predicted only when it is raised and every level has points
+    evaluated in some candidate.
+    """
+    n_evaluated_levels = np.asarray(n_evaluated_levels)
+    covers = _n_evaluated_covers_levels_not_predicted(
+        n_evaluated        = n_evaluated_levels.sum(axis=1),
+        n_evaluated_levels = n_evaluated_levels
+    )
+
+    assert covers is expected

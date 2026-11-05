@@ -57,6 +57,16 @@ series_short = {
     'l2': pd.Series(20 + 2 * np.cos(np.arange(60) / 2), index=index_short),
     'short': pd.Series(5 + np.arange(20) % 3, index=index_short[-20:], dtype=float),
 }
+# NOTE: `short` has 6 values, 5 of them in the training set of
+# `initial_train_size=45` and 1 in the test set, so the candidates with more
+# than 4 lags do not predict it, but evaluate more than 95% of the points of
+# the others (30 of 31): the warning of the levels not predicted is shown, the
+# warning of the points evaluated is not.
+series_short_one_point = {
+    'l1': series_short['l1'],
+    'l2': series_short['l2'],
+    'short': pd.Series(5 + np.arange(6) % 3, index=index_short[40:46], dtype=float),
+}
 
 
 def test_TypeError_bayesian_search_forecaster_multiseries_when_cv_not_valid():
@@ -3202,7 +3212,9 @@ def test_bayesian_search_forecaster_multiseries_warnings_of_trials_once_with_cou
     Test that the warning of the levels not predicted, raised in the trials
     with 8 lags, is shown once at the end of the search with the number of
     trials in which it is raised, also when optuna runs the trials in threads
-    (`n_jobs` of `study.optimize`).
+    (`n_jobs` of `study.optimize`). The trials evaluate more than 95% of the
+    points of the most complete one, so there is no warning of the points
+    evaluated.
     """
     forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
 
@@ -3218,7 +3230,7 @@ def test_bayesian_search_forecaster_multiseries_warnings_of_trials_once_with_cou
         warnings.simplefilter("always")
         _, study = bayesian_search_forecaster_multiseries(
             forecaster            = forecaster,
-            series                = series_short,
+            series                = series_short_one_point,
             search_space          = search_space,
             cv                    = TimeSeriesFold(initial_train_size=45, steps=5, refit=False),
             metric                = 'mean_absolute_error',
@@ -3234,13 +3246,12 @@ def test_bayesian_search_forecaster_multiseries_warnings_of_trials_once_with_cou
     messages = [
         w.message.message for w in record if w.category is MissingValuesWarning
     ]
-    assert len(messages) == 2
+    assert len(messages) == 1
     assert messages[0].startswith(
         f"Some levels are not predicted in folds where they have observed "
         f"values, so their metrics, and the aggregated metrics, do not include "
         f"those folds (in {n_lags_8} of 8 trials)."
     )
-    assert "evaluated on fewer points than the most complete one" in messages[1]
 
 
 def test_bayesian_search_forecaster_multiseries_when_study_is_loaded_from_storage():

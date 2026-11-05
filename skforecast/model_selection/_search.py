@@ -39,10 +39,13 @@ from ..model_selection._utils import (
     _check_metric_names_search,
     _get_n_evaluated_search_multiseries,
     _warn_n_evaluated_search_multiseries,
+    _n_evaluated_covers_levels_not_predicted,
     _sample_param_grid,
     _SearchWarnings,
-    N_EVALUATED_NAME
+    N_EVALUATED_NAME,
+    LEVELS_NOT_PREDICTED_WARNING
 )
+from ..exceptions import MissingValuesWarning
 from ..utils import (
     initialize_lags, 
     date_to_index_position, 
@@ -1741,6 +1744,11 @@ def _evaluate_grid_hyperparameters_multiseries(
                 f"  Levels: {levels_print}"
             )
 
+    if _n_evaluated_covers_levels_not_predicted(
+        n_evaluated        = results[N_EVALUATED_NAME].to_numpy(),
+        n_evaluated_levels = n_evaluated_levels
+    ):
+        search_warnings.discard(MissingValuesWarning, LEVELS_NOT_PREDICTED_WARNING)
     search_warnings.emit(n_params=len(param_grid))
 
     _warn_n_evaluated_search_multiseries(
@@ -2316,19 +2324,25 @@ def bayesian_search_forecaster_multiseries(
                 f"  Levels: {levels_print}"
             )
 
-    search_warnings.emit(n_candidates=len(study.trials) - n_trials_previous)
-
     # NOTE: Only the trials run in this call have the points evaluated of each
     # level, a study loaded from storage (`load_if_exists`) can have others.
     results_trials = results.loc[
         results['trial_number'].isin(n_evaluated_levels_trials)
     ]
+    n_evaluated_levels = [
+        n_evaluated_levels_trials[trial_number]
+        for trial_number in results_trials['trial_number']
+    ]
+    if _n_evaluated_covers_levels_not_predicted(
+        n_evaluated        = results_trials[N_EVALUATED_NAME].to_numpy(),
+        n_evaluated_levels = n_evaluated_levels
+    ):
+        search_warnings.discard(MissingValuesWarning, LEVELS_NOT_PREDICTED_WARNING)
+    search_warnings.emit(n_candidates=len(study.trials) - n_trials_previous)
+
     _warn_n_evaluated_search_multiseries(
         n_evaluated        = results_trials[N_EVALUATED_NAME].to_numpy(),
-        n_evaluated_levels = [
-            n_evaluated_levels_trials[trial_number]
-            for trial_number in results_trials['trial_number']
-        ],
+        n_evaluated_levels = n_evaluated_levels,
         lags               = results_trials['lags'].tolist(),
         candidate_ids      = results_trials['trial_number'].tolist(),
         levels             = levels,

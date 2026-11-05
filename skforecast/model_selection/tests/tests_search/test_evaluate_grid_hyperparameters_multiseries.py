@@ -57,6 +57,16 @@ series_short = {
     'l2': pd.Series(20 + 2 * np.cos(np.arange(60) / 2), index=index_short),
     'short': pd.Series(5 + np.arange(20) % 3, index=index_short[-20:], dtype=float),
 }
+# NOTE: `short` has 6 values, 5 of them in the training set of
+# `initial_train_size=45` and 1 in the test set, so the candidates with more
+# than 4 lags do not predict it, but evaluate more than 95% of the points of
+# the others (30 of 31): the warning of the levels not predicted is shown, the
+# warning of the points evaluated is not.
+series_short_one_point = {
+    'l1': series_short['l1'],
+    'l2': series_short['l2'],
+    'short': pd.Series(5 + np.arange(6) % 3, index=index_short[40:46], dtype=float),
+}
 N_EVALUATED_WARNING_MSG = "evaluated on fewer points than the most complete one"
 
 
@@ -2143,8 +2153,9 @@ def test_evaluate_grid_hyperparameters_multiseries_MissingValuesWarning_once_whe
     when some candidates evaluate less than 95% of the points of the most
     complete one, whatever the order of the grid. It lists the candidates affected,
     says that the best candidate is one of them and gives the series that
-    every candidate evaluates on the same points. The warning filters are the
-    same after the search.
+    every candidate evaluates on the same points. It covers the warning of the
+    levels not predicted of the candidates, which is not shown. The warning
+    filters are the same after the search.
     """
     forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
 
@@ -2170,6 +2181,9 @@ def test_evaluate_grid_hyperparameters_multiseries_MissingValuesWarning_once_whe
         if w.category is MissingValuesWarning and N_EVALUATED_WARNING_MSG in str(w.message)
     ]
     assert len(messages) == 1
+    assert not any(
+        str(w.message).startswith("Some levels are not predicted") for w in record
+    )
     assert (
         "2 of 4 candidates are evaluated on fewer points than the most complete "
         "one, so their metrics are not comparable. The best candidate of the "
@@ -2189,7 +2203,7 @@ def test_evaluate_grid_hyperparameters_multiseries_MissingValuesWarning_once_whe
 
 @pytest.mark.parametrize(
     "lags_grid",
-    [[2, 8], [8, 2]],
+    [[2, 5], [5, 2]],
     ids=lambda lags_grid: f"lags_grid: {lags_grid}",
 )
 def test_evaluate_grid_hyperparameters_multiseries_warnings_of_candidates_once_with_count(
@@ -2200,7 +2214,8 @@ def test_evaluate_grid_hyperparameters_multiseries_warnings_of_candidates_once_w
     the end of the search, whatever the order of the grid: the warning of the
     levels not predicted with the number of candidates in which it is raised,
     and the warning of the bins of the residuals, raised only in the refit, as
-    it is.
+    it is. The candidates evaluate more than 95% of the points of the most
+    complete one, so there is no warning of the points evaluated.
     """
     forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
 
@@ -2208,7 +2223,7 @@ def test_evaluate_grid_hyperparameters_multiseries_warnings_of_candidates_once_w
         warnings.simplefilter("always")
         _evaluate_grid_hyperparameters_multiseries(
             forecaster         = forecaster,
-            series             = series_short,
+            series             = series_short_one_point,
             cv                 = TimeSeriesFold(initial_train_size=45, steps=5, refit=False),
             param_grid         = [{'alpha': 0.1}, {'alpha': 1}],
             metric             = 'mean_absolute_error',
@@ -2219,24 +2234,23 @@ def test_evaluate_grid_hyperparameters_multiseries_warnings_of_candidates_once_w
         )
 
     assert [w.category for w in record] == [
-        MissingValuesWarning, IgnoredArgumentWarning, MissingValuesWarning
+        MissingValuesWarning, IgnoredArgumentWarning
     ]
     assert record[1].message.message.startswith(
-        "The number of bins has been reduced from 10 to 3"
+        "The number of bins has been reduced from 10 to"
     )
     messages = [
         w.message.message for w in record if w.category is MissingValuesWarning
     ]
-    assert len(messages) == 2
+    assert len(messages) == 1
     assert messages[0].startswith(
         "Some levels are not predicted in folds where they have observed values, "
         "so their metrics, and the aggregated metrics, do not include those "
         "folds (in 2 of 4 candidates). Levels never predicted have NaN metrics "
         "and are left out of the aggregated metrics.\n\nLevels not predicted:\n"
-        "  - Too short for the `window_size` (8) in the training set: "
+        "  - Too short for the `window_size` (5) in the training set: "
         "'short' (never predicted)."
     )
-    assert N_EVALUATED_WARNING_MSG in messages[1]
 
 
 def test_evaluate_grid_hyperparameters_multiseries_suppress_warnings_keeps_parameters_skipped():

@@ -326,3 +326,25 @@ def test_SearchWarnings_counts_with_filters_that_show_a_warning_once(action):
         search_warnings.emit()
 
     assert _messages(record) == ["Repeated (in 2 of 3 candidates)."]
+
+
+def test_SearchWarnings_discard():
+    """
+    Test that `discard` removes the warnings recorded of a category whose text
+    starts with the text given, and keeps the rest.
+    """
+    search_warnings = _SearchWarnings(n_candidates=2)
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        with search_warnings:
+            search_warnings.set_candidate(0)
+            warnings.warn("Covered warning. Details.", MissingValuesWarning)
+            warnings.warn("Other warning.", MissingValuesWarning)
+            warnings.warn("Covered warning, other category.", UserWarning)
+        search_warnings.discard(MissingValuesWarning, "Covered warning")
+        search_warnings.emit()
+
+    assert _messages(record) == [
+        "Other warning (in 1 of 2 candidates).",
+        "Covered warning, other category (in 1 of 2 candidates).",
+    ]

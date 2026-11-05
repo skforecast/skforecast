@@ -60,6 +60,12 @@ N_EVALUATED_NAME = 'n_evaluated'
 # bias of the metric is usually smaller than the differences between
 # candidates.
 N_EVALUATED_WARNING_THRESHOLD = 0.95
+# NOTE: Start of the warning of the levels not predicted in the folds of the
+# multi-series backtesting. The multi-series searches leave it out when the
+# warning of the points evaluated of the candidates covers it.
+LEVELS_NOT_PREDICTED_WARNING = (
+    "Some levels are not predicted in folds where they have observed values"
+)
 
 
 def initialize_lags_grid(
@@ -1271,10 +1277,9 @@ def _warn_levels_not_predicted_multiseries(
             lines.append(f"  - {reason_messages[reason]}: {', '.join(levels_info)}.")
 
     blocks = [
-        "Some levels are not predicted in folds where they have observed values, "
-        "so their metrics, and the aggregated metrics, do not include those "
-        "folds. Levels never predicted have NaN metrics and are left out of the "
-        "aggregated metrics.",
+        f"{LEVELS_NOT_PREDICTED_WARNING}, so their metrics, and the aggregated "
+        f"metrics, do not include those folds. Levels never predicted have NaN "
+        f"metrics and are left out of the aggregated metrics.",
         "Levels not predicted:\n" + "\n".join(lines)
     ]
     if skipped_folds:
@@ -2601,6 +2606,67 @@ def _format_names_warning(names: list, max_names: int | None = None) -> str:
     return ", ".join("..." if name is ... else repr(name) for name in names)
 
 
+def _is_affected_n_evaluated(n_evaluated: list[int] | np.ndarray) -> np.ndarray:
+    """
+    Candidates that evaluate less than `N_EVALUATED_WARNING_THRESHOLD` (95%)
+    of the points of the most complete candidate.
+
+    Parameters
+    ----------
+    n_evaluated : list, numpy ndarray
+        Number of points evaluated of each candidate.
+
+    Returns
+    -------
+    is_affected : numpy ndarray
+        Whether each candidate evaluates fewer points than the threshold.
+
+    """
+
+    n_evaluated = np.asarray(n_evaluated)
+    if n_evaluated.size == 0:
+        return np.zeros(0, dtype=bool)
+
+    return n_evaluated < N_EVALUATED_WARNING_THRESHOLD * n_evaluated.max()
+
+
+def _n_evaluated_covers_levels_not_predicted(
+    n_evaluated: list[int] | np.ndarray,
+    n_evaluated_levels: list[list[int]] | np.ndarray
+) -> bool:
+    """
+    Whether the warning of the points evaluated of a multi-series search
+    (`_warn_n_evaluated_search_multiseries`) covers the warning of the levels
+    not predicted raised in the backtesting of the candidates, so the search
+    can leave the latter out. It does when the warning of the points
+    evaluated is raised and every level has points evaluated in some
+    candidate: the levels not predicted by some candidates are those that are
+    not evaluated on the same points by every candidate, and the warning
+    gives the action. A level without points evaluated in any candidate is
+    not in the warning of the points evaluated, so then both are shown.
+
+    Parameters
+    ----------
+    n_evaluated : list, numpy ndarray
+        Number of points evaluated of each candidate.
+    n_evaluated_levels : list, numpy ndarray
+        Number of points evaluated of each candidate (rows) and level
+        (columns).
+
+    Returns
+    -------
+    covers : bool
+        Whether the warning of the levels not predicted can be left out.
+
+    """
+
+    if not _is_affected_n_evaluated(n_evaluated).any():
+        return False
+    n_evaluated_levels = np.asarray(n_evaluated_levels)
+
+    return bool((n_evaluated_levels.max(axis=0) > 0).all())
+
+
 def _warn_n_evaluated_search_multiseries(
     n_evaluated: list[int] | np.ndarray,
     n_evaluated_levels: list[list[int]] | np.ndarray,
@@ -2673,7 +2739,7 @@ def _warn_n_evaluated_search_multiseries(
         return
 
     n_evaluated_max = int(n_evaluated.max())
-    is_affected = n_evaluated < N_EVALUATED_WARNING_THRESHOLD * n_evaluated_max
+    is_affected = _is_affected_n_evaluated(n_evaluated)
     if not is_affected.any():
         return
 
@@ -3086,6 +3152,30 @@ class _SearchWarnings:
         """
 
         self.skipped.append((lags, params, error))
+
+    def discard(self, category: type[Warning], text_start: str) -> None:
+        """
+        Discard the warnings recorded of a category whose text starts with
+        `text_start`, for example, a warning covered by another one of the
+        search.
+
+        Parameters
+        ----------
+        category : Warning
+            Category of the warnings to discard.
+        text_start : str
+            Start of the text of the warnings to discard.
+
+        Returns
+        -------
+        None
+
+        """
+
+        self.records = [
+            record for record in self.records
+            if not (issubclass(record[1], category) and record[2].startswith(text_start))
+        ]
 
     def _record(
         self,
