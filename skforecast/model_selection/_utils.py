@@ -7,7 +7,9 @@
 
 from __future__ import annotations
 from typing import Callable, Generator, Any
+import os
 import re
+import sys
 import threading
 import warnings
 from itertools import chain
@@ -1251,8 +1253,8 @@ def _warn_levels_not_predicted_multiseries(
         )
     reason_messages = {
         'train': (
-            f"`window_size` ({forecaster.window_size}) observations or fewer "
-            f"in the training set"
+            f"Too short for the `window_size` ({forecaster.window_size}) in the "
+            f"training set"
         ),
         'last_window': reason_last_window
     }
@@ -1267,19 +1269,21 @@ def _warn_levels_not_predicted_multiseries(
                 for level, fold_numbers in levels_folds.items()
             ]
             lines.append(f"  - {reason_messages[reason]}: {', '.join(levels_info)}.")
-    if skipped_folds:
-        lines.append(
-            f"  - Folds skipped, no level can be predicted in them: "
-            f"{', '.join(map(str, skipped_folds))}."
-        )
 
-    warnings.warn(
+    blocks = [
         "Some levels are not predicted in folds where they have observed values, "
         "so their metrics, and the aggregated metrics, do not include those "
         "folds. Levels never predicted have NaN metrics and are left out of the "
-        "aggregated metrics.\n" + "\n".join(lines),
-        MissingValuesWarning
-    )
+        "aggregated metrics.",
+        "Levels not predicted:\n" + "\n".join(lines)
+    ]
+    if skipped_folds:
+        blocks.append(
+            f"Folds skipped, no level can be predicted in them: "
+            f"{', '.join(map(str, skipped_folds))}."
+        )
+
+    warnings.warn("\n\n".join(blocks), MissingValuesWarning)
 
 
 def _get_interval_bound_quantiles(
@@ -2600,10 +2604,13 @@ def _format_names_warning(names: list, max_names: int | None = None) -> str:
 def _warn_n_evaluated_search_multiseries(
     n_evaluated: list[int] | np.ndarray,
     n_evaluated_levels: list[list[int]] | np.ndarray,
-    candidates: list[str],
+    lags: list[Any],
+    candidate_ids: list[int],
     levels: list[str],
+    candidate_name: str = "candidate",
     best_is_first: bool = True,
-    max_candidates: int = 5,
+    max_lines: int = 5,
+    max_ids: int = 5,
     max_levels: int = 10
 ) -> None:
     """
@@ -2613,6 +2620,11 @@ def _warn_n_evaluated_search_multiseries(
     `N_EVALUATED_WARNING_THRESHOLD` (95%) of the points of the most complete
     candidate. The candidates must be in the order of the ranking, the first
     one is the best.
+
+    The candidates reported are grouped by `lags` and number of points
+    evaluated, which usually depends only on the window of the candidate, and
+    identified by their row in the results (grid and random search) or their
+    trial number (Bayesian search).
 
     The warning also gives the levels that every candidate evaluates on the
     same points (the same number of points as the most complete candidate in
@@ -2629,16 +2641,24 @@ def _warn_n_evaluated_search_multiseries(
     n_evaluated_levels : list, numpy ndarray
         Number of points evaluated of each candidate (rows, in the order of the
         ranking) and level (columns, in the order of `levels`).
-    candidates : list
-        Description of each candidate, in the order of the ranking.
+    lags : list
+        Lags of each candidate, in the order of the ranking.
+    candidate_ids : list
+        Identifier of each candidate, in the order of the ranking: its row in
+        the results if `candidate_name` is 'candidate', its trial number if it
+        is 'trial'.
     levels : list
         Levels of the search.
+    candidate_name : str, default 'candidate'
+        Name of a candidate in the warning ('candidate' or 'trial').
     best_is_first : bool, default True
         Whether the first candidate is the best of the ranking. If `False` (the
-        best candidate is not among `candidates`), the warning does not say
+        best candidate is not among the candidates), the warning does not say
         whether the best candidate is affected.
-    max_candidates : int, default 5
-        Maximum number of candidates listed in the warning.
+    max_lines : int, default 5
+        Maximum number of groups of candidates listed in the warning.
+    max_ids : int, default 5
+        Maximum number of identifiers listed in each group of candidates.
     max_levels : int, default 10
         Maximum number of levels listed in the warning.
 
@@ -2657,11 +2677,13 @@ def _warn_n_evaluated_search_multiseries(
     if not is_affected.any():
         return
 
+    candidates_name = f"{candidate_name}s"
     affected = np.flatnonzero(is_affected)
     if len(affected) == 1:
         summary = (
-            f"1 of {len(n_evaluated)} candidates is evaluated on fewer points than "
-            f"the most complete one, so its metrics are not comparable."
+            f"1 of {len(n_evaluated)} {candidates_name} is evaluated on fewer "
+            f"points than the most complete one, so its metrics are not "
+            f"comparable."
         )
         best_message = (
             "It is the best candidate of the ranking, so the ranking may favor it."
@@ -2670,9 +2692,9 @@ def _warn_n_evaluated_search_multiseries(
         )
     else:
         summary = (
-            f"{len(affected)} of {len(n_evaluated)} candidates are evaluated on "
-            f"fewer points than the most complete one, so their metrics are not "
-            f"comparable."
+            f"{len(affected)} of {len(n_evaluated)} {candidates_name} are "
+            f"evaluated on fewer points than the most complete one, so their "
+            f"metrics are not comparable."
         )
         best_message = (
             "The best candidate of the ranking is one of them, so the ranking may "
@@ -2735,16 +2757,35 @@ def _warn_n_evaluated_search_multiseries(
                 f"  {levels_line}"
             )
 
-    lines = [
-        f"  - {candidates[i]}: {int(n_evaluated[i]):,} "
-        f"({n_evaluated[i] / n_evaluated_max:.1%})"
-        for i in affected[:max_candidates]
-    ]
-    if len(affected) > max_candidates:
-        lines.append(f"  ... and {len(affected) - max_candidates} more")
+    groups = {}
+    for i in affected:
+        key = (_format_lags_warning(lags[i]), int(n_evaluated[i]))
+        groups.setdefault(key, []).append(candidate_ids[i])
+
+    id_name = "row" if candidate_name == "candidate" else candidate_name
+    lines = []
+    for (lags_repr, n), ids in list(groups.items())[:max_lines]:
+        if len(ids) == 1:
+            ids_repr = f"{id_name} {ids[0]}"
+        else:
+            ids_list = ", ".join(str(id_) for id_ in ids[:max_ids])
+            if len(ids) > max_ids:
+                ids_list += ", ..."
+            if id_name != candidate_name:
+                ids_list = f"{id_name}s {ids_list}"
+            ids_repr = f"{len(ids)} {candidates_name} ({ids_list})"
+        lines.append(
+            f"  - lags: {lags_repr}, {ids_repr}: {n:,} ({n / n_evaluated_max:.1%})"
+        )
+    if len(groups) > max_lines:
+        n_more = sum(len(ids) for ids in list(groups.values())[max_lines:])
+        lines.append(
+            f"  ... and {n_more} more {candidate_name if n_more == 1 else candidates_name}"
+        )
     candidates_block = (
-        f"Candidates with less than {N_EVALUATED_WARNING_THRESHOLD:.0%} of the "
-        f"{n_evaluated_max:,} points of the most complete one:\n" + "\n".join(lines)
+        f"{candidates_name.capitalize()} with less than "
+        f"{N_EVALUATED_WARNING_THRESHOLD:.0%} of the {n_evaluated_max:,} points "
+        f"of the most complete one:\n" + "\n".join(lines)
     )
 
     blocks = [
@@ -2754,7 +2795,9 @@ def _warn_n_evaluated_search_multiseries(
     if levels_block is not None:
         blocks.append(levels_block)
 
-    warnings.warn("\n\n".join(blocks), MissingValuesWarning)
+    warnings.warn(
+        "\n\n".join(blocks), MissingValuesWarning, stacklevel=_stacklevel_user_code()
+    )
 
 
 def _sample_param_grid(
@@ -2814,7 +2857,8 @@ def _sample_param_grid(
             f"`n_iter` ({n_iter}), so the search evaluates the {len(param_grid)} "
             f"combinations{for_each_lags}. For an exhaustive search, use "
             f"`{grid_search_name}`.",
-            UserWarning
+            UserWarning,
+            stacklevel = _stacklevel_user_code()
         )
 
     return param_grid
@@ -2832,6 +2876,7 @@ def _warn_skipped_candidates_search(
     their evaluation raised an error, so they are not in the results. The
     candidates are grouped by error. When every combination of parameters of
     a value of `lags` raises the same error, they are summarized in one line.
+    The warning points to the code of the user that called the search.
 
     Parameters
     ----------
@@ -2889,9 +2934,7 @@ def _warn_skipped_candidates_search(
             if lags_repr is None:
                 lines.extend(f"params: {params}" for params in params_list)
             elif n_params is not None and n_params > 1 and len(params_list) == n_params:
-                lines.append(
-                    f"lags: {lags_repr}, every params ({n_params} candidates)"
-                )
+                lines.append(f"lags: {lags_repr} ({n_params} candidates)")
             else:
                 lines.extend(
                     f"lags: {lags_repr}, params: {params}" for params in params_list
@@ -2905,7 +2948,9 @@ def _warn_skipped_candidates_search(
     if len(errors) > max_errors:
         blocks.append(f"... and {len(errors) - max_errors} more errors")
 
-    warnings.warn("\n\n".join(blocks), RuntimeWarning)
+    warnings.warn(
+        "\n\n".join(blocks), RuntimeWarning, stacklevel=_stacklevel_user_code()
+    )
 
 
 class _SearchWarnings:
@@ -2923,6 +2968,8 @@ class _SearchWarnings:
     - `LongTrainingWarning` is shown when it is raised the first time, with
     the number of fits of the whole search, so the user can stop the search.
     The rest are discarded.
+    - The warnings point to the code of the user that called the search
+    (the first frame outside skforecast when the context is entered).
     - Each warning is tagged with the candidate being evaluated, set with
     `set_candidate`. The candidate is stored per thread, so the trials of
     Optuna run in threads (`n_jobs` of `study.optimize`) are tagged correctly.
@@ -2986,6 +3033,14 @@ class _SearchWarnings:
         warnings.simplefilter("always", append=True)
         self._showwarning = warnings.showwarning
         warnings.showwarning = self._record
+
+        # NOTE: Code of the user that called the search, where LongTrainingWarning
+        # points to. It is found here, in the main thread, because the trials of
+        # Optuna can run in other threads.
+        frame, _ = _first_frame_outside_skforecast(sys._getframe(1))
+        self._user_location = (
+            (frame.f_code.co_filename, frame.f_lineno) if frame is not None else None
+        )
 
         return self
 
@@ -3052,6 +3107,9 @@ class _SearchWarnings:
                     return
                 self._long_training_shown = True
             message = self._long_training_message(message)
+            if self._user_location is not None:
+                filename, lineno = self._user_location
+                line = None
             self._showwarning(message, category, filename, lineno, file, line)
             return
 
@@ -3099,8 +3157,10 @@ class _SearchWarnings:
         number of candidates, after its first sentence.
         - Warnings with the same first sentence and different texts (for
         example, with the series or the counts of each candidate) are shown
-        once: the first sentence, the number of candidates and how to see the
-        details.
+        once: the text of the first one, with the number of candidates after
+        its first sentence.
+
+        The warnings point to the code of the user that called the search.
 
         Parameters
         ----------
@@ -3144,12 +3204,15 @@ class _SearchWarnings:
                 )
             else:
                 candidates = set().union(*(c for c, _ in texts.values()))
-                message = next(iter(texts.values()))[1]
-                text = first_sentence[:-1] if first_sentence.endswith(".") else first_sentence
+                if not candidates:
+                    for text, (_, message) in texts.items():
+                        _warn_recorded(text, category, message)
+                    continue
+                text, (_, message) = next(iter(texts.items()))
+                first_sentence, rest = _split_first_sentence(text)
                 text = (
-                    f"{text} (in {len(candidates)} of {n_candidates} "
-                    f"{candidates_name}). Run the backtesting of a candidate "
-                    f"to see the details."
+                    f"{first_sentence[:-1]} (in {len(candidates)} of {n_candidates} "
+                    f"{candidates_name}; details of the first one).{rest}"
                 )
 
             _warn_recorded(text, category, message)
@@ -3201,4 +3264,58 @@ def _warn_recorded(text: str, category: type[Warning], message: Warning | str) -
     except Exception:
         new_message = message
 
-    warnings.warn(new_message, stacklevel=3)
+    warnings.warn(new_message, stacklevel=_stacklevel_user_code())
+
+
+def _first_frame_outside_skforecast(frame: Any) -> tuple[Any, int]:
+    """
+    First frame, starting from `frame` and going up the stack, whose code is
+    not in the package skforecast. The tests of skforecast count as code
+    outside the package.
+
+    Parameters
+    ----------
+    frame : frame
+        Frame where the search starts.
+
+    Returns
+    -------
+    frame : frame, None
+        First frame outside skforecast, `None` if every frame is in it.
+    n_frames : int
+        Number of frames of skforecast skipped.
+
+    """
+
+    package_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    package_prefix = package_dir + os.sep
+    tests_dir = os.sep + "tests" + os.sep
+
+    n_frames = 0
+    while frame is not None:
+        filename = frame.f_code.co_filename
+        if not filename.startswith(package_prefix) or tests_dir in filename[len(package_dir):]:
+            break
+        frame = frame.f_back
+        n_frames += 1
+
+    return frame, n_frames
+
+
+def _stacklevel_user_code() -> int:
+    """
+    `stacklevel` of `warnings.warn`, called in the function that calls this
+    one, so the warning points to the code of the user (the first frame
+    outside skforecast) instead of the internal line that raises it. If every
+    frame is in skforecast, the warning points to the line that raises it.
+
+    Returns
+    -------
+    stacklevel : int
+        `stacklevel` of `warnings.warn`.
+
+    """
+
+    frame, n_frames = _first_frame_outside_skforecast(sys._getframe(1))
+
+    return 1 + n_frames if frame is not None else 1

@@ -38,7 +38,6 @@ from ..model_selection._utils import (
     _select_metrics_search_multiseries,
     _check_metric_names_search,
     _get_n_evaluated_search_multiseries,
-    _format_lags_warning,
     _warn_n_evaluated_search_multiseries,
     _sample_param_grid,
     _SearchWarnings,
@@ -1747,10 +1746,8 @@ def _evaluate_grid_hyperparameters_multiseries(
     _warn_n_evaluated_search_multiseries(
         n_evaluated        = results[N_EVALUATED_NAME].to_numpy(),
         n_evaluated_levels = n_evaluated_levels,
-        candidates         = [
-            f"lags: {_format_lags_warning(lags_k)}, params: {params}"
-            for lags_k, params in zip(results['lags_label'], results['params'])
-        ],
+        lags               = results['lags_label'].tolist(),
+        candidate_ids      = results.index.tolist(),
         levels             = levels
     )
 
@@ -2332,16 +2329,10 @@ def bayesian_search_forecaster_multiseries(
             n_evaluated_levels_trials[trial_number]
             for trial_number in results_trials['trial_number']
         ],
-        candidates         = [
-            f"trial {trial_number}, lags: {_format_lags_warning(lags)}, "
-            f"params: {params}"
-            for trial_number, lags, params in zip(
-                results_trials['trial_number'],
-                results_trials['lags'],
-                results_trials['params']
-            )
-        ],
+        lags               = results_trials['lags'].tolist(),
+        candidate_ids      = results_trials['trial_number'].tolist(),
         levels             = levels,
+        candidate_name     = 'trial',
         best_is_first      = len(results_trials) > 0 and results_trials.index[0] == 0
     )
 

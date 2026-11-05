@@ -70,8 +70,8 @@ def test_warn_levels_not_predicted_multiseries_MissingValuesWarning_when_levels_
         "Some levels are not predicted in folds where they have observed values, "
         "so their metrics, and the aggregated metrics, do not include those "
         "folds. Levels never predicted have NaN metrics and are left out of the "
-        "aggregated metrics.\n"
-        f"  - `window_size` ({window_size}) observations or fewer in the "
+        "aggregated metrics.\n\nLevels not predicted:\n"
+        f"  - Too short for the `window_size` ({window_size}) in the "
         "training set: 'l3' (never predicted).\n"
         f"  - Missing values in the last window, {reason_last_window}: "
         "'l2' (folds 1)."
@@ -120,9 +120,9 @@ def test_warn_levels_not_predicted_multiseries_MissingValuesWarning_lists_skippe
     forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=3)
 
     warn_msg = re.escape(
-        "  - `window_size` (3) observations or fewer in the training set: "
+        "  - Too short for the `window_size` (3) in the training set: "
         "'l1' (folds 0), 'l2' (folds 0).\n"
-        "  - Folds skipped, no level can be predicted in them: 0."
+        "\nFolds skipped, no level can be predicted in them: 0."
     )
     with pytest.warns(MissingValuesWarning, match=warn_msg):
         _warn_levels_not_predicted_multiseries(

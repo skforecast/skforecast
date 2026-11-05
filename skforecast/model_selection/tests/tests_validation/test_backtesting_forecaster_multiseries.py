@@ -6240,7 +6240,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
          )
 
     warn_msg = re.escape(
-        "  - `window_size` (5) observations or fewer in the training set: "
+        "  - Too short for the `window_size` (5) in the training set: "
         "'l2' (never predicted)."
     )
     with warnings.catch_warnings(record=True) as caught:
@@ -6305,7 +6305,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
          )
 
     warn_msg = re.escape(
-        "  - `window_size` (3) observations or fewer in the training set: "
+        "  - Too short for the `window_size` (3) in the training set: "
         "'l2' (folds 0)."
     )
     with pytest.warns(MissingValuesWarning, match=warn_msg):
@@ -7048,9 +7048,9 @@ def run_backtesting_counting_fits(series, refit, levels=None):
          [8, 8, 0, 16, 16, 16],
          {0: ['l1', 'l2'], 1: ['l1', 'l2']},
          2,
-         "  - `window_size` (3) observations or fewer in the training set: "
+         "  - Too short for the `window_size` (3) in the training set: "
          "'l3' (never predicted).\n"
-         "  - Folds skipped, no level can be predicted in them: 7."),
+         "\nFolds skipped, no level can be predicted in them: 7."),
         # No series to predict: 'l1' and 'l2' are in the training set of fold 2
         # but have no last window, 'l3' starts at the test start of fold 2.
         (20,
@@ -7060,9 +7060,9 @@ def run_backtesting_counting_fits(series, refit, levels=None):
          {0: ['l1', 'l2'], 1: ['l1', 'l2'], 3: ['l3'], 4: ['l3'], 5: ['l3'],
           6: ['l3'], 7: ['l3']},
          7,
-         "  - `window_size` (3) observations or fewer in the training set: "
+         "  - Too short for the `window_size` (3) in the training set: "
          "'l3' (folds 2).\n"
-         "  - Folds skipped, no level can be predicted in them: 2."),
+         "\nFolds skipped, no level can be predicted in them: 2."),
     ],
     ids=['start: 46, no series to train', 'start: 20, no series to predict']
 )
@@ -7120,9 +7120,9 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
          [8, 8, 15, 31, 31, 31],
          {0: ['l1', 'l2'], 1: ['l1', 'l2'], 5: ['l3'], 6: ['l3'], 7: ['l3']},
          5,
-         "  - `window_size` (3) observations or fewer in the training set: "
+         "  - Too short for the `window_size` (3) in the training set: "
          "'l3' (folds 4).\n"
-         "  - Folds skipped, no level can be predicted in them: 4."),
+         "\nFolds skipped, no level can be predicted in them: 4."),
         # Intermittent refit: the refit folds 2 and 4 are not fitted, so fold
         # 5 is not predicted with the model of fold 0, which has no 'l3'.
         (2,
@@ -7131,18 +7131,18 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
          [8, 8, 10, 26, 26, 26],
          {0: ['l1', 'l2'], 1: ['l1', 'l2'], 6: ['l3'], 7: ['l3']},
          2,
-         "  - `window_size` (3) observations or fewer in the training set: "
+         "  - Too short for the `window_size` (3) in the training set: "
          "'l3' (folds 4, 5).\n"
-         "  - Folds skipped, no level can be predicted in them: 4, 5."),
+         "\nFolds skipped, no level can be predicted in them: 4, 5."),
         (False,
          [0.2819275854710012, 0.22422588724325793, np.nan,
           0.2530767363571296, 0.2530767363571296, 0.2530767363571296],
          [8, 8, 0, 16, 16, 16],
          {0: ['l1', 'l2'], 1: ['l1', 'l2']},
          1,
-         "  - `window_size` (3) observations or fewer in the training set: "
+         "  - Too short for the `window_size` (3) in the training set: "
          "'l3' (never predicted).\n"
-         "  - Folds skipped, no level can be predicted in them: 4, 5, 6, 7."),
+         "\nFolds skipped, no level can be predicted in them: 4, 5, 6, 7."),
     ],
     ids=['refit: True', 'refit: 2', 'refit: False']
 )
@@ -7208,7 +7208,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
              fixed_train_size   = True
          )
 
-    warn_msg = re.escape("  - Folds skipped, no level can be predicted in them: 4.")
+    warn_msg = re.escape("\nFolds skipped, no level can be predicted in them: 4.")
     with pytest.warns(MissingValuesWarning, match=warn_msg):
         _, backtest_predictions = backtesting_forecaster_multiseries(
                                       forecaster    = forecaster,
@@ -7353,9 +7353,9 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
             )
     else:
         warn_msg = re.escape(
-            "  - `window_size` (3) observations or fewer in the training set: "
+            "  - Too short for the `window_size` (3) in the training set: "
             "'l2' (folds 2, 3).\n"
-            "  - Folds skipped, no level can be predicted in them: 2, 3."
+            "\nFolds skipped, no level can be predicted in them: 2, 3."
         )
         with pytest.warns(MissingValuesWarning, match=warn_msg):
             metrics_levels, backtest_predictions = backtesting_forecaster_multiseries(

@@ -17,8 +17,8 @@ def test_sample_param_grid_UserWarning_when_space_smaller_than_n_iter(
 ):
     """
     Test that, when the total space of parameters is smaller than `n_iter`,
-    the warning refers to the grid search of skforecast and the warning of
-    scikit-learn is not shown.
+    the warning refers to the grid search of skforecast, points to the code of
+    the user (the test), and the warning of scikit-learn is not shown.
     """
     param_distributions = {'alpha': [0.1, 1.0], 'fit_intercept': [True, False]}
 
@@ -37,6 +37,7 @@ def test_sample_param_grid_UserWarning_when_space_smaller_than_n_iter(
         f"search evaluates the 4 combinations{expected_for_each_lags}. For an "
         f"exhaustive search, use `grid_search_forecaster`."
     ]
+    assert record[0].filename == __file__
 
 
 def test_sample_param_grid_same_output_as_ParameterSampler_without_warning():

@@ -75,8 +75,8 @@ def test_SearchWarnings_same_text_in_some_candidates_shown_with_count():
 def test_SearchWarnings_different_texts_with_same_first_sentence_grouped():
     """
     Test that warnings with the same first sentence and different texts are
-    shown once, with the first sentence, the number of candidates (trials) and
-    how to see the details.
+    shown once, with the text of the first one and the number of candidates
+    (trials) after its first sentence.
     """
     search_warnings = _SearchWarnings(n_candidates=4, candidate_name="trial")
     with warnings.catch_warnings(record=True) as record:
@@ -92,9 +92,50 @@ def test_SearchWarnings_different_texts_with_same_first_sentence_grouped():
         search_warnings.emit()
 
     assert _messages(record) == [
-        "Some levels are not predicted (in 3 of 4 trials). Run the backtesting "
-        "of a candidate to see the details."
+        "Some levels are not predicted (in 3 of 4 trials; details of the first "
+        "one). Window 0."
     ]
+
+
+def test_SearchWarnings_different_texts_outside_candidates_shown_as_they_are():
+    """
+    Test that warnings with the same first sentence and different texts,
+    raised only outside the candidates, are shown as they are.
+    """
+    search_warnings = _SearchWarnings(n_candidates=2)
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        with search_warnings:
+            search_warnings.set_candidate(None)
+            warnings.warn("Refit warning. Text 1.", UserWarning)
+            warnings.warn("Refit warning. Text 2.", UserWarning)
+        search_warnings.emit()
+
+    assert _messages(record) == ["Refit warning. Text 1.", "Refit warning. Text 2."]
+
+
+def test_SearchWarnings_warnings_point_to_the_code_of_the_user():
+    """
+    Test that the warnings shown by `emit` and LongTrainingWarning point to
+    the code that uses `_SearchWarnings` (the tests count as code of the
+    user), not to the internal lines of skforecast.
+    """
+    search_warnings = _SearchWarnings(n_candidates=2)
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        with search_warnings:
+            search_warnings.set_candidate(0)
+            warnings.warn("Text.", UserWarning)
+            warnings.warn("The forecaster will be fit 10 times.", LongTrainingWarning)
+            search_warnings.add_skipped(
+                lags=None, params={'alpha': 1}, error=ValueError("Wrong.")
+            )
+        search_warnings.emit()
+
+    assert [w.category for w in record] == [
+        LongTrainingWarning, UserWarning, RuntimeWarning
+    ]
+    assert all(w.filename == __file__ for w in record)
 
 
 def test_SearchWarnings_emit_with_n_candidates():

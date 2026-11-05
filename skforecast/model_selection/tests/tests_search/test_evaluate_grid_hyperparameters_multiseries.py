@@ -2179,8 +2179,7 @@ def test_evaluate_grid_hyperparameters_multiseries_MissingValuesWarning_once_whe
         "`n_evaluated` of the results.\n"
         "\n"
         "Candidates with less than 95% of the 45 points of the most complete one:\n"
-        "  - lags: [1, 2, ..., 8], params: {'alpha': 0.1}: 30 (66.7%)\n"
-        "  - lags: [1, 2, ..., 8], params: {'alpha': 1}: 30 (66.7%)\n"
+        "  - lags: [1, 2, ..., 8], 2 candidates (rows 0, 1): 30 (66.7%)\n"
         "\n"
         "Series that every candidate evaluates on the same points:\n"
         "  levels=['l1', 'l2']"
@@ -2233,8 +2232,8 @@ def test_evaluate_grid_hyperparameters_multiseries_warnings_of_candidates_once_w
         "Some levels are not predicted in folds where they have observed values, "
         "so their metrics, and the aggregated metrics, do not include those "
         "folds (in 2 of 4 candidates). Levels never predicted have NaN metrics "
-        "and are left out of the aggregated metrics.\n"
-        "  - `window_size` (8) observations or fewer in the training set: "
+        "and are left out of the aggregated metrics.\n\nLevels not predicted:\n"
+        "  - Too short for the `window_size` (8) in the training set: "
         "'short' (never predicted)."
     )
     assert N_EVALUATED_WARNING_MSG in messages[1]
@@ -2269,7 +2268,7 @@ def test_evaluate_grid_hyperparameters_multiseries_suppress_warnings_keeps_param
         "Parameters skipped: 2 of 6 candidates raise an error, so they are not "
         "in the results.\n\nValueError: "
     )
-    assert message.endswith("  - lags: [1, 2, ..., 50], every params (2 candidates)")
+    assert message.endswith("  - lags: [1, 2, ..., 50] (2 candidates)")
 
 
 @pytest.mark.parametrize(

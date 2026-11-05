@@ -3172,13 +3172,19 @@ def test_bayesian_search_forecaster_multiseries_n_evaluated_user_attr_and_Missin
     assert 0 < n_affected < len(results)
     assert len(messages) == 1
     assert (
-        f"{n_affected} of 6 candidates are evaluated on fewer points than the "
+        f"{n_affected} of 6 trials are evaluated on fewer points than the "
         f"most complete one"
     ) in messages[0]
+    trials_affected = results.loc[results['n_evaluated'] == 30, 'trial_number'].tolist()
+    if n_affected == 1:
+        expected_trials = f"trial {trials_affected[0]}"
+    else:
+        expected_trials = (
+            f"{n_affected} trials ({', '.join(map(str, trials_affected))})"
+        )
     assert (
-        f"Candidates with less than 95% of the 45 points of the most complete one:\n"
-        f"  - trial {results.loc[0, 'trial_number']}, lags: [1, 2, ..., 8], "
-        f"params: {results.loc[0, 'params']}: 30 (66.7%)"
+        f"Trials with less than 95% of the 45 points of the most complete one:\n"
+        f"  - lags: [1, 2, ..., 8], {expected_trials}: 30 (66.7%)"
     ) in messages[0]
     assert (
         "Series that every candidate evaluates on the same points:\n"
@@ -3290,7 +3296,7 @@ def test_bayesian_search_forecaster_multiseries_when_study_is_loaded_from_storag
     assert len(messages) == 2
     assert results.loc[0, 'trial_number'] == 4
     assert messages[-1].startswith(
-        "1 of 4 candidates is evaluated on fewer points than the most complete "
+        "1 of 4 trials is evaluated on fewer points than the most complete "
         "one, so its metrics are not comparable. It is the best candidate of the "
         "ranking"
     )
