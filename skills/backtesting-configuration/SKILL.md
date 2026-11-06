@@ -89,8 +89,10 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 `gap + 1` to `gap + steps`, fewer in an incomplete last fold) and `y_true`
 (true value). Order: `fold, step, y_true, pred, ...`; with multiple series
 `level` goes first, and in `backtesting_stats` with several estimators
-`estimator_id` goes first. In the multi-series backtesting, the dates without
-an observed value have NaN in `y_true` and in every prediction column.
+`estimator_id` goes first. The dates without an observed value (missing
+values of `y` in the test set) stay in `predictions` with `y_true` NaN and are
+left out of the metrics, with one series and with several; in the
+multi-series backtesting, every prediction column is NaN at those dates too.
 
 The last column of `metric` is `n_evaluated`: the points used for the metrics
 (true value and prediction not missing). With overlapping folds

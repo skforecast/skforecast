@@ -327,7 +327,7 @@ metric, predictions = backtesting_forecaster(
 # metric columns: mean_absolute_error, coverage, interval_width, n_evaluated
 ```
 
-The predictions of the four backtesting functions (`backtesting_forecaster`, `backtesting_forecaster_multiseries`, `backtesting_stats` and `backtesting_foundation`) always include, after `fold`, the column `step` (step of the forecast horizon at which each prediction was made, from `gap + 1` to `gap + steps`) and `y_true` (true value), before the predictions: `level, fold, step, y_true, pred, ...` with multiple series, and `estimator_id, fold, step, y_true, pred, ...` in `backtesting_stats` with several estimators. In the multi-series backtesting, the dates without an observed value have NaN in `y_true` and in every prediction column. With overlapping folds (`fold_stride < steps`) every prediction is kept, so a date can appear several times with different `step`. The last column of `metric` is `n_evaluated`: the points used for the metrics (true value and prediction not missing, each date once with the prediction of its last fold), per level in multi-series and the sum in the aggregated rows; `weighted_average` is weighted by it. Metric names must be unique (they are the columns of `metric`; `create_mean_pinball_loss(alpha)` is named `mean_pinball_loss_q_{alpha}`) and cannot be `n_evaluated`.
+The predictions of the four backtesting functions (`backtesting_forecaster`, `backtesting_forecaster_multiseries`, `backtesting_stats` and `backtesting_foundation`) always include, after `fold`, the column `step` (step of the forecast horizon at which each prediction was made, from `gap + 1` to `gap + steps`) and `y_true` (true value), before the predictions: `level, fold, step, y_true, pred, ...` with multiple series, and `estimator_id, fold, step, y_true, pred, ...` in `backtesting_stats` with several estimators. The dates without an observed value (missing values of `y` in the test set) stay in the predictions with `y_true` NaN and are left out of the metrics, with one series and with several; in the multi-series backtesting, every prediction column is NaN at those dates too. With overlapping folds (`fold_stride < steps`) every prediction is kept, so a date can appear several times with different `step`. The last column of `metric` is `n_evaluated`: the points used for the metrics (true value and prediction not missing, each date once with the prediction of its last fold), per level in multi-series and the sum in the aggregated rows; `weighted_average` is weighted by it. Metric names must be unique (they are the columns of `metric`; `create_mean_pinball_loss(alpha)` is named `mean_pinball_loss_q_{alpha}`) and cannot be `n_evaluated`.
 
 ```python
 # Error and coverage by step of the horizon (group by ['level', 'step'] with multiple series)
@@ -3662,8 +3662,10 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 `gap + 1` to `gap + steps`, fewer in an incomplete last fold) and `y_true`
 (true value). Order: `fold, step, y_true, pred, ...`; with multiple series
 `level` goes first, and in `backtesting_stats` with several estimators
-`estimator_id` goes first. In the multi-series backtesting, the dates without
-an observed value have NaN in `y_true` and in every prediction column.
+`estimator_id` goes first. The dates without an observed value (missing
+values of `y` in the test set) stay in `predictions` with `y_true` NaN and are
+left out of the metrics, with one series and with several; in the
+multi-series backtesting, every prediction column is NaN at those dates too.
 
 The last column of `metric` is `n_evaluated`: the points used for the metrics
 (true value and prediction not missing). With overlapping folds
