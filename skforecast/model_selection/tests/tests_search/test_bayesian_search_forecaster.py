@@ -1710,3 +1710,110 @@ def test_bayesian_search_forecaster_LongTrainingWarning_once_with_fits_of_the_se
         "fits it about 240 times. This can take substantial amounts of time. If "
         "not feasible, try with `refit = False`."
     ]
+
+
+@pytest.mark.parametrize(
+    "cv",
+    [TimeSeriesFold(steps=3, initial_train_size=30, refit=False),
+     OneStepAheadFold(initial_train_size=30)],
+    ids=lambda cv: f"cv: {type(cv).__name__}"
+)
+def test_bayesian_search_forecaster_skips_trials_whose_evaluation_fails(cv, capfd):
+    """
+    Test that the trials whose evaluation fails (40 lags, not smaller than
+    `initial_train_size`) are marked as failed and reported in the warning of
+    the candidates skipped, identified by their number, instead of stopping
+    the search. Optuna does not log them.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=2)
+
+    def search_space(trial):
+        return {'lags': trial.suggest_categorical('lags', [2, 40])}
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results, study = bayesian_search_forecaster(
+                             forecaster    = forecaster,
+                             y             = y,
+                             cv            = cv,
+                             search_space  = search_space,
+                             metric        = 'mean_absolute_error',
+                             n_trials      = 6,
+                             return_best   = True,
+                             show_progress = False
+                         )
+
+    failed = [t.number for t in study.trials if t.state == optuna.trial.TrialState.FAIL]
+    assert failed == [t.number for t in study.trials if t.params['lags'] == 40]
+    assert 0 < len(failed) < 6
+    assert len(results) == 6 - len(failed)
+    assert results['lags'].map(len).unique().tolist() == [2]
+    assert forecaster.max_lag == 2
+    messages = [str(w.message) for w in record if w.category is RuntimeWarning]
+    assert len(messages) == 1
+    verb = "raises" if len(failed) == 1 else "raise"
+    assert messages[0].startswith(
+        f"Parameters skipped: {len(failed)} of 6 trials {verb} an error"
+    )
+    assert "`initial_train_size` must be greater than the `window_size` of the " \
+           "forecaster (40)" in messages[0]
+    for trial_number in failed:
+        assert f"  - trial {trial_number}, params: {{'lags': 40}}" in messages[0]
+    assert "Trial" not in capfd.readouterr().err
+
+
+def test_bayesian_search_forecaster_every_trial_fails_returns_empty_results():
+    """
+    Test that, when the evaluation of every trial fails, the results are
+    empty, the forecaster is not refitted and the warning says so.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=2)
+
+    def search_space(trial):
+        return {'lags': trial.suggest_categorical('lags', [40, 45])}
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results, study = bayesian_search_forecaster(
+                             forecaster    = forecaster,
+                             y             = y,
+                             cv            = TimeSeriesFold(steps=3, initial_train_size=30),
+                             search_space  = search_space,
+                             metric        = 'mean_absolute_error',
+                             n_trials      = 3,
+                             return_best   = True,
+                             show_progress = False
+                         )
+
+    assert results.empty
+    assert not forecaster.is_fitted
+    assert len(study.trials) == 3
+    messages = [str(w.message) for w in record if w.category is RuntimeWarning]
+    assert messages[0].startswith(
+        "Parameters skipped: 3 of 3 trials raise an error, so the results are empty."
+    )
+
+
+def test_bayesian_search_forecaster_ValueError_search_space_stops_the_search():
+    """
+    Test that an error of the `search_space` (not of the evaluation of the
+    trial) stops the search, also with a `catch` of the user in
+    `kwargs_study_optimize`.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=2)
+
+    def search_space(trial):
+        return {'alpha': trial.suggest_float('alpha', 0.1, 1) / 0}
+
+    with pytest.raises(ZeroDivisionError):
+        bayesian_search_forecaster(
+            forecaster            = forecaster,
+            y                     = y,
+            cv                    = TimeSeriesFold(steps=3, initial_train_size=30),
+            search_space          = search_space,
+            metric                = 'mean_absolute_error',
+            n_trials              = 3,
+            return_best           = False,
+            show_progress         = False,
+            kwargs_study_optimize = {'catch': (KeyError,)}
+        )

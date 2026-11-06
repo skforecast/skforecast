@@ -43,6 +43,8 @@ from ..model_selection._utils import (
     _n_evaluated_covers_levels_not_predicted,
     _sample_param_grid,
     _SearchWarnings,
+    _skip_trial,
+    _optimize_study,
     N_EVALUATED_NAME,
     LEVELS_NOT_PREDICTED_WARNING
 )
@@ -726,7 +728,9 @@ def bayesian_search_forecaster(
         search. See skforecast.exceptions.warn_skforecast_categories for more
         information.
         Otherwise, the warnings of the trials are shown once, at the end of
-        the search, with the number of trials in which they are raised.
+        the search, with the number of trials in which they are raised. The
+        trials skipped because they raise an error are always reported, in a
+        single warning.
     output_file : str, default None
         Specifies the filename or full path where the optuna logging output
         should be saved. If `None`, logging output will not be redirected to
@@ -740,6 +744,9 @@ def bayesian_search_forecaster(
         (a warning is raised if it contradicts the direction of the metric).
     kwargs_study_optimize : dict, default None
         Additional keyword arguments (key, value mappings) to pass to study.optimize().
+        The trials whose evaluation raises an error are marked as failed and
+        skipped, also when `catch` is passed (its errors are kept). An error in
+        `search_space` stops the search.
 
     Returns
     -------
@@ -837,17 +844,20 @@ def bayesian_search_forecaster(
             if "lags" in sample:
                 forecaster_search.set_lags(sample['lags'])
             
-            metrics, _ = backtesting_forecaster(
-                             forecaster        = forecaster_search,
-                             y                 = y,
-                             cv                = cv,
-                             exog              = exog,
-                             metric            = metric,
-                             n_jobs            = n_jobs,
-                             verbose           = verbose,
-                             show_progress     = False,
-                             suppress_warnings = suppress_warnings
-                         )
+            try:
+                metrics, _ = backtesting_forecaster(
+                                 forecaster        = forecaster_search,
+                                 y                 = y,
+                                 cv                = cv,
+                                 exog              = exog,
+                                 metric            = metric,
+                                 n_jobs            = n_jobs,
+                                 verbose           = verbose,
+                                 show_progress     = False,
+                                 suppress_warnings = suppress_warnings
+                             )
+            except Exception as e:
+                raise _skip_trial(search_warnings, trial, error=e) from e
             n_evaluated = int(metrics.loc[0, N_EVALUATED_NAME])
             metrics = metrics.loc[0, list(metric_dict)].to_list()
             
@@ -890,48 +900,55 @@ def bayesian_search_forecaster(
             if current_lags is not _SENTINEL:
                 forecaster_search.set_lags(current_lags)
 
+            # NOTE: The split is cached by lags, also its error. Its warnings
+            # are raised outside the trials, so they are shown as they are.
             lags_key = _make_lags_hashable(current_lags, sentinel=_SENTINEL)
             if lags_key not in _cached_split:
 
                 if len(_cached_split) >= _MAX_CACHE_SIZE:
                     _cached_split.pop(next(iter(_cached_split)))
 
-                (
-                    X_train,
-                    y_train,
-                    X_test,
-                    y_test,
-                    sample_weight,
-                    fit_kwargs
-                ) = forecaster_search._train_test_split_one_step_ahead(
-                    y=y, initial_train_size=initial_train_size, exog=exog
-                )
-                
-                _cached_split[lags_key] = (
-                    X_train, y_train, X_test, y_test, sample_weight, fit_kwargs,
-                    _get_estimator_categorical_set_params(forecaster_search)
-                )
+                search_warnings.set_candidate(None)
+                try:
+                    _cached_split[lags_key] = (
+                        *_train_test_split_one_step_ahead_search(
+                            forecaster         = forecaster_search,
+                            cv                 = cv,
+                            initial_train_size = initial_train_size,
+                            y                  = y,
+                            exog               = exog
+                        ),
+                        _get_estimator_categorical_set_params(forecaster_search)
+                    )
+                except Exception as e:
+                    _cached_split[lags_key] = e
+                finally:
+                    search_warnings.set_candidate(trial.number)
 
-            else:
+            split = _cached_split[lags_key]
+            if isinstance(split, Exception):
+                raise _skip_trial(search_warnings, trial, error=split) from split
+            (
+                X_train, y_train, X_test, y_test, sample_weight, fit_kwargs,
+                _estimator_cat_params
+            ) = split
+            _restore_estimator_categorical_set_params(
+                forecaster_search, _estimator_cat_params
+            )
 
-                (
-                    X_train, y_train, X_test, y_test, sample_weight, fit_kwargs,
-                    _estimator_cat_params
-                ) = _cached_split[lags_key]
-                _restore_estimator_categorical_set_params(
-                    forecaster_search, _estimator_cat_params
-                )
-
-            metrics, n_evaluated = _calculate_metrics_one_step_ahead(
-                                       forecaster    = forecaster_search,
-                                       metrics       = metric,
-                                       X_train       = X_train,
-                                       y_train       = y_train,
-                                       X_test        = X_test,
-                                       y_test        = y_test,
-                                       sample_weight = sample_weight,
-                                       fit_kwargs    = fit_kwargs
-                                   )
+            try:
+                metrics, n_evaluated = _calculate_metrics_one_step_ahead(
+                                           forecaster    = forecaster_search,
+                                           metrics       = metric,
+                                           X_train       = X_train,
+                                           y_train       = y_train,
+                                           X_test        = X_test,
+                                           y_test        = y_test,
+                                           sample_weight = sample_weight,
+                                           fit_kwargs    = fit_kwargs
+                                       )
+            except Exception as e:
+                raise _skip_trial(search_warnings, trial, error=e) from e
 
             # Store all metrics in the trial using optuna's user_attrs mechanism.
             for m_name, m_val in zip(metric_dict, metrics):
@@ -984,13 +1001,14 @@ def bayesian_search_forecaster(
     search_warnings = _SearchWarnings(n_candidates=n_trials, candidate_name='trial')
     n_trials_previous = len(study.trials)
     try:
-        with search_warnings, warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore",
-                category = UserWarning,
-                message  = "Choices for a categorical distribution should be*"
+        with search_warnings:
+            _optimize_study(
+                study                 = study,
+                objective             = _objective,
+                n_trials              = n_trials,
+                kwargs_study_optimize = kwargs_study_optimize,
+                filter_logs           = output_file is None
             )
-            study.optimize(_objective, n_trials=n_trials, **kwargs_study_optimize)
     finally:
         if output_file is not None:
             handler.close()
@@ -1030,7 +1048,8 @@ def bayesian_search_forecaster(
     )
     results = pd.concat([results, results['params'].apply(pd.Series)], axis=1)
     
-    if return_best:
+    # NOTE: The results are empty when every trial is skipped.
+    if return_best and not results.empty:
         
         best_lags = results.loc[0, 'lags']
         best_params = results.loc[0, 'params']
@@ -1908,7 +1927,9 @@ def bayesian_search_forecaster_multiseries(
         search. See skforecast.exceptions.warn_skforecast_categories for more
         information.
         Otherwise, the warnings of the trials are shown once, at the end of
-        the search, with the number of trials in which they are raised.
+        the search, with the number of trials in which they are raised. The
+        trials skipped because they raise an error are always reported, in a
+        single warning.
     output_file : str, default None
         Specifies the filename or full path where the optuna logging output
         should be saved. If `None`, logging output will not be redirected to
@@ -1922,6 +1943,9 @@ def bayesian_search_forecaster_multiseries(
         (a warning is raised if it contradicts the direction of the metric).
     kwargs_study_optimize : dict, default None
         Additional keyword arguments (key, value mappings) to pass to study.optimize().
+        The trials whose evaluation raises an error are marked as failed and
+        skipped, also when `catch` is passed (its errors are kept). An error in
+        `search_space` stops the search.
 
     Returns
     -------
@@ -2073,19 +2097,22 @@ def bayesian_search_forecaster_multiseries(
             if "lags" in sample:
                 forecaster_search.set_lags(sample['lags'])
             
-            metrics, _ = backtesting_forecaster_multiseries(
-                             forecaster            = forecaster_search,
-                             series                = series,
-                             cv                    = cv,
-                             exog                  = exog,
-                             levels                = levels,
-                             metric                = metric,
-                             add_aggregated_metric = add_aggregated_metric,
-                             n_jobs                = n_jobs,
-                             verbose               = verbose,
-                             show_progress         = False,
-                             suppress_warnings     = suppress_warnings
-                         )
+            try:
+                metrics, _ = backtesting_forecaster_multiseries(
+                                 forecaster            = forecaster_search,
+                                 series                = series,
+                                 cv                    = cv,
+                                 exog                  = exog,
+                                 levels                = levels,
+                                 metric                = metric,
+                                 add_aggregated_metric = add_aggregated_metric,
+                                 n_jobs                = n_jobs,
+                                 verbose               = verbose,
+                                 show_progress         = False,
+                                 suppress_warnings     = suppress_warnings
+                             )
+            except Exception as e:
+                raise _skip_trial(search_warnings, trial, error=e) from e
 
             n_evaluated, n_evaluated_levels = _get_n_evaluated_search_multiseries(
                                                   metrics = metrics,
@@ -2146,56 +2173,64 @@ def bayesian_search_forecaster_multiseries(
             if current_lags is not _SENTINEL:
                 forecaster_search.set_lags(current_lags)
 
+            # NOTE: The split is cached by lags, also its error. Its warnings
+            # are raised outside the trials, so they are shown as they are.
             lags_key = _make_lags_hashable(current_lags, sentinel=_SENTINEL)
             if lags_key not in _cached_split:
 
                 if len(_cached_split) >= _MAX_CACHE_SIZE:
                     _cached_split.pop(next(iter(_cached_split)))
 
-                (
-                    X_train,
-                    y_train,
-                    X_test,
-                    y_test,
-                    X_train_encoding,
-                    X_test_encoding,
-                    sample_weight,
-                    fit_kwargs
-                ) = forecaster_search._train_test_split_one_step_ahead(
-                    series=series, exog=exog, initial_train_size=initial_train_size,
-                )
-                _cached_split[lags_key] = (
-                    X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding,
-                    sample_weight, fit_kwargs,
-                    _get_estimator_categorical_set_params(forecaster_search)
-                )
-            else:
-                (
-                    X_train, y_train, X_test, y_test,
-                    X_train_encoding, X_test_encoding,
-                    sample_weight, fit_kwargs,
-                    _estimator_cat_params
-                ) = _cached_split[lags_key]
-                _restore_estimator_categorical_set_params(
-                    forecaster_search, _estimator_cat_params
-                )
+                search_warnings.set_candidate(None)
+                try:
+                    _cached_split[lags_key] = (
+                        *_train_test_split_one_step_ahead_search(
+                            forecaster         = forecaster_search,
+                            cv                 = cv,
+                            initial_train_size = initial_train_size,
+                            series             = series,
+                            exog               = exog,
+                            levels             = levels
+                        ),
+                        _get_estimator_categorical_set_params(forecaster_search)
+                    )
+                except Exception as e:
+                    _cached_split[lags_key] = e
+                finally:
+                    search_warnings.set_candidate(trial.number)
 
-            metrics, _ = _predict_and_calculate_metrics_one_step_ahead_multiseries(
-                             forecaster            = forecaster_search,
-                             series                = series,
-                             X_train               = X_train,
-                             y_train               = y_train,
-                             X_test                = X_test,
-                             y_test                = y_test,
-                             X_train_encoding      = X_train_encoding,
-                             X_test_encoding       = X_test_encoding,
-                             levels                = levels,
-                             metrics               = metric,
-                             add_aggregated_metric = add_aggregated_metric,
-                             sample_weight         = sample_weight,
-                             fit_kwargs            = fit_kwargs,
-                             return_predictions    = False
-                         )
+            split = _cached_split[lags_key]
+            if isinstance(split, Exception):
+                raise _skip_trial(search_warnings, trial, error=split) from split
+            (
+                X_train, y_train, X_test, y_test,
+                X_train_encoding, X_test_encoding,
+                sample_weight, fit_kwargs,
+                _estimator_cat_params
+            ) = split
+            _restore_estimator_categorical_set_params(
+                forecaster_search, _estimator_cat_params
+            )
+
+            try:
+                metrics, _ = _predict_and_calculate_metrics_one_step_ahead_multiseries(
+                                 forecaster            = forecaster_search,
+                                 series                = series,
+                                 X_train               = X_train,
+                                 y_train               = y_train,
+                                 X_test                = X_test,
+                                 y_test                = y_test,
+                                 X_train_encoding      = X_train_encoding,
+                                 X_test_encoding       = X_test_encoding,
+                                 levels                = levels,
+                                 metrics               = metric,
+                                 add_aggregated_metric = add_aggregated_metric,
+                                 sample_weight         = sample_weight,
+                                 fit_kwargs            = fit_kwargs,
+                                 return_predictions    = False
+                             )
+            except Exception as e:
+                raise _skip_trial(search_warnings, trial, error=e) from e
 
             n_evaluated, n_evaluated_levels = _get_n_evaluated_search_multiseries(
                                                   metrics = metrics,
@@ -2264,13 +2299,14 @@ def bayesian_search_forecaster_multiseries(
     search_warnings = _SearchWarnings(n_candidates=n_trials, candidate_name='trial')
     n_trials_previous = len(study.trials)
     try:
-        with search_warnings, warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore",
-                category=UserWarning,
-                message="Choices for a categorical distribution should be*"
+        with search_warnings:
+            _optimize_study(
+                study                 = study,
+                objective             = _objective,
+                n_trials              = n_trials,
+                kwargs_study_optimize = kwargs_study_optimize,
+                filter_logs           = output_file is None
             )
-            study.optimize(_objective, n_trials=n_trials, **kwargs_study_optimize)
     finally:
         if output_file is not None:
             handler.close()
@@ -2324,7 +2360,7 @@ def bayesian_search_forecaster_multiseries(
         
         lags_list = lags_list_initialized
 
-    results = pd.DataFrame(metrics_data)
+    results = pd.DataFrame(metrics_data, columns=[*metric_names, N_EVALUATED_NAME])
     results.insert(0, 'trial_number', trial_number_list)
     results.insert(1, 'levels', [levels] * len(results))
     results.insert(2, 'lags', lags_list)
@@ -2336,7 +2372,8 @@ def bayesian_search_forecaster_multiseries(
     )
     results = pd.concat([results, results['params'].apply(pd.Series)], axis=1)
     
-    if return_best:
+    # NOTE: The results are empty when every trial is skipped.
+    if return_best and not results.empty:
         
         best_lags = results.loc[0, 'lags']
         best_params = results.loc[0, 'params']
@@ -2526,7 +2563,9 @@ def bayesian_search_foundation(
         If `True`, skforecast warnings will be suppressed during the search.
         See `skforecast.exceptions.warn_skforecast_categories` for details.
         Otherwise, the warnings of the trials are shown once, at the end of
-        the search, with the number of trials in which they are raised.
+        the search, with the number of trials in which they are raised. The
+        trials skipped because they raise an error are always reported, in a
+        single warning.
     output_file : str, default None
         Filename or full path where optuna logging output should be saved. If
         `None`, logging output is not redirected.
@@ -2539,6 +2578,9 @@ def bayesian_search_foundation(
         raised if it contradicts the direction of the metric).
     kwargs_study_optimize : dict, default None
         Additional keyword arguments passed to `study.optimize()`.
+        The trials whose evaluation raises an error are marked as failed and
+        skipped, also when `catch` is passed (its errors are kept). An error in
+        `search_space` stops the search.
 
     Returns
     -------
@@ -2655,18 +2697,21 @@ def bayesian_search_foundation(
 
         forecaster_search.set_params(sample)
 
-        metrics, _ = backtesting_foundation(
-            forecaster            = forecaster_search,
-            series                = series,
-            cv                    = cv,
-            exog                  = exog,
-            levels                = levels,
-            metric                = metric,
-            add_aggregated_metric = add_aggregated_metric,
-            verbose               = verbose,
-            show_progress         = False,
-            suppress_warnings     = suppress_warnings,
-        )
+        try:
+            metrics, _ = backtesting_foundation(
+                forecaster            = forecaster_search,
+                series                = series,
+                cv                    = cv,
+                exog                  = exog,
+                levels                = levels,
+                metric                = metric,
+                add_aggregated_metric = add_aggregated_metric,
+                verbose               = verbose,
+                show_progress         = False,
+                suppress_warnings     = suppress_warnings,
+            )
+        except Exception as e:
+            raise _skip_trial(search_warnings, trial, error=e) from e
 
         if "levels" in metrics.columns:
             n_evaluated, _ = _get_n_evaluated_search_multiseries(
@@ -2740,13 +2785,14 @@ def bayesian_search_foundation(
     search_warnings = _SearchWarnings(n_candidates=n_trials, candidate_name="trial")
     n_trials_previous = len(study.trials)
     try:
-        with search_warnings, warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore",
-                category=UserWarning,
-                message="Choices for a categorical distribution should be*",
+        with search_warnings:
+            _optimize_study(
+                study                 = study,
+                objective             = _objective,
+                n_trials              = n_trials,
+                kwargs_study_optimize = kwargs_study_optimize,
+                filter_logs           = output_file is None
             )
-            study.optimize(_objective, n_trials=n_trials, **kwargs_study_optimize)
     finally:
         if output_file is not None:
             handler.close()
@@ -2767,7 +2813,7 @@ def bayesian_search_foundation(
             }
         )
 
-    results = pd.DataFrame(metrics_data)
+    results = pd.DataFrame(metrics_data, columns=[*metric_names, N_EVALUATED_NAME])
     results.insert(0, "trial_number", trial_number_list)
     results.insert(1, "levels", [levels_resolved] * len(results))
     results.insert(2, "params", params_list)
@@ -2779,7 +2825,8 @@ def bayesian_search_foundation(
     )
     results = pd.concat([results, results["params"].apply(pd.Series)], axis=1)
 
-    if return_best:
+    # NOTE: The results are empty when every trial is skipped.
+    if return_best and not results.empty:
 
         best_params = results.loc[0, "params"]
         best_metric = results.loc[0, metric_names[0]]

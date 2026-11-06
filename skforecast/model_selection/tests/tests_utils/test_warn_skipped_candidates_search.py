@@ -25,11 +25,11 @@ def test_warn_skipped_candidates_search_grouped_by_error_and_lags():
     error_80 = ValueError("Window 80.")
     error_90 = ValueError("Window 90.")
     skipped = [
-        (np.arange(1, 81), {'alpha': 0.1}, error_80),
-        (np.arange(1, 81), {'alpha': 1.0}, error_80),
-        (np.arange(1, 91), {'alpha': 0.1}, error_90),
-        (np.arange(1, 91), {'alpha': 1.0}, error_90),
-        ('lags_3', {'alpha': 1.0}, TypeError("Other.")),
+        (np.arange(1, 81), {'alpha': 0.1}, error_80, None),
+        (np.arange(1, 81), {'alpha': 1.0}, error_80, None),
+        (np.arange(1, 91), {'alpha': 0.1}, error_90, None),
+        (np.arange(1, 91), {'alpha': 1.0}, error_90, None),
+        ('lags_3', {'alpha': 1.0}, TypeError("Other."), None),
     ]
     warn_msg = re.escape(
         "Parameters skipped: 5 of 6 candidates raise an error, so they are not "
@@ -57,8 +57,8 @@ def test_warn_skipped_candidates_search_max_errors_and_candidates():
     skipped, the warning says that the results are empty.
     """
     skipped = (
-        [(None, {'p': i}, ValueError("Same.")) for i in range(4)]
-        + [(None, {'p': i}, ValueError(f"Error {i}.")) for i in range(4, 7)]
+        [(None, {'p': i}, ValueError("Same."), None) for i in range(4)]
+        + [(None, {'p': i}, ValueError(f"Error {i}."), None) for i in range(4, 7)]
     )
     warn_msg = re.escape(
         "Parameters skipped: 7 of 7 candidates raise an error, so the results "
@@ -80,4 +80,29 @@ def test_warn_skipped_candidates_search_max_errors_and_candidates():
             n_candidates   = 7,
             max_errors     = 2,
             max_candidates = 2
+        )
+
+
+def test_warn_skipped_candidates_search_trials_identified_by_number():
+    """
+    Test that the trials of a Bayesian search are identified by their number
+    and listed in order, whatever the order in which they are skipped (the
+    trials of Optuna can run in threads).
+    """
+    error = ValueError("Window 80.")
+    skipped = [
+        (None, {'lags': 80, 'alpha': 0.5}, error, 6),
+        (None, {'lags': 80, 'alpha': 0.1}, error, 1),
+    ]
+    warn_msg = re.escape(
+        "Parameters skipped: 2 of 8 trials raise an error, so they are not in "
+        "the results.\n"
+        "\n"
+        "ValueError: Window 80.\n"
+        "  - trial 1, params: {'lags': 80, 'alpha': 0.1}\n"
+        "  - trial 6, params: {'lags': 80, 'alpha': 0.5}"
+    )
+    with pytest.warns(RuntimeWarning, match=f"^{warn_msg}$"):
+        _warn_skipped_candidates_search(
+            skipped=skipped, n_candidates=8, candidate_name='trial'
         )

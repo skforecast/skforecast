@@ -3312,3 +3312,84 @@ def test_bayesian_search_forecaster_multiseries_when_study_is_loaded_from_storag
         "ranking"
     )
 
+
+
+@pytest.mark.parametrize(
+    "cv",
+    [TimeSeriesFold(steps=5, initial_train_size=45, refit=False),
+     OneStepAheadFold(initial_train_size=45)],
+    ids=lambda cv: f"cv: {type(cv).__name__}"
+)
+def test_bayesian_search_forecaster_multiseries_skips_trials_whose_evaluation_fails(cv):
+    """
+    Test that the trials whose evaluation fails (50 lags, not smaller than
+    `initial_train_size`) are marked as failed and reported in the warning of
+    the candidates skipped, identified by their number, instead of stopping
+    the search. With a `OneStepAheadFold`, the split of the lags that fail is
+    cached with its error.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
+
+    def search_space(trial):
+        return {'lags': trial.suggest_categorical('lags', [2, 50])}
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results, study = bayesian_search_forecaster_multiseries(
+                             forecaster    = forecaster,
+                             series        = series_short,
+                             cv            = cv,
+                             search_space  = search_space,
+                             metric        = 'mean_absolute_error',
+                             n_trials      = 6,
+                             return_best   = True,
+                             show_progress = False
+                         )
+
+    failed = [t.number for t in study.trials if t.state == optuna.trial.TrialState.FAIL]
+    assert failed == [t.number for t in study.trials if t.params['lags'] == 50]
+    assert 0 < len(failed) < 6
+    assert len(results) == 6 - len(failed)
+    assert forecaster.max_lag == 2
+    messages = [str(w.message) for w in record if w.category is RuntimeWarning]
+    assert len(messages) == 1
+    for trial_number in failed:
+        assert f"  - trial {trial_number}, params: {{'lags': 50}}" in messages[0]
+
+
+def test_bayesian_search_forecaster_multiseries_every_trial_fails_returns_empty_results():
+    """
+    Test that, when the evaluation of every trial fails, the results are
+    empty, with the columns of the metrics, and the forecaster is not
+    refitted.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
+
+    def search_space(trial):
+        return {'lags': trial.suggest_categorical('lags', [50, 55])}
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results, _ = bayesian_search_forecaster_multiseries(
+                         forecaster    = forecaster,
+                         series        = series_short,
+                         cv            = TimeSeriesFold(steps=5, initial_train_size=45),
+                         search_space  = search_space,
+                         metric        = 'mean_absolute_error',
+                         n_trials      = 3,
+                         return_best   = True,
+                         show_progress = False
+                     )
+
+    # NOTE: The column `params` is duplicated when the results are empty.
+    assert results.empty
+    assert list(dict.fromkeys(results.columns)) == [
+        'trial_number', 'levels', 'lags', 'params',
+        'mean_absolute_error__weighted_average', 'mean_absolute_error__average',
+        'mean_absolute_error__pooling', 'n_evaluated'
+    ]
+    assert not forecaster.is_fitted
+    assert any(
+        str(w.message).startswith("Parameters skipped: 3 of 3 trials raise an error")
+        for w in record
+    )

@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 from typing import Callable, Generator, Any
+import logging
 import os
 import re
 import sys
@@ -3101,9 +3102,10 @@ def _sample_param_grid(
 
 
 def _warn_skipped_candidates_search(
-    skipped: list[tuple[Any, dict, Exception]],
+    skipped: list[tuple[Any, dict, Exception, int | None]],
     n_candidates: int,
     n_params: int | None = None,
+    candidate_name: str = "candidate",
     max_errors: int = 5,
     max_candidates: int = 5
 ) -> None:
@@ -3118,13 +3120,17 @@ def _warn_skipped_candidates_search(
     ----------
     skipped : list
         Candidates skipped, in the order of the search, as tuples
-        `(lags, params, error)`. `lags` is `None` in the searches without
-        `lags_grid`.
+        `(lags, params, error, candidate_id)`. `lags` is `None` in the searches
+        without `lags_grid`. `candidate_id` identifies the candidate in the
+        warning (the trial number in Bayesian searches), `None` if the
+        candidate is identified by its lags and parameters.
     n_candidates : int
         Number of candidates of the search.
     n_params : int, default None
         Number of combinations of parameters evaluated for each value of
         `lags`. If `None`, the candidates are not summarized by `lags`.
+    candidate_name : str, default 'candidate'
+        Name of a candidate in the warning ('candidate' or 'trial').
     max_errors : int, default 5
         Maximum number of errors listed in the warning.
     max_candidates : int, default 5
@@ -3148,27 +3154,36 @@ def _warn_skipped_candidates_search(
         consequence = "so they are not in the results"
     verb = "raises" if n_skipped == 1 else "raise"
     summary = (
-        f"Parameters skipped: {n_skipped} of {n_candidates} candidates {verb} "
-        f"an error, {consequence}."
+        f"Parameters skipped: {n_skipped} of {n_candidates} {candidate_name}s "
+        f"{verb} an error, {consequence}."
     )
 
+    # NOTE: The trials of Optuna run in threads can be skipped in any order.
+    skipped = sorted(
+        skipped, key=lambda candidate: -1 if candidate[3] is None else candidate[3]
+    )
     errors = {}
-    for lags, params, error in skipped:
+    for lags, params, error, candidate_id in skipped:
         error_message = f"{type(error).__name__}: {error}"
-        errors.setdefault(error_message, []).append((lags, params))
+        errors.setdefault(error_message, []).append((lags, params, candidate_id))
 
     blocks = [summary]
     for error_message, candidates in list(errors.items())[:max_errors]:
 
         lines = []
         lags_reprs = {}
-        for lags, params in candidates:
+        for lags, params, candidate_id in candidates:
+            if candidate_id is not None:
+                params = f"{candidate_name} {candidate_id}, params: {params}"
             lags_reprs.setdefault(
                 None if lags is None else _format_lags_warning(lags), []
             ).append(params)
         for lags_repr, params_list in lags_reprs.items():
             if lags_repr is None:
-                lines.extend(f"params: {params}" for params in params_list)
+                lines.extend(
+                    params if isinstance(params, str) else f"params: {params}"
+                    for params in params_list
+                )
             elif n_params is not None and n_params > 1 and len(params_list) == n_params:
                 lines.append(f"lags: {lags_repr} ({n_params} candidates)")
             else:
@@ -3235,7 +3250,7 @@ class _SearchWarnings:
     records : list
         Warnings recorded, as tuples `(candidate, category, text, message)`.
     skipped : list
-        Candidates skipped, as tuples `(lags, params, error)`.
+        Candidates skipped, as tuples `(lags, params, error, candidate_id)`.
 
     """
 
@@ -3306,9 +3321,16 @@ class _SearchWarnings:
 
         self._local.candidate = candidate
 
-    def add_skipped(self, lags: Any, params: dict, error: Exception) -> None:
+    def add_skipped(
+        self,
+        lags: Any,
+        params: dict,
+        error: Exception,
+        candidate_id: int | None = None
+    ) -> None:
         """
-        Add a candidate skipped because its evaluation raised an error.
+        Add a candidate skipped because its evaluation raised an error. It can
+        be called from the threads of Optuna.
 
         Parameters
         ----------
@@ -3318,6 +3340,10 @@ class _SearchWarnings:
             Parameters of the candidate.
         error : Exception
             Error raised.
+        candidate_id : int, default None
+            Identifier of the candidate in the warning (the trial number in
+            Bayesian searches). If `None`, the candidate is identified by its
+            lags and parameters.
 
         Returns
         -------
@@ -3325,7 +3351,8 @@ class _SearchWarnings:
 
         """
 
-        self.skipped.append((lags, params, error))
+        with self._lock:
+            self.skipped.append((lags, params, error, candidate_id))
 
     def discard(self, category: type[Warning], text_start: str) -> None:
         """
@@ -3508,10 +3535,157 @@ class _SearchWarnings:
             _warn_recorded(text, category, message)
 
         _warn_skipped_candidates_search(
-            skipped      = self.skipped,
-            n_candidates = n_candidates,
-            n_params     = n_params
+            skipped        = self.skipped,
+            n_candidates   = n_candidates,
+            n_params       = n_params,
+            candidate_name = self.candidate_name
         )
+
+
+class _TrialEvaluationError(Exception):
+    """
+    Error raised when the evaluation of a trial of a Bayesian search fails.
+    It is added to the argument `catch` of `study.optimize`, so Optuna marks
+    the trial as failed and the search continues. The original error is the
+    cause (`__cause__`) of this one.
+    """
+
+
+def _skip_trial(
+    search_warnings: _SearchWarnings, trial: object, error: Exception
+) -> _TrialEvaluationError:
+    """
+    Skip a trial of a Bayesian search whose evaluation raised an error: add
+    it to the candidates skipped of the search, identified by its number, and
+    return the `_TrialEvaluationError` to raise, so Optuna marks the trial as
+    failed (`raise _skip_trial(...) from error`).
+
+    Parameters
+    ----------
+    search_warnings : _SearchWarnings
+        Warnings of the search.
+    trial : optuna Trial
+        Trial skipped.
+    error : Exception
+        Error raised by the evaluation of the trial.
+
+    Returns
+    -------
+    trial_error : _TrialEvaluationError
+        Error to raise.
+
+    """
+
+    search_warnings.add_skipped(
+        lags=None, params=trial.params, error=error, candidate_id=trial.number
+    )
+
+    return _TrialEvaluationError(f"{type(error).__name__}: {error}")
+
+
+class _FailedTrialsLogFilter(logging.Filter):
+    """
+    Filter of the logger of Optuna that runs the trials
+    (`optuna.study._optimize`) that drops the two messages of each trial that
+    fails with `_TrialEvaluationError` ("Trial N failed with parameters..."
+    with the traceback, and "Trial N failed with value None."). Those trials
+    are reported in the warning of the candidates skipped of the search.
+    """
+
+    def __init__(self) -> None:
+
+        super().__init__()
+        self._trials = set()
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        """
+        Whether the record is logged.
+
+        Parameters
+        ----------
+        record : logging.LogRecord
+            Record of the logger.
+
+        Returns
+        -------
+        keep : bool
+            `False` for the records of the trials that fail with
+            `_TrialEvaluationError`.
+
+        """
+
+        match = re.match(r"Trial (\d+) failed", record.getMessage())
+        if match is None:
+            return True
+        error = record.exc_info[1] if record.exc_info else None
+        if isinstance(error, _TrialEvaluationError):
+            self._trials.add(match.group(1))
+            return False
+
+        return match.group(1) not in self._trials
+
+
+def _optimize_study(
+    study: object,
+    objective: Callable,
+    n_trials: int,
+    kwargs_study_optimize: dict,
+    filter_logs: bool = True
+) -> None:
+    """
+    Run `study.optimize` for a Bayesian search. The trials whose evaluation
+    fails (`_TrialEvaluationError`, see `_skip_trial`) are marked as failed by
+    Optuna and the search continues: `_TrialEvaluationError` is added to the
+    argument `catch` of the user. Other errors, for example in the
+    `search_space`, stop the search. The warning of Optuna about the choices
+    of a categorical distribution is ignored.
+
+    Parameters
+    ----------
+    study : optuna Study
+        Study to optimize.
+    objective : Callable
+        Objective function of the search.
+    n_trials : int
+        Number of trials.
+    kwargs_study_optimize : dict
+        Other arguments of `study.optimize`, `catch` included.
+    filter_logs : bool, default True
+        If `True`, the messages of Optuna about the trials that fail with
+        `_TrialEvaluationError` are not logged (see `_FailedTrialsLogFilter`).
+
+    Returns
+    -------
+    None
+
+    """
+
+    kwargs_study_optimize = dict(kwargs_study_optimize)
+    catch = kwargs_study_optimize.pop("catch", ())
+    catch = (catch,) if isinstance(catch, type) else tuple(catch)
+
+    # NOTE: The messages are logged by the child logger of Optuna that runs
+    # the trials; a filter of the logger `optuna` does not apply to them.
+    logger = logging.getLogger("optuna.study._optimize")
+    log_filter = _FailedTrialsLogFilter() if filter_logs else None
+    if log_filter is not None:
+        logger.addFilter(log_filter)
+    try:
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                category = UserWarning,
+                message  = "Choices for a categorical distribution should be*"
+            )
+            study.optimize(
+                objective,
+                n_trials = n_trials,
+                catch    = (*catch, _TrialEvaluationError),
+                **kwargs_study_optimize
+            )
+    finally:
+        if log_filter is not None:
+            logger.removeFilter(log_filter)
 
 
 def _split_first_sentence(text: str) -> tuple[str, str]:
