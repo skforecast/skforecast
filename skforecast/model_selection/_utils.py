@@ -3687,15 +3687,30 @@ def _skip_trial(
 class _FailedTrialsLogFilter(logging.Filter):
     """
     Filter of the logger of Optuna that runs the trials
-    (`optuna.study._optimize`) that drops the two messages of each trial that
-    fails with `_TrialEvaluationError` ("Trial N failed with parameters..."
-    with the traceback, and "Trial N failed with value None."). Those trials
-    are reported in the warning of the candidates skipped of the search.
+    (`optuna.study._optimize`) that drops the two messages of each failed
+    trial ("Trial N failed with parameters..." with the traceback, and "Trial
+    N failed with value None."), unless its error is in the `catch` of the
+    user. The trials that fail with `_TrialEvaluationError` are reported in
+    the warning of the candidates skipped of the search, and the other errors
+    are raised by `study.optimize`, so their messages would repeat them. The
+    errors in the `catch` of the user are only reported by these messages.
+
+    Parameters
+    ----------
+    catch : tuple, default ()
+        Errors in the `catch` of the user, whose messages are kept.
+
+    Attributes
+    ----------
+    catch : tuple
+        Errors in the `catch` of the user, whose messages are kept.
+
     """
 
-    def __init__(self) -> None:
+    def __init__(self, catch: tuple[type[Exception], ...] = ()) -> None:
 
         super().__init__()
+        self.catch = catch
         self._trials = set()
 
     def filter(self, record: logging.LogRecord) -> bool:
@@ -3710,8 +3725,9 @@ class _FailedTrialsLogFilter(logging.Filter):
         Returns
         -------
         keep : bool
-            `False` for the records of the trials that fail with
-            `_TrialEvaluationError`.
+            `False` for the records of the trials that fail with an error that
+            is not in the `catch` of the user (`_TrialEvaluationError` or an
+            error that stops the search).
 
         """
 
@@ -3719,7 +3735,10 @@ class _FailedTrialsLogFilter(logging.Filter):
         if match is None:
             return True
         error = record.exc_info[1] if record.exc_info else None
-        if isinstance(error, _TrialEvaluationError):
+        if error is not None and (
+            isinstance(error, _TrialEvaluationError)
+            or not isinstance(error, self.catch)
+        ):
             self._trials.add(match.group(1))
             return False
 
@@ -3752,8 +3771,11 @@ def _optimize_study(
     kwargs_study_optimize : dict
         Other arguments of `study.optimize`, `catch` included.
     filter_logs : bool, default True
-        If `True`, the messages of Optuna about the trials that fail with
-        `_TrialEvaluationError` are not logged (see `_FailedTrialsLogFilter`).
+        If `True`, the messages of Optuna about the failed trials are not
+        logged, except for the errors in the `catch` of the user: the trials
+        that fail with `_TrialEvaluationError` are reported in the warning of
+        the candidates skipped, and the other errors are raised (see
+        `_FailedTrialsLogFilter`).
 
     Returns
     -------
@@ -3768,7 +3790,7 @@ def _optimize_study(
     # NOTE: The messages are logged by the child logger of Optuna that runs
     # the trials; a filter of the logger `optuna` does not apply to them.
     logger = logging.getLogger("optuna.study._optimize")
-    log_filter = _FailedTrialsLogFilter() if filter_logs else None
+    log_filter = _FailedTrialsLogFilter(catch=catch) if filter_logs else None
     if log_filter is not None:
         logger.addFilter(log_filter)
     try:

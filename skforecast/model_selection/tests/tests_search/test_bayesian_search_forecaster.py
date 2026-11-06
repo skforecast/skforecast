@@ -1835,11 +1835,12 @@ def test_bayesian_search_forecaster_every_trial_fails_returns_empty_results():
     )
 
 
-def test_bayesian_search_forecaster_ValueError_search_space_stops_the_search():
+def test_bayesian_search_forecaster_ValueError_search_space_stops_the_search(capfd):
     """
     Test that an error of the `search_space` (not of the evaluation of the
     trial) stops the search, also with a `catch` of the user in
-    `kwargs_study_optimize`.
+    `kwargs_study_optimize`. Optuna does not log the failed trial, so the
+    error is shown once, when it is raised.
     """
     forecaster = ForecasterRecursive(estimator=Ridge(), lags=2)
 
@@ -1858,6 +1859,8 @@ def test_bayesian_search_forecaster_ValueError_search_space_stops_the_search():
             show_progress         = False,
             kwargs_study_optimize = {'catch': (KeyError,)}
         )
+
+    assert "Trial 0 failed" not in capfd.readouterr().err
 
 
 def test_bayesian_search_forecaster_MissingValuesWarning_n_evaluated_single_series():
