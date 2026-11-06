@@ -487,7 +487,7 @@ class ChronosAdapter(_AdapterBase):
         # on those produces dtype=object with pd.NA sentinels instead of float32.
         if isinstance(col_data, pd.Series):
             if pd.api.types.is_numeric_dtype(col_data) or pd.api.types.is_bool_dtype(col_data):
-                return col_data.astype(np.float32).to_numpy()
+                return col_data.to_numpy(dtype=np.float32)
             return col_data.to_numpy()
 
         # Fallback for numpy arrays, lists, etc.
@@ -1532,7 +1532,7 @@ class TimesFM3Adapter(_AdapterBase):
 
         if isinstance(col_data, pd.Series):
             if pd.api.types.is_numeric_dtype(col_data) or pd.api.types.is_bool_dtype(col_data):
-                return col_data.astype(np.float32).to_numpy()
+                return col_data.to_numpy(dtype=np.float32)
             raise ValueError(
                 f"TimesFM3Adapter supports only numeric covariates. Column "
                 f"{col_data.name!r} has dtype {col_data.dtype}. Encode "
@@ -3915,7 +3915,7 @@ class T0Adapter(_AdapterBase):
         """
 
         if pd.api.types.is_numeric_dtype(col_data) or pd.api.types.is_bool_dtype(col_data):
-            return col_data.astype(np.float32).to_numpy()
+            return col_data.to_numpy(dtype=np.float32)
 
         raise ValueError(
             f"T0Adapter supports only numeric covariates. Column "
@@ -4332,7 +4332,7 @@ class TSICLAdapter(_AdapterBase):
 
         if isinstance(col_data, pd.Series):
             if pd.api.types.is_numeric_dtype(col_data) or pd.api.types.is_bool_dtype(col_data):
-                return col_data.astype(np.float32).to_numpy()
+                return col_data.to_numpy(dtype=np.float32)
             raise ValueError(
                 f"TSICLAdapter supports only numeric covariates. Column "
                 f"{col_data.name!r} has dtype {col_data.dtype}. Encode "
@@ -5075,7 +5075,7 @@ class NoriAdapter(_AdapterBase):
         """
 
         if pd.api.types.is_numeric_dtype(col_data) or pd.api.types.is_bool_dtype(col_data):
-            return col_data.astype(np.float32).to_numpy()
+            return col_data.to_numpy(dtype=np.float32)
 
         raise ValueError(
             f"NoriAdapter supports only numeric covariates. Column "
