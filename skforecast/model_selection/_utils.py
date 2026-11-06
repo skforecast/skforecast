@@ -45,6 +45,7 @@ from ..utils import (
     _check_in_place_fit,
     align_series_and_exog_multiseries,
     _series_too_short_multiseries,
+    estimator_has_native_nan_support,
 )
 
 # NOTE: Names of the metrics added to the backtesting metrics when the
@@ -893,15 +894,17 @@ def _train_test_split_one_step_ahead_search(
     y: pd.Series | None = None,
     series: pd.DataFrame | dict[str, pd.Series] | None = None,
     exog: pd.Series | pd.DataFrame | dict[str, pd.DataFrame | None] | None = None,
-    levels: list[str] | None = None
+    levels: list[str] | None = None,
+    max_levels: int = 5
 ) -> tuple:
     """
     Training and test matrices of a candidate of a search with a
     `OneStepAheadFold`, created with `_train_test_split_one_step_ahead` of the
     forecaster. Before the split, `initial_train_size` is checked against the
     `window_size` of the candidate. In multi-series searches, the split is
-    rejected if no level of `levels` can be evaluated in the test set. The
-    errors are raised for the candidate, so the search can skip it.
+    rejected if no level of `levels` can be evaluated in the test set, with
+    the cause of each level. The errors are raised for the candidate, so the
+    search can skip it.
 
     Parameters
     ----------
@@ -920,6 +923,9 @@ def _train_test_split_one_step_ahead_search(
         Exogenous variables.
     levels : list, default None
         Levels of the multi-series searches.
+    max_levels : int, default 5
+        Maximum number of levels whose cause is given in the error when no
+        level can be evaluated.
 
     Returns
     -------
@@ -960,19 +966,104 @@ def _train_test_split_one_step_ahead_search(
         is_observed = pd.notna(y_test).to_numpy()
         levels_test = set(np.asarray(X_test_encoding)[is_observed])
         has_points = any(level in levels_test for level in levels)
+        # NOTE: Same rule as `_train_test_split_one_step_ahead` of the forecaster.
+        dropna_last_window = (
+            forecaster.differentiation_max is not None
+            or not estimator_has_native_nan_support(forecaster.estimator)
+        )
     else:
         has_points = bool(pd.notna(y_test).any())
+        dropna_last_window = False
     if not has_points:
+        span_index = cv._extract_index(series)
+        causes = [
+            f"'{level}': "
+            + _cause_level_not_evaluated(
+                  y                  = series[level],
+                  span_index         = span_index,
+                  initial_train_size = initial_train_size,
+                  window_size        = forecaster.window_size,
+                  dropna_last_window = dropna_last_window
+              )
+            for level in levels[:max_levels]
+        ]
+        n_more = len(levels) - max_levels
+        if n_more > 0:
+            causes.append(f"and {n_more} more level{'s' if n_more > 1 else ''}")
         raise ValueError(
             f"No level of `levels` can be evaluated in the test set with this "
-            f"`window_size` ({forecaster.window_size}). A level is evaluated if "
-            f"it has more than `window_size` observations in the training set, "
-            f"its last window can be used to predict, and it has observed values "
-            f"in the test set. Review `levels`, `initial_train_size` of `cv` or "
-            f"the span of the series."
+            f"`window_size` ({forecaster.window_size}): {'; '.join(causes)}. A "
+            f"level is evaluated if it has more than `window_size` observations "
+            f"in the training set, its last window can be used to predict, and "
+            f"it has observed values in the test set. Review `levels`, "
+            f"`initial_train_size` of `cv` or the span of the series."
         )
 
     return split
+
+
+def _cause_level_not_evaluated(
+    y: pd.Series,
+    span_index: pd.Index,
+    initial_train_size: int,
+    window_size: int,
+    dropna_last_window: bool
+) -> str:
+    """
+    Why a level cannot be evaluated in the test set of a `OneStepAheadFold`,
+    checked in the order of `_train_test_split_one_step_ahead`: too few
+    observations in the training set (after removing the leading and trailing
+    NaNs), a last window that cannot be used to predict, or no observed values
+    in the test set.
+
+    Parameters
+    ----------
+    y : pandas Series
+        Time series of the level.
+    span_index : pandas Index
+        Index of the span of all the series.
+    initial_train_size : int
+        `initial_train_size` of `cv` as an integer.
+    window_size : int
+        `window_size` of the candidate.
+    dropna_last_window : bool
+        Whether a last window with NaNs is left out (the estimator does not
+        support NaNs, or the forecaster has `differentiation`).
+
+    Returns
+    -------
+    cause : str
+        Cause, for the error of the search.
+
+    """
+
+    train_end = span_index[initial_train_size - 1]
+    y_train = y.loc[:train_end]
+    first_valid, last_valid = y_train.first_valid_index(), y_train.last_valid_index()
+    n_train = 0 if first_valid is None else len(y_train.loc[first_valid:last_valid])
+    if n_train <= window_size:
+        return (
+            f"{n_train} observations in the training set, not more than the "
+            f"`window_size` ({window_size})"
+        )
+
+    if y.index[-1] < train_end:
+        return (
+            "it ends before the end of the training set, so it cannot be "
+            "predicted after it"
+        )
+
+    last_window = y.loc[span_index[initial_train_size - window_size]:train_end]
+    if dropna_last_window and last_window.isna().to_numpy().any():
+        return (
+            "missing values in its last window (the `window_size` observations "
+            "before the test set)"
+        )
+
+    if not y.loc[span_index[initial_train_size]:].notna().to_numpy().any():
+        return "no observed values in the test set"
+
+    return "no row of the test set without missing values in `y` or in its lags"
 
 
 def _calculate_metrics_one_step_ahead(

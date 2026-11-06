@@ -2350,8 +2350,10 @@ def test_evaluate_grid_hyperparameters_multiseries_OneStepAheadFold_skips_candid
     assert messages == [
         "Parameters skipped: 4 of 6 candidates raise an error, so they are not in "
         "the results.\n\nValueError: No level of `levels` can be evaluated in the "
-        "test set with this `window_size` (8). A level is evaluated if it has more "
-        "than `window_size` observations in the training set, its last window can "
+        "test set with this `window_size` (8): 'short': 5 observations in the "
+        "training set, not more than the `window_size` (8). A level is evaluated "
+        "if it has more than `window_size` observations in the training set, its "
+        "last window can "
         "be used to predict, and it has observed values in the test set. Review "
         "`levels`, `initial_train_size` of `cv` or the span of the series.\n"
         "  - lags: [1, 2, ..., 8] (2 candidates)\n\nValueError: "

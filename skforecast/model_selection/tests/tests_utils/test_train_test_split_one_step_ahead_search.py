@@ -78,24 +78,79 @@ def test_train_test_split_one_step_ahead_search_ValueError_when_initial_train_si
         )
 
 
-def test_train_test_split_one_step_ahead_search_ValueError_when_no_level_with_points_in_test():
+# NOTE: With `initial_train_size=45` and 8 lags, each of these series cannot be
+# evaluated for a different cause.
+gap = series['l1'].copy()
+gap.iloc[42] = np.nan
+series_causes = {
+    'l1': series['l1'],
+    'short': series['short'],
+    'ended': series['l1'].iloc[:40],
+    'gap': gap,
+    'no_test': series['l1'].iloc[:45],
+}
+
+
+@pytest.mark.parametrize(
+    "level, cause",
+    [('short', "5 observations in the training set, not more than the "
+               "`window_size` (8)"),
+     ('ended', "it ends before the end of the training set, so it cannot be "
+               "predicted after it"),
+     ('gap', "missing values in its last window (the `window_size` "
+             "observations before the test set)"),
+     ('no_test', "no observed values in the test set")],
+    ids=lambda x: x if x in series_causes else ''
+)
+def test_train_test_split_one_step_ahead_search_ValueError_when_no_level_with_points_in_test(
+    level, cause
+):
     """
     Test ValueError is raised when no level of `levels` can be evaluated in
-    the test set: `short` is not trained with 8 lags, although the other
-    series are.
+    the test set, with the cause of the level: too few observations in the
+    training set, a series that ends before the end of the training set,
+    missing values in the last window (Ridge does not support them) or no
+    observed values in the test set. The other series are trained.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(Ridge(), lags=8)
+
+    err_msg = re.escape(
+        f"No level of `levels` can be evaluated in the test set with this "
+        f"`window_size` (8): '{level}': {cause}. A level is evaluated if it has "
+        f"more than `window_size` observations in the training set, its last "
+        f"window can be used to predict, and it has observed values in the "
+        f"test set. Review `levels`, `initial_train_size` of `cv` or the span "
+        f"of the series."
+    )
+    with pytest.raises(ValueError, match=f"^{err_msg}$"):
+        _train_test_split_one_step_ahead_search(
+            forecaster         = forecaster,
+            cv                 = OneStepAheadFold(initial_train_size=45),
+            initial_train_size = 45,
+            series             = series_causes,
+            levels             = [level]
+        )
+
+
+def test_train_test_split_one_step_ahead_search_ValueError_max_levels():
+    """
+    Test that the error gives the cause of at most `max_levels` levels and
+    counts the rest.
     """
     forecaster = ForecasterRecursiveMultiSeries(Ridge(), lags=8)
 
     err_msg = re.escape(
         "No level of `levels` can be evaluated in the test set with this "
-        "`window_size` (8). A level is evaluated if it has more than "
-        "`window_size` observations in the training set"
+        "`window_size` (8): 'short': 5 observations in the training set, not "
+        "more than the `window_size` (8); 'no_test': no observed values in the "
+        "test set; and 2 more levels. A level is evaluated if"
     )
     with pytest.raises(ValueError, match=err_msg):
         _train_test_split_one_step_ahead_search(
             forecaster         = forecaster,
             cv                 = OneStepAheadFold(initial_train_size=45),
             initial_train_size = 45,
-            series             = series,
-            levels             = ['short']
+            series             = series_causes,
+            levels             = ['short', 'no_test', 'ended', 'gap'],
+            max_levels         = 2
         )
