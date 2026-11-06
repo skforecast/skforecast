@@ -12,7 +12,9 @@ from sklearn.metrics import (
     mean_absolute_error, mean_absolute_percentage_error, r2_score, zero_one_loss
 )
 from xgboost import XGBRegressor
-from skforecast.exceptions import LongTrainingWarning, OneStepAheadValidationWarning
+from skforecast.exceptions import (
+    LongTrainingWarning, MissingValuesWarning, OneStepAheadValidationWarning
+)
 from skforecast.metrics import mean_absolute_scaled_error, root_mean_squared_scaled_error
 from skforecast.recursive import ForecasterRecursive, ForecasterRecursiveClassifier
 from skforecast.direct import ForecasterDirect
@@ -1817,3 +1819,45 @@ def test_bayesian_search_forecaster_ValueError_search_space_stops_the_search():
             show_progress         = False,
             kwargs_study_optimize = {'catch': (KeyError,)}
         )
+
+
+def test_bayesian_search_forecaster_MissingValuesWarning_n_evaluated_single_series():
+    """
+    Test that, with a `OneStepAheadFold`, `dropna_from_series=True` and NaN in
+    `y`, the trials with larger windows are evaluated on fewer points and a
+    MissingValuesWarning lists them by trial number, once at the end of the
+    search.
+    """
+    y_nan = y.copy()
+    y_nan.iloc[[35, 40, 45]] = np.nan
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=2, dropna_from_series=True)
+
+    def search_space(trial):
+        return {'lags': trial.suggest_categorical('lags', [2, 10])}
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results, study = bayesian_search_forecaster(
+                             forecaster    = forecaster,
+                             y             = y_nan,
+                             cv            = OneStepAheadFold(initial_train_size=30),
+                             search_space  = search_space,
+                             metric        = 'mean_absolute_error',
+                             n_trials      = 4,
+                             return_best   = False,
+                             show_progress = False
+                         )
+
+    trials_10 = sorted(t.number for t in study.trials if t.params['lags'] == 10)
+    assert 0 < len(trials_10) < 4
+    messages = [
+        w.message.message for w in record
+        if w.category is MissingValuesWarning and "comparable" in str(w.message)
+    ]
+    assert len(messages) == 1
+    assert messages[0].startswith(
+        f"{len(trials_10)} of 4 trials {'is' if len(trials_10) == 1 else 'are'} "
+        f"evaluated on fewer points than the most complete one"
+    )
+    assert "fill the gaps of `y`" in messages[0]
+    assert "  - lags: [1, 2, ..., 10]" in messages[0]

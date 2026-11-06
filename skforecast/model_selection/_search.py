@@ -39,7 +39,7 @@ from ..model_selection._utils import (
     _select_metrics_search_multiseries,
     _check_metric_names_search,
     _get_n_evaluated_search_multiseries,
-    _warn_n_evaluated_search_multiseries,
+    _warn_n_evaluated_search,
     _n_evaluated_covers_levels_not_predicted,
     _sample_param_grid,
     _drop_series_too_short_refit,
@@ -158,7 +158,11 @@ def grid_search_forecaster(
         - column params: parameters configuration for each iteration.
         - column metric: metric value estimated for each iteration.
         - column n_evaluated: number of points that enter the metrics of each
-        iteration (true value and prediction not missing).
+        iteration (true value and prediction not missing). A
+        `MissingValuesWarning` is raised at the end of the search if some
+        iterations evaluate less than 95% of the points of the most complete
+        one, whose metrics are not comparable (with a `OneStepAheadFold`, when
+        `dropna_from_series=True` drops rows with missing values).
         - additional n columns with param = value.
     
     """
@@ -287,7 +291,11 @@ def random_search_forecaster(
         - column params: parameters configuration for each iteration.
         - column metric: metric value estimated for each iteration.
         - column n_evaluated: number of points that enter the metrics of each
-        iteration (true value and prediction not missing).
+        iteration (true value and prediction not missing). A
+        `MissingValuesWarning` is raised at the end of the search if some
+        iterations evaluate less than 95% of the points of the most complete
+        one, whose metrics are not comparable (with a `OneStepAheadFold`, when
+        `dropna_from_series=True` drops rows with missing values).
         - additional n columns with param = value.
     
     """
@@ -415,7 +423,11 @@ def _evaluate_grid_hyperparameters(
         - column params: parameters configuration for each iteration.
         - column metric: metric value estimated for each iteration.
         - column n_evaluated: number of points that enter the metrics of each
-        iteration (true value and prediction not missing).
+        iteration (true value and prediction not missing). A
+        `MissingValuesWarning` is raised at the end of the search if some
+        iterations evaluate less than 95% of the points of the most complete
+        one, whose metrics are not comparable (with a `OneStepAheadFold`, when
+        `dropna_from_series=True` drops rows with missing values).
         - additional n columns with param = value.
 
     """
@@ -641,6 +653,12 @@ def _evaluate_grid_hyperparameters(
 
     search_warnings.emit(n_params=len(param_grid))
 
+    _warn_n_evaluated_search(
+        n_evaluated   = results[N_EVALUATED_NAME].to_numpy(),
+        lags          = results['lags_label'].tolist(),
+        candidate_ids = results.index.tolist()
+    )
+
     return results
 
 
@@ -760,7 +778,11 @@ def bayesian_search_forecaster(
         - column params: parameters configuration for each iteration.
         - column metric: metric value estimated for each iteration.
         - column n_evaluated: number of points that enter the metrics of each
-        iteration (true value and prediction not missing).
+        iteration (true value and prediction not missing). A
+        `MissingValuesWarning` is raised at the end of the search if some
+        iterations evaluate less than 95% of the points of the most complete
+        one, whose metrics are not comparable (with a `OneStepAheadFold`, when
+        `dropna_from_series=True` drops rows with missing values).
         - additional n columns with param = value.
     study : optuna Study
         The optuna study object containing all optimization trials. Access the
@@ -1080,6 +1102,17 @@ def bayesian_search_forecaster(
             )
 
     search_warnings.emit(n_candidates=len(study.trials) - n_trials_previous)
+
+    # NOTE: Only the trials run in this call, a study loaded from storage
+    # (`load_if_exists`) can have others, without `n_evaluated`.
+    results_trials = results.loc[results['trial_number'] >= n_trials_previous]
+    _warn_n_evaluated_search(
+        n_evaluated    = results_trials[N_EVALUATED_NAME].to_numpy(),
+        lags           = results_trials['lags'].tolist(),
+        candidate_ids  = results_trials['trial_number'].tolist(),
+        candidate_name = 'trial',
+        best_is_first  = len(results_trials) > 0 and results_trials.index[0] == 0
+    )
 
     return results, study
 
@@ -1823,7 +1856,7 @@ def _evaluate_grid_hyperparameters_multiseries(
         search_warnings.discard(MissingValuesWarning, LEVELS_NOT_PREDICTED_WARNING)
     search_warnings.emit(n_params=len(param_grid))
 
-    _warn_n_evaluated_search_multiseries(
+    _warn_n_evaluated_search(
         n_evaluated        = results[N_EVALUATED_NAME].to_numpy(),
         n_evaluated_levels = n_evaluated_levels,
         lags               = results['lags_label'].tolist(),
@@ -2435,7 +2468,7 @@ def bayesian_search_forecaster_multiseries(
         search_warnings.discard(MissingValuesWarning, LEVELS_NOT_PREDICTED_WARNING)
     search_warnings.emit(n_candidates=len(study.trials) - n_trials_previous)
 
-    _warn_n_evaluated_search_multiseries(
+    _warn_n_evaluated_search(
         n_evaluated        = results_trials[N_EVALUATED_NAME].to_numpy(),
         n_evaluated_levels = n_evaluated_levels,
         lags               = results_trials['lags'].tolist(),

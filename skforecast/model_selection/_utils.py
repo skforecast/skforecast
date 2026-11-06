@@ -57,9 +57,9 @@ INTERVAL_METRIC_NAMES = ['coverage', 'interval_width']
 # removing the predictions of overlapping folds), see `_count_evaluated`.
 N_EVALUATED_NAME = 'n_evaluated'
 
-# NOTE: The multi-series searches warn when a candidate evaluates fewer points
-# than this fraction of the points of the most complete candidate, see
-# `_warn_n_evaluated_search_multiseries`. Below 5% of the points left out, the
+# NOTE: The searches warn when a candidate evaluates fewer points than this
+# fraction of the points of the most complete candidate, see
+# `_warn_n_evaluated_search`. Below 5% of the points left out, the
 # bias of the metric is usually smaller than the differences between
 # candidates.
 N_EVALUATED_WARNING_THRESHOLD = 0.95
@@ -2811,7 +2811,7 @@ def _n_evaluated_covers_levels_not_predicted(
 ) -> bool:
     """
     Whether the warning of the points evaluated of a multi-series search
-    (`_warn_n_evaluated_search_multiseries`) covers the warning of the levels
+    (`_warn_n_evaluated_search`) covers the warning of the levels
     not predicted raised in the backtesting of the candidates, so the search
     can leave the latter out. It does when the warning of the points
     evaluated is raised and every level has points evaluated in some
@@ -2842,12 +2842,12 @@ def _n_evaluated_covers_levels_not_predicted(
     return bool((n_evaluated_levels.max(axis=0) > 0).all())
 
 
-def _warn_n_evaluated_search_multiseries(
+def _warn_n_evaluated_search(
     n_evaluated: list[int] | np.ndarray,
-    n_evaluated_levels: list[list[int]] | np.ndarray,
     lags: list[Any],
     candidate_ids: list[int],
-    levels: list[str],
+    n_evaluated_levels: list[list[int]] | np.ndarray | None = None,
+    levels: list[str] | None = None,
     candidate_name: str = "candidate",
     best_is_first: bool = True,
     max_lines: int = 5,
@@ -2855,21 +2855,28 @@ def _warn_n_evaluated_search_multiseries(
     max_levels: int = 10
 ) -> None:
     """
-    Warn, once at the end of a multi-series search, when some candidates
-    evaluate fewer points than the most complete one, so their metrics are
-    not comparable. A candidate is reported when it evaluates less than
+    Warn, once at the end of a search, when some candidates evaluate fewer
+    points than the most complete one, so their metrics are not comparable. A
+    candidate is reported when it evaluates less than
     `N_EVALUATED_WARNING_THRESHOLD` (95%) of the points of the most complete
     candidate. The candidates must be in the order of the ranking, the first
     one is the best.
+
+    In multi-series searches (`levels` is not `None`), a level is left out of
+    the metrics of a candidate when the candidate cannot predict it. In single
+    series searches, it happens with a `OneStepAheadFold` when the rows with
+    missing values in `y` or in its lags are dropped
+    (`dropna_from_series=True`): more rows are dropped with larger windows.
 
     The candidates reported are grouped by `lags` and number of points
     evaluated, which usually depends only on the window of the candidate, and
     identified by their row in the results (grid and random search) or their
     trial number (Bayesian search).
 
-    The warning also gives the levels that every candidate evaluates on the
-    same points (the same number of points as the most complete candidate in
-    that level): passing them in `levels` makes the candidates comparable.
+    In multi-series searches, the warning also gives the levels that every
+    candidate evaluates on the same points (the same number of points as the
+    most complete candidate in that level): passing them in `levels` makes
+    the candidates comparable.
     They are listed if they are at most `max_levels`; otherwise, if the rest
     are at most `max_levels`, the rest are listed instead. Levels without
     points evaluated in any candidate are left out.
@@ -2879,17 +2886,18 @@ def _warn_n_evaluated_search_multiseries(
     n_evaluated : list, numpy ndarray
         Number of points evaluated of each candidate, in the order of the
         ranking.
-    n_evaluated_levels : list, numpy ndarray
-        Number of points evaluated of each candidate (rows, in the order of the
-        ranking) and level (columns, in the order of `levels`).
     lags : list
         Lags of each candidate, in the order of the ranking.
     candidate_ids : list
         Identifier of each candidate, in the order of the ranking: its row in
         the results if `candidate_name` is 'candidate', its trial number if it
         is 'trial'.
-    levels : list
-        Levels of the search.
+    n_evaluated_levels : list, numpy ndarray, default None
+        Number of points evaluated of each candidate (rows, in the order of the
+        ranking) and level (columns, in the order of `levels`). Only used in
+        multi-series searches.
+    levels : list, default None
+        Levels of a multi-series search. `None` in single series searches.
     candidate_name : str, default 'candidate'
         Name of a candidate in the warning ('candidate' or 'trial').
     best_is_first : bool, default True
@@ -2946,7 +2954,14 @@ def _warn_n_evaluated_search_multiseries(
 
     remove_message = "remove the candidates with larger windows"
     levels_block = None
-    if len(levels) < 2:
+    if levels is None:
+        action = (
+            f"The rows with missing values in `y` or in its lags are dropped "
+            f"(`dropna_from_series=True`), more with larger windows. To compare "
+            f"the candidates on the same points, fill the gaps of `y` or "
+            f"{remove_message}."
+        )
+    elif len(levels) < 2:
         action = f"To compare the candidates on the same points, {remove_message}."
     else:
         n_evaluated_levels = np.asarray(n_evaluated_levels)
