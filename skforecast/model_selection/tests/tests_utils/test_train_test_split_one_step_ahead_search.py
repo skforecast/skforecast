@@ -87,8 +87,9 @@ def test_train_test_split_one_step_ahead_search_ValueError_when_no_level_with_po
     forecaster = ForecasterRecursiveMultiSeries(Ridge(), lags=8)
 
     err_msg = re.escape(
-        "No level of `levels` can be evaluated in the test set: none of them "
-        "has more than `window_size` (8) observations in the training set"
+        "No level of `levels` can be evaluated in the test set with this "
+        "`window_size` (8). A level is evaluated if it has more than "
+        "`window_size` observations in the training set"
     )
     with pytest.raises(ValueError, match=err_msg):
         _train_test_split_one_step_ahead_search(

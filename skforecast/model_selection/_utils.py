@@ -958,11 +958,12 @@ def _train_test_split_one_step_ahead_search(
         has_points = bool(pd.notna(y_test).any())
     if not has_points:
         raise ValueError(
-            f"No level of `levels` can be evaluated in the test set: none of "
-            f"them has more than `window_size` ({forecaster.window_size}) "
-            f"observations in the training set, can be predicted after it and "
-            f"has observed values in the test set. Review `levels`, "
-            f"`initial_train_size` of `cv` or the span of the series."
+            f"No level of `levels` can be evaluated in the test set with this "
+            f"`window_size` ({forecaster.window_size}). A level is evaluated if "
+            f"it has more than `window_size` observations in the training set, "
+            f"its last window can be used to predict, and it has observed values "
+            f"in the test set. Review `levels`, `initial_train_size` of `cv` or "
+            f"the span of the series."
         )
 
     return split
@@ -3266,22 +3267,21 @@ def _warn_skipped_candidates_search(
         lines = []
         lags_reprs = {}
         for lags, params, candidate_id in candidates:
-            if candidate_id is not None:
-                params = f"{candidate_name} {candidate_id}, params: {params}"
+            id_repr = "" if candidate_id is None else f"{candidate_name} {candidate_id}, "
             lags_reprs.setdefault(
                 None if lags is None else _format_lags_warning(lags), []
-            ).append(params)
+            ).append((id_repr, params))
         for lags_repr, params_list in lags_reprs.items():
             if lags_repr is None:
                 lines.extend(
-                    params if isinstance(params, str) else f"params: {params}"
-                    for params in params_list
+                    f"{id_repr}params: {params}" for id_repr, params in params_list
                 )
             elif n_params is not None and n_params > 1 and len(params_list) == n_params:
                 lines.append(f"lags: {lags_repr} ({n_params} candidates)")
             else:
                 lines.extend(
-                    f"lags: {lags_repr}, params: {params}" for params in params_list
+                    f"{id_repr}lags: {lags_repr}, params: {params}"
+                    for id_repr, params in params_list
                 )
 
         candidates_lines = [f"  - {line}" for line in lines[:max_candidates]]
