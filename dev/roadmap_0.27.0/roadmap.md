@@ -39,12 +39,14 @@ secciones 1 a 7 quedan como referencia: evidencia, antes y después, y esbozos d
 > lanzamientos).
 > **PR 1 fusionado (#1447, 2026-11-04):** columna `n_evaluated` por candidato, aviso único
 > al final y nombre reservado validado en todas las búsquedas; de paso, el `pooling` del
-> one-step-ahead con `levels` parcial (hallazgo). **PR 2a hecho en local (2026-11-04)**,
-> rama `fix/search-warnings`, sin subir: los avisos de todas las búsquedas se muestran una
-> vez al final con el número de candidatos, "Parameters skipped" agrupado,
-> `LongTrainingWarning` una vez y el aviso de `ParameterSampler`. Queda el PR 2b (candidatos
-> que fallan: one-step-ahead por candidato y trials de bayesian). Detalle en las secciones
-> 11 y 12 de [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md).
+> one-step-ahead con `levels` parcial (hallazgo). **PR 2a fusionado (#1452, 2026-11-06):**
+> los avisos de todas las búsquedas se muestran una vez al final con el número de
+> candidatos y apuntan al código del usuario, "Parameters skipped" agrupado,
+> `LongTrainingWarning` una vez, un solo aviso para las series cortas y `n_evaluated` en
+> todas las búsquedas. Queda el PR 2b (candidatos que fallan: one-step-ahead por candidato
+> y trials de bayesian; refit con series cortas; mensaje de `initial_train_size`; aviso de
+> `n_evaluated` con una serie) y el 2c (avisos de joblib). Detalle en las secciones
+> 11, 12 y 12.5 de [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md).
 
 **Comprobado en local** (Python 3.14.3, numpy 2.5.3, pandas 2.3.3, scikit-learn 1.9.1,
 numba 0.68.0, statsmodels 0.14.6): BUG-03, BUG-01 y BUG-stats-interval-ignored se
@@ -175,8 +177,9 @@ efecto, con `FutureWarning` y eliminación en la 0.29.0; `load_demo_dataset` se 
    resultados en ese caso ("Before upgrading"). Línea base, mediciones y lo no previsto, en
    la sección 11 de ese documento. **Siguiente: PR 2** (avisos de las búsquedas, sección
    5.2 puntos 1, 3, 4, 5 y 6).
-   **PR 1 fusionado (#1447). PR 2a abierto el 2026-11-05 (#1452):** avisos de las búsquedas.
-   Quedan el PR 2b (candidatos que fallan) y el 2c (avisos de joblib).
+   **PR 1 fusionado (#1447). PR 2a fusionado el 2026-11-06 (#1452):** avisos de las
+   búsquedas y `n_evaluated` en todas. Quedan el PR 2b (candidatos que fallan, refit con
+   series cortas, aviso de `n_evaluated` con una serie) y el 2c (avisos de joblib).
 2. ~~**BUG-03**~~ **Hecho con #1431** (fusionado el 2026-10-22). La
    dirección sale de la métrica (decisión 6): atributo `greater_is_better` y convención de
    nombres solo para `sklearn.metrics`; si no se conoce, la dirección de la tarea, que ya
