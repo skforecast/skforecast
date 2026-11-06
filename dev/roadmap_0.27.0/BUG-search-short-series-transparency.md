@@ -951,9 +951,13 @@ datos del notebook 08 (`store_1`, `store_2` y `new_product` de 120 días).
 - En el escenario 4 salen dos avisos sobre `new_product`: el de #1415 (no se predice en la
   búsqueda) y el del refit (el forecaster devuelto no la conoce). Dicen cosas distintas; se
   dejan los dos.
-- Ya existía, fuera de este PR: `OneStepAheadValidationWarning` apunta a `_utils.py:794`
+- Ya existía, fuera de este PR: `OneStepAheadValidationWarning` apunta a `_utils.py:798`
   (sale en `check_one_step_ahead_input`, antes del registro de avisos), y los
   `RuntimeWarning` ("Parameters skipped", el del refit) salen sin el panel de rich, que solo
   formatea las categorías de skforecast.
 - Revisión final del código: la construcción de las líneas de "Parameters skipped" mezclaba
   cadenas y diccionarios (`isinstance`); ahora un prefijo con el identificador.
+- BUG-osa-initial-window-check (añadido al notebook tras el commit del arreglo, en la
+  sección 1): `ForecasterRecursive(lags=300)` con `lags_grid=[7, 14]` y `OneStepAheadFold`
+  evalúa los 4 candidatos (92 puntos cada uno) sin avisos de candidatos saltados, y el
+  forecaster devuelto tiene 14 lags. Antes abortaba con el `ValueError` de la ventana (300).
