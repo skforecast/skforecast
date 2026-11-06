@@ -7,7 +7,10 @@ import numpy as np
 import pandas as pd
 from scipy.stats import norm
 from sklearn.linear_model import Ridge, LogisticRegression
-from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.ensemble import (
+    HistGradientBoostingClassifier,
+    HistGradientBoostingRegressor,
+)
 from sklearn.metrics import mean_absolute_error
 from skforecast.recursive import ForecasterRecursive
 from skforecast.recursive import ForecasterRecursiveClassifier
@@ -497,6 +500,37 @@ def test_backtesting_forecaster_ValueError_when_no_true_values_in_test_set():
             metric        = "mean_absolute_error",
             show_progress = False
         )
+
+
+def test_backtesting_forecaster_ForecasterRecursiveClassifier_metrics_without_true_values():
+    """
+    Test that, with ForecasterRecursiveClassifier, the dates without a true
+    value are left out of the metrics: the metric is the one calculated by
+    hand without those dates, which previously raised a `TypeError` when
+    sorting the classes with NaN.
+    """
+    y_clf_nan = y_clf.copy()
+    y_clf_nan.iloc[[42, 47]] = np.nan
+
+    forecaster = ForecasterRecursiveClassifier(
+        estimator=HistGradientBoostingClassifier(max_iter=5, random_state=123), lags=3
+    )
+    cv = TimeSeriesFold(steps=5, initial_train_size=40)
+    metric, backtest_predictions = backtesting_forecaster(
+        forecaster    = forecaster,
+        y             = y_clf_nan,
+        cv            = cv,
+        metric        = "accuracy_score",
+        show_progress = False
+    )
+
+    assert backtest_predictions["y_true"].isna().sum() == 2
+    observed = backtest_predictions.loc[backtest_predictions["y_true"].notna()]
+    expected_accuracy = np.mean(
+        observed["y_true"].to_numpy() == observed["pred"].to_numpy()
+    )
+    assert metric.loc[0, "accuracy_score"] == pytest.approx(expected_accuracy)
+    assert metric.loc[0, "n_evaluated"] == 8
 
 
 def test_backtesting_forecaster_y_true_ForecasterRecursiveClassifier():
