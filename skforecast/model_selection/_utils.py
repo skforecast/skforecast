@@ -877,6 +877,94 @@ def select_n_jobs_backtesting(
     return n_jobs
 
 
+def _train_test_split_one_step_ahead_search(
+    forecaster: object,
+    cv: object,
+    initial_train_size: int,
+    y: pd.Series | None = None,
+    series: pd.DataFrame | dict[str, pd.Series] | None = None,
+    exog: pd.Series | pd.DataFrame | dict[str, pd.DataFrame | None] | None = None,
+    levels: list[str] | None = None
+) -> tuple:
+    """
+    Training and test matrices of a candidate of a search with a
+    `OneStepAheadFold`, created with `_train_test_split_one_step_ahead` of the
+    forecaster. Before the split, `initial_train_size` is checked against the
+    `window_size` of the candidate. In multi-series searches, the split is
+    rejected if no level of `levels` can be evaluated in the test set. The
+    errors are raised for the candidate, so the search can skip it.
+
+    Parameters
+    ----------
+    forecaster : ForecasterRecursive, ForecasterDirect, ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate
+        Forecaster with the lags and parameters of the candidate.
+    cv : OneStepAheadFold
+        OneStepAheadFold object of the search.
+    initial_train_size : int
+        `initial_train_size` of `cv` as an integer.
+    y : pandas Series, default None
+        Time series of the single series searches.
+    series : pandas DataFrame, dict, default None
+        Time series of the multi-series searches (a dict, already checked, for
+        ForecasterRecursiveMultiSeries).
+    exog : pandas Series, pandas DataFrame, dict, default None
+        Exogenous variables.
+    levels : list, default None
+        Levels of the multi-series searches.
+
+    Returns
+    -------
+    split : tuple
+        Output of `_train_test_split_one_step_ahead` of the forecaster.
+
+    """
+
+    forecaster_name = type(forecaster).__name__
+    if y is not None:
+        data = y
+        data_length_name = "the length of `y`"
+    else:
+        data = series
+        data_length_name = (
+            "the length of the span of `series`"
+            if forecaster_name == "ForecasterRecursiveMultiSeries"
+            else "the length of `series`"
+        )
+    _check_initial_train_size(
+        initial_train_size       = initial_train_size,
+        initial_train_size_input = cv.initial_train_size,
+        data_length              = len(cv._extract_index(data)),
+        data_length_name         = data_length_name,
+        window_size              = forecaster.window_size
+    )
+
+    if y is not None:
+        return forecaster._train_test_split_one_step_ahead(
+                   y=y, initial_train_size=initial_train_size, exog=exog
+               )
+
+    split = forecaster._train_test_split_one_step_ahead(
+                series=series, initial_train_size=initial_train_size, exog=exog
+            )
+    y_test, X_test_encoding = split[3], split[5]
+    if forecaster_name == "ForecasterRecursiveMultiSeries":
+        is_observed = pd.notna(y_test).to_numpy()
+        levels_test = set(np.asarray(X_test_encoding)[is_observed])
+        has_points = any(level in levels_test for level in levels)
+    else:
+        has_points = bool(pd.notna(y_test).any())
+    if not has_points:
+        raise ValueError(
+            f"No level of `levels` can be evaluated in the test set: none of "
+            f"them has more than `window_size` ({forecaster.window_size}) "
+            f"observations in the training set, can be predicted after it and "
+            f"has observed values in the test set. Review `levels`, "
+            f"`initial_train_size` of `cv` or the span of the series."
+        )
+
+    return split
+
+
 def _calculate_metrics_one_step_ahead(
     forecaster: object,
     metrics: list,

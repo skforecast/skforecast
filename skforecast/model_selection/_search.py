@@ -30,6 +30,7 @@ from ..model_selection._utils import (
     check_one_step_ahead_input,
     initialize_lags_grid,
     _initialize_levels_model_selection_multiseries,
+    _train_test_split_one_step_ahead_search,
     _calculate_metrics_one_step_ahead,
     _predict_and_calculate_metrics_one_step_ahead_multiseries,
     _make_lags_hashable,
@@ -495,18 +496,27 @@ def _evaluate_grid_hyperparameters(
             if lags_label == 'values':
                 lags_k = lags_v
 
+            # NOTE: With a `OneStepAheadFold`, the split is shared by the
+            # candidates of the same lags. If it fails, they are skipped.
+            split_error = None
             if cv_name == 'OneStepAheadFold':
-
-                (
-                    X_train,
-                    y_train,
-                    X_test,
-                    y_test,
-                    sample_weight,
-                    fit_kwargs
-                ) = forecaster_search._train_test_split_one_step_ahead(
-                    y=y, initial_train_size=initial_train_size, exog=exog
-                )
+                try:
+                    (
+                        X_train,
+                        y_train,
+                        X_test,
+                        y_test,
+                        sample_weight,
+                        fit_kwargs
+                    ) = _train_test_split_one_step_ahead_search(
+                        forecaster         = forecaster_search,
+                        cv                 = cv,
+                        initial_train_size = initial_train_size,
+                        y                  = y,
+                        exog               = exog
+                    )
+                except Exception as e:
+                    split_error = e
 
             if show_progress:
                 param_grid_tqdm = tqdm(param_grid, desc='params grid', position=1, leave=False)
@@ -516,6 +526,9 @@ def _evaluate_grid_hyperparameters(
             for params in param_grid_tqdm:
                 candidate += 1
                 search_warnings.set_candidate(candidate)
+                if split_error is not None:
+                    search_warnings.add_skipped(lags=lags_k, params=params, error=split_error)
+                    continue
                 try:
                     forecaster_search.set_params(params)
                     if cv_name == 'TimeSeriesFold':
@@ -1596,20 +1609,30 @@ def _evaluate_grid_hyperparameters_multiseries(
             if lags_label == 'values':
                 lags_k = lags_v
 
+            # NOTE: With a `OneStepAheadFold`, the split is shared by the
+            # candidates of the same lags. If it fails, they are skipped.
+            split_error = None
             if cv_name == 'OneStepAheadFold':
-
-                (
-                    X_train,
-                    y_train,
-                    X_test,
-                    y_test,
-                    X_train_encoding,
-                    X_test_encoding,
-                    sample_weight,
-                    fit_kwargs
-                ) = forecaster_search._train_test_split_one_step_ahead(
-                    series=series, exog=exog, initial_train_size=initial_train_size
-                )
+                try:
+                    (
+                        X_train,
+                        y_train,
+                        X_test,
+                        y_test,
+                        X_train_encoding,
+                        X_test_encoding,
+                        sample_weight,
+                        fit_kwargs
+                    ) = _train_test_split_one_step_ahead_search(
+                        forecaster         = forecaster_search,
+                        cv                 = cv,
+                        initial_train_size = initial_train_size,
+                        series             = series,
+                        exog               = exog,
+                        levels             = levels
+                    )
+                except Exception as e:
+                    split_error = e
 
             if show_progress:
                 param_grid_tqdm = tqdm(param_grid, desc='params grid', position=1, leave=False)
@@ -1620,6 +1643,9 @@ def _evaluate_grid_hyperparameters_multiseries(
 
                 candidate += 1
                 search_warnings.set_candidate(candidate)
+                if split_error is not None:
+                    search_warnings.add_skipped(lags=lags_k, params=params, error=split_error)
+                    continue
                 try:
                     forecaster_search.set_params(params)
             

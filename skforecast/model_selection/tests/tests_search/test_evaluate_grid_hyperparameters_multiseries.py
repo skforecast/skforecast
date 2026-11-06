@@ -2317,3 +2317,44 @@ def test_evaluate_grid_hyperparameters_multiseries_no_MissingValuesWarning_n_eva
         )
 
     assert not any(N_EVALUATED_WARNING_MSG in str(w.message) for w in record)
+
+
+def test_evaluate_grid_hyperparameters_multiseries_OneStepAheadFold_skips_candidates_without_data():
+    """
+    Test that, with a `OneStepAheadFold`, the candidates whose lags leave no
+    data to train with, or no level of `levels` to evaluate in the test set,
+    are skipped with the warning of the candidates skipped, grouped by error,
+    instead of aborting the search or returning rows without points evaluated.
+    `short` has 5 values in the training set, so it is not trained with 8 lags.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results = _evaluate_grid_hyperparameters_multiseries(
+                      forecaster         = forecaster,
+                      series             = series_short,
+                      cv                 = OneStepAheadFold(initial_train_size=45),
+                      param_grid         = [{'alpha': 0.1}, {'alpha': 1}],
+                      metric             = 'mean_absolute_error',
+                      levels             = ['short'],
+                      lags_grid          = [2, 8, 50],
+                      return_best        = False,
+                      verbose            = False,
+                      show_progress      = False
+                  )
+
+    assert results['lags_label'].map(len).tolist() == [2, 2]
+    assert results['n_evaluated'].tolist() == [15, 15]
+    messages = [str(w.message) for w in record if w.category is RuntimeWarning]
+    assert messages == [
+        "Parameters skipped: 4 of 6 candidates raise an error, so they are not in "
+        "the results.\n\nValueError: No level of `levels` can be evaluated in the "
+        "test set: none of them has more than `window_size` (8) observations in "
+        "the training set, can be predicted after it and has observed values in "
+        "the test set. Review `levels`, `initial_train_size` of `cv` or the span "
+        "of the series.\n  - lags: [1, 2, ..., 8] (2 candidates)\n\nValueError: "
+        "`initial_train_size` must be greater than the `window_size` of the "
+        "forecaster (50), so that the first training set has data to train with. "
+        "Got 45.\n  - lags: [1, 2, ..., 50] (2 candidates)"
+    ]

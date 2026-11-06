@@ -1306,3 +1306,37 @@ def test_evaluate_grid_hyperparameters_LongTrainingWarning_once_with_fits_of_the
         "candidates) fits it about 360 times. This can take substantial amounts "
         "of time. If not feasible, try with `refit = False`."
     ]
+
+
+def test_evaluate_grid_hyperparameters_OneStepAheadFold_skips_candidates_when_split_fails():
+    """
+    Test that, with a `OneStepAheadFold`, the candidates whose lags leave no
+    data to train with (`window_size` not smaller than `initial_train_size`)
+    are skipped with the warning of the candidates skipped, instead of
+    aborting the search.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=2)
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results = _evaluate_grid_hyperparameters(
+                      forecaster    = forecaster,
+                      y             = y,
+                      cv            = OneStepAheadFold(initial_train_size=30),
+                      param_grid    = [{'alpha': 0.1}, {'alpha': 1}],
+                      metric        = 'mean_absolute_error',
+                      lags_grid     = [2, 40],
+                      return_best   = True,
+                      verbose       = False,
+                      show_progress = False
+                  )
+
+    assert results['lags_label'].map(len).tolist() == [2, 2]
+    assert forecaster.max_lag == 2
+    messages = [str(w.message) for w in record if w.category is RuntimeWarning]
+    assert messages == [
+        "Parameters skipped: 2 of 4 candidates raise an error, so they are not in "
+        "the results.\n\nValueError: `initial_train_size` must be greater than the "
+        "`window_size` of the forecaster (40), so that the first training set has "
+        "data to train with. Got 30.\n  - lags: [1, 2, ..., 40] (2 candidates)"
+    ]
