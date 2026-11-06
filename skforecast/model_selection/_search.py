@@ -542,7 +542,9 @@ def _evaluate_grid_hyperparameters(
                 candidate += 1
                 search_warnings.set_candidate(candidate)
                 if split_error is not None:
-                    search_warnings.add_skipped(lags=lags_k, params=params, error=split_error)
+                    search_warnings.add_skipped(
+                        lags=lags_k, params=params, error=split_error
+                    )
                     continue
                 try:
                     forecaster_search.set_params(params)
@@ -1697,7 +1699,9 @@ def _evaluate_grid_hyperparameters_multiseries(
                 candidate += 1
                 search_warnings.set_candidate(candidate)
                 if split_error is not None:
-                    search_warnings.add_skipped(lags=lags_k, params=params, error=split_error)
+                    search_warnings.add_skipped(
+                        lags=lags_k, params=params, error=split_error
+                    )
                     continue
                 try:
                     forecaster_search.set_params(params)

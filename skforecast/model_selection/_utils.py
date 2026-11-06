@@ -3179,9 +3179,9 @@ def _drop_series_too_short_refit(
     no more observations than the `window_size`, after removing their leading
     and trailing NaNs. The backtesting of the candidate does not predict them
     either. A warning lists them, with their number of observations: the
-    forecaster returned is not trained with them. It is a `RuntimeWarning`, not silenced by `suppress_warnings`,
-    since it describes the forecaster returned. Other forecasters are returned
-    unchanged.
+    forecaster returned is not trained with them. It is a `RuntimeWarning`,
+    not silenced by `suppress_warnings`, since it describes the forecaster
+    returned. Other forecasters are returned unchanged.
 
     Parameters
     ----------
@@ -3229,6 +3229,9 @@ def _drop_series_too_short_refit(
            f"{'' if len(series_aligned[k]) == 1 else 's'}"
         for k in series_too_short
     }
+    names_repr = _format_names_warning(
+        series_too_short, max_names=10, details=n_observations
+    )
     warnings.warn(
         f"{n_series} series {'is' if n_series == 1 else 'are'} left out of the "
         f"refit of the best candidate: {'it has' if n_series == 1 else 'they have'} "
@@ -3237,8 +3240,7 @@ def _drop_series_too_short_refit(
         f"{'it' if n_series == 1 else 'them'} in the search either. The "
         f"forecaster returned is not trained with "
         f"{'it' if n_series == 1 else 'them'} (not in `series_names_in_`).\n\n"
-        f"Series left out: "
-        f"{_format_names_warning(series_too_short, max_names=10, details=n_observations)}.",
+        f"Series left out: {names_repr}.",
         RuntimeWarning,
         stacklevel = _stacklevel_user_code()
     )
@@ -3382,7 +3384,9 @@ def _warn_skipped_candidates_search(
         lines = []
         lags_reprs = {}
         for lags, params, candidate_id in candidates:
-            id_repr = "" if candidate_id is None else f"{candidate_name} {candidate_id}, "
+            id_repr = (
+                "" if candidate_id is None else f"{candidate_name} {candidate_id}, "
+            )
             lags_reprs.setdefault(
                 None if lags is None else _format_lags_warning(lags), []
             ).append((id_repr, params))
