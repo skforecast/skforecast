@@ -3393,3 +3393,37 @@ def test_bayesian_search_forecaster_multiseries_every_trial_fails_returns_empty_
         str(w.message).startswith("Parameters skipped: 3 of 3 trials raise an error")
         for w in record
     )
+
+
+def test_bayesian_search_forecaster_multiseries_refit_without_series_too_short():
+    """
+    Test that the refit of the best trial leaves out the series with
+    `window_size` observations or fewer (`short` has 6 values and the
+    forecaster 8 lags) with a RuntimeWarning, instead of failing at the end of
+    the search.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=8)
+
+    def search_space(trial):
+        return {'alpha': trial.suggest_float('alpha', 0.1, 1)}
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results, _ = bayesian_search_forecaster_multiseries(
+                         forecaster    = forecaster,
+                         series        = series_short_one_point,
+                         cv            = TimeSeriesFold(initial_train_size=45, steps=5),
+                         search_space  = search_space,
+                         metric        = 'mean_absolute_error',
+                         n_trials      = 3,
+                         return_best   = True,
+                         show_progress = False
+                     )
+
+    assert len(results) == 3
+    assert forecaster.series_names_in_ == ['l1', 'l2']
+    assert any(
+        w.category is RuntimeWarning
+        and str(w.message).endswith("Series left out: 'short'.")
+        for w in record
+    )

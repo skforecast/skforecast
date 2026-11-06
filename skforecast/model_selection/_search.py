@@ -42,6 +42,7 @@ from ..model_selection._utils import (
     _warn_n_evaluated_search_multiseries,
     _n_evaluated_covers_levels_not_predicted,
     _sample_param_grid,
+    _drop_series_too_short_refit,
     _SearchWarnings,
     _skip_trial,
     _optimize_study,
@@ -1787,9 +1788,14 @@ def _evaluate_grid_hyperparameters_multiseries(
 
         search_warnings.set_candidate(None)
         with search_warnings:
+            series_refit, exog_refit = _drop_series_too_short_refit(
+                                           forecaster = forecaster,
+                                           series     = series,
+                                           exog       = exog
+                                       )
             forecaster.fit(
-                series                    = series, 
-                exog                      = exog, 
+                series                    = series_refit, 
+                exog                      = exog_refit, 
                 store_in_sample_residuals = True, 
                 suppress_warnings         = suppress_warnings
             )
@@ -2385,9 +2391,14 @@ def bayesian_search_forecaster_multiseries(
 
         search_warnings.set_candidate(None)
         with search_warnings:
+            series_refit, exog_refit = _drop_series_too_short_refit(
+                                           forecaster = forecaster,
+                                           series     = series,
+                                           exog       = exog
+                                       )
             forecaster.fit(
-                series                    = series, 
-                exog                      = exog, 
+                series                    = series_refit, 
+                exog                      = exog_refit, 
                 store_in_sample_residuals = True, 
                 suppress_warnings         = suppress_warnings
             )

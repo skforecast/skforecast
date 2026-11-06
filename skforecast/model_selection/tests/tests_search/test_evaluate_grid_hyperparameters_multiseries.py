@@ -2358,3 +2358,58 @@ def test_evaluate_grid_hyperparameters_multiseries_OneStepAheadFold_skips_candid
         "forecaster (50), so that the first training set has data to train with. "
         "Got 45.\n  - lags: [1, 2, ..., 50] (2 candidates)"
     ]
+
+
+@pytest.mark.parametrize(
+    "cv",
+    [TimeSeriesFold(initial_train_size=45, steps=5, refit=False),
+     OneStepAheadFold(initial_train_size=45)],
+    ids=lambda cv: f"cv: {type(cv).__name__}"
+)
+@pytest.mark.parametrize(
+    "suppress_warnings", [False, True], ids=lambda x: f"suppress_warnings: {x}"
+)
+def test_evaluate_grid_hyperparameters_multiseries_refit_without_series_too_short(
+    cv, suppress_warnings
+):
+    """
+    Test that the refit of the best candidate leaves out the series with
+    `window_size` observations or fewer (`short` has 6 values and the best
+    candidate 8 lags), which the backtesting does not predict either, instead
+    of failing at the end of the search. The forecaster returned is not
+    trained with them and a RuntimeWarning says so, also with
+    `suppress_warnings=True`.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results = _evaluate_grid_hyperparameters_multiseries(
+                      forecaster         = forecaster,
+                      series             = series_short_one_point,
+                      cv                 = cv,
+                      param_grid         = [{'alpha': 0.1}, {'alpha': 1}],
+                      metric             = 'mean_absolute_error',
+                      lags_grid          = [8],
+                      return_best        = True,
+                      verbose            = False,
+                      show_progress      = False,
+                      suppress_warnings  = suppress_warnings
+                  )
+
+    assert len(results) == 2
+    assert forecaster.is_fitted
+    assert forecaster.max_lag == 8
+    assert forecaster.series_names_in_ == ['l1', 'l2']
+    assert list(forecaster.last_window_) == ['l1', 'l2']
+    messages = [
+        str(w.message) for w in record
+        if w.category is RuntimeWarning and "left out of the refit" in str(w.message)
+    ]
+    assert messages == [
+        "1 series is left out of the refit of the best candidate: it has "
+        "`window_size` (8) observations or fewer, too few to train the "
+        "forecaster, and the candidate did not predict it in the search either. "
+        "The forecaster returned is not trained with it (not in "
+        "`series_names_in_`).\n\nSeries left out: 'short'."
+    ]

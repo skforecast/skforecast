@@ -43,6 +43,8 @@ from ..utils import (
     cast_catboost_categorical_columns_dataframe,
     _copy_rows_to_check,
     _check_in_place_fit,
+    align_series_and_exog_multiseries,
+    _series_too_short_multiseries,
 )
 
 # NOTE: Names of the metrics added to the backtesting metrics when the
@@ -3035,6 +3037,82 @@ def _warn_n_evaluated_search_multiseries(
     warnings.warn(
         "\n\n".join(blocks), MissingValuesWarning, stacklevel=_stacklevel_user_code()
     )
+
+
+def _drop_series_too_short_refit(
+    forecaster: object,
+    series: dict[str, pd.Series] | pd.DataFrame,
+    exog: dict[str, pd.DataFrame | None] | pd.Series | pd.DataFrame | None = None
+) -> tuple[
+    dict[str, pd.Series] | pd.DataFrame,
+    dict[str, pd.DataFrame | None] | pd.Series | pd.DataFrame | None
+]:
+    """
+    Leave out of the refit of the best candidate of a multi-series search the
+    series that `fit` of `ForecasterRecursiveMultiSeries` rejects: they have
+    `window_size` observations or fewer, after removing their leading and
+    trailing NaNs. The backtesting of the candidate does not predict them
+    either. A warning lists them: the forecaster returned is not trained with
+    them. It is a `RuntimeWarning`, not silenced by `suppress_warnings`,
+    since it describes the forecaster returned. Other forecasters are returned
+    unchanged.
+
+    Parameters
+    ----------
+    forecaster : ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate
+        Forecaster with the lags and parameters of the best candidate.
+    series : dict, pandas DataFrame
+        Time series of the search (a dict, already checked, for
+        ForecasterRecursiveMultiSeries).
+    exog : dict, pandas Series, pandas DataFrame, default None
+        Exogenous variables of the search. They are filtered only if they are
+        a dict.
+
+    Returns
+    -------
+    series : dict, pandas DataFrame
+        Time series without the series too short.
+    exog : dict, pandas Series, pandas DataFrame, None
+        Exogenous variables without the series too short.
+
+    """
+
+    if type(forecaster).__name__ != "ForecasterRecursiveMultiSeries":
+        return series, exog
+
+    # NOTE: `align_series_and_exog_multiseries` replaces the values of the
+    # dict, so a copy is passed. Without exog, it only trims the series.
+    series_aligned, _ = align_series_and_exog_multiseries(
+                            series_dict = dict(series),
+                            exog_dict   = {k: None for k in series}
+                        )
+    series_too_short = _series_too_short_multiseries(
+                           series_dict = series_aligned,
+                           window_size = forecaster.window_size
+                       )
+    if not series_too_short:
+        return series, exog
+
+    series = {k: v for k, v in series.items() if k not in series_too_short}
+    if isinstance(exog, dict):
+        exog = {k: v for k, v in exog.items() if k not in series_too_short}
+
+    n_series = len(series_too_short)
+    warnings.warn(
+        f"{n_series} series {'is' if n_series == 1 else 'are'} left out of the "
+        f"refit of the best candidate: {'it has' if n_series == 1 else 'they have'} "
+        f"`window_size` ({forecaster.window_size}) observations or fewer, too "
+        f"few to train the forecaster, and the candidate did not predict "
+        f"{'it' if n_series == 1 else 'them'} in the search either. The "
+        f"forecaster returned is not trained with "
+        f"{'it' if n_series == 1 else 'them'} (not in `series_names_in_`).\n\n"
+        f"Series left out: "
+        f"{_format_names_warning(series_too_short, max_names=10)}.",
+        RuntimeWarning,
+        stacklevel = _stacklevel_user_code()
+    )
+
+    return series, exog
 
 
 def _sample_param_grid(

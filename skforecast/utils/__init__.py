@@ -9,5 +9,6 @@ from .utils import (
     _get_catboost_cat_feature_indices,
     _get_estimator_categorical_set_params,
     _NonFinitePredictorsError,
-    _restore_estimator_categorical_set_params
+    _restore_estimator_categorical_set_params,
+    _series_too_short_multiseries
 )
