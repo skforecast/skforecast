@@ -1,0 +1,31 @@
+Python 3.12.3 | torch 2.14.1+cpu | numpy 2.5.4 | pandas 2.3.3 | h2ofm 0.43.1 | huggingface-hub 2.4.0 | skforecast 0.27.0 | threads 4 | cpus 4 | x86_64 | Linux 6.18.44
+context 500, Temperature: max ratio 3.2 | folds with ratio > 5: [] | > 10: []
+context 500, Holiday: max ratio inf | folds with ratio > 5: [23, 24] | > 10: [23]
+  fold 23 (origin 2014-12-24 00:00:00, Holiday ratio inf), Temperature and Holiday: MAE  228.94 | mean width 80%  1365.3 | max q0.9   6512.9 | max demand  4496.4
+  fold 23 (origin 2014-12-24 00:00:00, Holiday ratio inf), Temperature only       : MAE  275.77 | mean width 80%   479.2 | max q0.9   4986.1 | max demand  4496.4
+  fold 23 (origin 2014-12-24 00:00:00, Holiday ratio inf), no exog                : MAE  309.08 | mean width 80%   591.1 | max q0.9   5261.0 | max demand  4496.4
+  fold 24 (origin 2014-12-25 00:00:00, Holiday ratio 7.0), Temperature and Holiday: MAE   90.50 | mean width 80%   644.3 | max q0.9   4190.4 | max demand  3875.9
+  fold 24 (origin 2014-12-25 00:00:00, Holiday ratio 7.0), Temperature only       : MAE  125.07 | mean width 80%   640.7 | max q0.9   4338.7 | max demand  3875.9
+  fold 24 (origin 2014-12-25 00:00:00, Holiday ratio 7.0), no exog                : MAE  150.00 | mean width 80%   651.9 | max q0.9   4502.1 | max demand  3875.9
+context 4096, Temperature: max ratio 3.5 | folds with ratio > 5: [] | > 10: []
+context 4096, Holiday: max ratio 13.0 | folds with ratio > 5: [23, 24, 25] | > 10: [23, 24]
+  fold 23 (origin 2014-12-24 00:00:00, Holiday ratio 13.0), Temperature and Holiday: MAE  224.13 | mean width 80%   436.3 | max q0.9   4881.8 | max demand  4496.4
+  fold 23 (origin 2014-12-24 00:00:00, Holiday ratio 13.0), Temperature only       : MAE  262.02 | mean width 80%   367.1 | max q0.9   4883.0 | max demand  4496.4
+  fold 23 (origin 2014-12-24 00:00:00, Holiday ratio 13.0), no exog                : MAE  277.97 | mean width 80%   454.7 | max q0.9   5097.6 | max demand  4496.4
+  fold 24 (origin 2014-12-25 00:00:00, Holiday ratio 10.9), Temperature and Holiday: MAE  155.53 | mean width 80%   548.8 | max q0.9   4516.2 | max demand  3875.9
+  fold 24 (origin 2014-12-25 00:00:00, Holiday ratio 10.9), Temperature only       : MAE  205.82 | mean width 80%   541.4 | max q0.9   4705.6 | max demand  3875.9
+  fold 24 (origin 2014-12-25 00:00:00, Holiday ratio 10.9), no exog                : MAE  186.01 | mean width 80%   564.2 | max q0.9   4474.7 | max demand  3875.9
+  fold 25 (origin 2014-12-26 00:00:00, Holiday ratio 8.3), Temperature and Holiday: MAE   74.44 | mean width 80%   421.0 | max q0.9   4138.8 | max demand  3937.3
+  fold 25 (origin 2014-12-26 00:00:00, Holiday ratio 8.3), Temperature only       : MAE   44.27 | mean width 80%   390.3 | max q0.9   4087.6 | max demand  3937.3
+  fold 25 (origin 2014-12-26 00:00:00, Holiday ratio 8.3), no exog                : MAE   66.99 | mean width 80%   511.6 | max q0.9   4229.0 | max demand  3937.3
+context 16384, Temperature: max ratio 3.0 | folds with ratio > 5: [] | > 10: []
+context 16384, Holiday: max ratio 6.5 | folds with ratio > 5: [23, 24, 25] | > 10: []
+  fold 23 (origin 2014-12-24 00:00:00, Holiday ratio 6.5), Temperature and Holiday: MAE   48.91 | mean width 80%   335.4 | max q0.9   4570.5 | max demand  4496.4
+  fold 23 (origin 2014-12-24 00:00:00, Holiday ratio 6.5), Temperature only       : MAE   90.30 | mean width 80%   311.0 | max q0.9   4508.0 | max demand  4496.4
+  fold 23 (origin 2014-12-24 00:00:00, Holiday ratio 6.5), no exog                : MAE   53.15 | mean width 80%   362.1 | max q0.9   4751.4 | max demand  4496.4
+  fold 24 (origin 2014-12-25 00:00:00, Holiday ratio 6.4), Temperature and Holiday: MAE  152.60 | mean width 80%   438.3 | max q0.9   4259.1 | max demand  3875.9
+  fold 24 (origin 2014-12-25 00:00:00, Holiday ratio 6.4), Temperature only       : MAE  196.73 | mean width 80%   374.8 | max q0.9   4292.3 | max demand  3875.9
+  fold 24 (origin 2014-12-25 00:00:00, Holiday ratio 6.4), no exog                : MAE  250.74 | mean width 80%   358.6 | max q0.9   4398.3 | max demand  3875.9
+  fold 25 (origin 2014-12-26 00:00:00, Holiday ratio 6.2), Temperature and Holiday: MAE   41.68 | mean width 80%   371.7 | max q0.9   4120.9 | max demand  3937.3
+  fold 25 (origin 2014-12-26 00:00:00, Holiday ratio 6.2), Temperature only       : MAE   62.46 | mean width 80%   379.3 | max q0.9   4142.1 | max demand  3937.3
+  fold 25 (origin 2014-12-26 00:00:00, Holiday ratio 6.2), no exog                : MAE   65.00 | mean width 80%   448.8 | max q0.9   4246.4 | max demand  3937.3

@@ -1,0 +1,117 @@
+Python 3.12.3 | torch 2.14.1+cpu | numpy 2.5.4 | pandas 2.3.3 | h2ofm 0.43.1 | huggingface-hub 2.4.0 | skforecast 0.27.0 | threads 4 | cpus 4 | x86_64 | Linux 6.18.44
+
+Loading weights:   0%|          | 0/92 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 92/92 [00:00<00:00, 2092.14it/s]
+{'model_id': 'autogluon/chronos-2-small', 'context_length': 500, 'exog': 'num', 'patch_ensemble': '', 'mae': 171.27, 'cov80': 0.731, 'cov90': 0.847, 'cov98': 0.967, 'width80': 462.5, 'seconds': 2.2}
+
+Loading weights:   0%|          | 0/170 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 170/170 [00:00<00:00, 2286.74it/s]
+{'model_id': 'amazon/chronos-2', 'context_length': 4096, 'exog': 'num', 'patch_ensemble': '', 'mae': 134.05, 'cov80': 0.721, 'cov90': 0.829, 'cov98': 0.942, 'width80': 449.9, 'seconds': 23.0}
+
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]
+Fetching 2 files:  50%|█████     | 1/2 [00:00<00:00,  2.90it/s]
+Fetching 2 files: 100%|██████████| 2/2 [00:09<00:00,  5.46s/it]
+Fetching 2 files: 100%|██████████| 2/2 [00:09<00:00,  4.69s/it]
+{'model_id': 'mistralai/Timestral-209M', 'context_length': 4096, 'exog': 'num', 'patch_ensemble': '', 'mae': 96.89, 'cov80': 0.718, 'cov90': 0.836, 'cov98': 0.976, 'width80': 280.8, 'seconds': 68.8}
+
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]
+Fetching 2 files: 100%|██████████| 2/2 [00:00<00:00, 633.87it/s]
+{'model_id': 'h2oai/timeh2o-v1', 'context_length': 500, 'exog': 'num', 'patch_ensemble': 'True', 'mae': 103.06, 'cov80': 0.818, 'cov90': 0.908, 'cov98': 0.968, 'width80': 398.8, 'seconds': 59.2}
+
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]
+Fetching 2 files: 100%|██████████| 2/2 [00:00<00:00, 935.18it/s]
+{'model_id': 'h2oai/timeh2o-v1', 'context_length': 2048, 'exog': 'num', 'patch_ensemble': 'True', 'mae': 100.3, 'cov80': 0.787, 'cov90': 0.882, 'cov98': 0.957, 'width80': 307.6, 'seconds': 218.9}
+
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]
+Fetching 2 files: 100%|██████████| 2/2 [00:00<00:00, 726.10it/s]
+{'model_id': 'h2oai/timeh2o-v1', 'context_length': 4096, 'exog': 'num', 'patch_ensemble': 'True', 'mae': 98.3, 'cov80': 0.81, 'cov90': 0.893, 'cov98': 0.969, 'width80': 312.9, 'seconds': 194.6}
+
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]
+Fetching 2 files: 100%|██████████| 2/2 [00:00<00:00, 819.76it/s]
+{'model_id': 'h2oai/timeh2o-v1', 'context_length': 8192, 'exog': 'num', 'patch_ensemble': 'True', 'mae': 103.84, 'cov80': 0.794, 'cov90': 0.9, 'cov98': 0.964, 'width80': 330.9, 'seconds': 166.5}
+
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]
+Fetching 2 files: 100%|██████████| 2/2 [00:00<00:00, 1151.81it/s]
+{'model_id': 'h2oai/timeh2o-v1', 'context_length': 16384, 'exog': 'num', 'patch_ensemble': 'True', 'mae': 84.24, 'cov80': 0.826, 'cov90': 0.919, 'cov98': 0.983, 'width80': 317.5, 'seconds': 114.0}
+
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]
+Fetching 2 files: 100%|██████████| 2/2 [00:00<00:00, 429.08it/s]
+{'model_id': 'h2oai/timeh2o-v1', 'context_length': 500, 'exog': 'num', 'patch_ensemble': 'False', 'mae': 112.35, 'cov80': 0.787, 'cov90': 0.865, 'cov98': 0.94, 'width80': 395.5, 'seconds': 6.5}
+
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]
+Fetching 2 files: 100%|██████████| 2/2 [00:00<00:00, 971.80it/s]
+{'model_id': 'h2oai/timeh2o-v1', 'context_length': 4096, 'exog': 'num', 'patch_ensemble': 'False', 'mae': 106.2, 'cov80': 0.76, 'cov90': 0.867, 'cov98': 0.964, 'width80': 318.5, 'seconds': 28.5}
+
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]
+Fetching 2 files: 100%|██████████| 2/2 [00:00<00:00, 1366.89it/s]
+{'model_id': 'h2oai/timeh2o-v1', 'context_length': 8192, 'exog': 'num', 'patch_ensemble': 'False', 'mae': 108.75, 'cov80': 0.754, 'cov90': 0.86, 'cov98': 0.958, 'width80': 329.5, 'seconds': 53.2}
+
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]
+Fetching 2 files: 100%|██████████| 2/2 [00:00<00:00, 1381.30it/s]
+{'model_id': 'h2oai/timeh2o-v1', 'context_length': 500, 'exog': 'none', 'patch_ensemble': 'True', 'mae': 155.57, 'cov80': 0.717, 'cov90': 0.826, 'cov98': 0.924, 'width80': 436.4, 'seconds': 27.9}
+
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]
+Fetching 2 files: 100%|██████████| 2/2 [00:00<00:00, 940.64it/s]
+{'model_id': 'h2oai/timeh2o-v1', 'context_length': 4096, 'exog': 'none', 'patch_ensemble': 'True', 'mae': 150.27, 'cov80': 0.761, 'cov90': 0.849, 'cov98': 0.928, 'width80': 443.2, 'seconds': 75.4}
+
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]
+Fetching 2 files: 100%|██████████| 2/2 [00:00<00:00, 1249.42it/s]
+{'model_id': 'h2oai/timeh2o-v1', 'context_length': 4096, 'exog': 'bool', 'patch_ensemble': 'True', 'mae': 98.35, 'cov80': 0.804, 'cov90': 0.893, 'cov98': 0.969, 'width80': 309.1, 'seconds': 202.5}
+
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]
+Fetching 2 files: 100%|██████████| 2/2 [00:00<00:00, 1493.43it/s]
+{'model_id': 'h2oai/timeh2o-v1-tiny', 'context_length': 500, 'exog': 'none', 'patch_ensemble': '', 'mae': 167.41, 'cov80': 0.672, 'cov90': 0.778, 'cov98': 0.9, 'width80': 439.9, 'seconds': 0.9}
+
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]
+Fetching 2 files: 100%|██████████| 2/2 [00:00<00:00, 1578.59it/s]
+{'model_id': 'h2oai/timeh2o-v1-tiny', 'context_length': 4096, 'exog': 'none', 'patch_ensemble': '', 'mae': 162.26, 'cov80': 0.704, 'cov90': 0.786, 'cov98': 0.899, 'width80': 436.3, 'seconds': 2.7}
+
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]
+Fetching 2 files: 100%|██████████| 2/2 [00:00<00:00, 1632.02it/s]
+{'model_id': 'h2oai/timeh2o-v1-tiny', 'context_length': 4096, 'exog': 'num', 'patch_ensemble': '', 'mae': 162.26, 'cov80': 0.704, 'cov90': 0.786, 'cov98': 0.899, 'width80': 436.3, 'seconds': 2.1}
+                 model_id  context_length exog patch_ensemble    mae  cov80  cov90  cov98  width80  seconds
+autogluon/chronos-2-small             500  num                171.27  0.731  0.847  0.967    462.5      2.2
+         amazon/chronos-2            4096  num                134.05  0.721  0.829  0.942    449.9     23.0
+ mistralai/Timestral-209M            4096  num                 96.89  0.718  0.836  0.976    280.8     68.8
+         h2oai/timeh2o-v1             500  num           True 103.06  0.818  0.908  0.968    398.8     59.2
+         h2oai/timeh2o-v1            2048  num           True 100.30  0.787  0.882  0.957    307.6    218.9
+         h2oai/timeh2o-v1            4096  num           True  98.30  0.810  0.893  0.969    312.9    194.6
+         h2oai/timeh2o-v1            8192  num           True 103.84  0.794  0.900  0.964    330.9    166.5
+         h2oai/timeh2o-v1           16384  num           True  84.24  0.826  0.919  0.983    317.5    114.0
+         h2oai/timeh2o-v1             500  num          False 112.35  0.787  0.865  0.940    395.5      6.5
+         h2oai/timeh2o-v1            4096  num          False 106.20  0.760  0.867  0.964    318.5     28.5
+         h2oai/timeh2o-v1            8192  num          False 108.75  0.754  0.860  0.958    329.5     53.2
+         h2oai/timeh2o-v1             500 none           True 155.57  0.717  0.826  0.924    436.4     27.9
+         h2oai/timeh2o-v1            4096 none           True 150.27  0.761  0.849  0.928    443.2     75.4
+         h2oai/timeh2o-v1            4096 bool           True  98.35  0.804  0.893  0.969    309.1    202.5
+    h2oai/timeh2o-v1-tiny             500 none                167.41  0.672  0.778  0.900    439.9      0.9
+    h2oai/timeh2o-v1-tiny            4096 none                162.26  0.704  0.786  0.899    436.3      2.7
+    h2oai/timeh2o-v1-tiny            4096  num                162.26  0.704  0.786  0.899    436.3      2.1
+--- second run (configurations added after the first results) ---
+Python 3.12.3 | torch 2.14.1+cpu | numpy 2.5.4 | pandas 2.3.3 | h2ofm 0.43.1 | huggingface-hub 2.4.0 | skforecast 0.27.0 | threads 4 | cpus 4 | x86_64 | Linux 6.18.44
+{'model_id': 'h2oai/timeh2o-v1', 'context_length': 16384, 'exog': 'none', 'patch_ensemble': 'True', 'mae': 142.24, 'cov80': 0.811, 'cov90': 0.886, 'cov98': 0.958, 'width80': 486.8, 'seconds': 51.5}
+{'model_id': 'h2oai/timeh2o-v1', 'context_length': 16384, 'exog': 'bool', 'patch_ensemble': 'True', 'mae': 87.59, 'cov80': 0.804, 'cov90': 0.907, 'cov98': 0.979, 'width80': 311.2, 'seconds': 136.9}
+{'model_id': 'h2oai/timeh2o-v1-tiny', 'context_length': 16384, 'exog': 'none', 'patch_ensemble': '', 'mae': 143.88, 'cov80': 0.768, 'cov90': 0.833, 'cov98': 0.929, 'width80': 432.0, 'seconds': 12.9}
+{'model_id': 'mistralai/Timestral-209M', 'context_length': 16384, 'exog': 'num', 'patch_ensemble': '', 'mae': 84.32, 'cov80': 0.733, 'cov90': 0.876, 'cov98': 0.988, 'width80': 255.7, 'seconds': 307.2}
+                 model_id  context_length exog patch_ensemble    mae  cov80  cov90  cov98  width80  seconds
+autogluon/chronos-2-small             500  num                171.27  0.731  0.847  0.967    462.5      2.2
+         amazon/chronos-2            4096  num                134.05  0.721  0.829  0.942    449.9     23.0
+ mistralai/Timestral-209M            4096  num                 96.89  0.718  0.836  0.976    280.8     68.8
+         h2oai/timeh2o-v1             500  num           True 103.06  0.818  0.908  0.968    398.8     59.2
+         h2oai/timeh2o-v1            2048  num           True 100.30  0.787  0.882  0.957    307.6    218.9
+         h2oai/timeh2o-v1            4096  num           True  98.30  0.810  0.893  0.969    312.9    194.6
+         h2oai/timeh2o-v1            8192  num           True 103.84  0.794  0.900  0.964    330.9    166.5
+         h2oai/timeh2o-v1           16384  num           True  84.24  0.826  0.919  0.983    317.5    114.0
+         h2oai/timeh2o-v1             500  num          False 112.35  0.787  0.865  0.940    395.5      6.5
+         h2oai/timeh2o-v1            4096  num          False 106.20  0.760  0.867  0.964    318.5     28.5
+         h2oai/timeh2o-v1            8192  num          False 108.75  0.754  0.860  0.958    329.5     53.2
+         h2oai/timeh2o-v1             500 none           True 155.57  0.717  0.826  0.924    436.4     27.9
+         h2oai/timeh2o-v1            4096 none           True 150.27  0.761  0.849  0.928    443.2     75.4
+         h2oai/timeh2o-v1            4096 bool           True  98.35  0.804  0.893  0.969    309.1    202.5
+    h2oai/timeh2o-v1-tiny             500 none                167.41  0.672  0.778  0.900    439.9      0.9
+    h2oai/timeh2o-v1-tiny            4096 none                162.26  0.704  0.786  0.899    436.3      2.7
+    h2oai/timeh2o-v1-tiny            4096  num                162.26  0.704  0.786  0.899    436.3      2.1
+         h2oai/timeh2o-v1           16384 none           True 142.24  0.811  0.886  0.958    486.8     51.5
+         h2oai/timeh2o-v1           16384 bool           True  87.59  0.804  0.907  0.979    311.2    136.9
+    h2oai/timeh2o-v1-tiny           16384 none                143.88  0.768  0.833  0.929    432.0     12.9
+ mistralai/Timestral-209M           16384  num                 84.32  0.733  0.876  0.988    255.7    307.2

@@ -1,0 +1,31 @@
+Python 3.12.3 | torch 2.14.1+cpu | numpy 2.5.4 | pandas 2.3.3 | h2ofm 0.43.1 | huggingface-hub 2.4.0 | skforecast 0.27.0 | threads 4 | cpus 4 | x86_64 | Linux 6.18.44
+
+=== h2oai/timeh2o-v1-tiny
+load: 2.26 s | device cpu | batch_size 256 | patch_sizes [8] | context_length 16384 | max_horizon 1024 | autoregressive False | variate_attention False | flip_equivariant True | quantiles (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
+parameters: 5,825,636
+forecast: type Forecast | point (24,) float32 | quantiles (24, 9) float32 | levels (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9) | mean (24,)
+point == median column: True
+requested [0.9, 0.5, 0.01]: levels (0.9, 0.5, 0.01) | q0.5 == point True | q0.9 equal to default grid True
+forecast_many list (lengths [300, 3000, 9000]) vs alone, max abs diff per series: ['3.81e-06', '2.29e-05', '0.00e+00']
+caller-padded array (width 9000) vs alone, max abs diff per series: ['3.81e-06', '2.29e-05', '0.00e+00'] | relative to the mean level: ['7.43e-08', '2.89e-07', '0.00e+00']
+each series alone, left-padded to 9000 vs unpadded: ['3.81e-06', '2.29e-05', '0.00e+00']
+time   1 series x   512: 0.021 s | patch_ensemble=False: 0.034 s
+time 100 series x   512: 0.966 s | patch_ensemble=False: 0.863 s
+time   1 series x  4096: 0.099 s | patch_ensemble=False: 0.085 s
+time   1 series x  8192: 0.185 s | patch_ensemble=False: 0.178 s
+time   1 series x 16384: 0.497 s | patch_ensemble=False: 0.496 s
+
+=== h2oai/timeh2o-v1
+load: 0.67 s | device cpu | batch_size 256 | patch_sizes [2, 4, 8, 16] | context_length 16384 | max_horizon 1024 | autoregressive False | variate_attention True | flip_equivariant True | quantiles (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
+parameters: 108,764,558
+forecast: type Forecast | point (24,) float32 | quantiles (24, 9) float32 | levels (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9) | mean (24,)
+point == median column: True
+requested [0.9, 0.5, 0.01]: levels (0.9, 0.5, 0.01) | q0.5 == point True | q0.9 equal to default grid True
+forecast_many list (lengths [300, 3000, 9000]) vs alone, max abs diff per series: ['7.63e-06', '1.53e-05', '0.00e+00']
+caller-padded array (width 9000) vs alone, max abs diff per series: ['2.48e-01', '1.19e-01', '0.00e+00'] | relative to the mean level: ['4.81e-03', '1.50e-03', '0.00e+00']
+each series alone, left-padded to 9000 vs unpadded: ['2.48e-01', '1.19e-01', '0.00e+00']
+time   1 series x   512: 1.034 s | patch_ensemble=False: 0.151 s
+time 100 series x   512: 93.138 s | patch_ensemble=False: 3.715 s
+time   1 series x  4096: 2.864 s | patch_ensemble=False: 0.525 s
+time   1 series x  8192: 2.246 s | patch_ensemble=False: 0.809 s
+time   1 series x 16384: 1.621 s | patch_ensemble=False: 1.648 s

@@ -1,0 +1,66 @@
+mode: report skeleton
+PASS every required class attribute is declared (PR #1450 contract): []
+PASS requires_equal_length_context is False and supports_nan_in_series True
+PASS get_params: {'model_id': 'h2oai/timeh2o-v1', 'context_length': 16384, 'device': 'auto', 'batch_size': 256, 'predict_kwargs': None}
+PASS init rejects prefix: `model_id` must start with 'h2oai/timeh2o' for TimeH2OAdapter. Got 'h2oai/h2ogpt-4096-llama2-7b'.
+PASS init rejects context_length: `context_length` must be a positive integer. Got 0.
+PASS init rejects batch_size: `batch_size` must be a positive integer. Got 0.
+PASS init rejects reserved predict_kwargs: `predict_kwargs` cannot include ['future_covariates']. These arguments are managed internally by TimeH2OAdapter.
+PASS set_params context_length and predict_kwargs keep the model
+PASS set_params device resets the model
+PASS set_params batch_size resets the model
+PASS set_params model_id resets the model
+PASS set_params rejects reserved predict_kwargs: `predict_kwargs` cannot include ['quantile_levels']. These arguments are managed internally by TimeH2OAdapter.
+PASS set_params rejects unknown parameters: Invalid parameter(s) for TimeH2OAdapter: ['revision']. Valid parameters are: ['batch_size', 'context_length', 'device', 'model_id', 'predict_kwargs'].
+PASS clone round trip: {'model_id': 'h2oai/timeh2o-v1', 'context_length': 1024, 'device': 'auto', 'batch_size': 32, 'predict_kwargs': {'patch_ensemble': False}}
+PASS ImportError without h2ofm and no LicenseWarning: h2ofm is required for TimeH2OAdapter. Install it with `pip install "h2ofm>=0.43"` (h2ofm requires Python >= 3.12).
+PASS get_model_info: FoundationModelInfo(model_id='h2oai/timeh2o-v1', adapter='TimeH2OAdapter', model_id_prefixes=('h2oai/timeh2o',), default_model_id='h2oai/timeh2o-v1', default_context_length=16384, backend_package='h2ofm>=0.43', allow_exog=True, supports_past_only_covariates=False, supports_categorical_covariates=True, supports_heterogeneous_covariates=True, supports_nan_in_series=True, supported_quantiles=None, requires_hf_auth=True, requires_provider_auth=False, weights_repo_id='h2oai/timeh2o-v1', weights_in_hf_cache=True, license='h2o-model-non-commercial-licence-v1.0', license_url='https://huggingface.co/h2oai/timeh2o-v1/blob/main/LICENSE', commercial_use_restricted=True)
+PASS get_model_info of the tiny checkpoint: https://huggingface.co/h2oai/timeh2o-v1/blob/main/LICENSE
+PASS contract: TimeH2O.from_pretrained accepts 1 positional and ['device', 'batch_size']
+PASS contract: TimeH2O.forecast_many accepts 1 positional and ['horizon', 'future_covariates', 'quantile_levels']
+PASS contract: Forecast accepts 0 positional and ['quantiles', 'quantile_levels']
+PASS LicenseWarning on load: The weights for 'h2oai/timeh2o-v1' are released under H2O Model Non-Commercial Licence v1.0 (non-commercial and non-production use only). Review the license terms before commercial or production use. See https://huggingface.co/h2oai/timeh2o-v1/blob/main/LICENSE.
+You can suppress this warning using: warnings.simplefilter('ignore', category=LicenseWarning)
+PASS FoundationModel.predict output
+PASS point forecast equals forecast.point of the backend: max abs diff 0.00e+00
+PASS ForecasterFoundation predict, predict_interval and predict_quantiles
+PASS backtesting_foundation with exog: MAE 0.293
+PASS heterogeneous batch: one adapter call, unpadded lengths: [{'s1': 900, 's2': 400, 's3': 700}]
+PASS heterogeneous batch equals each series alone: {'s1': '7.6e-06', 's2': '7.6e-06', 's3': '7.6e-06'}
+PASS any level, in the requested order
+PASS duplicated levels: FoundationModel keeps one column per level: ['level', 'q_0.5', 'q_0.1']
+PASS quantile 0 raises the ValueError of the backend: quantile_levels must be non-empty and strictly between 0 and 1, got [0.0, 0.5]
+PASS quantile 1 raises the ValueError of the backend: quantile_levels must be non-empty and strictly between 0 and 1, got [0.5, 1.0]
+PASS dtypes: numeric for float, int, Int64, bool and boolean (cast to 0/1); labels for category and strings: {'b': 'numeric', 'b_na': 'numeric', 'c': 'labels', 'f': 'numeric', 'i': 'numeric', 'i_na': 'numeric', 's': 'labels'}
+PASS real backend with every dtype, no warning from h2ofm: []
+PASS Series exog
+PASS past-only column: IgnoredArgumentWarning and not forwarded
+PASS inf in a covariate raises the ValueError of the backend: future_covariates may contain NaN, but not infinity
+PASS device='auto' on MPS falls back to CPU with a warning at the user's call: run_checks.py:369
+PASS device='mps:0' falls back to CPU, batch_size reaches the backend
+PASS flat covariate warning, constant price that changes: warns: Known covariates that are constant, or nearly constant, over the context and take other va
+PASS flat covariate warning, price with noise 1e-4 that changes by 0.06: warns: Known covariates that are constant, or nearly constant, over the context and take other va
+PASS flat covariate warning, bool indicator False over the context: warns: Known covariates that are constant, or nearly constant, over the context and take other va
+PASS flat covariate warning, varying covariate: no warning
+PASS flat covariate warning, indicator with 50 ones in the context: no warning
+PASS flat covariate warning, constant price that does not change: no warning
+PASS flat covariate warning, history all NaN: no warning
+PASS flat covariate warning, labels (strings): no warning
+PASS flat covariate warning points to the user's call to ForecasterFoundation.predict: run_checks.py:430
+PASS helper: message with the model name, the remedy and only the flat column: Known covariates that are constant, or nearly constant, over the context and take other values over the forecast horizon
+PASS helper: None inputs give no warning
+PASS helper: category column gives no warning
+PASS helper: string history and numeric future give no error and no warning
+PASS helper: a jump of about 6 deviations warns with max_deviation=5 and not with 20
+PASS helper: object boolean history (False and a missing value) is checked as 0/1
+PASS no flat-covariate warning with the tiny checkpoint (real backend)
+PASS no flat-covariate warning when config.variate_attention is False (fake)
+PASS bool column with a missing context timestamp is passed as 0/1 float with NaN: float64, NaN 1
+PASS tiny ignores exog with the warning of the backend: timeh2o_skeleton.py:482
+PASS fake: one call, levels deduplicated and sorted, columns in the requested order
+PASS fake: future covariates per series (2 rows, 1 row, None)
+PASS fake: point forecast is the 0.5 column
+PASS fake: predict_kwargs forwarded
+PASS fake: unknown predict_kwargs key raises TypeError: FakeTimeH2O.forecast_many() got an unexpected keyword argument 'unknown'
+
+62/62 checks passed

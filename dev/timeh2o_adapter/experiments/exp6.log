@@ -1,0 +1,10 @@
+Python 3.12.3 | torch 2.14.1+cpu | numpy 2.5.4 | pandas 2.3.3 | h2ofm 0.43.1 | huggingface-hub 2.4.0 | skforecast 0.27.0 | threads 4 | cpus 4 | x86_64 | Linux 6.18.44
+after load: peak RSS 1.29 GB
+1. 200 series, patch_ensemble=False: mixed lengths 500-4096 (mean 2414) 116.4 s | sorted by length 117.7 s (max abs diff 0.00e+00) | all 4096 121.6 s | peak RSS 4.25 GB
+1. 40 series, patch_ensemble=True: mixed 169.9 s | sorted 162.8 s | all 4096 138.2 s | peak RSS 4.25 GB
+2.  100 series x 512, no covariates: 3.7 s (37.2 ms per series) | peak RSS 4.25 GB
+2.  400 series x 512, no covariates: 16.4 s (40.9 ms per series) | peak RSS 4.25 GB
+2. 1000 series x 512, no covariates: 39.8 s (39.8 ms per series) | peak RSS 4.25 GB
+3. 400 series x 512, 2 covariates, batch_size   64: 40.7 s | peak RSS 4.25 GB
+3. 400 series x 512, 2 covariates, batch_size  256: 44.4 s | peak RSS 4.25 GB
+3. 400 series x 512, 2 covariates, batch_size 1024: 68.0 s | peak RSS 4.25 GB

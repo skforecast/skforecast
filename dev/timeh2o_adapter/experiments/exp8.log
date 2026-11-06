@@ -1,0 +1,11 @@
+Python 3.12.3 | torch 2.14.1+cpu | numpy 2.5.4 | pandas 2.3.3 | h2ofm 0.43.1 | huggingface-hub 2.4.0 | skforecast 0.27.0 | threads 4 | cpus 4 | x86_64 | Linux 6.18.44
+Reference without covariate (exp4): median max 2.09 | q0.9 max 4.29 | q0.99 max 6.07
+1. price noise s=0.0001 (change / s = 600)       median max     5.69 | q0.9 max   253.49 | q0.99 max   455.76 | series with q0.99 > 100: 31/32
+1. price noise s=0.001 (change / s = 60)         median max     5.17 | q0.9 max   264.21 | q0.99 max   476.91 | series with q0.99 > 100: 31/32
+1. price noise s=0.01 (change / s = 6)           median max     3.31 | q0.9 max    39.03 | q0.99 max    68.64 | series with q0.99 > 100: 0/32
+1. price noise s=0.03 (change / s = 2)           median max     2.15 | q0.9 max     6.51 | q0.99 max    10.16 | series with q0.99 > 100: 0/32
+1. price noise s=0.1 (change / s = 0.6)          median max     2.07 | q0.9 max     4.15 | q0.99 max     5.94 | series with q0.99 > 100: 0/32
+2. indicator with 1 ones in the context (std 0.031) median max     6.77 | q0.9 max    16.92 | q0.99 max    25.19 | series with q0.99 > 100: 0/32
+2. indicator with 4 ones in the context (std 0.062) median max     2.65 | q0.9 max     5.72 | q0.99 max     8.55 | series with q0.99 > 100: 0/32
+2. indicator with 16 ones in the context (std 0.124) median max     2.23 | q0.9 max     4.71 | q0.99 max     7.17 | series with q0.99 > 100: 0/32
+2. indicator with 64 ones in the context (std 0.242) median max     2.10 | q0.9 max     4.29 | q0.99 max     6.09 | series with q0.99 > 100: 0/32
