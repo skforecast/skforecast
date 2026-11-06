@@ -192,6 +192,7 @@ def test_init_metadata_and_tags_correctly_stored():
         ("autogluon/chronos-2-small", True),
         ("google/timesfm-3.0-pytorch", False),
         ("soda-inria/tabicl", False),
+        ("mistralai/Timestral-28M", True),
     ],
     ids=lambda x: str(x),
 )

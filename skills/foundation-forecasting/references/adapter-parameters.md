@@ -23,6 +23,7 @@ model = FoundationModel(
 - T0Adapter — The Forecasting Company T0
 - TSICLAdapter — EDF Lab TS-ICL
 - NoriAdapter — Synthefy Nori
+- TimestralAdapter — Mistral AI Timestral
 - Tunable parameters and model reload cost
 - Common behavior
 
@@ -179,6 +180,30 @@ Covariates must be numeric; encode categoricals as numbers before passing them.
 
 Nori frames forecasting as tabular in-context regression rather than a native sequence model: each series is featurized (running index, calendar features, Fourier terms, and known-future covariates) before being handed to `NoriRegressor`. Covariates must be numeric; encode categoricals as numbers before passing them.
 
+## TimestralAdapter — Mistral AI Timestral
+
+- **`model_id` prefix**: `mistralai/Timestral` (`Timestral-5M`, `Timestral-28M`, `Timestral-123M`, `Timestral-209M`)
+- **`allow_exog`**: `True` (past-only, known-future and categorical covariates)
+- **`supports_past_only_covariates`**: `True`
+- **`supports_heterogeneous_covariates`**: `False` (`forecast` takes the covariates of the batch as one array, so `FoundationModel` calls it once per group of series with the same exog columns)
+- **Supported quantiles**: `[0.01, 0.05, 0.1, 0.15, ..., 0.9, 0.95, 0.99]` (21 levels); other levels raise a `ValueError`
+- **Point forecast**: median (quantile `0.5`)
+- **Backend**: `pip install "timestral @ git+https://github.com/mistralai/timestral.git"` (not on PyPI yet)
+
+| Parameter        | Type | Default  | Description                                                         |
+|------------------|------|----------|---------------------------------------------------------------------|
+| `model_id`       | str  | —        | HuggingFace model ID (e.g. `mistralai/Timestral-28M`). Must start with `mistralai/Timestral`; any other id raises `ValueError`. |
+| `model`          | obj  | `None`   | Pre-loaded `TimestralForecaster`. If `None`, loaded lazily on first `predict`. |
+| `context_length` | int  | `4096`   | Max historical observations kept as context (the model accepts up to 32,768). |
+| `device`         | str  | `'auto'` | Device placement: `'auto'` (CUDA > MPS > CPU), `'cuda'`, `'cpu'`. MPS is not supported by timestral: `'mps'` (or `'auto'` on Apple Silicon without CUDA) falls back to CPU with a warning. |
+| `predict_kwargs` | dict | `None`   | Extra kwargs forwarded to `forecast` (`symmetric_averaging`, default `True`, and `clip_nonnegative`, default `True`). |
+
+For each series, columns present in its future `exog` become known covariates spanning `context + horizon`, and columns present only in its `context_exog` become past covariates. Numeric and boolean columns are passed as numeric covariates; any other column is passed as a categorical covariate (the adapter maps its labels to integer codes per series). Series of different lengths are left-padded with NaN by `FoundationModel`, which Timestral treats as missing values.
+
+Known issue ([mistralai/timestral#7](https://github.com/mistralai/timestral/issues/7)): a known covariate that is constant over the context and changes over the horizon (a price, or a 0/1 indicator that is 0 over the whole context) can make the upper quantiles, and sometimes the median, very large. The adapter issues a `FeatureOutOfRangeWarning` naming the series and columns; setting the historical values of those columns to NaN avoids it. `predict_kwargs={'symmetric_averaging': False}` is not a general fix. With known covariates, the first steps of the forecast also depend on `steps`.
+
+**License**: the weights are released under a modified MIT license that grants no rights to companies above USD 20 million of monthly revenue; loading them raises a `LicenseWarning` with a link to the license.
+
 ## Tunable Parameters and Model Reload Cost
 
 The parameters that can be changed after construction (via `set_params`, and therefore searched with `bayesian_search_foundation`) are exactly the keys returned by each adapter's `get_params()`. Any other key raises `ValueError`. Note that `model` / `pipeline` / `module` are constructor-only and are **not** settable.
@@ -196,12 +221,13 @@ Being accepted is not the same as being worth searching. Most adapters expose ru
 | T0Adapter | `model_id`, `context_length`, `device_map`, `torch_dtype` | `context_length` | `model_id`, `device_map`, `torch_dtype` |
 | TSICLAdapter | `model_id`, `checkpoint_version`, `context_length`, `device`, `allow_auto_download` | `context_length` | `checkpoint_version`, `allow_auto_download` (`device` only clears the cached resolved device) |
 | NoriAdapter | `model_id`, `context_length`, `point_estimate`, `add_calendar_features`, `n_fourier_terms`, `nori_config` | `context_length`, `point_estimate`, `add_calendar_features`, `n_fourier_terms`, (`nori_config`) | `model_id`, `nori_config` |
+| TimestralAdapter | `model_id`, `context_length`, `device`, `predict_kwargs` | `context_length`, (`predict_kwargs`) | `model_id`, `device` |
 
 Parameters in parentheses are backend passthrough dicts: they can hold quality-relevant settings but are awkward to search, so treat them as advanced.
 
 Two consequences that matter when tuning:
 
-- **`context_length` is not uniformly cheap.** It reloads the model on TimesFM 2.5 (but **not** TimesFM 3.0), Moirai-2, TabICL and TabPFN-TS; it is free on Chronos-2, TimesFM 3.0, T0, TS-ICL and Nori.
+- **`context_length` is not uniformly cheap.** It reloads the model on TimesFM 2.5 (but **not** TimesFM 3.0), Moirai-2, TabICL and TabPFN-TS; it is free on Chronos-2, TimesFM 3.0, T0, TS-ICL, Nori and Timestral.
 - **Reset only on change.** All foundation adapters compare the old and new values first (via the shared `set_params` helper), so re-sampling an identical value never triggers a reload. A reload happens only when a reload-triggering key is set to a genuinely new value, for example sampling a different `context_length` on TimesFM 2.5, Moirai-2, TabICL or TabPFN-TS.
 
 `model_id` forces a reload on every adapter except `TSICLAdapter`, where the checkpoint is selected by `checkpoint_version` instead.
@@ -213,17 +239,17 @@ All adapters implement the same minimal interface:
 - `fit(series, exog=None)` — stores context and metadata; no training.
 - `predict(steps, context, context_exog, exog, quantiles)` — returns a   `dict[str, np.ndarray]` of shape `(steps, n_quantiles)` keyed by series name.
 - `get_params()` / `set_params(**kwargs)` — sklearn-style parameter access.
-- `allow_exog` / `supports_past_only_covariates` / `supports_heterogeneous_covariates` / `supports_nan_in_series` — class attributes read by `FoundationModel` to decide how exog and NaN are handled. When `supports_heterogeneous_covariates` is `False` (Chronos-2, TS-ICL, TabICL, TimesFM 3.0), `FoundationModel.predict` groups the series by their (past-only, future) exog columns and calls `adapter.predict` once per group; adapters never receive a batch with mixed covariate columns. When `supports_nan_in_series` is `False`, a context with NaN raises `ValueError` before the adapter is called (all current adapters accept NaN; Nori drops the NaN rows itself).
-- `supports_categorical_covariates` / `requires_hf_auth` / `requires_provider_auth` / `weights_repo_id` / `weights_in_hf_cache` / `backend_package` / `default_model_id` / `SUPPORTED_QUANTILES`: descriptive class attributes. They are exposed, together with the ones above and the default `context_length`, through `get_model_info` and `list_adapters`. `supports_categorical_covariates` is `True` only for Chronos-2 (non-numeric covariates are passed natively); `requires_hf_auth` is `True` when the weights are gated on the Hugging Face Hub (currently none of the supported models); `requires_provider_auth` is `True` only for TabPFN-TS (Prior Labs token and license acceptance, outside the Hugging Face Hub); `weights_repo_id` is the fixed Hugging Face repository of the backends that ignore `model_id` (`jingang/TabICL`, `Prior-Labs/tabpfn_3_5`, `taharnbl/TS-ICL`) and `None` when the weights are downloaded from `model_id`; `weights_in_hf_cache` is `False` only for TabPFN-TS, which keeps the weights in its own cache directory; `SUPPORTED_QUANTILES` is `None` when any level in `(0, 1)` is accepted.
+- `allow_exog` / `supports_past_only_covariates` / `supports_heterogeneous_covariates` / `supports_nan_in_series` — class attributes read by `FoundationModel` to decide how exog and NaN are handled. When `supports_heterogeneous_covariates` is `False` (Chronos-2, TS-ICL, TabICL, TimesFM 3.0, Timestral), `FoundationModel.predict` groups the series by their (past-only, future) exog columns and calls `adapter.predict` once per group; adapters never receive a batch with mixed covariate columns. When `supports_nan_in_series` is `False`, a context with NaN raises `ValueError` before the adapter is called (all current adapters accept NaN; Nori drops the NaN rows itself). When `requires_equal_length_context` is `True` (T0, Timestral), `FoundationModel` left-pads the context and the historical exog of each group with NaN to the length of its longest series.
+- `supports_categorical_covariates` / `requires_hf_auth` / `requires_provider_auth` / `weights_repo_id` / `weights_in_hf_cache` / `backend_package` / `default_model_id` / `SUPPORTED_QUANTILES`: descriptive class attributes. They are exposed, together with the ones above and the default `context_length`, through `get_model_info` and `list_adapters`. `supports_categorical_covariates` is `True` only for Chronos-2 and Timestral (non-numeric covariates are passed natively); `requires_hf_auth` is `True` when the weights are gated on the Hugging Face Hub (currently none of the supported models); `requires_provider_auth` is `True` only for TabPFN-TS (Prior Labs token and license acceptance, outside the Hugging Face Hub); `weights_repo_id` is the fixed Hugging Face repository of the backends that ignore `model_id` (`jingang/TabICL`, `Prior-Labs/tabpfn_3_5`, `taharnbl/TS-ICL`) and `None` when the weights are downloaded from `model_id`; `weights_in_hf_cache` is `False` only for TabPFN-TS, which keeps the weights in its own cache directory; `SUPPORTED_QUANTILES` is `None` when any level in `(0, 1)` is accepted.
 
 ### Exog column validation at predict time
 
 `FoundationModel.predict` (and therefore `ForecasterFoundation.predict`, `predict_interval`, `predict_quantiles`) validates, per series, the columns of the future `exog` against the historical exog used as context (the one stored by `fit`, or `context_exog` when `context` is given). The check is skipped on the internal backtesting path, where both come from the same DataFrame. On every path, before the adapter is called, the historical exog of each series is reindexed to the index of its context and the future `exog` to the forecast horizon; missing timestamps are filled with NaN and reported with a `MissingValuesWarning`. No columns are ever added: a series only carries its own exog columns.
 
-| Situation (per series)                                  | Adapters with `supports_past_only_covariates=True` (Chronos-2, TS-ICL, TimesFM 3.0) | Adapters with `supports_past_only_covariates=False` (TabICL, TabPFN-TS, T0, Nori) |
+| Situation (per series)                                  | Adapters with `supports_past_only_covariates=True` (Chronos-2, TS-ICL, TimesFM 3.0, Timestral) | Adapters with `supports_past_only_covariates=False` (TabICL, TabPFN-TS, T0, Nori) |
 |---------------------------------------------------------|---------------------------------------------------------------|---------------------------------------------------------------|
 | Future `exog` column with no historical values          | `ValueError`                                                  | `ValueError`                                                  |
 | Historical column with no future values (`exog=None` or a subset of columns) | Used as a past-only covariate, no warning        | Ignored, `IgnoredArgumentWarning` listing the columns and series |
 | Same columns on both sides (any order)                  | OK                                                            | OK                                                            |
 
-Backend libraries (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`) are imported **lazily** inside the adapter method that needs them, so only the backend for the adapter you actually use needs to be installed.
+Backend libraries (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`, `timestral`) are imported **lazily** inside the adapter method that needs them, so only the backend for the adapter you actually use needs to be installed.

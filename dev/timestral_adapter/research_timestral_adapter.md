@@ -11,17 +11,22 @@ Leyenda de la procedencia de cada dato:
 
 ## 0. Estado y cómo retomar
 
-- **Fecha:** 29/10/2026 (última actualización: 05/11/2026, revisión del PR A abierto, [skforecast/skforecast#1450](https://github.com/skforecast/skforecast/pull/1450)).
+- **Fecha:** 29/10/2026 (última actualización: 05/11/2026, PR A fusionado, [skforecast/skforecast#1450](https://github.com/skforecast/skforecast/pull/1450), y revisión previa al PR B).
 - **Rama de referencia:** `0.27.x` (skforecast 0.27.0 en desarrollo), commit `9fc0fa12b9d0db55f695755d034f312c88233280` de `origin/0.27.x` (29/10/2026 12:58 +0100). Todas las referencias al código de skforecast son a ese commit. Revalidado el 04/11/2026 sobre `d3db96f` (59 commits más tarde): en `skforecast/foundation/` solo cambió una línea ajena al plan (`observed=True` en `FoundationModel._exog_to_dict`), `_backtesting_foundation` sigue descartando las ventanas de contexto enteras a NaN y `run_checks.py` pasa los 32 chequeos.
 - **Qué está commiteado:** este documento y `dev/timestral_adapter/experiments/`, fusionados en `0.27.x` con [skforecast/skforecast#1449](https://github.com/skforecast/skforecast/pull/1449) (merge `924ab7f`, 04/11/2026). Los logs van incluidos con `git add -f`, porque `.gitignore` excluye `*.log`. No se ha modificado nada en `skforecast/`, `docs/`, `tools/` ni en el harness.
 - **Qué hay en `dev/timestral_adapter/experiments/`:** el prototipo inicial, los seis experimentos (`exp1` a `exp6`) con sus logs y resultados, los requisitos del entorno y `skeleton/`, que extrae el esqueleto de este documento y lo ejecuta contra el backend real (sección 12).
-- **Estado del diseño:** el esqueleto de la sección 4, extraído de este documento, pasa los 32 chequeos de `skeleton/run_checks.py` con los pesos reales y `ruff check` con la configuración del repo **[probado]**. D5 y D11 están aceptadas (30/10/2026), y D7 (04/11/2026); las otras ocho decisiones de la sección 6 siguen abiertas, todas con una recomendación, y se pueden tomar al implementar: ninguna afecta al PR A (D6 es del PR C y las demás, del PR B). La revisión final del PR A (04/11/2026, anexo A, filas 91 a 96) aplicó el plan a una copia de `0.27.x` y ejecutó sus tests **[probado]**. El PR A está abierto como #1450 (rama `chore/foundation-equal-length-context`, contra `0.27.x`); su revisión del 05/11/2026 (anexo A, fila 97) midió el coste con el modelo real de T0 y cambió el relleno de las series a NumPy **[probado]**.
+- **Estado del diseño:** el esqueleto de la sección 4, extraído de este documento, pasa los 32 chequeos de `skeleton/run_checks.py` con los pesos reales y `ruff check` con la configuración del repo **[probado]**. D5 y D11 están aceptadas (30/10/2026), y D7 (04/11/2026); las otras ocho decisiones de la sección 6 siguen abiertas, todas con una recomendación, y se pueden tomar al implementar: ninguna afecta al PR A (D6 es del PR C y las demás, del PR B). La revisión final del PR A (04/11/2026, anexo A, filas 91 a 96) aplicó el plan a una copia de `0.27.x` y ejecutó sus tests **[probado]**. El PR A se fusionó en `0.27.x` el 05/11/2026 (#1450, merge `fc7efd0`, con merge commit); su revisión (anexo A, fila 97) midió el coste con el modelo real de T0 y cambió el relleno de las series a NumPy **[probado]**. La rama del PR B, `feature/timestral-adapter`, está creada desde `fc7efd0` con `--no-track`. La revisión previa al PR B (05/11/2026, anexo A, filas 98 a 101) comprobó el esqueleto contra el código fusionado y el estado de upstream.
+- **PR B (05/11/2026, sin commitear en `feature/timestral-adapter`):** hechos los pasos B1, B2, B3, B4, B6 y B7, con `verify` en verde (1057 tests de `skforecast/foundation` y de los llamantes, y `check_foundation_models_metadata.py` en verde para los cuatro checkpoints). `_match_quantile_indices` va en `_utils.py` justo después de `_validate_supported_quantiles`, junto a los otros helpers de cuantiles. El mismo día, con `timestral` 1.0.0 instalado desde git en el entorno de desarrollo (Windows, Python 3.13.18, torch 2.14.1 CPU, numpy 2.5.4, pandas 2.3.3):
+  - Prueba con los pesos reales: `experiments/check_real_adapter.py` (los chequeos de `run_checks.py` que necesitan el backend, contra el adapter del paquete y sin parches) pasa 18/18 (`check_real_adapter.log`) **[probado]**.
+  - Paso B5, opción (b): las celdas nuevas de Timestral (209M, `context_length=500`, MAE de backtesting 135.67, el mejor de la tabla; igual que en `exp2`), `list_adapters` y la comparación se ejecutaron en un notebook temporal con las celdas de preparación, y la comparación toma las métricas de los demás modelos de sus salidas guardadas. El resto de celdas conserva sus salidas. En el notebook de series heterogéneas solo cambian celdas de texto y un comentario de código. El fold del aviso del issue #7 (`Holiday`) es el que empieza el 2014-12-24 **[probado]**.
+  - Pendiente: el enlace del PR en la release note y lanzar `foundation-backends.yml` sobre la rama al abrir el PR.
+- **Fuera del plan:** el arreglo de `T0Adapter` para `tfc-t0>=0.4` (issue #1385) lo hará otra persona después de fusionar el PR B. No se toca T0 en el PR B.
 
 **Primer paso de la próxima sesión:**
 
 1. Leer la sección 6 y comprobar que todas las decisiones tienen el campo `Decisión:` relleno. Si falta alguna, preguntar antes de escribir código.
 2. Repasar la checklist de upstream (sección 10). Si algo ha cambiado (release en PyPI, cambio de API o de licencia, respuesta a los issues #6 o #7), ajustar el diseño como indica esa sección antes de empezar.
-3. Crear la rama del PR A desde `origin/0.27.x` (o la `X.Y.x` vigente) y seguir el plan de la sección 7 en orden. La rama del PR B se crea después de fusionar el PR A (sección 7).
+3. El PR A ya está fusionado (#1450). Trabajar en la rama `feature/timestral-adapter` (o crearla desde `origin/0.27.x` con `--no-track` si no existe) y seguir el PR B de la sección 7 en orden.
 
 **Antes del PR A:** este documento y `dev/timestral_adapter/experiments/` ya están en `0.27.x` (#1449), así que las ramas del plan salen de `0.27.x` con la especificación dentro. Si se añaden logs nuevos, `.gitignore` excluye `*.log`: hay que añadirlos con `git add -f`.
 
@@ -280,7 +285,7 @@ Lo que más se parece:
 
 - **Capacidades:** Chronos-2. Es el único otro adapter con covariables pasadas, futuras y categóricas a la vez.
 - **Cuantiles fijos, `device` como texto y `predict_kwargs` con claves reservadas:** TimesFM 3.0, que es el único con `_RESERVED_PREDICT_KWARGS`.
-- **Lote rectangular rellenado con NaN por la izquierda:** T0, que hoy lo hace dentro del propio adapter (`T0Adapter.predict` y `T0Adapter._build_future_covariates`).
+- **Lote rectangular rellenado con NaN por la izquierda:** T0. Lo hacía dentro del propio adapter (`T0Adapter.predict` y `T0Adapter._build_future_covariates`) hasta el PR A (#1450); desde entonces lo hace `FoundationModel` (`requires_equal_length_context=True`).
 
 Con la rejilla de 21 cuantiles, Timestral admite los intervalos del 80 % (`[0.1, 0.9]`, el valor por defecto de `predict_interval`), 90 % (`[0.05, 0.95]`) y 98 % (`[0.01, 0.99]`) **[probado]**. Con la rejilla `0.1 ... 0.9`, TimesFM y Moirai no pueden dar intervalos del 90 % ni del 98 %.
 
@@ -566,7 +571,7 @@ def _resolve_torch_device(
     mps_fallback_message : str, default None
         For backends that do not run on MPS. If given and the resolved
         device is MPS (`"auto"` on Apple Silicon without CUDA, or an
-        explicit `"mps"` or `"mps:<index>"`), this message is raised as a
+        explicit `"mps"` or `"mps:<index>"`), this message is issued as a
         `UserWarning` and `"cpu"` is returned. If `None`, MPS is allowed.
     stacklevel : int, default 2
         `stacklevel` of the warning, so that it points to the user's call.
@@ -1448,14 +1453,14 @@ Cada decisión tiene opciones, una recomendación y lo que cambia según la resp
   - (c) Esperar a PyPI (issue #5, sin respuesta).
 - **Recomendación:** (a). Ningún otro backend se fija a una versión, y el check semanal de `tools/foundation_compat` sirve precisamente para detectar si un cambio de `main` rompe el adapter. Con (b), ese check no vería los cambios y los usuarios se quedarían en el commit fijado. sktime y darts lo integran con la URL de git (PR abiertos).
 - **Qué cambia:** con (b), solo la cadena (en la clase, en `adapters.toml` y en la documentación). Con (c), se aplaza todo; el diseño no cambia salvo `backend_package = "timestral"`. En cualquier caso, los usuarios detrás de un firewall que bloquee git no podrán instalarlo hasta que esté en PyPI.
-- **Decisión:**
+- **Decisión:** (a), aceptada el 05/11/2026.
 
 ### D2. Licencia
 
 - **Opciones:** (a) Registrarla con `commercial_use_restricted=True`, para que salga la `LicenseWarning` al cargar los pesos. (b) `False`, porque no es una licencia "no comercial" en sentido estricto.
 - **Recomendación:** (a). Deja fuera a las empresas grandes, también para su uso interno, y el docstring de `LicenseWarning` habla de "restrictions on commercial or production use". TabPFN es un precedente: está registrada como restringida con "non-commercial without an enterprise license".
 - **Qué cambia:** con (a), la entrada de `_MODEL_LICENSES` de la sección 4, los tests de licencia (sección 8) y las tablas de licencias de la documentación. El texto que todavía dice "non-commercial" (el docstring de `_warn_if_non_commercial` y la skill `foundation-forecasting`) se puede ajustar a "commercial-use restriction". Con (b), el tercer campo pasa a `False`, el cuarto a `None`, y desaparece el aviso.
-- **Decisión:**
+- **Decisión:** (a), aceptada el 05/11/2026.
 
 ### D3. Issue #7 (covariables futuras planas)
 
@@ -1466,14 +1471,14 @@ Cada decisión tiene opciones, una recomendación y lo que cambia según la resp
   - Aparte, mantener o no `symmetric_averaging=True` por defecto.
 - **Recomendación:** (b) y mantener `symmetric_averaging=True`, el valor de Mistral y de sus benchmarks. (c) cambia los datos del usuario sin decírselo y sería un preprocesado propio de un backend.
 - **Qué cambia:** con (a), se eliminan `_warn_if_constant_known_covariates`, su llamada en `predict`, la importación de `FeatureOutOfRangeWarning` y sus tests, y el párrafo de Notes cambia. Con (c), el método pasa a enmascarar el histórico en lugar de avisar. Para desactivar el promedio por defecto, `__init__` pondría `{"symmetric_averaging": False}` en `predict_kwargs` (y `get_params` dejaría de devolver `None`).
-- **Decisión:**
+- **Decisión:** (b) y `symmetric_averaging=True`, aceptada el 05/11/2026.
 
 ### D4. Categóricas
 
 - **Opciones:** (a) `supports_categorical_covariates=True`, con el adapter traduciendo las etiquetas a códigos. (b) `False`, rechazando las columnas no numéricas como TimesFM 3.0.
 - **Recomendación:** (a). El backend tiene tratamiento específico para las categóricas, y Timestral sería el segundo adapter (tras Chronos-2) que las admite.
 - **Qué cambia:** con (b), se eliminan `_is_categorical`, `_categorical_columns`, `_to_codes` y las claves `categorical_*` de `_build_covariates`, y `_to_float_array` lanza `ValueError` con columnas no numéricas, con el texto de T0. Hay que retocar el docstring y los tests. Con (a), hay que corregir las frases que dicen que solo Chronos-2 admite categóricas (sección 9).
-- **Decisión:**
+- **Decisión:** (a), aceptada el 05/11/2026.
 
 ### D5. Relleno por la izquierda
 
@@ -1506,21 +1511,21 @@ Cada decisión tiene opciones, una recomendación y lo que cambia según la resp
 - **Opciones:** (a) `"mistralai/Timestral-28M"`. (b) `"mistralai/Timestral-209M"`.
 - **Recomendación:** (a). Con contexto largo rinde como Chronos-2 en un 40 % menos de tiempo, descarga 111 MB y sigue el criterio de Chronos (el pequeño por defecto). La documentación recomendaría el 209M para la mejor precisión.
 - **Qué cambia:** con (b), cambian la clase, el valor esperado en `test_list_adapters_output`, el `model_id` de los ejemplos y `EXTRA_MODEL_IDS` (el 28M pasaría a la lista y el 209M saldría).
-- **Decisión:**
+- **Decisión:** (a), aceptada el 05/11/2026.
 
 ### D9. `context_length` por defecto
 
 - **Opciones:** (a) 4096. (b) 8192, como Chronos y T0.
 - **Recomendación:** (a): da casi toda la ganancia por la mitad del coste con el 209M (73.0 s frente a 147.7 s) y un 60 % con el 28M (11.6 s frente a 19.5 s) (sección 2).
 - **Qué cambia:** la firma, los docstrings, la línea de `FoundationModel` ("Commonly used kwargs by model"), el valor esperado en `test_get_model_info_output_for_each_adapter` y en `test_TimestralAdapter_init_default_params`, y las tablas de la documentación.
-- **Decisión:**
+- **Decisión:** (a), aceptada el 05/11/2026.
 
 ### D10. Modelo del smoke test de `tools/foundation_compat`
 
 - **Opciones:** (a) `"mistralai/Timestral-5M"` en `adapters.toml` (21 MB). (b) `"mistralai/Timestral-28M"`, el `default_model_id`.
 - **Recomendación:** (a). El check semanal descarga menos y corre más rápido. Todas las entradas actuales usan el `default_model_id`; ningún test lo exige, pero es una convención y hay que decirlo en el PR.
 - **Qué cambia:** solo la línea `model_id` de `[timestral]` en `adapters.toml`.
-- **Decisión:**
+- **Decisión:** (a), aceptada el 05/11/2026.
 
 ### D11. Orden de los pull requests
 
@@ -1553,7 +1558,7 @@ Comprobación del PR A: `verify` (sección 13) con los tests de `skforecast/foun
 
 ### PR B: el adapter (rama propuesta `feature/timestral-adapter`)
 
-La rama se crea desde `origin/0.27.x` después de fusionar el PR A (el esqueleto usa los argumentos nuevos de `_resolve_torch_device` y el relleno de `FoundationModel`). Si hay que empezar antes, se crea desde la rama del PR A; el PR A se fusiona con merge commit (no squash), y después se hace `git merge origin/0.27.x` en la rama del PR B y un push normal. Nunca rebase: una rama ya publicada necesitaría un force push, que `push_guard.py` bloquea. El PR B se abre contra `0.27.x` (como borrador hasta que el PR A esté fusionado, para que su diff no muestre los commits del PR A). Orden de los pasos: los tests de cada paso solo pasan con los anteriores hechos; registrar la clase sin la licencia, `adapters.toml` y la matriz pone en rojo los tests que recorren el registro, así que esas entradas van en el mismo paso.
+La rama se crea desde `origin/0.27.x` después de fusionar el PR A (el esqueleto usa los argumentos nuevos de `_resolve_torch_device` y el relleno de `FoundationModel`). Hecho el 05/11/2026: `feature/timestral-adapter` desde `fc7efd0`, con `--no-track` para que un Sync de VS Code no publique en `0.27.x`. Para ponerla al día, `git merge origin/0.27.x` y un push normal; nunca rebase, porque una rama ya publicada necesitaría un force push, que `push_guard.py` bloquea. El PR B se abre contra `0.27.x`. Orden de los pasos: los tests de cada paso solo pasan con los anteriores hechos; registrar la clase sin la licencia, `adapters.toml` y la matriz pone en rojo los tests que recorren el registro, así que esas entradas van en el mismo paso.
 
 Código nuevo del adapter, más la documentación y el contexto de IA.
 
@@ -1697,7 +1702,7 @@ model_id = "mistralai/Timestral-5M"
 
 `tools/check_foundation_models_metadata.py`: `"mistralai/Timestral-5M"`, `"mistralai/Timestral-123M"` y `"mistralai/Timestral-209M"` en `EXTRA_MODEL_IDS` (el 28M ya lo cubre `list_adapters()`), además del cambio de `license_name` (paso B2).
 
-Aviso del harness: `.claude/skills/verify/affected.py` ejecuta `python -m pytest tools/foundation_compat/tests -q` cuando se toca `tools/foundation_compat/`, y ese comando falla porque `conftest.py` declara `--backend` como obligatorio. Es un fallo previo, ajeno a Timestral: hay que decirlo en el PR y no confundirlo con un fallo del cambio **[documentado]** (lo encontró un agente; no lo he ejecutado).
+Aviso del harness: `.claude/skills/verify/affected.py` ejecuta `python -m pytest tools/foundation_compat/tests -q` cuando se toca `tools/foundation_compat/`, y ese comando falla porque `conftest.py` declara `--backend` como obligatorio. Es un fallo previo, ajeno a Timestral: hay que decirlo en el PR y no confundirlo con un fallo del cambio **[probado]** (05/11/2026: `error: the following arguments are required: --backend`). Esa carpeta solo tiene los tests que se ejecutan contra un backend instalado (`run.py`); la configuración (`adapters.toml`, la matriz y las clases) la comprueba `skforecast/foundation/tests/tests_foundation_models/test_backends_compat_config.py`, que sí entra en los tests del PR.
 
 ## 9. Puntos que hay que tocar
 
@@ -1765,6 +1770,8 @@ Se pueden arreglar en el PR B si se tocan esos archivos, o dejarlos:
 ## 10. Revisión de upstream antes de empezar
 
 La sesión de implementación debe revisar esto primero. Estado a 29/10/2026 **[probado]** salvo donde se indica.
+
+Revisado de nuevo el 05/11/2026 **[probado]**: sin cambios. `timestral` sigue sin estar en PyPI (404); `main` sigue en el único commit `a534bdb`, sin tags ni releases; las cuatro revisiones de Hugging Face son las de la sección 2, con `license: other`, sin `license_name` y sin acceso restringido; siguen los 7 issues, sin PR y sin respuesta de Mistral (el último comentario, de la comunidad, es del 28/10/2026), y las integraciones de sktime y darts siguen abiertas. No se han revisado el informe técnico ni el anuncio.
 
 | Punto | Dónde mirarlo | Estado el 29/10/2026 | Si ha cambiado |
 |:------|:--------------|:---------------------|:---------------|
@@ -2085,3 +2092,17 @@ Comprobado y correcto, sin cambios: todas las celdas de los adapters existentes 
 | # | Hallazgo | Comprobación | Corrección |
 |--:|:---------|:-------------|:-----------|
 | 97 | `_left_pad_context` rellenaba cada serie con `set_axis` + `reindex`, unas 5 veces más lento que el `np.full` que T0 usaba antes (6,4 ms frente a 1,2 ms por 100 series sin exog; 74 frente a 16 ms con 1000) | Medido en el helper aislado y en `predict` completo; salidas idénticas con `assert_series_equal` | Camino de NumPy para las series con dtype de NumPy (float se conserva, el resto a float64; los nullable siguen por `reindex`), código de la sección 4. El helper pasa de 6,4 a 1,8 ms (100 series sin exog) y de 19,3 a 16,0 ms (con 4 exog); el test fija un `int64` que sale `float64` y un `float32` que se conserva |
+
+**Revisión previa al PR B** (05/11/2026, `0.27.x` en `fc7efd0`, con el PR A fusionado). Mismo entorno de desarrollo, sin `timestral` instalado (backend falso):
+
+- `skforecast/foundation/tests` en verde sobre `0.27.x` (886 tests).
+- Las funciones compartidas del esqueleto (`_left_pad_context`, `_resolve_torch_device`) tienen el mismo código que las del paquete (comparado con `ast`), y el bucle de `foundation_loop.txt` está entero en `FoundationModel.predict`. `_match_quantile_indices` solo difiere en lo que cambia el paso B2 (deja de ser `staticmethod` y el ejemplo de `quantile_grid`).
+- El esqueleto, registrado con `FakeTimestralForecaster` y un módulo `timestral` falso, sin parchear `FoundationModel`: cumple el contrato de `_AdapterBase`; series de distinta longitud y fecha final con exog numéricas y categóricas llegan como lote rectangular rellenado por la izquierda (una llamada por firma de exog); cuantiles en el orden pedido; `LicenseWarning` al cargar; MPS (`"auto"` y `"mps:0"`) pasa a CPU con aviso; `backtesting_foundation` con series heterogéneas y cuantiles **[probado]**.
+- Upstream sin cambios (sección 10). BUG-04 y QW-05 del roadmap siguen sin fusionar en `0.27.x`: la coordinación de D11 sigue vigente.
+
+| # | Hallazgo | Comprobación | Corrección |
+|--:|:---------|:-------------|:-----------|
+| 98 | Tras la fila 97, `_left_pad_context` usa `np`, pero la cabecera de `shared_changes.py` que escribe `extract_skeleton.py` no lo importaba: `ruff` da F821 y `run_checks.py` fallaría con `NameError` en cuanto rellenara una serie | Reproducido | `import numpy as np` en `HEADER_SHARED`; además, lectura y escritura en UTF-8 (en Windows fallaba al leer este documento con cp1252) |
+| 99 | El docstring de `_resolve_torch_device` del esqueleto decía "raised as a `UserWarning`" y el del paquete, "issued" | Comparado con el paquete | "issued" |
+| 100 | Los avisos del issue #7 (`stacklevel=5`) y de MPS (`stacklevel=6`) apuntan a la línea del usuario con `ForecasterFoundation.predict`, pero llamando a `FoundationModel.predict` directamente se pasan del marco del usuario (`<sys>:0`). Moirai (`stacklevel=7`, ya en `0.27.x`) hace lo mismo, y TabICL, TabPFN y Nori, al revés (`stacklevel=3`: aciertan con `FoundationModel` y apuntan dentro de skforecast con `ForecasterFoundation`) | Reproducido con el backend falso | Sin cambio: ningún `stacklevel` fijo sirve para los dos caminos, el aviso sale igual y `ForecasterFoundation` es el camino principal, como en Moirai. El test 30 fija el camino de `ForecasterFoundation` |
+| 101 | `run_checks.py` sigue insertando el bucle de `foundation_loop.txt` en `FoundationModel.predict` y declarando `requires_equal_length_context` en los adapters, cosas que ya hace el paquete | Confirmado (las marcas que busca siguen en `_foundation_model.py`, así que no falla) | Sin cambio ahora: el punto 5 de la sección 13 ya pide adaptarlo al adapter real en el PR B |

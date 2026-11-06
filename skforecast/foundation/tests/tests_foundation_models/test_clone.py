@@ -19,8 +19,12 @@ from skforecast.foundation._foundation_model import FoundationModel
         "theforecastingcompany/t0-alpha",
         "taharnbl/TS-ICL",
         "Synthefy/Nori",
+        "mistralai/Timestral-28M",
     ],
-    ids=["chronos", "timesfm", "timesfm3", "moirai", "tabicl", "tabpfn", "t0", "tsicl", "nori"],
+    ids=[
+        "chronos", "timesfm", "timesfm3", "moirai", "tabicl", "tabpfn", "t0",
+        "tsicl", "nori", "timestral",
+    ],
 )
 def test_clone_round_trip_every_adapter_default_params(model_id):
     """
@@ -46,8 +50,9 @@ def test_clone_round_trip_every_adapter_default_params(model_id):
         ("soda-inria/tabicl",               {"tabicl_config": {"n_estimators": 4}}),
         ("priorlabs/tabpfn-ts",             {"tabpfn_model_config": {"device": "cpu"}}),
         ("Synthefy/Nori",                   {"nori_config": {"model_path": "dummy"}}),
+        ("mistralai/Timestral-28M",         {"predict_kwargs": {"symmetric_averaging": False}}),
     ],
-    ids=["chronos", "timesfm", "timesfm3", "tabicl", "tabpfn", "nori"],
+    ids=["chronos", "timesfm", "timesfm3", "tabicl", "tabpfn", "nori", "timestral"],
 )
 def test_clone_round_trip_with_non_empty_config_dict(model_id, config_kwargs):
     """

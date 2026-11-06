@@ -168,7 +168,7 @@ All marked with `<!-- AUTO-GENERATED -->` header and tracked in `.gitattributes`
 | `feature-selection` | — | RFECV, SelectFromModel |
 | `drift-detection` | — | RangeDriftDetector, PopulationDriftDetector |
 | `deep-learning-forecasting` | `architecture-options.md` | ForecasterRnn, LSTM/GRU |
-| `foundation-forecasting` | `adapter-parameters.md` | ForecasterFoundation, Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL |
+| `foundation-forecasting` | `adapter-parameters.md` | ForecasterFoundation, Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL, Timestral |
 | `choosing-a-forecaster` | — | Decision guide for forecaster selection |
 | `baseline-forecasting` | — | ForecasterEquivalentDate and naive baselines |
 | `troubleshooting-common-errors` | — | Common mistakes and fixes |
@@ -236,7 +236,9 @@ errors, HTTP 408/425/429/5xx) up to 3 times with an increasing delay. A link tha
 still fails with one of them after the last attempt is printed as a warning and
 does not fail the check: the server is down at the moment (it happens with
 `doi.org` and Zenodo), which says nothing about the link. A 404, a DNS error or a
-redirect that is not allowed still fail it.
+redirect that is not allowed still fail it. A VCS requirement of pip
+(`git+https://github.com/<org>/<repo>.git`) is checked through the page of the
+repository, since the `.git` URL redirects.
 
 A `https://skforecast.org/latest/...` page that returns 404 is reported as
 "pending publication" instead of an error when its source exists in `docs/`

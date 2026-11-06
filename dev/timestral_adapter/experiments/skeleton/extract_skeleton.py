@@ -24,6 +24,7 @@ dev/timestral_adapter/research_timestral_adapter.md. Generated file, do not edit
 
 from __future__ import annotations
 import warnings
+import numpy as np
 import pandas as pd
 
 
@@ -56,7 +57,7 @@ from shared_changes import _match_quantile_indices, _resolve_torch_device
 
 '''
 
-doc = Path(sys.argv[1]).read_text()
+doc = Path(sys.argv[1]).read_text(encoding="utf-8")
 blocks = dict(re.findall(
     r"<!-- skeleton:(\w+) -->\n```python\n(.*?)\n```", doc, flags=re.DOTALL
 ))
@@ -66,8 +67,9 @@ if missing:
 
 here = Path(__file__).parent
 (here / "shared_changes.py").write_text(
-    HEADER_SHARED + blocks["shared_utils"] + "\n\n\n" + blocks["resolve_device"] + "\n"
+    HEADER_SHARED + blocks["shared_utils"] + "\n\n\n" + blocks["resolve_device"] + "\n",
+    encoding="utf-8",
 )
-(here / "timestral_skeleton.py").write_text(HEADER_ADAPTER + blocks["adapter"] + "\n")
-(here / "foundation_loop.txt").write_text(blocks["foundation_loop"] + "\n")
+(here / "timestral_skeleton.py").write_text(HEADER_ADAPTER + blocks["adapter"] + "\n", encoding="utf-8")
+(here / "foundation_loop.txt").write_text(blocks["foundation_loop"] + "\n", encoding="utf-8")
 print("written shared_changes.py, timestral_skeleton.py and foundation_loop.txt")

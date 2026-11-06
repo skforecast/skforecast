@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 import warnings
 
+from ..exceptions import FeatureOutOfRangeWarning
 from ..utils import expand_index
 from ._adapter_base import _AdapterBase
 from ._utils import (
@@ -25,6 +26,7 @@ from ._utils import (
     _tensor_to_numpy,
     _apply_set_params,
     _warn_if_non_commercial,
+    _match_quantile_indices,
     get_exog_signature,
 )
 
@@ -1487,7 +1489,7 @@ class TimesFM3Adapter(_AdapterBase):
         outs = dict(zip(names, results))
 
         if quantile_list is not None:
-            quantile_indices = self._match_quantile_indices(
+            quantile_indices = _match_quantile_indices(
                 list(self._model.config.quantiles), quantile_list
             )
 
@@ -1623,55 +1625,6 @@ class TimesFM3Adapter(_AdapterBase):
         )
 
         return past_only, past_future
-
-    @staticmethod
-    def _match_quantile_indices(
-        quantile_grid: list[float],
-        quantiles: list[float],
-        tol: float = 1e-6,
-    ) -> list[int]:
-        """
-        Map requested quantile levels to column indices in `quantile_grid`.
-
-        Parameters
-        ----------
-        quantile_grid : list of float
-            Quantile levels corresponding to the columns of the model's
-            quantile output, in order (e.g. `self._model.config.quantiles`).
-        quantiles : list of float
-            Requested quantile levels.
-        tol : float, default 1e-6
-            Maximum allowed absolute difference between a requested
-            quantile and its nearest match in `quantile_grid`.
-
-        Returns
-        -------
-        indices : list of int
-            Column index in `quantile_grid` for each entry in
-            `quantiles`, in the same order.
-
-        Notes
-        -----
-        A `ValueError` is raised if a requested quantile has no match
-        within `tol`. Matching against the model's own quantile grid
-        (synced from the loaded checkpoint) rather than a fixed formula
-        keeps the mapping correct even if a checkpoint ships a different
-        quantile grid.
-
-        """
-
-        indices = []
-        for q in quantiles:
-            diffs = [abs(g - q) for g in quantile_grid]
-            best_idx = diffs.index(min(diffs))
-            if diffs[best_idx] > tol:
-                raise ValueError(
-                    f"Quantile {q} not found in the model's quantile grid "
-                    f"{quantile_grid} (tolerance {tol})."
-                )
-            indices.append(best_idx)
-
-        return indices
 
     def _load_model(self) -> None:
         """
@@ -5164,6 +5117,781 @@ class NoriAdapter(_AdapterBase):
         return expand_index(series.index, steps=n)
 
 
+class TimestralAdapter(_AdapterBase):
+    """
+    Adapter for Mistral AI Timestral foundation models.
+
+    Parameters
+    ----------
+    model_id : str
+        HuggingFace model ID, e.g. `"mistralai/Timestral-28M"`. Must start
+        with `"mistralai/Timestral"`.
+    model : object, default None
+        Pre-loaded `TimestralForecaster` instance. If `None`, the model is
+        loaded lazily on the first `predict` call.
+    context_length : int, default 4096
+        Maximum number of historical observations to use as context. At fit
+        time only the last `context_length` observations are stored. At
+        predict time, if `context` is longer than `context_length` it
+        is trimmed to this length; if it is shorter, all available
+        observations are used as-is. Must be a positive integer. Timestral
+        supports context lengths up to 32,768: with a larger value, the
+        backend only uses the last 32,768 observations.
+    device : str, default 'auto'
+        Device placement for the model. `"auto"` selects the best available
+        accelerator (CUDA > MPS > CPU). Also accepts explicit values such as
+        `"cuda"`, `"mps"`, or `"cpu"`, forwarded to
+        `TimestralForecaster.from_pretrained`. MPS is not supported by
+        Timestral 1.0.0: it falls back to CPU with a warning.
+    predict_kwargs : dict, default None
+        Additional keyword arguments forwarded verbatim to `forecast` (e.g.
+        `symmetric_averaging`, `clip_nonnegative`). Cannot include
+        `context`, `prediction_length`, `observation_mask`,
+        `past_covariates`, `known_covariates`, `categorical_past_covariates`
+        or `categorical_known_covariates`, which are managed internally.
+
+    Attributes
+    ----------
+    model_id : str
+        HuggingFace model ID.
+    context_ : dict
+        Stored training series after fitting.
+    context_exog_ : dict, None
+        Stored historical exogenous variables after fitting.
+    context_length : int
+        Maximum number of historical observations used as context.
+    device : str
+        Device placement for the model.
+    predict_kwargs : dict
+        Additional keyword arguments forwarded to `forecast`.
+    allow_exog : bool
+        Whether this adapter accepts exogenous variables. Always `True`.
+    supports_past_only_covariates : bool
+        Whether historical exog columns without future values are used as
+        past-only covariates. Always `True`.
+    supports_heterogeneous_covariates : bool
+        Whether series with different covariate columns can be forecast in
+        the same backend call. Always `False`: `forecast` takes the
+        covariates of every series as one array, so `FoundationModel`
+        groups the series by covariate signature and calls `predict` once
+        per group.
+    requires_equal_length_context : bool
+        Whether the backend needs every series of a call to have the same
+        context length. Always `True`: `forecast` takes the context of every
+        series as one array, so `FoundationModel` left-pads the context and
+        the historical exog of each group with NaN, which Timestral treats
+        as missing values.
+    supports_nan_in_series : bool
+        Whether the backend accepts NaN values in the series used as
+        context. Always `True`.
+    supports_categorical_covariates : bool
+        Whether the backend supports non-numeric covariates natively, so
+        they do not have to be encoded as numbers. `True`: the adapter maps
+        the labels of each non-numeric column to integer codes and Timestral
+        encodes them per series.
+    SUPPORTED_QUANTILES : list, None
+        Quantile levels accepted by the backend. `None` means any level in
+        `(0, 1)`.
+    requires_hf_auth : bool
+        Whether the checkpoints served by this adapter are gated on the
+        Hugging Face Hub, so an authenticated account that has accepted the
+        model license is needed. Declared per adapter, not per checkpoint.
+    requires_provider_auth : bool
+        Whether the model provider requires its own account or license
+        acceptance, outside the Hugging Face Hub, before the weights can be
+        used.
+    weights_repo_id : str, None
+        Hugging Face repository the backend downloads the weights from when
+        it is not `model_id`. `None` means the repository is `model_id`.
+        `None` for Timestral: the weights are downloaded from `model_id`.
+    weights_in_hf_cache : bool
+        Whether the downloaded weights are stored in the Hugging Face Hub
+        cache, under `weights_repo_id`.
+    backend_package : str
+        Package that provides the backend, as passed to `pip install`.
+    default_model_id : str
+        Model ID used by default for this adapter (e.g. by skforecast
+        documentation and tools that need a concrete checkpoint).
+    is_fitted : bool
+        Whether the adapter has been fitted.
+
+    Notes
+    -----
+    Timestral supports only 21 fixed quantile levels: 0.01, 0.05, every
+    multiple of 0.05 up to 0.95, and 0.99. Requesting any other level raises
+    a `ValueError`. The point forecast is the median (quantile 0.5).
+
+    Each series is forecast as an independent target. For each series,
+    columns present in its future `exog` become known covariates spanning
+    `context + horizon`, built by concatenating the matching historical
+    column from `context_exog` with the future values; columns present only
+    in its `context_exog` become past covariates. Numeric and boolean columns
+    are passed as numeric covariates. Any other column is passed as a
+    categorical covariate: its labels are mapped to integer codes over the
+    history and the horizon of each series, and missing labels become NaN.
+    Whether a column is numeric is decided by its dtype, which is the same
+    in every series. NaN values in the series and in the numeric covariates
+    are treated as missing values by the backend; in a categorical
+    covariate, a missing label is encoded as a category of its own (except
+    in the left padding, which is ignored). Infinite values in numeric
+    covariates are turned into NaN.
+
+    A known covariate that is constant over the context and changes over the
+    forecast horizon (for example a price, or a 0/1 indicator that is 0 over
+    the whole context) can make Timestral 1.0.0 return very large quantiles
+    (mistralai/timestral#7). The adapter raises a `FeatureOutOfRangeWarning`
+    naming the affected series and columns. Setting the historical values of
+    those columns to NaN avoids the issue.
+
+    The pre-trained weights are released under a license that excludes
+    companies above a revenue threshold, so loading them raises a
+    `LicenseWarning`.
+
+    References
+    ----------
+    .. [1] https://github.com/mistralai/timestral
+
+    .. [2] https://huggingface.co/collections/mistralai/timestral
+
+    """
+
+    SUPPORTED_QUANTILES: list[float] = [
+        0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5,
+        0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99,
+    ]
+    allow_exog: bool = True
+    supports_past_only_covariates: bool = True
+    supports_categorical_covariates: bool = True
+    supports_heterogeneous_covariates: bool = False
+    requires_equal_length_context: bool = True
+    supports_nan_in_series: bool = True
+    requires_hf_auth: bool = False
+    requires_provider_auth: bool = False
+    weights_repo_id: str | None = None
+    weights_in_hf_cache: bool = True
+    backend_package: str = "timestral @ git+https://github.com/mistralai/timestral.git"
+    default_model_id: str = "mistralai/Timestral-28M"
+
+    _MODEL_ID_PREFIX: str = "mistralai/Timestral"
+    _RESERVED_PREDICT_KWARGS: frozenset[str] = frozenset({
+        "context", "prediction_length", "observation_mask", "past_covariates",
+        "known_covariates", "categorical_past_covariates",
+        "categorical_known_covariates",
+    })
+
+    def __init__(
+        self,
+        model_id: str,
+        *,
+        model: Any | None = None,
+        context_length: int = 4096,
+        device: str = "auto",
+        predict_kwargs: dict[str, Any] | None = None,
+    ) -> None:
+        """
+        Initialise the adapter.
+
+        Parameters
+        ----------
+        model_id : str
+            HuggingFace model ID, e.g. `"mistralai/Timestral-28M"`. Must
+            start with `"mistralai/Timestral"`.
+        model : object, default None
+            Pre-loaded `TimestralForecaster` instance. If `None`, the model
+            is loaded lazily on the first `predict` call.
+        context_length : int, default 4096
+            Maximum number of historical observations to retain as context.
+            At `fit` time only the last `context_length` observations of
+            `series` are stored. At `predict` time, if `context` is
+            longer than `context_length` it is trimmed to this length;
+            if it is shorter, all available observations are passed as-is.
+            Must be a positive integer.
+        device : str, default 'auto'
+            Device placement for the model. `"auto"` selects the best
+            available accelerator (CUDA > MPS > CPU). MPS falls back to CPU
+            with a warning.
+        predict_kwargs : dict, default None
+            Additional keyword arguments forwarded verbatim to `forecast`.
+
+        """
+
+        _validate_model_id_prefix(model_id, self._MODEL_ID_PREFIX, type(self).__name__)
+        _validate_positive_int("context_length", context_length)
+        predict_kwargs = predict_kwargs or {}
+        self._validate_predict_kwargs(predict_kwargs)
+
+        self.model_id       = model_id
+        self._model         = model
+        self.context_       = None
+        self.context_exog_  = None
+        self.context_length = context_length
+        self.device         = device
+        self.predict_kwargs = predict_kwargs
+        self.is_fitted      = False
+
+    @classmethod
+    def _validate_predict_kwargs(cls, predict_kwargs: dict[str, Any]) -> None:
+        """
+        Reject `predict_kwargs` keys that the adapter manages itself.
+
+        Parameters
+        ----------
+        predict_kwargs : dict
+            Candidate `predict_kwargs` value.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        A `ValueError` naming the offending keys is raised if any key in
+        `_RESERVED_PREDICT_KWARGS` is present. They are built internally
+        from `context`, `context_exog`, `exog` and `steps`, so passing them
+        explicitly would collide with the internal `forecast` call.
+
+        """
+
+        reserved = cls._RESERVED_PREDICT_KWARGS & set(predict_kwargs)
+        if reserved:
+            raise ValueError(
+                f"`predict_kwargs` cannot include {sorted(reserved)}. These "
+                f"arguments are managed internally by {cls.__name__}."
+            )
+
+    def get_params(self) -> dict:
+        """
+        Return the adapter's constructor parameters.
+
+        Returns
+        -------
+        params : dict
+            Keys: `model_id`, `context_length`, `device`, `predict_kwargs`.
+
+        """
+
+        return {
+            "model_id":       self.model_id,
+            "context_length": self.context_length,
+            "device":         self.device,
+            "predict_kwargs": self.predict_kwargs or None,
+        }
+
+    def set_params(self, **params) -> TimestralAdapter:
+        """
+        Set adapter parameters. Resets the model when parameters that affect
+        loading change.
+
+        Parameters
+        ----------
+        **params :
+            Valid keys: `model_id`, `context_length`, `device`,
+            `predict_kwargs`.
+
+        Returns
+        -------
+        self : TimestralAdapter
+
+        Notes
+        -----
+        Only `model_id` and `device` affect the loaded model, so only those
+        discard the cached model. `context_length` and `predict_kwargs` are
+        applied at predict time and never trigger a reload.
+
+        """
+
+        def validate(candidate_params: dict) -> dict:
+            if "model_id" in candidate_params:
+                _validate_model_id_prefix(
+                    candidate_params["model_id"],
+                    self._MODEL_ID_PREFIX,
+                    type(self).__name__,
+                )
+            if "context_length" in candidate_params:
+                _validate_positive_int(
+                    "context_length", candidate_params["context_length"]
+                )
+            if "predict_kwargs" in candidate_params:
+                candidate_params["predict_kwargs"] = (
+                    candidate_params["predict_kwargs"] or {}
+                )
+                self._validate_predict_kwargs(candidate_params["predict_kwargs"])
+            return candidate_params
+
+        return _apply_set_params(
+            self, params,
+            validate=validate,
+            resets=(
+                ({"model_id", "device"}, lambda: setattr(self, "_model", None)),
+            ),
+        )
+
+    def fit(
+        self,
+        context: dict[str, pd.Series],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+    ) -> TimestralAdapter:
+        """
+        Store the training series and optional historical exogenous variables.
+        No model training occurs since Timestral is a zero-shot inference
+        model.
+
+        All input normalization and validation is performed upstream by
+        `FoundationModel`; this method receives canonical dicts only.
+
+        Parameters
+        ----------
+        context : dict pandas Series
+            Normalized training series, one entry per series.
+        context_exog : dict pandas DataFrame, pandas Series, or None
+            Per-series historical exogenous variables (past covariates).
+
+        Returns
+        -------
+        self : TimestralAdapter
+
+        """
+
+        return super().fit(context=context, context_exog=context_exog)
+
+    def predict(
+        self,
+        steps: int,
+        context: dict[str, pd.Series],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        quantiles: list[float] | tuple[float, ...] | None,
+    ) -> dict[str, np.ndarray]:
+        """
+        Generate predictions using the Timestral model.
+
+        All input normalization, validation, context trimming and padding is
+        performed upstream by `FoundationModel`; this method receives
+        pre-processed dicts only.
+
+        Parameters
+        ----------
+        steps : int
+            Number of steps ahead to forecast.
+        context : dict
+            Per-series context windows (already trimmed to
+            `context_length` and left-padded with NaN to the same length).
+        context_exog : dict, None
+            Per-series historical exogenous variables (already trimmed and
+            padded). For each series, columns not also present in its `exog`
+            are forwarded as past covariates.
+        exog : dict, None
+            Per-series future exogenous variables for the forecast
+            horizon. Each column is forwarded as a known covariate of that
+            series, concatenated with its historical values.
+        quantiles : list of float or None
+            Quantile levels. Must be a subset of `SUPPORTED_QUANTILES`.
+
+        Returns
+        -------
+        predictions : dict
+            Keys are series names, in the same order as `context`. Each
+            value is a 2-D array of shape `(steps, n_quantiles)`.
+
+        Notes
+        -----
+        A `ValueError` is raised if a requested quantile level is not in
+        `SUPPORTED_QUANTILES`.
+
+        `forecast` requires all series in one call to share the same
+        context length and covariate layout. `FoundationModel` guarantees
+        both: it groups the series by covariate signature
+        (`get_exog_signature`), left-pads each group and calls `predict`
+        once per group, so the signature of the first series sets the
+        column order for the whole batch. The point forecast
+        (`quantiles is None`) is the model's median quantile.
+
+        """
+
+        quantile_list = _validate_supported_quantiles(
+            quantiles, self.SUPPORTED_QUANTILES, "Timestral"
+        )
+
+        # NOTE: the model is loaded lazily here so that the adapter can be
+        # instantiated and fitted without requiring timestral to be installed.
+        self._load_model()
+
+        names = list(context.keys())
+
+        # Every series in a call shares the same covariate columns
+        # (`FoundationModel` groups them by covariate signature), so the
+        # signature of the first series sets the column order for the batch.
+        past_only_cols, fut_cols = get_exog_signature(
+            context_exog = context_exog.get(names[0]) if context_exog is not None else None,
+            exog         = exog.get(names[0]) if exog is not None else None,
+        )
+        categorical_cols = self._categorical_columns(
+            context_exog   = context_exog.get(names[0]) if context_exog is not None else None,
+            exog           = exog.get(names[0]) if exog is not None else None,
+            past_only_cols = past_only_cols,
+            fut_cols       = fut_cols,
+        )
+        if fut_cols:
+            self._warn_if_constant_known_covariates(
+                names        = names,
+                context_exog = context_exog,
+                exog         = exog,
+                fut_cols     = fut_cols,
+            )
+
+        covariates = [
+            self._build_covariates(
+                context_exog     = (
+                    context_exog.get(series_name) if context_exog is not None else None
+                ),
+                exog             = exog.get(series_name) if exog is not None else None,
+                past_only_cols   = past_only_cols,
+                fut_cols         = fut_cols,
+                categorical_cols = categorical_cols,
+            )
+            for series_name in names
+        ]
+        covariate_kwargs = {
+            key: np.stack([series_covariates[key] for series_covariates in covariates])
+            for key in covariates[0]
+        }
+
+        forecast = self._model.forecast(
+            context           = np.stack([
+                                    context[series_name].to_numpy(dtype=np.float64)
+                                    for series_name in names
+                                ])[:, np.newaxis, :],
+            prediction_length = steps,
+            **covariate_kwargs,
+            **self.predict_kwargs,
+        )
+
+        # Shape (n_series, steps, n_levels): one target per series.
+        q_arr = _tensor_to_numpy(forecast.quantiles)[:, 0]
+        quantile_indices = _match_quantile_indices(
+            list(forecast.quantile_levels),
+            quantile_list if quantile_list is not None else [0.5],
+        )
+
+        return {
+            series_name: q_arr[i][:, quantile_indices]
+            for i, series_name in enumerate(names)
+        }
+
+    @staticmethod
+    def _is_categorical(col_data: pd.Series) -> bool:
+        """
+        Whether a covariate column is passed to Timestral as categorical.
+
+        Parameters
+        ----------
+        col_data : pandas Series
+            A single covariate column.
+
+        Returns
+        -------
+        is_categorical : bool
+            `False` for numeric and boolean columns, `True` otherwise.
+
+        """
+
+        return not (
+            pd.api.types.is_numeric_dtype(col_data)
+            or pd.api.types.is_bool_dtype(col_data)
+        )
+
+    @classmethod
+    def _categorical_columns(
+        cls,
+        context_exog: pd.DataFrame | pd.Series | None,
+        exog: pd.DataFrame | pd.Series | None,
+        past_only_cols: tuple,
+        fut_cols: tuple,
+    ) -> set:
+        """
+        Return the covariate columns that are passed as categorical
+        covariates, from the exogenous variables of one series.
+
+        Parameters
+        ----------
+        context_exog : pandas DataFrame, pandas Series, None
+            Historical exogenous variables of the first series of the batch.
+        exog : pandas DataFrame, pandas Series, None
+            Future exogenous variables of the first series of the batch.
+        past_only_cols : tuple
+            Past-only covariate columns of the batch.
+        fut_cols : tuple
+            Known-future covariate columns of the batch.
+
+        Returns
+        -------
+        categorical_cols : set
+            Past-only columns that are not numeric in `context_exog` and
+            known-future columns that are not numeric in `exog`.
+
+        Notes
+        -----
+        One series is enough: `FoundationModel` rejects exog columns whose
+        dtype differs between series (`check_preprocess_exog_multiseries`).
+
+        """
+
+        ctx_df = (
+            context_exog.to_frame()
+            if isinstance(context_exog, pd.Series)
+            else context_exog
+        )
+        fut_df = (
+            exog.to_frame()
+            if isinstance(exog, pd.Series)
+            else exog
+        )
+
+        return {
+            col for col in past_only_cols if cls._is_categorical(ctx_df[col])
+        } | {
+            col for col in fut_cols if cls._is_categorical(fut_df[col])
+        }
+
+    @staticmethod
+    def _to_float_array(col_data: pd.Series) -> np.ndarray:
+        """
+        Convert a numeric or boolean covariate column to a `float64` array.
+
+        Parameters
+        ----------
+        col_data : pandas Series
+            A single covariate column.
+
+        Returns
+        -------
+        col_array : numpy ndarray
+            1-D `float64` array, with NaN for missing and infinite values.
+
+        Notes
+        -----
+        Timestral masks infinite values in the target but not in the
+        numeric covariates, so they are turned into NaN here.
+
+        """
+
+        col_array = col_data.to_numpy(dtype=np.float64, na_value=np.nan)
+
+        return np.where(np.isinf(col_array), np.nan, col_array)
+
+    @staticmethod
+    def _to_codes(col_data: pd.Series) -> np.ndarray:
+        """
+        Map the labels of a categorical covariate column to integer codes.
+
+        Parameters
+        ----------
+        col_data : pandas Series
+            A single categorical covariate column, with the history followed
+            by the future values for known covariates, so that a label gets
+            the same code in both.
+
+        Returns
+        -------
+        col_array : numpy ndarray
+            1-D `float64` array with the code of each label
+            (`pandas.factorize`), and NaN for missing labels.
+
+        """
+
+        codes, _ = pd.factorize(col_data, use_na_sentinel=True)
+
+        return np.where(codes < 0, np.nan, codes).astype(np.float64)
+
+    @classmethod
+    def _build_covariates(
+        cls,
+        context_exog: pd.DataFrame | pd.Series | None,
+        exog: pd.DataFrame | pd.Series | None,
+        past_only_cols: tuple,
+        fut_cols: tuple,
+        categorical_cols: set,
+    ) -> dict[str, np.ndarray]:
+        """
+        Build the covariate arrays for one series from its own exogenous
+        variables, keyed by the `forecast` argument they are passed to.
+
+        Parameters
+        ----------
+        context_exog : pandas DataFrame, pandas Series, None
+            Historical exogenous variables aligned to the context for this
+            series. Must contain every column in `past_only_cols` and
+            `fut_cols`.
+        exog : pandas DataFrame, pandas Series, None
+            Future-known exogenous variables covering the forecast horizon
+            for this series. Must contain every column in `fut_cols`.
+        past_only_cols : tuple
+            Past-only covariate columns, as returned by `get_exog_signature`
+            for the first series of the group.
+        fut_cols : tuple
+            Known-future covariate columns, as returned by
+            `get_exog_signature` for the first series of the group.
+        categorical_cols : set
+            Columns passed as categorical covariates, as returned by
+            `_categorical_columns`.
+
+        Returns
+        -------
+        covariates : dict
+            Keys among `past_covariates` (shape `(n_cols, context_len)`),
+            `known_covariates` (shape `(n_cols, context_len + steps)`),
+            `categorical_past_covariates` and `categorical_known_covariates`.
+            A key is present only when it has at least one column.
+
+        """
+
+        ctx_df = (
+            context_exog.to_frame()
+            if isinstance(context_exog, pd.Series)
+            else context_exog
+        )
+        fut_df = (
+            exog.to_frame()
+            if isinstance(exog, pd.Series)
+            else exog
+        )
+
+        rows: dict[str, list[np.ndarray]] = {}
+        for col in past_only_cols:
+            if col in categorical_cols:
+                key, values = "categorical_past_covariates", cls._to_codes(ctx_df[col])
+            else:
+                key, values = "past_covariates", cls._to_float_array(ctx_df[col])
+            rows.setdefault(key, []).append(values)
+        for col in fut_cols:
+            if col in categorical_cols:
+                key = "categorical_known_covariates"
+                values = cls._to_codes(
+                    pd.concat([ctx_df[col], fut_df[col]], ignore_index=True)
+                )
+            else:
+                key = "known_covariates"
+                values = np.concatenate([
+                    cls._to_float_array(ctx_df[col]),
+                    cls._to_float_array(fut_df[col]),
+                ])
+            rows.setdefault(key, []).append(values)
+
+        return {key: np.stack(key_rows) for key, key_rows in rows.items()}
+
+    @classmethod
+    def _warn_if_constant_known_covariates(
+        cls,
+        names: list[str],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None],
+        exog: dict[str, pd.DataFrame | pd.Series | None],
+        fut_cols: tuple,
+    ) -> None:
+        """
+        Warn when a numeric known covariate is constant over the context and
+        takes other values over the forecast horizon.
+
+        Parameters
+        ----------
+        names : list of str
+            Series of the batch.
+        context_exog : dict
+            Per-series historical exogenous variables.
+        exog : dict
+            Per-series future exogenous variables.
+        fut_cols : tuple
+            Known-future covariate columns of the batch.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        Timestral 1.0.0 can return very large quantiles in that case
+        (mistralai/timestral#7). Only the columns passed as numeric
+        covariates (`_is_categorical` is `False`) are checked.
+
+        """
+
+        affected = []
+        for series_name in names:
+            ctx_df = context_exog[series_name]
+            fut_df = exog[series_name]
+            if isinstance(ctx_df, pd.Series):
+                ctx_df = ctx_df.to_frame()
+            if isinstance(fut_df, pd.Series):
+                fut_df = fut_df.to_frame()
+            for col in fut_cols:
+                if cls._is_categorical(fut_df[col]):
+                    continue
+                history = ctx_df[col].dropna()
+                if (
+                    history.nunique() == 1
+                    and (fut_df[col].dropna() != history.iloc[0]).any()
+                ):
+                    affected.append((series_name, col))
+
+        if affected:
+            warnings.warn(
+                f"Known covariates that are constant over the context and "
+                f"change over the forecast horizon, as (series, column): "
+                f"{affected}. Timestral can return very large quantiles in "
+                f"this case (mistralai/timestral#7). Setting their historical "
+                f"values to NaN avoids it.",
+                FeatureOutOfRangeWarning,
+                stacklevel=5,
+            )
+
+    def _load_model(self) -> None:
+        """
+        Load the Timestral model into `self._model` if not already set.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        This method is a no-op when `self._model` is already populated
+        (either by a prior call or by the `model` constructor argument).
+        The model is imported lazily from `timestral` and loaded via
+        `TimestralForecaster.from_pretrained`, resolving `self.device` to a
+        concrete device name first. Timestral 1.0.0 computes its scaling
+        statistics in float64, which MPS does not support
+        (mistralai/timestral#6), so MPS falls back to CPU with a warning.
+        `timestral` must be installed; an `ImportError` is raised otherwise.
+        A `LicenseWarning` is issued immediately before the weights are
+        loaded.
+
+        """
+
+        if self._model is not None:
+            return
+        try:
+            from timestral import TimestralForecaster
+        except ImportError as exc:
+            raise ImportError(
+                f"timestral is required for TimestralAdapter. "
+                f'Install it with `pip install "{self.backend_package}"`.'
+            ) from exc
+
+        _warn_if_non_commercial(self.model_id)
+
+        self._model = TimestralForecaster.from_pretrained(
+            self.model_id,
+            device=_resolve_torch_device(
+                self.device,
+                mps_fallback_message=(
+                    "MPS device is not supported by Timestral because the "
+                    "timestral library uses float64 operations internally. "
+                    "Falling back to CPU."
+                ),
+                stacklevel=6,
+            ),
+        )
+
+
 _ADAPTER_REGISTRY: dict[str, type] = {
     # Only Chronos-2 checkpoints: Chronos and Chronos-Bolt pipelines take a
     # different input format and do not accept `cross_learning`.
@@ -5178,7 +5906,8 @@ _ADAPTER_REGISTRY: dict[str, type] = {
     "priorlabs/tabpfn":   TabPFNAdapter,
     "theforecastingcompany/t0": T0Adapter,
     "Synthefy/Nori":      NoriAdapter,
-    "taharnbl/TS-ICL":    TSICLAdapter
+    "taharnbl/TS-ICL":    TSICLAdapter,
+    "mistralai/Timestral": TimestralAdapter,
 }
 
 

@@ -16,6 +16,7 @@ from skforecast.foundation._adapters import (
     T0Adapter,
     TSICLAdapter,
     NoriAdapter,
+    TimestralAdapter,
 )
 from .fixtures_adapters import y, y_wide, exog_shared, FakePipeline
 
@@ -33,11 +34,13 @@ _EXOG_ADAPTERS = [
     "Synthefy/Nori",
     "taharnbl/TS-ICL",
     "google/timesfm-3.0-pytorch",
+    "mistralai/Timestral-28M",
 ]
 _PAST_ONLY_ADAPTERS = [
     "autogluon/chronos-2-small",
     "taharnbl/TS-ICL",
     "google/timesfm-3.0-pytorch",
+    "mistralai/Timestral-28M",
 ]
 _FUTURE_ONLY_ADAPTERS = [
     "soda-inria/tabicl",
@@ -78,6 +81,7 @@ def _make_model(model_id="autogluon/chronos-2-small"):
         (MoiraiAdapter, False),
         (TimesFM25Adapter, False),
         (TimesFM3Adapter, True),
+        (TimestralAdapter, True),
     ],
     ids=lambda x: f"{getattr(x, '__name__', x)}",
 )

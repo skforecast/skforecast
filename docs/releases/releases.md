@@ -18,6 +18,8 @@ The main changes in this release are:
 
 + <span class="badge text-bg-feature">Feature</span> Backtesting returns, for machine learning, statistical and foundation models, the step of the forecast horizon (`step`) and the true value (`y_true`) of each prediction, and next to the metrics the number of points evaluated (`n_evaluated`) and, with a prediction interval, its empirical `coverage` and mean `interval_width`, per series and aggregated. Hyperparameter searches report it per candidate, and the multi-series searches of machine learning forecasters warn when the candidates are not evaluated on comparable points. [User guide](../user_guides/backtesting.ipynb#error-and-coverage-by-forecast-horizon) ([#1409](https://github.com/skforecast/skforecast/issues/1409), [#1437](https://github.com/skforecast/skforecast/pull/1437), [#1447](https://github.com/skforecast/skforecast/pull/1447), [#1452](https://github.com/skforecast/skforecast/pull/1452))
 
++ <span class="badge text-bg-feature">Feature</span> New <code>[TimestralAdapter]</code> adds support for **Mistral AI Timestral** (`'mistralai/Timestral-*'` ids), with past-only, known-future and categorical exogenous variables. [User guide](../user_guides/foundation-forecasting-models.ipynb#mistral-ai-timestral) ([#1454](https://github.com/skforecast/skforecast/pull/1454))
+
 + <span class="badge text-bg-api-change">API Change</span> Backtesting and hyperparameter search no longer require repeating the `differentiation` of the forecaster in <code>[TimeSeriesFold]</code> or <code>[OneStepAheadFold]</code>. The `differentiation` argument of both folds, and `window_size` of <code>[OneStepAheadFold]</code>, are deprecated: they have no effect, emit a `FutureWarning` and will be removed in 0.29.0. ([#1423](https://github.com/skforecast/skforecast/pull/1423))
 
 + <span class="badge text-bg-fix">Fix</span> The `predict_interval` method of <code>[ForecasterStats]</code> returns the interval requested in `interval`; it always returned the 95% interval. ([#1416](https://github.com/skforecast/skforecast/pull/1416))
@@ -68,6 +70,8 @@ The main changes in this release are:
 
 
 **Added**
+
++ New <code>[TimestralAdapter]</code> in the `foundation` module for **Mistral AI Timestral** (`'mistralai/Timestral-*'` ids, from 5M to 209M parameters), resolved automatically from `model_id`. It accepts past-only, known-future and categorical exogenous variables and returns 21 fixed quantile levels. The backend is installed from git (`pip install "timestral @ git+https://github.com/mistralai/timestral.git"`), and loading the weights raises a <code>[LicenseWarning]</code>. [User guide](../user_guides/foundation-forecasting-models.ipynb#mistral-ai-timestral) ([#1454](https://github.com/skforecast/skforecast/pull/1454))
 
 + <code>[backtesting_forecaster]</code>, <code>[backtesting_forecaster_multiseries]</code>, <code>[backtesting_stats]</code> and <code>[backtesting_foundation]</code> add `coverage` and `interval_width` (mean width of the interval, in the units of the series) to the metrics when the predictions define one interval: a float `interval`, or two quantiles optionally with the median (`[0.1, 0.9]` or `[0.1, 0.5, 0.9]`, in `interval` or `quantiles`). In multi-series backtesting they are reported per series and in the aggregated rows. ([#1409](https://github.com/skforecast/skforecast/issues/1409))
 
@@ -2115,6 +2119,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 [T0Adapter]: ../api/FoundationModel.md#skforecast.foundation._adapters.T0Adapter
 [NoriAdapter]: ../api/FoundationModel.md#skforecast.foundation._adapters.NoriAdapter
 [TSICLAdapter]: ../api/FoundationModel.md#skforecast.foundation._adapters.TSICLAdapter
+[TimestralAdapter]: ../api/FoundationModel.md#skforecast.foundation._adapters.TimestralAdapter
 
 <!-- stats -->
 [stats]: ../api/stats.md
