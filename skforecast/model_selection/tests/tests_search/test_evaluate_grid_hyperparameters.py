@@ -9,6 +9,7 @@ import pandas as pd
 from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error
 from sklearn.model_selection import ParameterGrid
 from sklearn.linear_model import Ridge, ElasticNet
+from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.preprocessing import StandardScaler
 from skforecast.metrics import mean_absolute_scaled_error, root_mean_squared_scaled_error
 from skforecast.exceptions import (
@@ -1371,6 +1372,43 @@ def test_evaluate_grid_hyperparameters_OneStepAheadFold_window_size_of_forecaste
     assert results['lags'].map(len).tolist() == [3, 3]
     assert forecaster.max_lag == 3
     assert [w for w in record if w.category is RuntimeWarning] == []
+
+
+def test_evaluate_grid_hyperparameters_TimeSeriesFold_NaN_in_test_set_single_series():
+    """
+    Test that, with a `TimeSeriesFold` and NaN in `y` inside the test set,
+    every candidate is evaluated (the dates without a true value are left out
+    of the metrics) on the same points, so no candidate is skipped and the
+    MissingValuesWarning of `n_evaluated` is not raised.
+    """
+    y_nan = y.copy()
+    y_nan.iloc[[35, 40, 45]] = np.nan
+    forecaster = ForecasterRecursive(
+        estimator=HistGradientBoostingRegressor(max_iter=5, random_state=123), lags=2
+    )
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results = _evaluate_grid_hyperparameters(
+                      forecaster    = forecaster,
+                      y             = y_nan,
+                      cv            = TimeSeriesFold(steps=5, initial_train_size=30),
+                      param_grid    = [{'max_depth': 2}, {'max_depth': 3}],
+                      metric        = 'mean_absolute_error',
+                      lags_grid     = [2, 10],
+                      return_best   = False,
+                      verbose       = False,
+                      show_progress = False
+                  )
+
+    assert len(results) == 4
+    assert results['mean_absolute_error'].notna().all()
+    assert results['n_evaluated'].tolist() == [17] * 4
+    assert [w for w in record if w.category is RuntimeWarning] == []
+    assert [
+        w for w in record
+        if w.category is MissingValuesWarning and "comparable" in str(w.message)
+    ] == []
 
 
 def test_evaluate_grid_hyperparameters_MissingValuesWarning_n_evaluated_single_series():

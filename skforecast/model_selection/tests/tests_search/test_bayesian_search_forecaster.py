@@ -6,7 +6,7 @@ import os
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import RandomForestRegressor, HistGradientBoostingRegressor
 from sklearn.linear_model import Ridge, LogisticRegression
 from sklearn.metrics import (
     mean_absolute_error, mean_absolute_percentage_error, r2_score, zero_one_loss
@@ -1861,6 +1861,45 @@ def test_bayesian_search_forecaster_ValueError_search_space_stops_the_search(cap
         )
 
     assert "Trial 0 failed" not in capfd.readouterr().err
+
+
+def test_bayesian_search_forecaster_TimeSeriesFold_NaN_in_test_set_single_series():
+    """
+    Test that, with a `TimeSeriesFold` and NaN in `y` inside the test set,
+    every trial is evaluated (the dates without a true value are left out of
+    the metrics) on the same points, so no trial is skipped and the
+    MissingValuesWarning of `n_evaluated` is not raised.
+    """
+    y_nan = y.copy()
+    y_nan.iloc[[35, 40, 45]] = np.nan
+    forecaster = ForecasterRecursive(
+        estimator=HistGradientBoostingRegressor(max_iter=5, random_state=123), lags=2
+    )
+
+    def search_space(trial):
+        return {'lags': trial.suggest_categorical('lags', [2, 10])}
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results, _ = bayesian_search_forecaster(
+                         forecaster    = forecaster,
+                         y             = y_nan,
+                         cv            = TimeSeriesFold(steps=5, initial_train_size=30),
+                         search_space  = search_space,
+                         metric        = 'mean_absolute_error',
+                         n_trials      = 4,
+                         return_best   = False,
+                         show_progress = False
+                     )
+
+    assert len(results) == 4
+    assert results['mean_absolute_error'].notna().all()
+    assert results['n_evaluated'].tolist() == [17] * 4
+    assert [w for w in record if w.category is RuntimeWarning] == []
+    assert [
+        w for w in record
+        if w.category is MissingValuesWarning and "comparable" in str(w.message)
+    ] == []
 
 
 def test_bayesian_search_forecaster_MissingValuesWarning_n_evaluated_single_series():

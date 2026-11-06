@@ -13,6 +13,10 @@ from skforecast.recursive import ForecasterRecursive
 from skforecast.recursive import ForecasterRecursiveClassifier
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirect
+from skforecast.metrics import (
+    mean_absolute_scaled_error,
+    root_mean_squared_scaled_error,
+)
 from skforecast.model_selection import backtesting_forecaster
 from skforecast.model_selection._split import TimeSeriesFold
 
@@ -395,35 +399,104 @@ def test_backtesting_forecaster_columns_order_when_interval_and_return_predictor
     assert metric.loc[0, "n_evaluated"] == 11
 
 
-def test_backtesting_forecaster_n_evaluated_when_true_values_are_missing():
+@pytest.mark.parametrize(
+    "refit, train_iloc_end",
+    [(False, 40), (True, 45)],
+    ids=lambda x: f"refit, train_iloc_end: {x}"
+)
+def test_backtesting_forecaster_metrics_leave_out_dates_without_true_values(
+    refit, train_iloc_end
+):
     """
-    Test that the dates without a true value are not evaluated: their `y_true`
-    is NaN and they are not counted in `n_evaluated`. A metric that ignores
-    missing values is needed, the metrics of scikit-learn raise an error.
+    Test that the dates without a true value are left out of the metrics (as
+    in the multi-series backtesting), also of the scaled metrics, whose
+    `y_train` has a missing value with `refit=True`: the metrics are the ones
+    calculated by hand without those dates, and they never receive a missing
+    value. The predictions keep the rows of those dates, with `step` and
+    `y_true` NaN, and they are not counted in `n_evaluated`.
     """
     y_nan = y.copy()
     y_nan.iloc[[42, 47]] = np.nan
 
-    def nan_mean_absolute_error(y_true, y_pred):
-        return np.nanmean(np.abs(y_true - y_pred))
+    received = []
+
+    def spy_metric(y_true, y_pred):
+        received.append(np.asarray(y_true))
+        return 0.
 
     forecaster = ForecasterRecursive(
         estimator=HistGradientBoostingRegressor(max_iter=5, random_state=123), lags=3
     )
-    cv = TimeSeriesFold(steps=5, initial_train_size=40)
+    cv = TimeSeriesFold(steps=5, initial_train_size=40, refit=refit)
     metric, backtest_predictions = backtesting_forecaster(
         forecaster    = forecaster,
         y             = y_nan,
         cv            = cv,
-        metric        = nan_mean_absolute_error,
+        metric        = [
+            "mean_absolute_error",
+            mean_absolute_scaled_error,
+            root_mean_squared_scaled_error,
+            spy_metric,
+        ],
         show_progress = False
     )
 
     assert backtest_predictions["y_true"].isna().tolist() == (
         [False, False, True] + [False] * 4 + [True] + [False] * 2
     )
+    assert backtest_predictions["step"].tolist() == [1, 2, 3, 4, 5] * 2
     assert backtest_predictions["pred"].notna().all()
-    assert metric.loc[0, "n_evaluated"] == 8
+
+    is_observed = backtest_predictions["y_true"].notna().to_numpy()
+    errors = (
+        backtest_predictions["y_true"].to_numpy()[is_observed]
+        - backtest_predictions["pred"].to_numpy()[is_observed]
+    )
+    # NOTE: The first `window_size` (3) values are not part of `y_train`.
+    naive_errors = np.diff(y_nan.to_numpy()[3:train_iloc_end])
+    expected_metric = pd.DataFrame({
+        "mean_absolute_error": [np.mean(np.abs(errors))],
+        "mean_absolute_scaled_error": [
+            np.mean(np.abs(errors)) / np.nanmean(np.abs(naive_errors))
+        ],
+        "root_mean_squared_scaled_error": [
+            np.sqrt(np.mean(errors ** 2)) / np.sqrt(np.nanmean(naive_errors ** 2))
+        ],
+        "spy_metric": [0.],
+        "n_evaluated": [8],
+    })
+    pd.testing.assert_frame_equal(metric, expected_metric)
+    assert len(received) == 1
+    assert len(received[0]) == 8
+    assert not np.isnan(received[0]).any()
+
+
+def test_backtesting_forecaster_ValueError_when_no_true_values_in_test_set():
+    """
+    Test ValueError is raised when no date of the test set has a true value,
+    so the metrics cannot be calculated.
+    """
+    y_nan = y.copy()
+    y_nan.iloc[40:] = np.nan
+
+    forecaster = ForecasterRecursive(
+        estimator=HistGradientBoostingRegressor(max_iter=5, random_state=123), lags=3
+    )
+    cv = TimeSeriesFold(steps=5, initial_train_size=40)
+
+    err_msg = re.escape(
+        "The series has no observed values in the test set of the folds, so the "
+        "metrics cannot be calculated. Review `initial_train_size` of `cv`, or "
+        "the span of the series."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        backtesting_forecaster(
+            forecaster    = forecaster,
+            y             = y_nan,
+            cv            = cv,
+            metric        = "mean_absolute_error",
+            show_progress = False
+        )
 
 
 def test_backtesting_forecaster_y_true_ForecasterRecursiveClassifier():

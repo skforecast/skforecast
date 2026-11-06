@@ -26,11 +26,9 @@ from ..model_selection._utils import (
     _extract_data_folds_multiseries,
     _select_fit_folds_multiseries,
     _warn_levels_not_predicted_multiseries,
+    _calculate_metrics_backtesting,
     _calculate_metrics_backtesting_multiseries,
-    _check_nan_predictions_backtesting,
     _get_interval_columns,
-    _calculate_interval_metrics,
-    _count_evaluated,
     _get_y_true_multiseries,
     INTERVAL_METRIC_NAMES,
     N_EVALUATED_NAME
@@ -697,12 +695,6 @@ def _backtesting_forecaster(
             backtest_predictions_for_metrics
             .loc[~backtest_predictions_for_metrics.index.duplicated(keep='last')]
         )
-    
-    y_true = backtest_predictions_for_metrics['y_true']
-    y_pred = backtest_predictions_for_metrics['pred']
-    _check_nan_predictions_backtesting(
-        y_true=y_true, y_pred=y_pred, differentiation=forecaster.differentiation
-    )
 
     if _any_metric_needs_y_train(metrics):
         train_indexes = []
@@ -720,27 +712,20 @@ def _backtesting_forecaster(
     else:
         y_train = None
 
-    metric_values = [
-        m(y_true=y_true, y_pred=y_pred, y_train=y_train)
-        for m in metrics
-    ]
-    metric_names = [m.__name__ for m in metrics]
-
     interval_columns = _get_interval_columns(
                            columns  = backtest_predictions_for_metrics.columns,
                            interval = interval
                        )
+    metric_values = _calculate_metrics_backtesting(
+                        predictions      = backtest_predictions_for_metrics,
+                        metrics          = metrics,
+                        y_train          = y_train,
+                        interval_columns = interval_columns,
+                        differentiation  = forecaster.differentiation
+                    )
+    metric_names = [m.__name__ for m in metrics]
     if interval_columns is not None:
-        metric_values.extend(
-            _calculate_interval_metrics(
-                y_true      = y_true,
-                lower_bound = backtest_predictions_for_metrics[interval_columns[0]],
-                upper_bound = backtest_predictions_for_metrics[interval_columns[1]]
-            )
-        )
         metric_names += INTERVAL_METRIC_NAMES
-
-    metric_values.append(_count_evaluated(y_true=y_true, y_pred=y_pred))
     metric_names.append(N_EVALUATED_NAME)
 
     metric_values = pd.DataFrame(
@@ -2422,62 +2407,34 @@ def _backtesting_stats(
                            columns  = backtest_predictions_for_metrics.columns,
                            interval = interval
                        )
-    add_interval_metrics = interval_columns is not None
     metric_names = [m.__name__ for m in metrics]
-    if add_interval_metrics:
+    if interval_columns is not None:
         metric_names += INTERVAL_METRIC_NAMES
-
     metric_names.append(N_EVALUATED_NAME)
 
     if forecaster.n_estimators == 1:
-        y_true = backtest_predictions_for_metrics['y_true']
-        y_pred = backtest_predictions_for_metrics['pred']
-        _check_nan_predictions_backtesting(y_true=y_true, y_pred=y_pred)
-        metric_values = [
-            m(y_true=y_true, y_pred=y_pred, y_train=y_train)
-            for m in metrics
-        ]
-        if add_interval_metrics:
-            metric_values.extend(
-                _calculate_interval_metrics(
-                    y_true      = y_true,
-                    lower_bound = backtest_predictions_for_metrics[interval_columns[0]],
-                    upper_bound = backtest_predictions_for_metrics[interval_columns[1]]
-                )
-            )
-        metric_values.append(_count_evaluated(y_true=y_true, y_pred=y_pred))
-
+        metric_values = _calculate_metrics_backtesting(
+                            predictions      = backtest_predictions_for_metrics,
+                            metrics          = metrics,
+                            y_train          = y_train,
+                            interval_columns = interval_columns
+                        )
         metric_values = pd.DataFrame(
             data    = [metric_values],
             columns = metric_names
         )
     else:
         grouped = backtest_predictions_for_metrics.groupby('estimator_id', sort=False)
-        metric_values = []
-        for estimator_id, group in grouped:
-            y_true = group['y_true']
-            y_pred = group['pred']
-            _check_nan_predictions_backtesting(
-                y_true       = y_true,
-                y_pred       = y_pred,
-                estimator_id = estimator_id
+        metric_values = [
+            _calculate_metrics_backtesting(
+                predictions      = group,
+                metrics          = metrics,
+                y_train          = y_train,
+                interval_columns = interval_columns,
+                estimator_id     = estimator_id
             )
-            metric_values_estimator = [
-                m(y_true=y_true, y_pred=y_pred, y_train=y_train)
-                for m in metrics
-            ]
-            if add_interval_metrics:
-                metric_values_estimator.extend(
-                    _calculate_interval_metrics(
-                        y_true      = y_true,
-                        lower_bound = group[interval_columns[0]],
-                        upper_bound = group[interval_columns[1]]
-                    )
-                )
-            metric_values_estimator.append(
-                _count_evaluated(y_true=y_true, y_pred=y_pred)
-            )
-            metric_values.append(metric_values_estimator)
+            for estimator_id, group in grouped
+        ]
 
         metric_values = pd.DataFrame(
             data    = metric_values,
@@ -3053,14 +3010,6 @@ def _backtesting_foundation(
                 .loc[~backtest_predictions_for_metrics.index.duplicated(keep='last')]
             )
         
-        y_true = backtest_predictions_for_metrics['y_true']
-        # For quantile-only output, derive 'pred' from the median quantile.
-        if quantiles is not None:
-            y_pred = backtest_predictions_for_metrics['q_0.5']
-        else:
-            y_pred = backtest_predictions_for_metrics['pred']
-        _check_nan_predictions_backtesting(y_true=y_true, y_pred=y_pred)
-        
         if _any_metric_needs_y_train(metrics):
             train_indexes = []
             for i, fold in enumerate(folds):
@@ -3071,27 +3020,22 @@ def _backtesting_foundation(
         else:
             y_train = None
 
-        metric_values = [
-            m(y_true=y_true, y_pred=y_pred, y_train=y_train)
-            for m in metrics
-        ]
-        metric_names = [m.__name__ for m in metrics]
-
         interval_columns = _get_interval_columns(
                                columns  = backtest_predictions_for_metrics.columns,
                                interval = quantiles
                            )
+        # For quantile-only output, the point prediction is the median quantile.
+        pred_column = 'q_0.5' if quantiles is not None else 'pred'
+        metric_values = _calculate_metrics_backtesting(
+                            predictions      = backtest_predictions_for_metrics,
+                            metrics          = metrics,
+                            y_train          = y_train,
+                            interval_columns = interval_columns,
+                            pred_column      = pred_column
+                        )
+        metric_names = [m.__name__ for m in metrics]
         if interval_columns is not None:
-            metric_values.extend(
-                _calculate_interval_metrics(
-                    y_true      = y_true,
-                    lower_bound = backtest_predictions_for_metrics[interval_columns[0]],
-                    upper_bound = backtest_predictions_for_metrics[interval_columns[1]]
-                )
-            )
             metric_names += INTERVAL_METRIC_NAMES
-
-        metric_values.append(_count_evaluated(y_true=y_true, y_pred=y_pred))
         metric_names.append(N_EVALUATED_NAME)
 
         metrics_levels = pd.DataFrame(
