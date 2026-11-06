@@ -18,6 +18,7 @@ from ..utils import (
     get_style_repr_html
 )
 from ..exceptions import IgnoredArgumentWarning
+from ._utils import _check_initial_train_size
 
 
 class BaseFold():
@@ -1105,15 +1106,17 @@ class TimeSeriesFold(BaseFold):
                                         date_literal = 'initial_train_size'
                                     )
 
-        if window_size_as_date_offset:
-            if initial_train_size_as_int is not None:
-                if initial_train_size_as_int < self.window_size:
-                    raise ValueError(
-                        f"If `initial_train_size` is an integer, it must be greater than "
-                        f"the `window_size` of the forecaster ({self.window_size}) "
-                        f"and smaller than the length of the series ({len(X)}). If "
-                        f"it is a date, it must be within this range of the index."
-                    )
+        # NOTE: When `initial_train_size` is None, the forecaster is already
+        # fitted and the first fold only needs the last window, so
+        # `initial_train_size` is set to `window_size` on purpose.
+        if window_size_as_date_offset and self.initial_train_size is not None:
+            _check_initial_train_size(
+                initial_train_size       = initial_train_size_as_int,
+                initial_train_size_input = self.initial_train_size,
+                data_length              = len(index),
+                data_length_name         = "the length of the series",
+                window_size              = self.window_size
+            )
 
         if self.allow_incomplete_fold:
             # At least one observation after the gap to allow incomplete fold

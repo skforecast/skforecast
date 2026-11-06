@@ -150,13 +150,16 @@ def test_TimeSeriesFold_split_initial_train_size_date_tz_aware_or_no_freq(
     assert folds[0][1] == [0, expected]
 
 
-@pytest.mark.parametrize("initial_train_size",
-                         [30, "2000-01-30 23:59:00"], 
-                         ids = lambda initial_train_size: f'initial_train_size: {initial_train_size}')
-def test_TimeSeriesFold_split_ValueError_window_size_as_date_offset_greater_initial_train_size(initial_train_size):
+@pytest.mark.parametrize("initial_train_size, received",
+                         [(30, "Got 30."),
+                          (31, "Got 31."),
+                          ("2000-01-30 23:59:00",
+                           "Got '2000-01-30 23:59:00', 30 observations in the training set.")], 
+                         ids = lambda dt: f'initial_train_size, received: {dt}')
+def test_TimeSeriesFold_split_ValueError_window_size_as_date_offset_greater_initial_train_size(initial_train_size, received):
     """
     Test ValueError is raised when the window_size as date offset is greater than
-    initial_train_size.
+    or equal to initial_train_size. The error gives the value received.
     """
     X = pd.Series(
             data  = np.arange(50),
@@ -167,13 +170,33 @@ def test_TimeSeriesFold_split_ValueError_window_size_as_date_offset_greater_init
         steps=5, initial_train_size=initial_train_size, window_size=pd.DateOffset(months=1)
     )
     msg = re.escape(
-        "If `initial_train_size` is an integer, it must be greater than "
-        "the `window_size` of the forecaster (31) "
-        "and smaller than the length of the series (50). If "
-        "it is a date, it must be within this range of the index."
+        f"`initial_train_size` must be greater than the `window_size` of the "
+        f"forecaster (31), so that the first training set has data to train "
+        f"with. {received}"
     )
     with pytest.raises(ValueError, match=msg):
         cv.split(X=X)
+
+
+def test_TimeSeriesFold_split_window_size_as_date_offset_initial_train_size_None():
+    """
+    Test that, when `initial_train_size` is None (forecaster already fitted),
+    the first fold starts after the window_size as date offset, without the
+    check of `initial_train_size`, which is set to the `window_size` on purpose.
+    """
+    X = pd.Series(
+            data  = np.arange(50),
+            index = pd.date_range(start='2000-01-01', periods=50, freq='D'),
+            name  = 'y'
+        )
+    cv = TimeSeriesFold(
+        steps=5, initial_train_size=None, window_size=pd.DateOffset(months=1),
+        refit=False, verbose=False
+    )
+    folds = cv.split(X=X, as_pandas=False)
+
+    assert folds[0][1] == [0, 31]
+    assert folds[0][3] == [31, 36]
 
 
 def test_TimeSeriesFold_split_ValueError_when_time_series_not_enough_data_allow_incomplete_fold():

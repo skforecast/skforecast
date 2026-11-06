@@ -132,6 +132,90 @@ def initialize_lags_grid(
     return lags_grid, lags_label
 
 
+def _check_initial_train_size(
+    initial_train_size: int,
+    initial_train_size_input: int | str | pd.Timestamp,
+    data_length: int,
+    data_length_name: str = "the length of `y`",
+    window_size: int | None = None,
+    allow_window_size: bool = False
+) -> None:
+    """
+    Check that `initial_train_size` leaves data to train with and data to
+    evaluate. The training set needs more than `window_size` observations (the
+    first `window_size` ones only create the predictors of the first row), and
+    the rest of the data is evaluated. The error says which limit is not met,
+    with the value received.
+
+    Parameters
+    ----------
+    initial_train_size : int
+        Number of observations of the first training set (`initial_train_size`
+        of `cv` as an integer).
+    initial_train_size_input : int, str, pandas Timestamp
+        `initial_train_size` of `cv` as passed by the user, shown in the error.
+    data_length : int
+        Number of observations of the data.
+    data_length_name : str, default 'the length of `y`'
+        Name of the length of the data in the error.
+    window_size : int, default None
+        `window_size` of the forecaster. If `None`, the training set only needs
+        one observation (`ForecasterFoundation`, whose `window_size` is the
+        maximum context of the model).
+    allow_window_size : bool, default False
+        If `True`, `initial_train_size` can be equal to `window_size`
+        (`ForecasterStats`, whose `window_size` is ignored).
+
+    Returns
+    -------
+    None
+
+    """
+
+    if window_size is None:
+        min_size = 1
+        lower_message = "greater than 0"
+    elif allow_window_size:
+        min_size = window_size
+        lower_message = (
+            f"greater than or equal to the `window_size` of the forecaster "
+            f"({window_size})"
+        )
+    else:
+        min_size = window_size + 1
+        lower_message = (
+            f"greater than the `window_size` of the forecaster ({window_size})"
+        )
+
+    if isinstance(initial_train_size_input, (str, pd.Timestamp)):
+        received = (
+            f"Got '{initial_train_size_input}', {initial_train_size} observations "
+            f"in the training set."
+        )
+    else:
+        received = f"Got {initial_train_size_input}."
+
+    if window_size is not None and min_size >= data_length:
+        raise ValueError(
+            f"The `window_size` of the forecaster ({window_size}) leaves no valid "
+            f"`initial_train_size`, which must be "
+            f"{'at least' if allow_window_size else 'greater than'} the "
+            f"`window_size` and smaller than {data_length_name} ({data_length}). "
+            f"Reduce the `window_size` (lags, window features, differentiation...) "
+            f"or use more data."
+        )
+    if initial_train_size < min_size:
+        raise ValueError(
+            f"`initial_train_size` must be {lower_message}, so that the first "
+            f"training set has data to train with. {received}"
+        )
+    if initial_train_size >= data_length:
+        raise ValueError(
+            f"`initial_train_size` must be smaller than {data_length_name} "
+            f"({data_length}), so that there is data left to evaluate. {received}"
+        )
+
+
 def check_backtesting_input(
     forecaster: object,
     cv: object,
@@ -360,24 +444,21 @@ def check_backtesting_input(
                                  method       = 'validation',
                                  date_literal = 'initial_train_size'
                              )
-        if forecaster_name == 'ForecasterFoundation':
-            # NOTE: For ForecasterFoundation, window_size equals context_length 
-            # which is the *maximum* context the model accepts, not a minimum 
-            # required training size. Only validate that initial_train_size is 
-            # at least 1 and smaller than data_length.
-            if initial_train_size < 1 or initial_train_size >= data_length:
-                raise ValueError(
-                    f"If `initial_train_size` is an integer, it must be greater than "
-                    f"0 and smaller than {data_length_name} ({data_length}). "
-                    f"If it is a date, it must be within this range of the index."
-                )
-        elif initial_train_size < forecaster.window_size or initial_train_size >= data_length:
-            raise ValueError(
-                f"If `initial_train_size` is an integer, it must be greater than "
-                f"the `window_size` of the forecaster ({forecaster.window_size}) "
-                f"and smaller than {data_length_name} ({data_length}). If "
-                f"it is a date, it must be within this range of the index."
-            )
+        # NOTE: For ForecasterFoundation, window_size equals context_length,
+        # the *maximum* context the model accepts, not a minimum training size:
+        # initial_train_size only needs to be at least 1. The window_size of
+        # ForecasterStats is ignored, initial_train_size can be equal to it.
+        _check_initial_train_size(
+            initial_train_size       = initial_train_size,
+            initial_train_size_input = cv.initial_train_size,
+            data_length              = data_length,
+            data_length_name         = data_length_name,
+            window_size              = (
+                None if forecaster_name == 'ForecasterFoundation'
+                else forecaster.window_size
+            ),
+            allow_window_size        = forecaster_name == 'ForecasterStats'
+        )
         if allow_incomplete_fold:
             # At least one observation after the gap to allow incomplete fold
             if data_length <= initial_train_size + gap:
@@ -693,13 +774,13 @@ def check_one_step_ahead_input(
                              method       = 'validation',
                              date_literal = 'initial_train_size'
                          )
-    if initial_train_size < forecaster.window_size or initial_train_size >= data_length:
-        raise ValueError(
-            f"If `initial_train_size` is an integer, it must be greater than "
-            f"the `window_size` of the forecaster ({forecaster.window_size}) "
-            f"and smaller than {data_length_name} ({data_length}). If "
-            f"it is a date, it must be within this range of the index."
-        )
+    _check_initial_train_size(
+        initial_train_size       = initial_train_size,
+        initial_train_size_input = cv.initial_train_size,
+        data_length              = data_length,
+        data_length_name         = data_length_name,
+        window_size              = forecaster.window_size
+    )
 
     if not isinstance(show_progress, bool):
         raise TypeError("`show_progress` must be a boolean: `True`, `False`.")
