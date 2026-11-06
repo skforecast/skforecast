@@ -870,3 +870,81 @@ Otros hallazgos de la línea base:
    los resultados.
 6. **`n_evaluated` de una serie:** `_warn_n_evaluated_search_multiseries` pasa a
    `_warn_n_evaluated_search` con `levels=None` para una serie (otro texto de acción).
+
+### 14.3 Resultado (script 09 y notebook 09)
+
+| Punto | Escenario | PR 2b |
+|---|---|---|
+| 1 | grid y random de una serie y multiserie, OSA, `lags_grid=[3, 80]` | 2 filas (lags 3); "Parameters skipped: 2 of 4 candidates" con el error de `initial_train_size` (comprobado por candidato) |
+| 1 | grid multiserie, OSA, `levels=['short']`, `lags_grid=[3, 24]` | 2 filas (lags 3); los de 24, saltados: "No level of `levels` can be evaluated in the test set with this `window_size` (24)..." Sin el `FutureWarning` de pandas |
+| 1 y 2 | bayesian de una serie y multiserie, OSA y TSF, `lags` en [3, 80] | trials de 80 en `FAIL`; "Parameters skipped: 2 of 6 trials", cada uno por su número; sin las trazas de Optuna en stderr |
+| 2 | claves de `search_space` distintas / `search_space` que lanza | siguen abortando (con el log de Optuna de antes) |
+| 2 | `alpha='x'` (falla en el `fit`) | se salta, como en grid |
+| 2 | todos los trials fallan, `return_best=True` | resultados vacíos y el aviso "so the results are empty" (antes, `ValueError` del primer trial) |
+| 3 | `lags=80`, fecha | "`initial_train_size` must be greater than the `window_size` of the forecaster (80), so that the first training set has data to train with. Got '2021-07-01', 67 observations in the training set." |
+| 3 | `lags=100`, 96 obs. | "The `window_size` of the forecaster (100) leaves no valid `initial_train_size`, which must be greater than the `window_size` and smaller than the length of `y` (96). Reduce the `window_size` (lags, window features, differentiation...) or use more data." |
+| 3 | `initial_train_size == window_size` | el mismo error que con un valor menor, en el chequeo (backtesting, multiserie y OSA) |
+| 4 | grid, random y bayesian multiserie, TSF y OSA, `tiny` de 6 valores, `lags=8` | la búsqueda termina; `series_names_in_ == ['l1', 'l2']`; `RuntimeWarning` "1 series is left out of the refit of the best candidate: ... Series left out: 'tiny'." |
+| 5 | grid, random y bayesian de una serie, OSA, NaN en `y` | `MissingValuesWarning` "... The rows with missing values in `y` or in its lags are dropped (`dropna_from_series=True`), more with larger windows. To compare the candidates on the same points, fill the gaps of `y` or remove the candidates with larger windows..." |
+
+Commits (rama `fix/search-failing-candidates`, en local): el mensaje de `initial_train_size`;
+los candidatos sin datos del one-step-ahead; los trials que fallan en bayesian; el refit sin
+series cortas; el aviso de `n_evaluated` con una serie; la documentación (nota de la versión,
+skill, `llms-base.txt`); y el texto del error de los niveles sin puntos. Tests: 2499 en
+`model_selection` (`tests_search`, `tests_split`, `tests_utils`), `tests_forecaster_recursive_multiseries`
+y `utils/tests_utils`; y, tras el punto 3, `tests_validation` (463) y los backtesting de
+`deep_learning`, `foundation`, `plot`, `ForecasterEquivalentDate` y `stats` (242).
+
+### 14.4 Implementación y no previsto
+
+- **Helpers nuevos** (`model_selection/_utils.py`): `_check_initial_train_size` (los tres
+  casos; `window_size=None` para `ForecasterFoundation`, `allow_window_size` para
+  `ForecasterStats`), `_train_test_split_one_step_ahead_search` (chequeo de la ventana,
+  split y niveles con puntos; lo usan grid y bayesian), `_TrialEvaluationError`,
+  `_skip_trial`, `_FailedTrialsLogFilter` y `_optimize_study` (las tres bayesian; también
+  ignora el aviso de Optuna de las categorías, antes repetido), `_drop_series_too_short_refit`.
+  En `utils`, `_series_too_short_multiseries`, la regla de `fit` compartida.
+  `_warn_n_evaluated_search_multiseries` pasa a `_warn_n_evaluated_search` (`levels=None`
+  para una serie). `add_skipped` guarda el número del trial (`candidate_id`) con el lock, y
+  "Parameters skipped" dice "trials" en bayesian y los ordena por número.
+- **Categoría del aviso del refit:** `suppress_warnings` silencia todas las categorías de
+  skforecast (`MissingValuesWarning` incluida), así que el aviso es `RuntimeWarning`, como
+  "Parameters skipped".
+- **Errores de configuración en bayesian:** abortan `search_space(trial)`, la comprobación
+  de sus claves y `set_params`/`set_lags`. Un nombre de parámetro que no existe aborta en
+  bayesian y se salta en grid (todos los candidatos): se deja así (decisión 2).
+- **Resultados vacíos con la columna `params` duplicada** (ya existía, 12.6): sigue; el test
+  de bayesian multiserie con todos los trials fallidos compara las columnas sin duplicados.
+- **Hallazgo (al roadmap como BUG-osa-initial-window-check):** con `OneStepAheadFold`,
+  `check_one_step_ahead_input` comprueba la ventana del forecaster inicial aunque
+  `lags_grid` no la use: `ForecasterRecursive(lags=70)` con `lags_grid=[3]` y 60
+  observaciones de train aborta; con `TimeSeriesFold` funciona. Ya existía. Desde este PR
+  la ventana se comprueba por candidato, así que bastaría con quitarla del chequeo inicial.
+  No se toca aquí (cambia el comportamiento fuera del alcance); pendiente de decidir.
+- **Hallazgo (al roadmap como BUG-refit-directmultivariate-short):** la sección 4b de 14.1.
+
+### 14.5 Revisión como usuario (notebook 09, 2026-11-06)
+
+`repro/BUG-search-short-series_09_failing_candidates.ipynb`, un escenario por punto con los
+datos del notebook 08 (`store_1`, `store_2` y `new_product` de 120 días).
+
+- Bien: el valor recibido en `initial_train_size` (con la fecha y las observaciones), el caso
+  de la ventana mayor que la serie, los trials por número y en orden, el aviso de una serie
+  (causa y acción), y el refit (`series_names_in_` sin la serie y el aviso apunta a la
+  línea del usuario).
+- **Cambiado tras la revisión:** "No level of `levels` can be evaluated in the test set:
+  none of them has more than `window_size` (35) observations in the training set, can be
+  predicted after it and has observed values in the test set." mezclaba tres negaciones.
+  Ahora: "No level of `levels` can be evaluated in the test set with this `window_size`
+  (35). A level is evaluated if it has more than `window_size` observations in the training
+  set, its last window can be used to predict, and it has observed values in the test set.
+  Review `levels`, `initial_train_size` of `cv` or the span of the series."
+- En el escenario 4 salen dos avisos sobre `new_product`: el de #1415 (no se predice en la
+  búsqueda) y el del refit (el forecaster devuelto no la conoce). Dicen cosas distintas; se
+  dejan los dos.
+- Ya existía, fuera de este PR: `OneStepAheadValidationWarning` apunta a `_utils.py:794`
+  (sale en `check_one_step_ahead_input`, antes del registro de avisos), y los
+  `RuntimeWarning` ("Parameters skipped", el del refit) salen sin el panel de rich, que solo
+  formatea las categorías de skforecast.
+- Revisión final del código: la construcción de las líneas de "Parameters skipped" mezclaba
+  cadenas y diccionarios (`isinstance`); ahora un prefijo con el identificador.
