@@ -837,6 +837,8 @@ Otros hallazgos de la línea base:
     en el DataFrame falla con "Number of series in `series` (2) does not match the number
     of series expected by the model architecture (3)": `_extract_data_folds_multiseries`
     quita la columna corta y el modelo espera todas. Ya existía; fuera de este PR.
+    `set_params` falla siempre, también fuera de las búsquedas: al roadmap como
+    BUG-rnn-set-params.
 
 ### 14.2 Decisiones (aprobadas el 2026-11-06)
 
@@ -920,7 +922,14 @@ y `utils/tests_utils`; y, tras el punto 3, `tests_validation` (463) y los backte
   `lags_grid` no la use: `ForecasterRecursive(lags=70)` con `lags_grid=[3]` y 60
   observaciones de train aborta; con `TimeSeriesFold` funciona. Ya existía. Desde este PR
   la ventana se comprueba por candidato, así que bastaría con quitarla del chequeo inicial.
-  No se toca aquí (cambia el comportamiento fuera del alcance); pendiente de decidir.
+  **Hecho en este PR, en su propio commit (decisión del 2026-11-06):**
+  `check_one_step_ahead_input` solo comprueba que `initial_train_size` sea menor que la
+  longitud de los datos (`window_size=None` en `_check_initial_train_size`); la ventana
+  queda para `_train_test_split_one_step_ahead_search`. Tests: el ejemplo en grid y en
+  bayesian, y el test de `check_one_step_ahead_input` pasa los casos de la ventana a "sin
+  error". La entrada de Fixed del one-step-ahead se amplía. Con `lags_grid=None` y una
+  ventana demasiado grande, la búsqueda ya no aborta: salta los candidatos con el aviso,
+  como con `TimeSeriesFold`.
 - **Hallazgo (al roadmap como BUG-refit-directmultivariate-short):** la sección 4b de 14.1.
 
 ### 14.5 Revisión como usuario (notebook 09, 2026-11-06)
