@@ -951,13 +951,41 @@ datos del notebook 08 (`store_1`, `store_2` y `new_product` de 120 días).
 - En el escenario 4 salen dos avisos sobre `new_product`: el de #1415 (no se predice en la
   búsqueda) y el del refit (el forecaster devuelto no la conoce). Dicen cosas distintas; se
   dejan los dos.
-- Ya existía, fuera de este PR: `OneStepAheadValidationWarning` apunta a `_utils.py:798`
-  (sale en `check_one_step_ahead_input`, antes del registro de avisos), y los
-  `RuntimeWarning` ("Parameters skipped", el del refit) salen sin el panel de rich, que solo
-  formatea las categorías de skforecast.
+- Ya existía: los `RuntimeWarning` ("Parameters skipped", el del refit) salen sin el panel
+  de rich, que solo formatea las categorías de skforecast. Se deja así.
 - Revisión final del código: la construcción de las líneas de "Parameters skipped" mezclaba
   cadenas y diccionarios (`isinstance`); ahora un prefijo con el identificador.
 - BUG-osa-initial-window-check (añadido al notebook tras el commit del arreglo, en la
   sección 1): `ForecasterRecursive(lags=300)` con `lags_grid=[7, 14]` y `OneStepAheadFold`
   evalúa los 4 candidatos (92 puntos cada uno) sin avisos de candidatos saltados, y el
   forecaster devuelto tiene 14 lags. Antes abortaba con el `ValueError` de la ventana (300).
+
+**Segunda revisión como usuario (2026-11-06, un commit por punto):**
+
+1. *Location de los avisos fuera del registro.* `OneStepAheadValidationWarning`
+   (`check_one_step_ahead_input`), el aviso de la dirección del study
+   (`_check_study_direction`) y el `IgnoredArgumentWarning` de `levels` con
+   `ForecasterDirectMultiVariate` (`_initialize_levels_model_selection_multiseries`) no
+   tenían `stacklevel` y apuntaban a skforecast. Ahora `stacklevel=_stacklevel_user_code()`;
+   los tests comprueban que el `filename` del aviso es el del test (fallaban sin el cambio).
+   En el notebook, la Location es la celda del usuario.
+2. *El error del `search_space` salía dos veces* (log de Optuna con la traza y luego la
+   excepción). `_FailedTrialsLogFilter` recibe el `catch` del usuario y quita también los
+   registros de los trials cuyo error se relanza; los del `catch` del usuario se siguen
+   registrando, y también los trials que fallan sin error (valor NaN). Tests de los dos
+   casos en el filtro, en `_optimize_study` y en bayesian con `capfd`.
+3. *Causa por nivel en "No level of `levels` can be evaluated...".* Un helper,
+   `_cause_level_not_evaluated`, repite en orden las condiciones del split: observaciones en
+   el train (sin NaN al principio y al final), una serie que acaba antes del final del train,
+   NaN en la última ventana (solo si el estimador no los admite o hay `differentiation`, la
+   misma regla que el forecaster), sin valores observados en el test, y un caso de reserva.
+   Máximo 5 niveles, el resto se cuenta. Va en el mismo párrafo, separado por punto y coma:
+   con varias líneas se confundiría con la lista de candidatos de "Parameters skipped". En
+   el notebook: "'new_product': 28 observations in the training set, not more than the
+   `window_size` (35)".
+4. *Aviso del refit:* "no more observations than the `window_size` (150)" y la longitud de
+   cada serie ("'new_product' (120 observations)"), con `details` en
+   `_format_names_warning`. Las docs y las skills describen la regla con sus palabras (no
+   citan el aviso), así que no cambian.
+5. *Notebook 09:* `# since 2023-09-03` y "28 días" (el producto nuevo empieza el
+   2023-09-03 y tiene 28 observaciones hasta el 2023-09-30). Vuelto a ejecutar sin errores.
