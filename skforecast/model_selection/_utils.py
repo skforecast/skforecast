@@ -164,7 +164,8 @@ def _check_initial_train_size(
     window_size : int, default None
         `window_size` of the forecaster. If `None`, the training set only needs
         one observation (`ForecasterFoundation`, whose `window_size` is the
-        maximum context of the model).
+        maximum context of the model, and the initial check of the searches
+        with a `OneStepAheadFold`, whose candidates are checked one by one).
     allow_window_size : bool, default False
         If `True`, `initial_train_size` can be equal to `window_size`
         (`ForecasterStats`, whose `window_size` is ignored).
@@ -777,12 +778,15 @@ def check_one_step_ahead_input(
                              method       = 'validation',
                              date_literal = 'initial_train_size'
                          )
+    # NOTE: The `window_size` is checked for each candidate of the search
+    # (`_train_test_split_one_step_ahead_search`), since the candidates can
+    # have a different `window_size` than the forecaster passed.
     _check_initial_train_size(
         initial_train_size       = initial_train_size,
         initial_train_size_input = cv.initial_train_size,
         data_length              = data_length,
         data_length_name         = data_length_name,
-        window_size              = forecaster.window_size
+        window_size              = None
     )
 
     if not isinstance(show_progress, bool):

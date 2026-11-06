@@ -1344,6 +1344,35 @@ def test_evaluate_grid_hyperparameters_OneStepAheadFold_skips_candidates_when_sp
     ]
 
 
+def test_evaluate_grid_hyperparameters_OneStepAheadFold_window_size_of_forecaster_not_checked():
+    """
+    Test that, with a `OneStepAheadFold`, the `window_size` of the forecaster
+    passed (70 lags) is not checked against `initial_train_size` (60) when
+    `lags_grid` does not use it: the search evaluates the candidates of
+    `lags_grid` (3 lags) without errors, as with a `TimeSeriesFold`.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=70)
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results = _evaluate_grid_hyperparameters(
+                      forecaster    = forecaster,
+                      y             = y_feature_selection.iloc[:80],
+                      cv            = OneStepAheadFold(initial_train_size=60),
+                      param_grid    = [{'alpha': 0.1}, {'alpha': 1}],
+                      metric        = 'mean_absolute_error',
+                      lags_grid     = [3],
+                      return_best   = True,
+                      verbose       = False,
+                      show_progress = False
+                  )
+
+    assert len(results) == 2
+    assert results['lags'].map(len).tolist() == [3, 3]
+    assert forecaster.max_lag == 3
+    assert [w for w in record if w.category is RuntimeWarning] == []
+
+
 def test_evaluate_grid_hyperparameters_MissingValuesWarning_n_evaluated_single_series():
     """
     Test that, with a `OneStepAheadFold`, `dropna_from_series=True` and NaN in

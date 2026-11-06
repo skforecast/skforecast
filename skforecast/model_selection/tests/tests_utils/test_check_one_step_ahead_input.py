@@ -187,18 +187,18 @@ def test_check_one_step_ahead_input_TypeError_when_metric_not_correct_type():
         )
 
 
-@pytest.mark.parametrize("initial_train_size", 
-                         ['greater', 'smaller', 'equal', 'date'], 
+@pytest.mark.parametrize("initial_train_size",
+                         ['greater', 'date'],
                          ids = lambda initial: f'initial_train_size: {initial}')
-@pytest.mark.parametrize("forecaster", 
+@pytest.mark.parametrize("forecaster",
                          [ForecasterRecursive(estimator=Ridge(), lags=3),
-                          ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=3)], 
+                          ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=3)],
                          ids = lambda fr: f'{type(fr).__name__}')
 def test_check_one_step_ahead_input_ValueError_when_initial_train_size_not_correct_value(initial_train_size, forecaster):
     """
-    Test ValueError is raised in check_one_step_ahead_input when 
-    initial_train_size >= length `y` or span of `series` or initial_train_size
-    <= window_size. The error gives the limit not met and the value received.
+    Test ValueError is raised in check_one_step_ahead_input when
+    initial_train_size >= length `y` or span of `series`. The error gives the
+    limit not met and the value received.
     """
     y_datetime = y.copy()
     y_datetime.index = pd.date_range(start='2020-01-01', periods=len(y), freq='D')
@@ -210,29 +210,22 @@ def test_check_one_step_ahead_input_ValueError_when_initial_train_size_not_corre
         data_length = len(series_dict_dt['l1'])
         data_length_name = 'the length of the span of `series`'
 
-    lower_msg = (
-        "`initial_train_size` must be greater than the `window_size` of the "
-        "forecaster (3), so that the first training set has data to train with. "
+    upper_msg = (
+        f"`initial_train_size` must be smaller than {data_length_name} "
+        f"({data_length}), so that there is data left to evaluate. "
     )
     if initial_train_size == 'greater':
         initial_train_size = data_length
-        err_msg = (
-            f"`initial_train_size` must be smaller than {data_length_name} "
-            f"({data_length}), so that there is data left to evaluate. "
-            f"Got {data_length}."
-        )
-    elif initial_train_size == 'smaller':
-        initial_train_size = forecaster.window_size - 1
-        err_msg = lower_msg + "Got 2."
-    elif initial_train_size == 'equal':
-        initial_train_size = forecaster.window_size
-        err_msg = lower_msg + "Got 3."
+        err_msg = upper_msg + f"Got {data_length}."
     else:
-        initial_train_size = '2020-01-02'  # Smaller than window_size
-        err_msg = lower_msg + "Got '2020-01-02', 2 observations in the training set."
-    
+        initial_train_size = y_datetime.index[-1].strftime('%Y-%m-%d')
+        err_msg = (
+            upper_msg + f"Got '{initial_train_size}', {data_length} observations "
+            f"in the training set."
+        )
+
     cv = OneStepAheadFold(initial_train_size=initial_train_size)
-    
+
     err_msg = re.escape(err_msg)
     with pytest.raises(ValueError, match = err_msg):
         check_one_step_ahead_input(
@@ -244,6 +237,35 @@ def test_check_one_step_ahead_input_ValueError_when_initial_train_size_not_corre
             show_progress     = False,
             suppress_warnings = False
         )
+
+
+@pytest.mark.parametrize("initial_train_size",
+                         [2, 3, '2020-01-02'],
+                         ids = lambda initial: f'initial_train_size: {initial}')
+@pytest.mark.parametrize("forecaster",
+                         [ForecasterRecursive(estimator=Ridge(), lags=3),
+                          ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=3)],
+                         ids = lambda fr: f'{type(fr).__name__}')
+def test_check_one_step_ahead_input_no_error_when_initial_train_size_not_greater_than_window_size(initial_train_size, forecaster):
+    """
+    Test that check_one_step_ahead_input does not check `initial_train_size`
+    against the `window_size` of the forecaster (3): the candidates of the
+    search can have a different `window_size`, and each one is checked before
+    its split.
+    """
+    y_datetime = y.copy()
+    y_datetime.index = pd.date_range(start='2020-01-01', periods=len(y), freq='D')
+    cv = OneStepAheadFold(initial_train_size=initial_train_size)
+
+    check_one_step_ahead_input(
+        forecaster        = forecaster,
+        cv                = cv,
+        metric            = 'mean_absolute_error',
+        y                 = y_datetime,
+        series            = series_dict_dt,
+        show_progress     = False,
+        suppress_warnings = True
+    )
 
 
 @pytest.mark.parametrize("initial_train_size",

@@ -1764,6 +1764,42 @@ def test_bayesian_search_forecaster_skips_trials_whose_evaluation_fails(cv, capf
     assert "Trial" not in capfd.readouterr().err
 
 
+def test_bayesian_search_forecaster_OneStepAheadFold_window_size_of_forecaster_not_checked():
+    """
+    Test that, with a `OneStepAheadFold`, the `window_size` of the forecaster
+    passed (70 lags) is not checked against `initial_train_size` (60) when
+    the `search_space` does not use it: the trials (3 lags) are evaluated
+    without errors, as with a `TimeSeriesFold`.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=70)
+
+    def search_space(trial):
+        return {
+            'lags': trial.suggest_categorical('lags', [3]),
+            'alpha': trial.suggest_float('alpha', 0.1, 1)
+        }
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results, study = bayesian_search_forecaster(
+                             forecaster    = forecaster,
+                             y             = y_feature_selection.iloc[:80],
+                             cv            = OneStepAheadFold(initial_train_size=60),
+                             search_space  = search_space,
+                             metric        = 'mean_absolute_error',
+                             n_trials      = 3,
+                             random_state  = 123,
+                             return_best   = True,
+                             show_progress = False
+                         )
+
+    assert len(results) == 3
+    assert all(t.state == optuna.trial.TrialState.COMPLETE for t in study.trials)
+    assert results['lags'].map(len).tolist() == [3, 3, 3]
+    assert forecaster.max_lag == 3
+    assert [w for w in record if w.category is RuntimeWarning] == []
+
+
 def test_bayesian_search_forecaster_every_trial_fails_returns_empty_results():
     """
     Test that, when the evaluation of every trial fails, the results are
