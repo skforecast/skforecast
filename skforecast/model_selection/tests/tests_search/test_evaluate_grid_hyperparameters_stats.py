@@ -125,7 +125,8 @@ def test_ValueError_evaluate_grid_hyperparameters_stats_when_return_best_and_len
 
 def test_evaluate_grid_hyperparameters_stats_warn_when_non_valid_params():
     """
-    Test that a warning is raised when non valid params are included in param_grid.
+    Test that a single warning is raised when non valid params are included in
+    param_grid, with the candidate skipped.
     """
 
     param_grid = {
@@ -139,10 +140,10 @@ def test_evaluate_grid_hyperparameters_stats_warn_when_non_valid_params():
 
     # The reason that follows comes from statsmodels and changes between versions
     msg = re.escape(
-        "Parameters skipped: {'order': (0, 1, 0), 'seasonal_order': (0, 0, 0, 0), "
-        "'trend': 'no-valid-value'}."
+        "Parameters skipped: 1 of 2 candidates raises an error, so it is not in "
+        "the results.\n"
     )
-    with pytest.warns(RuntimeWarning, match=msg):
+    with pytest.warns(RuntimeWarning, match=msg) as record:
         results = _evaluate_grid_hyperparameters_stats(
             forecaster=forecaster,
             y=y_datetime,
@@ -152,6 +153,15 @@ def test_evaluate_grid_hyperparameters_stats_warn_when_non_valid_params():
             return_best=False,
             suppress_warnings=True,
         )
+
+    skipped_messages = [
+        str(w.message) for w in record if "Parameters skipped" in str(w.message)
+    ]
+    assert len(skipped_messages) == 1
+    assert (
+        "  - params: {'order': (0, 1, 0), 'seasonal_order': (0, 0, 0, 0), "
+        "'trend': 'no-valid-value'}"
+    ) in skipped_messages[0]
 
     expected_results = pd.DataFrame(
         {
@@ -164,6 +174,7 @@ def test_evaluate_grid_hyperparameters_stats_warn_when_non_valid_params():
             "trend": {0: None},
         }
     )
+    expected_results.insert(2, 'n_evaluated', [30] * 1)
     pd.testing.assert_frame_equal(results, expected_results)
 
 
@@ -182,7 +193,8 @@ def test_evaluate_grid_hyperparameters_stats_warns_when_all_params_raise_excepti
     cv = TimeSeriesFold(steps=12, initial_train_size=20)
 
     warn_msg = re.escape(
-        "No valid parameter combinations found. All combinations raised exceptions."
+        "Parameters skipped: 2 of 2 candidates raise an error, so the results "
+        "are empty."
     )
     with pytest.warns(RuntimeWarning, match=warn_msg):
         results = _evaluate_grid_hyperparameters_stats(
@@ -303,6 +315,7 @@ def test_output_evaluate_grid_hyperparameters_stats_with_mocked():
         index = pd.Index(np.array([0, 1]), dtype='int64')
     )
 
+    expected_results.insert(2, 'n_evaluated', [12] * 2)
     pd.testing.assert_frame_equal(results, expected_results, atol=0.0001)
 
 
@@ -347,6 +360,7 @@ def test_output_evaluate_grid_hyperparameters_stats_exog_with_mocked():
         index = pd.Index(np.array([0, 1]), dtype='int64')
     )
 
+    expected_results.insert(2, 'n_evaluated', [12] * 2)
     pd.testing.assert_frame_equal(results, expected_results, atol=0.0001)
 
 
@@ -391,6 +405,7 @@ def test_output_evaluate_grid_hyperparameters_stats_metric_list_with_mocked():
         index = pd.Index(np.array([0, 1]), dtype='int64')
     )
 
+    expected_results.insert(3, 'n_evaluated', [12] * 2)
     pd.testing.assert_frame_equal(results, expected_results, atol=0.0001)
     
 

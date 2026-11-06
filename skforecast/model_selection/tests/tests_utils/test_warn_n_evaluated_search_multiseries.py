@@ -5,7 +5,10 @@ import warnings
 import pytest
 import numpy as np
 from skforecast.exceptions import MissingValuesWarning
-from skforecast.model_selection._utils import _warn_n_evaluated_search_multiseries
+from skforecast.model_selection._utils import (
+    _warn_n_evaluated_search_multiseries,
+    _n_evaluated_covers_levels_not_predicted
+)
 
 
 @pytest.mark.parametrize(
@@ -24,7 +27,8 @@ def test_warn_n_evaluated_search_multiseries_no_warning(n_evaluated):
         _warn_n_evaluated_search_multiseries(
             n_evaluated        = n_evaluated,
             n_evaluated_levels = [[n] for n in n_evaluated],
-            candidates         = [f"c{i}" for i in range(len(n_evaluated))],
+            lags               = [np.arange(1, 4)] * len(n_evaluated),
+            candidate_ids      = list(range(len(n_evaluated))),
             levels             = ['l1']
         )
 
@@ -33,9 +37,9 @@ def test_warn_n_evaluated_search_multiseries_MissingValuesWarning_when_best_is_a
     """
     Test the warning when the best candidate (the first) evaluates less than
     95% of the points of the most complete one: candidates listed in the order
-    of the ranking, up to `max_candidates`, with the rest counted, and the
-    levels that every candidate evaluates on the same points. The levels
-    without points evaluated are left out.
+    of the ranking with their row, up to `max_lines`, with the rest counted,
+    and the levels that every candidate evaluates on the same points. The
+    levels without points evaluated are left out.
     """
     n_evaluated_levels = np.array([
         [100, 300, 500, 0],
@@ -54,9 +58,9 @@ def test_warn_n_evaluated_search_multiseries_MissingValuesWarning_when_best_is_a
         "\n"
         "Candidates with less than 95% of the 1,000 points of the most complete "
         "one:\n"
-        "  - c0: 900 (90.0%)\n"
-        "  - c2: 500 (50.0%)\n"
-        "  ... and 2 more\n"
+        "  - lags: [1, 2, 3], row 0: 900 (90.0%)\n"
+        "  - lags: [1, 2, 3, 4, 5], row 2: 500 (50.0%)\n"
+        "  ... and 2 more candidates\n"
         "\n"
         "Series that every candidate evaluates on the same points:\n"
         "  levels=['l1']"
@@ -65,9 +69,10 @@ def test_warn_n_evaluated_search_multiseries_MissingValuesWarning_when_best_is_a
         _warn_n_evaluated_search_multiseries(
             n_evaluated        = n_evaluated_levels.sum(axis=1),
             n_evaluated_levels = n_evaluated_levels,
-            candidates         = ["c0", "c1", "c2", "c3", "c4"],
+            lags               = [np.arange(1, k) for k in range(4, 9)],
+            candidate_ids      = [0, 1, 2, 3, 4],
             levels             = ['l1', 'l2', 'l3', 'l4'],
-            max_candidates     = 2
+            max_lines          = 2
         )
 
 
@@ -112,7 +117,8 @@ def test_warn_n_evaluated_search_multiseries_levels_and_one_candidate_not_the_be
         _warn_n_evaluated_search_multiseries(
             n_evaluated        = n_evaluated_levels.sum(axis=1),
             n_evaluated_levels = n_evaluated_levels,
-            candidates         = ["c0", "c1"],
+            lags               = [np.arange(1, 4)] * 2,
+            candidate_ids      = [0, 1],
             levels             = levels
         )
 
@@ -143,7 +149,8 @@ def test_warn_n_evaluated_search_multiseries_levels_when_both_lists_are_long():
         _warn_n_evaluated_search_multiseries(
             n_evaluated        = n_evaluated_levels.sum(axis=1),
             n_evaluated_levels = n_evaluated_levels,
-            candidates         = ["c0", "c1"],
+            lags               = [np.arange(1, 4)] * 2,
+            candidate_ids      = [0, 1],
             levels             = levels
         )
 
@@ -177,13 +184,14 @@ def test_warn_n_evaluated_search_multiseries_one_level():
         "\n"
         "Candidates with less than 95% of the 100 points of the most complete "
         "one:\n"
-        "  - c1: 50 (50.0%)"
+        "  - lags: [1, 2, 3], row 1: 50 (50.0%)"
     )
     with pytest.warns(MissingValuesWarning, match=f"^{warn_msg}"):
         _warn_n_evaluated_search_multiseries(
             n_evaluated        = [100, 50],
             n_evaluated_levels = [[100], [50]],
-            candidates         = ["c0", "c1"],
+            lags               = [np.arange(1, 4)] * 2,
+            candidate_ids      = [0, 1],
             levels             = ['l1']
         )
 
@@ -197,7 +205,8 @@ def test_warn_n_evaluated_search_multiseries_when_best_is_not_first():
         _warn_n_evaluated_search_multiseries(
             n_evaluated        = [50, 100],
             n_evaluated_levels = [[50], [100]],
-            candidates         = ["c0", "c1"],
+            lags               = [np.arange(1, 4)] * 2,
+            candidate_ids      = [0, 1],
             levels             = ['l1'],
             best_is_first      = False
         )
@@ -209,3 +218,110 @@ def test_warn_n_evaluated_search_multiseries_when_best_is_not_first():
     )
     assert "best candidate" not in message
 
+
+
+@pytest.mark.parametrize(
+    "candidate_name, candidate_ids, expected",
+    [
+        (
+            "candidate",
+            [0, 1, 2, 3, 4, 5],
+            "3 of 6 candidates are evaluated on fewer points",
+        ),
+        (
+            "trial",
+            [5, 7, 8, 1, 3, 0],
+            "3 of 6 trials are evaluated on fewer points",
+        ),
+    ],
+    ids=["rows", "trials"],
+)
+def test_warn_n_evaluated_search_multiseries_grouped_by_lags(
+    candidate_name, candidate_ids, expected
+):
+    """
+    Test that the candidates with the same lags and number of points are listed
+    in one line, with their rows in the results (grid and random search) or
+    their trial numbers (Bayesian search).
+    """
+    lags = [np.arange(1, 36)] * 3 + [np.arange(1, 8)] * 3
+    n_evaluated = [184, 184, 184, 276, 276, 276]
+    expected_line = {
+        "candidate": "  - lags: [1, 2, ..., 35], 3 candidates (rows 0, 1, 2): 184 (66.7%)",
+        "trial": "  - lags: [1, 2, ..., 35], 3 trials (5, 7, 8): 184 (66.7%)",
+    }[candidate_name]
+
+    with pytest.warns(MissingValuesWarning) as record:
+        _warn_n_evaluated_search_multiseries(
+            n_evaluated        = n_evaluated,
+            n_evaluated_levels = [[n] for n in n_evaluated],
+            lags               = lags,
+            candidate_ids      = candidate_ids,
+            levels             = ['l1'],
+            candidate_name     = candidate_name
+        )
+
+    message = record[0].message.message
+    assert message.startswith(expected)
+    assert message.endswith(
+        f"{candidate_name.capitalize()}s with less than 95% of the 276 points of "
+        f"the most complete one:\n{expected_line}"
+    )
+    assert record[0].filename == __file__
+
+
+def test_warn_n_evaluated_search_multiseries_max_ids_and_max_lines():
+    """
+    Test that at most `max_ids` identifiers are listed in a line, at most
+    `max_lines` lines are listed, and the candidates of the rest are counted.
+    A group of one candidate shows its identifier.
+    """
+    lags = (
+        [np.arange(1, 36)] * 3 + [np.arange(1, 61)]
+        + [np.arange(1, 25)] + [np.arange(1, 8)]
+    )
+    n_evaluated = [184, 184, 184, 184, 200, 276]
+    expected = (
+        "Trials with less than 95% of the 276 points of the most complete one:\n"
+        "  - lags: [1, 2, ..., 35], 3 trials (5, 7, ...): 184 (66.7%)\n"
+        "  - lags: [1, 2, ..., 60], trial 1: 184 (66.7%)\n"
+        "  ... and 1 more trial"
+    )
+    with pytest.warns(MissingValuesWarning) as record:
+        _warn_n_evaluated_search_multiseries(
+            n_evaluated        = n_evaluated,
+            n_evaluated_levels = [[n] for n in n_evaluated],
+            lags               = lags,
+            candidate_ids      = [5, 7, 8, 1, 3, 0],
+            levels             = ['l1'],
+            candidate_name     = 'trial',
+            max_lines          = 2,
+            max_ids            = 2
+        )
+
+    assert record[0].message.message.endswith(expected)
+
+
+@pytest.mark.parametrize(
+    "n_evaluated_levels, expected",
+    [
+        ([[10, 10], [10, 10]], False),
+        ([[10, 10], [10, 0]], True),
+        ([[10, 10, 0], [10, 0, 0]], False),
+        (np.zeros((0, 2)), False),
+    ],
+    ids=["no warning", "warning", "level never evaluated", "no candidates"],
+)
+def test_n_evaluated_covers_levels_not_predicted(n_evaluated_levels, expected):
+    """
+    Test that the warning of the points evaluated covers the warning of the
+    levels not predicted only when it is raised and every level has points
+    evaluated in some candidate.
+    """
+    n_evaluated_levels = np.asarray(n_evaluated_levels)
+    covers = _n_evaluated_covers_levels_not_predicted(
+        n_evaluated        = n_evaluated_levels.sum(axis=1),
+        n_evaluated_levels = n_evaluated_levels
+    )
+
+    assert covers is expected

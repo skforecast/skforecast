@@ -1718,7 +1718,7 @@ def test_output_backtesting_foundation_fold_skipped_when_series_end_and_start_la
     )
     warn_msg = re.escape(
         "  - No observed values in the context window: 's6' (folds 1).\n"
-        "  - Folds skipped, no level can be predicted in them: 1."
+        "\nFolds skipped, no level can be predicted in them: 1."
     )
     with patch(
         "skforecast.model_selection._validation.deepcopy_forecaster",

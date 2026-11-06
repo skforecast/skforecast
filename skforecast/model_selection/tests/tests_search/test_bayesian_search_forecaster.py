@@ -12,7 +12,7 @@ from sklearn.metrics import (
     mean_absolute_error, mean_absolute_percentage_error, r2_score, zero_one_loss
 )
 from xgboost import XGBRegressor
-from skforecast.exceptions import OneStepAheadValidationWarning
+from skforecast.exceptions import LongTrainingWarning, OneStepAheadValidationWarning
 from skforecast.metrics import mean_absolute_scaled_error, root_mean_squared_scaled_error
 from skforecast.recursive import ForecasterRecursive, ForecasterRecursiveClassifier
 from skforecast.direct import ForecasterDirect
@@ -316,6 +316,7 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive():
         index=pd.RangeIndex(start=0, stop=10, step=1)
     )
 
+    expected_results.insert(3, 'n_evaluated', [12] * 10)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results, check_dtype=False)
 
 
@@ -433,6 +434,7 @@ def test_results_output_bayesian_search_forecaster_window_features_ForecasterRec
         ],
     })
 
+    expected_results.insert(3, 'n_evaluated', [12] * 10)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results, check_dtype=False)
     
 
@@ -532,6 +534,7 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive_with_kwar
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error': float, 'alpha': float})
 
+    expected_results.insert(3, 'n_evaluated', [12] * 10)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
@@ -619,6 +622,7 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive_with_kwar
         index=pd.RangeIndex(start=0, stop=5, step=1)
     ).astype({'mean_absolute_error': float, 'n_estimators': int, 'max_depth': int})
 
+    expected_results.insert(3, 'n_evaluated', [12] * 5)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results, check_dtype=False)
 
 
@@ -708,6 +712,7 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive_when_lags
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error': float, 'alpha': float})
     
+    expected_results.insert(3, 'n_evaluated', [12] * 10)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
@@ -964,6 +969,7 @@ def test_results_output_bayesian_search_forecaster_ForecasterDirect():
         'min_samples_leaf': float
     })
 
+    expected_results.insert(3, 'n_evaluated', [12] * 10)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
@@ -1082,6 +1088,7 @@ def test_results_output_bayesian_search_forecaster_window_features_ForecasterDir
         ],
     })
 
+    expected_results.insert(3, 'n_evaluated', [12] * 10)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
     
@@ -1386,6 +1393,7 @@ def test_results_output_bayesian_search_forecaster_optuna_ForecasterRecursive_wi
         ],
     })
 
+    expected_results.insert(3, 'n_evaluated', [12] * 10)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
@@ -1473,6 +1481,7 @@ def test_results_output_bayesian_search_forecaster_optuna_ForecasterRecursive_wi
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error': float, 'alpha': float})
 
+    expected_results.insert(3, 'n_evaluated', [12] * 10)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
@@ -1556,6 +1565,7 @@ def test_bayesian_search_forecaster_xgboost_categorical_no_ValueError_on_cache_h
         index=pd.RangeIndex(start=0, stop=6, step=1)
     ).astype({'mean_absolute_error': float, 'n_estimators': int})
 
+    expected_results.insert(3, 'n_evaluated', [15] * 6)
     pd.testing.assert_frame_equal(
         results.drop(columns=['trial_number']), expected_results, atol=1e-4
     )
@@ -1662,3 +1672,41 @@ def test_bayesian_search_forecaster_ForecasterRecursiveClassifier_minimizes_loss
     assert results["zero_one_loss"].is_monotonic_increasing
     assert results.loc[0, "zero_one_loss"] == study.best_value
     assert forecaster.estimator.C == results.loc[0, "C"]
+
+
+def test_bayesian_search_forecaster_LongTrainingWarning_once_with_fits_of_the_search():
+    """
+    Test that LongTrainingWarning is raised once, with the number of fits of
+    each trial and of the whole search, instead of once per trial.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=2)
+    cv = TimeSeriesFold(steps=1, initial_train_size=440, refit=True)
+
+    def search_space(trial):
+        search_space = {'alpha': trial.suggest_float('alpha', 0.1, 1.0)}
+
+        return search_space
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        bayesian_search_forecaster(
+            forecaster    = forecaster,
+            y             = y_feature_selection,
+            cv            = cv,
+            search_space  = search_space,
+            metric        = 'mean_absolute_error',
+            n_trials      = 4,
+            random_state  = 123,
+            return_best   = False,
+            verbose       = False,
+            show_progress = False
+        )
+
+    messages = [
+        w.message.message for w in record if w.category is LongTrainingWarning
+    ]
+    assert messages == [
+        "Each trial fits the forecaster about 60 times, so the search (4 trials) "
+        "fits it about 240 times. This can take substantial amounts of time. If "
+        "not feasible, try with `refit = False`."
+    ]

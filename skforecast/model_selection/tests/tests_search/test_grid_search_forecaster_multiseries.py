@@ -912,7 +912,7 @@ def test_grid_search_forecaster_multiseries_when_exog_has_NaN_in_test_fold_and_e
     cv = TimeSeriesFold(steps=10, initial_train_size=60, refit=False)
 
     warn_msg = re.escape(
-        "Number of NaN predictions per series: {'a': 5, 'b': 5}."
+        "NaN predictions per series: {'a': 5, 'b': 5} (10 in total)."
     )
     with pytest.warns(MissingValuesWarning, match=warn_msg):
         results = grid_search_forecaster_multiseries(

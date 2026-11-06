@@ -57,6 +57,16 @@ series_short = {
     'l2': pd.Series(20 + 2 * np.cos(np.arange(60) / 2), index=index_short),
     'short': pd.Series(5 + np.arange(20) % 3, index=index_short[-20:], dtype=float),
 }
+# NOTE: `short` has 6 values, 5 of them in the training set of
+# `initial_train_size=45` and 1 in the test set, so the candidates with more
+# than 4 lags do not predict it, but evaluate more than 95% of the points of
+# the others (30 of 31): the warning of the levels not predicted is shown, the
+# warning of the points evaluated is not.
+series_short_one_point = {
+    'l1': series_short['l1'],
+    'l2': series_short['l2'],
+    'short': pd.Series(5 + np.arange(6) % 3, index=index_short[40:46], dtype=float),
+}
 
 
 def test_TypeError_bayesian_search_forecaster_multiseries_when_cv_not_valid():
@@ -3172,18 +3182,76 @@ def test_bayesian_search_forecaster_multiseries_n_evaluated_user_attr_and_Missin
     assert 0 < n_affected < len(results)
     assert len(messages) == 1
     assert (
-        f"{n_affected} of 6 candidates are evaluated on fewer points than the "
+        f"{n_affected} of 6 trials are evaluated on fewer points than the "
         f"most complete one"
     ) in messages[0]
+    trials_affected = results.loc[results['n_evaluated'] == 30, 'trial_number'].tolist()
+    if n_affected == 1:
+        expected_trials = f"trial {trials_affected[0]}"
+    else:
+        expected_trials = (
+            f"{n_affected} trials ({', '.join(map(str, trials_affected))})"
+        )
     assert (
-        f"Candidates with less than 95% of the 45 points of the most complete one:\n"
-        f"  - trial {results.loc[0, 'trial_number']}, lags: [1, 2, ..., 8], "
-        f"params: {results.loc[0, 'params']}: 30 (66.7%)"
+        f"Trials with less than 95% of the 45 points of the most complete one:\n"
+        f"  - lags: [1, 2, ..., 8], {expected_trials}: 30 (66.7%)"
     ) in messages[0]
     assert (
         "Series that every candidate evaluates on the same points:\n"
         "  levels=['l1', 'l2']"
     ) in messages[0]
+
+
+@pytest.mark.parametrize(
+    "n_jobs",
+    [1, 2],
+    ids=lambda n_jobs: f"n_jobs: {n_jobs}",
+)
+def test_bayesian_search_forecaster_multiseries_warnings_of_trials_once_with_count(n_jobs):
+    """
+    Test that the warning of the levels not predicted, raised in the trials
+    with 8 lags, is shown once at the end of the search with the number of
+    trials in which it is raised, also when optuna runs the trials in threads
+    (`n_jobs` of `study.optimize`). The trials evaluate more than 95% of the
+    points of the most complete one, so there is no warning of the points
+    evaluated.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
+
+    def search_space(trial):
+        search_space = {
+            'alpha': trial.suggest_float('alpha', 0.1, 1.0),
+            'lags': trial.suggest_categorical('lags', [2, 8]),
+        }
+
+        return search_space
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        _, study = bayesian_search_forecaster_multiseries(
+            forecaster            = forecaster,
+            series                = series_short_one_point,
+            search_space          = search_space,
+            cv                    = TimeSeriesFold(initial_train_size=45, steps=5, refit=False),
+            metric                = 'mean_absolute_error',
+            n_trials              = 8,
+            random_state          = 123,
+            return_best           = False,
+            show_progress         = False,
+            kwargs_study_optimize = {'n_jobs': n_jobs}
+        )
+
+    n_lags_8 = sum(trial.params['lags'] == 8 for trial in study.trials)
+    assert 0 < n_lags_8 < 8
+    messages = [
+        w.message.message for w in record if w.category is MissingValuesWarning
+    ]
+    assert len(messages) == 1
+    assert messages[0].startswith(
+        f"Some levels are not predicted in folds where they have observed "
+        f"values, so their metrics, and the aggregated metrics, do not include "
+        f"those folds (in {n_lags_8} of 8 trials)."
+    )
 
 
 def test_bayesian_search_forecaster_multiseries_when_study_is_loaded_from_storage():
@@ -3239,7 +3307,7 @@ def test_bayesian_search_forecaster_multiseries_when_study_is_loaded_from_storag
     assert len(messages) == 2
     assert results.loc[0, 'trial_number'] == 4
     assert messages[-1].startswith(
-        "1 of 4 candidates is evaluated on fewer points than the most complete "
+        "1 of 4 trials is evaluated on fewer points than the most complete "
         "one, so its metrics are not comparable. It is the best candidate of the "
         "ranking"
     )

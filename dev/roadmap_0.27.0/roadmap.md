@@ -37,11 +37,14 @@ secciones 1 a 7 quedan como referencia: evidencia, antes y después, y esbozos d
 > despreciable en paneles maduros con lags cortos (0.03% de puntos fuera con `lags=56`),
 > relevante con rotación de catálogo o lags anuales (13% con `lags=365` en un periodo con
 > lanzamientos).
-> **PR 1 hecho en local (2026-11-03)**, rama `fix/search-short-series-n-evaluated`, sin
-> subir: columna `n_evaluated` por candidato, aviso único al final y nombre reservado
-> validado en todas las búsquedas; de paso, el `pooling` del one-step-ahead con `levels`
-> parcial (hallazgo). Queda el PR 2 (avisos de las búsquedas). Detalle en la sección 11
-> de [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md).
+> **PR 1 fusionado (#1447, 2026-11-04):** columna `n_evaluated` por candidato, aviso único
+> al final y nombre reservado validado en todas las búsquedas; de paso, el `pooling` del
+> one-step-ahead con `levels` parcial (hallazgo). **PR 2a hecho en local (2026-11-04)**,
+> rama `fix/search-warnings`, sin subir: los avisos de todas las búsquedas se muestran una
+> vez al final con el número de candidatos, "Parameters skipped" agrupado,
+> `LongTrainingWarning` una vez y el aviso de `ParameterSampler`. Queda el PR 2b (candidatos
+> que fallan: one-step-ahead por candidato y trials de bayesian). Detalle en las secciones
+> 11 y 12 de [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md).
 
 **Comprobado en local** (Python 3.14.3, numpy 2.5.3, pandas 2.3.3, scikit-learn 1.9.1,
 numba 0.68.0, statsmodels 0.14.6): BUG-03, BUG-01 y BUG-stats-interval-ignored se
@@ -172,6 +175,8 @@ efecto, con `FutureWarning` y eliminación en la 0.29.0; `load_demo_dataset` se 
    resultados en ese caso ("Before upgrading"). Línea base, mediciones y lo no previsto, en
    la sección 11 de ese documento. **Siguiente: PR 2** (avisos de las búsquedas, sección
    5.2 puntos 1, 3, 4, 5 y 6).
+   **PR 1 fusionado (#1447). PR 2a abierto el 2026-11-05 (#1452):** avisos de las búsquedas.
+   Quedan el PR 2b (candidatos que fallan) y el 2c (avisos de joblib).
 2. ~~**BUG-03**~~ **Hecho con #1431** (fusionado el 2026-10-22). La
    dirección sale de la métrica (decisión 6): atributo `greater_is_better` y convención de
    nombres solo para `sklearn.metrics`; si no se conoce, la dirección de la tarea, que ya
@@ -208,7 +213,8 @@ efecto, con `FutureWarning` y eliminación en la 0.29.0; `load_demo_dataset` se 
    demás; se puede hacer en cualquier momento. Alcance revisado con el análisis de la
    sección 2: `hour_of_week` y los días de fin de semana del mes, no los indicadores de
    inicio y fin de periodo.
-9. Resto del alcance: QW-05, QW-02, BUG-07, ~~BUG-08~~ (hecho), PERF-02, PRs externos y QW-07. BUG-06
+9. Resto del alcance: QW-05, QW-02, BUG-07, ~~BUG-08~~ (hecho), BUG-backtesting-nan-y-true
+   (nuevo, S), PERF-02, PRs externos y QW-07. BUG-06
    no está aquí porque va antes de FE-05 (punto 7).
 
 ### Alcance
@@ -997,6 +1003,7 @@ BUG-stats-interval-ignored son hallazgos laterales (verificación de FE-02, de F
 |---|---|---|---|---|---|
 | **BUG-03** | Las búsquedas eligen el peor modelo con métricas en las que mayor es mejor (`r2_score`): el orden y la dirección de Optuna dependen del tipo de tarea, no de la métrica, y `return_best=True` reentrena con el peor | model_selection | S | `dev/roadmap_0.27.0/repro/BUG-03.py` | (1) En las 3 búsquedas bayesianas, ordenar por `study.direction` (`_search.py:916,2049,2427`). (2) Helper `_infer_metric_direction` con la convención de sklearn (`*_score` se maximiza; `*_error`, `*_loss`, `*_deviance` se minimizan) usado en todas las ordenaciones (`_search.py:514,916,1537,2049,2427,2817,3077`) y como `direction` por defecto (`:846,1953,2369`). (3) Docstrings de `metric` y `kwargs_create_study`. **Hecho: #1431, fusionado en `0.27.x` el 2026-10-22**, con otro diseño para (2): la convención de nombres solo se aplica a `sklearn.metrics` y el resto usa el atributo `greater_is_better` o la tarea (decisión 6) |
 | **BUG-search-aggregate-order** (encontrado el 2026-10-31) | Las búsquedas multiserie (`grid`, `random` y `bayesian`, con `TimeSeriesFold` y `OneStepAheadFold`, y `bayesian_search_foundation`) etiquetaban las columnas `<métrica>__<agregado>` en el orden de `aggregate_metric`, pero las rellenaban en el orden de las filas de la tabla de métricas (`average`, `weighted_average`, `pooling`). Con el orden por defecto, `__weighted_average` tenía el average y al revés, y la búsqueda (y Optuna) ordenaba por el average. Solo cambia algo cuando las series se evalúan sobre distinto número de puntos (series cortas o con huecos). Existía desde 2024 | model_selection | S | Medido: MAE weighted_average 4,26 y average 3,60, y la búsqueda mostraba `__weighted_average` = 3,60. Dos tests de bayesian tenían los valores esperados cambiados de sitio: con el arreglo, el MAE `weighted_average` coincide con `pooling`, como debe ser | **Hecho con #1438 (fusionado en `0.27.x` el 2026-11-02):** seleccionar las métricas por nombre y las filas en el orden de `aggregate_metric` (helper `_select_metrics_search_multiseries` en `_utils.py`). De paso, `bayesian_search_foundation` usaba `levels[0]` con `levels=None`. Tests que fallan sin el arreglo (grid con los dos `cv`, bayesian); nota en Fixed, highlight y "Before upgrading" |
+| **BUG-backtesting-nan-y-true** (encontrado el 2026-11-05, en #1452) | `backtesting_forecaster` con valores ausentes en `y` dentro del test falla con `ValueError: Input contains NaN.` de la métrica de scikit-learn (medido con `Ridge` y `dropna_from_series=True`, y con LightGBM y `dropna_from_series=False`): las fechas con `y_true` NaN no se quitan antes de las métricas, como sí hace `backtesting_forecaster_multiseries`. `ForecasterRecursive` acepta NaN en `y` desde que se quitan las filas con objetivo ausente, así que el ajuste funciona y el error llega en la métrica. Consecuencia: una búsqueda de una serie con NaN en el test y `TimeSeriesFold` salta todos los candidatos y devuelve un DataFrame vacío | model_selection | S | 200 días con 3 NaN en el test (posiciones 150, 170 y 185), `TimeSeriesFold(steps=10, initial_train_size=140)`; script en la sección 12.8 de `BUG-search-short-series-transparency.md` | En `_backtesting_forecaster` (`_validation.py`, tras `_check_nan_predictions_backtesting`), calcular las métricas sin las filas con `y_true` NaN, como el multiserie (`dropna(subset=['y_true', 'y_pred'])`); `n_evaluated` ya las descuenta. Revisar `y_train` de las métricas escaladas (MASE, RMSSE) con NaN, el mismo caso en `backtesting_stats` y `backtesting_foundation` con una serie, y el `step`/`y_true` de las predicciones (se mantienen). Test: métricas iguales a las calculadas sin esas fechas y `n_evaluated` igual a las fechas con valor. Nota en Fixed |
 | **BUG-01** | `backtesting` con `initial_train_size=None` sobre un forecaster ya ajustado evalúa in-sample sin ningún aviso | model_selection | S | `dev/roadmap_0.27.0/repro/BUG-01.py` | En la rama `else` de `check_backtesting_input` (`skforecast/model_selection/_utils.py:370-380`), comparar la primera fecha de test (`index[window_size + gap]`) con `forecaster.training_range_` (dict por serie en multiserie) y emitir un aviso silenciable con `suppress_warnings` con el número y rango de predicciones in-sample. Que el `NotFittedError` sugiera primero `initial_train_size` |
 | **BUG-02** | Con `fold_stride < steps` la métrica solo mide los horizontes `1..fold_stride` (con 1, el error a 1 paso) y todas las búsquedas seleccionan por ese error | model_selection | S | `dev/roadmap_0.27.0/repro/BUG-02.py` | Parámetro en `TimeSeriesFold`, p. ej. `overlapping_metric="last"` o `"all"`, aplicado en los 5 puntos de deduplicación (`_validation.py:662-667,1488-1493,2159-2164,2643-2648,2674-2679`; números de línea anteriores a #1409; el de stats usa (fecha, `estimator_id`) con varios estimadores tras BUG-09 (a)); aviso mientras el defecto sea `"last"` (como `OneStepAheadValidationWarning`, `_utils.py:653-658`); no cambiar el defecto sin anunciarlo (la receta de meses naturales depende de `"last"`); corregir `skills/backtesting-configuration/SKILL.md:202-208`, la guía y `llms-base.txt`. Coordinar con BUG-09. Tras QW-12 (2026-10-30): con la opción de evaluar todos los pares origen-fecha, `n_evaluated` cuenta todas las filas, y el aviso puede citar las dos cifras (puntos evaluados frente a predichos) y la columna `step` para el error por horizonte |
 | **BUG-04** | Un pipeline o modelo precargado (p. ej. Chronos-2 con fine-tuning) se descarta en silencio al crear `ForecasterFoundation`: `clone` lo pierde y se recarga el checkpoint base | foundation | S | `dev/roadmap_0.27.0/repro/BUG-04.py` | `FoundationModel.__sklearn_clone__`: clon estándar y, si el usuario pasó el objeto, copiar la referencia al clon sin copiar pesos. Así lo heredan `ForecasterFoundation.__init__` (`_forecaster_foundation.py:156`), `deepcopy_forecaster` (`utils.py:4999`) y `bayesian_search_foundation`. Cada adaptador declara su atributo de backend (compartido con QW-05). Requisito de PLAN-CKPT (`dev/PLAN_UnifiedFinetunedCheckpoint.md`) |
