@@ -17,6 +17,9 @@ Scenarios:
 4. Scaled metrics (MASE, RMSSE) with NaN in `y_train`.
 5. The same case with `backtesting_forecaster_multiseries` (one and two series).
 
+Added after the fix: a NaN right before the start of a fold with `lags=3`, a test
+set without observed values and `ForecasterRecursiveClassifier`.
+
 Simulations (the package is not modified, only patched at run time):
 
 - S1, the fix of the roadmap: a metric that leaves out the dates with `y_true`
@@ -37,10 +40,11 @@ from unittest import mock
 import numpy as np
 import optuna
 import pandas as pd
-from lightgbm import LGBMRegressor
+from lightgbm import LGBMClassifier, LGBMRegressor
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_absolute_error
 
+import skforecast.model_selection._utils as utils_module
 import skforecast.model_selection._validation as validation_module
 from skforecast.metrics import (
     mean_absolute_scaled_error,
@@ -57,6 +61,7 @@ from skforecast.model_selection import (
 )
 from skforecast.recursive import (
     ForecasterRecursive,
+    ForecasterRecursiveClassifier,
     ForecasterRecursiveMultiSeries,
     ForecasterStats,
 )
@@ -88,6 +93,13 @@ Y_NAN_BOTH = Y_NAN.copy()
 Y_NAN_BOTH.iloc[[60, 100]] = np.nan
 
 N_OBSERVED_TEST = int(Y_NAN.iloc[140:].notna().sum())
+# A single NaN right before the start of a fold (160): its last window has it
+# with any number of lags.
+Y_NAN_159 = Y.copy()
+Y_NAN_159.iloc[159] = np.nan
+# No observed value in the test set.
+Y_NAN_TEST = Y.copy()
+Y_NAN_TEST.iloc[140:] = np.nan
 
 
 def cv(refit=False):
@@ -124,8 +136,15 @@ def _check_nan_predictions_no_raise(*args, **kwargs):
 
 @contextmanager
 def align_with_multiseries():
+    # Before the fix the check is called from `_validation`; after it, from the
+    # helper `_calculate_metrics_backtesting` in `_utils`.
+    module = (
+        validation_module
+        if hasattr(validation_module, "_check_nan_predictions_backtesting")
+        else utils_module
+    )
     with mock.patch.object(
-        validation_module,
+        module,
         "_check_nan_predictions_backtesting",
         _check_nan_predictions_no_raise,
     ):
@@ -233,12 +252,40 @@ for refit in (False, True):
         summary_backtesting,
     )
 
+run(
+    "1 | Ridge lags=3, dropna_from_series=True | refit=False | NaN at 159 (before a fold)",
+    lambda: backtesting_forecaster(
+        ridge(3), y=Y_NAN_159, cv=cv(), metric="mean_absolute_error",
+        show_progress=False,
+    ),
+    summary_backtesting,
+)
+run(
+    "1 | LightGBM lags=3 | no observed value in the test set",
+    lambda: backtesting_forecaster(
+        lgbm(3), y=Y_NAN_TEST, cv=cv(), metric="mean_absolute_error",
+        show_progress=False,
+    ),
+    summary_backtesting,
+)
+
 # Interval metrics: already leave the NaN out (`_calculate_interval_metrics`).
 run(
     "1 S1 | LightGBM lags=3 | interval=[0.1, 0.9] | metric ignoring y_true NaN",
     lambda: backtesting_forecaster(
         lgbm(3), y=Y_NAN, cv=cv(), metric=mae_ignore_nan, interval=[0.1, 0.9],
         interval_method="bootstrapping", n_boot=50, show_progress=False,
+    ),
+    summary_backtesting,
+)
+
+Y_CLF = pd.Series(np.where(Y.diff() > 0, "up", "down"), index=idx, dtype=object)
+Y_CLF.iloc[NAN_POSITIONS] = np.nan
+run(
+    "1 | ForecasterRecursiveClassifier LGBMClassifier lags=3 | metric='accuracy_score'",
+    lambda: backtesting_forecaster(
+        ForecasterRecursiveClassifier(LGBMClassifier(verbose=-1), lags=3),
+        y=Y_CLF, cv=cv(), metric="accuracy_score", show_progress=False,
     ),
     summary_backtesting,
 )
