@@ -168,7 +168,7 @@ All marked with `<!-- AUTO-GENERATED -->` header and tracked in `.gitattributes`
 | `feature-selection` | — | RFECV, SelectFromModel |
 | `drift-detection` | — | RangeDriftDetector, PopulationDriftDetector |
 | `deep-learning-forecasting` | `architecture-options.md` | ForecasterRnn, LSTM/GRU |
-| `foundation-forecasting` | `adapter-parameters.md` | ForecasterFoundation, Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL |
+| `foundation-forecasting` | `adapter-parameters.md` | ForecasterFoundation, Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL, Timestral |
 | `choosing-a-forecaster` | — | Decision guide for forecaster selection |
 | `baseline-forecasting` | — | ForecasterEquivalentDate and naive baselines |
 | `troubleshooting-common-errors` | — | Common mistakes and fixes |

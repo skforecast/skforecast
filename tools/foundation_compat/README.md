@@ -1,6 +1,6 @@
 # Foundation backends compatibility
 
-Checks that each foundation model adapter of `skforecast/foundation` still works with its backend library (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`).
+Checks that each foundation model adapter of `skforecast/foundation` still works with its backend library (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`, `timestral`).
 
 Those libraries release often and change their API without notice, and the unit tests of the adapters use fakes of them, so they stay green when a backend changes. This check installs the real backend of each adapter in its own environment and runs two levels of tests against it.
 

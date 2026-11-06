@@ -109,6 +109,56 @@ def _validate_supported_quantiles(
     return quantile_list
 
 
+def _match_quantile_indices(
+    quantile_grid: list[float],
+    quantiles: list[float],
+    tol: float = 1e-6,
+) -> list[int]:
+    """
+    Map requested quantile levels to column indices in `quantile_grid`.
+
+    Parameters
+    ----------
+    quantile_grid : list of float
+        Quantile levels corresponding to the columns of the model's
+        quantile output, in order (e.g. the quantile grid of the loaded
+        checkpoint).
+    quantiles : list of float
+        Requested quantile levels.
+    tol : float, default 1e-6
+        Maximum allowed absolute difference between a requested
+        quantile and its nearest match in `quantile_grid`.
+
+    Returns
+    -------
+    indices : list of int
+        Column index in `quantile_grid` for each entry in
+        `quantiles`, in the same order.
+
+    Notes
+    -----
+    A `ValueError` is raised if a requested quantile has no match
+    within `tol`. Matching against the model's own quantile grid
+    (synced from the loaded checkpoint) rather than a fixed formula
+    keeps the mapping correct even if a checkpoint ships a different
+    quantile grid.
+
+    """
+
+    indices = []
+    for q in quantiles:
+        diffs = [abs(g - q) for g in quantile_grid]
+        best_idx = diffs.index(min(diffs))
+        if diffs[best_idx] > tol:
+            raise ValueError(
+                f"Quantile {q} not found in the model's quantile grid "
+                f"{quantile_grid} (tolerance {tol})."
+            )
+        indices.append(best_idx)
+
+    return indices
+
+
 def _apply_set_params(
     instance: Any,
     params: dict[str, Any],
@@ -279,6 +329,15 @@ _MODEL_LICENSES: dict[str, tuple[str, str | None, bool, str | None]] = {
         "https://huggingface.co/taharnbl/TS-ICL/blob/main/LICENSE",
         True,
         "tsicl-v1-license-v1.0 (non-commercial)",
+    ),
+    # The model cards declare `license: other` with no `license_name`, and
+    # the four checkpoints publish the same LICENSE file.
+    "mistralai/Timestral": (
+        "other",
+        "https://huggingface.co/mistralai/Timestral-209M/blob/main/LICENSE",
+        True,
+        "Timestral Modified MIT License (no rights for companies with a monthly "
+        "revenue above USD 20 million)",
     ),
 }
 

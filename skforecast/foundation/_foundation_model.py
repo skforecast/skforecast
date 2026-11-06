@@ -39,7 +39,8 @@ class FoundationModel:
     Scikit-learn compatible interface for foundation time-series models.
 
     Currently supports Amazon Chronos-2, Google TimesFM 2.5 and 3.0, Salesforce
-    Moirai-2, TabICLv2, TabPFN-TS, TFC-T0, Synthefy Nori and EDF Lab TS-ICL.
+    Moirai-2, TabICLv2, TabPFN-TS, TFC-T0, Synthefy Nori, EDF Lab TS-ICL and
+    Mistral AI Timestral.
     For full skforecast ecosystem integration (backtesting, model selection, etc.)
     use `ForecasterFoundation` instead.
 
@@ -89,6 +90,13 @@ class FoundationModel:
 
         - `'taharnbl/TS-ICL'`
 
+        Mistral AI Timestral (supports `exog`):
+
+        - `'mistralai/Timestral-5M'`
+        - `'mistralai/Timestral-28M'`
+        - `'mistralai/Timestral-123M'`
+        - `'mistralai/Timestral-209M'`
+
         See References for links to model documentation and model cards.
     **kwargs :
         Additional keyword arguments forwarded to the underlying adapter.
@@ -132,6 +140,9 @@ class FoundationModel:
           default `'tsicl-v1.ckpt'`), `context_length` (int, default 4096),
           `device` (str, default `'auto'`), `allow_auto_download` (bool,
           default True).
+        - **Mistral AI Timestral** (`TimestralAdapter`): `context_length`
+          (int, default 4096), `device` (str, default `'auto'`),
+          `predict_kwargs` (dict, default None).
 
     Attributes
     ----------
@@ -217,7 +228,7 @@ class FoundationModel:
     - `device_map` (plus `torch_dtype`), HuggingFace `from_pretrained`
       style: Chronos, T0.
     - `device` string, resolved internally to a concrete accelerator:
-      Moirai, TS-ICL, TimesFM 3.0.
+      Moirai, TS-ICL, TimesFM 3.0, Timestral.
     - Through the backend configuration dict: TabICL (`tabicl_config`),
       TabPFN (`tabpfn_model_config`), Nori (`nori_config`).
     - No device parameter: TimesFM 2.5, which relies on its backend's own
@@ -272,6 +283,12 @@ class FoundationModel:
 
     .. [16] EDF Lab TS-ICL - HuggingFace model card.
             https://huggingface.co/taharnbl/TS-ICL
+
+    .. [17] Mistral AI Timestral - GitHub repository.
+            https://github.com/mistralai/timestral
+
+    .. [18] Mistral AI Timestral - HuggingFace collection.
+            https://huggingface.co/collections/mistralai/timestral
 
     """
 
@@ -376,10 +393,11 @@ class FoundationModel:
         supports_past_only_covariates : bool
             `True` if a column present in the historical exog but absent
             from the future `exog` is used as a past-only covariate
-            (Chronos-2, TS-ICL, TimesFM 3.0). `False` if the adapter only
-            uses covariates that also have future values, in which case
-            such columns are ignored and an `IgnoredArgumentWarning` is
-            issued at predict time (TabICL, TabPFN-TS, TFC-T0, Nori).
+            (Chronos-2, TS-ICL, TimesFM 3.0, Timestral). `False` if the
+            adapter only uses covariates that also have future values, in
+            which case such columns are ignored and an
+            `IgnoredArgumentWarning` is issued at predict time (TabICL,
+            TabPFN-TS, TFC-T0, Nori).
         """
         return self.adapter.supports_past_only_covariates
 
@@ -395,9 +413,9 @@ class FoundationModel:
             `True` if the backend accepts, in one call, series whose exog
             columns differ (TFC-T0, TabPFN-TS, Nori, and the adapters that
             ignore exog). `False` if every series in a call must have the
-            same columns (Chronos-2, TS-ICL, TabICL, TimesFM 3.0); in that
-            case `predict` groups the series by their exog columns and calls
-            the adapter once per group.
+            same columns (Chronos-2, TS-ICL, TabICL, TimesFM 3.0,
+            Timestral); in that case `predict` groups the series by their
+            exog columns and calls the adapter once per group.
         """
         return self.adapter.supports_heterogeneous_covariates
 

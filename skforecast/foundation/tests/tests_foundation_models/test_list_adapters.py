@@ -25,6 +25,7 @@ def test_list_adapters_output():
         ("T0Adapter", "theforecastingcompany/t0-alpha"),
         ("NoriAdapter", "Synthefy/Nori"),
         ("TSICLAdapter", "taharnbl/TS-ICL"),
+        ("TimestralAdapter", "mistralai/Timestral-28M"),
     ]
 
     assert all(isinstance(info, FoundationModelInfo) for info in adapters)

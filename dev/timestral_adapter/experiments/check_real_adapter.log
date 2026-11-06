@@ -1,0 +1,22 @@
+skforecast 0.27.0 from C:\Users\Joaquin\Documents\GitHub\skforecast\skforecast\__init__.py
+torch 2.14.1+cpu | numpy 2.5.4 | pandas 2.3.3
+PASS ImportError without timestral
+PASS LicenseWarning on load: The weights for 'mistralai/Timestral-28M' are released under Timestral Modified MIT License (no rights for com
+PASS quantile levels of the checkpoint equal SUPPORTED_QUANTILES
+PASS FoundationModel.predict shape: ['level', 'q_0.1', 'q_0.5', 'q_0.9']
+PASS point forecast is the median
+PASS quantiles ordered
+PASS ForecasterFoundation.predict_interval(interval=0.9): ['level', 'pred', 'lower_bound', 'upper_bound']
+PASS backtesting_foundation: MAE 3.590
+PASS one backend call per exog group: [{'context': (2, 1, 900), 'categorical_known_covariates': (2, 1, 924), 'known_covariates': (2, 1, 924)}, {'context': (1, 1, 700), 'known_covariates': (1, 1, 724)}]
+PASS heterogeneous batch equals each series alone: max abs diff 3.05e-05
+PASS quantile 0.33 rejected
+PASS all 21 levels accepted
+PASS bool, Int64 with NA, object, RangeIndex, padded batch
+PASS exog as pandas Series
+PASS inf in a numeric covariate
+PASS issue #7 warning through ForecasterFoundation points to the user's call: q_0.99 max 9399.1
+PASS historical values to NaN avoid it: q_0.99 max 6.6
+PASS auto with MPS available: warning at the user's call and model on CPU
+
+18/18 checks passed

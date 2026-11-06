@@ -71,7 +71,7 @@ jobs:
       matrix:
         # Same entries as tools/foundation_compat/adapters.toml (checked by
         # the unit test test_backends_compat_config.py).
-        adapter: [chronos, timesfm25, timesfm3, moirai, tabicl, tabpfn, t0, nori, tsicl]
+        adapter: [chronos, timesfm25, timesfm3, moirai, tabicl, tabpfn, t0, nori, tsicl, timestral]
     steps:
       - name: Checkout code
         uses: actions/checkout@v7

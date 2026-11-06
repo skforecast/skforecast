@@ -163,4 +163,23 @@ BACKEND_CONTRACTS = {
             ],
         },
     ],
+    "timestral": [
+        {
+            "target": "timestral:TimestralForecaster.from_pretrained",
+            "n_positional": 1,
+            "kwargs": ["device"],
+        },
+        {
+            "target": "timestral:TimestralForecaster.forecast",
+            "kwargs": [
+                "context",
+                "prediction_length",
+                "past_covariates",
+                "known_covariates",
+                "categorical_past_covariates",
+                "categorical_known_covariates",
+            ],
+        },
+        {"target": "timestral:Forecast", "kwargs": ["quantiles", "quantile_levels"]},
+    ],
 }

@@ -119,9 +119,10 @@ def test_set_params_resets_fitted_state_and_metadata():
     [
         ("google/timesfm-3.0-pytorch", "is served by TimesFM3Adapter"),
         ("Salesforce/moirai-2.0-R-small", "is served by MoiraiAdapter"),
+        ("mistralai/Timestral-28M", "is served by TimestralAdapter"),
         ("unknown/my-model", "No adapter found for model"),
     ],
-    ids=["other_adapter", "another_adapter", "unknown_prefix"],
+    ids=["other_adapter", "another_adapter", "timestral_adapter", "unknown_prefix"],
 )
 def test_set_params_ValueError_when_model_id_served_by_other_adapter(model_id, match):
     """

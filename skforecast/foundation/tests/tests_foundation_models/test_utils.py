@@ -16,6 +16,7 @@ from skforecast.foundation._utils import (
     _MODEL_LICENSES,
     _validate_model_id_prefix,
     _validate_supported_quantiles,
+    _match_quantile_indices,
     _left_pad_context,
 )
 from skforecast.foundation._adapters import _ADAPTER_REGISTRY
@@ -206,8 +207,9 @@ def test_get_model_license_output_when_model_id_is_not_registered():
         "Salesforce/moirai-2.0-R-small",
         "priorlabs/tabpfn-ts",
         "taharnbl/TS-ICL",
+        "mistralai/Timestral-28M",
     ],
-    ids=["timesfm-3.0", "moirai", "tabpfn-ts", "tsicl"],
+    ids=["timesfm-3.0", "moirai", "tabpfn-ts", "tsicl", "timestral"],
 )
 def test_warn_if_non_commercial_warns_for_registered_prefixes(model_id):
     """
@@ -380,6 +382,43 @@ def test_validate_supported_quantiles_ValueError_when_level_not_supported(bad_qu
     )
     with pytest.raises(ValueError, match=err_msg):
         _validate_supported_quantiles([0.5, bad_quantile], supported, "Moirai")
+
+
+# ===========================================================================
+# _match_quantile_indices
+# ===========================================================================
+
+@pytest.mark.parametrize(
+    "quantiles, expected",
+    [
+        ([0.5], [2]),
+        ([0.9, 0.1, 0.5], [4, 0, 2]),
+        ([0.1 + 1e-9, 0.9 - 1e-9], [0, 4]),
+    ],
+    ids=["single", "requested_order", "within_tolerance"],
+)
+def test_match_quantile_indices_output(quantiles, expected):
+    """
+    Test that _match_quantile_indices returns the column of each requested
+    level in the quantile grid, in the requested order, also for levels that
+    differ from the grid by less than the tolerance.
+    """
+    quantile_grid = [0.1, 0.25, 0.5, 0.75, 0.9]
+    assert _match_quantile_indices(quantile_grid, quantiles) == expected
+
+
+def test_match_quantile_indices_ValueError_when_quantile_missing():
+    """
+    Test that _match_quantile_indices raises ValueError naming the level, the
+    grid and the tolerance when a requested level is not in the grid.
+    """
+    quantile_grid = [0.1, 0.5, 0.9]
+    err_msg = re.escape(
+        "Quantile 0.2 not found in the model's quantile grid [0.1, 0.5, 0.9] "
+        "(tolerance 1e-06)."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        _match_quantile_indices(quantile_grid, [0.5, 0.2])
 
 
 # ===========================================================================
