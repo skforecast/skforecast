@@ -2410,9 +2410,9 @@ def test_evaluate_grid_hyperparameters_multiseries_refit_without_series_too_shor
         if w.category is RuntimeWarning and "left out of the refit" in str(w.message)
     ]
     assert messages == [
-        "1 series is left out of the refit of the best candidate: it has "
-        "`window_size` (8) observations or fewer, too few to train the "
+        "1 series is left out of the refit of the best candidate: it has no "
+        "more observations than the `window_size` (8), too few to train the "
         "forecaster, and the candidate did not predict it in the search either. "
         "The forecaster returned is not trained with it (not in "
-        "`series_names_in_`).\n\nSeries left out: 'short'."
+        "`series_names_in_`).\n\nSeries left out: 'short' (6 observations)."
     ]

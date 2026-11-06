@@ -21,19 +21,19 @@ exog = {k: pd.DataFrame({'x': np.arange(30.)}, index=index) for k in series}
 
 def test_drop_series_too_short_refit_output_and_warning():
     """
-    Test that the series with `window_size` observations or fewer, after
-    removing their leading and trailing NaNs, are left out of `series` and of
-    `exog` (dict), with a RuntimeWarning that lists them. The input is not
-    modified.
+    Test that the series with no more observations than the `window_size`,
+    after removing their leading and trailing NaNs, are left out of `series`
+    and of `exog` (dict), with a RuntimeWarning that lists them with their
+    number of observations. The input is not modified.
     """
     forecaster = ForecasterRecursiveMultiSeries(Ridge(), lags=6)
 
     warn_msg = re.escape(
-        "1 series is left out of the refit of the best candidate: it has "
-        "`window_size` (6) observations or fewer, too few to train the "
+        "1 series is left out of the refit of the best candidate: it has no "
+        "more observations than the `window_size` (6), too few to train the "
         "forecaster, and the candidate did not predict it in the search either. "
         "The forecaster returned is not trained with it (not in "
-        "`series_names_in_`).\n\nSeries left out: 'short'."
+        "`series_names_in_`).\n\nSeries left out: 'short' (6 observations)."
     )
     with pytest.warns(RuntimeWarning, match=f"^{warn_msg}$"):
         series_refit, exog_refit = _drop_series_too_short_refit(
@@ -46,6 +46,34 @@ def test_drop_series_too_short_refit_output_and_warning():
     assert list(exog_refit) == ['l1', 'l2']
     assert list(series) == ['l1', 'short', 'l2']
     assert len(series['short']) == 9
+
+
+def test_drop_series_too_short_refit_several_series():
+    """
+    Test the warning when several series are left out, one of them with a
+    single observation.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(Ridge(), lags=6)
+    series_several = {
+        **series,
+        'single': pd.Series([np.nan, 1.0, np.nan], index=index[:3]),
+    }
+
+    warn_msg = re.escape(
+        "2 series are left out of the refit of the best candidate: they have no "
+        "more observations than the `window_size` (6), too few to train the "
+        "forecaster, and the candidate did not predict them in the search "
+        "either. The forecaster returned is not trained with them (not in "
+        "`series_names_in_`).\n\nSeries left out: 'short' (6 observations), "
+        "'single' (1 observation)."
+    )
+    with pytest.warns(RuntimeWarning, match=f"^{warn_msg}$"):
+        series_refit, _ = _drop_series_too_short_refit(
+                              forecaster = forecaster,
+                              series     = series_several
+                          )
+
+    assert list(series_refit) == ['l1', 'l2']
 
 
 @pytest.mark.parametrize(

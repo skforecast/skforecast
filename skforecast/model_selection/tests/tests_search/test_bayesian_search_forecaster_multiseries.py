@@ -3424,6 +3424,6 @@ def test_bayesian_search_forecaster_multiseries_refit_without_series_too_short()
     assert forecaster.series_names_in_ == ['l1', 'l2']
     assert any(
         w.category is RuntimeWarning
-        and str(w.message).endswith("Series left out: 'short'.")
+        and str(w.message).endswith("Series left out: 'short' (6 observations).")
         for w in record
     )

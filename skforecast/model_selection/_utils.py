@@ -2855,7 +2855,11 @@ def _format_lags_warning(lags: Any) -> str:
     return str(lags)
 
 
-def _format_names_warning(names: list, max_names: int | None = None) -> str:
+def _format_names_warning(
+    names: list,
+    max_names: int | None = None,
+    details: dict | None = None
+) -> str:
     """
     Representation of a list of names for the warnings of the searches. If
     `max_names` is given and the list is longer, only the first two and the
@@ -2867,6 +2871,8 @@ def _format_names_warning(names: list, max_names: int | None = None) -> str:
         Names to show.
     max_names : int, default None
         Maximum number of names shown in full.
+    details : dict, default None
+        Detail of each name, shown in parentheses after it.
 
     Returns
     -------
@@ -2878,7 +2884,12 @@ def _format_names_warning(names: list, max_names: int | None = None) -> str:
     if max_names is not None and len(names) > max_names:
         names = [*names[:2], ..., names[-1]]
 
-    return ", ".join("..." if name is ... else repr(name) for name in names)
+    return ", ".join(
+        "..." if name is ...
+        else repr(name) if details is None
+        else f"{name!r} ({details[name]})"
+        for name in names
+    )
 
 
 def _is_affected_n_evaluated(n_evaluated: list[int] | np.ndarray) -> np.ndarray:
@@ -3165,10 +3176,10 @@ def _drop_series_too_short_refit(
     """
     Leave out of the refit of the best candidate of a multi-series search the
     series that `fit` of `ForecasterRecursiveMultiSeries` rejects: they have
-    `window_size` observations or fewer, after removing their leading and
-    trailing NaNs. The backtesting of the candidate does not predict them
-    either. A warning lists them: the forecaster returned is not trained with
-    them. It is a `RuntimeWarning`, not silenced by `suppress_warnings`,
+    no more observations than the `window_size`, after removing their leading
+    and trailing NaNs. The backtesting of the candidate does not predict them
+    either. A warning lists them, with their number of observations: the
+    forecaster returned is not trained with them. It is a `RuntimeWarning`, not silenced by `suppress_warnings`,
     since it describes the forecaster returned. Other forecasters are returned
     unchanged.
 
@@ -3213,16 +3224,21 @@ def _drop_series_too_short_refit(
         exog = {k: v for k, v in exog.items() if k not in series_too_short}
 
     n_series = len(series_too_short)
+    n_observations = {
+        k: f"{len(series_aligned[k])} observation"
+           f"{'' if len(series_aligned[k]) == 1 else 's'}"
+        for k in series_too_short
+    }
     warnings.warn(
         f"{n_series} series {'is' if n_series == 1 else 'are'} left out of the "
         f"refit of the best candidate: {'it has' if n_series == 1 else 'they have'} "
-        f"`window_size` ({forecaster.window_size}) observations or fewer, too "
-        f"few to train the forecaster, and the candidate did not predict "
+        f"no more observations than the `window_size` ({forecaster.window_size}), "
+        f"too few to train the forecaster, and the candidate did not predict "
         f"{'it' if n_series == 1 else 'them'} in the search either. The "
         f"forecaster returned is not trained with "
         f"{'it' if n_series == 1 else 'them'} (not in `series_names_in_`).\n\n"
         f"Series left out: "
-        f"{_format_names_warning(series_too_short, max_names=10)}.",
+        f"{_format_names_warning(series_too_short, max_names=10, details=n_observations)}.",
         RuntimeWarning,
         stacklevel = _stacklevel_user_code()
     )
