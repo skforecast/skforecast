@@ -437,9 +437,18 @@ def validate_imports_consistency() -> list[str]:
 
 
 def extract_urls(text: str) -> list[str]:
-    """Extract markdown and bare HTTP(S) URLs from text."""
+    """Extract markdown and bare HTTP(S) URLs from text.
+
+    A VCS requirement of pip (``git+https://github.com/<org>/<repo>.git``) is
+    checked through the page of the repository: the ``.git`` URL is served by
+    git, and the web server redirects it.
+    """
     urls: list[str] = re.findall(r"\(\s*(https?://[^)\s]+)\s*\)", text)
-    urls.extend(re.findall(r"\bhttps?://[^\s)>\"']+", text))
+    urls.extend(re.findall(r"(?<!\+)\bhttps?://[^\s)>\"']+", text))
+    urls.extend(
+        url.removesuffix(".git")
+        for url in re.findall(r"\bgit\+(https?://[^\s)>\"'@#]+)", text)
+    )
 
     seen: set[str] = set()
     unique_urls: list[str] = []
