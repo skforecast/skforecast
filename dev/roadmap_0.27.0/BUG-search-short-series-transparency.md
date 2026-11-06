@@ -788,3 +788,31 @@ dato; el aviso, un problema.
    (2), `probabilistic-forecasting-global-models` (1). Revisar cada caso: `y_true` solo está
    en las predicciones del backtesting, no en las de `predict`, y en multiserie va por fila
    (formato largo). Volver a ejecutar cada página tocada.
+
+## 14. PR 2b: candidatos que fallan y pendientes de las búsquedas (2026-11-06)
+
+Rama `fix/search-failing-candidates` desde `0.27.x` (con #1447 y #1452). Alcance: 12.5.
+Script de la línea base: `repro/BUG-search-short-series_09_failing_candidates.py` (un
+escenario por punto; avisos con los filtros por defecto, primera línea).
+
+### 14.1 Línea base en `0.27.x`
+
+| Punto | Escenario | `0.27.x` |
+|---|---|---|
+| 1 | grid y random de una serie, OSA, `lags_grid=[3, 80]` (67 obs. de train) | `ValueError: Length of y must be greater than the maximum window size`, se aborta |
+| 1 | grid y random multiserie, OSA, `lags_grid=[3, 80]` | `ValueError: No series can be used to train the forecaster`, se aborta |
+| 1 | grid multiserie, OSA, `levels=['short']`, `lags_grid=[3, 24]` (`short` no entra con 24) | no se aborta: 2 filas con `n_evaluated=0` y métricas NaN, un `FutureWarning` de pandas (concat vacío) y el aviso de `n_evaluated`. Con `TimeSeriesFold`, esos 2 candidatos se saltan ("Parameters skipped") |
+| 1 | bayesian de una serie y multiserie, OSA, `lags` en [3, 80] | el mismo `ValueError`, se aborta el study |
+| 2 | bayesian de una serie y multiserie, TSF, `lags` en [3, 80] | `ValueError` de `initial_train_size`, se aborta; además Optuna imprime en stderr "Trial 0 failed..." con la traza (el logger de optuna no tiene handler y cae en `lastResort`) |
+| 2 | bayesian, claves de `search_space` distintas / `search_space` que lanza / `alpha='x'` | se aborta (`ValueError`, `ZeroDivisionError`, `InvalidParameterError`) |
+| 3 | backtesting, `lags=80`, `initial_train_size='2021-07-01'` (67 obs.) | "If `initial_train_size` is an integer, it must be greater than the `window_size` of the forecaster (80) and smaller than the length of `y` (96)..." (se pasó una fecha) |
+| 3 | backtesting, `lags=100`, `len(y)=96` | el mismo texto: ningún valor lo cumple |
+| 3 | `initial_train_size == window_size` (3): backtesting, multiserie y OSA | lo acepta el chequeo y falla después: "Length of `y` must be greater than the maximum window size" (una serie, OSA) y "No fold of the backtesting has a level to predict" (multiserie). Con 4 funciona |
+| 4 | grid, random y bayesian multiserie, TSF y OSA, `tiny` de 6 valores, `lags=8`, `return_best=True` | tras evaluar todo, `ValueError: Length of 'tiny' must be greater than the maximum window size` en el refit |
+| 5 | grid, random y bayesian de una serie, OSA, `dropna_from_series=True`, 3 NaN en el test (57 puntos), `lags_grid=[3, 14]` | `lags=14` evalúa 12 puntos y `lags=3` 45; gana `lags=14`, sin aviso |
+
+Otros hallazgos de la línea base:
+
+- En bayesian con OSA, el aviso de los NaN quitados del split sale "(in 2 of 6 trials)": el
+  split se cachea por `lags` y solo se calcula (y avisa) en el primer trial de cada valor.
+  En grid sale tal cual (el split va fuera de los candidatos).
