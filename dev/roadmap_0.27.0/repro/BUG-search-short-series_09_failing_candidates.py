@@ -70,9 +70,14 @@ def run(name, fn, summary=None):
             out = None
             err = f"{type(e).__name__}: {str(e).splitlines()[0][:150]}"
     print(f"\n### {name}")
+    seen = {}
     for w in caught:
-        first = str(w.message).splitlines()[0][:150]
-        print(f"  warning {w.category.__name__}: {first}")
+        if issubclass(w.category, DeprecationWarning) or "optimizer 'adam'" in str(w.message):
+            continue
+        key = (w.category.__name__, str(w.message).splitlines()[0][:150])
+        seen[key] = seen.get(key, 0) + 1
+    for (category, first), n in seen.items():
+        print(f"  warning {category}{f' x{n}' if n > 1 else ''}: {first}")
     if err:
         print(f"  ERROR {err}")
     elif summary is not None:
@@ -247,3 +252,91 @@ for search in ["grid", "random", "bayesian"]:
             f, Y_NAN, cv_nan, lambda t: {"lags": t.suggest_categorical("lags", [3, 14])},
             "mean_absolute_error", n_trials=6, return_best=False, show_progress=False)
     run(f"{search}, lags [3, 14]", fn, rows)
+
+print()
+print("=" * 80)
+print("3b. initial_train_size == window_size in the other forecasters (TSF, refit=False)")
+print("=" * 80)
+
+from sklearn.linear_model import LogisticRegression
+from skforecast.direct import ForecasterDirect, ForecasterDirectMultiVariate
+from skforecast.recursive import (
+    ForecasterEquivalentDate, ForecasterRecursiveClassifier, ForecasterStats
+)
+from skforecast.stats import Arima
+
+Y_CLASS = pd.Series(np.where(Y.diff().fillna(0) > 0, "up", "down"), index=idx)
+SERIES_WIDE = pd.DataFrame({"long_1": SERIES["long_1"], "long_2": SERIES["long_2"]})
+
+
+def at_limit(make, data, multi_wide=False, offset=0):
+    def fn():
+        f = make()
+        ws = f.window_size
+        cv = TimeSeriesFold(steps=3, initial_train_size=ws + offset, refit=False)
+        if multi_wide:
+            return backtesting_forecaster_multiseries(
+                f, data, cv, "mean_absolute_error", show_progress=False)
+        if type(f).__name__ == "ForecasterStats":
+            from skforecast.model_selection import backtesting_stats
+            return backtesting_stats(f, data, cv, "mean_absolute_error", show_progress=False)
+        metric = "accuracy_score" if isinstance(data.iloc[0], str) else "mean_absolute_error"
+        return backtesting_forecaster(f, data, cv, metric, show_progress=False)
+    return fn
+
+
+CASES = {
+    "ForecasterDirect(lags=3, steps=3)": (lambda: ForecasterDirect(Ridge(), lags=3, steps=3), Y, False),
+    "ForecasterDirectMultiVariate(lags=3, steps=3)": (
+        lambda: ForecasterDirectMultiVariate(Ridge(), level="long_1", lags=3, steps=3),
+        SERIES_WIDE, True),
+    "ForecasterEquivalentDate(offset=3)": (lambda: ForecasterEquivalentDate(offset=3), Y, False),
+    "ForecasterRecursiveClassifier(lags=3)": (
+        lambda: ForecasterRecursiveClassifier(LogisticRegression(), lags=3), Y_CLASS, False),
+    "ForecasterStats(Arima(order=(1, 0, 0)))": (
+        lambda: ForecasterStats(Arima(order=(1, 0, 0))), Y, False),
+}
+try:
+    from skforecast.deep_learning import ForecasterRnn, create_and_compile_model
+    CASES["ForecasterRnn(lags=3, steps=3)"] = (
+        lambda: ForecasterRnn(
+            create_and_compile_model(SERIES_WIDE, lags=3, steps=3, levels=["long_1"],
+                                     recurrent_units=4, dense_units=4),
+            levels=["long_1"], lags=3, fit_kwargs={"epochs": 1, "verbose": 0}),
+        SERIES_WIDE, True)
+except ImportError as e:
+    print(f"  ForecasterRnn not available: {e}")
+
+for name, (make, data, wide) in CASES.items():
+    for offset in [0, 1]:
+        run(f"{name}, initial_train_size = window_size + {offset}",
+            at_limit(make, data, wide, offset),
+            lambda out: f"ok, metric: {out[0].iloc[0].to_dict()}")
+
+print()
+print("=" * 80)
+print("4b. Refit with a short series: ForecasterDirectMultiVariate and ForecasterRnn")
+print("=" * 80)
+
+SERIES_TINY_WIDE = pd.DataFrame(SERIES_TINY)          # 'tiny' NaN except 6 values
+run("grid DirectMultiVariate, level='l1', lags_grid [8], wide with 'tiny'",
+    lambda: grid_search_forecaster_multiseries(
+        ForecasterDirectMultiVariate(Ridge(), level="l1", lags=3, steps=5),
+        SERIES_TINY_WIDE, cv_tiny, {"alpha": [0.1, 1.0]}, "mean_absolute_error",
+        lags_grid=[8], return_best=True, show_progress=False), rows)
+run("grid DirectMultiVariate, level='l1', lags_grid [8], wide without 'tiny'",
+    lambda: grid_search_forecaster_multiseries(
+        ForecasterDirectMultiVariate(Ridge(), level="l1", lags=3, steps=5),
+        SERIES_TINY_WIDE[["l1", "l2"]], cv_tiny, {"alpha": [0.1, 1.0]},
+        "mean_absolute_error", lags_grid=[8], return_best=True, show_progress=False), rows)
+if "ForecasterRnn(lags=3, steps=3)" in CASES:
+    def rnn(series):
+        return ForecasterRnn(
+            create_and_compile_model(series, lags=8, steps=5, levels=["l1"],
+                                     recurrent_units=4, dense_units=4),
+            levels=["l1"], lags=8, fit_kwargs={"epochs": 1, "verbose": 0})
+    for name, data in [("with", SERIES_TINY_WIDE), ("without", SERIES_TINY_WIDE[["l1", "l2"]])]:
+        run(f"grid ForecasterRnn, lags 8, wide {name} 'tiny'",
+            lambda data=data: grid_search_forecaster_multiseries(
+                rnn(data), data, cv_tiny, {"dense_units": [4]}, "mean_absolute_error",
+                return_best=True, show_progress=False), rows)

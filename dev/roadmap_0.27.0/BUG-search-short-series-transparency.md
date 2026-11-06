@@ -816,3 +816,57 @@ Otros hallazgos de la línea base:
 - En bayesian con OSA, el aviso de los NaN quitados del split sale "(in 2 of 6 trials)": el
   split se cachea por `lags` y solo se calcula (y avisa) en el primer trial de cada valor.
   En grid sale tal cual (el split va fuera de los candidatos).
+- **`initial_train_size == window_size` en los demás forecasters** (TSF, `refit=False`,
+  sección 3b del script): ya fallaba, con errores tardíos y distintos, en
+  `ForecasterDirect` ("Minimum length of `y`... is 6", también con `window_size + 1`, porque
+  necesita `window_size + steps`), `ForecasterDirectMultiVariate` y `ForecasterRnn` ("No
+  fold of the backtesting has a level to predict"), `ForecasterEquivalentDate` y
+  `ForecasterRecursiveClassifier` ("Length of `y` must be greater than the maximum window
+  size"). **`ForecasterStats` no fallaba**: su `window_size` es 1 y se ignora; un Arima se
+  ajusta con 1 observación. Para él se mantiene el límite de antes (`<`).
+- **Refit con series cortas en otros forecasters multiserie** (sección 4b):
+  - `ForecasterDirectMultiVariate` (DataFrame ancho, `tiny` con NaN salvo 6 valores): el
+    backtesting quita `tiny` del train de cada fold (es corta) y los candidatos se
+    evalúan, pero el refit la incluye y `Ridge` falla con `Input X contains NaN`. No es la
+    regla de longitud de `fit` (`ForecasterDirectMultiVariate` no la tiene): con un
+    estimador que admite NaN, el refit funcionaría con `tiny` casi vacía como predictor.
+    **Fuera de este PR** (otra causa; anotarlo en el roadmap).
+  - `ForecasterRnn`: no se puede usar en las búsquedas: `set_params` clona el modelo de
+    keras y falla (`TypeError: Cannot clone object '<Functional ...>'`), con o sin `tiny`;
+    todos los candidatos se saltan. No aplica. Aparte, su backtesting con una serie corta
+    en el DataFrame falla con "Number of series in `series` (2) does not match the number
+    of series expected by the model architecture (3)": `_extract_data_folds_multiseries`
+    quita la columna corta y el modelo espera todas. Ya existía; fuera de este PR.
+
+### 14.2 Decisiones (aprobadas el 2026-11-06)
+
+1. **One-step-ahead:** el split, dentro de un `try` por cada `lags` en grid y random; si
+   falla, los `params` de ese `lags` se saltan con su error. Tras el split, si ningún nivel
+   de `levels` tiene puntos en el test, `ValueError` y se saltan (antes: filas con
+   `n_evaluated=0` y métricas NaN). En OSA, `initial_train_size > window_size` se comprueba
+   por candidato con el mismo helper del punto 3.
+2. **Bayesian:** abortan `search_space(trial)`, la comprobación de sus claves y
+   `set_params`/`set_lags` (errores del espacio de búsqueda). Solo la evaluación (split,
+   backtesting, ajuste y métricas) va en el `try`, relanzada como `_TrialEvaluationError`,
+   que se añade al `catch` del usuario. En "Parameters skipped", cada trial por su número.
+   `add_skipped` con `self._lock` (hilos de Optuna). Si fallan todos, resultados vacíos.
+   El split de OSA va fuera del candidato (`set_candidate(None)`) y se cachea también su
+   error. También en `bayesian_search_foundation`.
+3. **Logs de Optuna:** filtro en el logger `optuna.study._optimize` (un filtro en `optuna`
+   no se aplica a los registros de sus hijos), solo para los trials que fallan con
+   `_TrialEvaluationError`, quitado en un `finally`, y solo sin `output_file` (en el
+   fichero se mantienen).
+4. **`initial_train_size`:** helper con tres casos (ventana demasiado grande, valor menor o
+   igual que la ventana, valor mayor o igual que la longitud) y el valor recibido. Límite
+   `<=` en los chequeos de `_utils.py` y en el camino explícito de `_split.py`; no en el de
+   `initial_train_size=None` (forecaster ya ajustado: `initial_train_size = window_size` a
+   propósito), ni en `ForecasterStats` ni en `ForecasterFoundation`. Changed: error más
+   claro y temprano.
+5. **Refit sin series cortas:** solo `ForecasterRecursiveMultiSeries`; las series que `fit`
+   rechazaría (`len(y) <= window_size` tras `align_series_and_exog_multiseries`), con la
+   regla compartida con `fit`. `exog` solo se filtra si es un dict. El forecaster queda como
+   un `fit` sin esas series (sin atributos nuevos). El aviso **no** lo silencia
+   `suppress_warnings`: describe el forecaster devuelto, como "Parameters skipped" describe
+   los resultados.
+6. **`n_evaluated` de una serie:** `_warn_n_evaluated_search_multiseries` pasa a
+   `_warn_n_evaluated_search` con `levels=None` para una serie (otro texto de acción).
