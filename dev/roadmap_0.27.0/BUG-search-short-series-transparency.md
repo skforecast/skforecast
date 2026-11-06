@@ -10,8 +10,10 @@ de las búsquedas.
 **PR 1 fusionado en `0.27.x` el 2026-11-04 (#1447):** ver la sección 11. El PR 2 se divide en
 dos (sección 8.1): **PR 2a fusionado en `0.27.x` el 2026-11-06 (#1452,** rama
 `fix/search-warnings`; sección 12; también `n_evaluated` en todas las búsquedas, 12.8).
-**Siguiente: PR 2b** (candidatos que fallan y pendientes de las búsquedas, sección 12.5) y
-después el PR 2c (avisos de los procesos de joblib, 12.6 punto 8).
+**PR 2b fusionado en `0.27.x` el 2026-11-06 (#1456,** rama `fix/search-failing-candidates`;
+sección 14: candidatos que fallan y pendientes de las búsquedas). **Siguiente:**
+BUG-backtesting-nan-y-true del roadmap (S, misma zona), después el PR 2c (avisos de los
+procesos de joblib, 12.6 punto 8; medir antes su alcance) y, al final, la sección 13.
 
 **Desbloqueado el 2026-11-03:** QW-12 está hecho con #1437. Antes estaba **bloqueado por
 QW-12** (decisión del 2026-10-29): antes se hace, por separado, la columna con
@@ -792,6 +794,7 @@ dato; el aviso, un problema.
 ## 14. PR 2b: candidatos que fallan y pendientes de las búsquedas (2026-11-06)
 
 Rama `fix/search-failing-candidates` desde `0.27.x` (con #1447 y #1452). Alcance: 12.5.
+**Fusionado en `0.27.x` el 2026-11-06 (#1456),** ver 14.6.
 Script de la línea base: `repro/BUG-search-short-series_09_failing_candidates.py` (un
 escenario por punto; avisos con los filtros por defecto, primera línea).
 
@@ -889,7 +892,7 @@ Otros hallazgos de la línea base:
 | 4 | grid, random y bayesian multiserie, TSF y OSA, `tiny` de 6 valores, `lags=8` | la búsqueda termina; `series_names_in_ == ['l1', 'l2']`; `RuntimeWarning` "1 series is left out of the refit of the best candidate: ... Series left out: 'tiny'." |
 | 5 | grid, random y bayesian de una serie, OSA, NaN en `y` | `MissingValuesWarning` "... The rows with missing values in `y` or in its lags are dropped (`dropna_from_series=True`), more with larger windows. To compare the candidates on the same points, fill the gaps of `y` or remove the candidates with larger windows..." |
 
-Commits (rama `fix/search-failing-candidates`, en local): el mensaje de `initial_train_size`;
+Commits (rama `fix/search-failing-candidates`, #1456): el mensaje de `initial_train_size`;
 los candidatos sin datos del one-step-ahead; los trials que fallan en bayesian; el refit sin
 series cortas; el aviso de `n_evaluated` con una serie; la documentación (nota de la versión,
 skill, `llms-base.txt`); y el texto del error de los niveles sin puntos. Tests: 2499 en
@@ -997,3 +1000,16 @@ datos del notebook 08 (`store_1`, `store_2` y `new_product` de 120 días).
    citan el aviso), así que no cambian.
 5. *Notebook 09:* `# since 2023-09-03` y "28 días" (el producto nuevo empieza el
    2023-09-03 y tiene 28 observaciones hasta el 2023-09-30). Vuelto a ejecutar sin errores.
+
+### 14.6 Pull request (#1456, fusionado el 2026-11-06)
+
+- Abierto contra `0.27.x` con 21 commits más uno que enlaza el PR en la nota de la versión
+  (las cuatro entradas nuevas, el highlight y la entrada de #1447).
+- `0.27.x` había avanzado 10 commits (adaptadores foundation y notas de la versión): el
+  merge de prueba no tenía conflictos y `generate_ai_context_files.py --check` estaba al
+  día también sobre el árbol fusionado.
+- Tests antes de abrirlo: `tests_search`, `tests_split`, `tests_utils` y `tests_validation`
+  de `model_selection`, `tests_forecaster_recursive_multiseries` y `utils/tests_utils`:
+  2855 pasan y 2 se saltan. Sin el full suite.
+- Queda fuera, en el roadmap: BUG-refit-directmultivariate-short, BUG-rnn-set-params y
+  BUG-backtesting-nan-y-true; el PR 2c y la sección 13.

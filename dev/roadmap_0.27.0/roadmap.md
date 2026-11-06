@@ -43,12 +43,15 @@ secciones 1 a 7 quedan como referencia: evidencia, antes y después, y esbozos d
 > los avisos de todas las búsquedas se muestran una vez al final con el número de
 > candidatos y apuntan al código del usuario, "Parameters skipped" agrupado,
 > `LongTrainingWarning` una vez, un solo aviso para las series cortas y `n_evaluated` en
-> todas las búsquedas. **PR 2b hecho en local el 2026-11-06** (rama
-> `fix/search-failing-candidates`, sin PR todavía): candidatos que fallan (one-step-ahead
-> por candidato y trials de bayesian), refit sin series cortas, mensaje de
+> todas las búsquedas. **PR 2b fusionado (#1456, 2026-11-06):** candidatos que fallan
+> (one-step-ahead por candidato y trials de bayesian), refit sin series cortas, mensaje de
 > `initial_train_size`, aviso de `n_evaluated` con una serie y
-> BUG-osa-initial-window-check. Queda el 2c (avisos de joblib). Detalle en las secciones 11, 12 y 14 de
+> BUG-osa-initial-window-check. Queda el 2c (avisos de joblib). Detalle en las secciones
+> 11, 12 y 14 de
 > [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md).
+> **Siguiente:** BUG-backtesting-nan-y-true (S, misma zona; antes de volver a ejecutar las
+> guías), después medir el alcance del 2c (avisos de los procesos de joblib: cómo se ven,
+> no cambia resultados) y, al final, la sección 13 de ese documento (guías).
 
 **Comprobado en local** (Python 3.14.3, numpy 2.5.3, pandas 2.3.3, scikit-learn 1.9.1,
 numba 0.68.0, statsmodels 0.14.6): BUG-03, BUG-01 y BUG-stats-interval-ignored se
@@ -180,10 +183,13 @@ efecto, con `FutureWarning` y eliminación en la 0.29.0; `load_demo_dataset` se 
    la sección 11 de ese documento. **Siguiente: PR 2** (avisos de las búsquedas, sección
    5.2 puntos 1, 3, 4, 5 y 6).
    **PR 1 fusionado (#1447). PR 2a fusionado el 2026-11-06 (#1452):** avisos de las
-   búsquedas y `n_evaluated` en todas. **PR 2b hecho en local el 2026-11-06** (rama
-   `fix/search-failing-candidates`; sección 14 del documento): candidatos que fallan,
-   refit con series cortas, `initial_train_size`, aviso de `n_evaluated` con una serie
-   y BUG-osa-initial-window-check. Queda el 2c (avisos de joblib).
+   búsquedas y `n_evaluated` en todas. **PR 2b fusionado el 2026-11-06 (#1456;** sección
+   14 del documento): candidatos que fallan, refit con series cortas,
+   `initial_train_size`, aviso de `n_evaluated` con una serie y
+   BUG-osa-initial-window-check. Queda el 2c (avisos de joblib).
+   **Siguiente:** BUG-backtesting-nan-y-true (S, misma zona; antes de volver a ejecutar las
+   guías), después medir el alcance del 2c (avisos de los procesos de joblib: cómo se ven,
+   no cambia resultados) y, al final, la sección 13 de ese documento (guías).
 2. ~~**BUG-03**~~ **Hecho con #1431** (fusionado el 2026-10-22). La
    dirección sale de la métrica (decisión 6): atributo `greater_is_better` y convención de
    nombres solo para `sklearn.metrics`; si no se conoce, la dirección de la tarea, que ya
@@ -233,7 +239,7 @@ efecto, con `FutureWarning` y eliminación en la 0.29.0; `load_demo_dataset` se 
 | Comparar modelos | FE-05 | M. Nuevo (2026-10-20). Una llamada para el backtesting de varios forecasters de cualquier familia sobre los mismos puntos. Sustituye el código que hoy repite la guía `comparing-forecasting-models.ipynb`. Diseño analizado y prototipado (sección 3). Requisitos: QW-03 (hecho, #1423) y BUG-06 |
 | Feature engineering | QW-11 | S. Nuevo (2026-10-20). `hour_of_week` y el número de días de fin de semana del mes en `CalendarFeatures`, siempre opcionales, más un aviso y una guía de codificación. Medido en 18 series: `hour_of_week` reduce el MAE una mediana del 24% con Ridge en series horarias. Los festivos, que son lo que más aporta en series diarias, quedan como feature aparte (FE-06) |
 | Foundation para producción | QW-05, BUG-06, QW-02 | QW-02 pendiente de decisión |
-| **Búsquedas multiserie con series cortas (MUY IMPORTANTE)** | QW-12, después BUG-search-short-series | QW-12 hecho (#1437); PR 1 del arreglo hecho en local el 2026-11-03 (rama `fix/search-short-series-n-evaluated`), falta el PR 2 (avisos). S (QW-12) y S a M (el arreglo). Resultado erróneo silencioso en un uso habitual de los modelos globales. QW-12 va antes y bloquea el arreglo. Propuesta vigente (2026-10-29) en [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md): la columna de QW-12 en el backtesting y, después, por candidato en las búsquedas, un solo aviso al final cuando los candidatos no se evalúan sobre los mismos puntos, y avisos y errores de las búsquedas que salgan una vez y donde deben. No cambia resultados. Investigación y opción c2 (aparcada) en [`BUG-search-short-series.md`](BUG-search-short-series.md). QW-12 hecho con #1437 (2026-11-03): el arreglo ya no está bloqueado |
+| **Búsquedas multiserie con series cortas (MUY IMPORTANTE)** | QW-12, después BUG-search-short-series | QW-12 hecho (#1437); PR 1 (#1447), PR 2a (#1452) y PR 2b (#1456) del arreglo fusionados; falta el PR 2c (avisos de los procesos de joblib). S (QW-12) y S a M (el arreglo). Resultado erróneo silencioso en un uso habitual de los modelos globales. QW-12 va antes y bloquea el arreglo. Propuesta vigente (2026-10-29) en [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md): la columna de QW-12 en el backtesting y, después, por candidato en las búsquedas, un solo aviso al final cuando los candidatos no se evalúan sobre los mismos puntos, y avisos y errores de las búsquedas que salgan una vez y donde deben. No cambia resultados. Investigación y opción c2 (aparcada) en [`BUG-search-short-series.md`](BUG-search-short-series.md). QW-12 hecho con #1437 (2026-11-03): el arreglo ya no está bloqueado |
 | Paneles multiserie | QW-01, BUG-07, ISSUE-1410 | Hechos: ISSUE-1357 (IDs enteros) con #1412, que sustituye a PR-1408 (cerrado), e ISSUE-1410 con #1418 (2026-10-19); folds sin series con #1427 y `initial_train_size` contra el span con #1430 (2026-10-21, sección 6) |
 | Stats: corrección y rendimiento | BUG-08, PERF-02, PR-1400 | PR-1400 ya está fusionado en `0.27.x`. BUG-08 hecho con #1425 (fusionado el 2026-10-20). Volver a medir PERF-02 después de BUG-08 |
 | PRs externos | PR-1402, PR-1387, PR-1388, PR-1389 | Hecho: PR-1387 fusionado en `0.27.x` (2026-10-20); PR-1388 sustituido por #1433, que conserva su commit (fusionado el 2026-10-26); PR-1389 sustituido por el commit `6a5d933a4` (ISSUE-1354, 2026-10-27) y cerrado. PR-1402 fusionado en `0.27.x` el 2026-10-28. Queda abierto PR-1341 (TiRex-2, decisión pendiente 5), que apunta a `0.26.x` |
