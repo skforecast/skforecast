@@ -198,6 +198,13 @@ and win the ranking without being better.
 - To compare on the same points, pass those series in `levels` (for short
   series, those with more observations than the largest `window_size` before
   the first fold), or remove the candidates with larger windows.
+- With `return_best=True`, the refit of `ForecasterRecursiveMultiSeries`
+  leaves out the series with `window_size` observations or fewer for the best
+  candidate, with a `RuntimeWarning`: the forecaster returned is not trained
+  with them (they are not in `series_names_in_`).
+- Single series searches raise the same warning with `OneStepAheadFold`,
+  `dropna_from_series=True` and gaps in `y`: larger windows drop more test
+  rows. Fill the gaps of `y` or remove the candidates with larger windows.
 - How to forecast series with less history than the selected window (cold
   start) is a decision outside the search: fewer lags for them, a baseline or a
   foundation model.
@@ -303,7 +310,7 @@ results, study = bayesian_search_forecaster(
 6. **Comparing candidates evaluated on different points (multi-series)**: if `n_evaluated` differs between candidates (`MissingValuesWarning` at the end of the search), their metrics are not comparable. Restrict `levels` or the range of windows as described in [Series of different length](#series-of-different-length-compare-candidates-on-the-same-points).
 7. **Naming a custom metric `n_evaluated`**: it is the column with the points evaluated, so every search raises `ValueError`.
 8. **Passing the test set to the search**: give the search only the training and validation data (e.g. `y=data.loc[:end_validation]`). With `return_best=True` the forecaster is refitted on everything the search receives, so keep the test set out and evaluate the refitted forecaster with `backtesting_forecaster` on it.
-9. **Ignoring "Parameters skipped"**: candidates whose evaluation raises an error (for example, lags longer than the training set) are left out of the results and reported in a single `RuntimeWarning` at the end of the grid or random search, grouped by error. `suppress_warnings=True` does not hide it. The other warnings of the candidates (or trials) are also shown once, with the number of candidates in which they are raised and, if their texts differ, the details of the first one.
+9. **Ignoring "Parameters skipped"**: candidates whose evaluation raises an error (for example, lags not smaller than `initial_train_size`, also with `OneStepAheadFold`) are left out of the results and reported in a single `RuntimeWarning` at the end of the search, grouped by error. Bayesian trials are marked as failed in the study and listed by number; an error in `search_space` stops the search. `suppress_warnings=True` does not hide it. The other warnings of the candidates (or trials) are also shown once, with the number of candidates in which they are raised and, if their texts differ, the details of the first one.
 
 ## References
 

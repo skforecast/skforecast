@@ -359,7 +359,9 @@ results, study = bayesian_search_forecaster(
 | `bayesian_search_foundation` | `tuple[pd.DataFrame, optuna Study]`, no `lags` column | ✓ |
 
 When `return_best=True`, the forecaster is automatically updated with the
-best parameters found. The results DataFrame always has rows sorted by
+best parameters found (with `ForecasterRecursiveMultiSeries`, the series with
+`window_size` observations or fewer for the best candidate are left out of
+the refit, with a `RuntimeWarning`). The results DataFrame always has rows sorted by
 metric (best first). Every search adds the column `n_evaluated` after the
 metrics (points evaluated by each candidate, summed over the levels in
 multi-series; also in the `output_file` of grid and random search and as a
