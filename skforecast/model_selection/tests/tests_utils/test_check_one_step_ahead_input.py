@@ -354,7 +354,8 @@ def test_check_one_step_ahead_input_TypeError_when_boolean_arguments_not_bool(bo
 def test_check_one_step_ahead_input_OneStepAheadValidationWarning():
     """
     Test OneStepAheadValidationWarning is warned in check_one_step_ahead_input
-    when all checks are passed and suppress_warnings is False.
+    when all checks are passed and suppress_warnings is False. The warning
+    points to the code of the user (here, the test).
     """
     forecaster = ForecasterRecursive(
                      estimator = Ridge(random_state=123),
@@ -369,7 +370,7 @@ def test_check_one_step_ahead_input_OneStepAheadValidationWarning():
         "to backtest the final model for a more accurate multi-step performance "
         "estimate."
     )
-    with pytest.warns(OneStepAheadValidationWarning, match = warn_msg):
+    with pytest.warns(OneStepAheadValidationWarning, match = warn_msg) as record:
         check_one_step_ahead_input(
             forecaster        = forecaster,
             cv                = cv,
@@ -378,3 +379,6 @@ def test_check_one_step_ahead_input_OneStepAheadValidationWarning():
             show_progress     = False,
             suppress_warnings = False
         )
+
+    record = [w for w in record if w.category is OneStepAheadValidationWarning]
+    assert record[0].filename == __file__

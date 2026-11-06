@@ -799,7 +799,9 @@ def check_one_step_ahead_input(
             "One-step-ahead predictions are used for faster model comparison, but they "
             "may not fully represent multi-step prediction performance. It is recommended "
             "to backtest the final model for a more accurate multi-step performance "
-            "estimate.", OneStepAheadValidationWarning
+            "estimate.",
+            OneStepAheadValidationWarning,
+            stacklevel = _stacklevel_user_code()
         )
 
 
@@ -1121,7 +1123,8 @@ def _initialize_levels_model_selection_multiseries(
                 f"`ForecasterDirectMultiVariate`. The level of this forecaster "
                 f"is '{forecaster.level}', to predict another level, change "
                 f"the `level` argument when initializing the forecaster. \n",
-                IgnoredArgumentWarning
+                IgnoredArgumentWarning,
+                stacklevel = _stacklevel_user_code()
             )
         levels = [forecaster.level]
     else:
@@ -2609,7 +2612,8 @@ def _check_study_direction(study: object, metric: Callable) -> str:
                 f"'{metric_direction}'. The search, the order of the results and "
                 f"`return_best` follow the study direction. Remove `direction` "
                 f"from `kwargs_create_study` to use the direction of the metric.",
-                UserWarning
+                UserWarning,
+                stacklevel = _stacklevel_user_code()
             )
 
     return direction

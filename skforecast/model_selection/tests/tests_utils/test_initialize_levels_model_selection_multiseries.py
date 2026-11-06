@@ -40,7 +40,8 @@ def test_initialize_levels_model_selection_multiseries_TypeError_when_levels_not
 def test_initialize_levels_model_selection_multiseries_IgnoredArgumentWarning_forecaster_multivariate_and_levels():
     """
     Test IgnoredArgumentWarning is raised when levels is not forecaster.level or 
-    None in ForecasterDirectMultiVariate.
+    None in ForecasterDirectMultiVariate. The warning points to the code of the
+    user (here, the test).
     """
     forecaster = ForecasterDirectMultiVariate(
                      estimator = Ridge(random_state=123),
@@ -57,14 +58,15 @@ def test_initialize_levels_model_selection_multiseries_IgnoredArgumentWarning_fo
         "'l1', to predict another level, change the `level` "
         "argument when initializing the forecaster."
     )
-    with pytest.warns(IgnoredArgumentWarning, match = warn_msg):
+    with pytest.warns(IgnoredArgumentWarning, match = warn_msg) as record:
         levels = _initialize_levels_model_selection_multiseries(
                      forecaster = forecaster, 
                      series     = series_dict_range,
                      levels     = levels
                  )
-        
+
     assert levels == ['l1']
+    assert record[0].filename == __file__
 
 
 @pytest.mark.parametrize("series_as_dict",

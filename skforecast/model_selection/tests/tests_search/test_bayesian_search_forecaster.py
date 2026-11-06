@@ -1598,8 +1598,9 @@ def test_bayesian_search_forecaster_direction_when_metric_greater_is_better(
     the study is maximized by default, and that the results and `return_best`
     follow the direction of the study, also when it is set in
     `kwargs_create_study`. A direction that contradicts the metric raises a
-    warning. Before the fix, the default direction was 'minimize' and the
-    results were always sorted in ascending order.
+    warning, which points to the code of the user (here, the test). Before the
+    fix, the default direction was 'minimize' and the results were always
+    sorted in ascending order.
     """
     forecaster = ForecasterRecursive(estimator=Ridge(random_state=123), lags=2)
 
@@ -1622,8 +1623,10 @@ def test_bayesian_search_forecaster_direction_when_metric_greater_is_better(
     )
     warn_msg = "The optuna study direction is 'minimize'"
     if expected_direction == "minimize":
-        with pytest.warns(UserWarning, match=warn_msg):
+        with pytest.warns(UserWarning, match=warn_msg) as record:
             results, study = bayesian_search_forecaster(**kwargs)
+        record = [w for w in record if warn_msg in str(w.message)]
+        assert record[0].filename == __file__
     else:
         with warnings.catch_warnings(record=True) as record:
             warnings.simplefilter("always")
