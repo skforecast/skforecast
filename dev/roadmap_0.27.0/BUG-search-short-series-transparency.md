@@ -980,9 +980,17 @@ datos del notebook 08 (`store_1`, `store_2` y `new_product` de 120 días).
    NaN en la última ventana (solo si el estimador no los admite o hay `differentiation`, la
    misma regla que el forecaster), sin valores observados en el test, y un caso de reserva.
    Máximo 5 niveles, el resto se cuenta. Va en el mismo párrafo, separado por punto y coma:
-   con varias líneas se confundiría con la lista de candidatos de "Parameters skipped". En
-   el notebook: "'new_product': 28 observations in the training set, not more than the
-   `window_size` (35)".
+   con varias líneas se confundiría con la lista de candidatos de "Parameters skipped".
+   Tras la revisión, cada causa es una frase con "has" o "ends", sin repetir el valor de la
+   ventana, y las tres condiciones solo se explican con la causa genérica (se llega a ella,
+   por ejemplo, con `dropna_from_series=True` y el único valor del test con lags NaN). En el
+   notebook: "No level of `levels` can be evaluated in the test set with this
+   `window_size` (35). 'new_product' has 28 observations in the training set, not more
+   than the `window_size`. Review `levels`, ...".
+6. *Líneas de más de 88 caracteres* añadidas en el paquete (docstring de
+   `_drop_series_too_short_refit`, la f-string del aviso del refit, `id_repr` y las dos
+   `add_skipped` de `_search.py`): reajustadas. El F401 de `utils/__init__.py` se queda
+   (mismo patrón que el resto de reexportaciones privadas del archivo).
 4. *Aviso del refit:* "no more observations than the `window_size` (150)" y la longitud de
    cada serie ("'new_product' (120 observations)"), con `details` en
    `_format_names_warning`. Las docs y las skills describen la regla con sus palabras (no
