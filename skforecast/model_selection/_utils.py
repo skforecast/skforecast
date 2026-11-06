@@ -977,47 +977,58 @@ def _train_test_split_one_step_ahead_search(
     if not has_points:
         span_index = cv._extract_index(series)
         causes = [
-            f"'{level}': "
-            + _cause_level_not_evaluated(
-                  y                  = series[level],
-                  span_index         = span_index,
-                  initial_train_size = initial_train_size,
-                  window_size        = forecaster.window_size,
-                  dropna_last_window = dropna_last_window
-              )
+            _cause_level_not_evaluated(
+                level              = level,
+                y                  = series[level],
+                span_index         = span_index,
+                initial_train_size = initial_train_size,
+                window_size        = forecaster.window_size,
+                dropna_last_window = dropna_last_window
+            )
             for level in levels[:max_levels]
         ]
+        causes_repr = [cause for cause, _ in causes]
         n_more = len(levels) - max_levels
         if n_more > 0:
-            causes.append(f"and {n_more} more level{'s' if n_more > 1 else ''}")
+            causes_repr.append(f"and {n_more} more level{'s' if n_more > 1 else ''}")
+        # NOTE: The conditions are explained only when the cause of a level is
+        # not one of them.
+        conditions = (
+            " A level is evaluated if it has more than `window_size` observations "
+            "in the training set, its last window can be used to predict, and it "
+            "has observed values in the test set."
+            if any(is_generic for _, is_generic in causes)
+            else ""
+        )
         raise ValueError(
             f"No level of `levels` can be evaluated in the test set with this "
-            f"`window_size` ({forecaster.window_size}): {'; '.join(causes)}. A "
-            f"level is evaluated if it has more than `window_size` observations "
-            f"in the training set, its last window can be used to predict, and "
-            f"it has observed values in the test set. Review `levels`, "
-            f"`initial_train_size` of `cv` or the span of the series."
+            f"`window_size` ({forecaster.window_size}). {'; '.join(causes_repr)}."
+            f"{conditions} Review `levels`, `initial_train_size` of `cv` or the "
+            f"span of the series."
         )
 
     return split
 
 
 def _cause_level_not_evaluated(
+    level: str,
     y: pd.Series,
     span_index: pd.Index,
     initial_train_size: int,
     window_size: int,
     dropna_last_window: bool
-) -> str:
+) -> tuple[str, bool]:
     """
     Why a level cannot be evaluated in the test set of a `OneStepAheadFold`,
     checked in the order of `_train_test_split_one_step_ahead`: too few
     observations in the training set (after removing the leading and trailing
     NaNs), a last window that cannot be used to predict, or no observed values
-    in the test set.
+    in the test set. If none of them applies, a generic cause is returned.
 
     Parameters
     ----------
+    level : str
+        Name of the level.
     y : pandas Series
         Time series of the level.
     span_index : pandas Index
@@ -1033,7 +1044,10 @@ def _cause_level_not_evaluated(
     Returns
     -------
     cause : str
-        Cause, for the error of the search.
+        Cause, a sentence that starts with the name of the level, for the
+        error of the search.
+    is_generic : bool
+        Whether the cause is the generic one.
 
     """
 
@@ -1043,27 +1057,30 @@ def _cause_level_not_evaluated(
     n_train = 0 if first_valid is None else len(y_train.loc[first_valid:last_valid])
     if n_train <= window_size:
         return (
-            f"{n_train} observations in the training set, not more than the "
-            f"`window_size` ({window_size})"
-        )
+            f"'{level}' has {n_train} observation{'' if n_train == 1 else 's'} "
+            f"in the training set, not more than the `window_size`"
+        ), False
 
     if y.index[-1] < train_end:
         return (
-            "it ends before the end of the training set, so it cannot be "
-            "predicted after it"
-        )
+            f"'{level}' ends before the end of the training set, so it cannot be "
+            f"predicted after it"
+        ), False
 
     last_window = y.loc[span_index[initial_train_size - window_size]:train_end]
     if dropna_last_window and last_window.isna().to_numpy().any():
         return (
-            "missing values in its last window (the `window_size` observations "
-            "before the test set)"
-        )
+            f"'{level}' has missing values in its last window (the `window_size` "
+            f"observations before the test set)"
+        ), False
 
     if not y.loc[span_index[initial_train_size]:].notna().to_numpy().any():
-        return "no observed values in the test set"
+        return f"'{level}' has no observed values in the test set", False
 
-    return "no row of the test set without missing values in `y` or in its lags"
+    return (
+        f"'{level}' has no row in the test set without missing values in `y` or "
+        f"in its lags"
+    ), True
 
 
 def _calculate_metrics_one_step_ahead(
