@@ -1,0 +1,22 @@
+variant: patched
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+{
+  "model_id": "Synthefy/Nori",
+  "context_length": 500,
+  "exog": true,
+  "kwargs": {},
+  "mae": 185.9507,
+  "elapsed_s": 330.86,
+  "n_predictions": 720,
+  "versions": {
+    "python": "3.12.3",
+    "skforecast": "0.27.0",
+    "torch": "2.13.0+cpu",
+    "numpy": "2.5.4",
+    "pandas": "2.3.3",
+    "scikit-learn": "1.9.1",
+    "huggingface_hub": "1.33.0",
+    "synthefy-nori": "0.23.0"
+  },
+  "hardware": "Intel(R) Xeon(R) Processor @ 2.10GHz, 4 logical CPUs, Linux"
+}

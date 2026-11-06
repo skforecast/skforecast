@@ -1,0 +1,6 @@
+timesfm 3.0.0
+hasattr(timesfm, 'TimesFM3Forecaster'): False
+import timesfm3: ImportError import of torch halted; None in sys.modules
+ImportError raised by the adapter:
+   TimesFM 3.0 is installed (timesfm 3.0.0) but its backend could not be imported (import of torch halted; None in sys.modules). This usually means torch is missing. Install it with `pip install "timesfm[torch]"`.
+warnings: []

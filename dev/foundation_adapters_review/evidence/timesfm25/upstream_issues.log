@@ -1,0 +1,103 @@
+== is:issue proxies
+#412 [open] 2026-04-30 closed=-  [Bug] `TypeError: got an unexpected keyword argument 'proxies'` when loading TimesFM 2.5 via `from_pretrained`
+#340 [open] 2025-11-12 closed=- load local models
+#434 [closed] 2026-06-07 closed=2026-06-11 TimesFM 2.5 PyTorch: from_pretrained fails on huggingface_hub >= 0.36 (proxies kwarg leak); load_checkpoint(path) raises NotImplementedError
+#334 [closed] 2025-10-31 closed=2025-10-31 BUG: with huggingface_hub new release v1.0
+== is:pull-request proxies
+#531 [open] 2026-09-24 closed=- Require huggingface_hub>=0.30.0
+#420 [open] 2026-05-06 closed=- Fix TypeError on from_pretrained from huggingface_hub kwargs
+#438 [closed] 2026-06-14 closed=2026-06-16 fix(torch): strip Hugging Face download kwargs in from_pretrained
+#399 [closed] 2026-04-08 closed=2026-07-13 fix: accept Hugging Face Hub download kwargs
+#435 [closed] 2026-06-07 closed=2026-06-08 Fix model loading issues and forecast_naive slicing bug in TimesFM 2.5
+== is:issue resume_download
+#412 [open] 2026-04-30 closed=-  [Bug] `TypeError: got an unexpected keyword argument 'proxies'` when loading TimesFM 2.5 via `from_pretrained`
+#340 [open] 2025-11-12 closed=- load local models
+#334 [closed] 2025-10-31 closed=2025-10-31 BUG: with huggingface_hub new release v1.0
+== is:pull-request resume_download
+#420 [open] 2026-05-06 closed=- Fix TypeError on from_pretrained from huggingface_hub kwargs
+#438 [closed] 2026-06-14 closed=2026-06-16 fix(torch): strip Hugging Face download kwargs in from_pretrained
+#399 [closed] 2026-04-08 closed=2026-07-13 fix: accept Hugging Face Hub download kwargs
+== is:issue torch_compile
+#340 [open] 2025-11-12 closed=- load local models
+#328 [open] 2025-10-22 closed=- Problem with model predictions failing (flatlining) when running on H100s
+#313 [open] 2025-09-29 closed=- TimesFM-2.5 is ~15x slower than TimesFM-2.0
+#457 [closed] 2026-06-24 closed=2026-07-01 `torch.compile(self)` is a no-op — compiling `forward` directly gives 1.48x on A100
+#334 [closed] 2025-10-31 closed=2025-10-31 BUG: with huggingface_hub new release v1.0
+== is:pull-request torch_compile
+#531 [open] 2026-09-24 closed=- Require huggingface_hub>=0.30.0
+#420 [open] 2026-05-06 closed=- Fix TypeError on from_pretrained from huggingface_hub kwargs
+#401 [open] 2026-04-09 closed=- fix: correct NaN preprocessing and torch.compile dead assignment
+#445 [open] 2026-06-19 closed=- docs(examples): update covariates demo API snippet to TimesFM 2.5
+#404 [open] 2026-04-13 closed=- fix torch.compile, strip_leading_nans, linear_interpolation bugs; vectorize running stats; add tests and CI
+#386 [closed] 2026-04-03 closed=2026-10-15 Fix #382: Remove torch_compile=True from basic example
+#459 [closed] 2026-06-24 closed=2026-07-01 Fix: `torch.compile` was a no-op in `load_checkpoint`
+#458 [closed] 2026-06-24 closed=2026-06-24 Fix: `torch.compile` was a no-op in `load_checkpoint`
+== is:issue covariates 2.5
+#503 [open] 2026-09-10 closed=- [Doc/Bug] Outdated API signature and parameter structure in TimesFM 3.0 covariate example (demo_covariates.py)
+#382 [open] 2026-04-01 closed=- Typo in huggingface example snippet
+== is:pull-request covariates 2.5
+#550 [open] 2026-11-02 closed=- fix(timesfm_2p5): align timesfm + xreg residuals with the backcast
+#487 [open] 2026-09-03 closed=- Implement window_size for decomposed forecasting in TimesFM 2.5
+#445 [open] 2026-06-19 closed=- docs(examples): update covariates demo API snippet to TimesFM 2.5
+#465 [open] 2026-08-18 closed=- fix(examples): migrate global-temperature animation generator to TimesFM 2.5
+#448 [closed] 2026-06-19 closed=2026-07-23 Docs/examples migrate to 2p5
+#369 [closed] 2026-02-22 closed=2026-03-19 feat(skill): ship first-party timesfm-forecasting Agent Skill (agentskills.io)
+#368 [closed] 2026-02-22 closed=2026-02-22 feat: ship first-party timesfm-forecasting Agent Skill (agentskills.io)
+== is:issue MPS
+#502 [open] 2026-09-08 closed=- `use_variate_attention=False` passed to `TimesFM3Forecaster.from_pretrained` is silently ignored
+#321 [open] 2025-10-06 closed=- nan output
+== is:pull-request MPS
+#536 [open] 2026-10-03 closed=- Preserve the signed-log derivative at zero in PyTorch
+#436 [open] 2026-06-10 closed=- Bump torch from 2.3.1 to 2.12.0 in /v1
+#415 [closed] 2026-05-01 closed=2026-10-31 fix: add MPS (Apple Silicon) support for PyTorch backend
+#404 [open] 2026-04-13 closed=- fix torch.compile, strip_leading_nans, linear_interpolation bugs; vectorize running stats; add tests and CI
+#402 [closed] 2026-04-12 closed=2026-04-13 feat(packaging): modernize pip extras, CI, and PyPI publishing for multi-accelerator support
+#270 [closed] 2025-04-18 closed=2025-04-18 Bump torch from 2.1.0 to 2.3.1
+== is:issue forecast_with_covariates
+#338 [open] 2025-11-07 closed=- forecast_with_covariates() may have the problem of test data leakage
+#122 [open] 2024-08-12 closed=- AttributeError: 'TimesFm' object has no attribute 'forecast_with_covariates'
+#274 [open] 2025-05-05 closed=- `forecast_with_covariates` produces different results for same input depending on batch composition
+#224 [open] 2025-01-21 closed=- Forecasting with covariate variables
+#124 [closed] 2024-08-16 closed=2026-04-09 Significant Difference Between Batched Prediction and Looped Prediction in timesfm
+#113 [closed] 2024-07-21 closed=2024-07-25 Issue with forecast_with_covariates method causing ValueError: math domain error
+== is:pull-request forecast_with_covariates
+#487 [open] 2026-09-03 closed=- Implement window_size for decomposed forecasting in TimesFM 2.5
+#550 [open] 2026-11-02 closed=- fix(timesfm_2p5): align timesfm + xreg residuals with the backcast
+#392 [open] 2026-04-04 closed=- fix: per-input covariate normalization in forecast_with_covariates
+#366 [open] 2026-02-20 closed=- docs: fix swapped xreg_mode descriptions and covariates typo (#275)
+#291 [open] 2025-07-30 closed=- Clarify xreg_mode logic and comments in forecast_with_covariates
+#393 [open] 2026-04-04 closed=- fix: per-input regression in forecast_with_covariates to prevent data leakage
+#445 [open] 2026-06-19 closed=- docs(examples): update covariates demo API snippet to TimesFM 2.5
+#376 [closed] 2026-03-19 closed=2026-03-19 docs: fix swapped xreg_mode descriptions in forecast_with_covariates
+== is:issue max_context
+#313 [open] 2025-09-29 closed=- TimesFM-2.5 is ~15x slower than TimesFM-2.0
+#412 [open] 2026-04-30 closed=-  [Bug] `TypeError: got an unexpected keyword argument 'proxies'` when loading TimesFM 2.5 via `from_pretrained`
+#321 [open] 2025-10-06 closed=- nan output
+#328 [open] 2025-10-22 closed=- Problem with model predictions failing (flatlining) when running on H100s
+#340 [open] 2025-11-12 closed=- load local models
+#333 [closed] 2025-10-31 closed=2025-11-03 Is 2.5 Flax version not ok now?
+#306 [closed] 2025-09-19 closed=2025-10-03 bug: non-monotonic quantiles
+== is:pull-request max_context
+#550 [open] 2026-11-02 closed=- fix(timesfm_2p5): align timesfm + xreg residuals with the backcast
+#487 [open] 2026-09-03 closed=- Implement window_size for decomposed forecasting in TimesFM 2.5
+#396 [open] 2026-04-05 closed=- fix: correct docstring typo and replace print with logging
+#365 [open] 2026-02-20 closed=- fix: support custom output quantiles via ForecastConfig (#286)
+#445 [open] 2026-06-19 closed=- docs(examples): update covariates demo API snippet to TimesFM 2.5
+#459 [closed] 2026-06-24 closed=2026-07-01 Fix: `torch.compile` was a no-op in `load_checkpoint`
+#369 [closed] 2026-02-22 closed=2026-03-19 feat(skill): ship first-party timesfm-forecasting Agent Skill (agentskills.io)
+== is:issue return_backcast
+#412 [open] 2026-04-30 closed=-  [Bug] `TypeError: got an unexpected keyword argument 'proxies'` when loading TimesFM 2.5 via `from_pretrained`
+== is:pull-request return_backcast
+#550 [open] 2026-11-02 closed=- fix(timesfm_2p5): align timesfm + xreg residuals with the backcast
+== is:pull-request is:merged MPS
+#270 [closed] closed=2025-04-18 Bump torch from 2.1.0 to 2.3.1
+== is:pull-request is:unmerged MPS
+#536 [open] closed=- Preserve the signed-log derivative at zero in PyTorch
+#436 [open] closed=- Bump torch from 2.3.1 to 2.12.0 in /v1
+#415 [closed] closed=2026-10-31 fix: add MPS (Apple Silicon) support for PyTorch backend
+#404 [open] closed=- fix torch.compile, strip_leading_nans, linear_interpolation bugs; vectorize running stats; add tests and CI
+#402 [closed] closed=2026-04-13 feat(packaging): modernize pip extras, CI, and PyPI publishing for multi-accelerator support
+== is:pull-request is:merged proxies
+#435 [closed] closed=2026-06-08 Fix model loading issues and forecast_naive slicing bug in TimesFM 2.5
+== is:pull-request is:merged torch_compile
+#459 [closed] closed=2026-07-01 Fix: `torch.compile` was a no-op in `load_checkpoint`

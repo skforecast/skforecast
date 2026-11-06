@@ -1,0 +1,9 @@
+python=3.12.3 tsicl=0.2.1 torch=2.9.1+cpu numpy=2.5.4 pandas=2.3.3 skforecast=0.27.0 machine=x86_64
+
+requires_equal_length_context=False
+  with exog: s1 joint vs alone=1.289e+00  s2 joint vs alone=6.746e-01
+  no exog  : s1 joint vs alone=0.000e+00  s2 joint vs alone=0.000e+00
+
+requires_equal_length_context=True
+  with exog: s1 joint vs alone=7.629e-06  s2 joint vs alone=8.269e-02
+  no exog  : s1 joint vs alone=0.000e+00  s2 joint vs alone=2.293e-01

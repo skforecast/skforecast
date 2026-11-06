@@ -1,0 +1,62 @@
+== mps is:issue
+522 open 2026-08-13 [BUG] embed function not working when sending cuda tensors
+460 open 2026-02-01 [RFC] Production Optimizations: GPU-Resident Inference & Fine-Tuning Efficiency
+13 open 2024-03-17 How to use it for multivariate forecasting?
+343 closed 2025-10-27 [BUG] Float quantiles are compared using a set, which sometimes causes failures due to flo
+190 closed 2024-10-14 Faster manual retrieval than the pipeline. 
+141 closed 2024-06-28 [BUG]  NotImplementedError: The operator 'aten::isin.Tensor_Tensor_out' is not currently i
+== mps is:pull-request
+456 closed 2026-01-28 refactor(core): optimize inference pipeline for high-throughout production
+216 closed 2024-11-28 Remove reference to MPS
+226 closed 2024-12-03 add train on cpu
+41 closed 2024-04-04 Add MLX inference support
+46 closed 2024-04-08 Update README.md
+== device_map is:issue
+522 open 2026-08-13 [BUG] embed function not working when sending cuda tensors
+542 open 2026-10-22 [BUG] predict_quantiles documents its second return value as the mean, but Chronos-2 and C
+457 open 2026-01-30 Chronos-2 fine-tuning does not respect the GPU index
+544 open 2026-11-05 [BUG] Chronos-2 returns extreme quantiles (±1e5) when the context is entirely NaN
+18 open 2024-03-18 How to make predictions deterministic?
+35 open 2024-03-31 How to do inference without connecting to HuggingFace?
+== device_map is:pull-request
+531 open 2026-09-03 Fix embed function
+537 closed 2026-09-24 Compute series lengths in row order so predict_df handles categorical item ids
+324 closed 2025-10-20 Update README for Chronos-2
+197 closed 2024-11-06 Force context scaling and quantization in float32, add assertions to tests
+46 closed 2024-04-08 Update README.md
+25 closed 2024-03-24 Speed up inference by avoiding unnecessary padding
+== categorical is:issue
+352 open 2025-10-29 Support for static features and dynamic categorical features in Chronos-2
+36 closed 2024-04-01 is it working with multivariate time series with both categorical and continues values
+== categorical is:pull-request
+473 open 2026-02-26 Add vLLM plugin for Chronos-2 inference
+537 closed 2026-09-24 Compute series lengths in row order so predict_df handles categorical item ids
+493 closed 2026-04-28 Refactor preprocessing logic for Chronos-2
+== bfloat16 is:issue
+103 open 2024-06-09 What is the recommended `torch_dtype`?
+18 open 2024-03-18 How to make predictions deterministic?
+35 open 2024-03-31 How to do inference without connecting to HuggingFace?
+40 open 2024-04-03 How to generate forecasts with `prediction_length > 64`?
+13 open 2024-03-17 How to use it for multivariate forecasting?
+75 open 2024-05-18 How to evaluate the models' performance through metrics such as MASE? 
+== bfloat16 is:pull-request
+532 closed 2026-09-08 Preserve precision when unscaling Chronos-2 and Chronos-Bolt forecasts
+331 closed 2025-10-21 [chronos-2] add support for SDPA
+197 closed 2024-11-06 Force context scaling and quantization in float32, add assertions to tests
+25 closed 2024-03-24 Speed up inference by avoiding unnecessary padding
+41 closed 2024-04-04 Add MLX inference support
+== cross_learning batch_size is:issue
+== cross_learning batch_size is:pull-request
+473 open 2026-02-26 Add vLLM plugin for Chronos-2 inference
+== torch_dtype is:issue
+103 open 2024-06-09 What is the recommended `torch_dtype`?
+18 open 2024-03-18 How to make predictions deterministic?
+35 open 2024-03-31 How to do inference without connecting to HuggingFace?
+50 open 2024-04-11 How to do time series classification?
+40 open 2024-04-03 How to generate forecasts with `prediction_length > 64`?
+13 open 2024-03-17 How to use it for multivariate forecasting?
+== torch_dtype is:pull-request
+505 closed 2026-06-12 Support both dtype and torch_dtype for older transformers versions
+197 closed 2024-11-06 Force context scaling and quantization in float32, add assertions to tests
+25 closed 2024-03-24 Speed up inference by avoiding unnecessary padding
+41 closed 2024-04-04 Add MLX inference support

@@ -1,0 +1,30 @@
+python 3.12.3
+skforecast 0.27.0
+timesfm 3.0.2
+torch 2.15.0+cpu
+numpy 2.5.4
+pandas 2.3.3
+per_core_batch_size 4 input_patch_length 32
+
+== 1. Same length (512) in one batch vs alone
+  series 0: maxabs=0.00001 rel_to_mean=0.00000
+  series 1: maxabs=0.00001 rel_to_mean=0.00000
+  series 2: maxabs=0.00001 rel_to_mean=0.00000
+  series 3: maxabs=0.00001 rel_to_mean=0.00000
+
+== 2. Short series alone vs batched with one longer series
+  short=100  long=120   batch_ctx 128->128: maxabs=0.00000 rel_to_mean=0.00000
+  short=100  long=128   batch_ctx 128->128: maxabs=0.00000 rel_to_mean=0.00000
+  short=100  long=129   batch_ctx 128->160: maxabs=0.00756 rel_to_mean=0.00014
+  short=100  long=200   batch_ctx 128->224: maxabs=0.02390 rel_to_mean=0.00046
+  short=100  long=512   batch_ctx 128->512: maxabs=0.11009 rel_to_mean=0.00211
+  short=100  long=2048  batch_ctx 128->2048: maxabs=0.31692 rel_to_mean=0.00607
+  short=37   long=512   batch_ctx 64->512: maxabs=0.37288 rel_to_mean=0.00736
+  short=300  long=512   batch_ctx 320->512: maxabs=0.01056 rel_to_mean=0.00019
+  short=500  long=512   batch_ctx 512->512: maxabs=0.00000 rel_to_mean=0.00000
+
+== 3. Through FoundationModel: predict(levels=[x]) vs predict() filtered
+  s2048  maxabs=0.00001 rel_to_mean=0.00000
+  s1000  maxabs=0.02083 rel_to_mean=0.00030
+  s300   maxabs=0.02679 rel_to_mean=0.00047
+  s100   maxabs=0.20221 rel_to_mean=0.00388

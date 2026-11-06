@@ -1,0 +1,20 @@
+....s.                                                                   [100%]
+=============================== warnings summary ===============================
+tools/foundation_compat/tests/test_smoke.py::test_predict_output_when_single_series
+tools/foundation_compat/tests/test_smoke.py::test_predict_interval_output_when_single_series
+tools/foundation_compat/tests/test_smoke.py::test_predict_output_when_multiple_series
+tools/foundation_compat/tests/test_smoke.py::test_backtesting_foundation_output_when_two_folds
+  skforecast/foundation/_adapters.py:2069: LicenseWarning: The weights for 'Salesforce/moirai-2.0-R-small' are released under CC-BY-NC-4.0. Review the license terms before commercial or production use. See https://huggingface.co/Salesforce/moirai-2.0-R-small.
+  You can suppress this warning using: warnings.simplefilter('ignore', category=LicenseWarning)
+    self._load_module()
+
+tools/foundation_compat/tests/test_smoke.py::test_predict_output_when_multiple_series
+tools/foundation_compat/tests/test_smoke.py::test_backtesting_foundation_output_when_two_folds
+  skforecast/utils/utils.py:4394: InputTypeWarning: Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It is recommended to use a dictionary of pandas Series instead. For more details, see: https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html#input-data
+  You can suppress this warning using: warnings.simplefilter('ignore', category=InputTypeWarning)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+SKIPPED [1] tools/foundation_compat/tests/test_smoke.py:133: The adapter does not support exogenous variables.
+5 passed, 1 skipped, 6 warnings in 9.60s

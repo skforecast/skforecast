@@ -1,0 +1,8 @@
+.....                                                                    [100%]
+=============================== warnings summary ===============================
+tools/foundation_compat/tests/test_contract.py::test_backend_call_matches_signature[uni2ts.model.moirai2:Moirai2Module.from_pretrained]
+  ~/.venvs/fm-review-moirai/lib/python3.12/site-packages/einops/einops.py:827: SyntaxWarning: invalid escape sequence '\s'
+    """
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+5 passed, 1 warning in 9.30s

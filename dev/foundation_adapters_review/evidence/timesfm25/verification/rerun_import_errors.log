@@ -1,0 +1,5 @@
+timesfm 3.0.2 | huggingface_hub 2.4.0
+import timesfm: OK
+hasattr(timesfm, 'TimesFM_2p5_200M_torch'): False
+hasattr(timesfm, 'ForecastConfig'): True
+adapter._load_model(): AttributeError: module 'timesfm' has no attribute 'TimesFM_2p5_200M_torch'

@@ -1,0 +1,50 @@
+502	open	2026-09-08	`use_variate_attention=False` passed to `TimesFM3Forecaster.from_pretrained` is silently ignored
+503	open	2026-09-10	[Doc/Bug] Outdated API signature and parameter structure in TimesFM 3.0 covariate example (demo_covariates.py)
+504	open	2026-09-10	Update covariate example for TimesFM 3.0
+505	open	2026-09-11	Raise when from_pretrained cannot honor use_variate_attention
+506	closed	2026-09-12	MLX backend diverges from PyTorch in four places (stitching, CPM RevIN refine, residual activation, NaN handling)
+507	open	2026-09-13	Guard the variance square root against exactly-zero variance
+508	open	2026-09-14	timesfm finetune out
+509	closed	2026-09-14	Fix MLX backend divergence from PyTorch on stitching, CPM RevIN refine, residual activation, and NaN handling
+510	closed	2026-09-14	Fix stale refs/main causing _weights_cached() to miss cached weights
+511	open	2026-09-14	fix: keep Windows preflight and CUDA tests runnable
+512	open	2026-09-16	1
+513	open	2026-09-16	Avoid rolling workspace when extracting output patches
+514	open	2026-09-16	Gather CPM anchor patches without one-hot selection
+515	open	2026-09-16	Trim decoded horizons before combining forecast batches
+516	open	2026-09-16	Preserve each series output rank in mixed forecast batches
+517	open	2026-09-16	Validate forecast batch metadata and covariate shapes
+518	open	2026-09-16	Write stitched patch predictions directly into output
+519	open	2026-09-16	Avoid redundant variance tensors in running patch statistics
+520	open	2026-09-16	Keep missing CSV observations on the shared time grid
+521	closed	2026-09-16	En qué año nació
+522	open	2026-09-17	[Bug] Asymmetric scale guard in revin causes roundtrip invariant violation and silent forecast annihilation for low-variance / quiescent series
+523	open	2026-09-17	mlx: support use_bias, qk_norm=none, and frozen running stats
+525	closed	2026-09-20	feat: add stateless MCP forecasting service
+526	open	2026-09-20	Add unit tests for TimesFM3Evaluator
+527	open	2026-09-22	fix: stop LFS pointer warnings for skill outputs
+528	open	2026-09-23	fix: apply symmetric tolerance guard in revin denormalization
+529	open	2026-09-23	TQQQ forecast
+530	open	2026-09-23	TimesFM
+531	open	2026-09-24	Require huggingface_hub>=0.30.0
+532	open	2026-09-27	Add crypto domain LoRA adapters for TimesFM 2.5
+533	open	2026-09-27	perf(timesfm3/torch): skip variate attention math when there is one variate
+534	open	2026-09-30	Fix notebook links in v1 README
+535	open	2026-10-03	PyTorch signed-log transformations lose their derivative at zero
+536	open	2026-10-03	Preserve the signed-log derivative at zero in PyTorch
+537	open	2026-10-05	Avoid overflow when normalizing large TimesFM 2.5 inputs
+538	closed	2026-10-07	Commercial license inquiry for TimesFM 3.0 pretrained weights (single-user, internal use)
+539	open	2026-10-13	fix(deps): split jax[cuda] into cpu and cuda extras to support CPU-only installs (#443)
+540	open	2026-10-14	Verify evals on Papers with Code
+542	open	2026-10-20	fix: preserve application logging configuration on import
+543	open	2026-10-22	fix(torch): preserve low-precision attention dtypes
+544	open	2026-10-26	Notice: AI-assisted report on TimesFM published
+545	open	2026-10-29	fix(timesfm3/torch): build local checkpoints without variate RoPE
+546	open	2026-11-02	fix(timesfm3/torch): mask covariate placeholders in mixed batches
+547	open	2026-11-02	fix(timesfm3/torch): accept a 2D ndarray of contexts in TimesFM3Evaluator
+548	open	2026-11-02	fix(timesfm3/mlx): decode at patch-rounded horizon like torch
+549	open	2026-11-02	fix(timesfm3/torch): honor ModelConfig.use_sdpa in attention modules
+550	open	2026-11-02	fix(timesfm_2p5): align timesfm + xreg residuals with the backcast
+551	open	2026-11-04	docs(AGENTS.md): point test instructions at the current test suites
+552	open	2026-11-04	fix: surface optional backend import failures with actionable errors
+553	open	2026-11-06	ci: migrate manual PyPI publish workflow to OSS Exit Gate

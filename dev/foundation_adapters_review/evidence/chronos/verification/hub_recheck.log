@@ -1,0 +1,42 @@
+huggingface_hub 2.4.0
+amazon/chronos-2 29ec3766d3 2026-06-05 11:55:42+00:00 license apache-2.0 gated False
+    config.json 1067 f32073949651
+    model.safetensors 477930472 ddcda3c7508b
+autogluon/chronos-2 60088152a3 2026-06-05 11:59:59+00:00 license apache-2.0 gated False
+    config.json 1067 f32073949651
+    model.safetensors 477930472 ddcda3c7508b
+autogluon/chronos-2-small ddec01313e 2025-12-03 11:57:35+00:00 license apache-2.0 gated False
+    config.json 969 6a7ca58f3a81
+    model.safetensors 111749048 492290ae82bb
+autogluon/chronos-2-synth 3607918a9f 2025-12-03 11:57:19+00:00 license apache-2.0 gated False
+    config.json 971 c9073d0648f6
+    model.safetensors 475963368 920a3344726a
+--- search chronos-2 models by amazon/autogluon
+amazon amazon/chronos-2 2025-10-30 14:54:39+00:00
+amazon amazon/chronos-bolt-base 2024-11-25 09:47:43+00:00
+amazon amazon/chronos-bolt-small 2024-11-25 09:46:10+00:00
+amazon amazon/chronos-bolt-mini 2024-11-25 09:42:48+00:00
+amazon amazon/chronos-bolt-tiny 2024-11-25 08:18:08+00:00
+amazon amazon/chronos-t5-tiny 2024-02-28 07:51:45+00:00
+amazon amazon/chronos-t5-large 2024-02-21 10:18:57+00:00
+amazon amazon/chronos-t5-base 2024-02-21 10:13:39+00:00
+amazon amazon/chronos-t5-small 2024-02-21 10:06:21+00:00
+amazon amazon/chronos-t5-mini 2024-02-21 08:06:36+00:00
+autogluon autogluon/chronos-2-small 2025-12-03 10:53:00+00:00
+autogluon autogluon/chronos-2-synth 2025-11-24 21:20:25+00:00
+autogluon autogluon/chronos-2 2025-10-06 18:52:51+00:00
+autogluon autogluon/chronos-bolt-small 2024-11-13 13:28:57+00:00
+autogluon autogluon/chronos-bolt-mini 2024-11-13 13:28:44+00:00
+autogluon autogluon/chronos-bolt-tiny 2024-11-13 13:28:07+00:00
+autogluon autogluon/chronos-bolt-base 2024-11-13 13:07:57+00:00
+autogluon autogluon/chronos-t5-large 2024-05-14 15:57:34+00:00
+autogluon autogluon/chronos-t5-base 2024-05-14 15:57:03+00:00
+autogluon autogluon/chronos-t5-small 2024-05-14 15:55:51+00:00
+autogluon autogluon/chronos-t5-tiny 2024-05-14 15:53:45+00:00
+autogluon autogluon/chronos-t5-mini 2024-05-14 14:23:38+00:00
+amazon/chronos-2 [('29ec3766d3', '2026-06-05', 'Update deployment guide'), ('0f8a440441', '2026-01-06', 'Fix broken link in README'), ('34e99b4083', '2026-01-02', 'Add update for new SageMaker deployment guide (#3)'), ('e19c427c73', '2025-11-05', 'Remove `transformers` from model tags (#2)')]
+  rev 0f8a440441 {'.gitattributes': 'a6344aac8c09', 'README.md': 'c47ceff552d2', 'config.json': 'f32073949651', 'model.safetensors': 'ddcda3c7508b'}
+  rev 29ec3766d3 {'.gitattributes': 'a6344aac8c09', 'README.md': 'f612bbc4b27e', 'config.json': 'f32073949651', 'model.safetensors': 'ddcda3c7508b'}
+autogluon/chronos-2 [('60088152a3', '2026-06-05', 'Update the deployment guide'), ('b68758555f', '2025-11-24', 'Add model'), ('abdb14e9e4', '2025-10-06', 'initial commit')]
+  rev b68758555f {'.gitattributes': 'a6344aac8c09', 'README.md': 'ea3baa6444ea', 'config.json': 'f32073949651', 'model.safetensors': 'ddcda3c7508b'}
+  rev 60088152a3 {'.gitattributes': 'a6344aac8c09', 'README.md': 'ba74254c2254', 'config.json': 'f32073949651', 'model.safetensors': 'ddcda3c7508b'}

@@ -1,0 +1,9 @@
+python 3.12.3 | uni2ts 2.0.0 | torch 2.4.1+cpu | numpy 1.26.4
+no covariates: OK, shape (1, 9, 24)
+feat_dynamic_real (len T + steps): RuntimeError: The size of tensor a (34) must match the size of tensor b (36) at non-singleton dimension 1
+    raised at uni2ts/model/moirai2/module.py:144
+feat_dynamic_real (len T): RuntimeError: The size of tensor a (34) must match the size of tensor b (36) at non-singleton dimension 1
+    raised at uni2ts/model/moirai2/module.py:144
+past_feat_dynamic_real (len T): OK, shape (1, 9, 24)
+max|past_feat_dynamic_real (len T) - no covariates| = 2.137e-02
+EXIT 0

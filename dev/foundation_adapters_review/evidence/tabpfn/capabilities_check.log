@@ -1,0 +1,49 @@
+python 3.12.3
+skforecast         : 0.27.0
+tabpfn-time-series : 1.4.0
+tabpfn             : 9.2.0
+torch              : 2.15.0+cpu
+numpy              : 2.5.4
+pandas             : 2.3.3
+
+1. Backend warnings inside predict_df
+╭─────────────────────────────── LicenseWarning ───────────────────────────────╮
+│ The weights for 'priorlabs/tabpfn-ts' are released under TabPFN-3.5 License  │
+│ v1.0 (non-commercial without an enterprise license). Review the license      │
+│ terms before commercial or production use. See                               │
+│ https://huggingface.co/Prior-Labs/tabpfn_3_5/blob/main/LICENSE.              │
+│                                                                              │
+│ Category : skforecast.exceptions.LicenseWarning                              │
+│ Location : skforecast/foundation/_adapters.py:3133     │
+│ Suppress : warnings.simplefilter('ignore', category=LicenseWarning)          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+   show_progress=False: user stderr contains backend warning 'covariate values in future_tsdf are missing': False
+╭─────────────────────────────── LicenseWarning ───────────────────────────────╮
+│ The weights for 'priorlabs/tabpfn-ts' are released under TabPFN-3.5 License  │
+│ v1.0 (non-commercial without an enterprise license). Review the license      │
+│ terms before commercial or production use. See                               │
+│ https://huggingface.co/Prior-Labs/tabpfn_3_5/blob/main/LICENSE.              │
+│                                                                              │
+│ Category : skforecast.exceptions.LicenseWarning                              │
+│ Location : skforecast/foundation/_adapters.py:3133     │
+│ Suppress : warnings.simplefilter('ignore', category=LicenseWarning)          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+   show_progress=True : user stderr contains backend warning 'covariate values in future_tsdf are missing': True
+
+2. Context with too few valid values
+   all NaN         : ValueError: All values of series 'y' are NaN.
+╭─────────────────────────────── LicenseWarning ───────────────────────────────╮
+│ The weights for 'priorlabs/tabpfn-ts' are released under TabPFN-3.5 License  │
+│ v1.0 (non-commercial without an enterprise license). Review the license      │
+│ terms before commercial or production use. See                               │
+│ https://huggingface.co/Prior-Labs/tabpfn_3_5/blob/main/LICENSE.              │
+│                                                                              │
+│ Category : skforecast.exceptions.LicenseWarning                              │
+│ Location : skforecast/foundation/_adapters.py:3133     │
+│ Suppress : warnings.simplefilter('ignore', category=LicenseWarning)          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+   one valid value : no error, pred = [0.32, 0.32, 0.32]
+
+3. TabPFNTSPipeline.__init__ signature
+   (self, max_context_length: 'int' = 32768, temporal_features: 'list[FeatureGenerator]' = [KnownCovariateLagFeature_{'columns': None, 'season': None, 'lags': None, 'means': None, 'target_column': 'target'}, RunningIndexFeature_{}, CalendarFeature_{'components': ['year'], 'seasonal_features': {'second_of_minute': [60], 'minute_of_hour': [60], 'hour_of_day': [24], 'day_of_week': [7], 'day_of_month': [30.5], 'day_of_year': [365], 'week_of_year': [52], 'month_of_year': [12]}}, AutoSeasonalFeature_{'config': {'max_top_k': 12, 'do_detrend': True, 'detrend_type': 'linear', 'use_peaks_only': True, 'apply_hann_window': True, 'zero_padding_factor': 2, 'round_to_closest_integer': True, 'validate_with_acf': False, 'sampling_interval': 1.0, 'magnitude_threshold': 0.05, 'relative_threshold': True, 'exclude_zero': True}}], tabpfn_mode: 'TabPFNMode' = <TabPFNMode.LOCAL: 'local'>, tabpfn_output_selection: "Literal['mean', 'median', 'mode']" = 'median', tabpfn_model_config: 'dict' = {}, max_featurize_rows: 'int | None' = 10000000, num_workers_per_gpu: 'int' = 1, compile: 'bool' = True)
+   lines with enable_torch_compile: ['tabpfn_model_config = {**tabpfn_model_config, "enable_torch_compile": True}']

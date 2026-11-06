@@ -1,0 +1,61 @@
+### repo:soda-inria/tabicl is:issue forecast tqdm
+### repo:soda-inria/tabicl is:pull-request forecast tqdm
+### repo:soda-inria/tabicl is:issue forecast progress
+### repo:soda-inria/tabicl is:pull-request forecast progress
+### repo:soda-inria/tabicl is:issue TabICLForecaster
+#21 [closed] 2025-08-10 TabICL-TS
+### repo:soda-inria/tabicl is:pull-request TabICLForecaster
+#174 [open] 2026-10-31 Fix empty arguments in DatetimeEncoder and the broken "fourier" temporal feature alias
+#84 [closed] 2026-03-23 Clarify public vs. private API following scikit-learn conventions
+#77 [closed] 2026-03-16 add forecasting tuto
+### repo:soda-inria/tabicl is:issue forecast timestamp
+### repo:soda-inria/tabicl is:pull-request forecast timestamp
+#108 [closed] 2026-05-08 [EHN] Remove gluonts dependency
+### repo:soda-inria/tabicl is:issue quantiles float
+### repo:soda-inria/tabicl is:pull-request quantiles float
+### repo:soda-inria/tabicl is:issue forecast categorical
+### repo:soda-inria/tabicl is:pull-request forecast categorical
+### repo:soda-inria/tabicl is:issue forecast MPS
+### repo:soda-inria/tabicl is:pull-request forecast MPS
+### repo:soda-inria/tabicl is:issue forecast device
+### repo:soda-inria/tabicl is:pull-request forecast device
+#174 [open] 2026-10-31 Fix empty arguments in DatetimeEncoder and the broken "fourier" temporal feature alias
+## Summary
+
+Two small fixes in the forecasting temporal features.
+
+### `DatetimeEncoder` ignores empty `components` / `seasonal_features` (fixes #171)
+
+`components or ["year"]` and `seasonal_features or {...}` treat `[]` / `{}` like `None`, so it was impossible to disable either group of features. They now use explicit `is None` checks.
+
+```python
+from tabicl.forecast.transforms import DatetimeEncoder
+enc = DatetimeEncoder(components=[], seasonal_features={})
+enc.components, enc.seasonal_features
+# before: (['year'], {'second_of_minute': [60], ...})
+# after:  ([], {})
+```
+
+`None` still gives the same defaults as before.
+
+### `temporal_features=["fourier"]` always raises `TypeError` (fixes #172)
+
+`_resolve_transforms` instantiates registry entries with no arguments, but `FourierEncoder` requires `periods`:
+
+```python
+TabICLForecaster(temporal_features=["fourier"])
+# before: TypeError: FourierEncoder.__init__() missing 1 required positional argument: 'periods'
+# after:  ValueError: 'fourier' cannot be used as a string because FourierEncoder requires 'periods'. Pass an instance instead, e.g. FourierEncoder(periods=[7]).
+```
+
+I removed the `"fourier"` alias rather than adding a default `periods`. There is no period that is a sensible default across frequencies, and `AutoPeriodicEncoder` (`"periodic"`) already covers the "pick periods for me" case. The alias never worked, so no working code depends on it. The docstring example also used a non-existent `period=7` argument; it now reads `FourierEncoder(periods=[7])`. Happy to switch to a factory with default periods if you prefer.
+
+## Tests
+
+- `tests/test_datetime_encoder.py`: new tests for `None` (defaults) vs. empty containers (disabled).
+- `tests/test_forecast_temporal_features.py`: string resolution, helpful error for `"fourier"`, `FourierEncoder` instance accepted, unknown name error.
+
+Four of the new tests fail on `main` and all pass with this change.
+
+No `CHANGES.md` entry since there is no unreleased section after 2.2.0; happy to add one if you'd like.
+

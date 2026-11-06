@@ -1,0 +1,8 @@
+synthefy-nori : 0.21.1
+torch         : 2.13.0+cpu
+numpy         : 2.5.4
+skforecast    : 0.27.0
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+Synthefy/Nori -> ok [33.46, 32.892, 32.114]
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+Synthefy/Nori-1-5 -> TypeError get_x_encoder() got an unexpected keyword argument 'prompt_quantile_ple_bins'

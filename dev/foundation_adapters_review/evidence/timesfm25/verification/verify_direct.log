@@ -1,0 +1,29 @@
+python 3.12.3 | x86_64 | torch threads 4 | cuda False
+timesfm 3.0.2
+torch 2.15.0+cpu
+huggingface_hub 2.4.0
+numpy 2.5.4
+pandas 2.3.3
+skforecast 0.27.0
+
+== 1. adapter vs direct
+adapter model class: _TimesFMCompat | compiled: ForecastConfig(max_context=320, max_horizon=128, normalize_inputs=False, window_size=0, per_core_batch_size=1, use_continuous_quantile_head=False, force_flip_invariance=True, infer_is_positive=True, fix_quantile_crossing=False, return_backcast=False)
+direct shapes (3, 30) (3, 30, 10)
+max diff point 0.000e+00 | max diff quantiles 0.000e+00
+any NaN in adapter output: False
+
+== 2. point channel
+point == ch5: True | point == ch0: False | max|ch0-ch5| 0.2998
+
+== 3. torch_compile
+config.json: {'architectures': ['TimesFmModelForPrediction'], 'context_length': 16384, 'head_dim': 80, 'hidden_size': 1280, 'horizon_length': 128, 'intermediate_size': 1280, 'model_type': 'timesfm', 'num_attention_heads': 16, 'num_hidden_layers': 20, 'patch_length': 32, 'quantile_horizon_length': 1024, 'quantiles': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], 'rms_norm_eps': 1e-06, 'torch_compile': False}
+loaded torch_compile: False
+
+== 4. edge cases
+init only with max_context (no error expected at init): TypeError: timesfm.configs.ForecastConfig() got multiple values for keyword argument 'max_context'
+return_backcast=True: ValueError: could not broadcast input array from shape (318,1) into shape (30,1)
+context_length=16384: ValueError: Context + horizon must be less than the context limit. 16384 + 128 > 16384.
+context_length=16000: OK rows 30
+
+== 5. nullable Float64
+max |Float64 - float64 direct| 0.000e+00

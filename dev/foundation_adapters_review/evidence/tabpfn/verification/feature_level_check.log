@@ -1,0 +1,11 @@
+python : 3.12.3 Linux-6.18.44-fc-v242-x86_64-with-glibc2.39
+skforecast         : 0.27.0
+tabpfn-time-series : 1.4.0
+tabpfn             : 9.2.0
+numpy              : 2.5.4
+pandas             : 2.3.3
+adapter  train shape (347, 51) test shape (24, 51)
+direct   train shape (347, 51) test shape (24, 51)
+same columns       : True ['cos_#0', 'cos_#1', 'cos_#10', 'cos_#11', 'cos_#2', 'cos_#3', 'cos_#4', 'cos_#5'] ...
+featurized train and test frames identical (adapter vs direct): True
+future timestamps (adapter, series_2): [Timestamp('2024-01-13 12:00:00'), Timestamp('2024-01-13 13:00:00')]

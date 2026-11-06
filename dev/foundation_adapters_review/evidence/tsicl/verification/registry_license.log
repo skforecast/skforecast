@@ -1,0 +1,10 @@
+skforecast 0.27.0 tsicl 0.2.1
+resolvers: ['_resolve_adapter', '_resolve_torch_device']
+taharnbl/TS-ICL -> TSICLAdapter
+taharnbl/ts-icl -> ValueError No adapter found for model 'taharnbl/ts-icl'. Registered prefixes: ['amazon/chronos-2', 'autogluon/c
+EDF-Lab/TS-ICL -> ValueError No adapter found for model 'EDF-Lab/TS-ICL'. Registered prefixes: ['amazon/chronos-2', 'autogluon/ch
+taharnbl/TS-ICL-v2 -> TSICLAdapter
+('tsicl-v1-license-v1.0', 'https://huggingface.co/taharnbl/TS-ICL/blob/main/LICENSE', True, 'tsicl-v1-license-v1.0 (non-commercial)')
+['filename = self.checkpoint_version', 'model_path = Path( hf_hub_download(', 'repo_id          = hf_repo_ID,', 'filename         = filename,', 'print(f"Checkpoint \'{filename}\' not cached.\\n Downloading from Hugging Face Hub ({hf_repo_ID}).\\n")', 'model_path = Path( hf_hub_download(', 'repo_id  = hf_repo_ID,', 'filename = filename', 'f"Checkpoint \'{filename}\' not cached and automatic download is disabled.\\n"', 'f"Downloading \'{filename}\' from Hugging Face Hub ({hf_repo_ID}) to this location.\\n"', 'cache_path = hf_hub_download(', 'repo_id  = hf_repo_ID,', 'filename = filename,', 'f"\'{filename}\' from Hugging Face Hub ({hf_repo_ID})."']
+(self, model_path: str | pathlib.Path | None = None, checkpoint_version: str = 'tsicl-v1.ckpt', allow_auto_download: bool = True)
+(self, inputs, covars: Union[List[torch.Tensor], torch.Tensor, numpy.ndarray, NoneType] = None, prediction_length: int = 0, batch_size: int = 64, quantile_levels: List[float] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], context_length: int | None = None, device: torch.device | None = None, denormalize: bool = True, point_estimator: Literal['mean', 'median'] = 'mean', allow_auto_complete: bool = False, allow_covar_forecast: bool = False, squeeze_output: bool = True) -> Tuple[Union[torch.Tensor, List[torch.Tensor]], Union[torch.Tensor, List[torch.Tensor]]]

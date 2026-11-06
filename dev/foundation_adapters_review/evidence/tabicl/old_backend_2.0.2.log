@@ -1,0 +1,27 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using Python 3.12.3 environment at: ~/.venvs/fm-review-tabicl-2.0.2
+gluonts==0.17.0
+huggingface-hub==2.4.0
+numpy==2.5.4
+pandas==2.3.3
+tabicl==2.0.2
+torch==2.15.0+cpu
+.F.                                                                      [100%]
+=================================== FAILURES ===================================
+____ test_backend_call_matches_signature[tabicl.forecast:TabICLForecaster] _____
+tools/foundation_compat/tests/test_contract.py:70: in test_backend_call_matches_signature
+    signature.bind_partial(
+<python3.12 stdlib>/inspect.py:3249: in bind_partial
+    return self._bind(args, kwargs, partial=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<python3.12 stdlib>/inspect.py:3231: in _bind
+    raise TypeError(
+E   TypeError: got an unexpected keyword argument 'point_estimate'
+
+The above exception was the direct cause of the following exception:
+tools/foundation_compat/tests/test_contract.py:75: in test_backend_call_matches_signature
+    raise AssertionError(
+E   AssertionError: `tabicl.forecast:TabICLForecaster` does not accept the call of the adapter: got an unexpected keyword argument 'point_estimate'. Call: 0 positional argument(s) and the keyword arguments ['max_context_length', 'temporal_features', 'point_estimate', 'tabicl_config']. Signature: (max_context_length: 'int' = 4096, temporal_features: 'list[FeatureGenerator]' = [RunningIndexFeature_{}, CalendarFeature_{'components': ['year'], 'seasonal_features': {'second_of_minute': [60], 'minute_of_hour': [60], 'hour_of_day': [24], 'day_of_week': [7], 'day_of_month': [30.5], 'day_of_year': [365], 'week_of_year': [52], 'month_of_year': [12]}}, AutoSeasonalFeature_{'config': {'max_top_k': 5, 'do_detrend': True, 'detrend_type': 'linear', 'use_peaks_only': True, 'apply_hann_window': True, 'zero_padding_factor': 2, 'round_to_closest_integer': True, 'validate_with_acf': False, 'sampling_interval': 1.0, 'magnitude_threshold': 0.05, 'relative_threshold': True, 'exclude_zero': True}}], output_selection: "Literal['mean', 'median']" = 'mean', tabicl_config: 'dict' = None).
+=========================== short test summary info ============================
+FAILED tools/foundation_compat/tests/test_contract.py::test_backend_call_matches_signature[tabicl.forecast:TabICLForecaster]
+1 failed, 2 passed in 9.29s

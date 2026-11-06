@@ -1,0 +1,69 @@
+package         : synthefy-nori
+latest          : 0.23.0
+requires_python : >=3.9
+license         : Apache-2.0
+requires_dist   :
+    eval-type-backport>=0.2; python_version < "3.10"
+    einops>=0.7
+    huggingface-hub<2,>=0.36; python_version < "3.10"
+    huggingface-hub<2,>=1.0; python_version >= "3.10"
+    kditransform>=1.0
+    numba>=0.60
+    numpy>=2.0
+    pandas>=2.0
+    pyarrow>=14
+    pydantic>=2.0
+    pyvinecopulib>=0.7.1
+    pyyaml>=6.0
+    scikit-learn>=1.4
+    scipy>=1.13
+    setuptools<81,>=68
+    synthefy<9,>=7
+    torch<2.14,>=2.8
+    tqdm>=4.65
+    typing-extensions>=4.10
+    synthefy[forecasting]<9,>=7; extra == "forecasting"
+    synthefy[forecasting]<9,>=7; extra == "timeseries"
+    wandb>=0.15.0; extra == "train"
+    xgboost; extra == "train"
+    matplotlib; extra == "eval"
+    openml; extra == "eval"
+    shapiq>=1.0; extra == "interpretability"
+    interpret-core>=0.6; extra == "interpretability"
+    joblib; extra == "interpretability"
+    matplotlib; extra == "interpretability"
+    scipy>=1.13; extra == "interpretability"
+    interpret-core>=0.6; extra == "explainability"
+    joblib; extra == "explainability"
+    matplotlib; extra == "explainability"
+    scipy>=1.13; extra == "explainability"
+    synthefy[text]<9,>=7; extra == "text"
+    build; extra == "dev"
+    pytest; extra == "dev"
+    ruff; extra == "dev"
+    tomli>=2.0; python_version < "3.11" and extra == "dev"
+releases (upload date of the first file):
+    2026-07-13  0.10.0
+    2026-07-14  0.11.0
+    2026-07-16  0.11.1
+    2026-07-16  0.12.0
+    2026-07-27  0.12.1
+    2026-07-31  0.13.0
+    2026-08-04  0.13.1
+    2026-08-05  0.14.0
+    2026-08-05  0.15.0
+    2026-08-06  0.16.0
+    2026-08-12  0.17.0
+    2026-08-13  0.17.1
+    2026-08-14  0.17.2
+    2026-08-14  0.17.3
+    2026-08-17  0.18.0
+    2026-08-18  0.18.1
+    2026-08-20  0.18.2
+    2026-08-25  0.19.0
+    2026-08-27  0.20.0
+    2026-09-02  0.20.1
+    2026-09-14  0.21.0
+    2026-10-17  0.21.1
+    2026-10-20  0.22.0
+    2026-11-04  0.23.0

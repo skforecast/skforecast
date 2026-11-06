@@ -1,0 +1,150 @@
+== t0-alpha
+{
+  "dropout": 0.1,
+  "embed_dim": 512,
+  "group_every_n": 3,
+  "mlp_hidden_dim": 2048,
+  "num_heads": 8,
+  "num_layers": 24,
+  "patch_size": 32,
+  "quantile_levels": [
+    0.1,
+    0.25,
+    0.5,
+    0.75,
+    0.9
+  ],
+  "scaler_use_arcsinh": true
+}
+== t0-beta
+{
+  "dropout": 0.1,
+  "dtype": null,
+  "embed_dim": 1024,
+  "group_every_n": 3,
+  "mlp_hidden_dim": 2048,
+  "num_heads": 8,
+  "num_layers": 24,
+  "patch_size": 32,
+  "quantile_levels": [
+    0.01,
+    0.05,
+    0.1,
+    0.15,
+    0.2,
+    0.25,
+    0.3,
+    0.35,
+    0.4,
+    0.45,
+    0.5,
+    0.55,
+    0.6,
+    0.65,
+    0.7,
+    0.75,
+    0.8,
+    0.85,
+    0.9,
+    0.95,
+    0.99
+  ],
+  "scaler_eps": 0.01,
+  "scaler_eps_mode": "std_clamp",
+  "scaler_use_arcsinh": true
+}
+== t0-gamma
+{
+  "dropout": 0.1,
+  "dtype": null,
+  "embed_dim": 1024,
+  "group_every_n": 3,
+  "mlp_hidden_dim": 2048,
+  "num_heads": 8,
+  "num_layers": 24,
+  "patch_size": 32,
+  "quantile_levels": [
+    0.01,
+    0.05,
+    0.1,
+    0.15,
+    0.2,
+    0.25,
+    0.3,
+    0.35,
+    0.4,
+    0.45,
+    0.5,
+    0.55,
+    0.6,
+    0.65,
+    0.7,
+    0.75,
+    0.8,
+    0.85,
+    0.9,
+    0.95,
+    0.99
+  ],
+  "scaler_eps": 0.01,
+  "scaler_eps_mode": "std_clamp",
+  "scaler_use_arcsinh": true,
+  "scaler_zero_no_value": false,
+  "xpos_scale_layout": "halves"
+}
+== t0-alpha-onnx-fp16
+{
+  "model_type": "t0-alpha",
+  "base_model": "theforecastingcompany/t0-alpha",
+  "format": "onnx",
+  "artifact": "t0-alpha-grouped-fp16.onnx",
+  "precision": "fp16-weights-fp32-compute",
+  "interface": "grouped-rows-v1",
+  "context_length": {
+    "dynamic": true,
+    "exported_minimum": 1,
+    "exported_maximum": 4096,
+    "tested_minimum": 1,
+    "tested_maximum": 4096
+  },
+  "prediction_length": {
+    "dynamic": true,
+    "compute_multiple": 32,
+    "tested_minimum": 32,
+    "tested_maximum": 1024
+  },
+  "target_rows": {
+    "dynamic": true,
+    "exported_minimum": 1,
+    "exported_maximum": 64,
+    "joint_attention": true
+  },
+  "future_covariate_rows": {
+    "dynamic": true,
+    "exported_minimum": 0,
+    "exported_maximum": 64
+  },
+  "quantile_levels": [
+    0.1,
+    0.25,
+    0.5,
+    0.75,
+    0.9
+  ],
+  "input_names": [
+    "target_context",
+    "target_group_ids",
+    "future_covariate_context",
+    "future_covariate_future",
+    "future_covariate_group_ids"
+  ],
+  "output_name": "quantiles",
+  "supports_known_future_covariates": true,
+  "onnx_opset": 20,
+  "sha256": "a09f0eb974caa224139c3bd83e78825b1c9fc28d8de81099bb1b3cb965159cb8",
+  "compute_precision": "float32",
+  "weight_precision": "fp16",
+  "download_bytes": 203962049,
+  "base_model_revision": "741927847fe02367624749bb9290b2f09f128e7d"
+}
+

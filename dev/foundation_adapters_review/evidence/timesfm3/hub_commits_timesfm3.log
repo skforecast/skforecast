@@ -1,0 +1,25 @@
+43046b85ec22 2026-09-02 Test removing timesfm tag to check library_name
+c71907076f28 2026-09-01 Fix download tracking by removing stale library_name override (defaults to config.json)
+900fcab43d1b 2026-08-31 Update README.md
+d2741044bf1f 2026-08-28 Update README.md (#1)
+3f2c8d248d5c 2026-08-28 Update README.md
+3d64c362c3e7 2026-08-27 Add license: other (timesfm-non-commercial-license-v1.0) metadata
+24701cec1b1e 2026-08-27 Update license to timesfm-non-commercial-license-v1.0
+bdd792ac1e6c 2026-08-27 Update README.md
+3154456e2d71 2026-08-27 Update LICENSE file
+6455822fd470 2026-08-24 Upload TimesFM 3.0 PyTorch model weights and config
+f414f6e8add6 2026-08-24 initial commit
+google/timesfm-3.0-pytorch 2026-08-24 644082
+echo3700/timesfm-2.5-200m-transformers 2026-04-04 11
+yasserrmd/timesfm-3.0-onnx 2026-09-02 0
+YangjieOu/timesfm-3.0-onnx 2026-09-03 0
+mustangxxx/timesfm-3.0-pytorch 2026-09-03 8
+gubernac/timesfm-3.0-pytorch 2026-09-07 11
+Unravler/timesfm-3.0-pytorch 2026-09-07 10
+czxichen/timesfm3.0-f16 2026-09-08 20
+czxichen/timesfm3.0-balanced 2026-09-08 17
+mys/timesfm-3.0-GGUF 2026-09-24 169
+urbanoanido/timesfm-3.0-pytorch 2026-09-28 13
+sivakarthikm/timesfm-3.0-pytorch 2026-10-22 46
+6455822fd470 6455822fd470 [('config.json', 'c1de41214b9c', 1273), ('model.safetensors', 'a7592b0a8432', 1322898824)]
+main 43046b85ec22 [('config.json', 'c1de41214b9c', 1273), ('model.safetensors', 'a7592b0a8432', 1322898824)]

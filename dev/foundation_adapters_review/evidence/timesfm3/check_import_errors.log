@@ -1,0 +1,6 @@
+timesfm 3.0.2
+hasattr(timesfm, 'TimesFM3Forecaster'): False
+import timesfm3: OK (lazy package, torch not needed to import it)
+ImportError raised by the adapter:
+   TimesFM 3.0 is installed (timesfm 3.0.2) but does not provide `TimesFM3Forecaster`. Reinstall with `pip install -U "timesfm[torch]"`.
+warnings: []

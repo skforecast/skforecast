@@ -1,0 +1,9 @@
+python=3.12.3 tsicl=0.2.1 torch=2.9.1+cpu numpy=2.5.4 skforecast=0.27.0
+levels in SUPPORTED_QUANTILES: 99
+rejected by TSICL._get_quantile_indices: 8 -> [0.07, 0.14, 0.28, 0.29, 0.55, 0.56, 0.57, 0.58]
+rejected through FoundationModel.predict: 8
+    0.07: Misspecified arg `quantile_levels=[7.000000000000001]`, should be a subset of [0.01, 0.02,
+    0.14: Misspecified arg `quantile_levels=[14.000000000000002]`, should be a subset of [0.01, 0.02
+    0.28: Misspecified arg `quantile_levels=[28.000000000000004]`, should be a subset of [0.01, 0.02
+    0.29: Misspecified arg `quantile_levels=[28.999999999999996]`, should be a subset of [0.01, 0.02
+    0.55: Misspecified arg `quantile_levels=[55.00000000000001]`, should be a subset of [0.01, 0.02,

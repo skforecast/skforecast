@@ -1,0 +1,117 @@
+== is:issue mps
+#502 open 2026-09-08 `use_variate_attention=False` passed to `TimesFM3Forecaster.from_pretrained` is silently ignored
+== is:issue timesfm3
+#522 open 2026-09-17 [Bug] Asymmetric scale guard in revin causes roundtrip invariant violation and silent forecast annihilation for low-variance / quiescent series
+#535 open 2026-10-03 PyTorch signed-log transformations lose their derivative at zero
+#480 open 2026-09-02 Test Folder is not updated.
+#493 closed 2026-09-04 SwiGLU incorrectly mapped to SiLU
+#474 closed 2026-09-01 MLX (Apple Silicon) inference backend for TimesFM 3.0
+#506 closed 2026-09-12 MLX backend diverges from PyTorch in four places (stitching, CPM RevIN refine, residual activation, NaN handling)
+== is:issue 3.0
+#475 open 2026-09-01 TimesFM 3.0 in JAX
+#501 open 2026-09-05 License compatibility when serving TimesFM 3.0 architecture via third-party libraries (e.g. Darts)
+#503 open 2026-09-10 [Doc/Bug] Outdated API signature and parameter structure in TimesFM 3.0 covariate example (demo_covariates.py)
+#480 open 2026-09-02 Test Folder is not updated.
+#538 closed 2026-10-07 Commercial license inquiry for TimesFM 3.0 pretrained weights (single-user, internal use)
+#502 open 2026-09-08 `use_variate_attention=False` passed to `TimesFM3Forecaster.from_pretrained` is silently ignored
+#474 closed 2026-09-01 MLX (Apple Silicon) inference backend for TimesFM 3.0
+#473 closed 2026-08-31 timesfm-3.0-pytorch model is not accessible now
+== is:issue batch
+#474 closed 2026-09-01 MLX (Apple Silicon) inference backend for TimesFM 3.0
+== is:issue covariates
+#503 open 2026-09-10 [Doc/Bug] Outdated API signature and parameter structure in TimesFM 3.0 covariate example (demo_covariates.py)
+#500 open 2026-09-05 Git clone reports four files that should be Git LFS pointers
+== is:issue edge padding
+== is:issue per_core_batch_size
+== is:pull-request mps
+#536 open 2026-10-03 Preserve the signed-log derivative at zero in PyTorch
+== is:pull-request timesfm3
+#547 open 2026-11-02 fix(timesfm3/torch): accept a 2D ndarray of contexts in TimesFM3Evaluator
+#551 open 2026-11-04 docs(AGENTS.md): point test instructions at the current test suites
+#545 open 2026-10-29 fix(timesfm3/torch): build local checkpoints without variate RoPE
+#546 open 2026-11-02 fix(timesfm3/torch): mask covariate placeholders in mixed batches
+#548 open 2026-11-02 fix(timesfm3/mlx): decode at patch-rounded horizon like torch
+#549 open 2026-11-02 fix(timesfm3/torch): honor ModelConfig.use_sdpa in attention modules
+#477 open 2026-09-02 Add forecast confidence diagnostics
+#536 open 2026-10-03 Preserve the signed-log derivative at zero in PyTorch
+#543 open 2026-10-22 fix(torch): preserve low-precision attention dtypes
+#526 open 2026-09-20 Add unit tests for TimesFM3Evaluator
+#531 open 2026-09-24 Require huggingface_hub>=0.30.0
+#533 open 2026-09-27 perf(timesfm3/torch): skip variate attention math when there is one variate
+#511 open 2026-09-14 fix: keep Windows preflight and CUDA tests runnable
+#552 open 2026-11-04 fix: surface optional backend import failures with actionable errors
+#486 open 2026-09-03 Fill all-NaN series with zeros in TimesFM 2.5 interpolation
+#476 closed 2026-09-02 Add a MLX (Apple silicon) backend for TimesFM 3.0
+#509 closed 2026-09-14 Fix MLX backend divergence from PyTorch on stitching, CPM RevIN refine, residual activation, and NaN handling
+#483 closed 2026-09-02 fix(timesfm3): keep past-future covariate windows aligned when the context is truncated
+#492 closed 2026-09-04 Fix TimesFM3 KV cache indexing for batched decoding
+== is:pull-request 3.0
+#504 open 2026-09-10 Update covariate example for TimesFM 3.0
+#551 open 2026-11-04 docs(AGENTS.md): point test instructions at the current test suites
+#545 open 2026-10-29 fix(timesfm3/torch): build local checkpoints without variate RoPE
+#477 open 2026-09-02 Add forecast confidence diagnostics
+#526 open 2026-09-20 Add unit tests for TimesFM3Evaluator
+#533 open 2026-09-27 perf(timesfm3/torch): skip variate attention math when there is one variate
+#531 open 2026-09-24 Require huggingface_hub>=0.30.0
+#469 closed 2026-08-28 Timesfm 3.0
+#476 closed 2026-09-02 Add a MLX (Apple silicon) backend for TimesFM 3.0
+#470 closed 2026-08-28 docs: update README.md for TimesFM 3.0 announcement
+== is:pull-request batch
+#546 open 2026-11-02 fix(timesfm3/torch): mask covariate placeholders in mixed batches
+#547 open 2026-11-02 fix(timesfm3/torch): accept a 2D ndarray of contexts in TimesFM3Evaluator
+#517 open 2026-09-16 Validate forecast batch metadata and covariate shapes
+#515 open 2026-09-16 Trim decoded horizons before combining forecast batches
+#516 open 2026-09-16 Preserve each series output rank in mixed forecast batches
+#548 open 2026-11-02 fix(timesfm3/mlx): decode at patch-rounded horizon like torch
+#550 open 2026-11-02 fix(timesfm_2p5): align timesfm + xreg residuals with the backcast
+#504 open 2026-09-10 Update covariate example for TimesFM 3.0
+#468 open 2026-08-19 fix: stop forecast() from mutating the caller's input list
+#533 open 2026-09-27 perf(timesfm3/torch): skip variate attention math when there is one variate
+#518 open 2026-09-16 Write stitched patch predictions directly into output
+#513 open 2026-09-16 Avoid rolling workspace when extracting output patches
+#477 open 2026-09-02 Add forecast confidence diagnostics
+#519 open 2026-09-16 Avoid redundant variance tensors in running patch statistics
+#526 open 2026-09-20 Add unit tests for TimesFM3Evaluator
+#487 open 2026-09-03 Implement window_size for decomposed forecasting in TimesFM 2.5
+#492 closed 2026-09-04 Fix TimesFM3 KV cache indexing for batched decoding
+#483 closed 2026-09-02 fix(timesfm3): keep past-future covariate windows aligned when the context is truncated
+#476 closed 2026-09-02 Add a MLX (Apple silicon) backend for TimesFM 3.0
+== is:pull-request covariates
+#546 open 2026-11-02 fix(timesfm3/torch): mask covariate placeholders in mixed batches
+#545 open 2026-10-29 fix(timesfm3/torch): build local checkpoints without variate RoPE
+#550 open 2026-11-02 fix(timesfm_2p5): align timesfm + xreg residuals with the backcast
+#534 open 2026-09-30 Fix notebook links in v1 README
+#515 open 2026-09-16 Trim decoded horizons before combining forecast batches
+#487 open 2026-09-03 Implement window_size for decomposed forecasting in TimesFM 2.5
+#465 open 2026-08-18 fix(examples): migrate global-temperature animation generator to TimesFM 2.5
+#509 closed 2026-09-14 Fix MLX backend divergence from PyTorch on stitching, CPM RevIN refine, residual activation, and NaN handling
+#483 closed 2026-09-02 fix(timesfm3): keep past-future covariate windows aligned when the context is truncated
+#476 closed 2026-09-02 Add a MLX (Apple silicon) backend for TimesFM 3.0
+== is:pull-request edge padding
+#478 open 2026-09-02 fix(xreg): handle empty dimensions in padded JAX arrays
+#548 open 2026-11-02 fix(timesfm3/mlx): decode at patch-rounded horizon like torch
+#476 closed 2026-09-02 Add a MLX (Apple silicon) backend for TimesFM 3.0
+== is:pull-request per_core_batch_size
+#546 open 2026-11-02 fix(timesfm3/torch): mask covariate placeholders in mixed batches
+#129 open 2024-08-27 PyTorch implementation of TimesFM
+#143 closed 2024-09-12 How to run timesfm on torch, questions and solve plan !
+#153 open 2024-09-23 finetuning support for pytorch version
+#173 open 2024-10-28 Inference after finetuning
+#179 open 2024-11-06 offset in the prediction
+#235 closed 2025-02-11 Bump transformers from 4.47.1 to 4.48.0
+#262 open 2025-03-31 TimesFM with Covariates, Wrong predictions in the last element of a batch
+#274 open 2025-05-05 `forecast_with_covariates` produces different results for same input depending on batch composition
+#314 open 2025-09-30 Sample the mask during training
+#392 open 2026-04-04 fix: per-input covariate normalization in forecast_with_covariates
+#393 open 2026-04-04 fix: per-input regression in forecast_with_covariates to prevent data leakage
+#394 open 2026-04-04 test: add unit tests for configs, base utilities, and torch layers
+#468 open 2026-08-19 fix: stop forecast() from mutating the caller's input list
+#476 closed 2026-09-02 Add a MLX (Apple silicon) backend for TimesFM 3.0
+#483 closed 2026-09-02 fix(timesfm3): keep past-future covariate windows aligned when the context is truncated
+#492 closed 2026-09-04 Fix TimesFM3 KV cache indexing for batched decoding
+#509 closed 2026-09-14 Fix MLX backend divergence from PyTorch on stitching, CPM RevIN refine, residual activation, and NaN handling
+#515 open 2026-09-16 Trim decoded horizons before combining forecast batches
+#517 open 2026-09-16 Validate forecast batch metadata and covariate shapes
+#526 open 2026-09-20 Add unit tests for TimesFM3Evaluator
+#546 open 2026-11-02 fix(timesfm3/torch): mask covariate placeholders in mixed batches
+#548 open 2026-11-02 fix(timesfm3/mlx): decode at patch-rounded horizon like torch

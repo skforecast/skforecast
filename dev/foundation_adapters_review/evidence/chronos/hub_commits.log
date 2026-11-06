@@ -1,0 +1,24 @@
+== amazon/chronos-2
+  29ec3766d3 2026-06-05 Update deployment guide
+  0f8a440441 2026-01-06 Fix broken link in README
+  34e99b4083 2026-01-02 Add update for new SageMaker deployment guide (#3)
+  e19c427c73 2025-11-05 Remove `transformers` from model tags (#2)
+  18128c7b4f 2025-11-01 Update README.md
+  ff35bf3168 2025-10-30 Update README.md
+  f1b3424ab0 2025-10-30 Update README.md
+  b743e84905 2025-10-30 Update README.md
+== autogluon/chronos-2
+  60088152a3 2026-06-05 Update the deployment guide
+  b68758555f 2025-11-24 Add model
+  abdb14e9e4 2025-10-06 initial commit
+== autogluon/chronos-2-small
+  ddec01313e 2025-12-03 Update README
+  5108440c6c 2025-12-03 Add model, update README
+  de2ceb8dda 2025-12-03 initial commit
+== autogluon/chronos-2-synth
+  3607918a9f 2025-12-03 Update README
+  08e27b53a8 2025-11-26 Update README.md
+  fc159eac7d 2025-11-26 Update README.md
+  688191f2a0 2025-11-24 Add model
+  f310bcaf1f 2025-11-24 Update README
+  b4e823d0b6 2025-11-24 initial commit

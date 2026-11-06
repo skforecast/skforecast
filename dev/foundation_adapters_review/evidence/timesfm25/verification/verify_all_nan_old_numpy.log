@@ -1,0 +1,10 @@
+numpy 1.26.4
+helpers:76: DeprecationWarning: The truth value of an empty array is ambiguous. Returning False, but in future this will result in an error. Use `array.size > 0` to check that an array is not empty.
+all-NaN context -> [0. 0. 0. 0. 0. 0.]
+numpy 2.1.3
+helpers:76: DeprecationWarning: The truth value of an empty array is ambiguous. Returning False, but in future this will result in an error. Use `array.size > 0` to check that an array is not empty.
+all-NaN context -> [0. 0. 0. 0. 0. 0.]
+numpy 2.2.0
+all-NaN context -> ValueError: The truth value of an empty array is ambiguous. Use `array.size > 0` to check that an array is not empty.
+numpy 2.5.4
+all-NaN context -> ValueError: The truth value of an empty array is ambiguous. Use `array.size > 0` to check that an array is not empty.

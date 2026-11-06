@@ -1,0 +1,71 @@
+python 3.12.3 x86_64 Linux
+skforecast           0.27.0
+chronos-forecasting  2.3.2
+torch                2.15.0+cpu
+transformers         5.22.1
+accelerate           1.15.0
+numpy                2.5.4
+pandas               2.3.3
+huggingface-hub      2.4.0
+torch threads 4 cuda False
+
+==== autogluon/chronos-2-small
+  pipeline class: Chronos2Pipeline | model device: cpu | model dtype: torch.float32 | hf_device_map: None
+  model_context_length: 8192 | model_prediction_length: 1024 | n training quantiles: 13
+  warnings while loading: []
+  A single series, no exog                                       max_abs_diff=0.000e+00
+  B multi-series exog cross_learning=False level=s1              max_abs_diff=0.000e+00
+  B multi-series exog cross_learning=False level=s2              max_abs_diff=0.000e+00
+  B multi-series exog cross_learning=False level=s3              max_abs_diff=0.000e+00
+  B multi-series exog cross_learning=True level=s1               max_abs_diff=0.000e+00
+  B multi-series exog cross_learning=True level=s2               max_abs_diff=0.000e+00
+  B multi-series exog cross_learning=True level=s3               max_abs_diff=0.000e+00
+  C pandas Categorical covariate with integer categories
+    dtype of the array the adapter builds: int32
+  C adapter vs backend with dow as numeric                       max_abs_diff=0.000e+00
+  C adapter vs backend with dow as category (str)                max_abs_diff=3.483e-01
+  D same covariate name, numeric in s1 and string in s3, one group
+    FoundationModel raises TypeError: Exog/s: ['temp'] have different dtypes in different series. If any of these variables are 
+  D batch independence: s1 with s3 (both numeric) vs s1 alone    max_abs_diff=3.815e-06
+  E quantiles outside the trained range
+  E q_0.001 vs q_0.01 (clamped by the backend)                   max_abs_diff=0.000e+00
+  E q_0.999 vs q_0.99 (clamped by the backend)                   max_abs_diff=0.000e+00
+    python warnings: []
+    backend log records: ['Quantiles to be predicted ([0.001, 0.01, 0.99, 0.999]) are not within the range ']
+  F steps above model_prediction_length
+    rows: 1040 | finite: True
+    warnings: ['UserWarning: We recommend keeping prediction length <= 1024. The quality of longer predictions may degr']
+  G cross_learning=True, effect of the backend batch_size
+  G g0 cross_learning batch_size=256 vs batch_size=2             max_abs_diff=5.401e-01
+  G g0 cross_learning batch_size=2 vs cross_learning=False       max_abs_diff=5.590e-02
+  G g3 cross_learning batch_size=2 vs cross_learning=False       max_abs_diff=2.320e+00
+  H torch_dtype=torch.bfloat16 and device_map='cpu'
+    model dtype: torch.bfloat16 | device: cpu
+    warnings: []
+    adapter output dtype: float32 shape: (24, 3)
+  H bf16 adapter vs direct bf16                                  max_abs_diff=0.000e+00
+
+==== autogluon/chronos-2-synth
+  pipeline class: Chronos2Pipeline | model device: cpu | model dtype: torch.float32 | hf_device_map: None
+  model_context_length: 8192 | model_prediction_length: 1024 | n training quantiles: 13
+  warnings while loading: []
+  A single series, no exog                                       max_abs_diff=0.000e+00
+  B multi-series exog cross_learning=False level=s1              max_abs_diff=0.000e+00
+  B multi-series exog cross_learning=False level=s2              max_abs_diff=0.000e+00
+  B multi-series exog cross_learning=False level=s3              max_abs_diff=0.000e+00
+  B multi-series exog cross_learning=True level=s1               max_abs_diff=0.000e+00
+  B multi-series exog cross_learning=True level=s2               max_abs_diff=0.000e+00
+  B multi-series exog cross_learning=True level=s3               max_abs_diff=0.000e+00
+
+==== amazon/chronos-2
+  pipeline class: Chronos2Pipeline | model device: cpu | model dtype: torch.float32 | hf_device_map: None
+  model_context_length: 8192 | model_prediction_length: 1024 | n training quantiles: 21
+  warnings while loading: []
+  A single series, no exog                                       max_abs_diff=0.000e+00
+  B multi-series exog cross_learning=False level=s1              max_abs_diff=0.000e+00
+  B multi-series exog cross_learning=False level=s2              max_abs_diff=0.000e+00
+  B multi-series exog cross_learning=False level=s3              max_abs_diff=0.000e+00
+  B multi-series exog cross_learning=True level=s1               max_abs_diff=0.000e+00
+  B multi-series exog cross_learning=True level=s2               max_abs_diff=0.000e+00
+  B multi-series exog cross_learning=True level=s3               max_abs_diff=0.000e+00
+

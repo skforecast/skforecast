@@ -1,0 +1,22 @@
+synthefy-nori : 0.23.0
+torch         : 2.13.0+cpu
+numpy         : 2.5.4
+pandas        : 2.3.3
+skforecast    : 0.27.0
+model_id      : Synthefy/Nori
+
+[ok]  steps=1 point shape: (1, 2)
+      stdout of the backend: 'Mixed precision is not supported for CPU inference, so it has been automatically disabled' (1 lines)
+[ok]  steps=1 quantiles shape: (1, 3)
+[ok]  duplicated + unsorted quantiles [0.9, 0.5, 0.5, 0.1]: {'q_0.9': 33.985, 'q_0.5': 33.526, 'q_0.1': 32.965}
+[err] quantile 0.0 (accepted by FoundationModel, rejected by the adapter): ValueError: NoriAdapter quantiles must lie strictly in (0, 1). Got [0.0, 0.5].
+[ok]  point_estimate mean / median / mode: {'mean': [33.4496, 32.9002, 32.0355], 'median': [33.4842, 32.9006, 31.9713], 'mode': [33.4842, 32.9006, 31.9713]}
+      stdout of the backend: 'Mixed precision is not supported for CPU inference, so it has been automatically disabled' (3 lines)
+[ok]  RangeIndex series: [32.93, 33.055, 32.675]
+      stdout of the backend: 'Mixed precision is not supported for CPU inference, so it has been automatically disabled' (1 lines)
+      warning UserWarning: NoriAdapter received series with a non-DatetimeIndex; calendar features are skipped. Only running-index and Fourier(inde
+[ok]  two series, different length and covariates: ((6, 2), ['y', 'y2'])
+      stdout of the backend: 'Mixed precision is not supported for CPU inference, so it has been automatically disabled' (1 lines)
+[err] categorical covariate: ValueError: NoriAdapter supports only numeric covariates. Column 'kind' has dtype category. Encode categorical covariates as numeric values before passing them.
+[err] nori_config device='cuda' on a CPU machine: RuntimeError: device='cuda' was requested, but CUDA is not available to PyTorch.
+[err] nori_config device='mps' on a CPU machine: RuntimeError: device='mps' was requested, but this PyTorch build does not include MPS support.

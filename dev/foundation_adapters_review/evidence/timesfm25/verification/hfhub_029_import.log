@@ -1,0 +1,3 @@
+timesfm 3.0.2 | huggingface_hub 0.29.3
+timesfm Requires-Dist hub: ['huggingface_hub>=0.28.0', 'huggingface-hub>=0.24.0; extra == "mlx"']
+FoundationModel.predict: TypeError ModelHubMixin.__init_subclass__() got an unexpected keyword argument 'paper_url'

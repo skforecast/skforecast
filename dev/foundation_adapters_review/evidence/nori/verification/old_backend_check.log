@@ -1,0 +1,7 @@
+python       : 3.12.3
+synthefy-nori: 0.21.1
+torch        : 2.13.0+cpu
+numpy        : 2.5.4
+Synthefy/Nori     : ok, (20,)
+Synthefy/Nori-1-5 : TypeError: get_x_encoder() got an unexpected keyword argument 'prompt_quantile_ple_bins'
+nori-1-5          : CheckpointAccessError: Could not download 'nori-1-5' from the Hugging Face Hub: access denied.

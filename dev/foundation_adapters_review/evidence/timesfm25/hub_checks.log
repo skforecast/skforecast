@@ -1,0 +1,61 @@
+huggingface_hub 2.4.0
+
+== google/timesfm-2.5-200m-pytorch
+  commit 1d952420fba8 2025-10-02 Update README.md
+  commit 139be6c96884 2025-10-01 Update README.md
+  commit e8ebf27bfd55 2025-10-01 Update README.md
+  commit 816f64fb93ae 2025-10-01 Update README.md
+  commit 2d1b32066b7f 2025-10-01 Update README.md
+  commit fdcc8eb915bf 2025-10-01 Delete config.yaml
+  commit d418f3e8a8fa 2025-10-01 Refreshed model with speed optimizations.
+  commit a6e2c7cdf5f4 2025-09-29 Update README.md
+  commit ef46453a325d 2025-09-26 Remove trailing comma to make it a valid json (#2)
+  commit 9a657df611eb 2025-09-25 Create config.json
+  commit 26233fffa726 2025-09-15 Update README.md
+  commit 3099d9193d48 2025-09-15 Update README.md
+  commit 2b518f0fc994 2025-09-12 Update README.md
+  commit 03674287e8d7 2025-09-12 Update README.md
+  commit bbf56d4410bb 2025-09-12 Update README.md
+  commit b0b31f648778 2025-09-12 Update README.md
+  commit 295319dbdc75 2025-09-12 Update README.md
+  commit 910b4d31044a 2025-09-05 Upload folder using huggingface_hub
+  commit d35e0e4561f6 2025-09-02 Upload folder using huggingface_hub
+  commit eae42bc14a61 2025-09-02 initial commit
+  config.json: {"architectures": ["TimesFmModelForPrediction"], "context_length": 16384, "head_dim": 80, "hidden_size": 1280, "horizon_length": 128, "intermediate_size": 1280, "model_type": "timesfm", "num_attention_heads": 16, "num_hidden_layers": 20, "patch_length": 32, "quantile_horizon_length": 1024, "quantiles": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], "rms_norm_eps": 1e-06, "torch_compile": false}
+  safetensors: 232 tensors, params {'F32': 231289280}
+    output_projection_point.hidden_layer.weight [1280, 1280] F32
+    output_projection_point.output_layer.weight [1280, 1280] F32
+    output_projection_point.residual_layer.weight [1280, 1280] F32
+    output_projection_quantiles.hidden_layer.weight [1280, 1280] F32
+    output_projection_quantiles.output_layer.weight [10240, 1280] F32
+    output_projection_quantiles.residual_layer.weight [10240, 1280] F32
+  README front matter: license: apache-2.0 | library_name: timesfm | pipeline_tag: time-series-forecasting
+
+== google/timesfm-2.5-200m-transformers
+  commit 5a9806b9b291 2026-04-10 update typo in importing model (#4)
+  commit afa3be329c60 2026-03-05 updated config and weights (#3)
+  commit dcd4b67ca0d6 2026-02-20 Update README.md (#1)
+  commit 76599c50b9d3 2026-02-19 Upload folder using huggingface_hub
+  commit cfdfb14dc371 2026-02-19 initial commit
+  config.json: {"activation": "swish", "architectures": ["TimesFm2_5ModelForPrediction"], "attention_bias": false, "attention_dropout": 0.0, "context_length": 16384, "decode_index": 5, "dtype": "float32", "force_flip_invariance": true, "head_dim": 80, "hidden_size": 1280, "horizon_length": 128, "infer_is_positive": true, "initializer_range": 0.02, "intermediate_size": 1280, "max_position_embeddings": 16384, "model_type": "timesfm2_5", "num_attention_heads": 16, "num_hidden_layers": 20, "num_key_value_heads": 16, "output_quantile_len": 1024, "patch_length": 32, "quantiles": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
+  safetensors: 272 tensors, params {'F32': 231289280}
+    model.input_ff_layer.input_layer.bias [1280] F32
+    model.input_ff_layer.input_layer.weight [1280, 64] F32
+    model.input_ff_layer.output_layer.bias [1280] F32
+    model.input_ff_layer.output_layer.weight [1280, 1280] F32
+    model.input_ff_layer.residual_layer.bias [1280] F32
+    model.input_ff_layer.residual_layer.weight [1280, 64] F32
+  README front matter: license: apache-2.0 | library_name: transformers | pipeline_tag: time-series-forecasting | tags: | - transformers | - timesfm | - timesfm2_5 | - time-series-forecasting | - arxiv:2310.10688
+
+== google/timesfm-2.5-200m-flax
+  commit b99e9f6c457e 2025-09-02 Upload folder using huggingface_hub
+  commit 57996ba4e08f 2025-09-02 initial commit
+  config.json: RemoteEntryNotFoundError: 404 Client Error. (Request ID: Root=1-6aeddd30-33449b04666e4d106a96f535;2d5c1161-f2a2-4add-aeeb-4765b979a5aa)
+
+Entry Not Found for url: https://huggingface.co/google/timesfm-2.5-200m-flax/resolve/main
+  safetensors: NotASafetensorsRepoError: 'google/timesfm-2.5-200m-flax' is not a safetensors repo. Couldn't find 'model.safetensors.index.json' or 'model.safetensors' files.
+  README front matter: license: apache-2.0
+
+== tensor names pytorch vs transformers
+  common: 4, only pytorch: 228, only transformers: 268
+  example only transformers: ['model.input_ff_layer.input_layer.bias', 'model.input_ff_layer.input_layer.weight', 'model.input_ff_layer.output_layer.bias']

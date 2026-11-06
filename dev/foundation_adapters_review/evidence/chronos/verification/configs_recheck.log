@@ -1,0 +1,3 @@
+amazon/chronos-2 quantiles 21 0.01 0.99 context_length 8192 output_patch_size 16 max_output_patches 64 torch_dtype float32
+autogluon/chronos-2-small quantiles 13 0.01 0.99 context_length 8192 output_patch_size 16 max_output_patches 64 torch_dtype float32
+autogluon/chronos-2-synth quantiles 13 0.01 0.99 context_length 8192 output_patch_size 16 max_output_patches 64 torch_dtype float32

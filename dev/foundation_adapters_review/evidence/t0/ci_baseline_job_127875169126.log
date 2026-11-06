@@ -1,0 +1,18 @@
+# Excerpt of the job log of the Foundation Backends Compatibility workflow
+# run 42212742430 (2026-11-06, branch 0.27.x, commit 09433c35a7def53a0e14bf86b72ab2015f03e421),
+# job "t0", id 127875169126, read with the GitHub job logs API.
+$ uv pip install --python <venv>/bin/python --torch-backend cpu -e <checkout> pytest tfc-t0
+ + huggingface-hub==2.4.0
+ + numpy==2.5.4
+ + pandas==2.3.3
+ + scipy==1.18.1
+ + tfc-t0==0.6.0
+ (torch not installed: 45 packages, no torch)
+$ python -m pytest tools/foundation_compat/tests/test_contract.py --backend t0 -q
+.FF
+t0/torch/__init__.py:4: import torch -> ModuleNotFoundError: No module named 'torch'
+ImportError: t0.torch is the PyTorch runtime of t0. Install through pip install 'tfc-t0[torch]' or use the MLX runtime with `from t0.mlx import T0Forecaster`
+FAILED test_backend_call_matches_signature[t0:T0Forecaster.from_pretrained]
+FAILED test_backend_call_matches_signature[t0:T0Forecaster.predict]
+2 failed, 1 passed in 0.05s
+result json: versions {"tfc-t0": "0.6.0", "torch": null, "numpy": "2.5.4", "scipy": "1.18.1", "pandas": "2.3.3", "huggingface_hub": "2.4.0"}, latest_on_pypi "0.6.0", held_back false, contract failed, smoke not run, status failed

@@ -1,0 +1,81 @@
+python         : 3.12.3
+platform       : Linux-6.18.44-fc-v242-x86_64-with-glibc2.39
+synthefy-nori  : 0.23.0
+synthefy       : 8.0.0
+torch          : 2.13.0+cpu
+numpy          : 2.5.4
+pandas         : 2.3.3
+huggingface-hub: 1.33.0
+skforecast     : 0.27.0
+
+== A. routing
+  Synthefy/Nori          -> NoriAdapter
+  Synthefy/Nori-1-5      -> NoriAdapter
+  Synthefy/Nori-30M      -> NoriAdapter
+  Synthefy/Nori-100M     -> NoriAdapter
+  Synthefy/Nori-Causal   -> NoriAdapter
+  Synthefy/migas-1.5     -> ValueError: No adapter found for model 'Synthefy/migas-1.5'. Registered 
+
+== B/C. Synthefy/Nori
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+  point_estimate=mean   max|adapter - direct| = 0.000e+00
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+  point_estimate=median max|adapter - direct| = 0.000e+00
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+  point_estimate=mode   max|adapter - direct| = 0.000e+00
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+  quantiles [0.8, 0.2, 0.5, 0.05]: max|adapter - direct.T| = 0.000e+00
+  backend point: ndarray float64 (12,); quantiles: ndarray float64 (4, 12)
+  unsorted levels returned in requested order: True
+  duplicated levels [0.5, 0.9, 0.5, 0.1]: shape (4, 12), rows match True
+  regression_head=pinball; mode == median: True
+  stored inference config in checkpoint: None
+  device_ chosen with device=None: cpu
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+  registry name 'nori-6m' vs raw id: point diff 0.000e+00, quantile diff 0.000e+00
+
+== B/C. Synthefy/Nori-1-5
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+  point_estimate=mean   max|adapter - direct| = 0.000e+00
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+  point_estimate=median max|adapter - direct| = 0.000e+00
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+  point_estimate=mode   max|adapter - direct| = 0.000e+00
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+  quantiles [0.8, 0.2, 0.5, 0.05]: max|adapter - direct.T| = 0.000e+00
+  backend point: ndarray float64 (12,); quantiles: ndarray float64 (4, 12)
+  unsorted levels returned in requested order: True
+  duplicated levels [0.5, 0.9, 0.5, 0.1]: shape (4, 12), rows match True
+  regression_head=pinball; mode == median: True
+  stored inference config in checkpoint: model_v3_inference.json
+  device_ chosen with device=None: cpu
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+  registry name 'nori-1-5' vs raw id: point diff 0.000e+00, quantile diff 0.000e+00
+
+== D. NaN in covariates (Synthefy/Nori)
+  context rows with NaN in x1: 68 of 256
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+  current adapter: rows passed to fit = 188, NaN in X = False
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+  keep-NaN variant: rows passed to fit = 256, NaN in X = True
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+  keep-NaN variant vs direct backend call on X with NaN: max diff 0.000e+00; finite True
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+  current adapter vs direct call on the rows without NaN: max diff 0.000e+00
+  NaN in query rows accepted: finite quantiles True
+  NaN in y: ValueError: y must contain only finite target values
+
+== A2. Synthefy/Nori-Causal
+  FoundationModel adapter: NoriAdapter (construction ok)
+  predict raised RemoteEntryNotFoundError: 404 Client Error. (Request ID: Root=1-6aedf309-3833bf302621465a7961d14d;d733b0e9-c783-4bed-bc90-dd3e14e9a400)
+
+== E. stdout printed by a fresh model load on CPU
+  captured stdout: 'Mixed precision is not supported for CPU inference, so it has been automatically disabled'

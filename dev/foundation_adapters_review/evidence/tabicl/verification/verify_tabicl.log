@@ -1,0 +1,44 @@
+python 3.12.3 | tabicl 2.2.0 | torch 2.15.0+cpu | numpy 2.5.4 | pandas 2.3.3 | huggingface-hub 2.4.0 | skforecast 0.27.0 | x86_64 Linux | cuda False
+### F15 NaN in future exog, show_progress=False
+    returncode=0 | tqdm bar on stderr=False
+    stdout: done
+### F15 NaN in future exog, show_progress=True
+    returncode=0 | tqdm bar on stderr=True
+    stdout: done
+    stderr: ~/.venvs/fm-review-tabicl/lib/python3.12/site-packages/tabicl/forecast/_forecaster.py:260: UserWarning: Some covariate values in future_tsdf are missing (NaN). This may affect prediction quality.
+    stderr: context_tsdf, future_tsdf = self._align_covariates(context_tsdf, future_tsdf)
+### F15 first call hidden, second call show_progress=True (same process)
+    returncode=0 | tqdm bar on stderr=True
+    stdout: done
+    stderr: ~/.venvs/fm-review-tabicl/lib/python3.12/site-packages/tabicl/forecast/_forecaster.py:260: UserWarning: Some covariate values in future_tsdf are missing (NaN). This may affect prediction quality.
+    stderr: context_tsdf, future_tsdf = self._align_covariates(context_tsdf, future_tsdf)
+### P1 prototype (re-emit recorded warnings), show_progress=False
+    returncode=0 | tqdm bar on stderr=False
+    stdout: done
+    stderr: ~/.venvs/fm-review-tabicl/lib/python3.12/site-packages/tabicl/forecast/_forecaster.py:260: UserWarning: Some covariate values in future_tsdf are missing (NaN). This may affect prediction quality.
+    stderr: context_tsdf, future_tsdf = self._align_covariates(context_tsdf, future_tsdf)
+### F10/P2 quantile level types
+    returncode=0 | tqdm bar on stderr=False
+    stdout: int [0, 0.5, 1] ERROR ValueError Quantiles must be a list of floats
+    stdout: np.float32 ERROR ValueError Quantiles must be a list of floats
+    stdout: np.float64 OK
+    stdout: P2 columns: ['level', 'q_0', 'q_0.5', 'q_1']
+    stdout: P2 equal to float levels: True
+    stdout: P2 float32 columns: ['level', 'q_0.10000000149011612', 'q_0.8999999761581421']
+### F8 NaN inside the context window, adapter vs direct predict_df
+    returncode=0 | tqdm bar on stderr=False
+    stdout: max_abs_diff (same 64-row window incl. 10 NaN): 0.0
+    stdout: max_abs_diff vs direct call with full series (backend drops NaN then keeps last 64 valid): 0.3516092300415039
+### F18 temporal_features as strings
+    returncode=0 | tqdm bar on stderr=False
+    stdout: ['index', 'datetime'] OK (6, 2)
+    stdout: ['fourier'] ERROR TypeError FourierEncoder.__init__() missing 1 required positional argument: 'periods'
+### F9/F14 categorical covariate and integer timestamps (direct backend)
+    returncode=0 | tqdm bar on stderr=False
+    stdout: string covariate ERROR ValueError NumPy arrays passed to TabICL must be castable to a numeric dtype, but casting to float64 failed with: could n
+    stdout: integer timestamps parsed as [Timestamp('1970-01-01 00:00:00.000000120'), Timestamp('1970-01-01 00:00:00.000000121')]
+### F7 model_id resolution
+    returncode=0 | tqdm bar on stderr=False
+    stdout: soda-inria/tabicl -> TabICLAdapter
+    stdout: soda-inria/tabicl-v1-does-not-exist -> TabICLAdapter
+    stdout: jingang/TabICL -> ValueError No adapter found for model 'jingang/TabICL'. Registered pref

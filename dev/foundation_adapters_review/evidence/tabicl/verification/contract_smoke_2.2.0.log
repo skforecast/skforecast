@@ -1,0 +1,4 @@
+tabicl 2.2.0 env
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+9 passed, 2 warnings in 11.80s

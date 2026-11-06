@@ -1,0 +1,123 @@
+=== #434
+TimesFM 2.5 PyTorch: from_pretrained fails on huggingface_hub >= 0.36 (proxies kwarg leak); load_checkpoint(path) raises NotImplementedError
+closed
+## Summary
+
+`TimesFM_2p5_200M_torch.from_pretrained("google/timesfm-2.5-200m-pytorch")` fails on current `huggingface_hub` (0.36.2) with:
+
+```
+TypeError: TimesFM_2p5_200M_torch.__init__() got an unexpected keyword argument 'proxies'
+```
+
+The natural workaround — `snapshot_download` + `load_checkpoint(local_path)` — also fails because `TimesFM_2p5.load_checkpoint` raises `NotImplementedError` in the torch subclass.  The PyTorch model is therefore unloadable on a default modern environment.
+
+## Reproduction
+
+```python
+import timesfm
+
+# Path A: from_pretrained — fails immediately
+tfm = timesfm.TimesFM_2p5_200M_torch.from_pretrained(
+    "google/timesfm-2.5-200m-pytorch"
+)
+# TypeError: TimesFM_2p5_200M_torch.__init__() got an unexpected keyword argument 'proxies'
+
+# Path B: snapshot_download + load_checkpoint(path) — fails on the load step
+from huggingface_hub import snapshot_download
+local_dir = snapshot_download(
+    "google/timesfm-2.5-200m-pytorch",
+    allow_patterns=["*.safetensors", "*.json", "*.txt"],
+)
+tfm = timesfm.TimesFM_2p5_200M_torch()
+tfm.load_checkpoint(local_dir)
+# File ".../timesfm/timesfm_2p5/timesfm_2p5_base.py", line 149, in load_checkpoint
+#     raise NotImplementedError()
+# NotImplementedError
+```
+
+## Root cause (Path A)
+
+`huggingface_hub` ≥ 0.34 added a `proxies` parameter to the `PyTorchModelHubMixin.from_pretrained` plumbing.  The current behaviour forwards `proxies` through `_from_pretrained` to the subclass `__init__`:
+
+```python
+# timesfm/timesfm_2p5/
+=== #321
+nan output
+open
+The new code example gives all nan values (both for cuda and mac-mps).
+
+`print(quantile_forecast)`
+` [[[nan nan nan nan nan nan nan nan nan nan]
+  [nan nan nan nan nan nan nan nan nan nan]
+  [nan nan nan nan nan nan nan nan nan nan]
+  [nan nan nan nan nan nan nan nan nan nan]
+  [nan nan nan nan nan nan nan nan nan nan]
+  [nan nan nan nan nan nan nan nan nan nan]
+  [nan nan nan nan nan nan nan nan nan nan]
+  [nan nan nan nan nan nan nan nan nan nan]
+  [nan nan nan nan nan nan nan nan nan nan]
+  [nan nan nan nan nan nan nan nan nan nan]
+  [nan nan nan nan nan nan nan nan nan nan]
+  [nan nan nan nan nan nan nan nan nan nan]]
+
+ [[nan nan nan nan nan nan nan nan nan nan]
+  [nan nan nan nan nan nan nan nan nan nan]
+  [nan nan nan nan nan nan nan nan nan nan]
+  [nan nan nan nan nan nan nan nan nan nan]
+  [nan nan nan nan nan nan nan nan nan nan]
+  [nan nan nan nan nan nan nan nan nan nan]
+  [nan nan nan nan nan nan nan nan nan nan]
+  [nan nan nan nan nan nan nan nan nan nan]
+  [nan nan nan nan nan nan nan nan nan nan]
+  [nan nan nan nan nan nan nan nan nan nan]
+  [nan nan nan nan nan nan nan nan nan nan]
+  [nan nan nan nan nan nan nan nan nan nan]]]`
+
+---
+
+`import torch
+import numpy as np
+import timesfm
+
+torch.set_float32_matmul_precision("high")
+
+model = timesfm.TimesFM_2p5_200M_torch.from_pretrained("google/timesfm-2.5-200m-pytorch")
+
+model.compile(
+    timesfm.ForecastConfig(
+        max_context=1024,
+        max_horizon=256,
+        normalize_inputs=True,
+        use_continuous_
+=== #412
+ [Bug] `TypeError: got an unexpected keyword argument 'proxies'` when loading TimesFM 2.5 via `from_pretrained`
+open
+**Description:**
+When trying to load `TimesFM_2p5_200M_torch` in a fresh environment (like Google Colab) with the latest `huggingface_hub` (e.g., v0.26+), the model fails to initialize. 
+
+The `huggingface_hub` passes network-related parameters (like `proxies` and `paper_url`) via `**kwargs` during the `from_pretrained` call, but the `TimesFM_2p5_200M_torch.__init__()` method does not accept them, resulting in a `TypeError`.
+
+**Environment:**
+* OS: Google Colab (Ubuntu)
+* `huggingface_hub` version: 0.26.2 (or latest)
+* `transformers` version: 4.46.1
+* `timesfm` installed via git (`git+https://github.com/google-research/timesfm.git`)
+
+**Error Traceback:**
+```python
+Traceback (most recent call last):
+  ...
+  File "/usr/local/lib/python3.12/dist-packages/timesfm/timesfm_2p5/timesfm_2p5_torch.py", line 332, in _from_pretrained
+    instance = cls(config=config, **model_kwargs)
+TypeError: TimesFM_2p5_200M_torch.__init__() got an unexpected keyword argument 'proxies'
+# Note: Sometimes it also fails with unexpected keyword argument 'paper_url' during ModelHubMixin initialization.
+```
+
+**Proposed Solution:**
+A simple fix would be to explicitly pop these unexpected network/hub parameters before initialization in `timesfm_2p5_torch.py`, or simply allow `**kwargs` in the model's `__init__` to safely ignore unused arguments from the Hub.
+
+For example, modifying `_from_pretrained` in `timesfm_2p5_torch.py`:
+```python
+model_kwargs.pop('proxies', None)
+model_kwargs.pop('paper_url', None)
+inst

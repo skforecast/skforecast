@@ -1,0 +1,28 @@
+### env ~/.venvs/fm-review-timesfm25-oldhf
+timesfm 2.0.0 | huggingface_hub 0.36.0 | torch 2.15.0+cpu
+huggingface_hub from_pretrained passes proxies/resume_download: True True
+TimesFM_2p5_200M_torch.__init__ signature: (self, torch_compile: bool = True, config: Optional[dict] = None)
+(a) direct from_pretrained, no workaround: TypeError: TimesFM_2p5_200M_torch.__init__() got an unexpected keyword argument 'proxies'
+(b) adapter._load_model (with workaround): OK, torch_compile = False
+
+### env ~/.venvs/fm-review-timesfm25
+timesfm 3.0.2 | huggingface_hub 2.4.0 | torch 2.15.0+cpu
+huggingface_hub from_pretrained passes proxies/resume_download: False False
+TimesFM_2p5_200M_torch.__init__ signature: (self, torch_compile: bool = True, config: Optional[dict] = None, **kwargs)
+(a) direct from_pretrained, no workaround: OK, torch_compile = False
+(b) adapter._load_model (with workaround): OK, torch_compile = False
+
+### env ~/.venvs/fm-review-timesfm25-oldhf (timesfm 2.0.1)
+timesfm 2.0.1 | huggingface_hub 0.36.0 | torch 2.15.0+cpu
+huggingface_hub from_pretrained passes proxies/resume_download: True True
+TimesFM_2p5_200M_torch.__init__ signature: (self, torch_compile: bool = True, config: Optional[dict] = None, **kwargs)
+(a) direct from_pretrained, no workaround: OK, torch_compile = False
+(b) adapter._load_model (with workaround): OK, torch_compile = False
+
+### env ~/.venvs/fm-review-timesfm25-oldhf (timesfm 3.0.2)
+timesfm 3.0.2 | huggingface_hub 0.36.0 | torch 2.15.0+cpu
+huggingface_hub from_pretrained passes proxies/resume_download: True True
+TimesFM_2p5_200M_torch.__init__ signature: (self, torch_compile: bool = True, config: Optional[dict] = None, **kwargs)
+(a) direct from_pretrained, no workaround: OK, torch_compile = False
+(b) adapter._load_model (with workaround): OK, torch_compile = False
+

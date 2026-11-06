@@ -1,0 +1,8 @@
+# gh api -X GET search/issues -f q='repo:theforecastingcompany/tfc-t0 is:issue' (2026-11-06)
+2
+17 closed 2026-10-14 Verify evals on Papers with Code
+13 closed 2026-09-07 A standing live evaluation venue for t0 - forward-only, third-party-settled, free
+# is:pull-request total_count
+16
+# upstream clone ~/fm-review-src/tfc-t0 HEAD
+4871c64 2026-10-13  (HEAD, tag: v0.6.0)
