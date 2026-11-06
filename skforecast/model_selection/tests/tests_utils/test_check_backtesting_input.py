@@ -466,7 +466,7 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_is_None_Fore
 
 
 @pytest.mark.parametrize("initial_train_size", 
-                         ['greater', 'smaller', 'date'], 
+                         ['greater', 'smaller', 'equal', 'date'], 
                          ids = lambda initial: f'initial_train_size: {initial}')
 @pytest.mark.parametrize("forecaster", 
                          [ForecasterRecursive(estimator=Ridge(), lags=3),
@@ -476,7 +476,7 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_not_correct_
     """
     Test ValueError is raised in check_backtesting_input when 
     initial_train_size >= length `y` or span of `series` or initial_train_size
-    < window_size.
+    <= window_size. The error gives the limit not met and the value received.
     """
     y_datetime = y.copy()
     y_datetime.index = pd.date_range(start='2020-01-01', periods=len(y), freq='D')
@@ -488,12 +488,26 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_not_correct_
         data_length = len(series_dict_dt['l1'])
         data_length_name = 'the length of the span of `series`'
 
+    lower_msg = (
+        "`initial_train_size` must be greater than the `window_size` of the "
+        "forecaster (3), so that the first training set has data to train with. "
+    )
     if initial_train_size == 'greater':
         initial_train_size = data_length
+        err_msg = (
+            f"`initial_train_size` must be smaller than {data_length_name} "
+            f"({data_length}), so that there is data left to evaluate. "
+            f"Got {data_length}."
+        )
     elif initial_train_size == 'smaller':
         initial_train_size = forecaster.window_size - 1
+        err_msg = lower_msg + "Got 2."
+    elif initial_train_size == 'equal':
+        initial_train_size = forecaster.window_size
+        err_msg = lower_msg + "Got 3."
     else:
         initial_train_size = '2020-01-02'  # Smaller than window_size
+        err_msg = lower_msg + "Got '2020-01-02', 2 observations in the training set."
     
     cv = TimeSeriesFold(
              steps                 = 3,
@@ -504,12 +518,7 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_not_correct_
              allow_incomplete_fold = True
          )
     
-    err_msg = re.escape(
-        f"If `initial_train_size` is an integer, it must be greater than "
-        f"the `window_size` of the forecaster ({forecaster.window_size}) "
-        f"and smaller than {data_length_name} ({data_length}). If "
-        f"it is a date, it must be within this range of the index."
-    )
+    err_msg = re.escape(err_msg)
     with pytest.raises(ValueError, match = err_msg):
         check_backtesting_input(
             forecaster              = forecaster,
@@ -654,11 +663,10 @@ def test_check_backtesting_input_ValueError_when_not_enough_data_to_create_a_fol
 @pytest.mark.parametrize("initial_train_size",
                          [50, '2020-02-19'],
                          ids = lambda initial: f'initial_train_size: {initial}')
-@pytest.mark.parametrize("forecaster_name, lower_bound",
-                         [('ForecasterRecursiveMultiSeries', 'the `window_size` of the forecaster (3)'),
-                          ('ForecasterFoundation', '0')],
+@pytest.mark.parametrize("forecaster_name",
+                         ['ForecasterRecursiveMultiSeries', 'ForecasterFoundation'],
                          ids = lambda fr: f'{fr}')
-def test_check_backtesting_input_ValueError_when_initial_train_size_not_smaller_than_span_of_series_dict(initial_train_size, forecaster_name, lower_bound):
+def test_check_backtesting_input_ValueError_when_initial_train_size_not_smaller_than_span_of_series_dict(initial_train_size, forecaster_name):
     """
     Test ValueError is raised in check_backtesting_input when `series` is a
     dict of series that do not cover the same period and `initial_train_size`
@@ -680,10 +688,8 @@ def test_check_backtesting_input_ValueError_when_initial_train_size_not_smaller_
          )
 
     err_msg = re.escape(
-        f"If `initial_train_size` is an integer, it must be greater than "
-        f"{lower_bound} and smaller than the length of the span of "
-        f"`series` (50). If it is a date, it must be within this range of "
-        f"the index."
+        "`initial_train_size` must be smaller than the length of the span of "
+        "`series` (50), so that there is data left to evaluate. Got "
     )
     with pytest.raises(ValueError, match = err_msg):
         check_backtesting_input(
@@ -1268,8 +1274,9 @@ def test_check_backtesting_input_ForecasterFoundation_no_error_when_initial_trai
 def test_check_backtesting_input_ForecasterFoundation_ValueError_when_initial_train_size_not_correct_value():
     """
     Test ValueError is raised in check_backtesting_input for
-    ForecasterFoundation when initial_train_size >= data_length. The error
-    message uses ">0" instead of "window_size" as the lower bound.
+    ForecasterFoundation when initial_train_size >= data_length, although it
+    is smaller than the `window_size` (context_length), which is not a lower
+    bound for ForecasterFoundation.
     """
     forecaster = make_forecaster(context_length=2048)
     forecaster.fit(series=y_foundation)
@@ -1287,9 +1294,9 @@ def test_check_backtesting_input_ForecasterFoundation_ValueError_when_initial_tr
          )
 
     err_msg = re.escape(
-        f"If `initial_train_size` is an integer, it must be greater than "
-        f"0 and smaller than the length of the span of `series` ({data_length}). "
-        f"If it is a date, it must be within this range of the index."
+        f"`initial_train_size` must be smaller than the length of the span of "
+        f"`series` ({data_length}), so that there is data left to evaluate. "
+        f"Got {data_length}."
     )
     with pytest.raises(ValueError, match=err_msg):
         check_backtesting_input(

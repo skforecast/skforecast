@@ -796,3 +796,52 @@ def test_bayesian_search_foundation_maximizes_metric_when_greater_is_better():
     assert results["increasing_metric"].nunique() == 3
     assert results.loc[0, "trial_number"] == study.best_trial.number
     assert forecaster.context_length == results.loc[0, "context_length"]
+
+
+def test_bayesian_search_foundation_skips_trials_whose_evaluation_fails():
+    """
+    Test that the trials whose backtesting fails are marked as failed and
+    reported in the warning of the candidates skipped, identified by their
+    number, instead of stopping the search.
+    """
+    from skforecast.model_selection._search import backtesting_foundation
+
+    def backtesting_fails_with_48(forecaster, **kwargs):
+        if forecaster.estimator.adapter.get_params()["context_length"] == 48:
+            raise ValueError("Backtesting failed.")
+        return backtesting_foundation(forecaster=forecaster, **kwargs)
+
+    def search_space(trial):
+        return {
+            "context_length": trial.suggest_categorical("context_length", [24, 48])
+        }
+
+    forecaster = make_forecaster()
+    with (
+        patch(PATCH_DEEPCOPY, side_effect=deepcopy),
+        patch(
+            "skforecast.model_selection._search.backtesting_foundation",
+            side_effect=backtesting_fails_with_48
+        ),
+        pytest.warns(RuntimeWarning, match="Parameters skipped") as record,
+    ):
+        results, study = bayesian_search_foundation(
+            forecaster=forecaster,
+            series=y,
+            cv=TimeSeriesFold(steps=5, initial_train_size=40),
+            search_space=search_space,
+            metric="mean_absolute_error",
+            n_trials=4,
+            return_best=False,
+            show_progress=False,
+        )
+
+    failed = [t.number for t in study.trials if t.state == optuna.trial.TrialState.FAIL]
+    assert failed == [
+        t.number for t in study.trials if t.params["context_length"] == 48
+    ]
+    assert len(results) == 4 - len(failed)
+    message = [str(w.message) for w in record if "Parameters skipped" in str(w.message)][0]
+    assert "ValueError: Backtesting failed." in message
+    for trial_number in failed:
+        assert f"  - trial {trial_number}, params: {{'context_length': 48}}" in message

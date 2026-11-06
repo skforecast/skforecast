@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 from typing import Callable, Generator, Any
+import logging
 import os
 import re
 import sys
@@ -42,6 +43,9 @@ from ..utils import (
     cast_catboost_categorical_columns_dataframe,
     _copy_rows_to_check,
     _check_in_place_fit,
+    align_series_and_exog_multiseries,
+    _series_too_short_multiseries,
+    estimator_has_native_nan_support,
 )
 
 # NOTE: Names of the metrics added to the backtesting metrics when the
@@ -54,9 +58,9 @@ INTERVAL_METRIC_NAMES = ['coverage', 'interval_width']
 # removing the predictions of overlapping folds), see `_count_evaluated`.
 N_EVALUATED_NAME = 'n_evaluated'
 
-# NOTE: The multi-series searches warn when a candidate evaluates fewer points
-# than this fraction of the points of the most complete candidate, see
-# `_warn_n_evaluated_search_multiseries`. Below 5% of the points left out, the
+# NOTE: The searches warn when a candidate evaluates fewer points than this
+# fraction of the points of the most complete candidate, see
+# `_warn_n_evaluated_search`. Below 5% of the points left out, the
 # bias of the metric is usually smaller than the differences between
 # candidates.
 N_EVALUATED_WARNING_THRESHOLD = 0.95
@@ -130,6 +134,91 @@ def initialize_lags_grid(
         )
 
     return lags_grid, lags_label
+
+
+def _check_initial_train_size(
+    initial_train_size: int,
+    initial_train_size_input: int | str | pd.Timestamp,
+    data_length: int,
+    data_length_name: str = "the length of `y`",
+    window_size: int | None = None,
+    allow_window_size: bool = False
+) -> None:
+    """
+    Check that `initial_train_size` leaves data to train with and data to
+    evaluate. The training set needs more than `window_size` observations (the
+    first `window_size` ones only create the predictors of the first row), and
+    the rest of the data is evaluated. The error says which limit is not met,
+    with the value received.
+
+    Parameters
+    ----------
+    initial_train_size : int
+        Number of observations of the first training set (`initial_train_size`
+        of `cv` as an integer).
+    initial_train_size_input : int, str, pandas Timestamp
+        `initial_train_size` of `cv` as passed by the user, shown in the error.
+    data_length : int
+        Number of observations of the data.
+    data_length_name : str, default 'the length of `y`'
+        Name of the length of the data in the error.
+    window_size : int, default None
+        `window_size` of the forecaster. If `None`, the training set only needs
+        one observation (`ForecasterFoundation`, whose `window_size` is the
+        maximum context of the model, and the initial check of the searches
+        with a `OneStepAheadFold`, whose candidates are checked one by one).
+    allow_window_size : bool, default False
+        If `True`, `initial_train_size` can be equal to `window_size`
+        (`ForecasterStats`, whose `window_size` is ignored).
+
+    Returns
+    -------
+    None
+
+    """
+
+    if window_size is None:
+        min_size = 1
+        lower_message = "greater than 0"
+    elif allow_window_size:
+        min_size = window_size
+        lower_message = (
+            f"greater than or equal to the `window_size` of the forecaster "
+            f"({window_size})"
+        )
+    else:
+        min_size = window_size + 1
+        lower_message = (
+            f"greater than the `window_size` of the forecaster ({window_size})"
+        )
+
+    if isinstance(initial_train_size_input, (str, pd.Timestamp)):
+        received = (
+            f"Got '{initial_train_size_input}', {initial_train_size} observations "
+            f"in the training set."
+        )
+    else:
+        received = f"Got {initial_train_size_input}."
+
+    if window_size is not None and min_size >= data_length:
+        raise ValueError(
+            f"The `window_size` of the forecaster ({window_size}) leaves no valid "
+            f"`initial_train_size`, which must be "
+            f"{'at least' if allow_window_size else 'greater than'} the "
+            f"`window_size` and smaller than {data_length_name} ({data_length}). "
+            f"Reduce the `window_size` (lags, window features, differentiation...) "
+            f"or use more data."
+        )
+    if initial_train_size < min_size:
+        raise ValueError(
+            f"`initial_train_size` must be {lower_message}, so that the first "
+            f"training set has data to train with. {received}"
+        )
+    if initial_train_size >= data_length:
+        raise ValueError(
+            f"`initial_train_size` must be smaller than {data_length_name} "
+            f"({data_length}), so that there is data left to evaluate. {received}"
+        )
 
 
 def check_backtesting_input(
@@ -360,24 +449,21 @@ def check_backtesting_input(
                                  method       = 'validation',
                                  date_literal = 'initial_train_size'
                              )
-        if forecaster_name == 'ForecasterFoundation':
-            # NOTE: For ForecasterFoundation, window_size equals context_length 
-            # which is the *maximum* context the model accepts, not a minimum 
-            # required training size. Only validate that initial_train_size is 
-            # at least 1 and smaller than data_length.
-            if initial_train_size < 1 or initial_train_size >= data_length:
-                raise ValueError(
-                    f"If `initial_train_size` is an integer, it must be greater than "
-                    f"0 and smaller than {data_length_name} ({data_length}). "
-                    f"If it is a date, it must be within this range of the index."
-                )
-        elif initial_train_size < forecaster.window_size or initial_train_size >= data_length:
-            raise ValueError(
-                f"If `initial_train_size` is an integer, it must be greater than "
-                f"the `window_size` of the forecaster ({forecaster.window_size}) "
-                f"and smaller than {data_length_name} ({data_length}). If "
-                f"it is a date, it must be within this range of the index."
-            )
+        # NOTE: For ForecasterFoundation, window_size equals context_length,
+        # the *maximum* context the model accepts, not a minimum training size:
+        # initial_train_size only needs to be at least 1. The window_size of
+        # ForecasterStats is ignored, initial_train_size can be equal to it.
+        _check_initial_train_size(
+            initial_train_size       = initial_train_size,
+            initial_train_size_input = cv.initial_train_size,
+            data_length              = data_length,
+            data_length_name         = data_length_name,
+            window_size              = (
+                None if forecaster_name == 'ForecasterFoundation'
+                else forecaster.window_size
+            ),
+            allow_window_size        = forecaster_name == 'ForecasterStats'
+        )
         if allow_incomplete_fold:
             # At least one observation after the gap to allow incomplete fold
             if data_length <= initial_train_size + gap:
@@ -693,13 +779,16 @@ def check_one_step_ahead_input(
                              method       = 'validation',
                              date_literal = 'initial_train_size'
                          )
-    if initial_train_size < forecaster.window_size or initial_train_size >= data_length:
-        raise ValueError(
-            f"If `initial_train_size` is an integer, it must be greater than "
-            f"the `window_size` of the forecaster ({forecaster.window_size}) "
-            f"and smaller than {data_length_name} ({data_length}). If "
-            f"it is a date, it must be within this range of the index."
-        )
+    # NOTE: The `window_size` is checked for each candidate of the search
+    # (`_train_test_split_one_step_ahead_search`), since the candidates can
+    # have a different `window_size` than the forecaster passed.
+    _check_initial_train_size(
+        initial_train_size       = initial_train_size,
+        initial_train_size_input = cv.initial_train_size,
+        data_length              = data_length,
+        data_length_name         = data_length_name,
+        window_size              = None
+    )
 
     if not isinstance(show_progress, bool):
         raise TypeError("`show_progress` must be a boolean: `True`, `False`.")
@@ -711,7 +800,9 @@ def check_one_step_ahead_input(
             "One-step-ahead predictions are used for faster model comparison, but they "
             "may not fully represent multi-step prediction performance. It is recommended "
             "to backtest the final model for a more accurate multi-step performance "
-            "estimate.", OneStepAheadValidationWarning
+            "estimate.",
+            OneStepAheadValidationWarning,
+            stacklevel = _stacklevel_user_code()
         )
 
 
@@ -794,6 +885,202 @@ def select_n_jobs_backtesting(
             n_jobs = 1
 
     return n_jobs
+
+
+def _train_test_split_one_step_ahead_search(
+    forecaster: object,
+    cv: object,
+    initial_train_size: int,
+    y: pd.Series | None = None,
+    series: pd.DataFrame | dict[str, pd.Series] | None = None,
+    exog: pd.Series | pd.DataFrame | dict[str, pd.DataFrame | None] | None = None,
+    levels: list[str] | None = None,
+    max_levels: int = 5
+) -> tuple:
+    """
+    Training and test matrices of a candidate of a search with a
+    `OneStepAheadFold`, created with `_train_test_split_one_step_ahead` of the
+    forecaster. Before the split, `initial_train_size` is checked against the
+    `window_size` of the candidate. In multi-series searches, the split is
+    rejected if no level of `levels` can be evaluated in the test set, with
+    the cause of each level. The errors are raised for the candidate, so the
+    search can skip it.
+
+    Parameters
+    ----------
+    forecaster : ForecasterRecursive, ForecasterDirect, ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate
+        Forecaster with the lags and parameters of the candidate.
+    cv : OneStepAheadFold
+        OneStepAheadFold object of the search.
+    initial_train_size : int
+        `initial_train_size` of `cv` as an integer.
+    y : pandas Series, default None
+        Time series of the single series searches.
+    series : pandas DataFrame, dict, default None
+        Time series of the multi-series searches (a dict, already checked, for
+        ForecasterRecursiveMultiSeries).
+    exog : pandas Series, pandas DataFrame, dict, default None
+        Exogenous variables.
+    levels : list, default None
+        Levels of the multi-series searches.
+    max_levels : int, default 5
+        Maximum number of levels whose cause is given in the error when no
+        level can be evaluated.
+
+    Returns
+    -------
+    split : tuple
+        Output of `_train_test_split_one_step_ahead` of the forecaster.
+
+    """
+
+    forecaster_name = type(forecaster).__name__
+    if y is not None:
+        data = y
+        data_length_name = "the length of `y`"
+    else:
+        data = series
+        data_length_name = (
+            "the length of the span of `series`"
+            if forecaster_name == "ForecasterRecursiveMultiSeries"
+            else "the length of `series`"
+        )
+    _check_initial_train_size(
+        initial_train_size       = initial_train_size,
+        initial_train_size_input = cv.initial_train_size,
+        data_length              = len(cv._extract_index(data)),
+        data_length_name         = data_length_name,
+        window_size              = forecaster.window_size
+    )
+
+    if y is not None:
+        return forecaster._train_test_split_one_step_ahead(
+                   y=y, initial_train_size=initial_train_size, exog=exog
+               )
+
+    split = forecaster._train_test_split_one_step_ahead(
+                series=series, initial_train_size=initial_train_size, exog=exog
+            )
+    y_test, X_test_encoding = split[3], split[5]
+    if forecaster_name == "ForecasterRecursiveMultiSeries":
+        is_observed = pd.notna(y_test).to_numpy()
+        levels_test = set(np.asarray(X_test_encoding)[is_observed])
+        has_points = any(level in levels_test for level in levels)
+        # NOTE: Same rule as `_train_test_split_one_step_ahead` of the forecaster.
+        dropna_last_window = (
+            forecaster.differentiation_max is not None
+            or not estimator_has_native_nan_support(forecaster.estimator)
+        )
+    else:
+        has_points = bool(pd.notna(y_test).any())
+        dropna_last_window = False
+    if not has_points:
+        span_index = cv._extract_index(series)
+        causes = [
+            _cause_level_not_evaluated(
+                level              = level,
+                y                  = series[level],
+                span_index         = span_index,
+                initial_train_size = initial_train_size,
+                window_size        = forecaster.window_size,
+                dropna_last_window = dropna_last_window
+            )
+            for level in levels[:max_levels]
+        ]
+        causes_repr = [cause for cause, _ in causes]
+        n_more = len(levels) - max_levels
+        if n_more > 0:
+            causes_repr.append(f"and {n_more} more level{'s' if n_more > 1 else ''}")
+        # NOTE: The conditions are explained only when the cause of a level is
+        # not one of them.
+        conditions = (
+            " A level is evaluated if it has more than `window_size` observations "
+            "in the training set, its last window can be used to predict, and it "
+            "has observed values in the test set."
+            if any(is_generic for _, is_generic in causes)
+            else ""
+        )
+        raise ValueError(
+            f"No level of `levels` can be evaluated in the test set with this "
+            f"`window_size` ({forecaster.window_size}). {'; '.join(causes_repr)}."
+            f"{conditions} Review `levels`, `initial_train_size` of `cv` or the "
+            f"span of the series."
+        )
+
+    return split
+
+
+def _cause_level_not_evaluated(
+    level: str,
+    y: pd.Series,
+    span_index: pd.Index,
+    initial_train_size: int,
+    window_size: int,
+    dropna_last_window: bool
+) -> tuple[str, bool]:
+    """
+    Why a level cannot be evaluated in the test set of a `OneStepAheadFold`,
+    checked in the order of `_train_test_split_one_step_ahead`: too few
+    observations in the training set (after removing the leading and trailing
+    NaNs), a last window that cannot be used to predict, or no observed values
+    in the test set. If none of them applies, a generic cause is returned.
+
+    Parameters
+    ----------
+    level : str
+        Name of the level.
+    y : pandas Series
+        Time series of the level.
+    span_index : pandas Index
+        Index of the span of all the series.
+    initial_train_size : int
+        `initial_train_size` of `cv` as an integer.
+    window_size : int
+        `window_size` of the candidate.
+    dropna_last_window : bool
+        Whether a last window with NaNs is left out (the estimator does not
+        support NaNs, or the forecaster has `differentiation`).
+
+    Returns
+    -------
+    cause : str
+        Cause, a sentence that starts with the name of the level, for the
+        error of the search.
+    is_generic : bool
+        Whether the cause is the generic one.
+
+    """
+
+    train_end = span_index[initial_train_size - 1]
+    y_train = y.loc[:train_end]
+    first_valid, last_valid = y_train.first_valid_index(), y_train.last_valid_index()
+    n_train = 0 if first_valid is None else len(y_train.loc[first_valid:last_valid])
+    if n_train <= window_size:
+        return (
+            f"'{level}' has {n_train} observation{'' if n_train == 1 else 's'} "
+            f"in the training set, not more than the `window_size`"
+        ), False
+
+    if y.index[-1] < train_end:
+        return (
+            f"'{level}' ends before the end of the training set, so it cannot be "
+            f"predicted after it"
+        ), False
+
+    last_window = y.loc[span_index[initial_train_size - window_size]:train_end]
+    if dropna_last_window and last_window.isna().to_numpy().any():
+        return (
+            f"'{level}' has missing values in its last window (the `window_size` "
+            f"observations before the test set)"
+        ), False
+
+    if not y.loc[span_index[initial_train_size]:].notna().to_numpy().any():
+        return f"'{level}' has no observed values in the test set", False
+
+    return (
+        f"'{level}' has no row in the test set without missing values in `y` or "
+        f"in its lags"
+    ), True
 
 
 def _calculate_metrics_one_step_ahead(
@@ -944,7 +1231,8 @@ def _initialize_levels_model_selection_multiseries(
                 f"`ForecasterDirectMultiVariate`. The level of this forecaster "
                 f"is '{forecaster.level}', to predict another level, change "
                 f"the `level` argument when initializing the forecaster. \n",
-                IgnoredArgumentWarning
+                IgnoredArgumentWarning,
+                stacklevel = _stacklevel_user_code()
             )
         levels = [forecaster.level]
     else:
@@ -2432,7 +2720,8 @@ def _check_study_direction(study: object, metric: Callable) -> str:
                 f"'{metric_direction}'. The search, the order of the results and "
                 f"`return_best` follow the study direction. Remove `direction` "
                 f"from `kwargs_create_study` to use the direction of the metric.",
-                UserWarning
+                UserWarning,
+                stacklevel = _stacklevel_user_code()
             )
 
     return direction
@@ -2583,7 +2872,11 @@ def _format_lags_warning(lags: Any) -> str:
     return str(lags)
 
 
-def _format_names_warning(names: list, max_names: int | None = None) -> str:
+def _format_names_warning(
+    names: list,
+    max_names: int | None = None,
+    details: dict | None = None
+) -> str:
     """
     Representation of a list of names for the warnings of the searches. If
     `max_names` is given and the list is longer, only the first two and the
@@ -2595,6 +2888,8 @@ def _format_names_warning(names: list, max_names: int | None = None) -> str:
         Names to show.
     max_names : int, default None
         Maximum number of names shown in full.
+    details : dict, default None
+        Detail of each name, shown in parentheses after it.
 
     Returns
     -------
@@ -2606,7 +2901,12 @@ def _format_names_warning(names: list, max_names: int | None = None) -> str:
     if max_names is not None and len(names) > max_names:
         names = [*names[:2], ..., names[-1]]
 
-    return ", ".join("..." if name is ... else repr(name) for name in names)
+    return ", ".join(
+        "..." if name is ...
+        else repr(name) if details is None
+        else f"{name!r} ({details[name]})"
+        for name in names
+    )
 
 
 def _is_affected_n_evaluated(n_evaluated: list[int] | np.ndarray) -> np.ndarray:
@@ -2639,7 +2939,7 @@ def _n_evaluated_covers_levels_not_predicted(
 ) -> bool:
     """
     Whether the warning of the points evaluated of a multi-series search
-    (`_warn_n_evaluated_search_multiseries`) covers the warning of the levels
+    (`_warn_n_evaluated_search`) covers the warning of the levels
     not predicted raised in the backtesting of the candidates, so the search
     can leave the latter out. It does when the warning of the points
     evaluated is raised and every level has points evaluated in some
@@ -2670,12 +2970,12 @@ def _n_evaluated_covers_levels_not_predicted(
     return bool((n_evaluated_levels.max(axis=0) > 0).all())
 
 
-def _warn_n_evaluated_search_multiseries(
+def _warn_n_evaluated_search(
     n_evaluated: list[int] | np.ndarray,
-    n_evaluated_levels: list[list[int]] | np.ndarray,
     lags: list[Any],
     candidate_ids: list[int],
-    levels: list[str],
+    n_evaluated_levels: list[list[int]] | np.ndarray | None = None,
+    levels: list[str] | None = None,
     candidate_name: str = "candidate",
     best_is_first: bool = True,
     max_lines: int = 5,
@@ -2683,21 +2983,28 @@ def _warn_n_evaluated_search_multiseries(
     max_levels: int = 10
 ) -> None:
     """
-    Warn, once at the end of a multi-series search, when some candidates
-    evaluate fewer points than the most complete one, so their metrics are
-    not comparable. A candidate is reported when it evaluates less than
+    Warn, once at the end of a search, when some candidates evaluate fewer
+    points than the most complete one, so their metrics are not comparable. A
+    candidate is reported when it evaluates less than
     `N_EVALUATED_WARNING_THRESHOLD` (95%) of the points of the most complete
     candidate. The candidates must be in the order of the ranking, the first
     one is the best.
+
+    In multi-series searches (`levels` is not `None`), a level is left out of
+    the metrics of a candidate when the candidate cannot predict it. In single
+    series searches, it happens with a `OneStepAheadFold` when the rows with
+    missing values in `y` or in its lags are dropped
+    (`dropna_from_series=True`): more rows are dropped with larger windows.
 
     The candidates reported are grouped by `lags` and number of points
     evaluated, which usually depends only on the window of the candidate, and
     identified by their row in the results (grid and random search) or their
     trial number (Bayesian search).
 
-    The warning also gives the levels that every candidate evaluates on the
-    same points (the same number of points as the most complete candidate in
-    that level): passing them in `levels` makes the candidates comparable.
+    In multi-series searches, the warning also gives the levels that every
+    candidate evaluates on the same points (the same number of points as the
+    most complete candidate in that level): passing them in `levels` makes
+    the candidates comparable.
     They are listed if they are at most `max_levels`; otherwise, if the rest
     are at most `max_levels`, the rest are listed instead. Levels without
     points evaluated in any candidate are left out.
@@ -2707,17 +3014,18 @@ def _warn_n_evaluated_search_multiseries(
     n_evaluated : list, numpy ndarray
         Number of points evaluated of each candidate, in the order of the
         ranking.
-    n_evaluated_levels : list, numpy ndarray
-        Number of points evaluated of each candidate (rows, in the order of the
-        ranking) and level (columns, in the order of `levels`).
     lags : list
         Lags of each candidate, in the order of the ranking.
     candidate_ids : list
         Identifier of each candidate, in the order of the ranking: its row in
         the results if `candidate_name` is 'candidate', its trial number if it
         is 'trial'.
-    levels : list
-        Levels of the search.
+    n_evaluated_levels : list, numpy ndarray, default None
+        Number of points evaluated of each candidate (rows, in the order of the
+        ranking) and level (columns, in the order of `levels`). Only used in
+        multi-series searches.
+    levels : list, default None
+        Levels of a multi-series search. `None` in single series searches.
     candidate_name : str, default 'candidate'
         Name of a candidate in the warning ('candidate' or 'trial').
     best_is_first : bool, default True
@@ -2774,7 +3082,14 @@ def _warn_n_evaluated_search_multiseries(
 
     remove_message = "remove the candidates with larger windows"
     levels_block = None
-    if len(levels) < 2:
+    if levels is None:
+        action = (
+            f"The rows with missing values in `y` or in its lags are dropped "
+            f"(`dropna_from_series=True`), more with larger windows. To compare "
+            f"the candidates on the same points, fill the gaps of `y` or "
+            f"{remove_message}."
+        )
+    elif len(levels) < 2:
         action = f"To compare the candidates on the same points, {remove_message}."
     else:
         n_evaluated_levels = np.asarray(n_evaluated_levels)
@@ -2867,6 +3182,89 @@ def _warn_n_evaluated_search_multiseries(
     )
 
 
+def _drop_series_too_short_refit(
+    forecaster: object,
+    series: dict[str, pd.Series] | pd.DataFrame,
+    exog: dict[str, pd.DataFrame | None] | pd.Series | pd.DataFrame | None = None
+) -> tuple[
+    dict[str, pd.Series] | pd.DataFrame,
+    dict[str, pd.DataFrame | None] | pd.Series | pd.DataFrame | None
+]:
+    """
+    Leave out of the refit of the best candidate of a multi-series search the
+    series that `fit` of `ForecasterRecursiveMultiSeries` rejects: they have
+    no more observations than the `window_size`, after removing their leading
+    and trailing NaNs. The backtesting of the candidate does not predict them
+    either. A warning lists them, with their number of observations: the
+    forecaster returned is not trained with them. It is a `RuntimeWarning`,
+    not silenced by `suppress_warnings`, since it describes the forecaster
+    returned. Other forecasters are returned unchanged.
+
+    Parameters
+    ----------
+    forecaster : ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate
+        Forecaster with the lags and parameters of the best candidate.
+    series : dict, pandas DataFrame
+        Time series of the search (a dict, already checked, for
+        ForecasterRecursiveMultiSeries).
+    exog : dict, pandas Series, pandas DataFrame, default None
+        Exogenous variables of the search. They are filtered only if they are
+        a dict.
+
+    Returns
+    -------
+    series : dict, pandas DataFrame
+        Time series without the series too short.
+    exog : dict, pandas Series, pandas DataFrame, None
+        Exogenous variables without the series too short.
+
+    """
+
+    if type(forecaster).__name__ != "ForecasterRecursiveMultiSeries":
+        return series, exog
+
+    # NOTE: `align_series_and_exog_multiseries` replaces the values of the
+    # dict, so a copy is passed. Without exog, it only trims the series.
+    series_aligned, _ = align_series_and_exog_multiseries(
+                            series_dict = dict(series),
+                            exog_dict   = {k: None for k in series}
+                        )
+    series_too_short = _series_too_short_multiseries(
+                           series_dict = series_aligned,
+                           window_size = forecaster.window_size
+                       )
+    if not series_too_short:
+        return series, exog
+
+    series = {k: v for k, v in series.items() if k not in series_too_short}
+    if isinstance(exog, dict):
+        exog = {k: v for k, v in exog.items() if k not in series_too_short}
+
+    n_series = len(series_too_short)
+    n_observations = {
+        k: f"{len(series_aligned[k])} observation"
+           f"{'' if len(series_aligned[k]) == 1 else 's'}"
+        for k in series_too_short
+    }
+    names_repr = _format_names_warning(
+        series_too_short, max_names=10, details=n_observations
+    )
+    warnings.warn(
+        f"{n_series} series {'is' if n_series == 1 else 'are'} left out of the "
+        f"refit of the best candidate: {'it has' if n_series == 1 else 'they have'} "
+        f"no more observations than the `window_size` ({forecaster.window_size}), "
+        f"too few to train the forecaster, and the candidate did not predict "
+        f"{'it' if n_series == 1 else 'them'} in the search either. The "
+        f"forecaster returned is not trained with "
+        f"{'it' if n_series == 1 else 'them'} (not in `series_names_in_`).\n\n"
+        f"Series left out: {names_repr}.",
+        RuntimeWarning,
+        stacklevel = _stacklevel_user_code()
+    )
+
+    return series, exog
+
+
 def _sample_param_grid(
     param_distributions: dict,
     n_iter: int,
@@ -2932,9 +3330,10 @@ def _sample_param_grid(
 
 
 def _warn_skipped_candidates_search(
-    skipped: list[tuple[Any, dict, Exception]],
+    skipped: list[tuple[Any, dict, Exception, int | None]],
     n_candidates: int,
     n_params: int | None = None,
+    candidate_name: str = "candidate",
     max_errors: int = 5,
     max_candidates: int = 5
 ) -> None:
@@ -2949,13 +3348,17 @@ def _warn_skipped_candidates_search(
     ----------
     skipped : list
         Candidates skipped, in the order of the search, as tuples
-        `(lags, params, error)`. `lags` is `None` in the searches without
-        `lags_grid`.
+        `(lags, params, error, candidate_id)`. `lags` is `None` in the searches
+        without `lags_grid`. `candidate_id` identifies the candidate in the
+        warning (the trial number in Bayesian searches), `None` if the
+        candidate is identified by its lags and parameters.
     n_candidates : int
         Number of candidates of the search.
     n_params : int, default None
         Number of combinations of parameters evaluated for each value of
         `lags`. If `None`, the candidates are not summarized by `lags`.
+    candidate_name : str, default 'candidate'
+        Name of a candidate in the warning ('candidate' or 'trial').
     max_errors : int, default 5
         Maximum number of errors listed in the warning.
     max_candidates : int, default 5
@@ -2979,32 +3382,42 @@ def _warn_skipped_candidates_search(
         consequence = "so they are not in the results"
     verb = "raises" if n_skipped == 1 else "raise"
     summary = (
-        f"Parameters skipped: {n_skipped} of {n_candidates} candidates {verb} "
-        f"an error, {consequence}."
+        f"Parameters skipped: {n_skipped} of {n_candidates} {candidate_name}s "
+        f"{verb} an error, {consequence}."
     )
 
+    # NOTE: The trials of Optuna run in threads can be skipped in any order.
+    skipped = sorted(
+        skipped, key=lambda candidate: -1 if candidate[3] is None else candidate[3]
+    )
     errors = {}
-    for lags, params, error in skipped:
+    for lags, params, error, candidate_id in skipped:
         error_message = f"{type(error).__name__}: {error}"
-        errors.setdefault(error_message, []).append((lags, params))
+        errors.setdefault(error_message, []).append((lags, params, candidate_id))
 
     blocks = [summary]
     for error_message, candidates in list(errors.items())[:max_errors]:
 
         lines = []
         lags_reprs = {}
-        for lags, params in candidates:
+        for lags, params, candidate_id in candidates:
+            id_repr = (
+                "" if candidate_id is None else f"{candidate_name} {candidate_id}, "
+            )
             lags_reprs.setdefault(
                 None if lags is None else _format_lags_warning(lags), []
-            ).append(params)
+            ).append((id_repr, params))
         for lags_repr, params_list in lags_reprs.items():
             if lags_repr is None:
-                lines.extend(f"params: {params}" for params in params_list)
+                lines.extend(
+                    f"{id_repr}params: {params}" for id_repr, params in params_list
+                )
             elif n_params is not None and n_params > 1 and len(params_list) == n_params:
                 lines.append(f"lags: {lags_repr} ({n_params} candidates)")
             else:
                 lines.extend(
-                    f"lags: {lags_repr}, params: {params}" for params in params_list
+                    f"{id_repr}lags: {lags_repr}, params: {params}"
+                    for id_repr, params in params_list
                 )
 
         candidates_lines = [f"  - {line}" for line in lines[:max_candidates]]
@@ -3066,7 +3479,7 @@ class _SearchWarnings:
     records : list
         Warnings recorded, as tuples `(candidate, category, text, message)`.
     skipped : list
-        Candidates skipped, as tuples `(lags, params, error)`.
+        Candidates skipped, as tuples `(lags, params, error, candidate_id)`.
 
     """
 
@@ -3137,9 +3550,16 @@ class _SearchWarnings:
 
         self._local.candidate = candidate
 
-    def add_skipped(self, lags: Any, params: dict, error: Exception) -> None:
+    def add_skipped(
+        self,
+        lags: Any,
+        params: dict,
+        error: Exception,
+        candidate_id: int | None = None
+    ) -> None:
         """
-        Add a candidate skipped because its evaluation raised an error.
+        Add a candidate skipped because its evaluation raised an error. It can
+        be called from the threads of Optuna.
 
         Parameters
         ----------
@@ -3149,6 +3569,10 @@ class _SearchWarnings:
             Parameters of the candidate.
         error : Exception
             Error raised.
+        candidate_id : int, default None
+            Identifier of the candidate in the warning (the trial number in
+            Bayesian searches). If `None`, the candidate is identified by its
+            lags and parameters.
 
         Returns
         -------
@@ -3156,7 +3580,8 @@ class _SearchWarnings:
 
         """
 
-        self.skipped.append((lags, params, error))
+        with self._lock:
+            self.skipped.append((lags, params, error, candidate_id))
 
     def discard(self, category: type[Warning], text_start: str) -> None:
         """
@@ -3339,10 +3764,179 @@ class _SearchWarnings:
             _warn_recorded(text, category, message)
 
         _warn_skipped_candidates_search(
-            skipped      = self.skipped,
-            n_candidates = n_candidates,
-            n_params     = n_params
+            skipped        = self.skipped,
+            n_candidates   = n_candidates,
+            n_params       = n_params,
+            candidate_name = self.candidate_name
         )
+
+
+class _TrialEvaluationError(Exception):
+    """
+    Error raised when the evaluation of a trial of a Bayesian search fails.
+    It is added to the argument `catch` of `study.optimize`, so Optuna marks
+    the trial as failed and the search continues. The original error is the
+    cause (`__cause__`) of this one.
+    """
+
+
+def _skip_trial(
+    search_warnings: _SearchWarnings, trial: object, error: Exception
+) -> _TrialEvaluationError:
+    """
+    Skip a trial of a Bayesian search whose evaluation raised an error: add
+    it to the candidates skipped of the search, identified by its number, and
+    return the `_TrialEvaluationError` to raise, so Optuna marks the trial as
+    failed (`raise _skip_trial(...) from error`).
+
+    Parameters
+    ----------
+    search_warnings : _SearchWarnings
+        Warnings of the search.
+    trial : optuna Trial
+        Trial skipped.
+    error : Exception
+        Error raised by the evaluation of the trial.
+
+    Returns
+    -------
+    trial_error : _TrialEvaluationError
+        Error to raise.
+
+    """
+
+    search_warnings.add_skipped(
+        lags=None, params=trial.params, error=error, candidate_id=trial.number
+    )
+
+    return _TrialEvaluationError(f"{type(error).__name__}: {error}")
+
+
+class _FailedTrialsLogFilter(logging.Filter):
+    """
+    Filter of the logger of Optuna that runs the trials
+    (`optuna.study._optimize`) that drops the two messages of each failed
+    trial ("Trial N failed with parameters..." with the traceback, and "Trial
+    N failed with value None."), unless its error is in the `catch` of the
+    user. The trials that fail with `_TrialEvaluationError` are reported in
+    the warning of the candidates skipped of the search, and the other errors
+    are raised by `study.optimize`, so their messages would repeat them. The
+    errors in the `catch` of the user are only reported by these messages.
+
+    Parameters
+    ----------
+    catch : tuple, default ()
+        Errors in the `catch` of the user, whose messages are kept.
+
+    Attributes
+    ----------
+    catch : tuple
+        Errors in the `catch` of the user, whose messages are kept.
+
+    """
+
+    def __init__(self, catch: tuple[type[Exception], ...] = ()) -> None:
+
+        super().__init__()
+        self.catch = catch
+        self._trials = set()
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        """
+        Whether the record is logged.
+
+        Parameters
+        ----------
+        record : logging.LogRecord
+            Record of the logger.
+
+        Returns
+        -------
+        keep : bool
+            `False` for the records of the trials that fail with an error that
+            is not in the `catch` of the user (`_TrialEvaluationError` or an
+            error that stops the search).
+
+        """
+
+        match = re.match(r"Trial (\d+) failed", record.getMessage())
+        if match is None:
+            return True
+        error = record.exc_info[1] if record.exc_info else None
+        if error is not None and (
+            isinstance(error, _TrialEvaluationError)
+            or not isinstance(error, self.catch)
+        ):
+            self._trials.add(match.group(1))
+            return False
+
+        return match.group(1) not in self._trials
+
+
+def _optimize_study(
+    study: object,
+    objective: Callable,
+    n_trials: int,
+    kwargs_study_optimize: dict,
+    filter_logs: bool = True
+) -> None:
+    """
+    Run `study.optimize` for a Bayesian search. The trials whose evaluation
+    fails (`_TrialEvaluationError`, see `_skip_trial`) are marked as failed by
+    Optuna and the search continues: `_TrialEvaluationError` is added to the
+    argument `catch` of the user. Other errors, for example in the
+    `search_space`, stop the search. The warning of Optuna about the choices
+    of a categorical distribution is ignored.
+
+    Parameters
+    ----------
+    study : optuna Study
+        Study to optimize.
+    objective : Callable
+        Objective function of the search.
+    n_trials : int
+        Number of trials.
+    kwargs_study_optimize : dict
+        Other arguments of `study.optimize`, `catch` included.
+    filter_logs : bool, default True
+        If `True`, the messages of Optuna about the failed trials are not
+        logged, except for the errors in the `catch` of the user: the trials
+        that fail with `_TrialEvaluationError` are reported in the warning of
+        the candidates skipped, and the other errors are raised (see
+        `_FailedTrialsLogFilter`).
+
+    Returns
+    -------
+    None
+
+    """
+
+    kwargs_study_optimize = dict(kwargs_study_optimize)
+    catch = kwargs_study_optimize.pop("catch", ())
+    catch = (catch,) if isinstance(catch, type) else tuple(catch)
+
+    # NOTE: The messages are logged by the child logger of Optuna that runs
+    # the trials; a filter of the logger `optuna` does not apply to them.
+    logger = logging.getLogger("optuna.study._optimize")
+    log_filter = _FailedTrialsLogFilter(catch=catch) if filter_logs else None
+    if log_filter is not None:
+        logger.addFilter(log_filter)
+    try:
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                category = UserWarning,
+                message  = "Choices for a categorical distribution should be*"
+            )
+            study.optimize(
+                objective,
+                n_trials = n_trials,
+                catch    = (*catch, _TrialEvaluationError),
+                **kwargs_study_optimize
+            )
+    finally:
+        if log_filter is not None:
+            logger.removeFilter(log_filter)
 
 
 def _split_first_sentence(text: str) -> tuple[str, str]:

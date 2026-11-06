@@ -11,7 +11,9 @@ from sklearn.model_selection import ParameterGrid
 from sklearn.linear_model import Ridge, ElasticNet
 from sklearn.preprocessing import StandardScaler
 from skforecast.metrics import mean_absolute_scaled_error, root_mean_squared_scaled_error
-from skforecast.exceptions import LongTrainingWarning, OneStepAheadValidationWarning
+from skforecast.exceptions import (
+    LongTrainingWarning, MissingValuesWarning, OneStepAheadValidationWarning
+)
 from skforecast.recursive import ForecasterRecursive
 from skforecast.direct import ForecasterDirect
 from skforecast.model_selection import backtesting_forecaster
@@ -1305,4 +1307,110 @@ def test_evaluate_grid_hyperparameters_LongTrainingWarning_once_with_fits_of_the
         "Each candidate fits the forecaster about 60 times, so the search (6 "
         "candidates) fits it about 360 times. This can take substantial amounts "
         "of time. If not feasible, try with `refit = False`."
+    ]
+
+
+def test_evaluate_grid_hyperparameters_OneStepAheadFold_skips_candidates_when_split_fails():
+    """
+    Test that, with a `OneStepAheadFold`, the candidates whose lags leave no
+    data to train with (`window_size` not smaller than `initial_train_size`)
+    are skipped with the warning of the candidates skipped, instead of
+    aborting the search.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=2)
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results = _evaluate_grid_hyperparameters(
+                      forecaster    = forecaster,
+                      y             = y,
+                      cv            = OneStepAheadFold(initial_train_size=30),
+                      param_grid    = [{'alpha': 0.1}, {'alpha': 1}],
+                      metric        = 'mean_absolute_error',
+                      lags_grid     = [2, 40],
+                      return_best   = True,
+                      verbose       = False,
+                      show_progress = False
+                  )
+
+    assert results['lags_label'].map(len).tolist() == [2, 2]
+    assert forecaster.max_lag == 2
+    messages = [str(w.message) for w in record if w.category is RuntimeWarning]
+    assert messages == [
+        "Parameters skipped: 2 of 4 candidates raise an error, so they are not in "
+        "the results.\n\nValueError: `initial_train_size` must be greater than the "
+        "`window_size` of the forecaster (40), so that the first training set has "
+        "data to train with. Got 30.\n  - lags: [1, 2, ..., 40] (2 candidates)"
+    ]
+
+
+def test_evaluate_grid_hyperparameters_OneStepAheadFold_window_size_of_forecaster_not_checked():
+    """
+    Test that, with a `OneStepAheadFold`, the `window_size` of the forecaster
+    passed (70 lags) is not checked against `initial_train_size` (60) when
+    `lags_grid` does not use it: the search evaluates the candidates of
+    `lags_grid` (3 lags) without errors, as with a `TimeSeriesFold`.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=70)
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results = _evaluate_grid_hyperparameters(
+                      forecaster    = forecaster,
+                      y             = y_feature_selection.iloc[:80],
+                      cv            = OneStepAheadFold(initial_train_size=60),
+                      param_grid    = [{'alpha': 0.1}, {'alpha': 1}],
+                      metric        = 'mean_absolute_error',
+                      lags_grid     = [3],
+                      return_best   = True,
+                      verbose       = False,
+                      show_progress = False
+                  )
+
+    assert len(results) == 2
+    assert results['lags'].map(len).tolist() == [3, 3]
+    assert forecaster.max_lag == 3
+    assert [w for w in record if w.category is RuntimeWarning] == []
+
+
+def test_evaluate_grid_hyperparameters_MissingValuesWarning_n_evaluated_single_series():
+    """
+    Test that, with a `OneStepAheadFold`, `dropna_from_series=True` and NaN in
+    `y`, the candidates with larger windows are evaluated on fewer points and
+    a MissingValuesWarning is raised once at the end of the search, with the
+    cause and the action for a single series.
+    """
+    y_nan = y.copy()
+    y_nan.iloc[[35, 40, 45]] = np.nan
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=2, dropna_from_series=True)
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results = _evaluate_grid_hyperparameters(
+                      forecaster    = forecaster,
+                      y             = y_nan,
+                      cv            = OneStepAheadFold(initial_train_size=30),
+                      param_grid    = [{'alpha': 0.1}],
+                      metric        = 'mean_absolute_error',
+                      lags_grid     = [2, 10],
+                      return_best   = False,
+                      verbose       = False,
+                      show_progress = False
+                  )
+
+    assert results['n_evaluated'].tolist() == [11, 5]
+    messages = [
+        w.message.message for w in record
+        if w.category is MissingValuesWarning and "comparable" in str(w.message)
+    ]
+    assert messages == [
+        "1 of 2 candidates is evaluated on fewer points than the most complete "
+        "one, so its metrics are not comparable. It is not the best candidate of "
+        "the ranking. The rows with missing values in `y` or in its lags are "
+        "dropped (`dropna_from_series=True`), more with larger windows. To "
+        "compare the candidates on the same points, fill the gaps of `y` or "
+        "remove the candidates with larger windows. See the column "
+        "`n_evaluated` of the results.\n\nCandidates with less than 95% of the "
+        "11 points of the most complete one:\n"
+        "  - lags: [1, 2, ..., 10], row 1: 5 (45.5%)"
     ]

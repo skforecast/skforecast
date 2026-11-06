@@ -1,4 +1,4 @@
-# Unit test _warn_n_evaluated_search_multiseries
+# Unit test _warn_n_evaluated_search
 # ==============================================================================
 import re
 import warnings
@@ -6,7 +6,7 @@ import pytest
 import numpy as np
 from skforecast.exceptions import MissingValuesWarning
 from skforecast.model_selection._utils import (
-    _warn_n_evaluated_search_multiseries,
+    _warn_n_evaluated_search,
     _n_evaluated_covers_levels_not_predicted
 )
 
@@ -16,7 +16,7 @@ from skforecast.model_selection._utils import (
     [[100, 100, 100], [100, 95, 100], [21, 20], [0, 0], []],
     ids=lambda n: f"n_evaluated: {n}",
 )
-def test_warn_n_evaluated_search_multiseries_no_warning(n_evaluated):
+def test_warn_n_evaluated_search_no_warning(n_evaluated):
     """
     Test that no warning is raised when every candidate evaluates at least 95%
     of the points of the most complete one (95% included, 20 of 21 points is
@@ -24,7 +24,7 @@ def test_warn_n_evaluated_search_multiseries_no_warning(n_evaluated):
     """
     with warnings.catch_warnings():
         warnings.simplefilter("error")
-        _warn_n_evaluated_search_multiseries(
+        _warn_n_evaluated_search(
             n_evaluated        = n_evaluated,
             n_evaluated_levels = [[n] for n in n_evaluated],
             lags               = [np.arange(1, 4)] * len(n_evaluated),
@@ -33,7 +33,7 @@ def test_warn_n_evaluated_search_multiseries_no_warning(n_evaluated):
         )
 
 
-def test_warn_n_evaluated_search_multiseries_MissingValuesWarning_when_best_is_affected():
+def test_warn_n_evaluated_search_MissingValuesWarning_when_best_is_affected():
     """
     Test the warning when the best candidate (the first) evaluates less than
     95% of the points of the most complete one: candidates listed in the order
@@ -66,7 +66,7 @@ def test_warn_n_evaluated_search_multiseries_MissingValuesWarning_when_best_is_a
         "  levels=['l1']"
     )
     with pytest.warns(MissingValuesWarning, match=f"^{warn_msg}"):
-        _warn_n_evaluated_search_multiseries(
+        _warn_n_evaluated_search(
             n_evaluated        = n_evaluated_levels.sum(axis=1),
             n_evaluated_levels = n_evaluated_levels,
             lags               = [np.arange(1, k) for k in range(4, 9)],
@@ -98,7 +98,7 @@ def test_warn_n_evaluated_search_multiseries_MissingValuesWarning_when_best_is_a
     ],
     ids=["every series except", "levels", "none"],
 )
-def test_warn_n_evaluated_search_multiseries_levels_and_one_candidate_not_the_best(
+def test_warn_n_evaluated_search_levels_and_one_candidate_not_the_best(
     levels_other, expected
 ):
     """
@@ -114,7 +114,7 @@ def test_warn_n_evaluated_search_multiseries_levels_and_one_candidate_not_the_be
     ])
 
     with pytest.warns(MissingValuesWarning) as record:
-        _warn_n_evaluated_search_multiseries(
+        _warn_n_evaluated_search(
             n_evaluated        = n_evaluated_levels.sum(axis=1),
             n_evaluated_levels = n_evaluated_levels,
             lags               = [np.arange(1, 4)] * 2,
@@ -133,7 +133,7 @@ def test_warn_n_evaluated_search_multiseries_levels_and_one_candidate_not_the_be
         assert "Series that every candidate" not in message
 
 
-def test_warn_n_evaluated_search_multiseries_levels_when_both_lists_are_long():
+def test_warn_n_evaluated_search_levels_when_both_lists_are_long():
     """
     Test that, when both lists of levels are longer than `max_levels`, only
     their size and some of the levels left out are shown. With one candidate
@@ -146,7 +146,7 @@ def test_warn_n_evaluated_search_multiseries_levels_when_both_lists_are_long():
     ])
 
     with pytest.warns(MissingValuesWarning) as record:
-        _warn_n_evaluated_search_multiseries(
+        _warn_n_evaluated_search(
             n_evaluated        = n_evaluated_levels.sum(axis=1),
             n_evaluated_levels = n_evaluated_levels,
             lags               = [np.arange(1, 4)] * 2,
@@ -170,7 +170,7 @@ def test_warn_n_evaluated_search_multiseries_levels_when_both_lists_are_long():
     ) in message
 
 
-def test_warn_n_evaluated_search_multiseries_one_level():
+def test_warn_n_evaluated_search_one_level():
     """
     Test that, with one level (for example, ForecasterDirectMultiVariate), the
     warning does not suggest `levels`.
@@ -187,7 +187,7 @@ def test_warn_n_evaluated_search_multiseries_one_level():
         "  - lags: [1, 2, 3], row 1: 50 (50.0%)"
     )
     with pytest.warns(MissingValuesWarning, match=f"^{warn_msg}"):
-        _warn_n_evaluated_search_multiseries(
+        _warn_n_evaluated_search(
             n_evaluated        = [100, 50],
             n_evaluated_levels = [[100], [50]],
             lags               = [np.arange(1, 4)] * 2,
@@ -196,13 +196,40 @@ def test_warn_n_evaluated_search_multiseries_one_level():
         )
 
 
-def test_warn_n_evaluated_search_multiseries_when_best_is_not_first():
+def test_warn_n_evaluated_search_single_series():
+    """
+    Test that, in a single series search (`levels=None`), the warning gives
+    the cause (rows with missing values dropped, more with larger windows)
+    and the action without `levels`.
+    """
+    warn_msg = re.escape(
+        "1 of 2 candidates is evaluated on fewer points than the most complete "
+        "one, so its metrics are not comparable. It is the best candidate of the "
+        "ranking, so the ranking may favor it. The rows with missing values in "
+        "`y` or in its lags are dropped (`dropna_from_series=True`), more with "
+        "larger windows. To compare the candidates on the same points, fill the "
+        "gaps of `y` or remove the candidates with larger windows. See the "
+        "column `n_evaluated` of the results.\n"
+        "\n"
+        "Candidates with less than 95% of the 45 points of the most complete "
+        "one:\n"
+        "  - lags: [1, 2, ..., 14], row 0: 12 (26.7%)"
+    )
+    with pytest.warns(MissingValuesWarning, match=f"^{warn_msg}"):
+        _warn_n_evaluated_search(
+            n_evaluated   = [12, 45],
+            lags          = [np.arange(1, 15), np.arange(1, 4)],
+            candidate_ids = [0, 1]
+        )
+
+
+def test_warn_n_evaluated_search_when_best_is_not_first():
     """
     Test that the warning does not say whether the best candidate is affected
     when the best candidate is not among the candidates (`best_is_first=False`).
     """
     with pytest.warns(MissingValuesWarning) as record:
-        _warn_n_evaluated_search_multiseries(
+        _warn_n_evaluated_search(
             n_evaluated        = [50, 100],
             n_evaluated_levels = [[50], [100]],
             lags               = [np.arange(1, 4)] * 2,
@@ -236,7 +263,7 @@ def test_warn_n_evaluated_search_multiseries_when_best_is_not_first():
     ],
     ids=["rows", "trials"],
 )
-def test_warn_n_evaluated_search_multiseries_grouped_by_lags(
+def test_warn_n_evaluated_search_grouped_by_lags(
     candidate_name, candidate_ids, expected
 ):
     """
@@ -252,7 +279,7 @@ def test_warn_n_evaluated_search_multiseries_grouped_by_lags(
     }[candidate_name]
 
     with pytest.warns(MissingValuesWarning) as record:
-        _warn_n_evaluated_search_multiseries(
+        _warn_n_evaluated_search(
             n_evaluated        = n_evaluated,
             n_evaluated_levels = [[n] for n in n_evaluated],
             lags               = lags,
@@ -270,7 +297,7 @@ def test_warn_n_evaluated_search_multiseries_grouped_by_lags(
     assert record[0].filename == __file__
 
 
-def test_warn_n_evaluated_search_multiseries_max_ids_and_max_lines():
+def test_warn_n_evaluated_search_max_ids_and_max_lines():
     """
     Test that at most `max_ids` identifiers are listed in a line, at most
     `max_lines` lines are listed, and the candidates of the rest are counted.
@@ -288,7 +315,7 @@ def test_warn_n_evaluated_search_multiseries_max_ids_and_max_lines():
         "  ... and 1 more trial"
     )
     with pytest.warns(MissingValuesWarning) as record:
-        _warn_n_evaluated_search_multiseries(
+        _warn_n_evaluated_search(
             n_evaluated        = n_evaluated,
             n_evaluated_levels = [[n] for n in n_evaluated],
             lags               = lags,

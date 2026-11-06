@@ -12,7 +12,9 @@ from sklearn.metrics import (
     mean_absolute_error, mean_absolute_percentage_error, r2_score, zero_one_loss
 )
 from xgboost import XGBRegressor
-from skforecast.exceptions import LongTrainingWarning, OneStepAheadValidationWarning
+from skforecast.exceptions import (
+    LongTrainingWarning, MissingValuesWarning, OneStepAheadValidationWarning
+)
 from skforecast.metrics import mean_absolute_scaled_error, root_mean_squared_scaled_error
 from skforecast.recursive import ForecasterRecursive, ForecasterRecursiveClassifier
 from skforecast.direct import ForecasterDirect
@@ -1596,8 +1598,9 @@ def test_bayesian_search_forecaster_direction_when_metric_greater_is_better(
     the study is maximized by default, and that the results and `return_best`
     follow the direction of the study, also when it is set in
     `kwargs_create_study`. A direction that contradicts the metric raises a
-    warning. Before the fix, the default direction was 'minimize' and the
-    results were always sorted in ascending order.
+    warning, which points to the code of the user (here, the test). Before the
+    fix, the default direction was 'minimize' and the results were always
+    sorted in ascending order.
     """
     forecaster = ForecasterRecursive(estimator=Ridge(random_state=123), lags=2)
 
@@ -1620,8 +1623,10 @@ def test_bayesian_search_forecaster_direction_when_metric_greater_is_better(
     )
     warn_msg = "The optuna study direction is 'minimize'"
     if expected_direction == "minimize":
-        with pytest.warns(UserWarning, match=warn_msg):
+        with pytest.warns(UserWarning, match=warn_msg) as record:
             results, study = bayesian_search_forecaster(**kwargs)
+        record = [w for w in record if warn_msg in str(w.message)]
+        assert record[0].filename == __file__
     else:
         with warnings.catch_warnings(record=True) as record:
             warnings.simplefilter("always")
@@ -1710,3 +1715,191 @@ def test_bayesian_search_forecaster_LongTrainingWarning_once_with_fits_of_the_se
         "fits it about 240 times. This can take substantial amounts of time. If "
         "not feasible, try with `refit = False`."
     ]
+
+
+@pytest.mark.parametrize(
+    "cv",
+    [TimeSeriesFold(steps=3, initial_train_size=30, refit=False),
+     OneStepAheadFold(initial_train_size=30)],
+    ids=lambda cv: f"cv: {type(cv).__name__}"
+)
+def test_bayesian_search_forecaster_skips_trials_whose_evaluation_fails(cv, capfd):
+    """
+    Test that the trials whose evaluation fails (40 lags, not smaller than
+    `initial_train_size`) are marked as failed and reported in the warning of
+    the candidates skipped, identified by their number, instead of stopping
+    the search. Optuna does not log them.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=2)
+
+    def search_space(trial):
+        return {'lags': trial.suggest_categorical('lags', [2, 40])}
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results, study = bayesian_search_forecaster(
+                             forecaster    = forecaster,
+                             y             = y,
+                             cv            = cv,
+                             search_space  = search_space,
+                             metric        = 'mean_absolute_error',
+                             n_trials      = 6,
+                             return_best   = True,
+                             show_progress = False
+                         )
+
+    failed = [t.number for t in study.trials if t.state == optuna.trial.TrialState.FAIL]
+    assert failed == [t.number for t in study.trials if t.params['lags'] == 40]
+    assert 0 < len(failed) < 6
+    assert len(results) == 6 - len(failed)
+    assert results['lags'].map(len).unique().tolist() == [2]
+    assert forecaster.max_lag == 2
+    messages = [str(w.message) for w in record if w.category is RuntimeWarning]
+    assert len(messages) == 1
+    verb = "raises" if len(failed) == 1 else "raise"
+    assert messages[0].startswith(
+        f"Parameters skipped: {len(failed)} of 6 trials {verb} an error"
+    )
+    assert "`initial_train_size` must be greater than the `window_size` of the " \
+           "forecaster (40)" in messages[0]
+    for trial_number in failed:
+        assert f"  - trial {trial_number}, params: {{'lags': 40}}" in messages[0]
+    assert "Trial" not in capfd.readouterr().err
+
+
+def test_bayesian_search_forecaster_OneStepAheadFold_window_size_of_forecaster_not_checked():
+    """
+    Test that, with a `OneStepAheadFold`, the `window_size` of the forecaster
+    passed (70 lags) is not checked against `initial_train_size` (60) when
+    the `search_space` does not use it: the trials (3 lags) are evaluated
+    without errors, as with a `TimeSeriesFold`.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=70)
+
+    def search_space(trial):
+        return {
+            'lags': trial.suggest_categorical('lags', [3]),
+            'alpha': trial.suggest_float('alpha', 0.1, 1)
+        }
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results, study = bayesian_search_forecaster(
+                             forecaster    = forecaster,
+                             y             = y_feature_selection.iloc[:80],
+                             cv            = OneStepAheadFold(initial_train_size=60),
+                             search_space  = search_space,
+                             metric        = 'mean_absolute_error',
+                             n_trials      = 3,
+                             random_state  = 123,
+                             return_best   = True,
+                             show_progress = False
+                         )
+
+    assert len(results) == 3
+    assert all(t.state == optuna.trial.TrialState.COMPLETE for t in study.trials)
+    assert results['lags'].map(len).tolist() == [3, 3, 3]
+    assert forecaster.max_lag == 3
+    assert [w for w in record if w.category is RuntimeWarning] == []
+
+
+def test_bayesian_search_forecaster_every_trial_fails_returns_empty_results():
+    """
+    Test that, when the evaluation of every trial fails, the results are
+    empty, the forecaster is not refitted and the warning says so.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=2)
+
+    def search_space(trial):
+        return {'lags': trial.suggest_categorical('lags', [40, 45])}
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results, study = bayesian_search_forecaster(
+                             forecaster    = forecaster,
+                             y             = y,
+                             cv            = TimeSeriesFold(steps=3, initial_train_size=30),
+                             search_space  = search_space,
+                             metric        = 'mean_absolute_error',
+                             n_trials      = 3,
+                             return_best   = True,
+                             show_progress = False
+                         )
+
+    assert results.empty
+    assert not forecaster.is_fitted
+    assert len(study.trials) == 3
+    messages = [str(w.message) for w in record if w.category is RuntimeWarning]
+    assert messages[0].startswith(
+        "Parameters skipped: 3 of 3 trials raise an error, so the results are empty."
+    )
+
+
+def test_bayesian_search_forecaster_ValueError_search_space_stops_the_search(capfd):
+    """
+    Test that an error of the `search_space` (not of the evaluation of the
+    trial) stops the search, also with a `catch` of the user in
+    `kwargs_study_optimize`. Optuna does not log the failed trial, so the
+    error is shown once, when it is raised.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=2)
+
+    def search_space(trial):
+        return {'alpha': trial.suggest_float('alpha', 0.1, 1) / 0}
+
+    with pytest.raises(ZeroDivisionError):
+        bayesian_search_forecaster(
+            forecaster            = forecaster,
+            y                     = y,
+            cv                    = TimeSeriesFold(steps=3, initial_train_size=30),
+            search_space          = search_space,
+            metric                = 'mean_absolute_error',
+            n_trials              = 3,
+            return_best           = False,
+            show_progress         = False,
+            kwargs_study_optimize = {'catch': (KeyError,)}
+        )
+
+    assert "Trial 0 failed" not in capfd.readouterr().err
+
+
+def test_bayesian_search_forecaster_MissingValuesWarning_n_evaluated_single_series():
+    """
+    Test that, with a `OneStepAheadFold`, `dropna_from_series=True` and NaN in
+    `y`, the trials with larger windows are evaluated on fewer points and a
+    MissingValuesWarning lists them by trial number, once at the end of the
+    search.
+    """
+    y_nan = y.copy()
+    y_nan.iloc[[35, 40, 45]] = np.nan
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=2, dropna_from_series=True)
+
+    def search_space(trial):
+        return {'lags': trial.suggest_categorical('lags', [2, 10])}
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results, study = bayesian_search_forecaster(
+                             forecaster    = forecaster,
+                             y             = y_nan,
+                             cv            = OneStepAheadFold(initial_train_size=30),
+                             search_space  = search_space,
+                             metric        = 'mean_absolute_error',
+                             n_trials      = 4,
+                             return_best   = False,
+                             show_progress = False
+                         )
+
+    trials_10 = sorted(t.number for t in study.trials if t.params['lags'] == 10)
+    assert 0 < len(trials_10) < 4
+    messages = [
+        w.message.message for w in record
+        if w.category is MissingValuesWarning and "comparable" in str(w.message)
+    ]
+    assert len(messages) == 1
+    assert messages[0].startswith(
+        f"{len(trials_10)} of 4 trials {'is' if len(trials_10) == 1 else 'are'} "
+        f"evaluated on fewer points than the most complete one"
+    )
+    assert "fill the gaps of `y`" in messages[0]
+    assert "  - lags: [1, 2, ..., 10]" in messages[0]

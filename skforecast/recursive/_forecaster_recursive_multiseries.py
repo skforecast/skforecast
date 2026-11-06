@@ -42,6 +42,7 @@ from ..utils import (
     check_preprocess_series,
     check_preprocess_exog_multiseries,
     align_series_and_exog_multiseries,
+    _series_too_short_multiseries,
     prepare_levels_multiseries,
     preprocess_levels_self_last_window_multiseries,
     get_exog_dtypes,
@@ -1512,16 +1513,21 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 np.concatenate(list(series_dict.values())).reshape(-1, 1)
             )
 
-        for series_name, y in series_dict.items():
-            if len(y) <= self.window_size:
-                raise ValueError(
-                    f"Length of '{series_name}' must be greater than the maximum "
-                    f"window size needed by the forecaster.\n"
-                    f"    Length '{series_name}': {len(y)}.\n"
-                    f"    Max window size: {self.window_size}.\n"
-                    f"    Lags window size: {self.max_lag}.\n"
-                    f"    Window features window size: {self.max_size_window_features}."
-                )
+        series_too_short = _series_too_short_multiseries(
+                               series_dict = series_dict,
+                               window_size = self.window_size
+                           )
+        if series_too_short:
+            series_name = series_too_short[0]
+            y = series_dict[series_name]
+            raise ValueError(
+                f"Length of '{series_name}' must be greater than the maximum "
+                f"window size needed by the forecaster.\n"
+                f"    Length '{series_name}': {len(y)}.\n"
+                f"    Max window size: {self.window_size}.\n"
+                f"    Lags window size: {self.max_lag}.\n"
+                f"    Window features window size: {self.max_size_window_features}."
+            )
 
         # Training rows of each series, in the order of `series_dict`. The first
         # `self.window_size` positions are not in X_train.

@@ -4753,6 +4753,35 @@ def align_series_and_exog_multiseries(
     return series_dict, exog_dict
 
 
+def _series_too_short_multiseries(
+    series_dict: dict[str, pd.Series],
+    window_size: int
+) -> list[str]:
+    """
+    Series that cannot be used to train a `ForecasterRecursiveMultiSeries`:
+    they have `window_size` observations or fewer, so no training row can be
+    created with them. `series_dict` must be aligned with
+    `align_series_and_exog_multiseries` (leading and trailing NaNs removed),
+    as in `fit`.
+
+    Parameters
+    ----------
+    series_dict : dict
+        Series aligned with `align_series_and_exog_multiseries`.
+    window_size : int
+        Window size of the forecaster.
+
+    Returns
+    -------
+    series_too_short : list
+        Names of the series with `window_size` observations or fewer, in the
+        order of `series_dict`.
+
+    """
+
+    return [k for k, v in series_dict.items() if len(v) <= window_size]
+
+
 def prepare_levels_multiseries(
     X_train_series_names_in_: list[str],
     levels: str | list[str] | None = None
