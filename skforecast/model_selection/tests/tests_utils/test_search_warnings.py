@@ -97,10 +97,10 @@ def test_SearchWarnings_different_texts_with_same_first_sentence_grouped():
     ]
 
 
-def test_SearchWarnings_different_texts_outside_candidates_shown_as_they_are():
+def test_SearchWarnings_same_text_outside_candidates_shown_once_as_it_is():
     """
-    Test that warnings with the same first sentence and different texts,
-    raised only outside the candidates, are shown as they are.
+    Test that a warning raised only outside the candidates, with the same text
+    every time, is shown once, as it is.
     """
     search_warnings = _SearchWarnings(n_candidates=2)
     with warnings.catch_warnings(record=True) as record:
@@ -108,10 +108,72 @@ def test_SearchWarnings_different_texts_outside_candidates_shown_as_they_are():
         with search_warnings:
             search_warnings.set_candidate(None)
             warnings.warn("Refit warning. Text 1.", UserWarning)
-            warnings.warn("Refit warning. Text 2.", UserWarning)
+            warnings.warn("Refit warning. Text 1.", UserWarning)
         search_warnings.emit()
 
-    assert _messages(record) == ["Refit warning. Text 1.", "Refit warning. Text 2."]
+    assert _messages(record) == ["Refit warning. Text 1."]
+
+
+def test_SearchWarnings_different_texts_outside_candidates_grouped():
+    """
+    Test that warnings with the same first sentence and different texts,
+    raised only outside the candidates (for example, when the training
+    matrices of a `OneStepAheadFold` are created for each value of `lags`),
+    are shown once: the text of the first one, with the number of different
+    texts after its first sentence. A warning with another first sentence is
+    shown apart.
+    """
+    search_warnings = _SearchWarnings(n_candidates=2)
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        with search_warnings:
+            search_warnings.set_candidate(None)
+            for n_rows in (8, 16, 30, 16):
+                warnings.warn(
+                    f"Some rows have missing values. {n_rows} rows are dropped.",
+                    MissingValuesWarning
+                )
+            warnings.warn("Refit warning. Text 1.", UserWarning)
+        search_warnings.emit()
+
+    assert _messages(record) == [
+        "Some rows have missing values (3 times in the search, details of the "
+        "first one). 8 rows are dropped.",
+        "Refit warning. Text 1.",
+    ]
+    assert record[0].category is MissingValuesWarning
+    assert record[1].category is UserWarning
+
+
+def test_SearchWarnings_different_texts_outside_and_inside_candidates_grouped_by_candidates():
+    """
+    Test that, when warnings with the same first sentence and different texts
+    are raised outside and inside the candidates, they are shown once with the
+    number of candidates in which they are raised, as when they are raised
+    only inside the candidates.
+    """
+    search_warnings = _SearchWarnings(n_candidates=3)
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        with search_warnings:
+            search_warnings.set_candidate(None)
+            warnings.warn(
+                "Some rows have missing values. 8 rows are dropped.",
+                MissingValuesWarning
+            )
+            for candidate in range(3):
+                search_warnings.set_candidate(candidate)
+                if candidate < 2:
+                    warnings.warn(
+                        f"Some rows have missing values. {candidate} rows are dropped.",
+                        MissingValuesWarning
+                    )
+        search_warnings.emit()
+
+    assert _messages(record) == [
+        "Some rows have missing values (in 2 of 3 candidates; details of the "
+        "first one). 8 rows are dropped."
+    ]
 
 
 def test_SearchWarnings_warnings_point_to_the_code_of_the_user():

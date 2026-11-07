@@ -3800,7 +3800,12 @@ class _SearchWarnings:
         once: the text of the first one, with the number of candidates and
         "details of the first one" after its first sentence.
         - Warnings raised only outside the candidates (for example, in the
-        refit) are shown as they are.
+        refit or when the training matrices of a `OneStepAheadFold` are
+        created for each value of `lags`) are shown as they are if they have
+        the same text. Those with the same first sentence and different texts
+        (for example, with the counts of each value of `lags`) are shown once:
+        the text of the first one, with the number of different texts and
+        "details of the first one" after its first sentence.
 
         The warnings point to the code of the user that called the search.
 
@@ -3834,12 +3839,17 @@ class _SearchWarnings:
         for (category, _), texts in groups.items():
 
             n = len(set().union(*(candidates for candidates, _ in texts.values())))
+            text, (_, message) = next(iter(texts.items()))
             if n == 0:
-                for text, (_, message) in texts.items():
-                    _warn_recorded(text, category, message)
+                if len(texts) > 1:
+                    first_sentence, rest = _split_first_sentence(text)
+                    text = (
+                        f"{first_sentence[:-1]} ({len(texts)} times in the search, "
+                        f"details of the first one).{rest}"
+                    )
+                _warn_recorded(text, category, message)
                 continue
 
-            text, (_, message) = next(iter(texts.items()))
             if len(texts) == 1 and n == n_candidates:
                 _warn_recorded(text, category, message)
                 continue
