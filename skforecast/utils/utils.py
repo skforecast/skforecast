@@ -5439,7 +5439,8 @@ def _warn_nan_training_rows(
     n_nan_predictors: int | list[int] | np.ndarray,
     n_rows: int,
     dropna_from_series: bool,
-    series_name: str
+    series_name: str,
+    stacklevel: int = 2
 ) -> None:
     """
     Warn about the rows of the training matrix with missing values: how many
@@ -5468,6 +5469,10 @@ def _warn_nan_training_rows(
         Value of `dropna_from_series` of the forecaster.
     series_name : str
         Name of the input series used in the message, "`y`" or "`series`".
+    stacklevel : int, default 2
+        Stack level of the warning. The default points to the caller; the
+        helpers that call this function on behalf of a forecaster use 3, so
+        the warning points to the forecaster.
 
     Returns
     -------
@@ -5538,4 +5543,157 @@ def _warn_nan_training_rows(
                 "`forecaster.dropna_from_series = True`."
             )
 
-    warnings.warn(message, MissingValuesWarning, stacklevel=2)
+    warnings.warn(message, MissingValuesWarning, stacklevel=stacklevel)
+
+
+def _filter_nan_train_X_y(
+    X_train: np.ndarray | pd.DataFrame,
+    y_train: np.ndarray | pd.Series,
+    dropna_from_series: bool,
+    series_name: str,
+    train_index: pd.Index | None = None
+) -> tuple[
+    np.ndarray | pd.DataFrame, np.ndarray | pd.Series, pd.Index | None
+]:
+    """
+    Drop the rows of the training matrix with missing values and warn about
+    them with `_warn_nan_training_rows`. Rows with a NaN target are always
+    dropped; rows with NaN predictors (and a non-NaN target) are dropped only
+    if `dropna_from_series` is `True`. Used by the recursive forecasters, with
+    numpy arrays or pandas objects.
+
+    The rows with NaN are counted only if `X_train` or `y_train` has any NaN,
+    so the usual case (no NaN) costs a single check of each and returns the
+    inputs unchanged.
+
+    Parameters
+    ----------
+    X_train : numpy ndarray, pandas DataFrame
+        Training values (predictors), one row per training sample.
+    y_train : numpy ndarray, pandas Series
+        Values of the time series related to each row of `X_train`.
+    dropna_from_series : bool
+        Value of `dropna_from_series` of the forecaster.
+    series_name : str
+        Name of the input series used in the message, "`y`" or "`series`".
+    train_index : pandas Index, default None
+        Index of each row of `X_train`. If `None`, it is not filtered and
+        `None` is returned.
+
+    Returns
+    -------
+    X_train : numpy ndarray, pandas DataFrame
+        Training values without the dropped rows.
+    y_train : numpy ndarray, pandas Series
+        Values of the time series without the dropped rows.
+    train_index : pandas Index, None
+        Index without the dropped rows. `None` if `train_index` is `None`.
+
+    """
+
+    nan_target = np.asarray(pd.isna(y_train))
+    nan_matrix = np.asarray(pd.isna(X_train))
+    if not nan_target.any() and not nan_matrix.any():
+        return X_train, y_train, train_index
+
+    # NOTE: A row with a NaN target counts only as a NaN target row.
+    nan_predictors = nan_matrix.any(axis=1) & ~nan_target
+    _warn_nan_training_rows(
+        n_nan_target       = int(nan_target.sum()),
+        n_nan_predictors   = int(nan_predictors.sum()),
+        n_rows             = len(y_train),
+        dropna_from_series = dropna_from_series,
+        series_name        = series_name,
+        stacklevel         = 3
+    )
+
+    drop = nan_target | nan_predictors if dropna_from_series else nan_target
+    if drop.any():
+        keep = ~drop
+        X_train = X_train[keep]
+        y_train = y_train[keep]
+        if train_index is not None:
+            train_index = train_index[keep]
+
+    return X_train, y_train, train_index
+
+
+def _warn_nan_training_rows_direct(
+    y_train: np.ndarray,
+    X_train_autoreg: np.ndarray,
+    X_train_exog: np.ndarray | None,
+    steps: list[int],
+    dropna_from_series: bool,
+    series_name: str
+) -> None:
+    """
+    Count the rows with missing values of the training matrix of each step of
+    the direct forecasters and warn about them with `_warn_nan_training_rows`.
+    The rows are not dropped here, but when the matrix of each step is built.
+
+    The training matrix of each step is not built: the predictors of step `s`
+    are the autoregressive features of each row and the exogenous variables
+    shifted `s - 1` rows. The calendar features never have missing values.
+    The rows are counted only if there is any NaN, so the usual case (no NaN)
+    costs a single check of each matrix.
+
+    Parameters
+    ----------
+    y_train : numpy ndarray
+        Values of the time series, one column per step (before splitting them
+        by step), shape (n_rows, max_step).
+    X_train_autoreg : numpy ndarray
+        Autoregressive features (lags and window features), shape
+        (n_rows, n_autoreg).
+    X_train_exog : numpy ndarray, None
+        Exogenous variables without the direct expansion, with `max_step - 1`
+        more rows than `X_train_autoreg`. `None` if no exogenous variables.
+    steps : list
+        Steps of the forecaster (1-based).
+    dropna_from_series : bool
+        Value of `dropna_from_series` of the forecaster.
+    series_name : str
+        Name of the input series used in the message, "`y`" or "`series`".
+
+    Returns
+    -------
+    None
+
+    """
+
+    nan_target = np.isnan(y_train)
+    nan_autoreg = np.isnan(X_train_autoreg)
+    nan_exog = pd.isna(X_train_exog) if X_train_exog is not None else None
+    if not (
+        nan_target.any()
+        or nan_autoreg.any()
+        or (nan_exog is not None and nan_exog.any())
+    ):
+        return
+
+    n_rows = X_train_autoreg.shape[0]
+    nan_autoreg = nan_autoreg.any(axis=1)
+    if nan_exog is not None:
+        nan_exog = nan_exog.any(axis=1)
+    n_nan_target = []
+    n_nan_predictors = []
+    for step in steps:
+        nan_target_step = nan_target[:, step - 1]
+        nan_predictors_step = nan_autoreg
+        if nan_exog is not None:
+            nan_predictors_step = (
+                nan_predictors_step | nan_exog[step - 1 : step - 1 + n_rows]
+            )
+        n_nan_target.append(int(nan_target_step.sum()))
+        n_nan_predictors.append(
+            int((nan_predictors_step & ~nan_target_step).sum())
+        )
+
+    _warn_nan_training_rows(
+        n_nan_target       = n_nan_target,
+        n_nan_predictors   = n_nan_predictors,
+        n_rows             = n_rows,
+        dropna_from_series = dropna_from_series,
+        series_name        = series_name,
+        stacklevel         = 3
+    )

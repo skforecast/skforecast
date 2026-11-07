@@ -27,7 +27,7 @@ from ..exceptions import (
 )
 from ..utils import (
     _all_samples_removed_message,
-    _warn_nan_training_rows,
+    _warn_nan_training_rows_direct,
     initialize_lags,
     initialize_window_features,
     initialize_weights,
@@ -1247,42 +1247,15 @@ class ForecasterDirect(ForecasterBase):
         # training matrix of each step, and dropped in the `_filter_nan_X_y_step`
         # method during the training of each step. Rows with a NaN target are
         # always dropped; rows with NaN predictors (and a non-NaN target) only
-        # if `dropna_from_series` is `True`. The calendar features never have
-        # missing values. They are counted only if there is any NaN, so the
-        # usual case (no NaN) costs a single check of each matrix.
-        nan_target = np.isnan(y_train)
-        nan_autoreg = np.isnan(X_train_autoreg)
-        nan_exog = pd.isna(X_train_exog) if X_train_exog is not None else None
-        if (
-            nan_target.any()
-            or nan_autoreg.any()
-            or (nan_exog is not None and nan_exog.any())
-        ):
-            n_rows = X_train_autoreg.shape[0]
-            nan_autoreg = nan_autoreg.any(axis=1)
-            if nan_exog is not None:
-                nan_exog = nan_exog.any(axis=1)
-            n_nan_target = []
-            n_nan_predictors = []
-            for step in self.steps:
-                nan_target_step = nan_target[:, step - 1]
-                nan_predictors_step = nan_autoreg
-                if nan_exog is not None:
-                    nan_predictors_step = (
-                        nan_predictors_step | nan_exog[step - 1 : step - 1 + n_rows]
-                    )
-                n_nan_target.append(int(nan_target_step.sum()))
-                n_nan_predictors.append(
-                    int((nan_predictors_step & ~nan_target_step).sum())
-                )
-
-            _warn_nan_training_rows(
-                n_nan_target       = n_nan_target,
-                n_nan_predictors   = n_nan_predictors,
-                n_rows             = n_rows,
-                dropna_from_series = self.dropna_from_series,
-                series_name        = "`y`"
-            )
+        # if `dropna_from_series` is `True`.
+        _warn_nan_training_rows_direct(
+            y_train            = y_train,
+            X_train_autoreg    = X_train_autoreg,
+            X_train_exog       = X_train_exog,
+            steps              = self.steps,
+            dropna_from_series = self.dropna_from_series,
+            series_name        = "`y`"
+        )
 
         y_train = {
             step: y_train[:, step - 1] for step in self.steps

@@ -27,7 +27,7 @@ from ..exceptions import (
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 from ..utils import (
     _all_samples_removed_message,
-    _warn_nan_training_rows,
+    _filter_nan_train_X_y,
     initialize_lags,
     initialize_window_features,
     initialize_weights,    
@@ -986,34 +986,12 @@ class ForecasterRecursive(ForecasterBase):
         # NOTE: Rows with a NaN target are always dropped. Rows with NaN
         # predictors (and a non-NaN target) are dropped only if
         # `dropna_from_series` is `True`. A single warning gives both counts.
-        n_rows = len(y_train)
-        nan_target = np.isnan(y_train)
-        n_nan_target = int(nan_target.sum())
-        if n_nan_target > 0:
-            mask = ~nan_target
-            y_train = y_train[mask]
-            X_train = X_train[mask]
-            train_index = train_index[mask]
-
-        # NOTE: The rows with NaN predictors are counted only if the matrix has
-        # any NaN, so the usual case (no NaN) costs a single check.
-        nan_matrix = pd.isna(X_train)
-        n_nan_predictors = 0
-        if nan_matrix.any():
-            nan_predictors = nan_matrix.any(axis=1)
-            n_nan_predictors = int(nan_predictors.sum())
-            if self.dropna_from_series:
-                mask = ~nan_predictors
-                X_train = X_train[mask]
-                y_train = y_train[mask]
-                train_index = train_index[mask]
-
-        _warn_nan_training_rows(
-            n_nan_target       = n_nan_target,
-            n_nan_predictors   = n_nan_predictors,
-            n_rows             = n_rows,
+        X_train, y_train, train_index = _filter_nan_train_X_y(
+            X_train            = X_train,
+            y_train            = y_train,
             dropna_from_series = self.dropna_from_series,
-            series_name        = "`y`"
+            series_name        = "`y`",
+            train_index        = train_index
         )
 
         if len(y_train) == 0:
