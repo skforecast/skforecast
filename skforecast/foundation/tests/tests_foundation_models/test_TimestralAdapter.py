@@ -71,6 +71,7 @@ def test_TimestralAdapter_init_default_params():
     assert TimestralAdapter.supports_categorical_covariates is True
     assert TimestralAdapter.supports_heterogeneous_covariates is False
     assert TimestralAdapter.requires_equal_length_context is True
+    assert TimestralAdapter.max_series_per_call == 50
     assert TimestralAdapter.supports_nan_in_series is True
     assert "allow_exog" not in vars(adapter)
     assert TimestralAdapter.SUPPORTED_QUANTILES == [

@@ -1111,10 +1111,14 @@ class FoundationModel:
         columns. When `supports_heterogeneous_covariates` is `False`, the
         series are grouped by their exog columns (past-only and future) and
         the adapter is called once per group, so the prediction of a series
-        never depends on the exog columns of the other series. When
+        never depends on the exog columns of the other series. When the
+        adapter declares `max_series_per_call` (backends whose cost per
+        series, or memory, grows with the size of the batch), each group is
+        split into consecutive chunks of at most that many series, and the
+        adapter is called once per chunk. When
         `requires_equal_length_context` is `True` (backends that take the
         context of a call as a single array), the context and historical exog
-        of each group are left-padded with NaN to the length of its longest
+        of each call are left-padded with NaN to the length of its longest
         series. The index of the predictions is built from the unpadded
         context.
 
@@ -1250,36 +1254,47 @@ class FoundationModel:
                                 exog            = exog,
                             )
 
+        # Backends whose cost per series, or memory, grows with the size of
+        # the batch are called with chunks of at most `max_series_per_call`
+        # series of each group.
+        series_calls = []
+        for series_names_group in series_groups:
+            chunk_size = self.adapter.max_series_per_call or len(series_names_group)
+            series_calls.extend(
+                series_names_group[start:start + chunk_size]
+                for start in range(0, len(series_names_group), chunk_size)
+            )
+
         # Adapter returns dict[str, np.ndarray] with shape (steps, n_q)
         raw_predictions: dict[str, np.ndarray] = {}
-        for series_names_group in series_groups:
-            group_context = {
+        for series_names_call in series_calls:
+            call_context = {
                 series_name: context[series_name]
-                for series_name in series_names_group
+                for series_name in series_names_call
             }
-            group_context_exog = (
+            call_context_exog = (
                 {
                     series_name: context_exog[series_name]
-                    for series_name in series_names_group
+                    for series_name in series_names_call
                 }
                 if context_exog is not None else None
             )
             # Backends that take the context of a call as one array need the
-            # same length for every series: left-pad the group with NaN.
+            # same length for every series: left-pad the call with NaN.
             if self.adapter.requires_equal_length_context:
-                group_context, group_context_exog = _left_pad_context(
-                                                        context      = group_context,
-                                                        context_exog = group_context_exog,
-                                                    )
+                call_context, call_context_exog = _left_pad_context(
+                                                      context      = call_context,
+                                                      context_exog = call_context_exog,
+                                                  )
             raw_predictions.update(
                 self.adapter.predict(
                     steps        = steps,
-                    context      = group_context,
-                    context_exog = group_context_exog,
+                    context      = call_context,
+                    context_exog = call_context_exog,
                     exog         = (
                         {
                             series_name: exog[series_name]
-                            for series_name in series_names_group
+                            for series_name in series_names_call
                         }
                         if exog is not None else None
                     ),
