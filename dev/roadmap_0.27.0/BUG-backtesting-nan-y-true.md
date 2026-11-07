@@ -4,6 +4,7 @@ Fila del roadmap: sección 4 de `roadmap.md`. Encontrado en #1452 (sección 12.8
 de `BUG-search-short-series-transparency.md`).
 
 Rama `fix/backtesting-nan-y-true` desde `0.27.x` (con #1447, #1452 y #1456).
+**Fusionado el 2026-11-07 (#1458).**
 Script: `repro/BUG-backtesting-nan-y-true.py` (un escenario por caso; avisos con los filtros
 por defecto, primera línea).
 
