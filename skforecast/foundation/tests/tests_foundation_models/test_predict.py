@@ -9,6 +9,7 @@ from skforecast.foundation._foundation_model import FoundationModel
 from .fixtures_adapters import (
     y, data, y_dict,
     FakePipeline, FakeTimesFM25Model, FakeTimesFM3Forecaster, FakeT0Forecaster,
+    FakeTimestralForecaster,
 )
 
 
@@ -831,4 +832,121 @@ def test_predict_does_not_pad_when_adapter_does_not_require_equal_length_context
         pd.testing.assert_frame_equal(
             calls[0]["context_exog"][series_name], context_exog[series_name]
         )
+
+
+# Tests predict: chunks of max_series_per_call series
+# ==============================================================================
+def _make_chunk_inputs():
+    """
+    Five daily series of different length ending on the same date. Series
+    s0, s1 and s2 have the exog column `a` and s3 and s4 the column `b`, so
+    an adapter without heterogeneous covariates groups them in two.
+    """
+    lengths = {"s0": 6, "s1": 3, "s2": 5, "s3": 4, "s4": 2}
+    columns = {"s0": "a", "s1": "a", "s2": "a", "s3": "b", "s4": "b"}
+    future_index = pd.date_range("2024-01-11", periods=2, freq="D")
+    context = {}
+    context_exog = {}
+    exog = {}
+    for i, (series_name, length) in enumerate(lengths.items()):
+        index = pd.date_range(end="2024-01-10", periods=length, freq="D")
+        context[series_name] = pd.Series(
+            np.arange(length, dtype=float) + 10 * i, index=index, name=series_name
+        )
+        context_exog[series_name] = pd.DataFrame(
+            {columns[series_name]: np.arange(length, dtype=float)}, index=index
+        )
+        exog[series_name] = pd.DataFrame(
+            {columns[series_name]: [100.0, 101.0]}, index=future_index
+        )
+
+    return context, context_exog, exog
+
+
+@pytest.mark.parametrize(
+    "check_inputs",
+    [True, False],
+    ids=lambda check_inputs: f"check_inputs: {check_inputs}",
+)
+def test_predict_splits_groups_into_chunks_of_max_series_per_call(
+    monkeypatch, check_inputs
+):
+    """
+    Test that predict splits each group of series (Timestral groups the
+    series by exog columns) into consecutive chunks of at most
+    max_series_per_call series, calls the adapter once per chunk, left-pads
+    each chunk to the length of its own longest series, and returns the same
+    predictions as one call per group.
+    """
+    context, context_exog, exog = _make_chunk_inputs()
+
+    def predict(max_series_per_call):
+        m = FoundationModel(
+            "mistralai/Timestral-28M", model=FakeTimestralForecaster()
+        )
+        monkeypatch.setattr(m.adapter, "max_series_per_call", max_series_per_call)
+        calls = _record_adapter_predict(monkeypatch, m)
+        if check_inputs:
+            m.fit(series=context, exog=context_exog)
+            predictions = m.predict(steps=2, exog=exog, quantiles=[0.1, 0.5, 0.9])
+        else:
+            predictions = m.predict(
+                steps        = 2,
+                context      = context,
+                context_exog = context_exog,
+                exog         = exog,
+                quantiles    = [0.1, 0.5, 0.9],
+                check_inputs = False,
+            )
+
+        return predictions, calls
+
+    predictions, calls = predict(max_series_per_call=2)
+    expected, calls_one_per_group = predict(max_series_per_call=None)
+
+    assert [list(call["context"]) for call in calls] == [
+        ["s0", "s1"], ["s2"], ["s3", "s4"]
+    ]
+    assert [list(call["context"]) for call in calls_one_per_group] == [
+        ["s0", "s1", "s2"], ["s3", "s4"]
+    ]
+    for call, width in zip(calls, [6, 5, 4]):
+        for series_name, series in call["context"].items():
+            pd.testing.assert_index_equal(series.index, pd.RangeIndex(width))
+            np.testing.assert_array_equal(
+                series.to_numpy()[-len(context[series_name]):],
+                context[series_name].to_numpy(),
+            )
+            assert list(call["context_exog"][series_name].columns) == list(
+                context_exog[series_name].columns
+            )
+            assert list(call["exog"][series_name].columns) == list(
+                exog[series_name].columns
+            )
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
+def test_predict_TimestralAdapter_calls_backend_in_chunks_of_50_series():
+    """
+    Test that, with the default max_series_per_call of TimestralAdapter (50),
+    predict sends 230 series to the backend in calls of 50, 50, 50, 50 and
+    30 series, and returns one prediction per series.
+    """
+    index = pd.date_range("2024-01-01", periods=10, freq="D")
+    series = {
+        f"s{i}": pd.Series(np.arange(10, dtype=float) + i, index=index)
+        for i in range(230)
+    }
+    fake_model = FakeTimestralForecaster()
+    m = FoundationModel("mistralai/Timestral-28M", model=fake_model)
+    m.fit(series=series)
+
+    predictions = m.predict(steps=3)
+
+    assert m.adapter.max_series_per_call == 50
+    assert [call["context"].shape[0] for call in fake_model.calls] == [
+        50, 50, 50, 50, 30
+    ]
+    assert predictions.shape == (230 * 3, 2)
+    assert predictions["level"].tolist() == list(series) * 3
 
