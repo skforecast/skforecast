@@ -106,7 +106,7 @@ The main changes in this release are:
 
 + The first fit of <code>[Ets]</code> in a new environment, when numba compiles its functions, takes about 40% less time (7 s instead of 12 s on a 4-core CPU). Estimates and selected models are unchanged. ([#1400](https://github.com/skforecast/skforecast/pull/1400))
 
-+ Refitting <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code> in parallel (`n_jobs` other than 1) no longer sends the estimators of the previous fit to every step: <code>[backtesting_forecaster]</code> with `refit=True` and `n_jobs='auto'` is 5 to 7 times faster (5000 rows, 48 steps, LightGBM or HistGradientBoosting, on a 22-core CPU). Results are unchanged.
++ Refitting <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code> in parallel (`n_jobs` other than 1) no longer sends the estimators of the previous fit to every step: <code>[backtesting_forecaster]</code> with `refit=True` and `n_jobs='auto'` is 5 to 7 times faster (5000 rows, 48 steps, LightGBM or HistGradientBoosting, on a 22-core CPU). Results are unchanged. ([#1460](https://github.com/skforecast/skforecast/pull/1460))
 
 + The `version` argument of <code>[fetch_dataset]</code>, <code>[load_demo_dataset]</code> and <code>[show_datasets_info]</code> is deprecated and has no effect: datasets are always fetched from the main branch of skforecast-datasets, which has no published versions. Passing it emits a `FutureWarning`; it will be removed in version 0.29.0. ([#1440](https://github.com/skforecast/skforecast/pull/1440))
 
