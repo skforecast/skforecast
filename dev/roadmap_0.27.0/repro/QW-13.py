@@ -2,7 +2,8 @@
 QW-13: a single warning, with counts, for the training rows with NaN
 (roadmap 0.27.0, section 2).
 
-Baseline on `0.27.x`: the `MissingValuesWarning` raised today when the training
+Baseline on `0.27.x` (commit cb6a280d3) and result of the change: the
+`MissingValuesWarning` raised when the training
 matrices have NaN, and the rows kept, in the 5 forecasters that raise them
 (`ForecasterRecursive`, `ForecasterRecursiveClassifier`,
 `ForecasterRecursiveMultiSeries`, `ForecasterDirect` and
@@ -29,11 +30,10 @@ Each case runs with `dropna_from_series=True` and `False`.
    see how `_SearchWarnings` groups the two warnings, with `n_jobs='auto'` and
    `n_jobs=1` (the warnings printed by the joblib workers are captured from
    the file descriptors 1 and 2 and counted).
-4. Proposal: the text of the new warning for every case, built from the counts
-   of 1 and 2 (per step in Direct and DMV), and the check that its first
-   sentence does not change.
-5. Simulation: the proposed warning raised with different counts in the folds
-   of a search, through `_SearchWarnings`, to see how it is grouped.
+4. The warning emitted in each case of 1, 2 and 2b against the approved text,
+   built here from the counts measured (per step in Direct and DMV), and the
+   check that its first sentence does not change. On the baseline (before the
+   change, commit cb6a280d3) this section printed the proposal instead.
 """
 import os
 import re
@@ -54,7 +54,7 @@ from skforecast.model_selection import (
     grid_search_forecaster_multiseries,
 )
 from skforecast.exceptions import MissingValuesWarning
-from skforecast.model_selection._utils import _SearchWarnings, _split_first_sentence
+from skforecast.model_selection._utils import _split_first_sentence
 from skforecast.recursive import (
     ForecasterRecursive,
     ForecasterRecursiveClassifier,
@@ -200,51 +200,60 @@ def proposed_message(
     n_dropped: tuple[int, int] | None = None,
 ) -> str | None:
     """
-    Text proposed for the new warning (QW-13.md, section 4). In Direct and DMV
+    Text approved for the new warning (QW-13.md, section 4), written here
+    independently of `_warn_nan_training_rows` to check it. In Direct and DMV
     the counts are per step: a tuple (min, max) over the steps, and
     `n_dropped` is the (min, max) of the rows dropped per step.
     """
 
     per_step = isinstance(n_nan_target, tuple)
     if not per_step:
-        n_nan_target, n_nan_pred = (n_nan_target, n_nan_target), (n_nan_pred, n_nan_pred)
-    if max(n_nan_target) == 0 and max(n_nan_pred) == 0:
+        n_nan_target, n_nan_pred = (n_nan_target,) * 2, (n_nan_pred,) * 2
+    has_t, has_p = max(n_nan_target) > 0, max(n_nan_pred) > 0
+    if not has_t and not has_p:
         return None
 
     def fmt(n: tuple[int, int]) -> str:
         return f"{n[0]}" if n[0] == n[1] else f"{n[0]} to {n[1]}"
 
     def verb(n: tuple[int, int]) -> str:
-        return "is" if n == (1, 1) else "are"
+        return "is" if tuple(n) == (1, 1) else "are"
 
     where = " per step" if per_step else ""
-    first = "Some rows of the training matrix have missing values."
-    if dropna:
-        if n_dropped is None:
-            n_dropped = (n_nan_target[0] + n_nan_pred[0],) * 2
+    pred = "with NaN predictors (lags, window features or exog)."
+    if n_dropped is None:
+        n_dropped = (n_nan_target[0] + n_nan_pred[0],) * 2
+    if dropna and has_t and has_p:
         counts = (
             f"{fmt(n_dropped)} of {n_total} rows {verb(n_dropped)} dropped{where}: "
-            f"{fmt(n_nan_target)} with a NaN target and {fmt(n_nan_pred)} with "
-            f"NaN predictors (lags, window features or exog)."
+            f"{fmt(n_nan_target)} with a NaN target and {fmt(n_nan_pred)} {pred}"
         )
+    elif dropna and has_p:
+        counts = f"{fmt(n_nan_pred)} of {n_total} rows {verb(n_nan_pred)} dropped{where}, {pred}"
+    elif not has_p:
+        counts = (
+            f"{fmt(n_nan_target)} of {n_total} rows {verb(n_nan_target)} "
+            f"dropped{where}, with a NaN target."
+        )
+    elif has_t:
+        counts = (
+            f"{fmt(n_nan_target)} of {n_total} rows {verb(n_nan_target)} "
+            f"dropped{where} (NaN target) and {fmt(n_nan_pred)} "
+            f"{verb(n_nan_pred)} kept {pred}"
+        )
+    else:
+        counts = f"{fmt(n_nan_pred)} of {n_total} rows {verb(n_nan_pred)} kept{where} {pred}"
+    action = ""
+    if has_p:
         action = (
             "To keep the rows with NaN predictors, set "
             "`forecaster.dropna_from_series = False` (the estimator must "
             "support NaN)."
-        )
-    else:
-        counts = (
-            f"{fmt(n_nan_target)} of {n_total} rows {verb(n_nan_target)} "
-            f"dropped{where} (NaN target) and {fmt(n_nan_pred)} "
-            f"{verb(n_nan_pred)} kept with NaN predictors (lags, window features "
-            f"or exog)."
-        )
-        action = (
+            if dropna else
             "The estimator must support NaN. To drop those rows, set "
             "`forecaster.dropna_from_series = True`."
         )
-    if max(n_nan_pred) == 0:
-        action = ""
+    first = "Some rows of the training matrix have missing values."
     cause = f"They come from interspersed NaNs in `{data_name}` or `exog`."
     return " ".join(p for p in (first, counts, cause, action) if p)
 
@@ -324,7 +333,7 @@ for name, (kind, make) in FORECASTERS.items():
                     res["n_nan_target"], res["n_nan_pred"], res["n_total"],
                     dropna, data_name
                 )
-            proposals.append((name, dropna, case, msg))
+            proposals.append((name, dropna, case, msg, res["records"]))
 
 print()
 print("=" * 88)
@@ -374,7 +383,8 @@ for gap_name, positions in gap_cases.items():
                     res["nan_target_range"], res["nan_pred_range"], res["n_rows"],
                     dropna, "series" if kind == "dmv" else "y",
                     n_dropped=res["dropped_range"]
-                )
+                ),
+                res["records"],
             ))
 
 
@@ -471,47 +481,29 @@ for dropna in (True, False):
 
 print()
 print("=" * 88)
-print("4. Proposed text")
+print("4. Warnings emitted vs the approved text (sections 1, 2 and 2b)")
 print("=" * 88)
 first_sentences = set()
-for name, dropna, case, msg in proposals:
-    print(f"\n{name}, dropna_from_series={dropna}, NaN in {case}")
-    print(f"    {msg}")
-    if msg is not None:
-        first_sentences.add(_split_first_sentence(msg)[0])
-print(f"\nDistinct first sentences: {len(first_sentences)}")
-for s in first_sentences:
-    print(f"    {s!r}")
+n_ok = 0
+for name, dropna, case, expected, records in proposals:
+    texts = [
+        getattr(r.message, "message", str(r.message)) for r in records
+        if issubclass(r.category, MissingValuesWarning)
+    ]
+    new = [t for t in texts if t.startswith("Some rows of the training matrix")]
+    old = [t for t in texts if t.startswith("NaNs detected") or "`exog` has missing" in t]
+    ok = new == ([expected] if expected else []) and not old
+    n_ok += ok
+    if not ok:
+        print(f"\nMISMATCH {name}, dropna_from_series={dropna}, NaN in {case}")
+        print(f"    expected: {expected}")
+        print(f"    emitted : {texts}")
+    first_sentences.update(_split_first_sentence(t)[0] for t in new)
+print(f"\n{n_ok} of {len(proposals)} cases emit exactly the approved text, once")
+print(f"Distinct first sentences: {len(first_sentences)}")
+for sentence in first_sentences:
+    print(f"    {sentence!r}")
+assert n_ok == len(proposals)
 assert len(first_sentences) == 1
 # The counts must not be in the first sentence (`_SearchWarnings` groups by it).
 assert not re.search(r"\d", next(iter(first_sentences)))
-
-print()
-print("=" * 88)
-print(
-    "5. Simulation: the proposed warning through `_SearchWarnings` (4 candidates,\n"
-    "   4 folds with refit, different counts per fold; candidates 2 and 3 have\n"
-    "   no NaN in the training set of any fold, so they do not raise it)"
-)
-print("=" * 88)
-for dropna in (True, False):
-    for raising in ([0, 1, 2, 3], [0, 1]):
-        search_warnings = _SearchWarnings(n_candidates=4)
-        with warnings.catch_warnings(record=True) as records:
-            with search_warnings:
-                for candidate in range(4):
-                    search_warnings.set_candidate(candidate)
-                    if candidate not in raising:
-                        continue
-                    for fold in range(4):
-                        warnings.warn(
-                            proposed_message(
-                                2 + fold // 2, 10 + 5 * (fold // 2), 55 + 10 * fold,
-                                dropna
-                            ),
-                            MissingValuesWarning
-                        )
-                search_warnings.set_candidate(None)
-            search_warnings.emit()
-        print(f"\ndropna_from_series={dropna}, raised in candidates {raising}")
-        print_warnings(records)
