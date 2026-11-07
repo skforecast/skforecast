@@ -25,7 +25,7 @@ Leyenda de la procedencia de cada dato:
 
 **Qué queda:**
 
-1. PR C (sección 7): commitear (con los scripts y logs nuevos de `experiments/`, `exp7*` y `exp8*`, con `git add -f` para los logs), abrir el PR contra `0.27.x`, añadir su enlace a la entrada de `TimestralAdapter` en la release note de la 0.27.0 y, antes de fusionar, `git merge origin/0.27.x` y repetir `verify` (un atributo obligatorio nuevo es un conflicto semántico que git no ve; TimeH2O tendrá que declararlo).
+1. PR C (sección 7), abierto el 07/11/2026 como #1459 (commit `8a3d45f72`, con los scripts y logs de `exp7*` y `exp8*`) y enlazado en la entrada de `TimestralAdapter` de la release note: antes de fusionar, `git merge origin/0.27.x` (regenerar los `llms-full.txt` si dan conflicto) y repetir `verify` (un atributo obligatorio nuevo es un conflicto semántico que git no ve; TimeH2O tendrá que declararlo).
 2. Vigilar la checklist de upstream (sección 10): release en PyPI (cambia `backend_package` y activa la comprobación de "held back" en `foundation-backends.yml`), cambios de API o de licencia, y respuesta a los issues #6 y #7.
 
 Si se añaden logs nuevos a `dev/timestral_adapter/experiments/`, `.gitignore` excluye `*.log`: hay que añadirlos con `git add -f`.
