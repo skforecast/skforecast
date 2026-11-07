@@ -1361,34 +1361,41 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         # method during the training of each step. Rows with a NaN target are
         # always dropped; rows with NaN predictors (and a non-NaN target) only
         # if `dropna_from_series` is `True`. The calendar features never have
-        # missing values.
-        n_rows = X_train_autoreg.shape[0]
+        # missing values. They are counted only if there is any NaN, so the
+        # usual case (no NaN) costs a single check of each matrix.
         nan_target = np.isnan(y_train)
-        nan_autoreg = np.isnan(X_train_autoreg).any(axis=1)
-        nan_exog = (
-            pd.isna(X_train_exog).any(axis=1) if X_train_exog is not None else None
-        )
-        n_nan_target = []
-        n_nan_predictors = []
-        for step in self.steps:
-            nan_target_step = nan_target[:, step - 1]
-            nan_predictors_step = nan_autoreg
+        nan_autoreg = np.isnan(X_train_autoreg)
+        nan_exog = pd.isna(X_train_exog) if X_train_exog is not None else None
+        if (
+            nan_target.any()
+            or nan_autoreg.any()
+            or (nan_exog is not None and nan_exog.any())
+        ):
+            n_rows = X_train_autoreg.shape[0]
+            nan_autoreg = nan_autoreg.any(axis=1)
             if nan_exog is not None:
-                nan_predictors_step = (
-                    nan_predictors_step | nan_exog[step - 1 : step - 1 + n_rows]
+                nan_exog = nan_exog.any(axis=1)
+            n_nan_target = []
+            n_nan_predictors = []
+            for step in self.steps:
+                nan_target_step = nan_target[:, step - 1]
+                nan_predictors_step = nan_autoreg
+                if nan_exog is not None:
+                    nan_predictors_step = (
+                        nan_predictors_step | nan_exog[step - 1 : step - 1 + n_rows]
+                    )
+                n_nan_target.append(int(nan_target_step.sum()))
+                n_nan_predictors.append(
+                    int((nan_predictors_step & ~nan_target_step).sum())
                 )
-            n_nan_target.append(int(nan_target_step.sum()))
-            n_nan_predictors.append(
-                int((nan_predictors_step & ~nan_target_step).sum())
-            )
 
-        _warn_nan_training_rows(
-            n_nan_target       = n_nan_target,
-            n_nan_predictors   = n_nan_predictors,
-            n_rows             = n_rows,
-            dropna_from_series = self.dropna_from_series,
-            series_name        = "`series`"
-        )
+            _warn_nan_training_rows(
+                n_nan_target       = n_nan_target,
+                n_nan_predictors   = n_nan_predictors,
+                n_rows             = n_rows,
+                dropna_from_series = self.dropna_from_series,
+                series_name        = "`series`"
+            )
 
         y_train = {
             step: y_train[:, step - 1] for step in self.steps

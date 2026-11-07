@@ -1695,12 +1695,17 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             y_train = y_train.iloc[mask]
             X_train = X_train.iloc[mask, :]
 
-        nan_predictors = X_train.isna().any(axis=1).to_numpy()
-        n_nan_predictors = int(nan_predictors.sum())
-        if self.dropna_from_series and n_nan_predictors > 0:
-            mask = ~nan_predictors
-            X_train = X_train.iloc[mask, :]
-            y_train = y_train.iloc[mask]
+        # NOTE: The rows with NaN predictors are counted only if the matrix has
+        # any NaN, so the usual case (no NaN) costs a single check.
+        nan_matrix = X_train.isna().to_numpy()
+        n_nan_predictors = 0
+        if nan_matrix.any():
+            nan_predictors = nan_matrix.any(axis=1)
+            n_nan_predictors = int(nan_predictors.sum())
+            if self.dropna_from_series:
+                mask = ~nan_predictors
+                X_train = X_train.iloc[mask, :]
+                y_train = y_train.iloc[mask]
 
         _warn_nan_training_rows(
             n_nan_target       = n_nan_target,

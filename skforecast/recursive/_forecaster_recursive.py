@@ -995,13 +995,18 @@ class ForecasterRecursive(ForecasterBase):
             X_train = X_train[mask]
             train_index = train_index[mask]
 
-        nan_predictors = pd.isna(X_train).any(axis=1)
-        n_nan_predictors = int(nan_predictors.sum())
-        if self.dropna_from_series and n_nan_predictors > 0:
-            mask = ~nan_predictors
-            X_train = X_train[mask]
-            y_train = y_train[mask]
-            train_index = train_index[mask]
+        # NOTE: The rows with NaN predictors are counted only if the matrix has
+        # any NaN, so the usual case (no NaN) costs a single check.
+        nan_matrix = pd.isna(X_train)
+        n_nan_predictors = 0
+        if nan_matrix.any():
+            nan_predictors = nan_matrix.any(axis=1)
+            n_nan_predictors = int(nan_predictors.sum())
+            if self.dropna_from_series:
+                mask = ~nan_predictors
+                X_train = X_train[mask]
+                y_train = y_train[mask]
+                train_index = train_index[mask]
 
         _warn_nan_training_rows(
             n_nan_target       = n_nan_target,
