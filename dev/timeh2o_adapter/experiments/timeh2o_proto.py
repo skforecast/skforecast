@@ -3,8 +3,8 @@ Prototype of a TimeH2O adapter for skforecast, used only by the experiments of
 this folder. It is registered at runtime (`register()`), the package is not
 modified. It was written before PR #1450 and runs with and without it: it
 declares `requires_equal_length_context` (required on `0.27.x` from fc7efd0,
-harmless before) and passes `device` through `_resolve_torch_device` without
-the MPS fallback. The reviewed design is the skeleton of section 4 of the
+harmless before) and `max_series_per_call` (required from PR #1459, 7f0df4e21),
+and passes `device` through `_resolve_torch_device` without the MPS fallback. The reviewed design is the skeleton of section 4 of the
 report (`skeleton/`), not this file.
 """
 
@@ -34,6 +34,7 @@ class TimeH2OAdapter(_AdapterBase):
     supports_categorical_covariates: bool = True
     supports_heterogeneous_covariates: bool = True
     requires_equal_length_context: bool = False
+    max_series_per_call: int | None = None
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = True
     requires_provider_auth: bool = False

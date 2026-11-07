@@ -103,6 +103,7 @@ class GroupedTimeH2OAdapter(TimeH2OAdapter):
     supports_categorical_covariates = True
     supports_heterogeneous_covariates = False
     requires_equal_length_context = False
+    max_series_per_call = None
     supports_nan_in_series = True
     requires_hf_auth = True
     requires_provider_auth = False

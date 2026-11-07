@@ -1,9 +1,0 @@
-1. heterogeneous batch vs alone, max abs diff: 2.67e-05
-{'q_0.5': {'a': 54.03, 'b': 93.57, 'c': 125.04}}
-   quantile 0.33 -> Timestral only supports quantile levels [0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4,
-2.   10 series x (1 target + 2 cov) x 512:   0.50s  peak RSS 822 MB
-2.  100 series x (1 target + 2 cov) x 512:   5.47s  peak RSS 1,062 MB
-2.  200 series x (1 target + 2 cov) x 512:  12.28s  peak RSS 1,388 MB
-2.  400 series x (1 target + 2 cov) x 512:  31.57s  peak RSS 1,781 MB
-3. symmetric_averaging=True: median max 37.05, q99 max 14059.03
-3. symmetric_averaging=False: median max 2.60, q99 max 14059.03

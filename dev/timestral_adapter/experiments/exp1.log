@@ -1,4 +1,0 @@
-mistralai/Timestral-5M: params=5.2M load=0.1s max|batch-alone| short=4.77e-06 long=7.63e-06 t(1x512)=23ms t(100x512)=0.38s t(1x8192)=0.07s
-mistralai/Timestral-28M: params=27.8M load=0.4s max|batch-alone| short=5.72e-06 long=1.14e-05 t(1x512)=46ms t(100x512)=0.80s t(1x8192)=0.15s
-mistralai/Timestral-209M: params=209.3M load=1.3s max|batch-alone| short=3.81e-06 long=7.63e-06 t(1x512)=218ms t(100x512)=4.24s t(1x8192)=0.84s
-torch 2.14.1+cu130 threads 4

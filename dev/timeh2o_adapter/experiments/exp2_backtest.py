@@ -5,8 +5,12 @@ Demand, exog Temperature and Holiday, test 2014-12-01 00:00 to 2014-12-30
 23:00 (30 folds of 24 steps, 720 predictions), refit=False.
 
 TimeH2O goes through the prototype adapter registered at runtime. Chronos-2
-and Timestral-209M are measured again in this environment as a reference
-(Timestral through the prototype of dev/timestral_adapter/experiments).
+and Timestral-209M are measured again in this environment as a reference.
+The Timestral rows of results_exp2.csv were measured with the prototype of
+dev/timestral_adapter/experiments (removed on 2026-11-07, once its plan was
+finished); the script now uses the `TimestralAdapter` of the package (PR
+#1454), which needs `timestral` installed from git. With a single series there
+is no padding and no chunking, so the figures are expected to match.
 
 Columns of the CSV:
 - exog: "num" (Temperature and Holiday as floats, as in the user guide),
@@ -22,11 +26,6 @@ Columns of the CSV:
 Rows already in results_exp2.csv are skipped: delete the CSV to start over.
 
 Usage: HF_HUB_OFFLINE=1 python -W ignore exp2_backtest.py > exp2.log 2>&1
-
-The Timestral rows import the prototype of dev/timestral_adapter/experiments,
-written before PR #1450: it does not declare `requires_equal_length_context`,
-so on `0.27.x` from fc7efd0 this script fails at import time. See the exp2
-row of section 12 of the report.
 """
 import os
 import sys
@@ -37,16 +36,13 @@ import pandas as pd
 
 warnings.filterwarnings("ignore")
 sys.path.insert(0, ".")
-sys.path.insert(0, "../../timestral_adapter/experiments")
 from common import versions  # noqa: E402
 from timeh2o_proto import register as register_timeh2o  # noqa: E402
-from timestral_proto import register as register_timestral  # noqa: E402
 from skforecast.datasets import fetch_dataset  # noqa: E402
 from skforecast.foundation import FoundationModel, ForecasterFoundation  # noqa: E402
 from skforecast.model_selection import TimeSeriesFold, backtesting_foundation  # noqa: E402
 
 register_timeh2o()
-register_timestral()
 print(versions(), flush=True)
 
 data = fetch_dataset(name="vic_electricity", verbose=False)
