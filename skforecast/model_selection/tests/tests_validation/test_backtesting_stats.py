@@ -2074,3 +2074,65 @@ def test_output_backtesting_stats_step_y_true_and_n_evaluated_multiple_estimator
         'estimator_id', 'mean_absolute_error', 'coverage', 'interval_width', 'n_evaluated'
     ]
     assert metric['n_evaluated'].tolist() == [9, 9]
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    [
+        Sarimax(order=(1, 0, 0)),
+        [Sarimax(order=(1, 0, 0)), Sarimax(order=(2, 0, 0))],
+    ],
+    ids=["n_estimators: 1", "n_estimators: 2"]
+)
+def test_output_backtesting_stats_metrics_leave_out_dates_without_true_values(
+    estimator
+):
+    """
+    Test that the dates without a true value are left out of the metrics and
+    of `n_evaluated` (Sarimax with `refit=False` accepts missing values in the
+    test set), with one and several estimators: the metrics of each estimator
+    are the ones calculated by hand without those dates. The predictions keep
+    the rows of those dates, with `y_true` NaN.
+    """
+    y_nan = y_datetime.copy()
+    y_nan.iloc[[41, 45]] = np.nan
+
+    forecaster = ForecasterStats(estimator=estimator)
+    cv = TimeSeriesFold(
+             steps              = 3,
+             initial_train_size = len(y_nan) - 12,
+             refit              = False
+         )
+    metric, backtest_predictions = backtesting_stats(
+                                       forecaster    = forecaster,
+                                       y             = y_nan,
+                                       cv            = cv,
+                                       metric        = 'mean_absolute_error',
+                                       interval      = [0.1, 0.9],
+                                       show_progress = False
+                                   )
+
+    n_estimators = len(estimator) if isinstance(estimator, list) else 1
+    assert len(backtest_predictions) == 12 * n_estimators
+    assert backtest_predictions['y_true'].isna().sum() == 2 * n_estimators
+    assert backtest_predictions['pred'].notna().all()
+
+    if n_estimators == 1:
+        groups = [backtest_predictions]
+    else:
+        groups = [
+            group for _, group
+            in backtest_predictions.groupby('estimator_id', sort=False)
+        ]
+    expected_mae = []
+    expected_coverage = []
+    for group in groups:
+        observed = group.loc[group['y_true'].notna()]
+        expected_mae.append(np.mean(np.abs(observed['y_true'] - observed['pred'])))
+        expected_coverage.append(np.mean(
+            (observed['y_true'] >= observed['lower_bound'])
+            & (observed['y_true'] <= observed['upper_bound'])
+        ))
+    np.testing.assert_allclose(metric['mean_absolute_error'], expected_mae)
+    np.testing.assert_allclose(metric['coverage'], expected_coverage)
+    assert metric['n_evaluated'].tolist() == [10] * n_estimators

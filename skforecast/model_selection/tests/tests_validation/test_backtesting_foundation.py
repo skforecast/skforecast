@@ -1771,7 +1771,9 @@ def test_output_backtesting_foundation_single_step_y_true_and_n_evaluated(quanti
     Test the columns `step` and `y_true` of the predictions and `n_evaluated`
     of the metrics with a single series, `gap`, overlapping folds and an
     incomplete last fold. With `quantiles` there is no `pred`, the metrics
-    use the median `q_0.5`, and so does `n_evaluated`.
+    use the median `q_0.5`, and so does `n_evaluated`. The date without a
+    true value is left out of the metrics: the metric is the one calculated
+    by hand without it.
     """
     y_nan = y.copy()
     y_nan.iloc[45] = np.nan
@@ -1785,9 +1787,6 @@ def test_output_backtesting_foundation_single_step_y_true_and_n_evaluated(quanti
         verbose               = False,
     )
 
-    def nan_mean_absolute_error(y_true, y_pred):
-        return np.nanmean(np.abs(y_true - y_pred))
-
     with patch(
         "skforecast.model_selection._validation.deepcopy_forecaster",
         side_effect=deepcopy,
@@ -1796,7 +1795,7 @@ def test_output_backtesting_foundation_single_step_y_true_and_n_evaluated(quanti
             forecaster    = forecaster,
             series        = y_nan,
             cv            = cv,
-            metric        = nan_mean_absolute_error,
+            metric        = "mean_absolute_error",
             quantiles     = quantiles,
             verbose       = False,
             show_progress = False,
@@ -1814,6 +1813,15 @@ def test_output_backtesting_foundation_single_step_y_true_and_n_evaluated(quanti
     )
     # Dates 39 to 49 are predicted (the first one is the gap); 45 has no value.
     assert metric.loc[0, "n_evaluated"] == 10
+    predictions_metrics = backtest_predictions.loc[
+        ~backtest_predictions.index.duplicated(keep="last")
+    ]
+    predictions_metrics = predictions_metrics.loc[predictions_metrics["y_true"].notna()]
+    point_column = "pred" if quantiles is None else "q_0.5"
+    expected_mae = np.mean(
+        np.abs(predictions_metrics["y_true"] - predictions_metrics[point_column])
+    )
+    assert metric.loc[0, "mean_absolute_error"] == pytest.approx(expected_mae)
 
 
 def test_output_backtesting_foundation_multiseries_step_y_true_and_n_evaluated():

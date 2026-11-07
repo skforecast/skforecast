@@ -1860,6 +1860,95 @@ def _check_nan_predictions_backtesting(
         )
 
 
+def _calculate_metrics_backtesting(
+    predictions: pd.DataFrame,
+    metrics: list[Callable],
+    y_train: pd.Series | None = None,
+    interval_columns: list[str] | None = None,
+    pred_column: str = 'pred',
+    estimator_id: str | None = None,
+    differentiation: int | None = None
+) -> list[float]:
+    """
+    Calculate the backtesting metrics of a single series: the metrics, the
+    interval metrics (`INTERVAL_METRIC_NAMES`) if `interval_columns` is given,
+    and the number of points evaluated (`N_EVALUATED_NAME`), in this order.
+
+    The dates without an observed value (`y_true` NaN) are left out of the
+    metrics, as in the multi-series backtesting. A NaN prediction at a date
+    with an observed value raises an error first (see
+    `_check_nan_predictions_backtesting`), so the points evaluated are the
+    dates with an observed value.
+
+    Parameters
+    ----------
+    predictions : pandas DataFrame
+        Backtesting predictions used for the metrics, without the repeated
+        dates of overlapping folds, and of a single estimator. Columns
+        `y_true` and `pred_column`, and the columns in `interval_columns`.
+        Its rows are not modified.
+    metrics : list
+        Metrics to calculate, with the argument `y_train`.
+    y_train : pandas Series, default None
+        Training values of the series, used by the scaled metrics.
+    interval_columns : list, default None
+        Names of the lower and upper bound columns of the prediction interval.
+        If `None`, the interval metrics are not calculated.
+    pred_column : str, default 'pred'
+        Name of the column with the point predictions.
+    estimator_id : str, default None
+        Identifier of the estimator that made the predictions, included in
+        the error of NaN predictions when the forecaster has several
+        estimators.
+    differentiation : int, default None
+        Order of the differentiation of the forecaster, used in the error of
+        NaN predictions.
+
+    Returns
+    -------
+    metric_values : list
+        Value of each metric, then the coverage and the mean width of the
+        interval if `interval_columns` is given, and the number of points
+        evaluated.
+
+    """
+
+    y_true = predictions['y_true']
+    y_pred = predictions[pred_column]
+    _check_nan_predictions_backtesting(
+        y_true          = y_true,
+        y_pred          = y_pred,
+        estimator_id    = estimator_id,
+        differentiation = differentiation
+    )
+
+    is_observed = y_true.notna().to_numpy()
+    if not is_observed.any():
+        raise ValueError(
+            "The series has no observed values in the test set of the folds, "
+            "so the metrics cannot be calculated. Review `initial_train_size` "
+            "of `cv`, or the span of the series."
+        )
+    y_true = y_true.loc[is_observed]
+    y_pred = y_pred.loc[is_observed]
+
+    metric_values = [
+        m(y_true=y_true, y_pred=y_pred, y_train=y_train)
+        for m in metrics
+    ]
+    if interval_columns is not None:
+        metric_values.extend(
+            _calculate_interval_metrics(
+                y_true      = y_true,
+                lower_bound = predictions[interval_columns[0]].loc[is_observed],
+                upper_bound = predictions[interval_columns[1]].loc[is_observed]
+            )
+        )
+    metric_values.append(_count_evaluated(y_true=y_true, y_pred=y_pred))
+
+    return metric_values
+
+
 def _calculate_metrics_backtesting_multiseries(
     series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
     predictions: pd.DataFrame,
