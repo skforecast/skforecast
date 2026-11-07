@@ -5432,3 +5432,110 @@ def _all_samples_removed_message(
         f"the {predictors}, or when `exog` has a missing value in every row. "
         f"To keep training samples, {fixes}."
     )
+
+
+def _warn_nan_training_rows(
+    n_nan_target: int | list[int] | np.ndarray,
+    n_nan_predictors: int | list[int] | np.ndarray,
+    n_rows: int,
+    dropna_from_series: bool,
+    series_name: str
+) -> None:
+    """
+    Warn about the rows of the training matrix with missing values: how many
+    are dropped because their target is NaN and how many have NaN predictors
+    (dropped if `dropna_from_series` is `True`, kept otherwise). Nothing is
+    raised if there are no such rows.
+
+    A row with a NaN target counts only as a NaN target row, even if it also
+    has NaN predictors, so the rows dropped are the sum of both counts. The
+    first sentence of the warning does not change with the counts, so the
+    searches group the warnings of all their candidates in one.
+
+    Parameters
+    ----------
+    n_nan_target : int, list, numpy ndarray
+        Number of rows with a NaN target. In the direct forecasters, a list or
+        array with the number of each step (the warning gives a range if they
+        differ).
+    n_nan_predictors : int, list, numpy ndarray
+        Number of rows with NaN predictors and a non-NaN target. In the direct
+        forecasters, a list or array with the number of each step.
+    n_rows : int
+        Number of rows of the training matrix before dropping any row (of
+        each step in the direct forecasters).
+    dropna_from_series : bool
+        Value of `dropna_from_series` of the forecaster.
+    series_name : str
+        Name of the input series used in the message, "`y`" or "`series`".
+
+    Returns
+    -------
+    None
+
+    """
+
+    per_step = np.ndim(n_nan_target) > 0
+    n_nan_target = np.atleast_1d(np.asarray(n_nan_target, dtype=int))
+    n_nan_predictors = np.atleast_1d(np.asarray(n_nan_predictors, dtype=int))
+    has_target = n_nan_target.max() > 0
+    has_predictors = n_nan_predictors.max() > 0
+    if not has_target and not has_predictors:
+        return
+
+    def fmt(counts: np.ndarray) -> str:
+        low, high = counts.min(), counts.max()
+        return f"{low}" if low == high else f"{low} to {high}"
+
+    def verb(counts: np.ndarray) -> str:
+        return "is" if counts.min() == counts.max() == 1 else "are"
+
+    where = " per step" if per_step else ""
+    predictors = "with NaN predictors (lags, window features or exog)"
+    target = fmt(n_nan_target)
+    if dropna_from_series and has_target and has_predictors:
+        n_dropped = n_nan_target + n_nan_predictors
+        counts = (
+            f"{fmt(n_dropped)} of {n_rows} rows {verb(n_dropped)} dropped{where}: "
+            f"{target} with a NaN target and {fmt(n_nan_predictors)} {predictors}."
+        )
+    elif dropna_from_series and has_predictors:
+        counts = (
+            f"{fmt(n_nan_predictors)} of {n_rows} rows {verb(n_nan_predictors)} "
+            f"dropped{where}, {predictors}."
+        )
+    elif not has_predictors:
+        counts = (
+            f"{target} of {n_rows} rows {verb(n_nan_target)} dropped{where}, "
+            f"with a NaN target."
+        )
+    elif has_target:
+        counts = (
+            f"{target} of {n_rows} rows {verb(n_nan_target)} dropped{where} "
+            f"(NaN target) and {fmt(n_nan_predictors)} {verb(n_nan_predictors)} "
+            f"kept {predictors}."
+        )
+    else:
+        counts = (
+            f"{fmt(n_nan_predictors)} of {n_rows} rows {verb(n_nan_predictors)} "
+            f"kept{where} {predictors}."
+        )
+
+    message = (
+        f"Some rows of the training matrix have missing values. {counts} They "
+        f"come from interspersed NaNs in {series_name} or `exog`."
+    )
+    if has_predictors:
+        if dropna_from_series:
+            message += (
+                " To keep the rows with NaN predictors, set "
+                "`forecaster.dropna_from_series = False` (the estimator must "
+                "support NaN)."
+            )
+        else:
+            message += (
+                " The estimator must support NaN. To drop those rows, set "
+                "`forecaster.dropna_from_series = True`."
+            )
+
+    warnings.warn(message, MissingValuesWarning, stacklevel=2)
