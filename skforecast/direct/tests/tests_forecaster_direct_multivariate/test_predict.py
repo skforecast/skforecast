@@ -1037,10 +1037,12 @@ def test_predict_output_when_last_window_stored_has_NaN():
                  )
 
     warn_msg = re.escape(
-        "NaNs detected in `X_train`. They have been dropped. If "
-        "you want to keep them, set `forecaster.dropna_from_series = False`. "
-        "Same rows have been removed from `y_train` to maintain alignment. "
-        "This is caused by interspersed NaNs in `series` or `exog`."
+        "Some rows of the training matrix have missing values. 2 of 6 rows "
+        "are dropped per step: 1 with a NaN target and 1 with NaN "
+        "predictors (lags, window features or exog). They come from "
+        "interspersed NaNs in `series` or `exog`. To keep the rows with NaN "
+        "predictors, set `forecaster.dropna_from_series = False` (the "
+        "estimator must support NaN)."
     )
     with pytest.warns(MissingValuesWarning, match=warn_msg):
         forecaster.fit(series=series_nan)

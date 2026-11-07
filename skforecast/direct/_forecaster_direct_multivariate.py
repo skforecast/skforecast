@@ -26,11 +26,11 @@ from ..base import ForecasterBase
 from ._forecaster_direct import _fit_one_step_estimator
 from ..exceptions import (
     DataTransformationWarning,
-    MissingValuesWarning,
     ResidualsUsageWarning
 )
 from ..utils import (
     _all_samples_removed_message,
+    _warn_nan_training_rows,
     initialize_lags,
     initialize_window_features,
     initialize_weights,
@@ -1205,7 +1205,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                             )
                         )
 
-            check_exog(exog=exog, allow_nan=False)
             if self.categorical_features is None:
                 check_exog_dtypes(exog, call_check_exog=False)
 
@@ -1357,17 +1356,39 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 f"Duplicated feature names detected in X_train: {duplicated_names}."
             )
 
-        any_nan_y = np.isnan(y_train).any()
-        if any_nan_y:
-            # NOTE: NaN values in `y_train` are warned here but dropped in the 
-            # `_filter_nan_X_y_step` method during the training of each step.
-            warnings.warn(
-                "NaNs detected in `y_train`. They have been dropped because the "
-                "target variable cannot have NaN values. Same rows have been "
-                "dropped from `X_train` to maintain alignment. This is caused by "
-                "interspersed NaNs in `series`.",
-                MissingValuesWarning
+        # NOTE: NaN rows are counted per step here, without building the
+        # training matrix of each step, and dropped in the `_filter_nan_X_y_step`
+        # method during the training of each step. Rows with a NaN target are
+        # always dropped; rows with NaN predictors (and a non-NaN target) only
+        # if `dropna_from_series` is `True`. The calendar features never have
+        # missing values.
+        n_rows = X_train_autoreg.shape[0]
+        nan_target = np.isnan(y_train)
+        nan_autoreg = np.isnan(X_train_autoreg).any(axis=1)
+        nan_exog = (
+            pd.isna(X_train_exog).any(axis=1) if X_train_exog is not None else None
+        )
+        n_nan_target = []
+        n_nan_predictors = []
+        for step in self.steps:
+            nan_target_step = nan_target[:, step - 1]
+            nan_predictors_step = nan_autoreg
+            if nan_exog is not None:
+                nan_predictors_step = (
+                    nan_predictors_step | nan_exog[step - 1 : step - 1 + n_rows]
+                )
+            n_nan_target.append(int(nan_target_step.sum()))
+            n_nan_predictors.append(
+                int((nan_predictors_step & ~nan_target_step).sum())
             )
+
+        _warn_nan_training_rows(
+            n_nan_target       = n_nan_target,
+            n_nan_predictors   = n_nan_predictors,
+            n_rows             = n_rows,
+            dropna_from_series = self.dropna_from_series,
+            series_name        = "`series`"
+        )
 
         y_train = {
             step: y_train[:, step - 1] for step in self.steps
@@ -1377,29 +1398,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             step: series_index[self.window_size + step - 1:][:len_train_index]
             for step in self.steps
         }
-
-        any_nan_X = np.isnan(X_train_autoreg).any()
-        if X_train_exog is not None and not any_nan_X:
-            any_nan_X = pd.isna(X_train_exog).any()
-
-        if any_nan_X:
-            if self.dropna_from_series:
-                # NOTE: NaN values in `X_train` are warned here but dropped in the 
-                # `_filter_nan_X_y_step` method during the training of each step.
-                warnings.warn(
-                    "NaNs detected in `X_train`. They have been dropped. If "
-                    "you want to keep them, set `forecaster.dropna_from_series = False`. "
-                    "Same rows have been removed from `y_train` to maintain alignment. "
-                    "This is caused by interspersed NaNs in `series` or `exog`.",
-                    MissingValuesWarning
-                )
-            else:
-                warnings.warn(
-                    "NaNs detected in `X_train`. Some estimators do not allow "
-                    "NaN values during training. If you want to drop them, "
-                    "set `forecaster.dropna_from_series = True`.",
-                    MissingValuesWarning
-                )
 
         return (
             X_train_autoreg,
