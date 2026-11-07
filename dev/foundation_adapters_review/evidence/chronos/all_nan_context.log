@@ -1,0 +1,25 @@
+skforecast           0.27.0
+chronos-forecasting  2.3.2
+torch                2.15.0+cpu
+== single series, last 100 values NaN
+             q_0.1           q_0.5           q_0.9         
+               min       max   min   max       min      max
+level                                                      
+tail_nan -94680.38 -57279.47 -0.54 -0.14  58444.25  86308.8
+  first prediction timestamp: 2024-01-13 12:00:00
+  warnings: []
+== two series (dict), one with last 100 values NaN
+             q_0.1           q_0.5           q_0.9          
+               min       max   min   max       min       max
+level                                                       
+ok            8.98      9.60  9.05  9.66      9.11      9.72
+tail_nan -94680.55 -57279.52 -0.54 -0.14  58444.25  86308.97
+  first prediction timestamp: 2024-01-13 12:00:00
+  warnings: []
+== single series fitted, last 100 values NaN
+             q_0.1           q_0.5           q_0.9         
+               min       max   min   max       min      max
+level                                                      
+tail_nan -94680.38 -57279.47 -0.54 -0.14  58444.25  86308.8
+  first prediction timestamp: 2024-01-13 12:00:00
+  warnings: []

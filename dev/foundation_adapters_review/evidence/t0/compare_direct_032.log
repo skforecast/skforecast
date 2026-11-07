@@ -1,0 +1,23 @@
+python 3.12.3 | torch 2.15.0+cpu | numpy 2.5.4 | pandas 2.3.3 | tfc-t0 0.3.2 | skforecast 0.27.0
+
+=== 1. adapter vs direct call
+no exog: max abs diff adapter vs direct = 0.0
+exog:    max abs diff adapter vs direct = 0.0
+
+=== 2. left NaN padding in a batch
+short alone vs in batch with a 500-long series (NaN left padding, no mask):
+  max rel diff of the median = 0.014380811761104527
+
+=== 3. heterogeneous covariates in a batch
+series without exog alone vs in a batch with a series that has exog:
+  max rel diff of the median = 0.05756457755930698
+
+=== 4. quantile levels outside the trained range
+t0-alpha trained levels: 0.1 .. 0.9; requested [0.01, 0.05, 0.1, 0.5, 0.9, 0.95, 0.99]
+  q0.01 == q0.1 at every step: True
+  q0.99 == q0.9 at every step: True
+  mean width 1%-99% / mean width 10%-90% = 1.0
+
+=== 5. bfloat16
+adapter route model.to(bfloat16): ERROR RuntimeError : mat1 and mat2 must have the same dtype, but got Float and BFloat16
+upstream route from_pretrained(dtype=bfloat16), autocast: max rel diff vs fp32 = 0.003102115334034183

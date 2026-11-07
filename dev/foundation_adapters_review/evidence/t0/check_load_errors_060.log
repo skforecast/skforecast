@@ -1,0 +1,9 @@
+python 3.12.3 | tfc-t0 0.6.0 | huggingface_hub 2.4.0
+
+== theforecastingcompany/t0-does-not-exist
+config.json: RepositoryNotFoundError
+from_pretrained: TypeError : T0Forecaster.__init__() missing 8 required positional arguments: 'embed_dim', 'num_layers', 'num_heads', 'mlp_hidden_dim', 'patch_size', 'group_every_n', 'dropout', and 'quantile_levels'
+
+== theforecastingcompany/t0-alpha-onnx-int8
+config.json keys: ['artifact', 'base_model', 'base_model_revision', 'compute_precision', 'context_length', 'download_bytes', 'format', 'future_covariate_rows', 'input_names', 'interface', 'model_type', 'onnx_opset', 'output_name', 'precision', 'prediction_length']
+from_pretrained: TypeError : T0Forecaster.__init__() missing 7 required positional arguments: 'embed_dim', 'num_layers', 'num_heads', 'mlp_hidden_dim', 'patch_size', 'group_every_n', and 'dropout'

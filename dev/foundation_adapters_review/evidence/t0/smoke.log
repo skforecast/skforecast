@@ -1,0 +1,98 @@
+.FFFFF                                                                   [100%]
+=================================== FAILURES ===================================
+____________________ test_predict_output_when_single_series ____________________
+tools/foundation_compat/tests/test_smoke.py:78: in test_predict_output_when_single_series
+    predictions = forecaster.predict(steps=STEPS)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+skforecast/foundation/_forecaster_foundation.py:832: in predict
+    predictions = self.estimator.predict(
+skforecast/foundation/_foundation_model.py:1275: in predict
+    self.adapter.predict(
+skforecast/foundation/_adapters.py:3736: in predict
+    forecast = self._model.predict(
+~/.venvs/fm-review-t0/lib/python3.12/site-packages/torch/utils/_contextlib.py:158: in inference_mode
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: T0Forecaster.predict() got an unexpected keyword argument 'context'
+_______________ test_predict_interval_output_when_single_series ________________
+tools/foundation_compat/tests/test_smoke.py:95: in test_predict_interval_output_when_single_series
+    predictions = forecaster.predict_interval(steps=STEPS, interval=[0.1, 0.9])
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+skforecast/foundation/_forecaster_foundation.py:949: in predict_interval
+    predictions = self.predict_quantiles(
+skforecast/foundation/_forecaster_foundation.py:1041: in predict_quantiles
+    predictions = self.estimator.predict(
+skforecast/foundation/_foundation_model.py:1275: in predict
+    self.adapter.predict(
+skforecast/foundation/_adapters.py:3736: in predict
+    forecast = self._model.predict(
+~/.venvs/fm-review-t0/lib/python3.12/site-packages/torch/utils/_contextlib.py:158: in inference_mode
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: T0Forecaster.predict() got an unexpected keyword argument 'context'
+___________________ test_predict_output_when_multiple_series ___________________
+tools/foundation_compat/tests/test_smoke.py:114: in test_predict_output_when_multiple_series
+    predictions = forecaster.predict(steps=STEPS)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+skforecast/foundation/_forecaster_foundation.py:832: in predict
+    predictions = self.estimator.predict(
+skforecast/foundation/_foundation_model.py:1275: in predict
+    self.adapter.predict(
+skforecast/foundation/_adapters.py:3736: in predict
+    forecast = self._model.predict(
+~/.venvs/fm-review-t0/lib/python3.12/site-packages/torch/utils/_contextlib.py:158: in inference_mode
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: T0Forecaster.predict() got an unexpected keyword argument 'context'
+________________________ test_predict_output_when_exog _________________________
+tools/foundation_compat/tests/test_smoke.py:137: in test_predict_output_when_exog
+    predictions = forecaster.predict(steps=STEPS, exog=exog_future)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+skforecast/foundation/_forecaster_foundation.py:832: in predict
+    predictions = self.estimator.predict(
+skforecast/foundation/_foundation_model.py:1275: in predict
+    self.adapter.predict(
+skforecast/foundation/_adapters.py:3736: in predict
+    forecast = self._model.predict(
+~/.venvs/fm-review-t0/lib/python3.12/site-packages/torch/utils/_contextlib.py:158: in inference_mode
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: T0Forecaster.predict() got an unexpected keyword argument 'context'
+______________ test_backtesting_foundation_output_when_two_folds _______________
+tools/foundation_compat/tests/test_smoke.py:152: in test_backtesting_foundation_output_when_two_folds
+    metrics, predictions = backtesting_foundation(
+skforecast/utils/utils.py:2885: in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+skforecast/model_selection/_validation.py:3284: in backtesting_foundation
+    metrics_levels, backtest_predictions = _backtesting_foundation(
+skforecast/utils/utils.py:2885: in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+skforecast/model_selection/_validation.py:2941: in _backtesting_foundation
+    pred = forecaster.predict(
+skforecast/foundation/_forecaster_foundation.py:832: in predict
+    predictions = self.estimator.predict(
+skforecast/foundation/_foundation_model.py:1275: in predict
+    self.adapter.predict(
+skforecast/foundation/_adapters.py:3736: in predict
+    forecast = self._model.predict(
+~/.venvs/fm-review-t0/lib/python3.12/site-packages/torch/utils/_contextlib.py:158: in inference_mode
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: T0Forecaster.predict() got an unexpected keyword argument 'context'
+=============================== warnings summary ===============================
+tools/foundation_compat/tests/test_smoke.py::test_predict_output_when_multiple_series
+tools/foundation_compat/tests/test_smoke.py::test_backtesting_foundation_output_when_two_folds
+  skforecast/utils/utils.py:4394: InputTypeWarning: Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It is recommended to use a dictionary of pandas Series instead. For more details, see: https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html#input-data
+  You can suppress this warning using: warnings.simplefilter('ignore', category=InputTypeWarning)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tools/foundation_compat/tests/test_smoke.py::test_predict_output_when_single_series
+FAILED tools/foundation_compat/tests/test_smoke.py::test_predict_interval_output_when_single_series
+FAILED tools/foundation_compat/tests/test_smoke.py::test_predict_output_when_multiple_series
+FAILED tools/foundation_compat/tests/test_smoke.py::test_predict_output_when_exog
+FAILED tools/foundation_compat/tests/test_smoke.py::test_backtesting_foundation_output_when_two_folds
+5 failed, 1 passed, 2 warnings in 17.21s

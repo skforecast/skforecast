@@ -1,0 +1,22 @@
+OK   autogluon/chronos-2-small
+OK   google/timesfm-2.5-200m-pytorch
+OK   google/timesfm-3.0-pytorch
+OK   Salesforce/moirai-2.0-R-small
+OK   soda-inria/tabicl
+OK   priorlabs/tabpfn-ts
+OK   theforecastingcompany/t0-alpha
+OK   Synthefy/Nori
+OK   taharnbl/TS-ICL
+OK   mistralai/Timestral-28M
+OK   amazon/chronos-2
+OK   autogluon/chronos-2
+OK   autogluon/chronos-2-synth
+OK   theforecastingcompany/t0-beta
+OK   Synthefy/Nori-30M
+OK   Synthefy/Nori-100M
+OK   mistralai/Timestral-5M
+OK   mistralai/Timestral-123M
+OK   mistralai/Timestral-209M
+
+Foundation model metadata matches the Hugging Face Hub.
+exit=0

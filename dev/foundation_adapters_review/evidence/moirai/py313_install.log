@@ -1,0 +1,30 @@
+### Python 3.13: uv pip install -e . uni2ts --override scipy>=1.12 --torch-backend cpu (dry run first)
+Using CPython 3.13.18 interpreter at: <system python3.13>
+Creating virtual environment at: ~/.venvs/fm-review-moirai-py313
+Activate with: source ~/.venvs/fm-review-moirai-py313/bin/activate
+Resolved 95 packages in 97ms
+Would download 27 packages
+Would install 95 packages
+ + numpy==1.26.4
+ + pytorch-lightning==2.6.6
+ + torch==2.15.0+cpu
+ + torchmetrics==1.9.0
+ + uni2ts==1.1.1
+### real install
+Using Python 3.13.18 environment at: ~/.venvs/fm-review-moirai-py313
+Resolved 95 packages in 43ms
+   Building skforecast @ file://.
+      Built skforecast @ file://.
+   Building ml-dtypes==0.4.1
+   Building numpy==1.26.4
+      Built ml-dtypes==0.4.1
+      Built numpy==1.26.4
+Prepared 27 packages in 2m 09s
+Installed 95 packages in 132ms
+exit: 0
+uni2ts 1.1.1 numpy 1.26.4 torch 2.15.0+cpu
+
+### Adapter in the Python 3.13 env (uni2ts 1.1.1 installed by the resolver)
+python 3.13.18 uni2ts 1.1.1 torch 2.15.0+cpu
+ImportError : uni2ts is required for MoiraiAdapter. Install it with `pip install uni2ts`.
+cause: ModuleNotFoundError : No module named 'uni2ts.model.moirai2'

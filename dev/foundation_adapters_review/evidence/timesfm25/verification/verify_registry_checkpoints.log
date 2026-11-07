@@ -1,0 +1,27 @@
+timesfm 3.0.2 | huggingface_hub 2.4.0
+pytorch repo commit: 1d95242 2025-10-02 Update README.md
+pytorch repo commit: 139be6c 2025-10-01 Update README.md
+pytorch repo commit: e8ebf27 2025-10-01 Update README.md
+pytorch repo commit: 816f64f 2025-10-01 Update README.md
+pytorch repo commit: 2d1b320 2025-10-01 Update README.md
+pytorch repo commit: fdcc8eb 2025-10-01 Delete config.yaml
+pytorch repo commit: d418f3e 2025-10-01 Refreshed model with speed optimizations.
+pytorch repo commit: a6e2c7c 2025-09-29 Update README.md
+pytorch repo commit: ef46453 2025-09-26 Remove trailing comma to make it a valid json (#2)
+pytorch repo commit: 9a657df 2025-09-25 Create config.json
+pytorch repo commit: 26233ff 2025-09-15 Update README.md
+pytorch repo commit: 3099d91 2025-09-15 Update README.md
+pytorch repo commit: 2b518f0 2025-09-12 Update README.md
+pytorch repo commit: 0367428 2025-09-12 Update README.md
+pytorch repo commit: bbf56d4 2025-09-12 Update README.md
+pytorch repo commit: b0b31f6 2025-09-12 Update README.md
+pytorch repo commit: 295319d 2025-09-12 Update README.md
+pytorch repo commit: 910b4d3 2025-09-05 Upload folder using huggingface_hub
+pytorch repo commit: d35e0e4 2025-09-02 Upload folder using huggingface_hub
+pytorch repo commit: eae42bc 2025-09-02 initial commit
+-transformers tensors 272 | expected 232 | expected missing in file 228
+-pytorch tensors 232 | expected missing in file 0
+google/timesfm-2.5-200m-flax: adapter TimesFM25Adapter
+google/timesfm-2.5-200m-flax: RemoteEntryNotFoundError: 404 Client Error. (Request ID: Root=1-6aeded37-2da90efa48fc2dd6232340be;865a283a-2328-4e21-9b52-5d9db102802c)
+google/timesfm-2.0-500m-pytorch: ValueError: No adapter found for model 'google/timesfm-2.0-500m-pytorch'. Registered prefixes: ['amazon/chronos-2', 'autogluon/chronos-2', 'google/timesfm-2.5', 'google/tim
+google/timesfm-3.0-pytorch: adapter TimesFM3Adapter

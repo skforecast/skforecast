@@ -1,0 +1,41 @@
+python=3.12.3 tsicl=0.2.1 torch=2.9.1+cpu numpy=2.5.4 pandas=2.3.3 skforecast=0.27.0 machine=x86_64 cuda=False threads=4
+
+== V0 output type of the backend with squeeze_output=False
+  equal lengths: Tensor shape=(2, 1, 24, 1)
+  different lengths: list shapes=[(1, 24, 1), (1, 24, 1)]
+
+== V1 adapter (FoundationModel) vs direct backend, different lengths, exog, quantiles
+  a no exog q=[0.05, 0.5, 0.95]: max_abs_diff=0.000e+00
+  b no exog q=[0.05, 0.5, 0.95]: max_abs_diff=0.000e+00
+  a with past+future exog: max_abs_diff=0.000e+00
+
+== V2 backend: past-only covariates vs none (single series)
+  past-only vs none: max_abs_diff=0.000e+00
+  past+future vs none: max_abs_diff=9.949e-01
+
+== V3 backend: mixed (x1 past-only, x2 past+future) vs x2 only
+  mixed vs x2 only: max_abs_diff=0.000e+00
+
+== V4 backend: two series, different lengths, future exog
+  a joint (b shorter) vs a alone with exog: max_abs_diff=9.949e-01
+  a joint (b shorter) vs a without exog: max_abs_diff=0.000e+00
+  a joint (same length) vs a alone with exog: max_abs_diff=7.629e-06
+
+== V5 backend: NaN in the past exog of series b, same length
+  a joint (b exog NaN) vs a joint (no NaN): max_abs_diff=7.874e-03
+  a joint (no NaN) vs a alone: max_abs_diff=7.629e-06
+
+== V6 quantile grid: SUPPORTED_QUANTILES rejected by the backend
+  rejected=[0.07, 0.14, 0.28, 0.29, 0.55, 0.56, 0.57, 0.58]
+  100*0.07=7.000000000000001 in linspace grid: False
+  FoundationModel q=0.07: ValueError: Misspecified arg `quantile_levels=[7.000000000000001]`, should be a subset of [0.01, 0.02, ..., 0.99]
+
+== V7 rollout beyond max_target_length
+  max_target_length=672 max_context_length=4096
+  steps=700 exog=False: shape=(1, 700, 1) finite=True
+  steps=1344 exog=False: ValueError: Arg `prediction_length` should be a >0 `int`, received 0 instead at tsicl/pipeline.py:1270
+  steps=700 exog=True: RuntimeError: Sizes of tensors must match except in dimension 0. Expected size 400 but got size 672 for tensor number 1 in the list. at tsicl/pipeline.py:1101
+
+== V8 device and context_length clipping
+  _get_device(mps) -> cpu
+  context_length=10000 -> this_context_length=4096

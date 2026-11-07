@@ -1,0 +1,139 @@
+=========== #522
+#522 open [Bug] Asymmetric scale guard in revin causes roundtrip invariant violation and silent forecast annihilation for low-variance / quiescent series
+### Summary
+In both PyTorch (`src/timesfm/torch/util.py`) and Flax (`src/timesfm/flax/util.py`), the Reversible Instance Normalization (`revin`) implementation contains an asymmetry between forward normalization and reverse denormalization when handling near-zero variance inputs ($\sigma < \text{_TOLERANCE}$).
+
+While forward normalization guards against division-by-zero by clamping small $\sigma$ to $1.0$, reverse denormalization uses raw $\sigma$ directly:
+- Forward: `(x - mu) / safe_sigma` where `safe_sigma = where(sigma < 1e-6, 1.0, sigma)`
+- Reverse: `x * sigma + mu` (raw `sigma` without guard)
+
+This breaks the roundtrip identity:
+$$\text{revin}(\text{revin}(x, \mu, \sigma, \text{reverse=False}), \mu, \sigma, \text{reverse=True}) \neq x$$
+
+For any input series with zero or near-zero variance ($\sigma < 10^{-6}$, common in telemetry, quiescent sensors, piecewise-constant metrics, or idle systems), the transformer backbone's predicted forecast deltas are multiplied by $\approx 0.0$ in denormalization, silently annihilating all model predictions and collapsing the forecast into a flat line ($\mu$).
+
+---
+
+### Mathematical Invariant Violation
+
+As stated in `tests/test_torch_utils.py` (lines 190–196):
+> *"This is the fundamental invariant of reversible normalization... Any deviation here directly corrupts the final forecast values."*
+
+Kim et al. (ICLR 2022) defines RevIN such that normalization and denormalization must be exact mathematical inverses. When variance is below threshold, forward pass maps $x \mapsto x - \mu$ (treating effective $\sigma = 1.0$). Therefore, the inverse mapping must also treat effective $\sigma = 1.0$ ($x \mapsto x \cdot 1.0 + \mu$).
+
+Currently, multiplying by the raw unguarded $\sigma$ causes:
+1. When $\sigma = 0$: The forecast delta $\Delta = \hat{y} - \mu$ is zeroed out entirely ($\Delta \times 0 = 0$).
+2. When $0 < \sigma < 10^{-6}$: Forecast deltas are attenuated by up to $1,000,000\times$.
+
+---
+
+### Minimal Reproducible Example
+
+Run the following standalone script (reproducing `src/timesfm/torch/util.py:revin`):
+
+```python
+import torch
+
+_TOLERANCE = 1e-6
+
+def revin_current(x, mu, sigma, reverse=False):
+    if not reverse:
+        safe_sigma = torch.where(sigma < _TOLERANCE, 1.0, sigma)
+        return (x - mu) / safe_sigma
+    return x * sigma + mu
+
+def revin_symmetric(x, mu, sigma, reverse=False):
+    safe_sigma = torch.where(sigma < _TOLERANCE, 1.0, sigma)
+    if not reverse:
+        return (x - mu) / safe_sigma
+    return x
+=========== #546
+#546 open fix(timesfm3/torch): mask covariate placeholders in mixed batches
+## What's wrong
+
+When only some queries in a `predict_batch` batch have `past_only_covariates` or `past_future_covariates`, the others get an all-zero placeholder (`np.zeros_like`) so the arrays can be stacked. `model.decode` is then called without `past_only_mask` / `past_future_mask`, so it reads the placeholder as an observed covariate that is constantly zero. As a result, a series with no covariates gets a different forecast depending on which series share its batch.
+
+Repro (small random-weight TimesFM3Torch, `per_core_batch_size=2`, both contexts 64 long so padding is identical):
+
+```python
+alone = list(f.predict_batch([a], horizon=32))[0].forecast
+mixed = list(f.predict_batch([a, b], horizon=32,
+                             past_future_covariates=[None, pf_b]))[0].forecast
+np.abs(alone - mixed).max()
+```
+
+Before: 6.39. After: ~1e-5 (float noise). `past_only_covariates=[None, po_b]` behaves the same way.
+
+## Fix
+
+For each covariate type present in the batch, build a bool mask with the same shape as the covariate arrays: False for real rows, True for placeholder rows. Pass it to `decode` as `past_only_mask` / `past_future_mask`. `decode` already pads these masks and ORs them into the context mask, and for past-future covariates into the horizon mask too. When a covariate type is absent, its mask stays `None`, as before. When every row is real, the mask is all False, which is the same as `decode`'s default.
+
+The two fake models in the test file now accept, and ignore, the new keyword arguments.
+
+## Testing
+
+- New `TimesFM3ForecasterCovariatePlaceholderTest.test_no_covariate_query_unaffected_by_batch_mate` checks that a series' forecast alone matches its forecast when batched with a covariate-bearing series of the same length. It covers both past-future and past-only covariates and uses a tiny random-weight `TimesFM3Torch` loaded through `from_pretrained`. Without the fix, both subtests fail (max abs diff about 0.095 against a 1e-4 tolerance). With the fix, both pass.
+- `pytest src/timesfm3/torch tests`: 109 passed. `tests/test_model_loading.py` was excluded because my local environment is missing `einshape`.
+=========== #552
+#552 open fix: surface optional backend import failures with actionable errors
+## Summary
+
+`import timesfm` eagerly imports the PyTorch and Flax backends behind
+`try/except ImportError` guards and silently swallows the failure. Users who
+install without the matching extra (e.g. `pip install timesfm` instead of
+`pip install timesfm[torch]`) get:
+
+```
+AttributeError: module 'timesfm' has no attribute 'TimesFM_2p5_200M_torch'
+```
+
+with no hint of the real cause — exactly the confusion reported in #318 and
+#287, compounded by the stale PyPI releases tracked in #336.
+
+## Fix
+
+Keep the original ImportError from each swallowed backend import and expose it
+through a module-level PEP 562 `__getattr__` (the same pattern already used by
+`timesfm3/__init__.py`):
+
+- `timesfm.TimesFM_2p5_200M_torch` now raises `ImportError` naming the backend,
+  the original error, and the extra to install:
+
+  ```
+  ImportError: timesfm.TimesFM_2p5_200M_torch could not be imported
+  (ModuleNotFoundError("No module named 'torch'")). Install the optional
+  backend with: pip install "timesfm[torch]"
+  ```
+
+- `from timesfm import TimesFM3Forecaster` and `.TimesFM3Torch` surface the
+  same actionable message instead of a generic "cannot import name" error.
+- Unknown attribute names keep raising the standard `AttributeError` that
+  introspection tools expect.
+
+## Verification
+
+New subprocess-based tests in `tests/test_optional_backend_errors.py` block
+the optional imports with an import hook, so they pass identically whether or
+not the extras are installed:
+
+- import-time contract holds with all backends missing (`import timesfm` +
+  `ForecastConfig` still work)
+- each backend name raises a message naming the extra to install, chains the
+  original error, and keeps a standard `AttributeError` for unknown names
+- positive control: the torch backend loads when the extra is installed
+
+TDD: 3 of these tests fail against the unfixed code, all pass with the fix.
+
+- `PYTHONPATH=src python -m pytest tests -q --ignore=tests/test_model_loading.py`
+  → **65 passed**
+- `ruff check` and `ruff format --check` → clean
+- Reproduced the original `AttributeError` symptom in a fresh env *without*
+  `torch`, and verified the actionable error message afterwards.
+
+Related: #318, #287 (and the stale-release half of the symptom, tracked in
+=========== #515
+#515 open Trim decoded horizons before combining forecast batches
+When `predict_batch` processes separate batches with optional future covariates, `decode` can return the exact requested horizon for one batch and a patch-rounded horizon for another. Concatenating those outputs then raises a NumPy shape error. Trim each decoded batch to the requested horizon before collecting it.
+
+The regression test covers mixed covariates, batch sizes 1–3, symmetric averaging, and padding modes. On the current `master`, 4 of its 12 cases fail with the concatenation error; all 12 pass with this change. Ruff passes.
+

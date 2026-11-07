@@ -1,0 +1,21 @@
+## is:issue forecast
+#172 open Redundant "fourier" string in TRANSFORM REGISTRY upd=2026-10-31
+#171 open Preserve explicitly empty DatetimeEncoder configurations upd=2026-10-31
+#136 closed DatetimeEncoder sin/cos encoding is off by one, causing angle collisions upd=2026-09-02
+#83 closed License of pretrained weights upd=2026-03-25
+#21 closed TabICL-TS upd=2026-02-23
+## is:pull-request forecast
+#174 open Fix empty arguments in DatetimeEncoder and the broken "fourier" temporal feature alias upd=2026-10-31
+#130 open [test] Add forecast example test upd=2026-08-21
+#23 open [ENH] ensure multiple instances of identical `TabICLClassifier` share the same `torch` in-memory model upd=2025-08-23
+#108 closed [EHN] Remove gluonts dependency upd=2026-08-20
+#77 closed add forecasting tuto upd=2026-03-16
+#84 closed Clarify public vs. private API following scikit-learn conventions upd=2026-04-21
+#78 closed Add skrub tutorial + string handling fixes/tests upd=2026-03-17
+## is:issue fourier
+#172 open Redundant "fourier" string in TRANSFORM REGISTRY upd=2026-10-31
+## is:pull-request temporal_features
+#174 open Fix empty arguments in DatetimeEncoder and the broken "fourier" temporal feature alias upd=2026-10-31
+#84 closed Clarify public vs. private API following scikit-learn conventions upd=2026-04-21
+## is:issue quantiles
+#16 closed Planned support for regression? upd=2026-02-12

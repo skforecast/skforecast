@@ -1,0 +1,12 @@
+# python: Python 3.12.3
+tabpfn-time-series 1.4.0 | tabpfn 9.2.0 | tabpfn-client 0.7.1 | torch 2.15.0+cpu
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.2.0, pluggy-1.7.0
+rootdir: <repo>
+configfile: pyproject.toml
+plugins: anyio-4.16.0, platformdirs-4.14.5
+collected 5 items
+
+tools/foundation_compat/tests/test_contract.py .....                     [100%]
+
+============================== 5 passed in 12.54s ==============================

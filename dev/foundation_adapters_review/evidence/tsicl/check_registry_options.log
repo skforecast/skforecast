@@ -1,0 +1,28 @@
+python=3.12.3 tsicl=0.2.1 torch=2.9.1+cpu numpy=2.5.4 skforecast=0.27.0
+
+== registry
+'taharnbl/TS-ICL' -> TSICLAdapter
+'taharnbl/ts-icl' -> ValueError: No adapter found for model 'taharnbl/ts-icl'. Registered prefixes: ['amazon/chro
+'EDF-Lab/TS-ICL' -> ValueError: No adapter found for model 'EDF-Lab/TS-ICL'. Registered prefixes: ['amazon/chron
+'taharnbl/TS-ICL-v2' -> TSICLAdapter
+
+== get_model_info('taharnbl/TS-ICL')
+FoundationModelInfo(model_id='taharnbl/TS-ICL', adapter='TSICLAdapter', model_id_prefixes=('taharnbl/TS-ICL',), default_model_id='taharnbl/TS-ICL', default_context_length=4096, backend_package='tsicl', allow_exog=True, supports_past_only_covariates=True, supports_categorical_covariates=False, supports_heterogeneous_covariates=False, supports_nan_in_series=True, supported_quantiles=(0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16, 0.17, 0.18, 0.19, 0.2, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26, 0.27, 0.28, 0.29, 0.3, 0.31, 0.32, 0.33, 0.34, 0.35, 0.36, 0.37, 0.38, 0.39, 0.4, 0.41, 0.42, 0.43, 0.44, 0.45, 0.46, 0.47, 0.48, 0.49, 0.5, 0.51, 0.52, 0.53, 0.54, 0.55, 0.56, 0.57, 0.58, 0.59, 0.6, 0.61, 0.62, 0.63, 0.64, 0.65, 0.66, 0.67, 0.68, 0.69, 0.7, 0.71, 0.72, 0.73, 0.74, 0.75, 0.76, 0.77, 0.78, 0.79, 0.8, 0.81, 0.82, 0.83, 0.84, 0.85, 0.86, 0.87, 0.88, 0.89, 0.9, 0.91, 0.92, 0.93, 0.94, 0.95, 0.96, 0.97, 0.98, 0.99), requires_hf_auth=False, requires_provider_auth=False, weights_repo_id='taharnbl/TS-ICL', weights_in_hf_cache=True, license='tsicl-v1-license-v1.0', license_url='https://huggingface.co/taharnbl/TS-ICL/blob/main/LICENSE', commercial_use_restricted=True)
+
+== TSICL.forecast signature
+(self, inputs, covars: Union[List[torch.Tensor], torch.Tensor, numpy.ndarray, NoneType] = None, prediction_length: int = 0, batch_size: int = 64, quantile_levels: List[float] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], context_length: int | None = None, device: torch.device | None = None, denormalize: bool = True, point_estimator: Literal['mean', 'median'] = 'mean', allow_auto_complete: bool = False, allow_covar_forecast: bool = False, squeeze_output: bool = True) -> Tuple[Union[torch.Tensor, List[torch.Tensor]], Union[torch.Tensor, List[torch.Tensor]]]
+
+== TSICL.__init__ signature
+(self, model_path: str | pathlib.Path | None = None, checkpoint_version: str = 'tsicl-v1.ckpt', allow_auto_download: bool = True)
+
+max_context_length=4096 max_target_length=672
+quantile grid: start=0.01 end=0.99 n=99
+_get_device('mps') without CUDA -> cpu
+
+== allow_covar_forecast with past-only covariates
+allow_covar_forecast=False vs no covariates: max_abs_diff=0.000e+00
+allow_covar_forecast=True  vs no covariates: max_abs_diff=2.244e-01
+
+== output type of forecast(squeeze_output=False) for list inputs
+same lengths: Tensor shape=(2, 1, 24, 2)
+different lengths: list shapes=[(1, 24, 2), (1, 24, 2)]

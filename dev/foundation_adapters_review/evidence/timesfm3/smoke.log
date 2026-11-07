@@ -1,0 +1,4 @@
+python 3.12.3 | skforecast 0.27.0 | timesfm 3.0.2 | torch 2.15.0+cpu | git d9b8f4f
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+6 passed, 7 warnings in 12.85s

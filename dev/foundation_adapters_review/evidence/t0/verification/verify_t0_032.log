@@ -1,0 +1,21 @@
+python 3.12.3 | torch 2.15.0+cpu | numpy 2.5.4 | pandas 2.3.3 | tfc-t0 0.3.2 | huggingface_hub 2.4.0 | skforecast 0.27.0 | x86_64
+
+=== A. current adapter call unchanged
+current adapter call OK, shape (12, 2)
+
+=== C. left NaN padding
+short alone vs in batch (NaN padding as MISSING): max rel diff = 0.0038515028102328293
+direct with mask=PAD vs alone: max rel diff = 8.038944534286274e-06
+
+=== D. heterogeneous covariates
+hetero=True (current): a alone vs in batch with b+exog: max rel diff = 0.014454236002220825
+hetero=False: a alone vs in batch: max rel diff = 0.0
+direct: all-NaN covariate row vs no covariates: max rel diff = 0.014454158954322338
+
+=== E. extreme quantile levels
+q0.01 == q0.1: True | q0.99 == q0.9: True
+
+=== F. torch_dtype
+adapter torch_dtype=bfloat16 (model.to(dtype)): ERROR RuntimeError mat1 and mat2 must have the same dtype, but got Float and BFloat16
+from_pretrained(dtype=bf16) parameter dtype: torch.float32
+from_pretrained(dtype=bf16) predict OK, output dtype torch.float32

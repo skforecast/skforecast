@@ -1,0 +1,10 @@
+tabpfn-time-series : 1.4.0
+tabpfn             : 9.2.0
+pandas             : 2.3.3
+numpy              : 2.5.4
+Predicting time series:   0%|          | 0/1 [00:00<?, ?it/s]Predicting time series: 100%|██████████| 1/1 [00:00<00:00, 14.74it/s]
+integer timestamps, default features: OK, index dtype datetime64[ns]
+Predicting time series:   0%|          | 0/1 [00:00<?, ?it/s]Predicting time series: 100%|██████████| 1/1 [00:00<00:00, 41.16it/s]
+integer timestamps, [RunningIndexFeature()]: OK, index dtype datetime64[ns]
+DeprecationWarning   : pd.Timestamp("2000-01-01") + pd.Timedelta(days=5) -> The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the futur
+no DeprecationWarning: pd.date_range("2000-01-01", periods=5 + 3, freq="D")[5:]

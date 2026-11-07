@@ -1,0 +1,16 @@
+python 3.12.3 | tabicl 2.2.0 | torch 2.15.0+cpu | numpy 2.5.4 | pandas 2.3.3 | skforecast 0.27.0 | x86_64 Linux | cuda False
+Predicting time series:   0%|          | 0/1 [00:00<?, ?it/s]Predicting time series: 100%|██████████| 1/1 [00:00<00:00,  1.13it/s]Predicting time series: 100%|██████████| 1/1 [00:00<00:00,  1.13it/s]
+[A] backend output columns: ['target', 0.1, 0.5, 0.9] | index names: ['item_id', 'timestamp'] | type: DataFrame
+[A quantiles] shape adapter=(12, 3) direct=(12, 3) max_abs_diff=0.000e+00 allclose=True
+Predicting time series:   0%|          | 0/1 [00:00<?, ?it/s]Predicting time series: 100%|██████████| 1/1 [00:00<00:00,  1.19it/s]Predicting time series: 100%|██████████| 1/1 [00:00<00:00,  1.19it/s]
+[A point (mean)] shape adapter=(12,) direct=(12,) max_abs_diff=0.000e+00 allclose=True
+dev/foundation_adapters_review/evidence/tabicl/compare_direct.py:104: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+  f_index = pd.date_range(y.index[-1] + pd.Timedelta(hours=1), periods=STEPS, freq="h")
+Predicting time series:   0%|          | 0/3 [00:00<?, ?it/s]Predicting time series: 100%|██████████| 3/3 [00:00<00:00, 1784.30it/s]
+[B point s1] shape adapter=(12,) direct=(12,) max_abs_diff=0.000e+00 allclose=True
+[B point s2] shape adapter=(12,) direct=(12,) max_abs_diff=0.000e+00 allclose=True
+[B point s3] shape adapter=(12,) direct=(12,) max_abs_diff=0.000e+00 allclose=True
+Predicting time series:   0%|          | 0/1 [00:00<?, ?it/s]Predicting time series: 100%|██████████| 1/1 [00:00<00:00,  1.21it/s]Predicting time series: 100%|██████████| 1/1 [00:00<00:00,  1.20it/s]
+[C quantiles s1] shape adapter=(12, 2) direct=(12, 2) max_abs_diff=0.000e+00 allclose=True
+Predicting time series:   0%|          | 0/1 [00:00<?, ?it/s]Predicting time series: 100%|██████████| 1/1 [00:00<00:00,  1.20it/s]Predicting time series: 100%|██████████| 1/1 [00:00<00:00,  1.20it/s]
+[C quantiles s2] shape adapter=(12, 2) direct=(12, 2) max_abs_diff=0.000e+00 allclose=True

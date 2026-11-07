@@ -1,0 +1,8 @@
+# tabpfn-time-series==1.3.0 with tabpfn==9.0.0 (lowest pair allowed by backend_package)
+tabpfn-time-series 1.3.0 | tabpfn 9.0.0 | torch 2.15.0+cpu
+.....                                                                    [100%]
+5 passed in 11.36s
+58 passed, 4 warnings in 1.13s
+TabPFNTSPipeline.__init__ params: ['self', 'max_context_length', 'temporal_features', 'tabpfn_mode', 'tabpfn_output_selection', 'tabpfn_model_config', 'max_featurize_rows']
+default features: ['RunningIndexFeature', 'CalendarFeature', 'AutoSeasonalFeature']
+TABPFN_MODEL_VERSION: v3.5

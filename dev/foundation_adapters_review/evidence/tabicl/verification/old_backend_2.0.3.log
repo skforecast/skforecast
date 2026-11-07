@@ -1,0 +1,14 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using Python 3.12.3 environment at: ~/.venvs/fm-review-tabicl-v-2.0.3
+gluonts==0.17.0
+huggingface-hub==2.4.0
+numpy==2.5.4
+pandas==2.3.3
+tabicl==2.0.3
+torch==2.15.0+cpu
+ERROR: usage: python -m pytest [options] [file_or_dir] [file_or_dir] [...]
+python -m pytest: error: the following arguments are required: --backend
+  inifile: pyproject.toml
+  rootdir: ~/skforecast
+
+3 passed in 8.87s

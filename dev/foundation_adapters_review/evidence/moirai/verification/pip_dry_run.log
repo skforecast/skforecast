@@ -1,0 +1,7 @@
+pip 26.3 from ~/.venvs/fm-review-moirai-pipcheck/lib/python3.12/site-packages/pip (python 3.12)
+### pip install --dry-run uni2ts (pandas 2.3.3 and scipy 1.17.1 preinstalled)
+gluonts-0.14.4
+pandas-2.1.4
+scipy-1.11.4
+torch-2.4.1+cpu
+uni2ts-2.0.0

@@ -1,0 +1,20 @@
+Source: GitHub Actions run 42212742430 (Foundation Backends Compatibility), job 127875169082 "tabicl",
+branch 0.27.x, commit 09433c35a7def53a0e14bf86b72ab2015f03e421, 2026-11-06, ubuntu-26.04, CPython 3.12.16.
+Read with the GitHub Actions API (job logs, tail 600 lines). Relevant lines:
+
+$ uv pip install --python .../venv/bin/python --torch-backend cpu -e <repo> pytest tabicl[forecast]
+Resolved 63 packages
+ + tabicl==2.2.0
+ + torch==2.15.0+cpu
+ + numpy==2.5.4
+ + pandas==2.3.3
+ + scipy==1.18.1
+ + scikit-learn==1.9.1
+ + huggingface-hub==2.4.0
+ + einops==0.8.2
+ + skforecast==0.27.0 (editable)
+test_contract.py --backend tabicl: 3 passed in 9.18s
+test_smoke.py --backend tabicl: 6 passed, 2 warnings (InputTypeWarning) in 15.08s
+result json: "versions": {"tabicl": "2.2.0", "torch": "2.15.0+cpu", "numpy": "2.5.4", "scipy": "1.18.1",
+  "pandas": "2.3.3", "huggingface_hub": "2.4.0"}, "latest_on_pypi": "2.2.0", "held_back": false, "status": "passed"
+HF cache restored: foundation-weights-tabicl-... ~101 MB

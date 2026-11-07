@@ -1,0 +1,8 @@
+### Resolution with override scipy>=1.12, Python 3.13
+numpy==1.26.4
+torch==2.15.0+cpu
+uni2ts==1.1.1
+### Resolution with override scipy>=1.12, Python 3.14
+numpy==1.26.4
+torch==2.15.0+cpu
+uni2ts==1.1.1

@@ -1,0 +1,19 @@
+..F                                                                      [100%]
+=================================== FAILURES ===================================
+_________ test_backend_call_matches_signature[t0:T0Forecaster.predict] _________
+tools/foundation_compat/tests/test_contract.py:70: in test_backend_call_matches_signature
+    signature.bind_partial(
+<python-stdlib>/inspect.py:3249: in bind_partial
+    return self._bind(args, kwargs, partial=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<python-stdlib>/inspect.py:3231: in _bind
+    raise TypeError(
+E   TypeError: got an unexpected keyword argument 'context'
+
+The above exception was the direct cause of the following exception:
+tools/foundation_compat/tests/test_contract.py:75: in test_backend_call_matches_signature
+    raise AssertionError(
+E   AssertionError: `t0:T0Forecaster.predict` does not accept the call of the adapter: got an unexpected keyword argument 'context'. Call: 1 positional argument(s) and the keyword arguments ['context', 'horizon', 'quantiles', 'future_covariates']. Signature: (self, model_input: Any, horizon: int, quantile_levels: collections.abc.Sequence[float] = (0.1, 0.5, 0.9), *, context_length: int | None = None, future_covariates: Any = None, mask: Any = None, group_ids: Any = None, trim_leading_missing: bool = False, symmetric_averaging: bool = False, clip_nonnegative: bool = False, snap_integers: bool = False) -> t0.forecast.Forecast[torch.Tensor].
+=========================== short test summary info ============================
+FAILED tools/foundation_compat/tests/test_contract.py::test_backend_call_matches_signature[t0:T0Forecaster.predict]
+1 failed, 2 passed in 3.37s

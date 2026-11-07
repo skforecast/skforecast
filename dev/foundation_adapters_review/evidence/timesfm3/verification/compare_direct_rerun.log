@@ -1,0 +1,63 @@
+python 3.12.3
+skforecast 0.27.0
+timesfm 3.0.2
+torch 2.15.0+cpu
+numpy 2.5.4
+pandas 2.3.3
+huggingface_hub 2.4.0
+torch threads 4
+
+== Registry routing
+  google/timesfm-3.0-pytorch -> TimesFM3Adapter
+  google/timesfm-3.0-flax -> TimesFM3Adapter
+  google/timesfm-3.5-pytorch -> ValueError: No adapter found for model 'google/timesfm-3.5-pytorch'. Registered prefixes: ['
+  google/timesfm-2.5-200m-transformers -> TimesFM25Adapter
+
+Model loaded in 2.6 s
+config.quantiles [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+config.median_quantile_index 4
+config.per_core_batch_size 4
+global_context 15360
+device cpu dtype torch.float32
+
+== A. Single series, no exog (steps=24)
+  raw quantiles shape (24, 9)
+  point vs direct forecast   maxdiff 0.0
+  quantiles vs direct        maxdiff 0.0
+  q_0.5 vs point             maxdiff 0.0
+  point vs TimesFM3Forecaster.predict maxdiff 0.0
+  quantiles monotone True
+
+== B. Horizons
+  steps=1    rows=1 finite=True
+  steps=63   rows=63 finite=True
+  steps=64   rows=64 finite=True
+  steps=65   rows=65 finite=True
+  steps=200  rows=200 finite=True
+
+== C. Multi-series of different lengths: batch vs one by one
+  max |batch - single| over 6 series 0.20175552368164062
+  adapter vs direct predict_batch maxdiff 0.0
+  per_core_batch_size=1   vs default maxdiff 0.20175552368164062
+  per_core_batch_size=4   vs default maxdiff 0.0
+  per_core_batch_size=16  vs default maxdiff 0.016811370849609375
+
+== D. Exog: past-only 'past' + known-future 'fut' (steps=24)
+  adapter vs direct edge     maxdiff 0.0
+  direct edge vs none        maxdiff 0.9266891479492188 rel 0.016004059286025243
+  exog steps=64   rows=64 finite=True
+  exog steps=100  rows=100 finite=True
+
+== E. Exog dtypes int64 / bool / category
+  int/bool finite True
+  category -> ValueError: TimesFM3Adapter supports only numeric covariates. Column 'cat' has dtype category. Encode categorical covariat
+
+== F. NaN in the series
+  inner + leading NaN finite True
+  trailing NaN finite True
+
+== G. 40 known-future covariates (config max_variates=32)
+  40 covariates finite True
+
+== H. bfloat16 weights on CPU
+  bfloat16 -> RuntimeError expected m1 and m2 to have the same dtype, but got: float != c10::BFloat16

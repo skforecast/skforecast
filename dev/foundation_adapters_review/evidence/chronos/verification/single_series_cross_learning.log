@@ -1,0 +1,6 @@
+skforecast           0.27.0
+chronos-forecasting  2.3.2
+torch                2.15.0+cpu
+transformers         5.22.1
+single input, cross_learning True vs False max_abs_diff: 0.0
+predict_kwargs with cross_learning: TypeError chronos.chronos2.pipeline.Chronos2Pipeline.predict_quantiles() got multiple values for keyword argument 'cross_learning'

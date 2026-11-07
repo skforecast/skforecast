@@ -1,0 +1,9 @@
+python       : 3.12.3
+synthefy-nori: 0.23.0
+synthefy     : 8.0.0
+torch        : 2.13.0+cpu
+numpy        : 2.5.4
+pandas       : 2.3.3
+Synthefy/Nori: numpy vs numeric DataFrame max diff point 0.000e+00, quantiles 0.000e+00
+Synthefy/Nori-1-5: numpy vs numeric DataFrame max diff point 0.000e+00, quantiles 0.000e+00
+string column with unseen level 'z' in the query: finite True

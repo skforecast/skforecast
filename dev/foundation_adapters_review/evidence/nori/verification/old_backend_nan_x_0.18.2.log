@@ -1,0 +1,7 @@
+python       : 3.12.3
+synthefy-nori: 0.18.2
+torch        : 2.13.0+cpu
+numpy        : 2.5.4
+scikit-learn : 1.9.1
+NaN in X: ok, finite point True, finite quantiles True
+NaN in y: ValueError: Input y contains NaN.

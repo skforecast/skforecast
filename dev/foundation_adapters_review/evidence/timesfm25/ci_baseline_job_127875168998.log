@@ -1,0 +1,22 @@
+# Extract of the log of job 127875168998 (timesfm25), run 42212742430 of the
+# Foundation Backends Compatibility workflow, 2026-11-06, branch 0.27.x,
+# commit 09433c35a7def53a0e14bf86b72ab2015f03e421. Retrieved with the GitHub
+# job logs API (tail 600 lines). Only the relevant lines are kept.
+Using CPython 3.12.16
+$ uv pip install --python <venv>/bin/python --torch-backend cpu -e <repo> pytest timesfm[torch]
+ + huggingface-hub==2.4.0
+ + numpy==2.5.4
+ + pandas==2.3.3
+ + safetensors==0.8.0
+ + scipy==1.18.1
+ + skforecast==0.27.0 (from file:///<repo>)
+ + timesfm==3.0.2
+ + torch==2.15.0+cpu
+$ python -m pytest tools/foundation_compat/tests/test_contract.py --backend timesfm25 -q -p no:cacheprovider
+6 passed in 3.36s
+$ python -m pytest tools/foundation_compat/tests/test_smoke.py --backend timesfm25 -q -p no:cacheprovider
+....s.
+5 passed, 1 skipped, 2 warnings in 12.94s
+  "versions": {"timesfm": "3.0.2", "torch": "2.15.0+cpu", "numpy": "2.5.4",
+               "scipy": "1.18.1", "pandas": "2.3.3", "huggingface_hub": "2.4.0"},
+  "latest_on_pypi": "3.0.2", "held_back": false, "status": "passed"

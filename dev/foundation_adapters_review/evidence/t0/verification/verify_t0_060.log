@@ -1,0 +1,34 @@
+python 3.12.3 | torch 2.15.0+cpu | numpy 2.5.4 | pandas 2.3.3 | tfc-t0 0.6.0 | huggingface_hub 2.4.0 | skforecast 0.27.0 | x86_64
+
+=== A. current adapter call unchanged
+ERROR TypeError : T0Forecaster.predict() got an unexpected keyword argument 'context'
+Traceback (most recent call last):
+  File "dev/foundation_adapters_review/evidence/t0/verification/verify_t0.py", line 101, in check
+    fn()
+  File "dev/foundation_adapters_review/evidence/t0/verification/verify_t0.py", line 117, in c_current_call
+    out = fm(False, 300).fit(series=y).predict(steps=STEPS)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: T0Forecaster.predict() got an unexpected keyword argument 'context'
+
+=== B. P1 call vs direct backend
+no exog: max abs diff = 0.0
+exog:    max abs diff = 0.0
+
+=== C. left NaN padding
+short alone vs in batch (NaN padding as MISSING): max rel diff = 0.0038541522206673074
+with trim_leading_missing=True: alone vs in batch max rel diff = 1.6639515137840495e-07
+trim on a full-length single series changes it? max abs diff = 0.0
+direct with mask=PAD vs alone: max rel diff = 1.6639515137840495e-07
+
+=== D. heterogeneous covariates
+hetero=True (current): a alone vs in batch with b+exog: max rel diff = 0.01231375844100964
+hetero=False: a alone vs in batch: max rel diff = 0.0
+direct: all-NaN covariate row vs no covariates: max rel diff = 0.012313681654632092
+
+=== E. extreme quantile levels
+q0.01 == q0.1: False | q0.99 == q0.9: False
+
+=== F. torch_dtype
+adapter torch_dtype=bfloat16 (model.to(dtype)): ERROR RuntimeError mat1 and mat2 must have the same dtype, but got Float and BFloat16
+from_pretrained(dtype=bf16) parameter dtype: torch.float32
+from_pretrained(dtype=bf16) predict OK, output dtype torch.float32

@@ -1,0 +1,10 @@
+.......................................................                  [100%]
+=============================== warnings summary ===============================
+skforecast/foundation/tests/tests_foundation_models/test_ChronosAdapter.py::test_ChronosAdapter_fit_output_multi_series[wide_dataframe]
+skforecast/foundation/tests/tests_foundation_models/test_ChronosAdapter.py::test_ChronosAdapter_predict_point_forecast_multi_series[wide_dataframe]
+  skforecast/utils/utils.py:4394: InputTypeWarning: Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It is recommended to use a dictionary of pandas Series instead. For more details, see: https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html#input-data
+  You can suppress this warning using: warnings.simplefilter('ignore', category=InputTypeWarning)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+55 passed, 2 warnings in 1.17s

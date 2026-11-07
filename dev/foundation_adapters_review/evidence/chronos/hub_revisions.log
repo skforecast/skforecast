@@ -1,0 +1,8 @@
+amazon/chronos-2 29ec3766d3 29ec3766d3 {'.gitattributes': 'a6344aac8c09', 'README.md': 'f612bbc4b27e', 'config.json': 'f32073949651', 'model.safetensors': 'ddcda3c7508b'}
+amazon/chronos-2 0f8a440441 0f8a440441 {'.gitattributes': 'a6344aac8c09', 'README.md': 'c47ceff552d2', 'config.json': 'f32073949651', 'model.safetensors': 'ddcda3c7508b'}
+autogluon/chronos-2 60088152a3 60088152a3 {'.gitattributes': 'a6344aac8c09', 'README.md': 'ba74254c2254', 'config.json': 'f32073949651', 'model.safetensors': 'ddcda3c7508b'}
+autogluon/chronos-2 b68758555f b68758555f {'.gitattributes': 'a6344aac8c09', 'README.md': 'ea3baa6444ea', 'config.json': 'f32073949651', 'model.safetensors': 'ddcda3c7508b'}
+amazon/chronos-2 arch ['Chronos2Model'] pipeline Chronos2Pipeline context_length 8192 out_patch 16 max_output_patches 64 n_quantiles 21 q_min 0.01 q_max 0.99 d_model 768 layers 12 torch_dtype float32
+autogluon/chronos-2 arch ['Chronos2Model'] pipeline Chronos2Pipeline context_length 8192 out_patch 16 max_output_patches 64 n_quantiles 21 q_min 0.01 q_max 0.99 d_model 768 layers 12 torch_dtype float32
+autogluon/chronos-2-small arch ['Chronos2Model'] pipeline Chronos2Pipeline context_length 8192 out_patch 16 max_output_patches 64 n_quantiles 13 q_min 0.01 q_max 0.99 d_model 512 layers 6 torch_dtype float32
+autogluon/chronos-2-synth arch ['Chronos2Model'] pipeline Chronos2Pipeline context_length 8192 out_patch 16 max_output_patches 64 n_quantiles 13 q_min 0.01 q_max 0.99 d_model 768 layers 12 torch_dtype float32

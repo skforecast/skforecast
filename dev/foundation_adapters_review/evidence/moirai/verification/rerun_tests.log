@@ -1,0 +1,11 @@
+{'skforecast': '0.27.0', 'uni2ts': '2.0.0', 'torch': '2.4.1+cpu', 'numpy': '1.26.4', 'scipy': '1.17.1', 'pandas': '2.3.3'}
+### contract
+.....                                                                    [100%]
+5 passed in 2.82s
+### smoke
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+5 passed, 1 skipped, 6 warnings in 5.66s
+### unit tests MoiraiAdapter + device_handling -k moirai
+36 passed, 3 warnings in 0.90s
+12 passed, 25 deselected in 1.12s

@@ -1,0 +1,13 @@
+python : 3.12.3 Linux-6.18.44-fc-v242-x86_64-with-glibc2.39
+skforecast         : 0.27.0
+tabpfn-time-series : 1.4.0
+tabpfn             : 9.2.0
+torch              : 2.15.0+cpu
+numpy              : 2.5.4
+pandas             : 2.3.3
+adapter vs direct, exog          : max abs diff 0.0
+spread of predictions (std q0.5) : 0.0
+q0.1 < q0.5 < q0.9 everywhere    : True
+with vs without exog             : max abs diff 0.0
+future exog +3 vs original       : max abs diff 0.0
+series x2 vs original            : max abs diff 178.66783697324797

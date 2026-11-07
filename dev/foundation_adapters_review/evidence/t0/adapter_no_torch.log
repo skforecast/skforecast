@@ -1,0 +1,4 @@
+tfc-t0 0.6.0 skforecast 0.27.0
+torch not installed
+ImportError : tfc-t0 is required for T0Adapter. Install it with `pip install tfc-t0`.
+cause: ImportError : t0.torch is the PyTorch runtime of t0. Install through pip install 'tfc-t0[torch]' or use the MLX runtime with `from t0.mlx import T0Forecaster`

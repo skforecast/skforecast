@@ -1,0 +1,6 @@
+priorlabs/tabpfn-ts -> TabPFNAdapter
+priorlabs/tabpfn-v2 -> TabPFNAdapter
+priorlabs/tabpfn-ts-3 -> TabPFNAdapter
+Prior-Labs/tabpfn_3_5 -> ValueError No adapter found for model 'Prior-Labs/tabpfn_3_5'. Registered prefixes: ['amazon/chronos-2', 'autogluon/chronos-2', 'go
+priorlabs/TabPFN-TS -> ValueError No adapter found for model 'priorlabs/TabPFN-TS'. Registered prefixes: ['amazon/chronos-2', 'autogluon/chronos-2', 'goog
+PriorLabs/tabpfn-ts -> ValueError No adapter found for model 'PriorLabs/tabpfn-ts'. Registered prefixes: ['amazon/chronos-2', 'autogluon/chronos-2', 'goog

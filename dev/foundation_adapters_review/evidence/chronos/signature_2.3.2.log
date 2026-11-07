@@ -1,0 +1,8 @@
+chronos-forecasting 2.3.2
+Chronos2Pipeline.predict (self, inputs: Union[torch.Tensor, numpy.ndarray, Sequence[torch.Tensor | numpy.ndarray], Sequence[Mapping[str, Union[torch.Tensor, numpy.ndarray, Mapping[str, torch.Tensor | numpy.ndarray]]]], Sequence[chronos.chronos2.preprocess.PreparedInput]], prediction_length: int | None = None, batch_size: int = 256, context_length: int | None = None, cross_learning: bool = False, limit_prediction_length: bool = False, **kwargs) -> list[torch.Tensor]
+Chronos2Pipeline.predict_quantiles (self, inputs: Union[torch.Tensor, numpy.ndarray, Sequence[torch.Tensor | numpy.ndarray], Sequence[Mapping[str, Union[torch.Tensor, numpy.ndarray, Mapping[str, torch.Tensor | numpy.ndarray]]]], Sequence[chronos.chronos2.preprocess.PreparedInput]], prediction_length: int | None = None, quantile_levels: list[float] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], **predict_kwargs) -> tuple[list[torch.Tensor], list[torch.Tensor]]
+BaseChronosPipeline.from_pretrained (pretrained_model_name_or_path: Union[str, pathlib.Path], *model_args, force_s3_download=False, **kwargs)
+  predict declares cross_learning: True
+  predict declares batch_size: True
+  predict declares context_length: True
+  predict declares limit_prediction_length: True

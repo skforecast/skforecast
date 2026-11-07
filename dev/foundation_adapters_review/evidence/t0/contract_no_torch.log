@@ -1,0 +1,72 @@
+.FF                                                                      [100%]
+=================================== FAILURES ===================================
+_____ test_backend_call_matches_signature[t0:T0Forecaster.from_pretrained] _____
+~/.venvs/fm-review-t0/lib/python3.12/site-packages/t0/torch/__init__.py:4: in <module>
+    import torch
+E   ModuleNotFoundError: No module named 'torch'
+
+The above exception was the direct cause of the following exception:
+tools/foundation_compat/tests/test_contract.py:53: in test_backend_call_matches_signature
+    obj, owner = resolve_target(target)
+                 ^^^^^^^^^^^^^^^^^^^^^^
+tools/foundation_compat/tests/test_contract.py:27: in resolve_target
+    obj = getattr(owner, name)
+          ^^^^^^^^^^^^^^^^^^^^
+~/.venvs/fm-review-t0/lib/python3.12/site-packages/t0/__init__.py:32: in __getattr__
+    return getattr(importlib.import_module("t0.torch"), name)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<python-stdlib>/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1331: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:935: in _load_unlocked
+    ???
+<frozen importlib._bootstrap_external>:995: in exec_module
+    ???
+<frozen importlib._bootstrap>:488: in _call_with_frames_removed
+    ???
+~/.venvs/fm-review-t0/lib/python3.12/site-packages/t0/torch/__init__.py:6: in <module>
+    raise ImportError(
+E   ImportError: t0.torch is the PyTorch runtime of t0. Install through pip install 'tfc-t0[torch]' or use the MLX runtime with `from t0.mlx import T0Forecaster`
+_________ test_backend_call_matches_signature[t0:T0Forecaster.predict] _________
+~/.venvs/fm-review-t0/lib/python3.12/site-packages/t0/torch/__init__.py:4: in <module>
+    import torch
+E   ModuleNotFoundError: No module named 'torch'
+
+The above exception was the direct cause of the following exception:
+tools/foundation_compat/tests/test_contract.py:53: in test_backend_call_matches_signature
+    obj, owner = resolve_target(target)
+                 ^^^^^^^^^^^^^^^^^^^^^^
+tools/foundation_compat/tests/test_contract.py:27: in resolve_target
+    obj = getattr(owner, name)
+          ^^^^^^^^^^^^^^^^^^^^
+~/.venvs/fm-review-t0/lib/python3.12/site-packages/t0/__init__.py:32: in __getattr__
+    return getattr(importlib.import_module("t0.torch"), name)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<python-stdlib>/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1331: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:935: in _load_unlocked
+    ???
+<frozen importlib._bootstrap_external>:995: in exec_module
+    ???
+<frozen importlib._bootstrap>:488: in _call_with_frames_removed
+    ???
+~/.venvs/fm-review-t0/lib/python3.12/site-packages/t0/torch/__init__.py:6: in <module>
+    raise ImportError(
+E   ImportError: t0.torch is the PyTorch runtime of t0. Install through pip install 'tfc-t0[torch]' or use the MLX runtime with `from t0.mlx import T0Forecaster`
+=========================== short test summary info ============================
+FAILED tools/foundation_compat/tests/test_contract.py::test_backend_call_matches_signature[t0:T0Forecaster.from_pretrained]
+FAILED tools/foundation_compat/tests/test_contract.py::test_backend_call_matches_signature[t0:T0Forecaster.predict]
+2 failed, 1 passed in 0.05s

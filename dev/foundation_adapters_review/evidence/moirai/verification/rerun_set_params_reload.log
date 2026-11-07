@@ -1,0 +1,9 @@
+python 3.12.3 | skforecast 0.27.0 | uni2ts 2.0.0 | torch 2.4.1+cpu
+from_pretrained calls after first predict: 1
+adapter._module is None after set_params(context_length=1024): True
+from_pretrained calls after predict with the new context_length: 2
+max|reloaded module - reused module| = 0.000e+00
+injected module, from_pretrained calls after predict: 0
+injected module dropped after set_params(context_length=1024): True
+injected module, from_pretrained calls after set_params + predict: 1
+EXIT 0

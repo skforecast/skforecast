@@ -1,0 +1,4 @@
+0.3.2 >=3.10 ['einops>=0.7', 'huggingface-hub>=1', 'jaxtyping>=0.2.24', 'numpy>=1.26', 'rotary-embedding-torch>=0.8', 'safetensors>=0.4', 'torch>=2.4', 'typing-extensions>=4; python_version < "3.11"']
+0.4.0 >=3.10 ['einops>=0.7', 'huggingface-hub>=1', 'jaxtyping>=0.2.24', 'numpy>=1.26', 'rotary-embedding-torch>=0.8', 'safetensors>=0.4', 'torch>=2.4', 'typing-extensions>=4; python_version < "3.11"']
+0.5.0 >=3.10 ['einops>=0.7', 'huggingface-hub>=1', 'jaxtyping>=0.2.24', 'numpy>=1.26', 'rotary-embedding-torch>=0.8', 'safetensors>=0.4', 'torch>=2.4', 'typing-extensions>=4; python_version < "3.11"']
+0.6.0 >=3.10 ['huggingface-hub>=1', 'jaxtyping>=0.2.24', 'numpy>=1.26', 'typing-extensions>=4; python_version < "3.11"', 'einops>=0.7; extra == "torch"', 'rotary-embedding-torch>=0.8; extra == "torch"', 'safetensors>=0.4; extra == "torch"', 'torch>=2.4; extra == "torch"']

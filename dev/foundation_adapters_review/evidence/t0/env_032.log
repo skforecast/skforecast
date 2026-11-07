@@ -1,0 +1,65 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using CPython 3.12.3 interpreter at: <system python3.12>
+Creating virtual environment at: ~/.venvs/fm-review-t0-032
+Activate with: source ~/.venvs/fm-review-t0-032/bin/activate
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using Python 3.12.3 environment at: ~/.venvs/fm-review-t0-032
+Resolved 54 packages in 83ms
+   Building skforecast @ file://<checkout>
+      Built skforecast @ file://<checkout>
+Prepared 3 packages in 698ms
+Installed 54 packages in 109ms
+ + alembic==1.20.1
+ + anyio==4.16.0
+ + click==8.5.0
+ + cloudpickle==3.1.2
+ + colorlog==6.12.0
+ + einops==0.8.2
+ + filelock==4.2.9
+ + fsspec==2026.9.0
+ + h11==0.16.0
+ + hf-xet==1.8.0
+ + httpcore2==2.16.0
+ + httpx2==2.16.0
+ + huggingface-hub==2.4.0
+ + idna==3.20
+ + iniconfig==2.3.1
+ + jaxtyping==0.3.11
+ + jinja2==3.1.6
+ + joblib==1.6.0
+ + llvmlite==0.50.0
+ + mako==1.4.3
+ + markdown-it-py==4.2.0
+ + markupsafe==3.0.4
+ + mdurl==0.1.2
+ + mpmath==1.3.0
+ + narwhals==2.28.0
+ + networkx==3.7
+ + numba==0.68.1
+ + numpy==2.5.4
+ + optuna==5.0.0
+ + packaging==26.3
+ + pandas==2.3.3
+ + pluggy==1.7.0
+ + pygments==2.21.0
+ + pytest==9.2.0
+ + python-dateutil==4.0.0
+ + pytz==2026.6
+ + pyyaml==6.0.3
+ + rich==15.0.0
+ + rotary-embedding-torch==0.9.1
+ + safetensors==0.8.0
+ + scikit-learn==1.9.1
+ + scipy==1.18.1
+ + setuptools==84.2.1
+ + skforecast==0.27.0 (from file://<checkout>)
+ + sqlalchemy==2.1.8
+ + sympy==1.14.0
+ + tfc-t0==0.3.2
+ + threadpoolctl==3.8.0
+ + torch==2.15.0+cpu
+ + tqdm==4.70.1
+ + truststore==0.10.5
+ + typing-extensions==4.16.0
+ + tzdata==2026.6
+ + wadler-lindig==0.1.8

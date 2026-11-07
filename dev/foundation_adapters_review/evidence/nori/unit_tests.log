@@ -1,0 +1,9 @@
+...........................................                              [100%]
+=============================== warnings summary ===============================
+skforecast/foundation/tests/tests_foundation_models/test_NoriAdapter.py::test_NoriAdapter_predict_rangeindex_uses_index_and_fourier_only
+skforecast/foundation/tests/tests_foundation_models/test_NoriAdapter.py::test_NoriAdapter_predict_ValueError_on_non_numeric_covariate
+  ~/.venvs/fm-review-nori/lib/python3.12/site-packages/_pytest/python.py:187: UserWarning: NoriAdapter received series with a non-DatetimeIndex; calendar features are skipped. Only running-index and Fourier(index) features are used.
+    result = testfunction(**testargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+43 passed, 2 warnings in 1.05s

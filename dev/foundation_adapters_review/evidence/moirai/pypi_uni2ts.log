@@ -1,0 +1,69 @@
+package         : uni2ts
+latest          : 2.0.0
+requires_python : >=3.10
+license         : Apache License Version 2.0
+requires_dist   :
+    datasets~=2.17.1
+    einops==0.7.*
+    gluonts~=0.14.3
+    huggingface-hub>=0.23.0
+    hydra-core==1.3
+    jax[cpu]
+    jaxtyping~=0.2.24
+    lightning>=2.0
+    multiprocess
+    numpy~=1.26.0
+    orjson
+    python-dotenv==1.0.0
+    safetensors
+    scipy~=1.11.3
+    tensorboard
+    torch<2.5,>=2.1
+    buildings-bench; extra == "build-lotsa"
+    pyreadr; extra == "build-lotsa"
+    subseasonal-data; extra == "build-lotsa"
+    tables; extra == "build-lotsa"
+    black[jupyter]==24.2.0; extra == "dev"
+    hatch; extra == "dev"
+    isort; extra == "dev"
+    pre-commit; extra == "dev"
+    pytest-timeout==2.2.0; extra == "dev"
+    pytest==7.4.3; extra == "dev"
+    ipywidgets; extra == "notebook"
+    jupyter; extra == "notebook"
+    matplotlib; extra == "notebook"
+releases (upload date of the first file):
+    2024-08-15  1.1.0
+    2024-08-30  1.1.1
+    2024-12-04  1.2.0
+    2025-11-04  2.0.0
+2.0.0 >=3.10
+datasets~=2.17.1
+einops==0.7.*
+gluonts~=0.14.3
+huggingface-hub>=0.23.0
+hydra-core==1.3
+jax[cpu]
+jaxtyping~=0.2.24
+lightning>=2.0
+multiprocess
+numpy~=1.26.0
+orjson
+python-dotenv==1.0.0
+safetensors
+scipy~=1.11.3
+tensorboard
+torch<2.5,>=2.1
+buildings-bench; extra == "build-lotsa"
+pyreadr; extra == "build-lotsa"
+subseasonal-data; extra == "build-lotsa"
+tables; extra == "build-lotsa"
+black[jupyter]==24.2.0; extra == "dev"
+hatch; extra == "dev"
+isort; extra == "dev"
+pre-commit; extra == "dev"
+pytest-timeout==2.2.0; extra == "dev"
+pytest==7.4.3; extra == "dev"
+ipywidgets; extra == "notebook"
+jupyter; extra == "notebook"
+matplotlib; extra == "notebook"

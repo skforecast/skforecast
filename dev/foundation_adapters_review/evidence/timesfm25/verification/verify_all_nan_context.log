@@ -1,0 +1,4 @@
+timesfm 3.0.2 | numpy 2.5.4 | pandas 2.3.3
+backend helpers, all-NaN input: ValueError: The truth value of an empty array is ambiguous. Use `array.size > 0` to check that an array is not empty.
+context fully NaN (context_length=64): ValueError: The truth value of an empty array is ambiguous. Use `array.size > 0` to check that an array is not empty.
+context partly NaN (context_length=128): OK, NaN in output: False

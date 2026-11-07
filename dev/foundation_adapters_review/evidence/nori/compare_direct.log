@@ -1,0 +1,63 @@
+python         : 3.12.3
+platform       : Linux-6.18.44-fc-v242-x86_64-with-glibc2.39
+cpu count      : 4 torch threads
+synthefy-nori  : 0.23.0
+synthefy       : 8.0.0
+torch          : 2.13.0+cpu
+numpy          : 2.5.4
+pandas         : 2.3.3
+huggingface-hub: 1.33.0
+skforecast     : 0.27.0
+
+== 1. _resolve_adapter on the Synthefy Hub checkpoints
+  Synthefy/Nori          -> NoriAdapter
+  Synthefy/Nori-1-5      -> NoriAdapter
+  Synthefy/Nori-30M      -> NoriAdapter
+  Synthefy/Nori-100M     -> NoriAdapter
+  Synthefy/Nori-Causal   -> NoriAdapter
+  Synthefy/migas-1.5     -> ValueError: No adapter found for model 'Synthefy/migas-1.5'. Registered prefixes: ['amazon/c
+
+== 2-3. Synthefy/Nori (registry name 'nori-6m')
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+  backend point type/dtype/shape : ndarray float64 (24,)
+  backend quantiles type/shape   : ndarray float64 (3, 24) (levels [0.9, 0.1, 0.5])
+  regression_head                : pinball
+  device_                        : cpu
+  max|adapter - direct| point    : 0.000e+00
+  max|adapter - direct| quantiles: 0.000e+00
+  max|registry - raw repo| point : 0.000e+00
+  max|registry - raw repo| quant : 0.000e+00
+  determinism max|call1 - call2| : 0.000e+00
+  unsorted levels keep order     : True
+  mode == median                 : True
+  q0.5 == median (point)         : max diff 0.000e+00
+  first 3 steps adapter point    : [52.7698, 52.9594, 53.1263]
+
+== 2-3. Synthefy/Nori-1-5 (registry name 'nori-1-5')
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+  backend point type/dtype/shape : ndarray float64 (24,)
+  backend quantiles type/shape   : ndarray float64 (3, 24) (levels [0.9, 0.1, 0.5])
+  regression_head                : pinball
+  device_                        : cpu
+  max|adapter - direct| point    : 0.000e+00
+  max|adapter - direct| quantiles: 0.000e+00
+  max|registry - raw repo| point : 0.000e+00
+  max|registry - raw repo| quant : 0.000e+00
+  determinism max|call1 - call2| : 0.000e+00
+  unsorted levels keep order     : True
+  mode == median                 : True
+  q0.5 == median (point)         : max diff 1.028e-03
+  first 3 steps adapter point    : [52.5304, 52.6408, 52.7798]
+
+== 4. NaN in the feature matrix (nori-6m)
+Mixed precision is not supported for CPU inference, so it has been automatically disabled
+  fit/predict with NaN in X: ok, finite point=True, finite quantiles=True
+  NaN in y raised ValueError: y must contain only finite target values
+
+== 5. FoundationModel('Synthefy/Nori-Causal')
+  adapter: NoriAdapter
+  predict raised RemoteEntryNotFoundError: 404 Client Error. (Request ID: Root=1-6aede5a4-3977d1797a005dc77a9acc33;9dcb74af-6316-4f05-94ec-4402b4e78ccc)

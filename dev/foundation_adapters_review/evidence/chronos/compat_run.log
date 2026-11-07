@@ -1,0 +1,125 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using CPython 3.12.3 interpreter at: /usr/bin/python3.12
+Creating virtual environment at: <tmpdir>
+Activate with: source <tmpdir>
+$ uv pip install --python <tmpdir> --torch-backend cpu -e <repo> pytest chronos-forecasting
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using Python 3.12.3 environment at: <tmpdir>
+Resolved 59 packages in 186ms
+   Building skforecast @ file://<repo>
+      Built skforecast @ file://<repo>
+Prepared 2 packages in 655ms
+Installed 59 packages in 129ms
+ + accelerate==1.15.0
+ + alembic==1.20.1
+ + annotated-doc==0.0.5
+ + anyio==4.16.0
+ + chronos-forecasting==2.3.2
+ + click==8.5.0
+ + cloudpickle==3.1.2
+ + colorlog==6.12.0
+ + einops==0.8.2
+ + filelock==4.2.9
+ + fsspec==2026.9.0
+ + h11==0.16.0
+ + hf-xet==1.8.0
+ + httpcore2==2.16.0
+ + httpx2==2.16.0
+ + huggingface-hub==2.4.0
+ + idna==3.20
+ + iniconfig==2.3.1
+ + jinja2==3.1.6
+ + joblib==1.6.0
+ + llvmlite==0.50.0
+ + mako==1.4.3
+ + markdown-it-py==4.2.0
+ + markupsafe==3.0.4
+ + mdurl==0.1.2
+ + mpmath==1.3.0
+ + narwhals==2.28.0
+ + networkx==3.7
+ + numba==0.68.1
+ + numpy==2.5.4
+ + optuna==5.0.0
+ + packaging==26.3
+ + pandas==2.3.3
+ + pluggy==1.7.0
+ + psutil==7.2.2
+ + pygments==2.21.0
+ + pytest==9.2.0
+ + python-dateutil==4.0.0
+ + pytz==2026.6
+ + pyyaml==6.0.3
+ + regex==2026.9.29
+ + rich==15.0.0
+ + safetensors==0.8.0
+ + scikit-learn==1.9.1
+ + scipy==1.18.1
+ + setuptools==84.2.1
+ + shellingham==1.5.4
+ + skforecast==0.27.0 (from file://<repo>)
+ + sqlalchemy==2.1.8
+ + sympy==1.14.0
+ + threadpoolctl==3.8.0
+ + tokenizers==0.23.3
+ + torch==2.15.0+cpu
+ + tqdm==4.70.1
+ + transformers==5.22.1
+ + truststore==0.10.5
+ + typer==0.28.0
+ + typing-extensions==4.16.0
+ + tzdata==2026.6
+
+$ <tmpdir> -m pytest tools/foundation_compat/tests/test_contract.py --backend chronos --junitxml <tmpdir> -q -p no:cacheprovider
+...                                                                      [100%]
+3 passed in 11.32s
+$ <tmpdir> -m pytest tools/foundation_compat/tests/test_smoke.py --backend chronos --junitxml <tmpdir> -q -p no:cacheprovider
+......                                                                   [100%]
+=============================== warnings summary ===============================
+tools/foundation_compat/tests/test_smoke.py::test_predict_output_when_multiple_series
+tools/foundation_compat/tests/test_smoke.py::test_backtesting_foundation_output_when_two_folds
+  skforecast/utils/utils.py:4394: InputTypeWarning: Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It is recommended to use a dictionary of pandas Series instead. For more details, see: https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html#input-data
+  You can suppress this warning using: warnings.simplefilter('ignore', category=InputTypeWarning)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+6 passed, 2 warnings in 8.90s
+{
+  "adapter": "chronos",
+  "adapter_class": "ChronosAdapter",
+  "backend": "chronos-forecasting",
+  "model_id": "autogluon/chronos-2-small",
+  "overrides": [],
+  "versions": {
+    "chronos-forecasting": "2.3.2",
+    "torch": "2.15.0+cpu",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1",
+    "pandas": "2.3.3",
+    "huggingface_hub": "2.4.0"
+  },
+  "latest_on_pypi": "2.3.2",
+  "held_back": false,
+  "install": {
+    "status": "passed",
+    "error": ""
+  },
+  "levels": {
+    "contract": {
+      "status": "passed",
+      "tests": 3,
+      "errors": [],
+      "duration": 13.1
+    },
+    "smoke": {
+      "status": "passed",
+      "tests": 6,
+      "errors": [],
+      "duration": 10.5
+    }
+  },
+  "duration": 25.2,
+  "status": "passed"
+}
+
+Result written to dev/foundation_adapters_review/evidence/chronos/compat_results/chronos.json

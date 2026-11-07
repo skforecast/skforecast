@@ -1,0 +1,42 @@
+== d22a507 version = "0.3.2"
+t0/model/model.py: 247:    def predict(
+t0/model/model.py: 248-        self,
+t0/model/model.py: 249-        context: Float[Tensor, "batch time"]
+t0/model/model.py: 250-        | Float[Tensor, "batch variates time"]
+t0/model/model.py: 251-        | Float[np.ndarray, "batch time"]
+t0/model/model.py: 252-        | Float[np.ndarray, "batch variates time"],
+t0/model/model.py: 253-        horizon: int,
+== 5766e50 version = "0.4.0"
+t0/model/model.py: 187:    def predict(
+t0/model/model.py: 188-        self,
+t0/model/model.py: 189-        model_input: TimeSeries,
+t0/model/model.py: 190-        horizon: int,
+t0/model/model.py: 191-        quantiles: Sequence[float] = ...,
+t0/model/model.py: 192-        *,
+t0/model/model.py: 193-        context_length: int | None = ...,
+t0/model/model.py: --
+== a2eca8d version = "0.5.0"
+t0/model/model.py: 195:    def predict(
+t0/model/model.py: 196-        self,
+t0/model/model.py: 197-        model_input: TimeSeries,
+t0/model/model.py: 198-        horizon: int,
+t0/model/model.py: 199-        quantile_levels: Sequence[float] = ...,
+t0/model/model.py: 200-        *,
+t0/model/model.py: 201-        context_length: int | None = ...,
+t0/model/model.py: --
+== 4871c64 version = "0.6.0"
+t0/forecaster.py: 115:    def predict(
+t0/forecaster.py: 116-        self,
+t0/forecaster.py: 117-        model_input: Any,
+t0/forecaster.py: 118-        horizon: int,
+t0/forecaster.py: 119-        quantile_levels: Sequence[float] = (0.1, 0.5, 0.9),
+t0/forecaster.py: 120-        *,
+t0/forecaster.py: 121-        context_length: int | None = None,
+t0/torch/model/model.py: 126:    def predict(
+t0/torch/model/model.py: 127-        self,
+t0/torch/model/model.py: 128-        model_input: TimeSeries,
+t0/torch/model/model.py: 129-        horizon: int,
+t0/torch/model/model.py: 130-        quantile_levels: Sequence[float] = ...,
+t0/torch/model/model.py: 131-        *,
+t0/torch/model/model.py: 132-        context_length: int | None = ...,
+t0/torch/model/model.py: --

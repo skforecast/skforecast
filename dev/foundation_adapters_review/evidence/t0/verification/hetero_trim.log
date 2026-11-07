@@ -1,0 +1,3 @@
+tfc-t0 0.6.0
+trim_leading_missing=False: a alone vs in batch, max rel diff = 0.01204004604369402
+trim_leading_missing=True: a alone vs in batch, max rel diff = 0.01204004604369402

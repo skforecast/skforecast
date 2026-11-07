@@ -1,0 +1,7 @@
+  skforecast/utils/utils.py:4394: InputTypeWarning: Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It is recommended to use a dictionary of pandas Series instead. For more details, see: https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html#input-data
+  You can suppress this warning using: warnings.simplefilter('ignore', category=InputTypeWarning)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+9 passed, 7 warnings in 13.45s
+timesfm 3.0.2 torch 2.15.0+cpu

@@ -1,0 +1,6 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using Python 3.12.3 environment at: ~/.venvs/fm-review-timesfm3-v300
+numpy==2.5.4
+pandas==2.3.3
+timesfm==3.0.0
+torch==2.15.0+cpu

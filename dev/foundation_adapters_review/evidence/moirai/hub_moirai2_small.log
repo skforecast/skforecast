@@ -1,0 +1,58 @@
+### commits of Salesforce/moirai-2.0-R-small (HF API /commits/main)
+30f43ff08c84 2026-01-29 Update README with revised documentation
+caee210dd412 2026-01-16 Update README with revised documentation
+4c645a88f771 2026-01-16 Update README with revised documentation
+5e57b910cf82 2025-08-11 Update readme
+c1b8789901bf 2025-08-11 Update readme
+f2ed354ddbca 2025-08-06 Push model using huggingface_hub.
+5f248ffae4a3 2025-08-06 initial commit
+
+### config.json
+{
+  "attn_dropout_p": 0,
+  "d_ff": 1024,
+  "d_model": 384,
+  "dropout_p": 0,
+  "max_seq_len": 512,
+  "num_layers": 6,
+  "num_predict_token": 4,
+  "patch_size": 16,
+  "quantile_levels": [
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5,
+    0.6,
+    0.7,
+    0.8,
+    0.9
+  ],
+  "scaling": true
+}
+### README front matter + mentions
+---
+license: cc-by-nc-4.0
+pipeline_tag: time-series-forecasting
+tags:
+  - time series
+  - forecasting
+  - pretrained models
+  - foundation models
+  - time series foundation models
+  - time-series
+---
+
+# Moirai-2.0-R-Small
+
+Moirai 2.0 is a decoder-only universal time series forecasting transformer model pre-trained on:
+- Subset of [GIFT-Eval Pretrain](https://huggingface.co/datasets/Salesforce/GiftEvalPretrain), and [Train](https://huggingface.co/datasets/Salesforce/GiftEval) datasets (Non-leaking historical context). 
+- Mixup data generated from non-leaking subsets of [Chronos Dataset](https://arxiv.org/abs/2403.07815).
+- Synthetic time series produced via KernelSynth introduced in [Chronos paper](https://arxiv.org/abs/2403.07815).
+- Internal Salesforce operational data.
+
+### tree/main expand (lastCommit per file)
+.gitattributes 1519 5f248ffae4a3 2025-08-06 
+README.md 3170 30f43ff08c84 2026-01-29 
+config.json 291 f2ed354ddbca 2025-08-06 
+model.safetensors 45557824 f2ed354ddbca 2025-08-06 fb5652a3db8ea572

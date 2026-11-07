@@ -1,0 +1,50 @@
+== is:issue padding_mode
+== is:pull-request padding_mode
+#476 closed 2026-09-02 Add a MLX (Apple silicon) backend for TimesFM 3.0
+#483 closed 2026-09-02 fix(timesfm3): keep past-future covariate windows aligned when the context is truncated
+== is:issue predict_batch
+== is:pull-request predict_batch
+#504 open 2026-09-10 Update covariate example for TimesFM 3.0
+#516 open 2026-09-16 Preserve each series output rank in mixed forecast batches
+#517 open 2026-09-16 Validate forecast batch metadata and covariate shapes
+#515 open 2026-09-16 Trim decoded horizons before combining forecast batches
+#547 open 2026-11-02 fix(timesfm3/torch): accept a 2D ndarray of contexts in TimesFM3Evaluator
+#477 open 2026-09-02 Add forecast confidence diagnostics
+#548 open 2026-11-02 fix(timesfm3/mlx): decode at patch-rounded horizon like torch
+#546 open 2026-11-02 fix(timesfm3/torch): mask covariate placeholders in mixed batches
+#533 open 2026-09-27 perf(timesfm3/torch): skip variate attention math when there is one variate
+#476 closed 2026-09-02 Add a MLX (Apple silicon) backend for TimesFM 3.0
+#483 closed 2026-09-02 fix(timesfm3): keep past-future covariate windows aligned when the context is truncated
+== is:issue make_positive
+== is:issue torch import
+#535 open 2026-10-03 PyTorch signed-log transformations lose their derivative at zero
+#522 open 2026-09-17 [Bug] Asymmetric scale guard in revin causes roundtrip invariant violation and silent forecast annihilation for low-variance / quiescent series
+#313 open 2025-09-29 TimesFM-2.5 is ~15x slower than TimesFM-2.0
+#340 open 2025-11-12 load local models
+#226 open 2025-01-22 Colab and PAX error
+#219 open 2025-01-16 Misleading print make believe Jax is loaded
+#242 open 2025-02-17 Issue with fine tuning the model.
+#321 open 2025-10-06 nan output
+#330 open 2025-10-29 WinError 127 - Error loading "torch_python.dll" or one of its dependencies
+#328 open 2025-10-22 Problem with model predictions failing (flatlining) when running on H100s
+#252 open 2025-03-14 TimesFM convert to onnx, tensorrt
+#190 open 2024-11-24 TimesFM/Colab Install Error
+#434 closed 2026-06-07 TimesFM 2.5 PyTorch: from_pretrained fails on huggingface_hub >= 0.36 (proxies kwarg leak); load_checkpoint(path) raises NotImplementedError
+#333 closed 2025-10-31 Is 2.5 Flax version not ok now?
+#306 closed 2025-09-19 bug: non-monotonic quantiles
+== is:pull-request import torch
+#552 open 2026-11-04 fix: surface optional backend import failures with actionable errors
+#484 open 2026-09-02 fix(tests): skip test_model_loading when the [flax] extra is missing
+#551 open 2026-11-04 docs(AGENTS.md): point test instructions at the current test suites
+#507 open 2026-09-13 Guard the variance square root against exactly-zero variance
+#536 open 2026-10-03 Preserve the signed-log derivative at zero in PyTorch
+#531 open 2026-09-24 Require huggingface_hub>=0.30.0
+#420 open 2026-05-06 Fix TypeError on from_pretrained from huggingface_hub kwargs
+#431 open 2026-05-22 chore: ship PEP 561 py.typed marker
+#404 open 2026-04-13 fix torch.compile, strip_leading_nans, linear_interpolation bugs; vectorize running stats; add tests and CI
+#477 open 2026-09-02 Add forecast confidence diagnostics
+#445 open 2026-06-19 docs(examples): update covariates demo API snippet to TimesFM 2.5
+#401 open 2026-04-09 fix: correct NaN preprocessing and torch.compile dead assignment
+#377 open 2026-03-19 feat: add tqdm progress bars to TimesFMFinetuner
+#476 closed 2026-09-02 Add a MLX (Apple silicon) backend for TimesFM 3.0
+#509 closed 2026-09-14 Fix MLX backend divergence from PyTorch on stitching, CPM RevIN refine, residual activation, and NaN handling

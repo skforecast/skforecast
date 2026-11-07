@@ -1,0 +1,14 @@
+skforecast 0.27.0 chronos-forecasting 2.3.2
+amazon/chronos-2                    -> ChronosAdapter
+autogluon/chronos-2                 -> ChronosAdapter
+autogluon/chronos-2-small           -> ChronosAdapter
+autogluon/chronos-2-synth           -> ChronosAdapter
+amazon/chronos-bolt-tiny            -> ValueError: No adapter found for model 'amazon/chronos-bolt-tiny'. Regis
+autogluon/chronos-bolt-small        -> ValueError: No adapter found for model 'autogluon/chronos-bolt-small'. R
+amazon/chronos-t5-tiny              -> ValueError: No adapter found for model 'amazon/chronos-t5-tiny'. Registe
+autogluon/chronos-t5-mini           -> ValueError: No adapter found for model 'autogluon/chronos-t5-mini'. Regi
+amazon/chronos-2-small              -> ChronosAdapter
+Amazon/chronos-2                    -> ValueError: No adapter found for model 'Amazon/chronos-2'. Registered pr
+autogluon/chronos-2.5               -> ChronosAdapter
+s3://bucket/chronos-2               -> ValueError: No adapter found for model 's3://bucket/chronos-2'. Register
+./local/chronos-2                   -> ValueError: No adapter found for model './local/chronos-2'. Registered p

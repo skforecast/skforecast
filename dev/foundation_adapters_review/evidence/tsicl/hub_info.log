@@ -1,0 +1,7 @@
+{"id": "taharnbl/TS-ICL", "sha": "19c94031439fb31f36ce395088ee50a6762d3774", "created": "2026-06-14", "last_modified": "2026-07-07", "gated": false, "private": false, "license": "other", "license_name": "tsicl-v1-license-v1.0", "license_link": "LICENSE", "pipeline_tag": "time-series-forecasting", "library_name": "tsicl", "downloads": 38, "size_mb": 219.2, "files": [".gitattributes", "LICENSE", "README.md", "config.json", "tsicl-v1.ckpt"]}
+{"id": "taharnbl/TS-ICL", "sha": "19c94031439fb31f36ce395088ee50a6762d3774", "created": "2026-06-14", "last_modified": "2026-07-07", "gated": false, "private": false, "license": "other", "license_name": "tsicl-v1-license-v1.0", "license_link": "LICENSE", "pipeline_tag": "time-series-forecasting", "library_name": "tsicl", "downloads": 38, "size_mb": 219.2, "files": [".gitattributes", "LICENSE", "README.md", "config.json", "tsicl-v1.ckpt"]}
+# Hub API search queries (search=tsicl, search=ts-icl, filter=tsicl, author=EDF-Lab)
+search=tsicl ['taharnbl/TS-ICL']
+search=ts-icl ['taharnbl/TS-ICL']
+filter=tsicl ['taharnbl/TS-ICL']
+author=EDF-Lab []

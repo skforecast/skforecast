@@ -1,0 +1,37 @@
+python 3.12.3 Linux-6.18.44-fc-v242-x86_64-with-glibc2.39
+numpy 2.5.4 | pandas 2.3.3 | skforecast 0.27.0
+
+1. All-NaN trailing context window (context_length=50)
+   predict ran, context passed to backend all NaN: True
+
+2. Quantile level types forwarded to the adapter
+   requested [0, 0.5, 1] -> backend got types ['int', 'float', 'int'] | columns ['level', 'q_0', 'q_0.5', 'q_1']
+   requested [np.float32(0.1), np.float32(0.9)] -> backend got types ['float32', 'float32'] | columns ['level', 'q_0.10000000149011612', 'q_0.8999999761581421']
+
+3. _resolve_adapter on ids reported by the per-adapter reviews
+   Synthefy/Nori-Causal                          -> NoriAdapter
+   theforecastingcompany/t0-alpha-onnx-int8      -> T0Adapter
+   google/timesfm-2.5-200m-flax                  -> TimesFM25Adapter
+   google/timesfm-2.5-200m-transformers          -> TimesFM25Adapter
+   google/timesfm-3.0-flax                       -> TimesFM3Adapter
+   soda-inria/tabicl-v1-does-not-exist           -> TabICLAdapter
+   priorlabs/tabpfn-v2                           -> TabPFNAdapter
+   Salesforce/moirai-2.0-R-large                 -> MoiraiAdapter
+   taharnbl/TS-ICL-v2                            -> TSICLAdapter
+
+4. backend_package per adapter
+   ChronosAdapter     'chronos-forecasting'
+   ChronosAdapter     'chronos-forecasting'
+   TimesFM25Adapter   'timesfm[torch]'
+   TimesFM3Adapter    'timesfm[torch]'
+   MoiraiAdapter      'uni2ts'
+   TabICLAdapter      'tabicl[forecast]'
+   TabPFNAdapter      'tabpfn-time-series>=1.3'
+   T0Adapter          'tfc-t0'
+   NoriAdapter        'synthefy-nori'
+   TSICLAdapter       'tsicl'
+   TimestralAdapter   'timestral @ git+https://github.com/mistralai/timestral.git'
+
+5. pd.Timedelta(days=n) with the installed numpy/pandas
+   warnings: ["DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise a"]
+   date_range slice warnings: 0 | equal: True

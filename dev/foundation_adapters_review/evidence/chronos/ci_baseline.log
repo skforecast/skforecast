@@ -1,0 +1,11 @@
+# Extract of the log of job 127875169074 (run 42212742430, Foundation Backends
+# Compatibility, branch 0.27.x, commit 09433c35, 2026-11-06), read with the
+# GitHub Actions job logs API.
+python 3.12.16, ubuntu-26.04
+Installed: chronos-forecasting==2.3.2, torch==2.15.0+cpu, transformers==5.22.1,
+  accelerate==1.15.0, huggingface-hub==2.4.0, numpy==2.5.4, pandas==2.3.3,
+  einops==0.8.2, safetensors==0.8.0
+test_contract.py --backend chronos: 3 passed in 9.13s
+test_smoke.py --backend chronos: 6 passed, 2 warnings (InputTypeWarning) in 7.32s
+result: latest_on_pypi 2.3.2, held_back false, status passed
+model_id: autogluon/chronos-2-small

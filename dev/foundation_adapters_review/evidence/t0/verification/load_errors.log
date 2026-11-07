@@ -1,0 +1,14 @@
+tfc-t0 0.6.0 | huggingface_hub 2.4.0
+theforecastingcompany/t0-alpha-onnx-int8 -> T0Adapter
+   OSError : Could not load model 'theforecastingcompany/t0-alpha-onnx-int8' from the Hugging Face Hub. Its configuration could not be downloaded: check the model ID and the
+   cause: TypeError : T0Forecaster.__init__() missing 7 required positional arguments: 'embed_dim', 'num_layers', 'num_heads', 'mlp_hidden_dim', 'patch_size', 'group_every_n', and 'dropout'
+theforecastingcompany/t0-does-not-exist -> T0Adapter
+   OSError : Could not load model 'theforecastingcompany/t0-does-not-exist' from the Hugging Face Hub. Its configuration could not be downloaded: check the model ID and the 
+   cause: TypeError : T0Forecaster.__init__() missing 8 required positional arguments: 'embed_dim', 'num_layers', 'num_heads', 'mlp_hidden_dim', 'patch_size', 'group_every_n', 'dropout', and 'quantile_levels'
+tfc-t0 0.3.2 | huggingface_hub 2.4.0
+theforecastingcompany/t0-alpha-onnx-int8 -> T0Adapter
+   OSError : Could not load model 'theforecastingcompany/t0-alpha-onnx-int8' from the Hugging Face Hub. Its configuration could not be downloaded: check the model ID and the
+   cause: TypeError : T0Forecaster.__init__() missing 7 required positional arguments: 'embed_dim', 'num_layers', 'num_heads', 'mlp_hidden_dim', 'patch_size', 'group_every_n', and 'dropout'
+theforecastingcompany/t0-does-not-exist -> T0Adapter
+   OSError : Could not load model 'theforecastingcompany/t0-does-not-exist' from the Hugging Face Hub. Its configuration could not be downloaded: check the model ID and the 
+   cause: TypeError : T0Forecaster.__init__() missing 8 required positional arguments: 'embed_dim', 'num_layers', 'num_heads', 'mlp_hidden_dim', 'patch_size', 'group_every_n', 'dropout', and 'quantile_levels'

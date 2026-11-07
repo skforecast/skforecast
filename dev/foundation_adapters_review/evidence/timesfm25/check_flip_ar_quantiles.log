@@ -1,0 +1,8 @@
+### ~/.venvs/fm-review-timesfm25-oldhf
+timesfm 2.0.2 | torch 2.15.0+cpu | huggingface_hub 0.36.0
+series a: ordered steps 1-128: 1.00, steps 129-384: 0.47 | mean width q0.9-q0.1 steps 1-128: 2.941, steps 129-384: 0.024
+series b: ordered steps 1-128: 1.00, steps 129-384: 0.50 | mean width q0.9-q0.1 steps 1-128: 1.260, steps 129-384: 0.046
+### ~/.venvs/fm-review-timesfm25
+timesfm 3.0.2 | torch 2.15.0+cpu | huggingface_hub 2.4.0
+series a: ordered steps 1-128: 1.00, steps 129-384: 1.00 | mean width q0.9-q0.1 steps 1-128: 2.941, steps 129-384: 0.853
+series b: ordered steps 1-128: 1.00, steps 129-384: 1.00 | mean width q0.9-q0.1 steps 1-128: 1.260, steps 129-384: 0.922

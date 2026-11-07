@@ -1,0 +1,50 @@
+# curl https://huggingface.co/jingang/TabICL/raw/main/README.md
+---
+license: bsd-3-clause
+library_name: tabicl
+pipeline_tag: tabular-classification
+tags:
+- tabular-classification
+- tabular-regression
+- tabular-foundation-model
+- tabular-classification
+---
+
+# TabICLv2: A better, faster, scalable, and open tabular foundation model
+
+## Installation
+```bash
+pip install tabicl
+```
+
+The source code is available at [GitHub - soda-inria/tabicl](https://github.com/soda-inria/tabicl).
+
+## Citation
+If you use TabICL for research purposes, please cite our papers for **[TabICL](https://arxiv.org/abs/2502.05564)** and **[TabICLv2](https://arxiv.org/abs/2602.11139)**:
+```bibtex
+@inproceedings{qu2025tabicl,
+  title={Tab{ICL}: {A} Tabular Foundation Model for In-Context Learning on Large Data},
+  author={Qu, Jingang and Holzm{\"u}ller, David and Varoquaux, Ga{\"e}l and Le Morvan, Marine},
+  booktitle={International Conference on Machine Learning},
+  year={2025}
+}
+
+@article{qu2026tabiclv2,
+  title={{TabICLv2}: {A} better, faster, scalable, and open tabular foundation model},
+  author={Qu, Jingang and Holzm{\"u}ller, David and Varoquaux, Ga{\"e}l and Le Morvan, Marine},
+  journal={arXiv preprint arXiv:2602.11139},
+  year={2026}
+}
+```
+# file sizes and commits: https://huggingface.co/api/models/jingang/TabICL/tree/main
+.gitattributes 1519 2026-02-12T07:29:20.000Z initial commit
+README.md 1170 2026-02-18T09:58:04.000Z Update README.md
+tabicl-classifier-v1-20250208.ckpt 108317991 2026-02-12T07:34:31.000Z Upload 4 files
+tabicl-classifier-v1.1-20250506.ckpt 108318621 2026-02-12T07:34:31.000Z Upload 4 files
+tabicl-classifier-v2-20260212.ckpt 110368038 2026-02-12T07:34:31.000Z Upload 4 files
+tabicl-regressor-v2-20260212.ckpt 114324594 2026-02-12T07:34:31.000Z Upload 4 files
+# commits
+4dcd344ece 2026-02-18T09:58:04.000Z Update README.md
+beb57e7bb2 2026-02-12T07:45:40.000Z Update README.md
+d700cf0893 2026-02-12T07:34:31.000Z Upload 4 files
+9230385e20 2026-02-12T07:29:20.000Z initial commit

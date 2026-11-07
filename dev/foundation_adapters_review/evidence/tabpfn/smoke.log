@@ -1,0 +1,95 @@
+# python: Python 3.12.3
+# TABPFN_TOKEN set: 
+.F
+=================================== FAILURES ===================================
+____________________ test_predict_output_when_single_series ____________________
+tools/foundation_compat/tests/test_smoke.py:78: in test_predict_output_when_single_series
+    predictions = forecaster.predict(steps=STEPS)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+skforecast/foundation/_forecaster_foundation.py:832: in predict
+    predictions = self.estimator.predict(
+skforecast/foundation/_foundation_model.py:1275: in predict
+    self.adapter.predict(
+skforecast/foundation/_adapters.py:3181: in predict
+    result_df = self._model.predict_df(
+~/.venvs/fm-review-tabpfn/lib/python3.12/site-packages/tabpfn_time_series/pipeline.py:541: in predict_df
+    pred = self.predict(context_tsdf, future_tsdf, quantiles=quantiles)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~/.venvs/fm-review-tabpfn/lib/python3.12/site-packages/tabpfn_time_series/pipeline.py:374: in predict
+    return self.predictor.predict(
+~/.venvs/fm-review-tabpfn/lib/python3.12/site-packages/tabpfn_common_utils/telemetry/core/decorators.py:218: in wrapped
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+~/.venvs/fm-review-tabpfn/lib/python3.12/site-packages/tabpfn_time_series/predictor.py:167: in predict
+    return self._worker.predict(
+~/.venvs/fm-review-tabpfn/lib/python3.12/site-packages/tabpfn_time_series/worker/parallel_workers/cpu_worker.py:47: in predict
+    predictions = Parallel(
+~/.venvs/fm-review-tabpfn/lib/python3.12/site-packages/joblib/parallel.py:2012: in __call__
+    return output if self.return_generator else list(output)
+                                                ^^^^^^^^^^^^
+~/.venvs/fm-review-tabpfn/lib/python3.12/site-packages/joblib/parallel.py:1940: in _get_sequential_output
+    res = func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^
+~/.venvs/fm-review-tabpfn/lib/python3.12/site-packages/tabpfn_time_series/worker/parallel_workers/base.py:70: in _prediction_routine
+    results = self.inference_routine(train_X, train_y, test_X, **kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~/.venvs/fm-review-tabpfn/lib/python3.12/site-packages/tabpfn_time_series/worker/model_adapters/base.py:110: in predict
+    raw_pred_output = self._fit_and_predict(
+~/.venvs/fm-review-tabpfn/lib/python3.12/site-packages/tabpfn_time_series/worker/model_adapters/base.py:134: in _fit_and_predict
+    model.fit(train_X, train_y, **fit_kwargs)
+/usr/lib/python3.12/contextlib.py:81: in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+~/.venvs/fm-review-tabpfn/lib/python3.12/site-packages/tabpfn/regressor.py:1332: in fit
+    byte_size = self._initialize_model_variables()
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~/.venvs/fm-review-tabpfn/lib/python3.12/site-packages/tabpfn/regressor.py:808: in _initialize_model_variables
+    return initialize_model_variables_helper(self, self.estimator_type)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~/.venvs/fm-review-tabpfn/lib/python3.12/site-packages/tabpfn/base.py:528: in initialize_model_variables_helper
+    initialize_tabpfn_model(
+~/.venvs/fm-review-tabpfn/lib/python3.12/site-packages/tabpfn/base.py:221: in initialize_tabpfn_model
+    load_model_criterion_config(
+~/.venvs/fm-review-tabpfn/lib/python3.12/site-packages/tabpfn/model_loading.py:759: in load_model_criterion_config
+    raise res[0]
+~/.venvs/fm-review-tabpfn/lib/python3.12/site-packages/tabpfn/model_loading.py:569: in _download_model
+    ensure_license_accepted(hf_repo_id=_HF_REPOS[version])
+~/.venvs/fm-review-tabpfn/lib/python3.12/site-packages/tabpfn/browser_auth.py:611: in ensure_license_accepted
+    raise TabPFNLicenseError(
+E   tabpfn.errors.TabPFNLicenseError: TabPFN requires a one-time license acceptance to download
+E   model weights for local inference, but browser login is
+E   disabled (TABPFN_NO_BROWSER is set).
+E   
+E   Set the TABPFN_TOKEN environment variable with a valid API key
+E   obtained from https://ux.priorlabs.ai
+=============================== warnings summary ===============================
+tools/foundation_compat/tests/test_smoke.py::test_predict_output_when_single_series
+  skforecast/foundation/_adapters.py:3133: LicenseWarning: The weights for 'priorlabs/tabpfn-ts' are released under TabPFN-3.5 License v1.0 (non-commercial without an enterprise license). Review the license terms before commercial or production use. See https://huggingface.co/Prior-Labs/tabpfn_3_5/blob/main/LICENSE.
+  You can suppress this warning using: warnings.simplefilter('ignore', category=LicenseWarning)
+    self._load_model()
+
+tools/foundation_compat/tests/test_smoke.py::test_predict_output_when_single_series
+  ~/.venvs/fm-review-tabpfn/lib/python3.12/site-packages/tabpfn_time_series/predictor.py:105: UserWarning: Running TabPFN locally on CPU; inference will be slow for long contexts. Use a CUDA GPU, or TabPFNMode.CLIENT for cloud inference.
+    worker_class = _select_local_worker_class()
+
+tools/foundation_compat/tests/test_smoke.py::test_predict_output_when_single_series
+  /usr/lib/python3.12/inspect.py:1000: DeprecationWarning: Importing from 'tabpfn.model.loading' is deprecated and will be removed in a future release; import from 'tabpfn.model_loading' instead.
+    if ismodule(module) and hasattr(module, '__file__'):
+
+tools/foundation_compat/tests/test_smoke.py::test_predict_output_when_single_series
+  /usr/lib/python3.12/inspect.py:1001: DeprecationWarning: Importing from 'tabpfn.model.loading' is deprecated and will be removed in a future release; import from 'tabpfn.model_loading' instead.
+    f = module.__file__
+
+tools/foundation_compat/tests/test_smoke.py::test_predict_output_when_single_series
+  /usr/lib/python3.12/inspect.py:907: DeprecationWarning: Importing from 'tabpfn.model.loading' is deprecated and will be removed in a future release; import from 'tabpfn.model_loading' instead.
+    if getattr(object, '__file__', None):
+
+tools/foundation_compat/tests/test_smoke.py::test_predict_output_when_single_series
+  /usr/lib/python3.12/inspect.py:908: DeprecationWarning: Importing from 'tabpfn.model.loading' is deprecated and will be removed in a future release; import from 'tabpfn.model_loading' instead.
+    return object.__file__
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tools/foundation_compat/tests/test_smoke.py::test_predict_output_when_single_series
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 1 passed, 6 warnings in 4.75s

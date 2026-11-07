@@ -1,0 +1,4 @@
+versions:
+3.12.3 [('skforecast', '0.27.0'), ('tabpfn-time-series', '1.4.0'), ('tabpfn', '9.2.0'), ('pytest', '9.2.0'), ('numpy', '2.5.4'), ('pandas', '2.3.3')]
+..                                                                       [100%]
+2 passed in 3.11s

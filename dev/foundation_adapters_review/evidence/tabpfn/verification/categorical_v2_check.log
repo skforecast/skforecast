@@ -1,0 +1,11 @@
+python : 3.12.3
+skforecast         : 0.27.0
+tabpfn-time-series : 1.4.0
+tabpfn             : 9.2.0
+torch              : 2.15.0+cpu
+numpy              : 2.5.4
+pandas             : 2.3.3
+category    : mean pred low-regime steps   9.91 | high-regime steps  39.93
+str         : mean pred low-regime steps   9.91 | high-regime steps  39.93
+numeric 0/1 : mean pred low-regime steps   9.91 | high-regime steps  39.91
+no exog     : mean pred low-regime steps  10.08 | high-regime steps  10.12

@@ -1,0 +1,20 @@
+{
+  "model_id": "google/timesfm-3.0-pytorch",
+  "context_length": 500,
+  "exog": true,
+  "kwargs": {},
+  "mae": 162.4352,
+  "elapsed_s": 495.52,
+  "n_predictions": 720,
+  "versions": {
+    "python": "3.12.3",
+    "skforecast": "0.27.0",
+    "torch": "2.15.0+cpu",
+    "numpy": "2.5.4",
+    "pandas": "2.3.3",
+    "scikit-learn": "1.9.1",
+    "huggingface_hub": "2.4.0",
+    "timesfm": "3.0.2"
+  },
+  "hardware": "Intel(R) Xeon(R) Processor @ 2.10GHz, 4 logical CPUs, Linux"
+}
