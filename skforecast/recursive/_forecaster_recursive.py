@@ -22,12 +22,12 @@ from .. import __version__
 from ..base import ForecasterBase
 from ..exceptions import (
     DataTransformationWarning, 
-    MissingValuesWarning, 
     ResidualsUsageWarning
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 from ..utils import (
     _all_samples_removed_message,
+    _warn_nan_training_rows,
     initialize_lags,
     initialize_window_features,
     initialize_weights,    
@@ -983,41 +983,33 @@ class ForecasterRecursive(ForecasterBase):
             X_train = np.concatenate(X_train, axis=1)
 
         # --- NaN row filtering (interspersed NaN support) ---
-        if np.isnan(y_train).any():
-            mask = ~np.isnan(y_train)
+        # NOTE: Rows with a NaN target are always dropped. Rows with NaN
+        # predictors (and a non-NaN target) are dropped only if
+        # `dropna_from_series` is `True`. A single warning gives both counts.
+        n_rows = len(y_train)
+        nan_target = np.isnan(y_train)
+        n_nan_target = int(nan_target.sum())
+        if n_nan_target > 0:
+            mask = ~nan_target
             y_train = y_train[mask]
             X_train = X_train[mask]
             train_index = train_index[mask]
-            warnings.warn(
-                "NaNs detected in `y_train`. They have been dropped because the "
-                "target variable cannot have NaN values. Same rows have been "
-                "dropped from `X_train` to maintain alignment. This is caused by "
-                "interspersed NaNs in `y`.",
-                MissingValuesWarning
-            )
 
-        if self.dropna_from_series:
-            nan_rows = pd.isna(X_train).any(axis=1)
-            if nan_rows.any():
-                mask = ~nan_rows
-                X_train = X_train[mask]
-                y_train = y_train[mask]
-                train_index = train_index[mask]
-                warnings.warn(
-                    "NaNs detected in `X_train`. They have been dropped. If "
-                    "you want to keep them, set `forecaster.dropna_from_series = False`. "
-                    "Same rows have been removed from `y_train` to maintain alignment. "
-                    "This is caused by interspersed NaNs in `y` or `exog`.",
-                    MissingValuesWarning
-                )
-        else:
-            if pd.isna(X_train).any():
-                warnings.warn(
-                    "NaNs detected in `X_train`. Some estimators do not allow "
-                    "NaN values during training. If you want to drop them, "
-                    "set `forecaster.dropna_from_series = True`.",
-                    MissingValuesWarning
-                )
+        nan_predictors = pd.isna(X_train).any(axis=1)
+        n_nan_predictors = int(nan_predictors.sum())
+        if self.dropna_from_series and n_nan_predictors > 0:
+            mask = ~nan_predictors
+            X_train = X_train[mask]
+            y_train = y_train[mask]
+            train_index = train_index[mask]
+
+        _warn_nan_training_rows(
+            n_nan_target       = n_nan_target,
+            n_nan_predictors   = n_nan_predictors,
+            n_rows             = n_rows,
+            dropna_from_series = self.dropna_from_series,
+            series_name        = "`y`"
+        )
 
         if len(y_train) == 0:
             raise ValueError(

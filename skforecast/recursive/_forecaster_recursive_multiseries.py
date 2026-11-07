@@ -32,6 +32,7 @@ from ..exceptions import (
 )
 from ..utils import (
     _all_samples_removed_message,
+    _warn_nan_training_rows,
     _date_range_from_index,
     initialize_lags,
     initialize_window_features,
@@ -1683,38 +1684,31 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 f"Duplicated feature names detected in X_train: {duplicated_names}."
             )
 
-        if y_train.isna().to_numpy().any():
-            mask = y_train.notna().to_numpy()
+        # NOTE: Rows with a NaN target are always dropped. Rows with NaN
+        # predictors (and a non-NaN target) are dropped only if
+        # `dropna_from_series` is `True`. A single warning gives both counts.
+        n_rows = len(y_train)
+        nan_target = y_train.isna().to_numpy()
+        n_nan_target = int(nan_target.sum())
+        if n_nan_target > 0:
+            mask = ~nan_target
             y_train = y_train.iloc[mask]
-            X_train = X_train.iloc[mask,]
-            warnings.warn(
-                "NaNs detected in `y_train`. They have been dropped because the "
-                "target variable cannot have NaN values. Same rows have been "
-                "dropped from `X_train` to maintain alignment. This is caused by "
-                "interspersed NaNs in `series`.",
-                MissingValuesWarning
-            )
+            X_train = X_train.iloc[mask, :]
 
-        if self.dropna_from_series:
-            if np.any(X_train.isnull().to_numpy()):
-                mask = X_train.notna().all(axis=1).to_numpy()
-                X_train = X_train.iloc[mask, :]
-                y_train = y_train.iloc[mask]
-                warnings.warn(
-                    "NaNs detected in `X_train`. They have been dropped. If "
-                    "you want to keep them, set `forecaster.dropna_from_series = False`. "
-                    "Same rows have been removed from `y_train` to maintain alignment. "
-                    "This is caused by interspersed NaNs in `series` or `exog`.",
-                    MissingValuesWarning
-                )
-        else:
-            if np.any(X_train.isnull().to_numpy()):
-                warnings.warn(
-                    "NaNs detected in `X_train`. Some estimators do not allow "
-                    "NaN values during training. If you want to drop them, "
-                    "set `forecaster.dropna_from_series = True`.",
-                    MissingValuesWarning
-                )
+        nan_predictors = X_train.isna().any(axis=1).to_numpy()
+        n_nan_predictors = int(nan_predictors.sum())
+        if self.dropna_from_series and n_nan_predictors > 0:
+            mask = ~nan_predictors
+            X_train = X_train.iloc[mask, :]
+            y_train = y_train.iloc[mask]
+
+        _warn_nan_training_rows(
+            n_nan_target       = n_nan_target,
+            n_nan_predictors   = n_nan_predictors,
+            n_rows             = n_rows,
+            dropna_from_series = self.dropna_from_series,
+            series_name        = "`series`"
+        )
 
         if X_train.empty:
             raise ValueError(
