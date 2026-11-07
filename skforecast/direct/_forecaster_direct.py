@@ -1884,6 +1884,9 @@ class ForecasterDirect(ForecasterBase):
         self.filter_train_X_y_columns_cache_      = {}
         self.is_fitted                            = False
         self.fit_date                             = None
+        # NOTE: `self` is sent to every step task of `Parallel`, so the fitted
+        # estimators of a previous fit would be serialized once per step.
+        self.estimators_ = {step: clone(self.estimator) for step in self.steps}
 
         (
             X_train_autoreg,

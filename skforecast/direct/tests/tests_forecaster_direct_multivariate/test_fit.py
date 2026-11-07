@@ -506,6 +506,39 @@ def test_fit_resets_out_sample_residuals_on_refit():
     assert forecaster.out_sample_residuals_by_bin_ is None
 
 
+def test_fit_step_tasks_receive_unfitted_estimators_on_refit(monkeypatch):
+    """
+    Test that, when the forecaster is refitted, the forecaster sent to each
+    step task of `Parallel` carries unfitted estimators, so the estimators of
+    the previous fit are not serialized once per step. The fitted estimators
+    are stored at the end of `fit`.
+    """
+    from skforecast.direct import _forecaster_direct_multivariate
+
+    fitted_in_tasks = []
+    fit_one_step_estimator = _forecaster_direct_multivariate._fit_one_step_estimator
+
+    def spy(forecaster, **kwargs):
+        fitted_in_tasks.append(
+            [hasattr(est, "coef_") for est in forecaster.estimators_.values()]
+        )
+        return fit_one_step_estimator(forecaster=forecaster, **kwargs)
+
+    # `n_jobs=1` runs the step tasks in this process, so the patched function
+    # is the one called.
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=LinearRegression(), level='l1', lags=3, steps=2, n_jobs=1
+    )
+    forecaster.fit(series=series_fixtures)
+    monkeypatch.setattr(
+        _forecaster_direct_multivariate, "_fit_one_step_estimator", spy
+    )
+    forecaster.fit(series=series_fixtures)
+
+    assert fitted_in_tasks == [[False, False], [False, False]]
+    assert all(hasattr(est, "coef_") for est in forecaster.estimators_.values())
+
+
 def custom_weights(index):  # pragma: no cover
     """
     Return 0 if index is between 20 and 40 else 1.
