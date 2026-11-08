@@ -13,8 +13,8 @@ dos (sección 8.1): **PR 2a fusionado en `0.27.x` el 2026-11-06 (#1452,** rama
 **PR 2b fusionado en `0.27.x` el 2026-11-06 (#1456,** rama `fix/search-failing-candidates`;
 sección 14: candidatos que fallan y pendientes de las búsquedas). BUG-backtesting-nan-y-true
 (#1458) y QW-13 (#1466) fusionados. **PR 2c** (avisos de los procesos de joblib, 12.6 punto
-8): alcance medido el 2026-11-08 en la sección 15 (S), **pendiente de aprobación.** Al final,
-la sección 13.
+8): alcance medido y **aprobado el 2026-11-08** (sección 15, S); implementación en
+`fix/joblib-worker-warnings` (15.8). Al final, la sección 13.
 
 **Desbloqueado el 2026-11-03:** QW-12 está hecho con #1437. Antes estaba **bloqueado por
 QW-12** (decisión del 2026-10-29): antes se hace, por separado, la columna con
@@ -1026,7 +1026,7 @@ datos del notebook 08 (`store_1`, `store_2` y `new_product` de 120 días).
 
 ## 15. PR 2c: avisos de los procesos de joblib (alcance, 2026-11-08)
 
-Solo medida y propuesta; **sin cambios en el paquete, pendiente de aprobación.** Rama local
+Medida y propuesta (aprobada el 2026-11-08, ver el final de 15.7). Rama local
 `chore/joblib-warnings-scope` desde `0.27.x` (17219ad65). Script
 `repro/PR-2c_joblib_warnings.py`: cada caso en un proceso de Python limpio y en su propio
 `catch_warnings()`, con los filtros por defecto. Cuenta los avisos que llegan al proceso
@@ -1257,3 +1257,21 @@ las guías (15.3).
 **Tamaño: S.** Un commit de código (`_validation.py` y el docstring de `_SearchWarnings`), uno
 de tests y la nota de la versión. Si se aprueba, la rama sería `fix/joblib-worker-warnings`
 desde `0.27.x`.
+
+**Aprobado el 2026-11-08:** alternativa A con las recomendaciones de las decisiones 1, 2 y
+3. Las 4, 5 y 6 quedan fuera del 2c, en el roadmap: agrupar los avisos repetidos de un
+backtesting (sección 5, candidato M), QW-15 (el `fit` en paralelo de Direct y DMV) y QW-14
+(el doble aviso de `exog` con NaN en `predict`, que verifica HANDOFF-DOUBLE-WARN).
+Condiciones de la implementación:
+
+1. **Serialización:** en el hijo, aviso a aviso, comprobar que se puede serializar y, solo
+   si falla, enviar el texto como `RuntimeWarning`, con el nombre de la clase original en
+   el texto. No reconstruir siempre con `category(texto)`: los avisos de skforecast añaden
+   texto en `__str__` y saldría duplicado. Test con una clase de aviso definida dentro de
+   una función.
+2. **Hilos:** test de una búsqueda bayesiana con `kwargs_study_optimize={"n_jobs": 2}` y
+   los folds en procesos: cada aviso queda en el registro con su candidato.
+3. **Nota en Fixed:** con procesos, los avisos salen al terminar los folds, y con
+   `simplefilter("error")` el backtesting falla al final, no en el primer fold.
+4. **`module_globals`** en `warn_explicit`, además de `module`, para que los filtros y la
+   línea de código se resuelvan como con `n_jobs=1`.
