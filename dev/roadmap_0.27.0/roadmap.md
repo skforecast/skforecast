@@ -46,16 +46,16 @@ secciones 1 a 7 quedan como referencia: evidencia, antes y después, y esbozos d
 > todas las búsquedas. **PR 2b fusionado (#1456, 2026-11-06):** candidatos que fallan
 > (one-step-ahead por candidato y trials de bayesian), refit sin series cortas, mensaje de
 > `initial_train_size`, aviso de `n_evaluated` con una serie y
-> BUG-osa-initial-window-check. Queda el 2c (avisos de joblib). Detalle en las secciones
+> BUG-osa-initial-window-check. Detalle en las secciones
 > 11, 12, 14 y 15 de
 > [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md).
 > BUG-backtesting-nan-y-true fusionado el 2026-11-07 (#1458) y QW-13 el 2026-11-08
-> (#1466). **PR 2c: alcance medido y aprobado el 2026-11-08** (sección 15, S): los avisos
-> de los folds que corren en los procesos de joblib se registran en el proceso y se
-> reemiten en el principal (filtros del usuario, registro de las búsquedas, Jupyter); no
-> cambia resultados. **Implementado en local el 2026-11-08** en `fix/joblib-worker-warnings`
-> (sección 15.8: los 21 casos dan lo mismo con `'auto'` que con `n_jobs=1`). **Siguiente:**
-> abrir su PR y, al final, la sección 13 de ese documento (guías). Fuera del 2c: QW-14 (doble aviso de
+> (#1466). **PR 2c fusionado el 2026-11-08 (#1467;** sección 15): los avisos de los folds
+> que corren en los procesos de joblib se registran en el proceso y se reemiten en el
+> principal (filtros del usuario, registro de las búsquedas, Jupyter); no cambia
+> resultados. Incluye el refactor de [`REFACTOR-warnings.md`](REFACTOR-warnings.md).
+> PERF-contiguous-lags fusionado el 2026-11-08 (#1469). **Siguiente:** la sección 13 de
+> ese documento (guías). Fuera del 2c: QW-14 (doble aviso de
 > `exog` con NaN en `predict`), QW-15 (avisos del `fit` en paralelo de Direct y DMV) y
 > agrupar los avisos repetidos de un backtesting (sección 5, M).
 
@@ -192,11 +192,12 @@ efecto, con `FutureWarning` y eliminación en la 0.29.0; `load_demo_dataset` se 
    búsquedas y `n_evaluated` en todas. **PR 2b fusionado el 2026-11-06 (#1456;** sección
    14 del documento): candidatos que fallan, refit con series cortas,
    `initial_train_size`, aviso de `n_evaluated` con una serie y
-   BUG-osa-initial-window-check. Queda el 2c (avisos de joblib).
+   BUG-osa-initial-window-check.
    BUG-backtesting-nan-y-true fusionado el 2026-11-07 (#1458) y QW-13 el 2026-11-08
-   (#1466). **PR 2c:** alcance medido y aprobado el 2026-11-08 (sección 15 del documento,
-   alternativa A, decisiones 1 a 3); implementado en local el 2026-11-08 (sección 15.8).
-   **Siguiente:** abrir su PR y, al final, la sección 13 de ese documento (guías).
+   (#1466). **PR 2c fusionado el 2026-11-08 (#1467;** sección 15 del documento,
+   alternativa A, decisiones 1 a 3, con el refactor de `REFACTOR-warnings.md`).
+   PERF-contiguous-lags fusionado el 2026-11-08 (#1469).
+   **Siguiente:** la sección 13 de ese documento (guías).
 2. ~~**BUG-03**~~ **Hecho con #1431** (fusionado el 2026-10-22). La
    dirección sale de la métrica (decisión 6): atributo `greater_is_better` y convención de
    nombres solo para `sklearn.metrics`; si no se conoce, la dirección de la tarea, que ya
@@ -247,7 +248,7 @@ efecto, con `FutureWarning` y eliminación en la 0.29.0; `load_demo_dataset` se 
 | Feature engineering | QW-11 | S. Nuevo (2026-10-20). `hour_of_week` y el número de días de fin de semana del mes en `CalendarFeatures`, siempre opcionales, más un aviso y una guía de codificación. Medido en 18 series: `hour_of_week` reduce el MAE una mediana del 24% con Ridge en series horarias. Los festivos, que son lo que más aporta en series diarias, quedan como feature aparte (FE-06) |
 | Foundation para producción | QW-05, BUG-06, QW-02 | QW-02 pendiente de decisión |
 | **Búsquedas multiserie con series cortas (MUY IMPORTANTE)** | QW-12, después BUG-search-short-series | QW-12 hecho (#1437); PR 1 (#1447), PR 2a (#1452) y PR 2b (#1456) del arreglo fusionados; falta el PR 2c (avisos de los procesos de joblib; alcance aprobado el 2026-11-08, sección 15 del documento). S (QW-12) y S a M (el arreglo). Resultado erróneo silencioso en un uso habitual de los modelos globales. QW-12 va antes y bloquea el arreglo. Propuesta vigente (2026-10-29) en [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md): la columna de QW-12 en el backtesting y, después, por candidato en las búsquedas, un solo aviso al final cuando los candidatos no se evalúan sobre los mismos puntos, y avisos y errores de las búsquedas que salgan una vez y donde deben. No cambia resultados. Investigación y opción c2 (aparcada) en [`BUG-search-short-series.md`](BUG-search-short-series.md). QW-12 hecho con #1437 (2026-11-03): el arreglo ya no está bloqueado |
-| Rendimiento con modelos lineales | PERF-contiguous-lags | S. Nuevo (2026-11-08), después del refactor de los avisos (toca la misma zona de los forecasters). Con solo lags, Recursive, Direct y DMV pasan al estimador una vista no contigua de `sliding_window_view`. Copiarla a orden C solo cuando la clase del estimador es LinearRegression, Ridge, Lars o LassoLars (un `Pipeline` nunca se copia) reduce el `fit` con 20.000 filas entre un 9 y un 30 % en Recursive y entre un 14 y un 40 % en Direct. En un solo `fit` son milisegundos; se nota en el backtesting con `refit=True` y en las búsquedas (entre un 6 y un 33 % menos). Las predicciones no cambian (residuos in-sample: menos de 2e-13), la memoria pico sube un 12 % de la matriz como mucho (solo con LinearRegression) y con los demás estimadores no cambia nada. Una lista y una función privada en `utils`, y dos líneas en tres forecasters. Medición, lista y cambios en [`PERF-contiguous-lags.md`](PERF-contiguous-lags.md), secciones 14 a 16 |
+| Rendimiento con modelos lineales | ~~PERF-contiguous-lags~~ (hecho, #1469) | **Hecho con #1469**, fusionado el 2026-11-08. S. Nuevo (2026-11-08), después del refactor de los avisos (toca la misma zona de los forecasters). Con solo lags, Recursive, Direct y DMV pasan al estimador una vista no contigua de `sliding_window_view`. Copiarla a orden C solo cuando la clase del estimador es LinearRegression, Ridge, Lars o LassoLars (un `Pipeline` nunca se copia) reduce el `fit` con 20.000 filas entre un 9 y un 30 % en Recursive y entre un 14 y un 40 % en Direct. En un solo `fit` son milisegundos; se nota en el backtesting con `refit=True` y en las búsquedas (entre un 6 y un 33 % menos). Las predicciones no cambian (residuos in-sample: menos de 2e-13), la memoria pico sube un 12 % de la matriz como mucho (solo con LinearRegression) y con los demás estimadores no cambia nada. Una lista y una función privada en `utils`, y dos líneas en tres forecasters. Medición, lista y cambios en [`PERF-contiguous-lags.md`](PERF-contiguous-lags.md), secciones 14 a 16 |
 | Paneles multiserie | QW-01, BUG-07, ISSUE-1410 | Hechos: ISSUE-1357 (IDs enteros) con #1412, que sustituye a PR-1408 (cerrado), e ISSUE-1410 con #1418 (2026-10-19); folds sin series con #1427 y `initial_train_size` contra el span con #1430 (2026-10-21, sección 6) |
 | Stats: corrección y rendimiento | BUG-08, PERF-02, PR-1400 | PR-1400 ya está fusionado en `0.27.x`. BUG-08 hecho con #1425 (fusionado el 2026-10-20). Volver a medir PERF-02 después de BUG-08 |
 | PRs externos | PR-1402, PR-1387, PR-1388, PR-1389 | Hecho: PR-1387 fusionado en `0.27.x` (2026-10-20); PR-1388 sustituido por #1433, que conserva su commit (fusionado el 2026-10-26); PR-1389 sustituido por el commit `6a5d933a4` (ISSUE-1354, 2026-10-27) y cerrado. PR-1402 fusionado en `0.27.x` el 2026-10-28. Queda abierto PR-1341 (TiRex-2, decisión pendiente 5), que apunta a `0.26.x` |

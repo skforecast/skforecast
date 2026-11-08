@@ -12,9 +12,10 @@ dos (sección 8.1): **PR 2a fusionado en `0.27.x` el 2026-11-06 (#1452,** rama
 `fix/search-warnings`; sección 12; también `n_evaluated` en todas las búsquedas, 12.8).
 **PR 2b fusionado en `0.27.x` el 2026-11-06 (#1456,** rama `fix/search-failing-candidates`;
 sección 14: candidatos que fallan y pendientes de las búsquedas). BUG-backtesting-nan-y-true
-(#1458) y QW-13 (#1466) fusionados. **PR 2c** (avisos de los procesos de joblib, 12.6 punto
-8): alcance medido y **aprobado el 2026-11-08** (sección 15, S); implementación en
-`fix/joblib-worker-warnings` (15.8). Al final, la sección 13.
+(#1458) y QW-13 (#1466) fusionados. **PR 2c fusionado en `0.27.x` el 2026-11-08 (#1467,**
+rama `fix/joblib-worker-warnings`; sección 15: avisos de los procesos de joblib, con el
+refactor de [`REFACTOR-warnings.md`](REFACTOR-warnings.md)). **Siguiente: la sección 13**
+(guías).
 
 **Desbloqueado el 2026-11-03:** QW-12 está hecho con #1437. Antes estaba **bloqueado por
 QW-12** (decisión del 2026-10-29): antes se hace, por separado, la columna con
@@ -1278,7 +1279,7 @@ Condiciones de la implementación:
 
 ### 15.8 Implementación (2026-11-08, rama `fix/joblib-worker-warnings`)
 
-Rama local desde `origin/0.27.x` (1fbd373dc), sin push ni PR. Commits: los dos del alcance
+**Fusionado el 2026-11-08 (#1467).** Rama desde `origin/0.27.x` (1fbd373dc). Commits: los dos del alcance
 (script y sección 15), el roadmap (QW-14, QW-15 y el candidato de agrupar los avisos de un
 backtesting), el código, los tests, la nota de la versión, esta sección, y la segunda ronda
 (errores en un fold: código y tests).

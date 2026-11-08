@@ -4,7 +4,7 @@ Rama `perf/contiguous-lag-matrix` desde `origin/0.27.x` (17219ad65), solo en loc
 Medición con recomendación: el código del paquete no cambia. El prototipo está en
 `repro/PERF-contiguous-lags_prototype.diff` y no está aplicado en la rama.
 
-**Estado (2026-11-08, implementado en local):** opción D implementada en la rama
+**Fusionado el 2026-11-08 (#1469).** **Estado (2026-11-08, implementado en local):** opción D implementada en la rama
 `perf/contiguous-lag-matrix`, creada de nuevo desde `origin/0.27.x` después del refactor
 de los avisos (#1467). Son tres commits locales, sin push ni PR: `6518c93ff` (utils),
 `d9cf32c16` (forecasters) y `8bbcd088a` (nota de la versión). La medición final sobre la

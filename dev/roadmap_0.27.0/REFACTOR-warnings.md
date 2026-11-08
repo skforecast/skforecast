@@ -1,7 +1,7 @@
 # REFACTOR-warnings: organización y nombres del código de los avisos
 
 Fecha: 2026-11-08. Rama: `fix/joblib-worker-warnings` (PR #1467 contra `0.27.x`).
-Estado: **aplicado** (2026-11-08), en local y sin push, con las decisiones D1 a D6 de la
+Estado: **fusionado con #1467** (2026-11-08), con las decisiones D1 a D6 de la
 sección 7 aprobadas (D7 a D12 quedan fuera):
 
 | Commit | Contenido |
