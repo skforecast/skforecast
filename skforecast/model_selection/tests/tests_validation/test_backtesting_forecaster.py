@@ -5,6 +5,7 @@ import warnings
 import pytest
 import numpy as np
 import pandas as pd
+from joblib import parallel_config
 from scipy.stats import norm
 from sklearn.linear_model import Ridge, LogisticRegression
 from sklearn.ensemble import (
@@ -22,9 +23,10 @@ from skforecast.metrics import (
 )
 from skforecast.model_selection import backtesting_forecaster
 from skforecast.model_selection._split import TimeSeriesFold
+from skforecast.exceptions import MissingValuesWarning
 
 # Fixtures
-from ..fixtures_model_selection import y, y_clf
+from ..fixtures_model_selection import y, y_clf, exog
 
 
 def test_backtesting_forecaster_TypeError_when_forecaster_not_supported_types():
@@ -552,3 +554,71 @@ def test_backtesting_forecaster_y_true_ForecasterRecursiveClassifier():
     assert backtest_predictions.columns.tolist()[:4] == ["fold", "step", "y_true", "pred"]
     assert backtest_predictions["y_true"].tolist() == y_clf.iloc[40:].tolist()
     assert metric.loc[0, "n_evaluated"] == 10
+
+
+def _backtesting_exog_with_nan(n_jobs):
+    """
+    Backtesting of a `HistGradientBoostingRegressor` (its folds run in parallel
+    with `n_jobs` other than 1) with a missing value in `exog` in the test set,
+    so `predict` warns in the folds that use it.
+    """
+    exog_nan = exog.copy()
+    exog_nan.iloc[[42, 47]] = np.nan
+    forecaster = ForecasterRecursive(
+        HistGradientBoostingRegressor(max_iter=5, random_state=123), lags=3
+    )
+    backtesting_forecaster(
+        forecaster    = forecaster,
+        y             = y,
+        exog          = exog_nan,
+        cv            = TimeSeriesFold(steps=2, initial_train_size=40, refit=False),
+        metric        = "mean_absolute_error",
+        n_jobs        = n_jobs,
+        show_progress = False,
+    )
+
+
+@pytest.mark.parametrize(
+    "backend",
+    ["loky", "threading"],
+    ids=lambda backend: f"backend: {backend}",
+)
+def test_backtesting_forecaster_warnings_of_folds_in_parallel_same_as_n_jobs_1(backend):
+    """
+    Test that the warnings raised in the folds that run in parallel (worker
+    processes of loky, or threads) reach the main process once each, with the
+    same category, text, location and order as with `n_jobs=1`.
+    """
+    def warnings_shown(n_jobs):
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always")
+            _backtesting_exog_with_nan(n_jobs=n_jobs)
+
+        return [(w.category, str(w.message), w.filename, w.lineno) for w in record]
+
+    expected = warnings_shown(n_jobs=1)
+    with parallel_config(backend=backend):
+        results = warnings_shown(n_jobs=2)
+
+    assert len(expected) == 4
+    assert {category for category, _, _, _ in expected} == {MissingValuesWarning}
+    assert results == expected
+
+
+def test_backtesting_forecaster_warnings_of_folds_in_processes_go_through_filters():
+    """
+    Test that the warnings of the folds that run in worker processes go through
+    the filters of the user: ignored with 'ignore', and raised as an error,
+    after the folds, with 'error'.
+    """
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        warnings.simplefilter("ignore", category=MissingValuesWarning)
+        _backtesting_exog_with_nan(n_jobs=2)
+
+    assert [w for w in record if w.category is MissingValuesWarning] == []
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", category=MissingValuesWarning)
+        with pytest.raises(MissingValuesWarning, match="`exog` has missing values"):
+            _backtesting_exog_with_nan(n_jobs=2)

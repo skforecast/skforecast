@@ -1,6 +1,7 @@
 # Unit test backtesting_stats
 # ==============================================================================
 import re
+import warnings
 import platform
 from unittest.mock import patch
 import pytest
@@ -2136,3 +2137,38 @@ def test_output_backtesting_stats_metrics_leave_out_dates_without_true_values(
     np.testing.assert_allclose(metric['mean_absolute_error'], expected_mae)
     np.testing.assert_allclose(metric['coverage'], expected_coverage)
     assert metric['n_evaluated'].tolist() == [10] * n_estimators
+
+
+def test_backtesting_stats_warnings_of_folds_in_processes_same_as_n_jobs_1():
+    """
+    Test that the warnings raised in the folds that run in worker processes
+    (`n_jobs=2`, `refit=True`) reach the main process once each, with the same
+    category, text, location and order as with `n_jobs=1`: an Arima with one
+    iteration warns of a convergence problem in every fit.
+    """
+    def warnings_shown(n_jobs):
+        forecaster = ForecasterStats(
+            estimator=Arima(order=(1, 0, 1), optim_kwargs={"maxiter": 1})
+        )
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always")
+            backtesting_stats(
+                forecaster    = forecaster,
+                y             = air_passengers,
+                cv            = TimeSeriesFold(
+                                    steps=12, initial_train_size=len(air_passengers) - 36,
+                                    refit=True
+                                ),
+                metric        = 'mean_absolute_error',
+                n_jobs        = n_jobs,
+                show_progress = False,
+            )
+
+        return [(w.category, str(w.message), w.filename, w.lineno) for w in record]
+
+    expected = warnings_shown(n_jobs=1)
+    results = warnings_shown(n_jobs=2)
+
+    assert len(expected) == 3
+    assert {category for category, _, _, _ in expected} == {UserWarning}
+    assert results == expected
