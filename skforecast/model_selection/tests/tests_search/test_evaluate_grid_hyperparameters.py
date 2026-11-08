@@ -1452,3 +1452,93 @@ def test_evaluate_grid_hyperparameters_MissingValuesWarning_n_evaluated_single_s
         "11 points of the most complete one:\n"
         "  - lags: [1, 2, ..., 10], row 1: 5 (45.5%)"
     ]
+
+
+def test_evaluate_grid_hyperparameters_single_MissingValuesWarning_NaN_training_rows():
+    """
+    Test that, with a `TimeSeriesFold` with `refit=True`, `n_jobs=1` and NaN
+    in `y` inside the training sets, the warning of the training rows with
+    missing values, raised with different counts in each fit, is shown once at
+    the end of the search, grouped by its first sentence, with the counts of
+    the first fit (first candidate, first fold: 28 rows, NaN targets at
+    positions 10 and 20, and 4 rows with them in their lags).
+    """
+    y_nan = y.copy()
+    y_nan.iloc[[10, 20]] = np.nan
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=2, dropna_from_series=True)
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results = _evaluate_grid_hyperparameters(
+                      forecaster    = forecaster,
+                      y             = y_nan,
+                      cv            = TimeSeriesFold(
+                                          steps=5, initial_train_size=30, refit=True
+                                      ),
+                      param_grid    = [{'alpha': 0.1}, {'alpha': 1}],
+                      metric        = 'mean_absolute_error',
+                      lags_grid     = [2, 4],
+                      return_best   = False,
+                      n_jobs        = 1,
+                      verbose       = False,
+                      show_progress = False
+                  )
+
+    assert len(results) == 4
+    messages = [
+        w.message.message for w in record
+        if w.category is MissingValuesWarning
+        and "training matrix" in w.message.message
+    ]
+    assert messages == [
+        "Some rows of the training matrix have missing values (in 4 of 4 "
+        "candidates; details of the first one). 6 of 28 rows are dropped: 2 "
+        "with a NaN target and 4 with NaN predictors (lags, window features or "
+        "exog). They come from interspersed NaNs in `y` or `exog`. To keep the "
+        "rows with NaN predictors, set `forecaster.dropna_from_series = False` "
+        "(the estimator must support NaN)."
+    ]
+
+
+def test_evaluate_grid_hyperparameters_single_MissingValuesWarning_NaN_training_rows_OneStepAheadFold():
+    """
+    Test that, with a `OneStepAheadFold` and NaN in `y` in the training and in
+    the validation sets, the warning of the rows with missing values, raised
+    outside the candidates when the matrices of each value of `lags` are
+    created (8 different texts: 4 values of `lags`, training and validation
+    matrices), is shown once, with the counts of the first one (`lags=2`,
+    training matrix: 28 rows, a NaN target at position 10 and 2 rows with it
+    in their lags).
+    """
+    y_nan = y.copy()
+    y_nan.iloc[[10, 40]] = np.nan
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=2, dropna_from_series=True)
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results = _evaluate_grid_hyperparameters(
+                      forecaster    = forecaster,
+                      y             = y_nan,
+                      cv            = OneStepAheadFold(initial_train_size=30),
+                      param_grid    = [{'alpha': 0.1}],
+                      metric        = 'mean_absolute_error',
+                      lags_grid     = [2, 3, 4, 5],
+                      return_best   = False,
+                      verbose       = False,
+                      show_progress = False
+                  )
+
+    assert len(results) == 4
+    messages = [
+        w.message.message for w in record
+        if w.category is MissingValuesWarning
+        and "training matrix" in w.message.message
+    ]
+    assert messages == [
+        "Some rows of the training matrix have missing values (8 times in the "
+        "search, details of the first one). 3 of 28 rows are dropped: 1 with a "
+        "NaN target and 2 with NaN predictors (lags, window features or exog). "
+        "They come from interspersed NaNs in `y` or `exog`. To keep the rows "
+        "with NaN predictors, set `forecaster.dropna_from_series = False` (the "
+        "estimator must support NaN)."
+    ]
