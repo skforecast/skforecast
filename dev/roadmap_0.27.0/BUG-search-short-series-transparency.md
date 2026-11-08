@@ -1280,7 +1280,8 @@ Condiciones de la implementación:
 
 Rama local desde `origin/0.27.x` (1fbd373dc), sin push ni PR. Commits: los dos del alcance
 (script y sección 15), el roadmap (QW-14, QW-15 y el candidato de agrupar los avisos de un
-backtesting), el código, los tests, la nota de la versión y esta sección.
+backtesting), el código, los tests, la nota de la versión, esta sección, y la segunda ronda
+(errores en un fold: código y tests).
 
 **Código** (+170/−8 en dos archivos):
 
@@ -1375,6 +1376,53 @@ primer fold.
 | M5 grid multi OSA | 3 | 3 | 3 |
 | M6 bayesian multi OSA | 3 | 3 | 3 |
 | N3 escenario 3 del notebook 08 (`Ridge`) | 3 | 3 | 3 |
+
+**Errores en un fold (segunda ronda, 2026-11-08).** Antes del PR: si la función de un fold
+fallaba en un proceso, sus avisos registrados se perdían (salían del `catch_warnings` sin
+devolverse), y con `n_jobs=1` se veían; en una búsqueda, quedaban con el candidato saltado.
+
+- `_run_fold_recording_warnings` captura la excepción, guarda los avisos ya registrados (con
+  la misma comprobación de `pickle`, en `_serializable_fold_warnings`) en el atributo
+  `FOLD_WARNINGS_ATTRIBUTE` (`_skforecast_fold_warnings`) de la excepción y la vuelve a
+  lanzar (`raise`). Si la excepción no admite el atributo, se lanza sin él.
+- Los tres `Parallel` van en un `try/except Exception` que reemite esos avisos con
+  `_reemit_fold_warnings` y vuelve a lanzar la misma excepción con `raise`: mismo tipo,
+  mensaje y traceback (joblib añade la traza remota como `__cause__`, como antes). En el
+  proceso principal (`n_jobs=1`, hilos) la excepción no lleva el atributo y no se reemite
+  nada.
+- **Con loky el atributo llega al proceso principal** (experimento y test): joblib vuelve a
+  lanzar la excepción original, con su `__dict__`.
+- **Los avisos de los otros folds no se recuperan:** `Parallel` devuelve una lista, y
+  cuando un fold falla joblib aborta y descarta los resultados de los demás. Con `n_jobs=1`
+  se ven los de los folds anteriores al que falla (los siguientes no se ejecutan). Medido
+  con un experimento aparte: con `return_as="generator"` (joblib 1.3 o posterior, el mínimo
+  de skforecast) los resultados llegan en orden y, si el fold 3 falla, se reciben los de
+  los folds 0 a 2 antes de la excepción. Recuperaría esos avisos, igual que con `n_jobs=1`,
+  pero cambia cómo se recogen los resultados en los tres backtesting: no se ha hecho.
+- **Hallazgo al probarlo, corregido:** pasar `module_globals` de un módulo sin `__spec__`
+  (`__main__` de un script, o leído de la entrada estándar) a `warn_explicit` hace que
+  busque la línea de código con su loader. Con un script da un `DeprecationWarning` ("Module
+  globals is missing a `__spec__.loader`"); con la entrada estándar, además, un
+  `ImportError` ("'__main__' is not a built-in module") en lugar del aviso, que en una
+  búsqueda convertía el error del candidato en ese `ImportError`. `warnings.warn` no usa
+  esas globales, así que con `n_jobs=1` no pasa. Ahora `module_globals` solo se pasa a los
+  módulos con `__spec__` (los importados); `__main__` va con `None`. En Jupyter `__main__`
+  no tiene `__file__`, así que ya iba sin módulo.
+- Tests (5 nuevos, 22 en total): en un proceso simulado, la excepción se vuelve a lanzar
+  con sus avisos en el atributo (una clase local pasa a `RuntimeWarning`); con `Parallel`
+  de loky, el atributo llega al proceso principal y la excepción conserva su tipo y su
+  texto; `_reemit_fold_warnings` con un módulo sin `__spec__` y loader `BuiltinImporter`
+  muestra el aviso sin más; un backtesting con `n_jobs=2` en el que el fold avisa y falla
+  (una subclase de `Ridge` que avisa y lanza `ValueError` al predecir una fila) da el mismo
+  aviso y la misma excepción que con `n_jobs=1`; y un grid en el que el candidato con
+  `alpha=1.0` falla así se salta y su aviso queda con él ("(in 1 of 2 candidates)"), igual
+  que con `n_jobs=1`. Los dos de integración fallan con el código del commit anterior
+  (worktree temporal, ya borrado): el aviso se perdía.
+- `verify` antes de los dos commits: ruff, `page_meta.py`, `model_selection/tests`
+  completo y los backtesting de `ForecasterRnn` y `ForecasterEquivalentDate`: 1227 pasan y
+  2 se saltan. Los 21 casos del script dan la misma tabla de arriba.
+- La nota de la versión no cambia: describe que los avisos llegan al principal, también
+  los de un fold que falla.
 
 **Queda:** el enlace al PR en la nota de la versión al abrirlo, y la sección 13. El notebook
 08 no se ha vuelto a ejecutar: su escenario 3 usa `Ridge`, que con `'auto'` va en un solo
