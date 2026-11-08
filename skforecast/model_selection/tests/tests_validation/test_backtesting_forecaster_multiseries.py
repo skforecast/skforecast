@@ -1,6 +1,7 @@
 # Unit test backtesting_forecaster_multiseries
 # ==============================================================================
 import re
+import sys
 import warnings
 import pytest
 from unittest.mock import patch
@@ -15,6 +16,7 @@ from sklearn.compose import make_column_transformer, make_column_selector
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.metrics import mean_absolute_error
 from scipy.stats import norm
+from joblib import Parallel, cpu_count
 
 from skforecast.exceptions import IgnoredArgumentWarning
 from skforecast.metrics import create_mean_pinball_loss
@@ -7720,3 +7722,59 @@ def test_output_backtesting_forecaster_multiseries_pinball_losses_of_several_qua
         "l1", "l2", "average", "weighted_average", "pooling"
     ]
     assert metrics_levels[["mean_pinball_loss_q_0.1", "mean_pinball_loss_q_0.9"]].notna().all().all()
+
+
+@pytest.mark.parametrize(
+    "n_jobs, refit, min_work, expected_n_jobs",
+    [('auto', True, 0.0, min(max(1, cpu_count() - 1), 4)),
+     ('auto', True, 1e6, 1),
+     ('auto', False, 0.0, 1),
+     (2, True, 1e6, 2)],
+    ids=['auto, enough work', 'auto, too little work', 'auto, no refit', 'int']
+)
+def test_backtesting_forecaster_multiseries_n_jobs_auto_adjusted_to_the_work(
+    n_jobs, refit, min_work, expected_n_jobs
+):
+    """
+    Test that, with `n_jobs='auto'`, backtesting_forecaster_multiseries runs the folds with one job
+    when the work estimated from the initial fit is below the minimum of the
+    platform (`min_work`, patched) or there is no refit, and otherwise with
+    the jobs of `select_n_jobs_backtesting` limited to the number of folds
+    (4). An integer `n_jobs` is not adjusted. `Parallel` is mocked with
+    a sequential one, so no workers are started.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator=HistGradientBoostingRegressor(max_iter=5), lags=3
+                 )
+    cv = TimeSeriesFold(
+             steps              = 10,
+             initial_train_size = 10,
+             refit              = refit,
+             fixed_train_size   = False,
+             verbose            = False
+         )
+
+    with (
+        patch.dict(
+            "skforecast.model_selection._utils._MIN_PARALLEL_WORK_SECONDS",
+            {sys.platform: min_work}
+        ),
+        patch(
+            "skforecast.model_selection._utils._MIN_PARALLEL_WORK_SECONDS_DEFAULT",
+            min_work
+        ),
+        patch(
+            "skforecast.model_selection._validation.Parallel",
+            side_effect=lambda **kwargs: Parallel(n_jobs=1)
+        ) as mock_parallel
+    ):
+        backtesting_forecaster_multiseries(
+            forecaster    = forecaster,
+            series       = series_wide_range,
+            cv            = cv,
+            metric        = 'mean_absolute_error',
+            n_jobs        = n_jobs,
+            show_progress = False
+        )
+
+    assert mock_parallel.call_args.kwargs == {'n_jobs': expected_n_jobs}

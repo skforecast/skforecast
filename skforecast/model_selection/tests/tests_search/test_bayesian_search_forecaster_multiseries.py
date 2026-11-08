@@ -4,6 +4,9 @@ import os
 import re
 import platform
 import pytest
+from unittest.mock import patch
+from joblib import Parallel, cpu_count
+from sklearn.ensemble import HistGradientBoostingRegressor
 from pytest import approx
 import numpy as np
 import pandas as pd
@@ -3427,3 +3430,57 @@ def test_bayesian_search_forecaster_multiseries_refit_without_series_too_short()
         and str(w.message).endswith("Series left out: 'short' (6 observations).")
         for w in record
     )
+
+
+@pytest.mark.parametrize(
+    "estimator, n_jobs, expected_n_jobs",
+    [(Ridge(), 'auto', 1),
+     (HistGradientBoostingRegressor(max_iter=5), 'auto', max(1, cpu_count() - 1)),
+     (HistGradientBoostingRegressor(max_iter=5), 2, 2)],
+    ids=['auto, Ridge', 'auto, HistGradientBoostingRegressor', 'int']
+)
+def test_bayesian_search_forecaster_multiseries_n_jobs_auto_resolved_with_the_rules_of_each_candidate(
+    estimator, n_jobs, expected_n_jobs
+):
+    """
+    Test that bayesian_search_forecaster_multiseries resolves `n_jobs='auto'` with
+    `select_n_jobs_backtesting` for each candidate and passes the integer to
+    `backtesting_forecaster_multiseries`, so the work threshold of a single backtesting does not
+    reduce it. `Parallel` is mocked with a sequential one, so no workers are
+    started.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=estimator, lags=3)
+    cv = TimeSeriesFold(
+             steps              = 10,
+             initial_train_size = 10,
+             refit              = True,
+             fixed_train_size   = False
+         )
+
+    with (
+        patch(
+            "skforecast.model_selection._search.backtesting_forecaster_multiseries",
+            wraps=backtesting_forecaster_multiseries
+        ) as mock_backtesting,
+        patch(
+            "skforecast.model_selection._validation.Parallel",
+            side_effect=lambda **kwargs: Parallel(n_jobs=1)
+        ) as mock_parallel
+    ):
+        bayesian_search_forecaster_multiseries(
+            forecaster    = forecaster,
+            series       = series_wide_range,
+            cv            = cv,
+            search_space  = lambda trial: {'random_state': trial.suggest_int('random_state', 1, 2)},
+            metric        = 'mean_absolute_error',
+            n_trials      = 2,
+            return_best   = False,
+            n_jobs        = n_jobs,
+            show_progress = False
+        )
+
+    assert mock_backtesting.call_count == 2
+    for call in mock_backtesting.call_args_list:
+        assert call.kwargs['n_jobs'] == expected_n_jobs
+    for call in mock_parallel.call_args_list:
+        assert call.kwargs == {'n_jobs': expected_n_jobs}

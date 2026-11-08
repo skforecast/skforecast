@@ -3,6 +3,10 @@
 import numpy as np
 import pandas as pd
 import pytest
+from unittest.mock import patch
+from joblib import Parallel, cpu_count
+from sklearn.ensemble import HistGradientBoostingRegressor
+from skforecast.model_selection import backtesting_forecaster
 from sklearn.metrics import mean_absolute_percentage_error
 from sklearn.metrics import r2_score, zero_one_loss
 from skforecast.metrics import mean_absolute_scaled_error
@@ -379,3 +383,56 @@ def test_grid_search_forecaster_ForecasterRecursiveClassifier_follows_metric_dir
     assert results[metric_name].iloc[0] != results[metric_name].iloc[1]
     assert forecaster.estimator.C == 0.1
     np.testing.assert_array_equal(forecaster.lags, np.array([1, 2, 3, 4]))
+
+
+@pytest.mark.parametrize(
+    "estimator, n_jobs, expected_n_jobs",
+    [(Ridge(), 'auto', 1),
+     (HistGradientBoostingRegressor(max_iter=5), 'auto', max(1, cpu_count() - 1)),
+     (HistGradientBoostingRegressor(max_iter=5), 2, 2)],
+    ids=['auto, Ridge', 'auto, HistGradientBoostingRegressor', 'int']
+)
+def test_grid_search_forecaster_n_jobs_auto_resolved_with_the_rules_of_each_candidate(
+    estimator, n_jobs, expected_n_jobs
+):
+    """
+    Test that grid_search_forecaster resolves `n_jobs='auto'` with
+    `select_n_jobs_backtesting` for each candidate and passes the integer to
+    `backtesting_forecaster`, so the work threshold of a single backtesting does not
+    reduce it. `Parallel` is mocked with a sequential one, so no workers are
+    started.
+    """
+    forecaster = ForecasterRecursive(estimator=estimator, lags=3)
+    cv = TimeSeriesFold(
+             steps              = 10,
+             initial_train_size = 10,
+             refit              = True,
+             fixed_train_size   = False
+         )
+
+    with (
+        patch(
+            "skforecast.model_selection._search.backtesting_forecaster",
+            wraps=backtesting_forecaster
+        ) as mock_backtesting,
+        patch(
+            "skforecast.model_selection._validation.Parallel",
+            side_effect=lambda **kwargs: Parallel(n_jobs=1)
+        ) as mock_parallel
+    ):
+        grid_search_forecaster(
+            forecaster    = forecaster,
+            y            = y,
+            cv            = cv,
+            param_grid    = {'random_state': [1, 2]},
+            metric        = 'mean_absolute_error',
+            return_best   = False,
+            n_jobs        = n_jobs,
+            show_progress = False
+        )
+
+    assert mock_backtesting.call_count == 2
+    for call in mock_backtesting.call_args_list:
+        assert call.kwargs['n_jobs'] == expected_n_jobs
+    for call in mock_parallel.call_args_list:
+        assert call.kwargs == {'n_jobs': expected_n_jobs}
