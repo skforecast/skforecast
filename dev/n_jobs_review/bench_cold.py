@@ -126,15 +126,15 @@ def child(meta: dict, affinity: int | None) -> None:
     import skforecast.model_selection._validation as validation
 
     resolved = []
-    if hasattr(validation, "adjust_n_jobs_to_work"):
-        adjust = validation.adjust_n_jobs_to_work
+    if hasattr(validation, "limit_n_jobs_by_workload"):
+        limit = validation.limit_n_jobs_by_workload
 
         def spy(**kwargs):
-            out = adjust(**kwargs)
+            out = limit(**kwargs)
             resolved.append(out)
             return out
 
-        validation.adjust_n_jobs_to_work = spy
+        validation.limit_n_jobs_by_workload = spy
 
     setup, run, info = build_cell(meta)
     state = setup()

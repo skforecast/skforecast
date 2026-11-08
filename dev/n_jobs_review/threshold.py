@@ -16,7 +16,7 @@ and parallelizes the fit of the steps instead):
    overhead of starting the workers and `b` the inverse of the speedup.
 2. Break-even in real sequential time: `T = a / (1 - b)`.
 3. In units of the estimate: `T * median(estimate / sequential)`, rounded
-   to 0.5 s. That is the value of `_MIN_PARALLEL_WORK_SECONDS` for the
+   to 0.5 s. That is the value of `_MIN_PARALLEL_WORKLOAD_SECONDS` for the
    platform (`skforecast/model_selection/_utils.py`).
 
 Quick threshold, from block A alone (no V1): `0.7 * cold start of

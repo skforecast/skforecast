@@ -838,8 +838,8 @@ def select_n_jobs_backtesting(
 
     The hyperparameter searches use these rules for every candidate. A single
     backtesting (`backtesting_forecaster`, `backtesting_forecaster_multiseries`)
-    then adjusts the result to its work with
-    `skforecast.model_selection._utils.adjust_n_jobs_to_work`.
+    then limits the result by its workload with
+    `skforecast.model_selection._utils.limit_n_jobs_by_workload`.
 
     Parameters
     ----------
@@ -882,37 +882,37 @@ def select_n_jobs_backtesting(
     return max(1, cpu_count() - 1)
 
 
-# NOTE: Work, in seconds, below which a single backtesting with
+# NOTE: Workload, in seconds, below which a single backtesting with
 # `n_jobs='auto'` runs with one job, because starting the workers costs more
-# than it saves. The work is estimated as the duration of the initial fit
+# than it saves. The workload is estimated as the duration of the initial fit
 # times the number of refits, which gives about 80% of the real sequential
 # time. Measured with 21 workers that import skforecast, parallelizing pays
 # off from about 5 s of real sequential work on Windows (4 s of estimated
-# work) and from about 2.8 s on Linux (2 s). macOS has not been measured yet
-# and uses the value of Windows.
-_MIN_PARALLEL_WORK_SECONDS = {"win32": 4.0, "linux": 2.0}
-_MIN_PARALLEL_WORK_SECONDS_DEFAULT = 4.0
+# workload) and from about 2.8 s on Linux (2 s). macOS has not been measured
+# yet and uses the value of Windows.
+_MIN_PARALLEL_WORKLOAD_SECONDS = {"win32": 4.0, "linux": 2.0}
+_MIN_PARALLEL_WORKLOAD_SECONDS_DEFAULT = 4.0
 
 
-def adjust_n_jobs_to_work(
+def limit_n_jobs_by_workload(
     n_jobs: int,
     n_tasks: int,
     n_fits: int,
     fit_seconds: float | None
 ) -> int:
     """
-    Adjust the number of jobs selected with `n_jobs='auto'` to the work of a
-    single backtesting. Starting the workers of `joblib` takes seconds (more
+    Limit the number of jobs selected with `n_jobs='auto'` by the workload of
+    a single backtesting. Starting the workers of `joblib` takes seconds (more
     on Windows than on Linux), so parallelizing only pays off when the folds
-    have enough work to share.
+    have enough work to share. The result is never greater than `n_jobs`.
 
     - If `n_jobs` is 1, there is at most one task or no task fits the
     forecaster (no refit), then `n_jobs = 1`. Predicting the folds of a fitted
     forecaster takes less time than the workers take to start.
-    - If the estimated work, `n_fits * fit_seconds`, is below the minimum of
-    the platform (4 seconds on Windows and macOS, 2 seconds on Linux), then
+    - If the estimated workload, `n_fits * fit_seconds`, is below the minimum
+    of the platform (4 seconds on Windows and macOS, 2 seconds on Linux), then
     `n_jobs = 1`. If the time of the initial fit is not known
-    (`fit_seconds=None`), the work is not estimated.
+    (`fit_seconds=None`), the workload is not estimated.
     - Otherwise, `n_jobs = min(n_jobs, n_tasks)`: no more workers are started
     than there are tasks.
 
@@ -940,10 +940,10 @@ def adjust_n_jobs_to_work(
         return 1
 
     if fit_seconds is not None:
-        min_work = _MIN_PARALLEL_WORK_SECONDS.get(
-            sys.platform, _MIN_PARALLEL_WORK_SECONDS_DEFAULT
+        min_workload = _MIN_PARALLEL_WORKLOAD_SECONDS.get(
+            sys.platform, _MIN_PARALLEL_WORKLOAD_SECONDS_DEFAULT
         )
-        if n_fits * fit_seconds < min_work:
+        if n_fits * fit_seconds < min_workload:
             return 1
 
     return min(n_jobs, n_tasks)

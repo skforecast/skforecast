@@ -7732,7 +7732,7 @@ def test_output_backtesting_forecaster_multiseries_pinball_losses_of_several_qua
      (2, True, 1e6, 2)],
     ids=['auto, enough work', 'auto, too little work', 'auto, no refit', 'int']
 )
-def test_backtesting_forecaster_multiseries_n_jobs_auto_adjusted_to_the_work(
+def test_backtesting_forecaster_multiseries_n_jobs_auto_limited_by_the_workload(
     n_jobs, refit, min_work, expected_n_jobs
 ):
     """
@@ -7740,7 +7740,7 @@ def test_backtesting_forecaster_multiseries_n_jobs_auto_adjusted_to_the_work(
     when the work estimated from the initial fit is below the minimum of the
     platform (`min_work`, patched) or there is no refit, and otherwise with
     the jobs of `select_n_jobs_backtesting` limited to the number of folds
-    (4). An integer `n_jobs` is not adjusted. `Parallel` is mocked with
+    (4). An integer `n_jobs` is not limited. `Parallel` is mocked with
     a sequential one, so no workers are started.
     """
     forecaster = ForecasterRecursiveMultiSeries(
@@ -7756,11 +7756,11 @@ def test_backtesting_forecaster_multiseries_n_jobs_auto_adjusted_to_the_work(
 
     with (
         patch.dict(
-            "skforecast.model_selection._utils._MIN_PARALLEL_WORK_SECONDS",
+            "skforecast.model_selection._utils._MIN_PARALLEL_WORKLOAD_SECONDS",
             {sys.platform: min_work}
         ),
         patch(
-            "skforecast.model_selection._utils._MIN_PARALLEL_WORK_SECONDS_DEFAULT",
+            "skforecast.model_selection._utils._MIN_PARALLEL_WORKLOAD_SECONDS_DEFAULT",
             min_work
         ),
         patch(

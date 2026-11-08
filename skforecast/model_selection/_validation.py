@@ -23,7 +23,7 @@ from ..model_selection._split import TimeSeriesFold
 from ..model_selection._utils import (
     _initialize_levels_model_selection_multiseries,
     check_backtesting_input,
-    adjust_n_jobs_to_work,
+    limit_n_jobs_by_workload,
     select_n_jobs_backtesting,
     _extract_data_folds_multiseries,
     _select_fit_folds_multiseries,
@@ -446,9 +446,9 @@ def _backtesting_forecaster(
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting, and set to 1
-        when the work of the folds, estimated from the time of the initial fit, is
+        when the workload of the folds, estimated from the time of the initial fit, is
         too small to pay the start of the workers (for example, without refit).
-        See skforecast.model_selection._utils.adjust_n_jobs_to_work.
+        See skforecast.model_selection._utils.limit_n_jobs_by_workload.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used 
         for backtesting.
@@ -648,7 +648,7 @@ def _backtesting_forecaster(
     fold_items = list(zip(folds, fold_data_list))
 
     if n_jobs_auto:
-        n_jobs = adjust_n_jobs_to_work(
+        n_jobs = limit_n_jobs_by_workload(
                      n_jobs      = n_jobs,
                      n_tasks     = len(fold_items),
                      n_fits      = sum(fold[5] is True for fold in folds),
@@ -854,9 +854,9 @@ def backtesting_forecaster(
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting, and set to 1
-        when the work of the folds, estimated from the time of the initial fit, is
+        when the workload of the folds, estimated from the time of the initial fit, is
         too small to pay the start of the workers (for example, without refit).
-        See skforecast.model_selection._utils.adjust_n_jobs_to_work.
+        See skforecast.model_selection._utils.limit_n_jobs_by_workload.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used 
         for backtesting.
@@ -1286,9 +1286,9 @@ def _backtesting_forecaster_multiseries(
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting, and set to 1
-        when the work of the folds, estimated from the time of the initial fit, is
+        when the workload of the folds, estimated from the time of the initial fit, is
         too small to pay the start of the workers (for example, without refit).
-        See skforecast.model_selection._utils.adjust_n_jobs_to_work.
+        See skforecast.model_selection._utils.limit_n_jobs_by_workload.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used 
         for backtesting.
@@ -1607,9 +1607,9 @@ def _backtesting_forecaster_multiseries(
 
     if n_jobs_auto:
         # NOTE: If the first fold is not fitted (none of its levels is
-        # predicted with its model), `fit_seconds` is `None` and the work is
-        # not estimated.
-        n_jobs = adjust_n_jobs_to_work(
+        # predicted with its model), `fit_seconds` is `None` and the workload
+        # is not estimated.
+        n_jobs = limit_n_jobs_by_workload(
                      n_jobs      = n_jobs,
                      n_tasks     = len(data_folds_list),
                      n_fits      = sum(fit_folds),
@@ -1850,9 +1850,9 @@ def backtesting_forecaster_multiseries(
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting, and set to 1
-        when the work of the folds, estimated from the time of the initial fit, is
+        when the workload of the folds, estimated from the time of the initial fit, is
         too small to pay the start of the workers (for example, without refit).
-        See skforecast.model_selection._utils.adjust_n_jobs_to_work.
+        See skforecast.model_selection._utils.limit_n_jobs_by_workload.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used 
         for backtesting.

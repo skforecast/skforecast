@@ -57,7 +57,7 @@ check_repo_skforecast()
 import skforecast
 from skforecast.model_selection import _utils
 print('skforecast', skforecast.__version__, skforecast.__file__)
-if not hasattr(_utils, 'adjust_n_jobs_to_work'):
+if not hasattr(_utils, 'limit_n_jobs_by_workload'):
     raise SystemExit('This skforecast has no work threshold: check out its branch.')
 try:
     dump_json(machine_info(), RESULTS_DIR / 'machine.json')
@@ -70,12 +70,12 @@ done_ machine $rc
 
 step tests
 "$PY" -m pytest -q -p no:cacheprovider \
-  "$ROOT/skforecast/model_selection/tests/tests_utils/test_adjust_n_jobs_to_work.py" \
+  "$ROOT/skforecast/model_selection/tests/tests_utils/test_limit_n_jobs_by_workload.py" \
   "$ROOT/skforecast/model_selection/tests/tests_validation/test_backtesting_forecaster.py" \
   "$ROOT/skforecast/model_selection/tests/tests_validation/test_backtesting_forecaster_multiseries.py" \
   "$ROOT/skforecast/model_selection/tests/tests_search/test_grid_search_forecaster.py" \
   "$ROOT/skforecast/model_selection/tests/tests_search/test_grid_search_forecaster_multiseries.py" \
-  -k "adjust_n_jobs_to_work or adjusted_to_the_work or resolved_with_the_rules" \
+  -k "limit_n_jobs_by_workload or limited_by_the_workload or resolved_with_the_rules" \
   > "$NJOBS_RESULTS_DIR/tests.log" 2>&1
 rc=$?
 tail -1 "$NJOBS_RESULTS_DIR/tests.log"

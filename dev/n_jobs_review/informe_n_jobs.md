@@ -721,10 +721,10 @@ Lo demás se aplicó como se propone:
 +# Sequential work (seconds) below which starting the joblib workers does not
 +# pay off. Measured on Windows, where starting 21 workers that import
 +# skforecast costs 3-4 s inside a backtesting (dev/n_jobs_review).
-+_MIN_PARALLEL_WORK_SECONDS = 5.0
++_MIN_PARALLEL_WORKLOAD_SECONDS = 5.0
 +
 +
-+def adjust_n_jobs_to_work(
++def limit_n_jobs_by_workload(
 +    n_jobs: int, n_tasks: int, n_fits: int, fit_seconds: float
 +) -> int:
 +    """
@@ -732,7 +732,7 @@ Lo demás se aplicó como se propone:
 +    to pay the start of the workers, and cap it by the number of tasks.
 +    """
 +    estimated_work = n_fits * fit_seconds
-+    if n_jobs <= 1 or n_tasks <= 1 or estimated_work < _MIN_PARALLEL_WORK_SECONDS:
++    if n_jobs <= 1 or n_tasks <= 1 or estimated_work < _MIN_PARALLEL_WORKLOAD_SECONDS:
 +        return 1
 +    return min(n_jobs, n_tasks)
 
@@ -752,7 +752,7 @@ Lo demás se aplicó como se propone:
 @@
 +    if auto_n_jobs:
 +        n_fits = sum(fold[5] for fold in folds)   # folds that are refitted
-+        n_jobs = adjust_n_jobs_to_work(
++        n_jobs = limit_n_jobs_by_workload(
 +            n_jobs=n_jobs, n_tasks=len(fold_items), n_fits=n_fits,
 +            fit_seconds=fit_seconds,
 +        )
@@ -781,7 +781,7 @@ Lo demás se aplicó como se propone:
 
 **Aplicado** en la rama `perf/n-jobs-auto-work-threshold` (desde `0.27.x` @ `2daa0e836`, PR pendiente), con estas diferencias respecto al boceto:
 
-- **`adjust_n_jobs_to_work(n_jobs, n_tasks, n_fits, fit_seconds)`** (`_utils.py`, documentada en la página de la API junto a `select_n_jobs_backtesting`):
+- **`limit_n_jobs_by_workload(n_jobs, n_tasks, n_fits, fit_seconds)`** (`_utils.py`, documentada en la página de la API junto a `select_n_jobs_backtesting`):
   - devuelve 1 si `n_jobs` es 1, si hay una sola tarea o si ningún fold reajusta (sin refit, aunque el `fit` inicial sea largo);
   - devuelve 1 si `n_fits × fit_seconds` no llega al mínimo de la plataforma: `{"win32": 4.0, "linux": 2.0}`, y 4,0 en cualquier otra, macOS incluido, hasta medirlo (sección 16);
   - si no, `min(n_jobs, n_tasks)`;
@@ -793,8 +793,8 @@ Lo demás se aplicó como se propone:
   - multiplicado por la mediana de la estimación (0,78 y 0,77), da 4,0 y 2,15 s, que se redondean a 0,5 s: **4,0 y 2,0 s** [inferido de medidas, `results/threshold.md` y `results/wsl/threshold.md`].
 - **Búsquedas (D5)**: resuelven `'auto'` con `select_n_jobs_backtesting` en cada candidato, no una vez para toda la búsqueda, porque la regla de LightGBM depende de los parámetros del candidato. Pasan el entero al backtesting, así que el umbral no se aplica. Afecta a `grid_search_forecaster`, `random_search_forecaster`, `bayesian_search_forecaster` y sus versiones multiseries. Las de Stats y EquivalentDate no cambian: sus reglas ya dan 1.
 - **El `fit` de Direct no cambia**: su `n_jobs` se fija en `__init__` y su paralelismo se decide fuera del backtesting. Su backtesting ya usaba 1 por fuera.
-- **Tests**: 14 de `adjust_n_jobs_to_work` (casos sin nada que repartir, mínimo por plataforma con `sys.platform` parcheado, límite por tareas); 4 por función de backtesting y 3 por búsqueda, con `Parallel` sustituido por uno secuencial, que comprueban el `n_jobs` que recibe. Los de backtesting fallan sin el cambio (6 de 8; los 2 que pasan son los de `n_jobs` entero, que no cambia).
-- **Docstrings**: el `n_jobs` de `backtesting_forecaster` y `backtesting_forecaster_multiseries` (públicas y privadas) explica el umbral; la de `select_n_jobs_backtesting` remite a `adjust_n_jobs_to_work`. Nota de versión en `0.27.0`, apartado Changed.
+- **Tests**: 14 de `limit_n_jobs_by_workload` (casos sin nada que repartir, mínimo por plataforma con `sys.platform` parcheado, límite por tareas); 4 por función de backtesting y 3 por búsqueda, con `Parallel` sustituido por uno secuencial, que comprueban el `n_jobs` que recibe. Los de backtesting fallan sin el cambio (6 de 8; los 2 que pasan son los de `n_jobs` entero, que no cambia).
+- **Docstrings**: el `n_jobs` de `backtesting_forecaster` y `backtesting_forecaster_multiseries` (públicas y privadas) explica el umbral; la de `select_n_jobs_backtesting` remite a `limit_n_jobs_by_workload`. Nota de versión en `0.27.0`, apartado Changed.
 
 **Sin refit con predicciones caras** [probado]. El umbral manda a 1 todo backtesting sin refit, también con intervalos por bootstrapping, cuyo coste de predicción no estima. Con 10.000 filas, 20 folds y `n_boot=250` (LGBM(1)), o 50 series × 2.000 filas sin y con bootstrapping, el secuencial tarda de 2,2 a 4,4 s; con 21 workers, de 7,5 a 9,5 s en frío y de 1,2 a 6,4 s en caliente. Solo un caso gana en caliente (2,2 → 1,2 s). Con cargas mucho mayores sí ganaría; quien las tenga puede pasar un `n_jobs` entero.
 
@@ -836,7 +836,7 @@ Lo demás se aplicó como se propone:
 | 11.1 `estimators_` | perf | Direct/DMV con refit, ×5-11 | 1 nuevo |
 | 11.2 `mmap_mode='c'` (aplicado; se propuso `max_nbytes=None`) | fix | Sarimax en paralelo deja de fallar | 1 nuevo |
 | 11.3 "barato" | heurística | Pipeline y LogReg ×4-5; MultiSeries lineal sin arranque inútil | 5 actualizados, 2 nuevos |
-| 11.4 umbral | heurística | backtestings sueltos pequeños hasta ×20 más rápidos en Windows | 14 para `adjust_n_jobs_to_work`, 8 en los backtestings y 12 en las búsquedas |
+| 11.4 umbral | heurística | backtestings sueltos pequeños hasta ×20 más rápidos en Windows | 14 para `limit_n_jobs_by_workload`, 8 en los backtestings y 12 en las búsquedas |
 | Docstrings y cuaderno | docs | Reglas correctas, benchmark reproducible | `verify` (docs) |
 
 ## 12. Linux: medida en WSL2 (D7)
@@ -1108,16 +1108,16 @@ Con el valor `X`, en `skforecast/model_selection/_utils.py`:
 ```diff
 -# work) and from about 2.8 s on Linux (2 s). macOS has not been measured yet
 -# and uses the value of Windows.
--_MIN_PARALLEL_WORK_SECONDS = {"win32": 4.0, "linux": 2.0}
+-_MIN_PARALLEL_WORKLOAD_SECONDS = {"win32": 4.0, "linux": 2.0}
 +# work), from about 2.8 s on Linux (2 s) and from about <T> s on macOS
 +# (<X> s, <chip>).
-+_MIN_PARALLEL_WORK_SECONDS = {"win32": 4.0, "linux": 2.0, "darwin": <X>}
- _MIN_PARALLEL_WORK_SECONDS_DEFAULT = 4.0
++_MIN_PARALLEL_WORKLOAD_SECONDS = {"win32": 4.0, "linux": 2.0, "darwin": <X>}
+ _MIN_PARALLEL_WORKLOAD_SECONDS_DEFAULT = 4.0
 ```
 
 Y además:
-- la docstring de `adjust_n_jobs_to_work`, que dice "4 seconds on Windows and macOS, 2 seconds on Linux": pon los valores de cada plataforma;
-- el test `test_adjust_n_jobs_to_work_output_with_the_minimum_work_of_each_platform` (`skforecast/model_selection/tests/tests_utils/test_adjust_n_jobs_to_work.py`): los dos casos de `"darwin"` deben quedar a cada lado de `X` con 9 ajustes (por ejemplo, `X / 9 − 0,1` y `X / 9 + 0,1`);
+- la docstring de `limit_n_jobs_by_workload`, que dice "4 seconds on Windows and macOS, 2 seconds on Linux": pon los valores de cada plataforma;
+- el test `test_limit_n_jobs_by_workload_output_with_the_minimum_work_of_each_platform` (`skforecast/model_selection/tests/tests_utils/test_limit_n_jobs_by_workload.py`): los dos casos de `"darwin"` deben quedar a cada lado de `X` con 9 ajustes (por ejemplo, `X / 9 − 0,1` y `X / 9 + 0,1`);
 - la nota de versión del umbral en `docs/releases/releases.md`, si nombra las plataformas.
 
 Si `X` sale igual que en Windows, añade igualmente la clave `"darwin"`, para que el valor quede medido y no heredado, y cambia el comentario.
