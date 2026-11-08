@@ -292,6 +292,12 @@ _MODEL_LICENSES: dict[str, tuple[str, str | None, bool, str | None]] = {
         True,
         "TimesFM Non-Commercial License v1.0",
     ),
+    "NX-AI/TiRex-2": (
+        "Apache-2.0",
+        None,
+        False,
+        None,
+    ),
     "Salesforce/moirai": (
         "CC-BY-NC-4.0",
         None,

@@ -4,7 +4,7 @@ description: >
   Forecasts time series zero-shot with pre-trained foundation models
   (Amazon Chronos-2, Google TimesFM 2.5/3.0, Salesforce Moirai-2, Soda-INRIA TabICL,
   Prior Labs TabPFN-TS, The Forecasting Company T0, EDF Lab TS-ICL, Synthefy Nori,
-  Mistral AI Timestral) via ForecasterFoundation and
+  Mistral AI Timestral, NX-AI TiRex-2) via ForecasterFoundation and
   FoundationModel. Covers single and multi-series
   workflows, exogenous variables, prediction intervals / quantiles,
   backtesting, and inference-time parameter search (context_length tuning).
@@ -42,8 +42,8 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 |------|---------|----------|
 | `fit()` stores context only; it never trains the model | Expecting training to happen or weights to update | Treat the model as pre-trained; evaluate with `backtesting_foundation` |
 | `cv.refit` and `cv.fixed_train_size` are overridden by `backtesting_foundation` | `IgnoredArgumentWarning` when `refit=True` or `fixed_train_size=False` | Leave them at their defaults; the context window expands per fold either way |
-| Only Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, T0, Nori, TS-ICL, and Timestral use `exog`; TimesFM 2.5 and Moirai-2 ignore it | `IgnoredArgumentWarning`, forecast made without `exog` | Pick an exog-capable adapter when covariates matter |
-| TimesFM (2.5 and 3.0) and Moirai-2 restrict quantiles to `[0.1, 0.2, ..., 0.9]`; TS-ICL to a 0.01 grid; Timestral to 21 levels (`0.01`, `0.05`, `0.1`, ..., `0.95`, `0.99`) | Requested quantile rejected or unsupported | Request only supported quantiles, or use an adapter allowing any quantile in (0, 1) |
+| Only Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, T0, Nori, TS-ICL, Timestral, and TiRex-2 use `exog`; TimesFM 2.5 and Moirai-2 ignore it | `IgnoredArgumentWarning`, forecast made without `exog` | Pick an exog-capable adapter when covariates matter |
+| TimesFM (2.5 and 3.0), Moirai-2 and TiRex-2 restrict quantiles to `[0.1, 0.2, ..., 0.9]`; TS-ICL to a 0.01 grid; Timestral to 21 levels (`0.01`, `0.05`, `0.1`, ..., `0.95`, `0.99`) | Requested quantile rejected or unsupported | Request only supported quantiles, or use an adapter allowing any quantile in (0, 1) |
 | Each backend library must be installed separately | `ModuleNotFoundError` / `ImportError` on first use | `pip install` the matching backend (see Installation) |
 | Tuning uses `bayesian_search_foundation`, never `bayesian_search_forecaster*` | `TypeError` on the forecaster type or on `OneStepAheadFold` | Call `bayesian_search_foundation` with a `TimeSeriesFold` |
 | Weights for TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL, and Timestral are released under licenses that restrict commercial use (terms vary, e.g. TabPFN-TS allows commercial use under an enterprise license, Timestral excludes companies above USD 20 million of monthly revenue); no warning does not mean a model is unrestricted | `LicenseWarning` on first model load | Review the linked license before commercial use; suppress the warning with `suppress_warnings=True` if already reviewed |
@@ -62,6 +62,7 @@ pip install "tfc-t0<0.4"           # For T0
 pip install tsicl                  # For TS-ICL
 pip install synthefy-nori          # For Nori
 pip install "timestral @ git+https://github.com/mistralai/timestral.git"  # For Timestral (not on PyPI)
+pip install tirex-2                # For TiRex-2 (Python >= 3.11)
 ```
 
 Models are downloaded from HuggingFace on first use.
@@ -125,9 +126,9 @@ model = FoundationModel(
 )
 ```
 
-## With Exogenous Variables (Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL, and Timestral)
+## With Exogenous Variables (Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL, Timestral, and TiRex-2)
 
-Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL, and Timestral (`allow_exog=True`) accept exogenous variables. TimesFM 2.5 and Moirai-2 ignore them. At predict time the future `exog` columns are validated per series against the historical exog: a future column with no history raises `ValueError`; a historical column with no future values is a past-only covariate, used by Chronos-2, TS-ICL, TimesFM 3.0 and Timestral (`supports_past_only_covariates=True`) and ignored with an `IgnoredArgumentWarning` by TabICL, TabPFN-TS, TFC-T0 and Nori. Series in a multi-series input may differ in length and in their exog columns: each series is forecast with its own columns, and adapters whose backend needs identical columns per batch (`supports_heterogeneous_covariates=False`: Chronos-2, TS-ICL, TabICL, TimesFM 3.0, Timestral) are called once per group of series sharing the same columns, so the forecast of a series never depends on the exog of the others.
+Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL, Timestral, and TiRex-2 (`allow_exog=True`) accept exogenous variables. TimesFM 2.5 and Moirai-2 ignore them. At predict time the future `exog` columns are validated per series against the historical exog: a future column with no history raises `ValueError`; a historical column with no future values is a past-only covariate, used by Chronos-2, TS-ICL, TimesFM 3.0, Timestral and TiRex-2 (`supports_past_only_covariates=True`) and ignored with an `IgnoredArgumentWarning` by TabICL, TabPFN-TS, TFC-T0 and Nori. Series in a multi-series input may differ in length and in their exog columns: each series is forecast with its own columns, and adapters whose backend needs identical columns per batch (`supports_heterogeneous_covariates=False`: Chronos-2, TS-ICL, TabICL, TimesFM 3.0, Timestral) are called once per group of series sharing the same columns, so the forecast of a series never depends on the exog of the others.
 
 ```python
 # Historical + future exog (must cover the forecast horizon)
@@ -156,7 +157,7 @@ predictions = forecaster.predict_quantiles(
 # Columns: ['level', 'q_0.1', 'q_0.5', 'q_0.9']
 ```
 
-For TimesFM (2.5 and 3.0) and Moirai-2, requested quantiles must be a subset of `[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]`. TS-ICL accepts any level on a finer 0.01 grid in `[0.01, 0.99]` (e.g. `0.05`, `0.37`); off-grid levels raise a `ValueError`. Timestral returns 21 fixed levels: `0.01`, `0.05`, every multiple of `0.05` up to `0.95`, and `0.99`; any other level raises a `ValueError`. Chronos-2, TabICL, TabPFN-TS, TFC-T0 and Nori support any quantile in `(0, 1)`.
+For TimesFM (2.5 and 3.0), Moirai-2 and TiRex-2, requested quantiles must be a subset of `[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]`. TS-ICL accepts any level on a finer 0.01 grid in `[0.01, 0.99]` (e.g. `0.05`, `0.37`); off-grid levels raise a `ValueError`. Timestral returns 21 fixed levels: `0.01`, `0.05`, every multiple of `0.05` up to `0.95`, and `0.99`; any other level raises a `ValueError`. Chronos-2, TabICL, TabPFN-TS, TFC-T0 and Nori support any quantile in `(0, 1)`.
 
 ## Choosing a Model
 
@@ -172,6 +173,7 @@ For TimesFM (2.5 and 3.0) and Moirai-2, requested quantiles must be a subset of 
 | `Synthefy/Nori` (Synthefy)             | Yes  | 4096            | Tabular foundation model, exog-aware               |
 | `taharnbl/TS-ICL` (EDF Lab)            | Yes  | 4096            | Past & future covariates, fine-grained (0.01) quantile grid |
 | `mistralai/Timestral-*` (Mistral AI)   | Yes  | 4096            | Long context, past, future and categorical covariates (the 209M checkpoint is the most accurate) |
+| `NX-AI/TiRex-2` (NX-AI)                | Yes  | 2048            | Past & future covariates, series with different covariates in one call, horizons up to 320 steps |
 
 The adapter is resolved automatically from the `model_id` prefix — no need to import adapter classes directly.
 
@@ -277,18 +279,19 @@ automatically to the last `context_length` observations.
 
 1. **Expecting `fit()` to train the model**: it only stores context. The weights come from HuggingFace.
 2. **Index without frequency**: call `series.asfreq('h')` (or similar) before `fit` — skforecast requires a frequency.
-3. **Passing `exog` to TimesFM 2.5 / Moirai-2**: ignored with an `IgnoredArgumentWarning`. Only Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL, and Timestral support exogenous variables.
-4. **Requesting unsupported quantiles**: TimesFM (2.5 and 3.0) and Moirai-2 are restricted to the nine deciles `0.1 … 0.9` ; TS-ICL is restricted to a 0.01 grid in `[0.01, 0.99]`; Timestral to its 21 levels (`0.01`, `0.05`, `0.1`, ..., `0.95`, `0.99`).
+3. **Passing `exog` to TimesFM 2.5 / Moirai-2**: ignored with an `IgnoredArgumentWarning`. Only Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL, Timestral, and TiRex-2 support exogenous variables.
+4. **Requesting unsupported quantiles**: TimesFM (2.5 and 3.0), Moirai-2 and TiRex-2 are restricted to the nine deciles `0.1 … 0.9` ; TS-ICL is restricted to a 0.01 grid in `[0.01, 0.99]`; Timestral to its 21 levels (`0.01`, `0.05`, `0.1`, ..., `0.95`, `0.99`).
 5. **Large model downloads**: first call can be slow; consider using smaller variants (`*-small`) for experimentation.
-6. **Forgetting to install the backend**: each foundation model requires its own library (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`, `timestral`). Install only the one(s) you need.
+6. **Forgetting to install the backend**: each foundation model requires its own library (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`, `timestral`, `tirex-2`). Install only the one(s) you need. `tirex-2` requires Python >= 3.11.
 7. **Tuning a parameter that forces a model reload**: `model_id` and device/dtype arguments reload the model on every trial, and `context_length` does the same on TimesFM 2.5 (but **not** TimesFM 3.0), Moirai-2, TabICL and TabPFN-TS.
-8. **Assuming TimesFM 3.0 accepts categorical covariates**: it does not, and neither do Nori, T0, and TS-ICL (`ValueError`). Only Chronos-2 and Timestral accept them natively. `ForecasterFoundation` has no `transformer_exog`, so encode categoricals as numbers in `exog` before passing it to `fit` and `predict`.
+8. **Assuming TimesFM 3.0 accepts categorical covariates**: it does not, and neither do Nori, T0, TS-ICL, and TiRex-2 (`ValueError`). Only Chronos-2 and Timestral accept them natively. `ForecasterFoundation` has no `transformer_exog`, so encode categoricals as numbers in `exog` before passing it to `fit` and `predict`.
 9. **Passing a future `exog` column that was not in the historical exog** (`fit` without that column, or `context` without `context_exog`): `ValueError` on every adapter. Pass the same columns to `fit` (or `context_exog`) and to `predict`.
-10. **Predicting without `exog` after fitting with exog on TabICL, TabPFN-TS, T0 or Nori**: the historical columns are ignored (`IgnoredArgumentWarning`) and the forecast uses no covariates. Only Chronos-2, TS-ICL, TimesFM 3.0 and Timestral use them as past-only covariates.
+10. **Predicting without `exog` after fitting with exog on TabICL, TabPFN-TS, T0 or Nori**: the historical columns are ignored (`IgnoredArgumentWarning`) and the forecast uses no covariates. Only Chronos-2, TS-ICL, TimesFM 3.0, Timestral and TiRex-2 use them as past-only covariates.
 11. **Timestral with a known covariate that is constant over the context and changes over the horizon** (a price that has not moved, or a 0/1 holiday or promotion indicator that is 0 over the whole context): the upper quantiles, and sometimes the median, can become very large ([mistralai/timestral#7](https://github.com/mistralai/timestral/issues/7)). The adapter issues a `FeatureOutOfRangeWarning` naming the series and columns; set the historical values of those columns to NaN. With known covariates, Timestral's forecast of the first steps also depends on `steps`, so do not compare backtests with a different `steps` step by step.
+12. **Asking TiRex-2 for more than 320 steps**: `NX-AI/TiRex-2` forecasts at most 320 steps ahead (`future_len` of the checkpoint; 928 for the gifteval checkpoints), so a longer `steps` raises a `ValueError` (the backend would silently return a shorter forecast). Use another adapter for longer horizons.
 
 ## References
 
-See [references/adapter-parameters.md](references/adapter-parameters.md) for the per-adapter constructor parameters of `ChronosAdapter`, `TimesFM25Adapter`, `TimesFM3Adapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`, `NoriAdapter`, `TSICLAdapter`, and `TimestralAdapter`.
+See [references/adapter-parameters.md](references/adapter-parameters.md) for the per-adapter constructor parameters of `ChronosAdapter`, `TimesFM25Adapter`, `TimesFM3Adapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`, `NoriAdapter`, `TSICLAdapter`, `TimestralAdapter`, and `TiRex2Adapter`.
 
 See the user guide [Foundation models with heterogeneous series](https://skforecast.org/latest/user_guides/foundation-forecasting-with-heterogeneous-series.html) for a worked example with series of different lengths, different exog columns and NaN, and for the table of what each backend requires and tolerates.

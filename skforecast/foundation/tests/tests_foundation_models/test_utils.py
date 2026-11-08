@@ -239,9 +239,10 @@ def test_warn_if_non_commercial_warns_for_registered_prefixes(model_id):
         "soda-inria/tabicl",
         "theforecastingcompany/t0-alpha",
         "Synthefy/Nori",
+        "NX-AI/TiRex-2",
         "unknown/some-model",
     ],
-    ids=["chronos-autogluon", "chronos-amazon", "timesfm-2.5", "tabicl", "t0", "nori", "unknown"],
+    ids=["chronos-autogluon", "chronos-amazon", "timesfm-2.5", "tabicl", "t0", "nori", "tirex2", "unknown"],
 )
 def test_warn_if_non_commercial_no_warning_for_unmatched_prefixes(model_id):
     """

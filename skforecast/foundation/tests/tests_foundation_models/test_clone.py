@@ -20,10 +20,11 @@ from skforecast.foundation._foundation_model import FoundationModel
         "taharnbl/TS-ICL",
         "Synthefy/Nori",
         "mistralai/Timestral-28M",
+        "NX-AI/TiRex-2",
     ],
     ids=[
         "chronos", "timesfm", "timesfm3", "moirai", "tabicl", "tabpfn", "t0",
-        "tsicl", "nori", "timestral",
+        "tsicl", "nori", "timestral", "tirex2",
     ],
 )
 def test_clone_round_trip_every_adapter_default_params(model_id):

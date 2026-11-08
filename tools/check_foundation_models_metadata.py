@@ -47,6 +47,9 @@ EXTRA_MODEL_IDS = (
     "mistralai/Timestral-5M",
     "mistralai/Timestral-123M",
     "mistralai/Timestral-209M",
+    "NX-AI/TiRex-2-gifteval-zs",
+    "NX-AI/TiRex-2-gifteval-pretrain",
+    "NX-AI/TiRex-2-fevbench",
 )
 
 
