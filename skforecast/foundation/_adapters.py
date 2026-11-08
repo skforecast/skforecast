@@ -6270,8 +6270,8 @@ class TiRex2Adapter(_AdapterBase):
         Parameters
         ----------
         steps : int
-            Number of steps ahead to forecast. Must not exceed
-            `_MODEL_MAX_PREDICTION_LENGTH`.
+            Number of steps ahead to forecast. Must not exceed the maximum
+            horizon of the loaded checkpoint (its `future_len`).
         context : dict
             Per-series context windows (already trimmed to `context_length`).
         context_exog : dict
