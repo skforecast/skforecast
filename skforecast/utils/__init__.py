@@ -19,9 +19,9 @@ from ._warnings import (
     manage_warnings,
     _first_frame_outside_skforecast,
     _module_name_from_filename,
-    _reemit_fold_warnings,
-    _run_fold_recording_warnings,
-    _serializable_fold_warnings,
+    _reemit_worker_warnings,
+    _run_recording_worker_warnings,
+    _serializable_warnings,
     _stacklevel_user_code,
-    FOLD_WARNINGS_ATTRIBUTE
+    WORKER_WARNINGS_ATTRIBUTE
 )

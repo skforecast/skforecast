@@ -41,9 +41,9 @@ from ..utils import (
     manage_warnings,
     deepcopy_forecaster,
     estimator_has_native_nan_support,
-    _run_fold_recording_warnings,
-    _reemit_fold_warnings,
-    FOLD_WARNINGS_ATTRIBUTE
+    _run_recording_worker_warnings,
+    _reemit_worker_warnings,
+    WORKER_WARNINGS_ATTRIBUTE
 )
 from ..foundation._utils import check_preprocess_series_foundation
 
@@ -667,8 +667,8 @@ def _backtesting_forecaster(
     main_pid = os.getpid()
     try:
         backtest_predictions = Parallel(n_jobs=n_jobs)(
-            delayed(_run_fold_recording_warnings)(
-                fold_function = _fit_predict_forecaster,
+            delayed(_run_recording_worker_warnings)(
+                function = _fit_predict_forecaster,
                 main_pid      = main_pid,
                 fold          = fold,
                 y_train       = fold_data['y_train'],
@@ -680,9 +680,11 @@ def _backtesting_forecaster(
             for fold, fold_data in fold_items
         )
     except Exception as error:
-        _reemit_fold_warnings([(None, getattr(error, FOLD_WARNINGS_ATTRIBUTE, None))])
+        _reemit_worker_warnings(
+            [(None, getattr(error, WORKER_WARNINGS_ATTRIBUTE, None))]
+        )
         raise
-    backtest_predictions = _reemit_fold_warnings(backtest_predictions)
+    backtest_predictions = _reemit_worker_warnings(backtest_predictions)
     n_predictions_folds = [pred.shape[0] for pred in backtest_predictions]
     fold_labels = np.repeat([fold[0] for fold in folds], n_predictions_folds)
     test_iloc_starts = np.repeat([fold[3][0] for fold in folds], n_predictions_folds)
@@ -1617,8 +1619,8 @@ def _backtesting_forecaster_multiseries(
     main_pid = os.getpid()
     try:
         results = Parallel(n_jobs=n_jobs)(
-            delayed(_run_fold_recording_warnings)(
-                fold_function = _fit_predict_forecaster_multiseries,
+            delayed(_run_recording_worker_warnings)(
+                function = _fit_predict_forecaster_multiseries,
                 main_pid      = main_pid,
                 data_fold     = data_fold,
                 **kwargs_fit_predict_forecaster
@@ -1626,9 +1628,11 @@ def _backtesting_forecaster_multiseries(
             for data_fold in data_folds_list
         )
     except Exception as error:
-        _reemit_fold_warnings([(None, getattr(error, FOLD_WARNINGS_ATTRIBUTE, None))])
+        _reemit_worker_warnings(
+            [(None, getattr(error, WORKER_WARNINGS_ATTRIBUTE, None))]
+        )
         raise
-    results = _reemit_fold_warnings(results)
+    results = _reemit_worker_warnings(results)
 
     # NOTE: A fold that is only fitted, because its model predicts the
     # following folds without refit, returns no predictions (`None`).
@@ -2374,8 +2378,8 @@ def _backtesting_stats(
     main_pid = os.getpid()
     try:
         results = Parallel(n_jobs=n_jobs)(
-            delayed(_run_fold_recording_warnings)(
-                fold_function = _fit_predict_forecaster_stats,
+            delayed(_run_recording_worker_warnings)(
+                function = _fit_predict_forecaster_stats,
                 main_pid      = main_pid,
                 fold          = fold,
                 **kwargs_fit_predict_forecaster
@@ -2383,9 +2387,11 @@ def _backtesting_stats(
             for fold in folds_tqdm
         )
     except Exception as error:
-        _reemit_fold_warnings([(None, getattr(error, FOLD_WARNINGS_ATTRIBUTE, None))])
+        _reemit_worker_warnings(
+            [(None, getattr(error, WORKER_WARNINGS_ATTRIBUTE, None))]
+        )
         raise
-    results = _reemit_fold_warnings(results)
+    results = _reemit_worker_warnings(results)
 
     backtest_predictions = [result[0] for result in results]
     n_predictions_folds = [pred.shape[0] for pred in backtest_predictions]

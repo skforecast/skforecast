@@ -120,11 +120,11 @@ def _stacklevel_user_code() -> int:
     return 1 + n_frames if frame is not None else 1
 
 
-FOLD_WARNINGS_ATTRIBUTE = "_skforecast_fold_warnings"
+WORKER_WARNINGS_ATTRIBUTE = "_skforecast_worker_warnings"
 
 
-def _run_fold_recording_warnings(
-    fold_function: Callable,
+def _run_recording_worker_warnings(
+    function: Callable,
     main_pid: int,
     **kwargs
 ) -> tuple[Any, list[tuple] | None]:
@@ -132,7 +132,7 @@ def _run_fold_recording_warnings(
     Run the function of a fold of the backtesting. If it runs in a worker
     process of joblib (a process other than `main_pid`), its warnings are
     recorded and returned, so the main process shows them with
-    `_reemit_fold_warnings`. Otherwise, the warnings of a worker process would
+    `_reemit_worker_warnings`. Otherwise, the warnings of a worker process would
     be printed by the worker, without the filters of the user and outside the
     registry of the warnings of a search (`_SearchWarnings`).
 
@@ -145,53 +145,53 @@ def _run_fold_recording_warnings(
     with `pickle`. Otherwise, its text is returned as a `RuntimeWarning`,
     starting with the name of its category.
     - If the function raises an error, the warnings raised before it are
-    stored in the attribute `FOLD_WARNINGS_ATTRIBUTE` of the error, which
+    stored in the attribute `WORKER_WARNINGS_ATTRIBUTE` of the error, which
     reaches the main process with it, and the error is raised again.
 
     Parameters
     ----------
-    fold_function : Callable
+    function : Callable
         Function of the fold, defined at module level.
     main_pid : int
         Identifier of the main process (`os.getpid()` before `joblib.Parallel`).
     **kwargs
-        Arguments of `fold_function`.
+        Arguments of `function`.
 
     Returns
     -------
     result : Any
-        Output of `fold_function`.
-    fold_warnings : list, None
+        Output of `function`.
+    worker_warnings : list, None
         Warnings raised in the fold, as tuples `(message, category, filename,
         lineno)`. `None` if the fold runs in the main process.
 
     """
 
     if os.getpid() == main_pid:
-        return fold_function(**kwargs), None
+        return function(**kwargs), None
 
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
         try:
-            result = fold_function(**kwargs)
+            result = function(**kwargs)
         except Exception as error:
             try:
                 setattr(
-                    error, FOLD_WARNINGS_ATTRIBUTE, _serializable_fold_warnings(caught)
+                    error, WORKER_WARNINGS_ATTRIBUTE, _serializable_warnings(caught)
                 )
             except Exception:
                 pass
             raise
 
-    return result, _serializable_fold_warnings(caught)
+    return result, _serializable_warnings(caught)
 
 
-def _serializable_fold_warnings(caught: list) -> list[tuple]:
+def _serializable_warnings(caught: list) -> list[tuple]:
     """
-    Warnings recorded in a fold that runs in a worker process, in a form that
-    can be sent to the main process. Each warning is kept as it is if it can be
-    serialized and rebuilt with `pickle`. Otherwise, its text is kept as a
-    `RuntimeWarning`, starting with the name of its category.
+    Warnings recorded in a worker process, in a form that can be sent to the
+    main process. Each warning is kept as it is if it can be serialized and
+    rebuilt with `pickle`. Otherwise, its text is kept as a `RuntimeWarning`,
+    starting with the name of its category.
 
     Parameters
     ----------
@@ -200,12 +200,12 @@ def _serializable_fold_warnings(caught: list) -> list[tuple]:
 
     Returns
     -------
-    fold_warnings : list
+    worker_warnings : list
         Warnings, as tuples `(message, category, filename, lineno)`.
 
     """
 
-    fold_warnings = []
+    worker_warnings = []
     for warning in caught:
         message, category = warning.message, warning.category
         try:
@@ -216,9 +216,9 @@ def _serializable_fold_warnings(caught: list) -> list[tuple]:
         except Exception:
             message = RuntimeWarning(f"{category.__name__}: {message}")
             category = RuntimeWarning
-        fold_warnings.append((message, category, warning.filename, warning.lineno))
+        worker_warnings.append((message, category, warning.filename, warning.lineno))
 
-    return fold_warnings
+    return worker_warnings
 
 
 def _module_name_from_filename(filename: str) -> str | None:
@@ -245,10 +245,10 @@ def _module_name_from_filename(filename: str) -> str | None:
     return None
 
 
-def _reemit_fold_warnings(results: list[tuple]) -> list:
+def _reemit_worker_warnings(results: list[tuple]) -> list:
     """
     Show, in the main process and in the order of the folds, the warnings
-    recorded by `_run_fold_recording_warnings` in the worker processes of
+    recorded by `_run_recording_worker_warnings` in the worker processes of
     joblib, and return the outputs of the folds.
 
     Each warning is shown with `warnings.warn_explicit`, with its category,
@@ -262,8 +262,8 @@ def _reemit_fold_warnings(results: list[tuple]) -> list:
     Parameters
     ----------
     results : list
-        Outputs of `_run_fold_recording_warnings`, one per fold, as tuples
-        `(result, fold_warnings)`.
+        Outputs of `_run_recording_worker_warnings`, one per fold, as tuples
+        `(result, worker_warnings)`.
 
     Returns
     -------
@@ -274,9 +274,9 @@ def _reemit_fold_warnings(results: list[tuple]) -> list:
 
     module_names = {}
     outputs = []
-    for result, fold_warnings in results:
+    for result, worker_warnings in results:
         outputs.append(result)
-        for message, category, filename, lineno in fold_warnings or ():
+        for message, category, filename, lineno in worker_warnings or ():
             if filename not in module_names:
                 module_names[filename] = _module_name_from_filename(filename)
             module_name = module_names[filename]

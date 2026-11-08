@@ -3515,7 +3515,7 @@ def _warn_skipped_candidates_search(
 
 class _SearchWarnings:
     """
-    Context manager that collects the warnings raised while the candidates of
+    Context manager that records the warnings raised while the candidates of
     a search are evaluated, so each of them is shown once at the end of the
     search, with the number of candidates in which it is raised, instead of
     once per candidate.
@@ -3541,7 +3541,7 @@ class _SearchWarnings:
     The warnings raised in the folds of the backtesting that run in the worker
     processes of joblib (`n_jobs` greater than 1, which `n_jobs='auto'`
     selects for some forecasters) are shown again in the main process, after
-    the folds (`_reemit_fold_warnings`), so they are collected too.
+    the folds (`_reemit_worker_warnings`), so they are recorded too.
 
     Parameters
     ----------
