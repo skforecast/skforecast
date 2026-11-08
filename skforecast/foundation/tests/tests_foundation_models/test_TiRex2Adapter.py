@@ -66,6 +66,8 @@ def test_TiRex2Adapter_init_default_params():
     assert TiRex2Adapter.supports_past_only_covariates is True
     assert TiRex2Adapter.supports_categorical_covariates is False
     assert TiRex2Adapter.supports_heterogeneous_covariates is True
+    assert TiRex2Adapter.requires_equal_length_context is False
+    assert TiRex2Adapter.max_series_per_call == 64
     assert TiRex2Adapter.supports_nan_in_series is True
     assert TiRex2Adapter.requires_hf_auth is False
     assert TiRex2Adapter.requires_provider_auth is False

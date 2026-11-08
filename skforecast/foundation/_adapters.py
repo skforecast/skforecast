@@ -5992,6 +5992,15 @@ class TiRex2Adapter(_AdapterBase):
         same backend call. `True` for TiRex-2: every `TimeseriesType` carries its
         own covariates, so the backend accepts series with different covariate
         sets in a single call.
+    requires_equal_length_context : bool
+        Whether the backend needs every series of a call to have the same
+        context length, so that `FoundationModel` left-pads them with NaN.
+        `False`: the backend left-pads each call with NaN itself.
+    max_series_per_call : int, None
+        Maximum number of series sent to the backend in one call. `64`: the
+        backend mixes the variates of every series of a call in one attention,
+        so its memory grows faster than linearly with the size of the call,
+        and `FoundationModel` splits the series into calls of at most 64.
     supports_nan_in_series : bool
         Whether the backend accepts NaN values in the series used as context.
         `True` for TiRex-2: the backend masks NaN in `forward` and pads short
@@ -6056,6 +6065,8 @@ class TiRex2Adapter(_AdapterBase):
     supports_past_only_covariates: bool = True
     supports_categorical_covariates: bool = False
     supports_heterogeneous_covariates: bool = True
+    requires_equal_length_context: bool = False
+    max_series_per_call: int | None = 64
     supports_nan_in_series: bool = True
     requires_hf_auth: bool = False
     requires_provider_auth: bool = False

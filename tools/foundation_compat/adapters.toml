@@ -69,3 +69,8 @@ model_id = "taharnbl/TS-ICL"
 adapter = "TimestralAdapter"
 backend_package = "timestral @ git+https://github.com/mistralai/timestral.git"
 model_id = "mistralai/Timestral-5M"
+
+[tirex2]
+adapter = "TiRex2Adapter"
+backend_package = "tirex-2"
+model_id = "NX-AI/TiRex-2"

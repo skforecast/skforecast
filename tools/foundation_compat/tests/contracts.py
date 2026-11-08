@@ -182,4 +182,16 @@ BACKEND_CONTRACTS = {
         },
         {"target": "timestral:Forecast", "kwargs": ["quantiles", "quantile_levels"]},
     ],
+    "tirex2": [
+        {"target": "tirex2:load_model", "n_positional": 1, "kwargs": ["device"]},
+        {
+            "target": "tirex2:TimeseriesType",
+            "kwargs": ["target", "past_covariates", "future_covariates"],
+        },
+        {
+            "target": "tirex2:ForecastModel.forecast",
+            "n_positional": 1,
+            "kwargs": ["prediction_length", "output_type"],
+        },
+    ],
 }
