@@ -3466,8 +3466,9 @@ class T0Adapter(_AdapterBase):
         available accelerator (CUDA > MPS > CPU). Also accepts explicit
         values such as `"cuda"`, `"mps"`, or `"cpu"`.
     torch_dtype : object, default None
-        Torch dtype the loaded model is cast to (e.g. `torch.bfloat16`).
-        When `None` the model keeps its default `float32` weights.
+        Inference dtype forwarded to T0's loader. `torch.float16` and
+        `torch.bfloat16` enable native mixed precision with `float32` weights.
+        When `None`, inference uses `float32`.
 
     Attributes
     ----------
@@ -3597,8 +3598,9 @@ class T0Adapter(_AdapterBase):
             available accelerator (CUDA > MPS > CPU). Also accepts explicit
             values such as `"cuda"`, `"mps"`, or `"cpu"`.
         torch_dtype : object, default None
-            Torch dtype the loaded model is cast to (e.g. `torch.bfloat16`).
-            When `None` the model keeps its default `float32` weights.
+            Inference dtype forwarded to T0's loader. `torch.float16` and
+            `torch.bfloat16` enable native mixed precision with `float32`
+            weights. When `None`, inference uses `float32`.
 
         """
 
@@ -3787,9 +3789,10 @@ class T0Adapter(_AdapterBase):
         Notes
         -----
         The model is imported lazily from `t0` and loaded via
-        `T0Forecaster.from_pretrained`, then moved to the resolved device and
-        switched to eval mode. This method is a no-op when `self._model` is
-        already populated. `tfc-t0[torch]>=0.6` must be installed; an
+        `T0Forecaster.from_pretrained`, forwarding `torch_dtype` as `dtype`,
+        then moved to the resolved device and switched to eval mode. This
+        method is a no-op when `self._model` is already populated.
+        `tfc-t0[torch]>=0.6` must be installed; an
         `ImportError` is raised otherwise. An `OSError` is raised if
         `T0Forecaster.from_pretrained` fails to build the model because the
         configuration of the checkpoint could not be downloaded.
@@ -3828,7 +3831,9 @@ class T0Adapter(_AdapterBase):
             )
 
         try:
-            model = T0Forecaster.from_pretrained(self.model_id)
+            model = T0Forecaster.from_pretrained(
+                self.model_id, dtype=self.torch_dtype
+            )
         except TypeError as exc:
             raise OSError(
                 f"Could not load model '{self.model_id}' from the Hugging "
@@ -3843,8 +3848,6 @@ class T0Adapter(_AdapterBase):
 
         device = _resolve_torch_device(self.device_map)
         model = model.to(device)
-        if self.torch_dtype is not None:
-            model = model.to(self.torch_dtype)
         self._model = model.eval()
 
     def _build_future_covariates(

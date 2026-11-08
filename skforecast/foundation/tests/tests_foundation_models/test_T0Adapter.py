@@ -400,9 +400,11 @@ def test_T0Adapter_load_model_output_when_backend_supported(monkeypatch, install
 
     adapter._load_model()
 
-    loader.from_pretrained.assert_called_once_with("theforecastingcompany/t0-alpha")
+    loader.from_pretrained.assert_called_once_with(
+        "theforecastingcompany/t0-alpha", dtype="test_dtype"
+    )
     assert adapter._model is loaded
-    assert loaded.to.call_args_list == [call("cpu"), call("test_dtype")]
+    assert loaded.to.call_args_list == [call("cpu")]
     loaded.eval.assert_called_once_with()
 
 
@@ -428,7 +430,7 @@ def test_T0Adapter_load_model_OSError_when_from_pretrained_raises_TypeError(monk
     """
     class FakeFailingT0Forecaster:
         @classmethod
-        def from_pretrained(cls, model_id):
+        def from_pretrained(cls, model_id, *, dtype=None):
             raise TypeError(
                 "T0Forecaster.__init__() missing 8 required positional "
                 "arguments: 'embed_dim', 'num_layers', 'num_heads', "

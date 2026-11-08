@@ -130,7 +130,11 @@ BACKEND_CONTRACTS = {
         },
     ],
     "t0": [
-        {"target": "t0:T0Forecaster.from_pretrained"},
+        {
+            "target": "t0:T0Forecaster.from_pretrained",
+            "n_positional": 1,
+            "weak_kwargs": ["dtype"],
+        },
         {
             "target": "t0:T0Forecaster.predict",
             "n_positional": 1,

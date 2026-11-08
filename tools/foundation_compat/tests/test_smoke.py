@@ -181,6 +181,39 @@ def test_predict_output_when_t0_unequal_series_and_covariates(model, backend):
     assert (predictions["lower_bound"] <= predictions["upper_bound"]).all()
 
 
+@pytest.mark.parametrize("torch_dtype", ["float16", "bfloat16"])
+def test_predict_interval_output_when_t0_mixed_precision(
+    backend, backend_config, torch_dtype
+):
+    """
+    Test T0's native mixed precision works through the public forecasting API.
+    """
+    if backend != "t0":
+        pytest.skip("This regression exercises T0's mixed-precision runtime.")
+
+    import torch
+
+    model = FoundationModel(
+        model_id=backend_config["model_id"],
+        context_length=CONTEXT_LENGTH,
+        device_map="cpu",
+        torch_dtype=getattr(torch, torch_dtype),
+    )
+    forecaster = ForecasterFoundation(estimator=model)
+    forecaster.fit(series=series["series_1"], exog=exog)
+
+    predictions = forecaster.predict_interval(
+        steps=STEPS, interval=[0.1, 0.9], exog=exog_future
+    )
+
+    pd.testing.assert_index_equal(
+        predictions.index, expected_index, check_names=False
+    )
+    values = predictions[["pred", "lower_bound", "upper_bound"]].to_numpy(float)
+    assert np.isfinite(values).all()
+    assert (predictions["lower_bound"] <= predictions["upper_bound"]).all()
+
+
 def test_backtesting_foundation_output_when_two_folds(model):
     """
     Test the shape and values of the metrics and predictions of

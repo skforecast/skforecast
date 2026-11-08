@@ -141,7 +141,7 @@ There is no compile step and no horizon ceiling. For each series, columns presen
 | `model`          | obj    | `None`   | Pre-loaded `T0Forecaster`. If `None`, loaded lazily on first `predict`.    |
 | `context_length` | int    | `8192`   | Max historical observations kept as context.                               |
 | `device_map`     | str    | `'auto'` | Device placement: `'auto'` (CUDA > MPS > CPU), `'cuda'`, `'mps'`, `'cpu'`. |
-| `torch_dtype`    | object | `None`   | Torch dtype the loaded model is cast to (e.g. `torch.bfloat16`).           |
+| `torch_dtype`    | object | `None`   | Inference dtype forwarded to T0's loader. `torch.float16` and `torch.bfloat16` enable native mixed precision with float32 weights; `None` uses float32 inference. |
 
 Point forecasts use the median (quantile `0.5`). Covariates must be numeric; encode categoricals as numbers before passing them. A series with no future exog is forecast without covariates.
 
