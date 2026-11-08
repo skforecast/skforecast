@@ -13,6 +13,7 @@ from importlib.metadata import PackageNotFoundError, version
 from importlib.util import find_spec
 import inspect
 import math
+import os
 from packaging.requirements import Requirement
 from pathlib import Path
 import platform
@@ -4137,7 +4138,8 @@ def _build_predict_function(
     for the following estimator types:
 
     - Linear models of scikit-learn inheriting from `LinearModel` (`np.dot`)
-    - `LGBMRegressor` (`booster_.predict`)
+    - `LGBMRegressor` (`booster_.predict`, with the `num_threads` of the fit,
+    as `LGBMRegressor.predict`, capped at `OMP_NUM_THREADS` when it is set)
     - `XGBRegressor` (`get_booster().inplace_predict`, with the same
     `iteration_range` and `missing` as `XGBRegressor.predict`). The 'gblinear'
     booster does not support `inplace_predict` and uses `estimator.predict`.
@@ -4236,9 +4238,18 @@ def _build_predict_function(
 
     if estimator_name == 'LGBMRegressor':
         booster = estimator.booster_
+        # NOTE: Without `num_threads`, the booster predicts with all the OpenMP
+        # threads of the machine, which makes the single-row predictions of the
+        # recursive loop much slower. It gets the threads of the fit, as
+        # `LGBMRegressor.predict` does, capped at `OMP_NUM_THREADS` (set to the
+        # share of each worker by joblib), which an explicit value overrides.
+        num_threads = booster.params["num_threads"]
+        omp_num_threads = os.environ.get("OMP_NUM_THREADS", "")
+        if omp_num_threads.isdigit() and int(omp_num_threads) > 0:
+            num_threads = min(num_threads, int(omp_num_threads))
 
         def predict_fn(X):
-            return booster.predict(X)
+            return booster.predict(X, num_threads=num_threads)
 
         return predict_fn
 
