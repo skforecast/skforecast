@@ -1,4 +1,4 @@
-# Unit tests for the TiRex-2 adapter.
+# Unit test TiRex2Adapter
 # ==============================================================================
 import builtins
 import re
@@ -6,6 +6,7 @@ import sys
 import pytest
 import numpy as np
 import pandas as pd
+from skforecast.foundation import FoundationModel
 from skforecast.foundation._adapters import TiRex2Adapter
 from .fixtures_adapters import (
     FakeTirex2Model,
@@ -15,33 +16,19 @@ from .fixtures_adapters import (
 
 # Fixtures
 # ==============================================================================
-@pytest.fixture
-def index():
-    return pd.date_range("2024-01-01", periods=4, freq="D")
-
-
-@pytest.fixture
-def context(index):
-    return {"series": pd.Series([1, 2, 3, 4], index=index, dtype=float)}
-
-
-@pytest.fixture
-def context_exog(index):
-    return {
-        "series": pd.DataFrame(
-            {"past": [10, 11, 12, 13], "future": [0, 1, 2, 3]}, index=index
-        )
-    }
-
-
-@pytest.fixture
-def exog():
-    return {
-        "series": pd.DataFrame(
-            {"future": [4, 5]},
-            index=pd.date_range("2024-01-05", periods=2, freq="D"),
-        )
-    }
+index = pd.date_range("2024-01-01", periods=4, freq="D")
+context = {"series": pd.Series([1, 2, 3, 4], index=index, dtype=float)}
+context_exog = {
+    "series": pd.DataFrame(
+        {"past": [10, 11, 12, 13], "future": [0, 1, 2, 3]}, index=index
+    )
+}
+exog = {
+    "series": pd.DataFrame(
+        {"future": [4, 5]},
+        index=pd.date_range("2024-01-05", periods=2, freq="D"),
+    )
+}
 
 
 # Tests TiRex2Adapter.__init__
@@ -203,9 +190,7 @@ def test_TiRex2Adapter_set_params_ValueError_when_invalid(params, match):
     ],
     ids=["model_id", "device", "context_length", "predict_kwargs"],
 )
-def test_TiRex2Adapter_set_params_updates_and_resets_model(
-    param, value, resets_model
-):
+def test_TiRex2Adapter_set_params_updates_and_resets_model(param, value, resets_model):
     """
     Test that set_params updates the given parameter and resets `_model` only
     when `model_id` or `device` changes, since those control which checkpoint
@@ -239,7 +224,7 @@ def test_TiRex2Adapter_set_params_no_reset_when_value_unchanged():
 
 # Tests TiRex2Adapter.fit
 # ==============================================================================
-def test_TiRex2Adapter_fit_stores_context_and_exog(context, context_exog):
+def test_TiRex2Adapter_fit_stores_context_and_exog():
     """
     Test that fit stores the series and the historical exog, marks the adapter
     as fitted, and returns self. No training occurs.
@@ -254,11 +239,9 @@ def test_TiRex2Adapter_fit_stores_context_and_exog(context, context_exog):
     assert adapter.context_exog_ is context_exog
 
 
-# Tests TiRex2Adapter.predict — inputs and outputs
+# Tests TiRex2Adapter.predict: inputs and outputs
 # ==============================================================================
-def test_TiRex2Adapter_predict_maps_covariates_and_native_quantiles(
-    monkeypatch, context, context_exog, exog
-):
+def test_TiRex2Adapter_predict_maps_covariates_and_native_quantiles(monkeypatch):
     """
     Test that the adapter builds one `TimeseriesType` per series with the target
     and the past and future covariates as float32 tensors, and that the native
@@ -279,7 +262,7 @@ def test_TiRex2Adapter_predict_maps_covariates_and_native_quantiles(
     np.testing.assert_array_equal(result["series"], [[1, 9], [1, 9]])
 
 
-def test_TiRex2Adapter_predict_point_forecast_uses_median(monkeypatch, context):
+def test_TiRex2Adapter_predict_point_forecast_uses_median(monkeypatch):
     """
     Test that a point forecast (quantiles=None) returns the native median
     quantile (row 5) as a single-column array.
@@ -292,7 +275,7 @@ def test_TiRex2Adapter_predict_point_forecast_uses_median(monkeypatch, context):
     np.testing.assert_array_equal(result["series"], [[5], [5]])
 
 
-def test_TiRex2Adapter_predict_forwards_predict_kwargs(monkeypatch, context):
+def test_TiRex2Adapter_predict_forwards_predict_kwargs(monkeypatch):
     """
     Test that predict_kwargs are forwarded to the backend call alongside the
     arguments the adapter owns, which are never overridden.
@@ -367,37 +350,6 @@ def test_TiRex2Adapter_predict_heterogeneous_covariates_in_single_call(monkeypat
     assert timeseries[1].past_covariates.shape == (2, 3)
 
 
-def test_TiRex2Adapter_forecast_is_invariant_to_batch_members(monkeypatch):
-    """A series keeps the same forecast when batched with another series."""
-    index = pd.date_range("2024-01-01", periods=3, freq="D")
-    context = {
-        "target": pd.Series([1, 2, 3], index=index, dtype=float),
-        "other": pd.Series([10, 11, 12], index=index, dtype=float),
-    }
-    context_exog = {
-        "target": pd.DataFrame({"a": [0.0, 1.0, 2.0]}, index=index),
-        "other": pd.DataFrame(
-            {"a": [0.0, 1.0, 2.0], "b": [3.0, 4.0, 5.0]}, index=index
-        ),
-    }
-
-    alone_model = fake_tirex2_modules(monkeypatch)
-    alone = TiRex2Adapter("NX-AI/TiRex-2", model=alone_model).predict(
-        2,
-        {"target": context["target"]},
-        {"target": context_exog["target"]},
-        None,
-        None,
-    )["target"]
-
-    batched_model = FakeTirex2Model()
-    batched = TiRex2Adapter("NX-AI/TiRex-2", model=batched_model).predict(
-        2, context, context_exog, None, None
-    )["target"]
-
-    np.testing.assert_array_equal(alone, batched)
-
-
 def test_TiRex2Adapter_predict_accepts_nan_in_series(monkeypatch):
     """
     Test that a series containing NaN is forwarded to the backend unchanged
@@ -415,9 +367,7 @@ def test_TiRex2Adapter_predict_accepts_nan_in_series(monkeypatch):
     assert target[0, 0] == 1.0
 
 
-def test_TiRex2Adapter_predict_ValueError_when_steps_above_model_limit(
-    monkeypatch, context
-):
+def test_TiRex2Adapter_predict_ValueError_when_steps_above_model_limit(monkeypatch):
     """
     Test that a horizon longer than the model `future_len` is rejected before
     the backend is called, since the backend would truncate it with only a log
@@ -435,7 +385,7 @@ def test_TiRex2Adapter_predict_ValueError_when_steps_above_model_limit(
     assert model.calls == []
 
 
-def test_TiRex2Adapter_predict_steps_at_model_limit_is_accepted(monkeypatch, context):
+def test_TiRex2Adapter_predict_steps_at_model_limit_is_accepted(monkeypatch):
     """
     Test that exactly `_MODEL_MAX_PREDICTION_LENGTH` steps is accepted, so the
     limit is inclusive.
@@ -450,9 +400,7 @@ def test_TiRex2Adapter_predict_steps_at_model_limit_is_accepted(monkeypatch, con
     assert result["series"].shape == (TiRex2Adapter._MODEL_MAX_PREDICTION_LENGTH, 1)
 
 
-def test_TiRex2Adapter_predict_ValueError_when_backend_returns_wrong_count(
-    monkeypatch, context
-):
+def test_TiRex2Adapter_predict_ValueError_when_backend_returns_wrong_count(monkeypatch):
     """
     Test that a backend returning fewer forecasts than series raises a clear
     ValueError instead of silently misaligning the series names.
@@ -475,9 +423,7 @@ def test_TiRex2Adapter_predict_ValueError_when_backend_returns_wrong_count(
         adapter.predict(2, context, None, None, None)
 
 
-def test_TiRex2Adapter_predict_ValueError_when_backend_returns_wrong_shape(
-    monkeypatch, context
-):
+def test_TiRex2Adapter_predict_ValueError_when_backend_returns_wrong_shape(monkeypatch):
     """
     Test that a forecast whose shape is not `(1, 9, steps)` raises a clear
     ValueError naming both the received and the expected shape.
@@ -504,7 +450,7 @@ def test_TiRex2Adapter_predict_ValueError_when_backend_returns_wrong_shape(
     ids=["median", "tolerant_level", "three_levels"],
 )
 def test_TiRex2Adapter_predict_selects_native_quantile_rows(
-    monkeypatch, context, quantiles, expected
+    monkeypatch, quantiles, expected
 ):
     """
     Test that the requested levels are matched tolerantly against the native
@@ -519,9 +465,7 @@ def test_TiRex2Adapter_predict_selects_native_quantile_rows(
     np.testing.assert_array_equal(result["series"], expected)
 
 
-def test_TiRex2Adapter_predict_ValueError_when_quantile_not_on_native_grid(
-    monkeypatch, context
-):
+def test_TiRex2Adapter_predict_ValueError_when_quantile_not_on_native_grid(monkeypatch):
     """
     Test that a quantile level outside the native grid raises ValueError, since
     TiRex-2 does not interpolate quantiles.
@@ -606,13 +550,13 @@ def test_TiRex2Adapter_load_model_ImportError_when_backend_missing(monkeypatch):
 
     err_msg = re.escape(
         "tirex-2 is required for TiRex2Adapter. Install it with "
-        "`pip install tirex-2`."
+        "`pip install tirex-2` (requires Python >= 3.11)."
     )
     with pytest.raises(ImportError, match=err_msg):
         adapter._load_model()
 
 
-def test_TiRex2Adapter_predict_ImportError_when_backend_missing(monkeypatch, context):
+def test_TiRex2Adapter_predict_ImportError_when_backend_missing(monkeypatch):
     """
     Test that predict surfaces the same ImportError as _load_model when the
     backend is not installed.
@@ -669,3 +613,100 @@ def test_TiRex2Adapter_load_model_is_noop_when_model_injected():
     adapter._load_model()
 
     assert adapter._model is model
+
+
+# Tests FoundationModel with TiRex2Adapter
+# ==============================================================================
+def test_FoundationModel_TiRex2_predict_one_backend_call_when_heterogeneous_exog(
+    monkeypatch
+):
+    """
+    Test that FoundationModel sends series with different exog columns, and a
+    series without exog, to TiRex-2 in a single backend call
+    (`supports_heterogeneous_covariates=True`), that each series keeps its own
+    covariates, and that each forecast is assigned to its series. The fake
+    adds the last value of each series to its quantile rows.
+    """
+    class _LastValueModel(FakeTirex2Model):
+        def forecast(self, timeseries, prediction_length, output_type, **kwargs):
+            forecasts = super().forecast(
+                timeseries, prediction_length, output_type, **kwargs
+            )
+            return [
+                forecast + np.asarray(ts.target)[0, -1]
+                for forecast, ts in zip(forecasts, timeseries)
+            ]
+
+    model = fake_tirex2_modules(monkeypatch, model=_LastValueModel())
+    idx = pd.date_range("2024-01-01", periods=5, freq="D")
+    idx_future = pd.date_range("2024-01-06", periods=2, freq="D")
+    series = {
+        "s1": pd.Series([1.0, 2.0, 3.0, 4.0, 5.0], index=idx),
+        "s2": pd.Series([6.0, 7.0, 8.0, 9.0, 10.0], index=idx),
+        "s3": pd.Series([11.0, 12.0, 13.0, 14.0, 15.0], index=idx),
+    }
+    exog_all = pd.DataFrame(
+        {"a": np.arange(7.0), "b": np.arange(10.0, 17.0)},
+        index=idx.append(idx_future),
+    )
+    columns = {"s1": ["a"], "s2": ["a", "b"]}
+
+    forecaster = FoundationModel("NX-AI/TiRex-2", model=model)
+    forecaster.fit(
+        series = series,
+        exog   = {**{k: exog_all.loc[idx, v] for k, v in columns.items()}, "s3": None},
+    )
+    predictions = forecaster.predict(
+        steps     = 2,
+        exog      = {
+            **{k: exog_all.loc[idx_future, v] for k, v in columns.items()},
+            "s3": None,
+        },
+        quantiles = [0.1, 0.9],
+    )
+
+    assert len(model.calls) == 1
+    timeseries = model.calls[0][0]
+    np.testing.assert_array_equal(
+        timeseries[0].future_covariates, [[0, 1, 2, 3, 4, 5, 6]]
+    )
+    np.testing.assert_array_equal(
+        timeseries[1].future_covariates,
+        [[0, 1, 2, 3, 4, 5, 6], [10, 11, 12, 13, 14, 15, 16]],
+    )
+    assert timeseries[2].past_covariates is None
+    assert timeseries[2].future_covariates is None
+    expected = pd.DataFrame(
+        {
+            "level": ["s1", "s2", "s3", "s1", "s2", "s3"],
+            "q_0.1": [6.0, 11.0, 16.0, 6.0, 11.0, 16.0],
+            "q_0.9": [14.0, 19.0, 24.0, 14.0, 19.0, 24.0],
+        },
+        index=pd.DatetimeIndex(
+            ["2024-01-06", "2024-01-06", "2024-01-06",
+             "2024-01-07", "2024-01-07", "2024-01-07"]
+        ),
+    )
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
+def test_FoundationModel_TiRex2_predict_calls_backend_in_chunks_of_64_series(
+    monkeypatch
+):
+    """
+    Test that, with the default `max_series_per_call` of TiRex2Adapter (64),
+    FoundationModel splits 65 series into backend calls of 64 and 1 series.
+    """
+    model = fake_tirex2_modules(monkeypatch)
+    idx = pd.date_range("2024-01-01", periods=10, freq="D")
+    series = {
+        f"s{i}": pd.Series(np.arange(10.0) + i, index=idx) for i in range(65)
+    }
+
+    forecaster = FoundationModel("NX-AI/TiRex-2", model=model)
+    forecaster.fit(series=series)
+    predictions = forecaster.predict(steps=3)
+
+    assert [len(call[0]) for call in model.calls] == [64, 1]
+    assert predictions.shape == (195, 2)
+    assert list(predictions["level"].unique()) == list(series)

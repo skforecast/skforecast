@@ -268,12 +268,6 @@ def _tensor_to_numpy(values: Any) -> np.ndarray:
 # commercial-use restriction, it does not mean the license has been confirmed
 # permissive.
 _MODEL_LICENSES: dict[str, tuple[str, str | None, bool, str | None]] = {
-    "NX-AI/TiRex-2": (
-        "Apache-2.0",
-        None,
-        False,
-        None,
-    ),
     "amazon/chronos-2": (
         "Apache-2.0",
         None,
@@ -297,6 +291,12 @@ _MODEL_LICENSES: dict[str, tuple[str, str | None, bool, str | None]] = {
         "https://huggingface.co/google/timesfm-3.0-pytorch/blob/main/LICENSE",
         True,
         "TimesFM Non-Commercial License v1.0",
+    ),
+    "NX-AI/TiRex-2": (
+        "Apache-2.0",
+        None,
+        False,
+        None,
     ),
     "Salesforce/moirai": (
         "CC-BY-NC-4.0",

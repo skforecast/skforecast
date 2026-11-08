@@ -828,12 +828,14 @@ class FakeTirex2Model:
     `forecast()` returns the native layout `(n_targets, n_quantiles, horizon)`
     with one entry per input `TimeseriesType`; every quantile row is filled with
     the quantile level itself (1, 2, ..., 9), so selecting a row and selecting a
-    quantile level are both checkable. Records every call in `calls` as
-    `(timeseries, prediction_length, output_type, kwargs)`.
+    quantile level are both checkable. `quantiles` holds the quantile levels of
+    the checkpoint, as the real `ForecastModel` exposes them. Records every
+    call in `calls` as `(timeseries, prediction_length, output_type, kwargs)`.
     """
 
     def __init__(self):
         self.calls = []
+        self.quantiles = np.arange(1, 10) / 10
 
     def forecast(self, timeseries, prediction_length, output_type, **kwargs):
         self.calls.append((timeseries, prediction_length, output_type, kwargs))

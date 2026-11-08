@@ -5940,11 +5940,13 @@ class TiRex2Adapter(_AdapterBase):
     Adapter for the NX-AI TiRex-2 zero-shot forecaster.
 
     TiRex-2 forecasts one or more target variates directly from their history,
-    optionally conditioned on past and future-known covariates. When multiple
-    series are supplied, `FoundationModel` sends them in one backend call when
-    their covariate signatures are compatible. Each series retains its own
-    `TimeseriesType` and covariates, so its forecast does not depend on which
-    other series are passed alongside it.
+    optionally conditioned on past and future-known covariates. Each series is
+    passed to the backend as its own `TimeseriesType`, with its own covariates,
+    so `FoundationModel` sends every series in the same call, whatever its
+    covariates, in chunks of at most `max_series_per_call` series. The backend
+    keeps each series apart when it mixes the variates, so the forecast of a
+    series does not depend on the other series of the call (up to float32
+    rounding).
 
     Parameters
     ----------
@@ -5964,8 +5966,9 @@ class TiRex2Adapter(_AdapterBase):
         the checkpoint (`context_len: 2048`).
     device : str, default 'auto'
         Device placement for inference. `"auto"` selects the best available
-        accelerator (CUDA > MPS > CPU). Also accepts explicit values such as
-        `"cuda"`, `"mps"`, or `"cpu"`.
+        accelerator (CUDA > MPS > CPU). An explicit value must be exactly
+        `"cuda"`, `"mps"` or `"cpu"`: the backend does not accept a device
+        index such as `"cuda:1"`.
     predict_kwargs : dict, default None
         Extra keyword arguments forwarded to the backend `forecast` call, e.g.
         `{"tta_sign_flip": True}` to opt into sign-flip test-time augmentation.
@@ -6038,7 +6041,7 @@ class TiRex2Adapter(_AdapterBase):
     TiRex-2 is a zero-shot model, so `fit` only stores the series and no training
     occurs. The `tirex-2` package is not a skforecast dependency and is imported
     lazily inside the adapter, so the adapter can be created and fitted without
-    it installed.
+    it installed. `tirex-2` requires Python >= 3.11.
 
     The checkpoint forecasts at most `future_len` steps ahead (`320` for
     `NX-AI/TiRex-2`). The backend truncates longer horizons with only a log
@@ -6112,7 +6115,8 @@ class TiRex2Adapter(_AdapterBase):
             Must be a positive integer.
         device : str, default 'auto'
             Device placement for inference. `"auto"` selects the best available
-            accelerator (CUDA > MPS > CPU).
+            accelerator (CUDA > MPS > CPU). An explicit value must be exactly
+            `"cuda"`, `"mps"` or `"cpu"`.
         predict_kwargs : dict, default None
             Extra keyword arguments forwarded to the backend `forecast` call.
             Adapter-managed arguments are rejected.
@@ -6251,7 +6255,7 @@ class TiRex2Adapter(_AdapterBase):
         context: dict[str, pd.Series],
         context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
         exog: dict[str, pd.DataFrame | pd.Series | None] | None,
-        quantiles: list[float] | tuple[float] | None,
+        quantiles: list[float] | tuple[float, ...] | None,
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions using the TiRex-2 model.
@@ -6281,18 +6285,17 @@ class TiRex2Adapter(_AdapterBase):
             Keys are series names. Each value is a 2-D array of shape
             `(steps, n_quantiles)`.
 
-        Raises
-        ------
-        ValueError
-            If `steps` is larger than the maximum horizon supported by the
-            checkpoint.
+        Notes
+        -----
+        A `ValueError` is raised if `steps` is larger than the maximum horizon
+        of the checkpoint, before the backend is called.
 
         """
 
         if steps > self._MODEL_MAX_PREDICTION_LENGTH:
             raise ValueError(
                 f"`steps` must be <= {self._MODEL_MAX_PREDICTION_LENGTH}, the "
-                f"maximum forecast horizon of {self.default_model_id} "
+                f"maximum forecast horizon of {self.model_id} "
                 f"(`future_len`). Got {steps}. Longer horizons are truncated "
                 f"by the backend, so the adapter rejects them instead of "
                 f"returning a shorter forecast than requested."
@@ -6302,7 +6305,7 @@ class TiRex2Adapter(_AdapterBase):
             quantiles, self.SUPPORTED_QUANTILES, "TiRex-2"
         )
         self._load_model()
-        TimeseriesType = self._import_timeseries_type()
+        _, TimeseriesType = self._import_backend()
         import torch
 
         names = list(context)
@@ -6345,26 +6348,25 @@ class TiRex2Adapter(_AdapterBase):
                 "TiRex-2 returned an unexpected number of forecasts: "
                 f"{len(forecasts)}. Expected {len(names)}."
             )
+
+        # Each forecast has shape (n_targets, n_quantiles, steps), with the
+        # quantile levels of the loaded checkpoint. A point forecast is the
+        # median.
+        quantile_grid = [float(q) for q in self._model.quantiles]
+        quantile_indices = _match_quantile_indices(
+            quantile_grid, quantile_list if quantile_list is not None else [0.5]
+        )
+        expected_shape = (1, len(quantile_grid), steps)
         predictions = {}
         for name, forecast in zip(names, forecasts):
             values = np.asarray(forecast)
-            if values.ndim != 3 or values.shape != (1, 9, steps):
+            if values.shape != expected_shape:
                 raise ValueError(
                     "TiRex-2 returned an unexpected forecast shape: "
-                    f"{values.shape!r}. Expected (1, 9, {steps})."
+                    f"{values.shape!r}. Expected {expected_shape}."
                 )
-            values = values[0]
-            if quantile_list is None:
-                predictions[name] = values[4, :].reshape(-1, 1)
-            else:
-                indices = [
-                    min(
-                        range(len(self.SUPPORTED_QUANTILES)),
-                        key=lambda i: abs(self.SUPPORTED_QUANTILES[i] - q),
-                    )
-                    for q in quantile_list
-                ]
-                predictions[name] = values[indices, :].T
+            predictions[name] = values[0, quantile_indices, :].T
+
         return predictions
 
     @staticmethod
@@ -6382,10 +6384,9 @@ class TiRex2Adapter(_AdapterBase):
         array : numpy ndarray
             Covariate values as `float32`.
 
-        Raises
-        ------
-        ValueError
-            If the column is not numeric or boolean.
+        Notes
+        -----
+        A `ValueError` is raised if the column is not numeric or boolean.
 
         """
 
@@ -6398,7 +6399,7 @@ class TiRex2Adapter(_AdapterBase):
                     "TiRex2Adapter supports only numeric covariates. "
                     f"Column {values.name!r} has dtype {values.dtype}."
                 )
-            return values.astype(np.float32).to_numpy()
+            return values.to_numpy(dtype=np.float32)
         array = np.asarray(values)
         if array.dtype.kind not in "iufb":
             raise ValueError(
@@ -6439,7 +6440,10 @@ class TiRex2Adapter(_AdapterBase):
 
         """
 
-        ctx = context_exog.to_frame() if isinstance(context_exog, pd.Series) else context_exog
+        ctx = (
+            context_exog.to_frame()
+            if isinstance(context_exog, pd.Series) else context_exog
+        )
         fut = exog.to_frame() if isinstance(exog, pd.Series) else exog
         past = (
             np.stack([cls._to_covariate_array(ctx[col]) for col in past_cols])
@@ -6458,30 +6462,34 @@ class TiRex2Adapter(_AdapterBase):
         return past, future
 
     @classmethod
-    def _import_timeseries_type(cls) -> Any:
+    def _import_backend(cls) -> tuple[Any, Any]:
         """
-        Import the optional `tirex2` backend and return its `TimeseriesType`.
+        Import the optional `tirex2` backend.
 
         Returns
         -------
+        load_model : Callable
+            `tirex2.load_model`, used to load the checkpoint.
         TimeseriesType : type
             `tirex2.TimeseriesType`, used to build the backend inputs.
 
-        Raises
-        ------
-        ImportError
-            If `tirex-2` is not installed, with the install instruction.
+        Notes
+        -----
+        An `ImportError` with the install instruction is raised if `tirex-2`
+        is not installed. `tirex-2` requires Python >= 3.11.
 
         """
 
         try:
-            from tirex2 import TimeseriesType
+            from tirex2 import TimeseriesType, load_model
         except ImportError as exc:
             raise ImportError(
                 f"{cls.backend_package} is required for {cls.__name__}. "
-                f"Install it with `pip install {cls.backend_package}`."
+                f"Install it with `pip install {cls.backend_package}` "
+                f"(requires Python >= 3.11)."
             ) from exc
-        return TimeseriesType
+
+        return load_model, TimeseriesType
 
     def _load_model(self) -> None:
         """
@@ -6491,30 +6499,20 @@ class TiRex2Adapter(_AdapterBase):
         -------
         None
 
-        Raises
-        ------
-        ImportError
-            If `tirex-2` is not installed, with the install instruction.
-
         Notes
         -----
         The model is imported lazily from `tirex2` and instantiated via
         `load_model(self.model_id, device=...)`, which downloads (or loads from
         cache) the checkpoint from the Hugging Face repository given by
         `model_id`. This method is a no-op when `self._model` is already
-        populated.
+        populated. An `ImportError` with the install instruction is raised if
+        `tirex-2` is not installed.
 
         """
 
         if self._model is not None:
             return
-        try:
-            from tirex2 import load_model
-        except ImportError as exc:
-            raise ImportError(
-                f"{self.backend_package} is required for TiRex2Adapter. "
-                f"Install it with `pip install {self.backend_package}`."
-            ) from exc
+        load_model, _ = self._import_backend()
         self._model = load_model(
             self.model_id, device=_resolve_torch_device(self.device)
         )
