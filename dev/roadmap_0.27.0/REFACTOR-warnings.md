@@ -9,6 +9,15 @@ sección 7 aprobadas (D7 a D12 quedan fuera):
 | 5346b78e1 | 1. Mover sin renombrar a `skforecast/utils/_warnings.py`, con sus tests |
 | 70f5a37ff | 2. Renombrar `fold` → `worker` (D5), con "records" en el docstring de `_SearchWarnings` (nota 5 de la sección 5) |
 | 4516a4b0f | 3. Renombrar `_stacklevel_user_code` → `_find_stack_level` (D6) |
+| e34e62e60 | Tras la revisión: `WORKER_WARNINGS_ATTRIBUTE` → `_WORKER_WARNINGS_ATTRIBUTE` (sin `_`, la reexportación de `skforecast/utils/__init__.py` lo hacía parecer API pública; la propuesta de la sección 4.4 lo omitía) y alineación de `function` en las tres llamadas de `_validation.py` |
+
+Superficie de `skforecast.utils`: además de `P`, `R`, `wraps`, `ParamSpec` y `TypeVar`,
+deja de existir `skforecast.utils.warn_skforecast_categories` (también
+`skforecast.utils.utils.warn_skforecast_categories`). Estaba en `v0.26.0` solo por el
+`import *` de un `utils.py` sin `__all__`, no está documentada y nada del repositorio la
+usaba; la ruta documentada es `skforecast.exceptions`. Se acepta sin deprecación. El
+refactor no añade ningún nombre público a `skforecast.utils`. La comprobación del contexto
+de IA no cubre `utils` (no está en su lista de subpaquetes), así que no lo detectaría.
 
 `git blame -C` con el algoritmo por defecto (Myers) no encuentra el bloque de
 `manage_warnings` en las 5700 líneas de `utils/utils.py` y lo atribuye al commit 1. Con
@@ -276,7 +285,7 @@ Los sufijos se combinan (`_get_n_evaluated_search_multiseries`). Son dos ejes di
 | `manage_warnings` (con `P` y `R`) | igual | Es el mecanismo de silenciado. Con él en el mismo módulo, todo lo que decide qué avisos se ven y dónde apuntan queda junto, y los helpers de los procesos dependen de su comportamiento: los avisos silenciados dentro de la función no se registran |
 | `_first_frame_outside_skforecast` | igual | Genérico, como el `find_stack_level` de pandas |
 | `_stacklevel_user_code` | `_find_stack_level` | Genérico. Más adelante podría sustituir los `stacklevel=2` o `3` fijos de QW-13 (eso cambiaría el comportamiento, así que va aparte) |
-| `FOLD_WARNINGS_ATTRIBUTE` | `WORKER_WARNINGS_ATTRIBUTE` | QW-15 lo usará desde `direct` |
+| `FOLD_WARNINGS_ATTRIBUTE` | `_WORKER_WARNINGS_ATTRIBUTE` | QW-15 lo usará desde `direct` |
 | `_run_fold_recording_warnings` | `_run_recording_worker_warnings` | QW-15 |
 | `_serializable_fold_warnings` | `_serializable_warnings` | Lo usa la función anterior |
 | `_module_name_from_filename` | igual | Lo usa `_reemit_*` |
@@ -355,7 +364,7 @@ from ._warnings import (
     _reemit_worker_warnings,
     _run_recording_worker_warnings,
     _serializable_warnings,
-    WORKER_WARNINGS_ATTRIBUTE
+    _WORKER_WARNINGS_ATTRIBUTE
 )
 ```
 
@@ -439,7 +448,7 @@ convención clara.
 
 | Nombre | ¿Describe lo que hace? | Propuesta | Motivo |
 |:--|:--|:--|:--|
-| `FOLD_WARNINGS_ATTRIBUTE` (valor `"_skforecast_fold_warnings"`) | Hoy sí; con QW-15, no | **`WORKER_WARNINGS_ATTRIBUTE`** (valor `"_skforecast_worker_warnings"`) | Ver la nota 3. El valor es un atributo interno de la excepción; ningún test usa el literal |
+| `FOLD_WARNINGS_ATTRIBUTE` (valor `"_skforecast_fold_warnings"`) | Hoy sí; con QW-15, no | **`_WORKER_WARNINGS_ATTRIBUTE`** (valor `"_skforecast_worker_warnings"`) | Ver la nota 3. El valor es un atributo interno de la excepción; ningún test usa el literal |
 | `_run_fold_recording_warnings(fold_function, main_pid, **kwargs)` | Hoy sí; con QW-15, no | **`_run_recording_worker_warnings(function, main_pid, **kwargs)`** | Mantiene el verbo y la forma "ejecutar registrando", y dice de quién son los avisos. El parámetro pasa a `function`, como en `joblib.delayed(function)`. `fold_function` aparece 9 veces en el código y 8 en los tests |
 | `_serializable_fold_warnings` | Hoy sí | **`_serializable_warnings`** | No tiene nada de fold: convierte lo que devuelve `catch_warnings(record=True)` |
 | `_module_name_from_filename` | Sí | **mantener** | |

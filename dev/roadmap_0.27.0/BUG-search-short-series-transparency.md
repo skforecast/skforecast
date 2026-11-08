@@ -1390,7 +1390,7 @@ devolverse), y con `n_jobs=1` se veían; en una búsqueda, quedaban con el candi
 
 - `_run_recording_worker_warnings` captura la excepción, guarda los avisos ya registrados
   (con la misma comprobación de `pickle`, en `_serializable_warnings`) en el atributo
-  `WORKER_WARNINGS_ATTRIBUTE` (`_skforecast_worker_warnings`) de la excepción y la vuelve a
+  `_WORKER_WARNINGS_ATTRIBUTE` (`_skforecast_worker_warnings`) de la excepción y la vuelve a
   lanzar (`raise`). Si la excepción no admite el atributo, se lanza sin él.
 - Los tres `Parallel` van en un `try/except Exception` que reemite esos avisos con
   `_reemit_worker_warnings` y vuelve a lanzar la misma excepción con `raise`: mismo tipo,
