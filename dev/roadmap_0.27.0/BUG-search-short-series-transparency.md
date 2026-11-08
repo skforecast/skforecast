@@ -802,6 +802,52 @@ dato; el aviso, un problema.
 5. **PR 2c (sección 15):** no añade guías. Ninguna tiene guardados paneles de los procesos
    de joblib (todos son `display_data` del proceso principal).
 
+### 13.1 Hecho: puntos 1, 2 y 4 (2026-11-08, en local)
+
+Rama `docs/search-guides-n-evaluated` desde `0.27.x`, 3 commits (uno por guía), sin push ni
+PR. Ejecutadas con `PYTHONPATH=<repo>` (el entorno no tiene skforecast instalado; el log
+dice `Kernel skf : <repo>/skforecast/__init__.py`). El punto 3 (`y_true`) va en otro PR.
+
+- **`hyperparameter-tuning-and-lags-selection`:** `n_evaluated` (60) en las tablas de una
+  serie, en `user_attrs` del estudio y en el `output_file`; aviso multiserie agrupado
+  ("lags: [1, 2, ..., 90], 2 candidates (rows 0, 3): 64 (66.7%)"); los avisos apuntan a
+  la línea del usuario. Texto: la columna `n_evaluated` explicada en la primera búsqueda,
+  con enlace a la sección multiserie. **Texto desfasado desde 7a4d5aef1 (BUG-03,
+  2026-10-21), corregido:** el mejor trial bayesian (17, 0.112030, no 2), el de
+  one-step-ahead (19 árboles y `min_child_samples = 7`, 0.178049; ya no hay tres trials
+  con el mismo error) y el consejo del límite del rango; los errores del random forest
+  (0.015294 y 0.035851). La nota sobre `max_depth` que citaba "see the note below" no
+  existía (desde 83a9e00e0): ahora una frase (con 115 observaciones, `min_child_samples
+  = 20` limita los árboles a 5 hojas y profundidad 4, comprobado). La sección del
+  `output_file` menciona `n_evaluated`.
+- **`handling-missing-values`** (celdas 17 y 18): un aviso por ajuste ("106 of 260 rows are
+  dropped: 78 with a NaN target and 28 with NaN predictors"). Ningún texto cita el aviso
+  anterior; la nota de `dropna_from_series=False` sigue siendo cierta.
+- **`multi-series-with-different-length-and-different_exog`** (celdas 24 y 26): un aviso
+  por celda, con "kept" (`False`) y "dropped" (`True`). También cambian el backtesting
+  (`n_evaluated`, `step`, `y_true`) y la búsqueda bayesian: `n_evaluated` y las columnas
+  `weighted_average` y `average`, que estaban intercambiadas en la salida guardada (#1438);
+  el mejor trial sigue siendo el 1. Erratas previas corregidas: el comentario de la celda
+  26 (`True`) y el texto antes de la búsqueda (nombraba `grid_search_forecaster_multiseries`).
+- **Punto 2, resto de guías (sin ejecutar):** ninguna selecciona las columnas de los
+  resultados por posición ni las cuenta; todas por nombre (`results.loc[0, 'params']`,
+  `[['lags', ...]]`, `iloc` solo por filas). Nada se rompe al volver a ejecutarlas.
+- **Búsqueda de formatos antiguos en `docs/`:** "NaNs detected in" solo estaba en las dos
+  guías de NaN; el aviso de `n_evaluated` con `params`, solo en la de búsqueda. Sin
+  apariciones de "Parameters skipped", "No valid parameter combinations", `GridSearchCV`
+  (aviso de `n_iter`), "(never predicted)" ni avisos repetidos por candidato en celdas de
+  búsqueda.
+- **Revisión limitada a lo de esta release (2026-11-09, 27a7e7de7):** en lugar de
+  `/review-user-guide` completo (queda para la pasada de documentación de la 0.27.0), solo
+  lo que cambió con el bug y con #1458 y #1466, sin volver a ejecutar: la sección de series
+  de distinta longitud de la guía de búsqueda dice que el aviso de `n_evaluated` también
+  salta en una serie (`OneStepAheadFold`, `dropna_from_series=True` y huecos en `y`);
+  `handling-missing-values` explica que las fechas del test sin valor quedan fuera de las
+  métricas (`n_evaluated`); la guía multiserie corrige "no predictions are generated" (esas
+  fechas tienen fila con `y_true` y `pred` NaN, comprobado) y da `n_evaluated` 0 para
+  `id_1002`. Fuera, por no haber ejemplo en estas guías: candidatos y trials saltados,
+  mensajes de `initial_train_size`, refit sin series cortas y avisos de joblib.
+
 ## 14. PR 2b: candidatos que fallan y pendientes de las búsquedas (2026-11-06)
 
 Rama `fix/search-failing-candidates` desde `0.27.x` (con #1447 y #1452). Alcance: 12.5.
