@@ -2341,7 +2341,18 @@ def _backtesting_stats(
         "freeze_params": freeze_params,
         "suppress_warnings": suppress_warnings
     }
-    results = Parallel(n_jobs=n_jobs)(
+
+    # NOTE: joblib sends the arrays over 1 MB to the workers as read-only
+    # memmaps, and the Kalman filter of a fitted `Sarimax` (statsmodels) cannot
+    # be unpickled from them. Copy-on-write memmaps are writable and still
+    # shared. Only with `Sarimax`: a `Parallel` with a non-default `mmap_mode`
+    # makes loky restart the workers of a previous call with the default one.
+    any_sarimax = any(
+        est_type == 'skforecast.stats._sarimax.Sarimax'
+        for est_type in forecaster.estimator_types
+    )
+    parallel_kwargs = {'mmap_mode': 'c'} if any_sarimax else {}
+    results = Parallel(n_jobs=n_jobs, **parallel_kwargs)(
         delayed(_fit_predict_forecaster_stats)(
             fold=fold, **kwargs_fit_predict_forecaster
         )
