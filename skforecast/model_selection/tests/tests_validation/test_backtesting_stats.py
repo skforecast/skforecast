@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 import numpy as np
 import pandas as pd
+from joblib import Parallel
 from sklearn.linear_model import Ridge
 import skforecast.stats._arima as arima_module
 import skforecast.stats._ets as ets_module
@@ -1794,6 +1795,51 @@ def test_output_backtesting_stats_freeze_params_True_equal_to_selected_params_se
         Arima(order=None, seasonal_order=None, m=12).get_params()
     )
     assert forecaster.estimators[1].get_params() == Ets(m=12).get_params()
+
+
+@pytest.mark.parametrize(
+    "estimators, expected_kwargs",
+    [([Sarimax(order=(1, 0, 0))], {'n_jobs': 2, 'mmap_mode': 'c'}),
+     ([Arima(order=(1, 0, 0)), Sarimax(order=(1, 0, 0))],
+      {'n_jobs': 2, 'mmap_mode': 'c'}),
+     ([Arima(order=(1, 0, 0))], {'n_jobs': 2})],
+    ids=['Sarimax', 'Arima and Sarimax', 'Arima']
+)
+def test_backtesting_stats_Parallel_mmap_mode_c_only_with_Sarimax(
+    estimators, expected_kwargs
+):
+    """
+    Test that backtesting_stats passes `mmap_mode='c'` to joblib only when the
+    forecaster has a Sarimax. joblib sends the arrays over 1 MB to the workers
+    as read-only memmaps by default, and the Kalman filter of a fitted Sarimax
+    cannot be unpickled from them (`ValueError: buffer source array is
+    read-only`). `Parallel` is mocked with a sequential one, so no workers
+    are started.
+    """
+    forecaster = ForecasterStats(estimator=estimators)
+    cv = TimeSeriesFold(
+             steps              = 6,
+             initial_train_size = len(y_datetime) - 12,
+             refit              = True,
+             fixed_train_size   = False,
+             verbose            = False
+         )
+
+    with patch(
+        'skforecast.model_selection._validation.Parallel',
+        side_effect=lambda **kwargs: Parallel(n_jobs=1)
+    ) as mock_parallel:
+        backtesting_stats(
+            forecaster        = forecaster,
+            y                 = y_datetime,
+            cv                = cv,
+            metric            = 'mean_absolute_error',
+            n_jobs            = 2,
+            show_progress     = False,
+            suppress_warnings = True
+        )
+
+    assert mock_parallel.call_args.kwargs == expected_kwargs
 
 
 @pytest.mark.parametrize(
