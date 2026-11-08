@@ -11,9 +11,10 @@ de las búsquedas.
 dos (sección 8.1): **PR 2a fusionado en `0.27.x` el 2026-11-06 (#1452,** rama
 `fix/search-warnings`; sección 12; también `n_evaluated` en todas las búsquedas, 12.8).
 **PR 2b fusionado en `0.27.x` el 2026-11-06 (#1456,** rama `fix/search-failing-candidates`;
-sección 14: candidatos que fallan y pendientes de las búsquedas). **Siguiente:**
-BUG-backtesting-nan-y-true del roadmap (S, misma zona), después el PR 2c (avisos de los
-procesos de joblib, 12.6 punto 8; medir antes su alcance) y, al final, la sección 13.
+sección 14: candidatos que fallan y pendientes de las búsquedas). BUG-backtesting-nan-y-true
+(#1458) y QW-13 (#1466) fusionados. **PR 2c** (avisos de los procesos de joblib, 12.6 punto
+8): alcance medido el 2026-11-08 en la sección 15 (S), **pendiente de aprobación.** Al final,
+la sección 13.
 
 **Desbloqueado el 2026-11-03:** QW-12 está hecho con #1437. Antes estaba **bloqueado por
 QW-12** (decisión del 2026-10-29): antes se hace, por separado, la columna con
@@ -319,6 +320,7 @@ En `dev/roadmap_0.27.0/repro/`:
 | `BUG-search-short-series_02_options.py` | con muchas series cortas, cobertura de cada candidato (20/20 series, 66% de los puntos) | segundos |
 | `BUG-search-short-series_06_search_warnings.py` | experimento 6: avisos y errores que ve el usuario en cada búsqueda (sección 5.1) | ~1 min |
 | `BUG-search-short-series_07_m5_dropped_share.py` | experimento 7: fracción de puntos que deja fuera cada ventana en M5 completo (sección 3); descarga ~116 MB | ~1 min |
+| `PR-2c_joblib_warnings.py` | PR 2c: avisos vistos con `n_jobs='auto'` y `1`, y cuántos vienen de los procesos de joblib (21 casos, cada uno en un proceso limpio); `--bench`, coste con 500 folds (sección 15) | ~3 min; `--bench` ~1 min |
 
 Los scripts 3 a 5 (c1 y c2) están descritos en el documento anterior.
 
@@ -796,6 +798,8 @@ dato; el aviso, un problema.
    24 y 26). Sus salidas guardadas muestran los avisos anteriores ("NaNs detected in
    `y_train`" y "NaNs detected in `X_train`", 4 por celda); ahora sale uno por ajuste, con
    los recuentos. Revisar que ningún texto de la guía cite el aviso anterior.
+5. **PR 2c (sección 15):** no añade guías. Ninguna tiene guardados paneles de los procesos
+   de joblib (todos son `display_data` del proceso principal).
 
 ## 14. PR 2b: candidatos que fallan y pendientes de las búsquedas (2026-11-06)
 
@@ -1019,3 +1023,237 @@ datos del notebook 08 (`store_1`, `store_2` y `new_product` de 120 días).
   2855 pasan y 2 se saltan. Sin el full suite.
 - Queda fuera, en el roadmap: BUG-refit-directmultivariate-short, BUG-rnn-set-params y
   BUG-backtesting-nan-y-true; el PR 2c y la sección 13.
+
+## 15. PR 2c: avisos de los procesos de joblib (alcance, 2026-11-08)
+
+Solo medida y propuesta; **sin cambios en el paquete, pendiente de aprobación.** Rama local
+`chore/joblib-warnings-scope` desde `0.27.x` (17219ad65). Script
+`repro/PR-2c_joblib_warnings.py`: cada caso en un proceso de Python limpio y en su propio
+`catch_warnings()`, con los filtros por defecto. Cuenta los avisos que llegan al proceso
+principal (envolviendo `warnings.showwarning`) y los que se ven en total (paneles y avisos
+de texto en la salida, que los procesos de loky heredan). Los de los hijos son la
+diferencia. Entorno: Python 3.14.3, numpy 2.5.4, pandas 2.3.3, scikit-learn 1.9.1,
+joblib 1.6.0, rich 15.0.0, ipykernel 7.3.0, optuna 5.0.0; 10 núcleos (`n_jobs='auto'`
+reparte en 9 procesos).
+
+### 15.1 Dónde se emiten
+
+`_search.py` no usa `Parallel`: los candidatos se evalúan uno detrás de otro (los trials de
+Optuna, en hilos si el usuario pasa `n_jobs` en `kwargs_study_optimize`). Los procesos son los
+de los folds del backtesting de cada candidato, que corre dentro del registro de la búsqueda
+(`with search_warnings`, con `set_candidate`). Hay tres `Parallel` en `_validation.py`,
+todos con el backend por defecto (loky, procesos; el ejecutor se reutiliza entre llamadas, y
+entre los candidatos de una búsqueda):
+
+| Función (por fold) | Llamada desde | Qué corre en el hijo | Avisos posibles |
+|---|---|---|---|
+| `_fit_predict_forecaster` | `_backtesting_forecaster` | `fit` (folds con refit), `predict`, `predict_interval`/`_quantiles`/`_dist`/`_bootstrapping`, `predict_proba`, `create_predict_X` | QW-13 (filas con NaN), `exog` y `last_window` con NaN, `MissingExogWarning`, `IgnoredArgumentWarning`, `ResidualsUsageWarning`; los del estimador (`ConvergenceWarning`...) |
+| `_fit_predict_forecaster_multiseries` | `_backtesting_forecaster_multiseries` | lo mismo, por nivel | los anteriores y `UnknownLevelWarning`. Los niveles no predichos (#1415) ya se avisan en el principal, tras `Parallel` |
+| `_fit_predict_forecaster_stats` | `_backtesting_stats` | `fit` y `predict` de `ForecasterStats` | los de statsmodels y `stats` (`ConvergenceWarning`, "Possible convergence problem"...) |
+
+- **Cuándo hay procesos:** `n_jobs=1` (y el backend `threading` de `parallel_config`)
+  ejecuta en el proceso principal y los avisos llegan como siempre. Con `n_jobs='auto'`,
+  desde 544ba97f4 (hoy, 2026-11-08), solo `ForecasterRecursive`, `ForecasterRecursiveClassifier`
+  y `ForecasterRecursiveMultiSeries` con un estimador no lineal (también `LogisticRegression`;
+  LightGBM solo con `n_jobs=1` interno) reparten los folds. `backtesting_stats` y
+  `ForecasterStats`: 1 con `'auto'` y siempre 1 con `refit=False`; solo hay procesos con
+  `n_jobs` explícito y refit. `backtesting_foundation` y `OneStepAheadFold` no usan `Parallel`.
+- **El escenario 3 del notebook 08 ya no se reproduce con `'auto'`:** usa `Ridge`, que desde
+  544ba97f4 va en un solo proceso (3 paneles, caso N3). El problema sigue con HGBR, bosques,
+  LightGBM con `n_jobs=1`, MLP... y con `n_jobs` explícito.
+- **En cada hijo:** se importa skforecast (que instala el `showwarning` de rich), con los
+  filtros por defecto de Python, no los del usuario (joblib 1.6 no los pasa;
+  `sklearn.utils.parallel` de scikit-learn sí lo hace con los suyos). Imprime en su
+  stdout/stderr. `suppress_warnings=True` sí funciona: llega como argumento. Cada `fit` y
+  `predict` decorados con `manage_warnings` abren un `catch_warnings`, que invalida los
+  registros de avisos ya mostrados: el mismo aviso sale en cada fold, también con `n_jobs=1`.
+- **Otro `Parallel`, fuera del alcance:** `ForecasterDirect.fit` y
+  `ForecasterDirectMultiVariate.fit` (un estimador por paso, `n_jobs` del forecaster; con
+  `'auto'`, procesos salvo modelos lineales). Solo pueden salir avisos del estimador; en el
+  backtesting, Direct va con `n_jobs=1` en los folds, pero su `fit` sigue en paralelo.
+
+### 15.2 Línea base y prototipo (script `PR-2c_joblib_warnings.py`)
+
+Datos del notebook 08 (`store_1`, `store_2` y `new_product` de 120 días),
+`HistGradientBoostingRegressor(max_iter=20)`, `TimeSeriesFold(steps=14,
+initial_train_size="2023-09-30")` (7 folds). Huecos en `exog` el 2023-10-20 (test) y
+tres en `y` de `store_1` (train, QW-13). Avisos vistos (paneles y de texto); entre
+paréntesis, los que vienen de los hijos.
+
+| Caso | `'auto'` hoy | `n_jobs=1` | `'auto'` con el prototipo |
+|---|---|---|---|
+| B1 backtesting, hueco en `exog`, `refit=False` | 2 (2) | 2 | 2 (0) |
+| B2 backtesting, huecos en `y` (QW-13), `refit=True` | 7 (6) | 7 | 7 (0) |
+| B3 backtesting, MLP `max_iter=5` (`ConvergenceWarning`), `refit=True` | 7 (6) | 7 | 7 (0) |
+| B4 backtesting multiserie, serie corta (#1415) + hueco en `exog` | 3 (2) | 3 | 3 (0) |
+| B5 backtesting multiserie, QW-13, `refit=True` | 7 (6) | 7 | 7 (0) |
+| B6 backtesting multiserie (las dos tiendas), hueco en `exog`, `simplefilter("ignore", MissingValuesWarning)` del usuario | **2 (2)** | 0 | 0 |
+| B7 el mismo caso con `suppress_warnings=True` en lugar del filtro | 0 | 0 | 0 |
+| B8 `backtesting_stats`, Arima, `refit=True` | 0 (siempre 1 proceso) | 0 | 0 |
+| S1 grid una serie, hueco en `exog`, 2 lags × 2 lr | **8 (8)** | 1 | 1 (0) |
+| S2 grid una serie, QW-13, `refit=True` | **25 (24)** | 1 | 1 (0) |
+| S3 random una serie, hueco en `exog`, 4 candidatos | **8 (8)** | 1 | 1 (0) |
+| S4 bayesian una serie, hueco en `exog`, 6 trials | **12 (12)** | 1 | 1 (0) |
+| S5 grid una serie OSA, hueco en `exog` | 2 | 2 | 2 |
+| S6 bayesian una serie OSA, QW-13 | 2 | 2 | 2 |
+| M1 grid multi, serie corta + hueco en `exog`, lags [7, 35] × 2 lr | **11 (10)** | 4 | 4 (0) |
+| M2 random multi, el mismo caso, 4 candidatos | **11 (10)** | 4 | 4 (0) |
+| M3 bayesian multi, el mismo caso, 6 trials | **18 (17)** | 4 | 4 (0) |
+| M4 grid multi, QW-13, `refit=True` | **25 (24)** | 1 | 1 (0) |
+| M5 grid multi OSA, serie corta + hueco en `exog` | 3 | 3 | 3 |
+| M6 bayesian multi OSA, el mismo caso | 3 | 3 | 3 |
+| N3 escenario 3 del notebook 08 (`Ridge`, bayesian multi, 10 trials) | 3 (0) | 3 | 3 (0) |
+
+Lectura:
+
+1. **Búsquedas con `TimeSeriesFold`:** los avisos de los folds no entran en el registro. Salen
+   uno por fold y candidato (de 8 a 25 paneles, frente a 1 a 4 con `n_jobs=1`). Es lo que el
+   PR 2a arregló para el proceso principal. `OneStepAheadFold` no cambia (sin `Parallel`).
+2. **Backtesting suelto:** el mismo número que con `n_jobs=1`, pero los avisos de los hijos
+   no pasan por los filtros del usuario (B6: 2 frente a 0), ni por `set_warnings_style`, ni
+   por `pytest.warns` o `catch_warnings(record=True)`. En Jupyter se ven mal (15.3).
+3. **Ya pasaba con `n_jobs=1`, fuera del 2c:** el backtesting con refit repite el mismo aviso
+   en cada fold (B2, B3 y B5: 7 = el ajuste inicial y 6 folds). Ver la decisión 4.
+4. **Hallazgo, fuera del 2c:** un hueco en `exog` en el test da **dos** avisos en `predict`:
+   "`exog` has missing values... Prediction method may fail." (`check_predict_input`,
+   `utils.py:1669`) y "`exog` has missing values... Fitting the forecaster may fail."
+   (`check_exog`, `utils.py:1084`, que `predict` también llama). El segundo habla de ajustar
+   mientras se predice. B1 da 2 paneles por un solo hueco; en multiserie, uno por serie.
+   Candidato a QW.
+
+### 15.3 Cómo se ven en Jupyter
+
+Copia recortada del notebook 08 (en el scratchpad, el original sin tocar): preparación,
+escenario 3 con `n_jobs=4` (con `'auto'` ya no hay procesos), el mismo con `n_jobs=1`, y el
+caso B1. Ejecutada con `nbconvert`:
+
+| Celda | Hoy | Con el prototipo |
+|---|---|---|
+| escenario 3, `n_jobs=4` | 20 paneles en 2 salidas `stream` (stdout) de los hijos, `\x1b[93m` (amarillo de 16 colores), 80 columnas, 36 `�` (16 + 20); y 1 panel `display_data` (HTML, color 214, 88 columnas) del principal | 3 paneles `display_data`, los mismos que con `n_jobs=1` |
+| escenario 3, `n_jobs=1` | 3 paneles `display_data` | igual |
+| B1 (HGBR, `'auto'`) | 2 paneles `stream`, `\x1b[93m`, 80 columnas, 4 `�` | 2 paneles `display_data` |
+
+Confirmado lo descrito en 12.6 punto 8: rich en el hijo no detecta Jupyter (no hay kernel en
+ese proceso). Escribe ANSI de 16 colores a 80 columnas en el stdout del proceso, que
+ipykernel reenvía a trozos: un carácter del borde (`─`, 3 bytes) partido entre dos trozos
+sale como `�`. Ninguna guía de `docs/` tiene paneles de los hijos guardados (todos son
+`display_data`), así que el 2c no obliga a volver a ejecutar ninguna.
+
+### 15.4 Propuesta: registrar en los hijos y reemitir en el principal (prototipo)
+
+Prototipo en un worktree temporal (ya borrado), solo en `_validation.py` (+68/−3 líneas):
+
+- `_run_fold_recording_warnings(fold_function, main_pid, **kwargs)`, a nivel de módulo
+  (picklable). Si `os.getpid() == main_pid` (`n_jobs=1`, backend `threading`), llama a la
+  función y devuelve `(resultado, None)`: los avisos salen como hoy. En otro proceso, la
+  ejecuta dentro de `catch_warnings(record=True)` con `simplefilter("always")` y devuelve
+  `(resultado, [(message, category, filename, lineno), ...])`. Los filtros de
+  `suppress_warnings` (los `catch_warnings` de `fit`/`predict`) se aplican dentro: lo
+  silenciado no se registra.
+- `_reemit_fold_warnings(results)`: tras `Parallel`, en el orden de los folds,
+  `warnings.warn_explicit(message, category, filename, lineno, module=..., registry=None)`.
+  Pasa por los filtros del principal (los del usuario y, en una búsqueda, el `_record` de
+  `_SearchWarnings` con el candidato del hilo, que los agrupa) y conserva la ubicación
+  original, la misma que con `n_jobs=1`. Devuelve los resultados sin los avisos.
+- Los tres `Parallel` llaman a `_run_fold_recording_warnings` con la función de su fold y
+  `main_pid = os.getpid()`. Sin cambios en `_search.py`, los forecasters ni `exceptions`.
+
+Resultado (columna derecha de la tabla de 15.2): **los 21 casos dan lo mismo con `'auto'`
+que con `n_jobs=1`,** sin avisos desde los hijos.
+
+- **Registro (`registry=None`):** el primer intento usaba el `__warningregistry__` del
+  módulo de origen, y el principal deduplicaba: B2 daba 3 avisos y B3 2, frente a 7 con
+  `n_jobs=1`. Allí, cada `catch_warnings` de `manage_warnings` invalida el registro y el
+  mismo aviso sale en cada fold. Sin registro se repite eso.
+- **Orden y ubicación:** los mismos que con `n_jobs=1` (comprobado en B4): primero los de los
+  folds, en su orden, y después los del principal posteriores a `Parallel` (#1415). La
+  `Location` es la línea de skforecast o de la librería que avisa, como con `n_jobs=1`. Hoy
+  los avisos de los hijos salen mientras corren los procesos, cada uno cuando lo imprime su
+  proceso (no se ha medido si alguna vez salen en otro orden). En las
+  búsquedas, el registro los emite al final apuntando a la línea del usuario, como los demás.
+- **Coste** (`--bench`: `backtesting_forecaster`, 500 folds de 2 pasos, `refit=False`,
+  HGBR, `'auto'`, mediana de 11 en rondas alternas; las dos primeras rondas, estables):
+
+  | | `0.27.x` | prototipo |
+  |---|---|---|
+  | sin avisos | 0.690 / 0.674 s | 0.679 / 0.612 s |
+  | 2 avisos por fold (1000) | 0.614 / 0.633 s | 0.739 / 0.738 s |
+
+  Sin avisos, sin diferencia medible (las rondas 3 y 4, con la máquina ocupada, dan 0.7 a
+  1.0 s en las dos versiones). Con 1000 avisos, unos 0.1 s más, que es mostrarlos: pintar
+  1000 paneles de rich en un solo proceso cuesta 123 ms (hoy se pintan repartidos en 9
+  procesos). Serializar los 1000 registros: 0.7 ms y 25 kB; 1000
+  `catch_warnings(record=True)`: 0.8 ms. En una búsqueda no se pinta nada hasta el final.
+- **Tests:** `skforecast/model_selection/tests` con el prototipo: 1197 pasan y 2 se saltan,
+  como en `0.27.x`. El resumen de avisos de pytest pasa de 613 a 624: aparecen los de los
+  hijos que pytest no veía: `last_window` con NaN +5 y QW-13 +1 (en
+  `test_backtesting_forecaster.py` y `test_backtesting_forecaster_multiseries.py`), y un
+  `DeprecationWarning` de statsmodels +5 (en `test_backtesting_stats.py`, con `n_jobs=-1`).
+
+**Tamaño de la versión final: S.** `_validation.py`: dos o tres helpers con docstrings (~70
+líneas) y tres llamadas. `_utils.py`: quitar el párrafo de `_SearchWarnings` que dice que los
+avisos de los procesos no se recogen. Tests nuevos (~6): un aviso en un fold con `n_jobs=2`
+en el backtesting de una serie, multiserie y stats (`pytest.warns` lo ve; hoy no); un filtro
+`ignore` del usuario respetado; misma ubicación y número que con `n_jobs=1`; un grid con
+`n_jobs=2` da los mismos avisos que con `n_jobs=1`; con `parallel_config(backend="threading")`
+no se duplican; un aviso que no se puede serializar no rompe el backtesting. Nota de la
+versión en Fixed. Sin cambios en `llms-base.txt` ni en las skills (no hablan de esto) ni en
+las guías (15.3).
+
+### 15.5 Alternativas
+
+| Alternativa | Qué arregla | Por qué no (o no sola) |
+|---|---|---|
+| **A. Registrar en los hijos y reemitir (propuesta)** | todo: filtros, registro de las búsquedas, Jupyter, `pytest.warns` | coste solo al mostrar muchos avisos (15.4) |
+| B. Silenciar los avisos en los hijos y repetirlos desde el padre (comprobar `exog`/`last_window` antes de `Parallel`) | los avisos de entrada de skforecast | pierde los del estimador y los que dependen del fold (QW-13 con sus cuentas, `UnknownLevelWarning`, `ConvergenceWarning`); duplica las comprobaciones |
+| C. Pasar los filtros del usuario a los hijos (como `sklearn.utils.parallel`) | B6 | no agrupa en las búsquedas ni arregla Jupyter. Con A sobra: los filtros del principal deciden |
+| D. Backend `threading` | los avisos llegan solos | cambia el rendimiento (GIL); no es una decisión de avisos |
+| E. A, y además agrupar los avisos repetidos de un backtesting ("(in 6 of 7 folds)"), con cualquier `n_jobs` | también B2, B3 y B5 (7 → 1) | cambia lo que se ve con `n_jobs=1` y va más allá del 2c (M). Mejor aparte, si se quiere |
+| F. No hacer nada y documentar "`n_jobs=1` para ver los avisos" | nada | el usuario no sabe que le faltan avisos ni por qué se ven distintos |
+
+### 15.6 Riesgos
+
+- **Tests que dependen de que los avisos salgan desde los hijos:** ninguno. `pytest.warns` no
+  ve los avisos de los hijos, así que los tests de los avisos de los folds ya usan `n_jobs=1`
+  o estimadores lineales. Los 1197 tests pasan con el prototipo.
+- **Avisos que hoy no llegan al principal con `'auto'` y llegarán:** todos los de los folds
+  con forecasters recursivos y estimadores no lineales. Se ven igual que con `n_jobs=1`, y
+  además:
+  - `pytest.warns`, `catch_warnings(record=True)` y los filtros del usuario los ven. Con
+    `simplefilter("error")` el backtesting falla tras evaluar todos los folds (con `n_jobs=1`,
+    en el primero); en una búsqueda, el candidato se salta, como con `n_jobs=1`.
+  - `set_warnings_style("default")` del usuario se aplica (hoy los hijos usan siempre rich).
+  - Los `DeprecationWarning` de las librerías se registran con `always`, pero los filtros por
+    defecto del principal los ignoran (el módulo no es `__main__`); en pytest sí se ven
+    (+5 en statsmodels).
+- **Clases de aviso que no se pueden serializar o reconstruir** (un `__init__` con otros
+  argumentos, clases definidas dentro de una función): el resultado del fold no se podría
+  deserializar y el backtesting fallaría por un aviso. Mitigación: enviar el texto y la
+  categoría, y si la categoría no se puede serializar, `RuntimeWarning` con su nombre en el
+  texto; un test lo cubre.
+- **Hilos:** con los trials de Optuna en hilos, cada hilo reemite en su hilo, y `_record` los
+  marca con su candidato. No probado en el prototipo: test en el PR. Python 3.14
+  free-threaded no probado (como en 12.4).
+
+### 15.7 Decisiones abiertas
+
+1. **Solo desde otros procesos o siempre.** Recomendado: solo cuando la función del fold corre
+   en otro proceso (`os.getpid()`). Con `n_jobs=1` y con hilos no cambia nada.
+2. **Registro al reemitir.** Recomendado: `registry=None`, igual que con `n_jobs=1` (15.4).
+   Con el registro del módulo saldrían menos repeticiones, pero distintas según `n_jobs`.
+3. **Ubicación.** Recomendado: la original (`warn_explicit` con `filename` y `lineno`), igual
+   que con `n_jobs=1`. Apuntar a la línea del usuario (`_stacklevel_user_code`) cambiaría
+   también lo que hoy se ve con `n_jobs=1`; en las búsquedas el registro ya lo hace.
+4. **Agrupar las repeticiones de un backtesting (alternativa E).** Recomendado: fuera del 2c.
+   Pasa igual con `n_jobs=1` (B2, B3 y B5). Anotarlo en el roadmap como candidato (M) si
+   molesta en las guías.
+5. **`ForecasterDirect`/`ForecasterDirectMultiVariate.fit` en paralelo** (15.1): el mismo
+   helper serviría para `_fit_one_step_estimator`, pero solo afecta a avisos del estimador y
+   no se ha medido. Recomendado: fuera del 2c, anotado en el roadmap.
+6. **El doble aviso de `exog` con NaN en `predict`** (15.2, hallazgo 4). Recomendado: un QW
+   aparte (quitar la llamada a `check_exog` en `predict` o su aviso), con los tests que buscan
+   el texto.
+
+**Tamaño: S.** Un commit de código (`_validation.py` y el docstring de `_SearchWarnings`), uno
+de tests y la nota de la versión. Si se aprueba, la rama sería `fix/joblib-worker-warnings`
+desde `0.27.x`.
