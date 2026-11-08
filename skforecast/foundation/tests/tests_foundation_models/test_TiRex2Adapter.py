@@ -418,20 +418,6 @@ def test_TiRex2Adapter_predict_steps_limit_is_read_from_loaded_model(monkeypatch
         adapter.predict(929, context, None, None, None)
 
 
-def test_TiRex2Adapter_predict_steps_limit_falls_back_to_constant(monkeypatch):
-    """
-    Test that a loaded model without `future_len` falls back to
-    `_MODEL_MAX_PREDICTION_LENGTH`.
-    """
-    model = fake_tirex2_modules(monkeypatch)
-    del model.future_len
-    adapter = TiRex2Adapter("NX-AI/TiRex-2", model=model)
-
-    err_msg = re.escape("`steps` must be <= 320")
-    with pytest.raises(ValueError, match=err_msg):
-        adapter.predict(321, context, None, None, None)
-
-
 def test_TiRex2Adapter_predict_ValueError_when_backend_returns_wrong_count(monkeypatch):
     """
     Test that a backend returning fewer forecasts than series raises a clear

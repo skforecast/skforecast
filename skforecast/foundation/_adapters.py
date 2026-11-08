@@ -6080,10 +6080,6 @@ class TiRex2Adapter(_AdapterBase):
     backend_package: str = "tirex-2"
     default_model_id: str = "NX-AI/TiRex-2"
     _MODEL_ID_PREFIX: str = "NX-AI/TiRex-2"
-    # `future_len` of `NX-AI/TiRex-2`, used only if the loaded model does not
-    # expose its own. Longer horizons are truncated by the backend, so `predict`
-    # rejects them instead.
-    _MODEL_MAX_PREDICTION_LENGTH: int = 320
     _RESERVED_PREDICT_KWARGS: frozenset[str] = frozenset({
         "timeseries",
         "prediction_length",
@@ -6300,9 +6296,9 @@ class TiRex2Adapter(_AdapterBase):
             quantiles, self.SUPPORTED_QUANTILES, "TiRex-2"
         )
         self._load_model()
-        max_steps = getattr(
-            self._model, "future_len", self._MODEL_MAX_PREDICTION_LENGTH
-        )
+        # `future_len` of the loaded checkpoint. Longer horizons are truncated
+        # by the backend with only a log warning, so they are rejected here.
+        max_steps = self._model.future_len
         if steps > max_steps:
             raise ValueError(
                 f"`steps` must be <= {max_steps}, the maximum forecast horizon "
