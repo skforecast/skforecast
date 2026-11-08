@@ -1,5 +1,6 @@
 # Unit test grid_search_forecaster
 # ==============================================================================
+import warnings
 import numpy as np
 import pandas as pd
 import pytest
@@ -9,11 +10,13 @@ from skforecast.metrics import mean_absolute_scaled_error
 from skforecast.metrics import root_mean_squared_scaled_error
 from sklearn.linear_model import Ridge, LogisticRegression
 from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import HistGradientBoostingRegressor
 from skforecast.recursive import ForecasterRecursive, ForecasterRecursiveClassifier
 from skforecast.direct import ForecasterDirect
 from skforecast.model_selection._search import grid_search_forecaster
 from skforecast.model_selection._split import TimeSeriesFold
 from skforecast.model_selection._split import OneStepAheadFold
+from skforecast.exceptions import MissingValuesWarning
 
 from tqdm import tqdm
 from functools import partial, partialmethod
@@ -21,7 +24,7 @@ from functools import partial, partialmethod
 tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)  # hide progress bar
 
 # Fixtures
-from ..fixtures_model_selection import y, y_clf
+from ..fixtures_model_selection import y, y_clf, exog
 
  
 def test_output_grid_search_forecaster_ForecasterRecursive_with_mocked():
@@ -379,3 +382,92 @@ def test_grid_search_forecaster_ForecasterRecursiveClassifier_follows_metric_dir
     assert results[metric_name].iloc[0] != results[metric_name].iloc[1]
     assert forecaster.estimator.C == 0.1
     np.testing.assert_array_equal(forecaster.lags, np.array([1, 2, 3, 4]))
+
+
+def test_grid_search_forecaster_warnings_of_folds_in_processes_same_as_n_jobs_1():
+    """
+    Test that the warnings raised in the folds of the backtesting of each
+    candidate that run in worker processes (`n_jobs=2`) are collected by the
+    search and shown once at the end, as with `n_jobs=1`, instead of once per
+    fold and candidate by the worker processes.
+    """
+    exog_nan = exog.copy()
+    exog_nan.iloc[[42, 47]] = np.nan
+
+    def warnings_shown(n_jobs):
+        forecaster = ForecasterRecursive(
+            HistGradientBoostingRegressor(max_iter=5, random_state=123), lags=3
+        )
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always")
+            grid_search_forecaster(
+                forecaster    = forecaster,
+                y             = y,
+                exog          = exog_nan,
+                cv            = TimeSeriesFold(steps=2, initial_train_size=40, refit=False),
+                param_grid    = {'learning_rate': [0.1, 0.2]},
+                lags_grid     = [2, 3],
+                metric        = 'mean_absolute_error',
+                return_best   = False,
+                n_jobs        = n_jobs,
+                show_progress = False,
+            )
+
+        return [(w.category, str(w.message), w.filename, w.lineno) for w in record]
+
+    expected = warnings_shown(n_jobs=1)
+    results = warnings_shown(n_jobs=2)
+
+    assert [category for category, _, _, _ in expected].count(MissingValuesWarning) == 1
+    assert results == expected
+
+
+class RidgeWarnsThenFailsLargeAlpha(Ridge):
+    """
+    Ridge that, with `alpha` greater than 0.5 and when it predicts one row (the
+    steps of a recursive forecast), warns and then raises an error. It is not a
+    class of scikit-learn, so the forecaster calls its `predict`.
+    """
+
+    def predict(self, X):
+        if len(X) == 1 and self.alpha > 0.5:
+            warnings.warn("Warning before the error of the fold.", UserWarning)
+            raise ValueError("Error of the fold.")
+        return super().predict(X)
+
+
+def test_grid_search_forecaster_warning_of_fold_that_fails_in_process_kept_with_candidate():
+    """
+    Test that, when a fold of a candidate that runs in a worker process warns
+    and then raises an error, the candidate is skipped and its warning is
+    collected with it ("in 1 of 2 candidates"), as with `n_jobs=1`.
+    """
+    def search(n_jobs):
+        forecaster = ForecasterRecursive(RidgeWarnsThenFailsLargeAlpha(), lags=3)
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always")
+            results = grid_search_forecaster(
+                forecaster    = forecaster,
+                y             = y,
+                cv            = TimeSeriesFold(steps=2, initial_train_size=40, refit=False),
+                param_grid    = {'alpha': [0.1, 1.0]},
+                metric        = 'mean_absolute_error',
+                return_best   = False,
+                n_jobs        = n_jobs,
+                show_progress = False,
+            )
+
+        warnings_shown = [(w.category, str(w.message), w.filename, w.lineno) for w in record]
+
+        return results['params'].tolist(), warnings_shown
+
+    expected = search(n_jobs=1)
+    results = search(n_jobs=2)
+
+    assert expected[0] == [{'alpha': 0.1}]
+    assert expected[1][0][:2] == (
+        UserWarning, "Warning before the error of the fold (in 1 of 2 candidates)."
+    )
+    assert expected[1][1][0] is RuntimeWarning
+    assert "ValueError: Error of the fold." in expected[1][1][1]
+    assert results == expected

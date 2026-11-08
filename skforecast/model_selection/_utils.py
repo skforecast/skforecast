@@ -8,7 +8,6 @@
 from __future__ import annotations
 from typing import Callable, Generator, Any
 import logging
-import os
 import re
 import sys
 import threading
@@ -46,6 +45,8 @@ from ..utils import (
     align_series_and_exog_multiseries,
     _series_too_short_multiseries,
     estimator_has_native_nan_support,
+    _first_frame_outside_skforecast,
+    _find_stack_level
 )
 
 # NOTE: Names of the metrics added to the backtesting metrics when the
@@ -802,7 +803,7 @@ def check_one_step_ahead_input(
             "to backtest the final model for a more accurate multi-step performance "
             "estimate.",
             OneStepAheadValidationWarning,
-            stacklevel = _stacklevel_user_code()
+            stacklevel = _find_stack_level()
         )
 
 
@@ -1222,7 +1223,7 @@ def _initialize_levels_model_selection_multiseries(
                 f"is '{forecaster.level}', to predict another level, change "
                 f"the `level` argument when initializing the forecaster. \n",
                 IgnoredArgumentWarning,
-                stacklevel = _stacklevel_user_code()
+                stacklevel = _find_stack_level()
             )
         levels = [forecaster.level]
     else:
@@ -2800,7 +2801,7 @@ def _check_study_direction(study: object, metric: Callable) -> str:
                 f"`return_best` follow the study direction. Remove `direction` "
                 f"from `kwargs_create_study` to use the direction of the metric.",
                 UserWarning,
-                stacklevel = _stacklevel_user_code()
+                stacklevel = _find_stack_level()
             )
 
     return direction
@@ -3257,7 +3258,7 @@ def _warn_n_evaluated_search(
         blocks.append(levels_block)
 
     warnings.warn(
-        "\n\n".join(blocks), MissingValuesWarning, stacklevel=_stacklevel_user_code()
+        "\n\n".join(blocks), MissingValuesWarning, stacklevel=_find_stack_level()
     )
 
 
@@ -3338,7 +3339,7 @@ def _drop_series_too_short_refit(
         f"{'it' if n_series == 1 else 'them'} (not in `series_names_in_`).\n\n"
         f"Series left out: {names_repr}.",
         RuntimeWarning,
-        stacklevel = _stacklevel_user_code()
+        stacklevel = _find_stack_level()
     )
 
     return series, exog
@@ -3402,7 +3403,7 @@ def _sample_param_grid(
             f"combinations{for_each_lags}. For an exhaustive search, use "
             f"`{grid_search_name}`.",
             UserWarning,
-            stacklevel = _stacklevel_user_code()
+            stacklevel = _find_stack_level()
         )
 
     return param_grid
@@ -3508,13 +3509,13 @@ def _warn_skipped_candidates_search(
         blocks.append(f"... and {len(errors) - max_errors} more errors")
 
     warnings.warn(
-        "\n\n".join(blocks), RuntimeWarning, stacklevel=_stacklevel_user_code()
+        "\n\n".join(blocks), RuntimeWarning, stacklevel=_find_stack_level()
     )
 
 
 class _SearchWarnings:
     """
-    Context manager that collects the warnings raised while the candidates of
+    Context manager that records the warnings raised while the candidates of
     a search are evaluated, so each of them is shown once at the end of the
     search, with the number of candidates in which it is raised, instead of
     once per candidate.
@@ -3537,9 +3538,10 @@ class _SearchWarnings:
     - The candidates skipped because their evaluation raised an error are
     added with `add_skipped` and reported in a single warning.
 
-    The warnings raised in other processes (the backtesting with `n_jobs`
-    greater than 1, which `n_jobs='auto'` selects for some forecasters) do not
-    reach the main process, so they are not collected.
+    The warnings raised in the folds of the backtesting that run in the worker
+    processes of joblib (`n_jobs` greater than 1, which `n_jobs='auto'`
+    selects for some forecasters) are shown again in the main process, after
+    the folds (`_reemit_worker_warnings`), so they are recorded too.
 
     Parameters
     ----------
@@ -4083,58 +4085,4 @@ def _warn_recorded(text: str, category: type[Warning], message: Warning | str) -
     except Exception:
         new_message = message
 
-    warnings.warn(new_message, stacklevel=_stacklevel_user_code())
-
-
-def _first_frame_outside_skforecast(frame: Any) -> tuple[Any, int]:
-    """
-    First frame, starting from `frame` and going up the stack, whose code is
-    not in the package skforecast. The tests of skforecast count as code
-    outside the package.
-
-    Parameters
-    ----------
-    frame : frame
-        Frame where the search starts.
-
-    Returns
-    -------
-    frame : frame, None
-        First frame outside skforecast, `None` if every frame is in it.
-    n_frames : int
-        Number of frames of skforecast skipped.
-
-    """
-
-    package_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    package_prefix = package_dir + os.sep
-    tests_dir = os.sep + "tests" + os.sep
-
-    n_frames = 0
-    while frame is not None:
-        filename = frame.f_code.co_filename
-        if not filename.startswith(package_prefix) or tests_dir in filename[len(package_dir):]:
-            break
-        frame = frame.f_back
-        n_frames += 1
-
-    return frame, n_frames
-
-
-def _stacklevel_user_code() -> int:
-    """
-    `stacklevel` of `warnings.warn`, called in the function that calls this
-    one, so the warning points to the code of the user (the first frame
-    outside skforecast) instead of the internal line that raises it. If every
-    frame is in skforecast, the warning points to the line that raises it.
-
-    Returns
-    -------
-    stacklevel : int
-        `stacklevel` of `warnings.warn`.
-
-    """
-
-    frame, n_frames = _first_frame_outside_skforecast(sys._getframe(1))
-
-    return 1 + n_frames if frame is not None else 1
+    warnings.warn(new_message, stacklevel=_find_stack_level())

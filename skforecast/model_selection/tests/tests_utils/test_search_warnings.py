@@ -3,12 +3,24 @@
 import threading
 import warnings
 import pytest
+import skforecast.utils.utils as utils_module
 from skforecast.exceptions import (
     DataTransformationWarning,
     LongTrainingWarning,
     MissingValuesWarning
 )
 from skforecast.model_selection._utils import _SearchWarnings
+from skforecast.utils import _reemit_worker_warnings
+
+UTILS_FILE = utils_module.__file__
+
+
+def _worker_warning(text, category=MissingValuesWarning, lineno=10):
+    """
+    Warning recorded in a fold, as returned by `_run_recording_worker_warnings`,
+    raised in `skforecast/utils/utils.py`.
+    """
+    return (category(text), category, UTILS_FILE, lineno)
 
 
 def _messages(record, category=None):
@@ -410,3 +422,25 @@ def test_SearchWarnings_discard():
         "Other warning (in 1 of 2 candidates).",
         "Covered warning, other category (in 1 of 2 candidates).",
     ]
+
+
+def test_reemit_worker_warnings_collected_by_SearchWarnings_with_candidate():
+    """
+    Test that, inside a search, the warnings of the folds are collected by
+    `_SearchWarnings` with the candidate being evaluated, so they are grouped
+    with the rest of the warnings of the search.
+    """
+    search_warnings = _SearchWarnings(n_candidates=3)
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        with search_warnings:
+            for candidate in range(3):
+                search_warnings.set_candidate(candidate)
+                worker_warnings = [_worker_warning("Missing values. Details.")] if candidate else None
+                _reemit_worker_warnings([("output", worker_warnings), ("output", worker_warnings)])
+        assert record == []
+        assert [record[0] for record in search_warnings.records] == [1, 1, 2, 2]
+        search_warnings.emit()
+
+    assert len(record) == 1
+    assert record[0].message.message == "Missing values (in 2 of 3 candidates). Details."
