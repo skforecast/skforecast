@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Callable, Generator, Any
 import logging
 import os
+import pickle
 import re
 import sys
 import threading
@@ -3537,9 +3538,10 @@ class _SearchWarnings:
     - The candidates skipped because their evaluation raised an error are
     added with `add_skipped` and reported in a single warning.
 
-    The warnings raised in other processes (the backtesting with `n_jobs`
-    greater than 1, which `n_jobs='auto'` selects for some forecasters) do not
-    reach the main process, so they are not collected.
+    The warnings raised in the folds of the backtesting that run in the worker
+    processes of joblib (`n_jobs` greater than 1, which `n_jobs='auto'`
+    selects for some forecasters) are shown again in the main process, after
+    the folds (`_reemit_fold_warnings`), so they are collected too.
 
     Parameters
     ----------
@@ -4138,3 +4140,140 @@ def _stacklevel_user_code() -> int:
     frame, n_frames = _first_frame_outside_skforecast(sys._getframe(1))
 
     return 1 + n_frames if frame is not None else 1
+
+
+def _run_fold_recording_warnings(
+    fold_function: Callable,
+    main_pid: int,
+    **kwargs
+) -> tuple[Any, list[tuple] | None]:
+    """
+    Run the function of a fold of the backtesting. If it runs in a worker
+    process of joblib (a process other than `main_pid`), its warnings are
+    recorded and returned, so the main process shows them with
+    `_reemit_fold_warnings`. Otherwise, the warnings of a worker process would
+    be printed by the worker, without the filters of the user and outside the
+    registry of the warnings of a search (`_SearchWarnings`).
+
+    - In the main process (`n_jobs=1`, or a backend of threads), the function
+    is called and its warnings are shown as usual.
+    - The warnings are recorded with the action `"always"`, so the filters of
+    the main process decide which ones are shown. Those ignored inside the
+    function (for example, by `suppress_warnings`) are not recorded.
+    - Each warning is returned as it is if it can be serialized and rebuilt
+    with `pickle`. Otherwise, its text is returned as a `RuntimeWarning`,
+    starting with the name of its category.
+
+    Parameters
+    ----------
+    fold_function : Callable
+        Function of the fold, defined at module level.
+    main_pid : int
+        Identifier of the main process (`os.getpid()` before `joblib.Parallel`).
+    **kwargs
+        Arguments of `fold_function`.
+
+    Returns
+    -------
+    result : Any
+        Output of `fold_function`.
+    fold_warnings : list, None
+        Warnings raised in the fold, as tuples `(message, category, filename,
+        lineno)`. `None` if the fold runs in the main process.
+
+    """
+
+    if os.getpid() == main_pid:
+        return fold_function(**kwargs), None
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        result = fold_function(**kwargs)
+
+    fold_warnings = []
+    for warning in caught:
+        message, category = warning.message, warning.category
+        try:
+            # NOTE: The warning is also rebuilt: a category whose `__init__` takes
+            # other arguments than its text is serialized, but fails to load in
+            # the main process.
+            pickle.loads(pickle.dumps((message, category)))
+        except Exception:
+            message = RuntimeWarning(f"{category.__name__}: {message}")
+            category = RuntimeWarning
+        fold_warnings.append((message, category, warning.filename, warning.lineno))
+
+    return result, fold_warnings
+
+
+def _module_name_from_filename(filename: str) -> str | None:
+    """
+    Name of the module loaded from `filename`, if any.
+
+    Parameters
+    ----------
+    filename : str
+        Path of the file of the module.
+
+    Returns
+    -------
+    module_name : str, None
+        Name of the module in `sys.modules`, `None` if no module is loaded from
+        `filename`.
+
+    """
+
+    for module_name, module in list(sys.modules.items()):
+        if getattr(module, "__file__", None) == filename:
+            return module_name
+
+    return None
+
+
+def _reemit_fold_warnings(results: list[tuple]) -> list:
+    """
+    Show, in the main process and in the order of the folds, the warnings
+    recorded by `_run_fold_recording_warnings` in the worker processes of
+    joblib, and return the outputs of the folds.
+
+    Each warning is shown with `warnings.warn_explicit`, with its category,
+    location, module and the globals of its module, as with `n_jobs=1`. It
+    goes through the filters of the main process: those of the user, those of
+    `suppress_warnings` and, in a search, the registry of its warnings, which
+    groups them. No registry of the warnings already shown is used: with
+    `n_jobs=1`, the `catch_warnings` of each `fit` and `predict` resets them,
+    so the same warning is shown in every fold.
+
+    Parameters
+    ----------
+    results : list
+        Outputs of `_run_fold_recording_warnings`, one per fold, as tuples
+        `(result, fold_warnings)`.
+
+    Returns
+    -------
+    results : list
+        Outputs of the function of each fold.
+
+    """
+
+    module_names = {}
+    outputs = []
+    for result, fold_warnings in results:
+        outputs.append(result)
+        for message, category, filename, lineno in fold_warnings or ():
+            if filename not in module_names:
+                module_names[filename] = _module_name_from_filename(filename)
+            module_name = module_names[filename]
+            module = sys.modules.get(module_name) if module_name is not None else None
+            warnings.warn_explicit(
+                message        = message,
+                category       = category,
+                filename       = filename,
+                lineno         = lineno,
+                module         = module_name,
+                registry       = None,
+                module_globals = vars(module) if module is not None else None
+            )
+
+    return outputs
