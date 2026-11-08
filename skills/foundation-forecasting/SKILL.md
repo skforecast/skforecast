@@ -173,7 +173,7 @@ For TimesFM (2.5 and 3.0), Moirai-2 and TiRex-2, requested quantiles must be a s
 | `Synthefy/Nori` (Synthefy)             | Yes  | 4096            | Tabular foundation model, exog-aware               |
 | `taharnbl/TS-ICL` (EDF Lab)            | Yes  | 4096            | Past & future covariates, fine-grained (0.01) quantile grid |
 | `mistralai/Timestral-*` (Mistral AI)   | Yes  | 4096            | Long context, past, future and categorical covariates (the 209M checkpoint is the most accurate) |
-| `NX-AI/TiRex-2` (NX-AI)                | Yes  | 2048            | Past & future covariates, NaN in the context, horizons up to 320 steps |
+| `NX-AI/TiRex-2` (NX-AI)                | Yes  | 2048            | Past & future covariates, series with different covariates in one call, horizons up to 320 steps |
 
 The adapter is resolved automatically from the `model_id` prefix — no need to import adapter classes directly.
 
@@ -288,7 +288,7 @@ automatically to the last `context_length` observations.
 9. **Passing a future `exog` column that was not in the historical exog** (`fit` without that column, or `context` without `context_exog`): `ValueError` on every adapter. Pass the same columns to `fit` (or `context_exog`) and to `predict`.
 10. **Predicting without `exog` after fitting with exog on TabICL, TabPFN-TS, T0 or Nori**: the historical columns are ignored (`IgnoredArgumentWarning`) and the forecast uses no covariates. Only Chronos-2, TS-ICL, TimesFM 3.0, Timestral and TiRex-2 use them as past-only covariates.
 11. **Timestral with a known covariate that is constant over the context and changes over the horizon** (a price that has not moved, or a 0/1 holiday or promotion indicator that is 0 over the whole context): the upper quantiles, and sometimes the median, can become very large ([mistralai/timestral#7](https://github.com/mistralai/timestral/issues/7)). The adapter issues a `FeatureOutOfRangeWarning` naming the series and columns; set the historical values of those columns to NaN. With known covariates, Timestral's forecast of the first steps also depends on `steps`, so do not compare backtests with a different `steps` step by step.
-12. **Asking TiRex-2 for more than 320 steps**: the checkpoint forecasts at most 320 steps ahead, so `steps > 320` raises a `ValueError` (the backend would silently return a shorter forecast). Use another adapter for longer horizons.
+12. **Asking TiRex-2 for more than 320 steps**: `NX-AI/TiRex-2` forecasts at most 320 steps ahead (`future_len` of the checkpoint; 928 for the gifteval checkpoints), so a longer `steps` raises a `ValueError` (the backend would silently return a shorter forecast). Use another adapter for longer horizons.
 
 ## References
 

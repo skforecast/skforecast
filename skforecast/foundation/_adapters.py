@@ -5963,7 +5963,8 @@ class TiRex2Adapter(_AdapterBase):
         time, if `context` is longer than `context_length` it is trimmed to this
         length; if it is shorter, all available observations are used as-is.
         Must be a positive integer. The default is the maximum context length of
-        the checkpoint (`context_len: 2048`).
+        `NX-AI/TiRex-2` and `NX-AI/TiRex-2-fevbench` (`context_len: 2048`); the
+        two gifteval checkpoints accept up to 8192.
     device : str, default 'auto'
         Device placement for inference. `"auto"` selects the best available
         accelerator (CUDA > MPS > CPU). An explicit value must be exactly
@@ -6043,10 +6044,11 @@ class TiRex2Adapter(_AdapterBase):
     lazily inside the adapter, so the adapter can be created and fitted without
     it installed. `tirex-2` requires Python >= 3.11.
 
-    The checkpoint forecasts at most `future_len` steps ahead (`320` for
-    `NX-AI/TiRex-2`). The backend truncates longer horizons with only a log
-    warning, so `predict` rejects `steps` above that limit with a `ValueError`
-    before calling the backend.
+    Each checkpoint forecasts at most `future_len` steps ahead (`320` for
+    `NX-AI/TiRex-2` and `NX-AI/TiRex-2-fevbench`, `928` for the two gifteval
+    checkpoints). The backend truncates longer horizons with only a log
+    warning, so `predict` reads the limit from the loaded model and rejects
+    `steps` above it with a `ValueError` before calling the backend.
 
     Past covariates are forwarded as `past_covariates` and future-known
     covariates as `future_covariates`, concatenated with their historical values
@@ -6078,16 +6080,17 @@ class TiRex2Adapter(_AdapterBase):
     backend_package: str = "tirex-2"
     default_model_id: str = "NX-AI/TiRex-2"
     _MODEL_ID_PREFIX: str = "NX-AI/TiRex-2"
-    # `future_len` of the published checkpoint. Longer horizons are truncated by
-    # the backend, so they are rejected here instead.
+    # `future_len` of `NX-AI/TiRex-2`, used only if the loaded model does not
+    # expose its own. Longer horizons are truncated by the backend, so `predict`
+    # rejects them instead.
     _MODEL_MAX_PREDICTION_LENGTH: int = 320
-    _RESERVED_PREDICT_KWARGS = {
+    _RESERVED_PREDICT_KWARGS: frozenset[str] = frozenset({
         "timeseries",
         "prediction_length",
         "output_type",
         "yield_per_batch",
         "return_inference_time",
-    }
+    })
 
     def __init__(
         self,
@@ -6127,14 +6130,14 @@ class TiRex2Adapter(_AdapterBase):
         _validate_positive_int("context_length", context_length)
         predict_kwargs = predict_kwargs or {}
         self._validate_predict_kwargs(predict_kwargs)
-        self.model_id = model_id
-        self._model = model
+        self.model_id       = model_id
+        self._model         = model
         self.context_length = context_length
-        self.device = device
+        self.device         = device
         self.predict_kwargs = predict_kwargs
-        self.context_ = None
-        self.context_exog_ = None
-        self.is_fitted = False
+        self.context_       = None
+        self.context_exog_  = None
+        self.is_fitted      = False
 
     def get_params(self) -> dict:
         """
@@ -6148,9 +6151,9 @@ class TiRex2Adapter(_AdapterBase):
         """
 
         return {
-            "model_id": self.model_id,
+            "model_id":       self.model_id,
             "context_length": self.context_length,
-            "device": self.device,
+            "device":         self.device,
             "predict_kwargs": self.predict_kwargs or None,
         }
 
@@ -6288,23 +6291,25 @@ class TiRex2Adapter(_AdapterBase):
         Notes
         -----
         A `ValueError` is raised if `steps` is larger than the maximum horizon
-        of the checkpoint, before the backend is called.
+        of the loaded checkpoint (its `future_len`), before the backend is
+        called.
 
         """
-
-        if steps > self._MODEL_MAX_PREDICTION_LENGTH:
-            raise ValueError(
-                f"`steps` must be <= {self._MODEL_MAX_PREDICTION_LENGTH}, the "
-                f"maximum forecast horizon of {self.model_id} "
-                f"(`future_len`). Got {steps}. Longer horizons are truncated "
-                f"by the backend, so the adapter rejects them instead of "
-                f"returning a shorter forecast than requested."
-            )
 
         quantile_list = _validate_supported_quantiles(
             quantiles, self.SUPPORTED_QUANTILES, "TiRex-2"
         )
         self._load_model()
+        max_steps = getattr(
+            self._model, "future_len", self._MODEL_MAX_PREDICTION_LENGTH
+        )
+        if steps > max_steps:
+            raise ValueError(
+                f"`steps` must be <= {max_steps}, the maximum forecast horizon "
+                f"of {self.model_id} (`future_len`). Got {steps}. Longer "
+                f"horizons are truncated by the backend, so the adapter rejects "
+                f"them instead of returning a shorter forecast than requested."
+            )
         _, TimeseriesType = self._import_backend()
         import torch
 

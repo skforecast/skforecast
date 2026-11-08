@@ -369,9 +369,9 @@ def test_TiRex2Adapter_predict_accepts_nan_in_series(monkeypatch):
 
 def test_TiRex2Adapter_predict_ValueError_when_steps_above_model_limit(monkeypatch):
     """
-    Test that a horizon longer than the model `future_len` is rejected before
-    the backend is called, since the backend would truncate it with only a log
-    warning and return a shorter forecast than requested.
+    Test that a horizon longer than the `future_len` of the loaded model is
+    rejected before the backend is called, since the backend would truncate it
+    with only a log warning and return a shorter forecast than requested.
     """
     model = fake_tirex2_modules(monkeypatch)
     adapter = TiRex2Adapter("NX-AI/TiRex-2", model=model)
@@ -387,17 +387,49 @@ def test_TiRex2Adapter_predict_ValueError_when_steps_above_model_limit(monkeypat
 
 def test_TiRex2Adapter_predict_steps_at_model_limit_is_accepted(monkeypatch):
     """
-    Test that exactly `_MODEL_MAX_PREDICTION_LENGTH` steps is accepted, so the
-    limit is inclusive.
+    Test that exactly `future_len` steps is accepted, so the limit is
+    inclusive.
     """
     model = fake_tirex2_modules(monkeypatch)
     adapter = TiRex2Adapter("NX-AI/TiRex-2", model=model)
 
-    result = adapter.predict(
-        TiRex2Adapter._MODEL_MAX_PREDICTION_LENGTH, context, None, None, None
-    )
+    result = adapter.predict(320, context, None, None, None)
 
-    assert result["series"].shape == (TiRex2Adapter._MODEL_MAX_PREDICTION_LENGTH, 1)
+    assert result["series"].shape == (320, 1)
+
+
+def test_TiRex2Adapter_predict_steps_limit_is_read_from_loaded_model(monkeypatch):
+    """
+    Test that the horizon limit is the `future_len` of the loaded checkpoint,
+    not the constant of the default checkpoint, so the gifteval checkpoints
+    (`future_len` 928) accept longer horizons.
+    """
+    model = fake_tirex2_modules(monkeypatch, model=FakeTirex2Model(future_len=928))
+    adapter = TiRex2Adapter("NX-AI/TiRex-2-gifteval-zs", model=model)
+
+    result = adapter.predict(400, context, None, None, None)
+    assert result["series"].shape == (400, 1)
+
+    err_msg = re.escape(
+        "`steps` must be <= 928, the maximum forecast horizon of "
+        "NX-AI/TiRex-2-gifteval-zs"
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        adapter.predict(929, context, None, None, None)
+
+
+def test_TiRex2Adapter_predict_steps_limit_falls_back_to_constant(monkeypatch):
+    """
+    Test that a loaded model without `future_len` falls back to
+    `_MODEL_MAX_PREDICTION_LENGTH`.
+    """
+    model = fake_tirex2_modules(monkeypatch)
+    del model.future_len
+    adapter = TiRex2Adapter("NX-AI/TiRex-2", model=model)
+
+    err_msg = re.escape("`steps` must be <= 320")
+    with pytest.raises(ValueError, match=err_msg):
+        adapter.predict(321, context, None, None, None)
 
 
 def test_TiRex2Adapter_predict_ValueError_when_backend_returns_wrong_count(monkeypatch):

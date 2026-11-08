@@ -207,20 +207,20 @@ Known issue ([mistralai/timestral#7](https://github.com/mistralai/timestral/issu
 
 ## TiRex2Adapter: NX-AI TiRex-2
 
-- **`model_id` prefix**: `NX-AI/TiRex-2` (it also covers `NX-AI/TiRex-2-gifteval-zs`, `NX-AI/TiRex-2-gifteval-pretrain` and `NX-AI/TiRex-2-fevbench`, checkpoints released to evaluate on benchmarks without overlap with their pretraining data)
+- **`model_id` prefix**: `NX-AI/TiRex-2` (it also covers `NX-AI/TiRex-2-gifteval-zs`, `NX-AI/TiRex-2-gifteval-pretrain` and `NX-AI/TiRex-2-fevbench`, checkpoints released to evaluate on benchmarks without overlap with their pretraining data; the two gifteval checkpoints accept `context_length` up to 8192 and forecast up to 928 steps)
 - **`allow_exog`**: `True` (past-only and known-future numeric covariates)
 - **`supports_past_only_covariates`**: `True`
 - **`supports_heterogeneous_covariates`**: `True` (each series is passed as its own `TimeseriesType` with its own covariates, so `FoundationModel` sends every series in the same call, in calls of at most `max_series_per_call=64` series: the backend mixes the variates of all the series of a call in one attention, so its memory grows faster than linearly with the size of the call)
 - **Supported quantiles**: `[0.1, 0.2, ..., 0.9]`; other levels raise a `ValueError`
 - **Point forecast**: median (quantile `0.5`)
-- **Horizon**: at most 320 steps (`future_len` of the checkpoint). `steps > 320` raises a `ValueError`, because the backend would return a shorter forecast with only a log warning.
+- **Horizon**: at most `future_len` steps, read from the loaded checkpoint (320 for `NX-AI/TiRex-2` and `NX-AI/TiRex-2-fevbench`, 928 for the gifteval checkpoints). A longer `steps` raises a `ValueError`, because the backend would return a shorter forecast with only a log warning.
 - **Backend**: `pip install tirex-2` (requires Python >= 3.11)
 
 | Parameter        | Type | Default  | Description                                                         |
 |------------------|------|----------|---------------------------------------------------------------------|
 | `model_id`       | str  | —        | HuggingFace model ID (e.g. `NX-AI/TiRex-2`). Must start with `NX-AI/TiRex-2`; any other id raises `ValueError`. |
 | `model`          | obj  | `None`   | Pre-loaded model returned by `tirex2.load_model`. If `None`, loaded lazily on first `predict`. |
-| `context_length` | int  | `2048`   | Max historical observations kept as context (the maximum of the checkpoint). |
+| `context_length` | int  | `2048`   | Max historical observations kept as context (the maximum of `NX-AI/TiRex-2`; the gifteval checkpoints accept up to 8192). |
 | `device`         | str  | `'auto'` | Device placement: `'auto'` (CUDA > MPS > CPU), or exactly `'cuda'`, `'mps'` or `'cpu'` (the backend does not accept a device index such as `'cuda:1'`). |
 | `predict_kwargs` | dict | `None`   | Extra kwargs forwarded to `forecast` (e.g. `tta_sign_flip=True` for sign-flip test-time augmentation, which roughly doubles the inference cost). `timeseries`, `prediction_length`, `output_type`, `yield_per_batch` and `return_inference_time` are set by the adapter and rejected. |
 

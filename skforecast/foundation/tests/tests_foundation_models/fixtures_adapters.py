@@ -781,8 +781,10 @@ class FakeTimestralForecaster:
 # ==============================================================================
 class FakeTensor(np.ndarray):
     """
-    Minimal `torch.Tensor` stand-in exposing the only method the adapter uses
-    on the tensors it builds (`to`), so the real torch is not needed.
+    Minimal `torch.Tensor` stand-in, so the real torch is not needed. `to` is
+    what the backend calls on the tensors the adapter builds; here it marks the
+    object as a tensor, so `FakeTimeseriesType` can check that the adapter
+    converted its inputs with `torch.as_tensor`.
     """
 
     def to(self, device):
@@ -828,14 +830,16 @@ class FakeTirex2Model:
     `forecast()` returns the native layout `(n_targets, n_quantiles, horizon)`
     with one entry per input `TimeseriesType`; every quantile row is filled with
     the quantile level itself (1, 2, ..., 9), so selecting a row and selecting a
-    quantile level are both checkable. `quantiles` holds the quantile levels of
-    the checkpoint, as the real `ForecastModel` exposes them. Records every
-    call in `calls` as `(timeseries, prediction_length, output_type, kwargs)`.
+    quantile level are both checkable. `quantiles` and `future_len` hold the
+    quantile levels and the maximum horizon of the checkpoint, as the real
+    `ForecastModel` exposes them. Records every call in `calls` as
+    `(timeseries, prediction_length, output_type, kwargs)`.
     """
 
-    def __init__(self):
+    def __init__(self, future_len=320):
         self.calls = []
         self.quantiles = np.arange(1, 10) / 10
+        self.future_len = future_len
 
     def forecast(self, timeseries, prediction_length, output_type, **kwargs):
         self.calls.append((timeseries, prediction_length, output_type, kwargs))

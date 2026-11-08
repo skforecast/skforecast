@@ -235,7 +235,7 @@ class FoundationModel:
     - `device_map` (plus `torch_dtype`), HuggingFace `from_pretrained`
       style: Chronos, T0.
     - `device` string, resolved internally to a concrete accelerator:
-      Moirai, TS-ICL, TimesFM 3.0, Timestral.
+      Moirai, TS-ICL, TimesFM 3.0, Timestral, TiRex-2.
     - Through the backend configuration dict: TabICL (`tabicl_config`),
       TabPFN (`tabpfn_model_config`), Nori (`nori_config`).
     - No device parameter: TimesFM 2.5, which relies on its backend's own
@@ -406,9 +406,9 @@ class FoundationModel:
         supports_past_only_covariates : bool
             `True` if a column present in the historical exog but absent
             from the future `exog` is used as a past-only covariate
-            (Chronos-2, TS-ICL, TimesFM 3.0, Timestral). `False` if the
-            adapter only uses covariates that also have future values, in
-            which case such columns are ignored and an
+            (Chronos-2, TS-ICL, TimesFM 3.0, Timestral, TiRex-2). `False`
+            if the adapter only uses covariates that also have future values,
+            in which case such columns are ignored and an
             `IgnoredArgumentWarning` is issued at predict time (TabICL,
             TabPFN-TS, TFC-T0, Nori).
         """
@@ -424,11 +424,12 @@ class FoundationModel:
         -------
         supports_heterogeneous_covariates : bool
             `True` if the backend accepts, in one call, series whose exog
-            columns differ (TFC-T0, TabPFN-TS, Nori, and the adapters that
-            ignore exog). `False` if every series in a call must have the
-            same columns (Chronos-2, TS-ICL, TabICL, TimesFM 3.0,
-            Timestral); in that case `predict` groups the series by their
-            exog columns and calls the adapter once per group.
+            columns differ (TFC-T0, TabPFN-TS, Nori, TiRex-2, and the
+            adapters that ignore exog). `False` if every series in a call
+            must have the same columns (Chronos-2, TS-ICL, TabICL,
+            TimesFM 3.0, Timestral); in that case `predict` groups the
+            series by their exog columns and calls the adapter once per
+            group.
         """
         return self.adapter.supports_heterogeneous_covariates
 
