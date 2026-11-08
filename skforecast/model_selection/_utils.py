@@ -46,7 +46,7 @@ from ..utils import (
     _series_too_short_multiseries,
     estimator_has_native_nan_support,
     _first_frame_outside_skforecast,
-    _stacklevel_user_code
+    _find_stack_level
 )
 
 # NOTE: Names of the metrics added to the backtesting metrics when the
@@ -803,7 +803,7 @@ def check_one_step_ahead_input(
             "to backtest the final model for a more accurate multi-step performance "
             "estimate.",
             OneStepAheadValidationWarning,
-            stacklevel = _stacklevel_user_code()
+            stacklevel = _find_stack_level()
         )
 
 
@@ -1223,7 +1223,7 @@ def _initialize_levels_model_selection_multiseries(
                 f"is '{forecaster.level}', to predict another level, change "
                 f"the `level` argument when initializing the forecaster. \n",
                 IgnoredArgumentWarning,
-                stacklevel = _stacklevel_user_code()
+                stacklevel = _find_stack_level()
             )
         levels = [forecaster.level]
     else:
@@ -2801,7 +2801,7 @@ def _check_study_direction(study: object, metric: Callable) -> str:
                 f"`return_best` follow the study direction. Remove `direction` "
                 f"from `kwargs_create_study` to use the direction of the metric.",
                 UserWarning,
-                stacklevel = _stacklevel_user_code()
+                stacklevel = _find_stack_level()
             )
 
     return direction
@@ -3258,7 +3258,7 @@ def _warn_n_evaluated_search(
         blocks.append(levels_block)
 
     warnings.warn(
-        "\n\n".join(blocks), MissingValuesWarning, stacklevel=_stacklevel_user_code()
+        "\n\n".join(blocks), MissingValuesWarning, stacklevel=_find_stack_level()
     )
 
 
@@ -3339,7 +3339,7 @@ def _drop_series_too_short_refit(
         f"{'it' if n_series == 1 else 'them'} (not in `series_names_in_`).\n\n"
         f"Series left out: {names_repr}.",
         RuntimeWarning,
-        stacklevel = _stacklevel_user_code()
+        stacklevel = _find_stack_level()
     )
 
     return series, exog
@@ -3403,7 +3403,7 @@ def _sample_param_grid(
             f"combinations{for_each_lags}. For an exhaustive search, use "
             f"`{grid_search_name}`.",
             UserWarning,
-            stacklevel = _stacklevel_user_code()
+            stacklevel = _find_stack_level()
         )
 
     return param_grid
@@ -3509,7 +3509,7 @@ def _warn_skipped_candidates_search(
         blocks.append(f"... and {len(errors) - max_errors} more errors")
 
     warnings.warn(
-        "\n\n".join(blocks), RuntimeWarning, stacklevel=_stacklevel_user_code()
+        "\n\n".join(blocks), RuntimeWarning, stacklevel=_find_stack_level()
     )
 
 
@@ -4085,4 +4085,4 @@ def _warn_recorded(text: str, category: type[Warning], message: Warning | str) -
     except Exception:
         new_message = message
 
-    warnings.warn(new_message, stacklevel=_stacklevel_user_code())
+    warnings.warn(new_message, stacklevel=_find_stack_level())

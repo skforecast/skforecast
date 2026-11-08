@@ -101,7 +101,7 @@ def _first_frame_outside_skforecast(frame: Any) -> tuple[Any, int]:
     return frame, n_frames
 
 
-def _stacklevel_user_code() -> int:
+def _find_stack_level() -> int:
     """
     `stacklevel` of `warnings.warn`, called in the function that calls this
     one, so the warning points to the code of the user (the first frame
