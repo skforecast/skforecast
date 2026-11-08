@@ -3899,14 +3899,16 @@ def select_n_jobs_fit_forecaster(
     
     The number of jobs is chosen as follows:
     
-    - If forecaster_name is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
-    and estimator_name is a linear estimator then `n_jobs = 1`, 
-    otherwise `n_jobs = max(1, cpu_count() - 1)`.
-    - If estimator is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = max(1, cpu_count() - 1)`.
-    - If estimator is a `LGBMRegressor` with internal n_jobs != 1, then `n_jobs = 1`.
-    This is because `lightgbm` is highly optimized for gradient boosting and
-    parallelizes operations at a very fine-grained level, making additional
-    parallelization unnecessary and potentially harmful due to resource contention.
+    - If forecaster_name is not 'ForecasterDirect' or
+    'ForecasterDirectMultiVariate', then `n_jobs = 1`.
+    - If estimator, or the last step of a `Pipeline`, is a linear model of
+    scikit-learn (a subclass of `LinearModel`, such as `Ridge`), then
+    `n_jobs = 1`.
+    - If estimator, or the last step of a `Pipeline`, is a `LGBMRegressor`
+    with internal `n_jobs != 1`, then `n_jobs = 1`. LightGBM already
+    parallelizes its operations with threads, and more processes would
+    compete for the same cores.
+    - Otherwise, `n_jobs = max(1, cpu_count() - 1)`.
     
     Parameters
     ----------

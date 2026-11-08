@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 from joblib import cpu_count
 from sklearn.exceptions import NotFittedError
-from sklearn.linear_model._base import LinearModel, LinearClassifierMixin
+from sklearn.linear_model._base import LinearModel
 from sklearn.model_selection import ParameterSampler
 from sklearn.pipeline import Pipeline
 from tqdm.auto import tqdm
@@ -816,24 +816,25 @@ def select_n_jobs_backtesting(
 
     The number of jobs is chosen as follows:
 
-    - If `refit` is an integer, then `n_jobs = 1`. This is because parallelization doesn't 
-    work with intermittent refit.
-    - If forecaster is 'ForecasterRecursive' and estimator is a linear estimator, 
-    then `n_jobs = 1`.
-    - If forecaster is 'ForecasterRecursive' and estimator is not a linear 
-    estimator then `n_jobs = max(1, cpu_count() - 1)`.
-    - If forecaster is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
-    and `refit = True`, then `n_jobs = max(1, cpu_count() - 1)`.
-    - If forecaster is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
-    and `refit = False`, then `n_jobs = 1`.
-    - If forecaster is 'ForecasterRecursiveMultiSeries', then `n_jobs = max(1, cpu_count() - 1)`.
-    - If forecaster is 'ForecasterStats' or 'ForecasterEquivalentDate', 
-    then `n_jobs = 1`.
-    - If estimator is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = max(1, cpu_count() - 1)`.
-    - If estimator is a `LGBMRegressor` with internal n_jobs != 1, then `n_jobs = 1`.
-    This is because `lightgbm` is highly optimized for gradient boosting and
-    parallelizes operations at a very fine-grained level, making additional
-    parallelization unnecessary and potentially harmful due to resource contention.
+    - If `refit` is an integer other than 0 or 1, then `n_jobs = 1`. The
+    forecaster fitted in a fold is reused in the following ones, so the folds
+    cannot run in parallel.
+    - If forecaster is not 'ForecasterRecursive', 'ForecasterRecursiveClassifier'
+    or 'ForecasterRecursiveMultiSeries', then `n_jobs = 1`. 'ForecasterDirect'
+    and 'ForecasterDirectMultiVariate' parallelize the fit of their steps
+    instead (see `skforecast.utils.select_n_jobs_fit_forecaster`), and
+    'ForecasterStats', 'ForecasterEquivalentDate' and 'ForecasterRnn' are not
+    parallelized.
+    - If estimator, or the last step of a `Pipeline`, is a linear model of
+    scikit-learn (a subclass of `LinearModel`, such as `Ridge`), then
+    `n_jobs = 1`. It is fitted and predicts in less time than the workers
+    take to start. `LogisticRegression` is not a subclass of `LinearModel`:
+    it is fitted iteratively, so it is parallelized.
+    - If estimator, or the last step of a `Pipeline`, is a `LGBMRegressor` or
+    `LGBMClassifier` with internal `n_jobs != 1`, then `n_jobs = 1`. LightGBM
+    already parallelizes its operations with threads, and more processes
+    would compete for the same cores.
+    - Otherwise, `n_jobs = max(1, cpu_count() - 1)`.
 
     Parameters
     ----------
@@ -849,42 +850,31 @@ def select_n_jobs_backtesting(
     
     """
 
-    forecaster_name = type(forecaster).__name__
-
-    if forecaster_name in ('ForecasterStats', 'ForecasterFoundation'):
-        n_jobs = 1
-        return n_jobs
-
-    if isinstance(forecaster.estimator, Pipeline):
-        estimator = forecaster.estimator[-1]
-    else:
-        estimator = forecaster.estimator
-
     refit = False if refit == 0 else refit
     if not isinstance(refit, bool) and refit != 1:
-        n_jobs = 1
-    else:
-        if forecaster_name in {'ForecasterRecursive', 'ForecasterRecursiveClassifier'}:
-            if isinstance(estimator, (LinearModel, LinearClassifierMixin)):
-                n_jobs = 1
-            elif type(estimator).__name__ in {'LGBMRegressor', 'LGBMClassifier'}:
-                n_jobs = max(1, cpu_count() - 1) if estimator.n_jobs == 1 else 1
-            else:
-                n_jobs = max(1, cpu_count() - 1)
-        elif forecaster_name in {'ForecasterDirect', 'ForecasterDirectMultiVariate'}:
-            # Parallelization is applied during the fitting process.
-            n_jobs = 1
-        elif forecaster_name in {'ForecasterRecursiveMultiSeries'}:
-            if type(estimator).__name__ == 'LGBMRegressor':
-                n_jobs = max(1, cpu_count() - 1) if estimator.n_jobs == 1 else 1
-            else:
-                n_jobs = max(1, cpu_count() - 1)
-        elif forecaster_name in {'ForecasterEquivalentDate'}:
-            n_jobs = 1
-        else:
-            n_jobs = 1
+        return 1
 
-    return n_jobs
+    if type(forecaster).__name__ not in {
+        "ForecasterRecursive",
+        "ForecasterRecursiveClassifier",
+        "ForecasterRecursiveMultiSeries",
+    }:
+        return 1
+
+    estimator = forecaster.estimator
+    if isinstance(estimator, Pipeline):
+        estimator = estimator[-1]
+
+    if isinstance(estimator, LinearModel):
+        return 1
+
+    if (
+        type(estimator).__name__ in {"LGBMRegressor", "LGBMClassifier"}
+        and estimator.n_jobs != 1
+    ):
+        return 1
+
+    return max(1, cpu_count() - 1)
 
 
 def _train_test_split_one_step_ahead_search(
