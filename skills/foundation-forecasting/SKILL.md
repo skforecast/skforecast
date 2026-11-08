@@ -292,6 +292,6 @@ automatically to the last `context_length` observations.
 
 ## References
 
-See [references/adapter-parameters.md](references/adapter-parameters.md) for the per-adapter constructor parameters of `ChronosAdapter`, `TimesFM25Adapter`, `TimesFM3Adapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`, `NoriAdapter`, `TSICLAdapter`, `TimestralAdapter`, and `TiRex2Adapter`.
+See [references/adapter-parameters.md](references/adapter-parameters.md) for the per-adapter constructor parameters of `ChronosAdapter`, `TimesFM25Adapter`, `TimesFM3Adapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`, `NoriAdapter`, `TSICLAdapter`, `TimestralAdapter`, and `TiRex2Adapter`. Each adapter section is self-contained; the last two sections (tunable parameters and model reload cost, common behavior) apply to every adapter, so read them too.
 
 See the user guide [Foundation models with heterogeneous series](https://skforecast.org/latest/user_guides/foundation-forecasting-with-heterogeneous-series.html) for a worked example with series of different lengths, different exog columns and NaN, and for the table of what each backend requires and tolerates.
