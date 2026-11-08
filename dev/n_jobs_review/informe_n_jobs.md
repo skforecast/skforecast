@@ -817,7 +817,13 @@ Lo demás se aplicó como se propone:
 3. **El caso más cercano al umbral, HGB L (4,17 s estimados), queda por encima y gana** (×0,79). En la medida del estudio, con la máquina menos cargada, estimaba 3,76 s y habría quedado por debajo, perdiendo 1,4 s: es el error esperado cerca del umbral (sección 12.3).
 4. Con estos datos, `threshold.py` sugiere 4,5 s, porque la carga sube el coste de arrancar (`a` = 4,98 s). Se mantiene 4,0 s, el valor de la medida limpia, que además queda dentro de la horquilla de esta (pierde hasta 2,26 s, gana desde 4,17 s).
 
-**Comprobación en Linux (WSL2) con `run_platform.sh`** [probado, `results/linux_wsl_d4/`, 1 repetición en V1]. Es la misma ejecución que hará Javier en macOS (sección 16), con el código de la rama copiado al clon de WSL2. Sirve para comprobar el script en un sistema POSIX; con una repetición, los tiempos son orientativos.
+**Con 4 procesadores** [probado, `results/d4_windows_aff4/`, `bench_cold.py --affinity 4`, una repetición de 18 celdas; la medida se interrumpió porque con estas bastaba]. El umbral se calibró con 21 workers, pero vale igual en una máquina pequeña, porque arrancar menos workers cuesta menos (2,9 s con 3) y la aceleración máxima también es menor, y los dos efectos se compensan en el punto de equilibrio:
+- Sin refit, 3 workers siguen siendo 17 y 6 veces más lentos que `n_jobs=1` (S: 0,20 frente a 3,42 s; L: 0,63 frente a 4,03 s); `'auto'` usa 1 job (0,23 y 0,59 s).
+- MultiSeries S con refit: 1,96 s secuencial, 4,97 s con 3 workers, 2,16 s con `'auto'` (1 job).
+- Recursive LGBM(1) L con refit, estimación de 7 s, por encima del umbral: `'auto'` usa 3 jobs y tarda 7,36 s frente a 7,13 s secuencial, el empate esperado cerca del punto de equilibrio.
+- Los casos grandes ganan menos que con 21 workers, pero ganan: MultiSeries L 38,3 → 23,8 s y RF L 63,7 → 30,8 s con 3 workers.
+
+**Comprobación en Linux (WSL2) con `run_platform.sh`** [probado, `results/linux_wsl_d4/`, 1 repetición en V1]. Es la ejecución completa (`--full`) de la que Javier hará en macOS (sección 16), con el código de la rama copiado al clon de WSL2. Sirve para comprobar el script en un sistema POSIX; con una repetición, los tiempos son orientativos.
 - El script completo tarda 10 min: 28 tests pasan, el bloque A tarda 4,5 min y V1, 5 min.
 - Arranque en frío de 21 workers: 3,17 s (2,94 s en la medida de la sección 12).
 - `'auto'` usa 1 job en los cuatro casos pequeños y 18 o 20 en los grandes, como se espera con el umbral de 2 s. En los casos sin refit, `'auto'` / 1 es ×0,55 y ×1,27, y en los pequeños con refit ×1,47 y ×1,81, aunque `'auto'` también usó 1 job: es ruido de una sola repetición, no del umbral.
@@ -1017,13 +1023,14 @@ python dev/n_jobs_review/summarize.py                  # tablas en results/summa
 | `bench_spawn.py` | Bloque A (coste de arrancar workers) |
 | `probe_workers.py` | Puerta G1: afinidad, `cpu_count` y límites de hilos dentro de los workers |
 | `run_all.py`, `estimate.py`, `summarize.py` | Orquestación, estimación desde el piloto, resúmenes |
-| `bench_cold.py` | V1: backtestings sueltos en un proceso nuevo (`--values 1,auto,cpu-1`; con el umbral, registra en `auto_resolved` los jobs que usó `'auto'`) |
-| `threshold.py` | Umbral de una plataforma desde el bloque A y V1, y comprobación de `'auto'` (sección 11.4) |
-| `run_platform.sh` | Medida completa en macOS o Linux: información de la máquina, tests, bloque A, V1 y umbral (sección 16) |
+| `bench_cold.py` | V1: backtestings sueltos en un proceso nuevo (`--values 1,auto,cpu-1`; con el umbral, registra en `auto_resolved` los jobs que usó `'auto'`; `--cases` para un subconjunto, `--affinity N` para emular una máquina de N procesadores, solo Windows) |
+| `threshold.py` | Umbral de una plataforma: rápido desde el bloque A (0,7 × arranque de `cpu_count() − 1` workers) y, si hay V1, el del método completo y la comprobación de `'auto'` (sección 11.4) |
+| `run_platform.sh` | Medida en macOS o Linux: información de la máquina, tests, bloque A y umbral (unos 6 min); con `--full`, también V1 (sección 16) |
 | `results/*.csv` | Una fila por llamada (`phase` = warmup, rep, preds o timeout) |
 | `results/machine.json` | Máquina, topología, plan de energía y versiones |
 | `results/threshold.md`, `results/wsl/threshold.md` | Salida de `threshold.py` con los datos de V1 del estudio (Windows y WSL2) |
 | `results/d4_windows/` | V1 con el umbral implementado (Windows): `block_V_cold.csv`, `machine.json`, `threshold.md` |
+| `results/d4_windows_aff4/` | V1 con el umbral implementado y 4 procesadores (afinidad), parcial: 18 celdas de una repetición |
 | `results/linux_wsl_d4/` | `run_platform.sh` en WSL2 con el umbral implementado (1 repetición en V1): bloque A, V1, tests y `threshold.md` |
 | `results/wsl/` | Medida en WSL2 (sección 12): CSV de los bloques A a E y V1, `probe.csv`, `machine.json` y `exp_sarimax_parallel.txt`, con sus registros (`wsl_pilot.log`, `wsl_full.log`) |
 | `results/wsl/*.sh`, `wsl_patch*.py` | Instalación del entorno, clon del repositorio, orquestación (`run_wsl.sh pilot\|full`) y los parches que se aplicaron al clon |
@@ -1039,9 +1046,11 @@ Para medir el umbral en cualquier Linux o macOS basta con `run_platform.sh` (sec
 
 ## 16. Completar macOS (instrucciones para Javier)
 
-El umbral de trabajo de `'auto'` (sección 11.4) está calibrado en Windows (4 s) y Linux (2 s). macOS usa provisionalmente el de Windows. Faltan dos cosas, que se resuelven con una sola ejecución de unos 40 minutos:
-1. comprobar que la lógica nueva funciona bien en macOS;
-2. medir lo que cuesta arrancar los workers y fijar el umbral de macOS.
+El umbral de trabajo de `'auto'` (sección 11.4) está calibrado en Windows (4 s) y Linux (2 s). macOS usa provisionalmente el de Windows. Faltan dos cosas, que se resuelven con una sola ejecución de unos 6 minutos:
+1. comprobar que la lógica nueva funciona bien en macOS (los tests);
+2. medir lo que cuesta arrancar los workers y fijar el umbral de macOS (bloque A).
+
+Solo hace falta medir el arranque porque el umbral es `coste de arranque / (1 − b) × (estimación / real)`, y los otros dos factores dependen del trabajo, no de la máquina: la pendiente `b` fue 0,151 en Windows y 0,154 en WSL2, y la relación estimación/real 0,79 y 0,87. Con ellos, el umbral es 0,7 veces el arranque en frío de `cpu_count() − 1` workers, y ese factor reproduce el método completo en las dos plataformas medidas: Windows 5,68 s → 4,0 s (método completo 4,0 a 4,5 s); WSL2 3,17 s → 2,2 s (2,0 a 2,5 s). La medida completa (V1, unos 40 minutos) queda como opcional, con `--full`, para confirmar el valor caso por caso.
 
 ### 16.1 Qué necesitas
 
@@ -1063,19 +1072,19 @@ bash dev/n_jobs_review/run_platform.sh macos_<chip>      # por ejemplo, macos_m3
 El script hace, por orden:
 1. Comprueba que skforecast se importa del repositorio y que tiene el umbral, y guarda la máquina en `results/macos_<chip>/machine.json`.
 2. Pasa los tests del umbral y de las búsquedas (`tests.log`).
-3. Bloque A: arranque en frío y en caliente de k workers (`block_A_cold.csv`, `block_A_warm.csv`).
-4. V1: nueve backtestings sueltos, cada uno en un proceso nuevo, con `n_jobs=1`, `'auto'` y `cpu_count() - 1` workers, 5 repeticiones (`block_V_cold.csv`).
-5. Escribe el análisis en `threshold.md`.
+3. Bloque A: arranque en frío y en caliente de k workers (`block_A_cold.csv`, `block_A_warm.csv`), unos 5 minutos.
+4. Solo con `--full`: V1, nueve backtestings sueltos, cada uno en un proceso nuevo, con `n_jobs=1`, `'auto'` y `cpu_count() - 1` workers, 5 repeticiones (`block_V_cold.csv`), unos 35 minutos.
+5. Escribe el análisis en `threshold.md`: el umbral rápido a partir del bloque A y, con `--full`, también el del método completo y la comprobación de `'auto'`.
 
-Con `PYTHON=/ruta/a/python bash ...` eliges el intérprete. Con un segundo argumento cambias las repeticiones (`... macos_m3_pro 3`).
+Con `PYTHON=/ruta/a/python bash ...` eliges el intérprete. Con `--full --reps 3` haces V1 con 3 repeticiones en vez de 5.
 
 Si falla el paso 1 por la información de la máquina (la topología se lee con `sysctl` y no se ha probado en un Mac), el script avisa y sigue: la medida no depende de ella.
 
 ### 16.3 Comprobar que la lógica funciona
 
-En `tests.log`, todos los tests deben pasar.
+En `tests.log`, todos los tests deben pasar (28). Es la comprobación de la lógica en macOS: la selección por plataforma (`sys.platform == "darwin"`), el ajuste en las dos funciones de backtesting y la resolución por candidato en las búsquedas. Sin `--full`, no hay nada más que comprobar.
 
-En la tabla de `threshold.md`, la columna `auto_jobs` dice cuántos jobs usó `'auto'` en cada caso:
+Con `--full`, además, en la tabla de `threshold.md` la columna `auto_jobs` dice cuántos jobs usó `'auto'` en cada caso:
 - **Sin refit** (las dos primeras filas, `estimate` = 0): `auto_jobs` = 1, y `auto/seq` cerca de 1. Antes del umbral, estos casos eran entre 7 y 20 veces más lentos con `'auto'` (columna `par/seq`).
 - **Con refit y trabajo estimado por encima del umbral provisional (4 s)**: `auto_jobs` = `min(cpu_count() - 1, número de folds)`, y `auto` cerca de `par`.
 - **Por debajo del umbral**: `auto_jobs` = 1, y `auto` cerca de `seq`.
@@ -1085,12 +1094,14 @@ La última sección de `threshold.md` resume la comprobación: el peor caso de `
 
 ### 16.4 Fijar el umbral de macOS
 
-La sección "Threshold" de `threshold.md` da el valor recomendado, con el mismo método que dio 4 s en Windows y 2 s en Linux:
+La sección "Quick threshold" de `threshold.md` da el valor recomendado: 0,7 veces el arranque en frío de `cpu_count() − 1` workers con el forecaster (mediana de las repeticiones del bloque A), redondeado a 0,5 s. Es el valor `X` de abajo. Compáralo con los arranques conocidos: 5,68 s en Windows (umbral 4 s) y 3,17 s en WSL2 (2 s); lo esperable en un Mac es algo intermedio.
+
+Si has ejecutado `--full`, la sección "Threshold" da además el valor del método completo, el que dio 4 s en Windows y 2 s en Linux:
 - ajusta `paralelo = a + b × secuencial` sobre los casos con refit (sin Direct);
 - el punto de equilibrio es `a / (1 − b)` segundos de trabajo real;
 - se pasa a unidades de la estimación del código (`t_fit × refits`, alrededor del 80 % del real) y se redondea a 0,5 s.
 
-Comprueba también la horquilla que da al final ("parallel loses up to... and wins from..."): el valor debería quedar dentro de ella. Si no, o si el ajuste avisa de una pendiente rara, mira la tabla antes de fijar nada.
+Los dos valores deberían coincidir o diferir en 0,5 s; en ese caso, quédate con el del método completo. Comprueba también la horquilla que da al final ("parallel loses up to... and wins from..."): el valor debería quedar dentro de ella. Si no, o si el ajuste avisa de una pendiente rara, mira la tabla antes de fijar nada.
 
 Con el valor `X`, en `skforecast/model_selection/_utils.py`:
 
@@ -1112,10 +1123,10 @@ Y además:
 Si `X` sale igual que en Windows, añade igualmente la clave `"darwin"`, para que el valor quede medido y no heredado, y cambia el comentario.
 
 Después:
-1. Repite solo V1 y el análisis con el valor nuevo, para confirmar la comprobación de la sección 16.3:
+1. Opcional, si `X` difiere de los 4 s heredados: comprueba `'auto'` con el valor nuevo en los cuatro casos pequeños y uno grande de V1 (unos 5 minutos) y mira la última sección de `threshold.md` (sección 16.3):
    ```bash
    cd dev/n_jobs_review
-   PYTHONPATH=../.. NJOBS_RESULTS_DIR=results/macos_<chip>_final python bench_cold.py --reps 3 --values 1,auto,cpu-1
+   PYTHONPATH=../.. NJOBS_RESULTS_DIR=results/macos_<chip>_final python bench_cold.py --reps 3 --values 1,auto,cpu-1 --cases "lgbm_1|S,lgbm_1|L,hgb"
    python threshold.py --results-dir results/macos_<chip>_final
    ```
 2. Pasa la skill `verify` y abre el PR contra la rama de la versión (`0.27.x`).
@@ -1124,6 +1135,6 @@ Después:
 ### 16.5 Qué dejar en el informe
 
 - La máquina: chip, núcleos de rendimiento y de eficiencia, RAM, versión de macOS y de Python y librerías (está en `machine.json`).
-- El arranque en frío de 21 workers o del máximo que tenga la máquina, frente a 5,68 s en Windows y 2,94 s en WSL2.
-- La tabla de V1 y el umbral elegido, con su horquilla.
+- El arranque en frío de `cpu_count() − 1` workers, frente a 5,68 s en Windows y 3,17 s en WSL2, y el umbral elegido.
+- Con `--full`, la tabla de V1 y el umbral del método completo, con su horquilla.
 - Cualquier diferencia de comportamiento: por ejemplo, si LightGBM con sus propios hilos se comporta como en Linux (sección 12.4).

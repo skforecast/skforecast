@@ -19,6 +19,14 @@ and parallelizes the fit of the steps instead):
    to 0.5 s. That is the value of `_MIN_PARALLEL_WORK_SECONDS` for the
    platform (`skforecast/model_selection/_utils.py`).
 
+Quick threshold, from block A alone (no V1): `0.7 * cold start of
+cpu_count() - 1 workers with the forecaster payload`, rounded to 0.5 s. The
+speedup and the estimate / sequential ratio depend on the work, not on the
+machine (b = 0.151 and 0.154, ratio 0.79 and 0.87 on Windows and WSL2), so
+only the cold start has to be measured: 0.7 reproduces the full method on
+both platforms (Windows 5.68 s -> 4.0, WSL2 3.17 s -> 2.2, against 4.0-4.5
+and 2.0-2.5 from the full method).
+
 The script also checks the threshold of the installed skforecast: 'auto'
 should never be much slower than the best of `n_jobs=1` and `cpu-1`.
 
@@ -50,6 +58,30 @@ def cold_start_table(results_dir: Path) -> str:
 
     return "Cold start of k workers, median of the repetitions (s):\n\n" + (
         md_table(table) + "\n"
+    )
+
+
+QUICK_FACTOR = 0.7
+
+
+def quick_threshold(results_dir: Path) -> str:
+    path = results_dir / "block_A_cold.csv"
+    if not path.exists():
+        return "No block_A_cold.csv: cannot estimate the threshold.\n"
+    d = pd.read_csv(path)
+    d = d[(d["status"] == "ok") & (d["payload"] == "forecaster")]
+    k = int(d["cpu_count"].iloc[0]) - 1
+    cold = d[d["k"] == k]["seconds"]
+    if cold.empty:
+        return f"No cold start measured with k = {k} workers.\n"
+    median = float(cold.median())
+    value = np.round(median * QUICK_FACTOR * 2) / 2
+
+    return (
+        f"- Cold start of {k} workers (`cpu_count() - 1`) with the forecaster: "
+        f"{median:.2f} s, median of {len(cold)} processes.\n"
+        f"- Quick threshold: {QUICK_FACTOR} x {median:.2f} = "
+        f"{median * QUICK_FACTOR:.2f} s, rounded to **{value:.1f} s**.\n"
     )
 
 
@@ -140,6 +172,17 @@ def main() -> int:
     parser.add_argument("--results-dir", type=Path, default=RESULTS_DIR)
     args = parser.parse_args()
 
+    if not (args.results_dir / "block_V_cold.csv").exists():
+        report = (
+            f"# Work threshold: {args.results_dir}\n\n"
+            + cold_start_table(args.results_dir)
+            + "\n## Quick threshold (block A only, no V1)\n\n"
+            + quick_threshold(args.results_dir)
+        )
+        print(report)
+        (args.results_dir / "threshold.md").write_text(report, encoding="utf-8")
+        return 0
+
     cases = cases_table(args.results_dir)
     columns = [
         c
@@ -160,6 +203,8 @@ def main() -> int:
         + md_table(shown.round(2))
         + "\n\n## Threshold\n\n"
         + threshold_text
+        + "\nQuick estimate from block A, for comparison:\n\n"
+        + quick_threshold(args.results_dir)
         + "\n## 'auto' with the threshold of the installed skforecast\n\n"
         + check_auto(cases)
     )

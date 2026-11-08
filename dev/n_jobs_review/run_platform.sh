@@ -3,23 +3,38 @@
 #
 # 1. Machine information (results/<tag>/machine.json).
 # 2. Unit tests of the threshold and of the searches (results/<tag>/tests.log).
-# 3. Block A: cold and warm start of k workers (bench_spawn.py).
-# 4. V1: single backtestings in a fresh process with n_jobs=1, 'auto' and
-#    cpu_count() - 1 (bench_cold.py).
-# 5. Analysis: suggested threshold and check of 'auto' (threshold.py).
+# 3. Block A: cold and warm start of k workers (bench_spawn.py). The cold
+#    start of cpu_count() - 1 workers is what sets the threshold.
+# 4. With --full only: V1, single backtestings in a fresh process with
+#    n_jobs=1, 'auto' and cpu_count() - 1 (bench_cold.py), to confirm the
+#    threshold with the full method and check 'auto' case by case.
+# 5. Analysis: suggested threshold and, with --full, check of 'auto'
+#    (threshold.py).
 #
 # Run it from any folder, with the conda environment of skforecast active and
-# the machine plugged in, idle and without other heavy programs (about 40 min
-# with 5 repetitions). It tests and measures the skforecast of this
-# repository (PYTHONPATH), not the one installed in the environment.
+# the machine plugged in, idle and without other heavy programs. About 6 min;
+# with --full, about 40 min (5 repetitions). It tests and measures the
+# skforecast of this repository (PYTHONPATH), not the one installed in the
+# environment.
 #
-# Usage: bash run_platform.sh <tag> [repetitions]
+# Usage: bash run_platform.sh <tag> [--full] [--reps N]
 #   tag: name of the results folder, for example macos_m3_pro
+#   --full: also run V1 (N repetitions, default 5)
 #   PYTHON: interpreter to use (default: python)
 
 set -u
 TAG="${1:?results tag, for example macos_m3_pro}"
-REPS="${2:-5}"
+shift
+FULL=0
+REPS=5
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --full) FULL=1 ;;
+    --reps) shift; REPS="${1:?--reps needs a number}" ;;
+    *) echo "unknown argument: $1" >&2; exit 2 ;;
+  esac
+  shift
+done
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 PY="${PYTHON:-python}"
@@ -70,10 +85,12 @@ step A
 "$PY" bench_spawn.py > "$NJOBS_RESULTS_DIR/bench_spawn.log" 2>&1
 done_ A $?
 
-step V1
-"$PY" bench_cold.py --reps "$REPS" --values 1,auto,cpu-1 \
-  > "$NJOBS_RESULTS_DIR/bench_cold.log" 2>&1
-done_ V1 $?
+if [ "$FULL" -eq 1 ]; then
+  step V1
+  "$PY" bench_cold.py --reps "$REPS" --values 1,auto,cpu-1 \
+    > "$NJOBS_RESULTS_DIR/bench_cold.log" 2>&1
+  done_ V1 $?
+fi
 
 step threshold
 "$PY" threshold.py --results-dir "$NJOBS_RESULTS_DIR"
