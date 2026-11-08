@@ -4,8 +4,11 @@ Rama `perf/contiguous-lag-matrix` desde `origin/0.27.x` (17219ad65), solo en loc
 Medición con recomendación: el código del paquete no cambia. El prototipo está en
 `repro/PERF-contiguous-lags_prototype.diff` y no está aplicado en la rama.
 
-**Estado (2026-11-08, decisión):** opción D aprobada con dos recortes. Se implementará
-cuando se fusione el refactor de los avisos, que toca la misma zona.
+**Estado (2026-11-08, implementado en local):** opción D implementada en la rama
+`perf/contiguous-lag-matrix`, creada de nuevo desde `origin/0.27.x` después del refactor
+de los avisos (#1467). Son tres commits locales, sin push ni PR: `6518c93ff` (utils),
+`d9cf32c16` (forecasters) y `8bbcd088a` (nota de la versión). La medición final sobre la
+implementación está en la sección 18.
 
 - **Lista final** (sección 14): `LinearRegression`, `Ridge`, `Lars` y `LassoLars`.
 - **Sin tratamiento de `Pipeline`:** se comprueba solo la clase del estimador, y un Pipeline
@@ -765,6 +768,14 @@ es la que se implementará, no. La implementación quita el indicador de módulo
 llamada directa. Las líneas son las de `0.27.x` (17219ad65). Hay que revisarlas después
 del refactor de los avisos, que toca la misma zona.
 
+**Implementado (sección 18) con dos diferencias:**
+
+- **Nombre de la función.** Es `_prefers_c_contiguous_X`, para seguir el estilo
+  `_verbo_nombre` que acordó el refactor de los avisos (`REFACTOR-warnings.md`, sección
+  3).
+- **Texto de la nota de la versión.** Es el más corto de la sección 18. El de 16.3 pasaba
+  del límite de la skill `release-note` (80 palabras y tres frases).
+
 ### 16.1 La lista y la función (`skforecast/utils/utils.py`)
 
 La lista va junto a `_SKLEARN_NAN_TOLERANT_ESTIMATORS` (línea 60), con el mismo estilo:
@@ -1025,3 +1036,133 @@ cambiar ningún test (pytest secuencial, sin `-n`, `-m "not slow"`):
 | `recursive/tests/tests_forecaster_recursive`, `tests_forecaster_recursive_classifier`, `direct/tests/tests_forecaster_direct`, `tests_forecaster_direct_multivariate`, `model_selection/tests`, `utils/tests` | 3.766 passed, 3 skipped, 2 deselected |
 
 No falla ninguno.
+
+## 18. Implementación y medición final (2026-11-08)
+
+### 18.1 Qué se ha hecho
+
+Rama `perf/contiguous-lag-matrix`, creada de nuevo desde `origin/0.27.x` (`6c6f034fe`,
+con el refactor de los avisos ya fusionado en #1467). La rama de la medición se borró:
+sus tres commits ya estaban en `0.27.x` como *cherry-picks*, y `git cherry` y `git diff`
+lo confirmaron. Tres commits locales, sin push:
+
+| Commit | Contenido |
+|---|---|
+| `6518c93ff` | `_SKLEARN_C_CONTIGUOUS_ESTIMATORS` y `_prefers_c_contiguous_X` en `utils/utils.py` (junto a `_SKLEARN_NAN_TOLERANT_ESTIMATORS` y `estimator_has_native_nan_support`; el refactor los dejó ahí y no van en `_warnings.py`), exportada en `utils/__init__.py`, y su test |
+| `d9cf32c16` | La copia en Recursive (antes de `_filter_nan_train_X_y`), Direct y DMV (antes de `_warn_nan_training_rows_direct`, solo sin `exog` ni calendario), y sus tests |
+| `8bbcd088a` | Nota de la versión en **Changed** de 0.27.0 |
+
+Archivos, en líneas añadidas / quitadas:
+
+| Archivo | Líneas |
+|---|---|
+| `skforecast/utils/utils.py` | +55 |
+| `skforecast/utils/__init__.py` | +1 |
+| `skforecast/recursive/_forecaster_recursive.py` | +8 |
+| `skforecast/direct/_forecaster_direct.py` | +14 |
+| `skforecast/direct/_forecaster_direct_multivariate.py` | +14 |
+| `skforecast/utils/tests/tests_utils/test_prefers_c_contiguous_X.py` (nuevo) | +53 |
+| `skforecast/recursive/tests/tests_forecaster_recursive/test_fit.py` | +52 / −1 (el import de `Ridge`) |
+| `skforecast/direct/tests/tests_forecaster_direct/test_fit.py` | +53 / −1 |
+| `skforecast/direct/tests/tests_forecaster_direct_multivariate/test_fit.py` | +57 / −1 |
+| `docs/releases/releases.md` | +2 |
+
+Las líneas de inserción en los forecasters no habían cambiado con el refactor: Recursive
+980 a 989, Direct 1211 a 1251 y DMV 1324 a 1364. Classifier, MultiSeries, la API pública y
+el contexto de IA no cambian.
+
+Tests nuevos (17):
+
+- `test_prefers_c_contiguous_X.py` (8):
+  - un test parametrizado sobre la lista (4 casos, `True`);
+  - otro sobre HistGradientBoosting, Lasso y `make_pipeline(Ridge())` (`False`);
+  - uno que comprueba que los casos cubren `_SKLEARN_C_CONTIGUOUS_ESTIMATORS`.
+- En el `test_fit.py` de Recursive, Direct y DMV (3 por forecaster):
+  - `test_fit_training_matrix_layout_received_by_estimator`. Con `monkeypatch` sobre
+    `fit` se guardan los `X.flags`: Ridge recibe una copia C y HistGradientBoosting la
+    vista sin copiar (`c_contiguous` y `owndata` en `False`). En Direct y DMV con
+    `n_jobs=1`, porque con procesos el `monkeypatch` no llega al estimador.
+  - `test_fit_predictions_equal_bit_for_bit_with_c_contiguous_training_matrix`. Ridge en
+    un caso fijo de los datos de prueba, con `np.testing.assert_array_equal` contra
+    valores calculados con `0.27.x` antes del cambio.
+
+`verify`, en verde antes de cada commit:
+
+- **Lint.** Un único aviso nuevo: un F401 en `utils/__init__.py`, el mismo que ya tienen
+  las otras 23 funciones privadas exportadas igual.
+- **Tests.** 3.533 tests de los forecasters tocados, `utils` y `model_selection` (que
+  llama a esos forecasters), con 2 omitidos. Después, 2.323 de las carpetas afectadas,
+  tras la nota de la versión.
+- **Comprobaciones.** El contexto de IA está al día y `page_meta` no da problemas.
+- **Tests existentes.** Ninguno ha fallado ni se ha tocado.
+- **No ejecutado.** Classifier, MultiSeries, `deep_learning` y `foundation` usan `utils`,
+  pero su comportamiento no cambia.
+
+Nota de la versión (61 palabras, todavía sin el enlace del PR):
+
+> + <code>[ForecasterRecursive]</code>, <code>[ForecasterDirect]</code> and
+> <code>[ForecasterDirectMultiVariate]</code> fit faster with `LinearRegression`, `Ridge`,
+> `Lars` and `LassoLars` when the predictors are only lags. A single fit saves
+> milliseconds; the gain shows mainly in backtesting with `refit=True` and in
+> hyperparameter searches (6 to 33% less time). Nothing changes with other estimators or a
+> `Pipeline`, and predictions are unchanged (in-sample residuals can differ in the last
+> decimals).
+
+### 18.2 Medición final sobre la implementación (script 12)
+
+**Entorno.** Python 3.14.3, numpy 2.5.4 (Accelerate), pandas 2.3.3, scikit-learn 1.9.1,
+scipy 1.18.1, LightGBM 4.6.0 (XGBoost 3.2.0 y CatBoost 1.2.10 instalados, no usados aquí),
+Apple M5, macOS 27.2.
+
+**Condiciones.** Equipo enchufado y carga de 1 minuto entre 2,3 y 4,0 al empezar cada fila.
+El script espera antes de cada fila a que se cumplan las dos condiciones.
+
+**Método.** `repro/PERF-contiguous-lags_12_implementation.py`, sin el prototipo.
+
+- La versión "0.27.x" es la implementación con `_prefers_c_contiguous_X` sustituida, en
+  los tres módulos, por una función que devuelve `False`. Es el camino de `0.27.x` más una
+  llamada.
+- Las dos versiones alternan en el mismo proceso, y se toma el mínimo de las rondas.
+- Las predicciones salen idénticas bit a bit en todas las filas de `fit` y de backtesting.
+  La métrica de `OneStepAheadFold` cambia 1,9e-15 y 6,7e-16, como en la sección 15.
+
+`fit` en ms, `0.27.x` → opción D, y entre paréntesis la ganancia y la de la sección 15
+(prototipo). La memoria pico (MB) va en 20.000 x 24 / 20.000 x 168 / 200.000 x 168. En
+los controles de Direct con HistGradientBoosting, la memoria solo cubre el proceso
+principal.
+
+| Forecaster | Estimador | 20.000 x 24 | 20.000 x 168 | 200.000 x 168 | Memoria pico (MB) |
+|---|---|---|---|---|---|
+| Recursive | Ridge | 2,57 → 2,07 (−19 %; sección 15: −24 %) | 13,3 → 9,57 (−28 %; sección 15: −30 %) | 142 → 106 (−26 %; sección 15: −25 %) | 8 → 8 / 52 → 52 / 516 → 516 |
+| Recursive | LinearRegression | 4,20 → 3,71 (−12 %; sección 15: −12 %) | 42,1 → 38,4 (−9 %; sección 15: −9 %) | 665 → 626 (−6 %; sección 15: −4 %) | 8 → 8 / 52 → 55 / 516 → 548 |
+| Direct (5 pasos) | Ridge | 10,7 → 7,78 (−27 %; sección 15: −28 %) | 61,7 → 37,8 (−39 %; sección 15: −40 %) | 659 → 387 (−41 %; sección 15: −43 %) | 8 → 8 / 52 → 52 / 522 → 522 |
+| Direct (5 pasos) | LinearRegression | 21,5 → 18,4 (−15 %; sección 15: −15 %) | 205 → 180 (−12 %; sección 15: −14 %) | 3.115 → 2.928 (−6 %; sección 15: −7 %) | 9 → 9 / 53 → 56 / 528 → 560 |
+| Recursive | HistGradientBoosting (control) | - | 1.569 → 1.566 (0 %; sección 15: 0 %) | 3.700 → 3.710 (0 %; sección 15: +1 %) | 56 → 56 / 324 → 324 |
+| Recursive | LightGBM (control) | - | 633 → 629 (−1 %; sección 15: 0 %) | 2.838 → 2.829 (0 %; sección 15: 0 %) | 26 → 26 / 259 → 259 |
+| Direct (5 pasos) | HistGradientBoosting (control) | - | 1.781 → 1.804 (+1 %; sección 15: 0 %) | 14.603 → 14.969 (+3 %; sección 15: +1 %) | 32 → 32 / 49 → 49 |
+| Direct (5 pasos) | LightGBM (control) | - | 3.238 → 3.224 (0 %; sección 15: 0 %) | 15.048 → 15.131 (+1 %; sección 15: 0 %) | 27 → 27 / 266 → 266 |
+
+| Caso | `fit` | `0.27.x` → opción D (s) | Ganancia | Sección 15 | Memoria pico (MB) | Diferencia máxima |
+|---|---|---|---|---|---|---|
+| backtesting Recursive Ridge lags=24, 417 folds | 417 | 0,515 → 0,419 | −19 % | −19 % | 6 → 6 | 0 |
+| backtesting Recursive Ridge lags=168, 417 folds | 417 | 2,129 → 1,779 | −16 % | −16 % | 28 → 28 | 0 |
+| backtesting Recursive LinearRegression lags=24, 417 folds | 417 | 0,943 → 0,867 | −8 % | −8 % | 6 → 7 | 0 |
+| backtesting Recursive LinearRegression lags=168, 417 folds | 417 | 8,042 → 7,626 | −5 % | −6 % | 28 → 29 | 0 |
+| backtesting Direct(steps=24) Ridge lags=24, 105 folds | 2.520 | 1,037 → 0,767 | −26 % | −23 % | 2 → 2 | 0 |
+| backtesting Direct(steps=24) Ridge lags=168, 105 folds | 2.520 | 3,463 → 2,329 | −33 % | −33 % | 8 → 8 | 0 |
+| grid_search Ridge TimeSeriesFold refit=True, 42 folds x 20 candidates | 840 | 0,624 → 0,550 | −12 % | −14 % | 3 → 3 | 0 |
+| grid_search Ridge OneStepAheadFold n=2000, 20 candidates | 20 | 0,019 → 0,015 | −22 % | −23 % | 4 → 4 | 1,9e-15 |
+| grid_search Ridge OneStepAheadFold n=20000, 20 candidates | 20 | 0,096 → 0,065 | −32 % | −33 % | 39 → 45 | 6,7e-16 |
+
+**Resultado.**
+
+- **La implementación reproduce el prototipo** (sección 15). La diferencia está entre 0 y
+  5 puntos.
+- **Ridge:** entre un 19 y un 28 % menos en Recursive y entre un 27 y un 41 % en Direct.
+- **LinearRegression:** entre un 6 y un 15 % menos.
+- **Backtesting y búsquedas:** entre un 5 y un 33 % menos.
+- **Memoria pico:** solo sube con LinearRegression, un 12 % de la matriz.
+- **Controles:** entre −1 y +3 %, sin memoria extra.
+  - El +3 % de HistGradientBoosting en Direct con 200.000 x 168 es ruido. Con ese
+    estimador las dos versiones ejecutan el mismo código (no se copia), y la fila son
+    2 rondas de 15 s en 9 procesos.

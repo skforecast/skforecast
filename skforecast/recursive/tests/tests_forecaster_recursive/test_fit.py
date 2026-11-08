@@ -5,7 +5,7 @@ import pytest
 from pytest import approx
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.preprocessing import StandardScaler
 from catboost import CatBoostRegressor
@@ -539,3 +539,54 @@ def test_fit_with_interspersed_NaN_and_dropna_from_series_False():
     predictions = forecaster.predict(steps=3)
     assert len(predictions) == 3
     assert not predictions.isna().any()
+
+
+
+@pytest.mark.parametrize(
+    "estimator, expected_c_contiguous",
+    [
+        (Ridge(), True),
+        (HistGradientBoostingRegressor(max_iter=5, random_state=123), False),
+    ],
+    ids=lambda x: type(x).__name__ if not isinstance(x, bool) else f"C: {x}"
+)
+def test_fit_training_matrix_layout_received_by_estimator(
+    estimator, expected_c_contiguous, monkeypatch
+):
+    """
+    Test the memory layout of the training matrix that the estimator receives
+    in `fit` when the predictors are only lags: a C-contiguous copy for the
+    estimators that prefer it (Ridge), and the view of `sliding_window_view`,
+    not copied, for the rest (HistGradientBoostingRegressor).
+    """
+    flags = []
+    original_fit = type(estimator).fit
+
+    def recording_fit(self, X, y, *args, **kwargs):
+        flags.append(np.asarray(X).flags)
+        return original_fit(self, X, y, *args, **kwargs)
+
+    monkeypatch.setattr(type(estimator), "fit", recording_fit)
+    forecaster = ForecasterRecursive(estimator=estimator, lags=5)
+    forecaster.fit(y=y)
+
+    assert len(flags) == 1
+    for flag in flags:
+        assert flag.c_contiguous is expected_c_contiguous
+        assert flag.owndata is expected_c_contiguous
+
+
+def test_fit_predictions_equal_bit_for_bit_with_c_contiguous_training_matrix():
+    """
+    Test that the copy of the training matrix to a C-contiguous array does not
+    change the predictions with Ridge: they are equal, bit for bit, to the ones
+    of skforecast 0.27.x before the copy, when the estimator received the view
+    of `sliding_window_view`.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=5)
+    forecaster.fit(y=y)
+    predictions = forecaster.predict(steps=5).to_numpy()
+    expected = np.array([0.5736183556677587, 0.4747505305408221, 0.4405594104104335,
+                         0.49070097324783774, 0.48362170469052196])
+
+    np.testing.assert_array_equal(predictions, expected)

@@ -9,7 +9,8 @@ PERF-contiguous-lags: helpers shared by scripts 09 to 11 (loaded with
   within `max_wait` seconds (measuring with the machine loaded is not valid).
 - `set_mode(value)`: the flag `_CONTIGUOUS_X_TRAIN` of the prototype in the
   four forecaster modules (`False`: 0.27.x, `True`: always copy, `"D"`: copy only
-  for the estimators of option D).
+  for the estimators of option D). Script 12 replaces it to measure the
+  implementation without the prototype.
 """
 
 import os
@@ -29,14 +30,19 @@ import skforecast.recursive._forecaster_recursive as m_rec
 import skforecast.recursive._forecaster_recursive_classifier as m_cls
 
 MODULES = (m_rec, m_cls, m_direct, m_dmv)
-if not all(hasattr(m, "_CONTIGUOUS_X_TRAIN") for m in MODULES):
-    sys.exit(
-        "Prototype missing: git apply "
-        "dev/roadmap_0.27.0/repro/PERF-contiguous-lags_prototype.diff"
-    )
+PROTOTYPE = all(hasattr(m, "_CONTIGUOUS_X_TRAIN") for m in MODULES)
 
 
 def set_mode(value) -> None:
+    """
+    Flag of the prototype. Script 12 (the implementation, without the
+    prototype) replaces this function with its own.
+    """
+    if not PROTOTYPE:
+        sys.exit(
+            "Prototype missing: git apply "
+            "dev/roadmap_0.27.0/repro/PERF-contiguous-lags_prototype.diff"
+        )
     for m in MODULES:
         m._CONTIGUOUS_X_TRAIN = value
 
@@ -82,14 +88,23 @@ def environment() -> str:
     )
 
 
-def wait_for_load(max_load: float = 4.0, max_wait: float = 1800, step: float = 15):
-    """Wait until the 1-minute load average is below `max_load`."""
+def wait_for_load(
+    max_load: float = 4.0,
+    max_wait: float = 1800,
+    step: float = 15,
+    require_ac: bool = False
+):
+    """
+    Wait until the 1-minute load average is below `max_load` (and, with
+    `require_ac`, until the machine is on AC power).
+    """
     t0 = time.time()
-    while os.getloadavg()[0] >= max_load:
+    while os.getloadavg()[0] >= max_load or (require_ac and power_source() != "AC"):
         if time.time() - t0 > max_wait:
             sys.exit(
-                f"Load {os.getloadavg()[0]:.1f} above {max_load} for more than "
-                f"{max_wait:.0f} s: stopped without measuring."
+                f"Load {os.getloadavg()[0]:.1f} (limit {max_load}), power "
+                f"{power_source()}, for more than {max_wait:.0f} s: stopped "
+                "without measuring."
             )
         time.sleep(step)
     return os.getloadavg()[0]

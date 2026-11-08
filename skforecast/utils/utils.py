@@ -64,6 +64,20 @@ _SKLEARN_NAN_TOLERANT_ESTIMATORS = frozenset({
     'RandomForestRegressor',
 })
 
+# sklearn estimators whose `fit` (and the `predict` of the in-sample residuals)
+# is faster when the training matrix is C-contiguous. With only lags, the
+# forecasters build that matrix as a view of `sliding_window_view` (neither C
+# nor F contiguous), which these estimators copy again in every product with
+# `X`, and free each copy, so one copy before the fit adds little memory.
+# Criterion: at least 5% faster `fit` in two of three sizes, extra peak memory
+# up to 15% of the training matrix and identical predictions.
+_SKLEARN_C_CONTIGUOUS_ESTIMATORS = frozenset({
+    'Lars',
+    'LassoLars',
+    'LinearRegression',
+    'Ridge',
+})
+
 optional_dependencies = {
     'stats': [
         'statsmodels>=0.13.2, <0.16'
@@ -5309,6 +5323,47 @@ def estimator_has_native_nan_support(estimator: object) -> bool:
         return True
 
     return False
+
+
+def _prefers_c_contiguous_X(estimator: object) -> bool:
+    """
+    Check whether the training matrix should be copied to a C-contiguous array
+    before it is passed to the estimator.
+
+    With only lags (or only window features), the training matrix is a view of
+    `sliding_window_view` that is neither C nor F contiguous. Some linear
+    models of scikit-learn copy that view again in every product with `X`
+    (`fit` and the `predict` of the in-sample residuals), so one copy before
+    the fit is faster. Other estimators already copy or convert the matrix
+    (trees, boosting, coordinate descent) and the copy would only add memory.
+
+    Parameters
+    ----------
+    estimator : object
+        Estimator object.
+
+    Returns
+    -------
+    prefers_c_contiguous : bool
+        `True` if the estimator is one of the scikit-learn estimators in
+        `_SKLEARN_C_CONTIGUOUS_ESTIMATORS`, otherwise `False`.
+
+    Notes
+    -----
+    Detection is based on the class name and the module (`sklearn`), as in
+    `estimator_has_native_nan_support`. Only the class of the estimator is
+    checked: a Pipeline (whatever its steps), other meta-estimators (for
+    example `TransformedTargetRegressor`) and subclasses defined outside
+    scikit-learn return `False`, and the matrix is passed as it is.
+
+    """
+
+    module = type(estimator).__module__.split('.')[0]
+
+    return (
+        module == 'sklearn'
+        and type(estimator).__name__ in _SKLEARN_C_CONTIGUOUS_ESTIMATORS
+    )
 
 
 def _all_samples_removed_message(
