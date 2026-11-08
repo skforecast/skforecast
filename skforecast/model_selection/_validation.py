@@ -443,7 +443,7 @@ def _backtesting_forecaster(
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
-        skforecast.utils.select_n_jobs_backtesting.
+        skforecast.model_selection._utils.select_n_jobs_backtesting.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used 
         for backtesting.
@@ -835,7 +835,7 @@ def backtesting_forecaster(
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
-        skforecast.utils.select_n_jobs_backtesting.
+        skforecast.model_selection._utils.select_n_jobs_backtesting.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used 
         for backtesting.
@@ -1264,7 +1264,7 @@ def _backtesting_forecaster_multiseries(
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
-        skforecast.utils.select_n_jobs_backtesting.
+        skforecast.model_selection._utils.select_n_jobs_backtesting.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used 
         for backtesting.
@@ -1809,7 +1809,7 @@ def backtesting_forecaster_multiseries(
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
-        skforecast.utils.select_n_jobs_backtesting.
+        skforecast.model_selection._utils.select_n_jobs_backtesting.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used 
         for backtesting.
@@ -2157,7 +2157,7 @@ def _backtesting_stats(
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
-        skforecast.utils.select_n_jobs_backtesting.
+        skforecast.model_selection._utils.select_n_jobs_backtesting.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used 
         for backtesting.
@@ -2526,7 +2526,7 @@ def backtesting_stats(
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
-        skforecast.utils.select_n_jobs_backtesting. 
+        skforecast.model_selection._utils.select_n_jobs_backtesting.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used 
         for backtesting.
