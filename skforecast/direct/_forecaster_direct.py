@@ -27,6 +27,7 @@ from ..exceptions import (
 )
 from ..utils import (
     _all_samples_removed_message,
+    _prefers_c_contiguous_X,
     _warn_nan_training_rows_direct,
     initialize_lags,
     initialize_window_features,
@@ -1242,6 +1243,19 @@ class ForecasterDirect(ForecasterBase):
             raise ValueError(
                 f"Duplicated feature names detected in X_train: {duplicated_names}."
             )
+
+        # NOTE: With only lags (or only window features), `X_train_autoreg` is a
+        # view of `sliding_window_view` that is neither C nor F contiguous. Some
+        # linear models copy it again in every product with `X`. Without exog or
+        # calendar features every step uses `X_train_autoreg` as it is, so one
+        # copy here serves all the steps (with them, each step is built with
+        # `np.concatenate`, which is already C-contiguous).
+        if (
+            X_train_exog is None
+            and X_train_calendar is None
+            and _prefers_c_contiguous_X(self.estimator)
+        ):
+            X_train_autoreg = np.ascontiguousarray(X_train_autoreg)
 
         # NOTE: NaN rows are counted per step here, without building the
         # training matrix of each step, and dropped in the `_filter_nan_X_y_step`
