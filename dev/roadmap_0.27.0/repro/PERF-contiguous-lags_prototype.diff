@@ -1,0 +1,130 @@
+diff --git a/skforecast/direct/_forecaster_direct.py b/skforecast/direct/_forecaster_direct.py
+index 446b753b1..94b1609ed 100644
+--- a/skforecast/direct/_forecaster_direct.py
++++ b/skforecast/direct/_forecaster_direct.py
+@@ -61,6 +61,13 @@ from ..utils import (
+ from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
+ 
+ 
++# PROTOTYPE (PERF-contiguous-lags, not for merge): when `True` ("F": F order), the training
++# matrix is made C-contiguous before the NaN check and the `fit` of the estimator
++# if it is a single block (only lags or only window features), the cases where it
++# is a view of `sliding_window_view` or an F-ordered array.
++_CONTIGUOUS_X_TRAIN = True
++
++
+ def _fit_one_step_estimator(
+     forecaster: object,
+     estimator: object,
+@@ -1243,6 +1250,17 @@ class ForecasterDirect(ForecasterBase):
+                 f"Duplicated feature names detected in X_train: {duplicated_names}."
+             )
+ 
++        if (
++            _CONTIGUOUS_X_TRAIN
++            and X_train_exog is None
++            and X_train_calendar is None
++        ):
++            # Every step uses `X_train_autoreg` as is (no `np.concatenate`).
++            if _CONTIGUOUS_X_TRAIN == "F":
++                X_train_autoreg = np.asfortranarray(X_train_autoreg)
++            else:
++                X_train_autoreg = np.ascontiguousarray(X_train_autoreg)
++
+         # NOTE: NaN rows are counted per step here, without building the
+         # training matrix of each step, and dropped in the `_filter_nan_X_y_step`
+         # method during the training of each step. Rows with a NaN target are
+diff --git a/skforecast/direct/_forecaster_direct_multivariate.py b/skforecast/direct/_forecaster_direct_multivariate.py
+index 690f1bc61..8114a7836 100644
+--- a/skforecast/direct/_forecaster_direct_multivariate.py
++++ b/skforecast/direct/_forecaster_direct_multivariate.py
+@@ -65,6 +65,13 @@ from ..utils import (
+ from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
+ 
+ 
++# PROTOTYPE (PERF-contiguous-lags, not for merge): when `True` ("F": F order), the training
++# matrix is made C-contiguous before the NaN check and the `fit` of the estimator
++# if it is a single block (only lags or only window features), the cases where it
++# is a view of `sliding_window_view` or an F-ordered array.
++_CONTIGUOUS_X_TRAIN = True
++
++
+ class ForecasterDirectMultiVariate(ForecasterBase):
+     """
+     This class turns any estimator compatible with the scikit-learn API into an
+@@ -1356,6 +1363,17 @@ class ForecasterDirectMultiVariate(ForecasterBase):
+                 f"Duplicated feature names detected in X_train: {duplicated_names}."
+             )
+ 
++        if (
++            _CONTIGUOUS_X_TRAIN
++            and X_train_exog is None
++            and X_train_calendar is None
++        ):
++            # Every step uses `X_train_autoreg` as is (no `np.concatenate`).
++            if _CONTIGUOUS_X_TRAIN == "F":
++                X_train_autoreg = np.asfortranarray(X_train_autoreg)
++            else:
++                X_train_autoreg = np.ascontiguousarray(X_train_autoreg)
++
+         # NOTE: NaN rows are counted per step here, without building the
+         # training matrix of each step, and dropped in the `_filter_nan_X_y_step`
+         # method during the training of each step. Rows with a NaN target are
+diff --git a/skforecast/recursive/_forecaster_recursive.py b/skforecast/recursive/_forecaster_recursive.py
+index 52e96b2ec..b17dff62b 100644
+--- a/skforecast/recursive/_forecaster_recursive.py
++++ b/skforecast/recursive/_forecaster_recursive.py
+@@ -59,6 +59,13 @@ from ..utils import (
+ )
+ 
+ 
++# PROTOTYPE (PERF-contiguous-lags, not for merge): when `True` ("F": F order), the training
++# matrix is made C-contiguous before the NaN check and the `fit` of the estimator
++# if it is a single block (only lags or only window features), the cases where it
++# is a view of `sliding_window_view` or an F-ordered array.
++_CONTIGUOUS_X_TRAIN = True
++
++
+ class ForecasterRecursive(ForecasterBase):
+     """
+     This class turns any estimator compatible with the scikit-learn API into a
+@@ -979,6 +986,10 @@ class ForecasterRecursive(ForecasterBase):
+ 
+         if len(X_train) == 1:
+             X_train = X_train[0]
++            if _CONTIGUOUS_X_TRAIN == "F":
++                X_train = np.asfortranarray(X_train)
++            elif _CONTIGUOUS_X_TRAIN:
++                X_train = np.ascontiguousarray(X_train)
+         else:
+             X_train = np.concatenate(X_train, axis=1)
+ 
+diff --git a/skforecast/recursive/_forecaster_recursive_classifier.py b/skforecast/recursive/_forecaster_recursive_classifier.py
+index 06dcb5b5e..333d95188 100644
+--- a/skforecast/recursive/_forecaster_recursive_classifier.py
++++ b/skforecast/recursive/_forecaster_recursive_classifier.py
+@@ -45,6 +45,13 @@ from ..utils import (
+ )
+ 
+ 
++# PROTOTYPE (PERF-contiguous-lags, not for merge): when `True` ("F": F order), the training
++# matrix is made C-contiguous before the NaN check and the `fit` of the estimator
++# if it is a single block (only lags or only window features), the cases where it
++# is a view of `sliding_window_view` or an F-ordered array.
++_CONTIGUOUS_X_TRAIN = True
++
++
+ class ForecasterRecursiveClassifier(ForecasterBase):
+     """
+     This class turns any classification estimator compatible with the scikit-learn 
+@@ -967,6 +974,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
+         
+         if len(X_train) == 1:
+             X_train = X_train[0]
++            if _CONTIGUOUS_X_TRAIN == "F":
++                X_train = np.asfortranarray(X_train)
++            elif _CONTIGUOUS_X_TRAIN:
++                X_train = np.ascontiguousarray(X_train)
+         else:
+             X_train = np.concatenate(X_train, axis=1)
+ 
