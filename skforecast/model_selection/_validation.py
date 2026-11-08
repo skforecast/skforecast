@@ -31,9 +31,6 @@ from ..model_selection._utils import (
     _calculate_metrics_backtesting_multiseries,
     _get_interval_columns,
     _get_y_true_multiseries,
-    _run_fold_recording_warnings,
-    _reemit_fold_warnings,
-    FOLD_WARNINGS_ATTRIBUTE,
     INTERVAL_METRIC_NAMES,
     N_EVALUATED_NAME
 )
@@ -43,7 +40,10 @@ from ..utils import (
     align_series_and_exog_multiseries,
     manage_warnings,
     deepcopy_forecaster,
-    estimator_has_native_nan_support
+    estimator_has_native_nan_support,
+    _run_fold_recording_warnings,
+    _reemit_fold_warnings,
+    FOLD_WARNINGS_ATTRIBUTE
 )
 from ..foundation._utils import check_preprocess_series_foundation
 

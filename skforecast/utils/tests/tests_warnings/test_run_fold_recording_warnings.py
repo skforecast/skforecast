@@ -6,7 +6,7 @@ import pytest
 from joblib import Parallel, delayed
 from skforecast.exceptions import MissingValuesWarning
 from skforecast.utils import manage_warnings
-from skforecast.model_selection._utils import (
+from skforecast.utils import (
     _run_fold_recording_warnings,
     FOLD_WARNINGS_ATTRIBUTE
 )
