@@ -153,6 +153,83 @@ def test_build_predict_function_xgboost_output_equals_estimator_predict(
     np.testing.assert_allclose(predict_fn(X[:1]), expected[:1])
 
 
+def spy_booster_predict(estimator):
+    """
+    Replace `predict` of the booster of a fitted LGBMRegressor by a wrapper that
+    records the keyword arguments of each call, and return the list of records.
+    """
+    booster = estimator.booster_
+    booster_predict = booster.predict
+    calls_kwargs = []
+
+    def spy_predict(data, **kwargs):
+        calls_kwargs.append(kwargs)
+        return booster_predict(data, **kwargs)
+
+    booster.predict = spy_predict
+
+    return calls_kwargs
+
+
+@pytest.mark.parametrize(
+    "estimator_kwargs",
+    [
+        {"n_jobs": 1},
+        {"n_jobs": 2},
+        {"n_jobs": -1},
+        {"n_jobs": None},
+        {"num_threads": 3},
+    ],
+    ids=lambda estimator_kwargs: f"estimator_kwargs: {estimator_kwargs}",
+)
+def test_build_predict_function_lightgbm_num_threads_equals_estimator_predict(
+    estimator_kwargs, regression_data, monkeypatch
+):
+    """
+    Test that the predict function of an LGBMRegressor passes to the booster
+    the same `num_threads` as `estimator.predict` (from `n_jobs` or from
+    `num_threads`) when `OMP_NUM_THREADS` is not set. Without it, the booster
+    predicts with all the OpenMP threads of the machine.
+    """
+    monkeypatch.delenv("OMP_NUM_THREADS", raising=False)
+    X, y = regression_data
+    estimator = LGBMRegressor(n_estimators=10, verbose=-1, **estimator_kwargs)
+    estimator.fit(X, y)
+
+    calls_kwargs = spy_booster_predict(estimator)
+    predict_fn = _build_predict_function(estimator)
+    predict_fn(X[:1])
+    estimator.predict(X[:1])
+
+    assert len(calls_kwargs) == 2
+    assert calls_kwargs[0].get("num_threads") == calls_kwargs[1]["num_threads"]
+
+
+@pytest.mark.parametrize(
+    "omp_num_threads, expected",
+    [("1", 1), ("8", 2), ("0", 2), ("2,1", 2)],
+    ids=["capped", "above_n_jobs", "zero_ignored", "list_ignored"],
+)
+def test_build_predict_function_lightgbm_num_threads_capped_at_OMP_NUM_THREADS(
+    omp_num_threads, expected, regression_data, monkeypatch
+):
+    """
+    Test that the `num_threads` passed to the booster of an LGBMRegressor
+    (`n_jobs=2`) is capped at `OMP_NUM_THREADS`, which joblib sets in its
+    workers, and that values other than a positive integer are ignored.
+    """
+    X, y = regression_data
+    estimator = LGBMRegressor(n_estimators=10, n_jobs=2, verbose=-1)
+    estimator.fit(X, y)
+
+    monkeypatch.setenv("OMP_NUM_THREADS", omp_num_threads)
+    calls_kwargs = spy_booster_predict(estimator)
+    predict_fn = _build_predict_function(estimator)
+    predict_fn(X[:1])
+
+    assert calls_kwargs[0]["num_threads"] == expected
+
+
 @pytest.mark.parametrize(
     "base, estimator_kwargs",
     [
