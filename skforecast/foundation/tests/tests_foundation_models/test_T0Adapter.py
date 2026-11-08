@@ -1,6 +1,10 @@
 # Unit test T0Adapter
 # ==============================================================================
 import re
+import sys
+import types
+from importlib import metadata
+from unittest.mock import Mock, call
 import pytest
 import numpy as np
 import pandas as pd
@@ -124,7 +128,8 @@ def test_T0Adapter_fit_stores_context():
 # ==============================================================================
 # Tests T0Adapter.predict
 # ==============================================================================
-def test_T0Adapter_predict_returns_steps_by_n_quantiles():
+@pytest.mark.parametrize("quantiles", [[0.9, 0.1, 0.5], [0.9, 0.1, 0.9, 0.5]])
+def test_T0Adapter_predict_returns_steps_by_n_quantiles(quantiles):
     """
     Test that predict returns one (steps, n_quantiles) array per series with
     columns ordered to match the requested quantiles.
@@ -137,13 +142,13 @@ def test_T0Adapter_predict_returns_steps_by_n_quantiles():
     ctx, ctx_exog, future_exog = prepare_predict_args(adapter, steps=5)
     preds = adapter.predict(
         steps=5, context=ctx, context_exog=ctx_exog, exog=future_exog,
-        quantiles=[0.9, 0.1, 0.5],
+        quantiles=quantiles,
     )
 
-    assert preds["sales"].shape == (5, 3)
+    assert preds["sales"].shape == (5, len(quantiles))
     # FakeT0Forecast sets each column equal to its (sorted) quantile level;
-    # the adapter must reorder columns back to the requested [0.9, 0.1, 0.5].
-    np.testing.assert_allclose(preds["sales"][0], [0.9, 0.1, 0.5])
+    # Return columns in the caller's order, including repeated levels.
+    np.testing.assert_allclose(preds["sales"][0], quantiles)
     # T0 was queried with sorted, unique levels.
     assert fake.last_quantiles == [0.1, 0.5, 0.9]
 
@@ -255,6 +260,47 @@ def test_T0Adapter_predict_batches_all_series_in_one_call():
     assert preds.shape == (10, 2)
 
 
+def test_T0Adapter_predict_aligns_unequal_contexts_and_covariates():
+    """
+    Test shared padding preserves NaNs and aligns covariates at the horizon.
+    """
+    fake = FakeT0Forecaster()
+    model = FoundationModel("theforecastingcompany/t0-alpha", model=fake)
+    index = pd.date_range("2024-01-01", periods=8, freq="h")
+    series = {
+        "long": pd.Series([1., 2., 3., 4., 5., 6.], index=index[:6]),
+        "short": pd.Series([10., np.nan, 12.], index=index[3:6]),
+    }
+    past = {
+        "long": pd.DataFrame({"a": [1., 2., 3., 4., 5., 6.]}, index=index[:6]),
+        "short": pd.DataFrame({"b": [20., 21., 22.]}, index=index[3:6]),
+    }
+    future = {
+        "long": pd.DataFrame({"a": [7., 8.]}, index=index[6:]),
+        "short": pd.DataFrame({"b": [23., 24.]}, index=index[6:]),
+    }
+    model.fit(series=series, exog=past)
+
+    predictions = model.predict(steps=2, exog=future)
+
+    np.testing.assert_array_equal(
+        fake.last_context,
+        [[1., 2., 3., 4., 5., 6.],
+         [np.nan, np.nan, np.nan, 10., np.nan, 12.]],
+    )
+    assert fake.last_future_covariates.shape == (2, 2, 8)
+    np.testing.assert_array_equal(
+        fake.last_future_covariates[0, 0], [1., 2., 3., 4., 5., 6., 7., 8.]
+    )
+    np.testing.assert_array_equal(
+        fake.last_future_covariates[1, 1],
+        [np.nan, np.nan, np.nan, 20., 21., 22., 23., 24.],
+    )
+    assert np.isnan(fake.last_future_covariates[0, 1]).all()
+    assert np.isnan(fake.last_future_covariates[1, 0]).all()
+    np.testing.assert_array_equal(predictions["pred"], [0.5, 0.5, 0.5, 0.5])
+
+
 def test_T0Adapter_predict_no_exog_passes_none_covariates():
     """
     Test that a series without future exog is forecast with no covariates.
@@ -296,6 +342,70 @@ def test_T0Adapter_predict_ValueError_on_non_numeric_covariate():
 # ==============================================================================
 # Tests T0Adapter._load_model
 # ==============================================================================
+def test_T0Adapter_load_model_ImportError_when_backend_missing(monkeypatch):
+    """
+    Test that a missing runtime gives a shell-safe installation command.
+    """
+    monkeypatch.setitem(sys.modules, "t0", None)
+    adapter = T0Adapter(model_id="theforecastingcompany/t0-alpha")
+
+    with pytest.raises(
+        ImportError, match=re.escape('pip install "tfc-t0[torch]>=0.6"')
+    ):
+        adapter._load_model()
+    assert adapter._model is None
+
+
+@pytest.mark.parametrize("installed", ["0.3.2", "0.5.0", "0.6.0rc1"])
+def test_T0Adapter_load_model_ImportError_when_backend_too_old(
+    monkeypatch, installed
+):
+    """
+    Test that unsupported versions fail before attempting to load weights.
+    """
+    loader = Mock()
+    monkeypatch.setitem(
+        sys.modules, "t0", types.SimpleNamespace(T0Forecaster=loader)
+    )
+    monkeypatch.setattr(metadata, "version", lambda name: installed)
+    adapter = T0Adapter(model_id="theforecastingcompany/t0-alpha", device_map="cpu")
+
+    with pytest.raises(
+        ImportError, match=re.escape(f"tfc-t0 {installed} is installed")
+    ):
+        adapter._load_model()
+    loader.from_pretrained.assert_not_called()
+    assert adapter._model is None
+
+
+@pytest.mark.parametrize("installed", ["0.6.0", "0.10.0", "1.0.0"])
+def test_T0Adapter_load_model_output_when_backend_supported(monkeypatch, installed):
+    """
+    Test supported versions load the checkpoint and apply device and dtype.
+    """
+    loaded = Mock()
+    loaded.to.return_value = loaded
+    loaded.eval.return_value = loaded
+    loader = Mock()
+    loader.from_pretrained.return_value = loaded
+    monkeypatch.setitem(
+        sys.modules, "t0", types.SimpleNamespace(T0Forecaster=loader)
+    )
+    monkeypatch.setattr(metadata, "version", lambda name: installed)
+    adapter = T0Adapter(
+        model_id="theforecastingcompany/t0-alpha",
+        device_map="cpu",
+        torch_dtype="test_dtype",
+    )
+
+    adapter._load_model()
+
+    loader.from_pretrained.assert_called_once_with("theforecastingcompany/t0-alpha")
+    assert adapter._model is loaded
+    assert loaded.to.call_args_list == [call("cpu"), call("test_dtype")]
+    loaded.eval.assert_called_once_with()
+
+
 def test_T0Adapter_load_model_noop_when_already_set():
     """
     Test that _load_model is a no-op when a model is already present.
@@ -316,9 +426,6 @@ def test_T0Adapter_load_model_OSError_when_from_pretrained_raises_TypeError(monk
     confusing TypeError about missing hyperparameters. The `t0` package is
     faked so the test does not depend on `tfc-t0` being installed.
     """
-    import sys
-    import types
-
     class FakeFailingT0Forecaster:
         @classmethod
         def from_pretrained(cls, model_id):
@@ -332,6 +439,7 @@ def test_T0Adapter_load_model_OSError_when_from_pretrained_raises_TypeError(monk
     fake_t0_module = types.ModuleType("t0")
     fake_t0_module.T0Forecaster = FakeFailingT0Forecaster
     monkeypatch.setitem(sys.modules, "t0", fake_t0_module)
+    monkeypatch.setattr(metadata, "version", lambda name: "0.6.0")
 
     adapter = T0Adapter(model_id="theforecastingcompany/t0-alpha")
     err_msg = re.escape(

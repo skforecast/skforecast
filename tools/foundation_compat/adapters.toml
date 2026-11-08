@@ -50,7 +50,7 @@ secrets = ["TABPFN_TOKEN"]
 
 [t0]
 adapter = "T0Adapter"
-backend_package = "tfc-t0"
+backend_package = "tfc-t0[torch]>=0.6"
 model_id = "theforecastingcompany/t0-alpha"
 
 [nori]

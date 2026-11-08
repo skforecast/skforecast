@@ -133,7 +133,8 @@ BACKEND_CONTRACTS = {
         {"target": "t0:T0Forecaster.from_pretrained"},
         {
             "target": "t0:T0Forecaster.predict",
-            "kwargs": ["context", "horizon", "quantiles", "future_covariates"],
+            "n_positional": 1,
+            "kwargs": ["horizon", "quantile_levels", "future_covariates"],
         },
     ],
     "nori": [

@@ -170,7 +170,7 @@ def test_get_model_info_output_Timestral():
         ("priorlabs/tabpfn-ts",
          ("TabPFNAdapter", 32768, "tabpfn-time-series>=1.3", True, False, False)),
         ("theforecastingcompany/t0-alpha",
-         ("T0Adapter", 8192, "tfc-t0", True, False, False)),
+         ("T0Adapter", 8192, "tfc-t0[torch]>=0.6", True, False, False)),
         ("Synthefy/Nori",
          ("NoriAdapter", 4096, "synthefy-nori", True, False, False)),
         ("taharnbl/TS-ICL",

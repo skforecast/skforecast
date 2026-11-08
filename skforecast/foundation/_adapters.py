@@ -3563,7 +3563,7 @@ class T0Adapter(_AdapterBase):
     requires_provider_auth: bool = False
     weights_repo_id: str | None = None
     weights_in_hf_cache: bool = True
-    backend_package: str = "tfc-t0"
+    backend_package: str = "tfc-t0[torch]>=0.6"
     default_model_id: str = "theforecastingcompany/t0-alpha"
 
     def __init__(
@@ -3762,9 +3762,9 @@ class T0Adapter(_AdapterBase):
         )
 
         forecast = self._model.predict(
-            context           = context_batch,
+            context_batch,
             horizon           = steps,
-            quantiles         = query_levels,
+            quantile_levels   = query_levels,
             future_covariates = future_covariates,
         )
 
@@ -3789,8 +3789,8 @@ class T0Adapter(_AdapterBase):
         The model is imported lazily from `t0` and loaded via
         `T0Forecaster.from_pretrained`, then moved to the resolved device and
         switched to eval mode. This method is a no-op when `self._model` is
-        already populated. `tfc-t0` must be installed; an `ImportError` is
-        raised otherwise. An `OSError` is raised if
+        already populated. `tfc-t0[torch]>=0.6` must be installed; an
+        `ImportError` is raised otherwise. An `OSError` is raised if
         `T0Forecaster.from_pretrained` fails to build the model because the
         configuration of the checkpoint could not be downloaded.
 
@@ -3807,13 +3807,25 @@ class T0Adapter(_AdapterBase):
 
         if self._model is not None:
             return
+
+        from importlib.metadata import version
+        from packaging.version import Version
+
         try:
             from t0 import T0Forecaster
+            installed = version("tfc-t0")
         except ImportError as exc:
             raise ImportError(
                 f"{self.backend_package} is required for T0Adapter. "
-                f"Install it with `pip install {self.backend_package}`."
+                f'Install it with `pip install "{self.backend_package}"`.'
             ) from exc
+
+        if Version(installed) < Version("0.6"):
+            raise ImportError(
+                f"T0Adapter requires `{self.backend_package}`, but tfc-t0 "
+                f"{installed} is installed. Upgrade with "
+                f'`pip install -U "{self.backend_package}"`.'
+            )
 
         try:
             model = T0Forecaster.from_pretrained(self.model_id)

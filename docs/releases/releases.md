@@ -54,6 +54,8 @@ The main changes in this release are:
 
     And some code needs to be updated:
 
+    + T0 foundation models require `tfc-t0>=0.6` with its PyTorch runtime. Replace the previous `tfc-t0<0.4` workaround with `pip install -U "tfc-t0[torch]>=0.6"`.
+
     + Forecasters with a linear model of scikit-learn (`LinearRegression`, `Ridge`, `Lasso`...) raise a `ValueError` in `predict` when a predictor has a missing value, for example a gap in `exog`, instead of returning NaN predictions: fill the gaps or use an estimator that accepts missing values. This includes <code>[ForecasterRecursiveMultiSeries]</code> with `encoding='ordinal'` predicting a series not seen in training, which now raises for the whole call instead of returning NaN for that series; use `encoding='onehot'` or `None` to predict it.
 
     + With `differentiation`, any estimator raises a `ValueError` when one of the last `differentiation` values of the series (or of `last_window`) is missing: fill it.
@@ -114,6 +116,8 @@ The main changes in this release are:
 
 
 **Fixed**
+
++ T0 foundation models failed to load or predict with recent `tfc-t0` versions. Install the supported runtime with `pip install -U "tfc-t0[torch]>=0.6"`. [User guide](../user_guides/foundation-forecasting-models.ipynb#the-forecasting-company-t0) ([#1385](https://github.com/skforecast/skforecast/issues/1385), [#1417](https://github.com/skforecast/skforecast/issues/1417))
 
 + Fixed two issues in <code>[fetch_dataset]</code> where the `website_visits` and `m5` datasets were returned without a `DatetimeIndex`, with the warning `Could not preprocess dataset`. In addition, large parquet datasets such as `m5` need less memory to load (about 10 GB instead of more than 15 GB). ([#1402](https://github.com/skforecast/skforecast/pull/1402))
 

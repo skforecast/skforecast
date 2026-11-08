@@ -252,4 +252,4 @@ All adapters implement the same minimal interface:
 | Historical column with no future values (`exog=None` or a subset of columns) | Used as a past-only covariate, no warning        | Ignored, `IgnoredArgumentWarning` listing the columns and series |
 | Same columns on both sides (any order)                  | OK                                                            | OK                                                            |
 
-Backend libraries (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`, `timestral`) are imported **lazily** inside the adapter method that needs them, so only the backend for the adapter you actually use needs to be installed.
+Backend libraries (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`, `timestral`) are imported **lazily** inside the adapter method that needs them, so only the backend for the adapter you actually use needs to be installed. T0 requires `pip install "tfc-t0[torch]>=0.6"`.

@@ -444,15 +444,18 @@ class FakeT0Forecaster:
         self.last_quantiles = None
         self.last_future_covariates = None
 
-    def predict(self, context, horizon, quantiles, future_covariates=None):
-        context = np.asarray(context)
+    def predict(
+        self, model_input, horizon, quantile_levels=(0.1, 0.5, 0.9), *,
+        future_covariates=None,
+    ):
+        context = np.asarray(model_input)
         self.last_context = context
         self.last_horizon = horizon
-        self.last_quantiles = list(quantiles)
+        self.last_quantiles = list(quantile_levels)
         self.last_future_covariates = (
             None if future_covariates is None else np.asarray(future_covariates)
         )
-        return FakeT0Forecast(context.shape[0], horizon, quantiles)
+        return FakeT0Forecast(context.shape[0], horizon, quantile_levels)
 
 
 # Fake TabICL forecaster

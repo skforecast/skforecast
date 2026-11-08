@@ -142,6 +142,45 @@ def test_predict_output_when_exog(model, backend_config):
     assert np.isfinite(predictions["pred"].to_numpy(dtype=float)).all()
 
 
+def test_predict_output_when_t0_unequal_series_and_covariates(model, backend):
+    """
+    Test T0 accepts shared NaN padding and heterogeneous future covariates.
+    """
+    if backend != "t0":
+        pytest.skip("This regression exercises the T0 runtime contract.")
+
+    short = series["series_2"].iloc[-(CONTEXT_LENGTH // 2):].copy()
+    short.iloc[10] = np.nan
+    short.iloc[-1] = np.nan
+    heterogeneous_series = {"series_1": series["series_1"], "series_2": short}
+    past = {
+        "series_1": exog,
+        "series_2": exog.loc[short.index].rename(columns={"exog_1": "exog_2"}),
+    }
+    future = {
+        "series_1": exog_future,
+        "series_2": exog_future.rename(columns={"exog_1": "exog_2"}),
+    }
+    forecaster = ForecasterFoundation(estimator=model)
+    forecaster.fit(series=heterogeneous_series, exog=past)
+
+    predictions = forecaster.predict_interval(
+        steps=STEPS, interval=[0.1, 0.9], exog=future
+    )
+
+    assert len(predictions) == 2 * STEPS
+    assert predictions["level"].unique().tolist() == ["series_1", "series_2"]
+    for level in ["series_1", "series_2"]:
+        pd.testing.assert_index_equal(
+            predictions.index[predictions["level"] == level],
+            expected_index,
+            check_names=False,
+        )
+    values = predictions[["pred", "lower_bound", "upper_bound"]].to_numpy(float)
+    assert np.isfinite(values).all()
+    assert (predictions["lower_bound"] <= predictions["upper_bound"]).all()
+
+
 def test_backtesting_foundation_output_when_two_folds(model):
     """
     Test the shape and values of the metrics and predictions of

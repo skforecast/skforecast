@@ -543,7 +543,7 @@ forecaster = ForecasterStats(estimator=Ets(m=12, model='AAA'))
 
 ## Foundation Models (Zero-Shot)
 
-Pre-trained time series foundation models that forecast without task-specific training. Each model requires its own backend library installed separately (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`, `timestral`, installed from git with `pip install "timestral @ git+https://github.com/mistralai/timestral.git"`). Models are downloaded from HuggingFace on first use.
+Pre-trained time series foundation models that forecast without task-specific training. Each model requires its own backend library installed separately (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`, `timestral`, installed from git with `pip install "timestral @ git+https://github.com/mistralai/timestral.git"`). T0 requires `pip install "tfc-t0[torch]>=0.6"`. Models are downloaded from HuggingFace on first use.
 
 `FoundationModel` is the low-level interface; `ForecasterFoundation` wraps it to integrate with the rest of the skforecast ecosystem (backtesting, model selection, uniform `predict` / `predict_interval` / `predict_quantiles` API).
 
