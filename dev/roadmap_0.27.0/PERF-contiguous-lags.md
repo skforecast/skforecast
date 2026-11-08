@@ -4,12 +4,16 @@ Rama `perf/contiguous-lag-matrix` desde `origin/0.27.x` (17219ad65), solo en loc
 Medición con recomendación: el código del paquete no cambia. El prototipo está en
 `repro/PERF-contiguous-lags_prototype.diff` y no está aplicado en la rama.
 
-**Estado (2026-11-08, fase 2):** medición cerrada; opción D elegida, pendiente de aprobar
-la implementación.
+**Estado (2026-11-08, decisión):** opción D aprobada con dos recortes. Se implementará
+cuando se fusione el refactor de los avisos, que toca la misma zona.
 
 - **Lista final** (sección 14): `LinearRegression`, `Ridge`, `Lars` y `LassoLars`.
-- **Pipeline:** cuenta su primer paso, porque es el que recibe la matriz. Un Pipeline que
-  empieza por `StandardScaler` no se copia.
+- **Sin tratamiento de `Pipeline`:** se comprueba solo la clase del estimador, y un Pipeline
+  nunca se copia, empiece por lo que empiece. La regla del primer paso (fase 2) solo
+  acertaba con un Pipeline cuyo primer paso fuera el propio estimador, y eso no se da en la
+  práctica.
+- **Tests:** uno parametrizado sobre la lista y unos pocos casos que no copian, no tests
+  por estimador (sección 16.4).
 - **Dónde se copia:** en Recursive, Direct y DMV. Classifier no cambia.
 - **Datos:** la tabla comparativa limpia está en la sección 15 y la implementación,
   descrita sin aplicar, en la sección 16.
@@ -42,8 +46,8 @@ cada fila y equipo enchufado.
   - RidgeClassifier: ganancia inestable (5 % o menos en limpio).
   - Los demás: no ganan.
 - **Pipeline.** La regla de mirar el último paso, que proponía la fase 1, suma una matriz
-  de pico con `StandardScaler` (+100 %). Se mira el primer paso: un Pipeline que empieza
-  por un transformador no se copia.
+  de pico con `StandardScaler` (+100 %). La fase 2 proponía mirar el primer paso; la
+  decisión final es no tratar los Pipelines: nunca se copian.
 - **Ganancia de la opción D** frente a `0.27.x` (sección 15), con 20.000 filas o más:
   - `fit` de Recursive: entre un 4 y un 30 % menos.
   - `fit` de Direct (5 pasos): entre un 7 y un 43 % menos.
@@ -435,7 +439,7 @@ memoria es la de la sección 7.
 | A. No hacer nada | - | - | Ridge paga de un 23 a un 41 % más en el `fit` de Recursive desde 1.000 x 168, y hasta un 72 % en Direct (701 frente a 407 ms). LinearRegression, de un 3 a un 20 %. El backtesting y la búsqueda con lineales y muchos `fit`, de un 10 a un 52 % más. Memoria: 0. |
 | B. Copiar siempre | `np.ascontiguousarray` cuando la matriz es un solo bloque (prototipo). En Direct y DMV, solo sin `exog` ni calendario. | Lo de D. | Copia que nadie aprovecha con los demás estimadores (de 0,01 a 25 ms por `fit`); HistGradientBoosting un 4 % más lento con 200.000 x 168; +1 matriz de pico con Lasso, ElasticNet y HistGradientBoosting (+256 MB con 200.000 x 168); residuos in-sample de los lineales con cambios de hasta 2e-13. Dos líneas por forecaster. |
 | C. Construir los lags en orden C desde el principio (como MultiSeries) | Copiar en `_create_lags` | Lo de B. | Lo de B, más una copia doble cuando los lags se concatenan con `exog`, window features o calendario (hoy el `np.concatenate` ya da C), salvo que se limite al caso de un solo bloque, y entonces es B. No hay un método más barato que `ascontiguousarray` (sección 3). |
-| D. Copiar solo cuando el estimador gana | B, pero solo si el estimador (o el primer paso del `Pipeline`, fase 2) es `LinearRegression`, `Ridge`, `Lars` o `LassoLars` (lista final de la fase 2; en la fase 1 se proponían `LinearRegression`, `Ridge` y `RidgeCV`) | Recursive: Ridge de un 3 a un 29 % menos, LinearRegression de un 3 a un 14 %. Direct: de un 7 a un 42 % y de un 3 a un 17 %. Pipelines: de un 4 a un 17 %. Backtesting y búsqueda con Ridge y muchos `fit` (417 folds, Direct, `refit=True`, `OneStepAheadFold`): de un 15 a un 34 % menos. | Memoria: entre 0 y +32 MB con una matriz de 256 MB. Residuos in-sample de esos estimadores con cambios de hasta 2e-13; las predicciones no cambian. Con el resto de estimadores, ningún cambio. Una función en `utils` y una llamada en 4 forecasters. |
+| D. Copiar solo cuando el estimador gana | B, pero solo si la clase del estimador es `LinearRegression`, `Ridge`, `Lars` o `LassoLars` (lista final; un `Pipeline` nunca se copia; en la fase 1 se proponían `LinearRegression`, `Ridge` y `RidgeCV`) | Recursive: Ridge de un 3 a un 29 % menos, LinearRegression de un 3 a un 14 %. Direct: de un 7 a un 42 % y de un 3 a un 17 %. Pipelines: de un 4 a un 17 %. Backtesting y búsqueda con Ridge y muchos `fit` (417 folds, Direct, `refit=True`, `OneStepAheadFold`): de un 15 a un 34 % menos. | Memoria: entre 0 y +32 MB con una matriz de 256 MB. Residuos in-sample de esos estimadores con cambios de hasta 2e-13; las predicciones no cambian. Con el resto de estimadores, ningún cambio. Una función en `utils` y una llamada en 4 forecasters. |
 
 **Recomendación: D.** Tiene sentido:
 
@@ -453,7 +457,8 @@ Detalles para la implementación (fase 1; sustituidos por la sección 16):
 - **Criterio.** Lista cerrada de lo medido (`LinearRegression`, `Ridge`, `RidgeCV`, que
   usa el mismo cálculo). Hay que mirar el último paso del `Pipeline`, como
   `select_n_jobs_fit_forecaster`. **Corregido en la fase 2:** RidgeCV suma una matriz de
-  pico, y el último paso de un Pipeline con escalador también; se mira el primer paso.
+  pico, y el último paso de un Pipeline con escalador también. Decisión final: un Pipeline
+  nunca se copia (sección 16).
   - Las demás clases de `LinearModel` sin descenso por coordenadas (BayesianRidge, ARD,
     Lars, Huber, TheilSen, OMP, QuantileRegressor, RidgeClassifier) no están medidas.
     Se pueden añadir midiendo con el script 03.
@@ -485,7 +490,7 @@ Para la tabla de "Alcance" de la sección 0:
 
 | Tema | Elementos | Notas |
 |---|---|---|
-| Rendimiento con modelos lineales | PERF-contiguous-lags | S. Nuevo (2026-11-08). Con solo lags, Recursive, Direct y DMV pasan al estimador una vista no contigua de `sliding_window_view`. Copiarla a orden C solo cuando el estimador (o el primer paso del `Pipeline`) es LinearRegression, Ridge, Lars o LassoLars reduce el `fit` con 20.000 filas entre un 9 y un 30 % en Recursive y entre un 14 y un 40 % en Direct (hasta un 43 % con 200.000), y el backtesting con `refit=True` y las búsquedas con estos modelos entre un 6 y un 33 %. Las predicciones no cambian (residuos in-sample: menos de 2e-13) y la memoria pico sube un 12 % de la matriz como mucho (solo con LinearRegression). Con los demás estimadores no se copia. Una lista y una función privada en `utils`, y dos líneas en tres forecasters. Medición, lista y cambios en [`PERF-contiguous-lags.md`](PERF-contiguous-lags.md), secciones 14 a 16 |
+| Rendimiento con modelos lineales | PERF-contiguous-lags | S. Nuevo (2026-11-08), después del refactor de los avisos (toca la misma zona de los forecasters). Con solo lags, Recursive, Direct y DMV pasan al estimador una vista no contigua de `sliding_window_view`. Copiarla a orden C solo cuando la clase del estimador es LinearRegression, Ridge, Lars o LassoLars (un `Pipeline` nunca se copia) reduce el `fit` con 20.000 filas entre un 9 y un 30 % en Recursive y entre un 14 y un 40 % en Direct. En un solo `fit` son milisegundos; se nota en el backtesting con `refit=True` y en las búsquedas (entre un 6 y un 33 % menos). Las predicciones no cambian (residuos in-sample: menos de 2e-13), la memoria pico sube un 12 % de la matriz como mucho (solo con LinearRegression) y con los demás estimadores no cambia nada. Una lista y una función privada en `utils`, y dos líneas en tres forecasters. Medición, lista y cambios en [`PERF-contiguous-lags.md`](PERF-contiguous-lags.md), secciones 14 a 16 |
 
 ## 12. Prototipo
 
@@ -499,7 +504,10 @@ aplicado en la rama. Añade el indicador de módulo `_CONTIGUOUS_X_TRAIN`:
 - `False`: camino de `0.27.x`.
 
 En el parche, el modo D también está en Classifier, para medir RidgeClassifier. Con la
-lista final no se copia con ningún clasificador.
+lista final no se copia con ningún clasificador. El parche aplica todavía la regla del
+primer paso del `Pipeline` (fase 2). La decisión final la quita (sección 16), pero no
+cambia ningún número: los Pipelines medidos empiezan por `StandardScaler` y no se copian
+con ninguna de las dos reglas.
 
 Es para medir, no para fusionar: la opción D no usaría un indicador de módulo, sino el
 criterio del estimador. No se ha creado ningún worktree temporal para comparar: las dos
@@ -677,7 +685,9 @@ caso habitual; no merece una excepción por parámetro.
 
 ## 15. Opción D frente a `0.27.x` (condiciones limpias, script 11)
 
-Prototipo en el modo `"D"`, con la lista final y la regla del primer paso del Pipeline.
+Prototipo en el modo `"D"`, con la lista final y la regla del primer paso del Pipeline. La
+decisión final no trata los Pipelines (sección 16). Los números no cambian: los Pipelines de
+esta tabla empiezan por `StandardScaler` y tampoco se copiaban con esa regla.
 `fit` en ms, `0.27.x` → opción D, con la ganancia entre paréntesis. La memoria es la pico
 de `tracemalloc` en MB, `0.27.x` → opción D, en 20.000 x 24 / 20.000 x 168 / 200.000 x 168.
 Las predicciones son idénticas bit a bit en todas las filas de `fit` y backtesting.
@@ -748,9 +758,12 @@ ir en la siguiente sin coste: nada depende de él.
 
 ## 16. Qué cambia en el código (opción D, sin aplicar)
 
-El prototipo en el modo `"D"` (`repro/PERF-contiguous-lags_prototype.diff`) usa exactamente
-la lista y la función de abajo. La implementación quita el indicador de módulo y deja la
-llamada directa. Las líneas son las de `0.27.x` (17219ad65).
+Con los recortes de la decisión final: la lista se queda en los cuatro estimadores y no hay
+tratamiento de `Pipeline`. El prototipo en el modo `"D"` (`repro/PERF-contiguous-lags_prototype.diff`)
+usa la misma lista. Su función todavía mira el primer paso del Pipeline; la de abajo, que
+es la que se implementará, no. La implementación quita el indicador de módulo y deja la
+llamada directa. Las líneas son las de `0.27.x` (17219ad65). Hay que revisarlas después
+del refactor de los avisos, que toca la misma zona.
 
 ### 16.1 La lista y la función (`skforecast/utils/utils.py`)
 
@@ -793,29 +806,23 @@ def _estimator_benefits_from_c_contiguous_X(estimator: object) -> bool:
     Parameters
     ----------
     estimator : object
-        Estimator object. If the estimator is a Pipeline, its first step is
-        used, since it is the step that receives the training matrix.
+        Estimator object.
 
     Returns
     -------
     benefits : bool
-        `True` if the estimator (or the first step of a Pipeline) is one of the
-        scikit-learn estimators in `_SKLEARN_C_CONTIGUOUS_ESTIMATORS`,
-        otherwise `False`.
+        `True` if the estimator is one of the scikit-learn estimators in
+        `_SKLEARN_C_CONTIGUOUS_ESTIMATORS`, otherwise `False`.
 
     Notes
     -----
     Detection is based on the class name and the module (`sklearn`), as in
-    `estimator_has_native_nan_support`. Subclasses defined outside scikit-learn
-    and other meta-estimators (for example `TransformedTargetRegressor`) are
-    not detected, and the matrix is passed as it is. A Pipeline that starts
-    with a transformer (for example `StandardScaler`) is not copied either: the
-    transformer returns a new array, so the copy would only add memory.
+    `estimator_has_native_nan_support`. Only the class of the estimator is
+    checked: a Pipeline (whatever its steps), other meta-estimators (for
+    example `TransformedTargetRegressor`) and subclasses defined outside
+    scikit-learn return `False`, and the matrix is passed as it is.
 
     """
-
-    if isinstance(estimator, Pipeline):
-        estimator = estimator[0]
 
     module = type(estimator).__module__.split('.')[0]
 
@@ -832,15 +839,16 @@ def _estimator_benefits_from_c_contiguous_X(estimator: object) -> bool:
     `isinstance(estimator, LinearModel)`. Allí la familia entera se comporta igual. Aquí
     no: Lasso, ElasticNet, RidgeCV, BayesianRidge y ARD son `LinearModel` y no deben
     copiarse.
-- **Pipeline: el primer paso, no el último.** Las reglas de `n_jobs` y de NaN miran el
-  último paso, porque dependen de qué modelo se entrena. Aquí importa quién recibe la
-  matriz. Con `StandardScaler` delante, mirar el último paso sumaría una matriz de pico
-  (+100 %, sección 15).
+- **Pipeline: nunca se copia.** La función no desenvuelve el Pipeline: su clase es
+  `Pipeline` y no está en la lista.
+  - Mirar el último paso, como las reglas de `n_jobs` y de NaN, sumaría una matriz de pico
+    con un transformador delante (+100 %, sección 15).
+  - Mirar el primer paso (la propuesta de la fase 2) solo acierta con un Pipeline cuyo
+    primer paso es el propio estimador, y eso no se da en la práctica.
+  - Un Pipeline con escalador recibe la vista igual que hoy: ni gana ni pierde (sección 15).
 - **Otros meta-estimadores** (`TransformedTargetRegressor`, `MultiOutputRegressor`,
-  `GridSearchCV`, `VotingRegressor`, `StackingRegressor`): no se copia.
-  `TransformedTargetRegressor(regressor=Ridge())` pasaría `X` sin cambiar a Ridge y
-  ganaría, pero no está medido y la regla de NaN tampoco lo desenvuelve. Se puede añadir
-  después.
+  `GridSearchCV`, `VotingRegressor`, `StackingRegressor`): tampoco se copian, por la misma
+  razón.
 - **Organización de `utils`.** La función no depende de los avisos ni de un posible módulo
   privado de avisos.
   - Es una comprobación de capacidades del estimador, como
@@ -949,51 +957,49 @@ como C con los lineales (sección 5).
   **Changed**, junto a las de rendimiento (#1460 y #1462). Texto propuesto:
 
   > + <code>[ForecasterRecursive]</code>, <code>[ForecasterDirect]</code> and
-  > <code>[ForecasterDirectMultiVariate]</code> fit `LinearRegression`, `Ridge`, `Lars`
-  > and `LassoLars` faster when the predictors are only lags: the training matrix is passed
-  > as a C-contiguous array instead of a non-contiguous view. `fit` takes 9 to 30% less time
-  > in Recursive and 14 to 40% less in Direct (20,000 rows, 24 or 168 lags), and backtesting
-  > with `refit=True` 6 to 33% less; predictions are unchanged and in-sample residuals can
-  > differ in the last decimals. ([#XXXX](https://github.com/skforecast/skforecast/pull/XXXX))
+  > <code>[ForecasterDirectMultiVariate]</code> fit faster with `LinearRegression`, `Ridge`,
+  > `Lars` and `LassoLars` when the predictors are only lags: the training matrix is passed
+  > to the estimator as a C-contiguous array instead of a non-contiguous view. A single fit
+  > saves only milliseconds; the difference shows mainly in backtesting with `refit=True`
+  > and in hyperparameter searches, which repeat the fit (6 to 33% less time in our tests).
+  > Nothing changes with other estimators, including a `Pipeline`. Predictions are unchanged;
+  > in-sample residuals can differ in the last decimals.
+  > ([#XXXX](https://github.com/skforecast/skforecast/pull/XXXX))
 
 - **AI context.** No hace falta tocar `llms-base.txt` ni las skills, porque no cambia la
   API pública.
 
 ### 16.4 Tests
 
-Nuevos:
+Nuevos. Son parametrizados sobre la lista y tres casos que no copian, sin tests aparte
+para cada estimador. Los casos se escriben una vez:
 
-- **`skforecast/utils/tests/tests_utils/test_estimator_benefits_from_c_contiguous_X.py`**,
-  parametrizado.
-  - Devuelven `True`: `Ridge`, `LinearRegression`, `LinearRegression(positive=True)`,
-    `Lars`, `LassoLars` y `Pipeline([("ridge", Ridge())])`.
-  - Devuelven `False`:
-    - `Lasso`, `ElasticNet`, `RidgeCV`, `BayesianRidge`, `ARDRegression`,
-      `HuberRegressor`, `PoissonRegressor`, `RidgeClassifier` y `LogisticRegression`;
-    - `HistGradientBoostingRegressor` y `LGBMRegressor`;
-    - `make_pipeline(StandardScaler(), Ridge())`;
-    - `TransformedTargetRegressor(regressor=Ridge())`;
-    - una subclase de `Ridge` definida en el test (módulo distinto de `sklearn`).
-- **Disposición de la matriz**, en `test_create_train_X_y.py` de Recursive, Direct y DMV.
-  Se miran los flags del `X_train` de `_create_train_X_y`, que es lo que el `fit` pasa al
-  estimador.
-  - Solo lags:
-    - con `Ridge`, `X_train.flags.c_contiguous` es `True`;
-    - con `HistGradientBoostingRegressor`, es `False` y la matriz no es dueña de sus datos
-      (la vista);
-    - con `make_pipeline(StandardScaler(), Ridge())`, también `False`.
-  - Con `exog`: C en los dos casos.
-  - En Direct, la matriz de cada paso.
-  - En DMV, lags en una sola serie.
-  - `differentiation` y `transformer_y`: con Ridge siguen saliendo C.
-- **Predicciones iguales,** uno por forecaster en `test_fit.py`.
-  - Se ajusta el mismo forecaster con Ridge dos veces: una normal y otra con
+```python
+# One instance of each estimator in the list (copied) and the cases that are not.
+COPIED = [LinearRegression(), Ridge(), Lars(), LassoLars()]
+NOT_COPIED = [HistGradientBoostingRegressor(), Lasso(), make_pipeline(Ridge())]
+```
+
+- **La función**, en
+  `skforecast/utils/tests/tests_utils/test_estimator_benefits_from_c_contiguous_X.py`.
+  - Un test parametrizado sobre `COPIED` (`True`) y `NOT_COPIED` (`False`).
+  - Una comprobación de que `COPIED` cubre `_SKLEARN_C_CONTIGUOUS_ESTIMATORS`: los nombres
+    de clase coinciden, así que si alguien añade un estimador a la lista sin añadirlo al
+    test, falla.
+  - `make_pipeline(Ridge())` es el caso más estricto para el Pipeline: su único paso está
+    en la lista y aun así no se copia.
+- **La disposición de la matriz**, un test parametrizado por forecaster, en
+  `test_create_train_X_y.py` de Recursive, Direct y DMV. Mismos casos.
+  - Con solo lags, `X_train.flags.c_contiguous` del `_create_train_X_y` es `True` con
+    `COPIED` y `False` con `NOT_COPIED` (la vista). Es lo que el `fit` pasa al estimador.
+  - En Direct se mira `X_train_autoreg`. En DMV, con lags en una sola serie.
+  - Un caso más con `exog` y Ridge: C, por el `np.concatenate`.
+- **Predicciones iguales,** uno por forecaster en `test_fit.py`, con Ridge.
+  - Se ajusta el mismo forecaster dos veces: una normal y otra con
     `_estimator_benefits_from_c_contiguous_X` parcheada (`monkeypatch`) para que devuelva
     `False`.
   - `predict` tiene que coincidir bit a bit (`np.testing.assert_array_equal`).
   - `in_sample_residuals_` tiene que coincidir con `assert_allclose(rtol=0, atol=1e-10)`.
-- **`create_train_X_y`.** Con Ridge, mismos valores que con un árbol
-  (`pd.testing.assert_frame_equal`).
 
 Tests existentes que podrían notar los 2e-13 (residuos in-sample o intervalos con
 `LinearRegression` o `Ridge` y solo lags):
