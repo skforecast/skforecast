@@ -3,9 +3,13 @@
 import os
 import warnings
 import pytest
+from joblib import Parallel, delayed
 from skforecast.exceptions import MissingValuesWarning
 from skforecast.utils import manage_warnings
-from skforecast.model_selection._utils import _run_fold_recording_warnings
+from skforecast.model_selection._utils import (
+    _run_fold_recording_warnings,
+    FOLD_WARNINGS_ATTRIBUTE
+)
 
 # NOTE: A `main_pid` other than the identifier of this process simulates a fold
 # that runs in a worker process of joblib.
@@ -20,6 +24,14 @@ def fold_warns(value, n_warnings=1):
         warnings.warn("`exog` has missing values. Details.", MissingValuesWarning)
 
     return value * 2
+
+
+def fold_warns_then_fails(value):
+    """
+    Function of a fold that raises a MissingValuesWarning and then an error.
+    """
+    warnings.warn("`exog` has missing values. Details.", MissingValuesWarning)
+    raise ValueError(f"Error of the fold {value}.")
 
 
 @manage_warnings
@@ -154,3 +166,56 @@ def test_run_fold_recording_warnings_skforecast_warning_text_not_duplicated():
     assert category is MissingValuesWarning
     assert message.message == "`exog` has missing values. Details."
     assert str(message).count("`exog` has missing values. Details.") == 1
+
+
+def test_run_fold_recording_warnings_in_worker_process_error_raised_with_its_warnings():
+    """
+    Test that, in a worker process, an error of the fold is raised again, the
+    same error, with the warnings raised before it in its attribute
+    `FOLD_WARNINGS_ATTRIBUTE`, checked with `pickle` as the rest (a warning
+    that cannot be serialized is kept as a `RuntimeWarning`).
+    """
+
+    class LocalWarning(UserWarning):
+        pass
+
+    def fold_local_warning_then_fails():
+        warnings.warn("`exog` has missing values. Details.", MissingValuesWarning)
+        warnings.warn("Warning of a local class.", LocalWarning)
+        raise ValueError("Error of the fold.")
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        with pytest.raises(ValueError, match="Error of the fold.") as exc_info:
+            _run_fold_recording_warnings(
+                fold_function=fold_local_warning_then_fails, main_pid=OTHER_PID
+            )
+
+    assert record == []
+    fold_warnings = getattr(exc_info.value, FOLD_WARNINGS_ATTRIBUTE)
+    assert [category for _, category, _, _ in fold_warnings] == [
+        MissingValuesWarning, RuntimeWarning
+    ]
+    assert str(fold_warnings[1][0]) == "LocalWarning: Warning of a local class."
+
+
+def test_run_fold_recording_warnings_error_with_its_warnings_reaches_main_process_with_loky():
+    """
+    Test that the warnings stored in the error of a fold that runs in a worker
+    process of loky reach the main process with the error, which keeps its type
+    and text.
+    """
+    with pytest.raises(ValueError, match=r"Error of the fold \d\.") as exc_info:
+        Parallel(n_jobs=2, backend="loky")(
+            delayed(_run_fold_recording_warnings)(
+                fold_function=fold_warns_then_fails, main_pid=os.getpid(), value=value
+            )
+            for value in range(2)
+        )
+
+    fold_warnings = getattr(exc_info.value, FOLD_WARNINGS_ATTRIBUTE)
+    assert len(fold_warnings) == 1
+    message, category, filename, _ = fold_warnings[0]
+    assert category is MissingValuesWarning
+    assert message.message == "`exog` has missing values. Details."
+    assert filename == __file__

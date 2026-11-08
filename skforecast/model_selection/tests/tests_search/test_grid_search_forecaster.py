@@ -420,3 +420,54 @@ def test_grid_search_forecaster_warnings_of_folds_in_processes_same_as_n_jobs_1(
 
     assert [category for category, _, _, _ in expected].count(MissingValuesWarning) == 1
     assert results == expected
+
+
+class RidgeWarnsThenFailsLargeAlpha(Ridge):
+    """
+    Ridge that, with `alpha` greater than 0.5 and when it predicts one row (the
+    steps of a recursive forecast), warns and then raises an error. It is not a
+    class of scikit-learn, so the forecaster calls its `predict`.
+    """
+
+    def predict(self, X):
+        if len(X) == 1 and self.alpha > 0.5:
+            warnings.warn("Warning before the error of the fold.", UserWarning)
+            raise ValueError("Error of the fold.")
+        return super().predict(X)
+
+
+def test_grid_search_forecaster_warning_of_fold_that_fails_in_process_kept_with_candidate():
+    """
+    Test that, when a fold of a candidate that runs in a worker process warns
+    and then raises an error, the candidate is skipped and its warning is
+    collected with it ("in 1 of 2 candidates"), as with `n_jobs=1`.
+    """
+    def search(n_jobs):
+        forecaster = ForecasterRecursive(RidgeWarnsThenFailsLargeAlpha(), lags=3)
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always")
+            results = grid_search_forecaster(
+                forecaster    = forecaster,
+                y             = y,
+                cv            = TimeSeriesFold(steps=2, initial_train_size=40, refit=False),
+                param_grid    = {'alpha': [0.1, 1.0]},
+                metric        = 'mean_absolute_error',
+                return_best   = False,
+                n_jobs        = n_jobs,
+                show_progress = False,
+            )
+
+        warnings_shown = [(w.category, str(w.message), w.filename, w.lineno) for w in record]
+
+        return results['params'].tolist(), warnings_shown
+
+    expected = search(n_jobs=1)
+    results = search(n_jobs=2)
+
+    assert expected[0] == [{'alpha': 0.1}]
+    assert expected[1][0][:2] == (
+        UserWarning, "Warning before the error of the fold (in 1 of 2 candidates)."
+    )
+    assert expected[1][1][0] is RuntimeWarning
+    assert "ValueError: Error of the fold." in expected[1][1][1]
+    assert results == expected

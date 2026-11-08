@@ -1,6 +1,9 @@
 # Unit test _reemit_fold_warnings
 # ==============================================================================
+import sys
+import types
 import warnings
+from importlib.machinery import BuiltinImporter
 import skforecast.utils.utils as utils_module
 from skforecast.exceptions import MissingValuesWarning
 from skforecast.model_selection._utils import (
@@ -98,3 +101,29 @@ def test_reemit_fold_warnings_collected_by_SearchWarnings_with_candidate():
 
     assert len(record) == 1
     assert record[0].message.message == "Missing values (in 2 of 3 candidates). Details."
+
+
+def test_reemit_fold_warnings_module_without_spec_shown_without_extra_warnings():
+    """
+    Test that a warning raised in a module without `__spec__` (as `__main__`
+    when the code is read from the standard input) is shown as it is, without
+    a `DeprecationWarning` or an `ImportError` from its loader.
+    """
+    module = types.ModuleType("module_without_spec")
+    module.__file__ = "/path/to/module_without_spec.py"
+    module.__spec__ = None
+    module.__loader__ = BuiltinImporter
+    sys.modules["module_without_spec"] = module
+    try:
+        results = [
+            ("output", [(UserWarning("Warning of the user."), UserWarning, module.__file__, 3)])
+        ]
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always")
+            _reemit_fold_warnings(results)
+    finally:
+        del sys.modules["module_without_spec"]
+
+    assert [(w.category, str(w.message)) for w in record] == [
+        (UserWarning, "Warning of the user.")
+    ]

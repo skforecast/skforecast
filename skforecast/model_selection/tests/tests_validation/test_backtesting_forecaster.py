@@ -622,3 +622,49 @@ def test_backtesting_forecaster_warnings_of_folds_in_processes_go_through_filter
         warnings.simplefilter("error", category=MissingValuesWarning)
         with pytest.raises(MissingValuesWarning, match="`exog` has missing values"):
             _backtesting_exog_with_nan(n_jobs=2)
+
+
+class RidgeWarnsThenFailsPredictingOneRow(Ridge):
+    """
+    Ridge that, when it predicts one row (the steps of a recursive forecast, not
+    the in-sample residuals of `fit`), warns and then raises an error. It is
+    not a class of scikit-learn, so the forecaster calls its `predict`.
+    """
+
+    def predict(self, X):
+        if len(X) == 1:
+            warnings.warn("Warning before the error of the fold.", UserWarning)
+            raise ValueError("Error of the fold.")
+        return super().predict(X)
+
+
+def test_backtesting_forecaster_warnings_of_fold_that_fails_in_process_same_as_n_jobs_1():
+    """
+    Test that, when a fold that runs in a worker process warns and then raises
+    an error, its warning is shown in the main process and the error is the
+    same as with `n_jobs=1`.
+    """
+    def warnings_and_error(n_jobs):
+        forecaster = ForecasterRecursive(RidgeWarnsThenFailsPredictingOneRow(), lags=3)
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always")
+            with pytest.raises(ValueError) as exc_info:
+                backtesting_forecaster(
+                    forecaster    = forecaster,
+                    y             = y,
+                    cv            = TimeSeriesFold(steps=2, initial_train_size=40, refit=False),
+                    metric        = "mean_absolute_error",
+                    n_jobs        = n_jobs,
+                    show_progress = False,
+                )
+
+        warnings_shown = [(w.category, str(w.message), w.filename, w.lineno) for w in record]
+
+        return warnings_shown, type(exc_info.value), str(exc_info.value)
+
+    expected = warnings_and_error(n_jobs=1)
+    results = warnings_and_error(n_jobs=2)
+
+    assert expected[0][0][:2] == (UserWarning, "Warning before the error of the fold.")
+    assert expected[1:] == (ValueError, "Error of the fold.")
+    assert results == expected
