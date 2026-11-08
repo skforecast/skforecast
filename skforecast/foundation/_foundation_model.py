@@ -39,8 +39,8 @@ class FoundationModel:
     Scikit-learn compatible interface for foundation time-series models.
 
     Currently supports Amazon Chronos-2, Google TimesFM 2.5 and 3.0, Salesforce
-    Moirai-2, TabICLv2, TabPFN-TS, TFC-T0, Synthefy Nori, EDF Lab TS-ICL and
-    Mistral AI Timestral.
+    Moirai-2, TabICLv2, TabPFN-TS, TFC-T0, Synthefy Nori, EDF Lab TS-ICL,
+    Mistral AI Timestral and NX-AI TiRex-2.
     For full skforecast ecosystem integration (backtesting, model selection, etc.)
     use `ForecasterFoundation` instead.
 
@@ -97,6 +97,10 @@ class FoundationModel:
         - `'mistralai/Timestral-123M'`
         - `'mistralai/Timestral-209M'`
 
+        NX-AI TiRex-2 (supports `exog`):
+
+        - `'NX-AI/TiRex-2'`
+
         See References for links to model documentation and model cards.
     **kwargs :
         Additional keyword arguments forwarded to the underlying adapter.
@@ -143,6 +147,9 @@ class FoundationModel:
         - **Mistral AI Timestral** (`TimestralAdapter`): `context_length`
           (int, default 4096), `device` (str, default `'auto'`),
           `predict_kwargs` (dict, default None).
+        - **NX-AI TiRex-2** (`TiRex2Adapter`): `context_length` (int, default
+          2048), `device` (str, default `'auto'`), `predict_kwargs` (dict,
+          default None).
 
     Attributes
     ----------
@@ -289,6 +296,12 @@ class FoundationModel:
 
     .. [18] Mistral AI Timestral - HuggingFace collection.
             https://huggingface.co/collections/mistralai/timestral
+
+    .. [19] NX-AI TiRex-2 - GitHub repository.
+            https://github.com/NX-AI/tirex-2
+
+    .. [20] NX-AI TiRex-2 - HuggingFace model card.
+            https://huggingface.co/NX-AI/TiRex-2
 
     """
 
