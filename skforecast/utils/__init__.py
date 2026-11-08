@@ -10,6 +10,7 @@ from .utils import (
     _get_catboost_cat_feature_indices,
     _get_estimator_categorical_set_params,
     _NonFinitePredictorsError,
+    _prefers_c_contiguous_X,
     _restore_estimator_categorical_set_params,
     _series_too_short_multiseries,
     _warn_nan_training_rows,
