@@ -120,7 +120,7 @@ def _find_stack_level() -> int:
     return 1 + n_frames if frame is not None else 1
 
 
-WORKER_WARNINGS_ATTRIBUTE = "_skforecast_worker_warnings"
+_WORKER_WARNINGS_ATTRIBUTE = "_skforecast_worker_warnings"
 
 
 def _run_recording_worker_warnings(
@@ -145,7 +145,7 @@ def _run_recording_worker_warnings(
     with `pickle`. Otherwise, its text is returned as a `RuntimeWarning`,
     starting with the name of its category.
     - If the function raises an error, the warnings raised before it are
-    stored in the attribute `WORKER_WARNINGS_ATTRIBUTE` of the error, which
+    stored in the attribute `_WORKER_WARNINGS_ATTRIBUTE` of the error, which
     reaches the main process with it, and the error is raised again.
 
     Parameters
@@ -177,7 +177,7 @@ def _run_recording_worker_warnings(
         except Exception as error:
             try:
                 setattr(
-                    error, WORKER_WARNINGS_ATTRIBUTE, _serializable_warnings(caught)
+                    error, _WORKER_WARNINGS_ATTRIBUTE, _serializable_warnings(caught)
                 )
             except Exception:
                 pass

@@ -8,7 +8,7 @@ from skforecast.exceptions import MissingValuesWarning
 from skforecast.utils import manage_warnings
 from skforecast.utils import (
     _run_recording_worker_warnings,
-    WORKER_WARNINGS_ATTRIBUTE
+    _WORKER_WARNINGS_ATTRIBUTE
 )
 
 # NOTE: A `main_pid` other than the identifier of this process simulates a fold
@@ -172,7 +172,7 @@ def test_run_recording_worker_warnings_in_worker_process_error_raised_with_its_w
     """
     Test that, in a worker process, an error of the fold is raised again, the
     same error, with the warnings raised before it in its attribute
-    `WORKER_WARNINGS_ATTRIBUTE`, checked with `pickle` as the rest (a warning
+    `_WORKER_WARNINGS_ATTRIBUTE`, checked with `pickle` as the rest (a warning
     that cannot be serialized is kept as a `RuntimeWarning`).
     """
 
@@ -192,7 +192,7 @@ def test_run_recording_worker_warnings_in_worker_process_error_raised_with_its_w
             )
 
     assert record == []
-    worker_warnings = getattr(exc_info.value, WORKER_WARNINGS_ATTRIBUTE)
+    worker_warnings = getattr(exc_info.value, _WORKER_WARNINGS_ATTRIBUTE)
     assert [category for _, category, _, _ in worker_warnings] == [
         MissingValuesWarning, RuntimeWarning
     ]
@@ -213,7 +213,7 @@ def test_run_recording_worker_warnings_error_with_its_warnings_reaches_main_proc
             for value in range(2)
         )
 
-    worker_warnings = getattr(exc_info.value, WORKER_WARNINGS_ATTRIBUTE)
+    worker_warnings = getattr(exc_info.value, _WORKER_WARNINGS_ATTRIBUTE)
     assert len(worker_warnings) == 1
     message, category, filename, _ = worker_warnings[0]
     assert category is MissingValuesWarning

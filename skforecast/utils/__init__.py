@@ -23,5 +23,5 @@ from ._warnings import (
     _reemit_worker_warnings,
     _run_recording_worker_warnings,
     _serializable_warnings,
-    WORKER_WARNINGS_ATTRIBUTE
+    _WORKER_WARNINGS_ATTRIBUTE
 )

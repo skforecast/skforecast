@@ -43,7 +43,7 @@ from ..utils import (
     estimator_has_native_nan_support,
     _run_recording_worker_warnings,
     _reemit_worker_warnings,
-    WORKER_WARNINGS_ATTRIBUTE
+    _WORKER_WARNINGS_ATTRIBUTE
 )
 from ..foundation._utils import check_preprocess_series_foundation
 
@@ -668,7 +668,7 @@ def _backtesting_forecaster(
     try:
         backtest_predictions = Parallel(n_jobs=n_jobs)(
             delayed(_run_recording_worker_warnings)(
-                function = _fit_predict_forecaster,
+                function      = _fit_predict_forecaster,
                 main_pid      = main_pid,
                 fold          = fold,
                 y_train       = fold_data['y_train'],
@@ -681,7 +681,7 @@ def _backtesting_forecaster(
         )
     except Exception as error:
         _reemit_worker_warnings(
-            [(None, getattr(error, WORKER_WARNINGS_ATTRIBUTE, None))]
+            [(None, getattr(error, _WORKER_WARNINGS_ATTRIBUTE, None))]
         )
         raise
     backtest_predictions = _reemit_worker_warnings(backtest_predictions)
@@ -1620,7 +1620,7 @@ def _backtesting_forecaster_multiseries(
     try:
         results = Parallel(n_jobs=n_jobs)(
             delayed(_run_recording_worker_warnings)(
-                function = _fit_predict_forecaster_multiseries,
+                function      = _fit_predict_forecaster_multiseries,
                 main_pid      = main_pid,
                 data_fold     = data_fold,
                 **kwargs_fit_predict_forecaster
@@ -1629,7 +1629,7 @@ def _backtesting_forecaster_multiseries(
         )
     except Exception as error:
         _reemit_worker_warnings(
-            [(None, getattr(error, WORKER_WARNINGS_ATTRIBUTE, None))]
+            [(None, getattr(error, _WORKER_WARNINGS_ATTRIBUTE, None))]
         )
         raise
     results = _reemit_worker_warnings(results)
@@ -2379,7 +2379,7 @@ def _backtesting_stats(
     try:
         results = Parallel(n_jobs=n_jobs)(
             delayed(_run_recording_worker_warnings)(
-                function = _fit_predict_forecaster_stats,
+                function      = _fit_predict_forecaster_stats,
                 main_pid      = main_pid,
                 fold          = fold,
                 **kwargs_fit_predict_forecaster
@@ -2388,7 +2388,7 @@ def _backtesting_stats(
         )
     except Exception as error:
         _reemit_worker_warnings(
-            [(None, getattr(error, WORKER_WARNINGS_ATTRIBUTE, None))]
+            [(None, getattr(error, _WORKER_WARNINGS_ATTRIBUTE, None))]
         )
         raise
     results = _reemit_worker_warnings(results)
