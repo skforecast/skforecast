@@ -4198,7 +4198,9 @@ def _run_fold_recording_warnings(
             result = fold_function(**kwargs)
         except Exception as error:
             try:
-                setattr(error, FOLD_WARNINGS_ATTRIBUTE, _serializable_fold_warnings(caught))
+                setattr(
+                    error, FOLD_WARNINGS_ATTRIBUTE, _serializable_fold_warnings(caught)
+                )
             except Exception:
                 pass
             raise
@@ -4273,12 +4275,11 @@ def _reemit_fold_warnings(results: list[tuple]) -> list:
 
     Each warning is shown with `warnings.warn_explicit`, with its category,
     location, module and the globals of its module (if it has `__spec__`), as
-    with `n_jobs=1`. It
-    goes through the filters of the main process: those of the user, those of
-    `suppress_warnings` and, in a search, the registry of its warnings, which
-    groups them. No registry of the warnings already shown is used: with
-    `n_jobs=1`, the `catch_warnings` of each `fit` and `predict` resets them,
-    so the same warning is shown in every fold.
+    with `n_jobs=1`. It goes through the filters of the main process: those of
+    the user, those of `suppress_warnings` and, in a search, the registry of
+    its warnings, which groups them. No registry of the warnings already shown
+    is used: with `n_jobs=1`, the `catch_warnings` of each `fit` and `predict`
+    resets them, so the same warning is shown in every fold.
 
     Parameters
     ----------
