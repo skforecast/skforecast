@@ -1275,3 +1275,108 @@ Condiciones de la implementación:
    `simplefilter("error")` el backtesting falla al final, no en el primer fold.
 4. **`module_globals`** en `warn_explicit`, además de `module`, para que los filtros y la
    línea de código se resuelvan como con `n_jobs=1`.
+
+### 15.8 Implementación (2026-11-08, rama `fix/joblib-worker-warnings`)
+
+Rama local desde `origin/0.27.x` (1fbd373dc), sin push ni PR. Commits: los dos del alcance
+(script y sección 15), el roadmap (QW-14, QW-15 y el candidato de agrupar los avisos de un
+backtesting), el código, los tests, la nota de la versión y esta sección.
+
+**Código** (+170/−8 en dos archivos):
+
+- `model_selection/_utils.py`: `_run_fold_recording_warnings`, `_module_name_from_filename`
+  y `_reemit_fold_warnings`, con docstrings NumPy, junto al resto de la maquinaria de avisos
+  de las búsquedas (`_SearchWarnings`, `_warn_recorded`). Para QW-15 habría que moverlos a
+  `utils`. El docstring de `_SearchWarnings` dice ahora que los avisos de los folds en los
+  procesos se reemiten y se recogen.
+- `model_selection/_validation.py`: los tres `Parallel` (`_backtesting_forecaster`,
+  `_backtesting_forecaster_multiseries` y `_backtesting_stats`) llaman a la función de su
+  fold a través de `_run_fold_recording_warnings` con `main_pid = os.getpid()`, y
+  `_reemit_fold_warnings` devuelve sus resultados.
+- Condiciones de la aprobación:
+  1. **Serialización:** en el hijo, cada aviso se comprueba con
+     `pickle.loads(pickle.dumps((message, category)))`; solo si falla se envía
+     `RuntimeWarning(f"{category.__name__}: {message}")`. Se reconstruye además de serializar
+     porque una categoría con un `__init__` de otros argumentos (por ejemplo, `(n_rows,
+     total)`) se serializa bien pero falla al cargarse en el principal, y el backtesting
+     fallaría por un aviso. Los demás avisos viajan tal cual: no se reconstruyen con
+     `category(texto)`, así que el texto que añade `__str__` en los de skforecast no se
+     duplica.
+  2. **Hilos:** test de bayesian con `kwargs_study_optimize={"n_jobs": 2}` y `n_jobs=2`
+     (abajo). Repetido 5 veces sin fallos.
+  3. **Nota en Fixed:** sí (abajo).
+  4. **`module_globals`:** `warn_explicit` recibe `module` (el nombre del módulo cargado
+     desde ese archivo, buscado en `sys.modules` una vez por archivo y backtesting) y
+     `module_globals=vars(module)`. Si ningún módulo del principal tiene ese archivo, los dos
+     van como `None` y `warn_explicit` deriva el módulo del nombre del archivo.
+
+**Tests** (17 nuevos):
+
+- `tests_utils/test_run_fold_recording_warnings.py` (6): en el principal, los avisos salen
+  como siempre y no se devuelven; en un proceso (simulado con otro `main_pid`) se devuelven
+  todos, también las repeticiones, con categoría, texto, archivo y línea, y no sale ninguno;
+  lo silenciado por `suppress_warnings` no se registra; una clase definida dentro de una
+  función sale como `RuntimeWarning` con su nombre y su texto; una clase que se serializa
+  pero no se reconstruye, igual; un aviso de skforecast no duplica su texto.
+- `tests_utils/test_reemit_fold_warnings.py` (4): orden de los folds, categoría y ubicación
+  originales y resultados devueltos; el mismo aviso en tres folds sale tres veces con la
+  acción `default`, como con `n_jobs=1`; filtros del usuario por categoría y por módulo
+  (`module=r"skforecast\.utils\.utils"`); dentro de `_SearchWarnings` se registran con su
+  candidato y se agrupan ("(in 2 of 3 candidates)").
+- Backtesting, con procesos reales (`n_jobs=2`): `backtesting_forecaster` con loky y con
+  `parallel_config(backend="threading")` da los mismos avisos, en el mismo orden y lugar,
+  que con `n_jobs=1` (4 `MissingValuesWarning`); con `n_jobs=2` respeta un filtro `ignore`
+  y, con `error`, falla con `MissingValuesWarning`; `backtesting_forecaster_multiseries` y
+  `backtesting_stats` (Arima con `maxiter=1`, `refit=True`: 3 avisos de convergencia) dan
+  lo mismo que con `n_jobs=1`.
+- Búsquedas: un grid de una serie con `n_jobs=2` da los mismos avisos que con `n_jobs=1` (1
+  aviso agrupado); bayesian con los trials en hilos de Optuna y los folds en procesos: una
+  subclase de `Ridge` que avisa en `predict` si `alpha > 0.5` da un aviso "(in N of 8
+  trials)", con N el número de trials con `alpha > 0.5`.
+- Contra el código de `origin/0.27.x` (worktree temporal, ya borrado), los 6 tests de
+  integración con procesos fallan; el de `threading` pasa en los dos, como debe (comprueba
+  que no se duplican).
+- `verify` antes de cada commit: ruff (el E402 de `test_grid_search_forecaster.py` ya
+  existía), `skforecast/model_selection/tests` completo más los backtesting de
+  `ForecasterRnn` y `ForecasterEquivalentDate`: 1222 pasan y 2 se saltan; y
+  `page_meta.py` con la nota de la versión.
+
+**Nota de la versión** (Fixed, 71 palabras, sin enlace al PR hasta que se abra): los avisos
+de los folds en procesos ignoraban los filtros, se repetían en cada candidato de las
+búsquedas y se veían mal en Jupyter; ahora llegan al principal como con `n_jobs=1`, al
+terminar los folds, y con `simplefilter("error")` el backtesting falla al final, no en el
+primer fold.
+
+**Antes y después (21 casos de `PR-2c_joblib_warnings.py`).** "Antes" es la línea base de
+15.2 (17219ad65; el paquete no cambia hasta `origin/0.27.x`). Avisos vistos con
+`n_jobs='auto'` y, entre paréntesis, los que salen de los procesos. La columna de
+`n_jobs=1` es la misma antes y después en los 21 casos.
+
+| Caso | Antes | Después | `n_jobs=1` |
+|---|---|---|---|
+| B1 backtesting, hueco en `exog` | 2 (2) | 2 (0) | 2 |
+| B2 backtesting, QW-13, `refit=True` | 7 (6) | 7 (0) | 7 |
+| B3 backtesting, MLP `ConvergenceWarning`, `refit=True` | 7 (6) | 7 (0) | 7 |
+| B4 backtesting multiserie, serie corta + hueco en `exog` | 3 (2) | 3 (0) | 3 |
+| B5 backtesting multiserie, QW-13, `refit=True` | 7 (6) | 7 (0) | 7 |
+| B6 multiserie, filtro `ignore` del usuario | **2 (2)** | 0 | 0 |
+| B7 multiserie, `suppress_warnings=True` | 0 | 0 | 0 |
+| B8 `backtesting_stats`, Arima | 0 | 0 | 0 |
+| S1 grid una serie, hueco en `exog` | **8 (8)** | 1 (0) | 1 |
+| S2 grid una serie, QW-13, `refit=True` | **25 (24)** | 1 (0) | 1 |
+| S3 random una serie, hueco en `exog` | **8 (8)** | 1 (0) | 1 |
+| S4 bayesian una serie, hueco en `exog` | **12 (12)** | 1 (0) | 1 |
+| S5 grid una serie OSA | 2 | 2 | 2 |
+| S6 bayesian una serie OSA, QW-13 | 2 | 2 | 2 |
+| M1 grid multi, serie corta + hueco en `exog` | **11 (10)** | 4 (0) | 4 |
+| M2 random multi, el mismo caso | **11 (10)** | 4 (0) | 4 |
+| M3 bayesian multi, el mismo caso | **18 (17)** | 4 (0) | 4 |
+| M4 grid multi, QW-13, `refit=True` | **25 (24)** | 1 (0) | 1 |
+| M5 grid multi OSA | 3 | 3 | 3 |
+| M6 bayesian multi OSA | 3 | 3 | 3 |
+| N3 escenario 3 del notebook 08 (`Ridge`) | 3 | 3 | 3 |
+
+**Queda:** el enlace al PR en la nota de la versión al abrirlo, y la sección 13. El notebook
+08 no se ha vuelto a ejecutar: su escenario 3 usa `Ridge`, que con `'auto'` va en un solo
+proceso desde 544ba97f4. Con `n_jobs=4`, la copia de 15.3 ya mostró los 3 paneles del
+principal.

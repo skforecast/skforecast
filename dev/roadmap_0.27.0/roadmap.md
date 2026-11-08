@@ -53,8 +53,9 @@ secciones 1 a 7 quedan como referencia: evidencia, antes y después, y esbozos d
 > (#1466). **PR 2c: alcance medido y aprobado el 2026-11-08** (sección 15, S): los avisos
 > de los folds que corren en los procesos de joblib se registran en el proceso y se
 > reemiten en el principal (filtros del usuario, registro de las búsquedas, Jupyter); no
-> cambia resultados. **Siguiente:** implementarlo en `fix/joblib-worker-warnings` y, al
-> final, la sección 13 de ese documento (guías). Fuera del 2c: QW-14 (doble aviso de
+> cambia resultados. **Implementado en local el 2026-11-08** en `fix/joblib-worker-warnings`
+> (sección 15.8: los 21 casos dan lo mismo con `'auto'` que con `n_jobs=1`). **Siguiente:**
+> abrir su PR y, al final, la sección 13 de ese documento (guías). Fuera del 2c: QW-14 (doble aviso de
 > `exog` con NaN en `predict`), QW-15 (avisos del `fit` en paralelo de Direct y DMV) y
 > agrupar los avisos repetidos de un backtesting (sección 5, M).
 
@@ -194,8 +195,8 @@ efecto, con `FutureWarning` y eliminación en la 0.29.0; `load_demo_dataset` se 
    BUG-osa-initial-window-check. Queda el 2c (avisos de joblib).
    BUG-backtesting-nan-y-true fusionado el 2026-11-07 (#1458) y QW-13 el 2026-11-08
    (#1466). **PR 2c:** alcance medido y aprobado el 2026-11-08 (sección 15 del documento,
-   alternativa A, decisiones 1 a 3). **Siguiente:** implementarlo y, al final, la sección
-   13 de ese documento (guías).
+   alternativa A, decisiones 1 a 3); implementado en local el 2026-11-08 (sección 15.8).
+   **Siguiente:** abrir su PR y, al final, la sección 13 de ese documento (guías).
 2. ~~**BUG-03**~~ **Hecho con #1431** (fusionado el 2026-10-22). La
    dirección sale de la métrica (decisión 6): atributo `greater_is_better` y convención de
    nombres solo para `sklearn.metrics`; si no se conoce, la dirección de la tarea, que ya
