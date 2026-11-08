@@ -837,6 +837,16 @@ dice `Kernel skf : <repo>/skforecast/__init__.py`). El punto 3 (`y_true`) va en 
   apariciones de "Parameters skipped", "No valid parameter combinations", `GridSearchCV`
   (aviso de `n_iter`), "(never predicted)" ni avisos repetidos por candidato en celdas de
   búsqueda.
+- **Revisión limitada a lo de esta release (2026-11-09, 27a7e7de7):** en lugar de
+  `/review-user-guide` completo (queda para la pasada de documentación de la 0.27.0), solo
+  lo que cambió con el bug y con #1458 y #1466, sin volver a ejecutar: la sección de series
+  de distinta longitud de la guía de búsqueda dice que el aviso de `n_evaluated` también
+  salta en una serie (`OneStepAheadFold`, `dropna_from_series=True` y huecos en `y`);
+  `handling-missing-values` explica que las fechas del test sin valor quedan fuera de las
+  métricas (`n_evaluated`); la guía multiserie corrige "no predictions are generated" (esas
+  fechas tienen fila con `y_true` y `pred` NaN, comprobado) y da `n_evaluated` 0 para
+  `id_1002`. Fuera, por no haber ejemplo en estas guías: candidatos y trials saltados,
+  mensajes de `initial_train_size`, refit sin series cortas y avisos de joblib.
 
 ## 14. PR 2b: candidatos que fallan y pendientes de las búsquedas (2026-11-06)
 
