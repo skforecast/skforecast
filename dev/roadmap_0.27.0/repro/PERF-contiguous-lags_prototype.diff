@@ -1,8 +1,16 @@
 diff --git a/skforecast/direct/_forecaster_direct.py b/skforecast/direct/_forecaster_direct.py
-index 446b753b1..94b1609ed 100644
+index 446b753b1..7de52736c 100644
 --- a/skforecast/direct/_forecaster_direct.py
 +++ b/skforecast/direct/_forecaster_direct.py
-@@ -61,6 +61,13 @@ from ..utils import (
+@@ -26,6 +26,7 @@ from ..exceptions import (
+     ResidualsUsageWarning
+ )
+ from ..utils import (
++    _estimator_benefits_from_c_contiguous_X,
+     _all_samples_removed_message,
+     _warn_nan_training_rows_direct,
+     initialize_lags,
+@@ -61,6 +62,13 @@ from ..utils import (
  from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
  
  
@@ -10,13 +18,13 @@ index 446b753b1..94b1609ed 100644
 +# matrix is made C-contiguous before the NaN check and the `fit` of the estimator
 +# if it is a single block (only lags or only window features), the cases where it
 +# is a view of `sliding_window_view` or an F-ordered array.
-+_CONTIGUOUS_X_TRAIN = True
++_CONTIGUOUS_X_TRAIN = "D"
 +
 +
  def _fit_one_step_estimator(
      forecaster: object,
      estimator: object,
-@@ -1243,6 +1250,17 @@ class ForecasterDirect(ForecasterBase):
+@@ -1243,6 +1251,21 @@ class ForecasterDirect(ForecasterBase):
                  f"Duplicated feature names detected in X_train: {duplicated_names}."
              )
  
@@ -24,6 +32,10 @@ index 446b753b1..94b1609ed 100644
 +            _CONTIGUOUS_X_TRAIN
 +            and X_train_exog is None
 +            and X_train_calendar is None
++            and (
++                _CONTIGUOUS_X_TRAIN != "D"
++                or _estimator_benefits_from_c_contiguous_X(self.estimator)
++            )
 +        ):
 +            # Every step uses `X_train_autoreg` as is (no `np.concatenate`).
 +            if _CONTIGUOUS_X_TRAIN == "F":
@@ -35,10 +47,18 @@ index 446b753b1..94b1609ed 100644
          # training matrix of each step, and dropped in the `_filter_nan_X_y_step`
          # method during the training of each step. Rows with a NaN target are
 diff --git a/skforecast/direct/_forecaster_direct_multivariate.py b/skforecast/direct/_forecaster_direct_multivariate.py
-index 690f1bc61..8114a7836 100644
+index 690f1bc61..079c9cc07 100644
 --- a/skforecast/direct/_forecaster_direct_multivariate.py
 +++ b/skforecast/direct/_forecaster_direct_multivariate.py
-@@ -65,6 +65,13 @@ from ..utils import (
+@@ -29,6 +29,7 @@ from ..exceptions import (
+     ResidualsUsageWarning
+ )
+ from ..utils import (
++    _estimator_benefits_from_c_contiguous_X,
+     _all_samples_removed_message,
+     _warn_nan_training_rows_direct,
+     initialize_lags,
+@@ -65,6 +66,13 @@ from ..utils import (
  from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
  
  
@@ -46,13 +66,13 @@ index 690f1bc61..8114a7836 100644
 +# matrix is made C-contiguous before the NaN check and the `fit` of the estimator
 +# if it is a single block (only lags or only window features), the cases where it
 +# is a view of `sliding_window_view` or an F-ordered array.
-+_CONTIGUOUS_X_TRAIN = True
++_CONTIGUOUS_X_TRAIN = "D"
 +
 +
  class ForecasterDirectMultiVariate(ForecasterBase):
      """
      This class turns any estimator compatible with the scikit-learn API into an
-@@ -1356,6 +1363,17 @@ class ForecasterDirectMultiVariate(ForecasterBase):
+@@ -1356,6 +1364,21 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                  f"Duplicated feature names detected in X_train: {duplicated_names}."
              )
  
@@ -60,6 +80,10 @@ index 690f1bc61..8114a7836 100644
 +            _CONTIGUOUS_X_TRAIN
 +            and X_train_exog is None
 +            and X_train_calendar is None
++            and (
++                _CONTIGUOUS_X_TRAIN != "D"
++                or _estimator_benefits_from_c_contiguous_X(self.estimator)
++            )
 +        ):
 +            # Every step uses `X_train_autoreg` as is (no `np.concatenate`).
 +            if _CONTIGUOUS_X_TRAIN == "F":
@@ -71,10 +95,18 @@ index 690f1bc61..8114a7836 100644
          # training matrix of each step, and dropped in the `_filter_nan_X_y_step`
          # method during the training of each step. Rows with a NaN target are
 diff --git a/skforecast/recursive/_forecaster_recursive.py b/skforecast/recursive/_forecaster_recursive.py
-index 52e96b2ec..b17dff62b 100644
+index 52e96b2ec..fc19af23c 100644
 --- a/skforecast/recursive/_forecaster_recursive.py
 +++ b/skforecast/recursive/_forecaster_recursive.py
-@@ -59,6 +59,13 @@ from ..utils import (
+@@ -26,6 +26,7 @@ from ..exceptions import (
+ )
+ from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
+ from ..utils import (
++    _estimator_benefits_from_c_contiguous_X,
+     _all_samples_removed_message,
+     _filter_nan_train_X_y,
+     initialize_lags,
+@@ -59,6 +60,13 @@ from ..utils import (
  )
  
  
@@ -82,28 +114,39 @@ index 52e96b2ec..b17dff62b 100644
 +# matrix is made C-contiguous before the NaN check and the `fit` of the estimator
 +# if it is a single block (only lags or only window features), the cases where it
 +# is a view of `sliding_window_view` or an F-ordered array.
-+_CONTIGUOUS_X_TRAIN = True
++_CONTIGUOUS_X_TRAIN = "D"
 +
 +
  class ForecasterRecursive(ForecasterBase):
      """
      This class turns any estimator compatible with the scikit-learn API into a
-@@ -979,6 +986,10 @@ class ForecasterRecursive(ForecasterBase):
+@@ -979,6 +987,13 @@ class ForecasterRecursive(ForecasterBase):
  
          if len(X_train) == 1:
              X_train = X_train[0]
 +            if _CONTIGUOUS_X_TRAIN == "F":
 +                X_train = np.asfortranarray(X_train)
++            elif _CONTIGUOUS_X_TRAIN == "D":
++                if _estimator_benefits_from_c_contiguous_X(self.estimator):
++                    X_train = np.ascontiguousarray(X_train)
 +            elif _CONTIGUOUS_X_TRAIN:
 +                X_train = np.ascontiguousarray(X_train)
          else:
              X_train = np.concatenate(X_train, axis=1)
  
 diff --git a/skforecast/recursive/_forecaster_recursive_classifier.py b/skforecast/recursive/_forecaster_recursive_classifier.py
-index 06dcb5b5e..333d95188 100644
+index 06dcb5b5e..0e375e137 100644
 --- a/skforecast/recursive/_forecaster_recursive_classifier.py
 +++ b/skforecast/recursive/_forecaster_recursive_classifier.py
-@@ -45,6 +45,13 @@ from ..utils import (
+@@ -20,6 +20,7 @@ import skforecast
+ from ..base import ForecasterBase
+ from ..exceptions import DataTransformationWarning
+ from ..utils import (
++    _estimator_benefits_from_c_contiguous_X,
+     _all_samples_removed_message,
+     _filter_nan_train_X_y,
+     initialize_lags,
+@@ -45,6 +46,13 @@ from ..utils import (
  )
  
  
@@ -111,20 +154,114 @@ index 06dcb5b5e..333d95188 100644
 +# matrix is made C-contiguous before the NaN check and the `fit` of the estimator
 +# if it is a single block (only lags or only window features), the cases where it
 +# is a view of `sliding_window_view` or an F-ordered array.
-+_CONTIGUOUS_X_TRAIN = True
++_CONTIGUOUS_X_TRAIN = "D"
 +
 +
  class ForecasterRecursiveClassifier(ForecasterBase):
      """
      This class turns any classification estimator compatible with the scikit-learn 
-@@ -967,6 +974,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
+@@ -967,6 +975,13 @@ class ForecasterRecursiveClassifier(ForecasterBase):
          
          if len(X_train) == 1:
              X_train = X_train[0]
 +            if _CONTIGUOUS_X_TRAIN == "F":
 +                X_train = np.asfortranarray(X_train)
++            elif _CONTIGUOUS_X_TRAIN == "D":
++                if _estimator_benefits_from_c_contiguous_X(self.estimator):
++                    X_train = np.ascontiguousarray(X_train)
 +            elif _CONTIGUOUS_X_TRAIN:
 +                X_train = np.ascontiguousarray(X_train)
          else:
              X_train = np.concatenate(X_train, axis=1)
  
+diff --git a/skforecast/utils/__init__.py b/skforecast/utils/__init__.py
+index f32edb4cc..cd4980044 100644
+--- a/skforecast/utils/__init__.py
++++ b/skforecast/utils/__init__.py
+@@ -6,6 +6,7 @@ from .utils import (
+     _check_in_place_fit,
+     _copy_rows_to_check,
+     _date_range_from_index,
++    _estimator_benefits_from_c_contiguous_X,
+     _filter_nan_train_X_y,
+     _get_catboost_cat_feature_indices,
+     _get_estimator_categorical_set_params,
+diff --git a/skforecast/utils/utils.py b/skforecast/utils/utils.py
+index 17c3a152e..8e81abe90 100644
+--- a/skforecast/utils/utils.py
++++ b/skforecast/utils/utils.py
+@@ -70,6 +70,20 @@ _SKLEARN_NAN_TOLERANT_ESTIMATORS = frozenset({
+     'RandomForestRegressor',
+ })
+ 
++# sklearn estimators whose `fit` (and the `predict` of the in-sample residuals)
++# is faster when the training matrix is C-contiguous. With only lags, the
++# forecasters build that matrix as a view of `sliding_window_view` (neither C
++# nor F contiguous), which these estimators copy again in every product with
++# `X`, and free each copy, so one copy before the fit adds little memory.
++# Criterion: at least 5 % faster `fit` in two of three sizes, extra peak memory
++# up to 15 % of the training matrix and identical predictions.
++_SKLEARN_C_CONTIGUOUS_ESTIMATORS = frozenset({
++    'Lars',
++    'LassoLars',
++    'LinearRegression',
++    'Ridge',
++})
++
+ optional_dependencies = {
+     'stats': [
+         'statsmodels>=0.13.2, <0.16'
+@@ -5362,6 +5376,53 @@ def estimator_has_native_nan_support(estimator: object) -> bool:
+     return False
+ 
+ 
++def _estimator_benefits_from_c_contiguous_X(estimator: object) -> bool:
++    """
++    Check whether the training matrix should be copied to a C-contiguous array
++    before it is passed to the estimator.
++
++    With only lags (or only window features), the training matrix is a view of
++    `sliding_window_view` that is neither C nor F contiguous. Some linear
++    models of scikit-learn copy that view again in every product with `X`
++    (`fit` and the `predict` of the in-sample residuals), so one copy before
++    the fit is faster. Other estimators already copy or convert the matrix
++    (trees, boosting, coordinate descent) and the copy would only add memory.
++
++    Parameters
++    ----------
++    estimator : object
++        Estimator object. If the estimator is a Pipeline, its first step is
++        used, since it is the step that receives the training matrix.
++
++    Returns
++    -------
++    benefits : bool
++        `True` if the estimator (or the first step of a Pipeline) is one of the
++        scikit-learn estimators in `_SKLEARN_C_CONTIGUOUS_ESTIMATORS`,
++        otherwise `False`.
++
++    Notes
++    -----
++    Detection is based on the class name and the module (`sklearn`), as in
++    `estimator_has_native_nan_support`. Subclasses defined outside scikit-learn
++    and other meta-estimators (for example `TransformedTargetRegressor`) are
++    not detected, and the matrix is passed as it is. A Pipeline that starts
++    with a transformer (for example `StandardScaler`) is not copied either: the
++    transformer returns a new array, so the copy would only add memory.
++
++    """
++
++    if isinstance(estimator, Pipeline):
++        estimator = estimator[0]
++
++    module = type(estimator).__module__.split('.')[0]
++
++    return (
++        module == 'sklearn'
++        and type(estimator).__name__ in _SKLEARN_C_CONTIGUOUS_ESTIMATORS
++    )
++
++
+ def _all_samples_removed_message(
+     series_name: str,
+     dropna_from_series: bool,
