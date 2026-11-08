@@ -5095,6 +5095,581 @@ class NoriAdapter(_AdapterBase):
         return expand_index(series.index, steps=n)
 
 
+
+class TiRex2Adapter(_AdapterBase):
+    """
+    Adapter for the NX-AI TiRex-2 zero-shot forecaster.
+
+    TiRex-2 forecasts one or more target variates directly from their history,
+    optionally conditioned on past and future-known covariates. When multiple
+    series are supplied, `FoundationModel` sends them in one backend call when
+    their covariate signatures are compatible. Each series retains its own
+    `TimeseriesType` and covariates, so its forecast does not depend on which
+    other series are passed alongside it.
+
+    Parameters
+    ----------
+    model_id : str
+        Model ID, e.g. `"NX-AI/TiRex-2"`. Used to resolve this adapter and as
+        the Hugging Face repository the weights are downloaded from.
+    model : object, default None
+        Pre-instantiated model as returned by `tirex2.load_model`. If `None`, a
+        new instance is created lazily on the first call to `predict`. Intended
+        for testing only.
+    context_length : int, default 2048
+        Maximum number of historical observations to use as context. At fit
+        time only the last `context_length` observations are stored. At predict
+        time, if `context` is longer than `context_length` it is trimmed to this
+        length; if it is shorter, all available observations are used as-is.
+        Must be a positive integer. The default is the maximum context length of
+        the checkpoint (`context_len: 2048`).
+    device : str, default 'auto'
+        Device placement for inference. `"auto"` selects the best available
+        accelerator (CUDA > MPS > CPU). Also accepts explicit values such as
+        `"cuda"`, `"mps"`, or `"cpu"`.
+    predict_kwargs : dict, default None
+        Extra keyword arguments forwarded to the backend `forecast` call, e.g.
+        `{"tta_sign_flip": True}` to opt into sign-flip test-time augmentation.
+        Arguments owned by the adapter (`timeseries`, `prediction_length`,
+        `output_type`, `yield_per_batch`, `return_inference_time`) are rejected
+        at construction time.
+
+    Attributes
+    ----------
+    model_id : str
+        Model ID.
+    context_ : dict
+        Stored training series after fitting.
+    context_exog_ : dict
+        Stored historical exogenous variables after fitting.
+    context_length : int
+        Maximum number of historical observations used as context.
+    device : str
+        Device placement for inference.
+    predict_kwargs : dict
+        Extra keyword arguments forwarded to the backend `forecast` call.
+    supports_heterogeneous_covariates : bool
+        Whether series with different covariate columns can be forecast in the
+        same backend call. `True` for TiRex-2: every `TimeseriesType` carries its
+        own covariates, so the backend accepts series with different covariate
+        sets in a single call.
+    supports_nan_in_series : bool
+        Whether the backend accepts NaN values in the series used as context.
+        `True` for TiRex-2: the backend masks NaN in `forward` and pads short
+        contexts with NaN itself.
+    supports_categorical_covariates : bool
+        Whether the backend supports non-numeric covariates natively, so they do
+        not have to be encoded as numbers. `False` for TiRex-2: covariates must
+        be numeric.
+    SUPPORTED_QUANTILES : list
+        Quantile levels accepted by the backend. TiRex-2 forecasts the native
+        nine-quantile grid `[0.1, ..., 0.9]`, so requesting any other level
+        raises a `ValueError`.
+    requires_hf_auth : bool
+        Whether the checkpoints served by this adapter are gated on the Hugging
+        Face Hub. `False` for TiRex-2.
+    requires_provider_auth : bool
+        Whether the model provider requires its own account or license
+        acceptance, outside the Hugging Face Hub. `False` for TiRex-2, which is
+        released under Apache 2.0.
+    weights_repo_id : str, None
+        Hugging Face repository the backend downloads the weights from when it
+        is not `model_id`. `None` for TiRex-2: `load_model(self.model_id, ...)`
+        downloads the weights from `model_id` itself.
+    weights_in_hf_cache : bool
+        Whether the downloaded weights are stored in the Hugging Face Hub cache.
+    backend_package : str
+        Package that provides the backend, as passed to `pip install`.
+    default_model_id : str
+        Model ID used by default for this adapter.
+    is_fitted : bool
+        Whether the adapter has been fitted.
+
+    Notes
+    -----
+    TiRex-2 is a zero-shot model, so `fit` only stores the series and no training
+    occurs. The `tirex-2` package is not a skforecast dependency and is imported
+    lazily inside the adapter, so the adapter can be created and fitted without
+    it installed.
+
+    The checkpoint forecasts at most `future_len` steps ahead (`320` for
+    `NX-AI/TiRex-2`). The backend truncates longer horizons with only a log
+    warning, so `predict` rejects `steps` above that limit with a `ValueError`
+    before calling the backend.
+
+    Past covariates are forwarded as `past_covariates` and future-known
+    covariates as `future_covariates`, concatenated with their historical values
+    as the backend expects. Covariates must be numeric; encode categoricals as
+    numbers before passing them.
+
+    References
+    ----------
+    .. [1] https://github.com/NX-AI/tirex-2
+
+    .. [2] https://huggingface.co/NX-AI/TiRex-2
+
+    """
+
+    SUPPORTED_QUANTILES: list[float] = [
+        0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9
+    ]
+    allow_exog: bool = True
+    supports_past_only_covariates: bool = True
+    supports_categorical_covariates: bool = False
+    supports_heterogeneous_covariates: bool = True
+    supports_nan_in_series: bool = True
+    requires_hf_auth: bool = False
+    requires_provider_auth: bool = False
+    weights_repo_id: str | None = None
+    weights_in_hf_cache: bool = True
+    backend_package: str = "tirex-2"
+    default_model_id: str = "NX-AI/TiRex-2"
+    _MODEL_ID_PREFIX: str = "NX-AI/TiRex-2"
+    # `future_len` of the published checkpoint. Longer horizons are truncated by
+    # the backend, so they are rejected here instead.
+    _MODEL_MAX_PREDICTION_LENGTH: int = 320
+    _RESERVED_PREDICT_KWARGS = {
+        "timeseries",
+        "prediction_length",
+        "output_type",
+        "yield_per_batch",
+        "return_inference_time",
+    }
+
+    def __init__(
+        self,
+        model_id: str,
+        *,
+        model: Any | None = None,
+        context_length: int = 2048,
+        device: str = "auto",
+        predict_kwargs: dict[str, Any] | None = None,
+    ) -> None:
+        """
+        Initialise the adapter.
+
+        Parameters
+        ----------
+        model_id : str
+            Model ID, e.g. `"NX-AI/TiRex-2"`. Used to resolve this adapter and
+            as the Hugging Face repository the weights are downloaded from.
+        model : object, default None
+            Pre-instantiated model as returned by `tirex2.load_model`. If
+            `None`, a new instance is created lazily on the first call to
+            `predict`.
+        context_length : int, default 2048
+            Maximum number of historical observations to retain as context.
+            Must be a positive integer.
+        device : str, default 'auto'
+            Device placement for inference. `"auto"` selects the best available
+            accelerator (CUDA > MPS > CPU).
+        predict_kwargs : dict, default None
+            Extra keyword arguments forwarded to the backend `forecast` call.
+            Adapter-managed arguments are rejected.
+
+        """
+
+        _validate_model_id_prefix(model_id, self._MODEL_ID_PREFIX, type(self).__name__)
+        _validate_positive_int("context_length", context_length)
+        predict_kwargs = predict_kwargs or {}
+        self._validate_predict_kwargs(predict_kwargs)
+        self.model_id = model_id
+        self._model = model
+        self.context_length = context_length
+        self.device = device
+        self.predict_kwargs = predict_kwargs
+        self.context_ = None
+        self.context_exog_ = None
+        self.is_fitted = False
+
+    def get_params(self) -> dict:
+        """
+        Return the adapter's constructor parameters.
+
+        Returns
+        -------
+        params : dict
+            Keys: `model_id`, `context_length`, `device`, `predict_kwargs`.
+
+        """
+
+        return {
+            "model_id": self.model_id,
+            "context_length": self.context_length,
+            "device": self.device,
+            "predict_kwargs": self.predict_kwargs or None,
+        }
+
+    def set_params(self, **params) -> TiRex2Adapter:
+        """
+        Set adapter parameters. Resets the model when `model_id` or `device`
+        changes, since those control which checkpoint is loaded and where it
+        runs.
+
+        Parameters
+        ----------
+        **params :
+            Valid keys: `model_id`, `context_length`, `device`,
+            `predict_kwargs`.
+
+        Returns
+        -------
+        self : TiRex2Adapter
+
+        """
+
+        def validate(candidate_params: dict) -> dict:
+            if "model_id" in candidate_params:
+                _validate_model_id_prefix(
+                    candidate_params["model_id"],
+                    self._MODEL_ID_PREFIX,
+                    type(self).__name__,
+                )
+            if "context_length" in candidate_params:
+                _validate_positive_int(
+                    "context_length", candidate_params["context_length"]
+                )
+            if "predict_kwargs" in candidate_params:
+                candidate_params["predict_kwargs"] = (
+                    candidate_params["predict_kwargs"] or {}
+                )
+                self._validate_predict_kwargs(candidate_params["predict_kwargs"])
+            return candidate_params
+
+        return _apply_set_params(
+            self,
+            params,
+            validate=validate,
+            resets=(({"model_id", "device"}, lambda: setattr(self, "_model", None)),),
+        )
+
+    @classmethod
+    def _validate_predict_kwargs(cls, predict_kwargs: dict[str, Any]) -> None:
+        """
+        Reject `predict_kwargs` keys that the adapter owns, since forwarding
+        them would override the arguments built from `steps` and the
+        pre-processed inputs.
+
+        Parameters
+        ----------
+        predict_kwargs : dict
+            Extra keyword arguments to forward to the backend `forecast` call.
+
+        Returns
+        -------
+        None
+
+        """
+
+        reserved = cls._RESERVED_PREDICT_KWARGS & set(predict_kwargs)
+        if reserved:
+            raise ValueError(
+                "TiRex2Adapter predict_kwargs cannot include adapter-managed "
+                f"arguments: {sorted(reserved)}."
+            )
+
+    def fit(
+        self,
+        context: dict[str, pd.Series],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+    ) -> TiRex2Adapter:
+        """
+        Store the training series and optional historical exogenous variables.
+        No model training occurs since TiRex-2 is a zero-shot inference model.
+
+        All input normalization and validation is performed upstream by
+        `FoundationModel`; this method receives canonical dicts only.
+
+        Parameters
+        ----------
+        context : dict pandas Series
+            Normalized training series, one entry per series.
+        context_exog : dict pandas DataFrame, pandas Series, or None
+            Per-series historical exogenous variables (past covariates).
+
+        Returns
+        -------
+        self : TiRex2Adapter
+
+        """
+
+        return super().fit(context=context, context_exog=context_exog)
+
+    def predict(
+        self,
+        steps: int,
+        context: dict[str, pd.Series],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        quantiles: list[float] | tuple[float] | None,
+    ) -> dict[str, np.ndarray]:
+        """
+        Generate predictions using the TiRex-2 model.
+
+        All input normalization, validation, and context trimming is performed
+        upstream by `FoundationModel`; this method receives pre-processed dicts
+        only.
+
+        Parameters
+        ----------
+        steps : int
+            Number of steps ahead to forecast. Must not exceed
+            `_MODEL_MAX_PREDICTION_LENGTH`.
+        context : dict
+            Per-series context windows (already trimmed to `context_length`).
+        context_exog : dict
+            Per-series past covariates (already trimmed).
+        exog : dict
+            Per-series future covariates for the forecast horizon.
+        quantiles : list of float, tuple of float, None
+            Quantile levels to return. If `None`, a point forecast (median,
+            quantile 0.5) is produced.
+
+        Returns
+        -------
+        predictions : dict
+            Keys are series names. Each value is a 2-D array of shape
+            `(steps, n_quantiles)`.
+
+        Raises
+        ------
+        ValueError
+            If `steps` is larger than the maximum horizon supported by the
+            checkpoint.
+
+        """
+
+        if steps > self._MODEL_MAX_PREDICTION_LENGTH:
+            raise ValueError(
+                f"`steps` must be <= {self._MODEL_MAX_PREDICTION_LENGTH}, the "
+                f"maximum forecast horizon of {self.default_model_id} "
+                f"(`future_len`). Got {steps}. Longer horizons are truncated "
+                f"by the backend, so the adapter rejects them instead of "
+                f"returning a shorter forecast than requested."
+            )
+
+        quantile_list = _validate_supported_quantiles(
+            quantiles, self.SUPPORTED_QUANTILES, "TiRex-2"
+        )
+        self._load_model()
+        TimeseriesType = self._import_timeseries_type()
+        import torch
+
+        names = list(context)
+        timeseries = []
+        for name in names:
+            past_cols, future_cols = get_exog_signature(
+                context_exog=(context_exog or {}).get(name),
+                exog=(exog or {}).get(name),
+            )
+            past, future = self._build_covariates(
+                (context_exog or {}).get(name),
+                (exog or {}).get(name),
+                past_cols,
+                future_cols,
+            )
+            target = torch.as_tensor(
+                context[name].to_numpy(dtype=np.float32)[None, :],
+                dtype=torch.float32,
+            )
+            if past is not None:
+                past = torch.as_tensor(past, dtype=torch.float32)
+            if future is not None:
+                future = torch.as_tensor(future, dtype=torch.float32)
+            timeseries.append(
+                TimeseriesType(
+                    target=target,
+                    past_covariates=past,
+                    future_covariates=future,
+                )
+            )
+
+        forecasts = self._model.forecast(
+            timeseries,
+            prediction_length=steps,
+            output_type="numpy",
+            **self.predict_kwargs,
+        )
+        if len(forecasts) != len(names):
+            raise ValueError(
+                "TiRex-2 returned an unexpected number of forecasts: "
+                f"{len(forecasts)}. Expected {len(names)}."
+            )
+        predictions = {}
+        for name, forecast in zip(names, forecasts):
+            values = np.asarray(forecast)
+            if values.ndim != 3 or values.shape != (1, 9, steps):
+                raise ValueError(
+                    "TiRex-2 returned an unexpected forecast shape: "
+                    f"{values.shape!r}. Expected (1, 9, {steps})."
+                )
+            values = values[0]
+            if quantile_list is None:
+                predictions[name] = values[4, :].reshape(-1, 1)
+            else:
+                indices = [
+                    min(
+                        range(len(self.SUPPORTED_QUANTILES)),
+                        key=lambda i: abs(self.SUPPORTED_QUANTILES[i] - q),
+                    )
+                    for q in quantile_list
+                ]
+                predictions[name] = values[indices, :].T
+        return predictions
+
+    @staticmethod
+    def _to_covariate_array(values: Any) -> np.ndarray:
+        """
+        Convert one covariate column into a `float32` array.
+
+        Parameters
+        ----------
+        values : pandas Series, numpy array, list
+            Covariate column to convert.
+
+        Returns
+        -------
+        array : numpy ndarray
+            Covariate values as `float32`.
+
+        Raises
+        ------
+        ValueError
+            If the column is not numeric or boolean.
+
+        """
+
+        if isinstance(values, pd.Series):
+            if not (
+                pd.api.types.is_numeric_dtype(values)
+                or pd.api.types.is_bool_dtype(values)
+            ):
+                raise ValueError(
+                    "TiRex2Adapter supports only numeric covariates. "
+                    f"Column {values.name!r} has dtype {values.dtype}."
+                )
+            return values.astype(np.float32).to_numpy()
+        array = np.asarray(values)
+        if array.dtype.kind not in "iufb":
+            raise ValueError(
+                "TiRex2Adapter supports only numeric covariates. "
+                f"Got dtype {array.dtype}."
+            )
+        return array.astype(np.float32)
+
+    @classmethod
+    def _build_covariates(
+        cls,
+        context_exog: pd.DataFrame | pd.Series | None,
+        exog: pd.DataFrame | pd.Series | None,
+        past_cols: tuple,
+        future_cols: tuple,
+    ) -> tuple[np.ndarray | None, np.ndarray | None]:
+        """
+        Build the past and future covariate arrays of one series.
+
+        Parameters
+        ----------
+        context_exog : pandas DataFrame, pandas Series, None
+            Historical exogenous variables of the series.
+        exog : pandas DataFrame, pandas Series, None
+            Future exogenous variables of the series.
+        past_cols : tuple
+            Columns known only over the context.
+        future_cols : tuple
+            Columns known over the context and the forecast horizon.
+
+        Returns
+        -------
+        past : numpy ndarray, None
+            Array of shape `(n_past_covariates, context_length)`, or `None`.
+        future : numpy ndarray, None
+            Array of shape `(n_future_covariates, context_length + steps)`,
+            or `None`.
+
+        """
+
+        ctx = context_exog.to_frame() if isinstance(context_exog, pd.Series) else context_exog
+        fut = exog.to_frame() if isinstance(exog, pd.Series) else exog
+        past = (
+            np.stack([cls._to_covariate_array(ctx[col]) for col in past_cols])
+            if past_cols else None
+        )
+        future = (
+            np.stack([
+                np.concatenate([
+                    cls._to_covariate_array(ctx[col]),
+                    cls._to_covariate_array(fut[col]),
+                ])
+                for col in future_cols
+            ])
+            if future_cols else None
+        )
+        return past, future
+
+    @classmethod
+    def _import_timeseries_type(cls) -> Any:
+        """
+        Import the optional `tirex2` backend and return its `TimeseriesType`.
+
+        Returns
+        -------
+        TimeseriesType : type
+            `tirex2.TimeseriesType`, used to build the backend inputs.
+
+        Raises
+        ------
+        ImportError
+            If `tirex-2` is not installed, with the install instruction.
+
+        """
+
+        try:
+            from tirex2 import TimeseriesType
+        except ImportError as exc:
+            raise ImportError(
+                f"{cls.backend_package} is required for {cls.__name__}. "
+                f"Install it with `pip install {cls.backend_package}`."
+            ) from exc
+        return TimeseriesType
+
+    def _load_model(self) -> None:
+        """
+        Load the TiRex-2 model into `self._model` if not already set.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        ImportError
+            If `tirex-2` is not installed, with the install instruction.
+
+        Notes
+        -----
+        The model is imported lazily from `tirex2` and instantiated via
+        `load_model(self.model_id, device=...)`, which downloads (or loads from
+        cache) the checkpoint from the Hugging Face repository given by
+        `model_id`. This method is a no-op when `self._model` is already
+        populated.
+
+        """
+
+        if self._model is not None:
+            return
+        try:
+            from tirex2 import load_model
+        except ImportError as exc:
+            raise ImportError(
+                f"{self.backend_package} is required for TiRex2Adapter. "
+                f"Install it with `pip install {self.backend_package}`."
+            ) from exc
+        self._model = load_model(
+            self.model_id, device=_resolve_torch_device(self.device)
+        )
+
+
 _ADAPTER_REGISTRY: dict[str, type] = {
     # Only Chronos-2 checkpoints: Chronos and Chronos-Bolt pipelines take a
     # different input format and do not accept `cross_learning`.
@@ -5102,6 +5677,7 @@ _ADAPTER_REGISTRY: dict[str, type] = {
     "autogluon/chronos-2": ChronosAdapter,
     "google/timesfm-2.5": TimesFM25Adapter,
     "google/timesfm-3.0": TimesFM3Adapter,
+    "NX-AI/TiRex-2":      TiRex2Adapter,
     # Only Moirai-2 checkpoints: the configs of Moirai 1.x and Moirai-MoE lack
     # arguments required by `Moirai2Module` (`patch_size`, `d_ff`).
     "Salesforce/moirai-2": MoiraiAdapter,

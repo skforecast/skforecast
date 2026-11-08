@@ -633,3 +633,97 @@ class FakeNoriRegressor:
         return np.tile(
             np.asarray(quantiles, dtype=float).reshape(-1, 1), (1, n)
         )
+
+
+# Fake TiRex-2 backend
+# ==============================================================================
+class FakeTensor(np.ndarray):
+    """
+    Minimal `torch.Tensor` stand-in exposing the only method the adapter uses
+    on the tensors it builds (`to`), so the real torch is not needed.
+    """
+
+    def to(self, device):
+        return self
+
+
+class FakeTorch:
+    """
+    Minimal `torch` stand-in with the two attributes the adapter uses:
+    `float32` and `as_tensor`. The tensors it builds are numpy arrays viewed as
+    `FakeTensor`, so their values and shapes can be asserted directly.
+    """
+
+    float32 = np.float32
+
+    @staticmethod
+    def as_tensor(value, dtype=None):
+        return np.asarray(value, dtype=dtype).view(FakeTensor)
+
+
+class FakeTimeseriesType:
+    """
+    Minimal `tirex2.TimeseriesType` stand-in. Asserts that the adapter passes
+    tensor-like objects (not lists or plain arrays) for the target and for each
+    covariate block, then stores them for inspection.
+    """
+
+    def __init__(self, target, past_covariates, future_covariates):
+        assert hasattr(target, "to")
+        if past_covariates is not None:
+            assert hasattr(past_covariates, "to")
+        if future_covariates is not None:
+            assert hasattr(future_covariates, "to")
+        self.target = target
+        self.past_covariates = past_covariates
+        self.future_covariates = future_covariates
+
+
+class FakeTirex2Model:
+    """
+    Fake TiRex-2 `ForecastModel` for testing without tirex-2/torch.
+
+    `forecast()` returns the native layout `(n_targets, n_quantiles, horizon)`
+    with one entry per input `TimeseriesType`; every quantile row is filled with
+    the quantile level itself (1, 2, ..., 9), so selecting a row and selecting a
+    quantile level are both checkable. Records every call in `calls` as
+    `(timeseries, prediction_length, output_type, kwargs)`.
+    """
+
+    def __init__(self):
+        self.calls = []
+
+    def forecast(self, timeseries, prediction_length, output_type, **kwargs):
+        self.calls.append((timeseries, prediction_length, output_type, kwargs))
+        return [
+            np.broadcast_to(
+                np.arange(1, 10, dtype=float)[None, :, None],
+                (1, 9, prediction_length),
+            ).copy()
+            for _ in timeseries
+        ]
+
+
+def fake_tirex2_modules(monkeypatch, model=None):
+    """
+    Patch `sys.modules` so `TiRex2Adapter` can run without tirex-2 installed.
+
+    Registers the `tirex2` and `torch` modules used by the adapter and returns
+    a `FakeTirex2Model`, or `model` when one is provided, so a test can inspect
+    the calls the adapter made.
+    """
+    import sys
+    from types import SimpleNamespace
+
+    if model is None:
+        model = FakeTirex2Model()
+    monkeypatch.setitem(
+        sys.modules,
+        "tirex2",
+        SimpleNamespace(
+            TimeseriesType=FakeTimeseriesType,
+            load_model=lambda *args, **kwargs: model,
+        ),
+    )
+    monkeypatch.setitem(sys.modules, "torch", FakeTorch)
+    return model
