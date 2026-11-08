@@ -1283,17 +1283,22 @@ Rama local desde `origin/0.27.x` (1fbd373dc), sin push ni PR. Commits: los dos d
 backtesting), el código, los tests, la nota de la versión, esta sección, y la segunda ronda
 (errores en un fold: código y tests).
 
+Los nombres y las rutas de esta sección son los de después de
+[`REFACTOR-warnings.md`](REFACTOR-warnings.md), que movió los helpers a
+`skforecast/utils/_warnings.py` y cambió `fold` por `worker` en sus nombres.
+
 **Código** (+170/−8 en dos archivos):
 
-- `model_selection/_utils.py`: `_run_fold_recording_warnings`, `_module_name_from_filename`
-  y `_reemit_fold_warnings`, con docstrings NumPy, junto al resto de la maquinaria de avisos
-  de las búsquedas (`_SearchWarnings`, `_warn_recorded`). Para QW-15 habría que moverlos a
-  `utils`. El docstring de `_SearchWarnings` dice ahora que los avisos de los folds en los
-  procesos se reemiten y se recogen.
+- `model_selection/_utils.py`: `_run_recording_worker_warnings`,
+  `_module_name_from_filename` y `_reemit_worker_warnings`, con docstrings NumPy, junto al
+  resto de la maquinaria de avisos de las búsquedas (`_SearchWarnings`, `_warn_recorded`).
+  REFACTOR-warnings los movió después a `utils/_warnings.py`, para QW-15. El docstring de
+  `_SearchWarnings` dice ahora que los avisos de los folds en los procesos se reemiten y se
+  registran.
 - `model_selection/_validation.py`: los tres `Parallel` (`_backtesting_forecaster`,
   `_backtesting_forecaster_multiseries` y `_backtesting_stats`) llaman a la función de su
-  fold a través de `_run_fold_recording_warnings` con `main_pid = os.getpid()`, y
-  `_reemit_fold_warnings` devuelve sus resultados.
+  fold a través de `_run_recording_worker_warnings` con `main_pid = os.getpid()`, y
+  `_reemit_worker_warnings` devuelve sus resultados.
 - Condiciones de la aprobación:
   1. **Serialización:** en el hijo, cada aviso se comprueba con
      `pickle.loads(pickle.dumps((message, category)))`; solo si falla se envía
@@ -1313,13 +1318,15 @@ backtesting), el código, los tests, la nota de la versión, esta sección, y la
 
 **Tests** (17 nuevos):
 
-- `tests_utils/test_run_fold_recording_warnings.py` (6): en el principal, los avisos salen
-  como siempre y no se devuelven; en un proceso (simulado con otro `main_pid`) se devuelven
-  todos, también las repeticiones, con categoría, texto, archivo y línea, y no sale ninguno;
-  lo silenciado por `suppress_warnings` no se registra; una clase definida dentro de una
-  función sale como `RuntimeWarning` con su nombre y su texto; una clase que se serializa
-  pero no se reconstruye, igual; un aviso de skforecast no duplica su texto.
-- `tests_utils/test_reemit_fold_warnings.py` (4): orden de los folds, categoría y ubicación
+- `utils/tests/tests_warnings/test_run_recording_worker_warnings.py` (6): en el principal,
+  los avisos salen como siempre y no se devuelven; en un proceso (simulado con otro
+  `main_pid`) se devuelven todos, también las repeticiones, con categoría, texto, archivo y
+  línea, y no sale ninguno; lo silenciado por `suppress_warnings` no se registra; una clase
+  definida dentro de una función sale como `RuntimeWarning` con su nombre y su texto; una
+  clase que se serializa pero no se reconstruye, igual; un aviso de skforecast no duplica su
+  texto.
+- `utils/tests/tests_warnings/test_reemit_worker_warnings.py` (4; el de `_SearchWarnings`
+  está ahora en `test_search_warnings.py`): orden de los folds, categoría y ubicación
   originales y resultados devueltos; el mismo aviso en tres folds sale tres veces con la
   acción `default`, como con `n_jobs=1`; filtros del usuario por categoría y por módulo
   (`module=r"skforecast\.utils\.utils"`); dentro de `_SearchWarnings` se registran con su
@@ -1381,12 +1388,12 @@ primer fold.
 fallaba en un proceso, sus avisos registrados se perdían (salían del `catch_warnings` sin
 devolverse), y con `n_jobs=1` se veían; en una búsqueda, quedaban con el candidato saltado.
 
-- `_run_fold_recording_warnings` captura la excepción, guarda los avisos ya registrados (con
-  la misma comprobación de `pickle`, en `_serializable_fold_warnings`) en el atributo
-  `FOLD_WARNINGS_ATTRIBUTE` (`_skforecast_fold_warnings`) de la excepción y la vuelve a
+- `_run_recording_worker_warnings` captura la excepción, guarda los avisos ya registrados
+  (con la misma comprobación de `pickle`, en `_serializable_warnings`) en el atributo
+  `WORKER_WARNINGS_ATTRIBUTE` (`_skforecast_worker_warnings`) de la excepción y la vuelve a
   lanzar (`raise`). Si la excepción no admite el atributo, se lanza sin él.
 - Los tres `Parallel` van en un `try/except Exception` que reemite esos avisos con
-  `_reemit_fold_warnings` y vuelve a lanzar la misma excepción con `raise`: mismo tipo,
+  `_reemit_worker_warnings` y vuelve a lanzar la misma excepción con `raise`: mismo tipo,
   mensaje y traceback (joblib añade la traza remota como `__cause__`, como antes). En el
   proceso principal (`n_jobs=1`, hilos) la excepción no lleva el atributo y no se reemite
   nada.
@@ -1411,7 +1418,7 @@ devolverse), y con `n_jobs=1` se veían; en una búsqueda, quedaban con el candi
 - Tests (5 nuevos, 22 en total): en un proceso simulado, la excepción se vuelve a lanzar
   con sus avisos en el atributo (una clase local pasa a `RuntimeWarning`); con `Parallel`
   de loky, el atributo llega al proceso principal y la excepción conserva su tipo y su
-  texto; `_reemit_fold_warnings` con un módulo sin `__spec__` y loader `BuiltinImporter`
+  texto; `_reemit_worker_warnings` con un módulo sin `__spec__` y loader `BuiltinImporter`
   muestra el aviso sin más; un backtesting con `n_jobs=2` en el que el fold avisa y falla
   (una subclase de `Ridge` que avisa y lanza `ValueError` al predecir una fila) da el mismo
   aviso y la misma excepción que con `n_jobs=1`; y un grid en el que el candidato con

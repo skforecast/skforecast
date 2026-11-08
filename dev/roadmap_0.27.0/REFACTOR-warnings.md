@@ -1,8 +1,19 @@
 # REFACTOR-warnings: organización y nombres del código de los avisos
 
 Fecha: 2026-11-08. Rama: `fix/joblib-worker-warnings` (PR #1467 contra `0.27.x`).
-Estado: **análisis y propuesta; no se ha movido ni renombrado nada**. Las decisiones de la
-sección 7 están pendientes de aprobación.
+Estado: **aplicado** (2026-11-08), en local y sin push, con las decisiones D1 a D6 de la
+sección 7 aprobadas (D7 a D12 quedan fuera):
+
+| Commit | Contenido |
+|:--|:--|
+| 5346b78e1 | 1. Mover sin renombrar a `skforecast/utils/_warnings.py`, con sus tests |
+| 70f5a37ff | 2. Renombrar `fold` → `worker` (D5), con "records" en el docstring de `_SearchWarnings` (nota 5 de la sección 5) |
+| 4516a4b0f | 3. Renombrar `_stacklevel_user_code` → `_find_stack_level` (D6) |
+
+`git blame -C` con el algoritmo por defecto (Myers) no encuentra el bloque de
+`manage_warnings` en las 5700 líneas de `utils/utils.py` y lo atribuye al commit 1. Con
+`git -c diff.algorithm=histogram blame -C -C` (o `--minimal`) todas las líneas movidas se
+atribuyen a sus commits originales; solo la cabecera y los imports son del commit 1.
 
 Versiones del análisis: Python 3.14.3, scikit-learn 1.9.1, pandas 2.3.3, numpy 2.5.4,
 statsmodels 0.14.6, joblib 1.6.0, optuna 5.0.0. Última release: `v0.26.0`.
