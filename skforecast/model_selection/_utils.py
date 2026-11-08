@@ -4142,6 +4142,9 @@ def _stacklevel_user_code() -> int:
     return 1 + n_frames if frame is not None else 1
 
 
+FOLD_WARNINGS_ATTRIBUTE = "_skforecast_fold_warnings"
+
+
 def _run_fold_recording_warnings(
     fold_function: Callable,
     main_pid: int,
@@ -4163,6 +4166,9 @@ def _run_fold_recording_warnings(
     - Each warning is returned as it is if it can be serialized and rebuilt
     with `pickle`. Otherwise, its text is returned as a `RuntimeWarning`,
     starting with the name of its category.
+    - If the function raises an error, the warnings raised before it are
+    stored in the attribute `FOLD_WARNINGS_ATTRIBUTE` of the error, which
+    reaches the main process with it, and the error is raised again.
 
     Parameters
     ----------
@@ -4188,7 +4194,36 @@ def _run_fold_recording_warnings(
 
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        result = fold_function(**kwargs)
+        try:
+            result = fold_function(**kwargs)
+        except Exception as error:
+            try:
+                setattr(error, FOLD_WARNINGS_ATTRIBUTE, _serializable_fold_warnings(caught))
+            except Exception:
+                pass
+            raise
+
+    return result, _serializable_fold_warnings(caught)
+
+
+def _serializable_fold_warnings(caught: list) -> list[tuple]:
+    """
+    Warnings recorded in a fold that runs in a worker process, in a form that
+    can be sent to the main process. Each warning is kept as it is if it can be
+    serialized and rebuilt with `pickle`. Otherwise, its text is kept as a
+    `RuntimeWarning`, starting with the name of its category.
+
+    Parameters
+    ----------
+    caught : list
+        Warnings recorded by `warnings.catch_warnings(record=True)`.
+
+    Returns
+    -------
+    fold_warnings : list
+        Warnings, as tuples `(message, category, filename, lineno)`.
+
+    """
 
     fold_warnings = []
     for warning in caught:
@@ -4203,7 +4238,7 @@ def _run_fold_recording_warnings(
             category = RuntimeWarning
         fold_warnings.append((message, category, warning.filename, warning.lineno))
 
-    return result, fold_warnings
+    return fold_warnings
 
 
 def _module_name_from_filename(filename: str) -> str | None:
@@ -4237,7 +4272,8 @@ def _reemit_fold_warnings(results: list[tuple]) -> list:
     joblib, and return the outputs of the folds.
 
     Each warning is shown with `warnings.warn_explicit`, with its category,
-    location, module and the globals of its module, as with `n_jobs=1`. It
+    location, module and the globals of its module (if it has `__spec__`), as
+    with `n_jobs=1`. It
     goes through the filters of the main process: those of the user, those of
     `suppress_warnings` and, in a search, the registry of its warnings, which
     groups them. No registry of the warnings already shown is used: with
@@ -4266,6 +4302,15 @@ def _reemit_fold_warnings(results: list[tuple]) -> list:
                 module_names[filename] = _module_name_from_filename(filename)
             module_name = module_names[filename]
             module = sys.modules.get(module_name) if module_name is not None else None
+            # NOTE: The globals of a module without `__spec__` (`__main__` of a
+            # script or of the standard input) make `warn_explicit` raise a
+            # `DeprecationWarning`, or an `ImportError` from its loader, while
+            # looking for the source line. `warnings.warn` does not use them.
+            module_globals = (
+                vars(module)
+                if module is not None and getattr(module, "__spec__", None) is not None
+                else None
+            )
             warnings.warn_explicit(
                 message        = message,
                 category       = category,
@@ -4273,7 +4318,7 @@ def _reemit_fold_warnings(results: list[tuple]) -> list:
                 lineno         = lineno,
                 module         = module_name,
                 registry       = None,
-                module_globals = vars(module) if module is not None else None
+                module_globals = module_globals
             )
 
     return outputs

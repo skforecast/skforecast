@@ -33,6 +33,7 @@ from ..model_selection._utils import (
     _get_y_true_multiseries,
     _run_fold_recording_warnings,
     _reemit_fold_warnings,
+    FOLD_WARNINGS_ATTRIBUTE,
     INTERVAL_METRIC_NAMES,
     N_EVALUATED_NAME
 )
@@ -661,21 +662,26 @@ def _backtesting_forecaster(
         "suppress_warnings": suppress_warnings
     }
     # NOTE: The warnings of the folds that run in worker processes are recorded
-    # there and shown here, after the folds, as with `n_jobs=1`.
+    # there and shown here, after the folds, as with `n_jobs=1`. If a fold raises
+    # an error, the warnings raised in it before the error come with the error.
     main_pid = os.getpid()
-    backtest_predictions = Parallel(n_jobs=n_jobs)(
-        delayed(_run_fold_recording_warnings)(
-            fold_function = _fit_predict_forecaster,
-            main_pid      = main_pid,
-            fold          = fold,
-            y_train       = fold_data['y_train'],
-            last_window_y = fold_data['last_window_y'],
-            exog_train    = fold_data['exog_train'],
-            exog_test     = fold_data['exog_test'],
-            **kwargs_fit_predict_forecaster
+    try:
+        backtest_predictions = Parallel(n_jobs=n_jobs)(
+            delayed(_run_fold_recording_warnings)(
+                fold_function = _fit_predict_forecaster,
+                main_pid      = main_pid,
+                fold          = fold,
+                y_train       = fold_data['y_train'],
+                last_window_y = fold_data['last_window_y'],
+                exog_train    = fold_data['exog_train'],
+                exog_test     = fold_data['exog_test'],
+                **kwargs_fit_predict_forecaster
+            )
+            for fold, fold_data in fold_items
         )
-        for fold, fold_data in fold_items
-    )
+    except Exception as error:
+        _reemit_fold_warnings([(None, getattr(error, FOLD_WARNINGS_ATTRIBUTE, None))])
+        raise
     backtest_predictions = _reemit_fold_warnings(backtest_predictions)
     n_predictions_folds = [pred.shape[0] for pred in backtest_predictions]
     fold_labels = np.repeat([fold[0] for fold in folds], n_predictions_folds)
@@ -1606,17 +1612,22 @@ def _backtesting_forecaster_multiseries(
         "suppress_warnings": suppress_warnings
     }
     # NOTE: The warnings of the folds that run in worker processes are recorded
-    # there and shown here, after the folds, as with `n_jobs=1`.
+    # there and shown here, after the folds, as with `n_jobs=1`. If a fold raises
+    # an error, the warnings raised in it before the error come with the error.
     main_pid = os.getpid()
-    results = Parallel(n_jobs=n_jobs)(
-        delayed(_run_fold_recording_warnings)(
-            fold_function = _fit_predict_forecaster_multiseries,
-            main_pid      = main_pid,
-            data_fold     = data_fold,
-            **kwargs_fit_predict_forecaster
+    try:
+        results = Parallel(n_jobs=n_jobs)(
+            delayed(_run_fold_recording_warnings)(
+                fold_function = _fit_predict_forecaster_multiseries,
+                main_pid      = main_pid,
+                data_fold     = data_fold,
+                **kwargs_fit_predict_forecaster
+            )
+            for data_fold in data_folds_list
         )
-        for data_fold in data_folds_list
-    )
+    except Exception as error:
+        _reemit_fold_warnings([(None, getattr(error, FOLD_WARNINGS_ATTRIBUTE, None))])
+        raise
     results = _reemit_fold_warnings(results)
 
     # NOTE: A fold that is only fitted, because its model predicts the
@@ -2358,17 +2369,22 @@ def _backtesting_stats(
         "suppress_warnings": suppress_warnings
     }
     # NOTE: The warnings of the folds that run in worker processes are recorded
-    # there and shown here, after the folds, as with `n_jobs=1`.
+    # there and shown here, after the folds, as with `n_jobs=1`. If a fold raises
+    # an error, the warnings raised in it before the error come with the error.
     main_pid = os.getpid()
-    results = Parallel(n_jobs=n_jobs)(
-        delayed(_run_fold_recording_warnings)(
-            fold_function = _fit_predict_forecaster_stats,
-            main_pid      = main_pid,
-            fold          = fold,
-            **kwargs_fit_predict_forecaster
+    try:
+        results = Parallel(n_jobs=n_jobs)(
+            delayed(_run_fold_recording_warnings)(
+                fold_function = _fit_predict_forecaster_stats,
+                main_pid      = main_pid,
+                fold          = fold,
+                **kwargs_fit_predict_forecaster
+            )
+            for fold in folds_tqdm
         )
-        for fold in folds_tqdm
-    )
+    except Exception as error:
+        _reemit_fold_warnings([(None, getattr(error, FOLD_WARNINGS_ATTRIBUTE, None))])
+        raise
     results = _reemit_fold_warnings(results)
 
     backtest_predictions = [result[0] for result in results]
