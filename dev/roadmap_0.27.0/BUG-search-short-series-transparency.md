@@ -790,6 +790,12 @@ dato; el aviso, un problema.
    (2), `probabilistic-forecasting-global-models` (1). Revisar cada caso: `y_true` solo está
    en las predicciones del backtesting, no en las de `predict`, y en multiserie va por fila
    (formato largo). Volver a ejecutar cada página tocada.
+4. **Aviso de las filas de entrenamiento con NaN (QW-13, #1466):** volver a ejecutar
+   `docs/user_guides/handling-missing-values.ipynb` (celdas 17 y 18) y
+   `docs/user_guides/multi-series-with-different-length-and-different_exog.ipynb` (celdas
+   24 y 26). Sus salidas guardadas muestran los avisos anteriores ("NaNs detected in
+   `y_train`" y "NaNs detected in `X_train`", 4 por celda); ahora sale uno por ajuste, con
+   los recuentos. Revisar que ningún texto de la guía cite el aviso anterior.
 
 ## 14. PR 2b: candidatos que fallan y pendientes de las búsquedas (2026-11-06)
 
