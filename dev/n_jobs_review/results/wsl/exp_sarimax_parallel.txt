@@ -1,0 +1,66 @@
+size=S n_jobs=1: ok
+size=S n_jobs=4: ok
+size=L n_jobs=1: ok
+size=L n_jobs=4: BrokenProcessPool: A task has failed to un-serialize. Please ensure that the arguments of the function are all picklable.
+joblib.externals.loky.process_executor._RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/home/joaquin/miniconda3/envs/skforecast_27_py13_wsl/lib/python3.13/site-packages/joblib/externals/loky/process_executor.py", line 453, in _process_worker
+    call_item = call_queue.get(block=True, timeout=timeout)
+  File "/home/joaquin/miniconda3/envs/skforecast_27_py13_wsl/lib/python3.13/multiprocessing/queues.py", line 120, in get
+    return _ForkingPickler.loads(res)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "statsmodels/tsa/statespace/_kalman_filter.pyx", line 1807, in statsmodels.tsa.statespace._kalman_filter.dKalmanFilter.__setstate__
+  File "View.MemoryView", line 707, in View.MemoryView.memoryview_cwrapper
+  File "View.MemoryView", line 371, in View.MemoryView.memoryview.__cinit__
+ValueError: buffer source array is read-only
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/joaquin/github/skforecast_njobs_wsl/dev/n_jobs_review/exp_sarimax_parallel.py", line 34, in main
+    backtesting_stats(
+    ~~~~~~~~~~~~~~~~~^
+        forecaster=forecaster,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+        suppress_warnings=True,
+        ^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/joaquin/github/skforecast_njobs_wsl/skforecast/model_selection/_validation.py", line 2617, in backtesting_stats
+    metric_values, backtest_predictions = _backtesting_stats(
+                                          ~~~~~~~~~~~~~~~~~~^
+        forecaster        = forecaster,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+        suppress_warnings = suppress_warnings
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/joaquin/github/skforecast_njobs_wsl/skforecast/utils/utils.py", line 2885, in wrapper
+    return func(*args, **kwargs)
+  File "/home/joaquin/github/skforecast_njobs_wsl/skforecast/model_selection/_validation.py", line 2344, in _backtesting_stats
+    results = Parallel(n_jobs=n_jobs)(
+        delayed(_fit_predict_forecaster_stats)(
+    ...<2 lines>...
+        for fold in folds_tqdm
+    )
+  File "/home/joaquin/miniconda3/envs/skforecast_27_py13_wsl/lib/python3.13/site-packages/joblib/parallel.py", line 2098, in __call__
+    return output if self.return_generator else list(output)
+                                                ~~~~^^^^^^^^
+  File "/home/joaquin/miniconda3/envs/skforecast_27_py13_wsl/lib/python3.13/site-packages/joblib/parallel.py", line 1704, in _get_outputs
+    yield from self._retrieve()
+  File "/home/joaquin/miniconda3/envs/skforecast_27_py13_wsl/lib/python3.13/site-packages/joblib/parallel.py", line 1806, in _retrieve
+    self._raise_error_fast()
+    ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/joaquin/miniconda3/envs/skforecast_27_py13_wsl/lib/python3.13/site-packages/joblib/parallel.py", line 1885, in _raise_error_fast
+    error_job.get_result(self.timeout)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/home/joaquin/miniconda3/envs/skforecast_27_py13_wsl/lib/python3.13/site-packages/joblib/parallel.py", line 780, in get_result
+    return self._return_or_raise()
+           ~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/joaquin/miniconda3/envs/skforecast_27_py13_wsl/lib/python3.13/site-packages/joblib/parallel.py", line 795, in _return_or_raise
+    raise self._result
+joblib.externals.loky.process_executor.BrokenProcessPool: A task has failed to un-serialize. Please ensure that the arguments of the function are all picklable.

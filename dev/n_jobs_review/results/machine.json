@@ -1,0 +1,181 @@
+{
+  "date": "2026-11-07 19:44:27",
+  "cpu": "Intel(R) Core(TM) Ultra 9 185H",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "os_version": "10.0.26200",
+  "physical_cores": 16,
+  "logical_processors": 22,
+  "joblib_cpu_count": 22,
+  "joblib_cpu_count_physical": 16,
+  "efficiency_classes": {
+    "class_1": {
+      "cores": 6,
+      "logical": 12
+    },
+    "class_0": {
+      "cores": 10,
+      "logical": 10
+    }
+  },
+  "topology": [
+    {
+      "core": 0,
+      "efficiency_class": 1,
+      "logical": [
+        0,
+        1
+      ],
+      "smt": true
+    },
+    {
+      "core": 1,
+      "efficiency_class": 0,
+      "logical": [
+        2
+      ],
+      "smt": false
+    },
+    {
+      "core": 2,
+      "efficiency_class": 0,
+      "logical": [
+        3
+      ],
+      "smt": false
+    },
+    {
+      "core": 3,
+      "efficiency_class": 0,
+      "logical": [
+        4
+      ],
+      "smt": false
+    },
+    {
+      "core": 4,
+      "efficiency_class": 0,
+      "logical": [
+        5
+      ],
+      "smt": false
+    },
+    {
+      "core": 5,
+      "efficiency_class": 0,
+      "logical": [
+        6
+      ],
+      "smt": false
+    },
+    {
+      "core": 6,
+      "efficiency_class": 0,
+      "logical": [
+        7
+      ],
+      "smt": false
+    },
+    {
+      "core": 7,
+      "efficiency_class": 0,
+      "logical": [
+        8
+      ],
+      "smt": false
+    },
+    {
+      "core": 8,
+      "efficiency_class": 0,
+      "logical": [
+        9
+      ],
+      "smt": false
+    },
+    {
+      "core": 9,
+      "efficiency_class": 1,
+      "logical": [
+        10,
+        11
+      ],
+      "smt": true
+    },
+    {
+      "core": 10,
+      "efficiency_class": 1,
+      "logical": [
+        12,
+        13
+      ],
+      "smt": true
+    },
+    {
+      "core": 11,
+      "efficiency_class": 1,
+      "logical": [
+        14,
+        15
+      ],
+      "smt": true
+    },
+    {
+      "core": 12,
+      "efficiency_class": 1,
+      "logical": [
+        16,
+        17
+      ],
+      "smt": true
+    },
+    {
+      "core": 13,
+      "efficiency_class": 1,
+      "logical": [
+        18,
+        19
+      ],
+      "smt": true
+    },
+    {
+      "core": 14,
+      "efficiency_class": 0,
+      "logical": [
+        20
+      ],
+      "smt": false
+    },
+    {
+      "core": 15,
+      "efficiency_class": 0,
+      "logical": [
+        21
+      ],
+      "smt": false
+    }
+  ],
+  "ram_gb": 63.4,
+  "power_scheme": "Power Scheme GUID: 381b4222-f694-41f0-9685-ff5bb260df2e  (Balanced)",
+  "ac_power": true,
+  "battery_percent": 97,
+  "cpu_freq_mhz": {
+    "current": 1478.0,
+    "min": 0.0,
+    "max": 2300.0
+  },
+  "versions": {
+    "python": "3.13.18",
+    "numpy": "2.5.4",
+    "pandas": "2.3.3",
+    "sklearn": "1.9.1",
+    "scipy": "1.18.1",
+    "joblib": "1.6.0",
+    "numba": "0.68.0",
+    "lightgbm": "4.7.0",
+    "xgboost": "3.4.1",
+    "catboost": "1.2.10",
+    "statsmodels": "0.15.0",
+    "psutil": "7.2.2",
+    "threadpoolctl": "3.7.0",
+    "skforecast": "0.27.0"
+  }
+}

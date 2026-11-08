@@ -1,0 +1,16 @@
+diff --git a/skforecast/utils/utils.py b/skforecast/utils/utils.py
+index 677326010..b33f743e9 100644
+--- a/skforecast/utils/utils.py
++++ b/skforecast/utils/utils.py
+@@ -4236,9 +4236,10 @@ def _build_predict_function(
+ 
+     if estimator_name == 'LGBMRegressor':
+         booster = estimator.booster_
++        num_threads = estimator._process_n_jobs(estimator.n_jobs)
+ 
+         def predict_fn(X):
+-            return booster.predict(X)
++            return booster.predict(X, num_threads=num_threads)
+ 
+         return predict_fn
+ 

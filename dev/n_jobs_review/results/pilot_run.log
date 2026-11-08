@@ -1,0 +1,508 @@
+$ probe_workers.py
+n_jobs=1 worker {'pid': 19684, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=None;OPENBLAS_NUM_THREADS=None;MKL_NUM_THREADS=None;BLIS_NUM_THREADS=None;VECLIB_MAXIMUM_THREADS=None;NUMEXPR_NUM_THREADS=None;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:22;openmp:openmp:22;openmp:openmp:22;blas:openblas:22', 'where': 'worker'}
+n_jobs=2 worker {'pid': 1276, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=11;OPENBLAS_NUM_THREADS=11;MKL_NUM_THREADS=11;BLIS_NUM_THREADS=11;VECLIB_MAXIMUM_THREADS=11;NUMEXPR_NUM_THREADS=11;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:11;openmp:openmp:11;openmp:openmp:11;blas:openblas:11', 'where': 'worker'}
+n_jobs=2 worker {'pid': 29644, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=11;OPENBLAS_NUM_THREADS=11;MKL_NUM_THREADS=11;BLIS_NUM_THREADS=11;VECLIB_MAXIMUM_THREADS=11;NUMEXPR_NUM_THREADS=11;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:11;openmp:openmp:11;openmp:openmp:11;blas:openblas:11', 'where': 'worker'}
+n_jobs=21 worker {'pid': 30852, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 32100, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 25232, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 23896, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 28360, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 13668, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 16440, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 13308, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 19420, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 24168, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 26264, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 30096, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 23480, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 28636, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 17736, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 7712, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 39152, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 27264, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 26096, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 15876, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 16848, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+main {'pid': 19684, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=None;OPENBLAS_NUM_THREADS=None;MKL_NUM_THREADS=None;BLIS_NUM_THREADS=None;VECLIB_MAXIMUM_THREADS=None;NUMEXPR_NUM_THREADS=None;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:22;openmp:openmp:22;openmp:openmp:22;blas:openblas:22', 'where': 'main'}
+allowed logical processors: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
+G1 PASS: expected cpu_count 22
+BLOCK A affinity 22 START 14:16:09
+$ bench_spawn.py --pilot
+cold rep=0 k=16 few: 0.6000710999942385
+cold rep=0 k=16 noop: 0.6242344999918714
+cold rep=0 k=2 noop: 0.363383200019598
+cold rep=0 k=22 forecaster: 5.473698700021487
+cold rep=0 k=2 few: 0.46626059996197
+cold rep=0 k=22 noop: 0.8157874000025913
+cold rep=0 k=16 forecaster: 4.12944140000036
+cold rep=0 k=4 noop: 0.40780360001372173
+cold rep=0 k=4 few: 0.40920809999806806
+cold rep=0 k=22 few: 0.6313895999919623
+cold rep=0 k=21 few: 0.5929660999681801
+cold rep=0 k=8 noop: 0.477470199984964
+cold rep=0 k=8 forecaster: 2.82305099995574
+cold rep=0 k=8 few: 0.5079149000230245
+cold rep=0 k=4 forecaster: 2.570152300002519
+cold rep=0 k=2 forecaster: 2.18037070002174
+cold rep=0 k=21 forecaster: 5.309449099993799
+cold rep=0 k=21 noop: 0.7027719999896362
+warm k=22 forecaster
+warm k=8 forecaster
+warm k=8 noop
+warm k=22 few
+warm k=4 few
+warm k=8 few
+warm k=2 noop
+warm k=21 forecaster
+warm k=22 noop
+warm k=16 forecaster
+warm k=4 noop
+warm k=4 forecaster
+warm k=16 noop
+warm k=16 few
+warm k=2 few
+warm k=2 forecaster
+warm k=21 few
+warm k=21 noop
+BLOCK A affinity 22 END rc=0 1.8 min
+BLOCK B affinity 22 START 14:17:57
+$ bench.py --block B --pilot
+[1/90] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=S|refit=False|nj=cpu-1: 4.0 s (total 4 s)
+[2/90] B|op=backtest|forecaster=recursive|estimator=cat_1|size=S|refit=True|nj=cpu-1: 5.7 s (total 10 s)
+[3/90] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=False|nj=1: 6.6 s (total 16 s)
+[4/90] B|op=backtest|forecaster=recursive|estimator=hgb|size=S|refit=False|nj=1: 0.7 s (total 17 s)
+[5/90] B|op=backtest|forecaster=recursive|estimator=ridge|size=S|refit=False|nj=cpu-1: 2.0 s (total 19 s)
+[6/90] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=S|refit=True|nj=cpu-1: 3.1 s (total 22 s)
+[7/90] B|op=backtest|forecaster=recursive|estimator=ridge|size=L|refit=False|nj=cpu-1: 0.0 s (total 22 s)
+[8/90] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=L|refit=False|nj=cpu-1: 1.4 s (total 23 s)
+[9/90] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=S|refit=False|nj=cpu-1: 0.5 s (total 24 s)
+[10/90] B|op=backtest|forecaster=recursive|estimator=ridge|size=S|refit=True|nj=1: 0.0 s (total 24 s)
+[11/90] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=L|refit=False|nj=1: 0.9 s (total 25 s)
+[12/90] B|op=backtest|forecaster=recursive|estimator=hgb|size=S|refit=False|nj=cpu-1: 0.8 s (total 26 s)
+[13/90] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=S|refit=True|nj=1: 3.6 s (total 29 s)
+[14/90] B|op=backtest|forecaster=classifier|estimator=logreg|size=S|refit=True|nj=1: 0.3 s (total 30 s)
+[15/90] B|op=backtest|forecaster=recursive|estimator=et_none|size=L|refit=True|nj=cpu-1: 5.1 s (total 35 s)
+[16/90] B|op=backtest|forecaster=classifier|estimator=hgbc|size=S|refit=True|nj=cpu-1: 2.5 s (total 37 s)
+[17/90] B|op=backtest|forecaster=classifier|estimator=logreg|size=L|refit=False|nj=1: 0.7 s (total 38 s)
+[18/90] B|op=backtest|forecaster=classifier|estimator=logreg|size=L|refit=True|nj=1: 5.2 s (total 43 s)
+[19/90] B|op=backtest|forecaster=recursive|estimator=rf_none|size=L|refit=True|nj=1: 106.0 s (total 149 s)
+[20/90] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=L|refit=True|nj=cpu-1: 1.7 s (total 151 s)
+[21/90] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=L|refit=True|nj=1: 7.5 s (total 158 s)
+[22/90] B|op=backtest|forecaster=recursive|estimator=hgb|size=S|refit=True|nj=1: 3.0 s (total 161 s)
+[23/90] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=S|refit=False|nj=1: 0.1 s (total 161 s)
+[24/90] B|op=backtest|forecaster=recursive|estimator=rf_none|size=L|refit=False|nj=cpu-1: 5.1 s (total 166 s)
+[25/90] B|op=backtest|forecaster=classifier|estimator=logreg|size=S|refit=False|nj=cpu-1: 0.1 s (total 166 s)
+[26/90] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=S|refit=True|nj=1: 0.1 s (total 167 s)
+[27/90] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=S|refit=True|nj=cpu-1: 0.0 s (total 167 s)
+[28/90] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=L|refit=True|nj=1: 10.9 s (total 177 s)
+[29/90] B|op=backtest|forecaster=recursive|estimator=ridge|size=S|refit=False|nj=1: 0.0 s (total 177 s)
+[30/90] B|op=backtest|forecaster=recursive|estimator=et_none|size=S|refit=False|nj=cpu-1: 0.3 s (total 178 s)
+[31/90] B|op=backtest|forecaster=recursive|estimator=ridge|size=L|refit=True|nj=cpu-1: 0.1 s (total 178 s)
+[32/90] B|op=backtest|forecaster=classifier|estimator=logreg|size=S|refit=True|nj=cpu-1: 0.1 s (total 178 s)
+[33/90] B|op=backtest|forecaster=recursive|estimator=cat_1|size=L|refit=False|nj=1: 3.8 s (total 182 s)
+[34/90] B|op=backtest|forecaster=recursive|estimator=rf_none|size=S|refit=True|nj=cpu-1: 0.9 s (total 183 s)
+[35/90] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=L|refit=False|nj=cpu-1: 0.1 s (total 183 s)
+[36/90] B|op=backtest|forecaster=classifier|estimator=hgbc|size=S|refit=False|nj=cpu-1: 1.3 s (total 184 s)
+[37/90] B|op=backtest|forecaster=recursive|estimator=cat_1|size=S|refit=True|nj=1: 9.5 s (total 194 s)
+[38/90] B|op=backtest|forecaster=recursive|estimator=ridge|size=L|refit=True|nj=1: 0.1 s (total 194 s)
+[39/90] B|op=backtest|forecaster=classifier|estimator=logreg|size=L|refit=False|nj=cpu-1: 0.3 s (total 194 s)
+[40/90] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=S|refit=True|nj=1: 1.0 s (total 195 s)
+[41/90] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=False|nj=cpu-1: 0.4 s (total 195 s)
+[42/90] B|op=backtest|forecaster=recursive|estimator=cat_1|size=L|refit=True|nj=1: 37.6 s (total 233 s)
+[43/90] B|op=backtest|forecaster=recursive|estimator=rf_none|size=L|refit=True|nj=cpu-1: 16.6 s (total 250 s)
+[44/90] B|op=backtest|forecaster=recursive|estimator=rf_none|size=L|refit=False|nj=1: 5.3 s (total 255 s)
+[45/90] B|op=backtest|forecaster=classifier|estimator=hgbc|size=L|refit=False|nj=1: 45.8 s (total 301 s)
+[46/90] B|op=backtest|forecaster=recursive|estimator=et_none|size=L|refit=False|nj=1: 1.9 s (total 303 s)
+[47/90] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=3|nj=1: 2.4 s (total 305 s)
+[48/90] B|op=backtest|forecaster=recursive|estimator=et_none|size=S|refit=True|nj=1: 1.5 s (total 306 s)
+[49/90] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=False|nj=1: 0.6 s (total 307 s)
+[50/90] B|op=backtest|forecaster=classifier|estimator=logreg|size=S|refit=False|nj=1: 0.1 s (total 307 s)
+[51/90] B|op=backtest|forecaster=recursive|estimator=cat_1|size=S|refit=False|nj=cpu-1: 1.2 s (total 308 s)
+[52/90] B|op=backtest|forecaster=classifier|estimator=hgbc|size=S|refit=True|nj=1: 9.9 s (total 318 s)
+[53/90] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=S|refit=True|nj=cpu-1: 0.6 s (total 319 s)
+[54/90] B|op=backtest|forecaster=recursive|estimator=cat_1|size=L|refit=True|nj=cpu-1: 6.3 s (total 325 s)
+[55/90] B|op=backtest|forecaster=recursive|estimator=cat_1|size=L|refit=False|nj=cpu-1: 2.4 s (total 328 s)
+[56/90] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=L|refit=True|nj=cpu-1: 0.2 s (total 328 s)
+[57/90] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=L|refit=True|nj=1: 1.0 s (total 329 s)
+[58/90] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=S|refit=False|nj=cpu-1: 0.4 s (total 329 s)
+[59/90] B|op=backtest|forecaster=recursive|estimator=rf_none|size=S|refit=False|nj=1: 0.3 s (total 329 s)
+[60/90] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=S|refit=False|nj=1: 0.4 s (total 330 s)
+[61/90] B|op=backtest|forecaster=recursive|estimator=rf_none|size=S|refit=False|nj=cpu-1: 0.4 s (total 330 s)
+[62/90] B|op=backtest|forecaster=recursive|estimator=et_none|size=L|refit=False|nj=cpu-1: 1.7 s (total 332 s)
+[63/90] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=L|refit=False|nj=cpu-1: 1.1 s (total 333 s)
+[64/90] B|op=backtest|forecaster=recursive|estimator=ridge|size=S|refit=True|nj=cpu-1: 0.0 s (total 333 s)
+[65/90] B|op=backtest|forecaster=recursive|estimator=et_none|size=L|refit=True|nj=1: 26.2 s (total 359 s)
+[66/90] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=1: 11.9 s (total 371 s)
+[67/90] B|op=backtest|forecaster=classifier|estimator=hgbc|size=L|refit=True|nj=1: 64.0 s (total 435 s)
+[68/90] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=True|nj=1: 6.3 s (total 442 s)
+[69/90] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=False|nj=cpu-1: 1.1 s (total 443 s)
+[70/90] B|op=backtest|forecaster=recursive|estimator=rf_none|size=S|refit=True|nj=1: 3.1 s (total 446 s)
+[71/90] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=cpu-1: 2.4 s (total 448 s)
+[72/90] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=L|refit=False|nj=1: 1.2 s (total 449 s)
+[73/90] B|op=backtest|forecaster=classifier|estimator=hgbc|size=L|refit=True|nj=cpu-1: 8.4 s (total 458 s)
+[74/90] B|op=backtest|forecaster=recursive|estimator=et_none|size=S|refit=True|nj=cpu-1: 0.5 s (total 458 s)
+[75/90] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=S|refit=False|nj=1: 0.3 s (total 458 s)
+[76/90] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=3|nj=1: 7.8 s (total 466 s)
+[77/90] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=S|refit=False|nj=1: 0.1 s (total 466 s)
+[78/90] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=S|refit=True|nj=1: 1.3 s (total 468 s)
+[79/90] B|op=backtest|forecaster=classifier|estimator=logreg|size=L|refit=True|nj=cpu-1: 1.0 s (total 469 s)
+[80/90] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=S|refit=False|nj=cpu-1: 0.0 s (total 469 s)
+[81/90] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=S|refit=True|nj=cpu-1: 0.4 s (total 469 s)
+[82/90] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=True|nj=cpu-1: 1.3 s (total 470 s)
+[83/90] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=L|refit=True|nj=cpu-1: 2.2 s (total 473 s)
+[84/90] B|op=backtest|forecaster=classifier|estimator=hgbc|size=L|refit=False|nj=cpu-1: 5.5 s (total 478 s)
+[85/90] B|op=backtest|forecaster=recursive|estimator=hgb|size=S|refit=True|nj=cpu-1: 0.9 s (total 479 s)
+[86/90] B|op=backtest|forecaster=recursive|estimator=ridge|size=L|refit=False|nj=1: 0.0 s (total 479 s)
+[87/90] B|op=backtest|forecaster=recursive|estimator=cat_1|size=S|refit=False|nj=1: 1.2 s (total 480 s)
+[88/90] B|op=backtest|forecaster=recursive|estimator=et_none|size=S|refit=False|nj=1: 0.2 s (total 481 s)
+[89/90] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=L|refit=False|nj=1: 1.9 s (total 483 s)
+[90/90] B|op=backtest|forecaster=classifier|estimator=hgbc|size=S|refit=False|nj=1: 3.3 s (total 486 s)
+BLOCK B affinity 22 END rc=0 8.2 min
+BLOCK C affinity 22 START 14:26:08
+$ bench.py --block C --pilot
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_none|size=L|refit=True|nj=1 (timeout 690 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_none|size=L|refit=True|nj=1: 3.6 s (total 4 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_none|size=L|refit=True|nj=cpu-1 (timeout 125 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_none|size=L|refit=True|nj=cpu-1: 9.1 s (total 9 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_m1|size=L|refit=True|nj=1 (timeout 690 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_m1|size=L|refit=True|nj=1: 3.9 s (total 4 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_m1|size=L|refit=True|nj=cpu-1 (timeout 128 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_m1|size=L|refit=True|nj=cpu-1: 9.5 s (total 10 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_4|size=L|refit=True|nj=1 (timeout 690 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_4|size=L|refit=True|nj=1: 4.3 s (total 4 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_4|size=L|refit=True|nj=cpu-1 (timeout 131 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_4|size=L|refit=True|nj=cpu-1: 6.9 s (total 7 s)
+cell C|op=backtest|forecaster=recursive|estimator=xgb_none|size=L|refit=True|nj=1 (timeout 690 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=xgb_none|size=L|refit=True|nj=1: 8.2 s (total 8 s)
+cell C|op=backtest|forecaster=recursive|estimator=xgb_none|size=L|refit=True|nj=cpu-1 (timeout 171 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=xgb_none|size=L|refit=True|nj=cpu-1: 9.1 s (total 9 s)
+cell C|op=backtest|forecaster=recursive|estimator=xgb_m1|size=L|refit=True|nj=1 (timeout 690 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=xgb_m1|size=L|refit=True|nj=1: 9.4 s (total 9 s)
+cell C|op=backtest|forecaster=recursive|estimator=xgb_m1|size=L|refit=True|nj=cpu-1 (timeout 182 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=xgb_m1|size=L|refit=True|nj=cpu-1: 9.5 s (total 9 s)
+cell C|op=backtest|forecaster=recursive|estimator=rf_m1|size=L|refit=True|nj=1 (timeout 690 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=rf_m1|size=L|refit=True|nj=1: 18.9 s (total 19 s)
+cell C|op=backtest|forecaster=recursive|estimator=rf_m1|size=L|refit=True|nj=cpu-1 (timeout 278 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=rf_m1|size=L|refit=True|nj=cpu-1: 20.1 s (total 20 s)
+cell C|op=backtest|forecaster=recursive|estimator=et_m1|size=L|refit=True|nj=1 (timeout 690 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=et_m1|size=L|refit=True|nj=1: 4.9 s (total 5 s)
+cell C|op=backtest|forecaster=recursive|estimator=et_m1|size=L|refit=True|nj=cpu-1 (timeout 137 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=et_m1|size=L|refit=True|nj=cpu-1: 8.9 s (total 9 s)
+cell C|op=backtest|forecaster=recursive|estimator=cat_m1|size=L|refit=True|nj=1 (timeout 690 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=cat_m1|size=L|refit=True|nj=1: 10.4 s (total 10 s)
+cell C|op=backtest|forecaster=recursive|estimator=cat_m1|size=L|refit=True|nj=cpu-1 (timeout 193 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=cat_m1|size=L|refit=True|nj=cpu-1: 10.3 s (total 10 s)
+cell C|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=1 (timeout 690 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=1: 13.9 s (total 14 s)
+cell C|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=cpu-1 (timeout 228 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=cpu-1: 8.1 s (total 8 s)
+BLOCK C affinity 22 END rc=0 3.8 min
+BLOCK D affinity 22 START 14:29:54
+$ bench.py --block D --pilot
+[1/70] D|op=backtest|forecaster=direct|estimator=hgb|size=L|refit=True|nj=auto|auto: 314.2 s (total 314 s)
+[2/70] D|op=fit_direct|forecaster=direct|estimator=lgbm_1|size=S|refit=|nj=1: 2.8 s (total 317 s)
+[3/70] D|op=backtest|forecaster=direct|estimator=lgbm_1|size=L|refit=True|nj=1|1: 117.5 s (total 435 s)
+[4/70] D|op=fit_dmv|forecaster=dmv|estimator=lgbm_1|size=S|refit=|nj=1: 3.9 s (total 439 s)
+[5/70] D|op=fit_direct|forecaster=direct|estimator=hgb|size=S|refit=|nj=cpu-1: 1.0 s (total 439 s)
+[6/70] D|op=fit_direct|forecaster=direct|estimator=hgb|size=L|refit=|nj=1: 16.1 s (total 456 s)
+[7/70] D|op=backtest|forecaster=direct|estimator=ridge|size=L|refit=False|nj=auto|auto: 0.2 s (total 456 s)
+[8/70] D|op=fit_direct|forecaster=direct|estimator=ridge|size=S|refit=|nj=1: 0.0 s (total 456 s)
+[9/70] D|op=fit_direct|forecaster=direct|estimator=lgbm_none|size=S|refit=|nj=1: 1.4 s (total 457 s)
+[10/70] D|op=backtest|forecaster=direct|estimator=hgb|size=L|refit=False|nj=auto|auto: 3.8 s (total 461 s)
+[11/70] D|op=fit_direct|forecaster=direct|estimator=hgb|size=L|refit=|nj=cpu-1: 3.3 s (total 464 s)
+[12/70] D|op=backtest|forecaster=direct|estimator=lgbm_1|size=S|refit=True|nj=cpu-1|1: 8.3 s (total 473 s)
+[13/70] D|op=backtest_ms|forecaster=dmv|estimator=ridge|size=S|refit=True|nj=1|1: 0.2 s (total 473 s)
+[14/70] D|op=fit_dmv|forecaster=dmv|estimator=ridge|size=L|refit=|nj=1: 0.9 s (total 474 s)
+[15/70] D|op=fit_direct|forecaster=direct|estimator=rf_none|size=S|refit=|nj=cpu-1: 1.1 s (total 475 s)
+[16/70] D|op=backtest|forecaster=direct|estimator=ridge|size=L|refit=True|nj=auto|auto: 1.3 s (total 476 s)
+[17/70] D|op=backtest|forecaster=direct|estimator=lgbm_1|size=S|refit=False|nj=auto|auto: 0.5 s (total 477 s)
+[18/70] D|op=backtest_ms|forecaster=dmv|estimator=ridge|size=S|refit=True|nj=auto|auto: 0.3 s (total 477 s)
+[19/70] D|op=fit_dmv|forecaster=dmv|estimator=lgbm_1|size=L|refit=|nj=1: 68.4 s (total 545 s)
+[20/70] D|op=backtest_ms|forecaster=dmv|estimator=lgbm_1|size=S|refit=True|nj=1|1: 33.8 s (total 579 s)
+[21/70] D|op=fit_dmv|forecaster=dmv|estimator=ridge|size=S|refit=|nj=1: 0.0 s (total 579 s)
+[22/70] D|op=backtest|forecaster=direct|estimator=ridge|size=S|refit=False|nj=cpu-1|1: 0.2 s (total 579 s)
+[23/70] D|op=fit_direct|forecaster=direct|estimator=ridge|size=L|refit=|nj=1: 0.2 s (total 579 s)
+[24/70] D|op=backtest|forecaster=direct|estimator=ridge|size=S|refit=False|nj=1|1: 0.0 s (total 579 s)
+[25/70] D|op=backtest|forecaster=direct|estimator=lgbm_1|size=S|refit=True|nj=auto|auto: 24.9 s (total 604 s)
+[26/70] D|op=backtest|forecaster=direct|estimator=ridge|size=S|refit=False|nj=auto|auto: 0.1 s (total 604 s)
+[27/70] D|op=fit_dmv|forecaster=dmv|estimator=ridge|size=L|refit=|nj=cpu-1: 0.3 s (total 605 s)
+[28/70] D|op=backtest|forecaster=direct|estimator=lgbm_1|size=L|refit=False|nj=1|1: 11.9 s (total 617 s)
+[29/70] D|op=backtest|forecaster=direct|estimator=hgb|size=S|refit=False|nj=cpu-1|1: 8.5 s (total 625 s)
+[30/70] D|op=fit_direct|forecaster=direct|estimator=rf_none|size=S|refit=|nj=1: 7.0 s (total 632 s)
+[31/70] D|op=backtest_ms|forecaster=dmv|estimator=lgbm_1|size=S|refit=True|nj=cpu-1|1: 11.2 s (total 643 s)
+[32/70] D|op=backtest|forecaster=direct|estimator=ridge|size=L|refit=False|nj=cpu-1|1: 0.2 s (total 644 s)
+[33/70] D|op=backtest|forecaster=direct|estimator=hgb|size=S|refit=True|nj=cpu-1|1: 16.9 s (total 660 s)
+[34/70] D|op=fit_direct|forecaster=direct|estimator=ridge|size=L|refit=|nj=cpu-1: 0.8 s (total 661 s)
+[35/70] D|op=backtest|forecaster=direct|estimator=hgb|size=L|refit=False|nj=1|1: 17.3 s (total 678 s)
+[36/70] D|op=fit_direct|forecaster=direct|estimator=lgbm_none|size=L|refit=|nj=1: 5.2 s (total 684 s)
+[37/70] D|op=backtest|forecaster=direct|estimator=ridge|size=S|refit=True|nj=cpu-1|1: 0.1 s (total 684 s)
+[38/70] D|op=backtest|forecaster=direct|estimator=ridge|size=S|refit=True|nj=1|1: 0.2 s (total 684 s)
+[39/70] D|op=backtest|forecaster=direct|estimator=lgbm_1|size=S|refit=False|nj=cpu-1|1: 3.5 s (total 688 s)
+[40/70] D|op=fit_direct|forecaster=direct|estimator=ridge|size=S|refit=|nj=cpu-1: 0.1 s (total 688 s)
+[41/70] D|op=backtest|forecaster=direct|estimator=ridge|size=L|refit=True|nj=1|1: 1.3 s (total 689 s)
+[42/70] D|op=backtest|forecaster=direct|estimator=hgb|size=S|refit=False|nj=1|1: 6.3 s (total 695 s)
+[43/70] D|op=backtest|forecaster=direct|estimator=hgb|size=S|refit=False|nj=auto|auto: 1.3 s (total 696 s)
+[44/70] D|op=backtest|forecaster=direct|estimator=lgbm_1|size=L|refit=True|nj=cpu-1|1: 39.6 s (total 736 s)
+[45/70] D|op=backtest|forecaster=direct|estimator=hgb|size=L|refit=True|nj=cpu-1|1: 58.0 s (total 794 s)
+[46/70] D|op=backtest|forecaster=direct|estimator=hgb|size=S|refit=True|nj=auto|auto: 74.6 s (total 869 s)
+[47/70] D|op=backtest|forecaster=direct|estimator=lgbm_1|size=S|refit=False|nj=1|1: 2.1 s (total 871 s)
+[48/70] D|op=fit_direct|forecaster=direct|estimator=lgbm_none|size=L|refit=|nj=cpu-1: 6.6 s (total 877 s)
+[49/70] D|op=backtest|forecaster=direct|estimator=lgbm_1|size=L|refit=False|nj=cpu-1|1: 14.9 s (total 892 s)
+[50/70] D|op=fit_direct|forecaster=direct|estimator=lgbm_1|size=L|refit=|nj=1: 12.5 s (total 905 s)
+[51/70] D|op=fit_dmv|forecaster=dmv|estimator=ridge|size=S|refit=|nj=cpu-1: 0.0 s (total 905 s)
+[52/70] D|op=fit_direct|forecaster=direct|estimator=lgbm_1|size=L|refit=|nj=cpu-1: 2.7 s (total 907 s)
+[53/70] D|op=backtest|forecaster=direct|estimator=hgb|size=L|refit=True|nj=1|1: 166.4 s (total 1074 s)
+[54/70] D|op=fit_direct|forecaster=direct|estimator=rf_none|size=L|refit=|nj=1: 150.7 s (total 1225 s)
+[55/70] D|op=backtest|forecaster=direct|estimator=lgbm_1|size=L|refit=False|nj=auto|auto: 7.2 s (total 1232 s)
+[56/70] D|op=fit_dmv|forecaster=dmv|estimator=lgbm_1|size=S|refit=|nj=cpu-1: 0.7 s (total 1232 s)
+[57/70] D|op=fit_direct|forecaster=direct|estimator=lgbm_none|size=S|refit=|nj=cpu-1: 2.1 s (total 1235 s)
+[58/70] D|op=fit_direct|forecaster=direct|estimator=lgbm_1|size=S|refit=|nj=cpu-1: 0.6 s (total 1235 s)
+[59/70] D|op=backtest|forecaster=direct|estimator=lgbm_1|size=L|refit=True|nj=auto|auto: 114.3 s (total 1349 s)
+[60/70] D|op=backtest_ms|forecaster=dmv|estimator=ridge|size=S|refit=True|nj=cpu-1|1: 0.3 s (total 1350 s)
+[61/70] D|op=backtest|forecaster=direct|estimator=ridge|size=L|refit=False|nj=1|1: 0.2 s (total 1350 s)
+[62/70] D|op=backtest_ms|forecaster=dmv|estimator=lgbm_1|size=S|refit=True|nj=auto|auto: 16.3 s (total 1366 s)
+[63/70] D|op=backtest|forecaster=direct|estimator=hgb|size=S|refit=True|nj=1|1: 67.4 s (total 1434 s)
+[64/70] D|op=fit_dmv|forecaster=dmv|estimator=lgbm_1|size=L|refit=|nj=cpu-1: 14.1 s (total 1448 s)
+[65/70] D|op=backtest|forecaster=direct|estimator=ridge|size=S|refit=True|nj=auto|auto: 0.3 s (total 1448 s)
+[66/70] D|op=backtest|forecaster=direct|estimator=ridge|size=L|refit=True|nj=cpu-1|1: 0.6 s (total 1449 s)
+[67/70] D|op=fit_direct|forecaster=direct|estimator=rf_none|size=L|refit=|nj=cpu-1: 21.3 s (total 1470 s)
+[68/70] D|op=fit_direct|forecaster=direct|estimator=hgb|size=S|refit=|nj=1: 7.3 s (total 1477 s)
+[69/70] D|op=backtest|forecaster=direct|estimator=lgbm_1|size=S|refit=True|nj=1|1: 24.0 s (total 1501 s)
+[70/70] D|op=backtest|forecaster=direct|estimator=hgb|size=L|refit=False|nj=cpu-1|1: 23.6 s (total 1525 s)
+BLOCK D affinity 22 END rc=0 25.5 min
+BLOCK E affinity 22 START 14:55:22
+$ bench.py --block E --pilot
+[1/32] E|op=backtest_ms|forecaster=multiseries|estimator=hgb|size=L|refit=False|nj=cpu-1: 7.9 s (total 8 s)
+[2/32] E|op=backtest_ms|forecaster=multiseries|estimator=ridge|size=S|refit=False|nj=1: 0.1 s (total 8 s)
+[3/32] E|op=backtest_ms|forecaster=multiseries|estimator=lgbm_1|size=S|refit=False|nj=1: 0.3 s (total 8 s)
+[4/32] E|op=backtest_ms|forecaster=multiseries|estimator=lgbm_none|size=S|refit=True|nj=1: 1.3 s (total 10 s)
+[5/32] E|op=backtest_ms|forecaster=multiseries|estimator=lgbm_none|size=L|refit=True|nj=1: 12.7 s (total 22 s)
+[6/32] E|op=backtest_ms|forecaster=multiseries|estimator=hgb|size=S|refit=True|nj=1: 4.1 s (total 26 s)
+[7/32] E|op=backtest_ms|forecaster=multiseries|estimator=lgbm_none|size=L|refit=False|nj=cpu-1: 3.1 s (total 29 s)
+[8/32] E|op=backtest_ms|forecaster=multiseries|estimator=ridge|size=S|refit=True|nj=cpu-1: 0.1 s (total 30 s)
+[9/32] E|op=backtest_ms|forecaster=multiseries|estimator=hgb|size=S|refit=False|nj=1: 0.8 s (total 30 s)
+[10/32] E|op=backtest_ms|forecaster=multiseries|estimator=hgb|size=S|refit=True|nj=cpu-1: 1.1 s (total 32 s)
+[11/32] E|op=backtest_ms|forecaster=multiseries|estimator=ridge|size=L|refit=False|nj=cpu-1: 0.8 s (total 32 s)
+[12/32] E|op=backtest_ms|forecaster=multiseries|estimator=lgbm_1|size=S|refit=True|nj=1: 1.6 s (total 34 s)
+[13/32] E|op=backtest_ms|forecaster=multiseries|estimator=hgb|size=L|refit=True|nj=cpu-1: 8.4 s (total 42 s)
+[14/32] E|op=backtest_ms|forecaster=multiseries|estimator=lgbm_1|size=L|refit=False|nj=1: 14.3 s (total 57 s)
+[15/32] E|op=backtest_ms|forecaster=multiseries|estimator=lgbm_none|size=L|refit=False|nj=1: 3.0 s (total 60 s)
+[16/32] E|op=backtest_ms|forecaster=multiseries|estimator=hgb|size=L|refit=False|nj=1: 12.9 s (total 73 s)
+[17/32] E|op=backtest_ms|forecaster=multiseries|estimator=lgbm_1|size=L|refit=True|nj=1: 54.5 s (total 127 s)
+[18/32] E|op=backtest_ms|forecaster=multiseries|estimator=lgbm_none|size=S|refit=True|nj=cpu-1: 1.3 s (total 128 s)
+[19/32] E|op=backtest_ms|forecaster=multiseries|estimator=lgbm_1|size=L|refit=False|nj=cpu-1: 2.9 s (total 131 s)
+[20/32] E|op=backtest_ms|forecaster=multiseries|estimator=lgbm_none|size=L|refit=True|nj=cpu-1: 11.3 s (total 143 s)
+[21/32] E|op=backtest_ms|forecaster=multiseries|estimator=lgbm_1|size=S|refit=False|nj=cpu-1: 0.4 s (total 143 s)
+[22/32] E|op=backtest_ms|forecaster=multiseries|estimator=ridge|size=S|refit=True|nj=1: 0.2 s (total 143 s)
+[23/32] E|op=backtest_ms|forecaster=multiseries|estimator=ridge|size=L|refit=True|nj=1: 2.7 s (total 146 s)
+[24/32] E|op=backtest_ms|forecaster=multiseries|estimator=ridge|size=L|refit=True|nj=cpu-1: 1.8 s (total 148 s)
+[25/32] E|op=backtest_ms|forecaster=multiseries|estimator=hgb|size=S|refit=False|nj=cpu-1: 0.6 s (total 148 s)
+[26/32] E|op=backtest_ms|forecaster=multiseries|estimator=lgbm_1|size=S|refit=True|nj=cpu-1: 0.7 s (total 149 s)
+[27/32] E|op=backtest_ms|forecaster=multiseries|estimator=lgbm_1|size=L|refit=True|nj=cpu-1: 8.5 s (total 157 s)
+[28/32] E|op=backtest_ms|forecaster=multiseries|estimator=ridge|size=L|refit=False|nj=1: 0.9 s (total 158 s)
+[29/32] E|op=backtest_ms|forecaster=multiseries|estimator=ridge|size=S|refit=False|nj=cpu-1: 0.1 s (total 159 s)
+[30/32] E|op=backtest_ms|forecaster=multiseries|estimator=lgbm_none|size=S|refit=False|nj=cpu-1: 0.4 s (total 159 s)
+[31/32] E|op=backtest_ms|forecaster=multiseries|estimator=hgb|size=L|refit=True|nj=1: 21.9 s (total 181 s)
+[32/32] E|op=backtest_ms|forecaster=multiseries|estimator=lgbm_none|size=S|refit=False|nj=1: 0.2 s (total 181 s)
+BLOCK E affinity 22 END rc=0 3.1 min
+BLOCK F affinity 22 START 14:58:27
+$ bench.py --block F --pilot
+[1/16] F|op=backtest_stats|forecaster=stats|estimator=arima|size=S|refit=True|nj=cpu-1: 8.1 s (total 8 s)
+[2/16] F|op=backtest|forecaster=equivalent_date|estimator=none|size=L|refit=True|nj=1: 0.1 s (total 8 s)
+[3/16] F|op=backtest_stats|forecaster=stats|estimator=sarimax|size=L|refit=True|nj=1: 17.0 s (total 25 s)
+[4/16] F|op=backtest|forecaster=equivalent_date|estimator=none|size=S|refit=True|nj=cpu-1: 3.1 s (total 28 s)
+[5/16] F|op=backtest|forecaster=equivalent_date|estimator=none|size=S|refit=True|nj=1: 0.0 s (total 28 s)
+[6/16] F|op=backtest|forecaster=equivalent_date|estimator=none|size=L|refit=False|nj=cpu-1: 2.4 s (total 31 s)
+[7/16] F|op=backtest_stats|forecaster=stats|estimator=sarimax|size=S|refit=True|nj=cpu-1: 1.7 s (total 32 s)
+[8/16] F|op=backtest|forecaster=equivalent_date|estimator=none|size=S|refit=False|nj=1: 0.0 s (total 32 s)
+[9/16] F|op=backtest_stats|forecaster=stats|estimator=arima|size=L|refit=True|nj=cpu-1: 2.6 s (total 35 s)
+[10/16] F|op=backtest_stats|forecaster=stats|estimator=sarimax|size=S|refit=True|nj=1: 5.3 s (total 40 s)
+[11/16] F|op=backtest|forecaster=equivalent_date|estimator=none|size=S|refit=False|nj=cpu-1: 0.0 s (total 40 s)
+[12/16] F|op=backtest_stats|forecaster=stats|estimator=arima|size=L|refit=True|nj=1: 3.7 s (total 44 s)
+[13/16] F|op=backtest_stats|forecaster=stats|estimator=arima|size=S|refit=True|nj=1: 1.1 s (total 45 s)
+[14/16] F|op=backtest|forecaster=equivalent_date|estimator=none|size=L|refit=True|nj=cpu-1: 0.0 s (total 45 s)
+[15/16] F|op=backtest_stats|forecaster=stats|estimator=sarimax|size=L|refit=True|nj=cpu-1: 2.1 s (total 47 s)
+[16/16] F|op=backtest|forecaster=equivalent_date|estimator=none|size=L|refit=False|nj=1: 0.0 s (total 47 s)
+BLOCK F affinity 22 END rc=0 0.8 min
+BLOCK G affinity 22 START 14:59:17
+$ bench.py --block G --pilot
+[1/10] G|op=grid|forecaster=recursive|estimator=lgbm_1|size=L|refit=False|nj=1: 2.1 s (total 2 s)
+[2/10] G|op=grid|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=cpu-1: 14.6 s (total 17 s)
+[3/10] G|op=grid|forecaster=recursive|estimator=lgbm_1|size=L|refit=False|nj=cpu-1: 1.6 s (total 18 s)
+[4/10] G|op=grid|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=1: 39.6 s (total 58 s)
+[5/10] G|op=grid|forecaster=recursive|estimator=hgb|size=L|refit=False|nj=cpu-1: 3.3 s (total 61 s)
+[6/10] G|op=grid|forecaster=recursive|estimator=hgb|size=L|refit=False|nj=1: 17.7 s (total 79 s)
+[7/10] G|op=grid_ms|forecaster=multiseries|estimator=lgbm_1|size=L|refit=False|nj=1: 6.8 s (total 86 s)
+[8/10] G|op=grid|forecaster=recursive|estimator=lgbm_1|size=L|refit=True|nj=cpu-1: 3.7 s (total 89 s)
+[9/10] G|op=grid|forecaster=recursive|estimator=lgbm_1|size=L|refit=True|nj=1: 16.3 s (total 106 s)
+[10/10] G|op=grid_ms|forecaster=multiseries|estimator=lgbm_1|size=L|refit=False|nj=cpu-1: 6.4 s (total 112 s)
+BLOCK G affinity 22 END rc=0 1.9 min
+$ probe_workers.py --affinity 4
+n_jobs=1 worker {'pid': 1724, 'affinity': 4, 'cpu_count': 4, 'cpu_count_physical': 4, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=None;OPENBLAS_NUM_THREADS=None;MKL_NUM_THREADS=None;BLIS_NUM_THREADS=None;VECLIB_MAXIMUM_THREADS=None;NUMEXPR_NUM_THREADS=None;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:22;openmp:openmp:22;openmp:openmp:22;blas:openblas:22', 'where': 'worker'}
+n_jobs=2 worker {'pid': 32420, 'affinity': 4, 'cpu_count': 4, 'cpu_count_physical': 4, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=2;OPENBLAS_NUM_THREADS=2;MKL_NUM_THREADS=2;BLIS_NUM_THREADS=2;VECLIB_MAXIMUM_THREADS=2;NUMEXPR_NUM_THREADS=2;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:2;openmp:openmp:2;openmp:openmp:2;blas:openblas:2', 'where': 'worker'}
+n_jobs=2 worker {'pid': 33856, 'affinity': 4, 'cpu_count': 4, 'cpu_count_physical': 4, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=2;OPENBLAS_NUM_THREADS=2;MKL_NUM_THREADS=2;BLIS_NUM_THREADS=2;VECLIB_MAXIMUM_THREADS=2;NUMEXPR_NUM_THREADS=2;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:2;openmp:openmp:2;openmp:openmp:2;blas:openblas:2', 'where': 'worker'}
+n_jobs=3 worker {'pid': 26264, 'affinity': 4, 'cpu_count': 4, 'cpu_count_physical': 4, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=3 worker {'pid': 10400, 'affinity': 4, 'cpu_count': 4, 'cpu_count_physical': 4, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=3 worker {'pid': 23384, 'affinity': 4, 'cpu_count': 4, 'cpu_count_physical': 4, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+main {'pid': 1724, 'affinity': 4, 'cpu_count': 4, 'cpu_count_physical': 4, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=None;OPENBLAS_NUM_THREADS=None;MKL_NUM_THREADS=None;BLIS_NUM_THREADS=None;VECLIB_MAXIMUM_THREADS=None;NUMEXPR_NUM_THREADS=None;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:22;openmp:openmp:22;openmp:openmp:22;blas:openblas:22', 'where': 'main'}
+allowed logical processors: [16, 17, 18, 19]
+G1 PASS: expected cpu_count 4
+BLOCK A affinity 4 START 15:01:21
+$ bench_spawn.py --affinity 4 --pilot
+cold rep=0 k=4 forecaster: 3.5518511999980547
+cold rep=0 k=3 few: 0.5074952999711968
+cold rep=0 k=2 forecaster: 2.2570256000035442
+cold rep=0 k=3 noop: 0.4948034000117332
+cold rep=0 k=3 forecaster: 2.8439616999821737
+cold rep=0 k=2 few: 0.44543789996532723
+cold rep=0 k=2 noop: 0.4522428999771364
+cold rep=0 k=4 few: 0.6000220999703743
+cold rep=0 k=4 noop: 0.598397699999623
+warm k=3 forecaster
+warm k=3 noop
+warm k=3 few
+warm k=2 few
+warm k=2 forecaster
+warm k=2 noop
+warm k=4 few
+warm k=4 forecaster
+warm k=4 noop
+BLOCK A affinity 4 END rc=0 0.7 min
+BLOCK B affinity 4 START 15:02:05
+$ bench.py --block B --affinity 4 --pilot
+[1/12] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=True|nj=cpu-1: 6.4 s (total 6 s)
+[2/12] B|op=backtest|forecaster=recursive|estimator=ridge|size=L|refit=True|nj=cpu-1: 0.1 s (total 7 s)
+[3/12] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=False|nj=1: 0.4 s (total 7 s)
+[4/12] B|op=backtest|forecaster=recursive|estimator=ridge|size=L|refit=True|nj=1: 0.2 s (total 7 s)
+[5/12] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=False|nj=1: 4.0 s (total 11 s)
+[6/12] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=False|nj=cpu-1: 1.9 s (total 13 s)
+[7/12] B|op=backtest|forecaster=recursive|estimator=ridge|size=L|refit=False|nj=cpu-1: 0.0 s (total 13 s)
+[8/12] B|op=backtest|forecaster=recursive|estimator=ridge|size=L|refit=False|nj=1: 0.0 s (total 13 s)
+[9/12] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=cpu-1: 5.9 s (total 19 s)
+[10/12] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=1: 10.8 s (total 30 s)
+[11/12] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=True|nj=1: 5.6 s (total 36 s)
+[12/12] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=False|nj=cpu-1: 0.4 s (total 36 s)
+BLOCK B affinity 4 END rc=0 0.6 min
+BLOCK C affinity 4 START 15:02:44
+$ bench.py --block C --affinity 4 --pilot
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_none|size=L|refit=True|nj=1 (timeout 690 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_none|size=L|refit=True|nj=1: 4.0 s (total 4 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_none|size=L|refit=True|nj=cpu-1 (timeout 129 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_none|size=L|refit=True|nj=cpu-1: 9.6 s (total 10 s)
+cell C|op=backtest|forecaster=recursive|estimator=xgb_none|size=L|refit=True|nj=1 (timeout 690 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=xgb_none|size=L|refit=True|nj=1: 9.5 s (total 9 s)
+cell C|op=backtest|forecaster=recursive|estimator=xgb_none|size=L|refit=True|nj=cpu-1 (timeout 183 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=xgb_none|size=L|refit=True|nj=cpu-1: 10.5 s (total 10 s)
+cell C|op=backtest|forecaster=recursive|estimator=rf_m1|size=L|refit=True|nj=1 (timeout 690 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=rf_m1|size=L|refit=True|nj=1: 44.5 s (total 45 s)
+cell C|op=backtest|forecaster=recursive|estimator=rf_m1|size=L|refit=True|nj=cpu-1 (timeout 534 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=rf_m1|size=L|refit=True|nj=cpu-1: 43.1 s (total 43 s)
+cell C|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=1 (timeout 690 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=1: 10.4 s (total 10 s)
+cell C|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=cpu-1 (timeout 193 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=cpu-1: 8.5 s (total 9 s)
+BLOCK C affinity 4 END rc=0 2.7 min
+BLOCK D affinity 4 START 15:05:27
+$ bench.py --block D --affinity 4 --pilot
+[1/4] D|op=fit_direct|forecaster=direct|estimator=lgbm_1|size=L|refit=|nj=1: 12.5 s (total 13 s)
+[2/4] D|op=fit_direct|forecaster=direct|estimator=ridge|size=L|refit=|nj=1: 0.3 s (total 13 s)
+[3/4] D|op=fit_direct|forecaster=direct|estimator=ridge|size=L|refit=|nj=cpu-1: 3.1 s (total 16 s)
+[4/4] D|op=fit_direct|forecaster=direct|estimator=lgbm_1|size=L|refit=|nj=cpu-1: 7.9 s (total 24 s)
+BLOCK D affinity 4 END rc=0 0.4 min
+BLOCK E affinity 4 START 15:05:53
+$ bench.py --block E --affinity 4 --pilot
+[1/4] E|op=backtest_ms|forecaster=multiseries|estimator=lgbm_1|size=L|refit=True|nj=1: 28.5 s (total 29 s)
+[2/4] E|op=backtest_ms|forecaster=multiseries|estimator=lgbm_1|size=L|refit=False|nj=1: 1.7 s (total 30 s)
+[3/4] E|op=backtest_ms|forecaster=multiseries|estimator=lgbm_1|size=L|refit=False|nj=cpu-1: 4.5 s (total 35 s)
+[4/4] E|op=backtest_ms|forecaster=multiseries|estimator=lgbm_1|size=L|refit=True|nj=cpu-1: 16.4 s (total 51 s)
+BLOCK E affinity 4 END rc=0 0.9 min
+$ probe_workers.py --affinity 8
+n_jobs=1 worker {'pid': 21104, 'affinity': 8, 'cpu_count': 8, 'cpu_count_physical': 8, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=None;OPENBLAS_NUM_THREADS=None;MKL_NUM_THREADS=None;BLIS_NUM_THREADS=None;VECLIB_MAXIMUM_THREADS=None;NUMEXPR_NUM_THREADS=None;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:22;openmp:openmp:22;openmp:openmp:22;blas:openblas:22', 'where': 'worker'}
+n_jobs=2 worker {'pid': 30808, 'affinity': 8, 'cpu_count': 8, 'cpu_count_physical': 8, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=4;OPENBLAS_NUM_THREADS=4;MKL_NUM_THREADS=4;BLIS_NUM_THREADS=4;VECLIB_MAXIMUM_THREADS=4;NUMEXPR_NUM_THREADS=4;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:4;openmp:openmp:4;openmp:openmp:4;blas:openblas:4', 'where': 'worker'}
+n_jobs=2 worker {'pid': 3772, 'affinity': 8, 'cpu_count': 8, 'cpu_count_physical': 8, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=4;OPENBLAS_NUM_THREADS=4;MKL_NUM_THREADS=4;BLIS_NUM_THREADS=4;VECLIB_MAXIMUM_THREADS=4;NUMEXPR_NUM_THREADS=4;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:4;openmp:openmp:4;openmp:openmp:4;blas:openblas:4', 'where': 'worker'}
+n_jobs=7 worker {'pid': 11656, 'affinity': 8, 'cpu_count': 8, 'cpu_count_physical': 8, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=7 worker {'pid': 33692, 'affinity': 8, 'cpu_count': 8, 'cpu_count_physical': 8, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=7 worker {'pid': 38440, 'affinity': 8, 'cpu_count': 8, 'cpu_count_physical': 8, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=7 worker {'pid': 28068, 'affinity': 8, 'cpu_count': 8, 'cpu_count_physical': 8, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=7 worker {'pid': 27272, 'affinity': 8, 'cpu_count': 8, 'cpu_count_physical': 8, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=7 worker {'pid': 29528, 'affinity': 8, 'cpu_count': 8, 'cpu_count_physical': 8, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=7 worker {'pid': 23840, 'affinity': 8, 'cpu_count': 8, 'cpu_count_physical': 8, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+main {'pid': 21104, 'affinity': 8, 'cpu_count': 8, 'cpu_count_physical': 8, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=None;OPENBLAS_NUM_THREADS=None;MKL_NUM_THREADS=None;BLIS_NUM_THREADS=None;VECLIB_MAXIMUM_THREADS=None;NUMEXPR_NUM_THREADS=None;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:22;openmp:openmp:22;openmp:openmp:22;blas:openblas:22', 'where': 'main'}
+allowed logical processors: [12, 13, 14, 15, 16, 17, 18, 19]
+G1 PASS: expected cpu_count 8
+BLOCK A affinity 8 START 15:06:55
+$ bench_spawn.py --affinity 8 --pilot
+cold rep=0 k=2 forecaster: 2.261224099958781
+cold rep=0 k=8 noop: 0.5985837000189349
+cold rep=0 k=7 few: 0.5577126999851316
+cold rep=0 k=4 few: 0.4507453999831341
+cold rep=0 k=8 forecaster: 3.911926199973095
+cold rep=0 k=2 few: 0.4268624000251293
+cold rep=0 k=4 noop: 0.48094670003047213
+cold rep=0 k=7 forecaster: 3.62082479998935
+cold rep=0 k=4 forecaster: 2.7510009999969043
+cold rep=0 k=2 noop: 0.3840876999893226
+cold rep=0 k=8 few: 0.57545179995941
+cold rep=0 k=7 noop: 0.5808637000154704
+warm k=8 few
+warm k=4 noop
+warm k=7 few
+warm k=2 few
+warm k=4 forecaster
+warm k=4 few
+warm k=2 forecaster
+warm k=2 noop
+warm k=7 forecaster
+warm k=7 noop
+warm k=8 forecaster
+warm k=8 noop
+BLOCK A affinity 8 END rc=0 1.0 min
+BLOCK B affinity 8 START 15:07:56
+$ bench.py --block B --affinity 8 --pilot
+[1/12] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=True|nj=cpu-1: 6.2 s (total 6 s)
+[2/12] B|op=backtest|forecaster=recursive|estimator=ridge|size=L|refit=True|nj=cpu-1: 0.1 s (total 6 s)
+[3/12] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=False|nj=1: 0.6 s (total 7 s)
+[4/12] B|op=backtest|forecaster=recursive|estimator=ridge|size=L|refit=True|nj=1: 0.2 s (total 7 s)
+[5/12] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=False|nj=1: 5.2 s (total 12 s)
+[6/12] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=False|nj=cpu-1: 1.4 s (total 14 s)
+[7/12] B|op=backtest|forecaster=recursive|estimator=ridge|size=L|refit=False|nj=cpu-1: 0.0 s (total 14 s)
+[8/12] B|op=backtest|forecaster=recursive|estimator=ridge|size=L|refit=False|nj=1: 0.0 s (total 14 s)
+[9/12] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=cpu-1: 3.9 s (total 18 s)
+[10/12] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=1: 12.6 s (total 30 s)
+[11/12] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=True|nj=1: 6.4 s (total 37 s)
+[12/12] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=False|nj=cpu-1: 0.5 s (total 37 s)
+BLOCK B affinity 8 END rc=0 0.7 min
+BLOCK C affinity 8 START 15:08:36
+$ bench.py --block C --affinity 8 --pilot
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_none|size=L|refit=True|nj=1 (timeout 690 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_none|size=L|refit=True|nj=1: 3.5 s (total 3 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_none|size=L|refit=True|nj=cpu-1 (timeout 123 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_none|size=L|refit=True|nj=cpu-1: 7.7 s (total 8 s)
+cell C|op=backtest|forecaster=recursive|estimator=xgb_none|size=L|refit=True|nj=1 (timeout 690 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=xgb_none|size=L|refit=True|nj=1: 8.9 s (total 9 s)
+cell C|op=backtest|forecaster=recursive|estimator=xgb_none|size=L|refit=True|nj=cpu-1 (timeout 178 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=xgb_none|size=L|refit=True|nj=cpu-1: 9.1 s (total 9 s)
+cell C|op=backtest|forecaster=recursive|estimator=rf_m1|size=L|refit=True|nj=1 (timeout 690 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=rf_m1|size=L|refit=True|nj=1: 34.3 s (total 34 s)
+cell C|op=backtest|forecaster=recursive|estimator=rf_m1|size=L|refit=True|nj=cpu-1 (timeout 431 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=rf_m1|size=L|refit=True|nj=cpu-1: 33.7 s (total 34 s)
+cell C|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=1 (timeout 690 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=1: 13.3 s (total 13 s)
+cell C|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=cpu-1 (timeout 221 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=cpu-1: 8.5 s (total 9 s)
+BLOCK C affinity 8 END rc=0 2.4 min
+BLOCK D affinity 8 START 15:11:00
+$ bench.py --block D --affinity 8 --pilot
+[1/4] D|op=fit_direct|forecaster=direct|estimator=lgbm_1|size=L|refit=|nj=1: 14.6 s (total 15 s)
+[2/4] D|op=fit_direct|forecaster=direct|estimator=ridge|size=L|refit=|nj=1: 0.2 s (total 15 s)
+[3/4] D|op=fit_direct|forecaster=direct|estimator=ridge|size=L|refit=|nj=cpu-1: 4.2 s (total 19 s)
+[4/4] D|op=fit_direct|forecaster=direct|estimator=lgbm_1|size=L|refit=|nj=cpu-1: 4.9 s (total 24 s)
+BLOCK D affinity 8 END rc=0 0.4 min
+BLOCK E affinity 8 START 15:11:26
+$ bench.py --block E --affinity 8 --pilot
+[1/4] E|op=backtest_ms|forecaster=multiseries|estimator=lgbm_1|size=L|refit=True|nj=1: 29.9 s (total 30 s)
+[2/4] E|op=backtest_ms|forecaster=multiseries|estimator=lgbm_1|size=L|refit=False|nj=1: 1.7 s (total 32 s)
+[3/4] E|op=backtest_ms|forecaster=multiseries|estimator=lgbm_1|size=L|refit=False|nj=cpu-1: 5.5 s (total 37 s)
+[4/4] E|op=backtest_ms|forecaster=multiseries|estimator=lgbm_1|size=L|refit=True|nj=cpu-1: 11.0 s (total 48 s)
+BLOCK E affinity 8 END rc=0 0.8 min
+ALL DONE 56.3 min

@@ -1,0 +1,604 @@
+$ probe_workers.py
+n_jobs=1 worker {'pid': 1132, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=None;OPENBLAS_NUM_THREADS=None;MKL_NUM_THREADS=None;BLIS_NUM_THREADS=None;VECLIB_MAXIMUM_THREADS=None;NUMEXPR_NUM_THREADS=None;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:22;openmp:openmp:22;openmp:openmp:22;blas:openblas:22', 'where': 'worker'}
+n_jobs=2 worker {'pid': 31660, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=11;OPENBLAS_NUM_THREADS=11;MKL_NUM_THREADS=11;BLIS_NUM_THREADS=11;VECLIB_MAXIMUM_THREADS=11;NUMEXPR_NUM_THREADS=11;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:11;openmp:openmp:11;openmp:openmp:11;blas:openblas:11', 'where': 'worker'}
+n_jobs=2 worker {'pid': 30096, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=11;OPENBLAS_NUM_THREADS=11;MKL_NUM_THREADS=11;BLIS_NUM_THREADS=11;VECLIB_MAXIMUM_THREADS=11;NUMEXPR_NUM_THREADS=11;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:11;openmp:openmp:11;openmp:openmp:11;blas:openblas:11', 'where': 'worker'}
+n_jobs=21 worker {'pid': 6488, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 36404, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 30304, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 39228, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 1352, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 35728, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 35100, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 13052, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 20292, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 30864, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 27124, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 9916, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 38844, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 31376, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 22500, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 20436, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 31424, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 33628, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 23072, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 14852, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+n_jobs=21 worker {'pid': 27448, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;MKL_NUM_THREADS=1;BLIS_NUM_THREADS=1;VECLIB_MAXIMUM_THREADS=1;NUMEXPR_NUM_THREADS=1;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:1;openmp:openmp:1;openmp:openmp:1;blas:openblas:1', 'where': 'worker'}
+main {'pid': 1132, 'affinity': 22, 'cpu_count': 22, 'cpu_count_physical': 16, 'os_cpu_count': 22, 'process_cpu_count': 22, 'env': 'OMP_NUM_THREADS=None;OPENBLAS_NUM_THREADS=None;MKL_NUM_THREADS=None;BLIS_NUM_THREADS=None;VECLIB_MAXIMUM_THREADS=None;NUMEXPR_NUM_THREADS=None;LOKY_MAX_CPU_COUNT=None', 'threadpools': 'blas:openblas:22;openmp:openmp:22;openmp:openmp:22;blas:openblas:22', 'where': 'main'}
+allowed logical processors: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
+G1 PASS: expected cpu_count 22
+BLOCK A affinity 22 START 16:00:19
+$ bench_spawn.py
+cold rep=0 k=16 few: 0.6665347999660298
+cold rep=0 k=16 noop: 0.6858238999848254
+cold rep=0 k=2 noop: 0.4402665999950841
+cold rep=0 k=22 forecaster: 6.428028599999379
+cold rep=0 k=2 few: 0.46320689999265596
+cold rep=0 k=22 noop: 0.7365831999923103
+cold rep=0 k=16 forecaster: 4.49813969997922
+cold rep=0 k=4 noop: 0.46588099998189136
+cold rep=0 k=4 few: 0.4800762999802828
+cold rep=0 k=22 few: 0.6874122999724932
+cold rep=0 k=21 few: 0.6740351999760605
+cold rep=0 k=8 noop: 0.5598524999804795
+cold rep=0 k=8 forecaster: 3.1207692000316456
+cold rep=0 k=8 few: 0.5338831999688409
+cold rep=0 k=4 forecaster: 2.721016999974381
+cold rep=0 k=2 forecaster: 2.5265250999946147
+cold rep=0 k=21 forecaster: 5.715583199984394
+cold rep=0 k=21 noop: 0.6893853999790736
+cold rep=1 k=16 forecaster: 4.321477700024843
+cold rep=1 k=4 few: 0.4723853999748826
+cold rep=1 k=22 forecaster: 6.009158800006844
+cold rep=1 k=22 few: 0.6278328000335023
+cold rep=1 k=16 noop: 0.6278352999943309
+cold rep=1 k=2 noop: 0.417658600024879
+cold rep=1 k=22 noop: 0.7020429000258446
+cold rep=1 k=21 few: 0.6981696999864653
+cold rep=1 k=4 noop: 0.44045959995128214
+cold rep=1 k=8 noop: 0.48289839999051765
+cold rep=1 k=16 few: 0.6504934999975376
+cold rep=1 k=21 forecaster: 5.685032000008505
+cold rep=1 k=21 noop: 0.6438003000221215
+cold rep=1 k=8 forecaster: 3.054671199992299
+cold rep=1 k=2 forecaster: 2.1262928000069223
+cold rep=1 k=8 few: 0.47328470001230016
+cold rep=1 k=2 few: 0.4220291000092402
+cold rep=1 k=4 forecaster: 2.6441692000371404
+cold rep=2 k=21 few: 0.6156816000002436
+cold rep=2 k=21 noop: 0.6798114000121132
+cold rep=2 k=8 forecaster: 3.0173719999729656
+cold rep=2 k=22 few: 0.7342436999897473
+cold rep=2 k=8 noop: 0.48078839998925105
+cold rep=2 k=2 noop: 0.4038087999797426
+cold rep=2 k=8 few: 0.49220799998147413
+cold rep=2 k=4 noop: 0.4503103999886662
+cold rep=2 k=16 noop: 0.6261498000239953
+cold rep=2 k=4 forecaster: 2.6467412999481894
+cold rep=2 k=16 forecaster: 4.102160799957346
+cold rep=2 k=16 few: 0.5734531999914907
+cold rep=2 k=22 noop: 0.631603299989365
+cold rep=2 k=21 forecaster: 5.680288800038397
+cold rep=2 k=4 few: 0.44087069999659434
+cold rep=2 k=22 forecaster: 5.958542499982286
+cold rep=2 k=2 few: 0.4248481999966316
+cold rep=2 k=2 forecaster: 2.1684029000462033
+cold rep=3 k=8 few: 0.5227035999996588
+cold rep=3 k=4 noop: 0.4589051000075415
+cold rep=3 k=8 noop: 0.5122624000068754
+cold rep=3 k=4 few: 0.45258699997793883
+cold rep=3 k=22 noop: 0.7120920000015758
+cold rep=3 k=22 forecaster: 5.912561799981631
+cold rep=3 k=2 few: 0.4195989999570884
+cold rep=3 k=21 noop: 0.6018756999983452
+cold rep=3 k=2 noop: 0.3994834999903105
+cold rep=3 k=2 forecaster: 2.1959819000330754
+cold rep=3 k=21 forecaster: 5.2755486000096425
+cold rep=3 k=16 forecaster: 4.18546820001211
+cold rep=3 k=22 few: 0.6336725999717601
+cold rep=3 k=16 noop: 0.5929001999902539
+cold rep=3 k=21 few: 0.7649389000143856
+cold rep=3 k=16 few: 0.6434489999664947
+cold rep=3 k=4 forecaster: 2.618208699976094
+cold rep=3 k=8 forecaster: 2.949082700011786
+cold rep=4 k=21 noop: 0.6642047999775968
+cold rep=4 k=22 noop: 0.7034663000376895
+cold rep=4 k=4 few: 0.44857690000208095
+cold rep=4 k=22 forecaster: 5.933795299963094
+cold rep=4 k=8 few: 0.5144538999884389
+cold rep=4 k=21 few: 0.6756010999670252
+cold rep=4 k=4 forecaster: 2.8798942000139505
+cold rep=4 k=21 forecaster: 5.455122999963351
+cold rep=4 k=2 noop: 0.4473491999669932
+cold rep=4 k=16 forecaster: 4.188881299982313
+cold rep=4 k=2 forecaster: 2.3524432000122033
+cold rep=4 k=2 few: 0.3642806999851018
+cold rep=4 k=22 few: 0.6658832000102848
+cold rep=4 k=8 noop: 0.49932950001675636
+cold rep=4 k=16 few: 0.5950619999784976
+cold rep=4 k=4 noop: 0.4504542000358924
+cold rep=4 k=16 noop: 0.6078689999994822
+cold rep=4 k=8 forecaster: 2.9493965000147
+warm k=22 forecaster
+warm k=8 forecaster
+warm k=8 noop
+warm k=22 few
+warm k=4 few
+warm k=8 few
+warm k=2 noop
+warm k=21 forecaster
+warm k=22 noop
+warm k=16 forecaster
+warm k=4 noop
+warm k=4 forecaster
+warm k=16 noop
+warm k=16 few
+warm k=2 few
+warm k=2 forecaster
+warm k=21 few
+warm k=21 noop
+BLOCK A affinity 22 END rc=0 7.1 min
+BLOCK B affinity 22 START 16:07:23
+$ bench.py --block B
+[1/226] B|op=backtest|forecaster=classifier|estimator=logreg|size=S|refit=False|nj=-1: 10.5 s (total 11 s)
+[2/226] B|op=backtest|forecaster=recursive|estimator=rf_none|size=S|refit=False|nj=cpu-1: 2.0 s (total 13 s)
+[3/226] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=S|refit=True|nj=cpu-1: 0.3 s (total 13 s)
+[4/226] B|op=backtest|forecaster=recursive|estimator=ridge|size=L|refit=False|nj=physical: 1.4 s (total 14 s)
+[5/226] B|op=backtest|forecaster=recursive|estimator=et_none|size=L|refit=False|nj=1: 6.1 s (total 20 s)
+[6/226] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=physical: 11.0 s (total 31 s)
+[7/226] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=S|refit=False|nj=cpu-1: 0.4 s (total 32 s)
+[8/226] B|op=backtest|forecaster=recursive|estimator=rf_none|size=L|refit=True|nj=physical: 72.1 s (total 104 s)
+[9/226] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=S|refit=False|nj=-1: 9.8 s (total 113 s)
+[10/226] B|op=backtest|forecaster=recursive|estimator=hgb|size=S|refit=True|nj=-1: 3.2 s (total 117 s)
+[11/226] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=S|refit=False|nj=physical: 3.7 s (total 120 s)
+[12/226] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=S|refit=False|nj=physical: 2.2 s (total 123 s)
+[13/226] B|op=backtest|forecaster=recursive|estimator=ridge|size=S|refit=False|nj=-1: 0.3 s (total 123 s)
+[14/226] B|op=backtest|forecaster=recursive|estimator=ridge|size=L|refit=True|nj=cpu-1: 5.8 s (total 129 s)
+[15/226] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=S|refit=True|nj=auto: 2.7 s (total 131 s)
+[16/226] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=3|nj=auto: 13.6 s (total 145 s)
+[17/226] B|op=backtest|forecaster=classifier|estimator=logreg|size=S|refit=False|nj=cpu-1: 0.3 s (total 145 s)
+[18/226] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=S|refit=True|nj=-1: 4.4 s (total 150 s)
+[19/226] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=L|refit=True|nj=auto: 5.6 s (total 155 s)
+[20/226] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=False|nj=cpu-1: 4.1 s (total 159 s)
+[21/226] B|op=backtest|forecaster=classifier|estimator=logreg|size=L|refit=True|nj=1: 27.0 s (total 186 s)
+[22/226] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=L|refit=True|nj=physical: 13.3 s (total 200 s)
+[23/226] B|op=backtest|forecaster=recursive|estimator=hgb|size=S|refit=True|nj=physical: 3.1 s (total 203 s)
+[24/226] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=S|refit=False|nj=auto: 5.6 s (total 208 s)
+[25/226] B|op=backtest|forecaster=classifier|estimator=logreg|size=L|refit=True|nj=-1: 8.5 s (total 217 s)
+[26/226] B|op=backtest|forecaster=recursive|estimator=ridge|size=L|refit=False|nj=auto: 0.2 s (total 217 s)
+[27/226] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=L|refit=False|nj=auto: 4.8 s (total 222 s)
+[28/226] B|op=backtest|forecaster=recursive|estimator=et_none|size=S|refit=True|nj=cpu-1: 2.8 s (total 225 s)
+[29/226] B|op=backtest|forecaster=recursive|estimator=hgb|size=S|refit=False|nj=physical: 3.0 s (total 228 s)
+[30/226] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=S|refit=True|nj=physical: 0.3 s (total 228 s)
+[31/226] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=S|refit=True|nj=cpu-1: 6.9 s (total 235 s)
+[32/226] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=L|refit=True|nj=auto: 11.2 s (total 246 s)
+[33/226] B|op=backtest|forecaster=recursive|estimator=ridge|size=S|refit=True|nj=cpu-1: 0.2 s (total 246 s)
+[34/226] B|op=backtest|forecaster=recursive|estimator=rf_none|size=L|refit=True|nj=cpu-1: 56.6 s (total 303 s)
+[35/226] B|op=backtest|forecaster=recursive|estimator=hgb|size=S|refit=False|nj=-1: 3.7 s (total 306 s)
+[36/226] B|op=backtest|forecaster=recursive|estimator=rf_none|size=L|refit=True|nj=1: 282.5 s (total 589 s)
+[37/226] B|op=backtest|forecaster=classifier|estimator=hgbc|size=S|refit=False|nj=1: 16.6 s (total 606 s)
+[38/226] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=S|refit=False|nj=-1: 10.7 s (total 616 s)
+[39/226] B|op=backtest|forecaster=classifier|estimator=logreg|size=S|refit=False|nj=1: 0.3 s (total 617 s)
+[40/226] B|op=backtest|forecaster=recursive|estimator=cat_1|size=S|refit=False|nj=physical: 7.6 s (total 624 s)
+[41/226] B|op=backtest|forecaster=recursive|estimator=et_none|size=S|refit=False|nj=1: 0.5 s (total 625 s)
+[42/226] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=L|refit=True|nj=1: 5.0 s (total 630 s)
+[43/226] B|op=backtest|forecaster=recursive|estimator=et_none|size=S|refit=False|nj=physical: 0.9 s (total 631 s)
+[44/226] B|op=backtest|forecaster=recursive|estimator=ridge|size=L|refit=True|nj=cap8: 4.4 s (total 635 s)
+[45/226] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=True|nj=cap8: 11.2 s (total 646 s)
+[46/226] B|op=backtest|forecaster=recursive|estimator=cat_1|size=S|refit=False|nj=-1: 14.4 s (total 661 s)
+[47/226] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=3|nj=auto: 23.7 s (total 684 s)
+[48/226] B|op=backtest|forecaster=recursive|estimator=cat_1|size=L|refit=True|nj=-1: 34.9 s (total 719 s)
+[49/226] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=L|refit=False|nj=1: 4.1 s (total 723 s)
+[50/226] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=S|refit=False|nj=1: 0.4 s (total 724 s)
+[51/226] B|op=backtest|forecaster=recursive|estimator=et_none|size=L|refit=False|nj=cpu-1: 5.5 s (total 729 s)
+[52/226] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=S|refit=False|nj=auto: 0.5 s (total 730 s)
+[53/226] B|op=backtest|forecaster=recursive|estimator=ridge|size=S|refit=True|nj=physical: 1.4 s (total 731 s)
+[54/226] B|op=backtest|forecaster=recursive|estimator=ridge|size=L|refit=False|nj=-1: 0.4 s (total 732 s)
+[55/226] B|op=backtest|forecaster=classifier|estimator=logreg|size=L|refit=False|nj=-1: 6.6 s (total 738 s)
+[56/226] B|op=backtest|forecaster=classifier|estimator=logreg|size=L|refit=False|nj=cpu-1: 2.3 s (total 740 s)
+[57/226] B|op=backtest|forecaster=recursive|estimator=et_none|size=S|refit=False|nj=-1: 2.8 s (total 743 s)
+[58/226] B|op=backtest|forecaster=recursive|estimator=et_none|size=L|refit=False|nj=-1: 5.1 s (total 748 s)
+[59/226] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=True|nj=physical: 10.1 s (total 758 s)
+[60/226] B|op=backtest|forecaster=recursive|estimator=et_none|size=L|refit=False|nj=auto: 9.5 s (total 768 s)
+[61/226] B|op=backtest|forecaster=recursive|estimator=cat_1|size=S|refit=False|nj=auto: 6.3 s (total 774 s)
+[62/226] B|op=backtest|forecaster=recursive|estimator=hgb|size=S|refit=False|nj=auto: 1.7 s (total 776 s)
+[63/226] B|op=backtest|forecaster=recursive|estimator=rf_none|size=S|refit=True|nj=cpu-1: 2.7 s (total 779 s)
+[64/226] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=S|refit=True|nj=cpu-1: 7.9 s (total 787 s)
+[65/226] B|op=backtest|forecaster=recursive|estimator=cat_1|size=L|refit=True|nj=auto: 35.5 s (total 822 s)
+[66/226] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=S|refit=True|nj=-1: 0.3 s (total 822 s)
+[67/226] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=S|refit=True|nj=physical: 8.3 s (total 831 s)
+[68/226] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=L|refit=False|nj=physical: 1.0 s (total 832 s)
+[69/226] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=1: 44.6 s (total 876 s)
+[70/226] B|op=backtest|forecaster=recursive|estimator=hgb|size=S|refit=True|nj=auto: 7.2 s (total 884 s)
+[71/226] B|op=backtest|forecaster=classifier|estimator=logreg|size=L|refit=False|nj=1: 3.7 s (total 887 s)
+[72/226] B|op=backtest|forecaster=classifier|estimator=hgbc|size=S|refit=False|nj=physical: 11.3 s (total 898 s)
+[73/226] B|op=backtest|forecaster=recursive|estimator=cat_1|size=L|refit=False|nj=auto: 18.8 s (total 917 s)
+[74/226] B|op=backtest|forecaster=recursive|estimator=cat_1|size=S|refit=True|nj=1: 55.0 s (total 972 s)
+[75/226] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=S|refit=False|nj=-1: 0.3 s (total 973 s)
+[76/226] B|op=backtest|forecaster=recursive|estimator=et_none|size=S|refit=False|nj=cpu-1: 3.8 s (total 976 s)
+[77/226] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=S|refit=True|nj=1: 6.9 s (total 983 s)
+[78/226] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=L|refit=False|nj=1: 6.8 s (total 990 s)
+[79/226] B|op=backtest|forecaster=classifier|estimator=hgbc|size=S|refit=False|nj=auto: 8.0 s (total 998 s)
+[80/226] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=L|refit=True|nj=auto: 14.0 s (total 1012 s)
+[81/226] B|op=backtest|forecaster=recursive|estimator=et_none|size=S|refit=False|nj=auto: 0.8 s (total 1013 s)
+[82/226] B|op=backtest|forecaster=recursive|estimator=cat_1|size=L|refit=True|nj=1: 219.8 s (total 1233 s)
+[83/226] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=S|refit=False|nj=1: 1.3 s (total 1234 s)
+[84/226] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=False|nj=auto: 3.3 s (total 1237 s)
+[85/226] B|op=backtest|forecaster=recursive|estimator=ridge|size=S|refit=False|nj=physical: 2.4 s (total 1240 s)
+[86/226] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=L|refit=False|nj=auto: 7.7 s (total 1247 s)
+[87/226] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=True|nj=1: 33.8 s (total 1281 s)
+[88/226] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=L|refit=False|nj=physical: 6.8 s (total 1288 s)
+[89/226] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=L|refit=True|nj=cpu-1: 17.2 s (total 1305 s)
+[90/226] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=S|refit=True|nj=physical: 7.4 s (total 1313 s)
+[91/226] B|op=backtest|forecaster=recursive|estimator=rf_none|size=S|refit=False|nj=auto: 5.4 s (total 1318 s)
+[92/226] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=L|refit=True|nj=1: 63.2 s (total 1381 s)
+[93/226] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=S|refit=False|nj=physical: 3.1 s (total 1384 s)
+[94/226] B|op=backtest|forecaster=classifier|estimator=hgbc|size=S|refit=True|nj=cpu-1: 16.4 s (total 1401 s)
+[95/226] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=L|refit=False|nj=cpu-1: 5.6 s (total 1406 s)
+[96/226] B|op=backtest|forecaster=classifier|estimator=logreg|size=L|refit=False|nj=physical: 3.2 s (total 1409 s)
+[97/226] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=S|refit=True|nj=auto: 10.2 s (total 1419 s)
+[98/226] B|op=backtest|forecaster=recursive|estimator=et_none|size=L|refit=True|nj=physical: 16.9 s (total 1436 s)
+[99/226] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=S|refit=False|nj=cpu-1: 7.6 s (total 1444 s)
+[100/226] B|op=backtest|forecaster=classifier|estimator=hgbc|size=S|refit=True|nj=-1: 15.0 s (total 1459 s)
+[101/226] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=S|refit=False|nj=auto: 3.5 s (total 1463 s)
+[102/226] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=L|refit=True|nj=physical: 2.4 s (total 1465 s)
+[103/226] B|op=backtest|forecaster=recursive|estimator=rf_none|size=S|refit=True|nj=auto: 7.0 s (total 1472 s)
+[104/226] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=L|refit=True|nj=1: 47.9 s (total 1520 s)
+[105/226] B|op=backtest|forecaster=classifier|estimator=hgbc|size=S|refit=False|nj=cpu-1: 8.5 s (total 1528 s)
+[106/226] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=3|nj=1: 14.4 s (total 1543 s)
+[107/226] B|op=backtest|forecaster=recursive|estimator=et_none|size=L|refit=True|nj=1: 70.5 s (total 1613 s)
+[108/226] B|op=backtest|forecaster=recursive|estimator=cat_1|size=S|refit=False|nj=cpu-1: 5.8 s (total 1619 s)
+[109/226] B|op=backtest|forecaster=recursive|estimator=ridge|size=L|refit=False|nj=1: 0.2 s (total 1619 s)
+[110/226] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=3|nj=-1: 11.8 s (total 1631 s)
+[111/226] B|op=backtest|forecaster=recursive|estimator=cat_1|size=S|refit=False|nj=1: 6.2 s (total 1637 s)
+[112/226] B|op=backtest|forecaster=recursive|estimator=et_none|size=L|refit=True|nj=cpu-1: 12.4 s (total 1650 s)
+[113/226] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=S|refit=True|nj=1: 0.5 s (total 1650 s)
+[114/226] B|op=backtest|forecaster=classifier|estimator=hgbc|size=S|refit=True|nj=auto: 12.5 s (total 1663 s)
+[115/226] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=L|refit=True|nj=-1: 11.5 s (total 1674 s)
+[116/226] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=S|refit=True|nj=-1: 3.5 s (total 1678 s)
+[117/226] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=3|nj=1: 23.9 s (total 1701 s)
+[118/226] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=3|nj=-1: 24.8 s (total 1726 s)
+[119/226] B|op=backtest|forecaster=recursive|estimator=rf_none|size=L|refit=False|nj=auto: 16.1 s (total 1742 s)
+[120/226] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=False|nj=-1: 4.4 s (total 1747 s)
+[121/226] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=L|refit=True|nj=physical: 18.3 s (total 1765 s)
+[122/226] B|op=backtest|forecaster=recursive|estimator=et_none|size=S|refit=True|nj=-1: 6.2 s (total 1771 s)
+[123/226] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=L|refit=True|nj=cap8: 26.4 s (total 1798 s)
+[124/226] B|op=backtest|forecaster=recursive|estimator=rf_none|size=L|refit=True|nj=cap8: 87.4 s (total 1885 s)
+[125/226] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=S|refit=False|nj=auto: 11.5 s (total 1897 s)
+[126/226] B|op=backtest|forecaster=recursive|estimator=rf_none|size=L|refit=True|nj=auto: 52.7 s (total 1949 s)
+[127/226] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=True|nj=cpu-1: 7.9 s (total 1957 s)
+[128/226] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=False|nj=physical: 3.8 s (total 1961 s)
+[129/226] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=L|refit=False|nj=cpu-1: 8.2 s (total 1969 s)
+[130/226] B|op=backtest|forecaster=recursive|estimator=cat_1|size=L|refit=True|nj=cpu-1: 35.5 s (total 2005 s)
+[131/226] B|op=backtest|forecaster=recursive|estimator=ridge|size=S|refit=False|nj=1: 0.1 s (total 2005 s)
+[132/226] B|op=backtest|forecaster=classifier|estimator=logreg|size=S|refit=True|nj=physical: 1.5 s (total 2006 s)
+[133/226] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=auto: 12.9 s (total 2019 s)
+[134/226] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=S|refit=False|nj=cpu-1: 1.1 s (total 2020 s)
+[135/226] B|op=backtest|forecaster=classifier|estimator=logreg|size=S|refit=False|nj=physical: 1.3 s (total 2021 s)
+[136/226] B|op=backtest|forecaster=recursive|estimator=rf_none|size=S|refit=False|nj=-1: 5.9 s (total 2027 s)
+[137/226] B|op=backtest|forecaster=recursive|estimator=rf_none|size=L|refit=False|nj=1: 16.0 s (total 2043 s)
+[138/226] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=L|refit=True|nj=cap8: 5.2 s (total 2049 s)
+[139/226] B|op=backtest|forecaster=classifier|estimator=logreg|size=L|refit=True|nj=auto: 27.1 s (total 2076 s)
+[140/226] B|op=backtest|forecaster=recursive|estimator=hgb|size=S|refit=True|nj=cpu-1: 11.8 s (total 2087 s)
+[141/226] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=S|refit=False|nj=1: 0.7 s (total 2088 s)
+[142/226] B|op=backtest|forecaster=recursive|estimator=ridge|size=S|refit=False|nj=auto: 0.1 s (total 2088 s)
+[143/226] B|op=backtest|forecaster=recursive|estimator=cat_1|size=S|refit=True|nj=auto: 15.6 s (total 2104 s)
+[144/226] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=S|refit=True|nj=1: 8.0 s (total 2112 s)
+[145/226] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=L|refit=False|nj=auto: 6.6 s (total 2118 s)
+[146/226] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=False|nj=auto: 2.8 s (total 2121 s)
+[147/226] B|op=backtest|forecaster=recursive|estimator=ridge|size=S|refit=True|nj=1: 0.2 s (total 2121 s)
+[148/226] B|op=backtest|forecaster=recursive|estimator=rf_none|size=L|refit=False|nj=physical: 16.5 s (total 2138 s)
+[149/226] B|op=backtest|forecaster=recursive|estimator=et_none|size=L|refit=True|nj=cap8: 25.9 s (total 2164 s)
+[150/226] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=S|refit=True|nj=-1: 17.1 s (total 2181 s)
+[151/226] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=True|nj=-1: 8.3 s (total 2189 s)
+[152/226] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=S|refit=True|nj=1: 20.8 s (total 2210 s)
+[153/226] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=S|refit=False|nj=-1: 1.0 s (total 2211 s)
+[154/226] B|op=backtest|forecaster=recursive|estimator=ridge|size=S|refit=False|nj=cpu-1: 1.1 s (total 2212 s)
+[155/226] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=S|refit=True|nj=auto: 0.5 s (total 2213 s)
+[156/226] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=False|nj=physical: 5.2 s (total 2218 s)
+[157/226] B|op=backtest|forecaster=recursive|estimator=rf_none|size=L|refit=True|nj=-1: 60.5 s (total 2278 s)
+[158/226] B|op=backtest|forecaster=recursive|estimator=cat_1|size=L|refit=True|nj=physical: 53.3 s (total 2332 s)
+[159/226] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=L|refit=False|nj=1: 10.9 s (total 2343 s)
+[160/226] B|op=backtest|forecaster=classifier|estimator=logreg|size=S|refit=True|nj=1: 1.3 s (total 2344 s)
+[161/226] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=False|nj=1: 17.6 s (total 2362 s)
+[162/226] B|op=backtest|forecaster=recursive|estimator=rf_none|size=S|refit=True|nj=1: 8.4 s (total 2370 s)
+[163/226] B|op=backtest|forecaster=recursive|estimator=cat_1|size=S|refit=True|nj=physical: 15.2 s (total 2385 s)
+[164/226] B|op=backtest|forecaster=recursive|estimator=rf_none|size=L|refit=False|nj=-1: 21.1 s (total 2406 s)
+[165/226] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=S|refit=False|nj=physical: 2.7 s (total 2409 s)
+[166/226] B|op=backtest|forecaster=recursive|estimator=et_none|size=S|refit=True|nj=physical: 1.6 s (total 2411 s)
+[167/226] B|op=backtest|forecaster=classifier|estimator=logreg|size=S|refit=True|nj=auto: 1.6 s (total 2412 s)
+[168/226] B|op=backtest|forecaster=recursive|estimator=rf_none|size=S|refit=False|nj=1: 1.0 s (total 2413 s)
+[169/226] B|op=backtest|forecaster=classifier|estimator=logreg|size=L|refit=True|nj=cap8: 12.9 s (total 2426 s)
+[170/226] B|op=backtest|forecaster=recursive|estimator=rf_none|size=L|refit=False|nj=cpu-1: 24.0 s (total 2450 s)
+[171/226] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=L|refit=False|nj=-1: 8.0 s (total 2458 s)
+[172/226] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=L|refit=False|nj=physical: 7.7 s (total 2466 s)
+[173/226] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=L|refit=False|nj=cpu-1: 5.2 s (total 2471 s)
+[174/226] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=L|refit=False|nj=-1: 2.7 s (total 2474 s)
+[175/226] B|op=backtest|forecaster=recursive|estimator=cat_1|size=L|refit=False|nj=1: 24.1 s (total 2498 s)
+[176/226] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=L|refit=True|nj=-1: 1.0 s (total 2499 s)
+[177/226] B|op=backtest|forecaster=classifier|estimator=logreg|size=L|refit=False|nj=auto: 3.7 s (total 2503 s)
+[178/226] B|op=backtest|forecaster=recursive|estimator=rf_none|size=S|refit=True|nj=physical: 3.9 s (total 2507 s)
+[179/226] B|op=backtest|forecaster=recursive|estimator=ridge|size=L|refit=False|nj=cpu-1: 0.4 s (total 2507 s)
+[180/226] B|op=backtest|forecaster=classifier|estimator=logreg|size=L|refit=True|nj=cpu-1: 10.0 s (total 2517 s)
+[181/226] B|op=backtest|forecaster=classifier|estimator=hgbc|size=S|refit=True|nj=1: 59.5 s (total 2576 s)
+[182/226] B|op=backtest|forecaster=recursive|estimator=cat_1|size=L|refit=False|nj=cpu-1: 14.4 s (total 2591 s)
+[183/226] B|op=backtest|forecaster=recursive|estimator=ridge|size=L|refit=True|nj=1: 0.7 s (total 2591 s)
+[184/226] B|op=backtest|forecaster=classifier|estimator=hgbc|size=S|refit=True|nj=physical: 14.4 s (total 2606 s)
+[185/226] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=cpu-1: 12.9 s (total 2619 s)
+[186/226] B|op=backtest|forecaster=recursive|estimator=et_none|size=S|refit=True|nj=auto: 1.4 s (total 2620 s)
+[187/226] B|op=backtest|forecaster=recursive|estimator=cat_1|size=L|refit=False|nj=-1: 15.9 s (total 2636 s)
+[188/226] B|op=backtest|forecaster=recursive|estimator=et_none|size=S|refit=True|nj=1: 4.0 s (total 2640 s)
+[189/226] B|op=backtest|forecaster=classifier|estimator=hgbc|size=S|refit=False|nj=-1: 8.5 s (total 2649 s)
+[190/226] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=S|refit=True|nj=auto: 3.9 s (total 2652 s)
+[191/226] B|op=backtest|forecaster=recursive|estimator=ridge|size=S|refit=True|nj=auto: 0.1 s (total 2653 s)
+[192/226] B|op=backtest|forecaster=recursive|estimator=cat_1|size=S|refit=True|nj=cpu-1: 15.3 s (total 2668 s)
+[193/226] B|op=backtest|forecaster=recursive|estimator=cat_1|size=L|refit=True|nj=cap8: 65.6 s (total 2733 s)
+[194/226] B|op=backtest|forecaster=recursive|estimator=cat_1|size=L|refit=False|nj=physical: 18.2 s (total 2752 s)
+[195/226] B|op=backtest|forecaster=recursive|estimator=rf_none|size=S|refit=False|nj=physical: 1.3 s (total 2753 s)
+[196/226] B|op=backtest|forecaster=recursive|estimator=hgb|size=S|refit=False|nj=cpu-1: 6.1 s (total 2759 s)
+[197/226] B|op=backtest|forecaster=classifier|estimator=logreg|size=S|refit=True|nj=cpu-1: 0.4 s (total 2760 s)
+[198/226] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=False|nj=1: 3.3 s (total 2763 s)
+[199/226] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=-1: 10.0 s (total 2773 s)
+[200/226] B|op=backtest|forecaster=recursive|estimator=et_none|size=L|refit=False|nj=physical: 6.0 s (total 2779 s)
+[201/226] B|op=backtest|forecaster=recursive|estimator=hgb|size=S|refit=False|nj=1: 2.3 s (total 2781 s)
+[202/226] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=S|refit=False|nj=1: 2.2 s (total 2783 s)
+[203/226] B|op=backtest|forecaster=recursive|estimator=hgb|size=S|refit=True|nj=1: 10.5 s (total 2794 s)
+[204/226] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=S|refit=False|nj=cpu-1: 7.0 s (total 2801 s)
+[205/226] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=S|refit=True|nj=physical: 3.5 s (total 2804 s)
+[206/226] B|op=backtest|forecaster=recursive|estimator=ridge|size=L|refit=True|nj=physical: 0.4 s (total 2805 s)
+[207/226] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=L|refit=True|nj=-1: 19.0 s (total 2824 s)
+[208/226] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=False|nj=cpu-1: 4.4 s (total 2828 s)
+[209/226] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=L|refit=True|nj=cap8: 19.7 s (total 2848 s)
+[210/226] B|op=backtest|forecaster=recursive|estimator=ridge|size=L|refit=True|nj=auto: 0.7 s (total 2848 s)
+[211/226] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=L|refit=True|nj=cpu-1: 18.7 s (total 2867 s)
+[212/226] B|op=backtest|forecaster=recursive|estimator=et_none|size=L|refit=True|nj=auto: 14.6 s (total 2882 s)
+[213/226] B|op=backtest|forecaster=recursive|estimator=ridge|size=L|refit=True|nj=-1: 0.4 s (total 2882 s)
+[214/226] B|op=backtest|forecaster=classifier|estimator=logreg|size=S|refit=True|nj=-1: 2.6 s (total 2885 s)
+[215/226] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=False|nj=-1: 3.7 s (total 2888 s)
+[216/226] B|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=cap8: 16.5 s (total 2905 s)
+[217/226] B|op=backtest|forecaster=recursive|estimator=lgbm_1|size=L|refit=True|nj=auto: 15.8 s (total 2921 s)
+[218/226] B|op=backtest|forecaster=recursive|estimator=cat_1|size=S|refit=True|nj=-1: 18.3 s (total 2939 s)
+[219/226] B|op=backtest|forecaster=classifier|estimator=logreg|size=L|refit=True|nj=physical: 8.3 s (total 2947 s)
+[220/226] B|op=backtest|forecaster=recursive|estimator=pipe_ridge|size=L|refit=True|nj=cpu-1: 5.7 s (total 2953 s)
+[221/226] B|op=backtest|forecaster=recursive|estimator=ridge|size=S|refit=True|nj=-1: 0.2 s (total 2953 s)
+[222/226] B|op=backtest|forecaster=classifier|estimator=lgbmc_1|size=S|refit=True|nj=cpu-1: 5.7 s (total 2959 s)
+[223/226] B|op=backtest|forecaster=recursive|estimator=rf_none|size=S|refit=True|nj=-1: 5.0 s (total 2964 s)
+[224/226] B|op=backtest|forecaster=recursive|estimator=xgb_1|size=L|refit=False|nj=-1: 7.3 s (total 2971 s)
+[225/226] B|op=backtest|forecaster=classifier|estimator=logreg|size=S|refit=False|nj=auto: 0.5 s (total 2972 s)
+[226/226] B|op=backtest|forecaster=recursive|estimator=et_none|size=L|refit=True|nj=-1: 14.6 s (total 2986 s)
+BLOCK B affinity 22 END rc=0 49.9 min
+BLOCK C affinity 22 START 16:57:14
+$ bench.py --block C
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_none|size=L|refit=True|nj=1 (timeout 3690 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_none|size=L|refit=True|nj=1: 21.9 s (total 22 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_none|size=L|refit=True|nj=cpu-1 (timeout 307 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_none|size=L|refit=True|nj=cpu-1: 27.2 s (total 27 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_none|size=L|refit=True|nj=-1 (timeout 307 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_none|size=L|refit=True|nj=-1: 26.5 s (total 26 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_none|size=L|refit=True|nj=auto (timeout 307 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_none|size=L|refit=True|nj=auto: 22.5 s (total 22 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_none|size=L|refit=True|nj=8 (timeout 307 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_none|size=L|refit=True|nj=8: 20.1 s (total 20 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_none|size=L|refit=True|nj=physical (timeout 307 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_none|size=L|refit=True|nj=physical: 23.0 s (total 23 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_none|size=L|refit=True|nj=4 (timeout 307 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_none|size=L|refit=True|nj=4: 21.7 s (total 22 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_m1|size=L|refit=True|nj=1 (timeout 3690 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_m1|size=L|refit=True|nj=1: 30.8 s (total 31 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_m1|size=L|refit=True|nj=cpu-1 (timeout 395 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_m1|size=L|refit=True|nj=cpu-1: 29.1 s (total 29 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_m1|size=L|refit=True|nj=-1 (timeout 395 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_m1|size=L|refit=True|nj=-1: 31.3 s (total 31 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_m1|size=L|refit=True|nj=auto (timeout 395 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_m1|size=L|refit=True|nj=auto: 32.3 s (total 32 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_m1|size=L|refit=True|nj=8 (timeout 395 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_m1|size=L|refit=True|nj=8: 24.0 s (total 24 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_m1|size=L|refit=True|nj=physical (timeout 395 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_m1|size=L|refit=True|nj=physical: 27.4 s (total 27 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_m1|size=L|refit=True|nj=4 (timeout 395 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_m1|size=L|refit=True|nj=4: 25.6 s (total 26 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_4|size=L|refit=True|nj=1 (timeout 3690 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_4|size=L|refit=True|nj=1: 25.6 s (total 26 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_4|size=L|refit=True|nj=cpu-1 (timeout 343 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_4|size=L|refit=True|nj=cpu-1: 17.2 s (total 17 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_4|size=L|refit=True|nj=-1 (timeout 343 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_4|size=L|refit=True|nj=-1: 18.1 s (total 18 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_4|size=L|refit=True|nj=auto (timeout 343 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_4|size=L|refit=True|nj=auto: 23.6 s (total 24 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_4|size=L|refit=True|nj=8 (timeout 343 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_4|size=L|refit=True|nj=8: 13.1 s (total 13 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_4|size=L|refit=True|nj=physical (timeout 343 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_4|size=L|refit=True|nj=physical: 16.0 s (total 16 s)
+cell C|op=backtest|forecaster=recursive|estimator=lgbm_4|size=L|refit=True|nj=4 (timeout 343 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=lgbm_4|size=L|refit=True|nj=4: 14.0 s (total 14 s)
+cell C|op=backtest|forecaster=recursive|estimator=xgb_none|size=L|refit=True|nj=1 (timeout 3690 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=xgb_none|size=L|refit=True|nj=1: 44.4 s (total 44 s)
+cell C|op=backtest|forecaster=recursive|estimator=xgb_none|size=L|refit=True|nj=cpu-1 (timeout 530 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=xgb_none|size=L|refit=True|nj=cpu-1: 25.2 s (total 25 s)
+cell C|op=backtest|forecaster=recursive|estimator=xgb_none|size=L|refit=True|nj=-1 (timeout 530 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=xgb_none|size=L|refit=True|nj=-1: 27.0 s (total 27 s)
+cell C|op=backtest|forecaster=recursive|estimator=xgb_none|size=L|refit=True|nj=auto (timeout 530 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=xgb_none|size=L|refit=True|nj=auto: 28.1 s (total 28 s)
+cell C|op=backtest|forecaster=recursive|estimator=xgb_none|size=L|refit=True|nj=8 (timeout 530 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=xgb_none|size=L|refit=True|nj=8: 29.1 s (total 29 s)
+cell C|op=backtest|forecaster=recursive|estimator=xgb_none|size=L|refit=True|nj=physical (timeout 530 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=xgb_none|size=L|refit=True|nj=physical: 26.7 s (total 27 s)
+cell C|op=backtest|forecaster=recursive|estimator=xgb_none|size=L|refit=True|nj=4 (timeout 530 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=xgb_none|size=L|refit=True|nj=4: 33.4 s (total 33 s)
+cell C|op=backtest|forecaster=recursive|estimator=xgb_m1|size=L|refit=True|nj=1 (timeout 3690 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=xgb_m1|size=L|refit=True|nj=1: 62.6 s (total 63 s)
+cell C|op=backtest|forecaster=recursive|estimator=xgb_m1|size=L|refit=True|nj=cpu-1 (timeout 703 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=xgb_m1|size=L|refit=True|nj=cpu-1: 26.3 s (total 26 s)
+cell C|op=backtest|forecaster=recursive|estimator=xgb_m1|size=L|refit=True|nj=-1 (timeout 703 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=xgb_m1|size=L|refit=True|nj=-1: 25.4 s (total 25 s)
+cell C|op=backtest|forecaster=recursive|estimator=xgb_m1|size=L|refit=True|nj=auto (timeout 703 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=xgb_m1|size=L|refit=True|nj=auto: 25.1 s (total 25 s)
+cell C|op=backtest|forecaster=recursive|estimator=xgb_m1|size=L|refit=True|nj=8 (timeout 703 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=xgb_m1|size=L|refit=True|nj=8: 22.8 s (total 23 s)
+cell C|op=backtest|forecaster=recursive|estimator=xgb_m1|size=L|refit=True|nj=physical (timeout 703 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=xgb_m1|size=L|refit=True|nj=physical: 24.1 s (total 24 s)
+cell C|op=backtest|forecaster=recursive|estimator=xgb_m1|size=L|refit=True|nj=4 (timeout 703 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=xgb_m1|size=L|refit=True|nj=4: 24.4 s (total 24 s)
+cell C|op=backtest|forecaster=recursive|estimator=rf_m1|size=L|refit=True|nj=1 (timeout 3690 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=rf_m1|size=L|refit=True|nj=1: 60.2 s (total 60 s)
+cell C|op=backtest|forecaster=recursive|estimator=rf_m1|size=L|refit=True|nj=cpu-1 (timeout 686 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=rf_m1|size=L|refit=True|nj=cpu-1: 49.5 s (total 50 s)
+cell C|op=backtest|forecaster=recursive|estimator=rf_m1|size=L|refit=True|nj=-1 (timeout 686 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=rf_m1|size=L|refit=True|nj=-1: 51.4 s (total 51 s)
+cell C|op=backtest|forecaster=recursive|estimator=rf_m1|size=L|refit=True|nj=auto (timeout 686 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=rf_m1|size=L|refit=True|nj=auto: 48.9 s (total 49 s)
+cell C|op=backtest|forecaster=recursive|estimator=rf_m1|size=L|refit=True|nj=8 (timeout 686 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=rf_m1|size=L|refit=True|nj=8: 46.0 s (total 46 s)
+cell C|op=backtest|forecaster=recursive|estimator=rf_m1|size=L|refit=True|nj=physical (timeout 686 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=rf_m1|size=L|refit=True|nj=physical: 46.5 s (total 46 s)
+cell C|op=backtest|forecaster=recursive|estimator=rf_m1|size=L|refit=True|nj=4 (timeout 686 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=rf_m1|size=L|refit=True|nj=4: 46.7 s (total 47 s)
+cell C|op=backtest|forecaster=recursive|estimator=et_m1|size=L|refit=True|nj=1 (timeout 3690 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=et_m1|size=L|refit=True|nj=1: 16.7 s (total 17 s)
+cell C|op=backtest|forecaster=recursive|estimator=et_m1|size=L|refit=True|nj=cpu-1 (timeout 270 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=et_m1|size=L|refit=True|nj=cpu-1: 17.3 s (total 17 s)
+cell C|op=backtest|forecaster=recursive|estimator=et_m1|size=L|refit=True|nj=-1 (timeout 270 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=et_m1|size=L|refit=True|nj=-1: 17.6 s (total 18 s)
+cell C|op=backtest|forecaster=recursive|estimator=et_m1|size=L|refit=True|nj=auto (timeout 270 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=et_m1|size=L|refit=True|nj=auto: 17.5 s (total 17 s)
+cell C|op=backtest|forecaster=recursive|estimator=et_m1|size=L|refit=True|nj=8 (timeout 270 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=et_m1|size=L|refit=True|nj=8: 13.3 s (total 13 s)
+cell C|op=backtest|forecaster=recursive|estimator=et_m1|size=L|refit=True|nj=physical (timeout 270 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=et_m1|size=L|refit=True|nj=physical: 14.8 s (total 15 s)
+cell C|op=backtest|forecaster=recursive|estimator=et_m1|size=L|refit=True|nj=4 (timeout 270 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=et_m1|size=L|refit=True|nj=4: 13.1 s (total 13 s)
+cell C|op=backtest|forecaster=recursive|estimator=cat_m1|size=L|refit=True|nj=1 (timeout 3690 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=cat_m1|size=L|refit=True|nj=1: 60.9 s (total 61 s)
+cell C|op=backtest|forecaster=recursive|estimator=cat_m1|size=L|refit=True|nj=cpu-1 (timeout 694 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=cat_m1|size=L|refit=True|nj=cpu-1: 34.4 s (total 34 s)
+cell C|op=backtest|forecaster=recursive|estimator=cat_m1|size=L|refit=True|nj=-1 (timeout 694 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=cat_m1|size=L|refit=True|nj=-1: 36.2 s (total 36 s)
+cell C|op=backtest|forecaster=recursive|estimator=cat_m1|size=L|refit=True|nj=auto (timeout 694 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=cat_m1|size=L|refit=True|nj=auto: 37.2 s (total 37 s)
+cell C|op=backtest|forecaster=recursive|estimator=cat_m1|size=L|refit=True|nj=8 (timeout 694 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=cat_m1|size=L|refit=True|nj=8: 35.5 s (total 35 s)
+cell C|op=backtest|forecaster=recursive|estimator=cat_m1|size=L|refit=True|nj=physical (timeout 694 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=cat_m1|size=L|refit=True|nj=physical: 36.2 s (total 36 s)
+cell C|op=backtest|forecaster=recursive|estimator=cat_m1|size=L|refit=True|nj=4 (timeout 694 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=cat_m1|size=L|refit=True|nj=4: 39.4 s (total 39 s)
+cell C|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=1 (timeout 3690 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=1: 56.7 s (total 57 s)
+cell C|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=cpu-1 (timeout 646 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=cpu-1: 18.1 s (total 18 s)
+cell C|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=-1 (timeout 646 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=-1: 18.8 s (total 19 s)
+cell C|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=auto (timeout 646 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=auto: 18.4 s (total 18 s)
+cell C|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=8 (timeout 646 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=8: 18.1 s (total 18 s)
+cell C|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=physical (timeout 646 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=physical: 17.8 s (total 18 s)
+cell C|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=4 (timeout 646 s)
+[1/1] C|op=backtest|forecaster=recursive|estimator=hgb|size=L|refit=True|nj=4: 29.4 s (total 29 s)
+BLOCK C affinity 22 END rc=0 34.2 min
+BLOCK D affinity 22 START 17:31:28
+$ bench.py --block D
+[1/155] D|op=backtest_ms|forecaster=dmv|estimator=ridge|size=S|refit=True|nj=1|1: 2.4 s (total 2 s)
+[2/155] D|op=fit_direct|forecaster=direct|estimator=lgbm_1|size=S|refit=|nj=auto: 12.0 s (total 14 s)
+[3/155] D|op=backtest|forecaster=direct|estimator=ridge|size=L|refit=True|nj=auto|auto: 5.4 s (total 20 s)
+[4/155] D|op=backtest|forecaster=direct|estimator=hgb|size=S|refit=False|nj=1|1: 33.9 s (total 54 s)
+[5/155] D|op=fit_dmv|forecaster=dmv|estimator=ridge|size=L|refit=|nj=cpu-1: 1.7 s (total 55 s)
+[6/155] D|op=fit_direct|forecaster=direct|estimator=lgbm_1|size=S|refit=|nj=-1: 5.9 s (total 61 s)
+[7/155] D|op=fit_direct|forecaster=direct|estimator=hgb|size=S|refit=|nj=physical: 5.2 s (total 66 s)
+[8/155] D|op=fit_direct|forecaster=direct|estimator=hgb|size=S|refit=|nj=1: 32.6 s (total 99 s)
+[9/155] D|op=backtest|forecaster=direct|estimator=hgb|size=L|refit=False|nj=cpu-1|1: 114.1 s (total 213 s)
+[10/155] D|op=fit_direct|forecaster=direct|estimator=lgbm_none|size=L|refit=|nj=-1: 51.1 s (total 264 s)
+[11/155] D|op=fit_direct|forecaster=direct|estimator=lgbm_1|size=L|refit=|nj=-1: 20.5 s (total 285 s)
+[12/155] D|op=backtest|forecaster=direct|estimator=lgbm_1|size=L|refit=False|nj=physical|1: 88.3 s (total 373 s)
+[13/155] D|op=fit_direct|forecaster=direct|estimator=hgb|size=L|refit=|nj=cap8: 23.5 s (total 397 s)
+[14/155] D|op=fit_direct|forecaster=direct|estimator=lgbm_none|size=S|refit=|nj=cpu-1: 26.0 s (total 423 s)
+[15/155] D|op=fit_direct|forecaster=direct|estimator=ridge|size=L|refit=|nj=cap8: 7.3 s (total 430 s)
+[16/155] D|op=backtest|forecaster=direct|estimator=hgb|size=L|refit=False|nj=auto|auto: 23.3 s (total 453 s)
+[17/155] D|op=fit_dmv|forecaster=dmv|estimator=ridge|size=S|refit=|nj=cpu-1: 0.3 s (total 454 s)
+[18/155] D|op=fit_direct|forecaster=direct|estimator=rf_none|size=S|refit=|nj=auto: 4.0 s (total 458 s)
+[19/155] D|op=backtest|forecaster=direct|estimator=ridge|size=L|refit=True|nj=-1|1: 4.9 s (total 462 s)
+[20/155] D|op=backtest|forecaster=direct|estimator=hgb|size=L|refit=False|nj=-1|1: 91.0 s (total 553 s)
+[21/155] D|op=fit_dmv|forecaster=dmv|estimator=lgbm_1|size=L|refit=|nj=1: 206.8 s (total 760 s)
+[22/155] D|op=fit_direct|forecaster=direct|estimator=hgb|size=S|refit=|nj=-1: 2.8 s (total 763 s)
+[23/155] D|op=backtest|forecaster=direct_fix|estimator=lgbm_1|size=L|refit=True|nj=auto|auto: 77.4 s (total 841 s)
+[24/155] D|op=backtest|forecaster=direct|estimator=ridge|size=S|refit=False|nj=auto|auto: 0.3 s (total 841 s)
+[25/155] D|op=fit_dmv|forecaster=dmv|estimator=ridge|size=S|refit=|nj=physical: 1.3 s (total 842 s)
+[26/155] D|op=backtest|forecaster=direct|estimator=hgb|size=S|refit=False|nj=physical|1: 32.8 s (total 875 s)
+[27/155] D|op=backtest|forecaster=direct|estimator=lgbm_1|size=S|refit=False|nj=physical|1: 22.3 s (total 897 s)
+[28/155] D|op=fit_direct|forecaster=direct|estimator=lgbm_none|size=L|refit=|nj=auto: 35.2 s (total 932 s)
+[29/155] D|op=fit_direct|forecaster=direct|estimator=ridge|size=S|refit=|nj=physical: 0.5 s (total 933 s)
+[30/155] D|op=fit_direct|forecaster=direct|estimator=lgbm_none|size=S|refit=|nj=auto: 11.3 s (total 944 s)
+[31/155] D|op=backtest|forecaster=direct_fix|estimator=hgb|size=L|refit=True|nj=auto|auto: 67.9 s (total 1012 s)
+[32/155] D|op=fit_dmv|forecaster=dmv|estimator=lgbm_1|size=L|refit=|nj=physical: 45.5 s (total 1058 s)
+[33/155] D|op=backtest|forecaster=direct|estimator=ridge|size=L|refit=True|nj=cpu-1|1: 7.9 s (total 1066 s)
+[34/155] D|op=fit_direct|forecaster=direct|estimator=ridge|size=S|refit=|nj=-1: 2.2 s (total 1068 s)
+[35/155] D|op=backtest|forecaster=direct|estimator=ridge|size=S|refit=False|nj=cpu-1|cpu-1: 0.9 s (total 1069 s)
+[36/155] D|op=backtest|forecaster=direct|estimator=ridge|size=S|refit=True|nj=cpu-1|cpu-1: 1.2 s (total 1070 s)
+[37/155] D|op=backtest|forecaster=direct|estimator=hgb|size=S|refit=False|nj=cpu-1|cpu-1: 13.6 s (total 1084 s)
+[38/155] D|op=backtest|forecaster=direct|estimator=ridge|size=L|refit=False|nj=physical|1: 2.1 s (total 1086 s)
+[39/155] D|op=fit_dmv|forecaster=dmv|estimator=ridge|size=S|refit=|nj=1: 0.2 s (total 1086 s)
+[40/155] D|op=backtest|forecaster=direct|estimator=hgb|size=S|refit=True|nj=auto|auto: 262.1 s (total 1348 s)
+[41/155] D|op=fit_dmv|forecaster=dmv|estimator=lgbm_1|size=S|refit=|nj=physical: 6.0 s (total 1354 s)
+[42/155] D|op=backtest|forecaster=direct|estimator=ridge|size=S|refit=False|nj=cpu-1|1: 6.5 s (total 1360 s)
+[43/155] D|op=fit_dmv|forecaster=dmv|estimator=lgbm_1|size=L|refit=|nj=auto: 39.9 s (total 1400 s)
+[44/155] D|op=backtest|forecaster=direct|estimator=hgb|size=L|refit=True|nj=-1|1: 179.1 s (total 1579 s)
+[45/155] D|op=backtest|forecaster=direct|estimator=lgbm_1|size=S|refit=False|nj=-1|1: 20.7 s (total 1600 s)
+[46/155] D|op=backtest|forecaster=direct|estimator=ridge|size=L|refit=False|nj=-1|1: 0.9 s (total 1601 s)
+[47/155] D|op=fit_direct|forecaster=direct|estimator=lgbm_none|size=L|refit=|nj=cap8: 44.4 s (total 1645 s)
+[48/155] D|op=fit_dmv|forecaster=dmv|estimator=ridge|size=S|refit=|nj=auto: 0.2 s (total 1645 s)
+[49/155] D|op=backtest|forecaster=direct|estimator=hgb|size=L|refit=False|nj=physical|1: 94.3 s (total 1740 s)
+[50/155] D|op=backtest|forecaster=direct|estimator=ridge|size=S|refit=True|nj=cpu-1|1: 4.9 s (total 1745 s)
+[51/155] D|op=backtest|forecaster=direct|estimator=ridge|size=L|refit=False|nj=cpu-1|cpu-1: 6.6 s (total 1751 s)
+[52/155] D|op=fit_direct|forecaster=direct|estimator=lgbm_1|size=L|refit=|nj=1: 82.8 s (total 1834 s)
+[53/155] D|op=backtest|forecaster=direct|estimator=lgbm_1|size=S|refit=True|nj=auto|auto: 192.7 s (total 2027 s)
+[54/155] D|op=fit_direct|forecaster=direct|estimator=rf_none|size=S|refit=|nj=physical: 5.4 s (total 2032 s)
+[55/155] D|op=backtest|forecaster=direct|estimator=ridge|size=S|refit=False|nj=1|1: 0.2 s (total 2033 s)
+[56/155] D|op=backtest|forecaster=direct|estimator=ridge|size=L|refit=True|nj=1|1: 4.6 s (total 2037 s)
+[57/155] D|op=fit_direct|forecaster=direct|estimator=ridge|size=L|refit=|nj=1: 1.1 s (total 2038 s)
+[58/155] D|op=backtest|forecaster=direct|estimator=lgbm_1|size=L|refit=False|nj=cpu-1|1: 94.1 s (total 2132 s)
+[59/155] D|op=backtest|forecaster=direct|estimator=hgb|size=S|refit=True|nj=physical|1: 65.4 s (total 2198 s)
+[60/155] D|op=backtest|forecaster=direct|estimator=lgbm_1|size=S|refit=True|nj=physical|1: 52.3 s (total 2250 s)
+[61/155] D|op=backtest|forecaster=direct_fix|estimator=ridge|size=L|refit=True|nj=auto|auto: 4.2 s (total 2254 s)
+[62/155] D|op=fit_direct|forecaster=direct|estimator=lgbm_1|size=S|refit=|nj=1: 16.6 s (total 2271 s)
+[63/155] D|op=backtest|forecaster=direct|estimator=hgb|size=L|refit=True|nj=1|1: 374.4 s (total 2645 s)
+[64/155] D|op=backtest|forecaster=direct|estimator=ridge|size=S|refit=True|nj=auto|auto: 1.5 s (total 2647 s)
+[65/155] D|op=backtest|forecaster=direct|estimator=hgb|size=S|refit=False|nj=-1|1: 43.6 s (total 2690 s)
+[66/155] D|op=backtest|forecaster=direct|estimator=ridge|size=L|refit=True|nj=physical|1: 3.4 s (total 2694 s)
+[67/155] D|op=backtest|forecaster=direct|estimator=lgbm_1|size=L|refit=False|nj=1|1: 71.2 s (total 2765 s)
+[68/155] D|op=backtest|forecaster=direct|estimator=lgbm_1|size=L|refit=True|nj=cpu-1|cpu-1: 64.9 s (total 2830 s)
+[69/155] D|op=backtest|forecaster=direct|estimator=ridge|size=L|refit=False|nj=auto|auto: 0.9 s (total 2831 s)
+[70/155] D|op=backtest|forecaster=direct|estimator=hgb|size=S|refit=True|nj=-1|1: 65.7 s (total 2896 s)
+[71/155] D|op=backtest|forecaster=direct_fix|estimator=ridge|size=S|refit=True|nj=auto|auto: 1.4 s (total 2898 s)
+[72/155] D|op=backtest|forecaster=direct|estimator=ridge|size=S|refit=True|nj=1|1: 1.4 s (total 2899 s)
+[73/155] D|op=backtest_ms|forecaster=dmv|estimator=lgbm_1|size=S|refit=True|nj=cpu-1|1: 74.7 s (total 2974 s)
+[74/155] D|op=fit_direct|forecaster=direct|estimator=lgbm_1|size=L|refit=|nj=cap8: 30.0 s (total 3004 s)
+[75/155] D|op=backtest_ms|forecaster=dmv|estimator=lgbm_1|size=S|refit=True|nj=1|1: 215.1 s (total 3219 s)
+[76/155] D|op=backtest|forecaster=direct|estimator=lgbm_1|size=S|refit=False|nj=1|1: 11.9 s (total 3231 s)
+[77/155] D|op=backtest|forecaster=direct|estimator=hgb|size=L|refit=True|nj=cpu-1|cpu-1: 116.7 s (total 3347 s)
+[78/155] D|op=fit_direct|forecaster=direct|estimator=hgb|size=L|refit=|nj=physical: 16.5 s (total 3364 s)
+[79/155] D|op=fit_direct|forecaster=direct|estimator=lgbm_1|size=L|refit=|nj=cpu-1: 21.4 s (total 3385 s)
+[80/155] D|op=fit_direct|forecaster=direct|estimator=lgbm_1|size=S|refit=|nj=cpu-1: 4.4 s (total 3390 s)
+[81/155] D|op=fit_direct|forecaster=direct|estimator=lgbm_1|size=L|refit=|nj=physical: 21.9 s (total 3412 s)
+[82/155] D|op=fit_direct|forecaster=direct|estimator=ridge|size=S|refit=|nj=1: 0.2 s (total 3412 s)
+[83/155] D|op=backtest|forecaster=direct|estimator=lgbm_1|size=S|refit=False|nj=cpu-1|cpu-1: 15.6 s (total 3427 s)
+[84/155] D|op=fit_direct|forecaster=direct|estimator=lgbm_none|size=S|refit=|nj=-1: 17.2 s (total 3445 s)
+[85/155] D|op=backtest|forecaster=direct|estimator=lgbm_1|size=L|refit=False|nj=-1|1: 90.4 s (total 3535 s)
+[86/155] D|op=fit_direct|forecaster=direct|estimator=lgbm_none|size=S|refit=|nj=physical: 15.3 s (total 3550 s)
+[87/155] D|op=fit_direct|forecaster=direct|estimator=ridge|size=S|refit=|nj=cpu-1: 4.2 s (total 3555 s)
+[88/155] D|op=backtest|forecaster=direct|estimator=hgb|size=S|refit=True|nj=cpu-1|1: 61.9 s (total 3616 s)
+[89/155] D|op=backtest|forecaster=direct_fix|estimator=lgbm_1|size=S|refit=True|nj=auto|auto: 34.5 s (total 3651 s)
+[90/155] D|op=fit_direct|forecaster=direct|estimator=rf_none|size=S|refit=|nj=cpu-1: 3.8 s (total 3655 s)
+[91/155] D|op=fit_direct|forecaster=direct|estimator=lgbm_none|size=L|refit=|nj=cpu-1: 47.4 s (total 3702 s)
+[92/155] D|op=backtest|forecaster=direct|estimator=lgbm_1|size=S|refit=True|nj=cpu-1|cpu-1: 33.2 s (total 3735 s)
+[93/155] D|op=fit_direct|forecaster=direct|estimator=lgbm_none|size=S|refit=|nj=1: 17.7 s (total 3753 s)
+[94/155] D|op=fit_direct|forecaster=direct|estimator=ridge|size=S|refit=|nj=auto: 0.3 s (total 3753 s)
+[95/155] D|op=fit_direct|forecaster=direct|estimator=hgb|size=S|refit=|nj=cpu-1: 3.8 s (total 3757 s)
+[96/155] D|op=fit_direct|forecaster=direct|estimator=lgbm_1|size=L|refit=|nj=auto: 19.6 s (total 3777 s)
+[97/155] D|op=fit_dmv|forecaster=dmv|estimator=lgbm_1|size=S|refit=|nj=cpu-1: 7.1 s (total 3784 s)
+[98/155] D|op=backtest|forecaster=direct|estimator=lgbm_1|size=L|refit=True|nj=auto|auto: 425.1 s (total 4209 s)
+[99/155] D|op=backtest_ms|forecaster=dmv|estimator=lgbm_1|size=S|refit=True|nj=auto|auto: 107.2 s (total 4316 s)
+[100/155] D|op=backtest|forecaster=direct|estimator=hgb|size=L|refit=True|nj=auto|auto: 475.5 s (total 4792 s)
+[101/155] D|op=fit_direct|forecaster=direct|estimator=lgbm_1|size=S|refit=|nj=physical: 4.8 s (total 4796 s)
+[102/155] D|op=backtest_ms|forecaster=dmv|estimator=ridge|size=S|refit=True|nj=auto|auto: 1.4 s (total 4798 s)
+[103/155] D|op=backtest|forecaster=direct|estimator=hgb|size=S|refit=True|nj=cpu-1|cpu-1: 49.9 s (total 4848 s)
+[104/155] D|op=backtest|forecaster=direct|estimator=lgbm_1|size=S|refit=True|nj=1|1: 133.6 s (total 4981 s)
+[105/155] D|op=fit_direct|forecaster=direct|estimator=hgb|size=S|refit=|nj=auto: 2.9 s (total 4984 s)
