@@ -14,8 +14,9 @@ dos (sección 8.1): **PR 2a fusionado en `0.27.x` el 2026-11-06 (#1452,** rama
 sección 14: candidatos que fallan y pendientes de las búsquedas). BUG-backtesting-nan-y-true
 (#1458) y QW-13 (#1466) fusionados. **PR 2c fusionado en `0.27.x` el 2026-11-08 (#1467,**
 rama `fix/joblib-worker-warnings`; sección 15: avisos de los procesos de joblib, con el
-refactor de [`REFACTOR-warnings.md`](REFACTOR-warnings.md)). **Siguiente: la sección 13**
-(guías).
+refactor de [`REFACTOR-warnings.md`](REFACTOR-warnings.md)). Sección 13, puntos 1, 2 y 4
+(guías de búsqueda y de NaN), **fusionados el 2026-11-08 (#1470)**. Queda el punto 3
+(`y_true` en las páginas con backtesting), sin empezar.
 
 **Desbloqueado el 2026-11-03:** QW-12 está hecho con #1437. Antes estaba **bloqueado por
 QW-12** (decisión del 2026-10-29): antes se hace, por separado, la columna con
@@ -802,7 +803,7 @@ dato; el aviso, un problema.
 5. **PR 2c (sección 15):** no añade guías. Ninguna tiene guardados paneles de los procesos
    de joblib (todos son `display_data` del proceso principal).
 
-### 13.1 Hecho: puntos 1, 2 y 4 (2026-11-08, en local)
+### 13.1 Hecho: puntos 1, 2 y 4 (2026-11-08, fusionado con #1470)
 
 Rama `docs/search-guides-n-evaluated` desde `0.27.x`, 3 commits (uno por guía), sin push ni
 PR. Ejecutadas con `PYTHONPATH=<repo>` (el entorno no tiene skforecast instalado; el log
