@@ -179,22 +179,33 @@ def spy_booster_predict(estimator):
         {"n_jobs": -1},
         {"n_jobs": None},
         {"num_threads": 3},
+        {"nthread": 3},
     ],
     ids=lambda estimator_kwargs: f"estimator_kwargs: {estimator_kwargs}",
 )
+@pytest.mark.parametrize(
+    "booster_params",
+    [None, {}, {"num_threads": 1000}],
+    ids=["fitted", "deepcopy_lightgbm_lt_4_7", "fitted_on_another_machine"],
+)
 def test_build_predict_function_lightgbm_num_threads_equals_estimator_predict(
-    estimator_kwargs, regression_data, monkeypatch
+    estimator_kwargs, booster_params, regression_data, monkeypatch
 ):
     """
     Test that the predict function of an LGBMRegressor passes to the booster
     the same `num_threads` as `estimator.predict` (from `n_jobs` or from
     `num_threads`) when `OMP_NUM_THREADS` is not set. Without it, the booster
-    predicts with all the OpenMP threads of the machine.
+    predicts with all the OpenMP threads of the machine. The threads do not
+    depend on `booster_.params`, which a deepcopy of the booster empties with
+    lightgbm < 4.7 (backtesting with `initial_train_size=None` raised a
+    `KeyError`), and which keep the threads of the machine where it was fitted.
     """
     monkeypatch.delenv("OMP_NUM_THREADS", raising=False)
     X, y = regression_data
     estimator = LGBMRegressor(n_estimators=10, verbose=-1, **estimator_kwargs)
     estimator.fit(X, y)
+    if booster_params is not None:
+        estimator.booster_.params = booster_params
 
     calls_kwargs = spy_booster_predict(estimator)
     predict_fn = _build_predict_function(estimator)

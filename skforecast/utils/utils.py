@@ -4101,8 +4101,8 @@ def _build_predict_function(
     for the following estimator types:
 
     - Linear models of scikit-learn inheriting from `LinearModel` (`np.dot`)
-    - `LGBMRegressor` (`booster_.predict`, with the `num_threads` of the fit,
-    as `LGBMRegressor.predict`, capped at `OMP_NUM_THREADS` when it is set)
+    - `LGBMRegressor` (`booster_.predict`, with the same `num_threads` as
+    `LGBMRegressor.predict`, capped at `OMP_NUM_THREADS` when it is set)
     - `XGBRegressor` (`get_booster().inplace_predict`, with the same
     `iteration_range` and `missing` as `XGBRegressor.predict`). The 'gblinear'
     booster does not support `inplace_predict` and uses `estimator.predict`.
@@ -4203,10 +4203,21 @@ def _build_predict_function(
         booster = estimator.booster_
         # NOTE: Without `num_threads`, the booster predicts with all the OpenMP
         # threads of the machine, which makes the single-row predictions of the
-        # recursive loop much slower. It gets the threads of the fit, as
-        # `LGBMRegressor.predict` does, capped at `OMP_NUM_THREADS` (set to the
-        # share of each worker by joblib), which an explicit value overrides.
-        num_threads = booster.params["num_threads"]
+        # recursive loop much slower. The threads are computed as in
+        # `LGBMRegressor.predict`, from `num_threads` (stored as an attribute
+        # when given) or `n_jobs`, not from `booster_.params`, which lightgbm
+        # < 4.7 empties in a deepcopy and which keep the threads of the machine
+        # where the model was fitted. `getattr` is used because `get_params` is
+        # slower than a single-row prediction (Direct builds one per step).
+        # They are capped at `OMP_NUM_THREADS` (set to the share of each worker
+        # by joblib), which an explicit value overrides.
+        n_jobs = getattr(estimator, "num_threads", estimator.n_jobs)
+        if n_jobs is None:
+            num_threads = joblib.cpu_count(only_physical_cores=True)
+        elif n_jobs < 0:
+            num_threads = max(joblib.cpu_count() + 1 + n_jobs, 1)
+        else:
+            num_threads = n_jobs
         omp_num_threads = os.environ.get("OMP_NUM_THREADS", "")
         if omp_num_threads.isdigit() and int(omp_num_threads) > 0:
             num_threads = min(num_threads, int(omp_num_threads))
