@@ -322,3 +322,60 @@ Conclusiones:
 - CatBoost ignora el límite (sobresuscripción 3×4) y aun así gana un 12 %: su
   OpenMP no se degrada como el de LightGBM.
 - Siguiente: repetir HGB/XGB/CatBoost con datos medianos (los hilos rinden más).
+
+**Nota de método**: a las 13:42 el usuario fusionó `0.27.x` en la rama (commit 0604fa4:
+avisos de los workers re-emitidos en el principal con `_run_recording_worker_warnings`,
+matriz C-contigua para lineales). Las medidas anteriores usan el código de 16a519a. Se
+repitieron H1-RF (frío: 1.70 s con 1 frente a 3.47 s con 'auto') y H5 (10 folds: 2.38
+frente a 2.81; 20 folds: 4.57 frente a 3.64): mismas conclusiones. Todo lo que sigue usa
+el código fusionado.
+
+### H6 (cont.). Boosting con datos medianos (n=10 000, 48 lags, 10 folds, refit, frío)
+
+| Estimador | n_jobs=1 | 'auto' (=3) | est. work |
+|---|---|---|---|
+| XGB | **3.45 (3.19)** | 4.31 (4.04) | 3.09 |
+| HGB | 4.56 (4.39) | **3.76 (3.43)** | 4.14 |
+| CatBoost (300 it.) | 11.00 (10.75) | **9.97 (9.70)** | 10.04 |
+
+XGB pierde también aquí (−25 %); HGB gana menos que con datos pequeños (1.21× frente a
+1.76×); CatBoost gana poco (1.10×) pese a la sobresuscripción.
+
+### Hallazgo: un backtesting paralelo con XGBoost ralentiza 2.5× los ajustes posteriores
+
+Observación (caliente, n=2000, 20 folds, refit): `n_jobs=1` tardaba 8.35 s en un proceso
+que ya había ejecutado un backtesting paralelo, frente a 3.13 s en frío. Reproducido en
+un proceso: `[1: 3.05, 1: 3.16, 3: 3.75, 1: 7.99, 1: 7.82, 3: 2.78, 1: 7.43]`.
+
+Diagnóstico (`probe_xgb_after_parallel.py` y pruebas en línea):
+- Solo lo dispara un backtesting **paralelo de skforecast con XGBoost**: un `Parallel`
+  trivial, ajustes de XGB en workers o un backtesting paralelo con Ridge no.
+- Los workers ociosos no consumen CPU; no hay avisos re-emitidos; los filtros de avisos
+  y `threadpool_info()` del principal no cambian (4 hilos OpenMP).
+- cProfile: el tiempo extra está todo en `xgboost.core.Booster.update` (nativo): 1.57 s →
+  3.45 s. Cada hilo OpenMP consume la misma CPU pero tarda 2.5× más en reloj (duerme en
+  las barreras).
+- El proceso pasa de 13 a 16 hilos del sistema (con Ridge se queda en 13): aparece un
+  segundo equipo de libgomp.
+- Reproducción mínima sin skforecast: `pickle.dumps(xgb_model)` desde un hilo **que sigue
+  vivo** → 11 → 15 hilos y ajustes de XGB en el principal 162 → 417 ms; al terminar ese
+  hilo, vuelven a 204 ms. Igual con `inplace_predict` desde ese hilo. Con un hilo que
+  termina no pasa (libgomp destruye su equipo).
+
+Mecanismo: el `QueueFeederThread` de loky serializa las tareas en el proceso principal.
+Al serializar el forecaster ajustado, XGBoost (`save_raw`) abre una región OpenMP en ese
+hilo y libgomp le crea un equipo propio de 4 hilos. Con 8 hilos gestionados para 4 CPU,
+libgomp pasa a la espera reducida (throttled spin) y los hilos del equipo principal se
+duermen en cada barrera. El hilo vive lo que el ejecutor de loky (hasta 300 s
+inactivo), así que **cada ajuste secuencial de XGB en ese proceso** (otro backtesting
+con `n_jobs=1`, el ajuste inicial de cada candidato de una búsqueda, el reajuste final
+con `return_best=True`) va ~2.5× más lento. Las medidas en frío no lo ven. Corrige la
+comparación en caliente de XGB: 'auto' caliente 2.77 s frente a `n_jobs=1` limpio
+3.13 s, solo un 12 % de ganancia.
+
+Conclusiones:
+- Con XGBoost, paralelizar folds no compensa: −25 % en frío (datos pequeños y medianos),
+  +12 % en caliente, y además contamina el proceso. Tratarlo como LightGBM
+  (`n_jobs != 1` → 1) es la decisión segura.
+- Enviar a los folds con refit un forecaster **sin ajustar** (H2) evitaría serializar el
+  booster en el hilo de loky: H2 gana una justificación más allá de la IPC.

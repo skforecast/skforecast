@@ -70,3 +70,15 @@ load before/after: 2.67 1.31 0.54 / 3.34 1.63 0.67
 
 Same result in every config: yes
 
+### h1_grid_refit_false (cold, 4 CPU, 5 reps) RF, re-run after merging 0.27.x (2926b38)
+
+spec: `{"kind": "grid", "est": "rf", "n": 2000, "steps": 24, "n_folds": 20, "refit": false, "lags": 24, "param_grid": {"n_estimators": [20, 50], "max_depth": [5, null]}}`  
+load before/after: 0.52 3.72 3.76 / 1.06 3.45 3.67
+
+| n_jobs | used | median s | min s | max s | peak MB | est. work s | fp |
+|---|---|---|---|---|---|---|---|
+| 1 | 1 | 1.700 | 1.507 | 1.849 | nan | - | f555806b88 |
+| auto | 3 | 3.474 | 3.333 | 3.595 | nan | - | f555806b88 |
+
+Same result in every config: yes
+

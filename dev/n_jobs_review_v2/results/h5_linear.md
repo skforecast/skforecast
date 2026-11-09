@@ -49,3 +49,27 @@ load before/after: 1.68 1.75 1.35 / 2.99 2.10 1.49
 
 Same result in every config: yes
 
+### h5_linear (cold, 4 CPU, 5 reps) pipe_ridge 50k x 168 lags, 10 folds, re-run after merge (2926b38)
+
+spec: `{"kind": "backtest", "est": "pipe_ridge", "n": 50000, "steps": 24, "n_folds": 10, "refit": true, "lags": 168, "n_exog": 5}`  
+load before/after: 0.97 3.40 3.65 / 1.46 3.23 3.58
+
+| n_jobs | used | median s | min s | max s | peak MB | est. work s | fp |
+|---|---|---|---|---|---|---|---|
+| 1 | 1 | 2.384 | 2.178 | 2.668 | nan | - | 770d1a29a2 |
+| 3 | 3 | 2.811 | 2.785 | 3.288 | nan | - | 770d1a29a2 |
+
+Same result in every config: yes
+
+### h5_linear (cold, 4 CPU, 5 reps) pipe_ridge 50k x 168 lags, 20 folds, re-run after merge (2926b38)
+
+spec: `{"kind": "backtest", "est": "pipe_ridge", "n": 50000, "steps": 24, "n_folds": 20, "refit": true, "lags": 168, "n_exog": 5}`  
+load before/after: 1.46 3.23 3.58 / 2.24 3.12 3.52
+
+| n_jobs | used | median s | min s | max s | peak MB | est. work s | fp |
+|---|---|---|---|---|---|---|---|
+| 1 | 1 | 4.573 | 4.360 | 4.819 | nan | - | 24bad345cf |
+| 3 | 3 | 3.636 | 3.416 | 3.964 | nan | - | 24bad345cf |
+
+Same result in every config: yes
+
