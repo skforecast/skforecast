@@ -56,7 +56,7 @@ The main changes in this release are:
 
     + <code>[mean_absolute_scaled_error]</code> and <code>[root_mean_squared_scaled_error]</code> in backtesting and hyperparameter search: their values change, and so may the model selected with `return_best` when one of them ranks the candidates. Custom metrics with a `y_train` argument receive the series before the first fold.
 
-    + Hyperparameter searches with <code>[OneStepAheadFold]</code> and a forecaster with `differentiation`: the metrics are lower, and the model selected with `return_best` may change.
+    + Hyperparameter searches with <code>[OneStepAheadFold]</code> and a forecaster with `differentiation`: the metrics change (usually they are lower), and so may the model selected with `return_best`.
 
     And some code needs to be updated:
 

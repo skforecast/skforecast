@@ -328,7 +328,7 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
         """
         Reverts the differentiation. The input array `X` is assumed to be a
         differentiated time series of order n that starts right after the
-        the time series used to fit the transformer.
+        time series used to fit the transformer.
 
         Each value is added to the previous reverted value, as when predicting
         several steps ahead (each prediction is built on the previous one).

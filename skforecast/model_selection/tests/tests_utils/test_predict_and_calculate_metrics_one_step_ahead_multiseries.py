@@ -1208,3 +1208,63 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_when_index_is_
     pd.testing.assert_index_equal(predictions.index, index[initial_train_size:])
     assert predictions.notna().all(axis=None)
     assert metrics.notna().all(axis=None)
+
+
+@pytest.mark.parametrize("differentiation", [1, 2], ids=lambda d: f"differentiation: {d}")
+def test_predict_and_calculate_metrics_one_step_ahead_multiseries_differentiation_missing_values_in_test(differentiation):
+    """
+    Test that, with differentiation and missing values in the test set of a
+    series, its true values are the observed ones and each prediction is
+    built from the previous observed values plus the predicted difference
+    (`y[t-1] + d` with order 1, `2 * y[t-1] - y[t-2] + d` with order 2). The
+    rows with a missing target are left out of the test set, so the true
+    values cannot be rebuilt with the cumulative sum of the differences. (A
+    backtesting cannot be the reference: it raises an error when the last
+    value before a date is missing.)
+    """
+    series = {k: v.copy() for k, v in series_dict_dt_item_sales.items()}
+    series['item_1'].iloc[[950, 951, 1000]] = np.nan
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = HistGradientBoostingRegressor(max_iter=20, random_state=123),
+                     lags               = 7,
+                     encoding           = 'ordinal',
+                     differentiation    = differentiation,
+                     dropna_from_series = True
+                 )
+    received = {}
+
+    def capture(y_true, y_pred):
+        received['y_true'] = np.asarray(y_true)
+        received['y_pred'] = np.asarray(y_pred)
+        return 0.0
+
+    (
+        X_train, y_train, X_test, y_test,
+        X_train_encoding, X_test_encoding, sample_weight, fit_kwargs
+    ) = forecaster._train_test_split_one_step_ahead(
+            series=series, exog=None, initial_train_size=927
+        )
+    _predict_and_calculate_metrics_one_step_ahead_multiseries(
+        forecaster=forecaster, series=series,
+        X_train=X_train, y_train=y_train, X_test=X_test, y_test=y_test,
+        X_train_encoding=X_train_encoding, X_test_encoding=X_test_encoding,
+        levels=['item_1'], metrics=[capture], add_aggregated_metric=False,
+        sample_weight=sample_weight, fit_kwargs=fit_kwargs, return_predictions=False
+    )
+
+    is_item_1 = (np.asarray(X_test_encoding) == 'item_1')
+    test_index = y_test.index[is_item_1]
+    diff_pred = forecaster.estimator.predict(X_test[is_item_1])
+    y_item_1 = series['item_1']
+    previous_1 = y_item_1.shift(1).loc[test_index].to_numpy()
+    previous_2 = y_item_1.shift(2).loc[test_index].to_numpy()
+    if differentiation == 1:
+        expected_y_pred = previous_1 + diff_pred
+    else:
+        expected_y_pred = 2 * previous_1 - previous_2 + diff_pred
+
+    assert len(test_index) < len(y_item_1) - 927
+    np.testing.assert_array_almost_equal(
+        received['y_true'], y_item_1.loc[test_index].to_numpy()
+    )
+    np.testing.assert_array_almost_equal(received['y_pred'], expected_y_pred)

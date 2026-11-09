@@ -1080,6 +1080,41 @@ def _cause_level_not_evaluated(
     ), True
 
 
+def _get_test_positions(
+    y: pd.Series,
+    test_index: pd.Index
+) -> np.ndarray:
+    """
+    Positions in `y` of the dates (or index values) of the one-step-ahead test
+    set. The true values with differentiation, and the forecast origins of the
+    scaled metrics, are read from `y` at these positions.
+
+    Parameters
+    ----------
+    y : pandas Series
+        Time series, in its original scale.
+    test_index : pandas Index
+        Index of the rows of the test set.
+
+    Returns
+    -------
+    test_positions : numpy ndarray
+        Position in `y` of each row of the test set.
+
+    """
+
+    test_positions = y.index.get_indexer(test_index)
+    if (test_positions < 0).any():
+        n_missing = int((test_positions < 0).sum())
+        raise ValueError(
+            f"{n_missing} dates of the test set are not in the index of the "
+            f"series '{y.name}', so its true values cannot be read from it. "
+            f"First missing date: {test_index[test_positions < 0][0]}."
+        )
+
+    return test_positions
+
+
 def _revert_differentiation_one_step_ahead(
     y_observed: np.ndarray,
     diff_true: np.ndarray,
@@ -1233,7 +1268,7 @@ def _calculate_metrics_one_step_ahead(
 
     # NOTE: Each prediction is made one step ahead with the observed values,
     # so its forecast origin is its own position in `y`.
-    test_positions = y.index.get_indexer(test_index)
+    test_positions = _get_test_positions(y=y, test_index=test_index)
 
     if forecaster.differentiation is not None:
         y_true, y_pred = _revert_differentiation_one_step_ahead(
@@ -2526,7 +2561,11 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
     forecaster : object
         Forecaster model.
     series : pandas DataFrame, dict
-        Series data used to train and test the forecaster.
+        Series data used to train and test the forecaster, in their original
+        scale. With `differentiation`, the values of each level at the test
+        dates are the true values, from which the predictions are reverted one
+        step ahead (see `_revert_differentiation_one_step_ahead`). The metrics
+        with the argument `y_train` also use its values.
     X_train : pandas DataFrame
         Training matrix.
     y_train : pandas Series, dict
@@ -2664,7 +2703,7 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         # NOTE: Each prediction is made one step ahead with the observed
         # values, so its forecast origin is its own position in the series.
         y_level = series[level]
-        test_positions = y_level.index.get_indexer(test_index)
+        test_positions = _get_test_positions(y=y_level, test_index=test_index)
 
         differentiator = (
             forecaster.differentiator_[level]
@@ -2791,9 +2830,10 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
             if isinstance(y_level, pd.DataFrame):
                 y_level = y_level.iloc[:, 0]
             series_per_level[level] = y_level
-            test_positions_per_level[level] = y_level.index.get_indexer(
-                predictions_per_level[level].index
-            )
+            test_positions_per_level[level] = _get_test_positions(
+                                                  y          = y_level,
+                                                  test_index = predictions_per_level[level].index
+                                              )
 
     for level, predictions_level in predictions_per_level.items():
         differentiator = (
