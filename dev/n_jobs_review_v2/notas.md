@@ -469,3 +469,58 @@ forecaster ajustado. Para evitar la contaminación habría que predecir el fold 
 principal además de enviar copias sin ajustar. La parte RF del prototipo superó el
 tiempo límite (100 árboles × 13 ejecuciones, demasiado para un experimento corto): no
 se repite porque el ahorro de IPC con refit ya está acotado (≤ 5 %).
+
+---
+
+## Conclusiones de la fase 2 (escritas antes de leer la revisión previa)
+
+Modelo explícito para otras máquinas (estimación, no medida): con `W` el trabajo
+secuencial, `S` el arranque en frío (aquí 1.3 s en Linux) y `e` la eficiencia por
+worker, `T_par ≈ S + W / (n·e)`. Ajuste aquí: RF `e ≈ 0.78` (7.35 s → 4.44 s con 3),
+lineal grande `e ≈ 0.6-0.7`. Equilibrio `W* = S / (1 − 1/(n·e))`: con 3 workers
+`W* ≈ 2.3 s` (medido 2.4 s); con 15 workers y el mismo `S`, `W* ≈ 1.4 s`. Con un `S` de
+Windows de varios segundos, `W*` sube en proporción. En caliente `S ≈ 0.01 s`.
+
+Veredicto: la estrategia es razonable en el backtesting suelto (el umbral de trabajo
+está bien calibrado aquí y protege de lo peor) pero tiene cuatro huecos que hacen a
+`'auto'` mucho peor que `n_jobs=1` en casos frecuentes:
+
+1. **Búsquedas con `refit=False`**: `'auto'` paraleliza folds que solo predicen
+   (2-3.8× más lento en frío con RF/XGB/CatBoost; HGB es la excepción en caliente).
+2. **Estimadores con hilos propios no detectados**: LightGBM dentro de un
+   `TransformedTargetRegressor` (≥ 44× más lento: >155 s frente a 3.5 s); XGBoost
+   (−25 % a −50 % en backtesting, búsqueda y Direct, y además ralentiza 2.5× los ajustes
+   de XGB posteriores del proceso por un segundo equipo de libgomp).
+3. **Direct sin umbral**: un Direct barato paga +1.3 s (8×).
+4. **`cpu_count() - 1`**: en 2 CPU `'auto'` nunca paraleliza (deja 1.29×); en 4 CPU
+   deja un 12 %.
+
+Propuestas, por impacto/riesgo:
+
+- **P1** (alto, riesgo bajo): `select_n_jobs_backtesting` devuelve 1 si `refit` es
+  `False` (así lo hereda la búsqueda; el backtesting suelto ya lo hacía con el umbral).
+- **P2** (alto, riesgo bajo): ampliar la detección de hilos internos: desenvolver
+  `TransformedTargetRegressor` (y meta-estimadores con `regressor`/`estimator`), y tratar
+  `XGBRegressor`/`XGBClassifier` con `n_jobs != 1` como LightGBM, en el backtesting y en
+  `select_n_jobs_fit_forecaster`. Guardarraíl: aviso cuando el usuario pide `n_jobs > 1`
+  explícito con un LightGBM de hilos por defecto. CatBoost y HGB se quedan en paralelo
+  (ganan 1.1× y 1.2-1.8×).
+- **P3** (medio, riesgo bajo-medio): `cpu_count()` en lugar de `cpu_count() - 1` cuando
+  el umbral ya ha decidido paralelizar.
+- **P4** (medio, coste medio): umbral de trabajo para Direct (ajustar y cronometrar el
+  primer paso en el principal) y para stats solo cuando el ajuste inicial es
+  representativo (`freeze_params=False` o sin selección automática).
+- **P5** (medio-bajo): lineales: umbral propio (≈ 2× el general) en lugar de "siempre
+  1"; gana 1.3-2.1× en backtests lineales grandes a cambio de ~3.4× de memoria.
+- **P6** (alto, coste alto): búsquedas con candidatos en paralelo (1.7-2.0× frente a
+  `n_jobs=1`, ~3× frente al `'auto'` actual con `refit=False`). Proyecto aparte.
+- Descartadas o menores: umbral consciente de workers calientes (≤ 1.5 s por llamada,
+  depende de estado privado de loky), limitar hilos de HGB al predecir (−4 a −8 %),
+  enviar el forecaster sin ajustar (≤ 5 %; solo útil contra la contaminación de XGB si
+  además el fold 0 se predice en el principal), intervalos sin refit (`'auto'` acierta),
+  memoria de multiseries (no crece con los folds).
+
+Correctitud: todas las configuraciones dieron predicciones y métricas iguales a
+`n_jobs=1` salvo ruido de coma flotante (≤ 4e-11 en lineales con `refit=True`). Errores
+de comportamiento: E4 (meta-estimadores no desenvueltos, con la patología de LightGBM),
+E1 (`n_jobs=-2` → todos los núcleos), E2 (Direct resuelve `'auto'` en `__init__`).
