@@ -882,6 +882,49 @@ o `y_test` como valor real en `conformal-prediction` (27, 28, 32, 34), `probabil
 `time-series-differentiation` (celda 29) reconstruye el fold a mano (`backtesting_fold_id`)
 cuando las predicciones ya traen `fold` (aprobado apuntarlo).
 
+**Fase 3: inventario de las otras 30 páginas con `backtesting_*(`** (2026-11-09, pendiente
+de aprobación del usuario)
+
+- **Sí** (valor real buscado aparte para residuos o calibración, o la figura base de la guía
+  de backtesting):
+  - `plotting`: celdas 6 y 7, residuos y `plot_residuals` con `data_test['y']`.
+  - `probabilistic-forecasting-conformal-calibration`: celda 29, `calibrator.fit(y_true=data_cal['users'])`.
+  - `backtesting`: celda 16, `predictions[['y_true', 'pred']].plot(ax=ax)` en lugar de
+    dibujar `data.loc[end_train:, 'y']` aparte. Mismo tramo; la leyenda pasa de `y` a `y_true`.
+  - `time-series-differentiation`: celda 29, fuera de `y_true`; `fold` y `step` en lugar
+    de reconstruir el fold y el primer paso a mano.
+- **Dudoso** (test y predicción dibujados por separado, con la etiqueta por defecto en
+  `pred`): `forecasting-arar` 33, `forecasting-ets` 34, `forecasting-sarimax-arima` 42 y
+  `forecasting-statistical-models` 28. `predictions[['y_true', 'pred']].plot(ax=ax)` ahorra
+  una línea, pero la leyenda pasa de `test` a `y_true`.
+- **No**:
+  - test y predicciones con etiquetas propias, misma longitud, sin ganancia:
+    `cyclical-features` 22, `non-negative` 9/30/35, `forecasting-baseline` 21,
+    `foundation-forecasting-models` 33, `handling-missing-values` 20,
+    `weighted-time-series` 27, `quantile-regression` 20 y 22 (las predicciones se montan
+    a mano desde dos backtesting; página lenta);
+  - escala logarítmica fuera del forecaster: `non-negative` 16 y 17 (el `y_true` del
+    backtesting está en log; el ejemplo es justo calcular el error en la escala original);
+  - contexto de entrenamiento o la serie entera en la figura: `forecasting-with-delayed-historical-data`
+    14, `quick-start` 14, `backtesting` 49 (dibuja también las exógenas) y 63,
+    `foundation-forecasting-with-heterogeneous-series` 17,
+    `multi-series-with-different-length` 32, `migrate-from-prophet` 29 (excluida, necesita
+    prophet);
+  - `calculate_coverage`, `winkler_score` y `plot_prediction_intervals` con `data_test`
+    (misma longitud; `plot_prediction_intervals` ya hace `y_true.loc[predictions.index]`):
+    `conformal-calibration` 22, 33, 43, 50 (46 pasa `data_cal[series]` ancho, como pide el
+    calibrador), más lo aplazado de la fase 1: `bootstrapped-residuals`
+    (20, 33, 51, 55, 57, 64), `conformal-prediction` (27, 28, 32, 34),
+    `probabilistic-forecasting-metrics` (19, 25 a 41; las métricas a mano son el objeto de
+    la página), `global-models` (20, 31, 35), `rnn-lstm` (97, 103) y `comparing-forecasting-models`
+    (`plot_predictions`);
+  - sin uso de los valores reales: `forecasting-time-series-with-missing-values`,
+    `parallelization`, `parameters-search-backtesting-vs-one-step-ahead`,
+    `dependent-multi-series-multivariate`, `explainability`, `feature-selection`,
+    `hyperparameter-tuning-and-lags-selection`, `metrics`, `migration-guide`,
+    `stacking-ensemble`, `skforecast-in-GPU`; `forecasting-statistical-models` 34 y
+    `forecasting-sarimax-arima` 47 vienen de `predict`.
+
 **Bug aparte del MASE (2026-11-09):** el backtesting y las búsquedas escalan MASE/RMSSE
 con `y_train` sin las primeras `window_size` observaciones (`_validation.py`, bloque de
 `_any_metric_needs_y_train`), así que el denominador cambia con el modelo. En h2o (168
