@@ -867,15 +867,20 @@ backtesting, `y_true` explicado una sola vez (en la guía de clasificación, con
 | `probabilistic-forecasting-bootstrapped-residuals` | Hecha. 3 de 3 (celdas 27, 30, 43). Residuos, intervalos, coberturas y figuras idénticos. | 541c8efdb |
 | `forecasting-with-deep-learning-rnn-lstm` | Hecha **sin ejecutar** (decisión del usuario). Celda 100 con `y_true`; celda 102 toma `coverage` e `interval_width` de `metric` (11 líneas a 1); quitado el import de `calculate_coverage`. Comprobado aparte que `metric` da los mismos valores. **Pendiente:** la salida guardada de la celda 102 aún muestra `mean_interval_width`; al volver a ejecutar pasa a `interval_width` (mismos valores). | 915ac39ea |
 | `independent-multi-time-series-forecasting` | Sin cambios: los 2 casos son el corte train/test (celda 13), no el backtesting. | |
-| `probabilistic-forecasting-conformal-prediction` | Pendiente (grupo 3). | |
-| `probabilistic-forecasting-metrics` | Pendiente (grupo 3). | |
-| `time-series-differentiation` | Pendiente (grupo 3). | |
-| `probabilistic-forecasting-global-models` | Pendiente (grupo 3). | |
+| `probabilistic-forecasting-conformal-prediction` | Hecha. 2 de 2 (celdas 18, 21). Residuos, intervalos y figuras idénticos. | 98bbac252 |
+| `probabilistic-forecasting-metrics` | Hecha. 2 de 2 (celdas 20, 22). Residuos, métricas de intervalo y figuras idénticos. El aviso `MatplotlibDeprecationWarning` de la celda 19 ya estaba guardado. | 3aabef15c |
+| `time-series-differentiation` | Sin cambios: celda 29 busca el valor *anterior* (`data.shift(1)`) sobre la serie diferenciada; celda 33 viene de `predict_bootstrapping`. | |
+| `probabilistic-forecasting-global-models` | Aprobadas celda 21 (residuos por nivel con `y_true`; antes cada residuo salía dos veces por las fechas repetidas del formato largo) y celda 23 (`y_true` de `predictions_val` agrupado por nivel, como `y_pred`). Ejecutada: bins e intervalos idénticos. **Sin commit, pendiente de decisión:** la figura de la celda 21 cambia de eje (índice horario sin repetir: pandas usa su conversor, como la celda 20) y salen avisos `MatplotlibDeprecationWarning` en las celdas 20 (también con el código de `HEAD` en este entorno) y 21. | |
 
 **Para el inventario de la fase 3** (resto de páginas con `backtesting_*(`), además de las
 38 páginas: los usos de `data_test` como valor real en `bootstrapped-residuals` (celdas 20,
 33, 51, 55, 57, 64; aprobado incluirlos) y `plot_prediction_intervals(y_true=<test>)` en
-`comparing-forecasting-models` (`plot_predictions`) y `rnn-lstm` (celdas 97, 103).
+`comparing-forecasting-models` (`plot_predictions`) y `rnn-lstm` (celdas 97, 103); `data_test`
+o `y_test` como valor real en `conformal-prediction` (27, 28, 32, 34), `probabilistic-forecasting-metrics`
+(19, 25, 27, 30, 36, 39, 41; calcular las métricas a mano es el objeto de esa página) y
+`global-models` (20, `plot_intervals_and_coverage` en 31 y 35). Fuera de `y_true`:
+`time-series-differentiation` (celda 29) reconstruye el fold a mano (`backtesting_fold_id`)
+cuando las predicciones ya traen `fold` (aprobado apuntarlo).
 
 **Bug aparte del MASE (2026-11-09):** el backtesting y las búsquedas escalan MASE/RMSSE
 con `y_train` sin las primeras `window_size` observaciones (`_validation.py`, bloque de
