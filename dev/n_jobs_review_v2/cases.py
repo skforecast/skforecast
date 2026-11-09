@@ -69,6 +69,19 @@ def make_estimator(name, params=None):
     if name == "lgbm":
         from lightgbm import LGBMRegressor
         return LGBMRegressor(**{"random_state": 0, "verbose": -1, **params})
+    if name == "ttr_lgbm":
+        from lightgbm import LGBMRegressor
+        from sklearn.compose import TransformedTargetRegressor
+        return TransformedTargetRegressor(
+            regressor=LGBMRegressor(**{"random_state": 0, "verbose": -1, **params}),
+            func=np.log1p, inverse_func=np.expm1,
+        )
+    if name == "ttr_ridge":
+        from sklearn.compose import TransformedTargetRegressor
+        from sklearn.linear_model import Ridge
+        return TransformedTargetRegressor(
+            regressor=Ridge(**params), func=np.log1p, inverse_func=np.expm1
+        )
     if name == "xgb":
         from xgboost import XGBRegressor
         return XGBRegressor(**{"random_state": 0, **params})
@@ -98,7 +111,7 @@ def fingerprint(obj):
     h = hashlib.md5()
     for df in obj:
         num = df.select_dtypes("number").to_numpy(dtype=float)
-        h.update(np.round(np.nan_to_num(num, nan=-999.0), 9).tobytes())
+        h.update(np.round(np.nan_to_num(num, nan=-999.0), 7).tobytes())
     return h.hexdigest()[:10]
 
 

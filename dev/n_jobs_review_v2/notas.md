@@ -258,3 +258,67 @@ Conclusión: H3 confirmada. Con 4 CPU, 4 workers son un 12 % más rápidos que 3
 proceso principal apenas trabaja durante el `Parallel`). Con 2 CPU `'auto'` nunca
 paraleliza y deja un 1.29× sin aprovechar. En una máquina con 2 vCPU que sean un
 núcleo físico con HT (Colab gratis) la ganancia sería menor: no medible aquí.
+
+### H5. Modelos lineales (regla estática "lineal → 1")
+
+Caso: `backtesting_forecaster`, `refit=True`, `steps=24`, frío, 4 CPU.
+
+| Estimador, datos | folds | n_jobs=1 | n_jobs=3 | 'auto' (=1) | est. work | pico memoria 1 / 3 |
+|---|---|---|---|---|---|---|
+| Ridge, n=20 000, 48 lags | 50 | 0.62 | 1.82 | 0.55 | 1.06 | — |
+| Pipeline(Scaler, Ridge), n=50 000, 168 lags, 5 exog | 10 | 2.33 (2.21) | 2.75 (2.64) | 2.27 | 2.23 | — |
+| ídem | 20 | 4.80 (4.30) | 4.08 (3.99) | — | — | — |
+| ídem (1 rep) | 100 | 22.7 | 10.7 | 22.1 | 26.1 | 407 MB / 1486 MB |
+
+Las predicciones en paralelo difieren de las secuenciales en ~1e-11 (Pipeline+Ridge,
+Ridge) y ~1e-13 (LinearRegression): ruido de coma flotante, no un error. La huella pasa
+a redondear a 1e-7.
+
+Conclusión: la regla estática acierta en los tamaños típicos (Ridge con 20 000 filas
+y 50 folds tarda 0.6 s), pero deja 2.1× sin aprovechar en backtests lineales grandes
+(22 s → 10.7 s). En lineales el equilibrio está más alto que en RF (~3-3.5 s
+secuenciales reales frente a ~2.4 s): 3 workers solo rinden ~1.9× (memoria + BLAS de 1
+hilo en los workers frente a 4 en el principal). Y para ajustes de milisegundos la carga
+estimada sobreestima (1.06 s estimados frente a 0.55 s reales: el ajuste inicial lleva
+costes de primera llamada). Sustituir la regla por el umbral actual perdería ~0.4 s
+(18 %) cerca del umbral; con un umbral doble para lineales no.
+
+### H6. Paralelismo anidado (hilos de los estimadores dentro de los workers)
+
+Hilos efectivos (`probe_threads.py` y medida de tiempo de ajuste con 20 000×30, 200
+árboles; un worker de un `Parallel(n_jobs=3)` en 4 CPU):
+
+| Estimador (parámetro por defecto) | principal | worker de 3 | ¿respeta el límite de loky? |
+|---|---|---|---|
+| HGB (OpenMP) | 4 | 1 | sí |
+| XGB (`n_jobs=None`) | 4 (0.74 s) | 1 (1.58 s ≈ 1.53 s con `n_jobs=1`) | sí |
+| CatBoost (`thread_count=-1`) | 4 (0.66 s) | **4** (0.70 s; 1.50 s con 1 hilo) | **no** |
+| LightGBM (`n_jobs=None` o -1) | 4 | **4** (`num_threads` del booster) | **no** |
+| `n_jobs=-1` anidado (RF) | 4 | **4** (joblib threading anidado) | **no** |
+
+Efecto en un backtesting `refit=True`, n=2000, 24 lags, 20 folds, frío, 4 CPU:
+
+| Estimador | n_jobs=1 | 'auto' | n_jobs=3 | est. work |
+|---|---|---|---|---|
+| HGB | 6.02 (5.59) | **3.42 (3.29)**, elige 3 | — | 5.70 |
+| XGB | **3.13 (3.08)** | 3.94 (3.65), elige 3 | — | 2.90 |
+| CatBoost (300 it.) | 9.31 (8.79) | **8.23 (7.81)**, elige 3 | — | 9.44 |
+| LGBM, 4 folds (1 rep) | 0.55 | — | **52.8** | — |
+| LGBM, 20 folds | — | — | **> 166 s (timeout)** | — |
+| `TransformedTargetRegressor(LGBM)`, 20 folds (1 rep) | 2.10 | 1.92, elige 1 (umbral) | — | 1.59 |
+| `TransformedTargetRegressor(LGBM 400 árboles)`, 10 folds | 3.53 (3.45) | **> 155 s (timeout)**, elige 3 | — | — |
+
+Conclusiones:
+- **LightGBM con sus hilos por defecto dentro de varios workers es catastrófico en este
+  Linux (~100× más lento)**: 3 procesos × 4 hilos OpenMP en 4 CPU. `'auto'` lo evita
+  si ve el `LGBMRegressor` (directo o último paso de un `Pipeline`), pero **no** si va
+  envuelto en un `TransformedTargetRegressor` (u otro meta-estimador): ahí `'auto'`
+  supera el umbral y el backtesting pasa de 3.5 s a más de 155 s. Un usuario que pase
+  `n_jobs=-1` con un `LGBMRegressor()` por defecto cae en lo mismo sin aviso.
+- XGBoost respeta el límite de loky, pero con 1 hilo por worker los 3 procesos solo
+  sustituyen a los 4 hilos del secuencial: `'auto'` pierde un 26 % con datos pequeños.
+- HGB gana mucho con procesos (1.76×): su paralelismo de hilos es poco eficiente con
+  datos pequeños y predecir fila a fila con 4 hilos es lento.
+- CatBoost ignora el límite (sobresuscripción 3×4) y aun así gana un 12 %: su
+  OpenMP no se degrada como el de LightGBM.
+- Siguiente: repetir HGB/XGB/CatBoost con datos medianos (los hilos rinden más).

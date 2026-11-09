@@ -19,6 +19,7 @@ import csv
 import json
 import os
 import random
+import signal
 import statistics
 import subprocess
 import sys
@@ -45,9 +46,18 @@ def launch(spec, configs, mode, cpus, reps, seed, mem, timeout):
     if mem:
         cmd.append("--mem")
     env = dict(os.environ, PYTHONWARNINGS="ignore")
-    out = subprocess.run(
-        cmd, cwd=HERE, capture_output=True, text=True, timeout=timeout, env=env
+    # NOTE: A new session, so that a timeout kills the loky workers too.
+    proc = subprocess.Popen(
+        cmd, cwd=HERE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        env=env, start_new_session=True,
     )
+    try:
+        stdout, stderr = proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        os.killpg(proc.pid, signal.SIGKILL)
+        proc.communicate()
+        raise
+    out = subprocess.CompletedProcess(cmd, proc.returncode, stdout, stderr)
     rows = []
     for line in out.stdout.splitlines():
         if line.startswith("{"):
