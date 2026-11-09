@@ -17,9 +17,14 @@ from sklearn.linear_model import Lasso, LinearRegression, Ridge
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeRegressor, ExtraTreeRegressor
+from threadpoolctl import threadpool_info
 from lightgbm import LGBMRegressor
 from xgboost import XGBRegressor
-from skforecast.utils.utils import _build_predict_function, _NonFinitePredictorsError
+from skforecast.utils.utils import (
+    _build_predict_function,
+    _get_threadpool_controller,
+    _NonFinitePredictorsError,
+)
 
 
 # Fixtures
@@ -74,7 +79,7 @@ def make_clipped_subclass(base):
         ),
         pytest.param(
             HistGradientBoostingRegressor(max_iter=10, random_state=123),
-            id="HistGradientBoostingRegressor_fallback",
+            id="HistGradientBoostingRegressor",
         ),
         pytest.param(
             make_pipeline(StandardScaler(), Ridge(alpha=1.0)),
@@ -228,6 +233,55 @@ def test_build_predict_function_lightgbm_num_threads_capped_at_OMP_NUM_THREADS(
     predict_fn(X[:1])
 
     assert calls_kwargs[0]["num_threads"] == expected
+
+
+@pytest.mark.parametrize(
+    "pipeline", [False, True], ids=["estimator", "Pipeline"]
+)
+def test_build_predict_function_HistGradientBoostingRegressor_one_openmp_thread_up_to_100_rows(
+    pipeline
+):
+    """
+    Test that the predict function of a HistGradientBoostingRegressor, alone or
+    as the last step of a Pipeline, limits the OpenMP threads to 1 when `X` has
+    up to 100 rows and uses the default threads with more rows. The predictions
+    are the same as `estimator.predict`.
+    """
+    def openmp_num_threads():
+        return {
+            info["num_threads"] for info in threadpool_info()
+            if info["user_api"] == "openmp"
+        }
+
+    default_num_threads = openmp_num_threads()
+    if not default_num_threads:
+        pytest.skip("No OpenMP library is loaded.")
+
+    X, y = make_regression(n_samples=150, n_features=5, noise=0.1, random_state=123)
+    hgb = HistGradientBoostingRegressor(max_iter=10, random_state=123)
+    estimator = make_pipeline(StandardScaler(), hgb) if pipeline else hgb
+    estimator.fit(X, y)
+    expected = estimator.predict(X)
+
+    num_threads = []
+    original_predict = hgb.predict
+
+    def spy_predict(X, **kwargs):
+        num_threads.append(openmp_num_threads())
+        return original_predict(X, **kwargs)
+
+    # NOTE: The controller is created again, so that it knows every OpenMP
+    # library loaded by the previous tests.
+    _get_threadpool_controller.cache_clear()
+    hgb.predict = spy_predict
+    predict_fn = _build_predict_function(estimator)
+    result_100 = predict_fn(X[:100])
+    result_101 = predict_fn(X[:101])
+
+    assert num_threads == [{1}, default_num_threads]
+    assert openmp_num_threads() == default_num_threads
+    np.testing.assert_allclose(result_100, expected[:100])
+    np.testing.assert_allclose(result_101, expected[:101])
 
 
 @pytest.mark.parametrize(

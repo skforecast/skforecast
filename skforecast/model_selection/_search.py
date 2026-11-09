@@ -557,7 +557,8 @@ def _evaluate_grid_hyperparameters(
                         # NOTE: `n_jobs='auto'` is resolved with the rules of
                         # each candidate, without the work threshold of a single
                         # backtesting: the workers are started once and reused by
-                        # the following candidates.
+                        # the following candidates. Without refit, the rules
+                        # give one job: the folds only predict.
                         n_jobs_candidate = (
                             select_n_jobs_backtesting(
                                 forecaster=forecaster_search, refit=cv.refit

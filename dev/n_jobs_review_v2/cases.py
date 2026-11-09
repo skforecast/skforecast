@@ -276,7 +276,8 @@ def build(spec):
                     metric="mean_absolute_error", n_jobs=n_jobs,
                     return_best=False, show_progress=False,
                 )
-            return fingerprint(res[["mean_absolute_error"]])
+            cols = [c for c in res.columns if c.startswith("mean_absolute_error")]
+            return fingerprint(res[cols])
         return run
 
     if kind == "backtest_stats":

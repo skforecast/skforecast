@@ -615,3 +615,253 @@ Documentación frente a código (notebook de la FAQ, `llms-base.txt`, skills):
   `LGBMRegressor()` por defecto con `n_jobs > 1` en skforecast (o dentro de un
   `TransformedTargetRegressor` con `'auto'`) es ~100× más lento en Linux.
 - `llms-base.txt` y los skills solo dan firmas (`n_jobs='auto'`): sin contradicciones.
+
+## Revisión de propuestas con el usuario
+
+### P1: descartada
+
+Pregunta del usuario: nunca se ha visto a un usuario envolver un LightGBM; ¿es un escenario
+real? Comprobación:
+- Issues de GitHub (`lightgbm n_jobs`, `lightgbm slow`, `n_jobs slow`,
+  `TransformedTargetRegressor`): ninguna sobre lentitud con LightGBM y `n_jobs`; ninguna
+  menciona `TransformedTargetRegressor`. Las que combinan LightGBM y `n_jobs` hablan de los
+  hilos del estimador (p. ej. `LGBMRegressor(n_jobs=20)`), no del `n_jobs` de skforecast.
+- `docs/` y `skills/`: ningún `TransformedTargetRegressor` (skforecast tiene
+  `transformer_y`). El único `n_jobs=-1` junto a LightGBM es el del estimador.
+- Para caer en la patología con `LGBMRegressor` suelto hay que cambiar a mano el `'auto'`
+  por defecto, que ya lo protege.
+
+Conclusión: la prioricé por gravedad (100×) sin pesar la frecuencia. Descartada; queda
+una frase en la FAQ (P4).
+
+### P2: búsquedas multiseries con `refit=False` (H13)
+
+Pregunta: la P2 también cambia el valor por defecto de las búsquedas multiseries, donde
+cada fold predice muchas series a la vez y el modelo es más grande. No estaba medido.
+`cases.py:grid_ms` no se había ejecutado nunca y fallaba (la búsqueda multiseries
+devuelve `mean_absolute_error__weighted_average`, `__average` y `__pooling`): corregido.
+
+`grid_search_forecaster_multiseries`, `ForecasterRecursiveMultiSeries`, 4 CPU, 5 reps,
+mismas rejillas que H1 (`results/h13_grid_ms_refit_false.md`):
+
+| Caso | modo | n_jobs=1 med (min) | 'auto' (=3) med (min) | 'auto' / 1 |
+|---|---|---|---|---|
+| LGBM(`n_jobs=1`), 50 series × 1000, 24 pasos, 20 folds, 4 cand. | frío | **3.27 (3.16)** | 4.97 (4.96) | 1.52× más lento |
+| LGBM(`n_jobs=1`), ídem | caliente | **3.29 (3.08)** | 3.78 (3.66) | 1.15× más lento |
+| HGB, ídem | frío | 4.83 (4.67) | 5.02 (4.81) | empate (+4 %) |
+| HGB, ídem | caliente | 4.68 (4.35) | **3.68 (3.57)** | 1.27× más rápido |
+| RF, 20 series × 1000, ídem | frío | **13.05 (12.88)** | 17.34 (16.90) | 1.33× más lento |
+| HGB, 50 series × 3000, 168 pasos, 10 folds, 2 cand. | frío | 5.63 (5.58) | **4.58 (4.30)** | 1.23× más rápido |
+| HGB, ídem | caliente | 5.30 (5.01) | **2.93 (2.90)** | 1.81× más rápido |
+
+Predicciones y métricas idénticas en todas las configuraciones. Piloto de 1 rep con RF y
+50 series: 36.9 s frente a 43.1 s (por eso RF va con 20 series).
+
+Conclusión: el patrón de una sola serie se mantiene en multiseries. `'auto'` pierde con
+RF y LGBM(1) (también en caliente) y gana con HGB salvo en frío con 24 pasos; con 168
+pasos HGB gana 1.2× en frío y 1.8× en caliente. Con la P2 ese caso pasaría a 1. No medido:
+LGBM(1) y RF con 168 pasos en multiseries; cuánto de la ventaja de HGB se debe a predecir
+con 4 hilos en el principal (P5).
+
+### P2 y P5: HGB con 1 hilo solo en la predicción (H14)
+
+Pregunta: ¿cuánto de la ventaja de `'auto'` con HGB en búsquedas con `refit=False` se
+debe a que en el principal HGB predice cada fila con 4 hilos OpenMP (en un worker, 1)?
+Nueva config `1lim` en `run_one.py`: `n_jobs=1` con `threadpool_limits(1, "openmp")`
+alrededor de `_recursive_predict` (Recursive y RecursiveMultiSeries); emula la P5.
+Horizontes de 24 y 72 pasos (el usuario indica que la mayoría de casos predicen 24-72).
+4 CPU, 5 reps, configs intercaladas (`results/h14_hgb_predict_1thread.md`):
+
+| Búsqueda HGB, `refit=False`, 4 candidatos | modo | n_jobs=1 | `1lim` (P5) | 'auto' hoy |
+|---|---|---|---|---|
+| 1 serie, n=2000, 24 pasos, 20 folds | caliente | 2.42 (2.02) | 1.93 (1.83) | **1.45 (1.42)** |
+| ídem | frío | 2.52 (2.33) | **2.03 (1.82)** | 2.84 (2.59) |
+| 50 series × 1000, 24 pasos, 20 folds | caliente | 4.64 (4.46) | 4.06 (4.00) | **3.63 (3.56)** |
+| ídem | frío | 4.84 (4.69) | **4.07 (3.97)** | 4.99 (4.92) |
+| 50 series × 2000, 72 pasos, 10 folds | caliente | 5.76 (5.56) | 4.63 (4.15) | **3.92 (3.83)** |
+| ídem | frío | 5.50 (5.28) | **4.74 (4.53)** | 5.23 (5.10) |
+
+Predicciones idénticas en las tres configuraciones de cada caso.
+
+Conclusiones:
+- La P5 sola vale más de lo estimado: −16 a −20 % con `n_jobs=1` en búsquedas HGB (la
+  estimación anterior, −4 a −8 %, era de un backtesting suelto con más peso del ajuste).
+  Beneficia también al backtesting suelto con `refit=False`, donde `'auto'` ya es 1.
+- La P5 recupera la mitad o algo más de la ventaja de `'auto'` en caliente (50-61 %).
+- P2 + P5 frente a hoy, HGB: en frío, más rápido en los tres casos (10-29 %); en
+  caliente, más lento (1.12-1.33×). El peor caso de la P2 baja de 1.27-1.67× (24-72
+  pasos, caliente) a 1.12-1.33×.
+- En máquinas grandes el efecto de la P5 debería ser mayor (la revisión previa medía el
+  secuencial de HGB hasta 9× más lento con 22 hilos), sin medir aquí.
+
+### P5: filas por llamada y coste del límite de hilos (micro-medida)
+
+`HistGradientBoostingRegressor` ajustado con 20 000 × 24 (100 iteraciones), 4 CPU,
+mediana de 5 bloques. `predict` con los hilos por defecto (4) frente a
+`threadpool_limits(1, "openmp")`:
+
+| filas | 4 hilos ms | 1 hilo ms | 1 / 4 |
+|---|---|---|---|
+| 1 | 0.523 | 0.335 | 0.64 |
+| 10 | 0.521 | 0.257 | 0.49 |
+| 50 | 0.526 | 0.408 | 0.78 |
+| 100 | 0.721 | 0.569 | 0.79 |
+| 250 | 0.714 | 0.849 | 1.19 |
+| 500 | 1.155 | 1.293 | 1.12 |
+| 1000 | 1.521 | 2.197 | 1.44 |
+| 5000 | 4.796 | 9.861 | 2.06 |
+| 20000 | 14.629 | 40.264 | 2.75 |
+
+Coste de limitar: `threadpool_limits(...)` (entrar y salir) 1.07 ms, porque vuelve a
+inspeccionar las librerías cargadas; `ThreadpoolController()` 0.92 ms (una vez);
+`controller.limit(...)` con el controlador ya creado, 0.011 ms.
+
+Conclusión: 1 hilo gana hasta ~100 filas por llamada y pierde desde ~250 (cruce entre
+100 y 250 en esta máquina). Con un controlador creado una vez por proceso, limitar en
+cada llamada cuesta un 3 % de una predicción de una fila: se puede decidir por llamada
+según el número de filas (bootstrapping con `n_boot` filas y multiseries con muchas
+series quedan como hoy). `threadpool_limits` en cada llamada costaría 3× la predicción.
+
+### P2 y P5 implementadas en el paquete (sin commit): comprobación (H15)
+
+Decisiones del usuario: P2 aprobada; P5 con `threadpoolctl` importado sin declararlo,
+umbral de 100 filas y `ForecasterRecursiveClassifier` fuera. Todo en esta rama y en un
+único commit final.
+
+Mismo caso que H1/H14 (HGB, 1 serie, 24 pasos, 20 folds, 4 candidatos, `refit=False`),
+con el paquete modificado; `3` = folds en paralelo, lo que hacía `'auto'` antes de la P2
+(`results/h15_after_p2_p5.md`):
+
+| modo | n_jobs=1 | `'auto'` (ahora 1) | 3 |
+|---|---|---|---|
+| caliente | 2.00 (1.65) | 1.85 (1.80) | 1.49 (1.42) |
+| frío | 2.14 (1.89) | **1.89 (1.86)** | 2.91 (2.84) |
+
+Antes (H14): `n_jobs=1` 2.42 / 2.52 y `'auto'` 1.45 / 2.84 (caliente / frío). Coincide con
+la emulación `1lim` (1.93 / 2.03): en caliente `'auto'` es 1.28× más lento que antes y en
+frío 1.50× más rápido. Predicciones idénticas.
+
+### P3: descartada
+
+Propuesta: usar `cpu_count()` workers en lugar de `cpu_count() - 1` cuando `'auto'`
+paraleliza (`select_n_jobs_backtesting` y `select_n_jobs_fit_forecaster`). Evidencia
+(H3): −12 % con 4 CPU y 1.29× con 2 CPU; neutro con 8 y 22 en la revisión previa.
+
+Al revisarla:
+- Con 3 o más CPU solo añade un worker: se paraleliza en los mismos casos que hoy.
+- Con 2 CPU cambia la decisión (hoy `'auto'` nunca paraleliza). El backtesting suelto
+  tiene el umbral de trabajo, pero Direct y las búsquedas con refit no: un Direct barato
+  pagaría el arranque (H7: 0.19 s frente a 1.51 s) y una búsqueda barata, unos 1.3 s una
+  vez.
+- No medible aquí: 2 vCPU que sean un núcleo físico con HT (Colab gratis), donde la
+  ganancia sería menor.
+
+Recomendé aplicarla solo al backtesting y las búsquedas. Decisión del usuario:
+descartada; se mantiene `cpu_count() - 1`. Sin cambios en el paquete.
+
+### P6: descartada; P7 y P9: fuera de la revisión
+
+Decisión del usuario: P6 (umbral de trabajo para Direct y Stats) descartada sin medir
+Direct con 24-72 pasos. P7 (umbral propio para lineales) y P9 (candidatos en paralelo) no
+se revisan. La FAQ (P4) queda para el final. Único punto restante: P8 (XGBoost).
+
+### P8: XGBoost, datos crudos de la revisión previa y contaminación (H16)
+
+**Revisión previa, datos crudos** (`dev/n_jobs_review/results/block_C*.csv`). La máquina
+es **Windows 11** (Intel Ultra 9 185H, 16 físicos / 22 lógicos), no Linux: XGBoost usa
+allí el OpenMP de MSVC (vcomp), no libgomp. XGB `n_jobs=None` (sus hilos por defecto),
+tamaño L, `refit=True`, caliente, mediana de 5:
+
+| Procesadores (afinidad) | `n_jobs=1` | `cpu_count() - 1` | -1 |
+|---|---|---|---|
+| 4 (2c/4t) | 7.08 | 6.14 (1.15×) | 5.96 |
+| 8 (4c/8t) | 10.02 | 3.98 (2.5×) | 5.36 |
+| 22 | 7.33 | 2.66 (2.8×) | 2.77 |
+
+Con 4 procesadores paralelizar gana un 15 % allí (caliente) y aquí pierde un 25 % en frío
+y gana un 12 % en caliente; con 8 y 22 gana 2.5-2.8×. Una regla "XGBoost → 1" perdería eso
+en máquinas medianas y grandes: no compensa.
+
+**¿Qué estimadores contaminan?** `probe_omp_pickle_thread.py`: el modelo ajustado se
+serializa (o predice) desde un hilo que sigue vivo, como el `QueueFeederThread` de loky;
+después, mediana de 5 ajustes del mismo estimador en el hilo principal (5000 × 30, 4 CPU;
+xgboost 3.4.1, lightgbm 4.7.0, scikit-learn 1.9.1, catboost 1.2.10, joblib 1.6.0):
+
+| Estimador | serializar en el hilo | predecir en el hilo | hilos del proceso |
+|---|---|---|---|
+| XGB (hilos por defecto) | 1.75-1.96× | 2.09× | 11 → 15 |
+| XGB `n_jobs=1` | 0.95-1.03× | n/m | 11 → 12 |
+| LGBM (hilos por defecto) | 6.01× | 5.91× | 11 → 15 |
+| LGBM `n_jobs=1` | 0.94× | 1.05× | 8 → 9 |
+| HGB | 1.04× | 7.13× | 11 → 12 / 15 |
+| CatBoost | 0.94× | 1.00× | 8 → 9 |
+
+Al terminar el hilo, todo vuelve a la normalidad. Serializar solo crea un segundo equipo
+de OpenMP con XGB y LGBM de hilos por defecto. Con `'auto'`, LGBM de hilos por defecto ya
+va a 1 job; HGB solo contamina si predice en otro hilo (skforecast no lo hace; loky usa
+procesos). Queda XGB con sus hilos por defecto, el valor por defecto de `XGBRegressor`.
+
+**Direct también contamina** (`probe_xgb_direct.py`): tras `ForecasterDirect(XGB, 12
+pasos, n_jobs=3).fit`, los ajustes de XGB en el principal pasan de 229 a 472 ms (11 → 16
+hilos); con `n_jobs=1`, 234 → 228 ms. Aquí el modelo ajustado vuelve del worker y se
+deserializa en un hilo de loky.
+
+**Corrección probada** (`probe_xgb_fix_bytes.py`, `Parallel(n_jobs=3)` de 6 tareas):
+
+| Modo | ajustes de XGB en el principal después | hilos |
+|---|---|---|
+| enviar el modelo ajustado | 218 → 477 ms | 11 → 16 |
+| enviar `cloudpickle.dumps(modelo)` hecho en el principal | 249 → 249 ms | 11 → 13 |
+| devolver el modelo ajustado | 247 → 465 ms | 11 → 16 |
+| devolver `pickle.dumps(modelo)` y cargarlo en el principal | 235 → 233 ms | 11 → 13 |
+
+Serializar y deserializar en el hilo principal evita el segundo equipo en los dos
+sentidos. En skforecast: serializar el forecaster una vez en el principal antes del
+`Parallel` del backtesting (single y multiseries), y que el ajuste de los pasos de Direct
+devuelva los estimadores serializados. De paso, el forecaster se serializa una vez en
+lugar de una por tarea. Loky usa `cloudpickle` si está instalado (joblib 1.6 ya no lo
+incluye en `joblib.externals`; joblib 1.3, el mínimo, sí).
+
+Decisión del usuario: P8 aplazada; no se implementa nada por ahora.
+
+### Revisión final de P2 + P5 antes del commit
+
+Diff revisado completo: `_utils.py`, `_search.py`, `utils.py`, los tres tests, la FAQ y
+la nota de versión. Comprobaciones:
+
+- `controller.limit(limits=1, user_api="openmp")` con el controlador cacheado: 12-14 µs
+  por entrada y salida (3 librerías: 2 OpenBLAS y libgomp). threadpoolctl 3.8 restaura a
+  la salida todas las librerías, también OpenBLAS, al valor que tenían (dos llamadas
+  ctypes más, sin efecto). Coincide con el "0.01 ms" del docstring.
+- HGB 5000 × 24, 4 CPU con carga de fondo, `predict_fn` frente a `estimator.predict`:
+  1 fila 0.80, 0.67 y 0.63× con 100, 500 y 1000 iteraciones (la ganancia por árbol es
+  el fork/join de OpenMP, así que crece con el número de árboles y con el de núcleos);
+  100 filas 1.17, 0.89 y 0.84× (ruidoso, es la zona del cruce); 250 filas sin límite,
+  como antes. El umbral de 100 sale de la tabla de la micro-medida de P5 (0.49-0.79×
+  hasta 100 filas, 1.19× en 250).
+- threadpoolctl: scikit-learn 1.9.1 exige >= 3.5.0 y el mínimo soportado (1.6) exige
+  >= 3.1.0; `ThreadpoolController.limit` existe desde 3.0. `ThreadpoolController()`
+  emite un `RuntimeWarning` en Linux si libomp y libiomp están cargadas a la vez: una
+  vez por proceso (lru_cache), solo en entornos que ya tienen ese riesgo.
+- El controlador se crea en la primera predicción con HGB: libgomp de scikit-learn ya
+  está cargada (la importa el módulo de HGB). `_build_predict_function` se llama en cada
+  `predict`, no se guarda en el forecaster, así que no viaja a los workers.
+- `limit_n_jobs_by_workload`: la guarda `n_fits == 0` ya no se alcanza desde `'auto'`
+  (select devuelve 1 sin refit). Se mantiene: es el contrato de la función y la cubre su
+  test.
+- Nota de versión: la ganancia de H14 (`1` frente a `1lim`) es 12.6-20.0 %
+  (MS 24 pasos caliente 12.6, frío 16.0; MS 72 pasos 19.6 y 13.7; serie única 20.0 y
+  19.5), no "16 to 20%". Propuesta: "13 to 20%".
+- Consistencia: los otros tres puntos de `_search.py` remiten al NOTE de grid search;
+  skills y `llms-base.txt` no describen las reglas; la FAQ (celdas 22 y 23) ya decía que
+  sin refit no hay ganancia. Los tests hermanos de "rules of each candidate" (grid
+  multiseries, bayesian, bayesian multiseries) no tienen el caso sin refit; la regla
+  está cubierta en `test_select_n_jobs_backtesting.py` para todos los forecasters.
+- verify: lint solo el E402 preexistente; 2120 tests del alcance + 259 de `predict` de
+  recursive, multiseries, direct y direct multivariate pasan; `page_meta.py` y el check
+  del notebook OK (solo cambiaron celdas markdown).
+
+Correcciones aplicadas tras la revisión (aprobadas por el usuario): nota de versión
+"13 to 20%"; caso sin refit añadido a los tres tests hermanos de "rules of each
+candidate" (grid multiseries, bayesian, bayesian multiseries); NOTE de
+`_validation.py` (l. 616 y 1588) precisa "with an integer `n_jobs`".

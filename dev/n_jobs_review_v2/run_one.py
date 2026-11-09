@@ -13,6 +13,7 @@ recorded by patching the `Parallel` names of its modules.
 """
 
 import argparse
+import contextlib
 import json
 import os
 import random
@@ -92,7 +93,44 @@ class MemSampler(threading.Thread):
 
 
 def _parse_n_jobs(value):
-    return value if value == "auto" else int(value)
+    return value if value in ("auto", "1lim") else int(value)
+
+
+@contextlib.contextmanager
+def _limit_predict_threads():
+    """
+    Config "1lim": n_jobs=1 with the OpenMP threads limited to 1 only inside
+    the recursive prediction loop (emulates proposal P5 for HGB).
+    """
+    from threadpoolctl import threadpool_limits
+    from skforecast.recursive import (
+        ForecasterRecursive, ForecasterRecursiveMultiSeries
+    )
+    originals = {
+        cls: cls._recursive_predict
+        for cls in (ForecasterRecursive, ForecasterRecursiveMultiSeries)
+    }
+
+    def wrap(original):
+        def limited(self, *args, **kwargs):
+            with threadpool_limits(limits=1, user_api="openmp"):
+                return original(self, *args, **kwargs)
+        return limited
+
+    for cls, original in originals.items():
+        cls._recursive_predict = wrap(original)
+    try:
+        yield
+    finally:
+        for cls, original in originals.items():
+            cls._recursive_predict = original
+
+
+def _run_config(run, n_jobs):
+    if n_jobs == "1lim":
+        with _limit_predict_threads():
+            return run(1)
+    return run(n_jobs)
 
 
 def main():
@@ -122,7 +160,7 @@ def main():
         if sampler:
             sampler.start()
         t0 = time.perf_counter()
-        fp = run(n_jobs)
+        fp = _run_config(run, n_jobs)
         dt = time.perf_counter() - t0
         peak = sampler.stop() if sampler else None
         print(json.dumps({
@@ -143,7 +181,7 @@ def main():
 
     rng = random.Random(args.seed)
     for c in configs:
-        run(c)  # warm-up: starts the workers and fills caches
+        _run_config(run, c)  # warm-up: starts the workers and fills caches
     for rep in range(args.reps):
         order = configs[:]
         rng.shuffle(order)

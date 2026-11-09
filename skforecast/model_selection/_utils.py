@@ -820,6 +820,9 @@ def select_n_jobs_backtesting(
     - If `refit` is an integer other than 0 or 1, then `n_jobs = 1`. The
     forecaster fitted in a fold is reused in the following ones, so the folds
     cannot run in parallel.
+    - If `refit` is `False` (or 0), then `n_jobs = 1`. The folds only predict
+    with the forecaster fitted before them, and sending the fitted forecaster
+    to the workers usually costs more than the predictions they share.
     - If forecaster is not 'ForecasterRecursive', 'ForecasterRecursiveClassifier'
     or 'ForecasterRecursiveMultiSeries', then `n_jobs = 1`. 'ForecasterDirect'
     and 'ForecasterDirectMultiVariate' parallelize the fit of their steps
@@ -858,6 +861,9 @@ def select_n_jobs_backtesting(
 
     refit = False if refit == 0 else refit
     if not isinstance(refit, bool) and refit != 1:
+        return 1
+
+    if refit is False:
         return 1
 
     if type(forecaster).__name__ not in {

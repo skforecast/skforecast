@@ -8,7 +8,7 @@
 from __future__ import annotations
 from copy import copy, deepcopy
 import dis
-from functools import partial
+from functools import lru_cache, partial
 from importlib.metadata import PackageNotFoundError, version
 from importlib.util import find_spec
 import inspect
@@ -33,6 +33,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.exceptions import NotFittedError
 from sklearn.linear_model._base import LinearModel
 from sklearn.pipeline import Pipeline
+from threadpoolctl import ThreadpoolController
 from .. import __version__
 from ..exceptions import (
     DataTypeWarning,
@@ -4088,6 +4089,31 @@ class _NonFinitePredictorsError(ValueError):
         )
 
 
+# NOTE: `HistGradientBoostingRegressor` predicts with all the OpenMP threads of
+# the machine, which makes the predictions of a few rows (one per step in the
+# recursive loop, one per series in multi-series) slower than with one thread.
+# Measured with 4 CPUs: one thread is faster up to 100 rows (0.5 to 0.8 times
+# the time) and slower from 250 rows (bootstrapping, many series).
+_HGB_MAX_ROWS_ONE_THREAD = 100
+
+
+@lru_cache(maxsize=1)
+def _get_threadpool_controller() -> ThreadpoolController:
+    """
+    Return the `ThreadpoolController` of the process, created on the first
+    call. Creating it inspects the loaded libraries (about 1 ms), while
+    limiting the threads with it takes about 0.01 ms.
+
+    Returns
+    -------
+    controller : ThreadpoolController
+        Controller of the thread pools loaded in the process.
+
+    """
+
+    return ThreadpoolController()
+
+
 def _build_predict_function(
     estimator: object,
     forecaster: object | None = None
@@ -4117,6 +4143,12 @@ def _build_predict_function(
     features, the array is passed directly and its `writeable` flag is restored
     after prediction, since CatBoost borrows an F-contiguous array without a
     copy and leaves it read-only.
+
+    For `HistGradientBoostingRegressor`, alone or as the last step of a
+    `Pipeline`, `estimator.predict` is used with the OpenMP threads limited to
+    1 when `X` has up to 100 rows (one per step in the recursive loop, or one
+    per series), which is faster than with all the threads of the machine.
+    With more rows, it uses the default threads.
 
     For any other estimator the standard `estimator.predict` method is used.
     This includes user subclasses of scikit-learn estimators, since they may
@@ -4283,6 +4315,18 @@ def _build_predict_function(
             if not X.flags.writeable:
                 X.flags.writeable = True
             return preds
+
+        return predict_fn
+
+    final_estimator = estimator[-1] if isinstance(estimator, Pipeline) else estimator
+    if type(final_estimator).__name__ == "HistGradientBoostingRegressor":
+        controller = _get_threadpool_controller()
+
+        def predict_fn(X):
+            if X.shape[0] <= _HGB_MAX_ROWS_ONE_THREAD:
+                with controller.limit(limits=1, user_api="openmp"):
+                    return estimator.predict(X).ravel()
+            return estimator.predict(X).ravel()
 
         return predict_fn
 

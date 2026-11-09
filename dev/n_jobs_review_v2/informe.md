@@ -22,9 +22,9 @@ los números redondeados a 1e-7).
 ## 1. Resumen ejecutivo
 
 Veredicto: la estrategia es correcta en lo esencial para un backtesting suelto (umbral bien calibrado en Linux: equilibrio medido en ~2.4 s; sin errores en los resultados), pero `'auto'` sigue siendo mucho peor que `n_jobs=1` en casos frecuentes que no ve. Mejoras más valiosas:
-1. **Detectar LightGBM dentro de `TransformedTargetRegressor`** y avisar con `n_jobs` explícito: hoy `'auto'` pasa de 3.5 s a más de 155 s.
+1. ~~Detectar LightGBM dentro de `TransformedTargetRegressor` y avisar con `n_jobs` explícito~~ **(descartada, ver P1)**: caso grave (3.5 s → más de 155 s) pero sin uso conocido; queda como una frase en la FAQ (P4).
 2. **Búsquedas con `refit=False` → 1 job**: hoy son 1.5-3.8× más lentas que `n_jobs=1` con RF, XGBoost, CatBoost y LGBM(1) en 4 CPU.
-3. **`cpu_count()` en lugar de `cpu_count() - 1`**: −12 % con 4 CPU; con 2 CPU `'auto'` nunca paraleliza y deja 1.29×.
+3. ~~`cpu_count()` en lugar de `cpu_count() - 1`~~ **(descartada, ver P3)**: −12 % con 4 CPU y 1.29× con 2 CPU, pero sin medir en 2 vCPU con HT y con riesgo en Direct y en búsquedas con refit (sin umbral); se mantiene `cpu_count() - 1`.
 4. **Corregir el notebook de la FAQ** (búsquedas sin refit, Stats, hilos de XGBoost y LightGBM).
 5. **Medir en una máquina grande** limitar a 1 hilo la predicción de HGB (aquí −4 a −8 %; allí, probablemente varias veces).
 
@@ -111,8 +111,8 @@ diferencia numérica es ruido de coma flotante en lineales con `refit=True`
 
 | # | Error | Consecuencia medida |
 |---|---|---|
-| E1 | `'auto'` no desenvuelve `TransformedTargetRegressor` (ni otros meta-estimadores): un LightGBM dentro se trata como un estimador sin hilos. | Con trabajo por encima del umbral, `'auto'` lanza 3 workers × 4 hilos de LightGBM: **> 155 s frente a 3.5 s** con `n_jobs=1`. |
-| E2 | Un `n_jobs` explícito > 1 con `LGBMRegressor()` (hilos por defecto) no avisa. | 4 folds: 52.8 s frente a 0.55 s (~100×); 20 folds: > 166 s. |
+| E1 | `'auto'` no desenvuelve `TransformedTargetRegressor` (ni otros meta-estimadores): un LightGBM dentro se trata como un estimador sin hilos. | Con trabajo por encima del umbral, `'auto'` lanza 3 workers × 4 hilos de LightGBM: **> 155 s frente a 3.5 s** con `n_jobs=1`. Sin uso conocido (P1, descartada). |
+| E2 | Un `n_jobs` explícito > 1 con `LGBMRegressor()` (hilos por defecto) no avisa. | 4 folds: 52.8 s frente a 0.55 s (~100×); 20 folds: > 166 s. Requiere cambiar a mano el `'auto'` por defecto; sin uso conocido (P1, descartada). |
 | E3 | En una búsqueda con `refit=False`, `'auto'` paraleliza aunque el backtesting suelto, con los mismos datos, usaría 1. | 1.5-3.8× más lento que `n_jobs=1` (sección 4.6). |
 | E4 | `n_jobs` negativo distinto de -1 (p. ej. -2) o 0 → `cpu_count()`, no `cpu_count() + 1 + n_jobs` como en joblib. | Menor: el usuario que pide "todos menos uno" obtiene todos. |
 | E5 | Direct y DirectMultiVariate resuelven `'auto'` en `__init__`; `set_params` no lo recalcula. | Menor: un forecaster guardado en una máquina grande lleva su `n_jobs` a otra. |
@@ -282,6 +282,15 @@ API pública; todas cambian el valor que `'auto'` elige y llevan nota de versió
 
 ### P1. Desenvolver meta-estimadores para detectar LightGBM, y avisar con `n_jobs` explícito
 
+**Estado: descartada** (decisión del usuario tras revisarla). No hay evidencia de uso:
+ninguna issue de GitHub menciona `TransformedTargetRegressor` ni lentitud con LightGBM y
+`n_jobs`; ni la documentación ni los skills lo usan (skforecast ya tiene `transformer_y`,
+que cubre lo mismo); y el `n_jobs=-1` de la documentación junto a LightGBM es el del
+estimador, no el de skforecast. Con `'auto'`, el caso habitual (`LGBMRegressor` suelto o
+último paso de un `Pipeline`) ya está protegido. Se prioriza por gravedad sin pesar la
+frecuencia; el coste (código y tests en cinco sitios) no compensa un caso hipotético.
+Queda una frase en la FAQ (P4). Propuesta original:
+
 - **Cambio**: en `select_n_jobs_backtesting` y `select_n_jobs_fit_forecaster`, buscar el
   estimador real a través de `Pipeline` (último paso), `TransformedTargetRegressor`
   (`regressor`) y, en general, atributos `regressor`/`estimator`, recursivamente. Además,
@@ -304,6 +313,14 @@ API pública; todas cambian el valor que `'auto'` elige y llevan nota de versió
   1.3-1.6× (2.80 → 3.69 s; 1.49 → 2.38 s en caliente); en la revisión previa, con 22
   procesadores y 168 pasos, HGB 3.42 → 16.21 s y LGBM(1) 1.38 → 2.06 s. Nunca peor que
   `n_jobs=1`. P5 reduciría el caso HGB; el usuario puede pasar un entero.
+- **Multiseries** (H13, medido tras el informe, ver notas): mismo patrón. `'auto'`
+  pierde con LGBM(1) (1.52× en frío, 1.15× en caliente) y RF (1.33× en frío); HGB
+  empata en frío y gana 1.27× en caliente con 24 pasos, y gana 1.23× (frío) y 1.81×
+  (caliente) con 168 pasos y 50 series: ese es el peor caso de la P2 en multiseries.
+- **P2 + P5** (H14, ver notas): con la predicción de HGB limitada a 1 hilo, el
+  secuencial baja un 16-20 %; frente a `'auto'` de hoy, P2 + P5 es más rápido en
+  frío (10-29 %) y más lento en caliente (1.12-1.33×, antes 1.27-1.67×), con 24-72
+  pasos.
 - **Alternativa (P2b)**: decidir con el trabajo de predicción medido: predecir el fold 0
   en el principal, cronometrarlo y paralelizar el resto solo si
   `t_fold × (n_folds − 1)` supera un umbral. Conserva los casos HGB/horizonte largo;
@@ -311,6 +328,13 @@ API pública; todas cambian el valor que `'auto'` elige y llevan nota de versió
 - **Coste**: mínimo (una condición, tests de búsquedas, docstrings, notebook).
 
 ### P3. `cpu_count()` en lugar de `cpu_count() - 1`
+
+**Estado: descartada** (decisión del usuario tras revisarla). Se mantiene
+`cpu_count() - 1`. La ganancia se concentra en máquinas de 2 a 4 CPU y no está medida
+donde más importa (2 vCPU que son un núcleo físico con HT, como Colab gratis). Con 2 CPU
+cambiaría la decisión de no paralelizar a paralelizar en Direct y en búsquedas con
+refit, que no tienen umbral de trabajo (un Direct barato pasó de 0.19 s a 1.51 s en H7).
+Con 3 o más CPU el beneficio es de un worker más (−12 % con 4, neutro con 8 y 22).
 
 - **Cambio**: el número de workers cuando las reglas y el umbral deciden paralelizar.
 - **Evidencia**: −12 % de tiempo con 4 CPU; 1.29× con 2 CPU, donde hoy `'auto'` nunca
@@ -332,8 +356,8 @@ API pública; todas cambian el valor que `'auto'` elige y llevan nota de versió
   (1.56× aquí; ×2.3-2.5 en caliente en la revisión previa).
 - "XGBoost ... compete for the same cores": XGBoost respeta el límite de loky; CatBoost,
   LightGBM y `n_jobs=-1` anidado no.
-- Añadir: `LGBMRegressor()` por defecto con `n_jobs > 1` en skforecast (o envuelto, con
-  `'auto'`, hasta P1) es ~100× más lento en Linux; `n_jobs=1` en el estimador.
+- Añadir: `LGBMRegressor()` por defecto con un `n_jobs > 1` explícito en skforecast es
+  ~100× más lento en Linux; `n_jobs=1` en el estimador (sustituye a P1, descartada).
 - **Coste**: bajo. **Riesgo**: nulo.
 
 ### P5. HGB: predecir con 1 hilo en el bucle recursivo (medir antes en una máquina grande)
@@ -345,11 +369,15 @@ API pública; todas cambian el valor que `'auto'` elige y llevan nota de versió
   revisión previa midió HGB secuencial muy lento con 22 hilos (Direct S: 5.5 s frente a
   0.6 s; HGB L sin refit: 2.94 s con 1 frente a 0.52 s con 21 workers): ahí la ganancia
   puede ser de varias veces para todo usuario con `n_jobs=1` o `refit=False`.
-- **Peor caso**: predicciones con muchas filas por llamada (bootstrapping, multiseries)
-  más lentas con 1 hilo; limitarlo solo a llamadas de una fila lo evita.
+  Medido después del informe (H14): en búsquedas HGB con `refit=False` y `n_jobs=1`,
+  −16 a −20 % (1 serie y 50 series, 24 y 72 pasos).
+- **Peor caso**: predicciones con muchas filas por llamada (bootstrapping) quizá más
+  lentas con 1 hilo. Multiseries con 50 filas por llamada sigue ganando (H14).
 - **Falta medir**: el efecto con 8-22 hilos (Windows y Linux).
 
 ### P6. Umbral de trabajo para Direct y, con cuidado, para Stats
+
+**Estado: descartada** (decisión del usuario tras revisarla).
 
 - **Direct**: ajustar y cronometrar el primer paso en el principal y paralelizar el resto
   solo si `t_paso × (pasos − 1)` supera el umbral. Evita +1.3 s (8×) en Direct baratos;
@@ -364,6 +392,8 @@ API pública; todas cambian el valor que `'auto'` elige y llevan nota de versió
 
 ### P7. Lineales: umbral propio en lugar de "siempre 1"
 
+**Estado: no se revisa** (decisión del usuario).
+
 - **Cambio**: que los lineales pasen por el umbral con un mínimo mayor (≈ 2× el general,
   4 s estimados en Linux), por la sobreestimación con ajustes de milisegundos y la peor
   eficiencia de los workers.
@@ -376,6 +406,11 @@ API pública; todas cambian el valor que `'auto'` elige y llevan nota de versió
 
 ### P8. XGBoost en máquinas pequeñas y contaminación de libgomp
 
+**Estado: aplazada** (decisión del usuario tras revisarla). La regla "XGBoost → 1" no se
+recomienda: en Windows con 8 y 22 procesadores paralelizar gana 2.5-2.8×. La contaminación
+afecta también al ajuste paralelo de Direct y se evita serializando en el hilo principal
+(medidas en `notas.md`, H16); no implementada.
+
 - Con 4 CPU, paralelizar XGBoost pierde un 25-50 % (backtesting, búsqueda con refit,
   Direct) y contamina el proceso; con 8-22 procesadores la revisión previa medía
   ×2.5-4.9 a favor. Una regla del tipo "XGBoost con hilos → 1 si `cpu_count() <= 4`"
@@ -385,6 +420,8 @@ API pública; todas cambian el valor que `'auto'` elige y llevan nota de versió
   máquinas grandes y en Windows (otro runtime de OpenMP).
 
 ### P9. Búsquedas: candidatos en paralelo (proyecto aparte)
+
+**Estado: no se revisa** (decisión del usuario).
 
 - **Evidencia**: 1.7-2.0× frente a `n_jobs=1` con 12 candidatos y `refit=False`, frío
   incluido; ~3× frente al `'auto'` actual. No envía modelos ajustados.
@@ -469,8 +506,8 @@ aproximaciones razonables y mis medidas en frío reales caen en el mismo orden.
 - **Sin máquinas de muchos núcleos**: para 8-22 hay que fiarse de la revisión previa o del
   modelo `T_par ≈ S + W / (n·e)` (aquí `S` = 1.3 s, `e` ≈ 0.78 en RF, ≈ 0.6-0.7 en
   lineales grandes). Es una estimación: con 15 workers y el mismo `S`, el equilibrio
-  bajaría a ~1.4 s de trabajo secuencial; en Windows sube con `S`. P3, P5 y P8 necesitan
-  esa medida.
+  bajaría a ~1.4 s de trabajo secuencial; en Windows sube con `S`. P5 y P8 necesitan esa
+  medida.
 - **Experimentos cortos (< 3 min)**: los tamaños grandes (Arima estacional, lineal de 100
   folds) tienen 1-3 repeticiones, indicado en cada tabla.
 - **No medido**: Direct con LGBM(1) y DirectMultiVariate, `ForecasterRecursiveClassifier`,

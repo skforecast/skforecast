@@ -613,8 +613,9 @@ def _backtesting_forecaster(
 
     fit_seconds = None
     if initial_train_size is not None:
-        # NOTE: This allows for parallelization when `refit` is `False`. The initial 
-        # Forecaster fit occurs outside of the auxiliary function.
+        # NOTE: This allows for parallelization with an integer `n_jobs` when `refit`
+        # is `False`. The initial Forecaster fit occurs outside of the auxiliary
+        # function.
         exog_train = exog.iloc[:initial_train_size, ] if exog is not None else None
         fit_start = time.perf_counter()
         forecaster.fit(
@@ -1585,8 +1586,9 @@ def _backtesting_forecaster_multiseries(
 
     fit_seconds = None
     if initial_train_size is not None:
-        # NOTE: This allows for parallelization when `refit` is `False`. The initial 
-        # Forecaster fit occurs outside of the auxiliary function.
+        # NOTE: This allows for parallelization with an integer `n_jobs` when `refit`
+        # is `False`. The initial Forecaster fit occurs outside of the auxiliary
+        # function.
         if fit_folds[0]:
             series_train, _, last_window_levels, exog_train, _, _ = data_folds[0]
             fit_start = time.perf_counter()

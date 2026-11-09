@@ -3433,27 +3433,31 @@ def test_bayesian_search_forecaster_multiseries_refit_without_series_too_short()
 
 
 @pytest.mark.parametrize(
-    "estimator, n_jobs, expected_n_jobs",
-    [(Ridge(), 'auto', 1),
-     (HistGradientBoostingRegressor(max_iter=5), 'auto', max(1, cpu_count() - 1)),
-     (HistGradientBoostingRegressor(max_iter=5), 2, 2)],
-    ids=['auto, Ridge', 'auto, HistGradientBoostingRegressor', 'int']
+    "estimator, refit, n_jobs, expected_n_jobs",
+    [(Ridge(), True, 'auto', 1),
+     (HistGradientBoostingRegressor(max_iter=5), True, 'auto', max(1, cpu_count() - 1)),
+     (HistGradientBoostingRegressor(max_iter=5), False, 'auto', 1),
+     (HistGradientBoostingRegressor(max_iter=5), True, 2, 2)],
+    ids=[
+        'auto, Ridge', 'auto, HistGradientBoostingRegressor',
+        'auto, HistGradientBoostingRegressor, no refit', 'int'
+    ]
 )
 def test_bayesian_search_forecaster_multiseries_n_jobs_auto_resolved_with_the_rules_of_each_candidate(
-    estimator, n_jobs, expected_n_jobs
+    estimator, refit, n_jobs, expected_n_jobs
 ):
     """
     Test that bayesian_search_forecaster_multiseries resolves `n_jobs='auto'` with
     `select_n_jobs_backtesting` for each candidate and passes the integer to
     `backtesting_forecaster_multiseries`, so the work threshold of a single backtesting does not
-    reduce it. `Parallel` is mocked with a sequential one, so no workers are
-    started.
+    reduce it. Without refit, the rules give one job. `Parallel` is mocked with a
+    sequential one, so no workers are started.
     """
     forecaster = ForecasterRecursiveMultiSeries(estimator=estimator, lags=3)
     cv = TimeSeriesFold(
              steps              = 10,
              initial_train_size = 10,
-             refit              = True,
+             refit              = refit,
              fixed_train_size   = False
          )
 
