@@ -27,7 +27,7 @@ statsmodels 0.15.0, numba 0.68.1, threadpoolctl 3.8.0.
 | Búsquedas stats | `_search.py:_evaluate_grid_hyperparameters_stats` (l. 3326) | Pasa `n_jobs` tal cual a `backtesting_stats` → `'auto'` = 1. |
 | `grid_search_equivalent_date` | `_search.py` (l. 3616) | `'auto'` → 1. |
 | Direct | `direct/_forecaster_direct.py:__init__` (l. 633-643) y `_forecaster_direct_multivariate.py:__init__` (l. 589-599) → `utils/utils.py:select_n_jobs_fit_forecaster` | Se resuelve **una vez, en `__init__`**. `LinearModel` → 1; `LGBMRegressor` con `n_jobs != 1` → 1; resto → `cpu_count() - 1`. Sin umbral de trabajo. `set_params` no lo recalcula. |
-| Multiseries recursivo, Recursive, Stats, EquivalentDate, Rnn | — | Sin paralelismo propio en `fit`/`predict` (ni en el bootstrapping de intervalos). |
+| Multiseries recursivo, Recursive, Stats, EquivalentDate, Rnn | n/m | Sin paralelismo propio en `fit`/`predict` (ni en el bootstrapping de intervalos). |
 
 ### 2. Qué se paraleliza y cómo
 
@@ -43,9 +43,9 @@ deserializar desde un memmap de solo lectura).
 | Folds multiseries | `_validation.py:_fit_predict_forecaster_multiseries` | Igual: `series_train`/`exog_train` solo en folds con refit; forecaster ajustado. Todos los trozos se materializan antes del `Parallel` (también con `n_jobs=1`), y en DataFrame `drop(columns=...)` copia. |
 | Folds stats | `_validation.py:_fit_predict_forecaster_stats` | **`y` y `exog` completos** en cada tarea + la lista completa de folds + el forecaster. |
 | Pasos de Direct | `direct/_forecaster_direct.py:_fit_one_step_estimator` | `self` (el forecaster, con `estimators_` reseteados a clones para no serializar los ajustados) + las matrices completas `X_train_autoreg`, `X_train_exog`, `X_train_calendar` y el dict `y_train` en cada tarea; arrays > 1 MB como memmap. |
-| Candidatos de una búsqueda | — | **No** se paralelizan: bucle secuencial, y cada candidato paraleliza sus folds. Los workers de loky se reutilizan entre candidatos (mismo `n_jobs`). |
-| Series | — | No se paralelizan. |
-| Bootstrapping de intervalos | — | No se paraleliza (vectorizado sobre `n_boot`). |
+| Candidatos de una búsqueda | n/m | **No** se paralelizan: bucle secuencial, y cada candidato paraleliza sus folds. Los workers de loky se reutilizan entre candidatos (mismo `n_jobs`). |
+| Series | n/m | No se paralelizan. |
+| Bootstrapping de intervalos | n/m | No se paraleliza (vectorizado sobre `n_boot`). |
 
 Con `n_jobs=1`, `Parallel` ejecuta en el mismo proceso y el mismo objeto forecaster
 pasa de fold en fold (lo que permite el refit intermitente).
@@ -230,9 +230,9 @@ Caso: `backtesting_forecaster`, RF con pocos árboles para escalar el trabajo, n
 
 | árboles | modo | n_jobs=1 | n_jobs=3 | 'auto' (elige) | est. work |
 |---|---|---|---|---|---|
-| 4 | frío | 1.27 (1.06) | 2.02 (1.98) | 1.28 (1) | — |
+| 4 | frío | 1.27 (1.06) | 2.02 (1.98) | 1.28 (1) | n/m |
 | 8 | frío | 2.40 (2.38) | 2.42 (2.33) | 2.40 (1 o 3) | 1.94 |
-| 12 | frío | 3.61 (3.40) | 2.96 (2.85) | 2.90 (3) | — |
+| 12 | frío | 3.61 (3.40) | 2.96 (2.85) | 2.90 (3) | n/m |
 | 1 | caliente | 0.31 (0.26) | 0.17 (0.15) | 0.36 (1) | 0.32 |
 | 4 | caliente | 1.21 (1.13) | 0.54 (0.48) | 1.17 (1) | 0.96 |
 
@@ -249,7 +249,7 @@ Caso: el de H4 con RF de 25 árboles (≈ 7.3 s secuenciales), frío.
 | CPUs | n_jobs=1 | 'auto' | n_jobs=cpu_count |
 |---|---|---|---|
 | 4 | 7.35 (6.99) | 4.44 (4.31), elige 3 | 3.90 (3.75) con 4 |
-| 2 | — | 7.44 (7.17), elige 1 | 5.78 (5.48) con 2 |
+| 2 | n/m | 7.44 (7.17), elige 1 | 5.78 (5.48) con 2 |
 
 Las 4 vCPU de este contenedor se presentan como 4 núcleos sin hyperthreading
 (`lscpu`), aunque el hipervisor puede mapearlas a hilos hermanos.
@@ -265,9 +265,9 @@ Caso: `backtesting_forecaster`, `refit=True`, `steps=24`, frío, 4 CPU.
 
 | Estimador, datos | folds | n_jobs=1 | n_jobs=3 | 'auto' (=1) | est. work | pico memoria 1 / 3 |
 |---|---|---|---|---|---|---|
-| Ridge, n=20 000, 48 lags | 50 | 0.62 | 1.82 | 0.55 | 1.06 | — |
-| Pipeline(Scaler, Ridge), n=50 000, 168 lags, 5 exog | 10 | 2.33 (2.21) | 2.75 (2.64) | 2.27 | 2.23 | — |
-| ídem | 20 | 4.80 (4.30) | 4.08 (3.99) | — | — | — |
+| Ridge, n=20 000, 48 lags | 50 | 0.62 | 1.82 | 0.55 | 1.06 | n/m |
+| Pipeline(Scaler, Ridge), n=50 000, 168 lags, 5 exog | 10 | 2.33 (2.21) | 2.75 (2.64) | 2.27 | 2.23 | n/m |
+| ídem | 20 | 4.80 (4.30) | 4.08 (3.99) | n/m | n/m | n/m |
 | ídem (1 rep) | 100 | 22.7 | 10.7 | 22.1 | 26.1 | 407 MB / 1486 MB |
 
 Las predicciones en paralelo difieren de las secuenciales en ~1e-11 (Pipeline+Ridge,
@@ -300,13 +300,13 @@ Efecto en un backtesting `refit=True`, n=2000, 24 lags, 20 folds, frío, 4 CPU:
 
 | Estimador | n_jobs=1 | 'auto' | n_jobs=3 | est. work |
 |---|---|---|---|---|
-| HGB | 6.02 (5.59) | **3.42 (3.29)**, elige 3 | — | 5.70 |
-| XGB | **3.13 (3.08)** | 3.94 (3.65), elige 3 | — | 2.90 |
-| CatBoost (300 it.) | 9.31 (8.79) | **8.23 (7.81)**, elige 3 | — | 9.44 |
-| LGBM, 4 folds (1 rep) | 0.55 | — | **52.8** | — |
-| LGBM, 20 folds | — | — | **> 166 s (timeout)** | — |
-| `TransformedTargetRegressor(LGBM)`, 20 folds (1 rep) | 2.10 | 1.92, elige 1 (umbral) | — | 1.59 |
-| `TransformedTargetRegressor(LGBM 400 árboles)`, 10 folds | 3.53 (3.45) | **> 155 s (timeout)**, elige 3 | — | — |
+| HGB | 6.02 (5.59) | **3.42 (3.29)**, elige 3 | n/m | 5.70 |
+| XGB | **3.13 (3.08)** | 3.94 (3.65), elige 3 | n/m | 2.90 |
+| CatBoost (300 it.) | 9.31 (8.79) | **8.23 (7.81)**, elige 3 | n/m | 9.44 |
+| LGBM, 4 folds (1 rep) | 0.55 | n/m | **52.8** | n/m |
+| LGBM, 20 folds | n/m | n/m | **> 166 s (timeout)** | n/m |
+| `TransformedTargetRegressor(LGBM)`, 20 folds (1 rep) | 2.10 | 1.92, elige 1 (umbral) | n/m | 1.59 |
+| `TransformedTargetRegressor(LGBM 400 árboles)`, 10 folds | 3.53 (3.45) | **> 155 s (timeout)**, elige 3 | n/m | n/m |
 
 Conclusiones:
 - **LightGBM con sus hilos por defecto dentro de varios workers es catastrófico en este
@@ -453,7 +453,7 @@ los candidatos van en un `Parallel`. Mismas métricas que la búsqueda (huella i
 | Rejilla RF, `refit=False`, 20 folds | búsqueda n_jobs=1 | búsqueda 'auto' (folds) | candidatos ×3 | candidatos ×4 |
 |---|---|---|---|---|
 | 4 candidatos (ejecuciones separadas) | 4.06 (3.99) | 6.41 (6.28) | 3.40 (3.09) | 2.83 (2.63) |
-| 12 candidatos (misma ejecución; 1 = candidatos en serie) | 8.43 (8.11) | — | 4.87 (4.67) | 4.28 (4.00) |
+| 12 candidatos (misma ejecución; 1 = candidatos en serie) | 8.43 (8.11) | n/m | 4.87 (4.67) | 4.28 (4.00) |
 
 Conclusión: con `refit=False`, paralelizar candidatos da 1.7-2.0× frente a `n_jobs=1`
 (con arranque en frío incluido) y ~3× frente al `'auto'` actual. Es un cambio de diseño
