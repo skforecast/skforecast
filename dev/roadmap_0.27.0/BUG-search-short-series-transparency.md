@@ -849,6 +849,46 @@ dice `Kernel skf : <repo>/skforecast/__init__.py`). El punto 3 (`y_true`) va en 
   `id_1002`. Fuera, por no haber ejemplo en estas guías: candidatos y trials saltados,
   mensajes de `initial_train_size`, refit sin series cortas y avisos de joblib.
 
+### 13.2 En curso: punto 3, `y_true` en las guías (desde 2026-11-09)
+
+Rama local `docs/backtesting-y-true` desde `origin/0.27.x` (sin upstream, sin push ni PR).
+Proceso: propuesta por grupos de 2 o 3 páginas, aprobación línea a línea, un commit por
+página con `verify`. Criterios: solo si el código queda más corto o más claro, columnas
+por nombre, `metric` en lugar de métricas calculadas a mano cuando ya las devuelve el
+backtesting, `y_true` explicado una sola vez (en la guía de clasificación, con enlace a
+`backtesting.html#backtest`). Ejecutadas con `PYTHONPATH=<repo>` (`Kernel skf` del repo).
+
+**Fase 1-2: las 9 páginas con `.loc[<predicciones>.index, ...]`**
+
+| Página | Estado | Commit |
+|:--|:--|:--|
+| `autoregressive-classification-forecasting` | Hecha. 5 de 8 casos (18 y 19 vienen de `predict`), más la línea de `pred` del gráfico (29b) y el texto de la celda 25. Métricas, informes y figuras idénticos (PNG byte a byte). | 976605bf5 |
+| `comparing-forecasting-models` | **En espera** del bug del MASE (abajo). Propuesta: `y_true` en `summarize` (-4 líneas), en `set_out_sample_residuals` (celdas 10 y 20) y la columna en el texto de la celda 4. | |
+| `probabilistic-forecasting-bootstrapped-residuals` | Hecha. 3 de 3 (celdas 27, 30, 43). Residuos, intervalos, coberturas y figuras idénticos. | 541c8efdb |
+| `forecasting-with-deep-learning-rnn-lstm` | Hecha **sin ejecutar** (decisión del usuario). Celda 100 con `y_true`; celda 102 toma `coverage` e `interval_width` de `metric` (11 líneas a 1); quitado el import de `calculate_coverage`. Comprobado aparte que `metric` da los mismos valores. **Pendiente:** la salida guardada de la celda 102 aún muestra `mean_interval_width`; al volver a ejecutar pasa a `interval_width` (mismos valores). | 915ac39ea |
+| `independent-multi-time-series-forecasting` | Sin cambios: los 2 casos son el corte train/test (celda 13), no el backtesting. | |
+| `probabilistic-forecasting-conformal-prediction` | Pendiente (grupo 3). | |
+| `probabilistic-forecasting-metrics` | Pendiente (grupo 3). | |
+| `time-series-differentiation` | Pendiente (grupo 3). | |
+| `probabilistic-forecasting-global-models` | Pendiente (grupo 3). | |
+
+**Para el inventario de la fase 3** (resto de páginas con `backtesting_*(`), además de las
+38 páginas: los usos de `data_test` como valor real en `bootstrapped-residuals` (celdas 20,
+33, 51, 55, 57, 64; aprobado incluirlos) y `plot_prediction_intervals(y_true=<test>)` en
+`comparing-forecasting-models` (`plot_predictions`) y `rnn-lstm` (celdas 97, 103).
+
+**Bug aparte del MASE (2026-11-09):** el backtesting y las búsquedas escalan MASE/RMSSE
+con `y_train` sin las primeras `window_size` observaciones (`_validation.py`, bloque de
+`_any_metric_needs_y_train`), así que el denominador cambia con el modelo. En h2o (168
+meses de entrenamiento): escala 0.0918 con la serie completa, 0.0958 con `window_size=24`
+(+4.4 %); el MASE del backtesting invierte Ridge (0.667) y ETS (0.664) frente a la
+definición estándar (0.696 y 0.707). Se analiza en otra sesión
+(`BUG-mase-window-size.md`). `comparing-forecasting-models` espera a ese resultado.
+
+**Notas:** `execute_notebooks.py` excluye por defecto `comparing-forecasting-models` y
+`forecasting-with-deep-learning-rnn-lstm` (`EXCLUDE_NOTEBOOKS`); hay que pasarlas
+explícitamente.
+
 ## 14. PR 2b: candidatos que fallan y pendientes de las búsquedas (2026-11-06)
 
 Rama `fix/search-failing-candidates` desde `0.27.x` (con #1447 y #1452). Alcance: 12.5.
