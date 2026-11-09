@@ -22,6 +22,7 @@ import time
 import joblib
 
 USED = []
+WORK = []
 
 
 class RecParallel(joblib.Parallel):
@@ -36,6 +37,13 @@ def _patch():
     import skforecast.model_selection._validation as val
     for mod in (val, fd, fdm):
         mod.Parallel = RecParallel
+    original = val.limit_n_jobs_by_workload
+
+    def rec_limit(n_jobs, n_tasks, n_fits, fit_seconds):
+        WORK.append((n_fits, fit_seconds))
+        return original(n_jobs=n_jobs, n_tasks=n_tasks, n_fits=n_fits, fit_seconds=fit_seconds)
+
+    val.limit_n_jobs_by_workload = rec_limit
 
 
 def _rss_tree_mb():
@@ -109,6 +117,7 @@ def main():
 
     def measure(n_jobs, rep):
         USED.clear()
+        WORK.clear()
         sampler = MemSampler() if args.mem else None
         if sampler:
             sampler.start()
@@ -121,6 +130,10 @@ def main():
             "used": sorted(set(USED)), "n_parallel": len(USED), "fp": fp,
             "ncpu": ncpu, "mode": args.mode, "peak_mb": peak,
             "setup_s": round(t_import, 3),
+            "est_work_s": (
+                round(sum(nf * fs for nf, fs in WORK if fs is not None), 3)
+                if WORK else None
+            ),
         }), flush=True)
 
     if args.mode == "cold":

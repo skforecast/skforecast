@@ -196,3 +196,65 @@ Conclusión: solo HGB sufre el coste de abrir la región OpenMP con 4 hilos en c
 la predicción recursiva con HGB es ~2× más lenta de lo necesario también con
 `n_jobs=1`. skforecast ya limita los hilos de LightGBM al predecir; HGB no.
 Siguiente: medir el efecto en un backtesting real limitando los hilos solo al predecir.
+
+Lateral confirmado en un backtesting real (`probe_hgb_predict.py`, HGB, n_jobs=1,
+caliente): limitar a 1 hilo OpenMP solo la predicción recursiva baja 0.666 → 0.610 s
+con `refit=False` (−8 %) y 5.78 → 5.56 s con `refit=True` (−4 %). Micro-medida repetida:
+0.95 → 0.66 ms por fila (−30 %). Efecto real pequeño: **no prioritario**.
+
+### H2. Forecaster ajustado enviado a cada tarea con `refit=True`
+
+Medida directa (forecaster ajustado con 1520 filas, 24 lags):
+
+| estimador | pickle ajustado | dumps+loads | pickle sin ajustar | fit |
+|---|---|---|---|---|
+| Ridge | 0.01 MB | 0.3 ms | 4 KB | 0.01 s |
+| RF (100) | 13.6 MB | 15.5 ms | 5 KB | 1.33 s |
+| ET (100) | 21.6 MB | 36.9 ms | 5 KB | 0.64 s |
+| HGB | 0.41 MB | 5.8 ms | 5 KB | 0.27 s |
+| XGB | 0.37 MB | 2.9 ms | 5 KB | 0.16 s |
+| CatBoost | 1.13 MB | 1.8 ms | 4 KB | 1.48 s |
+| LGBM | 0.29 MB | 2.3 ms | 5 KB | 0.08 s |
+
+Conclusión: con `refit=True` el sobrecoste por tarea (≤ 40 ms + transferencia) es
+≤ 5-6 % del ajuste del fold incluso con RF/ET. H2 es real pero de impacto bajo en el
+backtesting con refit. Es el coste dominante cuando el fold solo predice (H1).
+Enviar un clon sin ajustar a los folds con refit es barato de implementar, pero
+la ganancia esperada es pequeña. No lo mido más.
+
+### H4. Umbral de trabajo de un backtesting suelto (`refit=True`)
+
+Caso: `backtesting_forecaster`, RF con pocos árboles para escalar el trabajo, n=2000,
+20 folds, `steps=24`, 4 CPU. `est. work` = `n_fits * fit_seconds` registrado por
+`limit_n_jobs_by_workload`.
+
+| árboles | modo | n_jobs=1 | n_jobs=3 | 'auto' (elige) | est. work |
+|---|---|---|---|---|---|
+| 4 | frío | 1.27 (1.06) | 2.02 (1.98) | 1.28 (1) | — |
+| 8 | frío | 2.40 (2.38) | 2.42 (2.33) | 2.40 (1 o 3) | 1.94 |
+| 12 | frío | 3.61 (3.40) | 2.96 (2.85) | 2.90 (3) | — |
+| 1 | caliente | 0.31 (0.26) | 0.17 (0.15) | 0.36 (1) | 0.32 |
+| 4 | caliente | 1.21 (1.13) | 0.54 (0.48) | 1.17 (1) | 0.96 |
+
+Conclusión: en frío el umbral de 2 s está bien calibrado en este Linux: el equilibrio
+está en ~2.4 s de trabajo secuencial real, y la carga estimada es ~80 % del tiempo
+secuencial (1.94 / 2.40). En caliente paralelizar gana a cualquier tamaño (1.8-2.2×),
+así que el umbral deja sin aprovechar hasta ~1.5 s por llamada en un notebook. Es una
+pérdida acotada; el umbral cumple el criterio "'auto' nunca mucho peor que 1".
+
+### H3. `cpu_count() - 1` frente a `cpu_count()`
+
+Caso: el de H4 con RF de 25 árboles (≈ 7.3 s secuenciales), frío.
+
+| CPUs | n_jobs=1 | 'auto' | n_jobs=cpu_count |
+|---|---|---|---|
+| 4 | 7.35 (6.99) | 4.44 (4.31), elige 3 | 3.90 (3.75) con 4 |
+| 2 | — | 7.44 (7.17), elige 1 | 5.78 (5.48) con 2 |
+
+Las 4 vCPU de este contenedor se presentan como 4 núcleos sin hyperthreading
+(`lscpu`), aunque el hipervisor puede mapearlas a hilos hermanos.
+
+Conclusión: H3 confirmada. Con 4 CPU, 4 workers son un 12 % más rápidos que 3 (el
+proceso principal apenas trabaja durante el `Parallel`). Con 2 CPU `'auto'` nunca
+paraleliza y deja un 1.29× sin aprovechar. En una máquina con 2 vCPU que sean un
+núcleo físico con HT (Colab gratis) la ganancia sería menor: no medible aquí.

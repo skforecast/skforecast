@@ -112,8 +112,8 @@ def main():
         f"spec: `{json.dumps(spec)}`  ",
         f"load before/after: {load_before} / {load_after}",
         "",
-        "| n_jobs | used | median s | min s | max s | peak MB | fp |",
-        "|---|---|---|---|---|---|---|",
+        "| n_jobs | used | median s | min s | max s | peak MB | est. work s | fp |",
+        "|---|---|---|---|---|---|---|---|",
     ]
     fps = set()
     for c in configs:
@@ -122,11 +122,13 @@ def main():
         used = sorted({str(u) for r in rs for u in r["used"]})
         peaks = [r["peak_mb"] for r in rs if r["peak_mb"] is not None]
         fp = sorted({r["fp"] for r in rs})
+        works = [r.get("est_work_s") for r in rs if r.get("est_work_s") is not None]
+        work = f"{statistics.median(works):.2f}" if works else "-"
         fps.update(fp)
         lines.append(
             f"| {c} | {','.join(used)} | {statistics.median(secs):.3f} | "
             f"{min(secs):.3f} | {max(secs):.3f} | "
-            f"{(max(peaks) if peaks else float('nan')):.0f} | {','.join(fp)} |"
+            f"{(max(peaks) if peaks else float('nan')):.0f} | {work} | {','.join(fp)} |"
         )
     lines.append("")
     lines.append(
