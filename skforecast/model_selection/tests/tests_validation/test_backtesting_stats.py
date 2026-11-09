@@ -707,7 +707,7 @@ def test_output_backtesting_stats_yes_refit_fixed_train_size_yes_exog_list_of_me
                                    )
     
     expected_metric = pd.DataFrame({"my_metric": [0.007877420102652216], 
-                                    "mean_absolute_scaled_error": [3.899618814139531]})
+                                    "mean_absolute_scaled_error": [3.9807353314434977]})
     expected_preds = pd.DataFrame(
         data    = np.array([ 0.59409098,  0.78323365,  0.99609033,  0.88202026,  1.03241114,
                              1.16808941,  0.86535534,  0.87277596,  0.69357041,  0.16628876,
@@ -2218,3 +2218,44 @@ def test_backtesting_stats_warnings_of_folds_in_processes_same_as_n_jobs_1():
     assert len(expected) == 3
     assert {category for category, _, _, _ in expected} == {UserWarning}
     assert results == expected
+
+
+@pytest.mark.parametrize(
+    "refit",
+    [False, True],
+    ids=lambda refit: f"refit: {refit}"
+)
+def test_backtesting_stats_scaled_metrics_scaled_by_forecast_origin(refit):
+    """
+    Test that `mean_absolute_scaled_error` and `root_mean_squared_scaled_error`
+    scale the error of each prediction with the naive forecast over the values
+    before its forecast origin (the start of the test set of its fold), with
+    and without `refit`: the training sets of later folds are not used.
+    """
+    from skforecast.metrics import (
+        mean_absolute_scaled_error,
+        root_mean_squared_scaled_error,
+    )
+
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 0, 0)))
+    metric, predictions = backtesting_stats(
+        forecaster        = forecaster,
+        y                 = y_datetime,
+        cv                = TimeSeriesFold(steps=5, initial_train_size=30, refit=refit),
+        metric            = [mean_absolute_scaled_error, root_mean_squared_scaled_error],
+        show_progress     = False,
+        suppress_warnings = True
+    )
+
+    values = y_datetime.to_numpy()
+    errors = (predictions["y_true"] - predictions["pred"]).to_numpy()
+    origins = 30 + 5 * predictions["fold"].to_numpy()
+    scale_abs = np.array([np.mean(np.abs(np.diff(values[:o]))) for o in origins])
+    scale_sq = np.array([np.mean(np.diff(values[:o]) ** 2) for o in origins])
+    np.testing.assert_almost_equal(
+        metric.loc[0, "mean_absolute_scaled_error"], np.mean(np.abs(errors) / scale_abs)
+    )
+    np.testing.assert_almost_equal(
+        metric.loc[0, "root_mean_squared_scaled_error"],
+        np.sqrt(np.mean(errors ** 2 / scale_sq))
+    )

@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed, cpu_count
 from tqdm.auto import tqdm
-from ..metrics import add_y_train_argument, _any_metric_needs_y_train, _get_metric
+from ..metrics import add_y_train_argument, _get_metric
 from ..exceptions import (
     LongTrainingWarning,
     IgnoredArgumentWarning
@@ -28,6 +28,7 @@ from ..model_selection._utils import (
     _select_fit_folds_multiseries,
     _warn_levels_not_predicted_multiseries,
     _calculate_metrics_backtesting,
+    _get_y_train_and_scales,
     _calculate_metrics_backtesting_multiseries,
     _get_interval_columns,
     _get_y_true_multiseries,
@@ -400,7 +401,11 @@ def _backtesting_forecaster(
         or `'root_mean_squared_error'`. All accepted names are listed in
         https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
-        (Optional) that returns a float.
+        (Optional) that returns a float. `y_train` is the series before the
+        first forecast origin. `mean_absolute_scaled_error` and
+        `root_mean_squared_scaled_error` scale the error of each prediction
+        with the one-step naive forecast over the observations before its own
+        forecast origin, the same for every forecaster.
         - If `list`: List containing multiple strings and/or Callables.
     exog : pandas Series, pandas DataFrame, default None
         Exogenous variable/s included as predictor/s. Must have the same
@@ -587,7 +592,6 @@ def _backtesting_forecaster(
 
     folds = cv.split(X=y, as_pandas=False)
     initial_train_size = cv.initial_train_size_as_int
-    window_size = cv.window_size
     gap = cv.gap
 
     # Save out-of-sample residuals, and the binner that binned them, before any
@@ -688,6 +692,9 @@ def _backtesting_forecaster(
     n_predictions_folds = [pred.shape[0] for pred in backtest_predictions]
     fold_labels = np.repeat([fold[0] for fold in folds], n_predictions_folds)
     test_iloc_starts = np.repeat([fold[3][0] for fold in folds], n_predictions_folds)
+    # NOTE: The forecast origin of a prediction is the end of the last window
+    # of its fold: the observations known when it is made (the `gap` is not).
+    origin_ilocs = np.repeat([fold[2][1] for fold in folds], n_predictions_folds)
 
     backtest_predictions = pd.concat(backtest_predictions)
     if isinstance(backtest_predictions, pd.Series):
@@ -708,26 +715,15 @@ def _backtesting_forecaster(
 
     backtest_predictions_for_metrics = backtest_predictions
     if overlapping_folds:
-        backtest_predictions_for_metrics = (
-            backtest_predictions_for_metrics
-            .loc[~backtest_predictions_for_metrics.index.duplicated(keep='last')]
-        )
+        is_kept = ~backtest_predictions_for_metrics.index.duplicated(keep='last')
+        backtest_predictions_for_metrics = backtest_predictions_for_metrics.loc[is_kept]
+        origin_ilocs = origin_ilocs[is_kept]
 
-    if _any_metric_needs_y_train(metrics):
-        train_indexes = []
-        for i, fold in enumerate(folds):
-            fit_fold = fold[-1]
-            if i == 0 or fit_fold:
-                # NOTE: When using a scaled metric, `y_train` doesn't include the
-                # first window_size observations used to create the predictors and/or
-                # rolling features.
-                train_iloc_start = fold[1][0] + window_size
-                train_iloc_end = fold[1][1]
-                train_indexes.append(np.arange(train_iloc_start, train_iloc_end))
-        train_indexes = np.unique(np.concatenate(train_indexes))
-        y_train = y.iloc[train_indexes]
-    else:
-        y_train = None
+    y_train, scale_abs, scale_sq = _get_y_train_and_scales(
+                                       y       = y,
+                                       origins = origin_ilocs,
+                                       metrics = metrics
+                                   )
 
     interval_columns = _get_interval_columns(
                            columns  = backtest_predictions_for_metrics.columns,
@@ -738,7 +734,9 @@ def _backtesting_forecaster(
                         metrics          = metrics,
                         y_train          = y_train,
                         interval_columns = interval_columns,
-                        differentiation  = forecaster.differentiation
+                        differentiation  = forecaster.differentiation,
+                        scale_abs        = scale_abs,
+                        scale_sq         = scale_sq
                     )
     metric_names = [m.__name__ for m in metrics]
     if interval_columns is not None:
@@ -801,7 +799,11 @@ def backtesting_forecaster(
         or `'root_mean_squared_error'`. All accepted names are listed in
         https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
-        (Optional) that returns a float.
+        (Optional) that returns a float. `y_train` is the series before the
+        first forecast origin. `mean_absolute_scaled_error` and
+        `root_mean_squared_scaled_error` scale the error of each prediction
+        with the one-step naive forecast over the observations before its own
+        forecast origin, the same for every forecaster.
         - If `list`: List containing multiple strings and/or Callables.
     exog : pandas Series, pandas DataFrame, default None
         Exogenous variable/s included as predictor/s. Must have the same
@@ -1225,7 +1227,11 @@ def _backtesting_forecaster_multiseries(
         or `'root_mean_squared_error'`. All accepted names are listed in
         https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
-        (Optional) that returns a float.
+        (Optional) that returns a float. `y_train` is the series before the
+        first forecast origin. `mean_absolute_scaled_error` and
+        `root_mean_squared_scaled_error` scale the error of each prediction
+        with the one-step naive forecast over the observations before its own
+        forecast origin, the same for every forecaster.
         - If `list`: List containing multiple strings and/or Callables.
     levels : str, list, default None
         Time series to be predicted. If `None` all levels will be predicted.
@@ -1696,8 +1702,8 @@ def _backtesting_forecaster_multiseries(
         )
 
     predictions_for_metrics = (
-        backtest_predictions_for_metrics[['y_true', 'pred']]
-        .set_axis(['y_true', 'y_pred'], axis=1)
+        backtest_predictions_for_metrics[['fold', 'y_true', 'pred']]
+        .set_axis(['fold', 'y_true', 'y_pred'], axis=1)
     )
     interval_columns = _get_interval_columns(
                            columns  = backtest_predictions_for_metrics.columns,
@@ -1705,8 +1711,8 @@ def _backtesting_forecaster_multiseries(
                        )
     if interval_columns is not None:
         predictions_for_metrics = (
-            backtest_predictions_for_metrics[['y_true', 'pred', *interval_columns]]
-            .set_axis(['y_true', 'y_pred', 'lower_bound', 'upper_bound'], axis=1)
+            backtest_predictions_for_metrics[['fold', 'y_true', 'pred', *interval_columns]]
+            .set_axis(['fold', 'y_true', 'y_pred', 'lower_bound', 'upper_bound'], axis=1)
         )
 
     metrics_levels = _calculate_metrics_backtesting_multiseries(
@@ -1714,7 +1720,6 @@ def _backtesting_forecaster_multiseries(
         predictions           = predictions_for_metrics,
         folds                 = folds,
         span_index            = span_index,
-        window_size           = forecaster.window_size,
         metrics               = metrics,
         levels                = levels,
         add_aggregated_metric = add_aggregated_metric
@@ -1780,7 +1785,11 @@ def backtesting_forecaster_multiseries(
         or `'root_mean_squared_error'`. All accepted names are listed in
         https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
-        (Optional) that returns a float.
+        (Optional) that returns a float. `y_train` is the series before the
+        first forecast origin. `mean_absolute_scaled_error` and
+        `root_mean_squared_scaled_error` scale the error of each prediction
+        with the one-step naive forecast over the observations before its own
+        forecast origin, the same for every forecaster.
         - If `list`: List containing multiple strings and/or Callables.
     levels : str, list, default None
         Time series to be predicted. If `None` all levels will be predicted.
@@ -2157,7 +2166,11 @@ def _backtesting_stats(
         or `'root_mean_squared_error'`. All accepted names are listed in
         https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
-        (Optional) that returns a float.
+        (Optional) that returns a float. `y_train` is the series before the
+        first forecast origin. `mean_absolute_scaled_error` and
+        `root_mean_squared_scaled_error` scale the error of each prediction
+        with the one-step naive forecast over the observations before its own
+        forecast origin, the same for every forecaster.
         - If `list`: List containing multiple strings and/or Callables.
     exog : pandas Series, pandas DataFrame, default None
         Exogenous variable/s included as predictor/s. Must have the same
@@ -2409,6 +2422,9 @@ def _backtesting_stats(
     n_predictions_folds = [pred.shape[0] for pred in backtest_predictions]
     fold_labels = np.repeat([fold[0] for fold in folds], n_predictions_folds)
     test_iloc_starts = np.repeat([fold[3][0] for fold in folds], n_predictions_folds)
+    # NOTE: The forecast origin of a prediction is the end of the last window
+    # of its fold: the observations known when it is made (the `gap` is not).
+    origin_ilocs = np.repeat([fold[2][1] for fold in folds], n_predictions_folds)
     backtest_predictions = pd.concat(backtest_predictions, axis=0)
     if isinstance(backtest_predictions, pd.Series):
         backtest_predictions = pd.DataFrame(backtest_predictions)
@@ -2430,20 +2446,6 @@ def _backtesting_stats(
         estimator_names_ = [result[1] for result in results]
         backtest_predictions['estimator_params'] = np.concatenate(estimator_names_)
 
-    if _any_metric_needs_y_train(metrics):
-        train_indexes = []
-        for i, fold in enumerate(folds):
-            fit_fold = fold[-1]
-            if i == 0 or fit_fold:
-                train_iloc_start = fold[1][0]
-                train_iloc_end = fold[1][1]
-                train_indexes.append(np.arange(train_iloc_start, train_iloc_end))
-        
-        train_indexes = np.unique(np.concatenate(train_indexes))
-        y_train = y.iloc[train_indexes]
-    else:
-        y_train = None
-
     backtest_predictions_for_metrics = backtest_predictions
     if overlapping_folds:
         # With several estimators, each date has one row per estimator, so the
@@ -2459,6 +2461,13 @@ def _backtesting_stats(
         backtest_predictions_for_metrics = (
             backtest_predictions_for_metrics.loc[~is_duplicated]
         )
+        origin_ilocs = origin_ilocs[~is_duplicated]
+
+    y_train, scale_abs, scale_sq = _get_y_train_and_scales(
+                                       y       = y,
+                                       origins = origin_ilocs,
+                                       metrics = metrics
+                                   )
 
     interval_columns = _get_interval_columns(
                            columns  = backtest_predictions_for_metrics.columns,
@@ -2474,7 +2483,9 @@ def _backtesting_stats(
                             predictions      = backtest_predictions_for_metrics,
                             metrics          = metrics,
                             y_train          = y_train,
-                            interval_columns = interval_columns
+                            interval_columns = interval_columns,
+                            scale_abs        = scale_abs,
+                            scale_sq         = scale_sq
                         )
         metric_values = pd.DataFrame(
             data    = [metric_values],
@@ -2488,7 +2499,15 @@ def _backtesting_stats(
                 metrics          = metrics,
                 y_train          = y_train,
                 interval_columns = interval_columns,
-                estimator_id     = estimator_id
+                estimator_id     = estimator_id,
+                scale_abs        = (
+                    scale_abs[grouped.indices[estimator_id]]
+                    if scale_abs is not None else None
+                ),
+                scale_sq         = (
+                    scale_sq[grouped.indices[estimator_id]]
+                    if scale_sq is not None else None
+                )
             )
             for estimator_id, group in grouped
         ]
@@ -2540,7 +2559,11 @@ def backtesting_stats(
         or `'root_mean_squared_error'`. All accepted names are listed in
         https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
-        (Optional) that returns a float.
+        (Optional) that returns a float. `y_train` is the series before the
+        first forecast origin. `mean_absolute_scaled_error` and
+        `root_mean_squared_scaled_error` scale the error of each prediction
+        with the one-step naive forecast over the observations before its own
+        forecast origin, the same for every forecaster.
         - If `list`: List containing multiple strings and/or Callables.
     exog : pandas Series, pandas DataFrame, default None
         Exogenous variable/s included as predictor/s. Must have the same
@@ -2731,7 +2754,11 @@ def _backtesting_foundation(
         or `'root_mean_squared_error'`. All accepted names are listed in
         https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and
-        `y_train` (Optional) that returns a float.
+        `y_train` (Optional) that returns a float. `y_train` is the series
+        before the first forecast origin. `mean_absolute_scaled_error` and
+        `root_mean_squared_scaled_error` scale the error of each prediction
+        with the one-step naive forecast over the observations before its own
+        forecast origin, the same for every forecaster.
         - If `list`: List containing multiple strings and/or Callables.
     levels : str, list, default None
         Time series to be predicted and evaluated. Must be a subset of the
@@ -3024,8 +3051,8 @@ def _backtesting_foundation(
             metric_col = 'pred'
 
         predictions_for_metrics = (
-            backtest_predictions_for_metrics[['y_true', metric_col]]
-            .set_axis(['y_true', 'y_pred'], axis=1)
+            backtest_predictions_for_metrics[['fold', 'y_true', metric_col]]
+            .set_axis(['fold', 'y_true', 'y_pred'], axis=1)
         )
         interval_columns = _get_interval_columns(
                                columns  = backtest_predictions_for_metrics.columns,
@@ -3033,8 +3060,8 @@ def _backtesting_foundation(
                            )
         if interval_columns is not None:
             predictions_for_metrics = (
-                backtest_predictions_for_metrics[['y_true', metric_col, *interval_columns]]
-                .set_axis(['y_true', 'y_pred', 'lower_bound', 'upper_bound'], axis=1)
+                backtest_predictions_for_metrics[['fold', 'y_true', metric_col, *interval_columns]]
+                .set_axis(['fold', 'y_true', 'y_pred', 'lower_bound', 'upper_bound'], axis=1)
             )
 
         metrics_levels = _calculate_metrics_backtesting_multiseries(
@@ -3042,7 +3069,6 @@ def _backtesting_foundation(
             predictions           = predictions_for_metrics,
             folds                 = folds,
             span_index            = span_index,
-            window_size           = 0,  # Not used here 
             metrics               = metrics,
             levels                = levels,
             add_aggregated_metric = add_aggregated_metric,
@@ -3066,16 +3092,18 @@ def _backtesting_foundation(
                 backtest_predictions_for_metrics
                 .loc[~backtest_predictions_for_metrics.index.duplicated(keep='last')]
             )
-        
-        if _any_metric_needs_y_train(metrics):
-            train_indexes = []
-            for i, fold in enumerate(folds):
-                if i == 0 or fold[-1]:
-                    train_indexes.append(np.arange(fold[1][0], fold[1][1]))
-            train_indexes = np.unique(np.concatenate(train_indexes))
-            y_train = series[series_names[0]].iloc[train_indexes]
-        else:
-            y_train = None
+
+        # NOTE: The forecast origin of a prediction is the end of the last
+        # window of its fold (the `gap` is not known when it is made).
+        origin_by_fold = {fold[0]: fold[2][1] for fold in folds}
+        origin_ilocs = (
+            backtest_predictions_for_metrics['fold'].map(origin_by_fold).to_numpy()
+        )
+        y_train, scale_abs, scale_sq = _get_y_train_and_scales(
+                                           y       = y,
+                                           origins = origin_ilocs,
+                                           metrics = metrics
+                                       )
 
         interval_columns = _get_interval_columns(
                                columns  = backtest_predictions_for_metrics.columns,
@@ -3088,7 +3116,9 @@ def _backtesting_foundation(
                             metrics          = metrics,
                             y_train          = y_train,
                             interval_columns = interval_columns,
-                            pred_column      = pred_column
+                            pred_column      = pred_column,
+                            scale_abs        = scale_abs,
+                            scale_sq         = scale_sq
                         )
         metric_names = [m.__name__ for m in metrics]
         if interval_columns is not None:
@@ -3151,7 +3181,11 @@ def backtesting_foundation(
         or `'root_mean_squared_error'`. All accepted names are listed in
         https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and
-        `y_train` (Optional) that returns a float.
+        `y_train` (Optional) that returns a float. `y_train` is the series
+        before the first forecast origin. `mean_absolute_scaled_error` and
+        `root_mean_squared_scaled_error` scale the error of each prediction
+        with the one-step naive forecast over the observations before its own
+        forecast origin, the same for every forecaster.
         - If `list`: List containing multiple strings and/or Callables.
     levels : str, list, default None
         Time series to be predicted and evaluated. Must be a subset of the

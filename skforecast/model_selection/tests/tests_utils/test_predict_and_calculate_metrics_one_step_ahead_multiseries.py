@@ -470,12 +470,12 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_ForecasterRecu
                                                 0.5255812268505718,
                                                 0.5255812268505717,
                                                 0.5255812268505717],
-            'mean_absolute_scaled_error': [3.2251721028626883,
-                                            4.520621275575221,
-                                            3.441691599998732,
-                                            3.7291616594788803,
-                                            3.729161659478881,
-                                            3.732657654164705],
+            'mean_absolute_scaled_error': [3.232081019417296,
+                                            4.513726395516266,
+                                            3.4350383938193927,
+                                            3.726948602917652,
+                                            3.726948602917652,
+                                            3.726948602917651],
             'n_evaluated': [170, 170, 170, 510, 510, 510]}
         ),
         pd.DataFrame(
@@ -581,12 +581,12 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_Forecas
                     5: 2.511392053700832,
                 },
                 "mean_absolute_scaled_error": {
-                    0: 2.204480978912765,
-                    1: 1.3765145512362387,
-                    2: 33.712615977712886,
-                    3: 12.431203835953964,
-                    4: 12.431203835953964,
-                    5: 17.347393898836998,
+                    0: 2.2088330938250484,
+                    1: 1.3794997216922271,
+                    2: 33.64271359593835,
+                    3: 12.410348803818543,
+                    4: 12.410348803818543,
+                    5: 12.410348803818545,
                 },
                 "n_evaluated": {0: 170, 1: 170, 2: 170, 3: 510, 4: 510, 5: 510},
             }
@@ -676,7 +676,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_Forecas
             {'levels': ['item_1'],
              'mean_absolute_error': [3.246937481200051],
              'mean_absolute_percentage_error': [0.1604318346564821],
-             'mean_absolute_scaled_error': [2.1241244208766368],
+             'mean_absolute_scaled_error': [2.12812319799106],
              'n_evaluated': [170]}
         ),
         pd.DataFrame(

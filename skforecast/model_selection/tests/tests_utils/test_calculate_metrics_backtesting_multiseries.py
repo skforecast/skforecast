@@ -14,17 +14,50 @@ from skforecast.model_selection._utils import (
     _SearchWarnings
 )
 
-def add_y_true(predictions, series):
+def add_y_true(predictions, series, folds=None, span_index=None):
     """
-    Predictions as the backtesting passes them: the true values of `series`
-    in the column `y_true` and the point predictions in `y_pred`.
+    Predictions as the backtesting passes them: the fold of each prediction in
+    the column `fold`, the true values of `series` in the column `y_true` and
+    the point predictions in `y_pred`. The fold of a prediction is the last
+    fold whose test set includes its date (positions of `span_index`).
     """
+    folds = FOLDS if folds is None else folds
+    span_index = SPAN_INDEX if span_index is None else span_index
     predictions = predictions.rename(columns={"pred": "y_pred"})
     predictions.insert(
         0, "y_true", _get_y_true_multiseries(series=series, index=predictions.index)
     )
+    positions = span_index.get_indexer(predictions.index.get_level_values("idx"))
+    fold_labels = np.full(len(positions), -1)
+    for fold in folds:
+        in_fold = (positions >= fold[3][0]) & (positions < fold[3][1])
+        fold_labels[in_fold] = fold[0]
+    predictions.insert(0, "fold", fold_labels)
 
     return predictions
+
+
+def expected_scaled_metrics(series, predictions, folds, span_index):
+    """
+    Reference MASE and RMSSE of each level: the error of each point is scaled
+    with the error of the one-step naive forecast of its series over the
+    observations before its forecast origin (the end of the last window of
+    its fold, `fold[2][1]`).
+    """
+    origin_by_fold = {fold[0]: fold[2][1] for fold in folds}
+    predictions = predictions.dropna(subset=["y_true", "y_pred"])
+    results = {}
+    for level, group in predictions.groupby(level="level", sort=False):
+        y = series[level].reindex(span_index).to_numpy()
+        q_abs, q_sq = [], []
+        for (_, row) in group.iterrows():
+            diffs = np.diff(y[:origin_by_fold[row["fold"]]])
+            error = row["y_true"] - row["y_pred"]
+            q_abs.append(abs(error) / np.nanmean(np.abs(diffs)))
+            q_sq.append(error ** 2 / np.nanmean(diffs ** 2))
+        results[level] = (np.mean(q_abs), np.sqrt(np.mean(q_sq)), q_abs, q_sq)
+
+    return results
 
 
 # Fixtures
@@ -147,13 +180,14 @@ predictions_interval_missing_level['lower_bound'] = predictions_missing_level['p
 predictions_interval_missing_level['upper_bound'] = predictions_missing_level['pred'] * 1.1
 
 span_index = pd.date_range(start="2012-01-01", end="2012-02-19", freq="D")
+SPAN_INDEX = span_index
 
 folds = [
     [0, [0, 25], [24, 25], [25, 35], [25, 35], True],
     [1, [0, 25], [34, 35], [35, 45], [35, 45], False],
     [2, [0, 25], [44, 45], [45, 50], [45, 50], False],
 ]
-window_size = 2
+FOLDS = folds
 levels = ["item_1", "item_2", "item_3"]
 
 
@@ -269,7 +303,6 @@ def test_calculate_metrics_backtesting_multiseries_output_when_no_aggregated_met
         predictions=add_y_true(predictions, data),
         folds=folds,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=levels,
         add_aggregated_metric=False,
@@ -279,7 +312,7 @@ def test_calculate_metrics_backtesting_multiseries_output_when_no_aggregated_met
         data={
             "levels": ["item_1", "item_2", "item_3"],
             "mean_absolute_error": [1.477567, 3.480129, 2.942386],
-            "mean_absolute_scaled_error": [0.8388579569071319, 1.261808218733781, 0.6816085701001846],
+            "mean_absolute_scaled_error": [0.6582011433315063, 1.1592943108558047, 0.665513685472384],
         }
     )
 
@@ -300,7 +333,6 @@ def test_calculate_metrics_backtesting_multiseries_output_when_aggregated_metric
         predictions=add_y_true(predictions, data),
         folds=folds,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=levels,
         add_aggregated_metric=True,
@@ -325,12 +357,12 @@ def test_calculate_metrics_backtesting_multiseries_output_when_aggregated_metric
                 2.633361,
             ],
             "mean_absolute_scaled_error": [
-                0.8388579569071319,
-                1.261808218733781,
-                0.6816085701001846,
-                0.9274249152470325,
-                0.9274249152470325,
-                0.8940507968656655,
+                0.6582011433315063,
+                1.1592943108558047,
+                0.665513685472384,
+                0.8276697132198984,
+                0.8276697132198982,
+                0.827669713219898,
             ],
         }
     )
@@ -352,7 +384,6 @@ def test_calculate_metrics_backtesting_multiseries_output_when_aggregated_metric
         predictions=add_y_true(predictions, data),
         folds=folds,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=levels,
         add_aggregated_metric=True,
@@ -403,7 +434,6 @@ def test_calculate_metrics_backtesting_multiseries_output_when_aggregated_metric
             predictions=add_y_true(predictions_different_length, data),
             folds=folds,
             span_index=span_index,
-            window_size=window_size,
             metrics=metrics,
             levels=levels,
             add_aggregated_metric=True,
@@ -428,12 +458,12 @@ def test_calculate_metrics_backtesting_multiseries_output_when_aggregated_metric
                 2.613332,
             ],
             "mean_absolute_scaled_error": [
-                0.8388579569071319,
-                1.261808218733781,
-                0.7351889788709302,
-                0.9452850515039476,
-                0.9893374538302255,
-                0.8872509680588639,
+                0.6582011433315063,
+                1.1592943108558047,
+                0.7162029629451473,
+                0.8445661390441527,
+                0.8714809985487829,
+                0.8714809985487828,
             ],
         }
     )
@@ -454,7 +484,6 @@ def test_calculate_metrics_backtesting_multiseries_output_when_aggregated_metric
         predictions=add_y_true(predictions_missing_level, data),
         folds=folds,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=levels,
         add_aggregated_metric=True,
@@ -479,12 +508,12 @@ def test_calculate_metrics_backtesting_multiseries_output_when_aggregated_metric
                 2.4788481,
             ],
             "mean_absolute_scaled_error": [
-                0.8388579569071319,
-                1.261808218733781,
+                0.6582011433315063,
+                1.1592943108558047,
                 np.nan,
-                1.0503330878204564,
-                1.0503330878204564,
-                1.096968360536767,
+                0.9087477270936555,
+                0.9087477270936555,
+                0.9087477270936555,
             ],
         }
     )
@@ -510,7 +539,6 @@ def test_calculate_metrics_backtesting_multiseries_output_when_interval_and_pred
             predictions=add_y_true(predictions_interval_different_length, data),
             folds=folds,
             span_index=span_index,
-            window_size=window_size,
             metrics=metrics,
             levels=levels,
             add_aggregated_metric=True,
@@ -570,7 +598,6 @@ def test_calculate_metrics_backtesting_multiseries_output_when_interval_and_one_
         predictions=add_y_true(predictions_interval_missing_level, data),
         folds=folds,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=levels,
         add_aggregated_metric=True,
@@ -621,7 +648,6 @@ def test_calculate_metrics_backtesting_multiseries_with_single_level():
         predictions=add_y_true(single_level_predictions, single_level_data),
         folds=folds,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=single_level_levels,
         add_aggregated_metric=True,  # Should be ignored when only 1 level
@@ -688,10 +714,9 @@ def test_calculate_metrics_backtesting_multiseries_with_rangeindex():
     
     results = _calculate_metrics_backtesting_multiseries(
         series=data_range,
-        predictions=add_y_true(predictions_range, data_range),
+        predictions=add_y_true(predictions_range, data_range, span_index=span_index_range),
         folds=folds,
         span_index=span_index_range,
-        window_size=window_size,
         metrics=metrics,
         levels=levels,
         add_aggregated_metric=False,
@@ -724,10 +749,9 @@ def test_calculate_metrics_backtesting_multiseries_with_multiple_folds_and_refit
     
     results = _calculate_metrics_backtesting_multiseries(
         series=data,
-        predictions=add_y_true(predictions, data),
+        predictions=add_y_true(predictions, data, folds=folds_mixed_refit),
         folds=folds_mixed_refit,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=levels,
         add_aggregated_metric=False,
@@ -740,45 +764,56 @@ def test_calculate_metrics_backtesting_multiseries_with_multiple_folds_and_refit
     assert results["mean_absolute_error"].notna().all()
 
 
-def test_calculate_metrics_backtesting_multiseries_with_window_size_variation():
+def test_calculate_metrics_backtesting_multiseries_scaled_metrics_scaled_by_forecast_origin():
     """
-    Test that _calculate_metrics_backtesting_multiseries correctly handles 
-    different window sizes (which affect y_train exclusion).
+    Test that `mean_absolute_scaled_error` and `root_mean_squared_scaled_error`
+    scale the error of each point with the error of the one-step naive forecast
+    of its series over the observations before its forecast origin (the end of
+    the last window of its fold), for each level and in the pooling (mean of
+    the scaled errors of all the points). The result does not depend on the
+    forecaster (`window_size`), which is not an argument.
     """
-    metrics = [add_y_train_argument(mean_absolute_scaled_error)]
-    
-    # Test with larger window size
-    results_ws5 = _calculate_metrics_backtesting_multiseries(
+    from skforecast.metrics import root_mean_squared_scaled_error
+
+    metrics = [
+        add_y_train_argument(mean_absolute_scaled_error),
+        add_y_train_argument(root_mean_squared_scaled_error),
+    ]
+    predictions_with_y_true = add_y_true(predictions, data)
+    results = _calculate_metrics_backtesting_multiseries(
         series=data,
-        predictions=add_y_true(predictions, data),
+        predictions=predictions_with_y_true,
         folds=folds,
         span_index=span_index,
-        window_size=5,  # larger window
         metrics=metrics,
         levels=levels,
-        add_aggregated_metric=False,
+        add_aggregated_metric=True,
     )
 
-    results_ws2 = _calculate_metrics_backtesting_multiseries(
-        series=data,
-        predictions=add_y_true(predictions, data),
-        folds=folds,
-        span_index=span_index,
-        window_size=2,  # original window
-        metrics=metrics,
-        levels=levels,
-        add_aggregated_metric=False,
+    expected = expected_scaled_metrics(
+        series=data, predictions=predictions_with_y_true, folds=folds,
+        span_index=span_index
     )
-
-    # Metrics should differ because y_train differs (fewer observations with larger window)
-    # but both should be valid numbers
-    assert results_ws5.shape == results_ws2.shape
-    assert results_ws5["mean_absolute_scaled_error"].notna().all()
-    assert results_ws2["mean_absolute_scaled_error"].notna().all()
-    # Different window sizes should produce different scaled error values
-    assert not np.allclose(
-        results_ws5["mean_absolute_scaled_error"].values,
-        results_ws2["mean_absolute_scaled_error"].values
+    q_abs = np.concatenate([expected[level][2] for level in levels])
+    q_sq = np.concatenate([expected[level][3] for level in levels])
+    results = results.set_index("levels")
+    for level in levels:
+        np.testing.assert_almost_equal(
+            results.loc[level, "mean_absolute_scaled_error"], expected[level][0]
+        )
+        np.testing.assert_almost_equal(
+            results.loc[level, "root_mean_squared_scaled_error"], expected[level][1]
+        )
+    np.testing.assert_almost_equal(
+        results.loc["pooling", "mean_absolute_scaled_error"], np.mean(q_abs)
+    )
+    np.testing.assert_almost_equal(
+        results.loc["pooling", "root_mean_squared_scaled_error"], np.sqrt(np.mean(q_sq))
+    )
+    # With the same points in every level, the pooled MASE is the weighted average.
+    np.testing.assert_almost_equal(
+        results.loc["pooling", "mean_absolute_scaled_error"],
+        results.loc["weighted_average", "mean_absolute_scaled_error"]
     )
 
 
@@ -799,7 +834,6 @@ def test_calculate_metrics_backtesting_multiseries_with_nans_in_series():
         predictions=add_y_true(predictions, data_with_nans),
         folds=folds,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=levels,
         add_aggregated_metric=True,
@@ -825,7 +859,6 @@ def test_calculate_metrics_backtesting_multiseries_preserves_level_order():
         predictions=add_y_true(predictions, data),
         folds=folds,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=reversed_levels,
         add_aggregated_metric=False,
@@ -857,7 +890,6 @@ def test_calculate_metrics_backtesting_multiseries_dataframe_no_multiindex_vs_di
         predictions=add_y_true(predictions, series_df),
         folds=folds,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=levels,
         add_aggregated_metric=True,
@@ -868,7 +900,6 @@ def test_calculate_metrics_backtesting_multiseries_dataframe_no_multiindex_vs_di
         predictions=add_y_true(predictions, series_dict),
         folds=folds,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=levels,
         add_aggregated_metric=True,
@@ -895,7 +926,6 @@ def test_calculate_metrics_backtesting_multiseries_dataframe_no_multiindex_two_l
         predictions=add_y_true(predictions_2_levels, data_2_levels),
         folds=folds,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=levels_2,
         add_aggregated_metric=True,
@@ -925,7 +955,6 @@ def test_calculate_metrics_backtesting_multiseries_dataframe_no_multiindex_colum
         predictions=add_y_true(predictions, data_reordered),
         folds=folds,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=levels,  # original order
         add_aggregated_metric=False,
@@ -980,7 +1009,6 @@ def test_calculate_metrics_backtesting_multiseries_dataframe_no_multiindex_many_
         predictions=add_y_true(predictions_many, data_many),
         folds=folds,
         span_index=pd.date_range(start="2012-01-01", periods=n_rows),
-        window_size=window_size,
         metrics=metrics,
         levels=levels_many,
         add_aggregated_metric=True,
@@ -1012,7 +1040,6 @@ def test_calculate_metrics_backtesting_multiseries_level_predicted_without_obser
         predictions=add_y_true(predictions_two_levels, series),
         folds=folds,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=['item_1', 'item_2'],
         add_aggregated_metric=True,
@@ -1063,7 +1090,6 @@ def test_calculate_metrics_backtesting_multiseries_MissingValuesWarning_when_NaN
             predictions=add_y_true(predictions_nan, series_nan),
             folds=folds,
             span_index=span_index,
-            window_size=window_size,
             metrics=metrics,
             levels=levels,
             add_aggregated_metric=True,
@@ -1074,7 +1100,6 @@ def test_calculate_metrics_backtesting_multiseries_MissingValuesWarning_when_NaN
         predictions=add_y_true(predictions_nan.dropna(), series_nan),
         folds=folds,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=levels,
         add_aggregated_metric=True,
@@ -1105,8 +1130,7 @@ def test_calculate_metrics_backtesting_multiseries_NaN_predictions_warning_group
                     predictions=add_y_true(predictions_nan, data),
                     folds=folds,
                     span_index=span_index,
-                    window_size=window_size,
-                    metrics=metrics,
+                                metrics=metrics,
                     levels=levels,
                     add_aggregated_metric=True,
                 )
@@ -1154,7 +1178,6 @@ def test_calculate_metrics_backtesting_multiseries_n_evaluated_and_weights():
             predictions=preds,
             folds=folds,
             span_index=span_index,
-            window_size=window_size,
             metrics=metrics,
             levels=["item_1", "item_2", "item_3", "item_4"],
             add_aggregated_metric=True,

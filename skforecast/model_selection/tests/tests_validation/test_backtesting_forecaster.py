@@ -12,6 +12,7 @@ from sklearn.ensemble import (
     HistGradientBoostingClassifier,
     HistGradientBoostingRegressor,
 )
+from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.metrics import mean_absolute_error
 from skforecast.recursive import ForecasterRecursive
 from skforecast.recursive import ForecasterRecursiveClassifier
@@ -405,20 +406,21 @@ def test_backtesting_forecaster_columns_order_when_interval_and_return_predictor
 
 
 @pytest.mark.parametrize(
-    "refit, train_iloc_end",
-    [(False, 40), (True, 45)],
-    ids=lambda x: f"refit, train_iloc_end: {x}"
+    "refit",
+    [False, True],
+    ids=lambda x: f"refit: {x}"
 )
 def test_backtesting_forecaster_metrics_leave_out_dates_without_true_values(
-    refit, train_iloc_end
+    refit
 ):
     """
     Test that the dates without a true value are left out of the metrics (as
-    in the multi-series backtesting), also of the scaled metrics, whose
-    `y_train` has a missing value with `refit=True`: the metrics are the ones
-    calculated by hand without those dates, and they never receive a missing
-    value. The predictions keep the rows of those dates, with `step` and
-    `y_true` NaN, and they are not counted in `n_evaluated`.
+    in the multi-series backtesting), also of the scaled metrics, whose scale
+    in the second fold (forecast origin 45, with or without refit) is
+    calculated with a missing value: the metrics are the ones calculated by
+    hand without those dates, and they never receive a missing value. The
+    predictions keep the rows of those dates, with `step` and `y_true` NaN,
+    and they are not counted in `n_evaluated`.
     """
     y_nan = y.copy()
     y_nan.iloc[[42, 47]] = np.nan
@@ -457,16 +459,19 @@ def test_backtesting_forecaster_metrics_leave_out_dates_without_true_values(
         backtest_predictions["y_true"].to_numpy()[is_observed]
         - backtest_predictions["pred"].to_numpy()[is_observed]
     )
-    # NOTE: The first `window_size` (3) values are not part of `y_train`.
-    naive_errors = np.diff(y_nan.to_numpy()[3:train_iloc_end])
+    # NOTE: Each error is scaled with the naive forecast over the values before
+    # the forecast origin of its fold (40 and 45, the end of the last window).
+    origins = np.where(backtest_predictions["fold"].to_numpy() == 0, 40, 45)[is_observed]
+    scale_abs = np.array(
+        [np.nanmean(np.abs(np.diff(y_nan.to_numpy()[:o]))) for o in origins]
+    )
+    scale_sq = np.array(
+        [np.nanmean(np.diff(y_nan.to_numpy()[:o]) ** 2) for o in origins]
+    )
     expected_metric = pd.DataFrame({
         "mean_absolute_error": [np.mean(np.abs(errors))],
-        "mean_absolute_scaled_error": [
-            np.mean(np.abs(errors)) / np.nanmean(np.abs(naive_errors))
-        ],
-        "root_mean_squared_scaled_error": [
-            np.sqrt(np.mean(errors ** 2)) / np.sqrt(np.nanmean(naive_errors ** 2))
-        ],
+        "mean_absolute_scaled_error": [np.mean(np.abs(errors) / scale_abs)],
+        "root_mean_squared_scaled_error": [np.sqrt(np.mean(errors ** 2 / scale_sq))],
         "spy_metric": [0.],
         "n_evaluated": [8],
     })
@@ -668,3 +673,178 @@ def test_backtesting_forecaster_warnings_of_fold_that_fails_in_process_same_as_n
     assert expected[0][0][:2] == (UserWarning, "Warning before the error of the fold.")
     assert expected[1:] == (ValueError, "Error of the fold.")
     assert results == expected
+
+
+def expected_scaled_metrics_per_origin(y, backtest_predictions, folds):
+    """
+    Reference MASE and RMSSE: the error of each prediction is scaled with the
+    error of the one-step naive forecast over the values of `y` before its
+    forecast origin, the end of the last window of its fold (`fold[2][1]`).
+    The repeated dates of overlapping folds keep the prediction of the last
+    fold.
+    """
+    origin_by_fold = {fold[0]: fold[2][1] for fold in folds}
+    predictions = backtest_predictions.loc[
+        ~backtest_predictions.index.duplicated(keep="last")
+    ]
+    predictions = predictions.loc[predictions["y_true"].notna()]
+    values = y.to_numpy()
+    errors = (predictions["y_true"] - predictions["pred"]).to_numpy()
+    origins = predictions["fold"].map(origin_by_fold).to_numpy()
+    scale_abs = np.array([np.nanmean(np.abs(np.diff(values[:o]))) for o in origins])
+    scale_sq = np.array([np.nanmean(np.diff(values[:o]) ** 2) for o in origins])
+
+    return (
+        np.mean(np.abs(errors) / scale_abs),
+        np.sqrt(np.mean(errors ** 2 / scale_sq))
+    )
+
+
+@pytest.mark.parametrize(
+    "forecaster, cv_kwargs",
+    [
+        (ForecasterRecursive(Ridge(random_state=123), lags=3), {}),
+        (ForecasterRecursive(Ridge(random_state=123), lags=10), {}),
+        (ForecasterRecursive(Ridge(random_state=123), lags=10, differentiation=1), {}),
+        (ForecasterDirect(Ridge(random_state=123), lags=10, steps=5), {}),
+        (ForecasterRecursive(Ridge(random_state=123), lags=10), {"refit": True}),
+        (
+            ForecasterRecursive(Ridge(random_state=123), lags=10),
+            {"refit": True, "fixed_train_size": True}
+        ),
+        (ForecasterRecursive(Ridge(random_state=123), lags=10), {"gap": 2}),
+        (ForecasterRecursive(Ridge(random_state=123), lags=10), {"fold_stride": 3}),
+        (
+            ForecasterRecursive(Ridge(random_state=123), lags=10),
+            {"steps": 4, "allow_incomplete_fold": True}
+        ),
+    ],
+    ids=[
+        "lags 3", "lags 10", "differentiation", "direct", "refit",
+        "refit fixed_train_size", "gap", "fold_stride", "incomplete last fold"
+    ]
+)
+def test_backtesting_forecaster_scaled_metrics_scaled_by_forecast_origin(
+    forecaster, cv_kwargs
+):
+    """
+    Test that `mean_absolute_scaled_error` and `root_mean_squared_scaled_error`
+    scale the error of each prediction with the naive forecast over the values
+    before its forecast origin (the end of the last window of its fold), the
+    same for every forecaster (`window_size`), `refit`, `fixed_train_size`,
+    `gap`, overlapping folds and incomplete last fold.
+    """
+    kwargs = {"steps": 5, "initial_train_size": 30, "refit": False}
+    kwargs.update(cv_kwargs)
+    cv = TimeSeriesFold(**kwargs)
+    metric, backtest_predictions = backtesting_forecaster(
+        forecaster    = forecaster,
+        y             = y,
+        cv            = cv,
+        metric        = [mean_absolute_scaled_error, root_mean_squared_scaled_error],
+        show_progress = False
+    )
+
+    folds = TimeSeriesFold(**kwargs, window_size=forecaster.window_size).split(
+        X=y, as_pandas=False
+    )
+    expected_mase, expected_rmsse = expected_scaled_metrics_per_origin(
+        y=y, backtest_predictions=backtest_predictions, folds=folds
+    )
+    np.testing.assert_almost_equal(
+        metric.loc[0, "mean_absolute_scaled_error"], expected_mase
+    )
+    np.testing.assert_almost_equal(
+        metric.loc[0, "root_mean_squared_scaled_error"], expected_rmsse
+    )
+
+
+def test_backtesting_forecaster_scaled_metrics_same_predictions_same_value():
+    """
+    Test that the scaled metrics of two forecasters with different
+    `window_size` are equal when their predictions are equal: the scale does
+    not depend on the forecaster. An estimator that predicts the first lag
+    (the naive forecast) gives the same predictions with 3 and 10 lags.
+    """
+
+    class LastValue(BaseEstimator, RegressorMixin):
+        def fit(self, X, y):
+            return self
+
+        def predict(self, X):
+            return np.asarray(X)[:, 0]
+
+    results = []
+    for lags in [3, 10]:
+        metric, predictions = backtesting_forecaster(
+            forecaster    = ForecasterRecursive(LastValue(), lags=lags),
+            y             = y,
+            cv            = TimeSeriesFold(steps=5, initial_train_size=30),
+            metric        = [
+                "mean_absolute_error",
+                mean_absolute_scaled_error,
+                root_mean_squared_scaled_error
+            ],
+            show_progress = False
+        )
+        results.append((metric, predictions))
+
+    pd.testing.assert_frame_equal(results[0][1], results[1][1])
+    pd.testing.assert_frame_equal(results[0][0], results[1][0])
+
+
+def test_backtesting_forecaster_metric_with_y_train_receives_values_before_first_origin():
+    """
+    Test that a metric with the argument `y_train`, other than the scaled
+    metrics of skforecast, receives the values of `y` before the first
+    forecast origin (`initial_train_size`), with any `refit`.
+    """
+    received = []
+
+    def custom_metric(y_true, y_pred, y_train):
+        received.append(y_train)
+        return 0.
+
+    for refit in [False, True]:
+        backtesting_forecaster(
+            forecaster    = ForecasterRecursive(Ridge(random_state=123), lags=10),
+            y             = y,
+            cv            = TimeSeriesFold(steps=5, initial_train_size=30, refit=refit),
+            metric        = custom_metric,
+            show_progress = False
+        )
+
+    for y_train in received:
+        pd.testing.assert_series_equal(y_train, y.iloc[:30])
+
+
+def test_backtesting_forecaster_RuntimeWarning_and_NaN_when_scale_is_zero():
+    """
+    Test that the scaled metrics leave out the points whose scale is zero
+    (constant series before the forecast origin), warning about it, and are
+    NaN when no point is left.
+    """
+    y_constant = pd.Series(np.full(50, 5.0))
+    warn_msg = re.escape(
+        "The scale of `mean_absolute_scaled_error` and "
+        "`root_mean_squared_scaled_error` (the error of the one-step naive "
+        "forecast over the observations before the forecast origin) is zero "
+        "or missing for 20 of the 20 points evaluated"
+    )
+    with pytest.warns(RuntimeWarning, match=warn_msg):
+        metric, _ = backtesting_forecaster(
+            forecaster    = ForecasterRecursive(Ridge(random_state=123), lags=3),
+            y             = y_constant,
+            cv            = TimeSeriesFold(steps=5, initial_train_size=30),
+            metric        = [
+                "mean_absolute_error",
+                mean_absolute_scaled_error,
+                root_mean_squared_scaled_error
+            ],
+            show_progress = False
+        )
+
+    assert metric.loc[0, "mean_absolute_error"] == 0.
+    assert np.isnan(metric.loc[0, "mean_absolute_scaled_error"])
+    assert np.isnan(metric.loc[0, "root_mean_squared_scaled_error"])
+    assert metric.loc[0, "n_evaluated"] == 20
