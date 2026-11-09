@@ -21,10 +21,10 @@ from skforecast.exceptions import MissingValuesWarning
 from tqdm import tqdm
 from functools import partial, partialmethod
 
-tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)  # hide progress bar
-
 # Fixtures
 from ..fixtures_model_selection import y, y_clf, exog
+
+tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)  # hide progress bar
 
  
 def test_output_grid_search_forecaster_ForecasterRecursive_with_mocked():
