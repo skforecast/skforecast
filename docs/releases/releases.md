@@ -56,6 +56,8 @@ The main changes in this release are:
 
     + <code>[mean_absolute_scaled_error]</code> and <code>[root_mean_squared_scaled_error]</code> in backtesting and hyperparameter search: their values change, and so may the model selected with `return_best` when one of them ranks the candidates. Custom metrics with a `y_train` argument receive the series before the first fold.
 
+    + Hyperparameter searches with <code>[OneStepAheadFold]</code> and a forecaster with `differentiation`: the metrics are lower, and the model selected with `return_best` may change.
+
     And some code needs to be updated:
 
     + Forecasters with a linear model of scikit-learn (`LinearRegression`, `Ridge`, `Lasso`...) raise a `ValueError` in `predict` when a predictor has a missing value, for example a gap in `exog`, instead of returning NaN predictions: fill the gaps or use an estimator that accepts missing values. This includes <code>[ForecasterRecursiveMultiSeries]</code> with `encoding='ordinal'` predicting a series not seen in training, which now raises for the whole call instead of returning NaN for that series; use `encoding='onehot'` or `None` to predict it.
@@ -176,6 +178,8 @@ The main changes in this release are:
 + The hyperparameter search of <code>[ForecasterRecursiveMultiSeries]</code> with <code>[OneStepAheadFold]</code> failed with `ValueError: Length of '<series>' must be greater than the maximum window size needed by the forecaster` when a series ended at the end of the training set. That series is now left out of the test set. ([#1430](https://github.com/skforecast/skforecast/pull/1430))
 
 + The hyperparameter searches of multi-series forecasters with <code>[OneStepAheadFold]</code> computed the `pooling` metric with every series, not only those in `levels`, when `levels` was a subset of the series. ([#1447](https://github.com/skforecast/skforecast/pull/1447))
+
++ The hyperparameter searches with <code>[OneStepAheadFold]</code> and a forecaster with `differentiation` evaluated predictions that carried the errors of all the previous ones, instead of one-step-ahead predictions: the metrics were too high (several times with `differentiation=1`) and the selected candidate could change. With missing values in the test set, the true values were also wrong. ([#1471](https://github.com/skforecast/skforecast/pull/1471))
 
 + The hyperparameter searches with <code>[OneStepAheadFold]</code> stopped with a `ValueError` when the lags of a candidate left no data to train with, and also when those of the forecaster passed did, even if no candidate used them. Those candidates are now skipped and reported in the warning of the candidates skipped, as with <code>[TimeSeriesFold]</code>, and so are, in multi-series searches, those without points to evaluate in `levels`, which returned rows with `n_evaluated=0` and NaN metrics. ([#1456](https://github.com/skforecast/skforecast/pull/1456))
 

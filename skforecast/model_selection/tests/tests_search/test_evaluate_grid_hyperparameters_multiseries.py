@@ -1695,6 +1695,24 @@ def test_evaluate_grid_hyperparameters_multiseries_ForecasterDirectMultiVariate_
                 transformer_series=StandardScaler(),
                 transformer_exog=StandardScaler(),
                 forecaster_id='Multivariate'
+            ),
+            ForecasterRecursiveMultiSeries(
+                estimator=Ridge(random_state=678),
+                lags=3,
+                transformer_series=StandardScaler(),
+                transformer_exog=StandardScaler(),
+                differentiation=1,
+                forecaster_id='Multiseries_transformer_diff'
+            ),
+            ForecasterDirectMultiVariate(
+                estimator=Ridge(random_state=678),
+                level='l1',
+                lags=3,
+                steps=1,
+                transformer_series=StandardScaler(),
+                transformer_exog=StandardScaler(),
+                differentiation=1,
+                forecaster_id='Multivariate_diff'
             )
         ], 
 ids=lambda forecaster: f'forecaster: {forecaster.forecaster_id}')
@@ -1703,11 +1721,10 @@ def test_evaluate_grid_hyperparameters_equivalent_outputs_backtesting_and_one_st
 ):
     """
     Test that the output of _evaluate_grid_hyperparameters for backtesting and one-step-ahead
-    is equivalent when steps=1 and refit=False.
-    Results are not equivalent if differentiation is included.
+    is equivalent when steps=1 and refit=False, also with differentiation.
     """
     
-    if forecaster.forecaster_id == 'Multivariate':
+    if forecaster.forecaster_id.startswith('Multivariate'):
         series = series_wide_dt
     else:
         series = series_dict_dt
@@ -1794,7 +1811,6 @@ def test_evaluate_grid_hyperparameters_same_output_backtesting_and_one_step_ahea
     """
     Test that the output of evaluate_grid_hyperparameters for backtesting and one-step-ahead
     is equivalent when steps=1 and refit=False. Using series and exog as dictionaries.
-    Results are not equivalent if differentiation is included.
     ForecasterMultiVariate is not included because it is not possible to use dictionaries
     as input.
     """

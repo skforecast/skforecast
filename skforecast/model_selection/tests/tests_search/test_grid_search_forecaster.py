@@ -111,6 +111,21 @@ forecasters = [
         transformer_y=StandardScaler(),
         transformer_exog=StandardScaler(),
     ),
+    ForecasterRecursive(
+        estimator=Ridge(random_state=678),
+        lags=3,
+        transformer_y=StandardScaler(),
+        differentiation=1,
+    ),
+    ForecasterRecursive(estimator=Ridge(random_state=678), lags=3, differentiation=2),
+    ForecasterDirect(
+        estimator=Ridge(random_state=678),
+        lags=3,
+        steps=1,
+        transformer_y=StandardScaler(),
+        transformer_exog=StandardScaler(),
+        differentiation=1,
+    ),
 ]
 @pytest.mark.parametrize("forecaster", forecasters)
 def test_grid_search_forecaster_equivalence_backtesting_one_step_ahead(
@@ -118,7 +133,9 @@ def test_grid_search_forecaster_equivalence_backtesting_one_step_ahead(
 ):
     """
     Test that output of grid_search_forecaster is equivalent with backtesting and
-    one step ahead one step=1, fixed_train_size=True retran=False
+    one step ahead one step=1, fixed_train_size=True retran=False. With
+    differentiation, each one-step-ahead prediction is reverted from the
+    observed values, as in the backtesting.
     """
 
     metrics = [

@@ -275,15 +275,43 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_ValueError_whe
             transformer_series=StandardScaler(),
             transformer_exog=StandardScaler(),
             forecaster_id='multivariate_transformer'
+        ),
+        ForecasterRecursiveMultiSeries(
+            estimator=Ridge(random_state=678),
+            lags=3,
+            transformer_series=StandardScaler(),
+            transformer_exog=StandardScaler(),
+            differentiation=1,
+            forecaster_id='multiseries_transformer_diff_1'
+        ),
+        ForecasterRecursiveMultiSeries(
+            estimator=Ridge(random_state=678),
+            lags=3,
+            differentiation={'item_1': 1, 'item_2': None, 'item_3': 2, '_unknown_level': None},
+            forecaster_id='multiseries_diff_dict'
+        ),
+        ForecasterDirectMultiVariate(
+            estimator=Ridge(random_state=678),
+            level='item_1',
+            lags=3,
+            steps=1,
+            transformer_series=StandardScaler(),
+            transformer_exog=StandardScaler(),
+            differentiation=1,
+            forecaster_id='multivariate_transformer_diff_1'
+        ),
+        ForecasterDirectMultiVariate(
+            estimator=Ridge(random_state=678), level='item_1', lags=3, steps=1,
+            differentiation=2, forecaster_id='multivariate_diff_2'
         )
     ],
 ids=lambda forecaster: f'{forecaster.forecaster_id}')
 def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_equivalence_to_backtesting(forecaster):
     """
     Test that the output of _predict_and_calculate_metrics_one_step_ahead_multiseries is equivalent to
-    the output of backtesting_forecaster_multiseries when steps=1 and refit=False.
-
-    **Results are not equivalent if differentiation is included**
+    the output of backtesting_forecaster_multiseries when steps=1 and refit=False,
+    also with differentiation (each prediction is reverted one step ahead from
+    the observed values).
     """
 
     initial_train_size = 927
@@ -405,6 +433,8 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_ForecasterRecu
     """
     Test that the output of _predict_and_calculate_metrics_one_step_ahead_multiseries 
     when ForecasterRecursiveMultiSeries is used with differentiation.
+    Each prediction is reverted one step ahead from the observed values, so
+    the output is equal to a backtesting with `steps=1` and `refit=False`.
     """
     forecaster = ForecasterRecursiveMultiSeries(
                      estimator          = Ridge(random_state=678),
@@ -458,37 +488,37 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_ForecasterRecu
                         'average',
                         'weighted_average',
                         'pooling'],
-            'mean_absolute_error': [4.929999429969281,
-                                    10.648823118144193,
-                                    12.779424665286516,
-                                    9.452749071133331,
-                                    9.452749071133331,
-                                    9.452749071133331],
-            'mean_absolute_percentage_error': [0.24360856584323834,
-                                                0.6270921373681089,
-                                                0.7060429773403681,
-                                                0.5255812268505718,
-                                                0.5255812268505717,
-                                                0.5255812268505717],
-            'mean_absolute_scaled_error': [3.232081019417296,
-                                            4.513726395516266,
-                                            3.4350383938193927,
-                                            3.726948602917652,
-                                            3.726948602917652,
-                                            3.726948602917651],
+            'mean_absolute_error': [1.1503178261670213,
+                                    2.398111266775402,
+                                    3.5819278725450805,
+                                    2.3767856551625015,
+                                    2.3767856551625015,
+                                    2.376785655162501],
+            'mean_absolute_percentage_error': [0.05602579819201732,
+                                                0.1543886758598446,
+                                                0.2357057444158043,
+                                                0.14870673948922208,
+                                                0.14870673948922206,
+                                                0.14870673948922208],
+            'mean_absolute_scaled_error': [0.7520986899376542,
+                                            1.019192035237137,
+                                            0.9645191922741891,
+                                            0.9119366391496602,
+                                            0.9119366391496602,
+                                            0.91193663914966],
             'n_evaluated': [170, 170, 170, 510, 510, 510]}
         ),
         pd.DataFrame(
-            data = np.array([[25.6059407 , 10.6092054 , 11.74557632],
-                             [24.62838843, 10.0671194 , 12.22932432],
-                             [24.10287379,  9.51212108, 10.56435278],
-                             [23.78506633,  9.17812301,  8.33429508],
-                             [23.58213459,  8.57805035,  7.60062965],
-                             [24.99011875,  9.57489282,  9.87305383],
-                             [26.15161932, 10.22090842, 10.90470084],
-                             [25.69506167, 10.94733743, 11.52785388],
-                             [24.41084617, 11.46312403, 11.96414091],
-                             [23.53329426, 11.05443539, 11.65551743]]),
+            data = np.array([[25.60594070, 10.60920540, 11.74557632],
+                             [25.41074260, 10.64749734, 10.25576089],
+                             [24.69993772, 10.98250168, 13.85087248],
+                             [26.03160180,  8.39308526, 12.42333537],
+                             [24.05758462,  9.65409401,  8.14457109],
+                             [23.30803874, 11.54684248, 14.17761292],
+                             [24.19163094,  9.53768226, 12.15819564],
+                             [26.06924239,  9.70976235,  8.85802054],
+                             [25.61749886,  8.22828660, 11.07709330],
+                             [25.89806846,  9.25172802,  8.99597145]]),
             columns = ['item_1', 'item_2', 'item_3'],
             index = pd.RangeIndex(start=927, stop=937, step=1)
         )
@@ -507,6 +537,8 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_Forecas
     """
     Test that the output of _predict_and_calculate_metrics_one_step_ahead_multiseries 
     when ForecasterRecursiveMultiSeries is used with differentiation as dict.
+    Each prediction is reverted one step ahead from the observed values, so
+    the output is equal to a backtesting with `steps=1` and `refit=False`.
     """
     forecaster = ForecasterRecursiveMultiSeries(
                      estimator          = Ridge(random_state=678),
@@ -565,43 +597,43 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_Forecas
                     5: "pooling",
                 },
                 "mean_absolute_error": {
-                    0: 3.3727768904389137,
+                    0: 1.2494901997609082,
                     1: 3.2454861506987474,
-                    2: 125.29749202738702,
-                    3: 43.97191835617489,
-                    4: 43.971918356174896,
-                    5: 43.9719183561749,
+                    2: 6.328693330432144,
+                    3: 3.6078898936306003,
+                    4: 3.6078898936306003,
+                    5: 3.6078898936306,
                 },
                 "mean_absolute_percentage_error": {
-                    0: 0.16768637909858158,
+                    0: 0.060374026807567885,
                     1: 0.23902627227111134,
-                    2: 7.127463509732804,
-                    3: 2.5113920537008325,
-                    4: 2.5113920537008325,
-                    5: 2.511392053700832,
+                    2: 0.41383952408047064,
+                    3: 0.23774660771971665,
+                    4: 0.23774660771971662,
+                    5: 0.23774660771971667,
                 },
                 "mean_absolute_scaled_error": {
-                    0: 2.2088330938250484,
+                    0: 0.8173020826169635,
                     1: 1.3794997216922271,
-                    2: 33.64271359593835,
-                    3: 12.410348803818543,
-                    4: 12.410348803818543,
-                    5: 12.410348803818545,
+                    2: 1.7038654244982896,
+                    3: 1.3002224096024932,
+                    4: 1.3002224096024935,
+                    5: 1.3002224096024935,
                 },
                 "n_evaluated": {0: 170, 1: 170, 2: 170, 3: 510, 4: 510, 5: 510},
             }
         ),
         pd.DataFrame(
             data = np.array([[25.86570499, 15.18029154,  8.97046675],
-                             [26.32581267, 15.07864711,  8.59274604],
-                             [26.71670307, 14.60073761,  7.7959118 ],
-                             [26.03183899, 14.55994232,  7.25551897],
-                             [25.44757003, 13.60961291,  5.69205946],
-                             [26.29183264, 16.14084149,  3.01541324],
-                             [25.96578123, 16.13231006,  2.10568015],
-                             [25.6248342 , 15.46833359,  2.92044047],
-                             [26.28049127, 14.83278091,  2.2656061 ],
-                             [26.71633178, 14.01618597,  1.79968493]]),
+                             [26.84840255, 15.07864711, 10.19583831],
+                             [25.61634276, 14.60073761, 20.84056163],
+                             [25.66454517, 14.55994232, 14.04738353],
+                             [23.67624741, 13.60961291,  2.08001327],
+                             [22.74431718, 16.14084149, 13.81895425],
+                             [22.70407896, 16.13231006, 12.11482165],
+                             [26.18485300, 15.46833359,  7.06767977],
+                             [27.55737144, 14.83278091, 11.57715035],
+                             [27.21146088, 14.01618597,  8.15729678]]),
             columns = ['item_1', 'item_2', 'item_3'],
             index = pd.date_range(start='2014-07-16', periods=10, freq='D')
         )
@@ -623,6 +655,8 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_Forecas
     """
     Test that the output of _predict_and_calculate_metrics_one_step_ahead_multiseries 
     when ForecasterDirectMultiVariate is used with differentiation.
+    Each prediction is reverted one step ahead from the observed values, so
+    the output is equal to a backtesting with `steps=1` and `refit=False`.
     """
     forecaster = ForecasterDirectMultiVariate(
                      estimator          = Ridge(random_state=678),
@@ -674,22 +708,22 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_Forecas
     expected = (
         pd.DataFrame(
             {'levels': ['item_1'],
-             'mean_absolute_error': [3.246937481200051],
-             'mean_absolute_percentage_error': [0.1604318346564821],
-             'mean_absolute_scaled_error': [2.12812319799106],
+             'mean_absolute_error': [0.8927713839844975],
+             'mean_absolute_percentage_error': [0.04380407225142365],
+             'mean_absolute_scaled_error': [0.5845726494502864],
              'n_evaluated': [170]}
         ),
         pd.DataFrame(
             data = np.array([[26.77436694],
-                             [26.12768984],
-                             [25.40947475],
-                             [24.67063314],
-                             [22.50260461],
-                             [24.46675686],
-                             [26.08019603],
-                             [26.80716849],
-                             [26.15049678],
-                             [25.63937881]]),
+                             [25.74161777],
+                             [24.50723727],
+                             [25.61056764],
+                             [22.09248784],
+                             [23.86420683],
+                             [24.64356954],
+                             [27.25277250],
+                             [26.24504265],
+                             [26.26450239]]),
             columns = ['item_1'],
             index = pd.date_range(start='2014-07-16', periods=10, freq='D')
         )
@@ -741,7 +775,6 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_equivalence_ba
     Test that the output of _predict_and_calculate_metrics_one_step_ahead_multiseries is
     equivalent to the output of backtesting_forecaster_multiseries when steps=1 and
     refit=False. Using series and exog as dictionaries.
-    Results are not equivalent if differentiation is included.
     ForecasterMultiVariate is not included because it is not possible to use dictionaries as input.
     Series 'id_1002' has no data in the test set: with CatBoost and
     encoding='ordinal_category', the codes of the other levels must not shift.
@@ -832,7 +865,6 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_equivalence_ba
     Test that the output of _predict_and_calculate_metrics_one_step_ahead_multiseries is
     equivalent to the output of backtesting_forecaster_multiseries when steps=1 and
     refit=False. Using series and exog as dictionaries.
-    Results are not equivalent if differentiation is included.
     ForecasterMultiVariate is not included because it is not possible to use dictionaries as input.
     """
 

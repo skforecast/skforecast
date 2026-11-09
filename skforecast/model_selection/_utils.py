@@ -51,7 +51,8 @@ from ..utils import (
     _series_too_short_multiseries,
     estimator_has_native_nan_support,
     _first_frame_outside_skforecast,
-    _find_stack_level
+    _find_stack_level,
+    transform_numpy
 )
 
 # NOTE: Names of the metrics added to the backtesting metrics when the
@@ -1079,6 +1080,74 @@ def _cause_level_not_evaluated(
     ), True
 
 
+def _revert_differentiation_one_step_ahead(
+    y_observed: np.ndarray,
+    diff_true: np.ndarray,
+    diff_pred: np.ndarray,
+    transformer: object | None
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Revert the differentiation of one-step-ahead predictions. Each prediction
+    is made from the observed values before it, so, in the transformed scale,
+    it is the observed value minus the observed difference plus the predicted
+    one:
+
+    `level_pred_t = level_true_t - diff_true_t + diff_pred_t`
+
+    This holds for any order of differentiation: the error of the level is the
+    error of the difference.
+
+    The `inverse_transform_next_window` method of the differentiator is not
+    used: it chains the predictions, as `predict` does, adding each predicted
+    difference to the previous prediction, so the error of each prediction
+    would be carried into the following ones. The observed values are taken
+    from the series rather than rebuilt from the differences, since the rows
+    with missing values are left out of the test set.
+
+    Parameters
+    ----------
+    y_observed : numpy ndarray
+        Observed values of the series at the predicted positions, in the
+        original scale.
+    diff_true : numpy ndarray
+        Target of the estimator at the same positions (the transformed and
+        differentiated series).
+    diff_pred : numpy ndarray
+        Predictions of the estimator at the same positions.
+    transformer : object, None
+        Fitted transformer of the series (`transformer_y`, or the transformer
+        of the level in `transformer_series_`), or `None`.
+
+    Returns
+    -------
+    y_true : numpy ndarray
+        Observed values in the original scale.
+    y_pred : numpy ndarray
+        One-step-ahead predictions in the original scale.
+
+    """
+
+    y_true = np.asarray(y_observed, dtype=float).ravel()
+    level_true = transform_numpy(
+                     array       = y_true,
+                     transformer = transformer,
+                     fit         = False
+                 ).ravel()
+    level_pred = (
+        level_true
+        - np.asarray(diff_true, dtype=float).ravel()
+        + np.asarray(diff_pred, dtype=float).ravel()
+    )
+    y_pred = transform_numpy(
+                 array             = level_pred,
+                 transformer       = transformer,
+                 fit               = False,
+                 inverse_transform = True
+             ).ravel()
+
+    return y_true, y_pred
+
+
 def _calculate_metrics_one_step_ahead(
     forecaster: object,
     metrics: list,
@@ -1116,12 +1185,14 @@ def _calculate_metrics_one_step_ahead(
     fit_kwargs : dict
         Precomputed keyword arguments for `estimator.fit`. Can be empty dict.
     y : pandas Series
-        Time series used in the search, in its original scale. The metrics
-        with the argument `y_train` use its values: the scaled metrics scale
-        the error of each prediction with the observations before it (its
-        forecast origin is its own position, since it is predicted one step
-        ahead), and the rest receive the observations before the first
-        prediction.
+        Time series used in the search, in its original scale. With
+        `differentiation`, its values at `test_index` are the true values, from
+        which the predictions are reverted one step ahead (see
+        `_revert_differentiation_one_step_ahead`). The metrics with the
+        argument `y_train` use its values: the scaled metrics scale the error
+        of each prediction with the observations before it (its forecast origin
+        is its own position, since it is predicted one step ahead), and the
+        rest receive the observations before the first prediction.
     test_index : pandas Index
         Index of `y` of each row of `X_test`.
 
@@ -1160,22 +1231,27 @@ def _calculate_metrics_one_step_ahead(
         )
         y_pred = estimator.predict(X_test).ravel()
 
-    if forecaster.differentiation is not None:
-        y_true = forecaster.differentiator.inverse_transform_next_window(y_true)
-        y_pred = forecaster.differentiator.inverse_transform_next_window(y_pred)
+    # NOTE: Each prediction is made one step ahead with the observed values,
+    # so its forecast origin is its own position in `y`.
+    test_positions = y.index.get_indexer(test_index)
 
-    if forecaster.transformer_y is not None:
+    if forecaster.differentiation is not None:
+        y_true, y_pred = _revert_differentiation_one_step_ahead(
+                             y_observed  = y.to_numpy()[test_positions],
+                             diff_true   = y_test,
+                             diff_pred   = y_pred,
+                             transformer = forecaster.transformer_y
+                         )
+    elif forecaster.transformer_y is not None:
         y_true = forecaster.transformer_y.inverse_transform(y_true.reshape(-1, 1))
         y_pred = forecaster.transformer_y.inverse_transform(y_pred.reshape(-1, 1))
 
     y_true = y_true.ravel()
     y_pred = y_pred.ravel()
 
-    # NOTE: Each prediction is made one step ahead with the observed values,
-    # so its forecast origin is its own position in `y`.
     y_train, scale_abs, scale_sq = _get_y_train_and_scales(
                                        y       = y,
-                                       origins = y.index.get_indexer(test_index),
+                                       origins = test_positions,
                                        metrics = metrics
                                    )
     metric_values, n_undefined = _calculate_metric_values(
@@ -2585,13 +2661,28 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
             )
             y_pred = estimator.predict(X_test).ravel()
 
-        if forecaster.differentiation is not None:
-            differentiator = forecaster.differentiator_[level]
-            if differentiator is not None:
-                y_true = differentiator.inverse_transform_next_window(y_true)
-                y_pred = differentiator.inverse_transform_next_window(y_pred)
+        # NOTE: Each prediction is made one step ahead with the observed
+        # values, so its forecast origin is its own position in the series.
+        y_level = series[level]
+        test_positions = y_level.index.get_indexer(test_index)
 
-        if forecaster.transformer_series is not None:
+        differentiator = (
+            forecaster.differentiator_[level]
+            if forecaster.differentiation is not None
+            else None
+        )
+        if differentiator is not None:
+            y_true, y_pred = _revert_differentiation_one_step_ahead(
+                                 y_observed  = y_level.to_numpy()[test_positions],
+                                 diff_true   = y_test,
+                                 diff_pred   = y_pred,
+                                 transformer = (
+                                     forecaster.transformer_series_[level]
+                                     if forecaster.transformer_series is not None
+                                     else None
+                                 )
+                             )
+        elif forecaster.transformer_series is not None:
             transformer = forecaster.transformer_series_[level]
             y_true = transformer.inverse_transform(
                 y_true.reshape(-1, 1)
@@ -2600,12 +2691,9 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
                 y_pred.reshape(-1, 1)
             ).ravel()
 
-        # NOTE: Each prediction is made one step ahead with the observed
-        # values, so its forecast origin is its own position in the series.
-        y_level = series[level]
         y_train_metric, scale_abs, scale_sq = _get_y_train_and_scales(
                                                   y       = y_level,
-                                                  origins = y_level.index.get_indexer(test_index),
+                                                  origins = test_positions,
                                                   metrics = metrics
                                               )
         metrics_level, n_undefined = _calculate_metric_values(
@@ -2693,43 +2781,57 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
     ).groupby('_level_skforecast')
     predictions_per_level = {key: group for key, group in predictions_per_level}
 
-    if forecaster.differentiation is not None:
-        for level in predictions_per_level:
-            differentiator = forecaster.differentiator_[level]
-            if differentiator is not None:
-                predictions_per_level[level]["y_true"] = (
-                    differentiator.inverse_transform_next_window(
-                        predictions_per_level[level]["y_true"].to_numpy()
-                    )
-                )
-                predictions_per_level[level]["y_pred"] = (
-                    differentiator.inverse_transform_next_window(
-                        predictions_per_level[level]["y_pred"].to_numpy()
-                    )   
-                )
-
-    if forecaster.transformer_series is not None:
-        for level in predictions_per_level:
-            transformer = forecaster.transformer_series_[level]
-            predictions_per_level[level]["y_true"] = transformer.inverse_transform(
-                predictions_per_level[level][["y_true"]]
-            )
-            predictions_per_level[level]["y_pred"] = transformer.inverse_transform(
-                predictions_per_level[level][["y_pred"]]
-            )
-
     # NOTE: Each prediction is made one step ahead with the observed values,
     # so its forecast origin is its own position in its series.
-    y_train_per_level = {}
-    scales_per_level = {}
-    if needs_y_train:
+    series_per_level = {}
+    test_positions_per_level = {}
+    if needs_y_train or forecaster.differentiation is not None:
         for level in predictions_per_level:
             y_level = series[level]
             if isinstance(y_level, pd.DataFrame):
                 y_level = y_level.iloc[:, 0]
+            series_per_level[level] = y_level
+            test_positions_per_level[level] = y_level.index.get_indexer(
+                predictions_per_level[level].index
+            )
+
+    for level, predictions_level in predictions_per_level.items():
+        differentiator = (
+            forecaster.differentiator_[level]
+            if forecaster.differentiation is not None
+            else None
+        )
+        if differentiator is not None:
+            y_true, y_pred = _revert_differentiation_one_step_ahead(
+                                 y_observed  = series_per_level[level].to_numpy()[
+                                                   test_positions_per_level[level]
+                                               ],
+                                 diff_true   = predictions_level["y_true"].to_numpy(),
+                                 diff_pred   = predictions_level["y_pred"].to_numpy(),
+                                 transformer = (
+                                     forecaster.transformer_series_[level]
+                                     if forecaster.transformer_series is not None
+                                     else None
+                                 )
+                             )
+            predictions_level["y_true"] = y_true
+            predictions_level["y_pred"] = y_pred
+        elif forecaster.transformer_series is not None:
+            transformer = forecaster.transformer_series_[level]
+            predictions_level["y_true"] = transformer.inverse_transform(
+                predictions_level[["y_true"]]
+            )
+            predictions_level["y_pred"] = transformer.inverse_transform(
+                predictions_level[["y_pred"]]
+            )
+
+    y_train_per_level = {}
+    scales_per_level = {}
+    if needs_y_train:
+        for level in predictions_per_level:
             y_train_level, scale_abs_level, scale_sq_level = _get_y_train_and_scales(
-                y       = y_level,
-                origins = y_level.index.get_indexer(predictions_per_level[level].index),
+                y       = series_per_level[level],
+                origins = test_positions_per_level[level],
                 metrics = metrics
             )
             y_train_per_level[level] = y_train_level

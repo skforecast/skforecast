@@ -5,6 +5,7 @@ import pandas as pd
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_absolute_percentage_error
 from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.preprocessing import StandardScaler
 from catboost import CatBoostRegressor
 from lightgbm import LGBMRegressor, LGBMClassifier
@@ -25,7 +26,9 @@ def test_calculate_metrics_one_step_ahead_when_ForecasterRecursive():
     """
     Test _calculate_metrics_one_step_ahead with ForecasterRecursive using
     transformer_y, transformer_exog, and differentiation. Covers inverse
-    transform for both differentiation and transformer_y. MASE scales the
+    transform for both differentiation and transformer_y: each prediction is
+    reverted one step ahead from the observed values, so the metrics are
+    equal to a backtesting with `steps=1` and `refit=False`. MASE scales the
     error of each prediction with the naive forecast over the values of `y`
     before it (its forecast origin is its own position).
     """
@@ -62,7 +65,7 @@ def test_calculate_metrics_one_step_ahead_when_ForecasterRecursive():
     )
     results = np.array([float(result) for result in results])
 
-    expected = np.array([0.5516310508466604, 1.2750659053445799, 2.277590549563719])
+    expected = np.array([0.3216560967772606, 1.1612907172094225, 1.3128815728782959])
 
     np.testing.assert_array_almost_equal(results, expected)
 
@@ -141,7 +144,7 @@ def test_calculate_metrics_one_step_ahead_when_ForecasterRecursive_only_differen
         test_index=test_index,
     )
 
-    expected = np.array([0.5030743819038218])
+    expected = np.array([0.3206559378236501])
 
     results = np.array([float(r) for r in results])
     np.testing.assert_array_almost_equal(results, expected)
@@ -179,7 +182,7 @@ def test_calculate_metrics_one_step_ahead_when_metric_does_not_need_y_train():
         test_index=test_index,
     )
 
-    expected = np.array([1.5427323873570953])
+    expected = np.array([0.351186353406055])
 
     results = np.array([float(r) for r in results])
     np.testing.assert_array_almost_equal(results, expected)
@@ -515,3 +518,60 @@ def test_calculate_metrics_one_step_ahead_scaled_metrics_scaled_by_own_position(
         positions = y.index.get_indexer(test_index)
         scale = np.array([np.mean(np.abs(np.diff(values[:p]))) for p in positions])
         np.testing.assert_almost_equal(results[0], np.mean(np.abs(errors) / scale))
+
+
+def test_calculate_metrics_one_step_ahead_differentiation_missing_values_in_test():
+    """
+    Test that, with differentiation and missing values in the test set, the
+    true values are the observed ones and each prediction is the previous
+    observed value plus the predicted difference. The rows with a missing
+    target are left out of the test set, so the true values cannot be rebuilt
+    with the cumulative sum of the differences. (A backtesting cannot be the
+    reference: it raises an error when the last value before a date is
+    missing, since the differentiation cannot be reverted.)
+    """
+    rng = np.random.default_rng(123)
+    y_nan = pd.Series(
+        50 + rng.normal(size=80).cumsum(),
+        index=pd.date_range("2020-01-01", periods=80, freq="D"),
+        name="y",
+    )
+    y_nan.iloc[[50, 51, 65]] = np.nan
+    forecaster = ForecasterRecursive(
+        estimator=HistGradientBoostingRegressor(max_iter=20, random_state=123),
+        lags=5,
+        differentiation=1,
+    )
+    received = {}
+
+    def capture(y_true, y_pred):
+        received["y_true"] = np.asarray(y_true)
+        received["y_pred"] = np.asarray(y_pred)
+        return 0.0
+
+    (
+        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index
+    ) = forecaster._train_test_split_one_step_ahead(
+        y=y_nan, exog=None, initial_train_size=40
+    )
+    _calculate_metrics_one_step_ahead(
+        forecaster=forecaster,
+        metrics=[add_y_train_argument(capture)],
+        X_train=X_train,
+        y_train=y_train,
+        X_test=X_test,
+        y_test=y_test,
+        sample_weight=sample_weight,
+        fit_kwargs=fit_kwargs,
+        y=y_nan,
+        test_index=test_index,
+    )
+
+    diff_pred = forecaster.estimator.predict(X_test)
+    expected_y_pred = y_nan.shift(1).loc[test_index].to_numpy() + diff_pred
+
+    assert len(test_index) < len(y_nan) - 40
+    np.testing.assert_array_almost_equal(
+        received["y_true"], y_nan.loc[test_index].to_numpy()
+    )
+    np.testing.assert_array_almost_equal(received["y_pred"], expected_y_pred)

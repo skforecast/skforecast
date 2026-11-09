@@ -4,7 +4,8 @@ Fila del roadmap: ninguna todavía. Detectado en la revisión de la PR #1471 (MA
 pero no tiene relación con ella: ocurre igual en `0.27.x`.
 
 Diagnóstico (2026-11-09) en local, en el worktree de `fix/mase-scale-per-origin` (#1471) y en
-un checkout temporal de `origin/0.27.x` (`ecbe7756a`). Sin cambios en el paquete. Scripts:
+un checkout temporal de `origin/0.27.x` (`ecbe7756a`). Implementado en la misma rama que #1471
+(sección 8), por decisión del usuario. Scripts:
 
 - `repro/BUG-osa-differentiation_00_fix_prototype.py`: prototipo del arreglo (sustituye el
   método en tiempo de ejecución, solo cuando lo llaman las dos funciones del OSA).
@@ -90,6 +91,10 @@ son las acumuladas, pero las búsquedas la llaman con `return_predictions=False`
   `test_predict_and_calculate_metrics_one_step_ahead_multiseries.py:281`, `:739`, `:830`,
   `:915`, `:1027`) no usan `differentiation`. Los tests que sí la usan comparan con valores
   fijos, calculados con el propio código.
+- **La diferencia se conocía, pero se tomó por una limitación y no por un bug.** Cinco
+  docstrings de tests de equivalencia lo decían: "Results are not equivalent if
+  differentiation is included" (dos en `test_evaluate_grid_hyperparameters_multiseries.py` y
+  tres en `test_predict_and_calculate_metrics_one_step_ahead_multiseries.py`).
 
 ## 3. Experimentos
 
@@ -230,7 +235,7 @@ multiserie) comparan dos ejecuciones entre sí, no valores fijos, así que pasan
 arreglo. `test_output_evaluate_grid_hyperparameters_ForecasterRecursive_with_differentiation_mocked`
 usa `TimeSeriesFold`.
 
-## 5. Arreglo propuesto (sin aplicar)
+## 5. Arreglo propuesto
 
 **Fórmula.** Para cualquier orden `d`, el nivel en `t` es una combinación fija de los niveles
 anteriores más la diferencia de orden `d` en `t`. A un paso, la predicción usa los niveles
@@ -285,7 +290,8 @@ ones instead of one-step-ahead predictions. The metrics were inflated (several t
 Probablemente también un highlight de tipo Fix y una línea en "Before upgrading", porque
 cambian los resultados de las búsquedas sin cambiar el código.
 
-**¿En esta PR o en otra?** En otra: es un bug independiente, anterior y con su propia nota de
+**¿En esta PR o en otra?** (Propuesta inicial; al final se implementó en la rama de #1471,
+sección 8.) En otra: es un bug independiente, anterior y con su propia nota de
 versión. Pero **no desde `0.27.x` tal como está ahora**, sino encima de #1471 (desde
 `fix/mase-scale-per-origin` mientras #1471 no se fusione, o desde la base actualizada cuando
 se fusione):
@@ -321,3 +327,48 @@ se fusione):
   y `differentiation`: el diferenciador de esa serie no se ajusta con datos de entrenamiento.
 - Que el sesgo hacia los lags cortos de 3.3 sea general: son 8 búsquedas, no un estudio con
   semillas.
+
+## 8. Implementación (2026-11-09)
+
+En `fix/mase-scale-per-origin`, la rama de #1471, a petición del usuario.
+
+**Diseño.** Helper privado `_revert_differentiation_one_step_ahead` en `model_selection/_utils.py`,
+no un método de `TimeSeriesDifferentiator`:
+
+- **No usa el estado del diferenciador.** La fórmula no depende de `last_values` ni del
+  orden, así que un método no usaría `self`.
+- **El trabajo real es de orquestación:** sacar los valores observados de la serie, usar el
+  transformador ajustado y saltarse los niveles sin diferenciación. Es lo que ya hacen los
+  demás helpers del OSA en ese módulo.
+- **No amplía la API pública.**
+- **Aviso en la clase:** el docstring de `inverse_transform_next_window` dice ahora que sirve
+  para predicciones encadenadas, no para predicciones a un paso.
+
+**Cambios:**
+
+- **`_calculate_metrics_one_step_ahead`:** con `differentiation`, el helper toma `y_true` de
+  `y` en `test_index` y calcula `y_pred` en la escala original. Sin ella, el camino del
+  transformador no cambia.
+- **`_predict_and_calculate_metrics_one_step_ahead_multiseries`:** lo mismo en las dos ramas.
+  En la de `ForecasterRecursiveMultiSeries`, las posiciones de cada nivel en su serie se
+  calculan una vez y se usan para la diferenciación y para las escalas, solo si hacen falta
+  (con `differentiation` o con métricas con `y_train`).
+
+**Tests:**
+
+| Tipo | Detalle |
+|---|---|
+| Actualizados | Los 9 de la sección 4. Antes de sustituir los valores esperados, se comprobó que métricas y predicciones coinciden con `backtesting_forecaster` y `backtesting_forecaster_multiseries` con `steps=1` y `refit=False`. |
+| Nuevo, unitario | `test_revert_differentiation_one_step_ahead.py`: orden 1 (el error de cada predicción es el de su diferencia), orden 2 (`2·y[t−1] − y[t−2] + d̂`) y transformador con órdenes 1 y 2. |
+| Nuevo, huecos | `test_calculate_metrics_one_step_ahead_differentiation_missing_values_in_test`: `y_true` es el valor observado, y cada predicción es el valor observado anterior más la diferencia predicha. Falla con el código anterior. El backtesting no sirve de referencia aquí: lanza un error cuando falta el último valor antes de una fecha. |
+| Equivalencia OSA = backtesting, ampliada con `differentiation` | Búsqueda de una serie: Recursive con orden 1 y `StandardScaler`, Recursive con orden 2, Direct con orden 1. Utils multiserie: MultiSeries con orden 1, dict `{1, None, 2}`, DirectMultiVariate con órdenes 1 y 2. Búsqueda multiserie: MultiSeries y DirectMultiVariate con orden 1. |
+
+Se ha quitado de los cinco docstrings la nota "Results are not equivalent if differentiation
+is included".
+
+**Resultado:** `_01_scope.py` da `now == bt` en los 36 casos y con `steps=3` coincide con el
+prototipo.
+
+**Nota de la versión:** una entrada en Fixed (junto a las demás del OSA) y una línea en
+"Before upgrading", ambas con el enlace a #1471. No se ha añadido un highlight (ya hay 9).
+
