@@ -870,7 +870,7 @@ backtesting, `y_true` explicado una sola vez (en la guía de clasificación, con
 | `probabilistic-forecasting-conformal-prediction` | Hecha. 2 de 2 (celdas 18, 21). Residuos, intervalos y figuras idénticos. | 98bbac252 |
 | `probabilistic-forecasting-metrics` | Hecha. 2 de 2 (celdas 20, 22). Residuos, métricas de intervalo y figuras idénticos. El aviso `MatplotlibDeprecationWarning` de la celda 19 ya estaba guardado. | 3aabef15c |
 | `time-series-differentiation` | Sin cambios: celda 29 busca el valor *anterior* (`data.shift(1)`) sobre la serie diferenciada; celda 33 viene de `predict_bootstrapping`. | |
-| `probabilistic-forecasting-global-models` | Aprobadas celda 21 (residuos por nivel con `y_true`; antes cada residuo salía dos veces por las fechas repetidas del formato largo) y celda 23 (`y_true` de `predictions_val` agrupado por nivel, como `y_pred`). Ejecutada: bins e intervalos idénticos. **Sin commit, pendiente de decisión:** la figura de la celda 21 cambia de eje (índice horario sin repetir: pandas usa su conversor, como la celda 20) y salen avisos `MatplotlibDeprecationWarning` en las celdas 20 (también con el código de `HEAD` en este entorno) y 21. | |
+| `probabilistic-forecasting-global-models` | Aprobadas celda 21 (residuos por nivel con `y_true`; antes cada residuo salía dos veces por las fechas repetidas del formato largo) y celda 23 (`y_true` de `predictions_val` agrupado por nivel, como `y_pred`). Hecha. Residuos guardados, bins e intervalos idénticos. La figura de la celda 21 cambia de eje (índice horario sin repetir: pandas usa su conversor de fechas, el mismo eje que la celda 20); aceptado por el usuario. | 3d2912f77 |
 
 **Para el inventario de la fase 3** (resto de páginas con `backtesting_*(`), además de las
 38 páginas: los usos de `data_test` como valor real en `bootstrapped-residuals` (celdas 20,
@@ -893,6 +893,14 @@ definición estándar (0.696 y 0.707). Se analiza en otra sesión
 **Notas:** `execute_notebooks.py` excluye por defecto `comparing-forecasting-models` y
 `forecasting-with-deep-learning-rnn-lstm` (`EXCLUDE_NOTEBOOKS`); hay que pasarlas
 explícitamente.
+
+**Ejecutor de notebooks (1d1c912d3):** pandas 2.3.3 con Matplotlib 3.11.1 imprime
+`MatplotlibDeprecationWarning: The locs attribute was deprecated` en cada celda que dibuja
+una serie con frecuencia (salía en `global-models`, celdas 20 y 21, también con el código de
+`HEAD`). Ahora `execute_notebooks.py` lo quita de las salidas `stderr` después de ejecutar
+(`REMOVED_WARNINGS`, como las barras de progreso estáticas) y el log dice cuántos quitó.
+Las salidas ya guardadas con el aviso (`probabilistic-forecasting-metrics`, celda 19) se
+limpian al volver a ejecutarlas.
 
 ## 14. PR 2b: candidatos que fallan y pendientes de las búsquedas (2026-11-06)
 
