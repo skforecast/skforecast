@@ -136,3 +136,63 @@ pasa de fold en fold (lo que permite el refit intermitente).
 ---
 
 ## Fase 2: medidas
+
+Herramientas: `cases.py` (casos), `run_one.py` (ejecuta un caso; registra el `n_jobs`
+efectivo de cada `Parallel` parcheando `joblib.Parallel` en los módulos de skforecast;
+huella md5 de los números del resultado), `bench.py` (orquestador: frío = un proceso
+nuevo por medida; caliente = un proceso que calienta cada config y luego las mide
+intercaladas; `--cpus k` = `taskset`). Resultados en `results/<nombre>.csv|md`.
+Todas las tablas: mediana y mínimo de 5 repeticiones intercaladas al azar.
+
+### E0. Coste de arranque de los workers (`probe_startup.py`)
+
+Hipótesis: el arranque en frío cuesta segundos en Linux; en caliente, milisegundos.
+Experimento: `Parallel` con tareas que importan `skforecast.model_selection._validation`
+y `sklearn.ensemble`, proceso nuevo por medida, 1/2/4 CPU con `taskset`.
+
+| CPUs | n_jobs | import skforecast en el principal | frío (med/min) | caliente (med/min) | caliente, 100 tareas triviales |
+|---|---|---|---|---|---|
+| 4 | 1 | 1.14 s | 0.03 / 0.03 s | 0.1 ms | 0.2 ms |
+| 4 | 3 | 1.17 s | 1.30 / 1.23 s | 11 ms | 11 ms |
+| 4 | 4 | 1.12 s | 1.31 / 1.27 s | 11 ms | 11 ms |
+| 2 | 2 | 1.14 s | 1.31 / 1.25 s | 11 ms | 11 ms |
+
+Conclusión: en este Linux el arranque en frío de los workers cuesta ~1.3 s (lo mismo
+con 2, 3 o 4 workers, importan en paralelo) y en caliente ~11 ms por llamada a
+`Parallel`. Cualquier paralelización en frío tiene que ahorrar más de ~1.3 s.
+
+### H1. Búsqueda con `refit=False`
+
+Caso: `grid_search_forecaster`, `ForecasterRecursive(lags=24)`, n=2000 horario,
+`steps=24`, 20 folds, `refit=False`, 4 candidatos, 4 CPU.
+
+| Estimador (rejilla) | modo | n_jobs=1 med (min) | 'auto' (=3) med (min) | 'auto' / 1 |
+|---|---|---|---|---|
+| RF (`n_estimators` 20/50 × `max_depth` 5/None) | frío | 1.54 (1.37) | 3.34 (3.27) | 2.2× más lento |
+| RF | caliente | 1.52 (1.42) | 1.84 (1.78) | 1.2× más lento |
+| HGB (`max_depth` 3/6 × `learning_rate`) | frío | 2.59 (2.21) | 2.82 (2.71) | 1.1× más lento |
+| HGB | caliente | 2.38 (2.27) | 1.49 (1.40) | **1.6× más rápido** |
+| XGB (`max_depth` × `learning_rate`) | frío | 0.73 (0.68) | 2.75 (2.62) | 3.8× más lento |
+| CatBoost (`depth` 4/6 × `iterations` 100/200) | frío | 1.28 (1.16) | 2.50 (2.35) | 2.0× más lento |
+
+Predicciones y métricas idénticas en todas las configuraciones.
+
+Conclusión: H1 confirmada salvo HGB en caliente. En la búsqueda, `'auto'` con
+`refit=False` paraleliza folds que solo predicen y pierde: arranque en frío + enviar el
+forecaster ajustado a cada tarea. HGB es la excepción porque predecir una fila con HGB
+es caro (ver siguiente punto) y en los workers corre con 1 hilo.
+
+### Lateral: hilos OpenMP en la predicción fila a fila
+
+Micro-medida (1500×24, mediana de 5 × 300 llamadas):
+
+| Estimador | 1 fila, hilos por defecto (4) | 1 fila, 1 hilo |
+|---|---|---|
+| `HistGradientBoostingRegressor.predict` | 1.02 ms | 0.54 ms (`threadpool_limits(1)`) |
+| `XGBRegressor` `inplace_predict` | 0.093 ms | 0.107-0.117 ms |
+| `CatBoostRegressor.predict` | 0.223 ms | 0.221-0.225 ms |
+
+Conclusión: solo HGB sufre el coste de abrir la región OpenMP con 4 hilos en cada fila:
+la predicción recursiva con HGB es ~2× más lenta de lo necesario también con
+`n_jobs=1`. skforecast ya limita los hilos de LightGBM al predecir; HGB no.
+Siguiente: medir el efecto en un backtesting real limitando los hilos solo al predecir.
