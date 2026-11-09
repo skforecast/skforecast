@@ -34,7 +34,12 @@ from ..metrics import (
     _get_metric,
     calculate_coverage
 )
-from ..metrics.metrics import _metric_greater_is_better
+from ..metrics.metrics import (
+    _metric_greater_is_better,
+    _naive_scales,
+    _scaled_metric_per_origin,
+    _is_scaled_metric
+)
 from ..utils import (
     _date_range_from_index,
     check_interval,
@@ -46,7 +51,8 @@ from ..utils import (
     _series_too_short_multiseries,
     estimator_has_native_nan_support,
     _first_frame_outside_skforecast,
-    _find_stack_level
+    _find_stack_level,
+    transform_numpy
 )
 
 # NOTE: Names of the metrics added to the backtesting metrics when the
@@ -1074,6 +1080,109 @@ def _cause_level_not_evaluated(
     ), True
 
 
+def _get_test_positions(
+    y: pd.Series,
+    test_index: pd.Index
+) -> np.ndarray:
+    """
+    Positions in `y` of the dates (or index values) of the one-step-ahead test
+    set. The true values with differentiation, and the forecast origins of the
+    scaled metrics, are read from `y` at these positions.
+
+    Parameters
+    ----------
+    y : pandas Series
+        Time series, in its original scale.
+    test_index : pandas Index
+        Index of the rows of the test set.
+
+    Returns
+    -------
+    test_positions : numpy ndarray
+        Position in `y` of each row of the test set.
+
+    """
+
+    test_positions = y.index.get_indexer(test_index)
+    if (test_positions < 0).any():
+        n_missing = int((test_positions < 0).sum())
+        raise ValueError(
+            f"{n_missing} dates of the test set are not in the index of the "
+            f"series '{y.name}', so its true values cannot be read from it. "
+            f"First missing date: {test_index[test_positions < 0][0]}."
+        )
+
+    return test_positions
+
+
+def _revert_differentiation_one_step_ahead(
+    y_observed: np.ndarray,
+    diff_true: np.ndarray,
+    diff_pred: np.ndarray,
+    transformer: object | None
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Revert the differentiation of one-step-ahead predictions. Each prediction
+    is made from the observed values before it, so, in the transformed scale,
+    it is the observed value minus the observed difference plus the predicted
+    one:
+
+    `level_pred_t = level_true_t - diff_true_t + diff_pred_t`
+
+    This holds for any order of differentiation: the error of the level is the
+    error of the difference.
+
+    The `inverse_transform_next_window` method of the differentiator is not
+    used: it chains the predictions, as `predict` does, adding each predicted
+    difference to the previous prediction, so the error of each prediction
+    would be carried into the following ones. The observed values are taken
+    from the series rather than rebuilt from the differences, since the rows
+    with missing values are left out of the test set.
+
+    Parameters
+    ----------
+    y_observed : numpy ndarray
+        Observed values of the series at the predicted positions, in the
+        original scale.
+    diff_true : numpy ndarray
+        Target of the estimator at the same positions (the transformed and
+        differentiated series).
+    diff_pred : numpy ndarray
+        Predictions of the estimator at the same positions.
+    transformer : object, None
+        Fitted transformer of the series (`transformer_y`, or the transformer
+        of the level in `transformer_series_`), or `None`.
+
+    Returns
+    -------
+    y_true : numpy ndarray
+        Observed values in the original scale.
+    y_pred : numpy ndarray
+        One-step-ahead predictions in the original scale.
+
+    """
+
+    y_true = np.asarray(y_observed, dtype=float).ravel()
+    level_true = transform_numpy(
+                     array       = y_true,
+                     transformer = transformer,
+                     fit         = False
+                 ).ravel()
+    level_pred = (
+        level_true
+        - np.asarray(diff_true, dtype=float).ravel()
+        + np.asarray(diff_pred, dtype=float).ravel()
+    )
+    y_pred = transform_numpy(
+                 array             = level_pred,
+                 transformer       = transformer,
+                 fit               = False,
+                 inverse_transform = True
+             ).ravel()
+
+    return y_true, y_pred
+
+
 def _calculate_metrics_one_step_ahead(
     forecaster: object,
     metrics: list,
@@ -1082,7 +1191,9 @@ def _calculate_metrics_one_step_ahead(
     X_test: np.ndarray,
     y_test: np.ndarray,
     sample_weight: np.ndarray | None,
-    fit_kwargs: dict[str, Any]
+    fit_kwargs: dict[str, Any],
+    y: pd.Series,
+    test_index: pd.Index
 ) -> tuple[list, int]:
     """
     Calculate metrics when predictions are one-step-ahead. When forecaster is
@@ -1108,6 +1219,17 @@ def _calculate_metrics_one_step_ahead(
         is defined.
     fit_kwargs : dict
         Precomputed keyword arguments for `estimator.fit`. Can be empty dict.
+    y : pandas Series
+        Time series used in the search, in its original scale. With
+        `differentiation`, its values at `test_index` are the true values, from
+        which the predictions are reverted one step ahead (see
+        `_revert_differentiation_one_step_ahead`). The metrics with the
+        argument `y_train` use its values: the scaled metrics scale the error
+        of each prediction with the observations before it (its forecast origin
+        is its own position, since it is predicted one step ahead), and the
+        rest receive the observations before the first prediction.
+    test_index : pandas Index
+        Index of `y` of each row of `X_test`.
 
     Returns
     -------
@@ -1118,8 +1240,6 @@ def _calculate_metrics_one_step_ahead(
         not missing.
     
     """
-
-    needs_y_train = _any_metric_needs_y_train(metrics)
 
     if type(forecaster).__name__ == 'ForecasterDirect':
         # NOTE: Only step 1 is optimized in one-step-ahead validation.
@@ -1146,29 +1266,38 @@ def _calculate_metrics_one_step_ahead(
         )
         y_pred = estimator.predict(X_test).ravel()
 
-    if not needs_y_train:
-        y_train = None
+    # NOTE: Each prediction is made one step ahead with the observed values,
+    # so its forecast origin is its own position in `y`.
+    test_positions = _get_test_positions(y=y, test_index=test_index)
 
     if forecaster.differentiation is not None:
-        y_true = forecaster.differentiator.inverse_transform_next_window(y_true)
-        y_pred = forecaster.differentiator.inverse_transform_next_window(y_pred)
-        if needs_y_train:
-            y_train = forecaster.differentiator.inverse_transform_training(y_train)
-
-    if forecaster.transformer_y is not None:
+        y_true, y_pred = _revert_differentiation_one_step_ahead(
+                             y_observed  = y.to_numpy()[test_positions],
+                             diff_true   = y_test,
+                             diff_pred   = y_pred,
+                             transformer = forecaster.transformer_y
+                         )
+    elif forecaster.transformer_y is not None:
         y_true = forecaster.transformer_y.inverse_transform(y_true.reshape(-1, 1))
         y_pred = forecaster.transformer_y.inverse_transform(y_pred.reshape(-1, 1))
-        if needs_y_train:
-            y_train = forecaster.transformer_y.inverse_transform(y_train.reshape(-1, 1))
 
     y_true = y_true.ravel()
     y_pred = y_pred.ravel()
-    if needs_y_train:
-        y_train = y_train.ravel()
-    
-    metric_values = [
-        m(y_true=y_true, y_pred=y_pred, y_train=y_train) for m in metrics
-    ]
+
+    y_train, scale_abs, scale_sq = _get_y_train_and_scales(
+                                       y       = y,
+                                       origins = test_positions,
+                                       metrics = metrics
+                                   )
+    metric_values, n_undefined = _calculate_metric_values(
+                                     metrics   = metrics,
+                                     y_true    = y_true,
+                                     y_pred    = y_pred,
+                                     y_train   = y_train,
+                                     scale_abs = scale_abs,
+                                     scale_sq  = scale_sq
+                                 )
+    _warn_undefined_scale({None: (n_undefined, len(y_true))})
     n_evaluated = _count_evaluated(y_true=y_true, y_pred=y_pred)
 
     return metric_values, n_evaluated
@@ -1851,6 +1980,181 @@ def _check_nan_predictions_backtesting(
         )
 
 
+def _get_y_train_and_scales(
+    y: pd.Series,
+    origins: np.ndarray,
+    metrics: list[Callable]
+) -> tuple[pd.Series | None, np.ndarray | None, np.ndarray | None]:
+    """
+    Values that the metrics need from the training data, given the position
+    in `y` of the forecast origin of each point evaluated (the end of the last
+    window of its fold in backtesting, and the position of the point itself in
+    one-step-ahead validation).
+
+    - `mean_absolute_scaled_error` and `root_mean_squared_scaled_error` scale
+    the error of each point with the error of the one-step naive forecast over
+    the observations before its origin, `y[:origin]`. The scale depends only on
+    the series and the origin, not on the forecaster (`window_size`, `refit`,
+    `fixed_train_size`), so the scaled metrics of two forecasters are
+    comparable.
+    - The rest of the metrics with the argument `y_train` receive the
+    observations before the first origin.
+
+    Parameters
+    ----------
+    y : pandas Series
+        Values of the series, in the coordinates of `origins`.
+    origins : numpy ndarray
+        Position in `y` of the forecast origin of each point evaluated.
+    metrics : list
+        Metrics to calculate, already processed by `add_y_train_argument`.
+
+    Returns
+    -------
+    y_train : pandas Series, None
+        Observations before the first forecast origin, from the first observed
+        value. `None` if no metric other than the scaled metrics needs it.
+    scale_abs : numpy ndarray, None
+        Mean absolute error of the naive forecast before the origin of each
+        point. `None` if no metric is a scaled metric.
+    scale_sq : numpy ndarray, None
+        Mean squared error of the naive forecast before the origin of each
+        point. `None` if no metric is a scaled metric.
+
+    """
+
+    if not _any_metric_needs_y_train(metrics):
+        return None, None, None
+
+    origins = np.asarray(origins, dtype=int)
+
+    # NOTE: The scaled metrics of skforecast use the scales, not `y_train`,
+    # so it is only built for the other metrics with the argument `y_train`.
+    y_train = None
+    if any(
+        getattr(m, '_needs_y_train', True) and not _is_scaled_metric(m)
+        for m in metrics
+    ):
+        first_origin = int(origins.min()) if origins.size > 0 else 0
+        y_train = y.iloc[:first_origin]
+        # NOTE: `y_train` starts at the first observed value (the span of
+        # several series may start before it), and includes the intercepted NaNs.
+        first_valid = y_train.first_valid_index()
+        if first_valid is not None:
+            y_train = y_train.loc[first_valid:]
+
+    scale_abs = scale_sq = None
+    if any(_is_scaled_metric(m) for m in metrics):
+        scale_abs, scale_sq = _naive_scales(y=y.to_numpy(dtype=float), origins=origins)
+
+    return y_train, scale_abs, scale_sq
+
+
+def _calculate_metric_values(
+    metrics: list[Callable],
+    y_true: pd.Series | np.ndarray,
+    y_pred: pd.Series | np.ndarray,
+    y_train: pd.Series | np.ndarray | None = None,
+    scale_abs: np.ndarray | None = None,
+    scale_sq: np.ndarray | None = None
+) -> tuple[list[float], int]:
+    """
+    Calculate the value of each metric. `mean_absolute_scaled_error` and
+    `root_mean_squared_scaled_error` scale each error with the scale of its
+    forecast origin (`scale_abs`, `scale_sq`), and the rest of the metrics
+    receive `y_train`.
+
+    Parameters
+    ----------
+    metrics : list
+        Metrics to calculate, with the argument `y_train`.
+    y_true : pandas Series, numpy ndarray
+        True values.
+    y_pred : pandas Series, numpy ndarray
+        Predicted values.
+    y_train : pandas Series, numpy ndarray, default None
+        Observations before the first forecast origin, passed to the metrics
+        with the argument `y_train` other than the scaled metrics.
+    scale_abs : numpy ndarray, default None
+        Mean absolute error of the naive forecast at the origin of each point.
+        If `None`, the scaled metrics receive `y_train` as the other metrics.
+    scale_sq : numpy ndarray, default None
+        Mean squared error of the naive forecast at the origin of each point.
+
+    Returns
+    -------
+    metric_values : list
+        Value of each metric.
+    n_undefined : int
+        Number of points left out of the scaled metrics because their scale
+        is missing or zero.
+
+    """
+
+    metric_values = []
+    n_undefined = 0
+    for m in metrics:
+        if scale_abs is not None and _is_scaled_metric(m):
+            value, n_undefined = _scaled_metric_per_origin(
+                metric    = m,
+                y_true    = y_true,
+                y_pred    = y_pred,
+                scale_abs = scale_abs,
+                scale_sq  = scale_sq
+            )
+        else:
+            value = m(y_true=y_true, y_pred=y_pred, y_train=y_train)
+        metric_values.append(value)
+
+    return metric_values, n_undefined
+
+
+def _warn_undefined_scale(
+    n_undefined: dict[str | None, tuple[int, int]]
+) -> None:
+    """
+    Warn that some points are left out of `mean_absolute_scaled_error` and
+    `root_mean_squared_scaled_error` because the scale of their forecast
+    origin is missing or zero.
+
+    Parameters
+    ----------
+    n_undefined : dict
+        Points left out and points evaluated, `(n_undefined, n_evaluated)`,
+        by level (`None` for a single series). Levels without points left out
+        are ignored.
+
+    Returns
+    -------
+    None
+
+    """
+
+    n_undefined = {k: v for k, v in n_undefined.items() if v[0] > 0}
+    if not n_undefined:
+        return
+
+    if list(n_undefined) == [None]:
+        n, total = n_undefined[None]
+        where = f"{n} of the {total} points evaluated"
+    else:
+        where = ", ".join(
+            f"'{level}' ({n} of {total})" for level, (n, total) in n_undefined.items()
+        )
+        where = f"some points evaluated of the levels {where}"
+    warnings.warn(
+        f"The scale of `mean_absolute_scaled_error` and "
+        f"`root_mean_squared_scaled_error` (the error of the one-step naive "
+        f"forecast over the observations before the forecast origin) is zero "
+        f"or missing for {where}, so they are left out of these metrics. It "
+        f"happens when the series is constant, or has no two consecutive "
+        f"observed values, before the forecast origin. If no point is left, "
+        f"the metric is NaN.",
+        RuntimeWarning,
+        stacklevel = _find_stack_level()
+    )
+
+
 def _calculate_metrics_backtesting(
     predictions: pd.DataFrame,
     metrics: list[Callable],
@@ -1858,7 +2162,9 @@ def _calculate_metrics_backtesting(
     interval_columns: list[str] | None = None,
     pred_column: str = 'pred',
     estimator_id: str | None = None,
-    differentiation: int | None = None
+    differentiation: int | None = None,
+    scale_abs: np.ndarray | None = None,
+    scale_sq: np.ndarray | None = None
 ) -> list[float]:
     """
     Calculate the backtesting metrics of a single series: the metrics, the
@@ -1881,7 +2187,9 @@ def _calculate_metrics_backtesting(
     metrics : list
         Metrics to calculate, with the argument `y_train`.
     y_train : pandas Series, default None
-        Training values of the series, used by the scaled metrics.
+        Observations before the first forecast origin, passed to the metrics
+        with the argument `y_train` other than `mean_absolute_scaled_error`
+        and `root_mean_squared_scaled_error`.
     interval_columns : list, default None
         Names of the lower and upper bound columns of the prediction interval.
         If `None`, the interval metrics are not calculated.
@@ -1894,6 +2202,15 @@ def _calculate_metrics_backtesting(
     differentiation : int, default None
         Order of the differentiation of the forecaster, used in the error of
         NaN predictions.
+    scale_abs : numpy ndarray, default None
+        Scale of `mean_absolute_scaled_error` for each row of `predictions`:
+        the mean absolute error of the one-step naive forecast before its
+        forecast origin (see `_get_y_train_and_scales`). If `None`, the
+        scaled metrics receive `y_train`.
+    scale_sq : numpy ndarray, default None
+        Scale of `root_mean_squared_scaled_error` for each row of
+        `predictions`: the mean squared error of the one-step naive forecast
+        before its forecast origin.
 
     Returns
     -------
@@ -1922,11 +2239,19 @@ def _calculate_metrics_backtesting(
         )
     y_true = y_true.loc[is_observed]
     y_pred = y_pred.loc[is_observed]
+    if scale_abs is not None:
+        scale_abs = np.asarray(scale_abs)[is_observed]
+        scale_sq = np.asarray(scale_sq)[is_observed]
 
-    metric_values = [
-        m(y_true=y_true, y_pred=y_pred, y_train=y_train)
-        for m in metrics
-    ]
+    metric_values, n_undefined = _calculate_metric_values(
+                                     metrics   = metrics,
+                                     y_true    = y_true,
+                                     y_pred    = y_pred,
+                                     y_train   = y_train,
+                                     scale_abs = scale_abs,
+                                     scale_sq  = scale_sq
+                                 )
+    _warn_undefined_scale({None: (n_undefined, len(y_true))})
     if interval_columns is not None:
         metric_values.extend(
             _calculate_interval_metrics(
@@ -1945,7 +2270,6 @@ def _calculate_metrics_backtesting_multiseries(
     predictions: pd.DataFrame,
     folds: list[list[int]] | tqdm,
     span_index: pd.DatetimeIndex | pd.RangeIndex,
-    window_size: int,
     metrics: list,
     levels: list,
     add_aggregated_metric: bool = True
@@ -1969,24 +2293,30 @@ def _calculate_metrics_backtesting_multiseries(
     a prediction, both not missing. Its aggregated value is the sum over the
     levels.
 
+    `mean_absolute_scaled_error` and `root_mean_squared_scaled_error` scale
+    the error of each point with the error of the one-step naive forecast of
+    its series over the observations before its forecast origin (the end of
+    the last window of its fold). Their pooled value is the mean of the scaled
+    errors of all the points of all the levels (the root of the mean of the
+    squared scaled errors for the RMSSE). The rest of the metrics with the
+    argument `y_train` receive the observations of the series before the first
+    forecast origin.
+
     Parameters
     ----------
     series : pandas DataFrame, dict
-        Series data used for backtesting. Only used to build `y_train` for the
-        metrics that need it.
+        Series data used for backtesting. Only used for the metrics with the
+        argument `y_train`.
     predictions : pandas DataFrame
         MultiIndex (`idx`, `level`) DataFrame generated during the backtesting
         multiseries process, without the repeated dates of overlapping folds.
-        Columns `y_true` (true values) and `y_pred` (point predictions), and
-        optionally `lower_bound` and `upper_bound`.
+        Columns `fold` (fold of each prediction), `y_true` (true values) and
+        `y_pred` (point predictions), and optionally `lower_bound` and
+        `upper_bound`.
     folds : list, tqdm
         Folds created during the backtesting process.
     span_index : pandas DatetimeIndex, pandas RangeIndex
         Full index from the minimum to the maximum index among all series.
-    window_size : int
-        Size of the window used by the forecaster to create the predictors.
-        This is used remove the first `window_size` (differentiation included) 
-        values from y_train since they are not part of the training matrix.
     metrics : list
         List of metrics to calculate.
     levels : list
@@ -2048,61 +2378,58 @@ def _calculate_metrics_backtesting_multiseries(
         axis=0, how="any", subset=['y_true', 'y_pred']
     )
 
-    if needs_y_train:
-        if isinstance(series, pd.DataFrame) and not isinstance(series.index, pd.MultiIndex):
-            series = series.stack()
-            series.index = series.index.swaplevel()
-            series.index.names = ['level', 'idx']
-            series = series.to_frame('y_true')
-        else:
-            series = pd.concat(series, names = ['level', 'idx']).to_frame('y_true')
-
-        train_indexes = []
-        for i, fold in enumerate(folds):
-            fit_fold = fold[-1]
-            if i == 0 or fit_fold:
-                train_iloc_start = fold[1][0]
-                train_iloc_end = fold[1][1]
-                train_indexes.append(np.arange(train_iloc_start, train_iloc_end))
-        
-        train_indexes = np.unique(np.concatenate(train_indexes))
-        train_indexes = span_index[train_indexes]
-        train_indexes = pd.MultiIndex.from_product([
-            levels_in_predictions,
-            train_indexes,
-        ])
-        series_train = series.loc[series.index.isin(train_indexes)]
-        # NOTE: Exclude first window_size observations used to create predictors
-        series_train = series_train[
-            series_train.groupby(level="level").cumcount() >= window_size
-        ]
-        series_train_grouped = (
-            series_train
-            .reset_index(level="level")
-            .groupby(by="level", sort=False, as_index=False)
-        )
-
     y_true_y_pred_grouped = (
         y_true_y_pred
         .reset_index(level="level")
         .groupby(by="level", sort=False, as_index=False)
     )
+
+    # NOTE: The scale of each point depends on its series and its forecast
+    # origin (the end of the last window of its fold, a position of
+    # `span_index`), so it is calculated for every point evaluated, aligned
+    # with the rows of `y_true_y_pred`.
+    y_train_levels = {}
+    scale_abs = scale_sq = None
+    if needs_y_train:
+        origin_by_fold = {fold[0]: fold[2][1] for fold in folds}
+        origins = y_true_y_pred['fold'].map(origin_by_fold).to_numpy()
+        is_scaled = any(_is_scaled_metric(m) for m in metrics)
+        if is_scaled:
+            scale_abs = np.full(len(y_true_y_pred), np.nan)
+            scale_sq = np.full(len(y_true_y_pred), np.nan)
+        for level, positions in y_true_y_pred_grouped.indices.items():
+            y_level = series[level]
+            if isinstance(y_level, pd.DataFrame):
+                y_level = y_level.iloc[:, 0]
+            y_level = y_level.reindex(span_index)
+            y_train_level, scale_abs_level, scale_sq_level = _get_y_train_and_scales(
+                y       = y_level,
+                origins = origins[positions],
+                metrics = metrics
+            )
+            y_train_levels[level] = y_train_level
+            if is_scaled:
+                scale_abs[positions] = scale_abs_level
+                scale_sq[positions] = scale_sq_level
+
     metrics_levels = []
     n_evaluated_levels = []
+    n_undefined_levels = {}
     for level in levels:
         if level in levels_in_predictions and level in y_true_y_pred_grouped.groups:
             group = y_true_y_pred_grouped.get_group(level)
+            positions = y_true_y_pred_grouped.indices[level]
             y_true = group['y_true']
             y_pred = group['y_pred']
-            if needs_y_train:
-                # NOTE: y_train includes the intercepted NaNs
-                y_train = series_train_grouped.get_group(level)['y_true']
-            else:
-                y_train = None
-            metrics_level = [
-                m(y_true=y_true, y_pred=y_pred, y_train=y_train)
-                for m in metrics
-            ]
+            metrics_level, n_undefined = _calculate_metric_values(
+                metrics   = metrics,
+                y_true    = y_true,
+                y_pred    = y_pred,
+                y_train   = y_train_levels.get(level),
+                scale_abs = scale_abs[positions] if scale_abs is not None else None,
+                scale_sq  = scale_sq[positions] if scale_sq is not None else None
+            )
+            n_undefined_levels[level] = (n_undefined, len(group))
             if add_interval_metrics:
                 metrics_level.extend(
                     _calculate_interval_metrics(
@@ -2116,6 +2443,8 @@ def _calculate_metrics_backtesting_multiseries(
         else:
             metrics_levels.append([None for _ in output_names])
             n_evaluated_levels.append(0)
+
+    _warn_undefined_scale(n_undefined_levels)
 
     metrics_levels = pd.DataFrame(
                          data    = metrics_levels,
@@ -2162,33 +2491,21 @@ def _calculate_metrics_backtesting_multiseries(
         weighted_average[N_EVALUATED_NAME] = n_evaluated
 
         # aggregation: pooling
-        scaled_metrics = [
-            'mean_absolute_scaled_error', 
-            'root_mean_squared_scaled_error'
-        ]
-
+        # NOTE: The scaled metrics are pooled with the scale of each point
+        # (the mean of the scaled errors of all the points). The rest of the
+        # metrics with `y_train` receive the training values of all levels.
         y_true = y_true_y_pred.loc[:, 'y_true'].droplevel("level")
         y_pred = y_true_y_pred.loc[:, 'y_pred'].droplevel("level")
-        if needs_y_train:
-            y_train = series_train.loc[:, 'y_true'].droplevel("level")
-            if any(name in scaled_metrics for name in metric_names):
-                series_train_list = [
-                    group['y_true'] 
-                    for _, group in series_train.groupby('level', sort=False)
-                ]
-        else:
-            y_train = None
-
-        pooled = []
-        for m, m_name in zip(metrics, metric_names):
-            if needs_y_train and m_name in scaled_metrics:
-                pooled.append(
-                    m(y_true=y_true, y_pred=y_pred, y_train=series_train_list)
-                )
-            else:
-                pooled.append(
-                    m(y_true=y_true, y_pred=y_pred, y_train=y_train)
-                )
+        y_train_values = [v for v in y_train_levels.values() if v is not None]
+        y_train_pooled = pd.concat(y_train_values) if y_train_values else None
+        pooled, _ = _calculate_metric_values(
+                        metrics   = metrics,
+                        y_true    = y_true,
+                        y_pred    = y_pred,
+                        y_train   = y_train_pooled,
+                        scale_abs = scale_abs,
+                        scale_sq  = scale_sq
+                    )
 
         if add_interval_metrics:
             pooled.extend(
@@ -2244,7 +2561,11 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
     forecaster : object
         Forecaster model.
     series : pandas DataFrame, dict
-        Series data used to train and test the forecaster.
+        Series data used to train and test the forecaster, in their original
+        scale. With `differentiation`, the values of each level at the test
+        dates are the true values, from which the predictions are reverted one
+        step ahead (see `_revert_differentiation_one_step_ahead`). The metrics
+        with the argument `y_train` also use its values.
     X_train : pandas DataFrame
         Training matrix.
     y_train : pandas Series, dict
@@ -2379,22 +2700,28 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
             )
             y_pred = estimator.predict(X_test).ravel()
 
-        if needs_y_train:
-            y_train_metric = y_train.copy()
-        else:
-            y_train_metric = None
+        # NOTE: Each prediction is made one step ahead with the observed
+        # values, so its forecast origin is its own position in the series.
+        y_level = series[level]
+        test_positions = _get_test_positions(y=y_level, test_index=test_index)
 
-        if forecaster.differentiation is not None:
-            differentiator = forecaster.differentiator_[level]
-            if differentiator is not None:
-                y_true = differentiator.inverse_transform_next_window(y_true)
-                y_pred = differentiator.inverse_transform_next_window(y_pred)
-                if needs_y_train:
-                    y_train_metric = differentiator.inverse_transform_training(
-                        y_train_metric
-                    )
-
-        if forecaster.transformer_series is not None:
+        differentiator = (
+            forecaster.differentiator_[level]
+            if forecaster.differentiation is not None
+            else None
+        )
+        if differentiator is not None:
+            y_true, y_pred = _revert_differentiation_one_step_ahead(
+                                 y_observed  = y_level.to_numpy()[test_positions],
+                                 diff_true   = y_test,
+                                 diff_pred   = y_pred,
+                                 transformer = (
+                                     forecaster.transformer_series_[level]
+                                     if forecaster.transformer_series is not None
+                                     else None
+                                 )
+                             )
+        elif forecaster.transformer_series is not None:
             transformer = forecaster.transformer_series_[level]
             y_true = transformer.inverse_transform(
                 y_true.reshape(-1, 1)
@@ -2402,15 +2729,21 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
             y_pred = transformer.inverse_transform(
                 y_pred.reshape(-1, 1)
             ).ravel()
-            if needs_y_train:
-                y_train_metric = transformer.inverse_transform(
-                    y_train_metric.reshape(-1, 1)
-                ).ravel()
 
-        metrics_level = [
-            m(y_true=y_true, y_pred=y_pred, y_train=y_train_metric)
-            for m in metrics
-        ]
+        y_train_metric, scale_abs, scale_sq = _get_y_train_and_scales(
+                                                  y       = y_level,
+                                                  origins = test_positions,
+                                                  metrics = metrics
+                                              )
+        metrics_level, n_undefined = _calculate_metric_values(
+                                         metrics   = metrics,
+                                         y_true    = y_true,
+                                         y_pred    = y_pred,
+                                         y_train   = y_train_metric,
+                                         scale_abs = scale_abs,
+                                         scale_sq  = scale_sq
+                                     )
+        _warn_undefined_scale({level: (n_undefined, len(y_true))})
 
         metrics_levels = pd.DataFrame(
             data=[metrics_level], columns=metric_names
@@ -2487,90 +2820,87 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
     ).groupby('_level_skforecast')
     predictions_per_level = {key: group for key, group in predictions_per_level}
 
-    if needs_y_train:
-        
-        y_train_per_level = pd.DataFrame(
-            {"y_train": y_train, "_level_skforecast": X_train_encoding},
-            index=y_train.index,
-        ).groupby("_level_skforecast")
-
-        # NOTE: Interleaved Nan values were excluded fom y_train. They are restored
-        if isinstance(series[levels[0]].index, pd.DatetimeIndex):
-            y_train_per_level = {
-                key: group.reindex(
-                    _date_range_from_index(
-                        index = group.index,
-                        start = group.index[0],
-                        end   = group.index[-1],
-                        freq  = freq
-                    )
-                )
-                for key, group in y_train_per_level
-            }
-        else:
-            y_train_per_level = {
-                key: group.reindex(
-                    pd.RangeIndex(
-                        start=min(group.index), stop=max(group.index) + 1, step=freq
-                    )
-                )
-                for key, group in y_train_per_level
-            }
-
-    if forecaster.differentiation is not None:
+    # NOTE: Each prediction is made one step ahead with the observed values,
+    # so its forecast origin is its own position in its series.
+    series_per_level = {}
+    test_positions_per_level = {}
+    if needs_y_train or forecaster.differentiation is not None:
         for level in predictions_per_level:
-            differentiator = forecaster.differentiator_[level]
-            if differentiator is not None:
-                predictions_per_level[level]["y_true"] = (
-                    differentiator.inverse_transform_next_window(
-                        predictions_per_level[level]["y_true"].to_numpy()
-                    )
-                )
-                predictions_per_level[level]["y_pred"] = (
-                    differentiator.inverse_transform_next_window(
-                        predictions_per_level[level]["y_pred"].to_numpy()
-                    )   
-                )
-                if needs_y_train:
-                    y_train_per_level[level]["y_train"] = (
-                        differentiator.inverse_transform_training(
-                            y_train_per_level[level]["y_train"].to_numpy()
-                        )
-                    )
+            y_level = series[level]
+            if isinstance(y_level, pd.DataFrame):
+                y_level = y_level.iloc[:, 0]
+            series_per_level[level] = y_level
+            test_positions_per_level[level] = _get_test_positions(
+                                                  y          = y_level,
+                                                  test_index = predictions_per_level[level].index
+                                              )
 
-    if forecaster.transformer_series is not None:
-        for level in predictions_per_level:
+    for level, predictions_level in predictions_per_level.items():
+        differentiator = (
+            forecaster.differentiator_[level]
+            if forecaster.differentiation is not None
+            else None
+        )
+        if differentiator is not None:
+            y_true, y_pred = _revert_differentiation_one_step_ahead(
+                                 y_observed  = series_per_level[level].to_numpy()[
+                                                   test_positions_per_level[level]
+                                               ],
+                                 diff_true   = predictions_level["y_true"].to_numpy(),
+                                 diff_pred   = predictions_level["y_pred"].to_numpy(),
+                                 transformer = (
+                                     forecaster.transformer_series_[level]
+                                     if forecaster.transformer_series is not None
+                                     else None
+                                 )
+                             )
+            predictions_level["y_true"] = y_true
+            predictions_level["y_pred"] = y_pred
+        elif forecaster.transformer_series is not None:
             transformer = forecaster.transformer_series_[level]
-            predictions_per_level[level]["y_true"] = transformer.inverse_transform(
-                predictions_per_level[level][["y_true"]]
+            predictions_level["y_true"] = transformer.inverse_transform(
+                predictions_level[["y_true"]]
             )
-            predictions_per_level[level]["y_pred"] = transformer.inverse_transform(
-                predictions_per_level[level][["y_pred"]]
+            predictions_level["y_pred"] = transformer.inverse_transform(
+                predictions_level[["y_pred"]]
             )
-            if needs_y_train:
-                y_train_per_level[level]["y_train"] = transformer.inverse_transform(
-                    y_train_per_level[level][["y_train"]]
-                )
+
+    y_train_per_level = {}
+    scales_per_level = {}
+    if needs_y_train:
+        for level in predictions_per_level:
+            y_train_level, scale_abs_level, scale_sq_level = _get_y_train_and_scales(
+                y       = series_per_level[level],
+                origins = test_positions_per_level[level],
+                metrics = metrics
+            )
+            y_train_per_level[level] = y_train_level
+            scales_per_level[level] = (scale_abs_level, scale_sq_level)
 
     metrics_levels = []
     n_evaluated_levels = []
+    n_undefined_levels = {}
     for level in levels:
         if level in predictions_per_level:
             y_true = predictions_per_level[level].loc[:, 'y_true']
             y_pred = predictions_per_level[level].loc[:, 'y_pred']
-            if needs_y_train:
-                y_train = y_train_per_level[level].loc[:, 'y_train']
-            else:
-                y_train = None
-            metrics_level = [
-                m(y_true=y_true, y_pred=y_pred, y_train=y_train) 
-                for m in metrics
-            ]
+            scale_abs, scale_sq = scales_per_level.get(level, (None, None))
+            metrics_level, n_undefined = _calculate_metric_values(
+                metrics   = metrics,
+                y_true    = y_true,
+                y_pred    = y_pred,
+                y_train   = y_train_per_level.get(level),
+                scale_abs = scale_abs,
+                scale_sq  = scale_sq
+            )
+            n_undefined_levels[level] = (n_undefined, len(y_true))
             metrics_levels.append(metrics_level)
             n_evaluated_levels.append(_count_evaluated(y_true=y_true, y_pred=y_pred))
         else:
             metrics_levels.append([None for _ in metrics])
             n_evaluated_levels.append(0)
+
+    _warn_undefined_scale(n_undefined_levels)
 
     metrics_levels = pd.DataFrame(
                          data    = metrics_levels,
@@ -2617,43 +2947,36 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         # aggregation: pooling
         # NOTE: `X_test` includes every series of the forecaster, so only the
         # predictions of `levels` are pooled.
-        scaled_metrics = ['mean_absolute_scaled_error', 'root_mean_squared_scaled_error']
+        # NOTE: The scaled metrics are pooled with the scale of each point
+        # (the mean of the scaled errors of all the points).
         levels_pooled = [k for k in predictions_per_level if k in levels]
         predictions_pooled = pd.concat(
             [predictions_per_level[k] for k in levels_pooled]
         )
+        y_train_pooled = scale_abs_pooled = scale_sq_pooled = None
         if needs_y_train:
-            y_train_pooled = pd.concat(
-                [y_train_per_level[k] for k in levels_pooled]
-            )
-            if any(name in scaled_metrics for name in metric_names):
-                list_y_train_by_level = [
-                    y_train_per_level[k]['y_train'].to_numpy()
-                    for k in levels_pooled
-                ]
-        else:
-            y_train_pooled = None
+            y_train_values = [
+                y_train_per_level[k] for k in levels_pooled
+                if y_train_per_level[k] is not None
+            ]
+            if y_train_values:
+                y_train_pooled = pd.concat(y_train_values)
+            if scales_per_level[levels_pooled[0]][0] is not None:
+                scale_abs_pooled = np.concatenate(
+                    [scales_per_level[k][0] for k in levels_pooled]
+                )
+                scale_sq_pooled = np.concatenate(
+                    [scales_per_level[k][1] for k in levels_pooled]
+                )
 
-        pooled = []
-        y_true = predictions_pooled['y_true']
-        y_pred = predictions_pooled['y_pred']
-        for m, m_name in zip(metrics, metric_names):
-            if needs_y_train and m_name in scaled_metrics:
-                pooled.append(
-                    m(y_true=y_true, y_pred=y_pred, y_train=list_y_train_by_level)
-                )
-            else:
-                pooled.append(
-                    m(
-                        y_true=y_true,
-                        y_pred=y_pred,
-                        y_train=(
-                            y_train_pooled["y_train"]
-                            if y_train_pooled is not None
-                            else None
-                        ),
+        pooled, _ = _calculate_metric_values(
+                        metrics   = metrics,
+                        y_true    = predictions_pooled['y_true'],
+                        y_pred    = predictions_pooled['y_pred'],
+                        y_train   = y_train_pooled,
+                        scale_abs = scale_abs_pooled,
+                        scale_sq  = scale_sq_pooled
                     )
-                )
         pooled = pd.DataFrame([pooled], columns=metric_names)
         pooled['levels'] = 'pooling'
         pooled[N_EVALUATED_NAME] = n_evaluated

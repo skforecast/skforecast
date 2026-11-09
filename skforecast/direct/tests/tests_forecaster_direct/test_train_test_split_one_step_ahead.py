@@ -33,7 +33,7 @@ def test_train_test_split_one_step_ahead_when_lags_and_exog():
     forecaster = ForecasterDirect(LinearRegression(), lags=5, steps=1)
 
     (
-        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index
     ) = forecaster._train_test_split_one_step_ahead(
         y=y, exog=exog, initial_train_size=10
     )
@@ -60,6 +60,7 @@ def test_train_test_split_one_step_ahead_when_lags_and_exog():
     np.testing.assert_array_almost_equal(y_train, expected_y_train)
     np.testing.assert_array_almost_equal(X_test, expected_X_test)
     np.testing.assert_array_almost_equal(y_test, expected_y_test)
+    pd.testing.assert_index_equal(test_index, y.index[10:])
     assert sample_weight is None
     assert fit_kwargs == {}
 
@@ -76,7 +77,7 @@ def test_train_test_split_one_step_ahead_when_no_exog():
     forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=1)
 
     (
-        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index
     ) = forecaster._train_test_split_one_step_ahead(
         y=y, initial_train_size=10
     )
@@ -127,7 +128,7 @@ def test_train_test_split_one_step_ahead_when_weight_func():
     )
 
     (
-        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index
     ) = forecaster._train_test_split_one_step_ahead(
         y=y, initial_train_size=10
     )
@@ -185,7 +186,7 @@ def test_train_test_split_one_step_ahead_when_window_features_and_transformers_a
     )
 
     (
-        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index
     ) = forecaster._train_test_split_one_step_ahead(
         y=y, exog=exog, initial_train_size=15
     )
@@ -248,7 +249,7 @@ def test_train_test_split_one_step_ahead_when_steps_greater_than_1():
     forecaster = ForecasterDirect(LinearRegression(), lags=5, steps=3)
 
     (
-        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index
     ) = forecaster._train_test_split_one_step_ahead(
         y=y, exog=exog, initial_train_size=15
     )
@@ -305,7 +306,7 @@ def test_train_test_split_one_step_ahead_when_lightgbm_categorical():
     )
 
     (
-        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index
     ) = forecaster._train_test_split_one_step_ahead(
         y=y, exog=exog, initial_train_size=15
     )
@@ -371,7 +372,7 @@ def test_train_test_split_one_step_ahead_when_xgboost_categorical():
     )
 
     (
-        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index
     ) = forecaster._train_test_split_one_step_ahead(
         y=y, exog=exog, initial_train_size=15
     )
@@ -437,7 +438,7 @@ def test_train_test_split_one_step_ahead_when_histgradientboosting_categorical()
     )
 
     (
-        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index
     ) = forecaster._train_test_split_one_step_ahead(
         y=y, exog=exog, initial_train_size=15
     )
@@ -506,7 +507,7 @@ def test_train_test_split_one_step_ahead_when_catboost_categorical():
     )
 
     (
-        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index
     ) = forecaster._train_test_split_one_step_ahead(
         y=y, exog=exog, initial_train_size=15
     )
@@ -573,7 +574,7 @@ def test_train_test_split_one_step_ahead_when_fit_kwargs_no_categorical():
     )
 
     (
-        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index
     ) = forecaster._train_test_split_one_step_ahead(
         y=y, exog=exog, initial_train_size=15
     )
@@ -628,7 +629,7 @@ def test_train_test_split_one_step_ahead_when_non_contiguous_lags():
     forecaster = ForecasterDirect(LinearRegression(), lags=[1, 7], steps=1)
 
     (
-        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index
     ) = forecaster._train_test_split_one_step_ahead(
         y=y, exog=exog, initial_train_size=15
     )
@@ -719,7 +720,7 @@ def test_train_test_split_one_step_ahead_fit_predict_with_categorical(
     )
 
     (
-        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index
     ) = forecaster._train_test_split_one_step_ahead(
         y=y, exog=exog, initial_train_size=40
     )
@@ -790,7 +791,7 @@ def test_train_test_split_one_step_ahead_NaN_filtered_when_dropna_from_series_Tr
         )
     )
 
-    X_train, y_train, X_test, y_test, sample_weight, fit_kwargs = (
+    X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index = (
         forecaster._train_test_split_one_step_ahead(
             y=y, initial_train_size=10
         )
@@ -811,5 +812,7 @@ def test_train_test_split_one_step_ahead_NaN_filtered_when_dropna_from_series_Tr
     np.testing.assert_array_almost_equal(y_train, expected_y_train)
     np.testing.assert_array_almost_equal(X_test, expected_X_test)
     np.testing.assert_array_almost_equal(y_test, expected_y_test)
+    # The index of the test rows left after removing the NaN is aligned with `y`.
+    np.testing.assert_array_almost_equal(y.loc[test_index].to_numpy(), expected_y_test)
     assert sample_weight is None
     assert fit_kwargs == {}

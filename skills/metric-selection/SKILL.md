@@ -147,6 +147,17 @@ When passed as a string or callable, skforecast handles `y_train` automatically 
 it detects whether the function signature includes a `y_train` parameter and
 provides the training data if so.
 
+In backtesting and hyperparameter search, MASE and RMSSE scale the error of each
+prediction with the one-step naive forecast over all the observations before its
+forecast origin (the end of the last window of its fold; in one-step-ahead
+validation, the prediction itself). The scale depends only on the series and the
+origin, not on the forecaster (`lags`, window features, `refit`), so the MASE of
+two models evaluated with the same `cv` is comparable, and the best candidate of
+a search does not depend on the window of each candidate. Other metrics with a
+`y_train` parameter receive the observations before the first fold
+(`y.iloc[:initial_train_size]`). In multi-series results, the `pooling` row of
+MASE and RMSSE is the mean of the scaled errors of all the points of all series.
+
 ```python
 # Both options work identically in backtesting — y_train is handled internally
 metric = 'mean_absolute_scaled_error'            # Option 1: as string

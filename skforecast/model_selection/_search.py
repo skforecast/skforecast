@@ -106,7 +106,11 @@ def grid_search_forecaster(
         or `'root_mean_squared_error'`. All accepted names are listed in
         https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
-        (Optional) that returns a float.
+        (Optional) that returns a float. `y_train` is the series before the
+        first forecast origin. `mean_absolute_scaled_error` and
+        `root_mean_squared_scaled_error` scale the error of each prediction
+        with the one-step naive forecast over the observations before its own
+        forecast origin, the same for every forecaster.
         - If `list`: List containing multiple strings and/or Callables.
 
         The first metric ranks the candidates. Scikit-learn metrics ending in
@@ -235,7 +239,11 @@ def random_search_forecaster(
         or `'root_mean_squared_error'`. All accepted names are listed in
         https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
-        (Optional) that returns a float.
+        (Optional) that returns a float. `y_train` is the series before the
+        first forecast origin. `mean_absolute_scaled_error` and
+        `root_mean_squared_scaled_error` scale the error of each prediction
+        with the one-step naive forecast over the observations before its own
+        forecast origin, the same for every forecaster.
         - If `list`: List containing multiple strings and/or Callables.
 
         The first metric ranks the candidates. Scikit-learn metrics ending in
@@ -373,7 +381,11 @@ def _evaluate_grid_hyperparameters(
         or `'root_mean_squared_error'`. All accepted names are listed in
         https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
-        (Optional) that returns a float.
+        (Optional) that returns a float. `y_train` is the series before the
+        first forecast origin. `mean_absolute_scaled_error` and
+        `root_mean_squared_scaled_error` scale the error of each prediction
+        with the one-step naive forecast over the observations before its own
+        forecast origin, the same for every forecaster.
         - If `list`: List containing multiple strings and/or Callables.
 
         The first metric ranks the candidates. Scikit-learn metrics ending in
@@ -525,7 +537,8 @@ def _evaluate_grid_hyperparameters(
                         X_test,
                         y_test,
                         sample_weight,
-                        fit_kwargs
+                        fit_kwargs,
+                        test_index
                     ) = _train_test_split_one_step_ahead_search(
                         forecaster         = forecaster_search,
                         cv                 = cv,
@@ -578,7 +591,9 @@ def _evaluate_grid_hyperparameters(
                                                          X_test        = X_test,
                                                          y_test        = y_test,
                                                          sample_weight = sample_weight,
-                                                         fit_kwargs    = fit_kwargs
+                                                         fit_kwargs    = fit_kwargs,
+                                                         y             = y,
+                                                         test_index    = test_index
                                                      )
                 except Exception as e:
                     search_warnings.add_skipped(lags=lags_k, params=params, error=e)
@@ -711,7 +726,11 @@ def bayesian_search_forecaster(
         or `'root_mean_squared_error'`. All accepted names are listed in
         https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
-        (Optional) that returns a float.
+        (Optional) that returns a float. `y_train` is the series before the
+        first forecast origin. `mean_absolute_scaled_error` and
+        `root_mean_squared_scaled_error` scale the error of each prediction
+        with the one-step naive forecast over the observations before its own
+        forecast origin, the same for every forecaster.
         - If `list`: List containing multiple strings and/or Callables.
 
         The first metric ranks the candidates. Scikit-learn metrics ending in
@@ -959,7 +978,7 @@ def bayesian_search_forecaster(
                 raise _skip_trial(search_warnings, trial, error=split) from split
             (
                 X_train, y_train, X_test, y_test, sample_weight, fit_kwargs,
-                _estimator_cat_params
+                test_index, _estimator_cat_params
             ) = split
             _restore_estimator_categorical_set_params(
                 forecaster_search, _estimator_cat_params
@@ -974,7 +993,9 @@ def bayesian_search_forecaster(
                                            X_test        = X_test,
                                            y_test        = y_test,
                                            sample_weight = sample_weight,
-                                           fit_kwargs    = fit_kwargs
+                                           fit_kwargs    = fit_kwargs,
+                                           y             = y,
+                                           test_index    = test_index
                                        )
             except Exception as e:
                 raise _skip_trial(search_warnings, trial, error=e) from e
@@ -1169,7 +1190,11 @@ def grid_search_forecaster_multiseries(
         or `'root_mean_squared_error'`. All accepted names are listed in
         https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
-        (Optional) that returns a float.
+        (Optional) that returns a float. `y_train` is the series before the
+        first forecast origin. `mean_absolute_scaled_error` and
+        `root_mean_squared_scaled_error` scale the error of each prediction
+        with the one-step naive forecast over the observations before its own
+        forecast origin, the same for every forecaster.
         - If `list`: List containing multiple strings and/or Callables.
 
         The first metric ranks the candidates. Scikit-learn metrics ending in
@@ -1315,7 +1340,11 @@ def random_search_forecaster_multiseries(
         or `'root_mean_squared_error'`. All accepted names are listed in
         https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
-        (Optional) that returns a float.
+        (Optional) that returns a float. `y_train` is the series before the
+        first forecast origin. `mean_absolute_scaled_error` and
+        `root_mean_squared_scaled_error` scale the error of each prediction
+        with the one-step naive forecast over the observations before its own
+        forecast origin, the same for every forecaster.
         - If `list`: List containing multiple strings and/or Callables.
 
         The first metric ranks the candidates. Scikit-learn metrics ending in
@@ -1470,7 +1499,11 @@ def _evaluate_grid_hyperparameters_multiseries(
         or `'root_mean_squared_error'`. All accepted names are listed in
         https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
-        (Optional) that returns a float.
+        (Optional) that returns a float. `y_train` is the series before the
+        first forecast origin. `mean_absolute_scaled_error` and
+        `root_mean_squared_scaled_error` scale the error of each prediction
+        with the one-step naive forecast over the observations before its own
+        forecast origin, the same for every forecaster.
         - If `list`: List containing multiple strings and/or Callables.
 
         The first metric ranks the candidates. Scikit-learn metrics ending in
@@ -1924,7 +1957,11 @@ def bayesian_search_forecaster_multiseries(
         or `'root_mean_squared_error'`. All accepted names are listed in
         https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
-        (Optional) that returns a float.
+        (Optional) that returns a float. `y_train` is the series before the
+        first forecast origin. `mean_absolute_scaled_error` and
+        `root_mean_squared_scaled_error` scale the error of each prediction
+        with the one-step naive forecast over the observations before its own
+        forecast origin, the same for every forecaster.
         - If `list`: List containing multiple strings and/or Callables.
 
         The first metric ranks the candidates. Scikit-learn metrics ending in
@@ -2570,7 +2607,11 @@ def bayesian_search_foundation(
           `'root_mean_squared_error'`. All accepted names are listed in
           https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and
-          `y_train` (optional) that returns a float.
+          `y_train` (optional) that returns a float. `y_train` is the series
+          before the first forecast origin. `mean_absolute_scaled_error` and
+          `root_mean_squared_scaled_error` scale the error of each prediction
+          with the one-step naive forecast over the observations before its
+          own forecast origin, the same for every forecaster.
         - If `list`: List containing multiple strings and/or callables.
 
         The first metric ranks the candidates. Scikit-learn metrics ending in
@@ -2951,7 +2992,11 @@ def grid_search_stats(
         or `'root_mean_squared_error'`. All accepted names are listed in
         https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
-        (Optional) that returns a float.
+        (Optional) that returns a float. `y_train` is the series before the
+        first forecast origin. `mean_absolute_scaled_error` and
+        `root_mean_squared_scaled_error` scale the error of each prediction
+        with the one-step naive forecast over the observations before its own
+        forecast origin, the same for every forecaster.
         - If `list`: List containing multiple strings and/or Callables.
 
         The first metric ranks the candidates. Scikit-learn metrics ending in
@@ -3061,7 +3106,11 @@ def random_search_stats(
         or `'root_mean_squared_error'`. All accepted names are listed in
         https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
-        (Optional) that returns a float.
+        (Optional) that returns a float. `y_train` is the series before the
+        first forecast origin. `mean_absolute_scaled_error` and
+        `root_mean_squared_scaled_error` scale the error of each prediction
+        with the one-step naive forecast over the observations before its own
+        forecast origin, the same for every forecaster.
         - If `list`: List containing multiple strings and/or Callables.
 
         The first metric ranks the candidates. Scikit-learn metrics ending in
@@ -3180,7 +3229,11 @@ def _evaluate_grid_hyperparameters_stats(
         or `'root_mean_squared_error'`. All accepted names are listed in
         https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
-        (Optional) that returns a float.
+        (Optional) that returns a float. `y_train` is the series before the
+        first forecast origin. `mean_absolute_scaled_error` and
+        `root_mean_squared_scaled_error` scale the error of each prediction
+        with the one-step naive forecast over the observations before its own
+        forecast origin, the same for every forecaster.
         - If `list`: List containing multiple strings and/or Callables.
 
         The first metric ranks the candidates. Scikit-learn metrics ending in
@@ -3432,7 +3485,11 @@ def grid_search_equivalent_date(
         or `'root_mean_squared_error'`. All accepted names are listed in
         https://skforecast.org/latest/user_guides/metrics.html.
         - If `Callable`: Function with arguments `y_true`, `y_pred` and `y_train`
-        (Optional) that returns a float.
+        (Optional) that returns a float. `y_train` is the series before the
+        first forecast origin. `mean_absolute_scaled_error` and
+        `root_mean_squared_scaled_error` scale the error of each prediction
+        with the one-step naive forecast over the observations before its own
+        forecast origin, the same for every forecaster.
         - If `list`: List containing multiple strings and/or Callables.
 
         The first metric ranks the candidates. Scikit-learn metrics ending in

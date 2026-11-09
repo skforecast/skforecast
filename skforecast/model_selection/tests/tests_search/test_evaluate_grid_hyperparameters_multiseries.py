@@ -1060,26 +1060,26 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMul
             5: 0.21078779920557153,
         },
         'mean_absolute_scaled_error__weighted_average': {
-            0: 0.798335248515498,
-            1: 0.7983823516895249,
-            2: 0.7987389489370742,
-            3: 0.8120054679421529,
-            4: 0.8119798820564519,
-            5: 0.8119753734760063},
+            0: 0.7917739273105381,
+            1: 0.7918222682731239,
+            2: 0.7921892191351169,
+            3: 0.7956979767609758,
+            4: 0.7956704843142104,
+            5: 0.7956659447267066},
         'mean_absolute_scaled_error__average': {
-            0: 0.7983352485154981,
-            1: 0.7983823516895249,
-            2: 0.7987389489370743,
-            3: 0.812005467942153,
-            4: 0.8119798820564519,
-            5: 0.8119753734760063},
+            0: 0.7917739273105381,
+            1: 0.7918222682731239,
+            2: 0.7921892191351169,
+            3: 0.7956979767609758,
+            4: 0.7956704843142104,
+            5: 0.7956659447267066},
         'mean_absolute_scaled_error__pooling': {
-            0: 0.7811335117239494,
-            1: 0.7811767002385028,
-            2: 0.7815002660695128,
-            3: 0.7988421945907456,
-            4: 0.7988917793592797,
-            5: 0.7988965817986066
+            0: 0.7917739273105381,
+            1: 0.7918222682731239,
+            2: 0.7921892191351169,
+            3: 0.7956979767609759,
+            4: 0.7956704843142104,
+            5: 0.7956659447267066
         },
         'n_evaluated': {0: 24, 1: 24, 2: 24, 3: 24, 4: 24, 5: 24},
         "alpha": {0: 0.01, 1: 0.1, 2: 1.0, 3: 1.0, 4: 0.1, 5: 0.01},
@@ -1695,6 +1695,24 @@ def test_evaluate_grid_hyperparameters_multiseries_ForecasterDirectMultiVariate_
                 transformer_series=StandardScaler(),
                 transformer_exog=StandardScaler(),
                 forecaster_id='Multivariate'
+            ),
+            ForecasterRecursiveMultiSeries(
+                estimator=Ridge(random_state=678),
+                lags=3,
+                transformer_series=StandardScaler(),
+                transformer_exog=StandardScaler(),
+                differentiation=1,
+                forecaster_id='Multiseries_transformer_diff'
+            ),
+            ForecasterDirectMultiVariate(
+                estimator=Ridge(random_state=678),
+                level='l1',
+                lags=3,
+                steps=1,
+                transformer_series=StandardScaler(),
+                transformer_exog=StandardScaler(),
+                differentiation=1,
+                forecaster_id='Multivariate_diff'
             )
         ], 
 ids=lambda forecaster: f'forecaster: {forecaster.forecaster_id}')
@@ -1703,11 +1721,10 @@ def test_evaluate_grid_hyperparameters_equivalent_outputs_backtesting_and_one_st
 ):
     """
     Test that the output of _evaluate_grid_hyperparameters for backtesting and one-step-ahead
-    is equivalent when steps=1 and refit=False.
-    Results are not equivalent if differentiation is included.
+    is equivalent when steps=1 and refit=False, also with differentiation.
     """
     
-    if forecaster.forecaster_id == 'Multivariate':
+    if forecaster.forecaster_id.startswith('Multivariate'):
         series = series_wide_dt
     else:
         series = series_dict_dt
@@ -1794,7 +1811,6 @@ def test_evaluate_grid_hyperparameters_same_output_backtesting_and_one_step_ahea
     """
     Test that the output of evaluate_grid_hyperparameters for backtesting and one-step-ahead
     is equivalent when steps=1 and refit=False. Using series and exog as dictionaries.
-    Results are not equivalent if differentiation is included.
     ForecasterMultiVariate is not included because it is not possible to use dictionaries
     as input.
     """
