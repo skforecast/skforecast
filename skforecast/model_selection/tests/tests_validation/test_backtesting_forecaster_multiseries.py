@@ -1745,11 +1745,11 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                 0.21542868699749262,
             ],
             "mean_absolute_scaled_error": [
-                0.9265126347211138,
-                0.7326447294149787,
-                0.8295786820680462,
-                0.8295786820680462,
-                0.8164857848143883,
+                0.9117261663403536,
+                0.7106713844714342,
+                0.8111987754058939,
+                0.8111987754058939,
+                0.8111987754058939,
             ],
         }
     )
@@ -2048,8 +2048,8 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                 1025.76779699, 937.0457823, 818.85514869, 818.85514869
             ],
             'mean_absolute_scaled_error': [
-                1.08353766, 3.16716567, np.nan, 5.4865466 ,
-                0.8435216 , 2.64519288, 2.55539804, 1.98180886
+                1.0314831057460854, 3.1257573375331713, np.nan, 5.569262256891323 ,
+                0.8524195756066629 , 2.6447305689443104, 2.5333657921242154, 2.533365792124216
             ]
         }
     )
@@ -2159,14 +2159,14 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                 7: 8270.334566642236,
             },
             "mean_absolute_scaled_error": {
-                0: 3.2915229401688673,
-                1: 49.625963480324536,
+                0: 3.1280539383999573,
+                1: 47.76861032253606,
                 2: np.nan,
-                3: 26.186189742022798,
-                4: 0.5544820306613829,
-                5: 19.914539548294393,
-                6: 24.408235797583576,
-                7: 20.00576968474758,
+                3: 26.555845090877643,
+                4: 0.5637637226100717,
+                5: 19.504068268605934,
+                6: 23.694211370123536,
+                7: 23.69421137012354,
             },
         }
     )
@@ -2274,14 +2274,14 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                 7: 724.960480498882,
             },
             "mean_absolute_scaled_error": {
-                0: 0.8178593233613526,
-                1: 4.1364664709651064,
+                0: 0.776892896759616,
+                1: 3.9755045416149426,
                 2: np.nan,
-                3: 1.1323827428361022,
-                4: 0.8271748048818786,
-                5: 1.72847083551111,
-                6: 2.0965105153721213,
-                7: 1.760615501057647,
+                3: 1.1527267335756342,
+                4: 0.8266384360851871,
+                5: 1.682940652008845,
+                6: 2.026284744067144,
+                7: 2.0262847440671434,
             },
         }
     )
@@ -2478,14 +2478,14 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                 7: 724.960480498882,
             },
             "mean_absolute_scaled_error": {
-                0: 0.8178593233613526,
-                1: 4.1364664709651064,
+                0: 0.776892896759616,
+                1: 3.9755045416149426,
                 2: np.nan,
-                3: 1.1323827428361022,
-                4: 0.8271748048818786,
-                5: 1.72847083551111,
-                6: 2.0965105153721213,
-                7: 1.760615501057647,
+                3: 1.1527267335756342,
+                4: 0.8266384360851871,
+                5: 1.682940652008845,
+                6: 2.026284744067144,
+                7: 2.0262847440671434,
             },
         }
     )
@@ -2666,14 +2666,14 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                 7: 724.960480498882,
             },
             "mean_absolute_scaled_error": {
-                0: 0.8178593233613526,
-                1: 4.1364664709651064,
+                0: 0.776892896759616,
+                1: 3.9755045416149426,
                 2: np.nan,
-                3: 1.1323827428361022,
-                4: 0.8271748048818786,
-                5: 1.72847083551111,
-                6: 2.0965105153721213,
-                7: 1.760615501057647,
+                3: 1.1527267335756342,
+                4: 0.8266384360851871,
+                5: 1.682940652008845,
+                6: 2.026284744067144,
+                7: 2.0262847440671434,
             },
         }
     )
@@ -2834,14 +2834,14 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                 7: 724.960480498882,
             },
             "mean_absolute_scaled_error": {
-                0: 0.8178593233613526,
-                1: 4.1364664709651064,
+                0: 0.776892896759616,
+                1: 3.9755045416149426,
                 2: np.nan,
-                3: 1.1323827428361022,
-                4: 0.8271748048818786,
-                5: 1.72847083551111,
-                6: 2.0965105153721213,
-                7: 1.760615501057647,
+                3: 1.1527267335756342,
+                4: 0.8266384360851871,
+                5: 1.682940652008845,
+                6: 2.026284744067144,
+                7: 2.0262847440671434,
             },
         }
     )
@@ -3579,14 +3579,14 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                 7: 724.960480498882,
             },
             "mean_absolute_scaled_error": {
-                0: 0.8178593233613526,
-                1: 4.1364664709651064,
+                0: 0.776892896759616,
+                1: 3.9755045416149426,
                 2: np.nan,
-                3: 1.1323827428361022,
-                4: 0.8271748048818786,
-                5: 1.72847083551111,
-                6: 2.0965105153721213,
-                7: 1.760615501057647,
+                3: 1.1527267335756342,
+                4: 0.8266384360851871,
+                5: 1.682940652008845,
+                6: 2.026284744067144,
+                7: 2.0262847440671434,
             },
         }
     )
@@ -3664,14 +3664,14 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                 7: 566.527968927292,
             },
             "mean_absolute_scaled_error": {
-                0: 0.6325905872013097,
-                1: 3.208552015320668,
+                0: 0.5975509862233241,
+                1: 3.155230458120042,
                 2: np.nan,
-                3: 1.1071639471904091,
-                4: 0.5696246291686657,
-                5: 1.379482794720263,
-                6: 1.664091840444422,
-                7: 1.3758514439155465,
+                3: 1.1231100649152466,
+                4: 0.5686161325957416,
+                5: 1.3611269104635888,
+                6: 1.6346557944561695,
+                7: 1.6346557944561695,
             },
         }
     )
@@ -4017,14 +4017,14 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                 7: 628.4941665601435,
             },
             "mean_absolute_scaled_error": {
-                0: 0.6829896828532042,
-                1: 3.4997122226567505,
+                0: 0.6460365477958757,
+                1: 3.3751442016303335,
                 2: np.nan,
-                3: 1.3381820653387495,
-                4: 0.6752422235882412,
-                5: 1.5490315486092363,
-                6: 1.8348312671758897,
-                7: 1.5263405409473236,
+                3: 1.3603065486221655,
+                4: 0.6762294571526116,
+                5: 1.5144291888002468,
+                6: 1.7803358504443847,
+                7: 1.7803358504443845,
             },
         }
     )
@@ -7756,3 +7756,63 @@ def test_backtesting_forecaster_multiseries_warnings_of_folds_in_processes_same_
 
     assert [category for category, _, _, _ in expected].count(MissingValuesWarning) == 4
     assert results == expected
+
+
+def test_backtesting_forecaster_multiseries_scaled_metrics_same_with_wide_DataFrame_and_dict():
+    """
+    Test that a series that starts after the others has the same scaled
+    metrics whether `series` is a wide DataFrame (the series padded with NaN
+    before its start) or a dict (the series without them), and that each
+    error is scaled with the naive forecast of its series over the values
+    before its forecast origin (the end of the last window of its fold).
+    """
+    from skforecast.metrics import (
+        mean_absolute_scaled_error,
+        root_mean_squared_scaled_error,
+    )
+
+    series_wide = series_wide_dt.copy()
+    series_wide.iloc[:10, 1] = np.nan
+    series_dict = {
+        name: series_wide[name].dropna() for name in series_wide.columns
+    }
+    cv = TimeSeriesFold(steps=5, initial_train_size=30, refit=False)
+    metrics = [
+        "mean_absolute_error",
+        mean_absolute_scaled_error,
+        root_mean_squared_scaled_error,
+    ]
+
+    results = []
+    for data in [series_wide, series_dict]:
+        metric, predictions = backtesting_forecaster_multiseries(
+            forecaster    = ForecasterRecursiveMultiSeries(
+                                Ridge(random_state=123), lags=5, encoding="ordinal"
+                            ),
+            series        = data,
+            cv            = cv,
+            metric        = metrics,
+            show_progress = False
+        )
+        results.append((metric, predictions))
+
+    pd.testing.assert_frame_equal(results[0][0], results[1][0])
+
+    metric, predictions = results[0]
+    origin_by_fold = {0: 30, 1: 35, 2: 40, 3: 45}
+    metric = metric.set_index("levels")
+    for level in series_wide.columns:
+        values = series_wide[level].to_numpy()
+        pred = predictions.loc[predictions["level"] == level]
+        errors = (pred["y_true"] - pred["pred"]).to_numpy()
+        origins = pred["fold"].map(origin_by_fold).to_numpy()
+        scale_abs = np.array([np.nanmean(np.abs(np.diff(values[:o]))) for o in origins])
+        scale_sq = np.array([np.nanmean(np.diff(values[:o]) ** 2) for o in origins])
+        np.testing.assert_almost_equal(
+            metric.loc[level, "mean_absolute_scaled_error"],
+            np.mean(np.abs(errors) / scale_abs)
+        )
+        np.testing.assert_almost_equal(
+            metric.loc[level, "root_mean_squared_scaled_error"],
+            np.sqrt(np.mean(errors ** 2 / scale_sq))
+        )

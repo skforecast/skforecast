@@ -200,10 +200,6 @@ def mean_absolute_scaled_error(
 
     """
 
-    # NOTE: When using this metric in validation, `y_train` doesn't include
-    # the first window_size observations used to create the predictors and/or
-    # rolling features.
-
     if not isinstance(y_true, (pd.Series, np.ndarray)):
         raise TypeError("`y_true` must be a pandas Series or numpy ndarray.")
     if not isinstance(y_pred, (pd.Series, np.ndarray)):
@@ -282,10 +278,6 @@ def root_mean_squared_scaled_error(
 
     """
 
-    # NOTE: When using this metric in validation, `y_train` doesn't include
-    # the first window_size observations used to create the predictors and/or
-    # rolling features.
-
     if not isinstance(y_true, (pd.Series, np.ndarray)):
         raise TypeError("`y_true` must be a pandas Series or numpy ndarray.")
     if not isinstance(y_pred, (pd.Series, np.ndarray)):
@@ -310,8 +302,147 @@ def root_mean_squared_scaled_error(
         naive_forecast = np.diff(y_train)
     
     rmsse = np.sqrt(np.mean((y_true - y_pred) ** 2)) / np.sqrt(np.nanmean(naive_forecast ** 2))
-    
+
     return rmsse
+
+
+def _naive_scales(
+    y: np.ndarray,
+    origins: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Scales of `mean_absolute_scaled_error` and `root_mean_squared_scaled_error`
+    for each forecast origin: the mean absolute error and the mean squared error
+    of the one-step naive forecast over the observations before the origin,
+    `y[:origin]`. Only the differences between two consecutive observed values
+    are used, so a gap in the series is not bridged.
+
+    Parameters
+    ----------
+    y : numpy ndarray
+        Values of the series, missing values as NaN.
+    origins : numpy ndarray
+        Position in `y` of the forecast origin of each prediction: the
+        prediction only knows `y[:origin]`.
+
+    Returns
+    -------
+    scale_abs : numpy ndarray
+        Mean absolute error of the naive forecast before each origin. NaN if
+        there are no two consecutive observed values before the origin.
+    scale_sq : numpy ndarray
+        Mean squared error of the naive forecast before each origin. NaN if
+        there are no two consecutive observed values before the origin.
+
+    """
+
+    y = np.asarray(y, dtype=float)
+    origins = np.asarray(origins, dtype=int)
+
+    diffs = np.diff(y)
+    is_valid = ~np.isnan(diffs)
+    diffs = np.where(is_valid, diffs, 0.0)
+
+    # NOTE: `cum_*[j]` is the sum over `diffs[:j]`, and the differences of
+    # `y[:origin]` are `diffs[:origin - 1]`.
+    cum_abs = np.concatenate(([0.0], np.cumsum(np.abs(diffs))))
+    cum_sq = np.concatenate(([0.0], np.cumsum(diffs ** 2)))
+    cum_n = np.concatenate(([0], np.cumsum(is_valid)))
+
+    idx = np.clip(origins - 1, 0, len(cum_n) - 1)
+    n = cum_n[idx].astype(float)
+    n[n == 0] = np.nan
+    scale_abs = cum_abs[idx] / n
+    scale_sq = cum_sq[idx] / n
+
+    return scale_abs, scale_sq
+
+
+def _scaled_metric_per_origin(
+    metric: Callable,
+    y_true: np.ndarray | pd.Series,
+    y_pred: np.ndarray | pd.Series,
+    scale_abs: np.ndarray,
+    scale_sq: np.ndarray
+) -> tuple[float, int]:
+    """
+    Calculate `mean_absolute_scaled_error` or `root_mean_squared_scaled_error`
+    scaling each error with the scale of its forecast origin (see
+    `_naive_scales`). The MASE is the mean of the scaled absolute errors,
+    `mean(|e_t| / scale_abs_t)`, and the RMSSE the root of the mean of the
+    scaled squared errors, `sqrt(mean(e_t ** 2 / scale_sq_t))`.
+
+    The points whose scale is missing or zero (the naive forecast is not
+    defined before the origin, or the series is constant) are left out, as
+    the points without an error (missing true value or prediction), which are
+    not evaluated.
+
+    Parameters
+    ----------
+    metric : Callable
+        `mean_absolute_scaled_error` or `root_mean_squared_scaled_error`.
+    y_true : numpy ndarray, pandas Series
+        True values.
+    y_pred : numpy ndarray, pandas Series
+        Predicted values.
+    scale_abs : numpy ndarray
+        Mean absolute error of the naive forecast at the origin of each point.
+    scale_sq : numpy ndarray
+        Mean squared error of the naive forecast at the origin of each point.
+
+    Returns
+    -------
+    value : float
+        Value of the metric, NaN if no point has a valid scale.
+    n_undefined : int
+        Number of points evaluated left out because their scale is missing or
+        zero.
+
+    """
+
+    errors = np.asarray(y_true, dtype=float) - np.asarray(y_pred, dtype=float)
+    scale = scale_abs if metric is mean_absolute_scaled_error else scale_sq
+    scale = np.asarray(scale, dtype=float)
+    is_evaluated = ~np.isnan(errors)
+    is_defined = is_evaluated & np.isfinite(scale) & (scale > 0)
+    n_undefined = int((is_evaluated & ~is_defined).sum())
+
+    if not is_defined.any():
+        return np.nan, n_undefined
+
+    errors = errors[is_defined]
+    scale = scale[is_defined]
+    if metric is mean_absolute_scaled_error:
+        value = np.mean(np.abs(errors) / scale)
+    else:
+        value = np.sqrt(np.mean(errors ** 2 / scale))
+
+    return float(value), n_undefined
+
+
+def _is_scaled_metric(metric: Callable) -> bool:
+    """
+    Check if a metric is `mean_absolute_scaled_error` or
+    `root_mean_squared_scaled_error` of skforecast, the metrics whose errors
+    are scaled with the forecast origin of each point in backtesting and
+    hyperparameter search.
+
+    Parameters
+    ----------
+    metric : Callable
+        Metric, already processed by `add_y_train_argument`.
+
+    Returns
+    -------
+    is_scaled : bool
+        `True` if the metric is one of the two scaled metrics.
+
+    """
+
+    return (
+        metric is mean_absolute_scaled_error
+        or metric is root_mean_squared_scaled_error
+    )
 
 
 def crps_from_predictions(

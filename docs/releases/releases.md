@@ -32,6 +32,8 @@ The main changes in this release are:
 
 + <span class="badge text-bg-fix">Fix</span> Multi-series hyperparameter searches rank the candidates by the weighted average of the metric, the default: the columns of the aggregated metrics were swapped, so they ranked by the simple average when the series were evaluated on different numbers of points. ([#1438](https://github.com/skforecast/skforecast/pull/1438))
 
++ <span class="badge text-bg-fix">Fix</span> <code>[mean_absolute_scaled_error]</code> and <code>[root_mean_squared_scaled_error]</code> can now compare models in backtesting and hyperparameter search: their scale no longer depends on the lags of the forecaster or on `refit`. ([#1471](https://github.com/skforecast/skforecast/pull/1471))
+
 !!! warning "Before upgrading"
 
     Some results change with this version, without any change in your code:
@@ -51,6 +53,10 @@ The main changes in this release are:
     + <code>[backtesting_forecaster_multiseries]</code>: the interval columns (`lower_bound`, `upper_bound`, quantiles...) of the dates without an observed value are NaN, as `pred` already was.
 
     + <code>[ForecasterRecursiveMultiSeries]</code> with `encoding='ordinal'` (the default), `'ordinal_category'` or `None` and series not given in alphabetical order: the rows of each step in the output of `predict` and the other predict methods with `levels=None`, and the keys of `in_sample_residuals_`, follow the order of the series instead of the alphabetical order. The values are the same; pass `levels` to fix an order.
+
+    + <code>[mean_absolute_scaled_error]</code> and <code>[root_mean_squared_scaled_error]</code> in backtesting and hyperparameter search: their values change, and so may the model selected with `return_best` when one of them ranks the candidates. Custom metrics with a `y_train` argument receive the series before the first fold.
+
+    + Hyperparameter searches with <code>[OneStepAheadFold]</code> and a forecaster with `differentiation`: the metrics change (usually they are lower), and so may the model selected with `return_best`.
 
     And some code needs to be updated:
 
@@ -79,6 +85,8 @@ The main changes in this release are:
 
 + The predictions of <code>[backtesting_forecaster]</code>, <code>[backtesting_forecaster_multiseries]</code>, <code>[backtesting_stats]</code> and <code>[backtesting_foundation]</code> have two more columns after `fold`: `step`, the step of the forecast horizon (from `gap + 1`), and `y_true`, the true value. The metrics end with `n_evaluated`, the points evaluated, per series and summed in the aggregated rows. Error and coverage by horizon no longer need a merge with the series. [User guide](../user_guides/backtesting.ipynb#error-and-coverage-by-forecast-horizon) ([#1437](https://github.com/skforecast/skforecast/pull/1437))
 
++ <code>[plot_prediction_intervals]</code> takes the true values from the `y_true` column of the backtesting predictions when `y_true` is not given, and `target_variable` can be omitted when `y_true` has a single column. Predictions of several series raise a `ValueError`: filter one level first. ([#1473](https://github.com/skforecast/skforecast/pull/1473))
+
 + `metric='root_mean_squared_error'` (RMSE, from scikit-learn) is accepted by name in backtesting and hyperparameter search, as `'mean_squared_error'` already was. Before, it had to be passed as a function. ([#1424](https://github.com/skforecast/skforecast/pull/1424))
 
 
@@ -99,6 +107,8 @@ The main changes in this release are:
 + The hyperparameter searches of multi-series forecasters are faster with metrics that do not use `y_train` (most of them): 19% less time with <code>[OneStepAheadFold]</code> and 8% with <code>[TimeSeriesFold]</code> (200 series, Ridge). ([#1431](https://github.com/skforecast/skforecast/pull/1431))
 
 + The results of the hyperparameter searches include `n_evaluated`, the points evaluated by each candidate. A single `MissingValuesWarning` at the end of the search lists the candidates with less than 95% of the points of the most complete one, whose metrics are not comparable, and how to compare them: the series to pass in `levels`, or filling the gaps of `y` (single series, <code>[OneStepAheadFold]</code> and `dropna_from_series=True`). A metric named `n_evaluated` raises a `ValueError`. [User guide](../user_guides/hyperparameter-tuning-and-lags-selection.ipynb#series-of-different-length-compare-candidates-on-the-same-points) ([#1447](https://github.com/skforecast/skforecast/pull/1447), [#1452](https://github.com/skforecast/skforecast/pull/1452), [#1456](https://github.com/skforecast/skforecast/pull/1456))
+
++ In backtesting and hyperparameter search, <code>[mean_absolute_scaled_error]</code> and <code>[root_mean_squared_scaled_error]</code> scale each error with the error of the naive forecast on the observations before that prediction, so models with the same errors get the same value. Before, this scale depended on the lags, on `refit` and, with multiple series, on passing them as a DataFrame or a dict. Custom metrics with `y_train` receive the series before the first fold. With multiple series, both metrics are 3 times faster. ([#1471](https://github.com/skforecast/skforecast/pull/1471))
 
 + The hyperparameter searches show each warning of the candidates once, with the number of candidates in which it is raised, pointing to the line of your code that calls the search. Before, grid and random search showed only those of the first candidate, and Bayesian search repeated them in every trial. Candidates skipped with an error are reported in a single warning, grouped by error, and `LongTrainingWarning` once, with the fits of the whole search. Results are unchanged. ([#1452](https://github.com/skforecast/skforecast/pull/1452))
 
@@ -168,6 +178,8 @@ The main changes in this release are:
 + The hyperparameter search of <code>[ForecasterRecursiveMultiSeries]</code> with <code>[OneStepAheadFold]</code> failed with `ValueError: Length of '<series>' must be greater than the maximum window size needed by the forecaster` when a series ended at the end of the training set. That series is now left out of the test set. ([#1430](https://github.com/skforecast/skforecast/pull/1430))
 
 + The hyperparameter searches of multi-series forecasters with <code>[OneStepAheadFold]</code> computed the `pooling` metric with every series, not only those in `levels`, when `levels` was a subset of the series. ([#1447](https://github.com/skforecast/skforecast/pull/1447))
+
++ The hyperparameter searches with <code>[OneStepAheadFold]</code> and a forecaster with `differentiation` evaluated predictions that carried the errors of all the previous ones, instead of one-step-ahead predictions: the metrics were too high (several times with `differentiation=1`) and the selected candidate could change. With missing values in the test set, the true values were also wrong. ([#1471](https://github.com/skforecast/skforecast/pull/1471))
 
 + The hyperparameter searches with <code>[OneStepAheadFold]</code> stopped with a `ValueError` when the lags of a candidate left no data to train with, and also when those of the forecaster passed did, even if no candidate used them. Those candidates are now skipped and reported in the warning of the candidates skipped, as with <code>[TimeSeriesFold]</code>, and so are, in multi-series searches, those without points to evaluate in `levels`, which returned rows with `n_evaluated=0` and NaN metrics. ([#1456](https://github.com/skforecast/skforecast/pull/1456))
 

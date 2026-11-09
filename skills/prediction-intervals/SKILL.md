@@ -247,6 +247,18 @@ coverage = calculate_coverage(
 print(f"Coverage: {coverage:.2%}")  # Should be close to 0.80 for [0.1, 0.9] interval
 ```
 
+To plot the interval against the true values, `plot_prediction_intervals` takes
+them from the `y_true` column of the backtesting predictions. Predictions of
+`predict_interval` have no `y_true`: pass the series with `y_true`. With
+multiple series, filter the rows of one level first.
+
+```python
+from skforecast.plot import plot_prediction_intervals
+
+plot_prediction_intervals(predictions)                  # backtesting predictions
+plot_prediction_intervals(predictions, y_true=y_test)   # predict_interval
+```
+
 ## Beyond Intervals
 
 For bootstrapping-capable ML forecasters (Recursive, Direct, RecursiveMultiSeries,

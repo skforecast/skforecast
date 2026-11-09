@@ -849,6 +849,151 @@ dice `Kernel skf : <repo>/skforecast/__init__.py`). El punto 3 (`y_true`) va en 
   `id_1002`. Fuera, por no haber ejemplo en estas guías: candidatos y trials saltados,
   mensajes de `initial_train_size`, refit sin series cortas y avisos de joblib.
 
+### 13.2 En curso: punto 3, `y_true` en las guías (desde 2026-11-09)
+
+Rama local `docs/backtesting-y-true` desde `origin/0.27.x` (sin upstream, sin push ni PR).
+Proceso: propuesta por grupos de 2 o 3 páginas, aprobación línea a línea, un commit por
+página con `verify`. Criterios: solo si el código queda más corto o más claro, columnas
+por nombre, `metric` en lugar de métricas calculadas a mano cuando ya las devuelve el
+backtesting, `y_true` explicado una sola vez (en la guía de clasificación, con enlace a
+`backtesting.html#backtest`). Ejecutadas con `PYTHONPATH=<repo>` (`Kernel skf` del repo).
+
+**Fase 1-2: las 9 páginas con `.loc[<predicciones>.index, ...]`**
+
+| Página | Estado | Commit |
+|:--|:--|:--|
+| `autoregressive-classification-forecasting` | Hecha. 5 de 8 casos (18 y 19 vienen de `predict`), más la línea de `pred` del gráfico (29b) y el texto de la celda 25. Métricas, informes y figuras idénticos (PNG byte a byte). | 976605bf5 |
+| `comparing-forecasting-models` | Hecha el 2026-11-09, tras fusionar #1471 (opción B, elegida por el usuario frente a la mínima, que solo tomaba `y_true` de las predicciones). Las métricas salen de la tabla `metric` del backtesting (MAE, MASE por origen y `coverage`): `summarize(metrics, elapsed)` toma la última fila (la única, o el `pooling`) y pasa de 31 a 12 líneas, sin los imports de `mean_absolute_scaled_error` ni `calculate_coverage`; `plot_predictions` usa `pred['y_true']` y pierde `series`; residuos de calibración con `pred_calibration['y_true']` (celdas 10 y 20); textos de las celdas 2 (MASE sobre las observaciones antes de cada fold) y 4. 79 líneas fuera, 63 dentro. Medido con las mismas predicciones: el orden de los modelos es idéntico en los tres datasets; el MASE de h2o baja unas 0,02 y en los otros dos menos de 0,003. ARIMA y ETS cambian algo frente a la ejecución del 2026-10-14 por cambios de `0.27.x`, no de esta rama; las conclusiones del texto se mantienen. | 587f31598 |
+| `probabilistic-forecasting-bootstrapped-residuals` | Hecha. 3 de 3 (celdas 27, 30, 43). Residuos, intervalos, coberturas y figuras idénticos. | 541c8efdb |
+| `forecasting-with-deep-learning-rnn-lstm` | Hecha **sin ejecutar** (decisión del usuario). Celda 100 con `y_true`; celda 102 toma `coverage` e `interval_width` de `metric` (11 líneas a 1); quitado el import de `calculate_coverage`. Comprobado aparte que `metric` da los mismos valores. **Ejecutada el 2026-11-09** (24 min, GPU `mps`): la celda 102 muestra `interval_width`; las salidas guardadas eran de la 0.26.0. Las tablas ganan `n_evaluated`, `step` e `y_true`. El ejemplo de bike sharing con exógenas (celdas 85 a 103) da otro modelo: early stopping en 34 épocas en lugar de 9 y MAE de 47,7 en lugar de 81,5, porque el entrenamiento en `mps` no es determinista (las primeras épocas coinciden). El texto no cita esas cifras y sus conclusiones se mantienen (cobertura in-sample 0,59, out-of-sample 0,73 con intervalos más anchos). Aceptado por el usuario. | 915ac39ea, 24010b636 |
+| `independent-multi-time-series-forecasting` | Sin cambios: los 2 casos son el corte train/test (celda 13), no el backtesting. | |
+| `probabilistic-forecasting-conformal-prediction` | Hecha. 2 de 2 (celdas 18, 21). Residuos, intervalos y figuras idénticos. | 98bbac252 |
+| `probabilistic-forecasting-metrics` | Hecha. 2 de 2 (celdas 20, 22). Residuos, métricas de intervalo y figuras idénticos. El aviso `MatplotlibDeprecationWarning` de la celda 19 ya estaba guardado. | 3aabef15c |
+| `time-series-differentiation` | Sin cambios: celda 29 busca el valor *anterior* (`data.shift(1)`) sobre la serie diferenciada; celda 33 viene de `predict_bootstrapping`. | |
+| `probabilistic-forecasting-global-models` | Aprobadas celda 21 (residuos por nivel con `y_true`; antes cada residuo salía dos veces por las fechas repetidas del formato largo) y celda 23 (`y_true` de `predictions_val` agrupado por nivel, como `y_pred`). Hecha. Residuos guardados, bins e intervalos idénticos. La figura de la celda 21 cambia de eje (índice horario sin repetir: pandas usa su conversor de fechas, el mismo eje que la celda 20); aceptado por el usuario. | 3d2912f77 |
+
+**Para el inventario de la fase 3** (resto de páginas con `backtesting_*(`), además de las
+38 páginas: los usos de `data_test` como valor real en `bootstrapped-residuals` (celdas 20,
+33, 51, 55, 57, 64; aprobado incluirlos) y `plot_prediction_intervals(y_true=<test>)` en
+`comparing-forecasting-models` (`plot_predictions`) y `rnn-lstm` (celdas 97, 103); `data_test`
+o `y_test` como valor real en `conformal-prediction` (27, 28, 32, 34), `probabilistic-forecasting-metrics`
+(19, 25, 27, 30, 36, 39, 41; calcular las métricas a mano es el objeto de esa página) y
+`global-models` (20, `plot_intervals_and_coverage` en 31 y 35). Fuera de `y_true`:
+`time-series-differentiation` (celda 29) reconstruye el fold a mano (`backtesting_fold_id`)
+cuando las predicciones ya traen `fold` (aprobado apuntarlo).
+
+**Fase 3: inventario de las otras 30 páginas con `backtesting_*(`** (2026-11-09, pendiente
+de aprobación del usuario)
+
+- **Sí** (valor real buscado aparte para residuos o calibración, o la figura base de la guía
+  de backtesting):
+  - `plotting`: celdas 6 y 7, residuos y `plot_residuals` con `data_test['y']`.
+  - `probabilistic-forecasting-conformal-calibration`: celda 29, `calibrator.fit(y_true=data_cal['users'])`.
+  - `backtesting`: celda 16, `predictions[['y_true', 'pred']].plot(ax=ax)` en lugar de
+    dibujar `data.loc[end_train:, 'y']` aparte. Mismo tramo; la leyenda pasa de `y` a `y_true`.
+  - `time-series-differentiation`: celda 29, fuera de `y_true`; `fold` y `step` en lugar
+    de reconstruir el fold y el primer paso a mano.
+- **Dudoso** (test y predicción dibujados por separado, con la etiqueta por defecto en
+  `pred`): `forecasting-arar` 33, `forecasting-ets` 34, `forecasting-sarimax-arima` 42 y
+  `forecasting-statistical-models` 28. `predictions[['y_true', 'pred']].plot(ax=ax)` ahorra
+  una línea, pero la leyenda pasa de `test` a `y_true`.
+- **No**:
+  - test y predicciones con etiquetas propias, misma longitud, sin ganancia:
+    `cyclical-features` 22, `non-negative` 9/30/35, `forecasting-baseline` 21,
+    `foundation-forecasting-models` 33, `handling-missing-values` 20,
+    `weighted-time-series` 27, `quantile-regression` 20 y 22 (las predicciones se montan
+    a mano desde dos backtesting; página lenta);
+  - escala logarítmica fuera del forecaster: `non-negative` 16 y 17 (el `y_true` del
+    backtesting está en log; el ejemplo es justo calcular el error en la escala original);
+  - contexto de entrenamiento o la serie entera en la figura: `forecasting-with-delayed-historical-data`
+    14, `quick-start` 14, `backtesting` 49 (dibuja también las exógenas) y 63,
+    `foundation-forecasting-with-heterogeneous-series` 17,
+    `multi-series-with-different-length` 32, `migrate-from-prophet` 29 (excluida, necesita
+    prophet);
+  - `calculate_coverage`, `winkler_score` y `plot_prediction_intervals` con `data_test`
+    (misma longitud; `plot_prediction_intervals` ya hace `y_true.loc[predictions.index]`):
+    `conformal-calibration` 22, 33, 43, 50 (46 pasa `data_cal[series]` ancho, como pide el
+    calibrador), más lo aplazado de la fase 1: `bootstrapped-residuals`
+    (20, 33, 51, 55, 57, 64), `conformal-prediction` (27, 28, 32, 34),
+    `probabilistic-forecasting-metrics` (19, 25 a 41; las métricas a mano son el objeto de
+    la página), `global-models` (20, 31, 35), `rnn-lstm` (97, 103) y `comparing-forecasting-models`
+    (`plot_predictions`);
+  - sin uso de los valores reales: `forecasting-time-series-with-missing-values`,
+    `parallelization`, `parameters-search-backtesting-vs-one-step-ahead`,
+    `dependent-multi-series-multivariate`, `explainability`, `feature-selection`,
+    `hyperparameter-tuning-and-lags-selection`, `metrics`, `migration-guide`,
+    `stacking-ensemble`, `skforecast-in-GPU`; `forecasting-statistical-models` 34 y
+    `forecasting-sarimax-arima` 47 vienen de `predict`.
+
+**Fase 3: aplicado** (aprobado "sí" a las páginas propuestas y "no" a las dudosas):
+
+| Página | Estado | Commit |
+|:--|:--|:--|
+| `plotting` | Hecha. Celdas 6 y 7 con `predictions['y_true']`; quitado `data_test` de la celda 4 (ya no se usaba). Residuos y figuras idénticos. | a1f94f891 |
+| `time-series-differentiation` | Hecha. Celda 29 agrupa por `fold` (3 líneas menos); `step` no (`.iloc[::steps]` es más corto). La celda 31 sigue comprobando que coincide con la diferenciación interna. | 5c659d2d9 |
+| `backtesting` | Hecha. Celda 16 `predictions[['y_true', 'pred']].plot(ax=ax)` y celda 41 con `y_true=predictions['y_true']`. Commit sin ejecutar por el bug de `num_threads` (abajo); **ejecutada el 2026-11-09** tras fusionar #1472. Salidas idénticas salvo la figura de la celda 16: mismos datos, la leyenda pasa de `y` a `y_true` y el eje x pierde la etiqueta `datetime` (el índice de las predicciones no tiene nombre); aceptado por el usuario. | 6ab0621c4, 774e621cc, 03f73a589 |
+| `probabilistic-forecasting-conformal-calibration` | Pasa a **no**: `ConformalIntervalCalibrator.fit` toma el nombre de la serie de `y_true`; con `predictions_cal['y_true']` la cobertura y los factores saldrían bajo `'y_true'` en lugar de `'users'` (haría falta `.rename('users')`). | |
+
+**Bug encontrado al ejecutar `backtesting` (2026-11-09, no es de esta rama):** ae67c3cfc
+("Respect the threads of LGBMRegressor in the fast prediction path", 2026-11-08) lee
+`booster.params["num_threads"]` en `_build_predict_function` (`skforecast/utils/utils.py`).
+`copy.deepcopy` de un `LGBMRegressor` ajustado pierde `num_threads` en `booster_.params`
+(lightgbm 4.6.0; con `pickle` se conserva), así que un backtesting con
+`initial_train_size=None` y un forecaster LightGBM ya entrenado falla con
+`KeyError: 'num_threads'` (celda 60 de `backtesting`, "Backtesting on training data").
+Necesita su propio arreglo y PR antes de volver a ejecutar esa guía. `backtesting` va con
+commit sin ejecutar (6ab0621c4, 774e621cc): las salidas guardadas son las anteriores.
+**Arreglado con #1472** (fusionado en `0.27.x` el 2026-11-09; los hilos salen de `n_jobs`,
+no de `booster_.params`). Fusionado `origin/0.27.x` en la rama (00d8d51f5) y `backtesting`
+ejecutada (03f73a589).
+
+**`plot_prediction_intervals` toma `y_true` de las predicciones (0e44d7759):** muchas
+funciones propias pedían el valor real aparte. Medido en las guías:
+`plot_prediction_intervals` (25 llamadas, ~14 con predicciones de backtesting) es la única
+que compensa; `ConformalIntervalCalibrator.fit` usa el nombre de la serie como clave,
+`set_out_sample_residuals` solo es verboso en multiserie (2 o 3 páginas) y `plot_residuals` y
+las métricas ya funcionan con `predictions['y_true']`. Cambio: `y_true` y `target_variable`
+opcionales (sin `y_true`, la columna `y_true` de las predicciones; sin `target_variable`, la
+única columna de `y_true`); `ValueError` si las predicciones tienen varios niveles.
+Compatible hacia atrás. Tests (9 en el archivo, 40 en `plot`), skill `prediction-intervals`,
+nota en Added (sin enlace de PR todavía). En las guías se usa la forma explícita
+`y_true=predictions['y_true']` (decisión del usuario: la forma corta esconde de dónde sale el
+valor real): `bootstrapped-residuals` (7 llamadas), `conformal-prediction` (2),
+`conformal-calibration` (22; 33 y 50 usan los intervalos calibrados, sin `y_true`),
+`probabilistic-forecasting-metrics` (25), `global-models` (la función de la celda 31 pierde
+el argumento `y_true`, también para la cobertura), `backtesting` (41) y `rnn-lstm` (103),
+estas dos sin ejecutar. Las ejecutadas dan figuras idénticas (píxel a píxel en
+`conformal-calibration` 6 y 10, que pierden el aviso de Matplotlib) y las mismas coberturas.
+
+**Cierre del punto 3 (2026-11-09):** 10 guías cambiadas y comprobadas; pendientes, por
+causas externas: volver a ejecutar `backtesting` (bug de `num_threads`; **hecho el
+2026-11-09**, ver arriba) y la guía RNN (**ejecutada el 2026-11-09**), y
+`comparing-forecasting-models` (bug del MASE; **hecha el 2026-11-09** tras fusionar #1471).
+**Punto 3 terminado:** 11 guías. Rama `docs/backtesting-y-true` en GitHub, PR #1473 a
+`0.27.x` (incluye #1471, fusionada en esta rama).
+
+**Bug aparte del MASE (2026-11-09):** el backtesting y las búsquedas escalan MASE/RMSSE
+con `y_train` sin las primeras `window_size` observaciones (`_validation.py`, bloque de
+`_any_metric_needs_y_train`), así que el denominador cambia con el modelo. En h2o (168
+meses de entrenamiento): escala 0.0918 con la serie completa, 0.0958 con `window_size=24`
+(+4.4 %); el MASE del backtesting invierte Ridge (0.667) y ETS (0.664) frente a la
+definición estándar (0.696 y 0.707). Se analiza en otra sesión
+(`BUG-mase-window-size.md`). `comparing-forecasting-models` espera a ese resultado.
+**Arreglado con #1471** (escala por origen; fusionado en esta rama el 2026-11-09, que también
+arregla las métricas de `OneStepAheadFold` con `differentiation`, `BUG-osa-differentiation.md`).
+
+**Notas:** `execute_notebooks.py` excluye por defecto `comparing-forecasting-models` y
+`forecasting-with-deep-learning-rnn-lstm` (`EXCLUDE_NOTEBOOKS`); hay que pasarlas
+explícitamente.
+
+**Ejecutor de notebooks (1d1c912d3):** pandas 2.3.3 con Matplotlib 3.11.1 imprime
+`MatplotlibDeprecationWarning: The locs attribute was deprecated` en cada celda que dibuja
+una serie con frecuencia (salía en `global-models`, celdas 20 y 21, también con el código de
+`HEAD`). Ahora `execute_notebooks.py` lo quita de las salidas `stderr` después de ejecutar
+(`REMOVED_WARNINGS`, como las barras de progreso estáticas) y el log dice cuántos quitó.
+Las salidas ya guardadas con el aviso (`probabilistic-forecasting-metrics`, celda 19) se
+limpian al volver a ejecutarlas.
+
 ## 14. PR 2b: candidatos que fallan y pendientes de las búsquedas (2026-11-06)
 
 Rama `fix/search-failing-candidates` desde `0.27.x` (con #1447 y #1452). Alcance: 12.5.

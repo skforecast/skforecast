@@ -56,8 +56,13 @@ secciones 1 a 7 quedan como referencia: evidencia, antes y después, y esbozos d
 > resultados. Incluye el refactor de [`REFACTOR-warnings.md`](REFACTOR-warnings.md).
 > PERF-contiguous-lags fusionado el 2026-11-08 (#1469). Sección 13 de ese documento,
 > puntos 1, 2 y 4 (guías de búsqueda y de NaN), fusionados el 2026-11-08 (#1470). **El
-> bug está cerrado en código y en sus guías.** Queda el punto 3 (`y_true` en las páginas
-> con backtesting), sin empezar. Fuera del 2c: QW-14 (doble aviso de
+> bug está cerrado en código y en sus guías.** Punto 3 (`y_true` en las páginas con
+> backtesting) hecho en local el 2026-11-09, rama `docs/backtesting-y-true` sin push
+> (sección 13.2): 10 guías, `plot_prediction_intervals` toma `y_true` de las predicciones
+> y el ejecutor de notebooks quita el aviso de Matplotlib de pandas. **Siguiente:** abrir
+> el PR; arreglar el `KeyError: 'num_threads'` de LightGBM (ae67c3cfc) para volver a
+> ejecutar `backtesting`; el bug del MASE (`BUG-mase-window-size.md`) decide
+> `comparing-forecasting-models`; ejecutar la guía RNN. Fuera del 2c: QW-14 (doble aviso de
 > `exog` con NaN en `predict`), QW-15 (avisos del `fit` en paralelo de Direct y DMV) y
 > agrupar los avisos repetidos de un backtesting (sección 5, M).
 
@@ -199,8 +204,12 @@ efecto, con `FutureWarning` y eliminación en la 0.29.0; `load_demo_dataset` se 
    (#1466). **PR 2c fusionado el 2026-11-08 (#1467;** sección 15 del documento,
    alternativa A, decisiones 1 a 3, con el refactor de `REFACTOR-warnings.md`).
    PERF-contiguous-lags fusionado el 2026-11-08 (#1469). Sección 13, puntos 1, 2 y 4,
-   fusionados el 2026-11-08 (#1470, sección 13.1). Queda el punto 3 de la sección 13
-   (`y_true` en las páginas con backtesting), sin empezar.
+   fusionados el 2026-11-08 (#1470, sección 13.1). Punto 3 de la sección 13 (`y_true`
+   en las páginas con backtesting) hecho en local el 2026-11-09 (sección 13.2, rama
+   `docs/backtesting-y-true`, sin PR). **Siguiente:** abrir el PR; antes de volver a
+   ejecutar `backtesting`, arreglar el `KeyError: 'num_threads'` (ae67c3cfc, `deepcopy`
+   de un `LGBMRegressor` ajustado pierde `num_threads`); `comparing-forecasting-models`
+   espera al bug del MASE; la guía RNN, sin ejecutar.
 2. ~~**BUG-03**~~ **Hecho con #1431** (fusionado el 2026-10-22). La
    dirección sale de la métrica (decisión 6): atributo `greater_is_better` y convención de
    nombres solo para `sklearn.metrics`; si no se conoce, la dirección de la tarea, que ya
