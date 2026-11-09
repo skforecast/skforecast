@@ -1,6 +1,7 @@
 # BUG-osa-differentiation: con `differentiation`, el OSA no evalúa predicciones a un paso
 
-Fila del roadmap: ninguna todavía. Detectado en la revisión de la PR #1471 (MASE por origen),
+**Fusionado en `0.27.x` el 2026-11-09 (#1471, dentro de #1473).** Fila del roadmap: ninguna
+(resumen junto al de BUG-mase-window-size en `roadmap.md`). Detectado en la revisión de la PR #1471 (MASE por origen),
 pero no tiene relación con ella: ocurre igual en `0.27.x`.
 
 Diagnóstico (2026-11-09) en local, en el worktree de `fix/mase-scale-per-origin` (#1471) y en

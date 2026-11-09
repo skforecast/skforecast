@@ -15,8 +15,8 @@ sección 14: candidatos que fallan y pendientes de las búsquedas). BUG-backtest
 (#1458) y QW-13 (#1466) fusionados. **PR 2c fusionado en `0.27.x` el 2026-11-08 (#1467,**
 rama `fix/joblib-worker-warnings`; sección 15: avisos de los procesos de joblib, con el
 refactor de [`REFACTOR-warnings.md`](REFACTOR-warnings.md)). Sección 13, puntos 1, 2 y 4
-(guías de búsqueda y de NaN), **fusionados el 2026-11-08 (#1470)**. Queda el punto 3
-(`y_true` en las páginas con backtesting), sin empezar.
+(guías de búsqueda y de NaN), **fusionados el 2026-11-08 (#1470)**. Punto 3 (`y_true` en
+las páginas con backtesting) **fusionado el 2026-11-09 (#1473,** sección 13.2). **Terminado.**
 
 **Desbloqueado el 2026-11-03:** QW-12 está hecho con #1437. Antes estaba **bloqueado por
 QW-12** (decisión del 2026-10-29): antes se hace, por separado, la columna con
@@ -849,7 +849,7 @@ dice `Kernel skf : <repo>/skforecast/__init__.py`). El punto 3 (`y_true`) va en 
   `id_1002`. Fuera, por no haber ejemplo en estas guías: candidatos y trials saltados,
   mensajes de `initial_train_size`, refit sin series cortas y avisos de joblib.
 
-### 13.2 En curso: punto 3, `y_true` en las guías (desde 2026-11-09)
+### 13.2 Punto 3, `y_true` en las guías (fusionado el 2026-11-09, #1473)
 
 Rama local `docs/backtesting-y-true` desde `origin/0.27.x` (sin upstream, sin push ni PR).
 Proceso: propuesta por grupos de 2 o 3 páginas, aprobación línea a línea, un commit por

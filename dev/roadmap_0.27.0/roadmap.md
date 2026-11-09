@@ -57,14 +57,25 @@ secciones 1 a 7 quedan como referencia: evidencia, antes y después, y esbozos d
 > PERF-contiguous-lags fusionado el 2026-11-08 (#1469). Sección 13 de ese documento,
 > puntos 1, 2 y 4 (guías de búsqueda y de NaN), fusionados el 2026-11-08 (#1470). **El
 > bug está cerrado en código y en sus guías.** Punto 3 (`y_true` en las páginas con
-> backtesting) hecho en local el 2026-11-09, rama `docs/backtesting-y-true` sin push
-> (sección 13.2): 10 guías, `plot_prediction_intervals` toma `y_true` de las predicciones
-> y el ejecutor de notebooks quita el aviso de Matplotlib de pandas. **Siguiente:** abrir
-> el PR; arreglar el `KeyError: 'num_threads'` de LightGBM (ae67c3cfc) para volver a
-> ejecutar `backtesting`; el bug del MASE (`BUG-mase-window-size.md`) decide
-> `comparing-forecasting-models`; ejecutar la guía RNN. Fuera del 2c: QW-14 (doble aviso de
-> `exog` con NaN en `predict`), QW-15 (avisos del `fit` en paralelo de Direct y DMV) y
-> agrupar los avisos repetidos de un backtesting (sección 5, M).
+> backtesting) **fusionado el 2026-11-09 (#1473,** sección 13.2): 11 guías toman el valor
+> real de `predictions['y_true']`, `plot_prediction_intervals` lo toma de las predicciones
+> si no se pasa `y_true`, y el ejecutor de notebooks quita el aviso de Matplotlib de pandas.
+> #1473 incluye #1471 (BUG-mase-window-size y BUG-osa-differentiation, abajo) y va detrás
+> de #1472 (`KeyError: 'num_threads'` de LightGBM). **Sección 13 terminada: no queda nada
+> de este bug.** Seguimientos con fila propia: QW-14 (doble aviso de `exog` con NaN en
+> `predict`), QW-15 (avisos del `fit` en paralelo de Direct y DMV) y agrupar los avisos
+> repetidos de un backtesting (sección 5, M).
+
+> **BUG-mase-window-size y BUG-osa-differentiation: fusionados el 2026-11-09 (#1471,** dentro
+> de #1473). MASE y RMSSE se escalan con el naive de la serie antes de cada origen, igual
+> para todos los modelos, en lugar de con `y_train` sin las primeras `window_size`
+> observaciones (que hacía depender la escala del modelo y, con `refit=True`, incluía el
+> test de los folds anteriores); el `pooling` de las escaladas es la media de los errores
+> escalados. Con `OneStepAheadFold` y `differentiation`, las métricas se calculan sobre
+> predicciones a un paso en la escala original. Resuelve también PERF-04 (MASE multiserie
+> de 6,4 s y 2,6 GB a 2,2 s y 68 MB). Detalle en
+> [`BUG-mase-window-size.md`](BUG-mase-window-size.md) y
+> [`BUG-osa-differentiation.md`](BUG-osa-differentiation.md).
 
 **Comprobado en local** (Python 3.14.3, numpy 2.5.3, pandas 2.3.3, scikit-learn 1.9.1,
 numba 0.68.0, statsmodels 0.14.6): BUG-03, BUG-01 y BUG-stats-interval-ignored se
@@ -130,16 +141,13 @@ un solo nombre como string, y la frecuencia y descripción de `australia_tourism
 efecto, con `FutureWarning` y eliminación en la 0.29.0; `load_demo_dataset` se apoya en
 `fetch_dataset('h2o')`).
 **Pendiente antes de la release:**
-- (BUG-08) Volver a ejecutar `docs/user_guides/comparing-forecasting-models.ipynb`: usa
-  AutoARIMA y AutoETS (con `refit` forzado a `True`), así que sus métricas y tiempos cambian
-  con #1425. No se ejecutó en el PR porque también corre modelos foundation, RNN y LightGBM.
+- ~~(BUG-08) Volver a ejecutar `docs/user_guides/comparing-forecasting-models.ipynb`~~
+  **Hecho con #1473** (2026-11-09), con las métricas tomadas del backtesting.
 - (QW-04, QW-10, QW-12, BUG-search-aggregate-order; #1437 y #1438) Volver a
   ejecutar las guías cuya salida cambia; solo se ejecutó `backtesting.ipynb`.
-  - Simplificar con `y_true` los 21 usos de `data.loc[pred.index, col]` en 8 guías:
-    `autoregressive-classification-forecasting` (8), `probabilistic-forecasting-bootstrapped-residuals` (3),
-    `comparing-forecasting-models` (2), `forecasting-with-deep-learning-rnn-lstm` (2),
-    `probabilistic-forecasting-conformal-prediction` (2), `probabilistic-forecasting-metrics` (2),
-    `probabilistic-forecasting-global-models` (1) y `time-series-differentiation` (1).
+  - ~~Simplificar con `y_true` los usos de `data.loc[pred.index, col]`~~ **Hecho con
+    #1473** (2026-11-09): 11 guías, todas ejecutadas (sección 13.2 de
+    `BUG-search-short-series-transparency.md`).
   - Búsquedas multiserie, cuyos `__weighted_average` y `__average` pueden cambiar con el
     arreglo del orden de los agregados: `multi-series-with-different-length-and-different_exog`
     (la más probable: series de distinta longitud), `independent-multi-time-series-forecasting`,
@@ -205,11 +213,8 @@ efecto, con `FutureWarning` y eliminación en la 0.29.0; `load_demo_dataset` se 
    alternativa A, decisiones 1 a 3, con el refactor de `REFACTOR-warnings.md`).
    PERF-contiguous-lags fusionado el 2026-11-08 (#1469). Sección 13, puntos 1, 2 y 4,
    fusionados el 2026-11-08 (#1470, sección 13.1). Punto 3 de la sección 13 (`y_true`
-   en las páginas con backtesting) hecho en local el 2026-11-09 (sección 13.2, rama
-   `docs/backtesting-y-true`, sin PR). **Siguiente:** abrir el PR; antes de volver a
-   ejecutar `backtesting`, arreglar el `KeyError: 'num_threads'` (ae67c3cfc, `deepcopy`
-   de un `LGBMRegressor` ajustado pierde `num_threads`); `comparing-forecasting-models`
-   espera al bug del MASE; la guía RNN, sin ejecutar.
+   en las páginas con backtesting) **fusionado el 2026-11-09 (#1473,** sección 13.2; con
+   #1471, el bug del MASE, dentro). **Terminado.**
 2. ~~**BUG-03**~~ **Hecho con #1431** (fusionado el 2026-10-22). La
    dirección sale de la métrica (decisión 6): atributo `greater_is_better` y convención de
    nombres solo para `sklearn.metrics`; si no se conoce, la dirección de la tarea, que ya
@@ -234,7 +239,7 @@ efecto, con `FutureWarning` y eliminación en la 0.29.0; `load_demo_dataset` se 
 5. **PERF-03 y BUG-02.** QW-04, QW-10 y lo que quedaba de QW-08 (el RMSE por nombre ya se
    hizo con #1424) pasan al PR de salidas del backtesting del punto 1. PERF-03 va justo
    detrás (toca `_get_metric`, como QW-08). BUG-02 no bloquea `step` ni `n_evaluated`, y
-   sigue pendiente de la decisión 1. PERF-04 (nuevo, 2026-11-01: `y_train` de MASE y RMSSE
+   sigue pendiente de la decisión 1. PERF-04 (**resuelto con #1471**; nuevo, 2026-11-01: `y_train` de MASE y RMSSE
    en el backtesting multiserie) va junto a PERF-03 o justo detrás: los dos tratan del coste
    de las métricas multiserie y comparten los tests de igualdad.
 6. **QW-01 y BUG-01** (S, avisos).
@@ -1063,7 +1068,7 @@ BUG-stats-interval-ignored son hallazgos laterales (verificación de FE-02, de F
 | **PERF-02** | El ajuste de Ets y Sarimax (L-BFGS-B de scipy >= 1.15) se vuelve de 3 a 70 veces más lento con cualquier otra carga en la máquina, y `n_jobs='auto'` deja en serie todo backtesting de Arima/Ets/Arar (refit obligatorio) | stats / model_selection (stats) | S | `dev/roadmap_0.27.0/repro/PERF-02.py` | (a) Envolver `Ets.fit`, `Sarimax.fit` (y `Arima.fit`) en `threadpoolctl.threadpool_limits(1, user_api="blas")` (dependencia de scikit-learn; 1,45 ms por llamada, 0,007 ms con un `ThreadpoolController` reutilizado). (b) `select_n_jobs_backtesting` (`_utils.py:706`): `max(1, cpu_count() - 1)` para `ForecasterStats` con `refit` True o 1. Volver a medir tras BUG-08 |
 | **PERF-01** | `backtesting_foundation` llama al modelo una vez por fold aunque es zero-shot, y prepara los datos con 0,87 a 1,33 ms por serie y fold | foundation / model_selection | M | `dev/roadmap_0.27.0/repro/PERF-01.py` | (1) Posiciones de fold con `searchsorted` y sumas acumuladas de `notna` una vez por serie, en lugar de `_extract_data_folds_multiseries`. (2) Pseudo-series (serie, fold) en trozos de ~1024 por llamada; una llamada por fold con `cross_learning=True` (mezclar folds filtraría futuro). (3) Cachear `expand_index` y comprobar NaN con numpy en `_prepare_future_exog` (`_foundation_model.py:870,877,1261`). Sin cambios de API |
 | **PERF-03** | Las métricas pedidas como texto (`mean_absolute_error`, `mean_squared_error`) usan las funciones de scikit-learn, cuya validación cuesta unos 150 µs por llamada; se llaman una vez por serie, métrica y candidato. Ocupan el 42 a 51% del tiempo de `grid_search_forecaster_multiseries` con `OneStepAheadFold` (más un 9% de MASE con 3 métricas) y el 5 a 11% del backtesting multiserie | metrics / model_selection | S (~1 día con tests de igualdad frente a scikit-learn y benchmark) | `dev/roadmap_0.27.0/repro/PERF-03.py` | En `_get_metric` (`skforecast/metrics/metrics.py:45-73`), versiones privadas en numpy de MAE y MSE (y RMSE con QW-08) con el mismo `__name__`, para que las columnas no cambien. Conservar la validación de scikit-learn: error con NaN y con longitudes distintas, y aplanar a 1D (si no, `(n,)` frente a `(n, 1)` daría por broadcasting una matriz `n x n` sin avisar). MASE y RMSSE con arrays de numpy en lugar de Series (hoy restan Series, que alinean por índice). MAPE y MSLE siguen en scikit-learn (`eps` del denominador, error con negativos) hasta medir su uso. Quien pase la función de scikit-learn como callable no gana nada. `get_group` (1 a 2%) no merece la pena; volver a medir después. Coordinar con QW-08: los dos tocan `_get_metric`. Medir de nuevo después de #1431, que evita preparar `y_train` en cada fold cuando la métrica no lo usa (un 19% menos en la búsqueda multiserie con `OneStepAheadFold` y 200 series) |
-| **PERF-04** (nuevo, 2026-11-01) | Con métricas escaladas (MASE, RMSSE), las métricas del backtesting multiserie preparan `y_train` apilando la serie entera en formato largo, construyendo un `MultiIndex.from_product` de niveles y fechas de entrenamiento, filtrándolo con `isin` y quitando las primeras `window_size` observaciones de cada serie con `cumcount`. Es el mismo patrón que tenía el merge con la serie que QW-04 quitó para `y_true`: con 10.000 series de 1500 observaciones y 28 fechas de test, las métricas pasan de 4,7 s y 50 MB con MAE a 6,3 s y 2,6 GB con MASE, cuando los valores de entrenamiento que necesita ocupan 117 MB | model_selection | S a M (con tests de igualdad de MASE y RMSSE por serie y en `pooling`) | `dev/roadmap_0.27.0/repro/PERF-04.py` | Sacar `y_train` de cada serie directamente, por posiciones dentro del span de los folds de entrenamiento (como `_get_y_true_multiseries`, agrupando por serie y sin materializar el formato largo), y quitar las primeras `window_size` observaciones de cada una. El `pooling` de las métricas escaladas ya recibe una lista por serie. Mantener la regla actual de los NaN de `y_train` ("`y_train` includes the intercepted NaNs") y medir de nuevo con PERF-03, que quita la mayor parte del tiempo que queda con MAE (una llamada a scikit-learn por serie). Código anterior a la rama de salidas del backtesting: no va en ese PR |
+| ~~**PERF-04**~~ (nuevo, 2026-11-01) **Resuelto con #1471** (2026-11-09): la escala por origen ya no materializa `y_train` en formato largo; MASE pasa de 6,4 s y 2,6 GB a 2,2 s y 68 MB, más rápido que MAE (sección 8 de `BUG-mase-window-size.md`) | Con métricas escaladas (MASE, RMSSE), las métricas del backtesting multiserie preparan `y_train` apilando la serie entera en formato largo, construyendo un `MultiIndex.from_product` de niveles y fechas de entrenamiento, filtrándolo con `isin` y quitando las primeras `window_size` observaciones de cada serie con `cumcount`. Es el mismo patrón que tenía el merge con la serie que QW-04 quitó para `y_true`: con 10.000 series de 1500 observaciones y 28 fechas de test, las métricas pasan de 4,7 s y 50 MB con MAE a 6,3 s y 2,6 GB con MASE, cuando los valores de entrenamiento que necesita ocupan 117 MB | model_selection | S a M (con tests de igualdad de MASE y RMSSE por serie y en `pooling`) | `dev/roadmap_0.27.0/repro/PERF-04.py` | Sacar `y_train` de cada serie directamente, por posiciones dentro del span de los folds de entrenamiento (como `_get_y_true_multiseries`, agrupando por serie y sin materializar el formato largo), y quitar las primeras `window_size` observaciones de cada una. El `pooling` de las métricas escaladas ya recibe una lista por serie. Mantener la regla actual de los NaN de `y_train` ("`y_train` includes the intercepted NaNs") y medir de nuevo con PERF-03, que quita la mayor parte del tiempo que queda con MAE (una llamada a scikit-learn por serie). Código anterior a la rama de salidas del backtesting: no va en ese PR |
 
 ### Observado frente a esperado
 

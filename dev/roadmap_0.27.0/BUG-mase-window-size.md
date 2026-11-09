@@ -1,6 +1,7 @@
 # BUG-mase-window-size: el denominador de MASE y RMSSE depende del modelo
 
-Fila del roadmap: ninguna todavía. Ya visto en FE-05 (punto 2 de "Medido con el prototipo",
+**Fusionado en `0.27.x` el 2026-11-09 (#1471, dentro de #1473).** Fila del roadmap: ninguna (resumen
+aparte en `roadmap.md`, junto a BUG-search-short-series). Ya visto en FE-05 (punto 2 de "Medido con el prototipo",
 `roadmap.md`), en `work/lens_outputs-metrics.md` ("Fricciones observadas") y relacionado con
 PERF-04 (que hoy propone **mantener** la exclusión).
 
@@ -678,9 +679,5 @@ solo las métricas del backtesting multiserie).
   exclusión de `window_size`, que ya no existe.
 - Nota de versión: entrada de rendimiento en Changed.
 
-**Pendiente:**
-
-- PR y enlaces en `releases.md`.
-- Fila de PERF-04 en `roadmap.md`: marcarla como resuelta por este arreglo.
-- La `summarize` de `comparing-forecasting-models.ipynb`, que ya podría usar la métrica del
-  backtesting (la guía está en espera por este bug).
+**Pendiente:** nada. Enlaces de #1471 en `releases.md`, PERF-04 marcado como resuelto en
+`roadmap.md` y `comparing-forecasting-models.ipynb` con las métricas del backtesting (#1473).
