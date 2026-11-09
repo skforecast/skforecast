@@ -1,0 +1,4 @@
+# setuptools adds tests/test*.py to the sdist by default. The tests of
+# skforecast are not distributed (see [tool.setuptools.packages.find] in
+# pyproject.toml), and tools/release/check_distributions.py checks it.
+prune tests
