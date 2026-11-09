@@ -28,6 +28,7 @@ from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
 from ..utils import (
     _all_samples_removed_message,
     _filter_nan_train_X_y,
+    _prefers_c_contiguous_X,
     initialize_lags,
     initialize_window_features,
     initialize_weights,    
@@ -979,6 +980,13 @@ class ForecasterRecursive(ForecasterBase):
 
         if len(X_train) == 1:
             X_train = X_train[0]
+            # NOTE: With only lags (or only window features), `X_train` is a view
+            # of `sliding_window_view` that is neither C nor F contiguous. Some
+            # linear models copy it again in every product with `X`, so one copy
+            # here is faster. Done before the NaN filtering, so that `pd.isna`
+            # also runs on the copy.
+            if _prefers_c_contiguous_X(self.estimator):
+                X_train = np.ascontiguousarray(X_train)
         else:
             X_train = np.concatenate(X_train, axis=1)
 

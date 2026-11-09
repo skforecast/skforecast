@@ -1998,3 +1998,50 @@ def test_bayesian_search_forecaster_n_jobs_auto_resolved_with_the_rules_of_each_
         assert call.kwargs['n_jobs'] == expected_n_jobs
     for call in mock_parallel.call_args_list:
         assert call.kwargs == {'n_jobs': expected_n_jobs}
+
+
+class RidgeWarnsInPredict(Ridge):
+    """
+    Ridge that warns in `predict` when `alpha` is greater than 0.5. It is not
+    a class of scikit-learn, so the forecaster calls its `predict`.
+    """
+
+    def predict(self, X):
+        if self.alpha > 0.5:
+            warnings.warn("Large alpha in predict. Details of the fold.", UserWarning)
+        return super().predict(X)
+
+
+def test_bayesian_search_forecaster_warnings_of_folds_in_processes_with_trials_in_threads():
+    """
+    Test that the warnings raised in the folds that run in worker processes
+    (`n_jobs=2`), shown again in the thread of each trial (`n_jobs` of
+    `study.optimize`), are collected with their trial: the warning raised in
+    the trials with `alpha` greater than 0.5 is shown once with the number of
+    those trials.
+    """
+    def search_space(trial):
+        return {'alpha': trial.suggest_float('alpha', 0.01, 1.0)}
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        _, study = bayesian_search_forecaster(
+            forecaster            = ForecasterRecursive(RidgeWarnsInPredict(), lags=3),
+            y                     = y,
+            cv                    = TimeSeriesFold(steps=2, initial_train_size=40, refit=False),
+            search_space          = search_space,
+            metric                = 'mean_absolute_error',
+            n_trials              = 8,
+            random_state          = 123,
+            return_best           = False,
+            n_jobs                = 2,
+            show_progress         = False,
+            kwargs_study_optimize = {'n_jobs': 2}
+        )
+
+    n_large_alpha = sum(trial.params['alpha'] > 0.5 for trial in study.trials)
+    assert 0 < n_large_alpha < 8
+    messages = [str(w.message) for w in record if w.category is UserWarning]
+    assert messages == [
+        f"Large alpha in predict (in {n_large_alpha} of 8 trials). Details of the fold."
+    ]

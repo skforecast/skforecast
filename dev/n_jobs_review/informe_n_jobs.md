@@ -1106,10 +1106,10 @@ Los dos valores deberían coincidir o diferir en 0,5 s; en ese caso, quédate co
 Con el valor `X`, en `skforecast/model_selection/_utils.py`:
 
 ```diff
--# work) and from about 2.8 s on Linux (2 s). macOS has not been measured yet
--# and uses the value of Windows.
+-# workload) and from about 2.8 s on Linux (2 s). macOS has not been measured
+-# yet and uses the value of Windows.
 -_MIN_PARALLEL_WORKLOAD_SECONDS = {"win32": 4.0, "linux": 2.0}
-+# work), from about 2.8 s on Linux (2 s) and from about <T> s on macOS
++# workload), from about 2.8 s on Linux (2 s) and from about <T> s on macOS
 +# (<X> s, <chip>).
 +_MIN_PARALLEL_WORKLOAD_SECONDS = {"win32": 4.0, "linux": 2.0, "darwin": <X>}
  _MIN_PARALLEL_WORKLOAD_SECONDS_DEFAULT = 4.0

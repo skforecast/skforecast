@@ -32,6 +32,7 @@ from skforecast.model_selection import TimeSeriesFold, backtesting_forecaster_mu
 from ....recursive.tests.tests_forecaster_recursive_multiseries.fixtures_forecaster_recursive_multiseries import expected_df_to_long_format
 from ..fixtures_model_selection_multiseries import (
     series_wide_range,
+    exog as exog_multiseries,
     series_wide_dt,
     series_wide_dt_intermittent,
     series_wide_dt_nans,
@@ -7778,3 +7779,38 @@ def test_backtesting_forecaster_multiseries_n_jobs_auto_limited_by_the_workload(
         )
 
     assert mock_parallel.call_args.kwargs == {'n_jobs': expected_n_jobs}
+
+
+def test_backtesting_forecaster_multiseries_warnings_of_folds_in_processes_same_as_n_jobs_1():
+    """
+    Test that the warnings raised in the folds that run in worker processes
+    (`n_jobs=2`) reach the main process once each, with the same category,
+    text, location and order as with `n_jobs=1`: a missing value of `exog` in
+    the test set warns once per series in the folds that use it.
+    """
+    exog_nan = exog_multiseries[['exog1']].copy()
+    exog_nan.iloc[[42, 47]] = np.nan
+
+    def warnings_shown(n_jobs):
+        forecaster = ForecasterRecursiveMultiSeries(
+            HistGradientBoostingRegressor(max_iter=5, random_state=123), lags=3
+        )
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always")
+            backtesting_forecaster_multiseries(
+                forecaster    = forecaster,
+                series        = series_wide_range,
+                exog          = exog_nan,
+                cv            = TimeSeriesFold(steps=2, initial_train_size=40, refit=False),
+                metric        = 'mean_absolute_error',
+                n_jobs        = n_jobs,
+                show_progress = False,
+            )
+
+        return [(w.category, str(w.message), w.filename, w.lineno) for w in record]
+
+    expected = warnings_shown(n_jobs=1)
+    results = warnings_shown(n_jobs=2)
+
+    assert [category for category, _, _, _ in expected].count(MissingValuesWarning) == 4
+    assert results == expected
