@@ -1,0 +1,128 @@
+{
+  "date": "2026-11-09 22:01:19",
+  "cpu": "Apple M5",
+  "platform": "macOS-27.2-arm64-arm-64bit-Mach-O",
+  "os_version": "Darwin Kernel Version 27.2.0: Wed Oct 14 23:48:06 PDT 2026; root:xnu-13432.41.4~25/RELEASE_ARM64_T8142",
+  "physical_cores": 10,
+  "logical_processors": 10,
+  "joblib_cpu_count": 10,
+  "joblib_cpu_count_physical": 10,
+  "efficiency_classes": {
+    "class_1": {
+      "cores": 4,
+      "logical": 4
+    },
+    "class_0": {
+      "cores": 6,
+      "logical": 6
+    }
+  },
+  "topology": [
+    {
+      "core": 0,
+      "efficiency_class": 1,
+      "logical": [
+        0
+      ],
+      "smt": false
+    },
+    {
+      "core": 1,
+      "efficiency_class": 1,
+      "logical": [
+        1
+      ],
+      "smt": false
+    },
+    {
+      "core": 2,
+      "efficiency_class": 1,
+      "logical": [
+        2
+      ],
+      "smt": false
+    },
+    {
+      "core": 3,
+      "efficiency_class": 1,
+      "logical": [
+        3
+      ],
+      "smt": false
+    },
+    {
+      "core": 4,
+      "efficiency_class": 0,
+      "logical": [
+        4
+      ],
+      "smt": false
+    },
+    {
+      "core": 5,
+      "efficiency_class": 0,
+      "logical": [
+        5
+      ],
+      "smt": false
+    },
+    {
+      "core": 6,
+      "efficiency_class": 0,
+      "logical": [
+        6
+      ],
+      "smt": false
+    },
+    {
+      "core": 7,
+      "efficiency_class": 0,
+      "logical": [
+        7
+      ],
+      "smt": false
+    },
+    {
+      "core": 8,
+      "efficiency_class": 0,
+      "logical": [
+        8
+      ],
+      "smt": false
+    },
+    {
+      "core": 9,
+      "efficiency_class": 0,
+      "logical": [
+        9
+      ],
+      "smt": false
+    }
+  ],
+  "ram_gb": 16.0,
+  "kernel": "27.2.0",
+  "power_scheme": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         20\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           1\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                0\n tcpkeepalive         1\n disksleep            10",
+  "ac_power": true,
+  "battery_percent": 100,
+  "cpu_freq_mhz": {
+    "current": 4,
+    "min": 0,
+    "max": 4
+  },
+  "versions": {
+    "python": "3.14.3",
+    "numpy": "2.5.4",
+    "pandas": "2.3.3",
+    "sklearn": "1.9.1",
+    "scipy": "1.18.1",
+    "joblib": "1.6.0",
+    "numba": "0.68.1",
+    "lightgbm": "4.6.0",
+    "xgboost": "3.2.0",
+    "catboost": "1.2.10",
+    "statsmodels": "0.14.6",
+    "psutil": "7.2.2",
+    "threadpoolctl": "3.7.0",
+    "skforecast": "0.27.0"
+  }
+}

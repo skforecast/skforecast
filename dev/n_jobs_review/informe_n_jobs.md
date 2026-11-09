@@ -1,12 +1,12 @@
 # Revisión de `n_jobs='auto'` en skforecast: medidas en Windows con una CPU híbrida
 
-El estudio (scripts, resultados e informe) está en `dev/n_jobs_review/`. Empezó el 7 de noviembre sobre `origin/0.27.x` @ `76e4500dd` (skforecast 0.27.0), en una rama local, y entra en el repositorio con el PR del umbral (rama `perf/n-jobs-auto-work-threshold`). Los demás cambios de código que salieron de él fueron en PRs aparte (sección 14). Cuando se cierre macOS, la carpeta se puede retirar de `dev/` con un PR pequeño antes de publicar la versión.
+El estudio (scripts, resultados e informe) está en `dev/n_jobs_review/`. Empezó el 7 de noviembre sobre `origin/0.27.x` @ `76e4500dd` (skforecast 0.27.0), en una rama local, y entra en el repositorio con el PR del umbral (rama `perf/n-jobs-auto-work-threshold`). Los demás cambios de código que salieron de él fueron en PRs aparte (sección 14). macOS se cerró el 9 de noviembre (sección 17); la carpeta se puede retirar de `dev/` con un PR pequeño antes de publicar la versión.
 
 **Estado a 9 de noviembre de 2026.**
 - Las secciones 1 a 11 describen el estudio en Windows tal como se cerró el 7 de noviembre, con notas donde algo cambió después.
 - La sección 12 es la medida en Linux (WSL2, D7); la 13, un fallo que apareció durante ella (D9).
 - La sección 14 resume el estado de cada decisión. Todas están aplicadas. D8 (el cuaderno de la documentación) va en la misma rama que D4 y D5.
-- El umbral de trabajo (D4 y D5) está implementado con los valores de Windows y Linux. Falta medir macOS: la sección 16 explica cómo hacerlo y qué cambiar después.
+- El umbral de trabajo (D4 y D5) está implementado con los valores de Windows (4 s), Linux (2 s) y macOS (2 s). La sección 16 explica cómo se midió macOS y la 17 da los resultados (Apple M5).
 
 Etiquetas: **[probado]** medido en esta máquina con los scripts de esta carpeta; **[verificado en código]** leído en el código fuente (skforecast o sus dependencias); **[documentado]** dicho por la documentación de una librería; **[inferido]** deducción sin medida directa.
 
@@ -49,7 +49,7 @@ Con ella, en frío, la pérdida total frente al óptimo baja de 211 a 42 s (L) y
 - Medido: D7. En Linux (WSL2) el arranque en frío de 21 workers cuesta la mitad que en Windows (2,9 s frente a 5,7 s), así que el punto de equilibrio baja de unos 5 s a unos 2,8 s de trabajo secuencial. Las reglas siguen acertando (sección 12).
 - Implementado, PR pendiente: D4 y D5 en la rama `perf/n-jobs-auto-work-threshold`. Con `'auto'`, un backtesting suelto usa un solo job si el trabajo estimado desde el `fit` inicial no llega a 4 s en Windows o a 2 s en Linux; las búsquedas resuelven `'auto'` con las reglas de cada candidato, sin umbral (sección 11.4).
 - Pendiente:
-  - macOS: medir el arranque y fijar su umbral, que hoy usa el de Windows (sección 16);
+  - ~~macOS: medir el arranque y fijar su umbral~~: hecho el 9 de noviembre, 2 s en un Apple M5 (sección 17);
   - D8, el cuaderno de la documentación.
 
 ## 2. Máquina, sistema y versiones
@@ -783,7 +783,7 @@ Lo demás se aplicó como se propone:
 
 - **`limit_n_jobs_by_workload(n_jobs, n_tasks, n_fits, fit_seconds)`** (`_utils.py`, documentada en la página de la API junto a `select_n_jobs_backtesting`):
   - devuelve 1 si `n_jobs` es 1, si hay una sola tarea o si ningún fold reajusta (sin refit, aunque el `fit` inicial sea largo);
-  - devuelve 1 si `n_fits × fit_seconds` no llega al mínimo de la plataforma: `{"win32": 4.0, "linux": 2.0}`, y 4,0 en cualquier otra, macOS incluido, hasta medirlo (sección 16);
+  - devuelve 1 si `n_fits × fit_seconds` no llega al mínimo de la plataforma: `{"win32": 4.0, "linux": 2.0}`, y 4,0 en cualquier otra. macOS usó 4,0 hasta medirlo; desde el 9 de noviembre tiene su clave, `"darwin": 2.0` (sección 17);
   - si no, `min(n_jobs, n_tasks)`;
   - si el `fit` inicial no se cronometró (`fit_seconds=None`), no estima el trabajo y solo limita por tareas. Pasa en MultiSeries cuando ningún nivel del primer fold se predice con su modelo y ese fold no se ajusta.
 - **`n_fits`** son los folds que reajustan, sin el `fit` inicial: `fold[5] is True` tras marcar el primero como ajustado en una serie, y `sum(fit_folds)` en MultiSeries, que ya descuenta los folds saltados. `fold_stride` y los folds saltados no necesitan nada más. Con `refit` entero, `select_n_jobs_backtesting` ya da 1.
@@ -942,7 +942,7 @@ El fallo de la sección 8.11 se reproduce igual en Linux: 2.000 filas, 4 workers
 
 - **WSL2 es una máquina virtual sobre Hyper-V.** No se ha medido Linux nativo, que probablemente arranque igual o más rápido [inferido].
 - **Una sola máquina.**
-- **macOS no se ha medido.** Javier Escobar lo medirá con el bloque A y V1, que bastan para fijar su umbral. Los scripts ya funcionan en Linux y macOS sin parches (sección 16).
+- **macOS se midió después**, en un Apple M5, con el bloque A y V1 (sección 17).
 
 ## 13. Fallo nuevo: las predicciones de LightGBM ignoraban `n_jobs` (D9)
 
@@ -990,14 +990,14 @@ En WSL2, la espera activa de libgomp con 22 hilos sobre procesadores virtuales m
 | D3 | #1462 | `1a3eadc51` | `'auto'` paraleliza Classifier con `LogisticRegression` (×4,7) y deja en 1 MultiSeries con lineal |
 | D9 | #1464 | `40042d1b1` | Predicciones con `LGBMRegressor`, entre 17 y 28 veces más rápidas en WSL2 con `n_jobs=1` |
 | D2 | #1468 | `2daa0e836` | `backtesting_stats` con Sarimax y `n_jobs > 1` deja de fallar |
-| D4 y D5 | pendiente | rama `perf/n-jobs-auto-work-threshold` | Con `'auto'`, un backtesting suelto pequeño ya no arranca los workers (sección 11.4) |
+| D4 y D5 | pendiente | rama `perf/n-jobs-auto-work-threshold` | Con `'auto'`, un backtesting suelto pequeño ya no arranca los workers (sección 11.4; umbral de macOS en la sección 17) |
 
 Pendiente, por orden:
 
 1. **Revisar y abrir el PR de D4 y D5** (sección 11.4), rama `perf/n-jobs-auto-work-threshold`. Lleva también esta carpeta, en un commit aparte del código.
-2. **macOS**: medir y fijar su umbral, que hoy es el de Windows (sección 16). Puede ir en un PR pequeño después del de D4.
+2. ~~**macOS**: medir y fijar su umbral~~. Hecho el 9 de noviembre en la rama de D4 y D5: 2 s en un Apple M5, el mismo valor que Linux (sección 17).
 3. **D8, el cuaderno `docs/faq/parallelization-skforecast.ipynb`**: reescrito el 9 de noviembre en la rama de D4 y D5, siguiendo la sección 9.3.
-   - El texto explica qué se paraleliza y muestra las reglas de `'auto'` en una tabla de decisión, un diagrama HTML (como el del cuaderno de foundation models; Mermaid no está configurado en el sitio) y una celda que llama a `select_n_jobs_backtesting` con varios forecasters, de modo que las reglas que se ven son las de la versión instalada. Cita el umbral de trabajo de Windows (4 s) y Linux (2 s) y no el de macOS, pendiente de medir. Explica el arranque de los workers, los hilos de los estimadores, el aviso de LightGBM con `n_jobs=-1` en Linux y `LOKY_MAX_CPU_COUNT`, y cierra con cuatro recomendaciones.
+   - El texto explica qué se paraleliza y muestra las reglas de `'auto'` en una tabla de decisión, un diagrama HTML (como el del cuaderno de foundation models; Mermaid no está configurado en el sitio) y una celda que llama a `select_n_jobs_backtesting` con varios forecasters, de modo que las reglas que se ven son las de la versión instalada. Cita el umbral de trabajo de Windows (4 s), Linux y macOS (2 s; macOS añadido el 9 de noviembre, sección 17). Explica el arranque de los workers, los hilos de los estimadores, el aviso de LightGBM con `n_jobs=-1` en Linux y `LOKY_MAX_CPU_COUNT`, y cierra con cuatro recomendaciones.
    - El benchmark usa `bike_sharing` y `store_sales` (50 series de una tienda), compara 1, `'auto'` y `cpu_count() - 1` y separa la primera llamada (con los workers parados) de la mediana de 3 más, con un gráfico de barras por caso. Tarda unos 5 min en esta máquina. Las salidas guardadas son de la tercera corrida del 9 de noviembre: la segunda coincidió con carga de fondo y salió el doble de lenta en todos los casos (y `'auto'` paralelizó el caso de 14 folds), y el `fit` secuencial de Direct varía hasta un 60 % entre llamadas incluso con la máquina tranquila; las conclusiones lo dicen.
    - Las cifras de Linux no se citan: el texto solo dice que arrancar los workers cuesta más en Windows.
    - Hallazgo al calibrarlo: cada worker importa las librerías con su primera tarea, así que una búsqueda con menos folds que workers reparte ese coste entre los primeros candidatos (4 candidatos de 6 folds: 10 s la primera vez frente a 3,6 en secuencial). Limitar el `n_jobs` de cada candidato al número de folds lo evitaría; no está medido ni aplicado.
@@ -1029,6 +1029,8 @@ python dev/n_jobs_review/summarize.py                  # tablas en results/summa
 | `results/*.csv` | Una fila por llamada (`phase` = warmup, rep, preds o timeout) |
 | `results/machine.json` | Máquina, topología, plan de energía y versiones |
 | `results/threshold.md`, `results/wsl/threshold.md` | Salida de `threshold.py` con los datos de V1 del estudio (Windows y WSL2) |
+| `results/macos_m5/` | Medida en macOS (sección 17): `machine.json`, bloque A, V1 (`block_V_cold.csv`), `threshold.md` y `probe_hgb_threads.py` |
+| `results/macos_m5_final/` | V1 reducido con el umbral de macOS ya aplicado (2 s): `block_V_cold.csv`, `threshold.md` |
 | `results/d4_windows/` | V1 con el umbral implementado (Windows): `block_V_cold.csv`, `machine.json`, `threshold.md` |
 | `results/d4_windows_aff4/` | V1 con el umbral implementado y 4 procesadores (afinidad), parcial: 18 celdas de una repetición |
 | `results/linux_wsl_d4/` | `run_platform.sh` en WSL2 con el umbral implementado (1 repetición en V1): bloque A, V1, tests y `threshold.md` |
@@ -1045,6 +1047,8 @@ Para repetir la medida de WSL2, ejecuta `wsl_install.sh` y `wsl_clone.sh`, y des
 Para medir el umbral en cualquier Linux o macOS basta con `run_platform.sh` (sección 16).
 
 ## 16. Completar macOS (instrucciones para Javier)
+
+**Hecho el 9 de noviembre de 2026** en un Apple M5; los resultados y el umbral elegido están en la sección 17. Las instrucciones se conservan para repetir la medida en otro Mac.
 
 El umbral de trabajo de `'auto'` (sección 11.4) está calibrado en Windows (4 s) y Linux (2 s). macOS usa provisionalmente el de Windows. Faltan dos cosas, que se resuelven con una sola ejecución de unos 6 minutos:
 1. comprobar que la lógica nueva funciona bien en macOS (los tests);
@@ -1138,3 +1142,73 @@ Después:
 - El arranque en frío de `cpu_count() − 1` workers, frente a 5,68 s en Windows y 3,17 s en WSL2, y el umbral elegido.
 - Con `--full`, la tabla de V1 y el umbral del método completo, con su horquilla.
 - Cualquier diferencia de comportamiento: por ejemplo, si LightGBM con sus propios hilos se comporta como en Linux (sección 12.4).
+
+## 17. macOS: medida en un Apple M5
+
+Medido el 9 de noviembre de 2026 con `run_platform.sh macos_m5 --full` (sección 16), sobre la rama `perf/n-jobs-auto-work-threshold` @ `6d1ea2286`, y una comprobación posterior con el umbral ya aplicado [probado, `results/macos_m5/` y `results/macos_m5_final/`].
+
+### 17.1 Máquina
+
+- Apple M5: 10 núcleos sin SMT, **4 de rendimiento y 6 de eficiencia**; 16 GB de RAM; macOS 27.2 (Darwin 27.2.0), enchufado.
+- `cpu_count()` = 10, así que `cpu_count() − 1` = 9 workers (21 en Windows y WSL2).
+- Python 3.14.3, numpy 2.5.4, pandas 2.3.3, scikit-learn 1.9.1, joblib 1.6.0, LightGBM 4.6.0 (libomp de Homebrew).
+- Los tests del umbral y de las búsquedas pasan: **30** (los 28 de la sección 16.3 más dos que se añadieron después a la rama).
+- La lectura de la topología con `sysctl` funciona: `machine.json` distingue las dos clases de núcleos.
+
+### 17.2 Arranque de los workers (bloque A)
+
+Tiempo de la llamada a `Parallel` en frío, mediana de 10 procesos (las dos ejecuciones del bloque A), en segundos [probado, `results/macos_m5/block_A_cold.csv`]:
+
+| Caso | k = 2 | 4 | 8 | 9 (`cpu − 1`) | 10 |
+|---|---|---|---|---|---|
+| Forecaster, macOS | 1,07 | 1,17 | 1,53 | **1,66** | 1,82 |
+| Tareas triviales, macOS | 0,14 | 0,15 | 0,20 | 0,21 | 0,23 |
+| Forecaster, WSL2 | 1,34 | 1,46 | 1,68 | | |
+| Forecaster, Windows | 2,20 | 2,65 | 3,02 | | |
+
+Con el mismo número de workers, arrancar en macOS cuesta algo menos que en WSL2 y la mitad que en Windows. Además, con 10 núcleos hay menos workers que arrancar: 1,66 s con 9, frente a 2,94 s con 21 en WSL2 y 5,68 s en Windows. El umbral rápido (0,7 × 1,66) sale **1,0 s**.
+
+### 17.3 Backtestings sueltos en frío (V1) y umbral
+
+Mediana de 5 procesos, en segundos, con el umbral provisional de 4 s; la última columna es `'auto'` con el umbral definitivo de 2 s (mediana de 3 procesos, `results/macos_m5_final/`) [probado]:
+
+| Backtesting suelto | n_jobs = 1 | 9 jobs | `'auto'` (4 s) | estimación | `'auto'` (2 s), jobs |
+|---|---|---|---|---|---|
+| Recursive LGBM(1), S, sin refit | 0,07 | 1,72 | 0,07 | 0 | 0,07, 1 |
+| Recursive LGBM(1), L, sin refit | 0,21 | 1,82 | 0,19 | 0 | 0,20, 1 |
+| Recursive LGBM(1), S, con refit | 0,50 | 1,79 | 0,50 | 0,44 | 0,54, 1 |
+| MultiSeries LGBM(1), S, con refit | 0,68 | 1,83 | 0,71 | 0,67 | 0,70, 1 |
+| Recursive LGBM(1), L, con refit | 2,62 | 2,32 | 2,57 (1 job) | 2,51 | **2,43, 9** |
+| Recursive HGB, L, con refit | 7,10 | 6,64 | 7,14 | 3,33 | ver 17.4 |
+| Direct LGBM(1), S, con refit | 10,71 | 4,15 | 4,10 | 9,14 | 4,18, 1 |
+| MultiSeries LGBM(1), L, con refit | 14,84 | 5,91 | 6,04 | 11,29 | 6,30, 9 |
+| Recursive RF, L, con refit | 32,78 | 8,41 | 8,42 | 24,82 | (no medido) |
+
+Umbral por el método completo (sección 11.4):
+
+| Ajuste de `paralelo = a + b × secuencial` | `a` | `b` | Equilibrio real | En unidades de la estimación |
+|---|---|---|---|---|
+| `threshold.py`, 6 casos con refit (incluye HGB) | 2,54 | 0,200 | 3,17 s | 2,60 → 2,5 s |
+| Los mismos sin HGB | 1,89 | 0,211 | 2,39 s | 1,96 → **2,0 s** |
+| Comprobación con 2 s (`macos_m5_final`, 5 casos) | 1,96 | 0,156 | 2,32 s | 2,13 → **2,0 s** |
+
+1. **Umbral elegido: 2,0 s**, el mismo que Linux. Queda dentro de la horquilla de los casos medidos: con una estimación de 0,67 s paralelizar pierde (0,68 → 1,83 s) y con 2,51 s ya gana (2,62 → 2,32 s).
+2. **No 2,5 s**, aunque es lo que da `threshold.py`. La recta pasa 2,7 s por encima de HGB (sección 17.4), que en esa ejecución no ganó en paralelo, y eso sube la ordenada en el origen. Con 2,5 s, LGBM(1) L con refit (estimación de 2,51 s, justo en el borde) quedaría en 1 job o en 9 según la repetición, y perdería el 11 % en las que queden en 1. Sin HGB, los residuos de los casos pequeños son de −0,1 a −0,2 s.
+3. **No 1,0 s**, el umbral rápido. La pendiente de macOS (0,20-0,21, aceleración ×4,8-5) es peor que la de Windows y WSL2 (0,15), porque 6 de los 10 núcleos son de eficiencia, y el factor 0,7 la supone igual. Con la pendiente medida, el equilibrio sale el doble que con el factor.
+4. **Con 2 s, `'auto'` acierta en todos los casos medidos**: su peor caso es un 7 % peor que la mejor opción entre 1 y 9 jobs (MultiSeries L, ruido entre repeticiones) y nunca más de un 3 % peor que `n_jobs=1`. Con los 4 s provisionales, el peor era LGBM(1) L con refit, un 11 % más lento que 9 jobs.
+5. **Sin refit**, `'auto'` = 1 y evita perder ×9 a ×24, como en Windows y Linux.
+
+Cambios aplicados: `_MIN_PARALLEL_WORKLOAD_SECONDS = {"win32": 4.0, "linux": 2.0, "darwin": 2.0}` con su comentario, la docstring de `limit_n_jobs_by_workload`, los casos `"darwin"` del test por plataforma (0,2 y 0,3 s con 9 ajustes), la nota de versión y la frase del umbral en `docs/faq/parallelization-skforecast.ipynb`.
+
+### 17.4 Diferencia de comportamiento: HGB con todos los hilos en una CPU híbrida
+
+`HistGradientBoostingRegressor` ajusta con todos los hilos de OpenMP (10). En el M5, sus hilos esperan a los que caen en los núcleos de eficiencia:
+
+- **Un `fit` con 10 hilos tarda 2,5 veces más que con 4** (0,85 s frente a 0,33 s; 8.000 filas, 48 columnas, `max_iter=50`; 5 procesos de 3 ajustes cada uno, dispersión menor del 10 %) [probado, `results/macos_m5/probe_hgb_threads.py`].
+- **El caso HGB L de V1 es inestable entre procesos.** En la ejecución completa, el `fit` inicial tardó 0,2 s en unos procesos y 4,5 s en otros, y el backtesting secuencial entre 4,1 y 10,8 s (uno de `'auto'`, 59,7 s). En la comprobación posterior fue estable, pero lento en secuencial: `fit` de 0,9 s, 18,1 s con 1 job y 3,4 s con 9 (×5,3), porque cada worker usa un solo hilo [probado, `block_V_cold.csv` de las dos carpetas].
+- No afecta al umbral, que deciden los casos de LGBM(1) (estables entre ejecuciones, a menos del 5 %), y `'auto'` ya paraleliza HGB con refit cuando su trabajo pasa de 2 s. Pero en un Mac con núcleos de eficiencia, HGB secuencial con sus hilos por defecto puede ser mucho más lento de lo necesario. **No se ha cambiado nada**: limitar los hilos de HGB al número de núcleos de rendimiento sería un cambio aparte, que habría que medir también en Windows (CPU híbrida, sección 2) [inferido].
+
+### 17.5 Límites
+
+- **Un solo Mac.** Las dos ejecuciones de LGBM coinciden a menos del 5 % tras 20 minutos de carga, así que la temperatura no redujo el rendimiento. Un Mac solo con núcleos de rendimiento (o un M Pro/Max con más núcleos) tendría mejor pendiente y quizá un equilibrio algo menor; 2 s sigue siendo un valor prudente [inferido].
+- **No se midieron los bloques B a E**: no sabemos si LightGBM con sus propios hilos se comporta como en Linux (sección 12.4).
