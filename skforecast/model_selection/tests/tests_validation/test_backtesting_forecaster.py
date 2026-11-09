@@ -604,7 +604,7 @@ def test_backtesting_forecaster_n_jobs_auto_limited_by_the_workload(
     ):
         backtesting_forecaster(
             forecaster    = forecaster,
-            y            = y,
+            y             = y,
             cv            = cv,
             metric        = 'mean_absolute_error',
             n_jobs        = n_jobs,

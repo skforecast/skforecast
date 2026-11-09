@@ -3469,7 +3469,7 @@ def test_bayesian_search_forecaster_multiseries_n_jobs_auto_resolved_with_the_ru
     ):
         bayesian_search_forecaster_multiseries(
             forecaster    = forecaster,
-            series       = series_wide_range,
+            series        = series_wide_range,
             cv            = cv,
             search_space  = lambda trial: {'random_state': trial.suggest_int('random_state', 1, 2)},
             metric        = 'mean_absolute_error',

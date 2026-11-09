@@ -424,7 +424,7 @@ def test_grid_search_forecaster_n_jobs_auto_resolved_with_the_rules_of_each_cand
     ):
         grid_search_forecaster(
             forecaster    = forecaster,
-            y            = y,
+            y             = y,
             cv            = cv,
             param_grid    = {'random_state': [1, 2]},
             metric        = 'mean_absolute_error',

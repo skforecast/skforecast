@@ -7771,7 +7771,7 @@ def test_backtesting_forecaster_multiseries_n_jobs_auto_limited_by_the_workload(
     ):
         backtesting_forecaster_multiseries(
             forecaster    = forecaster,
-            series       = series_wide_range,
+            series        = series_wide_range,
             cv            = cv,
             metric        = 'mean_absolute_error',
             n_jobs        = n_jobs,

@@ -974,7 +974,7 @@ def test_grid_search_forecaster_multiseries_n_jobs_auto_resolved_with_the_rules_
     ):
         grid_search_forecaster_multiseries(
             forecaster    = forecaster,
-            series       = series_wide_range,
+            series        = series_wide_range,
             cv            = cv,
             param_grid    = {'random_state': [1, 2]},
             metric        = 'mean_absolute_error',
