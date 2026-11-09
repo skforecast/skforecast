@@ -21,11 +21,14 @@ name: Publish to PyPI
 #    X.Y.x and approve the deployment `testpypi`.
 # 4. Create the GitHub release vX.Y.Z on that same commit of X.Y.x and
 #    publish it (Zenodo archives it at that moment). This workflow starts by
-#    itself: approve the deployment `pypi` and wait for "Install from the
-#    index".
+#    itself: approve the deployment `pypi` and wait for "Install from PyPI".
 # 5. Merge the pull request into main.
 # 6. Review and merge the pull request that the conda-forge bot opens in the
 #    feedstock, which builds from the sdist on PyPI.
+
+# The name of the workflow is fixed; the title of each run and the names of
+# the jobs say where it publishes.
+run-name: ${{ github.event_name == 'release' && format('Publish {0} to PyPI', github.event.release.tag_name) || format('Rehearsal on TestPyPI ({0})', github.ref_name) }}
 
 on:
   release:
@@ -168,7 +171,7 @@ jobs:
           venv/bin/python -I "$GITHUB_WORKSPACE/tools/release/smoke_test.py" "$VERSION"
 
   publish:
-    name: Publish skforecast
+    name: Publish to ${{ github.event_name == 'release' && 'PyPI' || 'TestPyPI' }}
     needs: [build, smoke-test]
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -197,7 +200,7 @@ jobs:
           skip-existing: true
 
   verify:
-    name: Install from the index
+    name: Install from ${{ github.event_name == 'release' && 'PyPI' || 'TestPyPI' }}
     needs: [build, publish]
     runs-on: ubuntu-latest
     timeout-minutes: 20

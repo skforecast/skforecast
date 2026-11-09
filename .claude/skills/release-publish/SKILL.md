@@ -24,12 +24,18 @@ Open it (or find it) and wait for every check: unit tests, the tests with the mi
 
 ## 3. Rehearsal on TestPyPI
 
-```bash
-git tag test-publish-<version>-<n> <sha>        # n = 1, 2... one tag per rehearsal
-git push origin test-publish-<version>-<n>
-```
+A rehearsal starts in either of two ways:
 
-The run uploads `<version>.dev<run number>` to TestPyPI. Approve the deployment `testpypi` (Actions → the run → Review deployments) and wait for the job "Install from the index". If it fails, fix it on `X.Y.x` through a pull request and rehearse again on the new head. Then delete the tag:
+- A tag `test-publish-*` on any commit (works from any branch, and is the way to rehearse the exact SHA of the release):
+
+  ```bash
+  git tag test-publish-<version>-<n> <sha>        # n = 1, 2... one tag per rehearsal
+  git push origin test-publish-<version>-<n>
+  ```
+
+- A manual run: Actions → Publish to PyPI → Run workflow, choosing the branch (or `gh workflow run publish-pypi.yml --ref <branch>`). GitHub only offers it once `publish-pypi.yml` is on the default branch, `main`.
+
+The run, titled "Rehearsal on TestPyPI (<ref>)", uploads `<version>.dev<run number>` to TestPyPI and never touches PyPI: only a published GitHub release goes there. Approve the deployment `testpypi` (the run → Review deployments) and wait for the job "Install from TestPyPI". If it fails, fix it on `X.Y.x` through a pull request and rehearse again on the new head. Then delete the tag:
 
 ```bash
 git push origin --delete test-publish-<version>-<n>
@@ -45,7 +51,7 @@ gh release create v<version> --target <sha> --title "v<version>" \
   --notes "See https://skforecast.org/<version>/releases/releases for more information on this new release."
 ```
 
-Publishing it starts the workflow and Zenodo archives the release (a new DOI). The workflow checks that the tag is `v` plus the version of both files, that the release is marked as a prerelease only for a prerelease version (`0.27.0rc1`) and that the commit is on `X.Y.x`. Follow it with `gh run watch`, approve the deployment `pypi` and wait for "Install from the index", which installs the version from PyPI and runs a forecast.
+Publishing it starts the workflow and Zenodo archives the release (a new DOI). The workflow checks that the tag is `v` plus the version of both files, that the release is marked as a prerelease only for a prerelease version (`0.27.0rc1`) and that the commit is on `X.Y.x`. The run is titled "Publish v<version> to PyPI". Follow it with `gh run watch`, approve the deployment `pypi` and wait for "Install from PyPI", which installs the version from PyPI and runs a forecast.
 
 ## 5. After the upload
 
