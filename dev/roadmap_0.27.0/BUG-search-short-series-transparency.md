@@ -863,7 +863,7 @@ backtesting, `y_true` explicado una sola vez (en la guía de clasificación, con
 | Página | Estado | Commit |
 |:--|:--|:--|
 | `autoregressive-classification-forecasting` | Hecha. 5 de 8 casos (18 y 19 vienen de `predict`), más la línea de `pred` del gráfico (29b) y el texto de la celda 25. Métricas, informes y figuras idénticos (PNG byte a byte). | 976605bf5 |
-| `comparing-forecasting-models` | **En espera** del bug del MASE (abajo). Propuesta: `y_true` en `summarize` (-4 líneas), en `set_out_sample_residuals` (celdas 10 y 20) y la columna en el texto de la celda 4. | |
+| `comparing-forecasting-models` | Hecha el 2026-11-09, tras fusionar #1471 (opción B, elegida por el usuario frente a la mínima, que solo tomaba `y_true` de las predicciones). Las métricas salen de la tabla `metric` del backtesting (MAE, MASE por origen y `coverage`): `summarize(metrics, elapsed)` toma la última fila (la única, o el `pooling`) y pasa de 31 a 12 líneas, sin los imports de `mean_absolute_scaled_error` ni `calculate_coverage`; `plot_predictions` usa `pred['y_true']` y pierde `series`; residuos de calibración con `pred_calibration['y_true']` (celdas 10 y 20); textos de las celdas 2 (MASE sobre las observaciones antes de cada fold) y 4. 79 líneas fuera, 63 dentro. Medido con las mismas predicciones: el orden de los modelos es idéntico en los tres datasets; el MASE de h2o baja unas 0,02 y en los otros dos menos de 0,003. ARIMA y ETS cambian algo frente a la ejecución del 2026-10-14 por cambios de `0.27.x`, no de esta rama; las conclusiones del texto se mantienen. | 587f31598 |
 | `probabilistic-forecasting-bootstrapped-residuals` | Hecha. 3 de 3 (celdas 27, 30, 43). Residuos, intervalos, coberturas y figuras idénticos. | 541c8efdb |
 | `forecasting-with-deep-learning-rnn-lstm` | Hecha **sin ejecutar** (decisión del usuario). Celda 100 con `y_true`; celda 102 toma `coverage` e `interval_width` de `metric` (11 líneas a 1); quitado el import de `calculate_coverage`. Comprobado aparte que `metric` da los mismos valores. **Pendiente:** la salida guardada de la celda 102 aún muestra `mean_interval_width`; al volver a ejecutar pasa a `interval_width` (mismos valores). | 915ac39ea |
 | `independent-multi-time-series-forecasting` | Sin cambios: los 2 casos son el corte train/test (celda 13), no el backtesting. | |
@@ -967,7 +967,8 @@ estas dos sin ejecutar. Las ejecutadas dan figuras idénticas (píxel a píxel e
 
 **Cierre del punto 3 (2026-11-09):** 10 guías cambiadas y comprobadas; pendientes, por
 causas externas: volver a ejecutar `backtesting` (bug de `num_threads`; **hecho el
-2026-11-09**, ver arriba) y la guía RNN, y `comparing-forecasting-models` (bug del MASE). Rama local `docs/backtesting-y-true`, sin
+2026-11-09**, ver arriba) y la guía RNN, y `comparing-forecasting-models` (bug del MASE;
+**hecha el 2026-11-09** tras fusionar #1471). Rama local `docs/backtesting-y-true`, sin
 push ni PR.
 
 **Bug aparte del MASE (2026-11-09):** el backtesting y las búsquedas escalan MASE/RMSSE
@@ -977,6 +978,8 @@ meses de entrenamiento): escala 0.0918 con la serie completa, 0.0958 con `window
 (+4.4 %); el MASE del backtesting invierte Ridge (0.667) y ETS (0.664) frente a la
 definición estándar (0.696 y 0.707). Se analiza en otra sesión
 (`BUG-mase-window-size.md`). `comparing-forecasting-models` espera a ese resultado.
+**Arreglado con #1471** (escala por origen; fusionado en esta rama el 2026-11-09, que también
+arregla las métricas de `OneStepAheadFold` con `differentiation`, `BUG-osa-differentiation.md`).
 
 **Notas:** `execute_notebooks.py` excluye por defecto `comparing-forecasting-models` y
 `forecasting-with-deep-learning-rnn-lstm` (`EXCLUDE_NOTEBOOKS`); hay que pasarlas
