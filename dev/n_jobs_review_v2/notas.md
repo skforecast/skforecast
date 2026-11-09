@@ -524,3 +524,94 @@ Correctitud: todas las configuraciones dieron predicciones y métricas iguales a
 `n_jobs=1` salvo ruido de coma flotante (≤ 4e-11 en lineales con `refit=True`). Errores
 de comportamiento: E4 (meta-estimadores no desenvueltos, con la patología de LightGBM),
 E1 (`n_jobs=-2` → todos los núcleos), E2 (Direct resuelve `'auto'` en `__init__`).
+
+---
+
+## Fase 3: contraste con la revisión previa (`dev/n_jobs_review/`)
+
+Leídos: `informe_n_jobs.md` (entero), `results/threshold.md`,
+`results/strategies_summary.md`, `bench.py` (cómo ejecuta las celdas) y el notebook de la
+FAQ (celdas de texto).
+
+Medidas cortas hechas aquí para resolver discrepancias (búsqueda `refit=False`, frío
+salvo indicación, 4 CPU):
+
+| Caso | n_jobs=1 | 'auto' (=3) |
+|---|---|---|
+| HGB, n=5000, 48 lags, **168 pasos**, 10 folds, 2 candidatos | 3.69 (3.56) | **2.80 (2.63)** |
+| RF (50/100 árboles), mismo caso | **9.79 (9.34)** | 11.29 (10.96) |
+| LGBM(`n_jobs=1`), n=2000, 24 pasos, 20 folds, 4 candidatos | **0.57 (0.51)** | 1.99 (1.94) |
+| ídem, caliente | **0.49 (0.45)** | 0.73 (0.67) |
+
+Coincidencias:
+- Arranque en frío: WSL2 1.34-1.46 s con 2-4 workers frente a 1.3 s aquí; dominan las
+  importaciones. En caliente, despreciable en ambas.
+- Umbral de Linux de 2 s: su equilibrio con 21 workers en WSL2 era ~2.8 s reales; aquí
+  ~2.4 s con 3 workers. La estimación es ~78-81 % del real en las dos revisiones.
+- `refit` entero → 1; lineales pequeños → 1; Stats → 1 en frío; intervalos sin refit →
+  1 (su medida con LGBM(1) y la mía con RF dan lo mismo).
+- LightGBM con hilos propios dentro de los workers: catastrófico en Linux en las dos
+  (>600 s allí, >155 s aquí).
+- `cpu_count()-1` frente a `-1`: en su máquina de 4 lógicos (2c/4t) `-1` fue un 5-9 %
+  mejor en 3 de 4 celdas (lo llamaron ruido); aquí, un 12 % con 4 CPU. Misma dirección.
+- Direct necesita un umbral propio (ellos lo infirieron para Direct S con LGBM(1); aquí
+  medido: 0.19 s frente a 1.51 s).
+
+Discrepancias y por qué:
+1. **Búsquedas sin refit**. Ellos (22 procesadores, en caliente, tamaño L con 168 pasos,
+   HGB y LGBM(1)): `'auto'` gana ×4.7 (HGB) y ×1.5 (LGBM(1)) → "mantener". Aquí (4 CPU):
+   pierde con RF, ET, XGB, CatBoost y LGBM(1) (1.5-3.8×, también en caliente con RF y
+   LGBM(1)); gana con HGB (en caliente, o en frío con 168 pasos). Causa: **máquina y
+   caso**. Paralelizar folds que solo predicen compensa cuando predecir es caro (HGB,
+   horizontes largos, muchos workers) y no cuando el modelo pesa mucho (RF/ET: 13-21 MB
+   por tarea) o predecir es barato (XGB, CatBoost, LGBM(1) con 24 pasos). Ellos no
+   midieron RF/ET/XGB/CatBoost en búsquedas sin refit ni horizontes cortos.
+2. **XGBoost**. Ellos: `'auto'` gana ×2.5-4.9 (8 y 22 procesadores, caliente, 168 pasos)
+   → "sin regla nueva". Aquí, con 4 CPU: pierde un 25 % en frío y gana un 12 % en
+   caliente. Causa probable: **número de núcleos** (con 4 hilos XGB ya usa bien la
+   máquina; con 22, procesos de 1 hilo rinden más) y el horizonte (168 pasos). Además,
+   sus celdas en caliente se ejecutaban en un solo proceso barajadas (`bench.py`); en
+   Linux, una celda XGB con `n_jobs=1` posterior a una paralela estaría inflada 2.5× por
+   el segundo equipo de libgomp. En Windows XGBoost usa otro runtime de OpenMP: no
+   puedo saber si les afecta. Su conclusión para máquinas grandes es plausible; la mía
+   para 4 CPU también.
+3. **Contaminación de XGBoost tras un paralelo** (segundo equipo de libgomp): no aparece
+   en la revisión previa. Nuevo.
+4. **`TransformedTargetRegressor(LGBM)` con `'auto'`**: su sección 8.6 cita
+   `TransformedTargetRegressor(Ridge)` como mal clasificado, pero no el caso LightGBM, que
+   aquí lleva a la patología de sobresuscripción con `'auto'`. Nuevo.
+5. **Búsquedas candidatos frente a folds**: no lo evaluaron (proponían decidir una vez por
+   búsqueda). Aquí el prototipo da 1.7-2.0× frente a `n_jobs=1` con `refit=False`.
+6. **Stats con `freeze_params`**: no lo consideraron; aquí el ajuste inicial con selección
+   es 25-70× más caro que los reajustes, lo que invalida estimar con él.
+7. **HGB con muchos hilos**: ellos midieron que HGB secuencial es muy lento con 22 hilos
+   (Direct S: 5.5 s frente a 0.6 s en workers; HGB L sin refit 2.94 s con 1 frente a
+   0.52 s con 21). Aquí, con 4 hilos, limitar a 1 hilo la predicción solo ahorra un
+   4-8 %. En máquinas grandes, el equivalente de D9 (LightGBM) para HGB puede valer mucho
+   más: **falta medirlo** allí.
+
+Revisión crítica de sus scripts y conclusiones:
+- `strategies.py` evalúa E3 con el tiempo secuencial **medido** como estimación (lo dicen);
+  el código real usa `t_fit × n_fits`, que además sobreestima con ajustes de milisegundos
+  (Ridge: 1.06 s estimados frente a 0.55 s reales). No afecta hoy porque los lineales
+  van a 1 antes del umbral, pero sí a cualquier propuesta que quite la regla lineal.
+- Escenario "frío" de V2: mediana en caliente + 72 % del arranque medido. Es una
+  aproximación razonable; mis medidas en frío reales coinciden en orden de magnitud.
+- Su veredicto "XGBoost, CatBoost, RF/ET con hilos propios: sin regla nueva" se apoya en
+  22 procesadores; con 4, XGBoost pierde (arriba) y CatBoost apenas gana (1.1×).
+
+Documentación frente a código (notebook de la FAQ, `llms-base.txt`, skills):
+- La tabla de reglas y el umbral del notebook coinciden con el código.
+- **Inexacto**: "Without refit ... `'auto'` runs them in one process" y "Do not expect
+  gains from n_jobs without refit": cierto en un backtesting suelto, **falso en las
+  búsquedas**, donde `'auto'` sí paraleliza folds sin refit.
+- **Inexacto**: "Do not expect gains ... with `ForecasterStats`": `'auto'` no lo
+  paraleliza, pero un `n_jobs` entero sí paraleliza `backtesting_stats` con refit y gana
+  (aquí 1.56× con un Arima estacional; ellos ×2.3-2.5 en caliente).
+- **Inexacto**: "XGBoost ... running several of them in each worker makes them compete
+  for the same cores": XGBoost respeta el límite de loky (1 hilo por worker); CatBoost,
+  LightGBM y `n_jobs=-1` anidado no.
+- **Falta**: el aviso de LightGBM habla de `n_jobs=-1` fuera de los workers; no dice que
+  `LGBMRegressor()` por defecto con `n_jobs > 1` en skforecast (o dentro de un
+  `TransformedTargetRegressor` con `'auto'`) es ~100× más lento en Linux.
+- `llms-base.txt` y los skills solo dan firmas (`n_jobs='auto'`): sin contradicciones.

@@ -82,3 +82,51 @@ load before/after: 0.52 3.72 3.76 / 1.06 3.45 3.67
 
 Same result in every config: yes
 
+### h1_grid_refit_false (cold, 4 CPU, 5 reps) HGB, steps=168 (horizonte largo como en la revisión previa), 2 candidatos
+
+spec: `{"kind": "grid", "est": "hgb", "n": 5000, "steps": 168, "n_folds": 10, "refit": false, "lags": 48, "param_grid": {"max_depth": [3, 6]}}`  
+load before/after: 0.08 0.94 1.65 / 1.47 1.21 1.71
+
+| n_jobs | used | median s | min s | max s | peak MB | est. work s | fp |
+|---|---|---|---|---|---|---|---|
+| 1 | 1 | 3.686 | 3.564 | 4.016 | nan | - | ef5dd00005 |
+| auto | 3 | 2.797 | 2.627 | 2.901 | nan | - | ef5dd00005 |
+
+Same result in every config: yes
+
+### h1_grid_refit_false (cold, 4 CPU, 5 reps) RF, steps=168, 2 candidatos
+
+spec: `{"kind": "grid", "est": "rf", "n": 5000, "steps": 168, "n_folds": 10, "refit": false, "lags": 48, "param_grid": {"n_estimators": [50, 100]}}`  
+load before/after: 1.35 1.19 1.70 / 1.41 1.30 1.68
+
+| n_jobs | used | median s | min s | max s | peak MB | est. work s | fp |
+|---|---|---|---|---|---|---|---|
+| 1 | 1 | 9.789 | 9.343 | 10.111 | nan | - | f45db6047a |
+| auto | 3 | 11.292 | 10.955 | 11.565 | nan | - | f45db6047a |
+
+Same result in every config: yes
+
+### h1_grid_refit_false (cold, 4 CPU, 5 reps) LGBM(n_jobs=1)
+
+spec: `{"kind": "grid", "est": "lgbm", "est_params": {"n_jobs": 1}, "n": 2000, "steps": 24, "n_folds": 20, "refit": false, "lags": 24, "param_grid": {"num_leaves": [15, 31], "learning_rate": [0.05, 0.1]}}`  
+load before/after: 0.43 1.02 1.55 / 0.74 1.03 1.54
+
+| n_jobs | used | median s | min s | max s | peak MB | est. work s | fp |
+|---|---|---|---|---|---|---|---|
+| 1 | 1 | 0.568 | 0.514 | 0.617 | nan | - | 2c5c81df5a |
+| auto | 3 | 1.990 | 1.942 | 2.037 | nan | - | 2c5c81df5a |
+
+Same result in every config: yes
+
+### h1_grid_refit_false (warm, 4 CPU, 5 reps) LGBM(n_jobs=1)
+
+spec: `{"kind": "grid", "est": "lgbm", "est_params": {"n_jobs": 1}, "n": 2000, "steps": 24, "n_folds": 20, "refit": false, "lags": 24, "param_grid": {"num_leaves": [15, 31], "learning_rate": [0.05, 0.1]}}`  
+load before/after: 0.74 1.03 1.54 / 0.78 1.03 1.53
+
+| n_jobs | used | median s | min s | max s | peak MB | est. work s | fp |
+|---|---|---|---|---|---|---|---|
+| 1 | 1 | 0.486 | 0.445 | 0.573 | nan | - | 2c5c81df5a |
+| auto | 3 | 0.731 | 0.665 | 0.761 | nan | - | 2c5c81df5a |
+
+Same result in every config: yes
+
