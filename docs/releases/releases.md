@@ -79,6 +79,8 @@ The main changes in this release are:
 
 + The predictions of <code>[backtesting_forecaster]</code>, <code>[backtesting_forecaster_multiseries]</code>, <code>[backtesting_stats]</code> and <code>[backtesting_foundation]</code> have two more columns after `fold`: `step`, the step of the forecast horizon (from `gap + 1`), and `y_true`, the true value. The metrics end with `n_evaluated`, the points evaluated, per series and summed in the aggregated rows. Error and coverage by horizon no longer need a merge with the series. [User guide](../user_guides/backtesting.ipynb#error-and-coverage-by-forecast-horizon) ([#1437](https://github.com/skforecast/skforecast/pull/1437))
 
++ <code>[plot_prediction_intervals]</code> takes the true values from the `y_true` column of the backtesting predictions when `y_true` is not given, and `target_variable` can be omitted when `y_true` has a single column. Predictions of several series raise a `ValueError`: filter one level first.
+
 + `metric='root_mean_squared_error'` (RMSE, from scikit-learn) is accepted by name in backtesting and hyperparameter search, as `'mean_squared_error'` already was. Before, it had to be passed as a function. ([#1424](https://github.com/skforecast/skforecast/pull/1424))
 
 
