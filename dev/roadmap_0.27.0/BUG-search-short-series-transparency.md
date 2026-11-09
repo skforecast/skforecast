@@ -931,7 +931,7 @@ de aprobación del usuario)
 |:--|:--|:--|
 | `plotting` | Hecha. Celdas 6 y 7 con `predictions['y_true']`; quitado `data_test` de la celda 4 (ya no se usaba). Residuos y figuras idénticos. | a1f94f891 |
 | `time-series-differentiation` | Hecha. Celda 29 agrupa por `fold` (3 líneas menos); `step` no (`.iloc[::steps]` es más corto). La celda 31 sigue comprobando que coincide con la diferenciación interna. | 5c659d2d9 |
-| `backtesting` | Celda 16 `predictions[['y_true', 'pred']].plot(ax=ax)` aprobada y aplicada en la copia de trabajo, **sin commit: la página no se puede ejecutar** por el bug de `num_threads` (abajo). | |
+| `backtesting` | Hecha. Celda 16 `predictions[['y_true', 'pred']].plot(ax=ax)` y celda 41 con `y_true=predictions['y_true']`. Commit sin ejecutar por el bug de `num_threads` (abajo); **ejecutada el 2026-11-09** tras fusionar #1472. Salidas idénticas salvo la figura de la celda 16: mismos datos, la leyenda pasa de `y` a `y_true` y el eje x pierde la etiqueta `datetime` (el índice de las predicciones no tiene nombre); aceptado por el usuario. | 6ab0621c4, 774e621cc, 03f73a589 |
 | `probabilistic-forecasting-conformal-calibration` | Pasa a **no**: `ConformalIntervalCalibrator.fit` toma el nombre de la serie de `y_true`; con `predictions_cal['y_true']` la cobertura y los factores saldrían bajo `'y_true'` en lugar de `'users'` (haría falta `.rename('users')`). | |
 
 **Bug encontrado al ejecutar `backtesting` (2026-11-09, no es de esta rama):** ae67c3cfc
@@ -943,6 +943,9 @@ de aprobación del usuario)
 `KeyError: 'num_threads'` (celda 60 de `backtesting`, "Backtesting on training data").
 Necesita su propio arreglo y PR antes de volver a ejecutar esa guía. `backtesting` va con
 commit sin ejecutar (6ab0621c4, 774e621cc): las salidas guardadas son las anteriores.
+**Arreglado con #1472** (fusionado en `0.27.x` el 2026-11-09; los hilos salen de `n_jobs`,
+no de `booster_.params`). Fusionado `origin/0.27.x` en la rama (00d8d51f5) y `backtesting`
+ejecutada (03f73a589).
 
 **`plot_prediction_intervals` toma `y_true` de las predicciones (0e44d7759):** muchas
 funciones propias pedían el valor real aparte. Medido en las guías:
@@ -963,8 +966,8 @@ estas dos sin ejecutar. Las ejecutadas dan figuras idénticas (píxel a píxel e
 `conformal-calibration` 6 y 10, que pierden el aviso de Matplotlib) y las mismas coberturas.
 
 **Cierre del punto 3 (2026-11-09):** 10 guías cambiadas y comprobadas; pendientes, por
-causas externas: volver a ejecutar `backtesting` (bug de `num_threads`) y la guía RNN, y
-`comparing-forecasting-models` (bug del MASE). Rama local `docs/backtesting-y-true`, sin
+causas externas: volver a ejecutar `backtesting` (bug de `num_threads`; **hecho el
+2026-11-09**, ver arriba) y la guía RNN, y `comparing-forecasting-models` (bug del MASE). Rama local `docs/backtesting-y-true`, sin
 push ni PR.
 
 **Bug aparte del MASE (2026-11-09):** el backtesting y las búsquedas escalan MASE/RMSSE
