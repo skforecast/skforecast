@@ -34,8 +34,8 @@ def test_limit_n_jobs_by_workload_output_1_when_nothing_to_share(
      ("win32", 0.5, 8),
      ("linux", 0.2, 1),
      ("linux", 0.3, 8),
-     ("darwin", 0.4, 1),
-     ("darwin", 0.5, 8)],
+     ("darwin", 0.2, 1),
+     ("darwin", 0.3, 8)],
     ids=lambda value: f"{value}"
 )
 def test_limit_n_jobs_by_workload_output_with_the_minimum_work_of_each_platform(
@@ -44,8 +44,8 @@ def test_limit_n_jobs_by_workload_output_with_the_minimum_work_of_each_platform(
     """
     Test that limit_n_jobs_by_workload returns 1 when the estimated work
     (`n_fits * fit_seconds`, here 9 fits) is below the minimum of the platform
-    (4 seconds on Windows, 2 seconds on Linux, 4 seconds on any other
-    platform), and `n_jobs` otherwise.
+    (4 seconds on Windows, 2 seconds on Linux and macOS, 4 seconds on any
+    other platform), and `n_jobs` otherwise.
     """
     monkeypatch.setattr(sys, "platform", platform)
     n_jobs = limit_n_jobs_by_workload(

@@ -895,9 +895,9 @@ def select_n_jobs_backtesting(
 # times the number of refits, which gives about 80% of the real sequential
 # time. Measured with 21 workers that import skforecast, parallelizing pays
 # off from about 5 s of real sequential work on Windows (4 s of estimated
-# workload) and from about 2.8 s on Linux (2 s). macOS has not been measured
-# yet and uses the value of Windows.
-_MIN_PARALLEL_WORKLOAD_SECONDS = {"win32": 4.0, "linux": 2.0}
+# workload), from about 2.8 s on Linux (2 s) and from about 2.4 s on macOS
+# (2 s, Apple M5 with 9 workers). Other platforms use the value of Windows.
+_MIN_PARALLEL_WORKLOAD_SECONDS = {"win32": 4.0, "linux": 2.0, "darwin": 2.0}
 _MIN_PARALLEL_WORKLOAD_SECONDS_DEFAULT = 4.0
 
 
@@ -917,7 +917,7 @@ def limit_n_jobs_by_workload(
     forecaster (no refit), then `n_jobs = 1`. Predicting the folds of a fitted
     forecaster takes less time than the workers take to start.
     - If the estimated workload, `n_fits * fit_seconds`, is below the minimum
-    of the platform (4 seconds on Windows and macOS, 2 seconds on Linux), then
+    of the platform (4 seconds on Windows, 2 seconds on Linux and macOS), then
     `n_jobs = 1`. If the time of the initial fit is not known
     (`fit_seconds=None`), the workload is not estimated.
     - Otherwise, `n_jobs = min(n_jobs, n_tasks)`: no more workers are started
