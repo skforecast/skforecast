@@ -32,7 +32,7 @@ The main changes in this release are:
 
 + <span class="badge text-bg-fix">Fix</span> Multi-series hyperparameter searches rank the candidates by the weighted average of the metric, the default: the columns of the aggregated metrics were swapped, so they ranked by the simple average when the series were evaluated on different numbers of points. ([#1438](https://github.com/skforecast/skforecast/pull/1438))
 
-+ <span class="badge text-bg-fix">Fix</span> In backtesting and hyperparameter search, <code>[mean_absolute_scaled_error]</code> and <code>[root_mean_squared_scaled_error]</code> scale each error with the naive forecast over the observations before its forecast origin, the same for every model, so they compare forecasters and search candidates as the error does. The scale depended on the `window_size` of the forecaster and on `refit`. ([#1471](https://github.com/skforecast/skforecast/pull/1471))
++ <span class="badge text-bg-fix">Fix</span> <code>[mean_absolute_scaled_error]</code> and <code>[root_mean_squared_scaled_error]</code> can now compare models in backtesting and hyperparameter search: their scale no longer depends on the lags of the forecaster or on `refit`. ([#1471](https://github.com/skforecast/skforecast/pull/1471))
 
 !!! warning "Before upgrading"
 
@@ -54,7 +54,7 @@ The main changes in this release are:
 
     + <code>[ForecasterRecursiveMultiSeries]</code> with `encoding='ordinal'` (the default), `'ordinal_category'` or `None` and series not given in alphabetical order: the rows of each step in the output of `predict` and the other predict methods with `levels=None`, and the keys of `in_sample_residuals_`, follow the order of the series instead of the alphabetical order. The values are the same; pass `levels` to fix an order.
 
-    + <code>[mean_absolute_scaled_error]</code> and <code>[root_mean_squared_scaled_error]</code> in the four backtesting functions and in the hyperparameter searches: their values change, and so may the order of the results and the model selected with `return_best` when one of them ranks the candidates. Metrics with a `y_train` argument receive the series before the first fold.
+    + <code>[mean_absolute_scaled_error]</code> and <code>[root_mean_squared_scaled_error]</code> in backtesting and hyperparameter search: their values change, and so may the model selected with `return_best` when one of them ranks the candidates. Custom metrics with a `y_train` argument receive the series before the first fold.
 
     And some code needs to be updated:
 
@@ -106,9 +106,7 @@ The main changes in this release are:
 
 + The results of the hyperparameter searches include `n_evaluated`, the points evaluated by each candidate. A single `MissingValuesWarning` at the end of the search lists the candidates with less than 95% of the points of the most complete one, whose metrics are not comparable, and how to compare them: the series to pass in `levels`, or filling the gaps of `y` (single series, <code>[OneStepAheadFold]</code> and `dropna_from_series=True`). A metric named `n_evaluated` raises a `ValueError`. [User guide](../user_guides/hyperparameter-tuning-and-lags-selection.ipynb#series-of-different-length-compare-candidates-on-the-same-points) ([#1447](https://github.com/skforecast/skforecast/pull/1447), [#1452](https://github.com/skforecast/skforecast/pull/1452), [#1456](https://github.com/skforecast/skforecast/pull/1456))
 
-+ In backtesting and hyperparameter search, <code>[mean_absolute_scaled_error]</code> and <code>[root_mean_squared_scaled_error]</code> scale each error with the naive forecast over all the observations before its forecast origin. The scale left out the first `window_size` observations and, with `refit=True`, included the test of previous folds. Their multi-series `pooling` is the mean of the scaled errors of all the points; other metrics with `y_train` receive the series before the first fold. ([#1471](https://github.com/skforecast/skforecast/pull/1471))
-
-+ <code>[backtesting_forecaster_multiseries]</code> and the multi-series hyperparameter searches compute <code>[mean_absolute_scaled_error]</code> and <code>[root_mean_squared_scaled_error]</code> about 3 times faster and with much less memory (10,000 series of 1,500 observations: 2.2 s and 68 MB instead of 6.4 s and 2.6 GB). ([#1471](https://github.com/skforecast/skforecast/pull/1471))
++ In backtesting and hyperparameter search, <code>[mean_absolute_scaled_error]</code> and <code>[root_mean_squared_scaled_error]</code> scale each error with the error of the naive forecast on the observations before that prediction, so models with the same errors get the same value. Before, this scale depended on the lags, on `refit` and, with multiple series, on passing them as a DataFrame or a dict. Custom metrics with `y_train` receive the series before the first fold. With multiple series, both metrics are 3 times faster. ([#1471](https://github.com/skforecast/skforecast/pull/1471))
 
 + The hyperparameter searches show each warning of the candidates once, with the number of candidates in which it is raised, pointing to the line of your code that calls the search. Before, grid and random search showed only those of the first candidate, and Bayesian search repeated them in every trial. Candidates skipped with an error are reported in a single warning, grouped by error, and `LongTrainingWarning` once, with the fits of the whole search. Results are unchanged. ([#1452](https://github.com/skforecast/skforecast/pull/1452))
 
@@ -200,8 +198,6 @@ The main changes in this release are:
 + <code>[PopulationDriftDetector]</code> raised a `KeyError` in `predict` with multiple series when the series level of the index was a `category` with unused categories; `fit` also created an empty detector for each of them, with warnings. Only the categories with data are used now, as pandas 3 does. ([#1448](https://github.com/skforecast/skforecast/pull/1448))
 
 + <code>[plot_residuals]</code> ignored the `fig` argument when another figure was active: the subplots were drawn on the active figure and `fig` was returned empty. ([#1386](https://github.com/skforecast/skforecast/issues/1386), [#1387](https://github.com/skforecast/skforecast/pull/1387))
-
-+ Fixed an issue in <code>[backtesting_forecaster_multiseries]</code> and the multi-series hyperparameter searches where <code>[mean_absolute_scaled_error]</code> and <code>[root_mean_squared_scaled_error]</code> of a series that starts after the others were different with a wide DataFrame and with a dict. ([#1471](https://github.com/skforecast/skforecast/pull/1471))
 
 
 ## 0.26.0 <small>Oct 8, 2026</small> { id="0.26.0" }
