@@ -925,6 +925,24 @@ de aprobación del usuario)
     `stacking-ensemble`, `skforecast-in-GPU`; `forecasting-statistical-models` 34 y
     `forecasting-sarimax-arima` 47 vienen de `predict`.
 
+**Fase 3: aplicado** (aprobado "sí" a las páginas propuestas y "no" a las dudosas):
+
+| Página | Estado | Commit |
+|:--|:--|:--|
+| `plotting` | Hecha. Celdas 6 y 7 con `predictions['y_true']`; quitado `data_test` de la celda 4 (ya no se usaba). Residuos y figuras idénticos. | a1f94f891 |
+| `time-series-differentiation` | Hecha. Celda 29 agrupa por `fold` (3 líneas menos); `step` no (`.iloc[::steps]` es más corto). La celda 31 sigue comprobando que coincide con la diferenciación interna. | 5c659d2d9 |
+| `backtesting` | Celda 16 `predictions[['y_true', 'pred']].plot(ax=ax)` aprobada y aplicada en la copia de trabajo, **sin commit: la página no se puede ejecutar** por el bug de `num_threads` (abajo). | |
+| `probabilistic-forecasting-conformal-calibration` | Pasa a **no**: `ConformalIntervalCalibrator.fit` toma el nombre de la serie de `y_true`; con `predictions_cal['y_true']` la cobertura y los factores saldrían bajo `'y_true'` en lugar de `'users'` (haría falta `.rename('users')`). | |
+
+**Bug encontrado al ejecutar `backtesting` (2026-11-09, no es de esta rama):** ae67c3cfc
+("Respect the threads of LGBMRegressor in the fast prediction path", 2026-11-08) lee
+`booster.params["num_threads"]` en `_build_predict_function` (`skforecast/utils/utils.py`).
+`copy.deepcopy` de un `LGBMRegressor` ajustado pierde `num_threads` en `booster_.params`
+(lightgbm 4.6.0; con `pickle` se conserva), así que un backtesting con
+`initial_train_size=None` y un forecaster LightGBM ya entrenado falla con
+`KeyError: 'num_threads'` (celda 60 de `backtesting`, "Backtesting on training data").
+Necesita su propio arreglo y PR antes de volver a ejecutar esa guía.
+
 **Bug aparte del MASE (2026-11-09):** el backtesting y las búsquedas escalan MASE/RMSSE
 con `y_train` sin las primeras `window_size` observaciones (`_validation.py`, bloque de
 `_any_metric_needs_y_train`), así que el denominador cambia con el modelo. En h2o (168
