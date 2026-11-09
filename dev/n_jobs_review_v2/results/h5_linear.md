@@ -73,3 +73,15 @@ load before/after: 1.46 3.23 3.58 / 2.24 3.12 3.52
 
 Same result in every config: yes
 
+### h5_linear (cold, 4 CPU, 5 reps) multiseries Ridge, 50 series x 10000, 80 folds
+
+spec: `{"kind": "backtest_ms", "est": "ridge", "n": 10000, "n_series": 50, "steps": 24, "n_folds": 80, "refit": true, "fixed_train_size": false, "lags": 24}`  
+load before/after: 1.50 1.63 2.25 / 2.90 2.13 2.36
+
+| n_jobs | used | median s | min s | max s | peak MB | est. work s | fp |
+|---|---|---|---|---|---|---|---|
+| 1 | 1 | 12.085 | 11.090 | 12.677 | 427 | - | 9aa5ec4029 |
+| 3 | 3 | 8.649 | 8.435 | 8.960 | 1473 | - | 9aa5ec4029 |
+
+Same result in every config: yes
+

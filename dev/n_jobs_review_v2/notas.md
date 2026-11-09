@@ -379,3 +379,93 @@ Conclusiones:
   (`n_jobs != 1` → 1) es la decisión segura.
 - Enviar a los folds con refit un forecaster **sin ajustar** (H2) evitaría serializar el
   booster en el hilo de loky: H2 gana una justificación más allá de la IPC.
+
+### H7. ForecasterDirect (ajuste de los pasos, `'auto'` sin umbral)
+
+Caso: `ForecasterDirect(...).fit` + `predict`, 24 lags, frío, 4 CPU.
+
+| Estimador, datos, pasos | n_jobs=1 | 'auto' (=3) |
+|---|---|---|
+| RF 10 árboles, n=500, 6 pasos, 12 lags | **0.19 (0.15)** | 1.51 (1.49) |
+| RF 10 árboles, n=2000, 12 pasos | 2.25 (1.98) | 2.23 (2.14) |
+| XGB, n=2000, 12 pasos | **1.99 (1.78)** | 2.99 (2.87) |
+| HGB, n=2000, 12 pasos | 3.35 (3.17) | **2.50 (2.32)** |
+
+Conclusión: H7 confirmada. Sin umbral, un Direct barato paga el arranque completo
+(+1.3 s, 8× en el peor caso medido); el equilibrio está otra vez en ~2.2-2.4 s de
+trabajo; XGB pierde un 50 % (hilos frente a procesos, como en el backtesting).
+
+### H8. Estadísticos (`'auto'` = 1 siempre)
+
+`backtesting_stats`, `refit=True`, frío, 4 CPU. Ojo: la **primera** ejecución tras
+instalar compila numba (caché en disco) y la infla: el piloto dio Ets(m=24) 8.47 s
+con 1 frente a 4.55 s con 3, que con la caché caliente es al revés.
+
+| Modelo, datos | 'auto' (=1) | n_jobs=3 |
+|---|---|---|
+| Ets(m=1), n=500, 10 folds de 12 | **0.60 (0.52)** | 2.49 (2.43) |
+| Ets(m=24) selección automática, n=1500, 10 folds de 24 | **3.28 (2.75)** | 4.37 (4.18) |
+| Arima(2,1,1)(1,1,1)24, n=1500, 10 folds (3 reps) | 18.55 (18.55) | **11.92 (10.60)** |
+
+Primer ajuste con selección frente a reajuste con parámetros congelados
+(`freeze_params=True`, el defecto): auto-Arima 2.21 s frente a 0.031 s; auto-Ets
+1.79 s frente a 0.080 s.
+
+Comprobación de `refit` en stats (`_validation.py:_backtesting_stats`, l. 2263-2277):
+todo estimador que no sea `skforecast.stats.Sarimax` se fuerza a `refit=True`
+(`IgnoredArgumentWarning`); `Sarimax` admite `refit=False` y entero (y entonces
+`n_jobs=1`). La suposición "refit siempre True" es cierta salvo con `Sarimax`.
+
+Conclusión: `'auto'` = 1 acierta en los casos pequeños y medianos (paralelizar pierde
+hasta 4×: arranque + carga de numba en cada worker), y deja 1.56× en modelos
+estacionales de orden fijo con series largas (o con `freeze_params=False`). Un umbral
+basado en el ajuste inicial **no** sirve con `freeze_params=True`: el ajuste inicial
+incluye la selección y sobreestima los reajustes 25-70×.
+
+### H9. `refit=False` con intervalos por bootstrapping
+
+RF 100, n=2000, 20 folds, `interval=0.8`, `n_boot=250`, frío: 'auto' (=1) **2.34
+(2.20)** frente a 3.56 (3.37) con 3. H9 descartada: el bootstrapping está vectorizado y
+`'auto'` = 1 acierta.
+
+### H10. Memoria de los trozos de los folds en multiseries
+
+Ridge, 50 series × 10 000, `refit=True`, `n_jobs=1`: pico 402 MB con 10 folds y 426 MB
+con 80. Los trozos son vistas; H10 descartada. El paralelismo sí multiplica la memoria:
+mismo caso con 80 folds, 427 MB con 1 frente a 1473 MB con 3 (3.4×), y 12.09 (11.09) s
+frente a 8.65 (8.44) s (1.40×).
+
+### Búsquedas con `refit=True` (folds en paralelo, workers reutilizados)
+
+| Rejilla (4 candidatos, n=2000, 10 folds) | n_jobs=1 | 'auto' (=3) |
+|---|---|---|
+| RF barato (`n_estimators` 5/10 × `max_depth` 5/None) | 3.79 (3.66) | **3.25 (3.11)** |
+| XGB (`max_depth` × `learning_rate`) | **4.66 (4.49)** | 5.87 (5.77) |
+
+Con `refit=True` la regla actual funciona (el arranque se amortiza entre candidatos),
+salvo con XGB (−26 %).
+
+### H11. Prototipo: candidatos en paralelo en lugar de folds (`refit=False`)
+
+`cases.py:grid_candidates`: cada candidato es un `backtesting_forecaster(n_jobs=1)` y
+los candidatos van en un `Parallel`. Mismas métricas que la búsqueda (huella igual).
+
+| Rejilla RF, `refit=False`, 20 folds | búsqueda n_jobs=1 | búsqueda 'auto' (folds) | candidatos ×3 | candidatos ×4 |
+|---|---|---|---|---|
+| 4 candidatos (ejecuciones separadas) | 4.06 (3.99) | 6.41 (6.28) | 3.40 (3.09) | 2.83 (2.63) |
+| 12 candidatos (misma ejecución; 1 = candidatos en serie) | 8.43 (8.11) | — | 4.87 (4.67) | 4.28 (4.00) |
+
+Conclusión: con `refit=False`, paralelizar candidatos da 1.7-2.0× frente a `n_jobs=1`
+(con arranque en frío incluido) y ~3× frente al `'auto'` actual. Es un cambio de diseño
+(avisos, `output_file`, barra de progreso, bayesiana secuencial, límites de hilos para
+LightGBM/CatBoost dentro de los workers).
+
+### H2 (cont.). Prototipo "forecaster sin ajustar en los folds con refit"
+
+`probe_unfitted_refit.py` (XGB, 20 folds, refit): ambas variantes dejan el proceso
+contaminado (`n_jobs=1` posterior: 7.98 s actual, 8.45 s variante, frente a 3.4-3.6 s
+en limpio). El fold 0 no reajusta (se ajusta en el principal) y sigue enviando el
+forecaster ajustado. Para evitar la contaminación habría que predecir el fold 0 en el
+principal además de enviar copias sin ajustar. La parte RF del prototipo superó el
+tiempo límite (100 árboles × 13 ejecuciones, demasiado para un experimento corto): no
+se repite porque el ahorro de IPC con refit ya está acotado (≤ 5 %).

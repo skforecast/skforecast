@@ -1,0 +1,5 @@
+name,mode,cpus,n_jobs,rep,seconds,used,n_parallel,fp,peak_mb,spec
+h10_memory_ms,cold,4,1,0,2.101,[1],1,00ca310268,401.86328125,"{""kind"": ""backtest_ms"", ""est"": ""ridge"", ""n"": 10000, ""n_series"": 50, ""steps"": 24, ""n_folds"": 10, ""refit"": true, ""fixed_train_size"": false, ""lags"": 24}"
+h10_memory_ms,cold,4,1,1,2.4363,[1],1,00ca310268,402.01171875,"{""kind"": ""backtest_ms"", ""est"": ""ridge"", ""n"": 10000, ""n_series"": 50, ""steps"": 24, ""n_folds"": 10, ""refit"": true, ""fixed_train_size"": false, ""lags"": 24}"
+h10_memory_ms,cold,4,1,0,12.6325,[1],1,9aa5ec4029,425.98828125,"{""kind"": ""backtest_ms"", ""est"": ""ridge"", ""n"": 10000, ""n_series"": 50, ""steps"": 24, ""n_folds"": 80, ""refit"": true, ""fixed_train_size"": false, ""lags"": 24}"
+h10_memory_ms,cold,4,1,1,12.3782,[1],1,9aa5ec4029,424.41796875,"{""kind"": ""backtest_ms"", ""est"": ""ridge"", ""n"": 10000, ""n_series"": 50, ""steps"": 24, ""n_folds"": 80, ""refit"": true, ""fixed_train_size"": false, ""lags"": 24}"

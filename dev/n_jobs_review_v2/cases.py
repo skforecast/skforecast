@@ -164,7 +164,6 @@ def build(spec):
             def run(n_jobs):
                 f = new_forecaster(n_jobs)
                 f.fit(y=y, exog=exog)
-                X = f.create_predict_X(steps=f.max_step, exog=None if exog is None else make_exog(n + f.max_step, n_exog).iloc[n:])
                 return fingerprint(f.predict(exog=None if exog is None else make_exog(n + f.max_step, n_exog).iloc[n:]).to_frame())
             return run
 
@@ -214,6 +213,34 @@ def build(spec):
                     )
                 return fingerprint(res[["mean_absolute_error"]])
             return run
+
+    if kind == "grid_candidates":
+        # Prototype: candidates in parallel (each one a backtesting with n_jobs=1)
+        # instead of the folds of each candidate. Same metrics as the grid search.
+        from itertools import product
+
+        from joblib import Parallel, delayed
+        from sklearn.model_selection import ParameterGrid
+
+        from skforecast.model_selection import backtesting_forecaster
+        from skforecast.recursive import ForecasterRecursive
+        y = make_y(n)
+        param_grid = list(ParameterGrid(spec["param_grid"]))
+
+        def one(params):
+            f = ForecasterRecursive(
+                estimator=make_estimator(est_name, {**est_params, **params}), lags=lags
+            )
+            return backtesting_forecaster(
+                forecaster=f, y=y, cv=cv, metric="mean_absolute_error", n_jobs=1,
+                show_progress=False,
+            )[0]["mean_absolute_error"].iloc[0]
+
+        def run(n_jobs):
+            n_jobs = 1 if n_jobs == "auto" else n_jobs
+            values = Parallel(n_jobs=n_jobs)(delayed(one)(p) for p in param_grid)
+            return fingerprint(pd.DataFrame({"mean_absolute_error": sorted(values)}))
+        return run
 
     if kind in ("backtest_ms", "grid_ms"):
         from skforecast.recursive import ForecasterRecursiveMultiSeries
