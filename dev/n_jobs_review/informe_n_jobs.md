@@ -1,11 +1,11 @@
 # Revisión de `n_jobs='auto'` en skforecast: medidas en Windows con una CPU híbrida
 
-El estudio (scripts, resultados e informe) está en `dev/n_jobs_review/`. Empezó el 7 de noviembre sobre `origin/0.27.x` @ `76e4500dd` (skforecast 0.27.0), en una rama local, y entra en el repositorio con el PR del umbral (rama `perf/n-jobs-auto-work-threshold`). Los demás cambios de código que salieron de él fueron en PRs aparte (sección 14). Cuando se cierren macOS y la documentación (D8), la carpeta se puede retirar de `dev/` con un PR pequeño antes de publicar la versión.
+El estudio (scripts, resultados e informe) está en `dev/n_jobs_review/`. Empezó el 7 de noviembre sobre `origin/0.27.x` @ `76e4500dd` (skforecast 0.27.0), en una rama local, y entra en el repositorio con el PR del umbral (rama `perf/n-jobs-auto-work-threshold`). Los demás cambios de código que salieron de él fueron en PRs aparte (sección 14). Cuando se cierre macOS, la carpeta se puede retirar de `dev/` con un PR pequeño antes de publicar la versión.
 
-**Estado a 8 de noviembre de 2026.**
+**Estado a 9 de noviembre de 2026.**
 - Las secciones 1 a 11 describen el estudio en Windows tal como se cerró el 7 de noviembre, con notas donde algo cambió después.
 - La sección 12 es la medida en Linux (WSL2, D7); la 13, un fallo que apareció durante ella (D9).
-- La sección 14 resume el estado de cada decisión. Todas están aplicadas salvo D8 (documentación).
+- La sección 14 resume el estado de cada decisión. Todas están aplicadas. D8 (el cuaderno de la documentación) va en la misma rama que D4 y D5.
 - El umbral de trabajo (D4 y D5) está implementado con los valores de Windows y Linux. Falta medir macOS: la sección 16 explica cómo hacerlo y qué cambiar después.
 
 Etiquetas: **[probado]** medido en esta máquina con los scripts de esta carpeta; **[verificado en código]** leído en el código fuente (skforecast o sus dependencias); **[documentado]** dicho por la documentación de una librería; **[inferido]** deducción sin medida directa.
@@ -558,7 +558,7 @@ Lectura:
 | D5 | Búsquedas: resolver `'auto'` una vez | (a) sí, junto con D4; (b) no | **(a)**, solo necesario si se adopta D4 | (a) por candidato, en la misma rama que D4 (sección 11.4) |
 | D6 | Regla de LightGBM con hilos propios | (a) mantener; (b) permitir paralelizar si `cpu_count() ≥ 16` | **(a)**: protege en máquinas pequeñas (×1,5 con 4) y en la grande pierde poco (×1,3) | (a), sin cambios. WSL2 la refuerza (sección 12.4) |
 | D7 | Medir en Linux (WSL2) antes de D4 | (a) subconjunto (bloque A + V1 + celdas clave, unas 2 h); (b) no | **(a)**: el umbral de 5 s está calibrado en Windows; si en Linux el arranque es mucho menor, D4 podría pasar a (c) | (a), hecho (31 min, sección 12) |
-| D8 | Documentación | (a) reescribir el cuaderno (sección 9.3) y recomendar estimadores de un hilo con refit; (b) solo corregir el texto de las reglas | **(a)**, en un PR de docs posterior a D1-D5 | Pendiente. El texto de reglas del cuaderno ya se corrigió en #1462 |
+| D8 | Documentación | (a) reescribir el cuaderno (sección 9.3) y recomendar estimadores de un hilo con refit; (b) solo corregir el texto de las reglas | **(a)**, en un PR de docs posterior a D1-D5 | Aplicada en la rama de D4 y D5 (el texto de reglas ya se corrigió en #1462) |
 | D9 | Las predicciones de LightGBM ignoran `n_jobs` (nueva, sección 13) | (a) pasar `num_threads` al booster; (b) siempre 1 hilo; (c) 1 hilo solo con una fila | **(a)** | (a), fusionado en #1464 |
 
 No se proponen cambios en el valor por defecto de `n_jobs` (`'auto'`) ni en la API pública.
@@ -996,11 +996,11 @@ Pendiente, por orden:
 
 1. **Revisar y abrir el PR de D4 y D5** (sección 11.4), rama `perf/n-jobs-auto-work-threshold`. Lleva también esta carpeta, en un commit aparte del código.
 2. **macOS**: medir y fijar su umbral, que hoy es el de Windows (sección 16). Puede ir en un PR pequeño después del de D4.
-3. **D8, el cuaderno `docs/faq/parallelization-skforecast.ipynb`** (sección 9.3), después de D4 (y, si se puede, de macOS). Además de lo de la sección 9.3, debería incluir:
-   - el umbral de trabajo: por qué un backtesting suelto pequeño no se paraleliza y cómo forzarlo con un `n_jobs` entero;
-   - las cifras de Linux;
-   - la recomendación de usar estimadores de un hilo al paralelizar los folds;
-   - el aviso sobre LightGBM con `n_jobs=-1` en Linux (sección 12.4).
+3. **D8, el cuaderno `docs/faq/parallelization-skforecast.ipynb`**: reescrito el 9 de noviembre en la rama de D4 y D5, siguiendo la sección 9.3.
+   - El texto explica qué se paraleliza y muestra las reglas de `'auto'` en una tabla de decisión, un diagrama HTML (como el del cuaderno de foundation models; Mermaid no está configurado en el sitio) y una celda que llama a `select_n_jobs_backtesting` con varios forecasters, de modo que las reglas que se ven son las de la versión instalada. Cita el umbral de trabajo de Windows (4 s) y Linux (2 s) y no el de macOS, pendiente de medir. Explica el arranque de los workers, los hilos de los estimadores, el aviso de LightGBM con `n_jobs=-1` en Linux y `LOKY_MAX_CPU_COUNT`, y cierra con cuatro recomendaciones.
+   - El benchmark usa `bike_sharing` y `store_sales` (50 series de una tienda), compara 1, `'auto'` y `cpu_count() - 1` y separa la primera llamada (con los workers parados) de la mediana de 3 más, con un gráfico de barras por caso. Tarda unos 5 min en esta máquina. Las salidas guardadas son de la tercera corrida del 9 de noviembre: la segunda coincidió con carga de fondo y salió el doble de lenta en todos los casos (y `'auto'` paralelizó el caso de 14 folds), y el `fit` secuencial de Direct varía hasta un 60 % entre llamadas incluso con la máquina tranquila; las conclusiones lo dicen.
+   - Las cifras de Linux no se citan: el texto solo dice que arrancar los workers cuesta más en Windows.
+   - Hallazgo al calibrarlo: cada worker importa las librerías con su primera tarea, así que una búsqueda con menos folds que workers reparte ese coste entre los primeros candidatos (4 candidatos de 6 folds: 10 s la primera vez frente a 3,6 en secuencial). Limitar el `n_jobs` de cada candidato al número de folds lo evitaría; no está medido ni aplicado.
 
 ## 15. Reproducción
 

@@ -427,8 +427,8 @@ faq/skforecast-benchmark.ipynb:
 faq/parallelization-skforecast.ipynb:
   title: Parallelization in skforecast
   description: >-
-    Parallelization in skforecast: how n_jobs speeds up fitting, backtesting and
-    hyperparameter search of forecasters, with benchmarks for each one.
+    What skforecast runs in parallel, how the automatic n_jobs decides, when to
+    set it yourself, and a benchmark of backtesting, fitting and search.
 
 faq/profiling-skforecast.ipynb:
   title: Profiling skforecast performance
