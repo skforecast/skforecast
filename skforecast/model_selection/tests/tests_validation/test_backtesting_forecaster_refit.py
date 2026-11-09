@@ -2183,7 +2183,7 @@ def test_output_backtesting_forecaster_refit_int_interval_yes_exog_yes_remainder
     """
     expected_metric = pd.DataFrame(
         {'mean_squared_error': [0.06099110404144631], 
-         'mean_absolute_scaled_error': [0.791393]}
+         'mean_absolute_scaled_error': [0.8213943811827986]}
     )
     expected_metric['coverage'] = [0.7]
     expected_metric['interval_width'] = [0.7023702828029286]

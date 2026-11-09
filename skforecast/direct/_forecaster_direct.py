@@ -1637,7 +1637,10 @@ class ForecasterDirect(ForecasterBase):
         y: pd.Series,
         initial_train_size: int,
         exog: pd.Series | pd.DataFrame | None = None
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray | None, dict[str, object]]:
+    ) -> tuple[
+        np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray | None,
+        dict[str, object], pd.Index
+    ]:
         """
         Create matrices needed to train and test the forecaster for one-step-ahead
         predictions. Uses `_create_train_X_y` to work directly with numpy arrays,
@@ -1671,6 +1674,9 @@ class ForecasterDirect(ForecasterBase):
         fit_kwargs : dict
             Precomputed keyword arguments for `estimator.fit`, including
             categorical feature configuration.
+        test_index : pandas Index
+            Index of `y` of each row of `X_test`, used to find the forecast
+            origin of each prediction in the metrics.
         
         """
 
@@ -1703,6 +1709,7 @@ class ForecasterDirect(ForecasterBase):
             X_test_exog,
             X_test_calendar,
             y_test,
+            test_index,
             *_
         ) = self._create_train_X_y(
                 y    = y.iloc[test_init:],
@@ -1733,9 +1740,10 @@ class ForecasterDirect(ForecasterBase):
             y_train_step     = y_train,
             train_index_step = train_index[step],
         )
-        X_test, y_test, _ = self._filter_nan_X_y_step(
-            X_train_step = X_test,
-            y_train_step = y_test,
+        X_test, y_test, test_index_step = self._filter_nan_X_y_step(
+            X_train_step     = X_test,
+            y_train_step     = y_test,
+            train_index_step = test_index[step],
         )
 
         sample_weight = self.create_sample_weights(X_train=train_index_step)
@@ -1757,7 +1765,7 @@ class ForecasterDirect(ForecasterBase):
             X=X_test, fit_kwargs=fit_kwargs, estimator=self.estimators_[step]
         )
 
-        return X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+        return X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index_step
 
     def create_sample_weights(
         self,

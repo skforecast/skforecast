@@ -1104,7 +1104,10 @@ class ForecasterRecursive(ForecasterBase):
         y: pd.Series,
         initial_train_size: int,
         exog: pd.Series | pd.DataFrame | None = None
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray | None, dict[str, object]]:
+    ) -> tuple[
+        np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray | None,
+        dict[str, object], pd.Index
+    ]:
         """
         Create matrices needed to train and test the forecaster for one-step-ahead
         predictions. Uses `_create_train_X_y` to work directly with numpy arrays
@@ -1137,6 +1140,9 @@ class ForecasterRecursive(ForecasterBase):
         fit_kwargs : dict
             Precomputed keyword arguments for `estimator.fit`, including
             categorical feature configuration.
+        test_index : pandas Index
+            Index of `y` of each row of `X_test`, used to find the forecast
+            origin of each prediction in the metrics.
         
         """
 
@@ -1166,6 +1172,7 @@ class ForecasterRecursive(ForecasterBase):
         (
             X_test,
             y_test,
+            test_index,
             *_
         ) = self._create_train_X_y(
                 y    = y.iloc[test_init:],
@@ -1193,7 +1200,7 @@ class ForecasterRecursive(ForecasterBase):
             X=X_test, fit_kwargs=fit_kwargs, estimator=self.estimator
         )
 
-        return X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+        return X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index
 
     def create_sample_weights(
         self,
