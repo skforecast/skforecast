@@ -941,7 +941,31 @@ de aprobación del usuario)
 (lightgbm 4.6.0; con `pickle` se conserva), así que un backtesting con
 `initial_train_size=None` y un forecaster LightGBM ya entrenado falla con
 `KeyError: 'num_threads'` (celda 60 de `backtesting`, "Backtesting on training data").
-Necesita su propio arreglo y PR antes de volver a ejecutar esa guía.
+Necesita su propio arreglo y PR antes de volver a ejecutar esa guía. `backtesting` va con
+commit sin ejecutar (6ab0621c4, 774e621cc): las salidas guardadas son las anteriores.
+
+**`plot_prediction_intervals` toma `y_true` de las predicciones (0e44d7759):** muchas
+funciones propias pedían el valor real aparte. Medido en las guías:
+`plot_prediction_intervals` (25 llamadas, ~14 con predicciones de backtesting) es la única
+que compensa; `ConformalIntervalCalibrator.fit` usa el nombre de la serie como clave,
+`set_out_sample_residuals` solo es verboso en multiserie (2 o 3 páginas) y `plot_residuals` y
+las métricas ya funcionan con `predictions['y_true']`. Cambio: `y_true` y `target_variable`
+opcionales (sin `y_true`, la columna `y_true` de las predicciones; sin `target_variable`, la
+única columna de `y_true`); `ValueError` si las predicciones tienen varios niveles.
+Compatible hacia atrás. Tests (9 en el archivo, 40 en `plot`), skill `prediction-intervals`,
+nota en Added (sin enlace de PR todavía). En las guías se usa la forma explícita
+`y_true=predictions['y_true']` (decisión del usuario: la forma corta esconde de dónde sale el
+valor real): `bootstrapped-residuals` (7 llamadas), `conformal-prediction` (2),
+`conformal-calibration` (22; 33 y 50 usan los intervalos calibrados, sin `y_true`),
+`probabilistic-forecasting-metrics` (25), `global-models` (la función de la celda 31 pierde
+el argumento `y_true`, también para la cobertura), `backtesting` (41) y `rnn-lstm` (103),
+estas dos sin ejecutar. Las ejecutadas dan figuras idénticas (píxel a píxel en
+`conformal-calibration` 6 y 10, que pierden el aviso de Matplotlib) y las mismas coberturas.
+
+**Cierre del punto 3 (2026-11-09):** 10 guías cambiadas y comprobadas; pendientes, por
+causas externas: volver a ejecutar `backtesting` (bug de `num_threads`) y la guía RNN, y
+`comparing-forecasting-models` (bug del MASE). Rama local `docs/backtesting-y-true`, sin
+push ni PR.
 
 **Bug aparte del MASE (2026-11-09):** el backtesting y las búsquedas escalan MASE/RMSSE
 con `y_train` sin las primeras `window_size` observaciones (`_validation.py`, bloque de
