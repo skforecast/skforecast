@@ -33,7 +33,7 @@ A rehearsal starts in either of two ways:
   git push origin test-publish-<version>-<n>
   ```
 
-- A manual run: Actions → Publish to PyPI → Run workflow, choosing the branch (or `gh workflow run publish-pypi.yml --ref <branch>`). GitHub only offers it once `publish-pypi.yml` is on the default branch, `main`.
+- A manual run: Actions → Publish to PyPI or TestPyPI → Run workflow, choosing the branch (or `gh workflow run publish-pypi.yml --ref <branch>`). GitHub only offers it once `publish-pypi.yml` is on the default branch, `main`.
 
 The run, titled "Rehearsal on TestPyPI (<ref>)", uploads `<version>.dev<run number>` to TestPyPI and never touches PyPI: only a published GitHub release goes there. Approve the deployment `testpypi` (the run → Review deployments) and wait for the job "Install from TestPyPI". If it fails, fix it on `X.Y.x` through a pull request and rehearse again on the new head. Then delete the tag:
 

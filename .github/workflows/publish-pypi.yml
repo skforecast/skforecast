@@ -1,4 +1,4 @@
-name: Publish to PyPI
+name: Publish to PyPI or TestPyPI
 
 # Publishes skforecast with Trusted Publishing (OIDC): no token or secret is
 # stored anywhere. Each index trusts this file of skforecast/skforecast with
@@ -26,8 +26,9 @@ name: Publish to PyPI
 # 6. Review and merge the pull request that the conda-forge bot opens in the
 #    feedstock, which builds from the sdist on PyPI.
 
-# The name of the workflow is fixed; the title of each run and the names of
-# the jobs say where it publishes.
+# The name of the workflow holds for every run; the title of each run and the
+# names of the jobs say where it publishes. Trusted Publishing identifies the
+# workflow by its file name, not by this name.
 run-name: ${{ github.event_name == 'release' && format('Publish {0} to PyPI', github.event.release.tag_name) || format('Rehearsal on TestPyPI ({0})', github.ref_name) }}
 
 on:
