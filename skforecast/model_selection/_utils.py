@@ -885,19 +885,14 @@ def select_n_jobs_backtesting(
         estimator = estimator[-1]
 
     # NOTE: Without refit, each task receives the fitted forecaster and only
-    # predicts. `HistGradientBoostingRegressor` takes about 0.5 ms to predict
-    # one row even with one thread, and `CatBoostRegressor` has a fixed cost of
-    # several hundred microseconds per call. Their fitted models weigh a few
-    # hundred KB (13 MB a RandomForest of 25 trees), so their predictions pay
-    # for sending them. In searches without refit with 22 threads,
-    # `HistGradientBoostingRegressor` was 1.5 to 2.8 times faster with
-    # `cpu_count() - 1` jobs than with 1 (20 candidates), and
-    # `CatBoostRegressor` 2.5 to 3 times (10 candidates, 274 folds of 24 steps;
-    # 1.6 times with 4 threads). The cost is the start of the workers in a
-    # small search: with CatBoost, 14 folds and 22 threads, the first call took
-    # 16 seconds instead of 11. LightGBM, XGBoost and RandomForest did not gain.
-    # Review this exception if these libraries make their prediction faster. A
-    # single backtesting without refit still uses one job
+    # predicts, so parallelizing only pays off when the prediction is slow and
+    # the fitted model is cheap to send to the workers. That is the case of
+    # `HistGradientBoostingRegressor` and `CatBoostRegressor` (high fixed cost
+    # per predict call, models of a few hundred KB): their searches without
+    # refit were 1.5 to 3 times faster in parallel, at the cost of starting the
+    # workers in small searches. LightGBM, XGBoost and RandomForest did not
+    # gain. Review this exception if these libraries make their prediction
+    # faster. A single backtesting without refit still uses one job
     # (`limit_n_jobs_by_workload`).
     if (
         refit is False
