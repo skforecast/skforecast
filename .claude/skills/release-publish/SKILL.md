@@ -44,7 +44,17 @@ git tag -d test-publish-<version>-<n>
 
 ## 4. GitHub release
 
-On the same commit that passed the rehearsal and the pull request checks:
+On the same commit that passed the rehearsal and the pull request checks.
+
+The workflow only checks the tag, the prerelease flag and the branch once the release is published, and by then Zenodo has archived it with a DOI. Run the same checks first, in a checkout of `<sha>` (the script only reads the files for `pypi`; it needs `packaging`):
+
+```bash
+git fetch origin X.Y.x && git switch --detach <sha>
+python tools/release/prepare_version.py pypi v<version> false   # true only for a prerelease
+gh api repos/skforecast/skforecast/compare/X.Y.x...<sha> --jq .status   # identical or behind
+```
+
+Then create and publish the release:
 
 ```bash
 gh release create v<version> --target <sha> --title "v<version>" \
@@ -62,4 +72,4 @@ Publishing it starts the workflow and Zenodo archives the release (a new DOI). T
 ## If something fails
 
 - Before the approval of `pypi`: reject the deployment, delete the release and its tag (`gh release delete v<version> --cleanup-tag`), fix on `X.Y.x` and start again from step 2. Zenodo has already archived the published release: review the new version there.
-- After the upload: PyPI never accepts the same file name twice, even after deleting it. If only part of the upload went through, "Re-run failed jobs" finishes it (`skip-existing` keeps what is there and the last job checks that the index serves the files built). A broken release is fixed with a new patch version; yank the broken one on PyPI if users should not install it.
+- After the upload: PyPI never accepts the same file name twice, even after deleting it. If only part of the upload went through, "Re-run failed jobs" finishes it (`skip-existing` keeps what is there and the last job checks that the index serves the files built). "Re-run all jobs" does not work there: it runs the build again, which fails because the version is already on the index (the same holds for a rehearsal). A broken release is fixed with a new patch version; yank the broken one on PyPI if users should not install it.
