@@ -134,6 +134,8 @@ The main changes in this release are:
 
 + <code>[fetch_dataset]</code> warns with a `MissingValuesWarning` when setting the frequency introduces rows with NaN for missing dates (currently only `wikipedia_visits`, with 59 missing days), keeps the order of the series within each date when sorting long-format datasets, and documents that these datasets have repeated dates and therefore no frequency. ([#1441](https://github.com/skforecast/skforecast/pull/1441))
 
++ New user guide [Forecasted exogenous variables](../user_guides/forecasted-exogenous-variables.ipynb): how to backtest a model whose exogenous variables are forecasts themselves (weather, prices, plans) with the values available when each prediction is made, instead of the observed ones, which make the metrics optimistic, and how to use them in production.
+
 
 **Fixed**
 
