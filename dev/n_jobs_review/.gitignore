@@ -1,6 +1,0 @@
-# Predictions stored for the equivalence check (about 110 MB); the result
-# of the check is kept in results/summary_equivalence.csv.
-results/preds/
-# Calibration run, not used in the report tables.
-results/pilot/
-__pycache__/
