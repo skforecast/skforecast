@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestRegressor, HistGradientBoostingRegressor
+from sklearn.tree import DecisionTreeRegressor
 from sklearn.linear_model import Ridge, LogisticRegression
 from sklearn.metrics import (
     mean_absolute_error, mean_absolute_percentage_error, r2_score, zero_one_loss
@@ -1950,11 +1951,13 @@ def test_bayesian_search_forecaster_MissingValuesWarning_n_evaluated_single_seri
     "estimator, refit, n_jobs, expected_n_jobs",
     [(Ridge(), True, 'auto', 1),
      (HistGradientBoostingRegressor(max_iter=5), True, 'auto', max(1, cpu_count() - 1)),
-     (HistGradientBoostingRegressor(max_iter=5), False, 'auto', 1),
+     (HistGradientBoostingRegressor(max_iter=5), False, 'auto', max(1, cpu_count() - 1)),
+     (DecisionTreeRegressor(max_depth=2), False, 'auto', 1),
      (HistGradientBoostingRegressor(max_iter=5), True, 2, 2)],
     ids=[
         'auto, Ridge', 'auto, HistGradientBoostingRegressor',
-        'auto, HistGradientBoostingRegressor, no refit', 'int'
+        'auto, HistGradientBoostingRegressor, no refit',
+        'auto, DecisionTreeRegressor, no refit', 'int'
     ]
 )
 def test_bayesian_search_forecaster_n_jobs_auto_resolved_with_the_rules_of_each_candidate(
@@ -1964,7 +1967,8 @@ def test_bayesian_search_forecaster_n_jobs_auto_resolved_with_the_rules_of_each_
     Test that bayesian_search_forecaster resolves `n_jobs='auto'` with
     `select_n_jobs_backtesting` for each candidate and passes the integer to
     `backtesting_forecaster`, so the work threshold of a single backtesting does not
-    reduce it. Without refit, the rules give one job. `Parallel` is mocked with a
+    reduce it. Without refit, the rules give one job, except with
+    `HistGradientBoostingRegressor`. `Parallel` is mocked with a
     sequential one, so no workers are started.
     """
     forecaster = ForecasterRecursive(estimator=estimator, lags=3)

@@ -13,6 +13,7 @@ from skforecast.metrics import root_mean_squared_scaled_error
 from sklearn.linear_model import Ridge, LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.tree import DecisionTreeRegressor
 from skforecast.recursive import ForecasterRecursive, ForecasterRecursiveClassifier
 from skforecast.direct import ForecasterDirect
 from skforecast.model_selection import backtesting_forecaster
@@ -391,11 +392,13 @@ def test_grid_search_forecaster_ForecasterRecursiveClassifier_follows_metric_dir
     "estimator, refit, n_jobs, expected_n_jobs",
     [(Ridge(), True, 'auto', 1),
      (HistGradientBoostingRegressor(max_iter=5), True, 'auto', max(1, cpu_count() - 1)),
-     (HistGradientBoostingRegressor(max_iter=5), False, 'auto', 1),
+     (HistGradientBoostingRegressor(max_iter=5), False, 'auto', max(1, cpu_count() - 1)),
+     (DecisionTreeRegressor(max_depth=2), False, 'auto', 1),
      (HistGradientBoostingRegressor(max_iter=5), True, 2, 2)],
     ids=[
         'auto, Ridge', 'auto, HistGradientBoostingRegressor',
-        'auto, HistGradientBoostingRegressor, no refit', 'int'
+        'auto, HistGradientBoostingRegressor, no refit',
+        'auto, DecisionTreeRegressor, no refit', 'int'
     ]
 )
 def test_grid_search_forecaster_n_jobs_auto_resolved_with_the_rules_of_each_candidate(
@@ -405,7 +408,8 @@ def test_grid_search_forecaster_n_jobs_auto_resolved_with_the_rules_of_each_cand
     Test that grid_search_forecaster resolves `n_jobs='auto'` with
     `select_n_jobs_backtesting` for each candidate and passes the integer to
     `backtesting_forecaster`, so the work threshold of a single backtesting does not
-    reduce it. Without refit, the rules give one job. `Parallel` is mocked with a
+    reduce it. Without refit, the rules give one job, except with
+    `HistGradientBoostingRegressor`. `Parallel` is mocked with a
     sequential one, so no workers are started.
     """
     forecaster = ForecasterRecursive(estimator=estimator, lags=3)

@@ -5,6 +5,7 @@ import pytest
 from unittest.mock import patch
 from joblib import Parallel, cpu_count
 from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.tree import DecisionTreeRegressor
 from skforecast.model_selection import backtesting_forecaster_multiseries
 import numpy as np
 import pandas as pd
@@ -941,11 +942,13 @@ def test_grid_search_forecaster_multiseries_when_exog_has_NaN_in_test_fold_and_e
     "estimator, refit, n_jobs, expected_n_jobs",
     [(Ridge(), True, 'auto', 1),
      (HistGradientBoostingRegressor(max_iter=5), True, 'auto', max(1, cpu_count() - 1)),
-     (HistGradientBoostingRegressor(max_iter=5), False, 'auto', 1),
+     (HistGradientBoostingRegressor(max_iter=5), False, 'auto', max(1, cpu_count() - 1)),
+     (DecisionTreeRegressor(max_depth=2), False, 'auto', 1),
      (HistGradientBoostingRegressor(max_iter=5), True, 2, 2)],
     ids=[
         'auto, Ridge', 'auto, HistGradientBoostingRegressor',
-        'auto, HistGradientBoostingRegressor, no refit', 'int'
+        'auto, HistGradientBoostingRegressor, no refit',
+        'auto, DecisionTreeRegressor, no refit', 'int'
     ]
 )
 def test_grid_search_forecaster_multiseries_n_jobs_auto_resolved_with_the_rules_of_each_candidate(
@@ -955,7 +958,8 @@ def test_grid_search_forecaster_multiseries_n_jobs_auto_resolved_with_the_rules_
     Test that grid_search_forecaster_multiseries resolves `n_jobs='auto'` with
     `select_n_jobs_backtesting` for each candidate and passes the integer to
     `backtesting_forecaster_multiseries`, so the work threshold of a single backtesting does not
-    reduce it. Without refit, the rules give one job. `Parallel` is mocked with a
+    reduce it. Without refit, the rules give one job, except with
+    `HistGradientBoostingRegressor`. `Parallel` is mocked with a
     sequential one, so no workers are started.
     """
     forecaster = ForecasterRecursiveMultiSeries(estimator=estimator, lags=3)

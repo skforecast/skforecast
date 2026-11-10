@@ -820,15 +820,18 @@ def select_n_jobs_backtesting(
     - If `refit` is an integer other than 0 or 1, then `n_jobs = 1`. The
     forecaster fitted in a fold is reused in the following ones, so the folds
     cannot run in parallel.
-    - If `refit` is `False` (or 0), then `n_jobs = 1`. The folds only predict
-    with the forecaster fitted before them, and sending the fitted forecaster
-    to the workers usually costs more than the predictions they share.
     - If forecaster is not 'ForecasterRecursive', 'ForecasterRecursiveClassifier'
     or 'ForecasterRecursiveMultiSeries', then `n_jobs = 1`. 'ForecasterDirect'
     and 'ForecasterDirectMultiVariate' parallelize the fit of their steps
     instead (see `skforecast.utils.select_n_jobs_fit_forecaster`), and
     'ForecasterStats', 'ForecasterEquivalentDate' and 'ForecasterRnn' are not
     parallelized.
+    - If `refit` is `False` (or 0), then `n_jobs = 1`, unless estimator, or the
+    last step of a `Pipeline`, is a `HistGradientBoostingRegressor`. The folds
+    only predict with the forecaster fitted before them, and sending the fitted
+    forecaster to the workers usually costs more than the predictions they
+    share. `HistGradientBoostingRegressor` predicts a few rows slowly and its
+    fitted model is small, so its predictions pay for sending it.
     - If estimator, or the last step of a `Pipeline`, is a linear model of
     scikit-learn (a subclass of `LinearModel`, such as `Ridge`), then
     `n_jobs = 1`. It is fitted and predicts in less time than the workers
@@ -863,9 +866,6 @@ def select_n_jobs_backtesting(
     if not isinstance(refit, bool) and refit != 1:
         return 1
 
-    if refit is False:
-        return 1
-
     if type(forecaster).__name__ not in {
         "ForecasterRecursive",
         "ForecasterRecursiveClassifier",
@@ -876,6 +876,21 @@ def select_n_jobs_backtesting(
     estimator = forecaster.estimator
     if isinstance(estimator, Pipeline):
         estimator = estimator[-1]
+
+    # NOTE: Without refit, each task receives the fitted forecaster and only
+    # predicts. `HistGradientBoostingRegressor` takes about 0.5 ms to predict
+    # one row even with one thread, and its fitted model weighs a few hundred
+    # KB (13 MB a RandomForest of 25 trees), so its predictions pay for sending
+    # it. In searches without refit (20 candidates, 22 threads) it was 1.5 to
+    # 2.8 times faster with `cpu_count() - 1` jobs than with 1; LightGBM,
+    # XGBoost, CatBoost and RandomForest were not. Review this exception if
+    # scikit-learn makes its prediction faster. A single backtesting without
+    # refit still uses one job (`limit_n_jobs_by_workload`).
+    if (
+        refit is False
+        and type(estimator).__name__ != "HistGradientBoostingRegressor"
+    ):
+        return 1
 
     if isinstance(estimator, LinearModel):
         return 1
