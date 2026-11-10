@@ -7,6 +7,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
 from lightgbm import LGBMRegressor, LGBMClassifier
+from catboost import CatBoostRegressor
 from skforecast.model_selection._utils import select_n_jobs_backtesting
 from skforecast.recursive import ForecasterRecursive, ForecasterRecursiveClassifier
 from skforecast.direct import ForecasterDirect, ForecasterDirectMultiVariate
@@ -28,6 +29,11 @@ from skforecast.recursive import ForecasterEquivalentDate
      (ForecasterRecursive(estimator=HistGradientBoostingRegressor(), lags=2), 0, max(1, cpu_count() - 1)),
      (ForecasterRecursive(estimator=HistGradientBoostingRegressor(), lags=2), False, max(1, cpu_count() - 1)),
      (ForecasterRecursive(estimator=make_pipeline(StandardScaler(), HistGradientBoostingRegressor()), lags=2), False, max(1, cpu_count() - 1)),
+     (ForecasterRecursive(estimator=CatBoostRegressor(verbose=0, allow_writing_files=False), lags=2), True, max(1, cpu_count() - 1)),
+     (ForecasterRecursive(estimator=CatBoostRegressor(verbose=0, allow_writing_files=False), lags=2), 2, 1),
+     (ForecasterRecursive(estimator=CatBoostRegressor(verbose=0, allow_writing_files=False), lags=2), 0, max(1, cpu_count() - 1)),
+     (ForecasterRecursive(estimator=CatBoostRegressor(verbose=0, allow_writing_files=False), lags=2), False, max(1, cpu_count() - 1)),
+     (ForecasterRecursive(estimator=make_pipeline(StandardScaler(), CatBoostRegressor(verbose=0, allow_writing_files=False)), lags=2), False, max(1, cpu_count() - 1)),
      (ForecasterRecursive(estimator=LGBMRegressor(n_jobs=1), lags=2), True, max(1, cpu_count() - 1)),
      (ForecasterRecursive(estimator=LGBMRegressor(n_jobs=1), lags=2), False, 1),
      (ForecasterRecursive(estimator=LGBMRegressor(), lags=2), True, 1),
@@ -46,6 +52,7 @@ from skforecast.recursive import ForecasterEquivalentDate
      (ForecasterDirect(estimator=HistGradientBoostingRegressor(), steps=3, lags=2), 2, 1),
      (ForecasterDirect(estimator=HistGradientBoostingRegressor(), steps=3, lags=2), 0, 1),
      (ForecasterDirect(estimator=HistGradientBoostingRegressor(), steps=3, lags=2), False, 1),
+     (ForecasterDirect(estimator=CatBoostRegressor(verbose=0, allow_writing_files=False), steps=3, lags=2), False, 1),
      (ForecasterDirect(estimator=LGBMRegressor(), steps=3, lags=2), True, 1),
      (ForecasterDirect(estimator=LGBMRegressor(), steps=3, lags=2), False, 1),
      (ForecasterDirectMultiVariate(estimator=HistGradientBoostingRegressor(), level='l1', steps=3, lags=2), True, 1),
@@ -57,6 +64,8 @@ from skforecast.recursive import ForecasterEquivalentDate
      (ForecasterRecursiveMultiSeries(estimator=HistGradientBoostingRegressor(), lags=2), 2, 1),
      (ForecasterRecursiveMultiSeries(estimator=HistGradientBoostingRegressor(), lags=2), 0, max(1, cpu_count() - 1)),
      (ForecasterRecursiveMultiSeries(estimator=HistGradientBoostingRegressor(), lags=2), False, max(1, cpu_count() - 1)),
+     (ForecasterRecursiveMultiSeries(estimator=CatBoostRegressor(verbose=0, allow_writing_files=False), lags=2), 2, 1),
+     (ForecasterRecursiveMultiSeries(estimator=CatBoostRegressor(verbose=0, allow_writing_files=False), lags=2), False, max(1, cpu_count() - 1)),
      (ForecasterRecursiveMultiSeries(estimator=LGBMRegressor(n_jobs=1), lags=2), True, max(1, cpu_count() - 1)),
      (ForecasterRecursiveMultiSeries(estimator=LGBMRegressor(n_jobs=1), lags=2), False, 1),
      (ForecasterRecursiveMultiSeries(estimator=LGBMRegressor(), lags=2), True, 1),

@@ -572,7 +572,8 @@ def _evaluate_grid_hyperparameters(
                         # backtesting: the workers are started once and reused by
                         # the following candidates. Without refit, the rules
                         # give one job (the folds only predict), except with
-                        # `HistGradientBoostingRegressor`.
+                        # `HistGradientBoostingRegressor` and
+                        # `CatBoostRegressor`.
                         n_jobs_candidate = (
                             select_n_jobs_backtesting(
                                 forecaster=forecaster_search, refit=cv.refit

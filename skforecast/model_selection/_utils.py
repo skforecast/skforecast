@@ -833,11 +833,12 @@ def select_n_jobs_backtesting(
     'ForecasterStats', 'ForecasterEquivalentDate' and 'ForecasterRnn' are not
     parallelized.
     - If `refit` is `False` (or 0), then `n_jobs = 1`, unless estimator, or the
-    last step of a `Pipeline`, is a `HistGradientBoostingRegressor`. The folds
-    only predict with the forecaster fitted before them, and sending the fitted
-    forecaster to the workers usually costs more than the predictions they
-    share. `HistGradientBoostingRegressor` predicts a few rows slowly and its
-    fitted model is small, so its predictions pay for sending it.
+    last step of a `Pipeline`, is a `HistGradientBoostingRegressor` or a
+    `CatBoostRegressor`. The folds only predict with the forecaster fitted
+    before them, and sending the fitted forecaster to the workers usually costs
+    more than the predictions they share. These two estimators predict a few
+    rows slowly and their fitted models are small, so their predictions pay
+    for sending them.
     - If estimator, or the last step of a `Pipeline`, is a linear model of
     scikit-learn (a subclass of `LinearModel`, such as `Ridge`), then
     `n_jobs = 1`. It is fitted and predicts in less time than the workers
@@ -885,16 +886,23 @@ def select_n_jobs_backtesting(
 
     # NOTE: Without refit, each task receives the fitted forecaster and only
     # predicts. `HistGradientBoostingRegressor` takes about 0.5 ms to predict
-    # one row even with one thread, and its fitted model weighs a few hundred
-    # KB (13 MB a RandomForest of 25 trees), so its predictions pay for sending
-    # it. In searches without refit (20 candidates, 22 threads) it was 1.5 to
-    # 2.8 times faster with `cpu_count() - 1` jobs than with 1; LightGBM,
-    # XGBoost, CatBoost and RandomForest were not. Review this exception if
-    # scikit-learn makes its prediction faster. A single backtesting without
-    # refit still uses one job (`limit_n_jobs_by_workload`).
+    # one row even with one thread, and `CatBoostRegressor` has a fixed cost of
+    # several hundred microseconds per call. Their fitted models weigh a few
+    # hundred KB (13 MB a RandomForest of 25 trees), so their predictions pay
+    # for sending them. In searches without refit with 22 threads,
+    # `HistGradientBoostingRegressor` was 1.5 to 2.8 times faster with
+    # `cpu_count() - 1` jobs than with 1 (20 candidates), and
+    # `CatBoostRegressor` 2.5 to 3 times (10 candidates, 274 folds of 24 steps;
+    # 1.6 times with 4 threads). The cost is the start of the workers in a
+    # small search: with CatBoost, 14 folds and 22 threads, the first call took
+    # 16 seconds instead of 11. LightGBM, XGBoost and RandomForest did not gain.
+    # Review this exception if these libraries make their prediction faster. A
+    # single backtesting without refit still uses one job
+    # (`limit_n_jobs_by_workload`).
     if (
         refit is False
-        and type(estimator).__name__ != "HistGradientBoostingRegressor"
+        and type(estimator).__name__
+        not in {"HistGradientBoostingRegressor", "CatBoostRegressor"}
     ):
         return 1
 
