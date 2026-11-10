@@ -1,0 +1,264 @@
+name: Publish to PyPI or TestPyPI
+
+# Publishes skforecast with Trusted Publishing (OIDC): no token or secret is
+# stored anywhere. Each index trusts this file of skforecast/skforecast with
+# the environment `pypi` or `testpypi`, which require the approval of a
+# maintainer.
+#
+# - A published GitHub release with the tag vX.Y.Z goes to PyPI.
+# - A tag test-publish-* or a manual run goes to TestPyPI, as a rehearsal. It
+#   publishes X.Y.Z.devN (N is the run number), so it can be repeated at will
+#   and never takes the name of the release on TestPyPI. A manual run needs
+#   this file on the default branch (main); the tag works from any branch.
+#
+# A release, step by step (the /release-publish skill has the detail):
+#
+# 1. Consolidate the release notes and merge everything into the release
+#    branch X.Y.x.
+# 2. Open the pull request X.Y.x to main and wait for the unit tests and the
+#    coverage to pass. Do not merge it yet.
+# 3. Rehearse on TestPyPI: push a tag test-publish-X.Y.Z-<n> on the head of
+#    X.Y.x and approve the deployment `testpypi`.
+# 4. Create the GitHub release vX.Y.Z on that same commit of X.Y.x and
+#    publish it (Zenodo archives it at that moment). This workflow starts by
+#    itself: approve the deployment `pypi` and wait for "Install from PyPI".
+# 5. Merge the pull request into main.
+# 6. Review and merge the pull request that the conda-forge bot opens in the
+#    feedstock, which builds from the sdist on PyPI.
+
+# The name of the workflow holds for every run; the title of each run and the
+# names of the jobs say where it publishes. Trusted Publishing identifies the
+# workflow by its file name, not by this name.
+run-name: ${{ github.event_name == 'release' && format('Publish {0} to PyPI', github.event.release.tag_name) || format('Rehearsal on TestPyPI ({0})', github.ref_name) }}
+
+on:
+  release:
+    types: [published]
+  push:
+    tags:
+      - 'test-publish-*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-pypi-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  TARGET: ${{ github.event_name == 'release' && 'pypi' || 'testpypi' }}
+
+jobs:
+  build:
+    name: Build and check the distributions
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.14'
+
+      - name: Install the build tools
+        run: python -m pip install --upgrade build twine packaging
+
+      # On a rehearsal, the version becomes X.Y.Z.devN in pyproject.toml and
+      # skforecast/__init__.py (see tools/release/prepare_version.py).
+      - name: Read and check the version
+        id: version
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          PRERELEASE: ${{ github.event.release.prerelease }}
+        run: |
+          if [ "$TARGET" = "pypi" ]; then
+            python tools/release/prepare_version.py pypi "$TAG" "$PRERELEASE"
+          else
+            python tools/release/prepare_version.py testpypi "$GITHUB_RUN_NUMBER"
+          fi
+
+      # A release is made from its release branch X.Y.x (it may be behind it).
+      - name: Check that the release is on its release branch
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ steps.version.outputs.branch }}
+        run: |
+          status=$(gh api "repos/$GITHUB_REPOSITORY/compare/$BRANCH...$GITHUB_SHA" --jq .status)
+          if [ "$status" != "identical" ] && [ "$status" != "behind" ]; then
+            echo "::error::$GITHUB_SHA is not on the branch $BRANCH (compare status: $status)"
+            exit 1
+          fi
+
+      # Fail before asking for the approval if the version is already taken:
+      # an index never accepts a file name twice, even after deleting it.
+      - name: Check that the version is not on the index yet
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          host=$([ "$TARGET" = "pypi" ] && echo pypi.org || echo test.pypi.org)
+          code=$(curl -s -o /dev/null -w '%{http_code}' "https://$host/pypi/skforecast/$VERSION/json")
+          if [ "$code" != "404" ]; then
+            echo "::error::https://$host/pypi/skforecast/$VERSION/json answers $code, expected 404"
+            exit 1
+          fi
+
+      # python -m build makes the sdist and then the wheel from the sdist, so
+      # the sdist (what conda-forge builds from) is known to build.
+      - name: Build the sdist and the wheel
+        run: |
+          python -m build --outdir dist .
+          python -m twine check --strict dist/*
+
+      - name: Check the contents of the distributions
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: python tools/release/check_distributions.py dist "$VERSION"
+
+      - name: Upload the distributions
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  smoke-test:
+    name: Install the wheel (Python ${{ matrix.python-version }})
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # The minimum Python of requires-python and the latest one, each with
+        # the newest dependencies that support it.
+        python-version: ['3.10', '3.14']
+    steps:
+      # Only the scripts: the package comes from the wheel.
+      - name: Checkout the release scripts
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          sparse-checkout: tools/release
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Download the distributions
+        uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: ${{ runner.temp }}/dist
+
+      # Outside the repository, so that the folder skforecast/ cannot shadow
+      # the installed package, and only with the core dependencies.
+      - name: Install the wheel and run a forecast
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          cd "$RUNNER_TEMP"
+          python -m venv venv
+          venv/bin/python -m pip install --no-cache-dir dist/*.whl
+          venv/bin/python -m pip check
+          venv/bin/python -I "$GITHUB_WORKSPACE/tools/release/smoke_test.py" "$VERSION"
+
+  publish:
+    name: Publish to ${{ github.event_name == 'release' && 'PyPI' || 'TestPyPI' }}
+    needs: [build, smoke-test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: ${{ github.event_name == 'release' && 'pypi' || 'testpypi' }}
+      url: ${{ github.event_name == 'release' && 'https://pypi.org' || 'https://test.pypi.org' }}/project/skforecast/${{ needs.build.outputs.version }}/
+    permissions:
+      id-token: write  # the OIDC token that the index exchanges for an upload token
+    # Every step of this job can request the OIDC token, so its actions are
+    # pinned to a commit (Dependabot keeps them up to date).
+    steps:
+      - name: Download the distributions
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with:
+          name: dist
+          path: dist/
+
+      # Uploads the wheel and the sdist, with their attestations (PEP 740).
+      # skip-existing lets "Re-run failed jobs" finish an upload that stopped
+      # halfway; the next job checks that the index has the files built here.
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086  # v1.14.3
+        with:
+          packages-dir: dist/
+          repository-url: ${{ github.event_name == 'release' && 'https://upload.pypi.org/legacy/' || 'https://test.pypi.org/legacy/' }}
+          skip-existing: true
+
+  verify:
+    name: Install from ${{ github.event_name == 'release' && 'PyPI' || 'TestPyPI' }}
+    needs: [build, publish]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout the release scripts
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          sparse-checkout: tools/release
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.14'
+
+      - name: Download the distributions
+        uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: ${{ runner.temp }}/dist
+
+      - name: Check that the index serves the files built
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          host=$([ "$TARGET" = "pypi" ] && echo pypi.org || echo test.pypi.org)
+          python tools/release/check_index.py "https://$host/pypi" "$RUNNER_TEMP/dist" "$VERSION"
+
+      # The index takes a while to list a new version, hence the retries.
+      # From TestPyPI, only skforecast (--no-deps): a dependency resolved
+      # there could be any package that took the name. The dependencies come
+      # from PyPI.
+      - name: Install skforecast from the index and run a forecast
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          cd "$RUNNER_TEMP"
+          python -m venv venv
+          if [ "$TARGET" = "pypi" ]; then
+            install=(venv/bin/python -m pip install --no-cache-dir "skforecast==$VERSION")
+          else
+            install=(venv/bin/python -m pip install --no-cache-dir --no-deps
+                     --index-url https://test.pypi.org/simple/ "skforecast==$VERSION")
+          fi
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if "${install[@]}"; then
+              break
+            fi
+            if [ "$attempt" = "10" ]; then
+              echo "::error::skforecast $VERSION cannot be installed from $TARGET"
+              exit 1
+            fi
+            sleep 30
+          done
+          if [ "$TARGET" != "pypi" ]; then
+            venv/bin/python -I -c "from importlib.metadata import requires; print('\n'.join(r for r in requires('skforecast') if 'extra ==' not in r))" > requirements.txt
+            venv/bin/python -m pip install --no-cache-dir -r requirements.txt
+          fi
+          venv/bin/python -m pip check
+          venv/bin/python -I "$GITHUB_WORKSPACE/tools/release/smoke_test.py" "$VERSION"

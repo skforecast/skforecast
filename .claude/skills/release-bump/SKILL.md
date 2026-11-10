@@ -9,6 +9,8 @@ argument-hint: "<new version, e.g. 0.27.0>"
 
 New version: $ARGUMENTS (ask for it if empty). The current one is `__version__` in `skforecast/__init__.py`.
 
+This opens the next version once the current one is released. Publishing a release (TestPyPI rehearsal, GitHub release, approval of the PyPI deployment) is `/release-publish`; nothing is uploaded by hand with `twine`.
+
 ## 1. Branch
 
 A new minor version starts a new release branch `X.Y.x` from the previous one (ask before creating or pushing it). A patch version stays on its release branch.
