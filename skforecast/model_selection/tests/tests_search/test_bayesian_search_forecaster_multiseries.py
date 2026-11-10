@@ -4,6 +4,10 @@ import os
 import re
 import platform
 import pytest
+from unittest.mock import patch
+from joblib import Parallel, cpu_count
+from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.tree import DecisionTreeRegressor
 from pytest import approx
 import numpy as np
 import pandas as pd
@@ -3427,3 +3431,64 @@ def test_bayesian_search_forecaster_multiseries_refit_without_series_too_short()
         and str(w.message).endswith("Series left out: 'short' (6 observations).")
         for w in record
     )
+
+
+@pytest.mark.parametrize(
+    "estimator, refit, n_jobs, expected_n_jobs",
+    [(Ridge(), True, 'auto', 1),
+     (HistGradientBoostingRegressor(max_iter=5), True, 'auto', max(1, cpu_count() - 1)),
+     (HistGradientBoostingRegressor(max_iter=5), False, 'auto', max(1, cpu_count() - 1)),
+     (DecisionTreeRegressor(max_depth=2), False, 'auto', 1),
+     (HistGradientBoostingRegressor(max_iter=5), True, 2, 2)],
+    ids=[
+        'auto, Ridge', 'auto, HistGradientBoostingRegressor',
+        'auto, HistGradientBoostingRegressor, no refit',
+        'auto, DecisionTreeRegressor, no refit', 'int'
+    ]
+)
+def test_bayesian_search_forecaster_multiseries_n_jobs_auto_resolved_with_the_rules_of_each_candidate(
+    estimator, refit, n_jobs, expected_n_jobs
+):
+    """
+    Test that bayesian_search_forecaster_multiseries resolves `n_jobs='auto'` with
+    `select_n_jobs_backtesting` for each candidate and passes the integer to
+    `backtesting_forecaster_multiseries`, so the work threshold of a single backtesting does not
+    reduce it. Without refit, the rules give one job, except with
+    `HistGradientBoostingRegressor`. `Parallel` is mocked with a
+    sequential one, so no workers are started.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=estimator, lags=3)
+    cv = TimeSeriesFold(
+             steps              = 10,
+             initial_train_size = 10,
+             refit              = refit,
+             fixed_train_size   = False
+         )
+
+    with (
+        patch(
+            "skforecast.model_selection._search.backtesting_forecaster_multiseries",
+            wraps=backtesting_forecaster_multiseries
+        ) as mock_backtesting,
+        patch(
+            "skforecast.model_selection._validation.Parallel",
+            side_effect=lambda **kwargs: Parallel(n_jobs=1)
+        ) as mock_parallel
+    ):
+        bayesian_search_forecaster_multiseries(
+            forecaster    = forecaster,
+            series        = series_wide_range,
+            cv            = cv,
+            search_space  = lambda trial: {'random_state': trial.suggest_int('random_state', 1, 2)},
+            metric        = 'mean_absolute_error',
+            n_trials      = 2,
+            return_best   = False,
+            n_jobs        = n_jobs,
+            show_progress = False
+        )
+
+    assert mock_backtesting.call_count == 2
+    for call in mock_backtesting.call_args_list:
+        assert call.kwargs['n_jobs'] == expected_n_jobs
+    for call in mock_parallel.call_args_list:
+        assert call.kwargs == {'n_jobs': expected_n_jobs}

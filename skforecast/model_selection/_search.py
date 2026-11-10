@@ -46,6 +46,7 @@ from ..model_selection._utils import (
     _SearchWarnings,
     _skip_trial,
     _optimize_study,
+    select_n_jobs_backtesting,
     N_EVALUATED_NAME,
     LEVELS_NOT_PREDICTED_WARNING
 )
@@ -566,6 +567,19 @@ def _evaluate_grid_hyperparameters(
                     forecaster_search.set_params(params)
                     if cv_name == 'TimeSeriesFold':
 
+                        # NOTE: `n_jobs='auto'` is resolved with the rules of
+                        # each candidate, without the work threshold of a single
+                        # backtesting: the workers are started once and reused by
+                        # the following candidates. Without refit, the rules
+                        # give one job (the folds only predict), except with
+                        # `HistGradientBoostingRegressor`.
+                        n_jobs_candidate = (
+                            select_n_jobs_backtesting(
+                                forecaster=forecaster_search, refit=cv.refit
+                            )
+                            if n_jobs == 'auto'
+                            else n_jobs
+                        )
                         metric_values = backtesting_forecaster(
                                             forecaster        = forecaster_search,
                                             y                 = y,
@@ -573,7 +587,7 @@ def _evaluate_grid_hyperparameters(
                                             metric            = metric,
                                             exog              = exog,
                                             interval          = None,
-                                            n_jobs            = n_jobs,
+                                            n_jobs            = n_jobs_candidate,
                                             verbose           = verbose,
                                             show_progress     = False,
                                             suppress_warnings = suppress_warnings
@@ -891,7 +905,15 @@ def bayesian_search_forecaster(
             forecaster_search.set_params(sample_params)
             if "lags" in sample:
                 forecaster_search.set_lags(sample['lags'])
-            
+
+            # NOTE: Same resolution of `n_jobs='auto'` as in grid search.
+            n_jobs_candidate = (
+                select_n_jobs_backtesting(
+                    forecaster=forecaster_search, refit=cv.refit
+                )
+                if n_jobs == 'auto'
+                else n_jobs
+            )
             try:
                 metrics, _ = backtesting_forecaster(
                                  forecaster        = forecaster_search,
@@ -899,7 +921,7 @@ def bayesian_search_forecaster(
                                  cv                = cv,
                                  exog              = exog,
                                  metric            = metric,
-                                 n_jobs            = n_jobs,
+                                 n_jobs            = n_jobs_candidate,
                                  verbose           = verbose,
                                  show_progress     = False,
                                  suppress_warnings = suppress_warnings
@@ -1748,6 +1770,14 @@ def _evaluate_grid_hyperparameters_multiseries(
             
                     if cv_name == 'TimeSeriesFold':
 
+                        # NOTE: Same resolution of `n_jobs='auto'` as in grid search.
+                        n_jobs_candidate = (
+                            select_n_jobs_backtesting(
+                                forecaster=forecaster_search, refit=cv.refit
+                            )
+                            if n_jobs == 'auto'
+                            else n_jobs
+                        )
                         metrics, _ = backtesting_forecaster_multiseries(
                             forecaster            = forecaster_search,
                             series                = series,
@@ -1758,7 +1788,7 @@ def _evaluate_grid_hyperparameters_multiseries(
                             add_aggregated_metric = add_aggregated_metric,
                             interval              = None,
                             verbose               = verbose,
-                            n_jobs                = n_jobs,
+                            n_jobs                = n_jobs_candidate,
                             show_progress         = False,
                             suppress_warnings     = suppress_warnings
                         )
@@ -2184,7 +2214,15 @@ def bayesian_search_forecaster_multiseries(
             forecaster_search.set_params(sample_params)
             if "lags" in sample:
                 forecaster_search.set_lags(sample['lags'])
-            
+
+            # NOTE: Same resolution of `n_jobs='auto'` as in grid search.
+            n_jobs_candidate = (
+                select_n_jobs_backtesting(
+                    forecaster=forecaster_search, refit=cv.refit
+                )
+                if n_jobs == 'auto'
+                else n_jobs
+            )
             try:
                 metrics, _ = backtesting_forecaster_multiseries(
                                  forecaster            = forecaster_search,
@@ -2194,7 +2232,7 @@ def bayesian_search_forecaster_multiseries(
                                  levels                = levels,
                                  metric                = metric,
                                  add_aggregated_metric = add_aggregated_metric,
-                                 n_jobs                = n_jobs,
+                                 n_jobs                = n_jobs_candidate,
                                  verbose               = verbose,
                                  show_progress         = False,
                                  suppress_warnings     = suppress_warnings

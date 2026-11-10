@@ -832,6 +832,12 @@ def select_n_jobs_backtesting(
     instead (see `skforecast.utils.select_n_jobs_fit_forecaster`), and
     'ForecasterStats', 'ForecasterEquivalentDate' and 'ForecasterRnn' are not
     parallelized.
+    - If `refit` is `False` (or 0), then `n_jobs = 1`, unless estimator, or the
+    last step of a `Pipeline`, is a `HistGradientBoostingRegressor`. The folds
+    only predict with the forecaster fitted before them, and sending the fitted
+    forecaster to the workers usually costs more than the predictions they
+    share. `HistGradientBoostingRegressor` predicts a few rows slowly and its
+    fitted model is small, so its predictions pay for sending it.
     - If estimator, or the last step of a `Pipeline`, is a linear model of
     scikit-learn (a subclass of `LinearModel`, such as `Ridge`), then
     `n_jobs = 1`. It is fitted and predicts in less time than the workers
@@ -842,6 +848,11 @@ def select_n_jobs_backtesting(
     already parallelizes its operations with threads, and more processes
     would compete for the same cores.
     - Otherwise, `n_jobs = max(1, cpu_count() - 1)`.
+
+    The hyperparameter searches use these rules for every candidate. A single
+    backtesting (`backtesting_forecaster`, `backtesting_forecaster_multiseries`)
+    then limits the result by its workload with
+    `skforecast.model_selection._utils.limit_n_jobs_by_workload`.
 
     Parameters
     ----------
@@ -872,6 +883,21 @@ def select_n_jobs_backtesting(
     if isinstance(estimator, Pipeline):
         estimator = estimator[-1]
 
+    # NOTE: Without refit, each task receives the fitted forecaster and only
+    # predicts. `HistGradientBoostingRegressor` takes about 0.5 ms to predict
+    # one row even with one thread, and its fitted model weighs a few hundred
+    # KB (13 MB a RandomForest of 25 trees), so its predictions pay for sending
+    # it. In searches without refit (20 candidates, 22 threads) it was 1.5 to
+    # 2.8 times faster with `cpu_count() - 1` jobs than with 1; LightGBM,
+    # XGBoost, CatBoost and RandomForest were not. Review this exception if
+    # scikit-learn makes its prediction faster. A single backtesting without
+    # refit still uses one job (`limit_n_jobs_by_workload`).
+    if (
+        refit is False
+        and type(estimator).__name__ != "HistGradientBoostingRegressor"
+    ):
+        return 1
+
     if isinstance(estimator, LinearModel):
         return 1
 
@@ -882,6 +908,73 @@ def select_n_jobs_backtesting(
         return 1
 
     return max(1, cpu_count() - 1)
+
+
+# NOTE: Workload, in seconds, below which a single backtesting with
+# `n_jobs='auto'` runs with one job, because starting the workers costs more
+# than it saves. The workload is estimated as the duration of the initial fit
+# times the number of refits, which gives about 80% of the real sequential
+# time. Measured with 21 workers that import skforecast, parallelizing pays
+# off from about 5 s of real sequential work on Windows (4 s of estimated
+# workload), from about 2.8 s on Linux (2 s) and from about 2.4 s on macOS
+# (2 s, Apple M5 with 9 workers). Other platforms use the value of Windows.
+_MIN_PARALLEL_WORKLOAD_SECONDS = {"win32": 4.0, "linux": 2.0, "darwin": 2.0}
+_MIN_PARALLEL_WORKLOAD_SECONDS_DEFAULT = 4.0
+
+
+def limit_n_jobs_by_workload(
+    n_jobs: int,
+    n_tasks: int,
+    n_fits: int,
+    fit_seconds: float | None
+) -> int:
+    """
+    Limit the number of jobs selected with `n_jobs='auto'` by the workload of
+    a single backtesting. Starting the workers of `joblib` takes seconds (more
+    on Windows than on Linux), so parallelizing only pays off when the folds
+    have enough work to share. The result is never greater than `n_jobs`.
+
+    - If `n_jobs` is 1, there is at most one task or no task fits the
+    forecaster (no refit), then `n_jobs = 1`. Predicting the folds of a fitted
+    forecaster takes less time than the workers take to start.
+    - If the estimated workload, `n_fits * fit_seconds`, is below the minimum
+    of the platform (4 seconds on Windows, 2 seconds on Linux and macOS), then
+    `n_jobs = 1`. If the time of the initial fit is not known
+    (`fit_seconds=None`), the workload is not estimated.
+    - Otherwise, `n_jobs = min(n_jobs, n_tasks)`: no more workers are started
+    than there are tasks.
+
+    Parameters
+    ----------
+    n_jobs : int
+        Number of jobs selected with `select_n_jobs_backtesting`.
+    n_tasks : int
+        Number of tasks (folds) sent to `joblib.Parallel`.
+    n_fits : int
+        Number of fits made in the tasks (folds with refit), without the
+        initial fit.
+    fit_seconds : float, None
+        Duration of the initial fit, in seconds. `None` if the forecaster
+        was not fitted before the folds.
+
+    Returns
+    -------
+    n_jobs : int
+        The number of jobs to run in parallel.
+
+    """
+
+    if n_jobs <= 1 or n_tasks <= 1 or n_fits == 0:
+        return 1
+
+    if fit_seconds is not None:
+        min_workload = _MIN_PARALLEL_WORKLOAD_SECONDS.get(
+            sys.platform, _MIN_PARALLEL_WORKLOAD_SECONDS_DEFAULT
+        )
+        if n_fits * fit_seconds < min_workload:
+            return 1
+
+    return min(n_jobs, n_tasks)
 
 
 def _train_test_split_one_step_ahead_search(

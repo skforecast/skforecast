@@ -26,4 +26,5 @@
 ::: skforecast.model_selection._utils.check_backtesting_input
 ::: skforecast.model_selection._utils.check_one_step_ahead_input
 ::: skforecast.model_selection._utils.select_n_jobs_backtesting
+::: skforecast.model_selection._utils.limit_n_jobs_by_workload
 ::: skforecast.model_selection._utils.initialize_lags_grid

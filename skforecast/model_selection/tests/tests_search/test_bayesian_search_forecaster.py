@@ -2,11 +2,14 @@
 # ==============================================================================
 import re
 import pytest
+from unittest.mock import patch
+from joblib import Parallel, cpu_count
 import os
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestRegressor, HistGradientBoostingRegressor
+from sklearn.tree import DecisionTreeRegressor
 from sklearn.linear_model import Ridge, LogisticRegression
 from sklearn.metrics import (
     mean_absolute_error, mean_absolute_percentage_error, r2_score, zero_one_loss
@@ -1942,6 +1945,67 @@ def test_bayesian_search_forecaster_MissingValuesWarning_n_evaluated_single_seri
     )
     assert "fill the gaps of `y`" in messages[0]
     assert "  - lags: [1, 2, ..., 10]" in messages[0]
+
+
+@pytest.mark.parametrize(
+    "estimator, refit, n_jobs, expected_n_jobs",
+    [(Ridge(), True, 'auto', 1),
+     (HistGradientBoostingRegressor(max_iter=5), True, 'auto', max(1, cpu_count() - 1)),
+     (HistGradientBoostingRegressor(max_iter=5), False, 'auto', max(1, cpu_count() - 1)),
+     (DecisionTreeRegressor(max_depth=2), False, 'auto', 1),
+     (HistGradientBoostingRegressor(max_iter=5), True, 2, 2)],
+    ids=[
+        'auto, Ridge', 'auto, HistGradientBoostingRegressor',
+        'auto, HistGradientBoostingRegressor, no refit',
+        'auto, DecisionTreeRegressor, no refit', 'int'
+    ]
+)
+def test_bayesian_search_forecaster_n_jobs_auto_resolved_with_the_rules_of_each_candidate(
+    estimator, refit, n_jobs, expected_n_jobs
+):
+    """
+    Test that bayesian_search_forecaster resolves `n_jobs='auto'` with
+    `select_n_jobs_backtesting` for each candidate and passes the integer to
+    `backtesting_forecaster`, so the work threshold of a single backtesting does not
+    reduce it. Without refit, the rules give one job, except with
+    `HistGradientBoostingRegressor`. `Parallel` is mocked with a
+    sequential one, so no workers are started.
+    """
+    forecaster = ForecasterRecursive(estimator=estimator, lags=3)
+    cv = TimeSeriesFold(
+             steps              = 10,
+             initial_train_size = 10,
+             refit              = refit,
+             fixed_train_size   = False
+         )
+
+    with (
+        patch(
+            "skforecast.model_selection._search.backtesting_forecaster",
+            wraps=backtesting_forecaster
+        ) as mock_backtesting,
+        patch(
+            "skforecast.model_selection._validation.Parallel",
+            side_effect=lambda **kwargs: Parallel(n_jobs=1)
+        ) as mock_parallel
+    ):
+        bayesian_search_forecaster(
+            forecaster    = forecaster,
+            y             = y,
+            cv            = cv,
+            search_space  = lambda trial: {'random_state': trial.suggest_int('random_state', 1, 2)},
+            metric        = 'mean_absolute_error',
+            n_trials      = 2,
+            return_best   = False,
+            n_jobs        = n_jobs,
+            show_progress = False
+        )
+
+    assert mock_backtesting.call_count == 2
+    for call in mock_backtesting.call_args_list:
+        assert call.kwargs['n_jobs'] == expected_n_jobs
+    for call in mock_parallel.call_args_list:
+        assert call.kwargs == {'n_jobs': expected_n_jobs}
 
 
 class RidgeWarnsInPredict(Ridge):

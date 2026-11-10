@@ -1,11 +1,13 @@
 # Unit test backtesting_forecaster
 # ==============================================================================
 import re
+import sys
 import warnings
 import pytest
+from unittest.mock import patch
 import numpy as np
 import pandas as pd
-from joblib import parallel_config
+from joblib import Parallel, cpu_count, parallel_config
 from scipy.stats import norm
 from sklearn.linear_model import Ridge, LogisticRegression
 from sklearn.ensemble import (
@@ -559,6 +561,62 @@ def test_backtesting_forecaster_y_true_ForecasterRecursiveClassifier():
     assert backtest_predictions.columns.tolist()[:4] == ["fold", "step", "y_true", "pred"]
     assert backtest_predictions["y_true"].tolist() == y_clf.iloc[40:].tolist()
     assert metric.loc[0, "n_evaluated"] == 10
+
+
+@pytest.mark.parametrize(
+    "n_jobs, refit, min_work, expected_n_jobs",
+    [('auto', True, 0.0, min(max(1, cpu_count() - 1), 4)),
+     ('auto', True, 1e6, 1),
+     ('auto', False, 0.0, 1),
+     (2, True, 1e6, 2)],
+    ids=['auto, enough work', 'auto, too little work', 'auto, no refit', 'int']
+)
+def test_backtesting_forecaster_n_jobs_auto_limited_by_the_workload(
+    n_jobs, refit, min_work, expected_n_jobs
+):
+    """
+    Test that, with `n_jobs='auto'`, backtesting_forecaster runs the folds with one job
+    when the work estimated from the initial fit is below the minimum of the
+    platform (`min_work`, patched) or there is no refit, and otherwise with
+    the jobs of `select_n_jobs_backtesting` limited to the number of folds
+    (4). An integer `n_jobs` is not limited. `Parallel` is mocked with
+    a sequential one, so no workers are started.
+    """
+    forecaster = ForecasterRecursive(
+                     estimator=HistGradientBoostingRegressor(max_iter=5), lags=3
+                 )
+    cv = TimeSeriesFold(
+             steps              = 10,
+             initial_train_size = 10,
+             refit              = refit,
+             fixed_train_size   = False,
+             verbose            = False
+         )
+
+    with (
+        patch.dict(
+            "skforecast.model_selection._utils._MIN_PARALLEL_WORKLOAD_SECONDS",
+            {sys.platform: min_work}
+        ),
+        patch(
+            "skforecast.model_selection._utils._MIN_PARALLEL_WORKLOAD_SECONDS_DEFAULT",
+            min_work
+        ),
+        patch(
+            "skforecast.model_selection._validation.Parallel",
+            side_effect=lambda **kwargs: Parallel(n_jobs=1)
+        ) as mock_parallel
+    ):
+        backtesting_forecaster(
+            forecaster    = forecaster,
+            y             = y,
+            cv            = cv,
+            metric        = 'mean_absolute_error',
+            n_jobs        = n_jobs,
+            show_progress = False
+        )
+
+    assert mock_parallel.call_args.kwargs == {'n_jobs': expected_n_jobs}
 
 
 def _backtesting_exog_with_nan(n_jobs):

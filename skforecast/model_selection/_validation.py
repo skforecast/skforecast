@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Callable, Any
 from copy import deepcopy
 import os
+import time
 import warnings
 import numpy as np
 import pandas as pd
@@ -23,6 +24,7 @@ from ..model_selection._split import TimeSeriesFold
 from ..model_selection._utils import (
     _initialize_levels_model_selection_multiseries,
     check_backtesting_input,
+    limit_n_jobs_by_workload,
     select_n_jobs_backtesting,
     _extract_data_folds_multiseries,
     _select_fit_folds_multiseries,
@@ -452,7 +454,10 @@ def _backtesting_forecaster(
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
-        skforecast.model_selection._utils.select_n_jobs_backtesting.
+        skforecast.model_selection._utils.select_n_jobs_backtesting, and set to 1
+        when the workload of the folds, estimated from the time of the initial fit, is
+        too small to pay the start of the workers (for example, without refit).
+        See skforecast.model_selection._utils.limit_n_jobs_by_workload.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used 
         for backtesting.
@@ -543,7 +548,8 @@ def _backtesting_forecaster(
     refit = cv.refit
     overlapping_folds = cv.overlapping_folds
 
-    if n_jobs == 'auto':
+    n_jobs_auto = n_jobs == 'auto'
+    if n_jobs_auto:
         n_jobs = select_n_jobs_backtesting(
                      forecaster = forecaster,
                      refit      = refit
@@ -609,16 +615,20 @@ def _backtesting_forecaster(
         out_sample_residuals_by_bin_ = forecaster.out_sample_residuals_by_bin_
         binner_ = deepcopy(forecaster.binner)
 
+    fit_seconds = None
     if initial_train_size is not None:
-        # NOTE: This allows for parallelization when `refit` is `False`. The initial 
-        # Forecaster fit occurs outside of the auxiliary function.
+        # NOTE: This allows for parallelization with an integer `n_jobs` when `refit`
+        # is `False`. The initial Forecaster fit occurs outside of the auxiliary
+        # function.
         exog_train = exog.iloc[:initial_train_size, ] if exog is not None else None
+        fit_start = time.perf_counter()
         forecaster.fit(
             y                         = y.iloc[:initial_train_size, ],
             exog                      = exog_train,
             store_in_sample_residuals = store_in_sample_residuals,
             suppress_warnings         = suppress_warnings
         )
+        fit_seconds = time.perf_counter() - fit_start
         _restore_out_sample_residuals(
             forecaster                   = forecaster,
             out_sample_residuals_        = out_sample_residuals_,
@@ -645,6 +655,15 @@ def _backtesting_forecaster(
 
     fold_data_list = _prepare_fold_data(folds, y, exog)
     fold_items = list(zip(folds, fold_data_list))
+
+    if n_jobs_auto:
+        n_jobs = limit_n_jobs_by_workload(
+                     n_jobs      = n_jobs,
+                     n_tasks     = len(fold_items),
+                     n_fits      = sum(fold[5] is True for fold in folds),
+                     fit_seconds = fit_seconds
+                 )
+
     if show_progress:
         fold_items = tqdm(fold_items)
 
@@ -854,7 +873,10 @@ def backtesting_forecaster(
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
-        skforecast.model_selection._utils.select_n_jobs_backtesting.
+        skforecast.model_selection._utils.select_n_jobs_backtesting, and set to 1
+        when the workload of the folds, estimated from the time of the initial fit, is
+        too small to pay the start of the workers (for example, without refit).
+        See skforecast.model_selection._utils.limit_n_jobs_by_workload.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used 
         for backtesting.
@@ -1287,7 +1309,10 @@ def _backtesting_forecaster_multiseries(
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
-        skforecast.model_selection._utils.select_n_jobs_backtesting.
+        skforecast.model_selection._utils.select_n_jobs_backtesting, and set to 1
+        when the workload of the folds, estimated from the time of the initial fit, is
+        too small to pay the start of the workers (for example, without refit).
+        See skforecast.model_selection._utils.limit_n_jobs_by_workload.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used 
         for backtesting.
@@ -1388,7 +1413,8 @@ def _backtesting_forecaster_multiseries(
     refit = cv.refit
     overlapping_folds = cv.overlapping_folds
 
-    if n_jobs == 'auto':
+    n_jobs_auto = n_jobs == 'auto'
+    if n_jobs_auto:
         n_jobs = select_n_jobs_backtesting(
                      forecaster = forecaster,
                      refit      = refit
@@ -1564,11 +1590,14 @@ def _backtesting_forecaster_multiseries(
                 LongTrainingWarning
             )
 
+    fit_seconds = None
     if initial_train_size is not None:
-        # NOTE: This allows for parallelization when `refit` is `False`. The initial 
-        # Forecaster fit occurs outside of the auxiliary function.
+        # NOTE: This allows for parallelization with an integer `n_jobs` when `refit`
+        # is `False`. The initial Forecaster fit occurs outside of the auxiliary
+        # function.
         if fit_folds[0]:
             series_train, _, last_window_levels, exog_train, _, _ = data_folds[0]
+            fit_start = time.perf_counter()
             forecaster.fit(
                 series                    = series_train,
                 exog                      = exog_train,
@@ -1576,6 +1605,7 @@ def _backtesting_forecaster_multiseries(
                 store_in_sample_residuals = store_in_sample_residuals,
                 suppress_warnings         = suppress_warnings
             )
+            fit_seconds = time.perf_counter() - fit_start
             _restore_out_sample_residuals(
                 forecaster                   = forecaster,
                 out_sample_residuals_        = out_sample_residuals_,
@@ -1599,6 +1629,18 @@ def _backtesting_forecaster_multiseries(
 
     fold_numbers = [data_fold[5][0] for data_fold in data_folds_list]
     test_iloc_starts = [data_fold[5][3][0] for data_fold in data_folds_list]
+
+    if n_jobs_auto:
+        # NOTE: If the first fold is not fitted (none of its levels is
+        # predicted with its model), `fit_seconds` is `None` and the workload
+        # is not estimated.
+        n_jobs = limit_n_jobs_by_workload(
+                     n_jobs      = n_jobs,
+                     n_tasks     = len(data_folds_list),
+                     n_fits      = sum(fit_folds),
+                     fit_seconds = fit_seconds
+                 )
+
     if show_progress:
         data_folds_list = tqdm(data_folds_list)
 
@@ -1849,7 +1891,10 @@ def backtesting_forecaster_multiseries(
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
-        skforecast.model_selection._utils.select_n_jobs_backtesting.
+        skforecast.model_selection._utils.select_n_jobs_backtesting, and set to 1
+        when the workload of the folds, estimated from the time of the initial fit, is
+        too small to pay the start of the workers (for example, without refit).
+        See skforecast.model_selection._utils.limit_n_jobs_by_workload.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used 
         for backtesting.
