@@ -22,7 +22,7 @@ filelock==4.2.9
 fonttools==4.68.0
 formulaic==1.2.2
 frozenlist==1.8.0
-fsspec==2026.2.0
+fsspec==2026.6.0
 gluonts==0.17.0
 google-crc32c==1.9.0
 h11==0.16.0
