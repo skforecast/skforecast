@@ -158,10 +158,12 @@ def test_bayesian_search_foundation_single_series():
     assert isinstance(results, pd.DataFrame)
     assert len(results) == n_trials
 
-    expected_cols = {"trial_number", "levels", "params", "mean_absolute_error", "context_length"}
-    assert expected_cols.issubset(set(results.columns))
-
-    assert "lags" not in results.columns
+    assert results.columns.tolist() == [
+        "trial_number", "levels", "params", "mean_absolute_error", "n_evaluated",
+        "context_length"
+    ]
+    # 2 folds of 5 steps
+    assert results["n_evaluated"].tolist() == [10, 10]
 
     # Sorted ascending for regression
     metric_vals = results["mean_absolute_error"].tolist()
@@ -218,6 +220,9 @@ def test_bayesian_search_foundation_multi_series_aggregated_columns():
     assert "mean_absolute_error" not in results.columns
 
     assert "lags" not in results.columns
+
+    # 2 folds of 5 steps, summed over the 2 series
+    assert results["n_evaluated"].tolist() == [20, 20]
 
     assert isinstance(study, optuna.Study)
 
@@ -464,6 +469,38 @@ def test_ValueError_bayesian_search_foundation_duplicate_metric_names():
             cv=cv,
             search_space=search_space,
             metric=["mean_absolute_error", "mean_absolute_error"],
+            n_trials=2,
+            return_best=False,
+        )
+
+
+def test_ValueError_bayesian_search_foundation_when_metric_named_n_evaluated():
+    """
+    ValueError is raised, before the first trial, when a metric is named
+    `n_evaluated`, the column of the backtesting metrics with the number of
+    points evaluated.
+    """
+    forecaster = make_forecaster()
+    cv = TimeSeriesFold(steps=5, initial_train_size=40)
+
+    def search_space(trial):  # pragma: no cover
+        return {"context_length": trial.suggest_categorical("context_length", [24, 48])}
+
+    def n_evaluated(y_true, y_pred):  # pragma: no cover
+        return float(np.mean(np.abs(np.asarray(y_true) - np.asarray(y_pred))))
+
+    err_msg = re.escape(
+        "The backtesting metrics include the column 'n_evaluated' with the "
+        "number of points evaluated. Rename the metric 'n_evaluated' passed in "
+        "`metric`."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        bayesian_search_foundation(
+            forecaster=forecaster,
+            series=y,
+            cv=cv,
+            search_space=search_space,
+            metric=["mean_absolute_error", n_evaluated],
             n_trials=2,
             return_best=False,
         )
@@ -717,3 +754,94 @@ def test_bayesian_search_foundation_verbose_return_best(capsys):
     captured = capsys.readouterr()
     assert "best-found parameters" in captured.out
     assert forecaster.is_fitted
+
+
+def test_bayesian_search_foundation_maximizes_metric_when_greater_is_better():
+    """
+    Test that a metric with `greater_is_better = True` is maximized: the
+    study direction is 'maximize', the results are sorted in descending
+    order and `return_best` refits the forecaster with the best trial. The
+    fake pipeline predicts the same values in every trial, so the metric
+    returns the number of calls to give each trial a different value.
+    """
+    forecaster = make_forecaster()
+    cv = TimeSeriesFold(steps=5, initial_train_size=40)
+    calls = []
+
+    def increasing_metric(y_true, y_pred):
+        calls.append(1)
+        return float(len(calls))
+
+    increasing_metric.greater_is_better = True
+
+    def search_space(trial):
+        return {
+            "context_length": trial.suggest_categorical("context_length", [24, 48])
+        }
+
+    with patch(PATCH_DEEPCOPY, side_effect=deepcopy):
+        results, study = bayesian_search_foundation(
+            forecaster=forecaster,
+            series=y,
+            cv=cv,
+            search_space=search_space,
+            metric=increasing_metric,
+            n_trials=3,
+            return_best=True,
+            show_progress=False,
+        )
+
+    assert study.direction == optuna.study.StudyDirection.MAXIMIZE
+    assert results["increasing_metric"].is_monotonic_decreasing
+    assert results["increasing_metric"].nunique() == 3
+    assert results.loc[0, "trial_number"] == study.best_trial.number
+    assert forecaster.context_length == results.loc[0, "context_length"]
+
+
+def test_bayesian_search_foundation_skips_trials_whose_evaluation_fails():
+    """
+    Test that the trials whose backtesting fails are marked as failed and
+    reported in the warning of the candidates skipped, identified by their
+    number, instead of stopping the search.
+    """
+    from skforecast.model_selection._search import backtesting_foundation
+
+    def backtesting_fails_with_48(forecaster, **kwargs):
+        if forecaster.estimator.adapter.get_params()["context_length"] == 48:
+            raise ValueError("Backtesting failed.")
+        return backtesting_foundation(forecaster=forecaster, **kwargs)
+
+    def search_space(trial):
+        return {
+            "context_length": trial.suggest_categorical("context_length", [24, 48])
+        }
+
+    forecaster = make_forecaster()
+    with (
+        patch(PATCH_DEEPCOPY, side_effect=deepcopy),
+        patch(
+            "skforecast.model_selection._search.backtesting_foundation",
+            side_effect=backtesting_fails_with_48
+        ),
+        pytest.warns(RuntimeWarning, match="Parameters skipped") as record,
+    ):
+        results, study = bayesian_search_foundation(
+            forecaster=forecaster,
+            series=y,
+            cv=TimeSeriesFold(steps=5, initial_train_size=40),
+            search_space=search_space,
+            metric="mean_absolute_error",
+            n_trials=4,
+            return_best=False,
+            show_progress=False,
+        )
+
+    failed = [t.number for t in study.trials if t.state == optuna.trial.TrialState.FAIL]
+    assert failed == [
+        t.number for t in study.trials if t.params["context_length"] == 48
+    ]
+    assert len(results) == 4 - len(failed)
+    message = [str(w.message) for w in record if "Parameters skipped" in str(w.message)][0]
+    assert "ValueError: Backtesting failed." in message
+    for trial_number in failed:
+        assert f"  - trial {trial_number}, params: {{'context_length': 48}}" in message

@@ -1,0 +1,11 @@
+python 3.12.3 | tfc-t0 0.6.0
+
+== theforecastingcompany/t0-beta: loaded without error
+  scaler_eps: published=0.01 loaded=0.01
+  scaler_eps_mode: published='std_clamp' loaded='std_clamp'
+
+== theforecastingcompany/t0-gamma: loaded without error
+  scaler_eps: published=0.01 loaded=0.01
+  scaler_eps_mode: published='std_clamp' loaded='std_clamp'
+  scaler_zero_no_value: published=False loaded=False
+  xpos_scale_layout: published='halves' loaded='halves'

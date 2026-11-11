@@ -1,11 +1,16 @@
 # Unit test backtesting_stats
 # ==============================================================================
 import re
+import warnings
 import platform
+from unittest.mock import patch
 import pytest
 import numpy as np
 import pandas as pd
+from joblib import Parallel
 from sklearn.linear_model import Ridge
+import skforecast.stats._arima as arima_module
+import skforecast.stats._ets as ets_module
 from skforecast.stats import Sarimax, Arar, Ets, Arima
 from skforecast.recursive import ForecasterRecursive
 from skforecast.recursive import ForecasterStats
@@ -99,7 +104,13 @@ def test_output_backtesting_stats_no_refit_no_exog_no_remainder_with_mocked(n_jo
     )
     expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -145,7 +156,13 @@ def test_output_backtesting_stats_no_refit_no_exog_remainder_with_mocked(initial
     )
     expected_preds.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2])
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -191,7 +208,13 @@ def test_output_backtesting_stats_yes_refit_no_exog_no_remainder_with_mocked(n_j
     )
     expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -237,7 +260,13 @@ def test_output_backtesting_stats_yes_refit_no_exog_remainder_with_mocked(n_jobs
     )
     expected_preds.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2])
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -280,7 +309,13 @@ def test_output_backtesting_stats_yes_refit_fixed_train_size_no_exog_no_remainde
     )
     expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -323,7 +358,13 @@ def test_output_backtesting_stats_yes_refit_fixed_train_size_no_exog_remainder_w
     )
     expected_preds.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2])
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
     
 
@@ -367,7 +408,13 @@ def test_output_backtesting_stats_no_refit_yes_exog_with_mocked():
     )
     expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -411,7 +458,13 @@ def test_output_backtesting_stats_yes_refit_yes_exog_with_mocked():
     )
     expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -455,7 +508,13 @@ def test_output_backtesting_stats_yes_refit_fixed_train_size_yes_exog_with_mocke
     )
     expected_preds.insert(0, 'fold', [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2])
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -508,7 +567,13 @@ def test_output_backtesting_stats_no_refit_yes_exog_callable_metric_with_mocked(
     )
     expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -552,7 +617,13 @@ def test_output_backtesting_stats_no_refit_no_exog_list_of_metrics_with_mocked()
     )
     expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
+    expected_metric.insert(2, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -595,7 +666,13 @@ def test_output_backtesting_stats_yes_refit_no_exog_callable_metric_with_mocked(
     )
     expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -630,7 +707,7 @@ def test_output_backtesting_stats_yes_refit_fixed_train_size_yes_exog_list_of_me
                                    )
     
     expected_metric = pd.DataFrame({"my_metric": [0.007877420102652216], 
-                                    "mean_absolute_scaled_error": [3.899618814139531]})
+                                    "mean_absolute_scaled_error": [3.9807353314434977]})
     expected_preds = pd.DataFrame(
         data    = np.array([ 0.59409098,  0.78323365,  0.99609033,  0.88202026,  1.03241114,
                              1.16808941,  0.86535534,  0.87277596,  0.69357041,  0.16628876,
@@ -640,15 +717,17 @@ def test_output_backtesting_stats_yes_refit_fixed_train_size_yes_exog_list_of_me
     )
     expected_preds.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
 
+    expected_metric.insert(2, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
     
 
-@pytest.mark.parametrize("alpha, interval", 
-                         [(0.05, [0.01, 0.99]), 
-                          (None, [0.025, 0.975])], 
-                         ids = lambda values: f'alpha, interval: {values}')
-def test_output_backtesting_stats_no_refit_yes_exog_interval_with_mocked(alpha, interval):
+def test_output_backtesting_stats_no_refit_yes_exog_interval_with_mocked():
     """
     Test output of backtesting_stats with backtesting mocked, Series y is mocked, yes exog, 
     no refit, 12 observations to backtest, steps=3 (no remainder), metric='mean_absolute_error',
@@ -673,12 +752,13 @@ def test_output_backtesting_stats_no_refit_yes_exog_interval_with_mocked(alpha, 
                                         cv         = cv,
                                         exog       = exog_datetime,
                                         metric     = ['mean_absolute_error'],
-                                        alpha      = alpha,
-                                        interval   = interval,
+                                        interval   = [0.025, 0.975],
                                         verbose    = False
                                    )
     
     expected_metric = pd.DataFrame({"mean_absolute_error": [0.3040748056175932]})
+    expected_metric["coverage"] = [1.0]
+    expected_metric["interval_width"] = [6.667294827683887]
     expected_values = np.array([[ 0.59409098, -1.08941968,  2.27760163],
                                 [ 0.78323365, -2.51570095,  4.08216824],
                                 [ 0.99609033, -4.02240666,  6.01458732],
@@ -699,15 +779,17 @@ def test_output_backtesting_stats_no_refit_yes_exog_interval_with_mocked(alpha, 
                                     )  
     expected_backtest_predictions.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])                                                   
 
+    expected_metric.insert(3, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_backtest_predictions.insert(1, 'step', [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3])
+    expected_backtest_predictions.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_backtest_predictions, backtest_predictions, atol=0.0001)
 
 
-@pytest.mark.parametrize("alpha, interval", 
-                         [(0.05, [0.01, 0.99]), 
-                          (None, [0.025, 0.975])], 
-                         ids = lambda values: f'alpha, interval: {values}')
-def test_output_backtesting_stats_yes_refit_yes_exog_interval_with_mocked(alpha, interval):
+def test_output_backtesting_stats_yes_refit_yes_exog_interval_with_mocked():
     """
     Test output of backtesting_stats with backtesting mocked, Series y is mocked, yes exog, 
     yes refit, 12 observations to backtest, steps=3 (no remainder), 
@@ -732,12 +814,13 @@ def test_output_backtesting_stats_yes_refit_yes_exog_interval_with_mocked(alpha,
                                         cv         = cv,
                                         exog       = exog_datetime,
                                         metric     = 'mean_absolute_error',
-                                        alpha      = alpha,
-                                        interval   = interval,
+                                        interval   = [0.025, 0.975],
                                         verbose    = False
                                    )
     
     expected_metric = pd.DataFrame({"mean_absolute_error": [0.31145145397674484]})
+    expected_metric["coverage"] = [1.0]
+    expected_metric["interval_width"] = [6.657028326924074]
     expected_values = np.array([[ 0.59409098, -1.08941968,  2.27760163],
                                 [ 0.78323365, -2.51570095,  4.08216824],
                                 [ 0.99609033, -4.02240666,  6.01458732],
@@ -758,15 +841,17 @@ def test_output_backtesting_stats_yes_refit_yes_exog_interval_with_mocked(alpha,
                                     )  
     expected_backtest_predictions.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])                                                     
 
+    expected_metric.insert(3, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_backtest_predictions.insert(1, 'step', [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3])
+    expected_backtest_predictions.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_backtest_predictions, backtest_predictions, atol=0.0001)
 
 
-@pytest.mark.parametrize("alpha, interval", 
-                         [(0.05, [0.01, 0.99]), 
-                          (None, [0.025, 0.975])], 
-                         ids = lambda values: f'alpha, interval: {values}')
-def test_output_backtesting_stats_yes_refit_fixed_train_size_yes_exog_interval_with_mocked(alpha, interval):
+def test_output_backtesting_stats_yes_refit_fixed_train_size_yes_exog_interval_with_mocked():
     """
     Test output of backtesting_stats with backtesting mocked, Series y is mocked, yes exog, 
     yes refit, fixed_train_size, 12 observations to backtest, steps=3 (no remainder), 
@@ -791,12 +876,13 @@ def test_output_backtesting_stats_yes_refit_fixed_train_size_yes_exog_interval_w
                                        cv         = cv,
                                        exog       = exog_datetime,
                                        metric     = ['mean_absolute_error'],
-                                       alpha      = alpha,
-                                       interval   = interval,
+                                       interval   = [0.025, 0.975],
                                        verbose    = False
                                    )
     
     expected_metric = pd.DataFrame({"mean_absolute_error": [0.31329767191681507]})
+    expected_metric["coverage"] = [1.0]
+    expected_metric["interval_width"] = [6.696882579371329]
     expected_values = np.array([[ 0.59409098, -1.08941968,  2.27760163],
                                 [ 0.78323365, -2.51570095,  4.08216824],
                                 [ 0.99609033, -4.02240666,  6.01458732],
@@ -817,7 +903,13 @@ def test_output_backtesting_stats_yes_refit_fixed_train_size_yes_exog_interval_w
                                     )
     expected_backtest_predictions.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])                                                    
 
+    expected_metric.insert(3, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_backtest_predictions.insert(1, 'step', [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3])
+    expected_backtest_predictions.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_backtest_predictions, backtest_predictions, atol=0.0001)
 
 
@@ -887,7 +979,17 @@ def test_output_backtesting_stats_fold_stride_with_mocked():
                 ])
     ).astype({'fold': int})
 
+    expected_metric.insert(1, 'n_evaluated', [12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [
+        1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6, 1, 2, 3
+    ])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.74083723, 0.72537176, 0.81580302, 0.81400947,
+        0.72537176, 0.81580302, 0.81400947, 0.92665305, 0.93727594, 0.52876165,
+        0.92665305, 0.93727594, 0.52876165, 0.55933994, 0.57787166, 0.61492741,
+        0.55933994, 0.57787166, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -938,7 +1040,12 @@ def test_output_backtesting_stats_fold_stride_greater_than_steps_with_mocked():
                 ])
     ).astype({'fold': int})
 
+    expected_metric.insert(1, 'n_evaluated', [6])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(1, 'step', [1, 2, 1, 2, 1, 2])
+    expected_preds.insert(2, 'y_true', [
+        0.58897764, 0.62313362, 0.81580302, 0.81400947, 0.52876165, 0.55933994
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -989,7 +1096,7 @@ def test_output_backtesting_stats_multiple_estimators_refit_False_with_mocked():
     expected_metric = pd.DataFrame({
         'estimator_id': ['skforecast.Sarimax', 'skforecast.Arar', 
                          'skforecast.Ets', 'skforecast.Arima'],
-        'mean_squared_error': [0.03870420, 0.00075339, 0.01301978, 0.01282563]
+        'mean_squared_error': [0.03870420, 0.00075339, 0.01301904, 0.01282563]
     })
     
     expected_preds = pd.DataFrame(
@@ -1002,15 +1109,15 @@ def test_output_backtesting_stats_multiple_estimators_refit_False_with_mocked():
                 0.51853756, 0.59008805, 0.57787066, 0.56450749,
                 0.5165776 , 0.6215785 , 0.59537616  , 0.5666523 ,
                 0.51790214, 0.72728926, 0.61288166, 0.56806442,
-                0.80295192, 0.74408697, 0.75511286, 0.73782662,
-                0.85238217, 0.75550972, 0.77508663, 0.7397932 ,
-                0.9244119 , 0.82159729, 0.79506039, 0.7385086 ,
-                0.84173367, 0.95293211, 0.83543811, 0.80561376,
-                0.8793909 , 0.93913951, 0.85573702, 0.8113779 ,
-                0.91329115, 0.5480628 , 0.87603592, 0.80742048,
-                0.42336972, 0.6195116 , 0.57538167, 0.57027113,
-                0.38434305, 0.58648398, 0.59269907, 0.59693343,
-                0.2093133 , 0.62192848, 0.61001647, 0.61405911
+                0.80295192, 0.74408697, 0.75445515, 0.73782662,
+                0.85238217, 0.75550972, 0.77427814, 0.7397932 ,
+                0.9244119 , 0.82159729, 0.79410112, 0.7385086 ,
+                0.84173367, 0.95293211, 0.83545194, 0.80561376,
+                0.8793909 , 0.93913951, 0.85577473, 0.8113779 ,
+                0.91329115, 0.5480628 , 0.87609752, 0.80742048,
+                0.42336972, 0.6195116 , 0.57297374, 0.57027113,
+                0.38434305, 0.58648398, 0.59043320, 0.59693343,
+                0.2093133 , 0.62192848, 0.60789266, 0.61405911
             ])
         },
         index = pd.DatetimeIndex(
@@ -1021,7 +1128,23 @@ def test_output_backtesting_stats_multiple_estimators_refit_False_with_mocked():
         )
     )
 
+    expected_metric.insert(2, 'n_evaluated', [12, 12, 12, 12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(0, 'estimator_id', expected_preds.pop('estimator_id'))
+    expected_preds.insert(2, 'step', [
+        1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3,
+        1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3
+    ])
+    expected_preds.insert(3, 'y_true', [
+        0.58897764, 0.58897764, 0.58897764, 0.58897764, 0.62313362, 0.62313362,
+        0.62313362, 0.62313362, 0.74083723, 0.74083723, 0.74083723, 0.74083723,
+        0.72537176, 0.72537176, 0.72537176, 0.72537176, 0.81580302, 0.81580302,
+        0.81580302, 0.81580302, 0.81400947, 0.81400947, 0.81400947, 0.81400947,
+        0.92665305, 0.92665305, 0.92665305, 0.92665305, 0.93727594, 0.93727594,
+        0.93727594, 0.93727594, 0.52876165, 0.52876165, 0.52876165, 0.52876165,
+        0.55933994, 0.55933994, 0.55933994, 0.55933994, 0.57787166, 0.57787166,
+        0.57787166, 0.57787166, 0.61492741, 0.61492741, 0.61492741, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -1064,7 +1187,7 @@ def test_output_backtesting_stats_multiple_estimators_refit_True_with_mocked():
     expected_metric = pd.DataFrame({
         'estimator_id': ['skforecast.Sarimax', 'skforecast.Arar', 
                          'skforecast.Ets', 'skforecast.Arima'],
-        'mean_squared_error': [0.03870420, 0.00075339, 0.01301978, 0.01282563]
+        'mean_squared_error': [0.03870420, 0.00075339, 0.01301904, 0.01282563]
     })
     
     expected_preds = pd.DataFrame(
@@ -1077,15 +1200,15 @@ def test_output_backtesting_stats_multiple_estimators_refit_True_with_mocked():
                 0.51853756, 0.59008805, 0.57787066, 0.56450749,
                 0.5165776 , 0.6215785 , 0.59537616  , 0.5666523 ,
                 0.51790214, 0.72728926, 0.61288166, 0.56806442,
-                0.80295192, 0.74408697, 0.75511286, 0.73782662,
-                0.85238217, 0.75550972, 0.77508663, 0.7397932 ,
-                0.9244119 , 0.82159729, 0.79506039, 0.7385086 ,
-                0.84173367, 0.95293211, 0.83543811, 0.80561376,
-                0.8793909 , 0.93913951, 0.85573702, 0.8113779 ,
-                0.91329115, 0.5480628 , 0.87603592, 0.80742048,
-                0.42336972, 0.6195116 , 0.57538167, 0.57027113,
-                0.38434305, 0.58648398, 0.59269907, 0.59693343,
-                0.2093133 , 0.62192848, 0.61001647, 0.61405911
+                0.80295192, 0.74408697, 0.75445515, 0.73782662,
+                0.85238217, 0.75550972, 0.77427814, 0.7397932 ,
+                0.9244119 , 0.82159729, 0.79410112, 0.7385086 ,
+                0.84173367, 0.95293211, 0.83545194, 0.80561376,
+                0.8793909 , 0.93913951, 0.85577473, 0.8113779 ,
+                0.91329115, 0.5480628 , 0.87609752, 0.80742048,
+                0.42336972, 0.6195116 , 0.57297374, 0.57027113,
+                0.38434305, 0.58648398, 0.59043320, 0.59693343,
+                0.2093133 , 0.62192848, 0.60789266, 0.61405911
             ])
         },
         index = pd.DatetimeIndex(
@@ -1096,7 +1219,23 @@ def test_output_backtesting_stats_multiple_estimators_refit_True_with_mocked():
         )
     )
 
+    expected_metric.insert(2, 'n_evaluated', [12, 12, 12, 12])
     pd.testing.assert_frame_equal(expected_metric, metric, atol=0.0001)
+    expected_preds.insert(0, 'estimator_id', expected_preds.pop('estimator_id'))
+    expected_preds.insert(2, 'step', [
+        1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3,
+        1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3
+    ])
+    expected_preds.insert(3, 'y_true', [
+        0.58897764, 0.58897764, 0.58897764, 0.58897764, 0.62313362, 0.62313362,
+        0.62313362, 0.62313362, 0.74083723, 0.74083723, 0.74083723, 0.74083723,
+        0.72537176, 0.72537176, 0.72537176, 0.72537176, 0.81580302, 0.81580302,
+        0.81580302, 0.81580302, 0.81400947, 0.81400947, 0.81400947, 0.81400947,
+        0.92665305, 0.92665305, 0.92665305, 0.92665305, 0.93727594, 0.93727594,
+        0.93727594, 0.93727594, 0.52876165, 0.52876165, 0.52876165, 0.52876165,
+        0.55933994, 0.55933994, 0.55933994, 0.55933994, 0.57787166, 0.57787166,
+        0.57787166, 0.57787166, 0.61492741, 0.61492741, 0.61492741, 0.61492741
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, atol=0.0001)
 
 
@@ -1137,13 +1276,17 @@ def test_output_backtesting_stats_multiple_estimators_refit_False_interval_with_
                                             y          = y_datetime,
                                             cv         = cv,
                                             metric     = 'mean_squared_error',
-                                            alpha      = 0.05,
-                                            interval   = None,
+                                            interval   = [0.025, 0.975],
                                             verbose    = False
                                        )
     
     # Check metric structure
-    assert list(metric.columns) == ['estimator_id', 'mean_squared_error']
+    assert list(metric.columns) == [
+        'estimator_id', 'mean_squared_error', 'coverage', 'interval_width',
+        'n_evaluated'
+    ]
+    assert metric['coverage'].between(0, 1).all()
+    assert (metric['interval_width'] > 0).all()
     assert len(metric) == 4
     assert list(metric['estimator_id']) == [
         'skforecast.Sarimax', 'skforecast.Arar', 
@@ -1152,7 +1295,8 @@ def test_output_backtesting_stats_multiple_estimators_refit_False_interval_with_
     
     # Check predictions structure
     assert list(backtest_predictions.columns) == [
-        'fold', 'estimator_id', 'pred', 'lower_bound', 'upper_bound'
+        'estimator_id', 'fold', 'step', 'y_true', 'pred', 'lower_bound',
+        'upper_bound'
     ]
     assert len(backtest_predictions) == 48  # 12 timesteps x 4 estimators
     assert set(backtest_predictions['estimator_id']) == {
@@ -1194,13 +1338,17 @@ def test_output_backtesting_stats_multiple_estimators_refit_True_interval_with_m
                                         y          = y_datetime,
                                         cv         = cv,
                                         metric     = 'mean_squared_error',
-                                        alpha      = 0.05,
-                                        interval   = None,
+                                        interval   = [0.025, 0.975],
                                         verbose    = False
                                    )
     
     # Check metric structure
-    assert list(metric.columns) == ['estimator_id', 'mean_squared_error']
+    assert list(metric.columns) == [
+        'estimator_id', 'mean_squared_error', 'coverage', 'interval_width',
+        'n_evaluated'
+    ]
+    assert metric['coverage'].between(0, 1).all()
+    assert (metric['interval_width'] > 0).all()
     assert len(metric) == 4
     assert list(metric['estimator_id']) == [
         'skforecast.Sarimax', 'skforecast.Arar', 
@@ -1209,7 +1357,8 @@ def test_output_backtesting_stats_multiple_estimators_refit_True_interval_with_m
     
     # Check predictions structure
     assert list(backtest_predictions.columns) == [
-        'fold', 'estimator_id', 'pred', 'lower_bound', 'upper_bound'
+        'estimator_id', 'fold', 'step', 'y_true', 'pred', 'lower_bound',
+        'upper_bound'
     ]
     assert len(backtest_predictions) == 48  # 12 timesteps x 4 estimators
     assert set(backtest_predictions['estimator_id']) == {
@@ -1220,6 +1369,71 @@ def test_output_backtesting_stats_multiple_estimators_refit_True_interval_with_m
     # Check that lower_bound < pred < upper_bound
     assert (backtest_predictions['lower_bound'] < backtest_predictions['pred']).all()
     assert (backtest_predictions['pred'] < backtest_predictions['upper_bound']).all()
+
+
+@pytest.mark.parametrize("interval",
+                         [None, [0.1, 0.9]],
+                         ids = lambda interval: f'interval: {interval}')
+@pytest.mark.parametrize("fold_stride",
+                         [1, 2],
+                         ids = lambda fold_stride: f'fold_stride: {fold_stride}')
+def test_output_backtesting_stats_multiple_estimators_overlapping_folds(fold_stride, interval):
+    """
+    Test output of backtesting_stats with multiple estimators and overlapping
+    folds (fold_stride < steps). The metrics and predictions of each estimator
+    must be equal to those obtained backtesting each estimator alone.
+    """
+    estimators = [Arima(order=(1, 1, 1)), Arar()]
+    cv = TimeSeriesFold(
+             steps                 = 3,
+             initial_train_size    = len(y_datetime) - 12,
+             fold_stride           = fold_stride,
+             refit                 = True,
+             fixed_train_size      = False,
+             gap                   = 0,
+             allow_incomplete_fold = True
+         )
+    metrics = ['mean_absolute_error', 'mean_squared_error']
+
+    forecaster = ForecasterStats(estimator=estimators)
+    metric, backtest_predictions = backtesting_stats(
+                                       forecaster = forecaster,
+                                       y          = y_datetime,
+                                       cv         = cv,
+                                       metric     = metrics,
+                                       interval   = interval,
+                                       n_jobs     = 1,
+                                       verbose    = False
+                                   )
+
+    expected_metric = []
+    expected_preds = []
+    for estimator in estimators:
+        forecaster_alone = ForecasterStats(estimator=estimator)
+        metric_alone, preds_alone = backtesting_stats(
+                                        forecaster = forecaster_alone,
+                                        y          = y_datetime,
+                                        cv         = cv,
+                                        metric     = metrics,
+                                        interval   = interval,
+                                        n_jobs     = 1,
+                                        verbose    = False
+                                    )
+        estimator_id = forecaster_alone.estimator_ids[0]
+        metric_alone.insert(0, 'estimator_id', estimator_id)
+        preds_alone.insert(0, 'estimator_id', estimator_id)
+        expected_metric.append(metric_alone)
+        expected_preds.append(preds_alone)
+
+    expected_metric = pd.concat(expected_metric, ignore_index=True)
+    expected_preds = pd.concat(expected_preds)
+
+    pd.testing.assert_frame_equal(expected_metric, metric)
+    for estimator_id, preds in expected_preds.groupby('estimator_id', sort=False):
+        pd.testing.assert_frame_equal(
+            preds,
+            backtest_predictions.query("estimator_id == @estimator_id")
+        )
 
 
 def test_output_backtesting_stats_auto_arima_arar_freeze_params_False_gap_air_passengers():
@@ -1380,7 +1594,20 @@ def test_output_backtesting_stats_auto_arima_arar_freeze_params_False_gap_air_pa
                           142, 142, 143, 143])
     )
 
+    expected_metric.insert(2, 'n_evaluated', [23, 23])
     pd.testing.assert_frame_equal(expected_metric, metric, rtol=0.01)
+    expected_preds.insert(0, 'estimator_id', expected_preds.pop('estimator_id'))
+    expected_preds.insert(2, 'step', [
+        3, 3, 4, 4, 5, 5, 6, 6, 3, 3, 4, 4, 5, 5, 6, 6, 3, 3, 4, 4, 5, 5, 6, 6, 3, 3,
+        4, 4, 5, 5, 6, 6, 3, 3, 4, 4, 5, 5, 6, 6, 3, 3, 4, 4, 5, 5
+    ])
+    expected_preds.insert(3, 'y_true', [
+        342.0, 342.0, 406.0, 406.0, 396.0, 396.0, 420.0, 420.0, 472.0, 472.0, 548.0,
+        548.0, 559.0, 559.0, 463.0, 463.0, 407.0, 407.0, 362.0, 362.0, 405.0, 405.0,
+        417.0, 417.0, 391.0, 391.0, 419.0, 419.0, 461.0, 461.0, 472.0, 472.0, 535.0,
+        535.0, 622.0, 622.0, 606.0, 606.0, 508.0, 508.0, 461.0, 461.0, 390.0, 390.0,
+        432.0, 432.0
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions, rtol=0.01)
 
 
@@ -1438,23 +1665,36 @@ def test_output_backtesting_stats_single_estimator_gap_no_interval(freeze_params
     })
 
     assert backtest_predictions.shape[0] == 23
+    expected_preds.insert(1, 'step', [
+        3, 4, 5, 6, 3, 4, 5, 6, 3, 4, 5, 6, 3, 4, 5, 6, 3, 4, 5, 6, 3, 4, 5
+    ])
+    expected_preds.insert(2, 'y_true', [
+        342.0, 406.0, 396.0, 420.0, 472.0, 548.0, 559.0, 463.0, 407.0, 362.0, 405.0,
+        417.0, 391.0, 419.0, 461.0, 472.0, 535.0, 622.0, 606.0, 508.0, 461.0, 390.0,
+        432.0
+    ])
     pd.testing.assert_frame_equal(expected_preds, backtest_predictions)
+    expected_metric.insert(1, 'n_evaluated', [23])
     pd.testing.assert_frame_equal(expected_metric, metric)
 
 
 @pytest.mark.parametrize(
-    "freeze_params",
-    [True, False],
-    ids=lambda freeze: f'freeze_params: {freeze}'
+    "freeze_params, expected_metric",
+    [(True, 2.8926272263334054), (False, 2.7797731527375893)],
+    ids=lambda value: f'{value}'
 )
-def test_output_backtesting_stats_auto_arima_with_drift_and_exog(freeze_params):
+def test_output_backtesting_stats_auto_arima_with_drift_and_exog(
+    freeze_params, expected_metric
+):
     """
     Test output of backtesting_stats with auto ARIMA when the selected model
     includes a drift term and exogenous variables. Before the fix, prediction
     failed because the future drift column was not added and, with
-    `freeze_params=True`, the frozen model lost the drift term. Both values of
-    `freeze_params` must give the same results because the same model is
-    selected in every fold. Data follow a random walk with drift 0.5 plus 2 * x.
+    `freeze_params=True`, the frozen model lost the drift term. The first fit
+    selects ARIMA(2,1,2) with drift, which `freeze_params=True` keeps in every
+    fold (the expected metric is the one of backtesting that model set by
+    hand), while `freeze_params=False` selects ARIMA(0,1,0) in some folds.
+    Data follow a random walk with drift 0.5 plus 2 * x.
     """
     rng = np.random.RandomState(123)
     n = 150
@@ -1484,13 +1724,208 @@ def test_output_backtesting_stats_auto_arima_with_drift_and_exog(freeze_params):
 
     # Values that depend on where the optimizer stops, see `tol_pred`
     np.testing.assert_allclose(
-        metric.loc[0, 'mean_absolute_error'], 2.7797731527375893, **tol_pred
+        metric.loc[0, 'mean_absolute_error'], expected_metric, **tol_pred
     )
     # The predictions differ by up to 5e-7 (relative) between the CI runners
     # and by up to 1e-6 under perturbations, far less than `tol_pred`.
     np.testing.assert_allclose(
         predictions['pred'].to_numpy()[:10], expected_pred_first_fold, rtol=1e-4
     )
+
+
+@pytest.mark.parametrize(
+    "n_jobs",
+    [1, 2],
+    ids=lambda n_jobs: f'n_jobs: {n_jobs}'
+)
+def test_output_backtesting_stats_freeze_params_True_equal_to_selected_params_set_by_hand(n_jobs):
+    """
+    Test that backtesting_stats with automatic Arima and Ets and
+    `freeze_params=True` gives the same output as backtesting the models
+    selected in the first fit, with their parameters set by hand. Before the
+    fix, each refit cloned the automatic estimators and the selection was
+    repeated in every fold. The forecaster passed by the user is not modified.
+    """
+    forecaster = ForecasterStats(
+                     estimator=[Arima(order=None, seasonal_order=None, m=12), Ets(m=12)]
+                 )
+    initial_train_size = len(air_passengers) - 36
+    cv = TimeSeriesFold(
+             steps              = 12,
+             initial_train_size = initial_train_size,
+             refit              = True,
+             fixed_train_size   = False,
+             verbose            = False
+         )
+    metric, backtest_predictions = backtesting_stats(
+                                       forecaster        = forecaster,
+                                       y                 = air_passengers,
+                                       cv                = cv,
+                                       metric            = 'mean_absolute_error',
+                                       freeze_params     = True,
+                                       n_jobs            = n_jobs,
+                                       show_progress     = False,
+                                       suppress_warnings = True
+                                   )
+
+    forecaster_first_fit = ForecasterStats(
+        estimator=[Arima(order=None, seasonal_order=None, m=12), Ets(m=12)]
+    )
+    forecaster_first_fit.fit(y=air_passengers.iloc[:initial_train_size])
+    forecaster_frozen = ForecasterStats(
+        estimator=[
+            type(estimator)(**estimator.best_params_)
+            for estimator in forecaster_first_fit.estimators_
+        ]
+    )
+    expected_metric, expected_predictions = backtesting_stats(
+                                                forecaster        = forecaster_frozen,
+                                                y                 = air_passengers,
+                                                cv                = cv,
+                                                metric            = 'mean_absolute_error',
+                                                n_jobs            = 1,
+                                                show_progress     = False,
+                                                suppress_warnings = True
+                                            )
+
+    pd.testing.assert_frame_equal(metric, expected_metric)
+    pd.testing.assert_frame_equal(backtest_predictions, expected_predictions)
+    assert not forecaster.is_fitted
+    assert [estimator.is_auto for estimator in forecaster.estimators] == [True, True]
+    assert forecaster.estimators[0].get_params() == (
+        Arima(order=None, seasonal_order=None, m=12).get_params()
+    )
+    assert forecaster.estimators[1].get_params() == Ets(m=12).get_params()
+
+
+@pytest.mark.parametrize(
+    "estimators, expected_kwargs",
+    [([Sarimax(order=(1, 0, 0))], {'n_jobs': 2, 'mmap_mode': 'c'}),
+     ([Arima(order=(1, 0, 0)), Sarimax(order=(1, 0, 0))],
+      {'n_jobs': 2, 'mmap_mode': 'c'}),
+     ([Arima(order=(1, 0, 0))], {'n_jobs': 2})],
+    ids=['Sarimax', 'Arima and Sarimax', 'Arima']
+)
+def test_backtesting_stats_Parallel_mmap_mode_c_only_with_Sarimax(
+    estimators, expected_kwargs
+):
+    """
+    Test that backtesting_stats passes `mmap_mode='c'` to joblib only when the
+    forecaster has a Sarimax. joblib sends the arrays over 1 MB to the workers
+    as read-only memmaps by default, and the Kalman filter of a fitted Sarimax
+    cannot be unpickled from them (`ValueError: buffer source array is
+    read-only`). `Parallel` is mocked with a sequential one, so no workers
+    are started.
+    """
+    forecaster = ForecasterStats(estimator=estimators)
+    cv = TimeSeriesFold(
+             steps              = 6,
+             initial_train_size = len(y_datetime) - 12,
+             refit              = True,
+             fixed_train_size   = False,
+             verbose            = False
+         )
+
+    with patch(
+        'skforecast.model_selection._validation.Parallel',
+        side_effect=lambda **kwargs: Parallel(n_jobs=1)
+    ) as mock_parallel:
+        backtesting_stats(
+            forecaster        = forecaster,
+            y                 = y_datetime,
+            cv                = cv,
+            metric            = 'mean_absolute_error',
+            n_jobs            = 2,
+            show_progress     = False,
+            suppress_warnings = True
+        )
+
+    assert mock_parallel.call_args.kwargs == expected_kwargs
+
+
+@pytest.mark.parametrize(
+    "freeze_params, expected_n_searches",
+    [(True, 1), (False, 3)],
+    ids=lambda value: f'{value}'
+)
+def test_backtesting_stats_freeze_params_number_of_automatic_searches(
+    freeze_params, expected_n_searches
+):
+    """
+    Test that, with `refit=True`, the automatic selection of Arima and Ets runs
+    only in the first fit when `freeze_params=True` and in every fit (3 folds)
+    when `freeze_params=False`, where the selected models are returned in the
+    `estimator_params` column.
+    """
+    forecaster = ForecasterStats(
+                     estimator=[Arima(order=None, seasonal_order=None, m=12), Ets(m=12)]
+                 )
+    cv = TimeSeriesFold(
+             steps              = 12,
+             initial_train_size = len(air_passengers) - 36,
+             refit              = True,
+             verbose            = False
+         )
+
+    with (
+        patch(
+            'skforecast.stats._arima.auto_arima', wraps=arima_module.auto_arima
+        ) as mock_auto_arima,
+        patch(
+            'skforecast.stats._ets.auto_ets', wraps=ets_module.auto_ets
+        ) as mock_auto_ets,
+    ):
+        _, backtest_predictions = backtesting_stats(
+                                      forecaster        = forecaster,
+                                      y                 = air_passengers,
+                                      cv                = cv,
+                                      metric            = 'mean_absolute_error',
+                                      freeze_params     = freeze_params,
+                                      n_jobs            = 1,
+                                      show_progress     = False,
+                                      suppress_warnings = True
+                                  )
+
+    assert mock_auto_arima.call_count == expected_n_searches
+    assert mock_auto_ets.call_count == expected_n_searches
+    assert ('estimator_params' in backtest_predictions.columns) is not freeze_params
+
+
+def test_output_backtesting_stats_freeze_params_refit_False_Sarimax():
+    """
+    Test that `freeze_params` does not change the predictions with
+    `refit=False` (only allowed with Sarimax, which has no automatic
+    selection). With `freeze_params=False`, the `estimator_params` column is
+    added.
+    """
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 1, 0), disp=False))
+    cv = TimeSeriesFold(
+             steps              = 12,
+             initial_train_size = len(air_passengers) - 36,
+             refit              = False,
+             verbose            = False
+         )
+
+    results = {
+        freeze_params: backtesting_stats(
+                           forecaster        = forecaster,
+                           y                 = air_passengers,
+                           cv                = cv,
+                           metric            = 'mean_absolute_error',
+                           freeze_params     = freeze_params,
+                           show_progress     = False,
+                           suppress_warnings = True
+                       )
+        for freeze_params in [True, False]
+    }
+
+    pd.testing.assert_frame_equal(results[True][0], results[False][0])
+    pd.testing.assert_frame_equal(
+        results[True][1], results[False][1].drop(columns='estimator_params')
+    )
+    assert results[False][1]['estimator_params'].unique().tolist() == [
+        'Sarimax(1,1,0)(0,0,0)[0]'
+    ]
 
 
 def test_backtesting_stats_IgnoredArgumentWarning_integer_refit_with_non_Sarimax():
@@ -1529,3 +1964,298 @@ def test_backtesting_stats_IgnoredArgumentWarning_integer_refit_with_non_Sarimax
         metric.loc[0, 'mean_squared_error'], 0.01505251113240201, rtol=1e-2
     )
     assert len(predictions) == 12
+
+
+def test_backtesting_stats_ValueError_when_alpha_and_interval_are_provided():
+    """
+    Test ValueError is raised when both `alpha` and `interval` are provided.
+    """
+    forecaster = ForecasterStats(estimator=Arima(order=(1, 1, 0)))
+    cv = TimeSeriesFold(
+             steps              = 3,
+             initial_train_size = len(y_datetime) - 12,
+             refit              = True
+         )
+
+    err_msg = re.escape(
+        "`alpha` and `interval` cannot be used together. Use only one "
+        "of them: `alpha=0.05` is equivalent to `interval=[0.025, 0.975]`."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        backtesting_stats(
+            forecaster = forecaster,
+            y          = y_datetime,
+            cv         = cv,
+            metric     = 'mean_absolute_error',
+            alpha      = 0.05,
+            interval   = [0.1, 0.9]
+        )
+
+
+def test_output_backtesting_stats_alpha_is_alias_of_interval():
+    """
+    Test backtesting_stats returns the same output with `alpha` as with the
+    equivalent `interval`.
+    """
+    forecaster = ForecasterStats(
+                     estimator = Arima(order=(1, 1, 0))
+                 )
+    cv = TimeSeriesFold(
+             steps                 = 3,
+             initial_train_size    = len(y_datetime) - 12,
+             refit                 = True,
+             fixed_train_size      = False,
+             gap                   = 0,
+             allow_incomplete_fold = True
+         )
+
+    metric, backtest_predictions = backtesting_stats(
+                                       forecaster    = forecaster,
+                                       y             = y_datetime,
+                                       cv            = cv,
+                                       metric        = 'mean_absolute_error',
+                                       alpha         = 0.2,
+                                       n_jobs        = 1,
+                                       show_progress = False
+                                   )
+    expected_metric, expected_predictions = backtesting_stats(
+                                                forecaster    = forecaster,
+                                                y             = y_datetime,
+                                                cv            = cv,
+                                                metric        = 'mean_absolute_error',
+                                                interval      = [0.1, 0.9],
+                                                n_jobs        = 1,
+                                                show_progress = False
+                                            )
+
+    pd.testing.assert_frame_equal(metric, expected_metric)
+    pd.testing.assert_frame_equal(backtest_predictions, expected_predictions)
+
+
+@pytest.mark.parametrize(
+    "estimators, of_estimator",
+    [([Arima(order=(1, 0, 0))], ""),
+     ([Arima(order=(1, 0, 0)), Arima(order=(0, 0, 1))],
+      " of estimator 'skforecast.Arima'")],
+    ids=lambda x: f"{x}"
+)
+def test_backtesting_stats_ValueError_when_NaN_predictions_at_observed_dates(
+    estimators, of_estimator
+):
+    """
+    Test backtesting_stats raises a ValueError with the number of NaN
+    predictions and the first date when `exog` has a missing value in the
+    test set of a fold and the model predicts NaN at a date with observed
+    value. Before, the metric raised 'Input contains NaN.'.
+    """
+    idx = pd.date_range("2020-01-01", periods=60, freq="D")
+    rng = np.random.default_rng(0)
+    y = pd.Series(rng.normal(100, 5, 60), index=idx, name="y")
+    exog = pd.Series(rng.normal(0, 1, 60), index=idx, name="x")
+    exog.iloc[45] = np.nan
+    forecaster = ForecasterStats(estimators)
+    cv = TimeSeriesFold(steps=5, initial_train_size=40, refit=False)
+
+    err_msg = re.escape(
+        f"1 backtesting predictions{of_estimator} are NaN at dates with "
+        f"observed values (first: 2020-02-15 00:00:00), so the metrics cannot "
+        f"be calculated."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        backtesting_stats(
+            forecaster        = forecaster,
+            y                 = y,
+            exog              = exog,
+            cv                = cv,
+            metric            = 'mean_absolute_error',
+            show_progress     = False,
+            suppress_warnings = True
+        )
+
+
+@pytest.mark.parametrize(
+    "fold_stride",
+    [None, 2],
+    ids=lambda fold_stride: f"fold_stride: {fold_stride}"
+)
+def test_output_backtesting_stats_step_y_true_and_n_evaluated_multiple_estimators(fold_stride):
+    """
+    Test the columns `estimator_id` (first, as `level` in the multi-series
+    backtesting), `step` and `y_true` of the predictions, and `n_evaluated`
+    of the metrics, with several estimators, `gap`, an incomplete last fold
+    and, optionally, overlapping folds. Each date has one row per estimator,
+    with the same step and true value.
+    """
+    forecaster = ForecasterStats(estimator=[Arima(order=(1, 0, 0)), Ets()])
+    cv = TimeSeriesFold(
+             steps                 = 4,
+             initial_train_size    = len(y_datetime) - 11,
+             fold_stride           = fold_stride,
+             gap                   = 2,
+             refit                 = True,
+             allow_incomplete_fold = True
+         )
+    metric, backtest_predictions = backtesting_stats(
+                                       forecaster    = forecaster,
+                                       y             = y_datetime,
+                                       cv            = cv,
+                                       metric        = 'mean_absolute_error',
+                                       interval      = [0.1, 0.9],
+                                       show_progress = False
+                                   )
+
+    assert backtest_predictions.columns.tolist() == [
+        'estimator_id', 'fold', 'step', 'y_true', 'pred', 'lower_bound', 'upper_bound'
+    ]
+    for estimator_id, preds in backtest_predictions.groupby('estimator_id'):
+        expected_step = preds.groupby('fold').cumcount() + 3
+        np.testing.assert_array_equal(preds['step'], expected_step)
+        np.testing.assert_array_equal(
+            preds['y_true'], y_datetime.loc[preds.index].to_numpy()
+        )
+    assert backtest_predictions['step'].min() == 3
+    assert backtest_predictions['step'].max() == 6
+
+    # The test set has 11 dates; the first 2 are the gap of the first fold.
+    assert metric.columns.tolist() == [
+        'estimator_id', 'mean_absolute_error', 'coverage', 'interval_width', 'n_evaluated'
+    ]
+    assert metric['n_evaluated'].tolist() == [9, 9]
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    [
+        Sarimax(order=(1, 0, 0)),
+        [Sarimax(order=(1, 0, 0)), Sarimax(order=(2, 0, 0))],
+    ],
+    ids=["n_estimators: 1", "n_estimators: 2"]
+)
+def test_output_backtesting_stats_metrics_leave_out_dates_without_true_values(
+    estimator
+):
+    """
+    Test that the dates without a true value are left out of the metrics and
+    of `n_evaluated` (Sarimax with `refit=False` accepts missing values in the
+    test set), with one and several estimators: the metrics of each estimator
+    are the ones calculated by hand without those dates. The predictions keep
+    the rows of those dates, with `y_true` NaN.
+    """
+    y_nan = y_datetime.copy()
+    y_nan.iloc[[41, 45]] = np.nan
+
+    forecaster = ForecasterStats(estimator=estimator)
+    cv = TimeSeriesFold(
+             steps              = 3,
+             initial_train_size = len(y_nan) - 12,
+             refit              = False
+         )
+    metric, backtest_predictions = backtesting_stats(
+                                       forecaster    = forecaster,
+                                       y             = y_nan,
+                                       cv            = cv,
+                                       metric        = 'mean_absolute_error',
+                                       interval      = [0.1, 0.9],
+                                       show_progress = False
+                                   )
+
+    n_estimators = len(estimator) if isinstance(estimator, list) else 1
+    assert len(backtest_predictions) == 12 * n_estimators
+    assert backtest_predictions['y_true'].isna().sum() == 2 * n_estimators
+    assert backtest_predictions['pred'].notna().all()
+
+    if n_estimators == 1:
+        groups = [backtest_predictions]
+    else:
+        groups = [
+            group for _, group
+            in backtest_predictions.groupby('estimator_id', sort=False)
+        ]
+    expected_mae = []
+    expected_coverage = []
+    for group in groups:
+        observed = group.loc[group['y_true'].notna()]
+        expected_mae.append(np.mean(np.abs(observed['y_true'] - observed['pred'])))
+        expected_coverage.append(np.mean(
+            (observed['y_true'] >= observed['lower_bound'])
+            & (observed['y_true'] <= observed['upper_bound'])
+        ))
+    np.testing.assert_allclose(metric['mean_absolute_error'], expected_mae)
+    np.testing.assert_allclose(metric['coverage'], expected_coverage)
+    assert metric['n_evaluated'].tolist() == [10] * n_estimators
+
+
+def test_backtesting_stats_warnings_of_folds_in_processes_same_as_n_jobs_1():
+    """
+    Test that the warnings raised in the folds that run in worker processes
+    (`n_jobs=2`, `refit=True`) reach the main process once each, with the same
+    category, text, location and order as with `n_jobs=1`: an Arima with one
+    iteration warns of a convergence problem in every fit.
+    """
+    def warnings_shown(n_jobs):
+        forecaster = ForecasterStats(
+            estimator=Arima(order=(1, 0, 1), optim_kwargs={"maxiter": 1})
+        )
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always")
+            backtesting_stats(
+                forecaster    = forecaster,
+                y             = air_passengers,
+                cv            = TimeSeriesFold(
+                                    steps=12, initial_train_size=len(air_passengers) - 36,
+                                    refit=True
+                                ),
+                metric        = 'mean_absolute_error',
+                n_jobs        = n_jobs,
+                show_progress = False,
+            )
+
+        return [(w.category, str(w.message), w.filename, w.lineno) for w in record]
+
+    expected = warnings_shown(n_jobs=1)
+    results = warnings_shown(n_jobs=2)
+
+    assert len(expected) == 3
+    assert {category for category, _, _, _ in expected} == {UserWarning}
+    assert results == expected
+
+
+@pytest.mark.parametrize(
+    "refit",
+    [False, True],
+    ids=lambda refit: f"refit: {refit}"
+)
+def test_backtesting_stats_scaled_metrics_scaled_by_forecast_origin(refit):
+    """
+    Test that `mean_absolute_scaled_error` and `root_mean_squared_scaled_error`
+    scale the error of each prediction with the naive forecast over the values
+    before its forecast origin (the start of the test set of its fold), with
+    and without `refit`: the training sets of later folds are not used.
+    """
+    from skforecast.metrics import (
+        mean_absolute_scaled_error,
+        root_mean_squared_scaled_error,
+    )
+
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 0, 0)))
+    metric, predictions = backtesting_stats(
+        forecaster        = forecaster,
+        y                 = y_datetime,
+        cv                = TimeSeriesFold(steps=5, initial_train_size=30, refit=refit),
+        metric            = [mean_absolute_scaled_error, root_mean_squared_scaled_error],
+        show_progress     = False,
+        suppress_warnings = True
+    )
+
+    values = y_datetime.to_numpy()
+    errors = (predictions["y_true"] - predictions["pred"]).to_numpy()
+    origins = 30 + 5 * predictions["fold"].to_numpy()
+    scale_abs = np.array([np.mean(np.abs(np.diff(values[:o]))) for o in origins])
+    scale_sq = np.array([np.mean(np.diff(values[:o]) ** 2) for o in origins])
+    np.testing.assert_almost_equal(
+        metric.loc[0, "mean_absolute_scaled_error"], np.mean(np.abs(errors) / scale_abs)
+    )
+    np.testing.assert_almost_equal(
+        metric.loc[0, "root_mean_squared_scaled_error"],
+        np.sqrt(np.mean(errors ** 2 / scale_sq))
+    )

@@ -1,0 +1,26 @@
+python=3.12.3 tsicl=0.2.1 torch=2.9.1+cpu numpy=2.5.4 pandas=2.3.3 skforecast=0.27.0 machine=x86_64 cuda=False
+
+== E1 past-only covariates
+past-only vs no exog: max_abs_diff=0.000e+00 identical=True
+past+future vs no exog: max_abs_diff=1.347e+00 identical=False
+MAE no exog=0.4426 past-only=0.4426 past+future=0.2819
+
+== E2 mixed covariates: 'drv' past-only, 'aux' known in the future
+mixed (drv past-only + aux future) vs aux only: max_abs_diff=0.000e+00 identical=True
+
+== E3 different context lengths in the same call, future exog
+s1 joint (same length) vs alone: max_abs_diff=3.815e-06 identical=False
+s1 joint (s2 shorter) vs alone: max_abs_diff=1.347e+00 identical=False
+s1 joint (s2 shorter) vs no exog: max_abs_diff=0.000e+00 identical=True
+
+== E4 NaN in the exog of another series of the same call
+s1 joint (s2 exog with NaN) vs alone: max_abs_diff=4.160e-03 identical=False
+
+== E5 rollout (max_target_len=672)
+steps=700 exog=False: rows=700 finite=True
+steps=1344 exog=False: ValueError: Arg `prediction_length` should be a >0 `int`, received 0 instead
+    raised at tsicl/pipeline.py 1270
+steps=700 exog=True: RuntimeError: Sizes of tensors must match except in dimension 0. Expected size 512 but got size 672 for tensor number 1 in the list.
+    raised at tsicl/pipeline.py 1101
+steps=1344 exog=True: RuntimeError: Sizes of tensors must match except in dimension 0. Expected size 512 but got size 672 for tensor number 1 in the list.
+    raised at tsicl/pipeline.py 1101

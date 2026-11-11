@@ -1,0 +1,10 @@
+python 3.12.3
+timesfm 3.0.2
+import timesfm3 (current adapter probe): OK (no error)
+from timesfm3 import TimesFM3Forecaster (proposed probe): ImportError: import of torch halted; None in sys.modules
+
+python 3.12.3
+timesfm 3.0.0
+import timesfm3 (current adapter probe): ImportError: import of torch halted; None in sys.modules
+from timesfm3 import TimesFM3Forecaster (proposed probe): ImportError: import of torch halted; None in sys.modules
+

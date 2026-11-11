@@ -1,0 +1,13 @@
+python 3.12.3 | torch 2.15.0+cpu | numpy 2.5.4 | pandas 2.3.3 | tfc-t0 0.6.0 | skforecast 0.27.0
+[padding] supports_heterogeneous_covariates=True, predict_extra={}: max rel diff = 0.0144
+[het. covariates] supports_heterogeneous_covariates=True, predict_extra={}: max rel diff = 0.0635
+[padding + het. covariates] supports_heterogeneous_covariates=True, predict_extra={}: max rel diff = 0.0346
+[padding] supports_heterogeneous_covariates=True, predict_extra={'trim_leading_missing': True}: max rel diff = 1.73e-07
+[het. covariates] supports_heterogeneous_covariates=True, predict_extra={'trim_leading_missing': True}: max rel diff = 0.0635
+[padding + het. covariates] supports_heterogeneous_covariates=True, predict_extra={'trim_leading_missing': True}: max rel diff = 0.0355
+[padding] supports_heterogeneous_covariates=False, predict_extra={}: max rel diff = 0.0144
+[het. covariates] supports_heterogeneous_covariates=False, predict_extra={}: max rel diff = 0
+[padding + het. covariates] supports_heterogeneous_covariates=False, predict_extra={}: max rel diff = 0
+[padding] supports_heterogeneous_covariates=False, predict_extra={'trim_leading_missing': True}: max rel diff = 1.73e-07
+[het. covariates] supports_heterogeneous_covariates=False, predict_extra={'trim_leading_missing': True}: max rel diff = 0
+[padding + het. covariates] supports_heterogeneous_covariates=False, predict_extra={'trim_leading_missing': True}: max rel diff = 0

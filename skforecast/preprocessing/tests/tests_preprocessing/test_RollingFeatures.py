@@ -150,6 +150,23 @@ def test_RollingFeatures_validate_params():
         RollingFeatures(**params[16])
 
 
+@pytest.mark.parametrize("window_sizes", [[], 5], 
+                         ids=lambda ws: f"window_sizes: {ws}")
+def test_RollingFeatures_ValueError_when_stats_is_empty_list(window_sizes):
+    """
+    Test RollingFeatures raises a ValueError with a clear message when
+    `stats` is an empty list, for example when the feature selection does not
+    select any window feature.
+    """
+    err_msg = re.escape(
+        "`stats` must contain at least one statistic. If no window "
+        "feature is needed (for example, the feature selection did not "
+        "select any), set `window_features=None` in the forecaster."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        RollingFeatures(stats=[], window_sizes=window_sizes)
+
+
 @pytest.mark.parametrize(
     "params", 
     [{'stats': ['mean', 'ewm'], 'window_sizes': 5, 'min_periods': None, 

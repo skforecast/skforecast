@@ -56,6 +56,13 @@ series_long_dt_nans = reshape_series_wide_to_long(series_wide_dt_nans)
 series_dict_range = series_wide_range.copy().to_dict(orient='series')
 series_dict_dt = series_wide_dt.copy().to_dict(orient='series')
 
+# Series that do not cover the same period: the span of the series (50
+# observations, from 2020-01-01 to 2020-02-19) is longer than any of them (30).
+series_dict_dt_different_periods = {
+    'l1': series_wide_dt['l1'].iloc[:30].copy(),
+    'l2': series_wide_dt['l2'].iloc[20:].copy(),
+}
+
 exog = pd.DataFrame({
      'exog1': pd.Series(np.array(
                [0.81362466, 0.18065237, 0.23475578, 0.65981251, 0.77626016,

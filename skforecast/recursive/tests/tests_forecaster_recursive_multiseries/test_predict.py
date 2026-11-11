@@ -1393,6 +1393,45 @@ def test_predict_output_when_encoding_onehot_and_series_not_in_alphabetical_orde
     pd.testing.assert_frame_equal(predictions, expected)
 
 
+@pytest.mark.parametrize(
+    "encoding, expected_pred",
+    [
+        ('ordinal', np.array([7.9141030331, 9.0366090718, 7.8098308274, 8.8198044885,
+                              7.5396723503, 9.7230055130, 7.3020742452, 8.9756666102])),
+        (None, np.array([9.2055791683, 8.1803752703, 8.9613651365, 8.4324024806,
+                         8.4987969814, 8.6561123966, 8.5811338924, 8.6482967876]))
+    ],
+    ids=['encoding: ordinal', 'encoding: None']
+)
+def test_predict_output_when_encoding_not_onehot_and_series_not_in_alphabetical_order(
+    encoding, expected_pred
+):
+    """
+    Test predict output when `encoding` is 'ordinal' or None and the series are
+    not in alphabetical order ('c', 'a', 'd', 'b'). With `levels=None`, the
+    levels of each step follow the order of the series, as with 'onehot', not
+    the alphabetical order of `encoding_mapping_`.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = LinearRegression(),
+                     lags               = 2,
+                     encoding           = encoding,
+                     transformer_series = None,
+                     dropna_from_series = True
+                 )
+    forecaster.fit(series=series_dict_unordered, suppress_warnings=True)
+    predictions = forecaster.predict(steps=2, suppress_warnings=True)
+
+    expected = pd.DataFrame(
+        {'level': ['c', 'a', 'd', 'b', 'c', 'a', 'd', 'b'],
+         'pred': expected_pred},
+        index=pd.DatetimeIndex(['2020-01-11'] * 4 + ['2020-01-12'] * 4)
+    )
+
+    assert forecaster.X_train_series_names_in_ == ['c', 'a', 'd', 'b']
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
 def test_predict_output_when_encoding_onehot_and_series_without_rows_in_X_train():
     """
     Test predict output when `encoding='onehot'` and one series ('d') loses
@@ -1505,6 +1544,7 @@ def test_predict_warns_once_when_exog_has_missing_values(
     predict has missing values, or they appear when aligning it with the 
     predictions. Before, a wide exog issued a second MissingValuesWarning.
     The exog has an integer column, whose dtype changes with the NaN values.
+    The estimator accepts NaN values, so predict does not raise.
     """
     rng = np.random.default_rng(123)
     index = pd.date_range(start='2020-01-01', periods=50, freq='D')
@@ -1515,7 +1555,9 @@ def test_predict_warns_once_when_exog_has_missing_values(
     exog = pd.DataFrame(
         {'exog_1': rng.normal(size=50), 'exog_2': np.arange(50)}, index=index
     )
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
+    forecaster = ForecasterRecursiveMultiSeries(
+        HistGradientBoostingRegressor(max_iter=10, random_state=123), lags=3
+    )
     forecaster.fit(series=series, exog=exog)
 
     exog_pred = pd.DataFrame(
@@ -1552,7 +1594,8 @@ def test_predict_warns_once_when_exog_has_missing_values(
 def test_predict_MissingValuesWarning_when_exog_has_categories_not_seen_in_fit():
     """
     Test predict issues a single MissingValuesWarning when a wide exog has a 
-    category not seen during training, which is encoded as NaN.
+    category not seen during training, which is encoded as NaN. The estimator
+    accepts NaN values, so predict does not raise.
     """
     rng = np.random.default_rng(123)
     index = pd.date_range(start='2020-01-01', periods=50, freq='D')
@@ -1567,7 +1610,9 @@ def test_predict_MissingValuesWarning_when_exog_has_categories_not_seen_in_fit()
         },
         index=index
     )
-    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
+    forecaster = ForecasterRecursiveMultiSeries(
+        HistGradientBoostingRegressor(max_iter=10, random_state=123), lags=3
+    )
     forecaster.fit(series=series, exog=exog)
 
     exog_pred = pd.DataFrame(
@@ -1584,3 +1629,291 @@ def test_predict_MissingValuesWarning_when_exog_has_categories_not_seen_in_fit()
         "`exog` has missing values after its transformation, for example "
         "categories not seen during training."
     )
+
+
+@pytest.mark.parametrize(
+    "encoding, expected_pred",
+    [('ordinal', [0.4868126323074294, 0.5024650068615651, 0.503815764769467,
+                  0.5174295272142599, 0.50181482588542, 0.5099601037013929]),
+     ('ordinal_category', [0.4868126323074294, 0.5024650068615651, 0.503815764769467,
+                           0.5174295272142599, 0.50181482588542, 0.5099601037013929]),
+     ('onehot', [0.4868126323074294, 0.502465006861565, 0.503815764769467,
+                 0.5174295272142598, 0.50181482588542, 0.5099601037013929]),
+     (None, [0.4830736746964662, 0.5061193035744198, 0.5001465472604174,
+             0.5212869740377445, 0.4982301921216813, 0.5135969153292497])],
+    ids=lambda x: f'{x}'
+)
+def test_predict_output_when_series_names_are_integers(encoding, expected_pred):
+    """
+    Test predict output when the series names are integers. The predictions
+    are the same as with the names as strings ('l1', 'l2') and the column
+    `level` keeps the integers. Before, `fit` raised a `KeyError`.
+    """
+    series = {
+        1: series_dict_dt['l1'].rename(1),
+        2: series_dict_dt['l2'].rename(2)
+    }
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, encoding=encoding
+    )
+    forecaster.fit(series=series)
+    predictions = forecaster.predict(steps=3)
+    predictions_level_2 = forecaster.predict(steps=3, levels=[2])
+
+    index = pd.DatetimeIndex(
+        ['2000-02-20', '2000-02-20', '2000-02-21', '2000-02-21',
+         '2000-02-22', '2000-02-22']
+    )
+    expected = pd.DataFrame(
+        {'level': [1, 2, 1, 2, 1, 2], 'pred': np.array(expected_pred)},
+        index=index
+    )
+
+    pd.testing.assert_frame_equal(predictions, expected)
+    pd.testing.assert_frame_equal(
+        predictions_level_2, expected.loc[expected['level'] == 2]
+    )
+
+
+@pytest.mark.parametrize(
+    "method",
+    ["predict", "predict_bootstrapping"],
+    ids=lambda method: f"method: {method}"
+)
+def test_predict_ValueError_when_exog_has_NaN_and_estimator_is_linear_model(method):
+    """
+    Test predict and predict_bootstrapping raise a ValueError naming the
+    predictor, the series, the step and the date when `exog` has a missing
+    value and the estimator is a linear model, which does not accept them (as
+    its `predict` method). Before, the fast path of linear models returned NaN
+    predictions from that step on.
+    """
+    index = pd.date_range(start='2020-01-01', periods=50, freq='D')
+    series = {
+        'l1': pd.Series(np.arange(50, dtype=float), index=index),
+        'l2': pd.Series(np.arange(50, 100, dtype=float), index=index)
+    }
+    exog = pd.DataFrame({'exog': np.arange(50, dtype=float)}, index=index)
+    exog_pred = pd.DataFrame(
+        {'exog': [50., 51., 52.]},
+        index=pd.date_range(start='2020-02-20', periods=3, freq='D')
+    )
+    exog_pred_l2 = exog_pred.copy()
+    exog_pred_l2.iloc[1, 0] = np.nan
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, encoding='ordinal'
+    )
+    forecaster.fit(series=series, exog=exog, store_in_sample_residuals=True)
+
+    err_msg = re.escape(
+        "Input X contains NaN in the predictors ['exog'] of series ['l2'] at "
+        "step 2 (2020-02-21 00:00:00). LinearRegression does not accept missing "
+        "values encoded as NaN, so its predictions would be NaN."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        getattr(forecaster, method)(
+            steps             = 3,
+            exog              = {'l1': exog_pred, 'l2': exog_pred_l2},
+            suppress_warnings = True
+        )
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    [HistGradientBoostingRegressor(max_iter=10, random_state=123),
+     LGBMRegressor(n_estimators=10, random_state=123, verbose=-1)],
+    ids=lambda estimator: f"estimator: {type(estimator).__name__}"
+)
+def test_predict_output_when_exog_has_NaN_and_estimator_accepts_NaN(estimator):
+    """
+    Test predict output when `exog` has a missing value and the estimator
+    accepts them: the predictions are not NaN and are the same as those of the
+    estimator with the predictors of `create_predict_X`.
+    """
+    rng = np.random.default_rng(123)
+    index = pd.date_range(start='2020-01-01', periods=50, freq='D')
+    series = {
+        'l1': pd.Series(rng.normal(size=50), index=index),
+        'l2': pd.Series(rng.normal(size=50), index=index)
+    }
+    exog = pd.DataFrame({'exog': np.arange(50, dtype=float)}, index=index)
+    exog_pred = pd.DataFrame(
+        {'exog': [50., np.nan, 52.]},
+        index=pd.date_range(start='2020-02-20', periods=3, freq='D')
+    )
+    forecaster = ForecasterRecursiveMultiSeries(estimator, lags=3, encoding='ordinal')
+    forecaster.fit(series=series, exog=exog)
+    predictions = forecaster.predict(steps=3, exog=exog_pred, suppress_warnings=True)
+    X_predict = forecaster.create_predict_X(
+        steps=3, exog=exog_pred, suppress_warnings=True
+    ).drop(columns='level')
+
+    assert not predictions['pred'].isna().any()
+    np.testing.assert_array_almost_equal(
+        predictions['pred'].to_numpy(), forecaster.estimator.predict(X_predict)
+    )
+
+
+def test_predict_ValueError_when_unknown_level_with_ordinal_encoding_and_estimator_is_linear_model():
+    """
+    Test predict raises a ValueError naming `_level_skforecast` when a series
+    not seen during training is predicted with `encoding='ordinal'`, which
+    encodes it as NaN, and the estimator is a linear model. Before, the fast
+    path of linear models returned NaN predictions.
+    """
+    series = pd.DataFrame({
+        'l1': np.arange(50, dtype=float), 'l2': np.arange(50, 100, dtype=float)
+    })
+    last_window = pd.DataFrame(
+        {'l3': [1., 2., 3.]}, index=pd.RangeIndex(start=47, stop=50)
+    )
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, encoding='ordinal'
+    )
+    forecaster.fit(series=series)
+
+    err_msg = re.escape(
+        "Input X contains NaN in the predictors ['_level_skforecast'] of series "
+        "['l3'] at step 1 (50). LinearRegression does not accept missing values "
+        "encoded as NaN, so its predictions would be NaN. Predict the series not "
+        "seen during training with `encoding='onehot'` or `encoding=None` (an "
+        "ordinal encoding gives them NaN), or use an estimator that accepts "
+        "them, for example HistGradientBoostingRegressor or LGBMRegressor."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        forecaster.predict(
+            steps=2, levels=['l3'], last_window=last_window, suppress_warnings=True
+        )
+
+
+def test_predict_output_when_allow_nan_predictions_and_exog_has_NaN():
+    """
+    Test predict output when `_allow_nan_predictions=True` (set only by
+    multi-series backtesting) and `exog` has a missing value: the linear
+    model returns NaN predictions for the series with the missing value from
+    that step on, instead of raising, and the other series are predicted.
+    """
+    index = pd.date_range(start='2020-01-01', periods=50, freq='D')
+    series = {
+        'l1': pd.Series(np.arange(50, dtype=float), index=index),
+        'l2': pd.Series(np.arange(50, 100, dtype=float), index=index)
+    }
+    exog = pd.DataFrame({'exog': np.arange(50, dtype=float)}, index=index)
+    exog_pred = pd.DataFrame(
+        {'exog': [50., 51., 52.]},
+        index=pd.date_range(start='2020-02-20', periods=3, freq='D')
+    )
+    exog_pred_l2 = exog_pred.copy()
+    exog_pred_l2.iloc[1, 0] = np.nan
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
+    forecaster.fit(series=series, exog=exog)
+    forecaster._allow_nan_predictions = True
+    predictions = forecaster.predict(
+        steps=3, exog={'l1': exog_pred, 'l2': exog_pred_l2}, suppress_warnings=True
+    )
+
+    is_nan = predictions['pred'].isna().to_numpy()
+    expected_is_nan = (
+        (predictions['level'] == 'l2') & (predictions.index >= '2020-02-21')
+    ).to_numpy()
+
+    np.testing.assert_array_equal(is_nan, expected_is_nan)
+
+
+# Series with a trend, so that the differentiation is needed, and a daily
+# index, so that the error names the date of the missing value.
+series_diff = pd.DataFrame(
+    {
+        'l1': np.arange(30, dtype=float) + np.random.default_rng(123).normal(size=30),
+        'l2': np.arange(30, dtype=float) + np.random.default_rng(456).normal(size=30)
+    },
+    index=pd.date_range("2020-01-01", periods=30, freq="D")
+)
+
+
+@pytest.mark.parametrize(
+    "method",
+    ["predict", "predict_interval", "predict_quantiles"],
+    ids=lambda method: f"method: {method}"
+)
+@pytest.mark.parametrize(
+    "estimator",
+    [LinearRegression(), HistGradientBoostingRegressor(max_iter=10, random_state=123)],
+    ids=lambda estimator: f"estimator: {type(estimator).__name__}"
+)
+def test_predict_ValueError_when_last_window_last_value_is_NaN_and_differentiation(
+    estimator, method
+):
+    """
+    Test predict methods raise a ValueError naming the series and the date
+    when the last value of a series in `last_window` is NaN and
+    `differentiation=1`. No predictor of the 2 steps reads it (`lags=[3]`),
+    but the differentiation of that series is reverted from it, so all its
+    predictions were NaN, with any estimator, without error.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator=estimator, lags=[3], differentiation=1
+                 )
+    forecaster.fit(series=series_diff.iloc[:20], store_in_sample_residuals=True)
+    last_window = series_diff.iloc[-6:].copy()
+    last_window.iloc[-1, 0] = np.nan
+
+    err_msg = re.escape(
+        "The series 'l1' (or `last_window`) has missing values (NaN) at "
+        "['2020-01-30 00:00:00']. With `differentiation`, the predictions are "
+        "reverted to the original scale from the last value of the series, so "
+        "all of them would be NaN, with any estimator. Fill the missing values "
+        "of the series (or `last_window`)."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        getattr(forecaster, method)(
+            steps=2, last_window=last_window, suppress_warnings=True
+        )
+
+
+def test_predict_output_when_last_window_last_value_is_NaN_and_differentiation_and_allow_nan_predictions():
+    """
+    Test predict output when `_allow_nan_predictions=True` (set only by
+    backtesting), the last value of a series in `last_window` is NaN and
+    `differentiation=1`: all the predictions of that series are NaN, instead
+    of raising, and the other series are predicted.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator=HistGradientBoostingRegressor(max_iter=10, random_state=123),
+                     lags=[3],
+                     differentiation=1
+                 )
+    forecaster.fit(series=series_diff.iloc[:20])
+    forecaster._allow_nan_predictions = True
+    last_window = series_diff.iloc[-6:].copy()
+    last_window.iloc[-1, 0] = np.nan
+    predictions = forecaster.predict(
+        steps=2, last_window=last_window, suppress_warnings=True
+    )
+
+    assert predictions.loc[predictions['level'] == 'l1', 'pred'].isna().all()
+    assert not predictions.loc[predictions['level'] == 'l2', 'pred'].isna().any()
+
+
+def test_predict_output_when_last_window_NaN_before_last_values_of_level_and_differentiation_dict():
+    """
+    Test predict output when `differentiation` is a dict with different
+    orders and `last_window` has a NaN in the second last value of a series
+    with order 1. All the series are checked at once with the maximum order
+    (2), but the differentiation of that series is reverted only from its
+    last value, so no error is raised and, with an estimator that accepts
+    NaN, its predictions are not NaN.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator=HistGradientBoostingRegressor(max_iter=10, random_state=123),
+                     lags=[3],
+                     differentiation={'l1': 1, 'l2': 2, '_unknown_level': 1}
+                 )
+    forecaster.fit(series=series_diff.iloc[:20])
+    last_window = series_diff.iloc[-6:].copy()
+    last_window.iloc[-2, 0] = np.nan
+    predictions = forecaster.predict(
+        steps=2, last_window=last_window, suppress_warnings=True
+    )
+
+    assert not predictions['pred'].isna().any()

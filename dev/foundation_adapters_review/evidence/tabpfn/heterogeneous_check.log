@@ -1,0 +1,8 @@
+skforecast         : 0.27.0
+tabpfn-time-series : 1.4.0
+tabpfn             : 9.2.0
+torch              : 2.15.0+cpu
+pandas             : 2.3.3
+numpy              : 2.5.4
+default features (1.4.0, with KnownCovariateLagFeature): max|s1 alone - s1 with s2(extra x2)| = 0.000e+00
+features of 1.3.0 (no KnownCovariateLagFeature): max|s1 alone - s1 with s2(extra x2)| = 0.000e+00

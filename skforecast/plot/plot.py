@@ -70,9 +70,9 @@ def plot_residuals(
         fig = plt.figure(constrained_layout=True, **fig_kw)
         
     gs  = matplotlib.gridspec.GridSpec(2, 2, figure=fig)
-    ax1 = plt.subplot(gs[0, :])
-    ax2 = plt.subplot(gs[1, 0])
-    ax3 = plt.subplot(gs[1, 1])
+    ax1 = fig.add_subplot(gs[0, :])
+    ax2 = fig.add_subplot(gs[1, 0])
+    ax3 = fig.add_subplot(gs[1, 1])
     
     ax1.plot(residuals)
     residuals_kde = np.asarray(residuals, dtype=float)
@@ -278,8 +278,8 @@ def set_dark_theme(
 
 def plot_prediction_intervals(
     predictions: pd.DataFrame,
-    y_true: pd.Series | pd.DataFrame,
-    target_variable: str,
+    y_true: pd.Series | pd.DataFrame | None = None,
+    target_variable: str | None = None,
     initial_x_zoom: list[str] | None = None,
     title: str | None = None,
     xaxis_title: str | None = None,
@@ -294,12 +294,19 @@ def plot_prediction_intervals(
     Parameters
     ----------
     predictions : pandas DataFrame
-        Predicted values and intervals. Expected columns are 'pred', 'lower_bound'
-        and 'upper_bound'.
-    y_true : pandas Series, pandas DataFrame
-        Real values of target variable.
-    target_variable : str
-        Name of target variable.
+        Predicted values and intervals of a single series. Expected columns are
+        'pred', 'lower_bound' and 'upper_bound', and 'y_true' when `y_true` is
+        not given (the predictions of the backtesting functions include it). With
+        multiple series, filter the rows of one level first.
+    y_true : pandas Series, pandas DataFrame, default None
+        Real values of target variable. If `None`, the column 'y_true' of
+        `predictions` is used.
+        **Changed in version 0.27.0:** optional when `predictions` has the
+        column 'y_true'.
+    target_variable : str, default None
+        Name of target variable, the column of `y_true` to plot. It can be
+        omitted when `y_true` is a pandas Series or has a single column.
+        **Changed in version 0.27.0:** optional.
     initial_x_zoom : list, default None
         Initial zoom of x-axis, by default None.
     title : str, default None
@@ -321,15 +328,38 @@ def plot_prediction_intervals(
     
     """
     
+    if 'level' in predictions.columns and predictions['level'].nunique() > 1:
+        raise ValueError(
+            "`predictions` contains more than one level. Filter the rows of one "
+            "level before plotting, for example: "
+            "`predictions[predictions['level'] == 'level_name']`."
+        )
+
+    if y_true is None:
+        if 'y_true' not in predictions.columns:
+            raise ValueError(
+                "`y_true` must be provided when `predictions` does not have the "
+                "column 'y_true' (the predictions of the backtesting functions "
+                "include it)."
+            )
+        y_true_to_plot = predictions['y_true']
+    else:
+        if isinstance(y_true, pd.Series):
+            y_true = y_true.to_frame()
+        if target_variable is None:
+            if y_true.shape[1] != 1:
+                raise ValueError(
+                    "`target_variable` must be provided when `y_true` has more "
+                    "than one column."
+                )
+            target_variable = y_true.columns[0]
+        y_true_to_plot = y_true.loc[predictions.index, target_variable]
+
     if ax is None:
         fig, ax = plt.subplots(**kwargs_subplots)
 
-    if isinstance(y_true, pd.Series):
-        y_true = y_true.to_frame()
-
     # NOTE: matplotlib is used directly instead of the pandas plotting backend
     # to avoid the deprecated pandas matplotlib converters.
-    y_true_to_plot = y_true.loc[predictions.index, target_variable]
     ax.plot(y_true_to_plot.index, y_true_to_plot.to_numpy(), label='real value')
     ax.plot(predictions.index, predictions['pred'].to_numpy(), label='prediction')
     ax.fill_between(

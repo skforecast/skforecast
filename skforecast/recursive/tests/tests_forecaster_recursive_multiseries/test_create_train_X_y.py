@@ -368,7 +368,84 @@ def test_create_train_X_y_output_when_series_and_exog_is_None():
         pd.testing.assert_series_equal(results[12][k], expected[12][k])
 
 
-@pytest.mark.parametrize("encoding, dtype", 
+def test_create_train_X_y_output_when_series_names_are_integers_and_encoding_onehot():
+    """
+    Test the output of _create_train_X_y when the series names are integers
+    and `encoding='onehot'`. The one-hot columns are named after the series
+    as strings, while the series names are kept as integers in the rest of
+    the outputs.
+    """
+    index = pd.date_range(start='2000-01-01', periods=7, freq='D')
+    series = {
+        1: pd.Series(np.arange(7, dtype=float), index=index, name=1),
+        2: pd.Series(np.arange(7, dtype=float), index=index, name=2)
+    }
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(),
+        transformer_series=StandardScaler(),
+        lags=3,
+        encoding="onehot"
+    )
+
+    results = forecaster._create_train_X_y(series=series)
+    expected = (
+        pd.DataFrame(
+            data = np.array([[-0.5, -1. , -1.5, 1, 0],
+                             [ 0. , -0.5, -1. , 1, 0],
+                             [ 0.5,  0. , -0.5, 1, 0],
+                             [ 1. ,  0.5,  0. , 1, 0],
+                             [-0.5, -1. , -1.5, 0, 1],
+                             [ 0. , -0.5, -1. , 0, 1],
+                             [ 0.5,  0. , -0.5, 0, 1],
+                             [ 1. ,  0.5,  0. , 0, 1]]),
+            index   = pd.DatetimeIndex([
+                "2000-01-04", "2000-01-05", "2000-01-06", "2000-01-07",
+                "2000-01-04", "2000-01-05", "2000-01-06", "2000-01-07"
+            ]),
+            columns = ['lag_1', 'lag_2', 'lag_3', '1', '2']
+        ),
+        pd.Series(
+            data  = np.array([0., 0.5, 1., 1.5, 0., 0.5, 1., 1.5]),
+            index   = pd.DatetimeIndex([
+                "2000-01-04", "2000-01-05", "2000-01-06", "2000-01-07",
+                "2000-01-04", "2000-01-05", "2000-01-06", "2000-01-07"
+            ]),
+            name  = 'y',
+            dtype = float
+        ),
+        {1: index, 2: index},
+        [1, 2],
+        [1, 2],
+        {1: pd.Series(
+                  data  = np.array([4., 5., 6.]),
+                  index = pd.date_range(start='2000-01-05', periods=3, freq='D'),
+                  name  = 1,
+                  dtype = float
+              ),
+         2: pd.Series(
+                  data  = np.array([4., 5., 6.]),
+                  index = pd.date_range(start='2000-01-05', periods=3, freq='D'),
+                  name  = 2,
+                  dtype = float
+              )
+        }
+    )
+
+    pd.testing.assert_frame_equal(results[0], expected[0])
+    pd.testing.assert_series_equal(results[1], expected[1])
+    assert results[2].keys() == expected[2].keys()
+    for k in results[2].keys():
+        pd.testing.assert_index_equal(results[2][k], expected[2][k])
+    assert results[3] == expected[3]
+    assert results[4] == expected[4]
+    assert forecaster.encoding_mapping_ == {1: 0, 2: 1}
+    assert list(results[12].keys()) == [1, 2]
+    for k in results[12].keys():
+        pd.testing.assert_series_equal(results[12][k], expected[5][k])
+
+
+@pytest.mark.parametrize("encoding, dtype",
                          [('ordinal'         , float), 
                           ('ordinal_category', 'category'),
                           (None              , float)], 
@@ -2157,10 +2234,11 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_y_train():
     )
     
     warn_msg = re.escape(
-        "NaNs detected in `y_train`. They have been dropped because the "
-        "target variable cannot have NaN values. Same rows have been "
-        "dropped from `X_train` to maintain alignment. This is caused by "
-        "interspersed NaNs in `series`."
+        "Some rows of the training matrix have missing values. 1 of 10 rows "
+        "is dropped (NaN target) and 4 are kept with NaN predictors (lags, "
+        "window features or exog). They come from interspersed NaNs in "
+        "`series` or `exog`. The estimator must support NaN. To drop those "
+        "rows, set `forecaster.dropna_from_series = True`."
     )
     with pytest.warns(MissingValuesWarning, match = warn_msg):    
         results = forecaster._create_train_X_y(series=series, exog=exog)
@@ -2252,10 +2330,11 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_y_train_datetime()
     )
     
     warn_msg = re.escape(
-        "NaNs detected in `y_train`. They have been dropped because the "
-        "target variable cannot have NaN values. Same rows have been "
-        "dropped from `X_train` to maintain alignment. This is caused by "
-        "interspersed NaNs in `series`."
+        "Some rows of the training matrix have missing values. 1 of 10 rows "
+        "is dropped (NaN target) and 4 are kept with NaN predictors (lags, "
+        "window features or exog). They come from interspersed NaNs in "
+        "`series` or `exog`. The estimator must support NaN. To drop those "
+        "rows, set `forecaster.dropna_from_series = True`."
     )
     with pytest.warns(MissingValuesWarning, match = warn_msg):    
         results = forecaster._create_train_X_y(series=series, exog=exog)
@@ -2354,10 +2433,11 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_X_train_drop_nan_T
     )
     
     warn_msg = re.escape(
-        "NaNs detected in `X_train`. They have been dropped. If "
-        "you want to keep them, set `forecaster.dropna_from_series = False`. " 
-        "Same rows have been removed from `y_train` to maintain alignment. "
-        "This is caused by interspersed NaNs in `series` or `exog`."
+        "Some rows of the training matrix have missing values. 4 of 10 rows "
+        "are dropped, with NaN predictors (lags, window features or exog). "
+        "They come from interspersed NaNs in `series` or `exog`. To keep "
+        "the rows with NaN predictors, set `forecaster.dropna_from_series = "
+        "False` (the estimator must support NaN)."
     )
     with pytest.warns(MissingValuesWarning, match = warn_msg):    
         results = forecaster._create_train_X_y(series=series, exog=exog)
@@ -2457,10 +2537,11 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_X_train_drop_nan_T
     )
     
     warn_msg = re.escape(
-        "NaNs detected in `X_train`. They have been dropped. If "
-        "you want to keep them, set `forecaster.dropna_from_series = False`. " 
-        "Same rows have been removed from `y_train` to maintain alignment. "
-        "This is caused by interspersed NaNs in `series` or `exog`."
+        "Some rows of the training matrix have missing values. 4 of 10 rows "
+        "are dropped, with NaN predictors (lags, window features or exog). "
+        "They come from interspersed NaNs in `series` or `exog`. To keep "
+        "the rows with NaN predictors, set `forecaster.dropna_from_series = "
+        "False` (the estimator must support NaN)."
     )
     with pytest.warns(MissingValuesWarning, match = warn_msg):    
         results = forecaster._create_train_X_y(series=series, exog=exog)
@@ -2556,9 +2637,11 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_X_train_drop_nan_F
     )
     
     warn_msg = re.escape(
-        "NaNs detected in `X_train`. Some estimators do not allow "
-        "NaN values during training. If you want to drop them, "
-        "set `forecaster.dropna_from_series = True`."
+        "Some rows of the training matrix have missing values. 4 of 10 rows "
+        "are kept with NaN predictors (lags, window features or exog). They "
+        "come from interspersed NaNs in `series` or `exog`. The estimator "
+        "must support NaN. To drop those rows, set "
+        "`forecaster.dropna_from_series = True`."
     )
     with pytest.warns(MissingValuesWarning, match = warn_msg):    
         results = forecaster._create_train_X_y(series=series, exog=exog)
@@ -2652,9 +2735,11 @@ def test_create_train_X_y_output_series_DataFrame_and_NaNs_in_X_train_drop_nan_F
     )
     
     warn_msg = re.escape(
-        "NaNs detected in `X_train`. Some estimators do not allow "
-        "NaN values during training. If you want to drop them, "
-        "set `forecaster.dropna_from_series = True`."
+        "Some rows of the training matrix have missing values. 4 of 10 rows "
+        "are kept with NaN predictors (lags, window features or exog). They "
+        "come from interspersed NaNs in `series` or `exog`. The estimator "
+        "must support NaN. To drop those rows, set "
+        "`forecaster.dropna_from_series = True`."
     )
     with pytest.warns(MissingValuesWarning, match = warn_msg):
         results = forecaster._create_train_X_y(series=series, exog=exog)
@@ -2761,9 +2846,14 @@ def test_ValueError_create_train_X_series_DataFrame_exog_dict_and_empty_X_train_
     )
     
     error_msg = re.escape(
-        "All samples have been removed due to NaNs. Set "
-        "`forecaster.dropna_from_series = False` or review `series` "
-        "and `exog` values."
+        "All samples have been removed due to NaNs: every row has a missing "
+        "value in the target or in the predictors (largest lag: 5). This can "
+        "happen when the missing values of `series` are closer together than the "
+        "lags, or when `exog` has a missing value in every row. To keep "
+        "training samples, fill the missing values of `series` and `exog`, use "
+        "fewer lags, or use an estimator that accepts NaNs (for example, "
+        "LightGBM or scikit-learn HistGradientBoosting models) and set "
+        "`dropna_from_series = False`."
     )
     with pytest.raises(ValueError, match = error_msg):
         forecaster._create_train_X_y(series=series, exog=exog_dict)
@@ -4038,23 +4128,18 @@ def test_create_train_X_y_output_when_categorical_features_and_already_trained(
 
 
 @pytest.mark.parametrize(
-    "encoding, expected_X_train_series_names_in_",
-    [
-        ('ordinal', ['a', 'b', 'c']),
-        ('ordinal_category', ['a', 'b', 'c']),
-        ('onehot', ['c', 'a', 'b']),
-        (None, ['a', 'b', 'c'])
-    ],
-    ids=lambda value: f'encoding, X_train_series_names_in_: {value}'
+    "encoding",
+    ['ordinal', 'ordinal_category', 'onehot', None],
+    ids=lambda encoding: f'encoding: {encoding}'
 )
 def test_create_train_X_y_X_train_series_names_in_when_series_unordered_and_one_series_dropped(
-    encoding, expected_X_train_series_names_in_
+    encoding
 ):
     """
     Test `X_train_series_names_in_` when the series are not in alphabetical order
     ('c', 'a', 'd', 'b') and all the rows of series 'd' are removed because it
-    has no exog and `dropna_from_series=True`. With 'onehot' the names follow the
-    order of the series and with the other encodings the alphabetical order of
+    has no exog and `dropna_from_series=True`. With every encoding the names
+    follow the order of the series, not the alphabetical order of
     `encoding_mapping_`. The column of 'd' is kept in the one-hot block.
     """
     forecaster = ForecasterRecursiveMultiSeries(
@@ -4071,7 +4156,7 @@ def test_create_train_X_y_X_train_series_names_in_when_series_unordered_and_one_
     )
 
     assert results[3] == ['c', 'a', 'd', 'b']
-    assert results[4] == expected_X_train_series_names_in_
+    assert results[4] == ['c', 'a', 'b']
     assert results[0].columns.to_list() == expected_columns
     assert len(results[0]) == 17
 
@@ -4178,10 +4263,12 @@ def test_create_train_X_y_output_when_dropna_from_series_and_nan_in_lags_and_cat
     )
 
     warn_msg = re.escape(
-        "NaNs detected in `X_train`. They have been dropped. If "
-        "you want to keep them, set `forecaster.dropna_from_series = False`. "
-        "Same rows have been removed from `y_train` to maintain alignment. "
-        "This is caused by interspersed NaNs in `series` or `exog`."
+        "Some rows of the training matrix have missing values. 4 of 12 rows "
+        "are dropped: 1 with a NaN target and 3 with NaN predictors (lags, "
+        "window features or exog). They come from interspersed NaNs in "
+        "`series` or `exog`. To keep the rows with NaN predictors, set "
+        "`forecaster.dropna_from_series = False` (the estimator must "
+        "support NaN)."
     )
     with pytest.warns(MissingValuesWarning, match=warn_msg):
         results = forecaster._create_train_X_y(series=series, exog=exog)
@@ -4309,7 +4396,24 @@ def test_create_train_X_y_output_when_exog_dict_float_column_with_NaNs(
                      dropna_from_series = dropna_from_series
                  )
 
-    warn_msg = re.escape("NaNs detected in `X_train`.")
+    if dropna_from_series:
+        counts = (
+            "3 of 8 rows are dropped, with NaN predictors (lags, window "
+            "features or exog). They come from interspersed NaNs in `series` "
+            "or `exog`. To keep the rows with NaN predictors, set "
+            "`forecaster.dropna_from_series = False` (the estimator must "
+            "support NaN)."
+        )
+    else:
+        counts = (
+            "3 of 8 rows are kept with NaN predictors (lags, window features "
+            "or exog). They come from interspersed NaNs in `series` or "
+            "`exog`. The estimator must support NaN. To drop those rows, set "
+            "`forecaster.dropna_from_series = True`."
+        )
+    warn_msg = re.escape(
+        f"Some rows of the training matrix have missing values. {counts}"
+    )
     with pytest.warns(MissingValuesWarning, match=warn_msg):
         results = forecaster._create_train_X_y(series=series, exog=exog)
 
@@ -4924,9 +5028,11 @@ def test_create_train_X_y_output_when_exog_dict_and_one_series_without_exog():
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
 
     warn_msg = re.escape(
-        "NaNs detected in `X_train`. Some estimators do not allow "
-        "NaN values during training. If you want to drop them, "
-        "set `forecaster.dropna_from_series = True`."
+        "Some rows of the training matrix have missing values. 5 of 12 rows "
+        "are kept with NaN predictors (lags, window features or exog). They "
+        "come from interspersed NaNs in `series` or `exog`. The estimator "
+        "must support NaN. To drop those rows, set "
+        "`forecaster.dropna_from_series = True`."
     )
     with pytest.warns(MissingValuesWarning, match=warn_msg):
         results = forecaster._create_train_X_y(series=series, exog=exog)
@@ -5124,3 +5230,61 @@ def test_create_train_X_y_output_when_exog_dict_window_features_transformers_and
         assert results[11][k] == expected[11][k]
     for k in results[12].keys():
         pd.testing.assert_series_equal(results[12][k], expected[12][k])
+
+
+@pytest.mark.parametrize(
+    "nan_in, dropna_from_series, counts, n_rows_kept",
+    [
+        ("y", True, "4 of 18 rows are dropped: 1 with a NaN target and 3 with NaN predictors (lags, window features or exog).", 14),
+        ("y", False, "1 of 18 rows is dropped (NaN target) and 3 are kept with NaN predictors (lags, window features or exog).", 17),
+        ("exog", True, "2 of 18 rows are dropped, with NaN predictors (lags, window features or exog).", 16),
+        ("exog", False, "2 of 18 rows are kept with NaN predictors (lags, window features or exog).", 18),
+        ("both", True, "6 of 18 rows are dropped: 1 with a NaN target and 5 with NaN predictors (lags, window features or exog).", 12),
+        ("both", False, "1 of 18 rows is dropped (NaN target) and 5 are kept with NaN predictors (lags, window features or exog).", 17),
+    ],
+    ids=lambda x: f"{x}"[:20]
+)
+def test_create_train_X_y_single_MissingValuesWarning_with_counts_of_NaN_rows(
+    nan_in, dropna_from_series, counts, n_rows_kept
+):
+    """
+    Test a single MissingValuesWarning is raised with the number of rows of
+    the training matrix with a NaN target (always dropped) and with NaN
+    predictors (dropped only if `dropna_from_series=True`), and that the
+    rows kept match the counts. NaN in `y` at position 5 (target of one row
+    and lag of the next 3) and in `exog` at position 10.
+    `exog` is shared by the two series, so its NaN gives a row with NaN
+    predictors in each one (18 rows in total).
+    """
+    y = pd.Series(np.arange(12, dtype=float), name='l1')
+    if nan_in in ("y", "both"):
+        y.iloc[5] = np.nan
+    series = {'l1': y, 'l2': pd.Series(np.arange(50, 62, dtype=float), name='l2')}
+    exog = pd.Series(np.arange(100, 112, dtype=float), name='exog')
+    if nan_in in ("exog", "both"):
+        exog.iloc[10] = np.nan
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = LinearRegression(),
+                     lags               = 3,
+                     transformer_series = StandardScaler(),
+                     dropna_from_series = dropna_from_series
+                 )
+
+    action = (
+        "To keep the rows with NaN predictors, set "
+            "`forecaster.dropna_from_series = False` (the estimator must "
+            "support NaN)."
+        if dropna_from_series else
+        "The estimator must support NaN. To drop those rows, set "
+            "`forecaster.dropna_from_series = True`."
+    )
+    warn_msg = re.escape(
+        f"Some rows of the training matrix have missing values. {counts} "
+        f"They come from interspersed NaNs in `series` or `exog`. {action}"
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg) as record:
+        X_train, y_train = forecaster.create_train_X_y(series=series, exog=exog)
+
+    assert sum(issubclass(w.category, MissingValuesWarning) for w in record) == 1
+    assert len(y_train) == n_rows_kept
+    assert len(X_train) == n_rows_kept

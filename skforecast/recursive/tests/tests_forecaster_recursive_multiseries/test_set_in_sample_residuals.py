@@ -1,5 +1,6 @@
 # Unit test set_in_sample_residuals ForecasterRecursiveMultiSeries
 # ==============================================================================
+import copy
 import re
 import warnings
 import pytest
@@ -9,6 +10,7 @@ import pandas as pd
 from sklearn.exceptions import NotFittedError
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
+from catboost import CatBoostRegressor
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 
 # Fixtures
@@ -266,4 +268,47 @@ def test_set_in_sample_residuals_when_more_than_10_000_residuals(index_type):
             np.testing.assert_array_equal(
                 forecaster_1.in_sample_residuals_by_bin_[level][k],
                 forecaster_2.in_sample_residuals_by_bin_[level][k]
+            )
+
+
+@pytest.mark.parametrize("encoding", 
+                         ["ordinal", "ordinal_category", "onehot", None],
+                         ids = lambda value: f'encoding: {value}')
+def test_set_in_sample_residuals_same_as_fit_when_catboost_and_categorical_exog(encoding):
+    """
+    Test that set_in_sample_residuals stores exactly the same residuals and
+    residuals by bin as fit with a CatBoostRegressor and a categorical exog.
+    The categorical columns of the training matrix are cast as in fit before
+    predicting with the estimator, otherwise CatBoost raises a CatBoostError.
+    """
+    exog_cat = exog_wide_range[['exog_1']].assign(
+        exog_cat=pd.Categorical(np.arange(len(exog_wide_range)) % 3)
+    )
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=CatBoostRegressor(
+            iterations=10, random_seed=123, verbose=0, allow_writing_files=False
+        ),
+        lags=3, encoding=encoding, binner_kwargs={'n_bins': 3}
+    )
+    forecaster.fit(
+        series=series_dict_range, exog=exog_cat, store_in_sample_residuals=True
+    )
+    residuals_fit = copy.deepcopy(forecaster.in_sample_residuals_)
+    residuals_bin_fit = copy.deepcopy(forecaster.in_sample_residuals_by_bin_)
+
+    forecaster.set_in_sample_residuals(series=series_dict_range, exog=exog_cat)
+
+    residuals = forecaster.in_sample_residuals_
+    assert list(residuals) == list(residuals_fit)
+    for level in residuals_fit.keys():
+        np.testing.assert_array_equal(residuals[level], residuals_fit[level])
+
+    residuals_bin = forecaster.in_sample_residuals_by_bin_
+    assert list(residuals_bin) == list(residuals_bin_fit)
+    for level in residuals_bin_fit.keys():
+        assert residuals_bin[level].keys() == residuals_bin_fit[level].keys()
+        for k in residuals_bin_fit[level].keys():
+            np.testing.assert_array_equal(
+                residuals_bin[level][k], residuals_bin_fit[level][k]
             )

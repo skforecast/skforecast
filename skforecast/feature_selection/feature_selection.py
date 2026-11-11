@@ -11,6 +11,7 @@ from itertools import chain
 import warnings
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import TimeSeriesSplit
 from ..utils import deepcopy_forecaster
 
 
@@ -90,10 +91,14 @@ def select_features(
         source calendar feature in `selected_calendar_features`.
     subsample : float, default 0.5
         Proportion of records to use for feature selection, in (0, 1]. Records
-        are sampled without replacement and kept in their original time order.
+        are sampled without replacement and passed to the selector in random
+        order, so the folds of its internal cross-validation (for example, the
+        `cv` of `RFECV`) are random: an integer `cv` gives the same kind of
+        folds as `KFold(shuffle=True)`. A `TimeSeriesSplit` does not give a
+        temporal validation, and a warning is raised.
     random_state : int, default 123
-        Sets a seed for the random subsample so that the subsampling process 
-        is always deterministic.
+        Sets a seed for the random subsample, and the order of its records, so
+        that the subsampling process is always deterministic.
     verbose : bool, default True
         Print information about feature selection process.
 
@@ -217,14 +222,13 @@ def select_features(
             "forecaster includes features for the selected group(s)."
         )
 
-    # Sample without replacement and keep the time order of the records, so
-    # that the selector's internal cross-validation never sees the same record
-    # in train and validation, and a `TimeSeriesSplit` can be used as its `cv`.
-    n_samples = max(1, int(len(X_train) * subsample))
-    rng = np.random.default_rng(seed=random_state)
-    sample = np.sort(rng.choice(len(X_train), size=n_samples, replace=False))
-    X_train_sample = X_train.iloc[sample, :]
-    y_train_sample = y_train.iloc[sample]
+    _warn_time_series_split_cv(selector=selector)
+    X_train_sample, y_train_sample = _subsample_records(
+                                         X_train      = X_train,
+                                         y_train      = y_train,
+                                         subsample    = subsample,
+                                         random_state = random_state
+                                     )
     selector.fit(X_train_sample, y_train_sample)
     selected_features = [
         str(feature) for feature in selector.get_feature_names_out()
@@ -407,13 +411,17 @@ def select_features_multiseries(
         source calendar feature in `selected_calendar_features`.
     subsample : float, default 0.5
         Proportion of records to use for feature selection, in (0, 1]. Records
-        are sampled without replacement and kept in the order of the training
-        matrix, where the series are stacked one after another, so the records
-        of each series are in time order but the series are not interleaved by
-        date.
+        are sampled without replacement and passed to the selector in random
+        order, so the folds of its internal cross-validation (for example, the
+        `cv` of `RFECV`) are random: an integer `cv` gives the same kind of
+        folds as `KFold(shuffle=True)`. In the training matrix of
+        `ForecasterRecursiveMultiSeries`, where the series are stacked one after
+        another, the records of every series are spread over the folds. A
+        `TimeSeriesSplit` does not give a temporal validation, and a warning is
+        raised.
     random_state : int, default 123
-        Sets a seed for the random subsample so that the subsampling process 
-        is always deterministic.
+        Sets a seed for the random subsample, and the order of its records, so
+        that the subsampling process is always deterministic.
     verbose : bool, default True
         Print information about feature selection process.
 
@@ -424,7 +432,11 @@ def select_features_multiseries(
         the output is a dict with the selected lags for each series, {series_name: lags},
         as the lags can be different for each series.
     selected_window_features : list
-        List of selected window features.
+        List of selected window features. If the forecaster is a
+        ForecasterDirectMultiVariate, each name starts with its series (for
+        example, `s1_roll_mean_7`). The forecaster computes the same window
+        features for all the series, so a selection that keeps a window
+        feature for only some of them cannot be reproduced exactly.
     selected_exog : list
         List of selected exogenous features.
     selected_calendar_features : list
@@ -493,7 +505,7 @@ def select_features_multiseries(
         window_features_cols = output[7]  # X_train_window_features_names_out_ output
         if forecaster.encoding == 'onehot':
             # One column per series, also for series without rows in X_train.
-            encoding_cols = list(forecaster.encoding_mapping_)
+            encoding_cols = forecaster._get_onehot_col_names()
         else:
             encoding_cols = ['_level_skforecast']
     
@@ -561,16 +573,13 @@ def select_features_multiseries(
             "forecaster includes features for the selected group(s)."
         )
 
-    # Sample without replacement, so that the selector's internal cross-validation
-    # never sees the same record in train and validation. Sorting keeps the order
-    # of X_train: each series in time order, but series are stacked one after
-    # another, so a `TimeSeriesSplit` as the selector's `cv` does not give a
-    # temporal validation.
-    n_samples = max(1, int(len(X_train) * subsample))
-    rng = np.random.default_rng(seed=random_state)
-    sample = np.sort(rng.choice(len(X_train), size=n_samples, replace=False))
-    X_train_sample = X_train.iloc[sample, :]
-    y_train_sample = y_train.iloc[sample]
+    _warn_time_series_split_cv(selector=selector)
+    X_train_sample, y_train_sample = _subsample_records(
+                                         X_train      = X_train,
+                                         y_train      = y_train,
+                                         subsample    = subsample,
+                                         random_state = random_state
+                                     )
     selector.fit(X_train_sample, y_train_sample)
     selected_features = [
         str(feature) for feature in selector.get_feature_names_out()
@@ -705,3 +714,79 @@ def select_features_multiseries(
         print(f"    Calendar        (n={len(selected_calendar_features)}) : {selected_calendar_features}")
 
     return selected_lags, selected_window_features, selected_exog, selected_calendar_features
+
+
+def _subsample_records(
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    subsample: float,
+    random_state: int
+) -> tuple[pd.DataFrame, pd.Series]:
+    """
+    Sample, without replacement and in random order, the records of the
+    training matrix used to fit the selector.
+
+    Parameters
+    ----------
+    X_train : pandas DataFrame
+        Training matrix with the features evaluated by the selector.
+    y_train : pandas Series
+        Target values of the training matrix.
+    subsample : float
+        Proportion of records to sample, in (0, 1].
+    random_state : int
+        Seed of the random sample and of the order of its records.
+
+    Returns
+    -------
+    X_train_sample : pandas DataFrame
+        Sampled records of `X_train`, in random order.
+    y_train_sample : pandas Series
+        Target values of the sampled records, in the same order.
+
+    """
+
+    # NOTE: Without replacement, the internal cross-validation of the selector
+    # never has the same record in train and validation. The records are not
+    # sorted back into the order of `X_train`: with an integer `cv` (KFold
+    # without shuffling), contiguous records form contiguous folds, that is,
+    # periods of time not seen in training or, in the stacked matrix of
+    # ForecasterRecursiveMultiSeries, whole series not seen in training. With
+    # those folds the selection is unstable and can keep almost no feature.
+    n_samples = max(1, int(len(X_train) * subsample))
+    rng = np.random.default_rng(seed=random_state)
+    sample = rng.choice(len(X_train), size=n_samples, replace=False)
+    X_train_sample = X_train.iloc[sample, :]
+    y_train_sample = y_train.iloc[sample]
+
+    return X_train_sample, y_train_sample
+
+
+def _warn_time_series_split_cv(
+    selector: object
+) -> None:
+    """
+    Warn when the `cv` of the selector is a `TimeSeriesSplit`. The records are
+    passed to the selector in random order, so its folds are not a temporal
+    validation.
+
+    Parameters
+    ----------
+    selector : object
+        Feature selector compatible with the scikit-learn API.
+
+    Returns
+    -------
+    None
+
+    """
+
+    if isinstance(getattr(selector, 'cv', None), TimeSeriesSplit):
+        warnings.warn(
+            "The `cv` of the selector is a `TimeSeriesSplit`, but the records "
+            "are passed to the selector in random order, so its folds are not "
+            "a temporal validation. Use an integer `cv` or "
+            "`KFold(n_splits, shuffle=True)`, and validate the selected features "
+            "with backtesting.",
+            stacklevel = 3
+        )

@@ -1,0 +1,23 @@
+# Source: GitHub Actions, workflow "Foundation Backends Compatibility",
+# run 42212742430 (2026-11-06, branch 0.27.x, commit 09433c35a7def53a0e14bf86b72ab2015f03e421),
+# job "tabpfn" id 127875169000. Read with the GitHub Actions API (job logs, tail 600 lines).
+# Extract of the relevant lines:
+uv pip install ... -e <repo> pytest tabpfn-time-series>=1.3   (Python 3.12.16, ubuntu-26.04)
+ + tabpfn==9.2.0
+ + tabpfn-client==0.7.1
+ + tabpfn-common-utils==0.2.23
+ + tabpfn-time-series==1.4.0
+ + torch==2.15.0+cpu
+ + numpy==2.5.4
+ + pandas==2.3.3
+ + scikit-learn==1.9.0
+ + huggingface-hub==1.33.0
+ + gluonts==0.17.0
+ + fev==0.10.0
+test_contract.py --backend tabpfn: 5 passed in 10.88s
+test_smoke.py --backend tabpfn:    6 passed, 12 warnings in 27.88s
+warnings:
+  skforecast/foundation/_adapters.py:3133: LicenseWarning: The weights for 'priorlabs/tabpfn-ts' are released under TabPFN-3.5 License v1.0 (non-commercial without an enterprise license). ...
+  tabpfn_time_series/predictor.py:105: UserWarning: Running TabPFN locally on CPU; inference will be slow for long contexts. Use a CUDA GPU, or TabPFNMode.CLIENT for cloud inference.
+result json: latest_on_pypi 1.4.0, held_back false, contract passed, smoke passed
+actions/cache of ~/.cache/huggingface for tabpfn: "Cache Size: ~0 MB (8332 B)" (TabPFN weights are not stored in the HF cache)

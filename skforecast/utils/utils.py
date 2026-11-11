@@ -8,16 +8,18 @@
 from __future__ import annotations
 from copy import copy, deepcopy
 import dis
-from functools import partial, wraps
+from functools import lru_cache, partial
 from importlib.metadata import PackageNotFoundError, version
 from importlib.util import find_spec
 import inspect
+import math
+import os
 from packaging.requirements import Requirement
 from pathlib import Path
 import platform
 import sys
 import textwrap
-from typing import Any, Callable, ParamSpec, TypeVar
+from typing import Any, Callable
 import uuid
 import warnings
 import zoneinfo
@@ -31,8 +33,8 @@ from sklearn.compose import ColumnTransformer
 from sklearn.exceptions import NotFittedError
 from sklearn.linear_model._base import LinearModel
 from sklearn.pipeline import Pipeline
+from threadpoolctl import ThreadpoolController
 from .. import __version__
-from ..exceptions import warn_skforecast_categories
 from ..exceptions import (
     DataTypeWarning,
     IgnoredArgumentWarning,
@@ -44,12 +46,7 @@ from ..exceptions import (
     UnknownLevelWarning,
     InputTypeWarning
 )
-
-# Type variables for the manage_warnings decorator. ParamSpec preserves the
-# decorated function's parameter signature, and TypeVar preserves its return
-# type, so that type checkers see the original signatures through the wrapper.
-P = ParamSpec('P')
-R = TypeVar('R')
+from ._warnings import manage_warnings
 
 # sklearn estimators that natively support NaN values in the input features.
 # Tree-based models gained this support in scikit-learn 1.3 (decision trees),
@@ -66,6 +63,20 @@ _SKLEARN_NAN_TOLERANT_ESTIMATORS = frozenset({
     'HistGradientBoostingRegressor',
     'RandomForestClassifier',
     'RandomForestRegressor',
+})
+
+# sklearn estimators whose `fit` (and the `predict` of the in-sample residuals)
+# is faster when the training matrix is C-contiguous. With only lags, the
+# forecasters build that matrix as a view of `sliding_window_view` (neither C
+# nor F contiguous), which these estimators copy again in every product with
+# `X`, and free each copy, so one copy before the fit adds little memory.
+# Criterion: at least 5% faster `fit` in two of three sizes, extra peak memory
+# up to 15% of the training matrix and identical predictions.
+_SKLEARN_C_CONTIGUOUS_ESTIMATORS = frozenset({
+    'Lars',
+    'LassoLars',
+    'LinearRegression',
+    'Ridge',
 })
 
 optional_dependencies = {
@@ -2840,51 +2851,6 @@ def transform_dataframe(
     return df_transformed
 
 
-def manage_warnings(func: Callable[P, R]) -> Callable[P, R]:
-    """
-    Decorator that safely manages skforecast warning suppression using
-    `warnings.catch_warnings()` context manager. If the decorated function
-    receives a `suppress_warnings=True` keyword argument, all skforecast
-    warnings are suppressed within its execution scope. Warning filter state
-    is automatically saved and restored, making this safe for nested calls
-    and exception scenarios.
-
-    By using `warnings.catch_warnings()`, the filter state is saved on entry and 
-    restored on exit — even if an exception is raised — so nested decorated 
-    functions never interfere with each other's suppression settings.
-
-    The decorator's type signature uses module-level type variables:
-
-    - `P` (`ParamSpec`): Captures the full parameter specification
-      (positional and keyword arguments) of the decorated function, so that
-      type checkers preserve the original call signature through the wrapper.
-    - `R` (`TypeVar`): Captures the return type of the decorated function,
-      ensuring the wrapper advertises the same return type.
-
-    Parameters
-    ----------
-    func : Callable[P, R]
-        The function to decorate. Expected to accept a `suppress_warnings`
-        keyword argument.
-
-    Returns
-    -------
-    Callable[P, R]
-        The wrapped function with safe warning management.
-
-    """
-
-    @wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-        suppress = kwargs.get('suppress_warnings', False)
-        with warnings.catch_warnings():
-            if suppress:
-                for category in warn_skforecast_categories:
-                    warnings.filterwarnings('ignore', category=category)
-            return func(*args, **kwargs)
-    return wrapper
-
-
 def _decompose_offset(offset: Any) -> Any:
     """
     Replace a generic `pandas.DateOffset` (e.g. `pd.DateOffset(days=7)`), which
@@ -3898,14 +3864,16 @@ def select_n_jobs_fit_forecaster(
     
     The number of jobs is chosen as follows:
     
-    - If forecaster_name is 'ForecasterDirect' or 'ForecasterDirectMultiVariate'
-    and estimator_name is a linear estimator then `n_jobs = 1`, 
-    otherwise `n_jobs = max(1, cpu_count() - 1)`.
-    - If estimator is a `LGBMRegressor(n_jobs=1)`, then `n_jobs = max(1, cpu_count() - 1)`.
-    - If estimator is a `LGBMRegressor` with internal n_jobs != 1, then `n_jobs = 1`.
-    This is because `lightgbm` is highly optimized for gradient boosting and
-    parallelizes operations at a very fine-grained level, making additional
-    parallelization unnecessary and potentially harmful due to resource contention.
+    - If forecaster_name is not 'ForecasterDirect' or
+    'ForecasterDirectMultiVariate', then `n_jobs = 1`.
+    - If estimator, or the last step of a `Pipeline`, is a linear model of
+    scikit-learn (a subclass of `LinearModel`, such as `Ridge`), then
+    `n_jobs = 1`.
+    - If estimator, or the last step of a `Pipeline`, is a `LGBMRegressor`
+    with internal `n_jobs != 1`, then `n_jobs = 1`. LightGBM already
+    parallelizes its operations with threads, and more processes would
+    compete for the same cores.
+    - Otherwise, `n_jobs = max(1, cpu_count() - 1)`.
     
     Parameters
     ----------
@@ -3980,8 +3948,175 @@ def set_cpu_gpu_device(
     return original_device
 
 
+def _check_differentiation_last_values(
+    last_window_values: np.ndarray,
+    last_window_index: pd.Index,
+    order: int,
+    series: str | None = None
+) -> None:
+    """
+    Check that the last `order` values of the last window, from which the
+    differentiation is reverted, are not missing. If any is NaN, all the
+    predictions are NaN, with any estimator, since no predictor reads it.
+
+    Parameters
+    ----------
+    last_window_values : numpy ndarray
+        Values of the last window, before the differentiation.
+    last_window_index : pandas Index
+        Index of the last window, aligned with `last_window_values`.
+    order : int
+        Order of the differentiation.
+    series : str, default None
+        Name of the series, for multi-series forecasters.
+
+    Returns
+    -------
+    None
+
+    """
+
+    is_nan = np.isnan(last_window_values[-order:])
+    if is_nan.any():
+        dates = [str(date) for date in last_window_index[-order:][is_nan]]
+        of_series = f" '{series}'" if series is not None else ""
+        last_values = "last value" if order == 1 else f"last {order} values"
+        raise ValueError(
+            f"The series{of_series} (or `last_window`) has missing values (NaN) "
+            f"at {dates}. With `differentiation`, the predictions are reverted "
+            f"to the original scale from the {last_values} of the series, so "
+            f"all of them would be NaN, with any estimator. Fill the missing "
+            f"values of the series (or `last_window`)."
+        )
+
+
+class _NonFinitePredictorsError(ValueError):
+    """
+    Raised by the fast path of linear models in `_build_predict_function` when
+    the predictors contain NaN or infinite values, which scikit-learn's
+    `predict` rejects. The prediction loops catch it to add the series, the
+    step and the date to the message with `message`.
+
+    Parameters
+    ----------
+    estimator_name : str
+        Name of the estimator class.
+    rows : numpy ndarray
+        Positions of the rows of `X` with non-finite values.
+    predictors : list
+        Names of the predictors (columns of `X`) with non-finite values.
+    has_nan : bool
+        `True` if `X` has NaN values, `False` if it only has infinite values.
+
+    """
+
+    def __init__(
+        self,
+        estimator_name: str,
+        rows: np.ndarray,
+        predictors: list[str],
+        has_nan: bool
+    ) -> None:
+
+        self.estimator_name = estimator_name
+        self.rows = rows
+        self.predictors = predictors
+        self.has_nan = has_nan
+        super().__init__(self.message())
+
+    def message(
+        self,
+        series: list[str] | None = None,
+        step: int | None = None,
+        date: Any = None
+    ) -> str:
+        """
+        Build the error message, with the context known by the caller.
+
+        Parameters
+        ----------
+        series : list, default None
+            Series whose predictors have non-finite values.
+        step : int, default None
+            Step (horizon) predicted, starting at 1.
+        date : object, default None
+            Date (index value) of the step predicted.
+
+        Returns
+        -------
+        message : str
+            Error message.
+
+        """
+
+        value = "NaN" if self.has_nan else "infinity"
+        context = f"Input X contains {value} in the predictors {self.predictors}"
+        if series is not None:
+            context += f" of series {series}"
+        if step is not None:
+            context += f" at step {step}"
+            if date is not None:
+                context += f" ({date})"
+
+        if self.has_nan:
+            # NOTE: `_level_skforecast` is NaN for the series not seen during
+            # training with an ordinal encoding, which no missing value of the
+            # data explains, so it gets its own remedy.
+            remedies = []
+            if any(p != "_level_skforecast" for p in self.predictors):
+                remedies.append(
+                    "fill the missing values of the series (or `last_window`) "
+                    "and `exog`"
+                )
+            if "_level_skforecast" in self.predictors:
+                remedies.append(
+                    "predict the series not seen during training with "
+                    "`encoding='onehot'` or `encoding=None` (an ordinal "
+                    "encoding gives them NaN)"
+                )
+            remedy = "; ".join(remedies)
+            return (
+                f"{context}. {self.estimator_name} does not accept missing "
+                f"values encoded as NaN, so its predictions would be NaN. "
+                f"{remedy[0].upper()}{remedy[1:]}, or use an estimator that "
+                f"accepts them, for example HistGradientBoostingRegressor or "
+                f"LGBMRegressor."
+            )
+
+        return (
+            f"{context}. {self.estimator_name} does not accept infinite values. "
+            f"Review the values of the series (or `last_window`) and `exog`."
+        )
+
+
+# NOTE: `HistGradientBoostingRegressor` predicts with all the OpenMP threads of
+# the machine, which makes the predictions of a few rows (one per step in the
+# recursive loop, one per series in multi-series) slower than with one thread.
+# Measured with 4 CPUs: one thread is faster up to 100 rows (0.5 to 0.8 times
+# the time) and slower from 250 rows (bootstrapping, many series).
+_HGB_MAX_ROWS_ONE_THREAD = 100
+
+
+@lru_cache(maxsize=1)
+def _get_threadpool_controller() -> ThreadpoolController:
+    """
+    Return the `ThreadpoolController` of the process, created on the first
+    call. Creating it inspects the loaded libraries (about 1 ms), while
+    limiting the threads with it takes about 0.01 ms.
+
+    Returns
+    -------
+    controller : ThreadpoolController
+        Controller of the thread pools loaded in the process.
+
+    """
+
+    return ThreadpoolController()
+
+
 def _build_predict_function(
     estimator: object,
+    forecaster: object | None = None
 ) -> Callable:
     """
     Build an optimized predict callable for a fitted estimator. The returned
@@ -3992,7 +4127,8 @@ def _build_predict_function(
     for the following estimator types:
 
     - Linear models of scikit-learn inheriting from `LinearModel` (`np.dot`)
-    - `LGBMRegressor` (`booster_.predict`)
+    - `LGBMRegressor` (`booster_.predict`, with the same `num_threads` as
+    `LGBMRegressor.predict`, capped at `OMP_NUM_THREADS` when it is set)
     - `XGBRegressor` (`get_booster().inplace_predict`, with the same
     `iteration_range` and `missing` as `XGBRegressor.predict`). The 'gblinear'
     booster does not support `inplace_predict` and uses `estimator.predict`.
@@ -4008,14 +4144,38 @@ def _build_predict_function(
     after prediction, since CatBoost borrows an F-contiguous array without a
     copy and leaves it read-only.
 
+    For `HistGradientBoostingRegressor`, alone or as the last step of a
+    `Pipeline`, `estimator.predict` is used with the OpenMP threads limited to
+    1 when `X` has up to 100 rows (one per step in the recursive loop, or one
+    per series), which is faster than with all the threads of the machine.
+    With more rows, it uses the default threads.
+
     For any other estimator the standard `estimator.predict` method is used.
     This includes user subclasses of scikit-learn estimators, since they may
     override `predict`.
+
+    The fast path of linear models skips the input validation of their
+    `predict` method, so it raises `_NonFinitePredictorsError` (a `ValueError`)
+    when `X` contains NaN or infinite values, as `predict` does, instead of
+    returning NaN predictions, unless the forecaster allows NaN predictions.
+    The rest of fast paths belong to estimators that accept NaN values.
 
     Parameters
     ----------
     estimator : object
         A fitted scikit-learn compatible estimator.
+    forecaster : object, default None
+        Forecaster that predicts with `estimator`. Two of its attributes are
+        used by the fast path of linear models:
+
+        - `X_train_features_names_out_`: names of the columns of `X`, used to
+        name the predictors with non-finite values in the error. If the
+        forecaster is `None`, they are named by their column position.
+        - `_allow_nan_predictions`: if `True` (set by backtesting in its copy
+        of the forecaster), NaN predictions are returned instead of raising,
+        to evaluate the series and dates that can be predicted. If the
+        forecaster is `None`, or was saved with a previous version that does
+        not have it, it is `False`.
 
     Returns
     -------
@@ -4033,20 +4193,69 @@ def _build_predict_function(
     if is_sklearn_class and isinstance(estimator, LinearModel):
         coef = estimator.coef_
         intercept = estimator.intercept_
+        feature_names = getattr(forecaster, 'X_train_features_names_out_', None)
+        # NOTE: `getattr` keeps forecasters saved with previous versions, which
+        # do not have this attribute, working.
+        allow_nan_predictions = getattr(forecaster, '_allow_nan_predictions', False)
 
-        # NOTE: np.dot does not validate its input, so NaN in `X` propagates to the
-        # prediction instead of raising as sklearn's `predict` would. Inputs must be
-        # validated upstream (see `check_predict_input`).
+        if allow_nan_predictions:
+            def predict_fn(X):
+                return np.dot(X, coef) + intercept
+
+            return predict_fn
+
+        # NOTE: np.dot does not validate its input, so NaN in `X` would give NaN
+        # predictions instead of raising as sklearn's `predict` does. A non-finite
+        # value in `X` gives a non-finite prediction, and so a non-finite sum of
+        # the predictions, which is the cheapest check. `X` is only inspected
+        # when the sum is not finite (it can also overflow with finite values).
         def predict_fn(X):
-            return np.dot(X, coef) + intercept
+            pred = np.dot(X, coef) + intercept
+            if not math.isfinite(pred.sum()):
+                is_finite_X = np.isfinite(X)
+                if not is_finite_X.all():
+                    is_not_finite_X = ~is_finite_X
+                    columns = np.flatnonzero(is_not_finite_X.any(axis=0))
+                    predictors = (
+                        [feature_names[i] for i in columns]
+                        if feature_names is not None
+                        else [f"column {i}" for i in columns]
+                    )
+                    raise _NonFinitePredictorsError(
+                        estimator_name = estimator_name,
+                        rows           = np.flatnonzero(is_not_finite_X.any(axis=1)),
+                        predictors     = predictors,
+                        has_nan        = bool(np.isnan(X).any())
+                    )
+            return pred
 
         return predict_fn
 
     if estimator_name == 'LGBMRegressor':
         booster = estimator.booster_
+        # NOTE: Without `num_threads`, the booster predicts with all the OpenMP
+        # threads of the machine, which makes the single-row predictions of the
+        # recursive loop much slower. The threads are computed as in
+        # `LGBMRegressor.predict`, from `num_threads` (stored as an attribute
+        # when given) or `n_jobs`, not from `booster_.params`, which lightgbm
+        # < 4.7 empties in a deepcopy and which keep the threads of the machine
+        # where the model was fitted. `getattr` is used because `get_params` is
+        # slower than a single-row prediction (Direct builds one per step).
+        # They are capped at `OMP_NUM_THREADS` (set to the share of each worker
+        # by joblib), which an explicit value overrides.
+        n_jobs = getattr(estimator, "num_threads", estimator.n_jobs)
+        if n_jobs is None:
+            num_threads = joblib.cpu_count(only_physical_cores=True)
+        elif n_jobs < 0:
+            num_threads = max(joblib.cpu_count() + 1 + n_jobs, 1)
+        else:
+            num_threads = n_jobs
+        omp_num_threads = os.environ.get("OMP_NUM_THREADS", "")
+        if omp_num_threads.isdigit() and int(omp_num_threads) > 0:
+            num_threads = min(num_threads, int(omp_num_threads))
 
         def predict_fn(X):
-            return booster.predict(X)
+            return booster.predict(X, num_threads=num_threads)
 
         return predict_fn
 
@@ -4117,6 +4326,18 @@ def _build_predict_function(
             if not X.flags.writeable:
                 X.flags.writeable = True
             return preds
+
+        return predict_fn
+
+    final_estimator = estimator[-1] if isinstance(estimator, Pipeline) else estimator
+    if type(final_estimator).__name__ == "HistGradientBoostingRegressor":
+        controller = _get_threadpool_controller()
+
+        def predict_fn(X):
+            if X.shape[0] <= _HGB_MAX_ROWS_ONE_THREAD:
+                with controller.limit(limits=1, user_api="openmp"):
+                    return estimator.predict(X).ravel()
+            return estimator.predict(X).ravel()
 
         return predict_fn
 
@@ -4561,6 +4782,35 @@ def align_series_and_exog_multiseries(
                     )
 
     return series_dict, exog_dict
+
+
+def _series_too_short_multiseries(
+    series_dict: dict[str, pd.Series],
+    window_size: int
+) -> list[str]:
+    """
+    Series that cannot be used to train a `ForecasterRecursiveMultiSeries`:
+    they have `window_size` observations or fewer, so no training row can be
+    created with them. `series_dict` must be aligned with
+    `align_series_and_exog_multiseries` (leading and trailing NaNs removed),
+    as in `fit`.
+
+    Parameters
+    ----------
+    series_dict : dict
+        Series aligned with `align_series_and_exog_multiseries`.
+    window_size : int
+        Window size of the forecaster.
+
+    Returns
+    -------
+    series_too_short : list
+        Names of the series with `window_size` observations or fewer, in the
+        order of `series_dict`.
+
+    """
+
+    return [k for k, v in series_dict.items() if len(v) <= window_size]
 
 
 def prepare_levels_multiseries(
@@ -5128,3 +5378,394 @@ def estimator_has_native_nan_support(estimator: object) -> bool:
         return True
 
     return False
+
+
+def _prefers_c_contiguous_X(estimator: object) -> bool:
+    """
+    Check whether the training matrix should be copied to a C-contiguous array
+    before it is passed to the estimator.
+
+    With only lags (or only window features), the training matrix is a view of
+    `sliding_window_view` that is neither C nor F contiguous. Some linear
+    models of scikit-learn copy that view again in every product with `X`
+    (`fit` and the `predict` of the in-sample residuals), so one copy before
+    the fit is faster. Other estimators already copy or convert the matrix
+    (trees, boosting, coordinate descent) and the copy would only add memory.
+
+    Parameters
+    ----------
+    estimator : object
+        Estimator object.
+
+    Returns
+    -------
+    prefers_c_contiguous : bool
+        `True` if the estimator is one of the scikit-learn estimators in
+        `_SKLEARN_C_CONTIGUOUS_ESTIMATORS`, otherwise `False`.
+
+    Notes
+    -----
+    Detection is based on the class name and the module (`sklearn`), as in
+    `estimator_has_native_nan_support`. Only the class of the estimator is
+    checked: a Pipeline (whatever its steps), other meta-estimators (for
+    example `TransformedTargetRegressor`) and subclasses defined outside
+    scikit-learn return `False`, and the matrix is passed as it is.
+
+    """
+
+    module = type(estimator).__module__.split('.')[0]
+
+    return (
+        module == 'sklearn'
+        and type(estimator).__name__ in _SKLEARN_C_CONTIGUOUS_ESTIMATORS
+    )
+
+
+def _all_samples_removed_message(
+    series_name: str,
+    dropna_from_series: bool,
+    max_lag: int | None,
+    max_size_window_features: int | None,
+    estimator: object
+) -> str:
+    """
+    Create the message of the error raised when no training sample is left
+    after removing the rows with NaN values.
+
+    Rows with NaN in the target are always removed, so if `dropna_from_series`
+    is `False`, the target is the only possible cause. Otherwise, the message
+    gives the size of the largest lag and window feature, since missing values
+    closer together than them can leave a NaN in every row, and the ways to
+    keep training samples. Setting `dropna_from_series = False` is suggested
+    directly only if the estimator natively supports NaN values.
+
+    Parameters
+    ----------
+    series_name : str
+        Name of the input series used in the message, "`y`" or "`series`".
+    dropna_from_series : bool
+        Value of `dropna_from_series` of the forecaster.
+    max_lag : int, None
+        Largest lag of the forecaster. `None` if no lags are used.
+    max_size_window_features : int, None
+        Largest window size of the window features. `None` if no window
+        features are used.
+    estimator : object
+        Estimator of the forecaster.
+
+    Returns
+    -------
+    message : str
+        Error message.
+
+    """
+
+    if not dropna_from_series:
+        return (
+            "All samples have been removed due to NaNs: the target is NaN in "
+            f"every row. Review {series_name} or fill its missing values."
+        )
+
+    sizes = []
+    predictors = []
+    shorten = []
+    if max_lag is not None:
+        sizes.append(f"largest lag: {max_lag}")
+        predictors.append("lags")
+        shorten.append("fewer lags")
+    if max_size_window_features is not None:
+        sizes.append(f"largest window feature: {max_size_window_features}")
+        predictors.append("window features")
+        shorten.append(
+            "shorter window features (or a smaller `min_periods` if they are "
+            "`RollingFeatures`)"
+        )
+    sizes = f" ({', '.join(sizes)})"
+    predictors = " or ".join(predictors)
+    shorten = f"use {' or '.join(shorten)}"
+
+    fill = f"fill the missing values of {series_name} and `exog`"
+    if estimator_has_native_nan_support(estimator):
+        fixes = (
+            "set `dropna_from_series = False` (the estimator accepts NaNs), "
+            f"{fill}, or {shorten}"
+        )
+    else:
+        fixes = (
+            f"{fill}, {shorten}, or use an estimator that accepts NaNs (for "
+            "example, LightGBM or scikit-learn HistGradientBoosting models) "
+            "and set `dropna_from_series = False`"
+        )
+
+    return (
+        "All samples have been removed due to NaNs: every row has a missing "
+        f"value in the target or in the predictors{sizes}. This can happen "
+        f"when the missing values of {series_name} are closer together than "
+        f"the {predictors}, or when `exog` has a missing value in every row. "
+        f"To keep training samples, {fixes}."
+    )
+
+
+def _warn_nan_training_rows(
+    n_nan_target: int | list[int] | np.ndarray,
+    n_nan_predictors: int | list[int] | np.ndarray,
+    n_rows: int,
+    dropna_from_series: bool,
+    series_name: str,
+    stacklevel: int = 2
+) -> None:
+    """
+    Warn about the rows of the training matrix with missing values: how many
+    are dropped because their target is NaN and how many have NaN predictors
+    (dropped if `dropna_from_series` is `True`, kept otherwise). Nothing is
+    raised if there are no such rows.
+
+    A row with a NaN target counts only as a NaN target row, even if it also
+    has NaN predictors, so the rows dropped are the sum of both counts. The
+    first sentence of the warning does not change with the counts, so the
+    searches group the warnings of all their candidates in one.
+
+    Parameters
+    ----------
+    n_nan_target : int, list, numpy ndarray
+        Number of rows with a NaN target. In the direct forecasters, a list or
+        array with the number of each step (the warning gives a range if they
+        differ).
+    n_nan_predictors : int, list, numpy ndarray
+        Number of rows with NaN predictors and a non-NaN target. In the direct
+        forecasters, a list or array with the number of each step.
+    n_rows : int
+        Number of rows of the training matrix before dropping any row (of
+        each step in the direct forecasters).
+    dropna_from_series : bool
+        Value of `dropna_from_series` of the forecaster.
+    series_name : str
+        Name of the input series used in the message, "`y`" or "`series`".
+    stacklevel : int, default 2
+        Stack level of the warning. The default points to the caller; the
+        helpers that call this function on behalf of a forecaster use 3, so
+        the warning points to the forecaster.
+
+    Returns
+    -------
+    None
+
+    """
+
+    per_step = np.ndim(n_nan_target) > 0
+    n_nan_target = np.atleast_1d(np.asarray(n_nan_target, dtype=int))
+    n_nan_predictors = np.atleast_1d(np.asarray(n_nan_predictors, dtype=int))
+    has_target = n_nan_target.max() > 0
+    has_predictors = n_nan_predictors.max() > 0
+    if not has_target and not has_predictors:
+        return
+
+    def fmt(counts: np.ndarray) -> str:
+        low, high = counts.min(), counts.max()
+        return f"{low}" if low == high else f"{low} to {high}"
+
+    def verb(counts: np.ndarray) -> str:
+        return "is" if counts.min() == counts.max() == 1 else "are"
+
+    where = " per step" if per_step else ""
+    predictors = "with NaN predictors (lags, window features or exog)"
+    target = fmt(n_nan_target)
+    if dropna_from_series and has_target and has_predictors:
+        n_dropped = n_nan_target + n_nan_predictors
+        counts = (
+            f"{fmt(n_dropped)} of {n_rows} rows {verb(n_dropped)} dropped{where}: "
+            f"{target} with a NaN target and {fmt(n_nan_predictors)} {predictors}."
+        )
+    elif dropna_from_series and has_predictors:
+        counts = (
+            f"{fmt(n_nan_predictors)} of {n_rows} rows {verb(n_nan_predictors)} "
+            f"dropped{where}, {predictors}."
+        )
+    elif not has_predictors:
+        counts = (
+            f"{target} of {n_rows} rows {verb(n_nan_target)} dropped{where}, "
+            f"with a NaN target."
+        )
+    elif has_target:
+        counts = (
+            f"{target} of {n_rows} rows {verb(n_nan_target)} dropped{where} "
+            f"(NaN target) and {fmt(n_nan_predictors)} {verb(n_nan_predictors)} "
+            f"kept {predictors}."
+        )
+    else:
+        counts = (
+            f"{fmt(n_nan_predictors)} of {n_rows} rows {verb(n_nan_predictors)} "
+            f"kept{where} {predictors}."
+        )
+
+    message = (
+        f"Some rows of the training matrix have missing values. {counts} They "
+        f"come from interspersed NaNs in {series_name} or `exog`."
+    )
+    if has_predictors:
+        if dropna_from_series:
+            message += (
+                " To keep the rows with NaN predictors, set "
+                "`forecaster.dropna_from_series = False` (the estimator must "
+                "support NaN)."
+            )
+        else:
+            message += (
+                " The estimator must support NaN. To drop those rows, set "
+                "`forecaster.dropna_from_series = True`."
+            )
+
+    warnings.warn(message, MissingValuesWarning, stacklevel=stacklevel)
+
+
+def _filter_nan_train_X_y(
+    X_train: np.ndarray | pd.DataFrame,
+    y_train: np.ndarray | pd.Series,
+    dropna_from_series: bool,
+    series_name: str,
+    train_index: pd.Index | None = None
+) -> tuple[
+    np.ndarray | pd.DataFrame, np.ndarray | pd.Series, pd.Index | None
+]:
+    """
+    Drop the rows of the training matrix with missing values and warn about
+    them with `_warn_nan_training_rows`. Rows with a NaN target are always
+    dropped; rows with NaN predictors (and a non-NaN target) are dropped only
+    if `dropna_from_series` is `True`. Used by the recursive forecasters, with
+    numpy arrays or pandas objects.
+
+    The rows with NaN are counted only if `X_train` or `y_train` has any NaN,
+    so the usual case (no NaN) costs a single check of each and returns the
+    inputs unchanged.
+
+    Parameters
+    ----------
+    X_train : numpy ndarray, pandas DataFrame
+        Training values (predictors), one row per training sample.
+    y_train : numpy ndarray, pandas Series
+        Values of the time series related to each row of `X_train`.
+    dropna_from_series : bool
+        Value of `dropna_from_series` of the forecaster.
+    series_name : str
+        Name of the input series used in the message, "`y`" or "`series`".
+    train_index : pandas Index, default None
+        Index of each row of `X_train`. If `None`, it is not filtered and
+        `None` is returned.
+
+    Returns
+    -------
+    X_train : numpy ndarray, pandas DataFrame
+        Training values without the dropped rows.
+    y_train : numpy ndarray, pandas Series
+        Values of the time series without the dropped rows.
+    train_index : pandas Index, None
+        Index without the dropped rows. `None` if `train_index` is `None`.
+
+    """
+
+    nan_target = np.asarray(pd.isna(y_train))
+    nan_matrix = np.asarray(pd.isna(X_train))
+    if not nan_target.any() and not nan_matrix.any():
+        return X_train, y_train, train_index
+
+    # NOTE: A row with a NaN target counts only as a NaN target row.
+    nan_predictors = nan_matrix.any(axis=1) & ~nan_target
+    _warn_nan_training_rows(
+        n_nan_target       = int(nan_target.sum()),
+        n_nan_predictors   = int(nan_predictors.sum()),
+        n_rows             = len(y_train),
+        dropna_from_series = dropna_from_series,
+        series_name        = series_name,
+        stacklevel         = 3
+    )
+
+    drop = nan_target | nan_predictors if dropna_from_series else nan_target
+    if drop.any():
+        keep = ~drop
+        X_train = X_train[keep]
+        y_train = y_train[keep]
+        if train_index is not None:
+            train_index = train_index[keep]
+
+    return X_train, y_train, train_index
+
+
+def _warn_nan_training_rows_direct(
+    y_train: np.ndarray,
+    X_train_autoreg: np.ndarray,
+    X_train_exog: np.ndarray | None,
+    steps: list[int],
+    dropna_from_series: bool,
+    series_name: str
+) -> None:
+    """
+    Count the rows with missing values of the training matrix of each step of
+    the direct forecasters and warn about them with `_warn_nan_training_rows`.
+    The rows are not dropped here, but when the matrix of each step is built.
+
+    The training matrix of each step is not built: the predictors of step `s`
+    are the autoregressive features of each row and the exogenous variables
+    shifted `s - 1` rows. The calendar features never have missing values.
+    The rows are counted only if there is any NaN, so the usual case (no NaN)
+    costs a single check of each matrix.
+
+    Parameters
+    ----------
+    y_train : numpy ndarray
+        Values of the time series, one column per step (before splitting them
+        by step), shape (n_rows, max_step).
+    X_train_autoreg : numpy ndarray
+        Autoregressive features (lags and window features), shape
+        (n_rows, n_autoreg).
+    X_train_exog : numpy ndarray, None
+        Exogenous variables without the direct expansion, with `max_step - 1`
+        more rows than `X_train_autoreg`. `None` if no exogenous variables.
+    steps : list
+        Steps of the forecaster (1-based).
+    dropna_from_series : bool
+        Value of `dropna_from_series` of the forecaster.
+    series_name : str
+        Name of the input series used in the message, "`y`" or "`series`".
+
+    Returns
+    -------
+    None
+
+    """
+
+    nan_target = np.isnan(y_train)
+    nan_autoreg = np.isnan(X_train_autoreg)
+    nan_exog = pd.isna(X_train_exog) if X_train_exog is not None else None
+    if not (
+        nan_target.any()
+        or nan_autoreg.any()
+        or (nan_exog is not None and nan_exog.any())
+    ):
+        return
+
+    n_rows = X_train_autoreg.shape[0]
+    nan_autoreg = nan_autoreg.any(axis=1)
+    if nan_exog is not None:
+        nan_exog = nan_exog.any(axis=1)
+    n_nan_target = []
+    n_nan_predictors = []
+    for step in steps:
+        nan_target_step = nan_target[:, step - 1]
+        nan_predictors_step = nan_autoreg
+        if nan_exog is not None:
+            nan_predictors_step = (
+                nan_predictors_step | nan_exog[step - 1 : step - 1 + n_rows]
+            )
+        n_nan_target.append(int(nan_target_step.sum()))
+        n_nan_predictors.append(
+            int((nan_predictors_step & ~nan_target_step).sum())
+        )
+
+    _warn_nan_training_rows(
+        n_nan_target       = n_nan_target,
+        n_nan_predictors   = n_nan_predictors,
+        n_rows             = n_rows,
+        dropna_from_series = dropna_from_series,
+        series_name        = series_name,
+        stacklevel         = 3
+    )

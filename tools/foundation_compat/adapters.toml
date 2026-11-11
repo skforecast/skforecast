@@ -50,7 +50,7 @@ secrets = ["TABPFN_TOKEN"]
 
 [t0]
 adapter = "T0Adapter"
-backend_package = "tfc-t0"
+backend_package = "tfc-t0[torch]>=0.6"
 model_id = "theforecastingcompany/t0-alpha"
 
 [nori]
@@ -62,3 +62,15 @@ model_id = "Synthefy/Nori"
 adapter = "TSICLAdapter"
 backend_package = "tsicl"
 model_id = "taharnbl/TS-ICL"
+
+# The smallest checkpoint, not the default one (Timestral-28M), so that the
+# weekly check downloads less.
+[timestral]
+adapter = "TimestralAdapter"
+backend_package = "timestral @ git+https://github.com/mistralai/timestral.git"
+model_id = "mistralai/Timestral-5M"
+
+[tirex2]
+adapter = "TiRex2Adapter"
+backend_package = "tirex-2"
+model_id = "NX-AI/TiRex-2"

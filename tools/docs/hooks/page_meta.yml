@@ -1,0 +1,620 @@
+# Search engine texts of each page, keyed by its path relative to docs/.
+# Read by tools/docs/hooks/page_meta.py, which explains how they are used.
+# Every page needs an entry: check them with `python tools/docs/hooks/page_meta.py`.
+#
+# - title: the <title> tag, before " - Skforecast Docs". Name what people search
+#   for, not the API. At most 42 characters, so that the whole tag fits in the
+#   60 characters a search result shows (60 for the home page, which has no
+#   suffix). The short title of `nav` in mkdocs.yml still names the page in
+#   the header, the sidebar and the breadcrumbs.
+# - description: the meta description and the summary shown when the page is
+#   shared. Between 120 and 160 characters, unique, main keyword first,
+#   without en or em dashes.
+# - Neither text can contain double quotes or angle brackets (Material writes
+#   them unescaped).
+
+# Home, introduction and quick start
+README.md:
+  title: "skforecast: time series forecasting in Python"
+  description: >-
+    Time series forecasting in Python with skforecast: machine learning,
+    statistical and foundation models, backtesting, tuning and prediction intervals.
+
+introduction-forecasting/introduction-forecasting.md:
+  title: Introduction to time series forecasting
+  description: >-
+    Introduction to time series forecasting with machine learning: lags,
+    recursive and direct strategies, global models and backtesting in Python.
+
+quick-start/quick-start-skforecast.ipynb:
+  title: "Quick start: forecasting in Python"
+  description: >-
+    Quick start to time series forecasting in Python with skforecast: train a
+    forecaster, predict, backtest and tune its hyperparameters in a few lines.
+
+quick-start/forecaster-parameters.md:
+  title: Forecaster parameters explained
+  description: >-
+    Forecaster parameters in skforecast explained: estimator, lags, window
+    features, transformers, categorical features, weights and differentiation.
+
+quick-start/forecaster-attributes.ipynb:
+  title: Forecaster attributes explained
+  description: >-
+    Forecaster attributes in skforecast explained: inspect the estimator, lags,
+    window features, last window and residuals stored by a trained forecaster.
+
+quick-start/how-to-install.md:
+  title: How to install skforecast
+  description: >-
+    How to install skforecast in Python with pip or conda: basic installation
+    and optional dependencies for statistical models, plotting and deep learning.
+
+quick-start/ai-assisted-forecasting.md:
+  title: AI-assisted forecasting with LLMs
+  description: >-
+    AI-assisted time series forecasting with skforecast: give ChatGPT, Claude,
+    Copilot or Cursor up-to-date context files and skills to write accurate code.
+
+# User guides
+user_guides/table-of-contents.md:
+  title: skforecast user guides
+  description: >-
+    skforecast user guides: every forecasting feature explained with runnable
+    Python examples, from data preparation and models to backtesting and deployment.
+
+user_guides/input-data.ipynb:
+  title: Input data for time series forecasting
+  description: >-
+    Input data for time series forecasting in skforecast: format pandas series
+    and DataFrames with a DatetimeIndex or RangeIndex and a regular frequency.
+
+user_guides/datasets.ipynb:
+  title: Time series datasets for forecasting
+  description: >-
+    Time series datasets for forecasting practice: load the skforecast datasets
+    with fetch_dataset, each with a description and a reference to its source.
+
+user_guides/comparing-forecasting-models.ipynb:
+  title: ML vs statistical vs foundation models
+  description: >-
+    Machine learning vs statistical vs foundation models for time series:
+    LightGBM, Ridge, ARIMA, ETS, Chronos-2 and LSTM compared with the same backtesting.
+
+user_guides/autoregressive-forecaster.ipynb:
+  title: Recursive multi-step forecasting in Python
+  description: >-
+    Recursive multi-step forecasting in Python with ForecasterRecursive: train
+    any scikit-learn model on lags, predict many steps ahead and get intervals.
+
+user_guides/direct-multi-step-forecasting.ipynb:
+  title: Direct multi-step forecasting in Python
+  description: >-
+    Direct multi-step forecasting in Python with ForecasterDirect: train one
+    scikit-learn model per step of the horizon, with lags and exogenous variables.
+
+user_guides/forecasting-baseline.ipynb:
+  title: Baseline forecasting models in Python
+  description: >-
+    Baseline forecasting models in Python: seasonal naive and equivalent date
+    forecasts with ForecasterEquivalentDate to benchmark more complex models.
+
+user_guides/autoregressive-classification-forecasting.ipynb:
+  title: Forecasting categorical time series
+  description: >-
+    Forecasting categorical time series in Python with
+    ForecasterRecursiveClassifier: predict future classes and their probabilities.
+
+user_guides/global-forecasting-overview.md:
+  title: Global forecasting models in Python
+  description: >-
+    Global forecasting models in Python: train one model on many time series
+    instead of one model per series, and choose between independent and dependent.
+
+user_guides/independent-multi-time-series-forecasting.ipynb:
+  title: Multi-series forecasting in Python
+  description: >-
+    Multi-series forecasting in Python with ForecasterRecursiveMultiSeries: one
+    global model for many independent time series, with exogenous variables.
+
+user_guides/multi-series-with-different-length-and-different_exog.ipynb:
+  title: Forecasting series with different lengths
+  description: >-
+    Forecast series with different lengths and different exogenous variables in
+    Python with a single global model, using dictionaries of pandas series.
+
+user_guides/dependent-multi-series-multivariate-forecasting.ipynb:
+  title: Multivariate time series forecasting
+  description: >-
+    Multivariate time series forecasting in Python with
+    ForecasterDirectMultiVariate: predict a series from the lags of several series.
+
+user_guides/foundation-forecasting-models.ipynb:
+  title: Forecasting with foundation models
+  description: >-
+    Time series foundation models in Python: zero-shot forecasting with Chronos,
+    TimesFM, Moirai and more through ForecasterFoundation in skforecast.
+
+user_guides/foundation-forecasting-with-heterogeneous-series.ipynb:
+  title: Foundation models for heterogeneous series
+  description: >-
+    Foundation models for heterogeneous time series: forecast series with
+    different lengths, exogenous variables and missing values in Python.
+
+user_guides/forecasting-statistical-models.ipynb:
+  title: Statistical forecasting models in Python
+  description: >-
+    Statistical forecasting models in Python with ForecasterStats: ARIMA,
+    SARIMAX, ETS and ARAR with backtesting, tuning and prediction intervals.
+
+user_guides/forecasting-sarimax-arima.ipynb:
+  title: ARIMA and SARIMAX forecasting in Python
+  description: >-
+    ARIMA, SARIMAX and AutoARIMA forecasting in Python with skforecast: seasonal
+    models with exogenous variables, prediction intervals and backtesting.
+
+user_guides/forecasting-ets.ipynb:
+  title: Exponential smoothing (ETS) in Python
+  description: >-
+    Exponential smoothing forecasting in Python with ETS and AutoETS: error,
+    trend and seasonality components, prediction intervals and backtesting.
+
+user_guides/forecasting-arar.ipynb:
+  title: ARAR forecasting model in Python
+  description: >-
+    ARAR forecasting model in Python with skforecast: memory shortening for
+    series with long memory or complex trends, prediction intervals and backtesting.
+
+user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb:
+  title: RNN and LSTM forecasting in Python
+  description: >-
+    Deep learning time series forecasting in Python with RNN, LSTM and GRU
+    networks: build Keras models with ForecasterRnn for one or many series.
+
+user_guides/autocorrelation-and-lag-selection.ipynb:
+  title: ACF, PACF and lag selection in Python
+  description: >-
+    Autocorrelation and lag selection in Python: use the ACF and PACF to detect
+    trend and seasonality and choose the lags of an autoregressive forecaster.
+
+user_guides/window-features-and-custom-features.ipynb:
+  title: Rolling window features for forecasting
+  description: >-
+    Rolling window features for time series forecasting in Python: moving
+    averages, other rolling statistics and your own custom features in skforecast.
+
+user_guides/exogenous-variables.ipynb:
+  title: Exogenous variables in forecasting
+  description: >-
+    Exogenous variables in time series forecasting with Python: add external
+    predictors to skforecast models, including their lags and window features.
+
+user_guides/calendar-features.ipynb:
+  title: Calendar features for forecasting
+  description: >-
+    Calendar features for time series forecasting in Python: day, month and
+    weekday, sunlight features, cyclical encoding and distance to holidays.
+
+user_guides/categorical-features.ipynb:
+  title: Categorical features in forecasting
+  description: >-
+    Categorical features in time series forecasting with Python: native support
+    in LightGBM, XGBoost and CatBoost, or encoders from scikit-learn.
+
+user_guides/sklearn-transformers-and-pipeline.ipynb:
+  title: Scikit-learn transformers and pipelines
+  description: >-
+    Scikit-learn transformers and pipelines in time series forecasting: scale or
+    encode the target series and exogenous variables inside skforecast models.
+
+user_guides/time-series-differentiation.ipynb:
+  title: Time series differentiation in Python
+  description: >-
+    Time series differentiation in Python: model the changes between
+    observations with TimeSeriesDifferentiator and revert them in the predictions.
+
+user_guides/handling-missing-values.ipynb:
+  title: Missing values in time series forecasting
+  description: >-
+    Missing values in time series forecasting with Python: NaN tolerant
+    estimators, dropping rows with NaN, or imputation plus weights in skforecast.
+
+user_guides/sktime-pipelines.ipynb:
+  title: sktime and skforecast equivalent pipelines
+  description: >-
+    sktime and skforecast equivalent pipelines: reproduce TransformedTargetForecaster
+    and ForecastingPipeline transformations of the target and exogenous data.
+
+user_guides/feature-selection.ipynb:
+  title: Feature selection for time series
+  description: >-
+    Feature selection for time series forecasting in Python: select lags, window
+    and exogenous features with RFECV, sequential feature selection and MRMR.
+
+user_guides/metrics.ipynb:
+  title: Time series forecasting metrics
+  description: >-
+    Time series forecasting metrics in Python: MAE, RMSE, MASE and other metrics
+    to evaluate single series, multiple series and classification forecasts.
+
+user_guides/backtesting.ipynb:
+  title: Backtesting time series models in Python
+  description: >-
+    Backtesting time series models in Python with skforecast: evaluate
+    forecasts on past data with or without refit, rolling windows and gaps.
+
+user_guides/hyperparameter-tuning-and-lags-selection.ipynb:
+  title: Hyperparameter tuning for forecasting
+  description: >-
+    Hyperparameter tuning and lag selection for time series forecasting in
+    Python: grid, random and Bayesian search with backtesting or one-step-ahead.
+
+user_guides/probabilistic-forecasting-overview.md:
+  title: Probabilistic forecasting in Python
+  description: >-
+    Probabilistic forecasting in Python: prediction intervals with bootstrapped
+    residuals, conformal prediction, quantile regression and foundation models.
+
+user_guides/probabilistic-forecasting-bootstrapped-residuals.ipynb:
+  title: Prediction intervals with bootstrapping
+  description: >-
+    Prediction intervals with bootstrapped residuals in Python: estimate the
+    uncertainty of forecasts from in-sample, out-of-sample and binned residuals.
+
+user_guides/probabilistic-forecasting-conformal-prediction.ipynb:
+  title: Conformal prediction for forecasting
+  description: >-
+    Conformal prediction for time series forecasting in Python: build prediction
+    intervals with a target coverage from the residuals of a point forecaster.
+
+user_guides/probabilistic-forecasting-quantile-regression.ipynb:
+  title: Quantile regression forecasting in Python
+  description: >-
+    Quantile regression for time series forecasting in Python: predict the
+    bounds of prediction intervals directly, with models tuned on the pinball loss.
+
+user_guides/probabilistic-forecasting-global-models.ipynb:
+  title: Prediction intervals for multiple series
+  description: >-
+    Prediction intervals for multiple time series in Python: conformal
+    prediction, bootstrapping and quantiles with global forecasting models.
+
+user_guides/probabilistic-forecasting-conformal-calibration.ipynb:
+  title: Conformal calibration of intervals
+  description: >-
+    Conformal calibration of prediction intervals in Python: adjust the
+    intervals of any forecaster to reach the target coverage, for one or many series.
+
+user_guides/probabilistic-forecasting-metrics.ipynb:
+  title: Metrics for probabilistic forecasting
+  description: >-
+    Metrics for probabilistic forecasting in Python: evaluate prediction
+    intervals and distributions with coverage, Winkler score, interval score and CRPS.
+
+user_guides/explainability.ipynb:
+  title: Explainability of forecasting models
+  description: >-
+    Explainability of time series forecasting models in Python: feature
+    importance, SHAP values and partial dependence plots for skforecast models.
+
+user_guides/training-and-prediction-matrices.ipynb:
+  title: Training and prediction matrices
+  description: >-
+    Training and prediction matrices of skforecast forecasters: inspect the lags,
+    window features and exogenous variables a forecasting model learns from.
+
+user_guides/save-load-forecaster.ipynb:
+  title: Save and load forecasting models
+  description: >-
+    Save and load forecasting models in Python: serialize skforecast
+    forecasters with joblib, pickle or skops, including custom window features.
+
+user_guides/forecaster-in-production.ipynb:
+  title: Forecasting models in production
+  description: >-
+    Forecasting models in production with Python: predict from the latest
+    observations with last_window, without retraining the skforecast forecaster.
+
+user_guides/drift-detection.ipynb:
+  title: Data drift detection in time series
+  description: >-
+    Data drift detection for time series forecasting in Python: monitor the
+    input data of a model with RangeDriftDetector and PopulationDriftDetector.
+
+user_guides/skforecast-in-GPU.ipynb:
+  title: Time series forecasting on GPU
+  description: >-
+    Time series forecasting on GPU in Python: train skforecast models faster
+    with XGBoost, LightGBM, CatBoost and RAPIDS cuML on CUDA devices.
+
+user_guides/plotting.ipynb:
+  title: Plotting forecasts and residuals
+  description: >-
+    Plotting forecasts in Python with skforecast: residual diagnostics,
+    prediction intervals, autocorrelation and correlation between series lags.
+
+user_guides/migration-guide.ipynb:
+  title: skforecast migration guide
+  description: >-
+    skforecast migration guide: update your Python forecasting code to the
+    latest version, with the API changes of each release and how to adapt to them.
+
+user_guides/weighted-time-series-forecasting.ipynb:
+  title: Weighted time series forecasting
+  description: >-
+    Weighted time series forecasting in Python: give lower weight to unreliable
+    periods such as outages or anomalies when training skforecast models.
+
+user_guides/stacking-ensemble-models-forecasting.ipynb:
+  title: Stacking ensemble models for forecasting
+  description: >-
+    Stacking ensemble models for time series forecasting in Python: combine
+    several scikit-learn regressors with StackingRegressor to improve accuracy.
+
+user_guides/forecasting-xgboost-lightgbm.ipynb:
+  title: Forecasting with XGBoost and LightGBM
+  description: >-
+    Forecasting with XGBoost and LightGBM in Python: gradient boosting models
+    for time series with lags, exogenous variables and backtesting in skforecast.
+
+user_guides/migrate-from-prophet.ipynb:
+  title: "Prophet alternative: migrate to skforecast"
+  description: >-
+    Migrate from Prophet to skforecast in Python: equivalents for seasonality,
+    holidays, regressors and cross-validation, with side-by-side backtests.
+
+# FAQ and forecasting tips
+faq/table-of-contents.md:
+  title: Time series forecasting FAQ and tips
+  description: >-
+    Time series forecasting FAQ and tips: answers to common skforecast questions
+    on negative predictions, missing values, delayed data, intervals and speed.
+
+faq/non-negative-predictions.ipynb:
+  title: Avoid negative predictions in forecasting
+  description: >-
+    Avoid negative predictions in time series forecasting with log transforms
+    or Poisson and gamma objectives in LightGBM and XGBoost with skforecast.
+
+faq/forecasting-time-series-with-missing-values.ipynb:
+  title: Forecasting series with missing values
+  description: >-
+    Forecasting time series with missing values in Python: impute the gaps and
+    give zero weight to the imputed observations when training skforecast models.
+
+faq/forecasting-with-delayed-historical-data.ipynb:
+  title: Forecasting with delayed historical data
+  description: >-
+    Forecasting with delayed historical data in Python: evaluate and predict
+    when the latest observations arrive late, using lags beyond the delay.
+
+faq/parameters-search-backtesting-vs-one-step-ahead.ipynb:
+  title: Backtesting vs one-step-ahead validation
+  description: >-
+    Backtesting vs one-step-ahead validation for hyperparameter and lag search:
+    compare the speed and the accuracy of both strategies in skforecast.
+
+faq/probabilistic-forecasting-crps-score.ipynb:
+  title: CRPS for probabilistic forecasting
+  description: >-
+    Continuous Ranked Probability Score (CRPS) in Python: evaluate probabilistic
+    forecasts from samples or quantiles of the predictive distribution.
+
+faq/probabilistic-forecasting-calibrate-intervals.ipynb:
+  title: Calibration of prediction intervals
+  description: >-
+    Calibration of prediction intervals in Python: symmetric and asymmetric
+    conformal calibration to reach the desired coverage of probabilistic forecasts.
+
+faq/cyclical-features-time-series.ipynb:
+  title: Cyclical features in time series
+  description: >-
+    Cyclical features in time series forecasting with Python: one hot encoding,
+    sine and cosine transformation and B-splines for calendar variables.
+
+faq/time-series-aggregation.ipynb:
+  title: Time series aggregation in Python
+  description: >-
+    Time series aggregation in Python with pandas: resample data to another
+    frequency and compute rolling window statistics before forecasting.
+
+faq/skforecast-benchmark.ipynb:
+  title: skforecast performance benchmark
+  description: >-
+    skforecast performance benchmark: execution time of fit, predict and other
+    key methods of every forecaster, and how it evolves across library versions.
+
+faq/parallelization-skforecast.ipynb:
+  title: Parallelization in skforecast
+  description: >-
+    What skforecast runs in parallel, how the automatic n_jobs decides, when to
+    set it yourself, and a benchmark of backtesting, fitting and search.
+
+faq/profiling-skforecast.ipynb:
+  title: Profiling skforecast performance
+  description: >-
+    Profiling skforecast performance: time spent by fit, create_train_X_y and
+    predict of the forecasters to find bottlenecks and use the library efficiently.
+
+# Examples
+examples/examples_english.md:
+  title: Time series forecasting examples in Python
+  description: >-
+    Time series forecasting examples in Python: skforecast tutorials with
+    gradient boosting, global models, foundation models and prediction intervals.
+
+examples/examples_spanish.md:
+  title: Forecasting tutorials in Spanish
+  description: >-
+    Time series forecasting tutorials in Spanish: skforecast examples in Python
+    with machine learning, global models, foundation models and intervals.
+
+examples/examples_chinese.md:
+  title: Forecasting tutorials in Chinese
+  description: >-
+    Time series forecasting tutorials in Chinese: skforecast examples in Python
+    with machine learning, gradient boosting, ARIMA and energy demand forecasting.
+
+# API reference
+api/ForecasterRecursive.md:
+  title: ForecasterRecursive API
+  description: >-
+    ForecasterRecursive API reference: parameters, attributes and methods of the
+    skforecast class for recursive multi-step forecasting with any regressor.
+
+api/ForecasterRecursiveClassifier.md:
+  title: ForecasterRecursiveClassifier API
+  description: >-
+    ForecasterRecursiveClassifier API reference: parameters and methods to
+    forecast categorical time series with any scikit-learn compatible classifier.
+
+api/ForecasterRecursiveMultiSeries.md:
+  title: ForecasterRecursiveMultiSeries API
+  description: >-
+    ForecasterRecursiveMultiSeries API reference: parameters and methods of the
+    global model that forecasts many time series with a single regressor.
+
+api/ForecasterStats.md:
+  title: ForecasterStats API
+  description: >-
+    ForecasterStats API reference: parameters and methods to forecast with
+    ARIMA, SARIMAX, ETS and ARAR statistical models through the skforecast interface.
+
+api/ForecasterEquivalentDate.md:
+  title: ForecasterEquivalentDate API
+  description: >-
+    ForecasterEquivalentDate API reference: parameters and methods of the
+    baseline forecaster that predicts with the values of equivalent past dates.
+
+api/ForecasterDirect.md:
+  title: ForecasterDirect API
+  description: >-
+    ForecasterDirect API reference: parameters, attributes and methods of the
+    skforecast class that trains one regressor per step of the forecast horizon.
+
+api/ForecasterDirectMultiVariate.md:
+  title: ForecasterDirectMultiVariate API
+  description: >-
+    ForecasterDirectMultiVariate API reference: parameters and methods to
+    forecast one series from the lags of several dependent time series.
+
+api/ForecasterFoundation.md:
+  title: ForecasterFoundation API
+  description: >-
+    ForecasterFoundation API reference: parameters and methods to forecast with
+    pretrained time series foundation models such as Chronos and TimesFM.
+
+api/FoundationModel.md:
+  title: FoundationModel API
+  description: >-
+    FoundationModel API reference: adapters for Chronos, TimesFM, Moirai, TabPFN
+    and other foundation models, and helpers to list and inspect them.
+
+api/ForecasterRnn.md:
+  title: ForecasterRnn API
+  description: >-
+    ForecasterRnn API reference: parameters and methods to forecast one or many
+    time series with Keras recurrent neural networks such as LSTM and GRU.
+
+api/stats.md:
+  title: skforecast.stats API
+  description: >-
+    skforecast.stats API reference: the Arima, Sarimax, Ets and Arar statistical
+    models, plus the ACF and PACF functions for autocorrelation analysis.
+
+api/model_selection.md:
+  title: skforecast.model_selection API
+  description: >-
+    skforecast.model_selection API reference: backtesting, grid, random and
+    Bayesian search functions and the TimeSeriesFold and OneStepAheadFold classes.
+
+api/feature_selection.md:
+  title: skforecast.feature_selection API
+  description: >-
+    skforecast.feature_selection API reference: select_features and
+    select_features_multiseries to choose lags, window and exogenous features.
+
+api/preprocessing.md:
+  title: skforecast.preprocessing API
+  description: >-
+    skforecast.preprocessing API reference: RollingFeatures, CalendarFeatures,
+    TimeSeriesDifferentiator, QuantileBinner and data reshaping functions.
+
+api/drift_detection.md:
+  title: skforecast.drift_detection API
+  description: >-
+    skforecast.drift_detection API reference: the RangeDriftDetector and
+    PopulationDriftDetector classes to monitor data drift in forecasting models.
+
+api/metrics.md:
+  title: skforecast.metrics API
+  description: >-
+    skforecast.metrics API reference: MASE, RMSSE, sMAPE and probabilistic
+    forecasting metrics such as coverage, CRPS, Winkler and interval scores.
+
+api/plot.md:
+  title: skforecast.plot API
+  description: >-
+    skforecast.plot API reference: functions to plot residuals, prediction
+    intervals, prediction distributions, backtesting animations and correlations.
+
+api/utils.md:
+  title: skforecast.utils API
+  description: >-
+    skforecast.utils API reference: save_forecaster, load_forecaster and the
+    input validation and helper functions used internally by the forecasters.
+
+api/experimental.md:
+  title: skforecast.experimental API
+  description: >-
+    skforecast.experimental API reference: features under development, such as
+    TimeSeriesSplitter, that may change in future releases of skforecast.
+
+api/datasets.md:
+  title: skforecast.datasets API
+  description: >-
+    skforecast.datasets API reference: fetch_dataset, load_demo_dataset and
+    show_datasets_info to load the time series datasets used in the docs.
+
+api/exceptions.md:
+  title: skforecast.exceptions API
+  description: >-
+    skforecast.exceptions API reference: the warnings skforecast raises, what
+    each one means, and set_warnings_style to change how they are displayed.
+
+# Other pages
+skforecast-ai/skforecast-ai.md:
+  title: "Skforecast AI: automated forecasting"
+  description: >-
+    Skforecast AI is an AI-assisted forecasting package: profile a time series,
+    choose a strategy, backtest it and get the forecast with runnable Python code.
+
+skforecast-studio/skforecast-studio.md:
+  title: "Skforecast Studio: no-code forecasting"
+  description: >-
+    Skforecast Studio is a no-code app to build time series forecasting models
+    visually and export production-ready Python code that uses skforecast.
+
+releases/releases.md:
+  title: skforecast release notes and changelog
+  description: >-
+    skforecast release notes and changelog: new features, API changes and bug
+    fixes of every version of the Python time series forecasting library.
+
+more/about-skforecast.md:
+  title: About skforecast
+  description: >-
+    About skforecast: history, governance, core team, contributors, license and
+    how to cite the open source Python library for time series forecasting.
+
+more/consulting.md:
+  title: Time series forecasting consulting
+  description: >-
+    Time series forecasting consulting from the skforecast team: machine
+    learning projects, advisory, workshops, training and support for skforecast.
+
+more/funding.md:
+  title: Sponsor skforecast
+  description: >-
+    Sponsor skforecast: corporate sponsorship, partnerships, institutional
+    funding and individual donations that keep the open source library growing.

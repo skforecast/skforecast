@@ -1,0 +1,11 @@
+python 3.12.3 x86_64 Linux
+tsicl 0.2.1
+torch 2.9.1+cpu
+numpy 2.5.4
+pandas 2.3.3
+huggingface_hub 2.4.0
+scikit-learn 1.9.1
+skforecast 0.27.0
+pytest 9.2.0
+cuda False mps False
+cpus 4

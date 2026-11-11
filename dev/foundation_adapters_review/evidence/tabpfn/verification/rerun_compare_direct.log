@@ -1,0 +1,35 @@
+python             : 3.12.3 Linux-6.18.44-fc-v242-x86_64-with-glibc2.39
+skforecast         : 0.27.0
+tabpfn-time-series : 1.4.0
+tabpfn             : 9.2.0
+tabpfn-client      : 0.7.1
+torch              : 2.15.0+cpu
+numpy              : 2.5.4
+pandas             : 2.3.3
+cuda available     : False
+
+Output columns of predict_df (real backend):
+Predicting time series:   0%|          | 0/1 [00:00<?, ?it/s]Predicting time series: 100%|██████████| 1/1 [00:00<00:00, 14.02it/s]
+  index names : ['item_id', 'timestamp']
+  columns     : [('target', 'str'), (0.1, 'float'), (0.5, 'float'), (0.9, 'float')]
+
+Predicting time series:   0%|          | 0/1 [00:00<?, ?it/s]Predicting time series: 100%|██████████| 1/1 [00:00<00:00, 27.69it/s]
+single series, point                                    max|adapter - direct| = 0.000e+00
+Predicting time series:   0%|          | 0/1 [00:00<?, ?it/s]Predicting time series: 100%|██████████| 1/1 [00:00<00:00, 31.47it/s]
+single series, quantiles [0.1, 0.5, 0.9]                max|adapter - direct| = 0.000e+00
+Predicting time series:   0%|          | 0/1 [00:00<?, ?it/s]Predicting time series: 100%|██████████| 1/1 [00:00<00:00, 34.08it/s]
+single series, quantiles [0.025, 0.975] (outside default) max|adapter - direct| = 0.000e+00
+Predicting time series:   0%|          | 0/2 [00:00<?, ?it/s]Predicting time series: 100%|██████████| 2/2 [00:00<00:00, 20.88it/s]
+2 series, different length, NaN, point                  max|adapter - direct| = 0.000e+00
+Predicting time series:   0%|          | 0/2 [00:00<?, ?it/s]Predicting time series: 100%|██████████| 2/2 [00:00<00:00, 20.92it/s]
+2 series, heterogeneous known exog, quantiles           max|adapter - direct| = 0.000e+00
+Predicting time series:   0%|          | 0/2 [00:00<?, ?it/s]Predicting time series: 100%|██████████| 2/2 [00:00<00:00, 26.96it/s]
+2 series, heterogeneous known exog, point               max|adapter - direct| = 0.000e+00
+Predicting time series:   0%|          | 0/1 [00:00<?, ?it/s]Predicting time series: 100%|██████████| 1/1 [00:00<00:00, 33.86it/s]
+
+target vs 0.5 quantile, max abs diff: 0.0
+TABPFN_TS_DEFAULT_FEATURES: ['KnownCovariateLagFeature', 'RunningIndexFeature', 'CalendarFeature', 'AutoSeasonalFeature']
+featurized columns (adapter input, default features): ['target', 'x1', 'x1_lag_1', 'x1_lag_24', 'x1_mean_24', 'running_index', 'year', 'second_of_minute_sin', 'second_of_minute_cos', 'minute_of_hour_sin', 'minute_of_hour_cos', 'hour_of_day_sin', 'hour_of_day_cos', 'day_of_week_sin', 'day_of_week_cos', 'day_of_month_sin', 'day_of_month_cos', 'day_of_year_sin', 'day_of_year_cos', 'week_of_year_sin', 'week_of_year_cos', 'month_of_year_sin', 'month_of_year_cos', 'sin_#0', 'cos_#0', 'sin_#1', 'cos_#1', 'sin_#2', 'cos_#2', 'sin_#3', 'cos_#3', 'sin_#4', 'cos_#4', 'sin_#5', 'cos_#5', 'sin_#6', 'cos_#6', 'sin_#7', 'cos_#7', 'sin_#8', 'cos_#8', 'sin_#9', 'cos_#9', 'sin_#10', 'cos_#10', 'sin_#11', 'cos_#11']
+RangeIndex: index [300, 301, 302] ... finite: True
+category covariate: predict ran, finite: True
+string covariate: predict ran, finite: True

@@ -21,6 +21,10 @@ It runs papermill and writes warning logs to `tools/docs/execute_notebooks/logs/
 
 The kernel runs from the notebook's folder, where the repo is not on the path: if the environment has a regular (non-editable) install of skforecast, the notebook silently runs that version instead of the repo code. The runner reports it in its header (`Kernel skf`, with a warning when it is not the repo code); to check it by hand, run `cd docs/user_guides && python -c "import skforecast; print(skforecast.__file__)"`. If it points to `site-packages`, run `pip install -e .` or prefix the command with `PYTHONPATH=<repo root>`.
 
+## Page titles and descriptions
+
+Every page has a search engine title and meta description in `tools/docs/hooks/page_meta.yml`, keyed by its path in `docs/` (notebooks cannot carry front matter). When you add, rename or remove a page, update its entry and run `python tools/docs/hooks/page_meta.py`, which checks the coverage and the rules written at the top of the YAML (title length, description of 120 to 160 characters, unique texts, no en or em dashes, no double quotes or angle brackets). CI runs it on pull requests that touch the docs.
+
 ## Keep user guides simple
 
 - Write example code for the result the notebook actually produces (outputs are committed). If RFECV keeps `roll_mean_24` and `roll_mean_48`, write `RollingFeatures(stats=['mean', 'mean'], window_sizes=[24, 48])`, not a parser that handles any name.

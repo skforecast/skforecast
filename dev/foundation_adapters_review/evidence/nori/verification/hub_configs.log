@@ -1,0 +1,10 @@
+== Nori
+{'model_type': 'features-transformer', 'num_parameters': 5868069, 'nhead': 2, 'regression_head': '999-quantile pinball'}
+== Nori-1-5
+{'model_type': 'features-transformer', 'num_parameters': 20757832, 'architecture': 'Model v3: two-phase encoder', 'nhead': 4, 'regression_head': '999-quantile pinball', 'min_synthefy_nori_version': '0.22.0'}
+== Nori-30M
+{'model_type': 'features-transformer', 'num_parameters': 29206833, 'nhead': 4, 'regression_head': '999-quantile pinball'}
+== Nori-100M
+{'model_type': 'features-transformer', 'num_parameters': 98304698, 'nhead': 8, 'regression_head': '999-quantile pinball'}
+== Nori-Causal
+{'model_type': 'noricausal', 'num_parameters': 30342598, 'architecture': 'row-and-column transformer -> row pooling -> column transformer -> bilinear edge head', 'nhead': 4, 'output': '(T, T) edge probabilities, [i, j] = P(node i -> node j); T = features + target'}

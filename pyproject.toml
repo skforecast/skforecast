@@ -1,6 +1,6 @@
 [project]
 name = "skforecast"
-version = "0.26.0"
+version = "0.27.0"
 description = "Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models."
 readme = "README.md"
 authors = [
@@ -84,18 +84,21 @@ all = [
     "statsmodels>=0.13.2, <0.16",
     "keras>=3.3, <4.0",
     'tensorflow>=2.18, <2.22; python_version < "3.14"',
-    "torch>=2.4, <2.15"
+    "torch>=2.4, <2.16"
 ]
 
 full = ["skforecast[all]"]
 
 docs = [
-    "mike==2.1.3",
+    "mike==2.2.0",
     "mkdocs==1.6.1",
     "mkdocs-jupyter==0.26.3",
     "mkdocs-material==9.7.7",
-    "mkdocstrings==1.0.6",
-    "mkdocstrings-python==2.0.8",
+    "mkdocstrings==1.0.7",
+    "mkdocstrings-python==2.0.9",
+    # Pinned like the rest: Material only requires >=10.2, and a new major
+    # version can break mkdocstrings (12.x needs mkdocstrings>=1.0.7)
+    "pymdown-extensions==12.2",
     "black==26.5.1",
 ]
 
@@ -103,7 +106,6 @@ test = [
     # Testing
     "pytest>=9.1.0",
     "pytest-cov>=7.1.0",
-    "pytest-xdist>=3.8",
     "pytest-github-actions-annotate-failures>=0.4.2",
     
     # Stats and plotting
@@ -115,7 +117,7 @@ test = [
     "xgboost>=2.1, <4.0",
     "catboost>=1.2, <2.0",
     "keras>=3.3, <4.0",
-    "torch>=2.4, <2.15",
+    "torch>=2.4, <2.16",
     "cloudpickle>=3.0",
     "skops>=0.14",
     "tomli>=2.0",

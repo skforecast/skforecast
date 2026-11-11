@@ -1,0 +1,195 @@
+# Upstream checks: Synthefy/synthefy-nori cloned into ~/fm-review-src/synthefy-nori
+# HEAD: f88b73f (2026-11-05); tags compared: synthefy-nori-v0.18.2 (backend current when NoriAdapter shipped in skforecast 0.24.0, 2026-08-24) and synthefy-nori-v0.23.0
+
+## synthefy-nori-v0.18.2 ccd166b
+### NoriRegressor.__init__ / fit / predict signatures
+    def __init__(
+        self,
+        model_path: str | None = None,
+        *,
+        model: str | None = None,
+        device=None,
+        inference_config: str | None = None,
+        token: str | bool | None = None,
+        augmentations: tuple[str, ...] | list[str] | None = ("yj",),
+        yj_skew_threshold: float = 10.0,
+        quantile_collapse: str = "mean",
+        bar_temperature: float = 1.0,
+        bar_point_estimator: str = "mean",
+        discrete_y_snap_max_unique: int = 0,
+        discretize: str | None = None,
+        categorical_levels=None,
+        categorical_columns=CATEGORICAL_AUTO,
+        categorical_encoding: str = DEFAULT_CATEGORICAL_ENCODING,
+        max_categorical_cardinality: int = DEFAULT_MAX_CARDINALITY,
+        text_columns=None,
+        memory_policy: "MemoryPolicy | dict | str | None" = None,
+        large_context_policy=None,
+        large_context_threshold: int = DEFAULT_LARGE_CONTEXT_THRESHOLD,
+        large_context_seed: int = 0,
+        large_context_cache_entries: int = 1,
+        svd_dim: int | None = 128,
+        embedder="minilm",
+        text_max_cardinality: int | None = None,
+        text_normalize: bool | None = None,
+    ) -> None:
+379:    def fit(self, X, y):
+551:    def predict(
+    def predict(
+        self,
+        X,
+        *,
+        output_type: str = "mean",
+        quantiles: list[float] | None = None,
+        discretize: str | None = None,
+        categorical_levels=None,
+    ):
+### output_type validation and tensor conversion
+630:        if output_type not in ("mean", "median", "mode"):
+682:            pred = pred.detach().cpu().numpy()
+819:                raise ValueError("quantiles must lie strictly in (0, 1).")
+834:            bank = bank.detach().cpu().numpy()
+851:        for i, level in enumerate(q_levels):
+### NORI_MODELS (hf.py)
+NORI_MODELS = {
+    "nori-6m": DEFAULT_MODEL_REPO_ID,  # ~6M base (honors SYNTHEFY_NORI_HF_REPO)
+    "nori-30m": "Synthefy/Nori-30M",   # ~29.2M scaling-law variant
+    "nori-100m": "Synthefy/Nori-100M", # ~98.3M scaling-law variant
+}
+64:    return NORI_MODELS.get(model, model)
+
+## synthefy-nori-v0.23.0 f88b73f
+### NoriRegressor.__init__ / fit / predict signatures
+    def __init__(
+        self,
+        model_path: str | None = None,
+        *,
+        model: str | None = None,
+        device=None,
+        inference_config: str | None = None,
+        token: str | bool | None = None,
+        augmentations: tuple[str, ...] | list[str] | None = ("yj",),
+        yj_skew_threshold: float = 10.0,
+        quantile_collapse: str = "mean",
+        bar_temperature: float = 1.0,
+        bar_point_estimator: str = "mean",
+        discrete_y_snap_max_unique: int = 0,
+        discretize: str | None = None,
+        categorical_levels=None,
+        categorical_columns=CATEGORICAL_AUTO,
+        categorical_encoding: str = DEFAULT_CATEGORICAL_ENCODING,
+        max_categorical_cardinality: int = DEFAULT_MAX_CARDINALITY,
+        text_columns=None,
+        encode_id_cols: list[str] | None = None,
+        memory_policy: "MemoryPolicy | dict | str | None" = None,
+        large_context_policy=None,
+        large_context_threshold: int = DEFAULT_LARGE_CONTEXT_THRESHOLD,
+        large_context_seed: int = 0,
+        large_context_holdout: str = "random",
+        large_context_cache_entries: int = 1,
+        svd_dim: int | None = 128,
+        embedder="minilm",
+        text_max_cardinality: int | None = None,
+        text_normalize: bool | None = None,
+        large_context_max_calls: int | None = None,
+        multi_target_prediction_strategy: Literal[
+            "independent", "copula", "autoregressive"
+        ] = DEFAULT_MULTI_TARGET_PREDICTION_STRATEGY,
+        multi_target_prediction_policy: "MultiTargetPredictionPolicy | dict | None" = None,
+    ) -> None:
+464:    def fit(self, X, y):
+862:    def predict(
+    def predict(
+        self,
+        X,
+        *,
+        output_type: str = "mean",
+        quantiles: list[float] | None = None,
+        discretize: str | None = None,
+        categorical_levels=None,
+        multi_target_prediction_policy: "MultiTargetPredictionPolicy | dict | None" = None,
+    ):
+### output_type validation and tensor conversion
+604:            raise ValueError("y must contain only finite target values")
+950:        if output_type not in ("mean", "median", "mode"):
+1022:        if output_type not in ("mean", "samples"):
+1149:            pred = pred.detach().cpu().numpy()
+1290:                raise ValueError("quantiles must lie strictly in (0, 1).")
+1305:            bank = bank.detach().cpu().numpy()
+1335:        for i, level in enumerate(q_levels):
+### NORI_MODELS (hf.py)
+NORI_MODELS = {
+    "nori-6m": DEFAULT_MODEL_REPO_ID,  # ~6M base (honors SYNTHEFY_NORI_HF_REPO)
+    # Nori 1.5: ~20.8M Model v3 (two-phase encoder). Versions are spelled with hyphens
+    # (nori-1-5, not nori-1.5) because serving model names allow only [a-z0-9-].
+    "nori-1-5": "Synthefy/Nori-1-5",
+    "nori-30m": "Synthefy/Nori-30M",  # ~29.2M scaling-law variant
+    "nori-100m": "Synthefy/Nori-100M",  # ~98.3M scaling-law variant
+}
+67:    return NORI_MODELS.get(model, model)
+71:DOWNLOAD_COUNTED_REPOS = {*NORI_MODELS.values(), "Synthefy/Nori-Causal"}
+143:    if repo_id in DOWNLOAD_COUNTED_REPOS and filename != "config.json":
+
+## Commits touching api.py, hf.py, __init__.py between the two tags
+aadce3e 2026-11-05 release: synthefy-nori 0.23.0, which accepts synthefy 8 (#75) (#197)
+d170ada 2026-10-30 NoriInterpreter moves to interpretability.glassbox; add NoriCausal (causal=True) (#192)
+46224d9 2026-10-20 Release Nori 1.5 as synthefy-nori 0.22.0 (#185)
+8d2ce12 2026-10-17 Promote the SHAP helper fix and release synthefy-nori 0.21.1 (#181)
+621a091 2026-10-14 feat: add --model to synthefy-nori-download (#173)
+b486397 2026-09-14 fix(memory): clarify numerical guarantees for release (#155)
+9944e8e 2026-09-14 Add explicit encode_id_cols to NoriRegressor (#590) (#45) (#154)
+dcf6dd6 2026-09-11 Promote: transductive fit for the wide-table SVD selector + release 0.21.0 (#153)
+c4f7790 2026-09-08 chore(release): prepare synthefy-nori 0.20.2 (#152)
+481bbe0 2026-09-02 feat(inference): add target-rank policy (#41) (#146)
+2d80f9a 2026-08-29 chore(release): prepare 7.1.1 and 0.20.1 (#145)
+3935683 2026-08-29 fix(api): preserve one-row prediction shape (#544) (#144)
+2e58203 2026-08-26 feat: add multi-target prediction (#140)
+7ec89f2 2026-08-27 style: ruff format the tree, then gate it in CI (#161) (#138)
+7a35bdf 2026-08-25 feat(client): support all built-in large-context policies (#33) (#136)
+54732fb 2026-08-20 release: synthefy-nori 0.19.0 — model and synthetic-training hardening (#133)
+
+## CPU mixed precision message (stdout print)
+321:            print("Mixed precision is not supported for CPU inference, so it has been automatically disabled")
+
+## Time-series forecaster shipped by the backend family
+65:DEFAULT_QUANTILES: List[float] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+83:class NoriTSForecaster:
+267:        for item_id in test_feat.item_ids:
+forecasting = [
+    "datasets>=2.0",
+    "gluonts>=0.16",
+    "joblib>=1.1",
+    "scipy>=1.13",
+    "statsmodels>=0.14",
+]
+
+## Issue search (gh api search/issues)
+-- is:issue mixed precision
+0
+-- is:issue NaN
+1
+45 closed 2026-06-18 Adding Noir to TabArena / Issue Fix Request
+-- is:issue skforecast
+0
+-- is:issue time series
+2
+194 open 2026-10-31 [Bug]: synthefy.nori_ts fails to import on pandas 3 (ArrayManager was removed)
+177 open 2026-10-14 [Feature]: Report probabilistic metrics (CRPS, interval coverage) in synthefy-nori-eval
+-- is:pull-request mixed precision
+1
+55 closed 2026-06-22 Add inference/explanation speed benchmarks and README plots
+-- is:pull-request NaN
+11
+191 open 2026-10-24 feat(eval): opt-in predictive-distribution metrics in synthefy-nori-eval
+185 closed 2026-10-20 Release Nori 1.5 as synthefy-nori 0.22.0
+157 closed 2026-09-16 fix(model): correct outlier broadcasting and normalization invariants
+67 closed 2026-07-05 Replace LabelEncoder with a shared ordinal encode helper
+46 closed 2026-06-18 Make fitted NoriRegressor picklable with stdlib pickle (#45)
+71 closed 2026-07-13 Opt-in categorical-target discretization in predict; disable hidden low-K auto-snap by default
+-- is:pull-request skforecast
+0
+-- is:pull-request time series
+3
+88 closed 2026-07-27 Promote staging to public + release 0.15.0 (nori-ts)
+121 closed 2026-08-17 Unify categorical DataFrame preprocessing across Nori APIs
+65 closed 2026-07-02 skills: add nori-regression Claude Code skill

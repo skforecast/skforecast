@@ -1,26 +1,10 @@
-# Frequently Asked Questions and forecasting tips
+# FAQ and forecasting tips
 
-Thank you for choosing skforecast and visiting our Frequently Asked Questions (FAQ) page. Here, we aim to provide solutions to commonly encountered issues on our Github repository. If your question is not answered on this page, we encourage you to [create a new issue on our Github](https://github.com/skforecast/skforecast/issues) so that it can be addressed, and other users can also benefit from it. Additionally, we have included some forecasting tips to help you get the most out of skforecast.
+Answers to frequent questions and practical tips to get the most out of skforecast, grouped by topic. If your question is not answered here, [open an issue on GitHub](https://github.com/skforecast/skforecast/issues) so that other users can also benefit from the answer.
 
-<span style="font-size: 1.3em;">General Forecasting Tips</span>
+<!-- The cards below are generated at build time from the `FAQ and Tips` entry
+     of `nav` in mkdocs.yml and tools/docs/hooks/toc_cards.yml by
+     tools/docs/hooks/toc_cards.py. To add or move a page, edit `nav`, not
+     this page. -->
 
-+ [Avoid negative predictions when forecasting](../faq/non-negative-predictions.ipynb)
-+ [Forecasting time series with missing values](../faq/forecasting-time-series-with-missing-values.ipynb)
-+ [Forecasting time series with trend: differentiation](../user_guides/time-series-differentiation.ipynb)
-+ [Forecasting time series with trend: tree based models](https://cienciadedatos.net/documentos/py49-modelling-time-series-trend-with-tree-based-models.html)
-+ [Forecasting with delayed historical data](../faq/forecasting-with-delayed-historical-data.ipynb)
-+ [Backtesting vs One-step-ahead](../faq/parameters-search-backtesting-vs-one-step-ahead.ipynb)
-+ [Continuous Ranked Probability Score (CRPS)](../faq/probabilistic-forecasting-crps-score.ipynb)
-+ [Calibration of probabilistic forecasting intervals](../faq/probabilistic-forecasting-calibrate-intervals.ipynb)
-+ [Avoid data leakage in pre-trained forecasting models](https://cienciadedatos.net/documentos/py63-data-leakage-pre-trained-forecasting-models.html)
-
-<span style="font-size: 1.3em;">Feature Engineering</span>
-
-+ [Cyclical features in time series](../faq/cyclical-features-time-series.ipynb)
-+ [Time series aggregation](../faq/time-series-aggregation.ipynb)
-
-<span style="font-size: 1.3em;">Performance Optimization</span>
-
-+ [Benchmarking skforecast](../faq/skforecast-benchmark.ipynb)
-+ [Parallelization in skforecast](../faq/parallelization-skforecast.ipynb)
-+ [Profiling skforecast](../faq/profiling-skforecast.ipynb)
+<!-- TOC-CARDS -->

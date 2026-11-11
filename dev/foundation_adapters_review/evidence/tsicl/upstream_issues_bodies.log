@@ -1,0 +1,990 @@
+=========== #23 [open] `batch_size` does not limit target series per batch for irregular list inputs (by lenzone91, 2026-10-30)
+## Summary
+
+`batch_size` behaves differently depending on the input format.
+
+For tensor inputs, target variables are flattened into the batch dimension and then split according to `batch_size`.
+
+For irregular list inputs, each example is yielded as a whole, including all its target variables. A single batch can therefore contain more target series than requested.
+
+[launch.py](https://github.com/user-attachments/files/34199560/launch.py)
+
+## Cause
+
+[`validate_target_inputs`](https://github.com/EDF-Lab/ts-icl/blob/main/src/tsicl/utils/data_adapter.py#L80-L97) flattens target variables into the batch dimension for tensors. For irregular lists, each element retains all its variables.
+
+In [`batchify`](https://github.com/EDF-Lab/ts-icl/blob/main/src/tsicl/utils/utils.py#L37-L45), tensors are sliced according to `batch_size`, whereas list elements are yielded directly without further splitting.
+
+## Impact
+
+Reducing `batch_size` reduces the number of target series processed together for tensors, but not for irregular lists.
+
+Users processing examples with many target variables may therefore still encounter out-of-memory errors with `batch_size=1`.
+
+This reproduction verifies batch shapes; it does not measure model memory consumption.
+
+## Expected behavior
+
+`batch_size` should provide a consistent limit on the number of target series processed together, or its limitation for irregular list inputs should be explicitly documented.
+
+=========== #22 [open] Empty quantile lists produce NaN point forecasts; duplicate quantiles affect the mean (by lenzone91, 2026-10-30)
+## Summary
+
+`quantile_levels=[]` is accepted by `forecast`, but produces empty quantile outputs and NaN point predictions.
+
+Duplicate quantiles are also accepted. With `point_estimator="mean"`, duplicates count multiple times in the average and therefore change the point forecast.
+
+## Observed behavior
+
+### Empty list
+
+With `quantile_levels=[]`, the call completes without an exception:
+
+```text
+Point: tensor([nan, nan, nan, nan])
+Quantiles shape: torch.Size([4, 0])
+```
+
+The subset validation accepts an empty set. The point estimator then averages over an empty quantile dimension, producing NaNs.
+
+### Duplicate quantiles
+
+With `quantile_levels=[0.1, 0.5, 0.5]`, the output contains the median twice.
+
+The common quantile values are identical to those returned with `[0.1, 0.5]` when resetting the seed before each call. However, the point forecast changes because the average becomes:
+
+```python
+(q10 + 2 * q50) / 3
+```
+
+instead of:
+
+```python
+(q10 + q50) / 2
+```
+
+[launch.py](https://github.com/user-attachments/files/34199333/launch.py)
+
+=========== #21 [open] Internal covariate forecasting overwrites the context length used by subsequent batches (by lenzone91, 2026-10-30)
+## Summary
+
+With `allow_covar_forecast=True`, the internal forecast of past-only covariates modifies `self.this_context_length`.
+
+As a result, subsequent target batches no longer respect the `context_length` requested by the user.
+
+[launch.py](https://github.com/user-attachments/files/34199213/launch.py)
+
+## Cause
+
+The outer [`forecast` call](https://github.com/EDF-Lab/ts-icl/blob/main/src/tsicl/pipeline.py#L760-L763) stores the requested context length in a shared instance attribute:
+
+```python
+self.this_context_length = min(
+    self.max_context_length, context_length
+)
+```
+
+When past-only covariates need forecasting, [`_get_context_target_coords_f`](https://github.com/EDF-Lab/ts-icl/blob/main/src/tsicl/pipeline.py#L412) recursively calls `self.forecast(...)` without passing `context_length`.
+
+That internal call resets `self.this_context_length` to `self.max_context_length`, which is 4096 with the tested checkpoint.
+
+The first target batch still uses 6 observations because its local lookback length was calculated before the recursive call. The second target batch reads the modified attribute and therefore uses all 10 available observations.
+
+The internal covariate forecasts also use 6 and 10 historical observations respectively.
+
+## Expected behavior
+
+Every target batch should respect the explicitly requested `context_length=6`.
+
+An internal covariate forecast should not overwrite the context configuration of the outer forecast call.
+
+=========== #20 [open] `squeeze_output=True` removes all singleton dimensions, including horizon and quantiles (by lenzone91, 2026-10-30)
+With `squeeze_output=True`, all dimensions of size 1 are removed, including the prediction horizon and quantile dimensions.
+
+## Example
+
+```python
+point, quantiles = model.forecast(
+    inputs=np.ones(100),
+    prediction_length=1,
+    quantile_levels=[0.5],
+    squeeze_output=True,
+)
+
+print(point.shape)      # torch.Size([])
+print(quantiles.shape)  # torch.Size([])
+```
+
+For one example, one target, a one-step horizon and one quantile, both outputs become scalar tensors.
+
+The output rank therefore depends simultaneously on the batch size, target variable count, horizon and quantile count. Downstream indexing can break when any of these becomes 1.
+
+Source: [output squeezing in `forecast`](https://github.com/EDF-Lab/ts-icl/blob/main/src/tsicl/pipeline.py#L779).
+
+Could the documentation explicitly state which axes are removed and show this scalar-output case? Setting `squeeze_output=False` preserves the output dimensions.
+
+=========== #19 [open] Forecast return type changes with historical input lengths (by lenzone91, 2026-10-30)
+The return type of `forecast` changes depending on whether list elements have equal historical lengths, even when the prediction horizon and number of targets remain identical.
+
+## Example
+
+```python
+# Equal historical lengths: returns tensors.
+predictions, quantiles = model.forecast(
+    inputs=[np.ones(100), np.ones(100)],
+    prediction_length=24,
+)
+
+# Different historical lengths: returns lists of tensors.
+predictions, quantiles = model.forecast(
+    inputs=[np.ones(100), np.ones(101)],
+    prediction_length=24,
+)
+```
+
+Equal-length inputs are automatically stacked. Unequal-length inputs remain a list, which leads to different [output collection paths](https://github.com/EDF-Lab/ts-icl/blob/main/src/tsicl/pipeline.py#L1031-L1047).
+
+As a result, changing a single history length requires downstream code to handle a different return type, although the forecast outputs have compatible shapes.
+
+Could the return type be made consistent for list inputs, or could this dependency on historical lengths be explicitly documented?
+
+=========== #18 [open] Clarify shape interpretation and DataFrame semantics in the forecast API (by lenzone91, 2026-10-30)
+## Summary
+
+The interpretation of a two-dimensional input changes depending on whether it is passed directly or wrapped in a list.
+
+This behavior is documented for NumPy arrays and PyTorch tensors, but it can cause silent semantic mistakes. DataFrames follow the same shape convention, with additional inconsistencies in accepted formats and no alignment based on their index or column names.
+
+## 1. Wrapping a 2D array in a list changes the meaning of its axes
+
+```python
+x = np.ones((100, 3))
+
+model.forecast(inputs=x, prediction_length=4)
+# 100 examples, each containing one target series with 3 observations.
+
+model.forecast(inputs=[x], prediction_length=4)
+# 1 example containing 3 target variables with 100 observations each.
+```
+
+The same distinction applies to covariates:
+
+```python
+covars = c
+# Interpreted as (batch, covar_length).
+
+covars = [c]
+# Each list element is interpreted as (covar_length, num_variates).
+```
+
+The [`forecast` documentation](https://edf-lab.github.io/ts-icl/autoapi/tsicl/pipeline/TSICL.html#tsicl.pipeline.TSICL.forecast) explicitly defines these conventions:
+
+| Argument | Direct 2D array | 2D array inside a list |
+|---|---|---|
+| `inputs` | `(batch, context_length)` | `(context_length, num_variates)` |
+| `covars` | `(batch, covar_length)` | `(covar_length, num_variates)` |
+
+This therefore follows the documented contract. However, adding or removing a list wrapper changes the interpretation of the data without changing the underlying array.
+
+When the resulting shapes remain compatible, forecasting can succeed even though the axes no longer represent what the user intended.
+
+## 2. DataFrames have the same ambiguity
+
+```python
+df = pd.DataFrame(
+    np.ones((100, 3)),
+    columns=["temperature", "humidity", "consumption"],
+)
+
+model.forecast(inputs=df, prediction_length=4)
+# 100 examples with 3 observations each.
+
+model.forecast(inputs=[df], prediction_length=4)
+# 1 example with 3 target variables and 100 observations each.
+```
+
+In particular, passing a DataFrame directly does not interpret its rows as timestamps and its columns as variables. That interpretation only applies when it is wrapped in a list.
+
+## 3. DataFrame support differs between targets and covariates
+
+The accepted formats are also inconsistent:
+
+| Format | `inputs` | `covars` |
+|---|---|---|
+| A DataFrame | Accepted | Rejected |
+| A list of DataFrames | Accepted | Accepted |
+
+Thus, a DataFrame accepted as a target cannot necessarily be passed directly as covariates.
+
+Sources: [target conversion](https://github.com/EDF-Lab/ts-icl/blob/main/src/tsicl/utils/data_adapter.py#L71), [covariate conversion](https://github.com/EDF-Lab/ts-icl/blob/main/src/tsicl/utils/data_adapter.py#L243-L252).
+
+## 4. DataFrame labels do not provide alignment
+
+DataFrames are converted through `.values`, which discards their index and column names.
+
+Consequently:
+
+- Target and covariate observations are associated by position, without date-based alignment.
+- Column names are not used to align variables across examples.
+- Matching shapes do not guarantee matching timestamps or column order.
+
+For example, two DataFrames with the same shape but differently ordered timestamps or columns can be processed without detecting the semantic mismatch.
+
+=========== #17 [open] Forecast input validation: edge cases produce unclear errors or silently invalid outputs (by lenzone91, 2026-10-30)
+## Summary
+
+The forecasting interface accepts several input formats, but some edge cases are not validated consistently before reaching tensor operations or the model.
+
+These cases can produce low-level exceptions, inconsistent behavior between equivalent representations, or non-finite forecasts without an error.
+
+This issue groups several smaller validation problems. The examples below assume a loaded `model` and `prediction_length=4`, unless specified otherwise.
+
+## 1. Empty lists produce `IndexError`
+
+```python
+model.forecast(inputs=[], prediction_length=4)
+
+model.forecast(
+    inputs=np.ones(10),
+    covars=[],
+    prediction_length=4,
+)
+```
+
+Several functions directly access the first element of a list without checking whether it is empty. The resulting `IndexError` does not explain that the supplied list contains no examples.
+
+Sources: [target input handling](https://github.com/EDF-Lab/ts-icl/blob/main/src/tsicl/utils/data_adapter.py#L34), [covariate input handling](https://github.com/EDF-Lab/ts-icl/blob/main/src/tsicl/utils/data_adapter.py#L246).
+
+## 2. Empty dimensions are not clearly rejected
+
+```python
+inputs = np.ones((0, 10))     # Empty batch.
+inputs = np.ones((2, 10, 0))  # No target variables.
+```
+
+The empty batch fails later in `torch.cat`. The input without target variables produces an error about the Boolean value of an empty tensor.
+
+An empty context can also be reported as containing only NaNs, without distinguishing an empty axis from an actual series of missing observations.
+
+## 3. Unsupported covariate ranks pass validation
+
+At the adapter level, `validate_covar_inputs` accepts both:
+
+```python
+covars = torch.tensor(1.0)          # Scalar.
+covars = torch.ones(1, 1, 1, 10, 1)  # 5D tensor.
+```
+
+Neither rank matches the documented array formats, but validation returns without rejecting them. Subsequent operations assume a different shape.
+
+This observation concerns the adapter accepting these inputs, rather than a successful end-to-end forecast.
+
+Source: [covariate dimension handling](https://github.com/EDF-Lab/ts-icl/blob/main/src/tsicl/utils/data_adapter.py#L301).
+
+## 4. Mixed NumPy/PyTorch lists are handled according to their first element
+
+```python
+inputs = [
+    torch.ones(10),
+    np.ones(10),
+]
+```
+
+Although NumPy arrays and PyTorch tensors are individually supported, this combination fails in `torch.stack`.
+
+The conversion strategy depends on the first element. There is no clear validation error identifying the incompatible element or explaining whether mixed lists are supported.
+
+## 5. An empty covariate dictionary produces an unrelated error
+
+```python
+inputs = [{
+    "target": np.ones(10),
+    "past_covariates": {},
+}]
+
+model.forecast(inputs=inputs, prediction_length=4)
+```
+
+This produces:
+
+```text
+ValueError: Unsupported type <class 'NoneType'>
+```
+
+Omitting `past_covariates` works, whereas providing an empty dictionary fails. The error refers to an internal `None` value rather than the supplied dictionary.
+
+Sources: [empty dictionary handling](https://github.com/EDF-Lab/ts-icl/blob/main/src/tsicl/utils/data_adapter.py#L180), [final type validation](https://github.com/EDF-Lab/ts-icl/blob/main/src/tsicl/utils/data_adapter.py#L324).
+
+## 6. Dictionary covariates of length one are rejected
+
+```python
+inputs = [{
+    "target": np.ones(10),
+    "past_covariates": {
+        "temperature": np.ones(10),
+    },
+    "future_covariates": {
+        "temperature": np.ones(1),
+    },
+}]
+
+model.forecast(inputs=inputs, prediction_length=1)
+```
+
+The future covariate is a valid 1D array whose length matches the prediction horizon. However, `.squeeze()` converts its shape from `(1,)` to a scalar, which then fails the one-dimensionality check.
+
+Conversely, an array shaped `(1, T, 1)` can pass that same check because squeezing converts it to `(T,)`, despite the documented requirement for 1D dictionary values.
+
+Source: [dictionary covariate conversion](https://github.com/EDF-Lab/ts-icl/blob/main/src/tsicl/utils/data_adapter.py#L193).
+
+## 7. Numeric dtype handling differs between NumPy arrays and PyTorch tensors
+
+```python
+inputs = np.arange(10, dtype=np.float64)        # Works.
+inputs = torch.arange(10, dtype=torch.float64)  # Double/Float error.
+inputs = torch.arange(10)                      # nanmean error on Long.
+```
+
+NumPy arrays are converted through `torch.Tensor`, while directly supplied tensors retain their dtype.
+
+Consequently, equivalent numerical inputs can either work or fail later in the scaler or network depending on their representation.
+
+## 8. Infinite values can produce non-finite forecasts without an exception
+
+```python
+inputs = np.full(10, np.inf, dtype=np.float32)
+
+predictions, quantiles = model.forecast(
+    inputs=inputs,
+    prediction_length=4,
+)
+```
+
+The call completes but returns non-finite values.
+
+NaNs are supported as missing observations, but infinite values are not distinguished from valid observations by an explicit input check.
+
+## 9. Observation availability is checked before context truncation
+
+```python
+inputs = np.array(
+    [1, 2, 3, np.nan, np.nan],
+    dtype=np.float32,
+)
+
+model.forecast(
+    inputs=inputs,
+    context_length=2,
+    prediction_length=4,
+)
+```
+
+The original series contains observations and passes validation. However, the selected context consists entirely of NaNs.
+
+The eventual error occurs during a reshape operation inside the model, without explaining that the context actually used for forecasting contains no observed values.
+
+## 10. Many input checks rely on `assert`
+
+Some checks for batch compatibility, shapes, and dictionary keys use assertions.
+
+Running Python with optimization enabled removes these checks:
+
+```bash
+python -O launch.py
+```
+
+Invalid inputs can therefore reach later tensor or network operations instead of being rejected at the interface.
+
+There is also an assertion written as:
+
+```python
+assert condition, print(...)
+```
+
+When it fails, the shapes are printed, but the exception itself is `AssertionError: None`, because `print()` returns `None`.
+
+Source: [batch compatibility assertion](https://github.com/EDF-Lab/ts-icl/blob/main/src/tsicl/pipeline.py#L284).
+
+## 11. Some forecast parameters are insufficiently validated
+
+The following behaviors were observed:
+
+| Argument | Result |
+|---|---|
+| `batch_size=0` | `ZeroDivisionError` |
+| `batch_size=-1` | Late `torch.cat` error |
+| `context_length=0` | `AssertionError` |
+| `context_length=-2` | `AssertionError` |
+| `prediction_length=True` | Accepted as a prediction horizon of 1 |
+
+The Boolean horizon is accepted because Python treats `bool` as a subclass of `int`.
+
+=========== #16 [open] Inconsistent handling of variable counts across list inputs (by lenzone91, 2026-10-30)
+## Documented behavior
+
+The [`TSICL.forecast` documentation](https://edf-lab.github.io/ts-icl/autoapi/tsicl/pipeline/TSICL.html#tsicl.pipeline.TSICL.forecast) states that, for a list of arrays:
+
+> The `context_length` may be different across elements of the list, not the `num_variates`.
+
+This restriction is also stated in the [source docstring](https://github.com/EDF-Lab/ts-icl/blob/main/src/tsicl/pipeline.py#L665-L668).
+
+However, inputs with different numbers of target variables are accepted without covariates, while adding covariates causes a late `IndexError`.
+
+[launch.py](https://github.com/user-attachments/files/34198507/launch.py)
+
+=========== #15 [open] Reject mismatched batch sizes instead of implicitly repeating covariates (by lenzone91, 2026-10-30)
+The forecasting pipeline currently accepts different batch sizes for `inputs` and `covars` when the sizes are divisible.
+
+For example:
+
+    inputs.shape == (4, T)
+    covars.shape == (2, T, C)
+
+The covariates are automatically repeated, producing this association:
+
+    inputs[0] → covars[0]
+    inputs[1] → covars[0]
+    inputs[2] → covars[1]
+    inputs[3] → covars[1]
+
+The caller may have intended a different mapping, or simply supplied an incorrect batch size. The call succeeds without an error or warning.
+
+## Cause
+
+In `input_adapter`, covariates are repeated whenever their batch size divides the number of flattened target series:
+
+    assert len(inputs) % len(covars) == 0
+    covars = repeat(
+        covars,
+        'n c t 1 -> (n b) c t 1',
+        b=len(inputs) // len(covars),
+    )
+
+This repetition is useful when multivariate targets `(B, T, V)` are flattened into `(B * V, T, 1)`: each example's covariates must then be shared by its `V` target variables.
+
+However, the divisibility check also accepts mismatched batch sizes unrelated to this multivariate case.
+
+## Suggested behavior
+
+Validate that the original batch sizes of `inputs` and `covars` match before flattening target variables.
+
+If sharing covariates across separate examples is intended to remain supported, could that mapping be explicit rather than inferred from divisibility?
+
+This would make accidental batch-size mismatches easier to detect and avoid silently associating targets with unintended covariates.
+
+[launch.py](https://github.com/user-attachments/files/34196639/launch.py)
+
+=========== #14 [open] Inconsistent validation of covariate lengths: short inputs fail with a late IndexError (by lenzone91, 2026-10-30)
+Invalid covariate lengths produce different errors depending on whether they are longer or shorter than the target history.
+
+For a target context of 10 observations and a forecast horizon of 4, the documented covariate lengths are:
+
+- `10`: historical covariates only.
+- `14`: historical and future covariates.
+
+## Actual behavior
+
+For length **12**, `_get_context_target_coords_f` raises a descriptive error:
+
+```text
+ValueError: Covariate of seq len 12 does not match context+horizon len 14
+```
+
+For length **8**, validation does not reject the covariate explicitly. Execution reaches `prepare_context_tensors`, where indexing with the target's observation mask fails:
+
+```text
+IndexError: The shape of the mask [10] at index 0 does not match the shape of the indexed tensor [1, 8, 1] at index 1
+```
+
+The failing instruction is:
+
+```python
+covar_c = covariates[idx][..., ~is_missing_mask, :]
+```
+
+The second error describes an internal tensor-indexing failure rather than the invalid covariate length supplied by the caller.
+
+## Cause
+
+The explicit total-length check is applied when the covariate length exceeds the target history length. Shorter covariates do not receive an equivalent validation before temporal alignment.
+
+## Expected behavior
+
+Reject incompatible covariate lengths before indexing, using a consistent, descriptive `ValueError` in both cases. For example:
+
+```text
+Invalid covariate length 8: expected 10 historical values
+or 14 historical and future values for prediction_length=4.
+```
+
+[launch.py](https://github.com/user-attachments/files/34195389/launch.py)
+
+
+=========== #13 [open] Invalid past/future covariate lengths are accepted when their total matches context + horizon (by lenzone91, 2026-10-30)
+Dictionary inputs can contain an invalid split between historical and future covariate values without raising an error, as long as their combined length matches the target context plus the forecast horizon.
+
+This silently reinterprets some values declared as future observations as historical observations.
+
+## Actual behavior
+
+The adapter concatenates both covariate fields:
+
+```text
+Declared past:    [0, 1, 2, 3, 4, 5, 6, 7]
+Declared future:  [100, 101, 102, 103, 104, 105]
+```
+
+The forecasting pipeline checks the combined length:
+
+```text
+8 + 6 = 14 = 10 + 4
+```
+
+This passes. The pipeline then splits the concatenated array according to the target context and requested horizon:
+
+```text
+Historical values used: [0, 1, 2, 3, 4, 5, 6, 7, 100, 101]
+Future values used:     [102, 103, 104, 105]
+```
+
+Consequently, `100` and `101`, explicitly supplied in `future_covariates`, become historical values. The remaining future values are also assigned to different horizon positions than their declared ordering would imply.
+
+<img width="2100" height="675" alt="Image" src="https://github.com/user-attachments/assets/c2b9a3d3-0033-47d2-9cdb-3ac38f6077a2" />
+
+[launch.py](https://github.com/user-attachments/files/34191147/launch.py)
+
+## Expected behavior
+
+For every sample, validate the fields independently before concatenation:
+
+- Each historical covariate must have the same length as that sample's target history.
+- Each supplied future covariate must have length `prediction_length`.
+
+
+=========== #12 [open] Reject conflicting covariate sources instead of silently overriding `covars` (by lenzone91, 2026-10-30)
+When covariates are provided both through dictionary inputs and the separate `covars` argument, the dictionary values silently override `covars`.
+
+For example:
+
+    model.forecast(
+        inputs=[{
+            "target": x,
+            "past_covariates": {
+                "temperature": temperature_a,
+            },
+        }],
+        covars=temperature_b,
+        prediction_length=24,
+    )
+
+Here, `temperature_b` is ignored without an error or warning.
+
+Although this precedence is documented, accepting two potentially conflicting sources makes mistakes difficult to detect.
+
+Raising a `ValueError` when `covars` is not `None` and dictionary inputs also contain `past_covariates` or `future_covariates` seems to be a better way to proceed.
+
+For example:
+
+    ValueError: Provide covariates either through dictionary inputs
+    or through the `covars` argument, not both.
+
+=========== #11 [open] Covariates in later samples are silently ignored when the first sample has none (by lenzone91, 2026-10-30)
+I found that covariate extraction from dictionary inputs depends on whether the **first sample** contains covariate keys.
+
+As a result, covariates explicitly provided for later samples can be silently ignored. Reversing the sample order can instead raise an exception.
+
+## Cause
+
+`TSICL.input_adapter` checks only `inputs[0]` to decide whether dictionary covariates should be extracted:
+
+```python
+if isinstance(inputs, list) and isinstance(inputs[0], dict):
+    has_covar_keys = any(
+        k in inputs[0]
+        for k in ('past_covariates', 'future_covariates')
+    )
+    if has_covar_keys:
+        covars = [{k: v for k, v in x.items() if k != 'target'} for x in inputs]
+```
+
+If the first sample has no covariate keys, extraction is skipped for the entire list.
+
+If the covariate-bearing sample comes first, extraction occurs, but the downstream dictionary adapter expects those keys to exist in the other samples and raises an assertion.
+
+## Observed impact on forecasting
+
+I also tested the full forecast using `tsicl-v1.ckpt` on CPU, with context length 128, horizon 24, quantiles `[0.1, 0.5, 0.9]`, and NumPy/PyTorch seeds reset to 42 before each call. Covariate forecasting was disabled.
+
+For this experiment, sample B provides **both historical and future temperature values**. Both samples have the same history length, and all supplied observations are finite.
+
+B's target and covariate data remain unchanged across the relevant cases:
+
+| Configuration | B's covariate reaches the network | MAE of B |
+|---|---|---:|
+| B alone, without covariates | No | 0.577179 |
+| B alone, with its covariate | Yes | 0.216777 |
+| A without covariates, followed by B with its covariate | No | 0.577179 |
+| B with its covariate, followed by A without covariates | No forecast: `AssertionError` | — |
+
+The predicted quantiles for B after A are **exactly identical** to those obtained for B alone without covariates. Instrumentation confirms that the network receives `series_covar=None`.
+
+<img width="1950" height="1500" alt="Image" src="https://github.com/user-attachments/assets/5e36f2a6-e4ae-4a7d-8840-5a5651af136c" />
+
+## Expected behavior
+
+Ideally, covariates should be associated with each sample independently, including samples with no covariates.
+
+If mixing samples with and without covariates is not supported, the input should instead be rejected consistently with an explicit error, regardless of sample order. It should not silently discard data in one order and raise an assertion in the other.
+
+Checking every sample instead of only the first is necessary.
+
+[launch.py](https://github.com/user-attachments/files/34190579/launch.py)
+
+=========== #10 [open] Future covariates are silently dropped when historical lengths differ across samples (by lenzone91, 2026-10-30)
+I found another case where a sample's forecast changes depending on the other samples included in the same call, even though its own inputs remain unchanged.
+
+This is related in symptom to #8, but occurs in the input adapter rather than in the Perceiver attention mask.
+
+## Cause
+
+`_list_dict_inputs_utils` stacks samples whenever their shapes match:
+
+- Historical covariates with different lengths become a **list of tensors**.
+- Future covariates sharing the same horizon become a **stacked tensor**.
+
+However, `validate_covar_inputs` concatenates historical and future values only when both are tensors or both are lists. The list/tensor combination falls through to:
+
+```python
+else:
+    covars = past_covars
+```
+
+The supplied future values are silently discarded, without an error or warning.
+
+## Observed impact on forecasting
+
+I reproduced the issue with `tsicl-v1.ckpt` on CPU, a 24-step horizon, and quantiles `[0.1, 0.5, 0.9]`. NumPy and PyTorch seeds were reset to 42 before each forecast, and `allow_covar_forecast=False`.
+
+Sample A always has a 100-point history. Its target history, historical covariate values and future covariate values remain identical. Only the history length of sample B changes.
+
+| Configuration | Future covariate points retained for A | MAE of A |
+|---|---:|---:|
+| A alone | 24 | 0.168414 |
+| A + B, histories of 100 / 100 | 24 | 0.168414 |
+| A + B, histories of 100 / 150 | 0 | 1.792854 |
+
+As an additional control, I reversed only A's future covariate values:
+
+- With histories of **100 / 100**, the forecast changes: the maximum absolute difference across predicted quantiles is **3.633429**.
+- With histories of **100 / 150**, the predicted quantiles remain **exactly identical**, confirming that the supplied future values have no effect after adaptation.
+
+On current `main`, the irregular-history case also produces exactly the same quantiles as providing no covariates. This additional effect is explained by #3: after the adapter drops the future, the remaining past-only covariates are not passed to the network by default.
+
+<img width="1800" height="1350" alt="Image" src="https://github.com/user-attachments/assets/425312c0-6281-4b2a-a844-841427c0d783" />
+
+[launch.py](https://github.com/user-attachments/files/34190174/launch.py)
+
+=========== #9 [open] Is the hardcoded median for intermediate covariate forecasts intentional? (by lenzone91, 2026-10-30)
+I noticed that when `allow_covar_forecast=True`, the intermediate forecast of past-only covariates explicitly uses `point_estimator="median"`, independently of the estimator requested for the target forecast.
+
+For example:
+
+    point, quantiles = model.forecast(
+        inputs=target_history,
+        covars=covariate_history,
+        prediction_length=horizon,
+        allow_covar_forecast=True,
+        point_estimator="mean",
+    )
+
+Inside `_get_context_target_coords_f`, the recursive call is:
+
+    covar_t, _ = self.forecast(
+        ...,
+        point_estimator="median",
+        ...
+    )
+
+The target forecast therefore uses the median covariate trajectory as its future input, even when the caller requests `"mean"`.
+
+Is this a deliberate modeling choice, for example for robustness or consistency with training? Or should the intermediate covariate forecast inherit the requested `point_estimator`?
+
+=========== #8 [open] Covariate availability masks are shared across the batch in the Perceiver encoder (by lenzone91, 2026-10-30)
+I noticed that the Perceiver encoder combines covariate availability across samples when constructing its attention mask.
+
+This can cause valid observations in one sample to be masked because they are missing in another sample.
+
+## Current behavior
+
+In `PerceiverEncoder._pad`, the covariate mask is computed as:
+
+    mask_covar = series_covar.isnan().sum(0).squeeze(-1) == 0
+
+For inputs shaped `(B, C, T, 1)`, summing over dimension 0 removes the batch dimension. The resulting mask has shape `(C, T)`.
+
+A position is therefore considered available only if it is observed in every sample.
+
+The same mask is subsequently repeated across the batch:
+
+    mask = repeat(mask, 'c t -> (b c) t', b=series.shape[0])
+
+## Example
+
+Consider two samples sharing one covariate:
+
+| Sample | Historical values | Future values |
+|---|---|---|
+| A | Observed | Observed |
+| B | Observed | Missing |
+
+We would expect the encoder to use A's future covariate values while masking only B's missing values.
+
+Instead, the current mask excludes those future positions for both samples : 
+
+<img width="1399" height="899" alt="Image" src="https://github.com/user-attachments/assets/08d7853b-60b3-4a05-b835-29312cdfc277" />
+
+[exemple.py](https://github.com/user-attachments/files/34188609/exemple.py)
+
+=========== #7 [open] Clarification on training support for past-only and mixed-availability covariates (by lenzone91, 2026-10-30)
+Following #3 and #5, I have been investigating whether the forecasting checkpoint can effectively use covariates available only in the past, without first forecasting their future values.
+
+Are these availability patterns represented in the training prior, and on the intended inference behavior?
+
+## Input handling versus learned capability
+
+Two separate input-handling issues motivated this investigation:
+
+1. Past-only covariates are not passed to the network unless their future is forecast. PR #4 proposes using their historical values directly.
+2. With dictionary inputs, historical channels absent from `future_covariates` are silently discarded. For example:
+
+    {
+        "target": consumption_history,
+        "past_covariates": {
+            "temperature": temperature_history,
+            "hour": hour_history,
+        },
+        "future_covariates": {
+            "hour": hour_future,
+        },
+    }
+
+   Only `hour` currently survives the adaptation step.
+
+I have locally tested retaining all historical channels and representing unavailable future values with `NaN`. Instrumentation confirms that the historical values reach both the encoder and the ICL head, and that no additional covariate forecast occurs when `allow_covar_forecast=False`.
+
+However, making the information available does not necessarily mean that the checkpoint uses it effectively.
+
+## Observed behavior on a synthetic example
+
+Using `tsicl-v1.ckpt` on CPU, I compared four availability configurations for a synthetic target:
+
+    temperature[t] = 15 + 4 * cos(2πt / 96)
+    hour[t] = sin(2πt / 24)
+    target[t] = 0.8 * temperature[t] + 3 * hour[t] + noise[t]
+
+The context length is 128, the horizon is 24, and the requested quantiles are `[0.1, 0.5, 0.9]`. Data are generated with NumPy seed 42, and NumPy/PyTorch seeds are reset to 42 before each forecast. Covariate forecasting is disabled in every case.
+
+<img width="2250" height="1200" alt="Image" src="https://github.com/user-attachments/assets/f12ef09c-c975-466a-a7ad-10a239b7abf7" />
+
+The mixed-availability case exhibits a substantial level bias. Providing future temperature only also performs slightly worse than providing historical covariates alone in this example.
+
+This suggests that the checkpoint exploits the information well when it is aligned with target timestamps, but does not recover this delayed dependence from the raw history in this test.
+
+## Questions about the training prior
+
+Were covariate horizons independently masked during forecasting pretraining? In particular, were there examples with fully past-only covariates and examples mixing past-only and known-future channels?
+
+## Possible extension if these cases are not currently represented
+
+Would it be useful to include a mixture of fully observed, past-only and mixed-availability covariates in the training prior, with corresponding normalization and masking?
+
+Potential tasks could include:
+
+- Delayed effects where the target horizon depends on already observed driver values.
+- Smooth or periodic drivers whose historical state helps predict the target.
+- Covariates that reveal a latent regime.
+- **Unpredictable contemporaneous drivers, where missing future information should increase uncertainty rather than encourage an unjustifiably precise forecast.**
+
+The current two-stage approach retains the historical values and appends a point forecast of the covariate future. My concern is therefore not that the history is discarded in this mode, but that an uncertain intermediate estimate is subsequently treated as an available future covariate.
+
+Direct training on historical availability might allow the model to learn task-relevant representations and account for the missing future implicitly. This would not necessarily outperform the two-stage approach in practice, but it seems worth evaluating if it is not already covered by the prior.
+
+=========== #5 [open] Preserve historical covariates when only a subset has future values (by lenzone91, 2026-10-30)
+**Linked to #7** 
+
+Following the direct past-only covariate support proposed in PR #3, I would like to address another case where historical information is currently discarded.
+
+## Current behavior
+
+When dictionary inputs contain both past-only and known-future covariates, only the channels listed in `future_covariates` are retained.
+
+For example:
+
+    inputs = [{
+        "target": consumption_history,
+        "past_covariates": {
+            "temperature": temperature_history,
+            "hour": hour_history,
+        },
+        "future_covariates": {
+            "hour": hour_future,
+        },
+    }]
+
+    point, quantiles = model.forecast(
+        inputs=inputs,
+        prediction_length=horizon,
+        allow_covar_forecast=False,
+    )
+
+Here, the historical temperature values are silently discarded, even though they were explicitly supplied.
+
+This happens because `_list_dict_inputs_utils` replaces the historical covariate key list with `_future_cov_keys`.
+
+## Expected behavior
+
+We would like to use all available historical information **without requiring a preliminary forecast of the missing covariate horizons**.
+
+In this example:
+
+- Historical temperature and hour values should both be retained.
+- Supplied future hour values should be used.
+- Future temperature values should remain unknown when `allow_covar_forecast=False`.
+
+This seems consistent with the documented interface, which allows future covariate names to be a subset of historical names.
+
+## Proposed changes
+
+The local implementation:
+
+- Preserves all historical covariate channels.
+- Aligns future channels by name, using the historical channel order.
+- Represents unavailable future channels with `NaN`.
+- Preserves supplied future values when histories have different lengths.
+- Uses historical normalization statistics for channels whose future is entirely unknown, while preserving the existing future-based scaling for channels with observed future values.
+- With `allow_covar_forecast=True`, forecasts only channels with an entirely unknown horizon, leaving supplied future values untouched.
+
+=========== #3 [open] Past-only covariates are silently ignored unless allow_covar_forecast=True: is this intentional? (by lenzone91, 2026-10-30)
+**Linked to #7**
+
+While exploring the forecasting pipeline, I noticed that past-only covariates appear to be silently ignored when `allow_covar_forecast=False`, which is the default.
+
+## Current behavior
+
+For example:
+
+    point, quantiles = model.forecast(
+        inputs=signal[:context],
+        covars=weekly_pattern[:context],
+        prediction_length=horizon,
+        allow_covar_forecast=False,
+    )
+
+`_get_context_target_coords_f` preserves the historical covariates as `covar_c`. However, `_predict_batch` only constructs `series_covar` when both `covar_c` and `covar_t` are available:
+
+    if (covar_c is not None) and (covar_t is not None):
+        scaler_cov = CustomStandardScaler(dim=-2, epsilon=1e-7)
+        scaler_cov.fit(covar_t)
+        covar_t = scaler_cov.transform(covar_t)
+        covar_c = scaler_cov.transform(covar_c)
+        series_covar = torch.cat([covar_c, covar_t], dim=-2)
+
+Otherwise, the network receives `series_covar=None`. On the example below, the unmodified pipeline produces exactly the same quantiles with past-only covariates as without covariates.
+
+Is this intentional, perhaps because of the training setup?
+
+## Local experiment
+
+I tested a small change that passes past-only covariates directly to the network, using their historical coordinates and normalizing them over their historical values. No future covariate values are supplied or predicted.
+
+I reproduced the example from `get_started_forecasting.ipynb` with:
+
+- Checkpoint: `tsicl-v1.ckpt`
+- Device: CPU
+- Initial NumPy and PyTorch seeds: 42
+- Gaussian-process data seed: 91
+- Context length: 900
+- Forecast horizon: 100
+- The notebook's quantile levels and MAE / Mean WQL formulas
+- The same forecast call order, including the partially observed context example
+
+The comparison gives:
+
+| Configuration | Median MAE ↓ | Mean WQL ↓ |
+|---|---:|---:|
+| No covariate | 3.1124 | 0.3028 |
+| Past-future covariate | 2.6867 | 0.2242 |
+| Past-only covariate, with its future forecast enabled | 2.6509 | 0.2687 |
+| Past-only covariate, used directly with the local change | 2.8412 | 0.2764 |
+
+Using the historical covariate directly reduces both MAE and Mean WQL by approximately **8.7%** compared with using no covariate.
+These results concern a single synthetic window, so they do not establish a general performance improvement. However, they suggest that retaining historical covariates could be useful, rather than silently discarding them.
+
+Would you consider using past-only covariates directly when `allow_covar_forecast=False`, while keeping future covariate prediction explicitly optional through `allow_covar_forecast=True`?
+
+
+=========== #6 [open] Preserve mixed covariates (by lenzone91, 2026-10-30)
+Closes #5 
+
+=========== #4 [open] use_past_only_covariates (by lenzone91, 2026-10-30)
+Closes EDF-Lab/ts-icl#3
+
+=========== #2 [open] Improve checkpoint loading and support configurable Hugging Face repo (by lenzone91, 2026-10-21)
+This PR makes the Hugging Face repository configurable through a new `hf_repo_id` parameter, while preserving `taharnbl/TS-ICL` as the default.
+
+For example:
+
+```python
+model = TSICL(
+    hf_repo_id="your-account/your-tsicl-model",
+    checkpoint_version="your-checkpoint.ckpt",
+)
+``` 
+
+It also simplifies checkpoint loading by resolving the local path before calling torch.load() once. Existing local files retain priority, and downloaded files are still renamed to the requested model_path. 
+
+The README, API docstrings, and forecasting/imputation tutorials have been
+updated.
+
+=========== #1 [closed] Fix covariate rollout in _rollout_f: concat along time (dim=-2) and correct per-step horizon indexing (by ashok-arjun, 2026-07-16)
+## Summary
+
+`_rollout_f` rolls out horizons longer than `max_target_len` (672 for the released checkpoint) in chunks. Three issues in the covariate-window code, all triggered together when **future-known covariates are present and `prediction_length > max_target_len`**:
+
+1. **Crash — `cat` missing `dim`.** Covariates are `(bs, C, T, 1)` (time on `dim=-2`), but the window used `torch.cat([covar_past, chunk])`, defaulting to `dim=0` and raising `RuntimeError: Sizes of tensors must match except in dimension 0`. (The sibling `covar_past` update already used `dim=-2`.)
+
+2. **Wrong offset on the last step.** `covar_horizon[..., ii*pred_len:(ii+1)*pred_len, :]` uses the wrong offset once `pred_len` shrinks to the remainder — e.g. `max_target_len=672, horizon=800` slices `[128:256]` instead of `[672:800]`, silently feeding wrong future covariates. Fixed with a fixed stride `start = ii * max_target_length`.
+
+3. **Zero-length final chunk.** `pred_len = prediction_length % max_target_length` is `0` for exact multiples (e.g. `1344`), so the last step forecasts nothing and output is too short. Fixed with `pred_len = prediction_length - start`.
+
+Both covariate concats in the loop are updated consistently.
+
+## Verification
+
+Setting `covar_horizon[j] = j` and capturing the indices fed to the model per rollout:
+
+| Horizon | Before | After |
+|---|---|---|
+| 800  | crash; with only the `dim` fix, last step fed `[128..255]` | last step fed `[672..799]`, len 800 |
+| 1344 | last `pred_len=0`, output len `672` | correct, output len `1344` |
+
+Horizons ≤ 672 skip the rollout path (no-op).
+
+```python
+import numpy as np
+from tsicl.pipeline import TSICL
+
+model = TSICL()
+ctx, horizon = 300, 800  # > max_target_len (672) -> rollout
+t = np.arange(ctx + horizon, dtype=np.float32)
+cov = np.sin(2 * np.pi * t / 37.0).astype(np.float32)
+item = {
+    "target": (2 * cov[:ctx] + 0.01 * t[:ctx]).astype(np.float32),
+    "past_covariates":   {"cov": cov[:ctx]},
+    "future_covariates": {"cov": cov[ctx:]},
+}
+model.forecast(inputs=[item], prediction_length=horizon, context_length=ctx,
+               quantile_levels=[0.5], denormalize=True, point_estimator="median")
+```
+
+

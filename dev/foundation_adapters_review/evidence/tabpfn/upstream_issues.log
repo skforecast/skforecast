@@ -1,0 +1,25 @@
+== progress
+30 open 2025-04-24 Can't run predict on my data - Error
+63 open 2025-08-24 How to predict future trends
+10 closed 2025-02-02 Support for batched inference
+== tqdm
+10 closed 2025-02-02 Support for batched inference
+== RangeIndex
+== timestamp
+51 open 2025-07-15 Question: Temporal Continuity for Missing Targets at the end of a Series
+63 open 2025-08-24 How to predict future trends
+72 closed 2025-10-22 Convert Pandas dataframe to run tabpfn-time-series
+109 closed 2026-04-20 Local or Global model -- multiple time-series
+== compile
+67 open 2025-09-10 Installation fail
+== skforecast
+== categorical
+8 closed 2025-01-20 Does TabPFN Time-Series support any external features
+== PRs tqdm/progress
+149 closed 2026-08-18 Harden PR CI, matching tabpfn-extensions
+173 closed 2026-09-05 Bump tqdm and tabpfn-client
+203 closed 2026-11-02 Bump the uv group across 1 directory with 8 updates
+116 closed 2026-05-06 Bump jupyterlab from 4.4.10 to 4.5.7
+199 closed 2026-10-30 Bump the uv group across 1 directory with 9 updates
+102 closed 2026-04-18 Bump pytest from 8.4.2 to 9.0.3
+61 closed 2025-07-28 Refactor time series prediction inference code

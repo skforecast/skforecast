@@ -1,5 +1,53 @@
 {% extends "base.html" %}
 
+{#- Search engine title from tools/docs/hooks/page_meta.yml, stored as
+    `seo_title` so that the header keeps the short title of `nav`. -#}
+{% block htmltitle %}
+  {% if page and page.meta and page.meta.seo_title %}
+    <title>{{ page.meta.seo_title | e }} - {{ config.site_name }}</title>
+  {% else %}
+    {{ super() }}
+  {% endif %}
+{% endblock %}
+
+{% block extrahead %}
+  {#- Preview when a page is shared (LinkedIn, Slack, X...). Social networks
+      need absolute URLs, so they point to the latest release, like the
+      canonical URL. `mike deploy` sets site_url to .../latest (canonical_version
+      in mkdocs.yml), a plain `mkdocs build` leaves it at the domain. The title
+      and description come from tools/docs/hooks/page_meta.yml. The home page
+      overrides the social_meta block with its own card. MkDocs does not
+      autoescape templates, hence the `e` filters. og:url is lowercase, like
+      the canonical URL, because Netlify redirects URLs with uppercase letters
+      (see tools/docs/hooks/page_meta.py). -#}
+  {% set site_root = config.site_url | trim("/") %}
+  {% if site_root.endswith("/latest") %}
+    {% set latest_url = site_root ~ "/" %}
+  {% else %}
+    {% set latest_url = site_root ~ "/latest/" %}
+  {% endif %}
+  {% block social_meta scoped %}
+    {% if page and page.file %}
+      {% set share_title = (page.meta.seo_title or page.title) | striptags %}
+      {% set share_text = page.meta.description or config.site_description %}
+      {% set share_image = latest_url ~ "img/social-card-home.png" %}
+      <meta property="og:type" content="website">
+      <meta property="og:site_name" content="skforecast">
+      <meta property="og:url" content="{{ (latest_url ~ page.url | lower) | e }}">
+      <meta property="og:title" content="{{ share_title | e }}">
+      <meta property="og:description" content="{{ share_text | e }}">
+      <meta property="og:image" content="{{ share_image | e }}">
+      <meta property="og:image:width" content="1200">
+      <meta property="og:image:height" content="630">
+      <meta property="og:image:alt" content="skforecast, time series forecasting in Python">
+      <meta name="twitter:card" content="summary_large_image">
+      <meta name="twitter:title" content="{{ share_title | e }}">
+      <meta name="twitter:description" content="{{ share_text | e }}">
+      <meta name="twitter:image" content="{{ share_image | e }}">
+    {% endif %}
+  {% endblock %}
+{% endblock %}
+
 {% block announce %}
   {% include "partials/announce.html" %}
 {% endblock %}

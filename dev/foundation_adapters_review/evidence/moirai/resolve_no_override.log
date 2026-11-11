@@ -1,0 +1,10 @@
+### Resolution WITHOUT override (dry run, Python 3.12)
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+  × No solution found when resolving dependencies:
+  ╰─▶ Because all versions of uni2ts depend on scipy>=1.11.3,<1.12.dev0
+      and skforecast==0.27.0 depends on scipy>=1.12, we can conclude that
+      skforecast==0.27.0 and all versions of uni2ts are incompatible.
+      And because only skforecast==0.27.0 is available, we can conclude that
+      all versions of skforecast and all versions of uni2ts are incompatible.
+      And because you require skforecast and uni2ts, we can conclude that your
+      requirements are unsatisfiable.

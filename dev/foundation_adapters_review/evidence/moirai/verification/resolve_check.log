@@ -1,0 +1,27 @@
+uv 0.11.32 (x86_64-unknown-linux-gnu)
+== python 3.12 uni2ts (no constraints)
+gluonts==0.14.4
+numpy==1.26.4
+pandas==2.1.4
+scipy==1.11.4
+torch==2.4.1+cpu
+uni2ts==2.0.0
+== python 3.12 uni2ts>=2.0
+numpy==1.26.4
+scipy==1.11.4
+torch==2.4.1+cpu
+uni2ts==2.0.0
+== python 3.13 uni2ts (no constraints)
+gluonts==0.14.4
+numpy==1.26.4
+pandas==2.1.4
+scipy==1.11.4
+torch==2.15.0+cpu
+uni2ts==1.1.1
+== python 3.13 uni2ts>=2.0
+  × No solution found when resolving dependencies:
+      And because uni2ts>=2.0.0 depends on torch>=2.1,<2.5 and you require
+== python 3.12 skforecast + uni2ts without override
+  × No solution found when resolving dependencies:
+      And because only skforecast==0.27.0 is available, we can conclude that
+      And because you require uni2ts and skforecast, we can conclude that your

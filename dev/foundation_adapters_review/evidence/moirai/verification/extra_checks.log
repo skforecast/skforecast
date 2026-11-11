@@ -1,0 +1,9 @@
+python 3.12.3 | skforecast 0.27.0 | uni2ts 2.0.0 | torch 2.4.1+cpu | numpy 1.26.4
+
+2. LicenseWarning location on first load
+   LicenseWarning at: ['foundation/_adapters.py:2069']
+
+1. context_length=12000 (> 512 patches * 16 = 8192)
+   module.max_seq_len, patch_size: 512 16
+   finite: True | max|adapter - direct| = 0.000e+00
+EXIT 0

@@ -17,7 +17,7 @@ Primarily, **Skforecast** development focuses on adding new *Forecasters*, creat
 
 ### Before You Start
 
-To make sure we are aligned, please **open an issue** with a brief description of your proposed contribution. Once you are ready to proceed, you must read and agree to the [**Contributor License Agreement**](./CONTRIBUTOR_LICENSE_AGREEMENT.md).
+To make sure we are aligned, please **open an issue** with a brief description of your proposed contribution. To work on an existing issue, **comment on it and ask for it to be assigned** before opening a pull request: the maintainers may already be working on it, especially on the issues they opened. Once you are ready to proceed, you must read and agree to the [**Contributor License Agreement**](./CONTRIBUTOR_LICENSE_AGREEMENT.md).
 
 We are excited to have you involved in this project!
 

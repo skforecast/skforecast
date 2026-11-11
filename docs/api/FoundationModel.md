@@ -28,6 +28,12 @@
 ::: skforecast.foundation._adapters.TSICLAdapter
     options:
       show_bases: false
+::: skforecast.foundation._adapters.TimestralAdapter
+    options:
+      show_bases: false
+::: skforecast.foundation._adapters.TiRex2Adapter
+    options:
+      show_bases: false
 ::: skforecast.foundation._model_info.get_model_info
 ::: skforecast.foundation._model_info.list_adapters
 ::: skforecast.foundation._model_info.FoundationModelInfo

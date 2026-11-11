@@ -1,6 +1,7 @@
 # Unit test predict FoundationModel
 # ==============================================================================
 import re
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
@@ -8,7 +9,8 @@ from skforecast.exceptions import IgnoredArgumentWarning, MissingValuesWarning
 from skforecast.foundation._foundation_model import FoundationModel
 from .fixtures_adapters import (
     y, data, y_dict,
-    FakePipeline, FakeTimesFM25Model, FakeTimesFM3Forecaster,
+    FakePipeline, FakeTimesFM25Model, FakeTimesFM3Forecaster, FakeT0Forecaster,
+    FakeTimestralForecaster,
 )
 
 
@@ -688,3 +690,464 @@ def test_predict_ValueError_when_context_has_nan_and_adapter_does_not_support_it
     )
     with pytest.raises(ValueError, match=err_msg):
         m.predict(steps=3)
+
+
+# Tests predict: left-padding of the context
+# ==============================================================================
+def _record_adapter_predict(monkeypatch, model):
+    """
+    Wrap `model.adapter.predict` so that every call stores the keyword
+    arguments it receives, and return the list of calls.
+    """
+    calls = []
+    original_predict = model.adapter.predict
+
+    def recording_predict(**kwargs):
+        calls.append(kwargs)
+        return original_predict(**kwargs)
+
+    monkeypatch.setattr(model.adapter, "predict", recording_predict)
+
+    return calls
+
+
+def _make_different_length_inputs():
+    """
+    Two daily series in America/Santiago of different length and end date,
+    on both sides of the daylight saving change at midnight of 2024-09-08,
+    with one historical exog column and its future values.
+    """
+    idx_long = pd.date_range("2024-08-30", periods=6, freq="D", tz="America/Santiago")
+    idx_short = pd.date_range("2024-09-09", periods=3, freq="D", tz="America/Santiago")
+    future_long = pd.date_range("2024-09-05", periods=2, freq="D", tz="America/Santiago")
+    future_short = pd.date_range("2024-09-12", periods=2, freq="D", tz="America/Santiago")
+    context = {
+        "long": pd.Series(np.arange(1.0, 7.0), index=idx_long, name="long"),
+        "short": pd.Series([10.0, 11.0, 12.0], index=idx_short, name="short"),
+    }
+    context_exog = {
+        "long": pd.DataFrame({"a": np.arange(6.0)}, index=idx_long),
+        "short": pd.DataFrame({"a": [20.0, 21.0, 22.0]}, index=idx_short),
+    }
+    exog = {
+        "long": pd.DataFrame({"a": [6.0, 7.0]}, index=future_long),
+        "short": pd.DataFrame({"a": [23.0, 24.0]}, index=future_short),
+    }
+
+    return context, context_exog, exog, future_long, future_short
+
+
+@pytest.mark.parametrize(
+    "check_inputs",
+    [True, False],
+    ids=lambda check_inputs: f"check_inputs: {check_inputs}",
+)
+def test_predict_left_pads_groups_when_adapter_requires_equal_length_context(
+    monkeypatch, check_inputs
+):
+    """
+    Test that, for an adapter with requires_equal_length_context=True (T0),
+    predict left-pads the context and the historical exog of every series
+    with NaN to the length of the longest one, on a common positional
+    RangeIndex (also across a daylight saving change and on the
+    check_inputs=False path), forwards the future exog with the index of the
+    forecast horizon, and builds the index of the predictions from the
+    unpadded context of each series.
+    """
+    context, context_exog, exog, future_long, future_short = (
+        _make_different_length_inputs()
+    )
+    m = FoundationModel("theforecastingcompany/t0-alpha", model=FakeT0Forecaster())
+    calls = _record_adapter_predict(monkeypatch, m)
+
+    if check_inputs:
+        m.fit(series=context, exog=context_exog)
+        predictions = m.predict(steps=2, exog=exog)
+    else:
+        predictions = m.predict(
+            steps        = 2,
+            context      = context,
+            context_exog = context_exog,
+            exog         = exog,
+            check_inputs = False,
+        )
+
+    assert len(calls) == 1
+    index = pd.RangeIndex(6)
+    padded_context = calls[0]["context"]
+    padded_context_exog = calls[0]["context_exog"]
+    pd.testing.assert_series_equal(
+        padded_context["long"], pd.Series(np.arange(1.0, 7.0), index=index, name="long")
+    )
+    pd.testing.assert_series_equal(
+        padded_context["short"],
+        pd.Series([np.nan, np.nan, np.nan, 10.0, 11.0, 12.0], index=index, name="short"),
+    )
+    pd.testing.assert_frame_equal(
+        padded_context_exog["long"], pd.DataFrame({"a": np.arange(6.0)}, index=index)
+    )
+    pd.testing.assert_frame_equal(
+        padded_context_exog["short"],
+        pd.DataFrame({"a": [np.nan, np.nan, np.nan, 20.0, 21.0, 22.0]}, index=index),
+    )
+    pd.testing.assert_index_equal(calls[0]["exog"]["long"].index, future_long)
+    pd.testing.assert_index_equal(calls[0]["exog"]["short"].index, future_short)
+    np.testing.assert_array_almost_equal(
+        m.adapter._model.last_context,
+        np.array([
+            [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            [np.nan, np.nan, np.nan, 10.0, 11.0, 12.0],
+        ]),
+    )
+    # The long-format index of several series has no `freq`.
+    pd.testing.assert_index_equal(
+        predictions.loc[predictions["level"] == "long"].index,
+        pd.DatetimeIndex(future_long, freq=None),
+    )
+    pd.testing.assert_index_equal(
+        predictions.loc[predictions["level"] == "short"].index,
+        pd.DatetimeIndex(future_short, freq=None),
+    )
+
+
+def test_predict_does_not_pad_when_adapter_does_not_require_equal_length_context(
+    monkeypatch
+):
+    """
+    Test that, for an adapter with requires_equal_length_context=False
+    (Chronos), predict forwards every series and its historical exog with its
+    own length and index.
+    """
+    context, context_exog, exog, _, _ = _make_different_length_inputs()
+    m = FoundationModel("autogluon/chronos-2-small", pipeline=FakePipeline())
+    calls = _record_adapter_predict(monkeypatch, m)
+    m.fit(series=context, exog=context_exog)
+
+    m.predict(steps=2, exog=exog)
+
+    assert len(calls) == 1
+    for series_name in context:
+        pd.testing.assert_series_equal(
+            calls[0]["context"][series_name], context[series_name]
+        )
+        pd.testing.assert_frame_equal(
+            calls[0]["context_exog"][series_name], context_exog[series_name]
+        )
+
+
+# Tests predict: chunks of max_series_per_call series
+# ==============================================================================
+def _make_chunk_inputs():
+    """
+    Five daily series of different length ending on the same date. Series
+    s0, s1 and s2 have the exog column `a` and s3 and s4 the column `b`, so
+    an adapter without heterogeneous covariates groups them in two.
+    """
+    lengths = {"s0": 6, "s1": 3, "s2": 5, "s3": 4, "s4": 2}
+    columns = {"s0": "a", "s1": "a", "s2": "a", "s3": "b", "s4": "b"}
+    future_index = pd.date_range("2024-01-11", periods=2, freq="D")
+    context = {}
+    context_exog = {}
+    exog = {}
+    for i, (series_name, length) in enumerate(lengths.items()):
+        index = pd.date_range(end="2024-01-10", periods=length, freq="D")
+        context[series_name] = pd.Series(
+            np.arange(length, dtype=float) + 10 * i, index=index, name=series_name
+        )
+        context_exog[series_name] = pd.DataFrame(
+            {columns[series_name]: np.arange(length, dtype=float)}, index=index
+        )
+        exog[series_name] = pd.DataFrame(
+            {columns[series_name]: [100.0, 101.0]}, index=future_index
+        )
+
+    return context, context_exog, exog
+
+
+@pytest.mark.parametrize(
+    "check_inputs",
+    [True, False],
+    ids=lambda check_inputs: f"check_inputs: {check_inputs}",
+)
+def test_predict_splits_groups_into_chunks_of_max_series_per_call(
+    monkeypatch, check_inputs
+):
+    """
+    Test that predict splits each group of series (Timestral groups the
+    series by exog columns) into consecutive chunks of at most
+    max_series_per_call series, calls the adapter once per chunk, left-pads
+    each chunk to the length of its own longest series, and returns the same
+    predictions as one call per group.
+    """
+    context, context_exog, exog = _make_chunk_inputs()
+
+    def predict(max_series_per_call):
+        m = FoundationModel(
+            "mistralai/Timestral-28M", model=FakeTimestralForecaster()
+        )
+        monkeypatch.setattr(m.adapter, "max_series_per_call", max_series_per_call)
+        calls = _record_adapter_predict(monkeypatch, m)
+        if check_inputs:
+            m.fit(series=context, exog=context_exog)
+            predictions = m.predict(steps=2, exog=exog, quantiles=[0.1, 0.5, 0.9])
+        else:
+            predictions = m.predict(
+                steps        = 2,
+                context      = context,
+                context_exog = context_exog,
+                exog         = exog,
+                quantiles    = [0.1, 0.5, 0.9],
+                check_inputs = False,
+            )
+
+        return predictions, calls
+
+    predictions, calls = predict(max_series_per_call=2)
+    expected, calls_one_per_group = predict(max_series_per_call=None)
+
+    assert [list(call["context"]) for call in calls] == [
+        ["s0", "s1"], ["s2"], ["s3", "s4"]
+    ]
+    assert [list(call["context"]) for call in calls_one_per_group] == [
+        ["s0", "s1", "s2"], ["s3", "s4"]
+    ]
+    for call, width in zip(calls, [6, 5, 4]):
+        for series_name, series in call["context"].items():
+            pd.testing.assert_index_equal(series.index, pd.RangeIndex(width))
+            np.testing.assert_array_equal(
+                series.to_numpy()[-len(context[series_name]):],
+                context[series_name].to_numpy(),
+            )
+            assert list(call["context_exog"][series_name].columns) == list(
+                context_exog[series_name].columns
+            )
+            assert list(call["exog"][series_name].columns) == list(
+                exog[series_name].columns
+            )
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
+def test_predict_TimestralAdapter_calls_backend_in_chunks_of_50_series():
+    """
+    Test that, with the default max_series_per_call of TimestralAdapter (50),
+    predict sends 230 series to the backend in calls of 50, 50, 50, 50 and
+    30 series, and returns one prediction per series.
+    """
+    index = pd.date_range("2024-01-01", periods=10, freq="D")
+    series = {
+        f"s{i}": pd.Series(np.arange(10, dtype=float) + i, index=index)
+        for i in range(230)
+    }
+    fake_model = FakeTimestralForecaster()
+    m = FoundationModel("mistralai/Timestral-28M", model=fake_model)
+    m.fit(series=series)
+
+    predictions = m.predict(steps=3)
+
+    assert m.adapter.max_series_per_call == 50
+    assert [call["context"].shape[0] for call in fake_model.calls] == [
+        50, 50, 50, 50, 30
+    ]
+    assert predictions.shape == (230 * 3, 2)
+    assert predictions["level"].tolist() == list(series) * 3
+
+
+# Tests predict: past-only covariates
+# ==============================================================================
+def _stub_adapter_predict(monkeypatch, model):
+    """
+    Replace `model.adapter.predict` with a stub that stores the keyword
+    arguments of every call and returns zeros, so that no backend is needed,
+    and return the list of calls.
+    """
+    calls = []
+
+    def stub_predict(**kwargs):
+        calls.append(kwargs)
+        n_quantiles = 1 if kwargs["quantiles"] is None else len(kwargs["quantiles"])
+        return {
+            series_name: np.zeros((kwargs["steps"], n_quantiles))
+            for series_name in kwargs["context"]
+        }
+
+    monkeypatch.setattr(model.adapter, "predict", stub_predict)
+
+    return calls
+
+
+def _count_past_only_warnings(record):
+    """
+    Number of IgnoredArgumentWarning about historical exog columns without
+    future values in a list of recorded warnings.
+    """
+    return sum(
+        issubclass(w.category, IgnoredArgumentWarning)
+        and "Historical exog columns without future values are ignored"
+        in str(w.message)
+        for w in record
+    )
+
+
+@pytest.mark.parametrize(
+    "check_inputs",
+    [True, False],
+    ids=lambda check_inputs: f"check_inputs: {check_inputs}",
+)
+@pytest.mark.parametrize(
+    "model_id, expected_columns",
+    [
+        ("autogluon/chronos-2-small", ["p", "k"]),
+        ("google/timesfm-3.0-pytorch", ["p", "k"]),
+        ("taharnbl/TS-ICL", ["p", "k"]),
+        ("mistralai/Timestral-28M", ["p", "k"]),
+        ("NX-AI/TiRex-2", ["p", "k"]),
+        ("soda-inria/tabicl", ["k"]),
+        ("priorlabs/tabpfn-ts", ["k"]),
+        ("theforecastingcompany/t0-alpha", ["k"]),
+        ("Synthefy/Nori", ["k"]),
+        ("google/timesfm-2.5-200m-pytorch", None),
+        ("Salesforce/moirai-2.0-R-small", None),
+    ],
+    ids=lambda value: f"{value}",
+)
+def test_predict_adapter_receives_past_only_exog_only_when_it_supports_it(
+    monkeypatch, model_id, expected_columns, check_inputs
+):
+    """
+    Test the historical exog that every adapter receives when a column has
+    no future values ('p'): adapters with supports_past_only_covariates=True
+    receive it, adapters with supports_past_only_covariates=False only
+    receive the columns with future values ('k'), and adapters with
+    allow_exog=False receive no exog. The column is removed also with
+    check_inputs=False, while the IgnoredArgumentWarning that names it is
+    issued once and only with check_inputs=True.
+    """
+    context = {"s1": pd.Series(_p, index=_HETERO_INDEX, name="s1")}
+    context_exog = {
+        "s1": pd.DataFrame({"p": _p * 2, "k": _p * 3}, index=_HETERO_INDEX)
+    }
+    exog = {
+        "s1": pd.DataFrame({"k": np.arange(3, dtype=float)}, index=_HETERO_FUTURE_INDEX)
+    }
+    m = FoundationModel(model_id)
+    calls = _stub_adapter_predict(monkeypatch, m)
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        predictions = m.predict(
+            steps        = 3,
+            context      = context,
+            context_exog = context_exog,
+            exog         = exog,
+            check_inputs = check_inputs,
+        )
+
+    assert len(calls) == 1
+    if expected_columns is None:
+        assert m.allow_exog is False
+        assert calls[0]["context_exog"] is None
+        assert calls[0]["exog"] is None
+    else:
+        assert m.supports_past_only_covariates is (expected_columns == ["p", "k"])
+        assert list(calls[0]["context_exog"]["s1"].columns) == expected_columns
+        np.testing.assert_array_almost_equal(
+            calls[0]["context_exog"]["s1"]["k"].to_numpy(), _p * 3
+        )
+        assert list(calls[0]["exog"]["s1"].columns) == ["k"]
+    expected_warnings = 1 if expected_columns == ["k"] and check_inputs else 0
+    assert _count_past_only_warnings(record) == expected_warnings
+    if expected_warnings:
+        messages = [str(w.message) for w in record]
+        assert any("ignored for series {'s1': ['p']}." in msg for msg in messages)
+    assert list(context_exog["s1"].columns) == ["p", "k"]
+    assert predictions.shape == (3, 2)
+
+
+@pytest.mark.parametrize(
+    "check_inputs",
+    [True, False],
+    ids=lambda check_inputs: f"check_inputs: {check_inputs}",
+)
+@pytest.mark.parametrize(
+    "context_from",
+    ["fit", "predict"],
+    ids=lambda context_from: f"context_from: {context_from}",
+)
+def test_predict_adapter_receives_no_exog_when_exog_None_and_no_past_only_support(
+    monkeypatch, context_from, check_inputs
+):
+    """
+    Test that, for an adapter with supports_past_only_covariates=False
+    (TabICL), predicting without future exog removes every historical exog
+    column, both with the context stored in fit and with the one passed to
+    predict, also with check_inputs=False. The exog stored in fit is not
+    modified, and the IgnoredArgumentWarning is issued once and only with
+    check_inputs=True.
+    """
+    context = {
+        "s1": pd.Series(_p, index=_HETERO_INDEX, name="s1"),
+        "s2": pd.Series(_p * 2, index=_HETERO_INDEX, name="s2"),
+    }
+    context_exog = {
+        "s1": pd.DataFrame({"a": _p, "b": _p * 2}, index=_HETERO_INDEX),
+        "s2": pd.DataFrame({"a": _p * 3}, index=_HETERO_INDEX),
+    }
+    m = FoundationModel("soda-inria/tabicl")
+    calls = _stub_adapter_predict(monkeypatch, m)
+    if context_from == "fit":
+        m.fit(series=context, exog=context_exog)
+        predict_kwargs = {}
+    else:
+        predict_kwargs = {"context": context, "context_exog": context_exog}
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        predictions = m.predict(steps=3, check_inputs=check_inputs, **predict_kwargs)
+
+    assert len(calls) == 1
+    assert calls[0]["context_exog"] == {"s1": None, "s2": None}
+    assert calls[0]["exog"] == {"s1": None, "s2": None}
+    assert _count_past_only_warnings(record) == (1 if check_inputs else 0)
+    if check_inputs:
+        messages = [str(w.message) for w in record]
+        assert any(
+            "ignored for series {'s1': ['a', 'b'], 's2': ['a']}." in msg
+            for msg in messages
+        )
+    if context_from == "fit":
+        assert list(m.context_exog_["s1"].columns) == ["a", "b"]
+        assert list(m.context_exog_["s2"].columns) == ["a"]
+    assert predictions.shape == (6, 2)
+
+
+def test_predict_groups_series_after_dropping_past_only_exog(monkeypatch):
+    """
+    Test that, for an adapter with supports_past_only_covariates=False and
+    supports_heterogeneous_covariates=False (TabICL), the historical columns
+    without future values are removed before grouping the series by exog
+    columns: the series whose only exog column is past-only is forecast in
+    the same call as the series without exog, and no call receives a
+    past-only column.
+    """
+    context, context_exog, exog = _make_heterogeneous_inputs()
+    m = FoundationModel("soda-inria/tabicl")
+    calls = _stub_adapter_predict(monkeypatch, m)
+    m.fit(series=context, exog=context_exog)
+
+    warn_msg = re.escape(
+        "ignored for series {'full': ['p'], 'past': ['p'], 'full2': ['p']}."
+    )
+    with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
+        predictions = m.predict(steps=3, exog=exog)
+
+    assert [list(call["context"]) for call in calls] == [
+        ["full", "full2"], ["none", "past"]
+    ]
+    assert [list(df.columns) for df in calls[0]["context_exog"].values()] == [
+        ["k"], ["k"]
+    ]
+    assert calls[1]["context_exog"] == {"none": None, "past": None}
+    assert [list(df.columns) for df in calls[0]["exog"].values()] == [["k"], ["k"]]
+    assert calls[1]["exog"] == {"none": None, "past": None}
+    assert list(predictions["level"].unique()) == ["full", "none", "past", "full2"]
+    assert predictions.shape == (12, 2)

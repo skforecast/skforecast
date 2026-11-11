@@ -2,6 +2,7 @@
 # ==============================================================================
 import re
 import os
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
@@ -12,12 +13,17 @@ from sklearn.metrics import mean_squared_error
 from sklearn.metrics import mean_absolute_percentage_error
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import ParameterGrid
-from skforecast.exceptions import OneStepAheadValidationWarning
+from skforecast.exceptions import (
+    IgnoredArgumentWarning,
+    MissingValuesWarning,
+    OneStepAheadValidationWarning
+)
 from skforecast.metrics import mean_absolute_scaled_error
 from skforecast.metrics import root_mean_squared_scaled_error
 from skforecast.preprocessing import RollingFeatures
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirectMultiVariate
+from skforecast.model_selection import backtesting_forecaster_multiseries
 from skforecast.model_selection._search import _evaluate_grid_hyperparameters_multiseries
 from skforecast.model_selection._split import TimeSeriesFold, OneStepAheadFold
 
@@ -41,6 +47,27 @@ pytestmark = [
     pytest.mark.filterwarnings("ignore::skforecast.exceptions.MissingExogWarning"),
     pytest.mark.filterwarnings("ignore::skforecast.exceptions.MissingValuesWarning"),
 ]
+
+# NOTE: `short` has 20 values, 5 of them in the training set of
+# `initial_train_size=45`, so the candidates with more than 4 lags do not
+# predict it and evaluate fewer points than the others.
+index_short = pd.date_range('2020-01-01', periods=60, freq='D')
+series_short = {
+    'l1': pd.Series(10 + np.sin(np.arange(60)), index=index_short),
+    'l2': pd.Series(20 + 2 * np.cos(np.arange(60) / 2), index=index_short),
+    'short': pd.Series(5 + np.arange(20) % 3, index=index_short[-20:], dtype=float),
+}
+# NOTE: `short` has 6 values, 5 of them in the training set of
+# `initial_train_size=45` and 1 in the test set, so the candidates with more
+# than 4 lags do not predict it, but evaluate more than 95% of the points of
+# the others (30 of 31): the warning of the levels not predicted is shown, the
+# warning of the points evaluated is not.
+series_short_one_point = {
+    'l1': series_short['l1'],
+    'l2': series_short['l2'],
+    'short': pd.Series(5 + np.arange(6) % 3, index=index_short[40:46], dtype=float),
+}
+N_EVALUATED_WARNING_MSG = "evaluated on fewer points than the most complete one"
 
 
 def test_ValueError_evaluate_grid_hyperparameters_multiseries_when_return_best_and_len_series_exog_different():
@@ -187,6 +214,40 @@ def test_evaluate_grid_hyperparameters_multiseries_exception_when_metric_list_du
         )
 
 
+def test_evaluate_grid_hyperparameters_multiseries_ValueError_when_metric_named_n_evaluated():
+    """
+    Test ValueError is raised in _evaluate_grid_hyperparameters_multiseries,
+    before evaluating any candidate, when a metric is named `n_evaluated`,
+    the column of the backtesting metrics with the number of points evaluated.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator = Ridge(random_state=123),
+                     lags      = 3,
+                     encoding  = 'onehot'
+                 )
+    cv = TimeSeriesFold(initial_train_size=12, steps=4, refit=False)
+
+    def n_evaluated(y_true, y_pred):  # pragma: no cover
+        return mean_absolute_error(y_true, y_pred)
+
+    err_msg = re.escape(
+        "The backtesting metrics include the column 'n_evaluated' with the "
+        "number of points evaluated. Rename the metric 'n_evaluated' passed in "
+        "`metric`."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        _evaluate_grid_hyperparameters_multiseries(
+            forecaster         = forecaster,
+            series             = series_dict_range,
+            cv                 = cv,
+            param_grid         = [{'alpha': 0.01}, {'alpha': 0.1}],
+            metric             = ['mean_absolute_error', n_evaluated],
+            lags_grid          = [2, 4],
+            return_best        = False,
+            verbose            = False
+        )
+
+
 # ForecasterRecursiveMultiSeries
 # ======================================================================================================================
 def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMultiSeries_with_mocked():
@@ -254,6 +315,7 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMul
                     0.21078779824759553,
                 ]
             ),
+            "n_evaluated": [24] * 6,
             "alpha": np.array([0.01, 0.1, 1.0, 1.0, 0.1, 0.01]),
         },
         index=pd.Index([0, 1, 2, 3, 4, 5], dtype="int64"),
@@ -334,6 +396,7 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMul
                     0.21677673611895729,
                     0.22004258621311923,
                     0.22107598684517502],
+         'n_evaluated': [24] * 6,
          'alpha': [1.0, 0.1, 1.0, 0.1, 0.01, 0.01]}
     )
 
@@ -408,6 +471,7 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMul
                                                   673.8431369197542,
                                                   761.8926543280367,
                                                   775.090407239743],
+        'n_evaluated': [654] * 4,
         'n_estimators': [15, 15, 10, 10],
         'max_depth': [5, 5, 3, 3]
     })
@@ -473,6 +537,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterRecursiveMultiSeries_lag
                     0.21078779824759553,
                 ]
             ),
+            "n_evaluated": [24] * 6,
             "alpha": np.array([0.01, 0.1, 1.0, 1.0, 0.1, 0.01]),
         },
         index=pd.Index([0, 1, 2, 3, 4, 5], dtype="int64"),
@@ -527,12 +592,75 @@ def test_output_evaluate_grid_hyperparameters_ForecasterRecursiveMultiSeries_lag
             "mean_absolute_error__weighted_average": np.array(
                 [0.21077344827205086, 0.21078653113227208, 0.21078779824759553]
             ),
+            "n_evaluated": [24] * 3,
             "alpha": np.array([1.0, 0.1, 0.01]),
         },
         index=pd.Index([0, 1, 2], dtype="int64"),
     )
 
     pd.testing.assert_frame_equal(results, expected_results)
+
+
+@pytest.mark.parametrize(
+    "cv, expected_metric",
+    [(TimeSeriesFold(steps=3, initial_train_size=len(series_dict_range['l1']) - 12, refit=False),
+      np.array([0.21043602991610974, 0.21061383703517822, 0.21064405145051132])),
+     (OneStepAheadFold(initial_train_size=len(series_dict_range['l1']) - 12),
+      np.array([0.21088437764824652, 0.2113636838391947, 0.21144760769988624]))],
+    ids=['TimeSeriesFold', 'OneStepAheadFold']
+)
+@pytest.mark.parametrize("lags_grid",
+                         [None, [None]],
+                         ids=lambda lg: f'lags_grid: {lg}')
+def test_output_evaluate_grid_hyperparameters_multiseries_when_forecaster_lags_is_None(
+    cv, expected_metric, lags_grid
+):
+    """
+    Test output of _evaluate_grid_hyperparameters_multiseries when the forecaster
+    has `lags=None` and only window features: `lags_grid=None` uses the lags of
+    the forecaster and `lags_grid=[None]` evaluates the forecaster without lags.
+    With `return_best=True`, the forecaster is refitted without lags.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = Ridge(random_state=123),
+                     lags               = None,
+                     window_features    = RollingFeatures(stats=['mean'], window_sizes=3),
+                     encoding           = 'onehot',
+                     transformer_series = None
+                 )
+    param_grid = [{'alpha': 0.01}, {'alpha': 0.1}, {'alpha': 1}]
+
+    results = _evaluate_grid_hyperparameters_multiseries(
+                  forecaster         = forecaster,
+                  series             = series_long_dt,
+                  param_grid         = param_grid,
+                  cv                 = cv,
+                  metric             = mean_absolute_error,
+                  aggregate_metric   = 'weighted_average',
+                  levels             = ['l1', 'l2'],
+                  exog               = None,
+                  lags_grid          = lags_grid,
+                  return_best        = True,
+                  verbose            = False
+              )
+
+    expected_results = pd.DataFrame(
+        {
+            "levels": [["l1", "l2"], ["l1", "l2"], ["l1", "l2"]],
+            "lags": [None, None, None],
+            "lags_label": [None, None, None],
+            "params": [{"alpha": 1}, {"alpha": 0.1}, {"alpha": 0.01}],
+            "mean_absolute_error__weighted_average": expected_metric,
+            "n_evaluated": [24] * 3,
+            "alpha": np.array([1.0, 0.1, 0.01]),
+        },
+        index=pd.RangeIndex(start=0, stop=3, step=1),
+    )
+
+    pd.testing.assert_frame_equal(results, expected_results)
+    assert forecaster.lags is None
+    assert forecaster.estimator.alpha == 1
+    assert forecaster.is_fitted
 
 
 @pytest.mark.parametrize("levels", 
@@ -603,6 +731,7 @@ def test_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMultiSerie
                     0.2075484707375347,
                 ]
             ),
+            "n_evaluated": [12] * 6,
             "alpha": np.array([0.01, 0.1, 1.0, 0.01, 0.1, 1.0]),
         },
         index=pd.Index([0, 1, 2, 3, 4, 5], dtype="int64"),
@@ -686,6 +815,7 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMul
                     0.21077344827205086,
                 ]
             ),
+            "n_evaluated": [24] * 6,
             "alpha": np.array([0.01, 0.1, 1.0, 0.01, 0.1, 1.0]),
         },
         index=pd.Index([0, 1, 2, 3, 4, 5], dtype="int64"),
@@ -930,27 +1060,28 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterRecursiveMul
             5: 0.21078779920557153,
         },
         'mean_absolute_scaled_error__weighted_average': {
-            0: 0.798335248515498,
-            1: 0.7983823516895249,
-            2: 0.7987389489370742,
-            3: 0.8120054679421529,
-            4: 0.8119798820564519,
-            5: 0.8119753734760063},
+            0: 0.7917739273105381,
+            1: 0.7918222682731239,
+            2: 0.7921892191351169,
+            3: 0.7956979767609758,
+            4: 0.7956704843142104,
+            5: 0.7956659447267066},
         'mean_absolute_scaled_error__average': {
-            0: 0.7983352485154981,
-            1: 0.7983823516895249,
-            2: 0.7987389489370743,
-            3: 0.812005467942153,
-            4: 0.8119798820564519,
-            5: 0.8119753734760063},
+            0: 0.7917739273105381,
+            1: 0.7918222682731239,
+            2: 0.7921892191351169,
+            3: 0.7956979767609758,
+            4: 0.7956704843142104,
+            5: 0.7956659447267066},
         'mean_absolute_scaled_error__pooling': {
-            0: 0.7811335117239494,
-            1: 0.7811767002385028,
-            2: 0.7815002660695128,
-            3: 0.7988421945907456,
-            4: 0.7988917793592797,
-            5: 0.7988965817986066
+            0: 0.7917739273105381,
+            1: 0.7918222682731239,
+            2: 0.7921892191351169,
+            3: 0.7956979767609759,
+            4: 0.7956704843142104,
+            5: 0.7956659447267066
         },
+        'n_evaluated': {0: 24, 1: 24, 2: 24, 3: 24, 4: 24, 5: 24},
         "alpha": {0: 0.01, 1: 0.1, 2: 1.0, 3: 1.0, 4: 0.1, 5: 0.01},
     })
 
@@ -1003,7 +1134,8 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterDirectMultiV
         'mean_absolute_error': np.array(
             [0.20115194, 0.20183032, 0.20566862,
              0.22224269, 0.22625017, 0.22644284]
-        ),                                                               
+        ),
+        'n_evaluated': [12] * 6,
         'alpha': np.array([0.01, 0.1, 1., 1., 0.1, 0.01])
         },
         index = pd.Index([0, 1, 2, 3, 4, 5], dtype='int64')
@@ -1056,7 +1188,8 @@ def test_output_evaluate_grid_hyperparameters_ForecasterDirectMultiVariate_lags_
         'mean_absolute_error': np.array(
             [0.20115194, 0.20183032, 0.20566862,
              0.22224269, 0.22625017, 0.22644284]
-            ),                                                               
+            ),
+        'n_evaluated': [12] * 6,
         'alpha': np.array([0.01, 0.1, 1., 1., 0.1, 0.01])
         },
         index = pd.Index([0, 1, 2, 3, 4, 5], dtype='int64')
@@ -1106,7 +1239,8 @@ def test_output_evaluate_grid_hyperparameters_ForecasterDirectMultiVariate_lags_
         'lags': [[1, 2], [1, 2], [1, 2]],
         'lags_label': [[1, 2], [1, 2], [1, 2]],
         'params': [{'alpha': 0.01}, {'alpha': 0.1}, {'alpha': 1.}],
-        'mean_absolute_error': np.array([0.20115194, 0.20183032, 0.20566862]),                                                               
+        'mean_absolute_error': np.array([0.20115194, 0.20183032, 0.20566862]),
+        'n_evaluated': [12] * 3,
         'alpha': np.array([0.01, 0.1, 1.])
     },
         index = pd.Index([0, 1, 2], dtype='int64')
@@ -1177,7 +1311,8 @@ def test_output_evaluate_grid_hyperparameters_ForecasterDirectMultiVariate_lags_
             [0.2053202, 0.20555199, 0.20677802, 
              0.21443621, 0.21801147, 0.21863968, 
              0.22401526, 0.22830217, 0.22878132]
-            ),                                                               
+            ),
+        'n_evaluated': [12] * 9,
         'alpha': np.array([0.01, 0.1, 1., 1., 0.1, 0.01, 1., 0.1, 0.01])
         },
         index = pd.Index([0, 1, 2, 3, 4, 5, 6, 7, 8], dtype='int64')
@@ -1265,6 +1400,7 @@ def test_output_evaluate_grid_hyperparameters_ForecasterDirectMultiVariate_lags_
              0.20677802, 0.21005165, 0.21007475, 0.21071924, 0.21353688,
              0.21443621, 0.21622784, 0.2166998, 0.21801147, 0.21863968,
              0.22401526, 0.22830217, 0.22878132]),
+        'n_evaluated': [12] * 18,
         'alpha': np.array([0.01, 0.1, 1., 0.01, 0.1, 1., 0.01, 0.1, 1., 1., 1.,
        0.1, 0.01, 0.1, 0.01, 1., 0.1, 0.01])
         },
@@ -1319,6 +1455,7 @@ def test_output_evaluate_grid_hyperparameters_multiseries_ForecasterDirectMultiV
                                         0.08032378, 0.08400047, 0.08448937]),
         'mean_absolute_error': np.array(
             [0.20115194, 0.20183032, 0.20566862, 0.22224269, 0.22625017, 0.22644284]),
+        'n_evaluated': [12] * 6,
         'alpha': np.array([0.01, 0.1, 1., 1., 0.1, 0.01])
         },
         index = pd.Index([0, 1, 2, 3, 4, 5], dtype='int64')
@@ -1374,6 +1511,69 @@ def test_evaluate_grid_hyperparameters_multiseries_when_return_best_ForecasterDi
     for i in forecaster.steps:
         assert expected_alpha == forecaster.estimators_[i].alpha
     assert expected_series_names_in_ == forecaster.series_names_in_
+
+
+def test_evaluate_grid_hyperparameters_multiseries_when_lags_grid_has_None_and_return_best():
+    """
+    Test that `None` in `lags_grid` evaluates the forecaster without lags (only
+    window features) next to the other candidates, and that the forecaster is
+    refitted with the best lags when `return_best=True`.
+    """
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator          = Ridge(random_state=123),
+                     level              = 'l1',
+                     lags               = None,
+                     steps              = 3,
+                     window_features    = RollingFeatures(stats=['mean'], window_sizes=3),
+                     transformer_series = None
+                 )
+    cv = TimeSeriesFold(
+            initial_train_size = len(series_wide_range) - 12,
+            steps              = 3,
+            refit              = False
+         )
+    param_grid = [{'alpha': 0.01}, {'alpha': 0.1}, {'alpha': 1}]
+
+    results = _evaluate_grid_hyperparameters_multiseries(
+                  forecaster         = forecaster,
+                  series             = series_wide_range,
+                  param_grid         = param_grid,
+                  cv                 = cv,
+                  metric             = 'mean_absolute_error',
+                  aggregate_metric   = 'weighted_average',
+                  levels             = None,
+                  exog               = None,
+                  lags_grid          = [None, 2],
+                  return_best        = True,
+                  verbose            = False,
+                  show_progress      = False
+              )
+
+    expected_lags = [[1, 2], None, [1, 2], None, None, [1, 2]]
+    expected_params = [
+        {'alpha': 1}, {'alpha': 1}, {'alpha': 0.1},
+        {'alpha': 0.1}, {'alpha': 0.01}, {'alpha': 0.01}
+    ]
+    expected_metric = np.array(
+        [0.204584, 0.209270, 0.209546, 0.210975, 0.211978, 0.215558]
+    )
+
+    results_lags = [
+        None if lags is None else lags.tolist() for lags in results['lags']
+    ]
+    results_lags_label = [
+        None if lags is None else lags.tolist() for lags in results['lags_label']
+    ]
+    assert results_lags == expected_lags
+    assert results_lags_label == expected_lags
+    assert results['params'].to_list() == expected_params
+    np.testing.assert_array_almost_equal(
+        results['mean_absolute_error'].to_numpy(), expected_metric
+    )
+    np.testing.assert_array_equal(forecaster.lags, np.array([1, 2]))
+    for i in forecaster.steps:
+        assert forecaster.estimators_[i].alpha == 1
+    assert forecaster.series_names_in_ == ['l1', 'l2']
 
 
 def test_evaluate_grid_hyperparameters_multiseries_ForecasterDirectMultiVariate_output_file_single_level():
@@ -1495,6 +1695,24 @@ def test_evaluate_grid_hyperparameters_multiseries_ForecasterDirectMultiVariate_
                 transformer_series=StandardScaler(),
                 transformer_exog=StandardScaler(),
                 forecaster_id='Multivariate'
+            ),
+            ForecasterRecursiveMultiSeries(
+                estimator=Ridge(random_state=678),
+                lags=3,
+                transformer_series=StandardScaler(),
+                transformer_exog=StandardScaler(),
+                differentiation=1,
+                forecaster_id='Multiseries_transformer_diff'
+            ),
+            ForecasterDirectMultiVariate(
+                estimator=Ridge(random_state=678),
+                level='l1',
+                lags=3,
+                steps=1,
+                transformer_series=StandardScaler(),
+                transformer_exog=StandardScaler(),
+                differentiation=1,
+                forecaster_id='Multivariate_diff'
             )
         ], 
 ids=lambda forecaster: f'forecaster: {forecaster.forecaster_id}')
@@ -1503,11 +1721,10 @@ def test_evaluate_grid_hyperparameters_equivalent_outputs_backtesting_and_one_st
 ):
     """
     Test that the output of _evaluate_grid_hyperparameters for backtesting and one-step-ahead
-    is equivalent when steps=1 and refit=False.
-    Results are not equivalent if differentiation is included.
+    is equivalent when steps=1 and refit=False, also with differentiation.
     """
     
-    if forecaster.forecaster_id == 'Multivariate':
+    if forecaster.forecaster_id.startswith('Multivariate'):
         series = series_wide_dt
     else:
         series = series_dict_dt
@@ -1594,7 +1811,6 @@ def test_evaluate_grid_hyperparameters_same_output_backtesting_and_one_step_ahea
     """
     Test that the output of evaluate_grid_hyperparameters for backtesting and one-step-ahead
     is equivalent when steps=1 and refit=False. Using series and exog as dictionaries.
-    Results are not equivalent if differentiation is included.
     ForecasterMultiVariate is not included because it is not possible to use dictionaries
     as input.
     """
@@ -1658,7 +1874,8 @@ def test_evaluate_grid_hyperparameters_same_output_backtesting_and_one_step_ahea
 
 def test_evaluate_grid_hyperparameters_multiseries_warn_when_non_valid_params():
     """
-    Test that a warning is raised when non valid params are included in param_grid.
+    Test that a single warning, grouped by error, is raised when non valid
+    params are included in param_grid, and the candidate is skipped.
     """
 
     param_grid = {
@@ -1670,9 +1887,12 @@ def test_evaluate_grid_hyperparameters_multiseries_warn_when_non_valid_params():
     forecaster = ForecasterRecursiveMultiSeries(estimator=ElasticNet(), lags=5)
 
     msg = re.escape(
-        "Parameters skipped: {'alpha': 0.1, 'l1_ratio': 10}. The 'l1_ratio' "
-        "parameter of ElasticNet must be a float in the range [0.0, 1.0]. "
-        "Got 10 instead."
+        "Parameters skipped: 1 of 2 candidates raises an error, so it is not in "
+        "the results.\n"
+        "\n"
+        "InvalidParameterError: The 'l1_ratio' parameter of ElasticNet must be a "
+        "float in the range [0.0, 1.0]. Got 10 instead.\n"
+        "  - lags: [1, 2, 3, 4, 5], params: {'alpha': 0.1, 'l1_ratio': 10}"
     )
     with pytest.warns(RuntimeWarning, match=msg):
         results = _evaluate_grid_hyperparameters_multiseries(
@@ -1696,6 +1916,7 @@ def test_evaluate_grid_hyperparameters_multiseries_warn_when_non_valid_params():
             "mean_squared_error__weighted_average": {0: 0.06321861327736888},
             "mean_squared_error__average": {0: 0.06321861327736888},
             "mean_squared_error__pooling": {0: 0.06321861327736888},
+            "n_evaluated": {0: 40},
             "alpha": {0: 0.1},
             "l1_ratio": {0: 0.5},
         }
@@ -1718,7 +1939,8 @@ def test_evaluate_grid_hyperparameters_multiseries_warns_when_all_params_raise_e
     forecaster = ForecasterRecursiveMultiSeries(estimator=ElasticNet(), lags=5)
 
     warn_msg = re.escape(
-        "No valid parameter combinations found. All combinations raised exceptions."
+        "Parameters skipped: 2 of 2 candidates raise an error, so the results "
+        "are empty."
     )
     with pytest.warns(RuntimeWarning, match=warn_msg):
         results = _evaluate_grid_hyperparameters_multiseries(
@@ -1740,6 +1962,7 @@ def test_evaluate_grid_hyperparameters_multiseries_warns_when_all_params_raise_e
         'mean_squared_error__weighted_average',
         'mean_squared_error__average',
         'mean_squared_error__pooling',
+        'n_evaluated',
     ]
     assert list(results.columns) == expected_columns
 
@@ -1758,7 +1981,8 @@ def test_evaluate_grid_hyperparameters_multiseries_warns_when_all_params_raise_e
     forecaster = ForecasterRecursiveMultiSeries(estimator=ElasticNet(), lags=5)
 
     warn_msg = re.escape(
-        "No valid parameter combinations found. All combinations raised exceptions."
+        "Parameters skipped: 2 of 2 candidates raise an error, so the results "
+        "are empty."
     )
     with pytest.warns(RuntimeWarning, match=warn_msg):
         results = _evaluate_grid_hyperparameters_multiseries(
@@ -1779,5 +2003,429 @@ def test_evaluate_grid_hyperparameters_multiseries_warns_when_all_params_raise_e
         'mean_squared_error__weighted_average',
         'mean_squared_error__average',
         'mean_squared_error__pooling',
+        'n_evaluated',
     ]
     assert list(results.columns) == expected_columns
+
+
+@pytest.mark.parametrize(
+    "cv",
+    [
+        TimeSeriesFold(steps=10, initial_train_size=213, refit=False),
+        OneStepAheadFold(initial_train_size=213),
+    ],
+    ids=lambda cv: f"cv: {type(cv).__name__}",
+)
+@pytest.mark.parametrize(
+    "aggregate_metric",
+    [
+        ["weighted_average", "average", "pooling"],
+        ["pooling", "average"],
+    ],
+    ids=lambda agg: f"aggregate_metric: {agg}",
+)
+def test_evaluate_grid_hyperparameters_multiseries_aggregated_metrics_match_their_column(
+    cv, aggregate_metric
+):
+    """
+    Test that each column `<metric>__<aggregation>` of the results contains
+    the metric of its aggregation, whatever the order of `aggregate_metric`.
+    The series are evaluated on different numbers of points, so the weighted
+    average differs from the average. The expected values are those of a
+    search with each aggregation alone.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=LGBMRegressor(n_estimators=5, random_state=123, verbose=-1),
+        lags=3,
+    )
+    kwargs = {
+        "forecaster": forecaster,
+        "series": series_dict_nans,
+        "param_grid": [{"n_estimators": 5}, {"n_estimators": 10}],
+        "cv": cv,
+        "metric": ["mean_absolute_error", "mean_squared_error"],
+        "return_best": False,
+        "verbose": False,
+        "show_progress": False,
+    }
+
+    def by_params(results, column):
+        return results.set_index(results["params"].astype(str))[column].sort_index()
+
+    results = _evaluate_grid_hyperparameters_multiseries(
+        aggregate_metric=aggregate_metric, **kwargs
+    )
+
+    for aggregation in aggregate_metric:
+        expected = _evaluate_grid_hyperparameters_multiseries(
+            aggregate_metric=aggregation, **kwargs
+        )
+        for metric in ["mean_absolute_error", "mean_squared_error"]:
+            column = f"{metric}__{aggregation}"
+            pd.testing.assert_series_equal(
+                by_params(results, column), by_params(expected, column)
+            )
+    weighted_average = _evaluate_grid_hyperparameters_multiseries(
+        aggregate_metric="weighted_average", **kwargs
+    )
+    assert not np.allclose(
+        by_params(results, "mean_absolute_error__average"),
+        by_params(weighted_average, "mean_absolute_error__weighted_average"),
+    )
+
+
+@pytest.mark.parametrize(
+    "cv",
+    [
+        TimeSeriesFold(initial_train_size=45, steps=5, refit=False),
+        OneStepAheadFold(initial_train_size=45),
+    ],
+    ids=lambda cv: f"cv: {type(cv).__name__}",
+)
+@pytest.mark.parametrize(
+    "levels, expected_n_evaluated",
+    [
+        (None, [30, 45]),
+        (['l1', 'l2'], [30]),
+        ('l1', [15]),
+    ],
+    ids=lambda x: f"{x}",
+)
+def test_evaluate_grid_hyperparameters_multiseries_n_evaluated_equal_to_backtesting(
+    cv, levels, expected_n_evaluated
+):
+    """
+    Test that the column `n_evaluated` of each candidate is the `n_evaluated`
+    of the backtesting of the same configuration: the row of the aggregation
+    (sum over the levels), or the level if only one is evaluated. With
+    `OneStepAheadFold`, the backtesting with `steps=1` and `refit=False`
+    evaluates the same points, also when `levels` is a subset of the series,
+    and so do the metrics (`pooling` included).
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
+    results = _evaluate_grid_hyperparameters_multiseries(
+                  forecaster         = forecaster,
+                  series             = series_short,
+                  cv                 = cv,
+                  param_grid         = [{'alpha': 0.1}, {'alpha': 1}],
+                  metric             = 'mean_absolute_error',
+                  aggregate_metric   = ['pooling', 'average'],
+                  levels             = levels,
+                  lags_grid          = [2, 8],
+                  return_best        = False,
+                  verbose            = False,
+                  show_progress      = False,
+                  suppress_warnings  = True
+              )
+
+    if isinstance(cv, OneStepAheadFold):
+        cv_backtesting = TimeSeriesFold(initial_train_size=45, steps=1, refit=False)
+    else:
+        cv_backtesting = cv
+    metric_column = (
+        'mean_absolute_error' if levels == 'l1' else 'mean_absolute_error__pooling'
+    )
+    row = 'l1' if levels == 'l1' else 'pooling'
+    for lags, params, metric_value, n_evaluated in zip(
+        results['lags'], results['params'], results[metric_column], results['n_evaluated']
+    ):
+        metrics, _ = backtesting_forecaster_multiseries(
+            forecaster        = ForecasterRecursiveMultiSeries(
+                                    estimator=Ridge(**params), lags=lags
+                                ),
+            series            = series_short,
+            cv                = cv_backtesting,
+            metric            = 'mean_absolute_error',
+            levels            = levels,
+            show_progress     = False,
+            suppress_warnings = True
+        )
+        metrics = metrics.set_index('levels')
+        assert n_evaluated == metrics.loc[row, 'n_evaluated']
+        assert metric_value == pytest.approx(metrics.loc[row, 'mean_absolute_error'])
+
+    assert results['n_evaluated'].dtype == 'int64'
+    assert sorted(results['n_evaluated'].unique()) == expected_n_evaluated
+
+
+@pytest.mark.parametrize(
+    "cv",
+    [
+        TimeSeriesFold(initial_train_size=45, steps=5, refit=False),
+        OneStepAheadFold(initial_train_size=45),
+    ],
+    ids=lambda cv: f"cv: {type(cv).__name__}",
+)
+@pytest.mark.parametrize(
+    "lags_grid",
+    [[2, 8], [8, 2]],
+    ids=lambda lags_grid: f"lags_grid: {lags_grid}",
+)
+def test_evaluate_grid_hyperparameters_multiseries_MissingValuesWarning_once_when_candidates_evaluate_different_points(
+    cv, lags_grid
+):
+    """
+    Test that a single MissingValuesWarning is raised at the end of the search
+    when some candidates evaluate less than 95% of the points of the most
+    complete one, whatever the order of the grid. It lists the candidates affected,
+    says that the best candidate is one of them and gives the series that
+    every candidate evaluates on the same points. It covers the warning of the
+    levels not predicted of the candidates, which is not shown. The warning
+    filters are the same after the search.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        filters_before = list(warnings.filters)
+        results = _evaluate_grid_hyperparameters_multiseries(
+                      forecaster         = forecaster,
+                      series             = series_short,
+                      cv                 = cv,
+                      param_grid         = [{'alpha': 0.1}, {'alpha': 1}],
+                      metric             = 'mean_absolute_error',
+                      lags_grid          = lags_grid,
+                      return_best        = False,
+                      verbose            = False,
+                      show_progress      = False
+                  )
+        filters_after = list(warnings.filters)
+
+    assert filters_after == filters_before
+    messages = [
+        str(w.message) for w in record
+        if w.category is MissingValuesWarning and N_EVALUATED_WARNING_MSG in str(w.message)
+    ]
+    assert len(messages) == 1
+    assert not any(
+        str(w.message).startswith("Some levels are not predicted") for w in record
+    )
+    assert (
+        "2 of 4 candidates are evaluated on fewer points than the most complete "
+        "one, so their metrics are not comparable. The best candidate of the "
+        "ranking is one of them, so the ranking may favor it. To compare the "
+        "candidates on the same points, pass the series listed below in `levels` "
+        "or remove the candidates with larger windows. See the column "
+        "`n_evaluated` of the results.\n"
+        "\n"
+        "Candidates with less than 95% of the 45 points of the most complete one:\n"
+        "  - lags: [1, 2, ..., 8], 2 candidates (rows 0, 1): 30 (66.7%)\n"
+        "\n"
+        "Series that every candidate evaluates on the same points:\n"
+        "  levels=['l1', 'l2']"
+    ) in messages[0]
+    assert results['n_evaluated'].to_list() == [30, 30, 45, 45]
+
+
+@pytest.mark.parametrize(
+    "lags_grid",
+    [[2, 5], [5, 2]],
+    ids=lambda lags_grid: f"lags_grid: {lags_grid}",
+)
+def test_evaluate_grid_hyperparameters_multiseries_warnings_of_candidates_once_with_count(
+    lags_grid
+):
+    """
+    Test that the warnings of the candidates and of the refit are shown once at
+    the end of the search, whatever the order of the grid: the warning of the
+    levels not predicted with the number of candidates in which it is raised,
+    and the warning of the bins of the residuals, raised only in the refit, as
+    it is. The candidates evaluate more than 95% of the points of the most
+    complete one, so there is no warning of the points evaluated.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        _evaluate_grid_hyperparameters_multiseries(
+            forecaster         = forecaster,
+            series             = series_short_one_point,
+            cv                 = TimeSeriesFold(initial_train_size=45, steps=5, refit=False),
+            param_grid         = [{'alpha': 0.1}, {'alpha': 1}],
+            metric             = 'mean_absolute_error',
+            lags_grid          = lags_grid,
+            return_best        = True,
+            verbose            = False,
+            show_progress      = False
+        )
+
+    assert [w.category for w in record] == [
+        MissingValuesWarning, IgnoredArgumentWarning
+    ]
+    assert record[1].message.message.startswith(
+        "The number of bins has been reduced from 10 to"
+    )
+    messages = [
+        w.message.message for w in record if w.category is MissingValuesWarning
+    ]
+    assert len(messages) == 1
+    assert messages[0].startswith(
+        "Some levels are not predicted in folds where they have observed values, "
+        "so their metrics, and the aggregated metrics, do not include those "
+        "folds (in 2 of 4 candidates). Levels never predicted have NaN metrics "
+        "and are left out of the aggregated metrics.\n\nLevels not predicted:\n"
+        "  - Too short for the `window_size` (5) in the training set: "
+        "'short' (never predicted)."
+    )
+
+
+def test_evaluate_grid_hyperparameters_multiseries_suppress_warnings_keeps_parameters_skipped():
+    """
+    Test that, with `suppress_warnings=True`, the skforecast warnings of the
+    candidates are not shown, but the candidates skipped are.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results = _evaluate_grid_hyperparameters_multiseries(
+                      forecaster         = forecaster,
+                      series             = series_short,
+                      cv                 = TimeSeriesFold(initial_train_size=45, steps=5, refit=False),
+                      param_grid         = [{'alpha': 0.1}, {'alpha': 1}],
+                      metric             = 'mean_absolute_error',
+                      lags_grid          = [2, 8, 50],
+                      return_best        = True,
+                      verbose            = False,
+                      show_progress      = False,
+                      suppress_warnings  = True
+                  )
+
+    assert len(results) == 4
+    assert [w.category for w in record] == [RuntimeWarning]
+    message = str(record[0].message)
+    assert message.startswith(
+        "Parameters skipped: 2 of 6 candidates raise an error, so they are not "
+        "in the results.\n\nValueError: "
+    )
+    assert message.endswith("  - lags: [1, 2, ..., 50] (2 candidates)")
+
+
+@pytest.mark.parametrize(
+    "levels, suppress_warnings",
+    [(['l1', 'l2'], False), (None, True)],
+    ids=lambda x: f"{x}",
+)
+def test_evaluate_grid_hyperparameters_multiseries_no_MissingValuesWarning_n_evaluated(
+    levels, suppress_warnings
+):
+    """
+    Test that the warning about the points evaluated is not raised when every
+    candidate evaluates the same points (`levels` without the short series),
+    or when `suppress_warnings=True`.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        _evaluate_grid_hyperparameters_multiseries(
+            forecaster         = forecaster,
+            series             = series_short,
+            cv                 = TimeSeriesFold(initial_train_size=45, steps=5, refit=False),
+            param_grid         = [{'alpha': 0.1}, {'alpha': 1}],
+            metric             = 'mean_absolute_error',
+            levels             = levels,
+            lags_grid          = [2, 8],
+            return_best        = True,
+            verbose            = False,
+            show_progress      = False,
+            suppress_warnings  = suppress_warnings
+        )
+
+    assert not any(N_EVALUATED_WARNING_MSG in str(w.message) for w in record)
+
+
+def test_evaluate_grid_hyperparameters_multiseries_OneStepAheadFold_skips_candidates_without_data():
+    """
+    Test that, with a `OneStepAheadFold`, the candidates whose lags leave no
+    data to train with, or no level of `levels` to evaluate in the test set,
+    are skipped with the warning of the candidates skipped, grouped by error,
+    instead of aborting the search or returning rows without points evaluated.
+    `short` has 5 values in the training set, so it is not trained with 8 lags.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results = _evaluate_grid_hyperparameters_multiseries(
+                      forecaster         = forecaster,
+                      series             = series_short,
+                      cv                 = OneStepAheadFold(initial_train_size=45),
+                      param_grid         = [{'alpha': 0.1}, {'alpha': 1}],
+                      metric             = 'mean_absolute_error',
+                      levels             = ['short'],
+                      lags_grid          = [2, 8, 50],
+                      return_best        = False,
+                      verbose            = False,
+                      show_progress      = False
+                  )
+
+    assert results['lags_label'].map(len).tolist() == [2, 2]
+    assert results['n_evaluated'].tolist() == [15, 15]
+    messages = [str(w.message) for w in record if w.category is RuntimeWarning]
+    assert messages == [
+        "Parameters skipped: 4 of 6 candidates raise an error, so they are not in "
+        "the results.\n\nValueError: No level of `levels` can be evaluated in the "
+        "test set with this `window_size` (8). 'short' has 5 observations in the "
+        "training set, not more than the `window_size`. Review `levels`, "
+        "`initial_train_size` of `cv` or the span of the series.\n"
+        "  - lags: [1, 2, ..., 8] (2 candidates)\n\nValueError: "
+        "`initial_train_size` must be greater than the `window_size` of the "
+        "forecaster (50), so that the first training set has data to train with. "
+        "Got 45.\n  - lags: [1, 2, ..., 50] (2 candidates)"
+    ]
+
+
+@pytest.mark.parametrize(
+    "cv",
+    [TimeSeriesFold(initial_train_size=45, steps=5, refit=False),
+     OneStepAheadFold(initial_train_size=45)],
+    ids=lambda cv: f"cv: {type(cv).__name__}"
+)
+@pytest.mark.parametrize(
+    "suppress_warnings", [False, True], ids=lambda x: f"suppress_warnings: {x}"
+)
+def test_evaluate_grid_hyperparameters_multiseries_refit_without_series_too_short(
+    cv, suppress_warnings
+):
+    """
+    Test that the refit of the best candidate leaves out the series with
+    `window_size` observations or fewer (`short` has 6 values and the best
+    candidate 8 lags), which the backtesting does not predict either, instead
+    of failing at the end of the search. The forecaster returned is not
+    trained with them and a RuntimeWarning says so, also with
+    `suppress_warnings=True`.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results = _evaluate_grid_hyperparameters_multiseries(
+                      forecaster         = forecaster,
+                      series             = series_short_one_point,
+                      cv                 = cv,
+                      param_grid         = [{'alpha': 0.1}, {'alpha': 1}],
+                      metric             = 'mean_absolute_error',
+                      lags_grid          = [8],
+                      return_best        = True,
+                      verbose            = False,
+                      show_progress      = False,
+                      suppress_warnings  = suppress_warnings
+                  )
+
+    assert len(results) == 2
+    assert forecaster.is_fitted
+    assert forecaster.max_lag == 8
+    assert forecaster.series_names_in_ == ['l1', 'l2']
+    assert list(forecaster.last_window_) == ['l1', 'l2']
+    messages = [
+        str(w.message) for w in record
+        if w.category is RuntimeWarning and "left out of the refit" in str(w.message)
+    ]
+    assert messages == [
+        "1 series is left out of the refit of the best candidate: it has no "
+        "more observations than the `window_size` (8), too few to train the "
+        "forecaster, and the candidate did not predict it in the search either. "
+        "The forecaster returned is not trained with it (not in "
+        "`series_names_in_`).\n\nSeries left out: 'short' (6 observations)."
+    ]

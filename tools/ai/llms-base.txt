@@ -2,13 +2,13 @@
 
 > Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models
 
-This document is for skforecast v0.26.0+. If you are using an older version, check the documentation at skforecast.org.
+This document is for skforecast v0.27.0+. If you are using an older version, check the documentation at skforecast.org.
 
 Skforecast is a Python library for time series forecasting using scikit-learn compatible models, statistical methods, and foundation models. It works with any estimator compatible with the scikit-learn API (LightGBM, XGBoost, CatBoost, Keras, etc.).
 
 ## Quick Info
 
-- Version: 0.26.0
+- Version: 0.27.0
 - License: BSD-3-Clause
 - Python: 3.10, 3.11, 3.12, 3.13, 3.14
 - Repository: https://github.com/skforecast/skforecast
@@ -38,7 +38,7 @@ skforecast/
 ├── direct/                  # ForecasterDirect, ForecasterDirectMultiVariate
 ├── deep_learning/           # ForecasterRnn, create_and_compile_model
 ├── foundation/              # FoundationModel, ForecasterFoundation, get_model_info, list_adapters
-│                            # (zero-shot: Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL)
+│                            # (zero-shot: Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL, Timestral, TiRex-2)
 ├── stats/                   # Arima, Sarimax, Ets, Arar, acf, pacf, calculate_lag_autocorrelation
 ├── preprocessing/           # TimeSeriesDifferentiator, RollingFeatures, CalendarFeatures,
 │                            # QuantileBinner, ConformalIntervalCalibrator, reshape_* functions
@@ -59,7 +59,7 @@ skforecast/
 - **Forecasters inheriting from `ForecasterBase`**: ForecasterRecursive, ForecasterRecursiveMultiSeries, ForecasterRecursiveClassifier, ForecasterDirect, ForecasterDirectMultiVariate, ForecasterRnn
 - **Standalone forecasters (no inheritance)**: ForecasterStats, ForecasterEquivalentDate, ForecasterFoundation
 - Statistical models in `stats/` are wrapped by `ForecasterStats` (in `recursive/`)
-- `ForecasterFoundation` (in `foundation/`) wraps a `FoundationModel`, which delegates to an adapter class (`ChronosAdapter`, `TimesFM25Adapter`, `TimesFM3Adapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`, `NoriAdapter`, `TSICLAdapter`) resolved from the HuggingFace `model_id`
+- `ForecasterFoundation` (in `foundation/`) wraps a `FoundationModel`, which delegates to an adapter class (`ChronosAdapter`, `TimesFM25Adapter`, `TimesFM3Adapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`, `NoriAdapter`, `TSICLAdapter`, `TimestralAdapter`, `TiRex2Adapter`) resolved from the HuggingFace `model_id`
 - `model_selection/` functions work with all forecaster types
 - `preprocessing/` classes can be passed to forecasters via `transformer_y`, `transformer_exog`, `window_features`
 
@@ -73,9 +73,11 @@ skforecast/
 | ForecasterDirectMultiVariate | Multivariate forecasting (multiple series as features) |
 | ForecasterRnn | Deep learning (RNN/LSTM) forecasting |
 | ForecasterStats | Statistical models (ARIMA, SARIMAX, ETS, ARAR) |
-| ForecasterFoundation | Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL) |
+| ForecasterFoundation | Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL, Timestral, TiRex-2) |
 | ForecasterRecursiveClassifier | Classification-based forecasting |
 | ForecasterEquivalentDate | Baseline forecaster using equivalent past dates |
+
+To choose between model families, compare them on the same folds: each family has its own backtesting function (`backtesting_forecaster`, `backtesting_forecaster_multiseries`, `backtesting_stats`, `backtesting_foundation`), and passing the same `TimeSeriesFold` to all of them makes the results comparable. The scaled metrics (`mean_absolute_scaled_error`, `root_mean_squared_scaled_error`) scale each error with the one-step naive forecast over the observations before its forecast origin, the same for every forecaster. The user guide [Comparing forecasting models](https://skforecast.org/latest/user_guides/comparing-forecasting-models.html) does this for the seasonal naive, Ridge, LightGBM, Chronos-2, AutoARIMA, AutoETS and an LSTM on three datasets, reporting MASE, interval coverage and computation time.
 
 ## Basic Usage Example
 
@@ -317,7 +319,22 @@ metric, predictions = backtesting_forecaster(
     show_progress=True,                         # Show progress bar
     suppress_warnings=False                     # Suppress skforecast warnings
 )
+# predictions columns: fold, step, y_true, pred, lower_bound, upper_bound
+# metric columns: mean_absolute_error, coverage, interval_width, n_evaluated
 ```
+
+The predictions of the four backtesting functions (`backtesting_forecaster`, `backtesting_forecaster_multiseries`, `backtesting_stats` and `backtesting_foundation`) always include, after `fold`, the column `step` (step of the forecast horizon at which each prediction was made, from `gap + 1` to `gap + steps`) and `y_true` (true value), before the predictions: `level, fold, step, y_true, pred, ...` with multiple series, and `estimator_id, fold, step, y_true, pred, ...` in `backtesting_stats` with several estimators. The dates without an observed value (missing values of `y` in the test set) stay in the predictions with `y_true` NaN and are left out of the metrics, with one series and with several; in the multi-series backtesting, every prediction column is NaN at those dates too. With overlapping folds (`fold_stride < steps`) every prediction is kept, so a date can appear several times with different `step`. The last column of `metric` is `n_evaluated`: the points used for the metrics (true value and prediction not missing, each date once with the prediction of its last fold), per level in multi-series and the sum in the aggregated rows; `weighted_average` is weighted by it. Metric names must be unique (they are the columns of `metric`; `create_mean_pinball_loss(alpha)` is named `mean_pinball_loss_q_{alpha}`) and cannot be `n_evaluated`.
+
+```python
+# Error and coverage by step of the horizon (group by ['level', 'step'] with multiple series)
+predictions = predictions.dropna(subset=['y_true'])
+predictions.assign(
+    absolute_error=(predictions['y_true'] - predictions['pred']).abs(),
+    covered=predictions['y_true'].between(predictions['lower_bound'], predictions['upper_bound']),
+).groupby('step')[['absolute_error', 'covered']].mean()
+```
+
+When the predictions define one interval, the backtesting functions add two columns to `metric`, after the requested metrics: `coverage` (share of true values inside the interval) and `interval_width` (mean width of the interval, in the units of the series). One interval means a float `interval` such as `0.8`, or two quantiles, optionally with the median: `interval=[0.1, 0.9]` or `[0.1, 0.5, 0.9]`, and the same in `quantiles` of `backtesting_foundation`. Compare `coverage` with the nominal level (0.8 for `[0.1, 0.9]`) and read it together with `interval_width`: a wide interval covers more. Multi-series backtesting reports them per level and in the aggregated rows, and `backtesting_stats` per estimator (also with `alpha`). With other quantiles (for example `[0.05, 0.1, 0.9, 0.95]`), `interval='bootstrapping'` or a distribution, they are not added; use CRPS or the pinball loss instead. A custom metric cannot be named `coverage` or `interval_width` when they are added.
 
 ## Cross-Validation Strategies
 
@@ -334,12 +351,11 @@ cv = TimeSeriesFold(
     steps=12,                        # (required) Number of observations to predict in each fold (forecast horizon)
     initial_train_size=100,          # Number of observations for initial training. Can be int, str (date), or pd.Timestamp
     fold_stride=None,                # Observations between consecutive test set starts. If None, equals steps (no overlap)
-    window_size=None,                # Observations needed for autoregressive predictors (set automatically by forecaster)
-    differentiation=None,            # Differencing order to extend last_window (set automatically by forecaster)
+    window_size=None,                # Observations needed for autoregressive predictors (set automatically by forecaster; when calling split() directly, use forecaster.window_size, which includes differentiation)
     refit=False,                     # Whether to refit forecaster each fold: True, False, or int (refit every n folds)
-    fixed_train_size=True,           # If True, training size is fixed; if False, expands each fold
+    fixed_train_size=True,           # If True, the training window rolls with a fixed size; if False, it expands each fold (only with refit)
     gap=0,                           # Observations between end of training and start of test set
-    skip_folds=None,                 # Folds to skip: int (every n-th fold) or list of fold indexes to skip
+    skip_folds=None,                 # Folds to leave out: int (keep one of every n folds, starting with the first) or list of fold indexes to skip
     allow_incomplete_fold=True,      # Whether to allow last fold with fewer observations than steps
     return_all_indexes=False,        # Whether to return all indexes or only start/end of each fold
     verbose=True                     # Whether to print information about generated folds
@@ -354,6 +370,7 @@ print(folds)
 - If `fold_stride == steps`: test sets are back-to-back without overlap
 - If `fold_stride < steps`: test sets overlap (multiple forecasts for same observations)
 - If `fold_stride > steps`: gaps between consecutive test sets
+- `differentiation` (both folds) and `window_size` (`OneStepAheadFold`) are deprecated since 0.27.0: they have no effect, emit a `FutureWarning` and will be removed in 0.29.0
 
 ### OneStepAheadFold
 
@@ -364,8 +381,6 @@ from skforecast.model_selection import OneStepAheadFold
 
 cv = OneStepAheadFold(
     initial_train_size=100,          # (required) Number of observations for initial training. Can be int, str (date), or pd.Timestamp
-    window_size=None,                # Observations needed for autoregressive predictors (set automatically by forecaster)
-    differentiation=None,            # Differencing order to extend last_window (set automatically by forecaster)
     return_all_indexes=False,        # Whether to return all indexes or only start/end of each fold
     verbose=True                     # Whether to print information about generated folds
 )
@@ -382,6 +397,12 @@ print(fold)
 ## Hyperparameter Tuning
 
 Three search strategies are available: `grid_search_forecaster`, `random_search_forecaster`, and `bayesian_search_forecaster` (Optuna-based). All accept `TimeSeriesFold` or `OneStepAheadFold`. Multi-series variants: `grid_search_forecaster_multiseries`, `random_search_forecaster_multiseries`, `bayesian_search_forecaster_multiseries`.
+
+Results are sorted by the first metric, best first, and `return_best=True` refits the forecaster with the first row. The direction comes from the metric: scikit-learn metrics ending in `_score` (`r2_score`, `accuracy_score`) are maximized; errors and losses are minimized. A custom callable is minimized in regression and maximized in classification unless it sets the attribute `greater_is_better` (`True` or `False`). In the Bayesian searches, `kwargs_create_study={'direction': ...}` overrides it.
+
+The results of every search include, after the metrics, the column `n_evaluated` (the `n_evaluated` of the backtesting metrics: points in the metrics of each candidate, summed over the levels in multi-series; also a `user_attr` of each Optuna trial and a column of the `output_file`). In the multi-series searches, a candidate with a larger `window_size` does not predict a series with `window_size` observations or fewer before a fold, so its metrics can use fewer points; a single `MissingValuesWarning` at the end of the search reports the candidates with less than 95% of the points of the most complete one and the series that every candidate evaluates on the same points. To compare them on the same points, pass those series in `levels`, or remove the larger windows. The single series searches raise the same warning with `OneStepAheadFold`, `dropna_from_series=True` and gaps in `y` (larger windows drop more test rows): fill the gaps or remove the larger windows. Metric names must be unique and cannot be `n_evaluated` in any search (`ValueError`).
+
+Candidates (or Bayesian trials) whose evaluation raises an error, for example lags not smaller than `initial_train_size`, are skipped: they are left out of the results and reported in a single `RuntimeWarning` ("Parameters skipped"), grouped by error, that `suppress_warnings=True` does not hide. Bayesian trials are marked as failed in the study and listed by number; errors in `search_space` stop the search. With `ForecasterRecursiveMultiSeries` and `return_best=True`, the refit leaves out the series with `window_size` observations or fewer for the best candidate (another `RuntimeWarning`): they are not in `series_names_in_`.
 
 ```python
 from skforecast.model_selection import bayesian_search_forecaster, TimeSeriesFold
@@ -436,7 +457,7 @@ forecaster = ForecasterStats(estimator=Ets(m=12, model='AAA'))
 
 ## Foundation Models (Zero-Shot)
 
-Pre-trained time series foundation models that forecast without task-specific training. Each model requires its own backend library installed separately (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`). Models are downloaded from HuggingFace on first use.
+Pre-trained time series foundation models that forecast without task-specific training. Each model requires its own backend library installed separately (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0[torch]` (>= 0.6), `synthefy-nori`, `tsicl`, `tirex-2` (Python >= 3.11), `timestral`, installed from git with `pip install "timestral @ git+https://github.com/mistralai/timestral.git"`). Models are downloaded from HuggingFace on first use.
 
 `FoundationModel` is the low-level interface; `ForecasterFoundation` wraps it to integrate with the rest of the skforecast ecosystem (backtesting, model selection, uniform `predict` / `predict_interval` / `predict_quantiles` API).
 
@@ -475,6 +496,8 @@ Supported adapters (selected automatically from `model_id`). Query them programm
 | T0Adapter (The Forecasting Company) | `theforecastingcompany/t0` | Yes (future-known covariates) | 8192 | Any in `(0, 1)` |
 | NoriAdapter (Synthefy) | `Synthefy/Nori` | Yes (known-future covariates) | 4096 | Any in `(0, 1)` |
 | TSICLAdapter (EDF Lab) | `taharnbl/TS-ICL` | Yes (past & future covariates) | 4096 | Subset of `[0.01, 0.02, ..., 0.99]` |
+| TimestralAdapter (Mistral AI) | `mistralai/Timestral` | Yes (past, known-future and categorical covariates) | 4096 | Subset of `[0.01, 0.05, 0.1, ..., 0.95, 0.99]` (21 levels) |
+| TiRex2Adapter (NX-AI) | `NX-AI/TiRex-2` | Yes (past & known-future covariates) | 2048 | `[0.1, 0.2, ..., 0.9]` |
 
 ```python
 from skforecast.foundation import get_model_info, list_adapters
@@ -506,9 +529,11 @@ Key points:
 - `predict(..., context=...)` lets you override the stored context (used internally by backtesting).
 - Use `backtesting_foundation` (not `backtesting_forecaster`) to evaluate a `ForecasterFoundation`. It deep-copies `cv` and forces `refit=True`, `fixed_train_size=False`, so the context window expands with each fold up to `context_length`; no weights are ever trained.
 - Use `bayesian_search_foundation` (not `bayesian_search_forecaster`) to tune inference-time parameters such as `context_length`. Only `TimeSeriesFold` is supported.
-- Loading a model whose weights are released under a known non-commercial license (TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL) raises a `LicenseWarning` naming the license and a link to the model card; review the link, since terms vary (e.g. TabPFN-TS permits commercial use under an enterprise license). Absence of the warning does not guarantee a model's license is unrestricted. Suppress it like any other skforecast warning (`suppress_warnings=True` or `warnings.simplefilter`).
-- At predict time, the columns of the future `exog` are validated per series against the historical exog (the one passed to `fit`, or `context_exog`). A future column with no historical values raises a `ValueError`. A historical column with no future values is a past-only covariate: used as such when `forecaster.supports_past_only_covariates` is `True` (Chronos-2, TS-ICL, TimesFM 3.0), ignored with an `IgnoredArgumentWarning` otherwise (TabICL, TabPFN-TS, TFC-T0, Nori).
-- Multi-series input may be heterogeneous: series can have different lengths, a different subset of exog columns each, and NaN values. Each series is forecast with its own exog columns only. When the backend needs identical covariate columns in a batch (`forecaster.supports_heterogeneous_covariates` is `False`: Chronos-2, TS-ICL, TabICL, TimesFM 3.0), the series are grouped by their exog columns and the backend is called once per group, so the forecast of a series never depends on the exog of the others. `forecaster.supports_nan_in_series` tells whether the backend accepts NaN in the context.
+- Loading a model whose weights are released under a license that restricts commercial use (TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL, Timestral) raises a `LicenseWarning` naming the license and a link to the model card; review the link, since terms vary (e.g. TabPFN-TS permits commercial use under an enterprise license; Timestral grants no rights to companies above USD 20 million of monthly revenue). Absence of the warning does not guarantee a model's license is unrestricted. Suppress it like any other skforecast warning (`suppress_warnings=True` or `warnings.simplefilter`).
+- At predict time, the columns of the future `exog` are validated per series against the historical exog (the one passed to `fit`, or `context_exog`). A future column with no historical values raises a `ValueError`. A historical column with no future values is a past-only covariate: used as such when `forecaster.supports_past_only_covariates` is `True` (Chronos-2, TS-ICL, TimesFM 3.0, Timestral, TiRex-2), ignored with an `IgnoredArgumentWarning` otherwise (TabICL, TabPFN-TS, TFC-T0, Nori): the forecast is then the same as without that column.
+- Multi-series input may be heterogeneous: series can have different lengths, a different subset of exog columns each, and NaN values. Each series is forecast with its own exog columns only. When the backend needs identical covariate columns in a batch (`forecaster.supports_heterogeneous_covariates` is `False`: Chronos-2, TS-ICL, TabICL, TimesFM 3.0, TFC-T0, Timestral), the series are grouped by their exog columns and the backend is called once per group, so the forecast of a series never depends on the exog of the others. `forecaster.supports_nan_in_series` tells whether the backend accepts NaN in the context.
+- Timestral: with a known covariate that is constant over the context and changes over the horizon (a price, or a 0/1 indicator that is 0 over the whole context), the upper quantiles can become very large (mistralai/timestral#7); a `FeatureOutOfRangeWarning` names the affected series and columns, and setting their historical values to NaN avoids it.
+- TiRex-2: each checkpoint forecasts at most `future_len` steps ahead (320 for `NX-AI/TiRex-2`, 928 for the gifteval checkpoints), so a longer `steps` raises a `ValueError` (the backend would silently return a shorter forecast). All the series go to the backend in the same call whatever their exog, in calls of at most 64 series.
 - In `backtesting_foundation`, a series is predicted in a fold only if it has at least one observed value in that fold's test window and its context window (the last `context_length` observations up to the end of the train span) is not entirely NaN; the context keeps interior and trailing NaN, so every prediction is dated inside the fold.
 - User guide for heterogeneous multi-series input (different lengths, exog columns and NaN): https://skforecast.org/latest/user_guides/foundation-forecasting-with-heterogeneous-series.html
 
@@ -527,7 +552,7 @@ selected_lags, selected_window_features, selected_exog, selected_calendar_featur
     exog=exog_train,
     select_only=None,              # 'autoreg', 'exog', 'calendar', a list of them, or None (all features)
     force_inclusion=None,          # Features to always include (list or regex str)
-    subsample=0.5,                 # Proportion of records in (0, 1], sampled without replacement
+    subsample=0.5,                 # Proportion of records in (0, 1], sampled without replacement and in random order (random cv folds)
     random_state=123,
     verbose=True
 )

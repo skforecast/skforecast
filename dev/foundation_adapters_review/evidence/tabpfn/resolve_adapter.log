@@ -1,0 +1,8 @@
+priorlabs/tabpfn-ts        -> TabPFNAdapter
+priorlabs/tabpfn           -> TabPFNAdapter
+priorlabs/tabpfn-3.5       -> TabPFNAdapter
+priorlabs/tabpfn-ts-3      -> TabPFNAdapter
+priorlabs/tabpfn-v2        -> TabPFNAdapter
+Prior-Labs/tabpfn_3_5      -> ValueError No adapter found for model 'Prior-Labs/tabpfn_3_5'. Register
+Prior-Labs/tabpfn-ts       -> ValueError No adapter found for model 'Prior-Labs/tabpfn-ts'. Registere
+priorlabs/TabPFN-TS        -> ValueError No adapter found for model 'priorlabs/TabPFN-TS'. Registered

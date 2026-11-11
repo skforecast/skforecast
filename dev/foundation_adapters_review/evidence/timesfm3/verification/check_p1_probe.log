@@ -1,0 +1,14 @@
+python 3.12.3
+timesfm 3.0.2
+current _load_model: ImportError: TimesFM 3.0 is installed (timesfm 3.0.2) but does not provide `TimesFM3Forecaster`. Reinstall with `pip install -U "timesfm[torch]"`.
+patched _load_model: ImportError: backend could not be imported (import of torch halted; None in sys.modules). torch is missing
+PR #552 simulation, current code: ImportError propagated from hasattr: timesfm.TimesFM3Forecaster could not be imported (No module named 'torch'). Install the optional backend with: pip install "timesfm[torch]"
+PR #552 simulation, patched code: backend could not be imported (import of torch halted; None in sys.modules). torch is missing
+
+python 3.12.3
+timesfm 3.0.0
+current _load_model: ImportError: TimesFM 3.0 is installed (timesfm 3.0.0) but its backend could not be imported (import of torch halted; None in sys.modules). This usually means torch is missing. Install it with `pip install "timesfm[torch]"`.
+patched _load_model: ImportError: backend could not be imported (import of torch halted; None in sys.modules). torch is missing
+PR #552 simulation, current code: ImportError propagated from hasattr: timesfm.TimesFM3Forecaster could not be imported (No module named 'torch'). Install the optional backend with: pip install "timesfm[torch]"
+PR #552 simulation, patched code: backend could not be imported (import of torch halted; None in sys.modules). torch is missing
+

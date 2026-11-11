@@ -1,0 +1,50 @@
+package         : tfc-t0
+latest          : 0.6.0
+requires_python : >=3.10
+license         : Apache-2.0
+requires_dist   :
+    huggingface-hub>=1
+    jaxtyping>=0.2.24
+    numpy>=1.26
+    typing-extensions>=4; python_version < "3.11"
+    einops>=0.7; extra == "evaluation"
+    gluonts>=0.15; extra == "evaluation"
+    rotary-embedding-torch>=0.8; extra == "evaluation"
+    safetensors>=0.4; extra == "evaluation"
+    torch>=2.4; extra == "evaluation"
+    tqdm>=4.66; extra == "evaluation"
+    mlx>=0.32.2; (sys_platform == "darwin" and platform_machine == "arm64") and extra == "mlx"
+    accelerate>=0.30; extra == "notebooks"
+    einops>=0.7; extra == "notebooks"
+    holidays>=0.40; extra == "notebooks"
+    ipykernel>=6.29; extra == "notebooks"
+    jupyterlab>=4; extra == "notebooks"
+    matplotlib>=3.8; extra == "notebooks"
+    pandas>=2; extra == "notebooks"
+    peft>=0.11; extra == "notebooks"
+    pyarrow>=14; extra == "notebooks"
+    requests>=2.31; extra == "notebooks"
+    rotary-embedding-torch>=0.8; extra == "notebooks"
+    safetensors>=0.4; extra == "notebooks"
+    scipy>=1.11; extra == "notebooks"
+    torch>=2.4; extra == "notebooks"
+    tqdm>=4.66; extra == "notebooks"
+    matplotlib>=3.8; extra == "plot"
+    einops>=0.7; extra == "torch"
+    rotary-embedding-torch>=0.8; extra == "torch"
+    safetensors>=0.4; extra == "torch"
+    torch>=2.4; extra == "torch"
+releases (upload date of the first file):
+    2026-06-10  0.1.0
+    2026-06-12  0.1.1
+    2026-06-14  0.1.2
+    2026-06-24  0.2.0
+    2026-07-01  0.2.1
+    2026-07-20  0.2.2
+    2026-07-30  0.2.3
+    2026-08-19  0.3.0
+    2026-09-01  0.3.1
+    2026-09-09  0.3.2
+    2026-09-15  0.4.0
+    2026-09-17  0.5.0
+    2026-10-13  0.6.0

@@ -1,0 +1,48 @@
+# Upstream google-research/timesfm, clone at origin/master e51928e (2026-09-29)
+# Files of TimesFM 2.5 used by TimesFM25Adapter: src/timesfm/__init__.py, configs.py, timesfm_2p5/timesfm_2p5_base.py, timesfm_2p5/timesfm_2p5_torch.py
+
+## git diff --stat v3.0.2 origin/master (after the latest release)
+(empty = no change)
+
+## git log v2.0.1..v3.0.2 on those files
+0548f53 2026-08-20 initial fully functioning torch code for timesfm-3
+af8f595 2026-07-09 fix(torch): apply quantile flip to autoregressive outputs in force_flip_invariance
+26d3e89 2026-07-01 Merge pull request #459 from matdou/master
+2011cfb 2026-07-01 Pre-download config.json in _from_pretrained and bump version to 2.0.2
+f83f134 2026-06-24 test: cover compile behavior; respect torch_compile kwarg in load_checkpoint
+1e89ad1 2026-06-24 fix: compile forward instead of module in load_checkpoint
+
+## git diff v2.0.2 v3.0.2 on those files
+diff --git a/src/timesfm/__init__.py b/src/timesfm/__init__.py
+index 361a36d..3b50ed4 100644
+--- a/src/timesfm/__init__.py
++++ b/src/timesfm/__init__.py
+@@ -27,3 +27,8 @@ try:
+   TimesFM_2p5_200M_flax = timesfm_2p5_flax.TimesFM_2p5_200M_flax
+ except ImportError:
+   pass
++
++try:
++  from timesfm3 import TimesFM3Forecaster, TimesFM3Torch
++except ImportError:
++  pass
+diff --git a/src/timesfm/timesfm_2p5/timesfm_2p5_torch.py b/src/timesfm/timesfm_2p5/timesfm_2p5_torch.py
+index 2930c7d..2b801f0 100644
+--- a/src/timesfm/timesfm_2p5/timesfm_2p5_torch.py
++++ b/src/timesfm/timesfm_2p5/timesfm_2p5_torch.py
+@@ -461,7 +461,10 @@ class TimesFM_2p5_200M_torch(
+         flipped_pf_outputs = flip_quantile_fn(flipped_pf_outputs)
+         to_cat = [flipped_pf_outputs[:, -1, ...]]
+         if flipped_ar_outputs is not None:
+-          to_cat.append(flipped_ar_outputs.reshape(batch_size, -1, self.model.q))
++          flipped_ar_outputs = flip_quantile_fn(
++            flipped_ar_outputs.reshape(batch_size, -1, self.model.q)
++          )
++          to_cat.append(flipped_ar_outputs)
+         flipped_full_forecast = torch.cat(to_cat, dim=1)
+         quantile_spreads = (quantile_spreads - flipped_quantile_spreads) / 2
+         pf_outputs = (pf_outputs - flipped_pf_outputs) / 2
+
+## git diff v2.0.1 v2.0.2 --stat
+ src/timesfm/timesfm_2p5/timesfm_2p5_torch.py | 25 ++++++++++++++++++-------
+ 1 file changed, 18 insertions(+), 7 deletions(-)

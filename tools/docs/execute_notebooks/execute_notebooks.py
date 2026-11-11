@@ -9,7 +9,8 @@
 #   python tools/docs/execute_notebooks/execute_notebooks.py --check          # Scan saved outputs, no execution
 #
 # After each notebook runs, its tqdm progress bar widgets are replaced with
-# static progress bars (see static_widgets.py).
+# static progress bars (see static_widgets.py), and the third-party warnings in
+# REMOVED_WARNINGS are removed from its outputs.
 #
 # With --check, the saved outputs of every notebook in scope (excluded and slow
 # ones included) are scanned for error outputs, unexecuted code cells and
@@ -82,11 +83,13 @@ SKFORECAST_WARNING_CATEGORIES = {
 
 # Notebooks to exclude (by name or relative path within docs/)
 EXCLUDE_NOTEBOOKS = [
+    "user_guides/comparing-forecasting-models.ipynb",  # Specific environment (keras, chronos)
     "user_guides/forecasting-with-deep-learning-rnn-lstm.ipynb",
     "user_guides/foundation-forecasting-models.ipynb",  # Specific environment
     "user_guides/foundation-forecasting-with-heterogeneous-series.ipynb",  # Specific environment
     "user_guides/skforecast-in-GPU.ipynb",
     "user_guides/sktime-pipelines.ipynb",
+    "user_guides/migrate-from-prophet.ipynb",  # Needs prophet (not a dependency)
 
     "faq/profiling-skforecast.ipynb",
     "faq/skforecast-benchmark.ipynb"
@@ -129,6 +132,24 @@ CLEANUP_FILES = {
         "custom_weights_item_3.py",
     ]
 }
+
+# Third-party warnings removed from the stderr outputs after execution: they come
+# from the libraries, not from the code of the page, and would be published. Each
+# pattern matches the warning line and the source line that Python prints below it.
+REMOVED_WARNINGS = [
+    # pandas plotting a series with a frequency (date converter) with Matplotlib 3.11
+    re.compile(
+        r"^[^\n]*MatplotlibDeprecationWarning: The locs attribute was deprecated"
+        r"[^\n]*(?:\n|$)(?:  [^\n]*(?:\n|$))?",
+        re.MULTILINE,
+    ),
+    # tabpfn-time-series running TabPFN-TS in local mode without a GPU
+    re.compile(
+        r"^[^\n]*UserWarning: Running TabPFN locally on CPU"
+        r"[^\n]*(?:\n|$)(?:  [^\n]*(?:\n|$))?",
+        re.MULTILINE,
+    ),
+]
 
 
 # ANSI color codes
@@ -320,6 +341,51 @@ def _warnings_from_text(text, external_warnings, skforecast_warnings):
             external_warnings[entry] = external_warnings.get(entry, 0) + 1
 
         i += 1
+
+
+def _remove_known_warnings(notebook_path):
+    """Remove the warnings in REMOVED_WARNINGS from the stderr outputs.
+
+    A stderr output left empty is dropped. The file is only rewritten when
+    something is removed.
+
+    Returns
+    -------
+    int
+        Number of warnings removed.
+    """
+    raw = notebook_path.read_text(encoding="utf-8")
+    nb = json.loads(raw)
+    removed = 0
+    for cell in nb.get("cells", []):
+        if not cell.get("outputs"):
+            continue
+        kept = []
+        for output in cell["outputs"]:
+            if output.get("output_type") == "stream" and output.get("name") == "stderr":
+                text = output.get("text", "")
+                if isinstance(text, list):
+                    text = "".join(text)
+                n_removed = 0
+                for pattern in REMOVED_WARNINGS:
+                    text, n = pattern.subn("", text)
+                    n_removed += n
+                if n_removed:
+                    removed += n_removed
+                    if not text.strip():
+                        continue
+                    output["text"] = text.splitlines(keepends=True)
+            kept.append(output)
+        cell["outputs"] = kept
+
+    if removed:
+        trailing_newline = "\n" if raw.endswith("\n") else ""
+        notebook_path.write_text(
+            json.dumps(nb, indent=1, ensure_ascii=False) + trailing_newline,
+            encoding="utf-8",
+        )
+
+    return removed
 
 
 def _scan_notebook(notebook_path):
@@ -591,6 +657,13 @@ def _execute_notebooks(notebooks, results, log):
                 log.info(
                     f"  {C.INFO}Static progress bars:{C.END} {n_converted} "
                     f"converted, {n_removed} removed"
+                )
+
+            # Third-party warnings that should not be published, see REMOVED_WARNINGS
+            n_warnings_removed = _remove_known_warnings(notebook)
+            if n_warnings_removed:
+                log.info(
+                    f"  {C.INFO}Removed third-party warnings:{C.END} {n_warnings_removed}"
                 )
 
             # Scan the saved notebook for warnings, error outputs and unexecuted cells

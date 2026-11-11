@@ -82,6 +82,39 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 - When `fixed_train_size=True`, the window rolls forward (oldest data discarded). Use for concept drift or when old data is less relevant.
 - When `fixed_train_size=False`, the window expands (all history retained). Use when more data always helps.
 
+## Reading the Output
+
+`predictions` has, before the predicted values, the columns `fold`, `step`
+(step of the forecast horizon at which each prediction was made, from
+`gap + 1` to `gap + steps`, fewer in an incomplete last fold) and `y_true`
+(true value). Order: `fold, step, y_true, pred, ...`; with multiple series
+`level` goes first, and in `backtesting_stats` with several estimators
+`estimator_id` goes first. The dates without an observed value (missing
+values of `y` in the test set) stay in `predictions` with `y_true` NaN and are
+left out of the metrics, with one series and with several; in the
+multi-series backtesting, every prediction column is NaN at those dates too.
+
+The last column of `metric` is `n_evaluated`: the points used for the metrics
+(true value and prediction not missing). With overlapping folds
+(`fold_stride < steps`) each date is evaluated once, with the prediction of its
+last fold, so `n_evaluated` is smaller than the rows of `predictions`. In
+multi-series backtesting it is reported per level and summed in the aggregated
+rows, and `weighted_average` is weighted by it. A level with fewer points than
+the others was not predicted in some folds (short series, missing values).
+
+Error and coverage by forecast horizon use every row, including the repeated
+dates of overlapping folds:
+
+```python
+predictions = predictions.dropna(subset=['y_true'])
+by_step = predictions.assign(
+    absolute_error=(predictions['y_true'] - predictions['pred']).abs(),
+    covered=predictions['y_true'].between(
+        predictions['lower_bound'], predictions['upper_bound']
+    ),
+).groupby('step')[['absolute_error', 'covered']].mean()   # ['level', 'step'] with multiple series
+```
+
 ## Business Scenario Mapping
 
 ### Retraining frequency
@@ -91,6 +124,7 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 | Retrain every time new data arrives | `refit=True` |
 | Retrain weekly (with daily forecasts, steps=1) | `refit=7` |
 | Retrain monthly (with daily forecasts, steps=7) | `refit=4` (every 4 folds × 7 steps ≈ monthly) |
+| Retrain at each month end and forecast the whole next month (daily data) | `steps=31`, `fold_stride=1`, `skip_folds` = folds not starting on day 1, `refit=True` (see example below) |
 | Never retrain / train once, evaluate across time | `refit=False` (`fixed_train_size` has no effect without refit) |
 
 ### Data freshness vs volume
@@ -154,6 +188,50 @@ refit = True
 refit = True
 skip_folds = 2  # Keep every 2nd fold
 ```
+
+### "I retrain at the end of every month and forecast the whole next month" (daily data)
+
+Folds count observations, not calendar months. Create one candidate fold per day
+and skip those that do not start predicting on day 1 of a month:
+
+```python
+gap = 0
+first_origin = '2025-09-30'  # month end (minus `gap` days): fold 0 cannot be skipped
+n_train = y.index.get_loc(first_origin) + 1
+skip_folds = [
+    i for i, date in enumerate(y.index[n_train + gap:]) if not date.is_month_start
+]  # fold i predicts from position n_train + gap + i
+
+cv = TimeSeriesFold(
+    steps=31,                  # longest month
+    initial_train_size=first_origin,
+    fold_stride=1,
+    gap=gap,
+    skip_folds=skip_folds,
+    refit=True,
+    fixed_train_size=False,
+    allow_incomplete_fold=True,
+)
+```
+
+- Needs a regular index without missing dates. With sub-daily data, `is_month_start`
+  is `True` for every hour of day 1: also require `date == date.normalize()` and set
+  `steps` to the observations of the longest month (744 for hourly data).
+- `ForecasterDirect` and `ForecasterDirectMultiVariate` need `steps >= 31 + gap`.
+- Use `refit=True` (retrain every month) or `refit=False` (train once). An integer
+  `refit` counts the daily candidate folds, not months: `refit=3` does not retrain
+  every 3 months.
+- The metric needs no correction: overlapping folds are scored with the last
+  prediction of each date, the one of its own month. It works the same in the
+  multi-series backtesting and in the hyperparameter search functions.
+- `predictions` repeats the dates where months shorter than 31 days spill into the
+  next month. Remove them before grouping by month or plotting (the error of
+  each month is then `(predictions['pred'] - predictions['y_true']).abs()`):
+  `predictions[~predictions.index.duplicated(keep='last')]` for a single series;
+  with multiple series (long format with a `level` column), deduplicate by date and
+  level, `predictions[~predictions.set_index('level', append=True).index.duplicated(keep='last')]`.
+- The `fold` column keeps the numbering of the daily folds (0, 31, 61, ...).
+- Use `verbose=False`: `verbose=True` prints every skipped fold.
 
 ### "I want maximum evaluation coverage with a 12-step horizon"
 ```

@@ -1,0 +1,25 @@
+{"id": "jingang/TabICL", "sha": "4dcd344ece2c00be9e831fdd35bed57b5ad83e19", "created": "2026-02-12", "last_modified": "2026-02-18", "gated": false, "private": false, "license": "bsd-3-clause", "license_name": null, "license_link": null, "pipeline_tag": "tabular-classification", "library_name": "tabicl", "downloads": 0, "size_mb": 441.3, "files": [".gitattributes", "README.md", "tabicl-classifier-v1-20250208.ckpt", "tabicl-classifier-v1.1-20250506.ckpt", "tabicl-classifier-v2-20260212.ckpt", "tabicl-regressor-v2-20260212.ckpt"]}
+===
+===
+jingang/TabICL-clf 
+jingang/TabICL 
+DataikuNLP/TabICL-clf 
+taltstidl/tabicl-survival 
+eugenehp/tabicl-classifier-v2-rs 
+eugenehp/tabicl-regressor-v2-rs 
+AMFORGE/tabicl-gold-btc-finetuned 
+AMFORGE/tabicl-synthetics-finetuned 
+AMFORGE/tabicl-universal-finetuned 
+zhuhao888/tabiclv2_tabpfnv3_ckpt 
+ayushkaushal4/tabiclv2-replication 
+DataikuNLP/TabICL 
+general-forecast/tabicl-v2-classifier 
+general-forecast/tabicl-v2-regressor 
+bakshinghampalace/tabicl-regressor-v2-onnx 
+bakshinghampalace/tabicl-classifier-v2-onnx 
+jingang/TabICL-clf
+jingang/TabICL
+4dcd344 2026-02-18T09:58:04.000Z Update README.md
+beb57e7 2026-02-12T07:45:40.000Z Update README.md
+d700cf0 2026-02-12T07:34:31.000Z Upload 4 files
+9230385 2026-02-12T07:29:20.000Z initial commit

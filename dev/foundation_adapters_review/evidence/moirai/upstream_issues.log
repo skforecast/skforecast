@@ -1,0 +1,56 @@
+### is:issue moirai2 covariates
+224 open 2025-08-12 Moirai2 forecast accuracy drops significantly when `feat_dynamic_real` are present
+### is:issue moirai 2.0 covariate
+224 open 2025-08-12 Moirai2 forecast accuracy drops significantly when `feat_dynamic_real` are present
+### is:issue feat_dynamic_real
+176 open 2025-01-22 What are steps required to fine-tune using past_feat_dynamic_real and feat_dynamic_real?
+224 open 2025-08-12 Moirai2 forecast accuracy drops significantly when `feat_dynamic_real` are present
+213 open 2025-05-27 moirai-moe Reasoning.RuntimeError: The size of tensor a must match the size of tensor b  at non-singleton dimension 1
+25 closed 2024-04-16 Using covariates for inference
+### is:issue mps
+19 open 2024-04-11 Training errors - nans
+### is:issue float64
+19 open 2024-04-11 Training errors - nans
+### is:issue scipy
+3 closed 2024-03-26 Get a error from get started code
+### is:issue torch
+251 open 2026-02-23 Security: torch<2.5 constraint in 2.0.0 forces use of vulnerable torch versions.
+133 open 2024-10-24 Test failure if we use torch 2.5
+162 open 2024-12-12 Zero-shot performance is unexpected poor
+237 open 2025-10-23 Reproducing ETTh results in the original paper
+165 open 2024-12-30 pre_train ValueError: Expected parameter logits
+19 open 2024-04-11 Training errors - nans
+228 open 2025-08-24 Support for a newer Pytorch / Blackwell
+219 open 2025-07-28 [Feature Request] Support Loading Moirai Model from Local Checkpoint for Inference
+### is:issue numpy
+176 open 2025-01-22 What are steps required to fine-tune using past_feat_dynamic_real and feat_dynamic_real?
+174 open 2025-01-19 Trying to finetune on a dataset
+203 open 2025-04-02 Trying to finetune
+149 closed 2024-11-24 How can use moirai-moe-1.0-R-base to inference on GPUs?
+122 closed 2024-09-11 Bug when preparing data for finetuning
+102 closed 2024-08-11 Bug when trying to prepare custom dataset for finetuning
+3 closed 2024-03-26 Get a error from get started code
+25 closed 2024-04-16 Using covariates for inference
+### is:issue moirai-2.0-R-base
+### is:issue python 3.13
+### is:issue release 2.0
+### is:pull-request moirai2 covariates
+### is:pull-request moirai 2.0 covariate
+### is:pull-request feat_dynamic_real
+35 closed 2024-05-07 Exogenous
+### is:pull-request mps
+### is:pull-request float64
+### is:pull-request scipy
+256 open 2026-04-12 cabm - fix: Python 3.13 + updated dependency compatibility (pandas 2.2, PyTorch 2.11, gluonts 0.16, datasets 4.x)
+### is:pull-request torch
+216 open 2025-07-18 fix: relax dependencies
+256 open 2026-04-12 cabm - fix: Python 3.13 + updated dependency compatibility (pandas 2.2, PyTorch 2.11, gluonts 0.16, datasets 4.x)
+111 closed 2024-08-19 Update README and config files with Moirai-1.1-R and fix Moirai-1.0-R model weights
+4 closed 2024-03-26 Update cli.eval to have the same YAML format as other cli files
+### is:pull-request numpy
+256 open 2026-04-12 cabm - fix: Python 3.13 + updated dependency compatibility (pandas 2.2, PyTorch 2.11, gluonts 0.16, datasets 4.x)
+### is:pull-request moirai-2.0-R-base
+### is:pull-request python 3.13
+256 open 2026-04-12 cabm - fix: Python 3.13 + updated dependency compatibility (pandas 2.2, PyTorch 2.11, gluonts 0.16, datasets 4.x)
+### is:pull-request release 2.0
+257 open 2026-04-16 relax hydra-core pin from ==1.3 to >=1.3,<2

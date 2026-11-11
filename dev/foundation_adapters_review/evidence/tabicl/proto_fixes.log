@@ -1,0 +1,4 @@
+python 3.12.3 | tabicl 2.2.0 | skforecast 0.27.0
+columns with int levels after cast: ['level', 'q_0', 'q_0.5', 'q_1']
+equal to float levels: True
+warnings re-emitted: ['UserWarning: Some covariate values in future_tsdf are missing (NaN). This may affect prediction quality']

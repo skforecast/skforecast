@@ -2,17 +2,24 @@
 # ==============================================================================
 import re
 import pytest
+from unittest.mock import patch
+from joblib import Parallel, cpu_count
 import os
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import Ridge
-from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error
+from sklearn.ensemble import RandomForestRegressor, HistGradientBoostingRegressor
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.linear_model import Ridge, LogisticRegression
+from sklearn.metrics import (
+    mean_absolute_error, mean_absolute_percentage_error, r2_score, zero_one_loss
+)
 from xgboost import XGBRegressor
-from skforecast.exceptions import OneStepAheadValidationWarning
+from skforecast.exceptions import (
+    LongTrainingWarning, MissingValuesWarning, OneStepAheadValidationWarning
+)
 from skforecast.metrics import mean_absolute_scaled_error, root_mean_squared_scaled_error
-from skforecast.recursive import ForecasterRecursive
+from skforecast.recursive import ForecasterRecursive, ForecasterRecursiveClassifier
 from skforecast.direct import ForecasterDirect
 from skforecast.model_selection import backtesting_forecaster
 from skforecast.model_selection import bayesian_search_forecaster
@@ -25,7 +32,7 @@ from tqdm import tqdm
 from functools import partialmethod
 
 # Fixtures
-from ..fixtures_model_selection import y
+from ..fixtures_model_selection import y, y_clf
 from ..fixtures_model_selection import y_feature_selection
 from ..fixtures_model_selection import exog_feature_selection
 
@@ -88,7 +95,6 @@ def test_ValueError_bayesian_search_forecaster_metric_list_duplicate_names():
             steps                 = 3,
             initial_train_size    = len(y_train),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -115,6 +121,41 @@ def test_ValueError_bayesian_search_forecaster_metric_list_duplicate_names():
             metric             = ['mean_absolute_error', mean_absolute_error],
             n_trials           = 10,
             random_state       = 123,
+            return_best        = False,
+            verbose            = False,
+        )
+
+
+def test_ValueError_bayesian_search_forecaster_when_metric_named_n_evaluated():
+    """
+    Test ValueError is raised in bayesian_search_forecaster, before the first
+    trial, when a metric is named `n_evaluated`, the column of the backtesting
+    metrics with the number of points evaluated.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(random_state=123), lags=2)
+    cv = TimeSeriesFold(steps=3, initial_train_size=len(y[:-12]), refit=False)
+
+    def search_space(trial):  # pragma: no cover
+        search_space  = {'alpha': trial.suggest_float('alpha', 1e-2, 1.0)}
+
+        return search_space
+
+    def n_evaluated(y_true, y_pred):  # pragma: no cover
+        return float(np.mean(np.abs(np.asarray(y_true) - np.asarray(y_pred))))
+
+    err_msg = re.escape(
+        "The backtesting metrics include the column 'n_evaluated' with the "
+        "number of points evaluated. Rename the metric 'n_evaluated' passed in "
+        "`metric`."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        bayesian_search_forecaster(
+            forecaster         = forecaster,
+            y                  = y,
+            cv                 = cv,
+            search_space       = search_space,
+            metric             = n_evaluated,
+            n_trials           = 10,
             return_best        = False,
             verbose            = False,
         )
@@ -184,7 +225,6 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive():
             steps                 = 3,
             initial_train_size    = len(y_train),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -281,6 +321,7 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive():
         index=pd.RangeIndex(start=0, stop=10, step=1)
     )
 
+    expected_results.insert(3, 'n_evaluated', [12] * 10)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results, check_dtype=False)
 
 
@@ -304,7 +345,6 @@ def test_results_output_bayesian_search_forecaster_window_features_ForecasterRec
             steps                 = 3,
             initial_train_size    = len(y_train),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -399,6 +439,7 @@ def test_results_output_bayesian_search_forecaster_window_features_ForecasterRec
         ],
     })
 
+    expected_results.insert(3, 'n_evaluated', [12] * 10)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results, check_dtype=False)
     
 
@@ -420,7 +461,6 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive_with_kwar
             steps                 = 3,
             initial_train_size    = len(y_train),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -499,6 +539,7 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive_with_kwar
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error': float, 'alpha': float})
 
+    expected_results.insert(3, 'n_evaluated', [12] * 10)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
@@ -517,7 +558,6 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive_with_kwar
             steps                 = 3,
             initial_train_size    = len(y_train),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -587,6 +627,7 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive_with_kwar
         index=pd.RangeIndex(start=0, stop=5, step=1)
     ).astype({'mean_absolute_error': float, 'n_estimators': int, 'max_depth': int})
 
+    expected_results.insert(3, 'n_evaluated', [12] * 5)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results, check_dtype=False)
 
 
@@ -605,7 +646,6 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive_when_lags
             steps                 = 3,
             initial_train_size    = len(y_train),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -677,6 +717,7 @@ def test_results_output_bayesian_search_forecaster_ForecasterRecursive_when_lags
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error': float, 'alpha': float})
     
+    expected_results.insert(3, 'n_evaluated', [12] * 10)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
@@ -695,7 +736,6 @@ def test_evaluate_bayesian_search_forecaster_when_return_best_ForecasterRecursiv
             steps                 = 3,
             initial_train_size    = len(y_train),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -748,7 +788,6 @@ def test_results_opt_best_output_bayesian_search_forecaster_with_output_study_be
             steps                 = 3,
             initial_train_size    = len(y_train),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -833,7 +872,6 @@ def test_results_output_bayesian_search_forecaster_ForecasterDirect():
             steps                 = 3,
             initial_train_size    = len(y_train),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -936,6 +974,7 @@ def test_results_output_bayesian_search_forecaster_ForecasterDirect():
         'min_samples_leaf': float
     })
 
+    expected_results.insert(3, 'n_evaluated', [12] * 10)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
@@ -960,7 +999,6 @@ def test_results_output_bayesian_search_forecaster_window_features_ForecasterDir
             steps                 = 3,
             initial_train_size    = len(y_train),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -1055,6 +1093,7 @@ def test_results_output_bayesian_search_forecaster_window_features_ForecasterDir
         ],
     })
 
+    expected_results.insert(3, 'n_evaluated', [12] * 10)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
     
@@ -1073,7 +1112,6 @@ def test_bayesian_search_forecaster_output_file():
             steps                 = 3,
             initial_train_size    = len(y_train),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -1173,7 +1211,6 @@ def test_bayesian_search_forecaster_outputs_backtesting_one_step_ahead(
             steps                 = 1,
             initial_train_size    = initial_train_size,
             window_size           = None,
-            differentiation       = None,
             refit                 = False,
             fixed_train_size      = False,
             gap                   = 0,
@@ -1236,7 +1273,6 @@ def test_ValueError_bayesian_search_forecaster_when_return_best_and_len_y_exog_d
             steps                 = 3,
             initial_train_size    = len(y[:-12]),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -1287,7 +1323,6 @@ def test_results_output_bayesian_search_forecaster_optuna_ForecasterRecursive_wi
             steps                 = 3,
             initial_train_size    = len(y[:-12]),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -1363,6 +1398,7 @@ def test_results_output_bayesian_search_forecaster_optuna_ForecasterRecursive_wi
         ],
     })
 
+    expected_results.insert(3, 'n_evaluated', [12] * 10)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
@@ -1380,7 +1416,6 @@ def test_results_output_bayesian_search_forecaster_optuna_ForecasterRecursive_wi
             steps                 = 3,
             initial_train_size    = len(y[:-12]),
             window_size           = None,
-            differentiation       = None,
             refit                 = True,
             fixed_train_size      = True,
             gap                   = 0,
@@ -1451,6 +1486,7 @@ def test_results_output_bayesian_search_forecaster_optuna_ForecasterRecursive_wi
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error': float, 'alpha': float})
 
+    expected_results.insert(3, 'n_evaluated', [12] * 10)
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
 
@@ -1534,6 +1570,486 @@ def test_bayesian_search_forecaster_xgboost_categorical_no_ValueError_on_cache_h
         index=pd.RangeIndex(start=0, stop=6, step=1)
     ).astype({'mean_absolute_error': float, 'n_estimators': int})
 
+    expected_results.insert(3, 'n_evaluated', [15] * 6)
     pd.testing.assert_frame_equal(
         results.drop(columns=['trial_number']), expected_results, atol=1e-4
     )
+
+
+@pytest.mark.parametrize(
+    "cv",
+    [
+        TimeSeriesFold(steps=3, initial_train_size=len(y) - 12, refit=False),
+        OneStepAheadFold(initial_train_size=len(y) - 12),
+    ],
+    ids=lambda cv: f"cv: {type(cv).__name__}",
+)
+@pytest.mark.parametrize(
+    "kwargs_create_study, expected_direction",
+    [
+        (None, "maximize"),
+        ({"direction": "maximize"}, "maximize"),
+        ({"direction": "minimize"}, "minimize"),
+    ],
+    ids=lambda dt: f"{dt}",
+)
+def test_bayesian_search_forecaster_direction_when_metric_greater_is_better(
+    cv, kwargs_create_study, expected_direction
+):
+    """
+    Test that, with a metric in which greater values are better (`r2_score`),
+    the study is maximized by default, and that the results and `return_best`
+    follow the direction of the study, also when it is set in
+    `kwargs_create_study`. A direction that contradicts the metric raises a
+    warning, which points to the code of the user (here, the test). Before the
+    fix, the default direction was 'minimize' and the results were always
+    sorted in ascending order.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(random_state=123), lags=2)
+
+    def search_space(trial):
+        return {
+            "alpha": trial.suggest_float("alpha", 1e-2, 1e2, log=True),
+            "lags": trial.suggest_categorical("lags", [2, 4]),
+        }
+
+    kwargs = dict(
+        forecaster=forecaster,
+        y=y,
+        cv=cv,
+        search_space=search_space,
+        metric=r2_score,
+        n_trials=10,
+        random_state=123,
+        return_best=True,
+        kwargs_create_study=kwargs_create_study,
+    )
+    warn_msg = "The optuna study direction is 'minimize'"
+    if expected_direction == "minimize":
+        with pytest.warns(UserWarning, match=warn_msg) as record:
+            results, study = bayesian_search_forecaster(**kwargs)
+        record = [w for w in record if warn_msg in str(w.message)]
+        assert record[0].filename == __file__
+    else:
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always")
+            results, study = bayesian_search_forecaster(**kwargs)
+        assert not any(warn_msg in str(w.message) for w in record)
+
+    assert study.direction.name.lower() == expected_direction
+    assert results["r2_score"].nunique() > 1
+    if expected_direction == "maximize":
+        assert results["r2_score"].is_monotonic_decreasing
+    else:
+        assert results["r2_score"].is_monotonic_increasing
+    assert results.loc[0, "trial_number"] == study.best_trial.number
+    assert results.loc[0, "r2_score"] == study.best_value
+    assert forecaster.estimator.alpha == study.best_params["alpha"]
+    np.testing.assert_array_equal(forecaster.lags, results.loc[0, "lags"])
+
+
+def test_bayesian_search_forecaster_ForecasterRecursiveClassifier_minimizes_loss():
+    """
+    Test that a classification forecaster minimizes a loss (`zero_one_loss`)
+    by default and that `return_best` refits it with the best trial. Before
+    the fix, every metric was maximized in classification tasks.
+    """
+    forecaster = ForecasterRecursiveClassifier(
+        estimator=LogisticRegression(max_iter=1000), lags=2
+    )
+    cv = TimeSeriesFold(steps=3, initial_train_size=len(y_clf) - 12, refit=False)
+
+    def search_space(trial):
+        return {
+            "C": trial.suggest_float("C", 1e-4, 10, log=True),
+            "lags": trial.suggest_categorical("lags", [2, 4]),
+        }
+
+    results, study = bayesian_search_forecaster(
+        forecaster=forecaster,
+        y=y_clf,
+        cv=cv,
+        search_space=search_space,
+        metric=zero_one_loss,
+        n_trials=10,
+        random_state=123,
+        return_best=True,
+    )
+
+    assert study.direction == optuna.study.StudyDirection.MINIMIZE
+    assert results["zero_one_loss"].is_monotonic_increasing
+    assert results.loc[0, "zero_one_loss"] == study.best_value
+    assert forecaster.estimator.C == results.loc[0, "C"]
+
+
+def test_bayesian_search_forecaster_LongTrainingWarning_once_with_fits_of_the_search():
+    """
+    Test that LongTrainingWarning is raised once, with the number of fits of
+    each trial and of the whole search, instead of once per trial.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=2)
+    cv = TimeSeriesFold(steps=1, initial_train_size=440, refit=True)
+
+    def search_space(trial):
+        search_space = {'alpha': trial.suggest_float('alpha', 0.1, 1.0)}
+
+        return search_space
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        bayesian_search_forecaster(
+            forecaster    = forecaster,
+            y             = y_feature_selection,
+            cv            = cv,
+            search_space  = search_space,
+            metric        = 'mean_absolute_error',
+            n_trials      = 4,
+            random_state  = 123,
+            return_best   = False,
+            verbose       = False,
+            show_progress = False
+        )
+
+    messages = [
+        w.message.message for w in record if w.category is LongTrainingWarning
+    ]
+    assert messages == [
+        "Each trial fits the forecaster about 60 times, so the search (4 trials) "
+        "fits it about 240 times. This can take substantial amounts of time. If "
+        "not feasible, try with `refit = False`."
+    ]
+
+
+@pytest.mark.parametrize(
+    "cv",
+    [TimeSeriesFold(steps=3, initial_train_size=30, refit=False),
+     OneStepAheadFold(initial_train_size=30)],
+    ids=lambda cv: f"cv: {type(cv).__name__}"
+)
+def test_bayesian_search_forecaster_skips_trials_whose_evaluation_fails(cv, capfd):
+    """
+    Test that the trials whose evaluation fails (40 lags, not smaller than
+    `initial_train_size`) are marked as failed and reported in the warning of
+    the candidates skipped, identified by their number, instead of stopping
+    the search. Optuna does not log them.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=2)
+
+    def search_space(trial):
+        return {'lags': trial.suggest_categorical('lags', [2, 40])}
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results, study = bayesian_search_forecaster(
+                             forecaster    = forecaster,
+                             y             = y,
+                             cv            = cv,
+                             search_space  = search_space,
+                             metric        = 'mean_absolute_error',
+                             n_trials      = 6,
+                             return_best   = True,
+                             show_progress = False
+                         )
+
+    failed = [t.number for t in study.trials if t.state == optuna.trial.TrialState.FAIL]
+    assert failed == [t.number for t in study.trials if t.params['lags'] == 40]
+    assert 0 < len(failed) < 6
+    assert len(results) == 6 - len(failed)
+    assert results['lags'].map(len).unique().tolist() == [2]
+    assert forecaster.max_lag == 2
+    messages = [str(w.message) for w in record if w.category is RuntimeWarning]
+    assert len(messages) == 1
+    verb = "raises" if len(failed) == 1 else "raise"
+    assert messages[0].startswith(
+        f"Parameters skipped: {len(failed)} of 6 trials {verb} an error"
+    )
+    assert "`initial_train_size` must be greater than the `window_size` of the " \
+           "forecaster (40)" in messages[0]
+    for trial_number in failed:
+        assert f"  - trial {trial_number}, params: {{'lags': 40}}" in messages[0]
+    assert "Trial" not in capfd.readouterr().err
+
+
+def test_bayesian_search_forecaster_OneStepAheadFold_window_size_of_forecaster_not_checked():
+    """
+    Test that, with a `OneStepAheadFold`, the `window_size` of the forecaster
+    passed (70 lags) is not checked against `initial_train_size` (60) when
+    the `search_space` does not use it: the trials (3 lags) are evaluated
+    without errors, as with a `TimeSeriesFold`.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=70)
+
+    def search_space(trial):
+        return {
+            'lags': trial.suggest_categorical('lags', [3]),
+            'alpha': trial.suggest_float('alpha', 0.1, 1)
+        }
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results, study = bayesian_search_forecaster(
+                             forecaster    = forecaster,
+                             y             = y_feature_selection.iloc[:80],
+                             cv            = OneStepAheadFold(initial_train_size=60),
+                             search_space  = search_space,
+                             metric        = 'mean_absolute_error',
+                             n_trials      = 3,
+                             random_state  = 123,
+                             return_best   = True,
+                             show_progress = False
+                         )
+
+    assert len(results) == 3
+    assert all(t.state == optuna.trial.TrialState.COMPLETE for t in study.trials)
+    assert results['lags'].map(len).tolist() == [3, 3, 3]
+    assert forecaster.max_lag == 3
+    assert [w for w in record if w.category is RuntimeWarning] == []
+
+
+def test_bayesian_search_forecaster_every_trial_fails_returns_empty_results():
+    """
+    Test that, when the evaluation of every trial fails, the results are
+    empty, the forecaster is not refitted and the warning says so.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=2)
+
+    def search_space(trial):
+        return {'lags': trial.suggest_categorical('lags', [40, 45])}
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results, study = bayesian_search_forecaster(
+                             forecaster    = forecaster,
+                             y             = y,
+                             cv            = TimeSeriesFold(steps=3, initial_train_size=30),
+                             search_space  = search_space,
+                             metric        = 'mean_absolute_error',
+                             n_trials      = 3,
+                             return_best   = True,
+                             show_progress = False
+                         )
+
+    assert results.empty
+    assert not forecaster.is_fitted
+    assert len(study.trials) == 3
+    messages = [str(w.message) for w in record if w.category is RuntimeWarning]
+    assert messages[0].startswith(
+        "Parameters skipped: 3 of 3 trials raise an error, so the results are empty."
+    )
+
+
+def test_bayesian_search_forecaster_ValueError_search_space_stops_the_search(capfd):
+    """
+    Test that an error of the `search_space` (not of the evaluation of the
+    trial) stops the search, also with a `catch` of the user in
+    `kwargs_study_optimize`. Optuna does not log the failed trial, so the
+    error is shown once, when it is raised.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=2)
+
+    def search_space(trial):
+        return {'alpha': trial.suggest_float('alpha', 0.1, 1) / 0}
+
+    with pytest.raises(ZeroDivisionError):
+        bayesian_search_forecaster(
+            forecaster            = forecaster,
+            y                     = y,
+            cv                    = TimeSeriesFold(steps=3, initial_train_size=30),
+            search_space          = search_space,
+            metric                = 'mean_absolute_error',
+            n_trials              = 3,
+            return_best           = False,
+            show_progress         = False,
+            kwargs_study_optimize = {'catch': (KeyError,)}
+        )
+
+    assert "Trial 0 failed" not in capfd.readouterr().err
+
+
+def test_bayesian_search_forecaster_TimeSeriesFold_NaN_in_test_set_single_series():
+    """
+    Test that, with a `TimeSeriesFold` and NaN in `y` inside the test set,
+    every trial is evaluated (the dates without a true value are left out of
+    the metrics) on the same points, so no trial is skipped and the
+    MissingValuesWarning of `n_evaluated` is not raised.
+    """
+    y_nan = y.copy()
+    y_nan.iloc[[35, 40, 45]] = np.nan
+    forecaster = ForecasterRecursive(
+        estimator=HistGradientBoostingRegressor(max_iter=5, random_state=123), lags=2
+    )
+
+    def search_space(trial):
+        return {'lags': trial.suggest_categorical('lags', [2, 10])}
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results, _ = bayesian_search_forecaster(
+                         forecaster    = forecaster,
+                         y             = y_nan,
+                         cv            = TimeSeriesFold(steps=5, initial_train_size=30),
+                         search_space  = search_space,
+                         metric        = 'mean_absolute_error',
+                         n_trials      = 4,
+                         return_best   = False,
+                         show_progress = False
+                     )
+
+    assert len(results) == 4
+    assert results['mean_absolute_error'].notna().all()
+    assert results['n_evaluated'].tolist() == [17] * 4
+    assert [w for w in record if w.category is RuntimeWarning] == []
+    assert [
+        w for w in record
+        if w.category is MissingValuesWarning and "comparable" in str(w.message)
+    ] == []
+
+
+def test_bayesian_search_forecaster_MissingValuesWarning_n_evaluated_single_series():
+    """
+    Test that, with a `OneStepAheadFold`, `dropna_from_series=True` and NaN in
+    `y`, the trials with larger windows are evaluated on fewer points and a
+    MissingValuesWarning lists them by trial number, once at the end of the
+    search.
+    """
+    y_nan = y.copy()
+    y_nan.iloc[[35, 40, 45]] = np.nan
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=2, dropna_from_series=True)
+
+    def search_space(trial):
+        return {'lags': trial.suggest_categorical('lags', [2, 10])}
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results, study = bayesian_search_forecaster(
+                             forecaster    = forecaster,
+                             y             = y_nan,
+                             cv            = OneStepAheadFold(initial_train_size=30),
+                             search_space  = search_space,
+                             metric        = 'mean_absolute_error',
+                             n_trials      = 4,
+                             return_best   = False,
+                             show_progress = False
+                         )
+
+    trials_10 = sorted(t.number for t in study.trials if t.params['lags'] == 10)
+    assert 0 < len(trials_10) < 4
+    messages = [
+        w.message.message for w in record
+        if w.category is MissingValuesWarning and "comparable" in str(w.message)
+    ]
+    assert len(messages) == 1
+    assert messages[0].startswith(
+        f"{len(trials_10)} of 4 trials {'is' if len(trials_10) == 1 else 'are'} "
+        f"evaluated on fewer points than the most complete one"
+    )
+    assert "fill the gaps of `y`" in messages[0]
+    assert "  - lags: [1, 2, ..., 10]" in messages[0]
+
+
+@pytest.mark.parametrize(
+    "estimator, refit, n_jobs, expected_n_jobs",
+    [(Ridge(), True, 'auto', 1),
+     (HistGradientBoostingRegressor(max_iter=5), True, 'auto', max(1, cpu_count() - 1)),
+     (HistGradientBoostingRegressor(max_iter=5), False, 'auto', max(1, cpu_count() - 1)),
+     (DecisionTreeRegressor(max_depth=2), False, 'auto', 1),
+     (HistGradientBoostingRegressor(max_iter=5), True, 2, 2)],
+    ids=[
+        'auto, Ridge', 'auto, HistGradientBoostingRegressor',
+        'auto, HistGradientBoostingRegressor, no refit',
+        'auto, DecisionTreeRegressor, no refit', 'int'
+    ]
+)
+def test_bayesian_search_forecaster_n_jobs_auto_resolved_with_the_rules_of_each_candidate(
+    estimator, refit, n_jobs, expected_n_jobs
+):
+    """
+    Test that bayesian_search_forecaster resolves `n_jobs='auto'` with
+    `select_n_jobs_backtesting` for each candidate and passes the integer to
+    `backtesting_forecaster`, so the work threshold of a single backtesting does not
+    reduce it. Without refit, the rules give one job, except with
+    `HistGradientBoostingRegressor`. `Parallel` is mocked with a
+    sequential one, so no workers are started.
+    """
+    forecaster = ForecasterRecursive(estimator=estimator, lags=3)
+    cv = TimeSeriesFold(
+             steps              = 10,
+             initial_train_size = 10,
+             refit              = refit,
+             fixed_train_size   = False
+         )
+
+    with (
+        patch(
+            "skforecast.model_selection._search.backtesting_forecaster",
+            wraps=backtesting_forecaster
+        ) as mock_backtesting,
+        patch(
+            "skforecast.model_selection._validation.Parallel",
+            side_effect=lambda **kwargs: Parallel(n_jobs=1)
+        ) as mock_parallel
+    ):
+        bayesian_search_forecaster(
+            forecaster    = forecaster,
+            y             = y,
+            cv            = cv,
+            search_space  = lambda trial: {'random_state': trial.suggest_int('random_state', 1, 2)},
+            metric        = 'mean_absolute_error',
+            n_trials      = 2,
+            return_best   = False,
+            n_jobs        = n_jobs,
+            show_progress = False
+        )
+
+    assert mock_backtesting.call_count == 2
+    for call in mock_backtesting.call_args_list:
+        assert call.kwargs['n_jobs'] == expected_n_jobs
+    for call in mock_parallel.call_args_list:
+        assert call.kwargs == {'n_jobs': expected_n_jobs}
+
+
+class RidgeWarnsInPredict(Ridge):
+    """
+    Ridge that warns in `predict` when `alpha` is greater than 0.5. It is not
+    a class of scikit-learn, so the forecaster calls its `predict`.
+    """
+
+    def predict(self, X):
+        if self.alpha > 0.5:
+            warnings.warn("Large alpha in predict. Details of the fold.", UserWarning)
+        return super().predict(X)
+
+
+def test_bayesian_search_forecaster_warnings_of_folds_in_processes_with_trials_in_threads():
+    """
+    Test that the warnings raised in the folds that run in worker processes
+    (`n_jobs=2`), shown again in the thread of each trial (`n_jobs` of
+    `study.optimize`), are collected with their trial: the warning raised in
+    the trials with `alpha` greater than 0.5 is shown once with the number of
+    those trials.
+    """
+    def search_space(trial):
+        return {'alpha': trial.suggest_float('alpha', 0.01, 1.0)}
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        _, study = bayesian_search_forecaster(
+            forecaster            = ForecasterRecursive(RidgeWarnsInPredict(), lags=3),
+            y                     = y,
+            cv                    = TimeSeriesFold(steps=2, initial_train_size=40, refit=False),
+            search_space          = search_space,
+            metric                = 'mean_absolute_error',
+            n_trials              = 8,
+            random_state          = 123,
+            return_best           = False,
+            n_jobs                = 2,
+            show_progress         = False,
+            kwargs_study_optimize = {'n_jobs': 2}
+        )
+
+    n_large_alpha = sum(trial.params['alpha'] > 0.5 for trial in study.trials)
+    assert 0 < n_large_alpha < 8
+    messages = [str(w.message) for w in record if w.category is UserWarning]
+    assert messages == [
+        f"Large alpha in predict (in {n_large_alpha} of 8 trials). Details of the fold."
+    ]

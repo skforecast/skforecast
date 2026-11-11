@@ -1,0 +1,61 @@
+# Texts of the table of contents pages rendered as card grids, keyed by the path
+# of the page in docs/.
+#
+# The sections, their order and their pages come from the entry of `nav` in
+# mkdocs.yml given in `nav`; the hook tools/docs/hooks/toc_cards.py renders one
+# card per section. This file only holds what `nav` cannot say. To add, move or
+# remove a page, edit `nav`, not this file.
+#
+# Each page has:
+#
+# - nav: the title of the top level entry of `nav` whose sections are the cards.
+# - sections: one sentence per section, shown under the title of its card. The
+#   keys are the section titles of `nav`.
+# - titles (optional): titles of `nav` are kept short for the sidebar; a page
+#   listed here is shown in the cards with this longer title instead. The keys
+#   are the paths of `nav`.
+# - extra_links (optional): links added at the end of a card to pages that are
+#   not in this entry of `nav`, as a `title` and a `url` (a path of docs/ or an
+#   absolute URL). The keys are the section titles of `nav`.
+
+user_guides/table-of-contents.md:
+  nav: User Guides
+  sections:
+    Data: The format skforecast expects for series and exogenous variables, and the datasets used in the examples.
+    Choosing a model: Machine learning, statistical, foundation and deep learning models compared with the same backtesting.
+    Single series Forecasters: "One model for one series: recursive and direct strategies, baselines and classification."
+    Global Forecasters (multiple series): One model trained on many series at once, either independent or multivariate.
+    Foundation Models: Pretrained models that forecast zero-shot, without training on your data.
+    Statistical Models: ARIMA, ETS and ARAR with the same API as the rest of the forecasters.
+    Deep Learning: Recurrent neural networks (RNN, LSTM) for multi-step forecasting.
+    Feature Engineering: "Build the predictors of the model: lags, window features, exogenous variables and transformations."
+    Model Evaluation and Tuning: Measure the error as the model will be used in production and search for the best configuration.
+    Probabilistic Forecasting: Prediction intervals and quantiles, and how to evaluate them.
+    Model Explainability: Understand what drives each forecast and inspect the matrices the model is trained on.
+    Model Deployment: Save, load, run and monitor a forecaster in production.
+    Plotting: Built-in plots for residuals, prediction intervals and autocorrelation.
+    Additional Resources: "Migration from earlier versions and specific techniques: weights, stacking and gradient boosting."
+    Migrating from other libraries: How the concepts of other forecasting libraries translate to skforecast, with side-by-side backtests.
+  titles:
+    user_guides/comparing-forecasting-models.ipynb: "Machine learning vs statistical vs foundation models: which one to use"
+    user_guides/global-forecasting-overview.md: "Global forecasting: local vs global models and which forecaster to use"
+    user_guides/forecasting-statistical-models.ipynb: Forecasting with statistical models
+    user_guides/autocorrelation-and-lag-selection.ipynb: Autocorrelation analysis and lag selection
+    user_guides/migrate-from-prophet.ipynb: Migrating from Prophet to skforecast
+
+faq/table-of-contents.md:
+  nav: FAQ and Tips
+  sections:
+    Forecasting Tips: Practical answers to common modelling problems, such as negative predictions, missing values, trend or delayed data.
+    Model Evaluation: Evaluate forecasts and prediction intervals without overly optimistic results.
+    Feature Engineering: Encode cyclical calendar features and change the frequency of a series.
+    Performance Optimization: Measure and speed up training, backtesting and hyperparameter search.
+  extra_links:
+    Forecasting Tips:
+      - title: "Forecasting time series with trend: differentiation"
+        url: user_guides/time-series-differentiation.ipynb
+      - title: "Forecasting time series with trend: tree based models"
+        url: https://cienciadedatos.net/documentos/py49-modelling-time-series-trend-with-tree-based-models.html
+    Model Evaluation:
+      - title: Avoid data leakage in pre-trained forecasting models
+        url: https://cienciadedatos.net/documentos/py63-data-leakage-pre-trained-forecasting-models.html

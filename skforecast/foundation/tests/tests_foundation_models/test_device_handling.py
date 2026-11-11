@@ -1,6 +1,7 @@
 # Unit test _resolve_torch_device and adapter device handling
 # ==============================================================================
 from unittest.mock import patch, MagicMock
+import warnings
 import pytest
 import numpy as np
 from skforecast.foundation._adapters import (
@@ -20,7 +21,7 @@ from .fixtures_adapters import (
 # ==============================================================================
 @pytest.mark.parametrize(
     "device",
-    ["cpu", "cuda", "cuda:0", "cuda:1", "mps"],
+    ["cpu", "cuda", "cuda:0", "cuda:1", "mps", "mps:0"],
     ids=lambda d: f"device={d}"
 )
 def test_resolve_torch_device_explicit_values_returned_as_is(device):
@@ -88,6 +89,62 @@ def test_resolve_torch_device_auto_priority_cuda_over_mps():
         result = _resolve_torch_device("auto")
 
     assert result == "cuda"
+
+
+def test_resolve_torch_device_auto_falls_back_to_cpu_with_mps_fallback_message():
+    """
+    Test that, when a `mps_fallback_message` is given and "auto" resolves to
+    MPS, the message is issued as a UserWarning and "cpu" is returned.
+    """
+    mock_torch = MagicMock()
+    mock_torch.cuda.is_available.return_value = False
+    mock_torch.backends.mps.is_available.return_value = True
+
+    with patch.dict("sys.modules", {"torch": mock_torch}):
+        with pytest.warns(UserWarning, match="MPS device is not supported"):
+            result = _resolve_torch_device(
+                "auto", mps_fallback_message="MPS device is not supported."
+            )
+
+    assert result == "cpu"
+
+
+@pytest.mark.parametrize(
+    "device",
+    ["mps", "mps:0"],
+    ids=lambda d: f"device={d}"
+)
+def test_resolve_torch_device_explicit_mps_falls_back_to_cpu_with_mps_fallback_message(device):
+    """
+    Test that, when a `mps_fallback_message` is given, an explicit MPS device
+    (also with an index) issues the message as a UserWarning and returns
+    "cpu".
+    """
+    with pytest.warns(UserWarning, match="MPS device is not supported"):
+        result = _resolve_torch_device(
+            device, mps_fallback_message="MPS device is not supported."
+        )
+
+    assert result == "cpu"
+
+
+@pytest.mark.parametrize(
+    "device",
+    ["cpu", "cuda", "cuda:1"],
+    ids=lambda d: f"device={d}"
+)
+def test_resolve_torch_device_no_warning_with_mps_fallback_message_when_not_mps(device):
+    """
+    Test that a `mps_fallback_message` has no effect when the device is not
+    MPS: the device is returned unchanged and no warning is issued.
+    """
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        result = _resolve_torch_device(
+            device, mps_fallback_message="MPS device is not supported."
+        )
+
+    assert result == device
 
 
 # ==============================================================================
@@ -246,7 +303,8 @@ def test_MoiraiAdapter_set_params_device_resets_forecast_obj():
 def test_MoiraiAdapter_ensure_forecast_obj_calls_to_with_resolved_device():
     """
     Test that _ensure_forecast_obj moves the model to the resolved device
-    via .to(). Mocks uni2ts imports and _resolve_torch_device.
+    via .to(), and that it resolves the device with Moirai's MPS fallback
+    message. Mocks uni2ts imports and _resolve_torch_device.
     """
     mock_module = MagicMock()
     mock_forecast_cls = MagicMock()
@@ -271,39 +329,50 @@ def test_MoiraiAdapter_ensure_forecast_obj_calls_to_with_resolved_device():
         ):
             adapter._ensure_forecast_obj()
 
-    mock_resolve.assert_called_once_with("cuda")
+    mock_resolve.assert_called_once()
+    args, kwargs = mock_resolve.call_args
+    assert args == ("cuda",)
+    assert kwargs["mps_fallback_message"].startswith(
+        "MPS device is not supported by Moirai"
+    )
+    assert kwargs["stacklevel"] == 7
     mock_forecast_instance.to.assert_called_once_with("cuda")
 
 
-def test_MoiraiAdapter_ensure_forecast_obj_auto_mps_falls_back_to_cpu():
+@pytest.mark.parametrize(
+    "device",
+    ["auto", "mps", "mps:0"],
+    ids=lambda d: f"device={d}"
+)
+def test_MoiraiAdapter_ensure_forecast_obj_mps_falls_back_to_cpu(device):
     """
-    Test that _ensure_forecast_obj with device="auto" falls back to CPU when
-    the resolved device is "mps" (not supported by Moirai due to float64
-    operations in uni2ts). A warning is also issued.
+    Test that _ensure_forecast_obj falls back to CPU, with a warning, when
+    the device is MPS: resolved from "auto" on Apple Silicon without CUDA,
+    or explicit, also with an index (MPS is not supported by Moirai due to
+    float64 operations in uni2ts).
     """
     mock_module = MagicMock()
     mock_forecast_cls = MagicMock()
     mock_forecast_instance = MagicMock()
     mock_forecast_instance.eval.return_value = mock_forecast_instance
     mock_forecast_cls.return_value = mock_forecast_instance
+    mock_torch = MagicMock()
+    mock_torch.cuda.is_available.return_value = False
+    mock_torch.backends.mps.is_available.return_value = True
 
     adapter = MoiraiAdapter(
         model_id="Salesforce/moirai-2.0-R-small",
         module=mock_module,
-        device="auto",
+        device=device,
     )
 
-    with patch(
-        "skforecast.foundation._adapters._resolve_torch_device",
-        return_value="mps"
+    with patch.dict(
+        "sys.modules",
+        {"torch": mock_torch, "uni2ts": MagicMock(), "uni2ts.model": MagicMock(),
+         "uni2ts.model.moirai2": MagicMock(Moirai2Forecast=mock_forecast_cls)}
     ):
-        with patch.dict(
-            "sys.modules",
-            {"uni2ts": MagicMock(), "uni2ts.model": MagicMock(),
-             "uni2ts.model.moirai2": MagicMock(Moirai2Forecast=mock_forecast_cls)}
-        ):
-            with pytest.warns(UserWarning, match="MPS device is not supported"):
-                adapter._ensure_forecast_obj()
+        with pytest.warns(UserWarning, match="MPS device is not supported by Moirai"):
+            adapter._ensure_forecast_obj()
 
     mock_forecast_instance.to.assert_called_once_with("cpu")
 

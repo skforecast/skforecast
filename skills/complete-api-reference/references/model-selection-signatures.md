@@ -60,9 +60,9 @@ backtesting_stats(
     cv,                                 # TimeSeriesFold
     metric,                             # str | Callable | list[str | Callable]
     exog=None,                          # pd.Series | pd.DataFrame | None
-    alpha=None,                         # float | None, significance level
-    interval=None,                      # list[float] | tuple[float] | None
-    freeze_params=True,                 # bool, if True only first fold fits the model
+    interval=None,                      # list[float] | tuple[float] | None, symmetric quantiles 0-1
+    alpha=None,                         # float | None, alias of interval, not both
+    freeze_params=True,                 # bool, if True auto selection (Arima, Ets) runs only in the first fit
     n_jobs='auto',                      # int | str
     verbose=False,                      # bool
     show_progress=True,                 # bool
@@ -96,7 +96,7 @@ grid_search_forecaster(
     param_grid,              # dict, sklearn-style parameter grid
     metric,                  # str | Callable | list[str | Callable]
     exog=None,               # pd.Series | pd.DataFrame | None
-    lags_grid=None,          # list[int | list | np.ndarray | range] | dict | None
+    lags_grid=None,          # list[int | list | np.ndarray | range | None] | dict | None
     return_best=True,        # bool
     n_jobs='auto',           # int | str
     verbose=False,           # bool
@@ -112,7 +112,7 @@ random_search_forecaster(
     param_distributions,     # dict, parameter distributions for sampling
     metric,                  # str | Callable | list[str | Callable]
     exog=None,               # pd.Series | pd.DataFrame | None
-    lags_grid=None,          # list[int | list | np.ndarray | range] | dict | None
+    lags_grid=None,          # list[int | list | np.ndarray | range | None] | dict | None
     n_iter=10,               # int, number of random parameter combinations
     random_state=123,        # int
     return_best=True,        # bool
@@ -155,7 +155,7 @@ grid_search_forecaster_multiseries(
     aggregate_metric=['weighted_average', 'average', 'pooling'],  # str | list[str]
     levels=None,             # str | list[str] | None
     exog=None,               # pd.Series | pd.DataFrame | dict | None
-    lags_grid=None,          # list | dict | None
+    lags_grid=None,          # list[int | list | np.ndarray | range | None] | dict | None
     return_best=True,        # bool
     n_jobs='auto',           # int | str
     verbose=False,           # bool
@@ -173,7 +173,7 @@ random_search_forecaster_multiseries(
     aggregate_metric=['weighted_average', 'average', 'pooling'],  # str | list[str]
     levels=None,             # str | list[str] | None
     exog=None,               # pd.Series | pd.DataFrame | dict | None
-    lags_grid=None,          # list | dict | None
+    lags_grid=None,          # list[int | list | np.ndarray | range | None] | dict | None
     n_iter=10,               # int
     random_state=123,        # int
     return_best=True,        # bool
@@ -288,7 +288,6 @@ TimeSeriesFold(
     initial_train_size=None,        # int | str | pd.Timestamp | None
     fold_stride=None,               # int | None, if None equals steps
     window_size=None,               # int | None, set automatically by forecaster
-    differentiation=None,           # int | None, set automatically by forecaster
     refit=False,                    # bool | int, refit model each fold or every n folds
     fixed_train_size=True,          # bool, fixed vs expanding window
     gap=0,                          # int, observations between train end and test start
@@ -300,8 +299,6 @@ TimeSeriesFold(
 
 OneStepAheadFold(
     initial_train_size,             # int | str | pd.Timestamp (required)
-    window_size=None,               # int | None, set automatically by forecaster
-    differentiation=None,           # int | None, set automatically by forecaster
     return_all_indexes=False,       # bool
     verbose=True                    # bool
 )
@@ -317,7 +314,7 @@ select_features(
     exog=None,               # pd.Series | pd.DataFrame | None
     select_only=None,        # 'autoreg' | 'exog' | 'calendar' | list of them | None (select all)
     force_inclusion=None,    # list[str] | str (regex) | None
-    subsample=0.5,           # float in (0, 1], proportion of records (sampled without replacement)
+    subsample=0.5,           # float in (0, 1], proportion of records (without replacement, random order)
     random_state=123,        # int
     verbose=True             # bool
 ) -> tuple[list[int], list[str], list[str], list[str]]
@@ -330,7 +327,7 @@ select_features_multiseries(
     exog=None,               # pd.Series | pd.DataFrame | dict | None
     select_only=None,        # 'autoreg' | 'exog' | 'calendar' | list of them | None
     force_inclusion=None,    # list[str] | str (regex) | None
-    subsample=0.5,           # float in (0, 1]
+    subsample=0.5,           # float in (0, 1], proportion of records (without replacement, random order)
     random_state=123,        # int
     verbose=True             # bool
 ) -> tuple[list[int] | dict[str, list[int]], list[str], list[str], list[str]]

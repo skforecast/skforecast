@@ -1,0 +1,17 @@
+Foundation Backends Compatibility, run 42212742430, job 127875169007 (moirai), 2026-11-06, branch 0.27.x, commit 09433c35a7def53a0e14bf86b72ab2015f03e421
+Retrieved with the GitHub Actions API (job logs, job_id 127875169007, tail 600 lines). Relevant lines copied:
+Using CPython 3.12.16
+$ uv pip install --python <venv>/bin/python --torch-backend cpu -e <repo> pytest uni2ts --override <tmp>/overrides.txt
+ + uni2ts==2.0.0
+ + torch==2.4.1+cpu
+ + numpy==1.26.4
+ + scipy==1.17.1
+ + pandas==2.3.3
+ + huggingface-hub==2.4.0
+ + gluonts==0.14.3
+ + jax==0.7.1
+ + lightning==2.6.6
+ + einops==0.7.0
+contract: 5 passed, 1 warning in 9.56s
+smoke:    5 passed, 1 skipped, 6 warnings in 5.03s  (skipped: test_predict_output_when_exog, allow_exog=False)
+"latest_on_pypi": "2.0.0", "held_back": false, "overrides": ["scipy>=1.12"]

@@ -23,7 +23,9 @@ from ._utils import (
     check_preprocess_series_foundation,
     group_series_by_exog_signature,
     align_context_exog,
+    drop_past_only_exog,
     _extract_exog_columns,
+    _left_pad_context,
 )
 from ..utils import (
     check_preprocess_exog_multiseries,
@@ -38,7 +40,8 @@ class FoundationModel:
     Scikit-learn compatible interface for foundation time-series models.
 
     Currently supports Amazon Chronos-2, Google TimesFM 2.5 and 3.0, Salesforce
-    Moirai-2, TabICLv2, TabPFN-TS, TFC-T0, Synthefy Nori and EDF Lab TS-ICL.
+    Moirai-2, TabICLv2, TabPFN-TS, TFC-T0, Synthefy Nori, EDF Lab TS-ICL,
+    Mistral AI Timestral and NX-AI TiRex-2.
     For full skforecast ecosystem integration (backtesting, model selection, etc.)
     use `ForecasterFoundation` instead.
 
@@ -88,6 +91,17 @@ class FoundationModel:
 
         - `'taharnbl/TS-ICL'`
 
+        Mistral AI Timestral (supports `exog`):
+
+        - `'mistralai/Timestral-5M'`
+        - `'mistralai/Timestral-28M'`
+        - `'mistralai/Timestral-123M'`
+        - `'mistralai/Timestral-209M'`
+
+        NX-AI TiRex-2 (supports `exog`):
+
+        - `'NX-AI/TiRex-2'`
+
         See References for links to model documentation and model cards.
     **kwargs :
         Additional keyword arguments forwarded to the underlying adapter.
@@ -131,6 +145,12 @@ class FoundationModel:
           default `'tsicl-v1.ckpt'`), `context_length` (int, default 4096),
           `device` (str, default `'auto'`), `allow_auto_download` (bool,
           default True).
+        - **Mistral AI Timestral** (`TimestralAdapter`): `context_length`
+          (int, default 4096), `device` (str, default `'auto'`),
+          `predict_kwargs` (dict, default None).
+        - **NX-AI TiRex-2** (`TiRex2Adapter`): `context_length` (int, default
+          2048), `device` (str, default `'auto'`), `predict_kwargs` (dict,
+          default None).
 
     Attributes
     ----------
@@ -216,7 +236,7 @@ class FoundationModel:
     - `device_map` (plus `torch_dtype`), HuggingFace `from_pretrained`
       style: Chronos, T0.
     - `device` string, resolved internally to a concrete accelerator:
-      Moirai, TS-ICL, TimesFM 3.0.
+      Moirai, TS-ICL, TimesFM 3.0, Timestral, TiRex-2.
     - Through the backend configuration dict: TabICL (`tabicl_config`),
       TabPFN (`tabpfn_model_config`), Nori (`nori_config`).
     - No device parameter: TimesFM 2.5, which relies on its backend's own
@@ -271,6 +291,18 @@ class FoundationModel:
 
     .. [16] EDF Lab TS-ICL - HuggingFace model card.
             https://huggingface.co/taharnbl/TS-ICL
+
+    .. [17] Mistral AI Timestral - GitHub repository.
+            https://github.com/mistralai/timestral
+
+    .. [18] Mistral AI Timestral - HuggingFace collection.
+            https://huggingface.co/collections/mistralai/timestral
+
+    .. [19] NX-AI TiRex-2 - GitHub repository.
+            https://github.com/NX-AI/tirex-2
+
+    .. [20] NX-AI TiRex-2 - HuggingFace model card.
+            https://huggingface.co/NX-AI/TiRex-2
 
     """
 
@@ -375,10 +407,11 @@ class FoundationModel:
         supports_past_only_covariates : bool
             `True` if a column present in the historical exog but absent
             from the future `exog` is used as a past-only covariate
-            (Chronos-2, TS-ICL, TimesFM 3.0). `False` if the adapter only
-            uses covariates that also have future values, in which case
-            such columns are ignored and an `IgnoredArgumentWarning` is
-            issued at predict time (TabICL, TabPFN-TS, TFC-T0, Nori).
+            (Chronos-2, TS-ICL, TimesFM 3.0, Timestral, TiRex-2). `False`
+            if the adapter only uses covariates that also have future values,
+            in which case such columns are ignored and an
+            `IgnoredArgumentWarning` is issued at predict time (TabICL,
+            TabPFN-TS, TFC-T0, Nori).
         """
         return self.adapter.supports_past_only_covariates
 
@@ -392,11 +425,11 @@ class FoundationModel:
         -------
         supports_heterogeneous_covariates : bool
             `True` if the backend accepts, in one call, series whose exog
-            columns differ (TFC-T0, TabPFN-TS, Nori, and the adapters that
+            columns differ (TabPFN-TS, Nori, TiRex-2, and the adapters that
             ignore exog). `False` if every series in a call must have the
-            same columns (Chronos-2, TS-ICL, TabICL, TimesFM 3.0); in that
-            case `predict` groups the series by their exog columns and calls
-            the adapter once per group.
+            same columns (Chronos-2, TS-ICL, TabICL, TimesFM 3.0, TFC-T0,
+            Timestral); in that case `predict` groups the series by their
+            exog columns and calls the adapter once per group.
         """
         return self.adapter.supports_heterogeneous_covariates
 
@@ -735,7 +768,7 @@ class FoundationModel:
                 )
             per_series = {
                 sid: group.droplevel(0)
-                for sid, group in exog.groupby(level=0, sort=False)
+                for sid, group in exog.groupby(level=0, sort=False, observed=True)
             }
             warnings.warn(
                 "Passing a long-format DataFrame as `exog` requires "
@@ -865,18 +898,17 @@ class FoundationModel:
             label = f"`exog` for series '{series_name}'"
 
             # DatetimeIndex: reindex to the exact expected date range,
-            # filling gaps with NaN.
+            # filling gaps with NaN. Only timestamps missing from the user's
+            # exog trigger the warning, not missing values it already holds.
             if is_datetime_ctx and isinstance(series_exog.index, pd.DatetimeIndex):
                 expected_idx = expand_index(ctx.index, steps=steps)
-                # Fast path: exog already aligned, no reindex needed.
-                series_exog_aligned = (
-                    series_exog
-                    if series_exog.index.equals(expected_idx)
-                    else series_exog.reindex(expected_idx)
-                )
-                if series_exog_aligned.isnull().any(axis=None):
+                if series_exog.index.equals(expected_idx):
+                    # Fast path: exog already aligned, no reindex needed.
+                    exog_aligned[series_name] = series_exog
+                    continue
+                if not expected_idx.isin(series_exog.index).all():
                     nan_filled_series.append(series_name)
-                exog_aligned[series_name] = series_exog_aligned
+                exog_aligned[series_name] = series_exog.reindex(expected_idx)
             else:
                 # RangeIndex / other: length check + optional start validation,
                 # then truncate to the forecast horizon.
@@ -941,9 +973,10 @@ class FoundationModel:
         with no historical values in its `context_exog`: no adapter can use a
         covariate without history. A column present in the history but absent
         from the future `exog` is a past-only covariate; adapters with
-        `supports_past_only_covariates=False` ignore it, so an
-        `IgnoredArgumentWarning` is issued for them. Column names are
-        compared as sets, so order does not matter.
+        `supports_past_only_covariates=False` cannot use it, so an
+        `IgnoredArgumentWarning` is issued for them. This method only
+        validates and warns: `predict` removes those columns afterwards.
+        Column names are compared as sets, so order does not matter.
 
         Only predict-time inputs are compared (never `fit` metadata), so the
         check also applies in zero-shot mode. It runs only on the user-facing
@@ -1083,8 +1116,11 @@ class FoundationModel:
         used as context. A future column with no historical values raises a
         `ValueError`. A historical column with no future values is a
         past-only covariate: it is used as such when
-        `supports_past_only_covariates` is `True`, and ignored with an
-        `IgnoredArgumentWarning` otherwise.
+        `supports_past_only_covariates` is `True`. Otherwise it is removed
+        from the historical exog before calling the adapter, so the
+        prediction is the same as without that column, and an
+        `IgnoredArgumentWarning` is issued (the warning, like the rest of
+        the column validation, only with `check_inputs=True`).
 
         Before calling the adapter, the historical exog of each series is
         aligned to the index of its context and the future `exog` to its
@@ -1093,7 +1129,16 @@ class FoundationModel:
         columns. When `supports_heterogeneous_covariates` is `False`, the
         series are grouped by their exog columns (past-only and future) and
         the adapter is called once per group, so the prediction of a series
-        never depends on the exog columns of the other series.
+        never depends on the exog columns of the other series. When the
+        adapter declares `max_series_per_call` (backends whose cost per
+        series, or memory, grows with the size of the batch), each group is
+        split into consecutive chunks of at most that many series, and the
+        adapter is called once per chunk. When
+        `requires_equal_length_context` is `True` (backends that take the
+        context of a call as a single array), the context and historical exog
+        of each call are left-padded with NaN to the length of its longest
+        series. The index of the predictions is built from the unpadded
+        context.
 
         """
 
@@ -1180,7 +1225,7 @@ class FoundationModel:
             # Alignment runs on every path: adapters rely on `context_exog`
             # sharing the index of `context` and on `exog` covering exactly
             # `steps` rows. With `check_inputs=False` (internal backtesting
-            # path) only the column check is skipped:
+            # path) only the column check, and its warning, is skipped:
             # `_extract_data_folds_multiseries` slices `context_exog` and
             # `exog` from the same per-series DataFrame, so their columns
             # always match by construction.
@@ -1202,6 +1247,20 @@ class FoundationModel:
                     exog            = exog,
                     series_names_in = series_names_in,
                 )
+            # Adapters that cannot use past-only covariates never receive
+            # them. The historical columns without future values are removed
+            # on every path, since the adapter would otherwise forward them
+            # to the backend, and before grouping the series, since they are
+            # part of the covariate signature.
+            if (
+                context_exog is not None
+                and not self.adapter.supports_past_only_covariates
+            ):
+                context_exog = drop_past_only_exog(
+                                   context_exog    = context_exog,
+                                   exog            = exog,
+                                   series_names_in = series_names_in,
+                               )
 
         if not self.adapter.supports_nan_in_series:
             series_with_nan = [
@@ -1227,27 +1286,47 @@ class FoundationModel:
                                 exog            = exog,
                             )
 
+        # Backends whose cost per series, or memory, grows with the size of
+        # the batch are called with chunks of at most `max_series_per_call`
+        # series of each group.
+        series_calls = []
+        for series_names_group in series_groups:
+            chunk_size = self.adapter.max_series_per_call or len(series_names_group)
+            series_calls.extend(
+                series_names_group[start:start + chunk_size]
+                for start in range(0, len(series_names_group), chunk_size)
+            )
+
         # Adapter returns dict[str, np.ndarray] with shape (steps, n_q)
         raw_predictions: dict[str, np.ndarray] = {}
-        for series_names_group in series_groups:
+        for series_names_call in series_calls:
+            call_context = {
+                series_name: context[series_name]
+                for series_name in series_names_call
+            }
+            call_context_exog = (
+                {
+                    series_name: context_exog[series_name]
+                    for series_name in series_names_call
+                }
+                if context_exog is not None else None
+            )
+            # Backends that take the context of a call as one array need the
+            # same length for every series: left-pad the call with NaN.
+            if self.adapter.requires_equal_length_context:
+                call_context, call_context_exog = _left_pad_context(
+                                                      context      = call_context,
+                                                      context_exog = call_context_exog,
+                                                  )
             raw_predictions.update(
                 self.adapter.predict(
                     steps        = steps,
-                    context      = {
-                        series_name: context[series_name]
-                        for series_name in series_names_group
-                    },
-                    context_exog = (
-                        {
-                            series_name: context_exog[series_name]
-                            for series_name in series_names_group
-                        }
-                        if context_exog is not None else None
-                    ),
+                    context      = call_context,
+                    context_exog = call_context_exog,
                     exog         = (
                         {
                             series_name: exog[series_name]
-                            for series_name in series_names_group
+                            for series_name in series_names_call
                         }
                         if exog is not None else None
                     ),

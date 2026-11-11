@@ -1,0 +1,14 @@
+python 3.12.3 | torch 2.15.0+cpu | tfc-t0 0.3.2 | skforecast 0.27.0
+theforecastingcompany/t0-alpha: T0Adapter, license='Apache-2.0'
+theforecastingcompany/t0-beta: T0Adapter, license='Apache-2.0'
+theforecastingcompany/t0-gamma: T0Adapter, license='Apache-2.0'
+theforecastingcompany/t0-alpha-onnx-fp16: T0Adapter, license='Apache-2.0'
+theforecastingcompany/t0-alpha-onnx-int8: T0Adapter, license='Apache-2.0'
+theforecastingcompany/t0-beta-onnx-fp16: T0Adapter, license='Apache-2.0'
+theforecastingcompany/t0-beta-onnx-int8: T0Adapter, license='Apache-2.0'
+
+Loading an ONNX repository through FoundationModel:
+  OSError: Could not load model 'theforecastingcompany/t0-alpha-onnx-int8' from the Hugging Face Hub. Its configuration could not be downloaded: check the model ID and the network connection. If the repository is gated, visit https://huggingface.co/theforecastingcompany/t0-alpha-onnx-int8 while logged in to accept its license, then authenticate locally (`hf auth login` or the `HF_TOKEN` environment variable)
+
+FoundationModel(..., torch_dtype=torch.bfloat16) through the public API:
+  RuntimeError: mat1 and mat2 must have the same dtype, but got Float and BFloat16

@@ -147,7 +147,7 @@ predictions = forecaster.predict_quantiles(
 )
 ```
 
-TimesFM (2.5 and 3.0) and Moirai-2 restrict quantiles to `[0.1, 0.2, …, 0.9]`; TS-ICL restricts them to a 0.01 grid in `[0.01, 0.99]`; Chronos-2, TabICL, TabPFN-TS, TFC-T0, and Nori accept any quantile in `(0, 1)`. See the `foundation-forecasting` skill for details.
+TimesFM (2.5 and 3.0), Moirai-2 and TiRex-2 restrict quantiles to `[0.1, 0.2, …, 0.9]`; TS-ICL restricts them to a 0.01 grid in `[0.01, 0.99]`; Timestral to 21 levels (`0.01`, `0.05`, `0.1`, ..., `0.95`, `0.99`); Chronos-2, TabICL, TabPFN-TS, TFC-T0, and Nori accept any quantile in `(0, 1)`. See the `foundation-forecasting` skill for details.
 
 ## During Backtesting
 
@@ -171,8 +171,17 @@ metric, predictions = backtesting_forecaster(
     use_in_sample_residuals=True,
     use_binned_residuals=True,
 )
-# predictions has columns: pred, lower_bound, upper_bound
+# predictions has columns: fold, step, y_true, pred, lower_bound, upper_bound
+# metric has columns: mean_absolute_error, coverage, interval_width, n_evaluated
 ```
+
+When `interval` defines one interval (a float, or two quantiles optionally with
+the median, such as `[0.1, 0.5, 0.9]`), `metric` also reports its empirical
+`coverage` and its mean width (`interval_width`, in the units of the series),
+per level and aggregated in multi-series backtesting. `backtesting_foundation`
+does the same with `quantiles`. A coverage
+well below the nominal level (0.8 for `[0.1, 0.9]`) is common with in-sample
+residuals and complex estimators: switch to out-of-sample residuals (see below).
 
 ## Multi-Series Intervals
 
@@ -202,7 +211,7 @@ metric, predictions_bt = backtesting_forecaster(
 
 # Set out-of-sample residuals on the forecaster
 forecaster.set_out_sample_residuals(
-    y_true=data['target'].loc[predictions_bt.index],
+    y_true=predictions_bt['y_true'],
     y_pred=predictions_bt['pred'],
 )
 
@@ -223,6 +232,10 @@ creating the forecaster, or predict with `use_binned_residuals=False`.
 
 ## Evaluating Interval Quality
 
+Backtesting with one interval (two quantiles, optionally with the median) already returns `coverage` and
+`interval_width` in `metric`. For predictions made outside backtesting (for
+example `predict_interval` on a test set), compute it with `calculate_coverage`:
+
 ```python
 from skforecast.metrics import calculate_coverage
 
@@ -232,6 +245,18 @@ coverage = calculate_coverage(
     upper_bound=predictions['upper_bound'],
 )
 print(f"Coverage: {coverage:.2%}")  # Should be close to 0.80 for [0.1, 0.9] interval
+```
+
+To plot the interval against the true values, `plot_prediction_intervals` takes
+them from the `y_true` column of the backtesting predictions. Predictions of
+`predict_interval` have no `y_true`: pass the series with `y_true`. With
+multiple series, filter the rows of one level first.
+
+```python
+from skforecast.plot import plot_prediction_intervals
+
+plot_prediction_intervals(predictions)                  # backtesting predictions
+plot_prediction_intervals(predictions, y_true=y_test)   # predict_interval
 ```
 
 ## Beyond Intervals
@@ -265,8 +290,8 @@ See [references/interval-compatibility.md](references/interval-compatibility.md)
 1. **Passing percentiles instead of quantiles**: `interval` is on the 0-1 scale. Use `interval=[0.1, 0.9]`, not `[10, 90]` (percentiles are deprecated and emit a `FutureWarning`). Mixing scales, e.g. `[0.1, 90]`, raises a `ValueError`.
 2. **Forgetting `store_in_sample_residuals=True`**: Required in `fit()` before using `predict_interval(method='bootstrapping')`.
 3. **Wrong default method for multi-series**: `ForecasterRecursiveMultiSeries` and `ForecasterDirectMultiVariate` default to `method='conformal'`, not `'bootstrapping'`.
-4. **Mixing `alpha` and `interval`**: `ForecasterStats` supports both `alpha` (e.g., `alpha=0.05` for 95% interval) and `interval=[lo, hi]` (quantiles). ML forecasters only support `interval`.
-5. **Not evaluating coverage**: Always check if actual coverage matches nominal interval width.
+4. **Mixing `alpha` and `interval`**: in `ForecasterStats` and `backtesting_stats`, `alpha` is an alias of `interval` (`alpha=0.05` is `interval=[0.025, 0.975]`). Pass only one of them; passing both raises a `ValueError`. ML forecasters only support `interval`.
+5. **Not evaluating coverage**: Always check if actual coverage matches the nominal level. Backtesting with one interval (a float `interval`, or two quantiles optionally with the median) reports it in the `coverage` column of `metric`, next to `interval_width`.
 6. **Ignoring physical bounds**: neither the model nor the intervals know that a series cannot be negative (counts, sales, demand), so predictions and lower bounds can fall below zero. Clip them after predicting, e.g. `predictions.clip(lower=0)`. See the FAQ [Non-negative predictions](https://skforecast.org/latest/faq/non-negative-predictions.html).
 
 ## References

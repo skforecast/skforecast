@@ -1,11 +1,64 @@
 # Unit test calculate_metrics_multiseries
 # ==============================================================================
+import re
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_error
+from skforecast.exceptions import MissingValuesWarning
 from skforecast.metrics import mean_absolute_scaled_error, add_y_train_argument
-from skforecast.model_selection._utils import _calculate_metrics_backtesting_multiseries
+from skforecast.model_selection._utils import (
+    _calculate_metrics_backtesting_multiseries,
+    _get_y_true_multiseries,
+    _SearchWarnings
+)
+
+def add_y_true(predictions, series, folds=None, span_index=None):
+    """
+    Predictions as the backtesting passes them: the fold of each prediction in
+    the column `fold`, the true values of `series` in the column `y_true` and
+    the point predictions in `y_pred`. The fold of a prediction is the last
+    fold whose test set includes its date (positions of `span_index`).
+    """
+    folds = FOLDS if folds is None else folds
+    span_index = SPAN_INDEX if span_index is None else span_index
+    predictions = predictions.rename(columns={"pred": "y_pred"})
+    predictions.insert(
+        0, "y_true", _get_y_true_multiseries(series=series, index=predictions.index)
+    )
+    positions = span_index.get_indexer(predictions.index.get_level_values("idx"))
+    fold_labels = np.full(len(positions), -1)
+    for fold in folds:
+        in_fold = (positions >= fold[3][0]) & (positions < fold[3][1])
+        fold_labels[in_fold] = fold[0]
+    predictions.insert(0, "fold", fold_labels)
+
+    return predictions
+
+
+def expected_scaled_metrics(series, predictions, folds, span_index):
+    """
+    Reference MASE and RMSSE of each level: the error of each point is scaled
+    with the error of the one-step naive forecast of its series over the
+    observations before its forecast origin (the end of the last window of
+    its fold, `fold[2][1]`).
+    """
+    origin_by_fold = {fold[0]: fold[2][1] for fold in folds}
+    predictions = predictions.dropna(subset=["y_true", "y_pred"])
+    results = {}
+    for level, group in predictions.groupby(level="level", sort=False):
+        y = series[level].reindex(span_index).to_numpy()
+        q_abs, q_sq = [], []
+        for (_, row) in group.iterrows():
+            diffs = np.diff(y[:origin_by_fold[row["fold"]]])
+            error = row["y_true"] - row["y_pred"]
+            q_abs.append(abs(error) / np.nanmean(np.abs(diffs)))
+            q_sq.append(error ** 2 / np.nanmean(diffs ** 2))
+        results[level] = (np.mean(q_abs), np.sqrt(np.mean(q_sq)), q_abs, q_sq)
+
+    return results
+
 
 # Fixtures
 data = pd.DataFrame(
@@ -117,14 +170,24 @@ predictions_different_length = (
     .set_index('level', append=True)
 )
 
+# NOTE: As in backtesting, the bounds are not NaN when `pred` is NaN (item_3
+# has no observed values in its last predictions).
+predictions_interval_different_length = predictions_different_length.copy()
+predictions_interval_different_length['lower_bound'] = (predictions['pred'] - 1.5).to_numpy()
+predictions_interval_different_length['upper_bound'] = (predictions['pred'] * 1.1).to_numpy()
+predictions_interval_missing_level = predictions_missing_level.copy()
+predictions_interval_missing_level['lower_bound'] = predictions_missing_level['pred'] - 1.5
+predictions_interval_missing_level['upper_bound'] = predictions_missing_level['pred'] * 1.1
+
 span_index = pd.date_range(start="2012-01-01", end="2012-02-19", freq="D")
+SPAN_INDEX = span_index
 
 folds = [
     [0, [0, 25], [24, 25], [25, 35], [25, 35], True],
     [1, [0, 25], [34, 35], [35, 45], [35, 45], False],
     [2, [0, 25], [44, 45], [45, 50], [45, 50], False],
 ]
-window_size = 2
+FOLDS = folds
 levels = ["item_1", "item_2", "item_3"]
 
 
@@ -237,10 +300,9 @@ def test_calculate_metrics_backtesting_multiseries_output_when_no_aggregated_met
     metrics = [add_y_train_argument(metric) for metric in metrics]
     results = _calculate_metrics_backtesting_multiseries(
         series=data,
-        predictions=predictions,
+        predictions=add_y_true(predictions, data),
         folds=folds,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=levels,
         add_aggregated_metric=False,
@@ -250,10 +312,11 @@ def test_calculate_metrics_backtesting_multiseries_output_when_no_aggregated_met
         data={
             "levels": ["item_1", "item_2", "item_3"],
             "mean_absolute_error": [1.477567, 3.480129, 2.942386],
-            "mean_absolute_scaled_error": [0.8388579569071319, 1.261808218733781, 0.6816085701001846],
+            "mean_absolute_scaled_error": [0.6582011433315063, 1.1592943108558047, 0.665513685472384],
         }
     )
 
+    expected.insert(3, 'n_evaluated', [25, 25, 25])
     pd.testing.assert_frame_equal(results, expected)
 
 
@@ -267,10 +330,9 @@ def test_calculate_metrics_backtesting_multiseries_output_when_aggregated_metric
     metrics = [add_y_train_argument(metric) for metric in metrics]
     results = _calculate_metrics_backtesting_multiseries(
         series=data,
-        predictions=predictions,
+        predictions=add_y_true(predictions, data),
         folds=folds,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=levels,
         add_aggregated_metric=True,
@@ -295,16 +357,17 @@ def test_calculate_metrics_backtesting_multiseries_output_when_aggregated_metric
                 2.633361,
             ],
             "mean_absolute_scaled_error": [
-                0.8388579569071319,
-                1.261808218733781,
-                0.6816085701001846,
-                0.9274249152470325,
-                0.9274249152470325,
-                0.8940507968656655,
+                0.6582011433315063,
+                1.1592943108558047,
+                0.665513685472384,
+                0.8276697132198984,
+                0.8276697132198982,
+                0.827669713219898,
             ],
         }
     )
 
+    expected.insert(3, 'n_evaluated', [25, 25, 25, 75, 75, 75])
     pd.testing.assert_frame_equal(results, expected)
 
 
@@ -318,10 +381,9 @@ def test_calculate_metrics_backtesting_multiseries_output_when_aggregated_metric
     metrics = [add_y_train_argument(metric) for metric in metrics]
     results = _calculate_metrics_backtesting_multiseries(
         series=data,
-        predictions=predictions,
+        predictions=add_y_true(predictions, data),
         folds=folds,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=levels,
         add_aggregated_metric=True,
@@ -348,6 +410,7 @@ def test_calculate_metrics_backtesting_multiseries_output_when_aggregated_metric
         }
     )
 
+    expected.insert(2, 'n_evaluated', [25, 25, 25, 75, 75, 75])
     pd.testing.assert_frame_equal(results, expected)
 
 
@@ -355,18 +418,26 @@ def test_calculate_metrics_backtesting_multiseries_output_when_aggregated_metric
     metrics=[mean_absolute_error, mean_absolute_scaled_error]
 ):
     """
+    Test output of _calculate_metrics_backtesting_multiseries when the last 13
+    predictions of 'item_3' are NaN at dates with observed values: they are
+    left out of the metrics with a MissingValuesWarning.
     """
     metrics = [add_y_train_argument(metric) for metric in metrics]
-    results = _calculate_metrics_backtesting_multiseries(
-        series=data,
-        predictions=predictions_different_length,
-        folds=folds,
-        span_index=span_index,
-        window_size=window_size,
-        metrics=metrics,
-        levels=levels,
-        add_aggregated_metric=True,
+    warn_msg = re.escape(
+        "Some predictions are NaN at dates with observed values, so the "
+        "metrics leave them out. NaN predictions per series: "
+        "{'item_3': 13} (13 in total)."
     )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        results = _calculate_metrics_backtesting_multiseries(
+            series=data,
+            predictions=add_y_true(predictions_different_length, data),
+            folds=folds,
+            span_index=span_index,
+            metrics=metrics,
+            levels=levels,
+            add_aggregated_metric=True,
+        )
 
     expected = pd.DataFrame(
         data={
@@ -387,16 +458,17 @@ def test_calculate_metrics_backtesting_multiseries_output_when_aggregated_metric
                 2.613332,
             ],
             "mean_absolute_scaled_error": [
-                0.8388579569071319,
-                1.261808218733781,
-                0.7351889788709302,
-                0.9452850515039476,
-                0.9893374538302255,
-                0.8872509680588639,
+                0.6582011433315063,
+                1.1592943108558047,
+                0.7162029629451473,
+                0.8445661390441527,
+                0.8714809985487829,
+                0.8714809985487828,
             ],
         }
     )
 
+    expected.insert(3, 'n_evaluated', [25, 25, 12, 62, 62, 62])
     pd.testing.assert_frame_equal(results, expected)
 
 
@@ -409,10 +481,9 @@ def test_calculate_metrics_backtesting_multiseries_output_when_aggregated_metric
     metrics = [add_y_train_argument(metric) for metric in metrics]
     results = _calculate_metrics_backtesting_multiseries(
         series=data,
-        predictions=predictions_missing_level,
+        predictions=add_y_true(predictions_missing_level, data),
         folds=folds,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=levels,
         add_aggregated_metric=True,
@@ -437,16 +508,127 @@ def test_calculate_metrics_backtesting_multiseries_output_when_aggregated_metric
                 2.4788481,
             ],
             "mean_absolute_scaled_error": [
-                0.8388579569071319,
-                1.261808218733781,
+                0.6582011433315063,
+                1.1592943108558047,
                 np.nan,
-                1.0503330878204564,
-                1.0503330878204564,
-                1.096968360536767,
+                0.9087477270936555,
+                0.9087477270936555,
+                0.9087477270936555,
             ],
         }
     )
 
+    expected.insert(3, 'n_evaluated', [25, 25, 0, 50, 50, 50])
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_calculate_metrics_backtesting_multiseries_output_when_interval_and_predictions_have_different_length():
+    """
+    Test output of _calculate_metrics_backtesting_multiseries when predictions
+    include `lower_bound` and `upper_bound`: coverage and interval_width are
+    added after the metrics, for each level and aggregated. Rows whose `pred`
+    is NaN are excluded (with a MissingValuesWarning, as they are dates with
+    observed values) although their bounds are not NaN, and the other metrics
+    are the same as without the bounds.
+    """
+    metrics = [add_y_train_argument(mean_absolute_error)]
+    warn_msg = re.escape("NaN predictions per series: {'item_3': 13} (13 in total).")
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        results = _calculate_metrics_backtesting_multiseries(
+            series=data,
+            predictions=add_y_true(predictions_interval_different_length, data),
+            folds=folds,
+            span_index=span_index,
+            metrics=metrics,
+            levels=levels,
+            add_aggregated_metric=True,
+        )
+
+    expected = pd.DataFrame(
+        data={
+            "levels": [
+                "item_1",
+                "item_2",
+                "item_3",
+                "average",
+                "weighted_average",
+                "pooling",
+            ],
+            "mean_absolute_error": [
+                1.47756696,
+                3.48012924,
+                3.1736833333333334,
+                2.7104598444444448,
+                2.613332338709678,
+                2.613332338709678,
+            ],
+            "coverage": [
+                0.68,
+                0.24,
+                0.5,
+                0.47333333333333333,
+                0.46774193548387094,
+                0.46774193548387094,
+            ],
+            "interval_width": [
+                3.8544806960000018,
+                3.7798795480000025,
+                3.769625016666669,
+                3.8013284202222244,
+                3.807975908064518,
+                3.8079759080645186,
+            ],
+        }
+    )
+
+    expected.insert(4, 'n_evaluated', [25, 25, 12, 62, 62, 62])
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_calculate_metrics_backtesting_multiseries_output_when_interval_and_one_level_is_not_predicted():
+    """
+    Test output of _calculate_metrics_backtesting_multiseries when predictions
+    include `lower_bound` and `upper_bound` and one level is not predicted:
+    its coverage and interval_width are NaN and it is left out of the
+    aggregated metrics.
+    """
+    metrics = [add_y_train_argument(mean_absolute_error)]
+    results = _calculate_metrics_backtesting_multiseries(
+        series=data,
+        predictions=add_y_true(predictions_interval_missing_level, data),
+        folds=folds,
+        span_index=span_index,
+        metrics=metrics,
+        levels=levels,
+        add_aggregated_metric=True,
+    )
+
+    expected = pd.DataFrame(
+        data={
+            "levels": [
+                "item_1",
+                "item_2",
+                "item_3",
+                "average",
+                "weighted_average",
+                "pooling",
+            ],
+            "mean_absolute_error": [
+                1.47756696, 3.48012924, np.nan, 2.4788481, 2.4788481, 2.4788481
+            ],
+            "coverage": [0.68, 0.24, np.nan, 0.46, 0.46, 0.46],
+            "interval_width": [
+                3.8544806960000018,
+                3.7798795480000025,
+                np.nan,
+                3.817180122000002,
+                3.817180122000002,
+                3.817180122000002,
+            ],
+        }
+    )
+
+    expected.insert(4, 'n_evaluated', [25, 25, 0, 50, 50, 50])
     pd.testing.assert_frame_equal(results, expected)
 
 
@@ -463,10 +645,9 @@ def test_calculate_metrics_backtesting_multiseries_with_single_level():
     
     results = _calculate_metrics_backtesting_multiseries(
         series=single_level_data,
-        predictions=single_level_predictions,
+        predictions=add_y_true(single_level_predictions, single_level_data),
         folds=folds,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=single_level_levels,
         add_aggregated_metric=True,  # Should be ignored when only 1 level
@@ -479,6 +660,7 @@ def test_calculate_metrics_backtesting_multiseries_with_single_level():
         }
     )
 
+    expected.insert(2, 'n_evaluated', [25])
     pd.testing.assert_frame_equal(results, expected)
 
 
@@ -532,10 +714,9 @@ def test_calculate_metrics_backtesting_multiseries_with_rangeindex():
     
     results = _calculate_metrics_backtesting_multiseries(
         series=data_range,
-        predictions=predictions_range,
+        predictions=add_y_true(predictions_range, data_range, span_index=span_index_range),
         folds=folds,
         span_index=span_index_range,
-        window_size=window_size,
         metrics=metrics,
         levels=levels,
         add_aggregated_metric=False,
@@ -548,6 +729,7 @@ def test_calculate_metrics_backtesting_multiseries_with_rangeindex():
         }
     )
 
+    expected.insert(2, 'n_evaluated', [25, 25, 25])
     pd.testing.assert_frame_equal(results, expected)
 
 
@@ -567,61 +749,71 @@ def test_calculate_metrics_backtesting_multiseries_with_multiple_folds_and_refit
     
     results = _calculate_metrics_backtesting_multiseries(
         series=data,
-        predictions=predictions,
+        predictions=add_y_true(predictions, data, folds=folds_mixed_refit),
         folds=folds_mixed_refit,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=levels,
         add_aggregated_metric=False,
     )
 
     # The metric calculation should work regardless of refit pattern
-    assert results.shape == (3, 2)
-    assert list(results.columns) == ["levels", "mean_absolute_error"]
+    assert results.shape == (3, 3)
+    assert list(results.columns) == ["levels", "mean_absolute_error", "n_evaluated"]
     assert list(results["levels"]) == ["item_1", "item_2", "item_3"]
     assert results["mean_absolute_error"].notna().all()
 
 
-def test_calculate_metrics_backtesting_multiseries_with_window_size_variation():
+def test_calculate_metrics_backtesting_multiseries_scaled_metrics_scaled_by_forecast_origin():
     """
-    Test that _calculate_metrics_backtesting_multiseries correctly handles 
-    different window sizes (which affect y_train exclusion).
+    Test that `mean_absolute_scaled_error` and `root_mean_squared_scaled_error`
+    scale the error of each point with the error of the one-step naive forecast
+    of its series over the observations before its forecast origin (the end of
+    the last window of its fold), for each level and in the pooling (mean of
+    the scaled errors of all the points). The result does not depend on the
+    forecaster (`window_size`), which is not an argument.
     """
-    metrics = [add_y_train_argument(mean_absolute_scaled_error)]
-    
-    # Test with larger window size
-    results_ws5 = _calculate_metrics_backtesting_multiseries(
+    from skforecast.metrics import root_mean_squared_scaled_error
+
+    metrics = [
+        add_y_train_argument(mean_absolute_scaled_error),
+        add_y_train_argument(root_mean_squared_scaled_error),
+    ]
+    predictions_with_y_true = add_y_true(predictions, data)
+    results = _calculate_metrics_backtesting_multiseries(
         series=data,
-        predictions=predictions,
+        predictions=predictions_with_y_true,
         folds=folds,
         span_index=span_index,
-        window_size=5,  # larger window
         metrics=metrics,
         levels=levels,
-        add_aggregated_metric=False,
+        add_aggregated_metric=True,
     )
 
-    results_ws2 = _calculate_metrics_backtesting_multiseries(
-        series=data,
-        predictions=predictions,
-        folds=folds,
-        span_index=span_index,
-        window_size=2,  # original window
-        metrics=metrics,
-        levels=levels,
-        add_aggregated_metric=False,
+    expected = expected_scaled_metrics(
+        series=data, predictions=predictions_with_y_true, folds=folds,
+        span_index=span_index
     )
-
-    # Metrics should differ because y_train differs (fewer observations with larger window)
-    # but both should be valid numbers
-    assert results_ws5.shape == results_ws2.shape
-    assert results_ws5["mean_absolute_scaled_error"].notna().all()
-    assert results_ws2["mean_absolute_scaled_error"].notna().all()
-    # Different window sizes should produce different scaled error values
-    assert not np.allclose(
-        results_ws5["mean_absolute_scaled_error"].values,
-        results_ws2["mean_absolute_scaled_error"].values
+    q_abs = np.concatenate([expected[level][2] for level in levels])
+    q_sq = np.concatenate([expected[level][3] for level in levels])
+    results = results.set_index("levels")
+    for level in levels:
+        np.testing.assert_almost_equal(
+            results.loc[level, "mean_absolute_scaled_error"], expected[level][0]
+        )
+        np.testing.assert_almost_equal(
+            results.loc[level, "root_mean_squared_scaled_error"], expected[level][1]
+        )
+    np.testing.assert_almost_equal(
+        results.loc["pooling", "mean_absolute_scaled_error"], np.mean(q_abs)
+    )
+    np.testing.assert_almost_equal(
+        results.loc["pooling", "root_mean_squared_scaled_error"], np.sqrt(np.mean(q_sq))
+    )
+    # With the same points in every level, the pooled MASE is the weighted average.
+    np.testing.assert_almost_equal(
+        results.loc["pooling", "mean_absolute_scaled_error"],
+        results.loc["weighted_average", "mean_absolute_scaled_error"]
     )
 
 
@@ -639,10 +831,9 @@ def test_calculate_metrics_backtesting_multiseries_with_nans_in_series():
     # This should work without raising errors
     results = _calculate_metrics_backtesting_multiseries(
         series=data_with_nans,
-        predictions=predictions,
+        predictions=add_y_true(predictions, data_with_nans),
         folds=folds,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=levels,
         add_aggregated_metric=True,
@@ -650,7 +841,7 @@ def test_calculate_metrics_backtesting_multiseries_with_nans_in_series():
 
     # Should still produce valid output structure
     assert results.shape[0] == 6  # 3 levels + 3 aggregations
-    assert results.shape[1] == 2  # levels + 1 metric
+    assert results.shape[1] == 3  # levels + 1 metric + n_evaluated
 
 
 def test_calculate_metrics_backtesting_multiseries_preserves_level_order():
@@ -665,10 +856,9 @@ def test_calculate_metrics_backtesting_multiseries_preserves_level_order():
     
     results = _calculate_metrics_backtesting_multiseries(
         series=data,
-        predictions=predictions,
+        predictions=add_y_true(predictions, data),
         folds=folds,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=reversed_levels,
         add_aggregated_metric=False,
@@ -697,10 +887,9 @@ def test_calculate_metrics_backtesting_multiseries_dataframe_no_multiindex_vs_di
     
     results_df = _calculate_metrics_backtesting_multiseries(
         series=series_df,
-        predictions=predictions,
+        predictions=add_y_true(predictions, series_df),
         folds=folds,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=levels,
         add_aggregated_metric=True,
@@ -708,10 +897,9 @@ def test_calculate_metrics_backtesting_multiseries_dataframe_no_multiindex_vs_di
     
     results_dict = _calculate_metrics_backtesting_multiseries(
         series=series_dict,
-        predictions=predictions,
+        predictions=add_y_true(predictions, series_dict),
         folds=folds,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=levels,
         add_aggregated_metric=True,
@@ -735,10 +923,9 @@ def test_calculate_metrics_backtesting_multiseries_dataframe_no_multiindex_two_l
     
     results = _calculate_metrics_backtesting_multiseries(
         series=data_2_levels,
-        predictions=predictions_2_levels,
+        predictions=add_y_true(predictions_2_levels, data_2_levels),
         folds=folds,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=levels_2,
         add_aggregated_metric=True,
@@ -765,10 +952,9 @@ def test_calculate_metrics_backtesting_multiseries_dataframe_no_multiindex_colum
     
     results = _calculate_metrics_backtesting_multiseries(
         series=data_reordered,
-        predictions=predictions,
+        predictions=add_y_true(predictions, data_reordered),
         folds=folds,
         span_index=span_index,
-        window_size=window_size,
         metrics=metrics,
         levels=levels,  # original order
         add_aggregated_metric=False,
@@ -782,6 +968,7 @@ def test_calculate_metrics_backtesting_multiseries_dataframe_no_multiindex_colum
         }
     )
 
+    expected.insert(2, 'n_evaluated', [25, 25, 25])
     pd.testing.assert_frame_equal(results, expected)
 
 
@@ -819,10 +1006,9 @@ def test_calculate_metrics_backtesting_multiseries_dataframe_no_multiindex_many_
     
     results = _calculate_metrics_backtesting_multiseries(
         series=data_many,
-        predictions=predictions_many,
+        predictions=add_y_true(predictions_many, data_many),
         folds=folds,
         span_index=pd.date_range(start="2012-01-01", periods=n_rows),
-        window_size=window_size,
         metrics=metrics,
         levels=levels_many,
         add_aggregated_metric=True,
@@ -833,3 +1019,181 @@ def test_calculate_metrics_backtesting_multiseries_dataframe_no_multiindex_many_
     assert results["mean_absolute_error"].notna().all()
     assert list(results["levels"][:5]) == levels_many
     assert list(results["levels"][5:]) == ["average", "weighted_average", "pooling"]
+
+
+def test_calculate_metrics_backtesting_multiseries_level_predicted_without_observed_values():
+    """
+    Test that a level with predictions but no observed values in their dates
+    ('item_2' ends the day before the first prediction) has NaN metrics and is
+    left out of the aggregated metrics: the weighted average is not NaN and it
+    is equal to the average and the pooling.
+    """
+    series = {
+        'item_1': data['item_1'],
+        'item_2': data['item_2'].iloc[:25],
+    }
+    predictions_two_levels = predictions.query("level in ['item_1', 'item_2']")
+    metrics = [add_y_train_argument(mean_absolute_error)]
+
+    results = _calculate_metrics_backtesting_multiseries(
+        series=series,
+        predictions=add_y_true(predictions_two_levels, series),
+        folds=folds,
+        span_index=span_index,
+        metrics=metrics,
+        levels=['item_1', 'item_2'],
+        add_aggregated_metric=True,
+    )
+
+    expected = pd.DataFrame(
+        {
+            'levels': ['item_1', 'item_2', 'average', 'weighted_average', 'pooling'],
+            'mean_absolute_error': [
+                1.47756696, np.nan, 1.47756696, 1.47756696, 1.47756696
+            ],
+        }
+    )
+
+    expected.insert(2, 'n_evaluated', [25, 0, 25, 25, 25])
+    pd.testing.assert_frame_equal(results, expected)
+
+def test_calculate_metrics_backtesting_multiseries_MissingValuesWarning_when_NaN_predictions_at_observed_dates():
+    """
+    Test that the NaN predictions of dates with observed values are left out
+    of the metrics with a MissingValuesWarning that gives the number of NaN
+    predictions of each series. The metrics are the same as without those
+    predictions. The NaN predictions of dates without observed values (the
+    series has a NaN) are expected and are not warned.
+    """
+    series_nan = data.copy()
+    series_nan.loc['2012-02-01', 'item_2'] = np.nan
+    predictions_nan = predictions.copy()
+    nan_rows = [
+        (pd.Timestamp('2012-01-27'), 'item_1'),
+        (pd.Timestamp('2012-01-28'), 'item_1'),
+        (pd.Timestamp('2012-02-05'), 'item_3'),
+    ]
+    predictions_nan.loc[nan_rows, 'pred'] = np.nan
+    predictions_nan.loc[(pd.Timestamp('2012-02-01'), 'item_2'), 'pred'] = np.nan
+    metrics = [add_y_train_argument(mean_absolute_error)]
+
+    warn_msg = re.escape(
+        "Some predictions are NaN at dates with observed values, so the "
+        "metrics leave them out. NaN predictions per series: "
+        "{'item_1': 2, 'item_3': 1} (3 in total). The "
+        "forecaster could not predict these dates, for example because of "
+        "missing values in the last window or in `exog`."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        results = _calculate_metrics_backtesting_multiseries(
+            series=series_nan,
+            predictions=add_y_true(predictions_nan, series_nan),
+            folds=folds,
+            span_index=span_index,
+            metrics=metrics,
+            levels=levels,
+            add_aggregated_metric=True,
+        )
+
+    expected = _calculate_metrics_backtesting_multiseries(
+        series=series_nan,
+        predictions=add_y_true(predictions_nan.dropna(), series_nan),
+        folds=folds,
+        span_index=span_index,
+        metrics=metrics,
+        levels=levels,
+        add_aggregated_metric=True,
+    )
+
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_calculate_metrics_backtesting_multiseries_NaN_predictions_warning_grouped_in_searches():
+    """
+    Test that the MissingValuesWarning of the NaN predictions starts with a
+    fixed sentence, so that the warnings of the candidates of a search are
+    grouped in one even if the number of NaN predictions differs.
+    """
+    metrics = [add_y_train_argument(mean_absolute_error)]
+    search_warnings = _SearchWarnings(n_candidates=3)
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        with search_warnings:
+            for candidate, n_nan in enumerate([2, 1, 0]):
+                search_warnings.set_candidate(candidate)
+                predictions_nan = predictions.copy()
+                predictions_nan.loc[
+                    predictions_nan.index[:n_nan], 'pred'
+                ] = np.nan
+                _calculate_metrics_backtesting_multiseries(
+                    series=data,
+                    predictions=add_y_true(predictions_nan, data),
+                    folds=folds,
+                    span_index=span_index,
+                                metrics=metrics,
+                    levels=levels,
+                    add_aggregated_metric=True,
+                )
+        search_warnings.emit()
+
+    messages = [
+        w.message.message for w in record
+        if issubclass(w.category, MissingValuesWarning)
+    ]
+    assert len(messages) == 1
+    assert messages[0].startswith(
+        "Some predictions are NaN at dates with observed values, so the "
+        "metrics leave them out (in 2 of 3 candidates; details of the first "
+        "one). NaN predictions per series: {'item_1': 1, 'item_2': 1} (2 in "
+        "total)."
+    )
+
+
+def test_calculate_metrics_backtesting_multiseries_n_evaluated_and_weights():
+    """
+    Test `n_evaluated`: per level, the rows with a true value and a
+    prediction, both not missing; 0 for a level not predicted
+    ('item_3') and for a level predicted without true values ('item_4'),
+    which are left out of the aggregations; the sum over the levels in the
+    aggregated rows; and the weights of the weighted average.
+    """
+    metrics = [add_y_train_argument(mean_absolute_error)]
+    series = data.copy()
+    series["item_4"] = np.nan
+    preds = predictions.query("level != 'item_3'").copy()
+    item_4 = predictions.query("level == 'item_1'").rename(index={"item_1": "item_4"})
+    preds = pd.concat([preds, item_4]).sort_index(level="idx", sort_remaining=False)
+    preds = add_y_true(preds, series)
+    # 5 true values missing in item_1 and 3 predictions missing in item_2.
+    preds.loc[(preds.index.get_level_values("level") == "item_1"), "y_true"] = (
+        [np.nan] * 5 + [1.0] * 20
+    )
+    preds.loc[(preds.index.get_level_values("level") == "item_2"), "y_pred"] = (
+        [np.nan] * 3 + preds.query("level == 'item_2'")["y_pred"].iloc[3:].tolist()
+    )
+
+    with pytest.warns(MissingValuesWarning):
+        results = _calculate_metrics_backtesting_multiseries(
+            series=series,
+            predictions=preds,
+            folds=folds,
+            span_index=span_index,
+            metrics=metrics,
+            levels=["item_1", "item_2", "item_3", "item_4"],
+            add_aggregated_metric=True,
+        )
+
+    results = results.set_index("levels")
+    assert results["n_evaluated"].to_dict() == {
+        "item_1": 20, "item_2": 22, "item_3": 0, "item_4": 0,
+        "average": 42, "weighted_average": 42, "pooling": 42,
+    }
+    assert results.loc[["item_3", "item_4"], "mean_absolute_error"].isna().all()
+    assert results.loc["weighted_average", "mean_absolute_error"] == pytest.approx(
+        np.average(
+            results.loc[["item_1", "item_2"], "mean_absolute_error"], weights=[20, 22]
+        )
+    )
+    assert results.loc["weighted_average", "mean_absolute_error"] == pytest.approx(
+        results.loc["pooling", "mean_absolute_error"]
+    )

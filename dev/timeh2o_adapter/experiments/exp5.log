@@ -1,0 +1,21 @@
+Python 3.12.3 | torch 2.14.1+cpu | numpy 2.5.4 | pandas 2.3.3 | h2ofm 0.43.1 | huggingface-hub 2.4.0 | skforecast 0.27.0 | threads 4 | cpus 4 | x86_64 | Linux 6.18.44
+1. 200 NaN inside: finite True | max abs diff vs no NaN 0.050
+1. 800 leading NaN vs the last 1200 points alone: max abs diff 1.53e-05
+1. all-NaN context: median min/max 0.000/0.000 | q0.1 min -0.000 | q0.9 max 0.000
+1. FoundationModel.fit with the last 600 values NaN and context_length=500: fit accepted, predictions min/max 0.000/0.000
+1. FoundationModel.predict with an all-NaN context: ValueError: All values of series 'y' are NaN.
+2. float32 vs float64 input: max abs diff 0.00e+00 | two identical calls: 0.00e+00 | output dtype float32
+3. 20000 points vs the last 16384: max abs diff 0.00e+00
+3. context_length=20000 option: warnings ["The specified context_length 20000 is greater than the model's maximum context length 16384. Resetting context_length to"]
+4. horizon 1024, one pass: shape (1024, 9) finite True 3.71 s
+4. horizon 2048, one pass: shape (2048, 9) finite True 4.62 s
+4. horizon 4096, one pass: shape (4096, 9) finite True 7.18 s
+4. horizon 2048, autoregressive=True: 138.74 s | first 1024 steps equal to one pass 5.95e-01 | steps 1024+ max abs diff 3.636
+5. no covariates, horizon 24 vs first 24 of horizon 100: max abs diff 1.53e-05
+5. future covariate, horizon 24 vs first 24 of horizon 100: max abs diff 0.380 | first step with diff > 1e-3: 0 | level 77.3
+6. 40 series x 512, patch_ensemble=False: batch_size 8 1.57 s | 256 1.18 s | max abs diff 0.00e+00
+7. device='mps': ValueError: device must be 'auto', 'cpu', 'cuda' or 'cuda:N'
+7. device='cuda': ValueError: CUDA was requested but is not available; use device='cpu'
+7. device='auto': loaded on cpu
+8. Poisson(0.7) counts: q0.1 min default -0.023 | clip_nonnegative=True 0.000 | snap_integer=True values [np.float32(0.0), np.float32(1.0), np.float32(2.0)]
+8. mean vs median (hourly series): max abs diff 0.014

@@ -1,0 +1,103 @@
+########## #224
+Moirai2 forecast accuracy drops significantly when `feat_dynamic_real` are present | state=open | created=2025-08-12 | updated=2025-12-05 | comments=8
+**Describe the bug**
+I am not sure if this should be considered a bug or a general question, but I have observed that the forecast accuracy of Moirai2 consistently and noticeably drops when `feat_dynamic_real` are provided.
+
+I am not sure if this is a problem with, e.g., how I provide the data to the model using the `PandasDataset`, or if this is an issue with the model itself.
+
+**To Reproduce**
+
+Here is a representative example using the Electricity Price Forecasting - FR dataset, but I have observed similar behavior on at least 10 other datasets involving covariates.
+
+```python
+# !pip install datasets matplotlib "uni2ts @ git+https://github.com/SalesforceAIResearch/uni2ts@b472ef6dcf7"
+import datasets
+import matplotlib.pyplot as plt
+from gluonts.dataset.pandas import PandasDataset
+from uni2ts.model.moirai2 import Moirai2Forecast, Moirai2Module
+
+h = 48
+context_length = 1024
+ds = datasets.load_dataset("autogluon/fev_datasets", "epf_electricity_fr", split="train")
+df = ds.to_pandas().explode(["timestamp", "target", "Generation forecast", "System load forecast"])
+df = df.query("timestamp < '2016-11-29'").tail(context_length + h)
+gluonts_dataset = PandasDataset.from_long_dataframe(
+    df,
+    item_id="id",
+    timestamp="timestamp",
+    target="target",
+    feat_dynamic_real=["Generation forecast", "System load forecast"],
+    future_length=h,
+)
+
+past = df.iloc[:-h]
+future = df.il
+########## #251
+Security: torch<2.5 constraint in 2.0.0 forces use of vulnerable torch versions. | state=open | created=2026-02-23 | updated=2026-02-23 | comments=0
+## Problem
+
+⁠ uni2ts==2.0.0 ⁠ requires ⁠ torch>=2.1,<2.5 ⁠, which prevents upgrading to
+torch 2.5+ and forces production environments to pin torch to versions
+currently flagged with active CVEs by security scanners.
+
+This creates a hard blocker: upgrading ⁠ uni2ts ⁠ to fix its own
+vulnerability requires pinning ⁠ torch ⁠ to a version range with known
+security issues.
+
+## Relation to existing work
+
+This is related to PR #216 (relax dependencies) and issue #133
+(test failure with torch 2.5). We understand the ⁠ <2.5 ⁠ upper bound
+was introduced due to a test regression in ⁠ test_attention.py ⁠, but
+from a security standpoint this constraint is now actively harmful
+for production users.
+
+## Our environment
+
+•⁠  ⁠⁠ uni2ts ⁠: trying to upgrade from ⁠ 1.x ⁠ → ⁠ 2.0.0 ⁠
+•⁠  ⁠⁠ torch ⁠: currently on ⁠ ^2.5.1 ⁠ (not vulnerable)
+•⁠  ⁠Upgrading to ⁠ uni2ts==2.0.0 ⁠ forces torch to ⁠ <2.5 ⁠ (vulnerable)
+
+## Request
+
+Could you prioritize merging PR #216 or releasing a patch that relaxes
+the ⁠ torch ⁠ upper bound? Even making ⁠ torch>=2.5 ⁠ work — perhaps with
+the attention fix from issue #133 — would unblock us.
+
+We're happy to help test a candidate fix against torch 2.5+.
+########## #228
+Support for a newer Pytorch / Blackwell | state=open | created=2025-08-24 | updated=2025-09-07 | comments=1
+Tried running the project with RTX5090, but it doesn't work because Blackwell requires Pytorch 2.8 with CUDA 12.9 support. 
+I tried upgrading torch, but then I had issues with the gluonts library, but upgrading this library to 0.16.2 brought on other errors.
+########## #256
+cabm - fix: Python 3.13 + updated dependency compatibility (pandas 2.2, PyTorch 2.11, gluonts 0.16, datasets 4.x) | state=open | created=2026-04-12 | updated=2026-04-12 | comments=2
+# Commit: Python 3.13 + updated dependency compatibility
+
+**Message:** `fix: Python 3.13 + updated dependency compatibility (pandas 2.2, PyTorch 2.11, gluonts 0.16, datasets 4.x)`
+
+## Summary
+
+Relaxed version pins in `pyproject.toml` to support Python 3.13 (`numpy`, `scipy`, `torch`, `gluonts`, `datasets`). Fixed resulting breakages across the codebase:
+
+- **`src/uni2ts/transform/patch.py`**: Updated `DEFAULT_RANGES` keys to pandas 2.2+ frequency aliases (`H`→`h`, `T`→`min`, `M`→`ME`, etc.)
+- **`src/uni2ts/data/builder/simple.py`**: Replaced `Dataset.from_generator` with `Dataset.from_list` to avoid Windows Arrow file-locking in datasets 4.x; added `.astype("float32").squeeze()` for stricter schema enforcement
+- **`src/uni2ts/model/moirai2/forecast.py`**: Added `_QuantilePredictionNetWrapper` to adapt `Moirai2Forecast.forward()` output to the gluonts 0.16.x `QuantileForecastGenerator` interface (now expects `((tensor,), loc, scale)`)
+- **`test/module/test_attention.py`**: Updated all-masked attention assertion for PyTorch 2.11 behaviour change
+- **`test/data/builder/test_simple.py`**: Added explicit `del hf_dataset` before `shutil.rmtree` to release Arrow file handles on Windows
+- **`test/transform/test_patch.py`**: Fixed frequency alias lookup to use `norm_freq_str`
+- **`README.md`**: Fixed Getting Started code block (added missing `moirai2` imports, removed unus
+########## #216
+fix: relax dependencies | state=open | created=2025-07-18 | updated=2025-08-10 | comments=1
+this pr relax dependencies to allow include the library as dependency in more projects.
+########## #133
+Test failure if we use torch 2.5 | state=open | created=2024-10-24 | updated=2024-11-27 | comments=0
+**Is your feature request related to a problem? Please describe.**
+If we don't require torch version < 2.5, the build test will fail, particularly test/module/test_attention.py::test_all_masked: https://github.com/SalesforceAIResearch/uni2ts/blob/2ba614de8878d350c62835c942b450d2f4d5a711/test/module/test_attention.py#L85
+**Describe the solution you'd like**
+The reason might be that torch 2.5 updates the function `nn.functional.scaled_dot_product_attention` (see here https://github.com/pytorch/pytorch/releases/tag/v2.5.0) 
+It mentions: 
+> Before this PR, fully masked rows in the attn_mask passed to nn.functional.scaled_dot_product_attention would yield NANs in the output, after this PR, fully masked rows yield 0s.
+
+I think later maybe we would like to change the test function to assert all 0s. 
+But I am not sure if we have special usage for torch.nan in output (like if we change to 0s for fully masked rows, it will break the pipeline)
+@chenghaoliu89 @cuthalionn Any comments/suggestions? 

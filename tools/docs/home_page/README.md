@@ -155,10 +155,11 @@ period shown.
 
 ### Update the social preview card
 
-The Open Graph and Twitter tags in the `extrahead` block of `home.html` make
+The Open Graph and Twitter tags in the `social_meta` block of `home.html` make
 LinkedIn, Slack or X show a preview with `docs/img/social-card-home.png` when
-the home page is shared. The image is the headline plus a screenshot of the
-animation on its last step. The same script saves that screenshot alone as
+the home page is shared. The other pages use the same image as default, with
+their own title and description (`docs/overrides/main.html`). The image is the
+headline plus a screenshot of the animation on its last step. The same script saves that screenshot alone as
 `images/skforecast-backtesting-comparison.png`, the image of the GitHub README
 (referenced with an absolute URL, so PyPI can show it too). Regenerate both
 when the animation or the headline changes. It needs Node.js 22 or newer and Google Chrome (set `CHROME_PATH` if
@@ -171,6 +172,8 @@ node tools/docs/home_page/make_social_card.mjs      # default URL: http://127.0.
 
 The tags use absolute URLs to `https://skforecast.org/latest/`, as social
 networks require, so a new image is only visible once it is deployed.
+`mike deploy` already sets `site_url` to `.../latest`, so the templates add
+`/latest/` only when it is missing.
 
 ### Update the number of publications
 

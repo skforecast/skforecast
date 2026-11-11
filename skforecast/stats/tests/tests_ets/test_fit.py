@@ -431,3 +431,30 @@ def test_fit_ets_auto_selection_with_lambda_param():
         lambda_param=0.0,
     ).fit(y)
     np.testing.assert_allclose(model.predict(steps=12), selected.predict(steps=12))
+
+
+def test_fit_ets_auto_selection_best_params_stores_box_cox_lambda():
+    """
+    Test that `best_params_` of the automatic selection stores the Box-Cox
+    lambda used in the fit, with `lambda_auto=False`, also when it was selected
+    with `lambda_auto=True`, as R's `ets(y, model = fit)` reuses it. Fitting
+    `Ets(**best_params_)` on more data keeps that lambda instead of selecting
+    it again. Without Box-Cox, `lambda_param` is `None`.
+    """
+    from ...tests.tests_arima.fixtures_arima import air_passengers
+
+    y = air_passengers.to_numpy(dtype=float)
+    model = Ets(m=12, lambda_auto=True).fit(y[:96])
+    lambda_fit = model.model_.transform.lambda_param
+
+    assert model.best_params_['lambda_auto'] is False
+    assert model.best_params_['lambda_param'] == lambda_fit
+
+    frozen = Ets(**model.best_params_).fit(y)
+    reselected = Ets(m=12, lambda_auto=True).fit(y)
+    assert frozen.model_.transform.lambda_param == lambda_fit
+    assert reselected.model_.transform.lambda_param != lambda_fit
+
+    model = Ets(m=12).fit(y[:96])
+    assert model.best_params_['lambda_param'] is None
+    assert model.best_params_['lambda_auto'] is False

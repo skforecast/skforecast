@@ -236,7 +236,14 @@ lags_grid = {
     'long': 24,
     'custom': [1, 2, 3, 23, 24],
 }
+
+# None as an element: a candidate without lags, only the forecaster's window_features
+# (the forecaster must have window_features, otherwise a ValueError is raised)
+lags_grid = [None, 3, 24]
 ```
+
+`lags_grid=None` (the default) uses the lags of the forecaster, also when the
+forecaster was created with `lags=None` and only `window_features`.
 
 For Bayesian search, lags are included in the `search_space` function:
 
@@ -329,7 +336,9 @@ results, study = bayesian_search_forecaster(
     ...,
     kwargs_create_study={
         'sampler': optuna.samplers.TPESampler(seed=123),
-        'direction': 'minimize',
+        # 'direction' defaults to the direction of the first metric (maximize
+        # for scikit-learn `*_score` metrics, minimize for errors and losses).
+        # If set, results and return_best follow it.
     },
     kwargs_study_optimize={
         'timeout': 600,  # seconds
@@ -350,5 +359,10 @@ results, study = bayesian_search_forecaster(
 | `bayesian_search_foundation` | `tuple[pd.DataFrame, optuna Study]`, no `lags` column | ✓ |
 
 When `return_best=True`, the forecaster is automatically updated with the
-best parameters found. The results DataFrame always has rows sorted by
-metric (best first). Access the best Optuna trial with `study.best_trial`.
+best parameters found (with `ForecasterRecursiveMultiSeries`, the series with
+`window_size` observations or fewer for the best candidate are left out of
+the refit, with a `RuntimeWarning`). The results DataFrame always has rows sorted by
+metric (best first). Every search adds the column `n_evaluated` after the
+metrics (points evaluated by each candidate, summed over the levels in
+multi-series; also in the `output_file` of grid and random search and as a
+`user_attr` of each Bayesian trial). Access the best Optuna trial with `study.best_trial`.

@@ -1,0 +1,26 @@
+huggingface_hub 2.4.0
+43046b85ec22 2026-09-02 Test removing timesfm tag to check library_name
+c71907076f28 2026-09-01 Fix download tracking by removing stale library_name override (defaults to config.json)
+900fcab43d1b 2026-08-31 Update README.md
+d2741044bf1f 2026-08-28 Update README.md (#1)
+3f2c8d248d5c 2026-08-28 Update README.md
+3d64c362c3e7 2026-08-27 Add license: other (timesfm-non-commercial-license-v1.0) metadata
+24701cec1b1e 2026-08-27 Update license to timesfm-non-commercial-license-v1.0
+bdd792ac1e6c 2026-08-27 Update README.md
+3154456e2d71 2026-08-27 Update LICENSE file
+6455822fd470 2026-08-24 Upload TimesFM 3.0 PyTorch model weights and config
+f414f6e8add6 2026-08-24 initial commit
+43046b85ec22 [('model.safetensors', 'a7592b0a8432')]
+c71907076f28 [('model.safetensors', 'a7592b0a8432')]
+900fcab43d1b [('model.safetensors', 'a7592b0a8432')]
+d2741044bf1f [('model.safetensors', 'a7592b0a8432')]
+3f2c8d248d5c [('model.safetensors', 'a7592b0a8432')]
+3d64c362c3e7 [('model.safetensors', 'a7592b0a8432')]
+24701cec1b1e [('model.safetensors', 'a7592b0a8432')]
+bdd792ac1e6c [('model.safetensors', 'a7592b0a8432')]
+3154456e2d71 [('model.safetensors', 'a7592b0a8432')]
+6455822fd470 [('model.safetensors', 'a7592b0a8432')]
+f414f6e8add6 []
+timesfm-3 ['google/timesfm-3.0-pytorch', 'echo3700/timesfm-2.5-200m-transformers', 'yasserrmd/timesfm-3.0-onnx', 'YangjieOu/timesfm-3.0-onnx', 'mustangxxx/timesfm-3.0-pytorch', 'gubernac/timesfm-3.0-pytorch', 'Unravler/timesfm-3.0-pytorch', 'czxichen/timesfm3.0-f16', 'czxichen/timesfm3.0-balanced', 'mys/timesfm-3.0-GGUF', 'urbanoanido/timesfm-3.0-pytorch', 'sivakarthikm/timesfm-3.0-pytorch']
+timesfm3 ['google/timesfm-3.0-pytorch', 'yasserrmd/timesfm-3.0-onnx', 'YangjieOu/timesfm-3.0-onnx', 'mustangxxx/timesfm-3.0-pytorch', 'gubernac/timesfm-3.0-pytorch', 'Unravler/timesfm-3.0-pytorch', 'czxichen/timesfm3.0-f16', 'czxichen/timesfm3.0-balanced', 'mys/timesfm-3.0-GGUF', 'urbanoanido/timesfm-3.0-pytorch', 'sivakarthikm/timesfm-3.0-pytorch']
+timesfm-3.5 []

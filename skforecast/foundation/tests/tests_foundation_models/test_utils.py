@@ -11,11 +11,14 @@ from skforecast.foundation._utils import (
     get_exog_signature,
     group_series_by_exog_signature,
     align_context_exog,
+    drop_past_only_exog,
     _warn_if_non_commercial,
     _get_model_license,
     _MODEL_LICENSES,
     _validate_model_id_prefix,
     _validate_supported_quantiles,
+    _match_quantile_indices,
+    _left_pad_context,
 )
 from skforecast.foundation._adapters import _ADAPTER_REGISTRY
 from skforecast.exceptions import (
@@ -205,8 +208,9 @@ def test_get_model_license_output_when_model_id_is_not_registered():
         "Salesforce/moirai-2.0-R-small",
         "priorlabs/tabpfn-ts",
         "taharnbl/TS-ICL",
+        "mistralai/Timestral-28M",
     ],
-    ids=["timesfm-3.0", "moirai", "tabpfn-ts", "tsicl"],
+    ids=["timesfm-3.0", "moirai", "tabpfn-ts", "tsicl", "timestral"],
 )
 def test_warn_if_non_commercial_warns_for_registered_prefixes(model_id):
     """
@@ -236,9 +240,10 @@ def test_warn_if_non_commercial_warns_for_registered_prefixes(model_id):
         "soda-inria/tabicl",
         "theforecastingcompany/t0-alpha",
         "Synthefy/Nori",
+        "NX-AI/TiRex-2",
         "unknown/some-model",
     ],
-    ids=["chronos-autogluon", "chronos-amazon", "timesfm-2.5", "tabicl", "t0", "nori", "unknown"],
+    ids=["chronos-autogluon", "chronos-amazon", "timesfm-2.5", "tabicl", "t0", "nori", "tirex2", "unknown"],
 )
 def test_warn_if_non_commercial_no_warning_for_unmatched_prefixes(model_id):
     """
@@ -382,6 +387,43 @@ def test_validate_supported_quantiles_ValueError_when_level_not_supported(bad_qu
 
 
 # ===========================================================================
+# _match_quantile_indices
+# ===========================================================================
+
+@pytest.mark.parametrize(
+    "quantiles, expected",
+    [
+        ([0.5], [2]),
+        ([0.9, 0.1, 0.5], [4, 0, 2]),
+        ([0.1 + 1e-9, 0.9 - 1e-9], [0, 4]),
+    ],
+    ids=["single", "requested_order", "within_tolerance"],
+)
+def test_match_quantile_indices_output(quantiles, expected):
+    """
+    Test that _match_quantile_indices returns the column of each requested
+    level in the quantile grid, in the requested order, also for levels that
+    differ from the grid by less than the tolerance.
+    """
+    quantile_grid = [0.1, 0.25, 0.5, 0.75, 0.9]
+    assert _match_quantile_indices(quantile_grid, quantiles) == expected
+
+
+def test_match_quantile_indices_ValueError_when_quantile_missing():
+    """
+    Test that _match_quantile_indices raises ValueError naming the level, the
+    grid and the tolerance when a requested level is not in the grid.
+    """
+    quantile_grid = [0.1, 0.5, 0.9]
+    err_msg = re.escape(
+        "Quantile 0.2 not found in the model's quantile grid [0.1, 0.5, 0.9] "
+        "(tolerance 1e-06)."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        _match_quantile_indices(quantile_grid, [0.5, 0.2])
+
+
+# ===========================================================================
 # get_exog_signature
 # ===========================================================================
 
@@ -501,3 +543,180 @@ def test_align_context_exog_MissingValuesWarning_when_exog_shorter_than_context(
     expected_s2 = pd.DataFrame({"a": [np.nan, 0.0, 1.0, 2.0]}, index=ctx_idx)
     pd.testing.assert_frame_equal(results["s1"], expected_s1)
     pd.testing.assert_frame_equal(results["s2"], expected_s2)
+
+
+# ===========================================================================
+# drop_past_only_exog
+# ===========================================================================
+
+def test_drop_past_only_exog_output():
+    """
+    Test that drop_past_only_exog keeps, per series, only the historical
+    columns that are also in the future exog (in their original order,
+    whatever the order in the future exog and also when it is a pandas
+    Series), returns None when no column is left (no future exog, a None
+    value, a missing key or `exog=None`), returns the same object when
+    nothing is removed, and does not modify its inputs.
+    """
+    p = np.arange(3, dtype=float)
+    context_exog = {
+        "mixed":   pd.DataFrame({"p": p, "k": p * 2, "j": p * 3}),
+        "all":     pd.DataFrame({"k": p, "j": p}),
+        "series":  pd.DataFrame({"p": p, "k": p}),
+        "past":    pd.DataFrame({"p": p}),
+        "missing": pd.DataFrame({"p": p}),
+        "none":    None,
+    }
+    exog = {
+        "mixed":  pd.DataFrame({"j": p, "k": p}),
+        "all":    pd.DataFrame({"j": p, "k": p}),
+        "series": pd.Series(p, name="k"),
+        "past":   None,
+        "none":   None,
+    }
+    series_names_in = ["mixed", "all", "series", "past", "missing", "none"]
+    columns_before = {
+        k: list(v.columns) for k, v in context_exog.items() if v is not None
+    }
+
+    results = drop_past_only_exog(context_exog, exog, series_names_in)
+
+    assert list(results.keys()) == series_names_in
+    pd.testing.assert_frame_equal(
+        results["mixed"], context_exog["mixed"][["k", "j"]]
+    )
+    assert results["all"] is context_exog["all"]
+    pd.testing.assert_frame_equal(results["series"], context_exog["series"][["k"]])
+    assert results["past"] is None
+    assert results["missing"] is None
+    assert results["none"] is None
+    assert columns_before == {
+        k: list(v.columns) for k, v in context_exog.items() if v is not None
+    }
+
+    results = drop_past_only_exog(context_exog, None, ["mixed", "none"])
+    assert results == {"mixed": None, "none": None}
+
+
+# ===========================================================================
+# _left_pad_context
+# ===========================================================================
+
+def test_left_pad_context_output():
+    """
+    Test that _left_pad_context left-pads every series and its historical
+    exog with NaN to the length of the longest series, on a common positional
+    RangeIndex, whatever the end date, frequency or time zone of each series:
+    two daily series in America/Santiago on both sides of the daylight saving
+    change at midnight of 2024-09-08 and a DatetimeIndex without `freq`. A
+    padded int64 series becomes float64, a float32 one and a nullable Float64
+    one keep their dtype, and every series keeps its name. Boolean columns
+    become float in every series, NumPy integer columns only in the padded
+    series, the nullable Int64 and the other columns keep their dtype, a
+    series without exog (None or missing key) stays None, and the inputs are
+    not modified.
+    """
+    idx_a = pd.date_range("2024-09-02", periods=6, freq="D", tz="America/Santiago")
+    idx_b = pd.date_range("2024-09-09", periods=3, freq="D", tz="America/Santiago")
+    idx_c = pd.DatetimeIndex(["2024-01-01", "2024-01-03", "2024-01-04", "2024-01-08"])
+    idx_d = pd.date_range("2024-03-01", periods=2, freq="h")
+    context = {
+        "a": pd.Series(np.arange(1.0, 7.0), index=idx_a, name="a"),
+        "b": pd.Series([10, 11, 12], index=idx_b, name="b", dtype="int64"),
+        "c": pd.Series(
+            [20.0, 21.0, 22.0, 23.0], index=idx_c, name="series_c", dtype="float32"
+        ),
+        "d": pd.Series([30.0, None], index=idx_d, name="d", dtype="Float64"),
+    }
+
+    def make_exog(index, offset):
+        n = len(index)
+        return pd.DataFrame(
+            {
+                "flag": [True, False] * (n // 2) + [True] * (n % 2),
+                "int": np.arange(offset, offset + n, dtype="int64"),
+                "nullable_int": pd.array(np.arange(n), dtype="Int64"),
+                "cat": pd.Categorical(["x", "y", "x", "y", "x", "y"][:n], categories=["x", "y"]),
+                "text": np.array(["p", "q", "r", "s", "t", "u"][:n], dtype=object),
+            },
+            index=index,
+        )
+
+    context_exog = {"a": make_exog(idx_a, 0), "b": make_exog(idx_b, 100), "c": None}
+    context_copy = {k: v.copy() for k, v in context.items()}
+    context_exog_copy = {k: (v.copy() if v is not None else None) for k, v in context_exog.items()}
+
+    padded_context, padded_exog = _left_pad_context(context, context_exog)
+
+    index = pd.RangeIndex(6)
+    expected_context = {
+        "a": pd.Series(np.arange(1.0, 7.0), index=index, name="a"),
+        "b": pd.Series([np.nan, np.nan, np.nan, 10.0, 11.0, 12.0], index=index, name="b"),
+        "c": pd.Series(
+            [np.nan, np.nan, 20.0, 21.0, 22.0, 23.0],
+            index=index, name="series_c", dtype="float32",
+        ),
+        "d": pd.Series(
+            pd.array([None, None, None, None, 30.0, None], dtype="Float64"),
+            index=index, name="d",
+        ),
+    }
+    expected_exog_a = pd.DataFrame(
+        {
+            "flag": [1.0, 0.0, 1.0, 0.0, 1.0, 0.0],
+            "int": np.arange(6, dtype="int64"),
+            "nullable_int": pd.array(np.arange(6), dtype="Int64"),
+            "cat": pd.Categorical(["x", "y", "x", "y", "x", "y"], categories=["x", "y"]),
+            "text": np.array(["p", "q", "r", "s", "t", "u"], dtype=object),
+        },
+        index=index,
+    )
+    expected_exog_b = pd.DataFrame(
+        {
+            "flag": [np.nan, np.nan, np.nan, 1.0, 0.0, 1.0],
+            "int": [np.nan, np.nan, np.nan, 100.0, 101.0, 102.0],
+            "nullable_int": pd.array([None, None, None, 0, 1, 2], dtype="Int64"),
+            "cat": pd.Categorical([np.nan, np.nan, np.nan, "x", "y", "x"], categories=["x", "y"]),
+            "text": np.array([np.nan, np.nan, np.nan, "p", "q", "r"], dtype=object),
+        },
+        index=index,
+    )
+
+    assert list(padded_context.keys()) == ["a", "b", "c", "d"]
+    for series_name, expected in expected_context.items():
+        pd.testing.assert_series_equal(padded_context[series_name], expected)
+    assert list(padded_exog.keys()) == ["a", "b", "c", "d"]
+    pd.testing.assert_frame_equal(padded_exog["a"], expected_exog_a)
+    pd.testing.assert_frame_equal(padded_exog["b"], expected_exog_b)
+    assert padded_exog["c"] is None
+    assert padded_exog["d"] is None
+    for series_name in context:
+        pd.testing.assert_series_equal(context[series_name], context_copy[series_name])
+    pd.testing.assert_frame_equal(context_exog["a"], context_exog_copy["a"])
+    pd.testing.assert_frame_equal(context_exog["b"], context_exog_copy["b"])
+
+
+def test_left_pad_context_output_when_equal_lengths_and_no_exog():
+    """
+    Test that, when every series already has the same length, _left_pad_context
+    keeps the values unchanged, only replaces the index by a positional
+    RangeIndex, and returns None as exog when `context_exog` is None.
+    """
+    idx_a = pd.date_range("2020-01-01", periods=3, freq="D")
+    idx_b = pd.date_range("2021-06-01", periods=3, freq="h")
+    context = {
+        "a": pd.Series([1.0, 2.0, 3.0], index=idx_a, name="a"),
+        "b": pd.Series([4.0, np.nan, 6.0], index=idx_b, name="b"),
+    }
+
+    padded_context, padded_exog = _left_pad_context(context, None)
+
+    index = pd.RangeIndex(3)
+    pd.testing.assert_series_equal(
+        padded_context["a"], pd.Series([1.0, 2.0, 3.0], index=index, name="a")
+    )
+    pd.testing.assert_series_equal(
+        padded_context["b"], pd.Series([4.0, np.nan, 6.0], index=index, name="b")
+    )
+    assert padded_exog is None
+

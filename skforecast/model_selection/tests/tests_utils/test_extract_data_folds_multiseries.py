@@ -839,3 +839,107 @@ def test_extract_data_folds_multiseries_dropna_last_window_nan_tolerant_estimato
         assert data_fold[3] is None
         assert data_fold[4] is None
         assert data_fold[5] == expected_data_folds[i][5]
+
+
+@pytest.mark.parametrize("series_type", 
+                         ['DataFrame', 'dict'], 
+                         ids=lambda series_type: f'series_type: {series_type}')
+def test_extract_data_folds_multiseries_series_with_window_size_values_left_out_of_fold(series_type):
+    """
+    Test _extract_data_folds_multiseries leaves a series out of the training set
+    and the last window of a fold when it has exactly `window_size` values in
+    the training set of that fold, since `fit` needs more than `window_size`
+    values. 'l2' starts at position 25: it has 5 values (`window_size`) in the
+    training set of fold 0 and 6 in fold 1.
+    """
+    l2 = np.arange(50, 100, dtype=float)
+    l2[:25] = np.nan
+    series = pd.DataFrame({'l1': np.arange(50, dtype=float), 'l2': l2})
+    if series_type == 'dict':
+        series = {
+            'l1': series['l1'],
+            'l2': series['l2'].iloc[25:]
+        }
+
+    # Train, last_window, test, fit_forecaster
+    folds = [
+        [0, [0, 30], [25, 30], [30, 35], True], 
+        [1, [0, 31], [26, 31], [31, 36], True]
+    ]
+    span_index = pd.RangeIndex(start=0, stop=50, step=1)
+    window_size = 5
+
+    data_folds = list(
+        _extract_data_folds_multiseries(
+            series             = series, 
+            folds              = folds, 
+            span_index         = span_index, 
+            window_size        = window_size, 
+            exog               = None, 
+            dropna_last_window = True, 
+            externally_fitted  = False
+        )
+    )
+
+    expected_last_windows = [
+        pd.DataFrame(
+            data  = {'l1': np.arange(25, 30, dtype=float)},
+            index = pd.RangeIndex(start=25, stop=30, step=1)
+        ),
+        pd.DataFrame(
+            data  = {'l1': np.arange(26, 31, dtype=float),
+                     'l2': np.arange(76, 81, dtype=float)},
+            index = pd.RangeIndex(start=26, stop=31, step=1)
+        )
+    ]
+    if series_type == 'DataFrame':
+        l2_train_fold_1 = np.arange(50, 81, dtype=float)
+        l2_train_fold_1[:25] = np.nan
+        expected_series_train = [
+            pd.DataFrame(
+                data  = {'l1': np.arange(30, dtype=float)},
+                index = pd.RangeIndex(start=0, stop=30, step=1)
+            ),
+            pd.DataFrame(
+                data  = {'l1': np.arange(31, dtype=float), 'l2': l2_train_fold_1},
+                index = pd.RangeIndex(start=0, stop=31, step=1)
+            )
+        ]
+    else:
+        expected_series_train = [
+            {
+                'l1': pd.Series(
+                          data  = np.arange(30, dtype=float),
+                          index = pd.RangeIndex(start=0, stop=30, step=1),
+                          name  = 'l1'
+                      )
+            },
+            {
+                'l1': pd.Series(
+                          data  = np.arange(31, dtype=float),
+                          index = pd.RangeIndex(start=0, stop=31, step=1),
+                          name  = 'l1'
+                      ),
+                'l2': pd.Series(
+                          data  = np.arange(75, 81, dtype=float),
+                          index = pd.RangeIndex(start=25, stop=31, step=1),
+                          name  = 'l2'
+                      )
+            }
+        ]
+    expected_levels = [['l1'], ['l1', 'l2']]
+
+    for i, data_fold in enumerate(data_folds):
+        if series_type == 'DataFrame':
+            pd.testing.assert_frame_equal(data_fold[0], expected_series_train[i])
+        else:
+            assert data_fold[0].keys() == expected_series_train[i].keys()
+            for k in data_fold[0]:
+                pd.testing.assert_series_equal(
+                    data_fold[0][k], expected_series_train[i][k]
+                )
+        pd.testing.assert_frame_equal(data_fold[1], expected_last_windows[i])
+        assert data_fold[2] == expected_levels[i]
+        assert data_fold[3] is None
+        assert data_fold[4] is None
+        assert data_fold[5] == folds[i]

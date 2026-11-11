@@ -47,7 +47,7 @@ the chosen model adds value.
 | **General purpose** (start here) | `ForecasterRecursive` | Default choice. One model, recursive multi-step. Works with any sklearn-compatible estimator (LightGBM, XGBoost, CatBoost, RandomForest, etc.). Supports lags, window features, exog, differentiation, transformers, weight functions, and all probabilistic prediction methods (bootstrapping, conformal, quantiles, distributions) |
 | **Horizon-dependent patterns** (e.g., predicting at 1h vs 24h requires different relationships) | `ForecasterDirect` | Trains one independent model per step — no error propagation. Better when the predictive relationship changes significantly across the forecast horizon. Requires `steps` at init; parallelizable with `n_jobs` |
 | **Statistical baseline** | `ForecasterStats` | Wraps ARIMA, SARIMAX, ETS, ARAR. Use as a benchmark to compare against ML models, or when the series is very short (< 200 obs) and ML overfits |
-| **Zero-shot / cold-start / no training data** | `ForecasterFoundation` | Wraps pre-trained foundation models (Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL). `fit()` only stores context, no training. Strong zero-shot accuracy, also for short or new series; needs more compute to predict. See the `foundation-forecasting` skill |
+| **Zero-shot / cold-start / no training data** | `ForecasterFoundation` | Wraps pre-trained foundation models (Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL, Timestral, TiRex-2). `fit()` only stores context, no training. Strong zero-shot accuracy, also for short or new series; needs more compute to predict. See the `foundation-forecasting` skill |
 | **Naive baseline** | `ForecasterEquivalentDate` | Predicts using equivalent past dates (e.g., same weekday last week). Use as a sanity-check baseline. See the `baseline-forecasting` skill |
 
 ## Step 2b — Multiple Series
@@ -57,7 +57,7 @@ the chosen model adds value.
 | **Forecast many series with a shared model** (start here) | `ForecasterRecursiveMultiSeries` | One global model learns cross-series patterns. Supports DataFrame or dict input (dict allows series with different date ranges). Encoding options: `'ordinal'` (default), `'ordinal_category'`, `'onehot'`, `None`. Supports per-series transformers, per-series differentiation, series_weights |
 | **Other series are features for one target** | `ForecasterDirectMultiVariate` | All series become input features to predict a single `level`. Per-series lags via dict (`{'sales': [1,7], 'price': [1]}`). One model per step — no error propagation |
 | **Deep learning / complex nonlinear patterns** | `ForecasterRnn` | Keras-based RNN/LSTM/GRU. Single model outputs all steps and levels simultaneously via 3D tensors. Only conformal intervals (no bootstrapping). Requires keras |
-| **Zero-shot / pre-trained generalist** | `ForecasterFoundation` | Global zero-shot forecasts via Chronos-2 / TimesFM 2.5/3.0 / Moirai-2 / TabICL / TabPFN-TS / TFC-T0 / Nori / TS-ICL. `fit()` only stores context. Native quantile intervals. Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori and TS-ICL support exog; TimesFM 2.5 & Moirai-2 do not. See the `foundation-forecasting` skill |
+| **Zero-shot / pre-trained generalist** | `ForecasterFoundation` | Global zero-shot forecasts via Chronos-2 / TimesFM 2.5/3.0 / Moirai-2 / TabICL / TabPFN-TS / TFC-T0 / Nori / TS-ICL / Timestral / TiRex-2. `fit()` only stores context. Native quantile intervals. Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL, Timestral and TiRex-2 support exog; TimesFM 2.5 & Moirai-2 do not. See the `foundation-forecasting` skill |
 
 ## Decision Flowchart
 
@@ -90,7 +90,7 @@ How many series?
         └─► ForecasterRnn
 
 Zero-shot / no training data / cold-start (single or multi-series)?
-    └─► ForecasterFoundation (Chronos-2 / TimesFM 2.5/3.0 / Moirai-2 / TabICL / TabPFN-TS / TFC-T0 / Nori / TS-ICL)
+    └─► ForecasterFoundation (Chronos-2 / TimesFM 2.5/3.0 / Moirai-2 / TabICL / TabPFN-TS / TFC-T0 / Nori / TS-ICL / Timestral / TiRex-2)
 ```
 
 ## Key Comparisons
@@ -131,7 +131,7 @@ Zero-shot / no training data / cold-start (single or multi-series)?
 | Estimators | Any sklearn-compatible (LightGBM, XGBoost, RF, etc.) | Arima, Sarimax, Ets, Arar |
 | Lags / window features | Full support (`lags`, `RollingFeatures`) | No (model handles its own structure) |
 | Differentiation | Built-in (`differentiation` param) | Handled within model (e.g., ARIMA `d` parameter) |
-| Exogenous variables | Full support | Only SARIMAX |
+| Exogenous variables | Full support | Arima, Sarimax and Arar (not Ets) |
 | Prediction intervals | Bootstrapping (binned residuals) + conformal | Built-in parametric |
 | Tuning | `grid_search_forecaster`, `random_search_forecaster`, `bayesian_search_forecaster` | `grid_search_stats`, `random_search_stats` |
 | Backtesting | `backtesting_forecaster` / `backtesting_forecaster_multiseries` | `backtesting_stats` |
@@ -139,24 +139,28 @@ Zero-shot / no training data / cold-start (single or multi-series)?
 
 ## Feature Support Matrix
 
-| Feature | Recursive | Direct | RecursiveMultiSeries | DirectMultiVariate | Rnn | Stats | EquivalentDate | Classifier |
-|---------|:---------:|:------:|:-------------------:|:-----------------:|:---:|:-----:|:--------------:|:----------:|
-| Lags | ✓ | ✓ | ✓ | ✓ (per-series dict) | ✓ | — | — | ✓ |
-| Window features (`RollingFeatures`) | ✓ | ✓ | ✓ | ✓ | — | — | — | ✓ |
-| Exogenous variables | ✓ | ✓ | ✓ | ✓ | ✓ | SARIMAX only | — | ✓ |
-| Differentiation | ✓ | ✓ | ✓ (per-series) | ✓ (per-series) | — | Within model | — | — |
-| Transformer y/series | ✓ | ✓ | ✓ (per-series) | ✓ (per-series) | ✓ | ✓ | — | — |
-| Transformer exog | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ |
-| Weight function | ✓ | ✓ | ✓ (per-series) | ✓ | — | — | — | ✓ |
-| Bootstrapping intervals | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
-| Conformal intervals | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — |
-| Binned residuals | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — |
-| Quantile predictions | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
-| Distribution fitting | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
-| Class probabilities | — | — | — | — | — | — | — | ✓ |
-| Feature importances | ✓ | ✓ | ✓ | ✓ | — | — | — | — |
+| Feature | Recursive | Direct | RecursiveMultiSeries | DirectMultiVariate | Foundation | Rnn | Stats | EquivalentDate | Classifier |
+|---------|:---------:|:------:|:-------------------:|:-----------------:|:----------:|:---:|:-----:|:--------------:|:----------:|
+| Lags | ✓ | ✓ | ✓ | ✓ (per-series dict) | — (context window) | ✓ | — | — | ✓ |
+| Window features (`RollingFeatures`) | ✓ | ✓ | ✓ | ✓ | — | — | — | — | ✓ |
+| Exogenous variables | ✓ | ✓ | ✓ | ✓ | ✓ (model-dependent) | ✓ | Arima, Sarimax, Arar | — | ✓ |
+| Differentiation | ✓ | ✓ | ✓ (per-series) | ✓ (per-series) | — | — | Within model | — | — |
+| Transformer y/series | ✓ | ✓ | ✓ (per-series) | ✓ (per-series) | — | ✓ | ✓ | — | — |
+| Transformer exog | ✓ | ✓ | ✓ | ✓ | — | ✓ | ✓ | — | ✓ |
+| Weight function | ✓ | ✓ | ✓ (per-series) | ✓ | — | — | — | — | ✓ |
+| Bootstrapping intervals | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — |
+| Conformal intervals | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | ✓ | — |
+| Binned residuals | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | ✓ | — |
+| Quantile predictions | ✓ | ✓ | ✓ | ✓ | ✓ (native) | — | — | — | — |
+| Distribution fitting | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — |
+| Class probabilities | — | — | — | — | — | — | — | — | ✓ |
+| Feature importances | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — |
 
 > **Legend:** ✓ = supported, — = not supported/not applicable.
+
+## Measured Comparison
+
+The user guide [Comparing forecasting models](https://skforecast.org/latest/user_guides/comparing-forecasting-models.html) evaluates the seasonal naive, Ridge, LightGBM, Chronos-2, AutoARIMA, AutoETS and an LSTM with the same backtesting on three datasets: one series with exogenous variables, a short monthly series and 50 daily series that share the same patterns. Use it to show users how each family behaves (accuracy, interval coverage and computation time) and as a template to compare candidates on their own data with the same `TimeSeriesFold`.
 
 ## Next Steps
 

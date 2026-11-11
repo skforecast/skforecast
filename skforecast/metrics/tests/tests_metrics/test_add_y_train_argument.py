@@ -41,3 +41,23 @@ def test_add_y_train_argument_func_with_y_train():
     # Test the wrapped function with 'y_train' argument
     result = wrapped_func(10, y_train=np.array([1, 2, 3]))
     np.testing.assert_array_almost_equal(result, np.array([11, 12, 13]))
+
+def test_add_y_train_argument_returns_same_function_when_already_processed():
+    """
+    Test that a function already processed by add_y_train_argument is returned
+    as it is, so that `_needs_y_train` is not overwritten when it is processed
+    again (for example, by a search and then by the backtesting).
+    """
+    def test_func(x):
+        return x
+
+    def test_func_y_train(x, y_train):
+        return x + y_train
+
+    wrapped_func = add_y_train_argument(test_func)
+    wrapped_func_y_train = add_y_train_argument(test_func_y_train)
+
+    assert add_y_train_argument(wrapped_func) is wrapped_func
+    assert wrapped_func._needs_y_train is False
+    assert add_y_train_argument(wrapped_func_y_train) is wrapped_func_y_train
+    assert wrapped_func_y_train._needs_y_train is True

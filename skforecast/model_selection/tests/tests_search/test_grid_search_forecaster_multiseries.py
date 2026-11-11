@@ -1,16 +1,27 @@
 # Unit test grid_search_forecaster_multiseries
 # ==============================================================================
+import re
+import pytest
+from unittest.mock import patch
+from joblib import Parallel, cpu_count
+from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.tree import DecisionTreeRegressor
+from skforecast.model_selection import backtesting_forecaster_multiseries
 import numpy as np
 import pandas as pd
+from copy import deepcopy
 from sklearn.linear_model import Ridge
 from lightgbm import LGBMRegressor
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirectMultiVariate
+from skforecast.preprocessing import reshape_series_wide_to_long
 from skforecast.model_selection import grid_search_forecaster_multiseries
 from skforecast.model_selection._split import TimeSeriesFold, OneStepAheadFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_percentage_error
+from sklearn.metrics import r2_score
 from skforecast.metrics import mean_absolute_scaled_error
+from skforecast.exceptions import MissingValuesWarning
 
 # Fixtures
 from ..fixtures_model_selection_multiseries import (
@@ -18,6 +29,7 @@ from ..fixtures_model_selection_multiseries import (
     series_long_dt_item_sales,
     series_dict_range,
     series_dict_dt,
+    series_dict_dt_different_periods,
     series_dict_nans,
     series_wide_dt_item_sales,
     exog_wide_dt_item_sales,
@@ -72,7 +84,8 @@ def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSerie
         'mean_absolute_error__weighted_average':  np.array(
             [0.20968100463227382, 0.20969259779858337, 0.20977945312386406, 
              0.21077344827205086, 0.21078653113227208, 0.21078779824759553]
-        ),                                                               
+        ),
+        'n_evaluated': [24] * 6,
         'alpha' : np.array([0.01, 0.1, 1., 1., 0.1, 0.01])
         },
         index = pd.Index([0, 1, 2, 3, 4, 5], dtype='int64')
@@ -159,24 +172,25 @@ def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSerie
         3: 0.21077344921320565,
         4: 0.21078653208835063,
         5: 0.21078779920557153},
-        'mean_absolute_scaled_error__weighted_average': {0: 0.798335248515498,
-        1: 0.7983823516895249,
-        2: 0.7987389489370742,
-        3: 0.8120054679421529,
-        4: 0.8119798820564519,
-        5: 0.8119753734760063},
-        'mean_absolute_scaled_error__average': {0: 0.7983352485154981,
-        1: 0.7983823516895249,
-        2: 0.7987389489370743,
-        3: 0.812005467942153,
-        4: 0.8119798820564519,
-        5: 0.8119753734760063},
-        'mean_absolute_scaled_error__pooling': {0: 0.7811335117239494,
-        1: 0.7811767002385028,
-        2: 0.7815002660695128,
-        3: 0.7988421945907456,
-        4: 0.7988917793592797,
-        5: 0.7988965817986066},
+        'mean_absolute_scaled_error__weighted_average': {0: 0.7917739273105381,
+        1: 0.7918222682731239,
+        2: 0.7921892191351169,
+        3: 0.7956979767609758,
+        4: 0.7956704843142104,
+        5: 0.7956659447267066},
+        'mean_absolute_scaled_error__average': {0: 0.7917739273105381,
+        1: 0.7918222682731239,
+        2: 0.7921892191351169,
+        3: 0.7956979767609758,
+        4: 0.7956704843142104,
+        5: 0.7956659447267066},
+        'mean_absolute_scaled_error__pooling': {0: 0.7917739273105381,
+        1: 0.7918222682731239,
+        2: 0.7921892191351169,
+        3: 0.7956979767609759,
+        4: 0.7956704843142104,
+        5: 0.7956659447267066},
+        'n_evaluated': {0: 24, 1: 24, 2: 24, 3: 24, 4: 24, 5: 24},
         'alpha': {0: 0.01, 1: 0.1, 2: 1.0, 3: 1.0, 4: 0.1, 5: 0.01}
     })
 
@@ -226,7 +240,8 @@ def test_output_grid_search_forecaster_multiseries_ForecasterDirectMultiVariate_
         'params': [{'alpha': 0.01}, {'alpha': 0.1}, {'alpha': 1}, {'alpha': 1}, {'alpha': 0.1}, {'alpha': 0.01}],
         'mean_absolute_error':  np.array(
             [0.20115194, 0.20183032, 0.20566862, 0.22224269, 0.22625017, 0.22644284]
-        ),                                                               
+        ),
+        'n_evaluated': [12] * 6,
         'alpha': np.array([0.01, 0.1, 1., 1., 0.1, 0.01])
         },
         index = pd.Index([0, 1, 2, 3, 4, 5], dtype='int64')
@@ -359,29 +374,30 @@ def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSerie
             0.14293292399573712,
         ],
         "mean_absolute_scaled_error__average": [
-            0.9160114137335943,
-            0.9165140769691532,
-            0.916564930542703,
-            0.9988413247804616,
-            0.9998432724761427,
-            0.9999449761167062,
+            0.903804904969063,
+            0.9042948967585162,
+            0.9043444690673287,
+            0.9865496806997074,
+            0.9875258142950895,
+            0.9876248953585223,
         ],
         "mean_absolute_scaled_error__weighted_average": [
-            0.9160114137335942,
-            0.9165140769691533,
-            0.916564930542703,
-            0.9988413247804617,
-            0.9998432724761427,
-            0.9999449761167061,
+            0.903804904969063,
+            0.9042948967585162,
+            0.9043444690673287,
+            0.9865496806997074,
+            0.9875258142950895,
+            0.9876248953585223,
         ],
         "mean_absolute_scaled_error__pooling": [
-            0.9579938854777973,
-            0.9589288087285971,
-            0.9590233830036539,
-            1.0399318034229648,
-            1.041533293296968,
-            1.041695551804101,
+            0.903804904969063,
+            0.9042948967585163,
+            0.9043444690673288,
+            0.9865496806997072,
+            0.9875258142950895,
+            0.9876248953585223,
         ],
+        "n_evaluated": [291] * 6,
         "alpha": [10.0, 1.0, 0.1, 10.0, 1.0, 0.1],
     },
     index = pd.RangeIndex(start=0, stop=6, step=1)
@@ -480,13 +496,14 @@ def test_output_grid_search_forecaster_multiseries_ForecasterDirectMultiVariate_
                 0.04003870940397041,
             ],
             "mean_absolute_scaled_error": [
-                0.49937582613686904,
-                0.4996872553730314,
-                0.4996954627649902,
-                0.5481460812405979,
-                0.5482785168914454,
-                0.5494840109433957,
+                0.49951371724580923,
+                0.49985237090680723,
+                0.4998579435117348,
+                0.5481820999049536,
+                0.5483097618209474,
+                0.5494702675113005,
             ],
+            "n_evaluated": [88] * 6,
             "alpha": [10.0, 0.1, 1.0, 0.1, 1.0, 10.0],
         },
         index=pd.RangeIndex(start=0, stop=6, step=1),
@@ -639,35 +656,36 @@ def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSerie
             1.9378779379561716e16,
         ],
         "mean_absolute_scaled_error__average": [
-            1.338257547877582,
-            1.3458574988611296,
-            1.418344242255843,
-            1.4196630001824362,
-            1.502472367026163,
-            1.516064192858667,
-            1.5547477191379595,
-            1.5594122630466858,
+            1.417023712724175,
+            1.4275505626957525,
+            1.5019763039424583,
+            1.4996687116806353,
+            1.5834518983885666,
+            1.6005565393675263,
+            1.6406530125774816,
+            1.6427107400759815,
         ],
         "mean_absolute_scaled_error__weighted_average": [
-            1.6314647598931409,
-            1.627988835703755,
-            1.720233806106665,
-            1.7212080197022548,
-            1.8204941416870104,
-            1.8231712390456873,
-            1.8766737381944514,
-            1.8860125959513818,
+            1.7455071884634479,
+            1.7503247426667086,
+            1.8446657843016798,
+            1.835863308186015,
+            1.9368626322669988,
+            1.9495326400323336,
+            2.004325583672197,
+            2.004834736270324,
         ],
         "mean_absolute_scaled_error__pooling": [
-            1.4086529286833727,
-            1.4224992984312164,
-            1.505414844206229,
-            1.4889348761536338,
-            1.5689005596025196,
-            1.5914777035729348,
-            1.6386889129680593,
-            1.6291942735674578,
+            1.7455071884634479,
+            1.7503247426667086,
+            1.8446657843016805,
+            1.835863308186015,
+            1.9368626322669986,
+            1.9495326400323336,
+            2.004325583672197,
+            2.004834736270324,
         ],
+        "n_evaluated": [417] * 8,
         "max_depth": [3, 3, 2, 2, 3, 3, 2, 2],
         "n_estimators": [10, 10, 10, 10, 5, 5, 5, 5],
         },
@@ -675,3 +693,306 @@ def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSerie
     )
 
     pd.testing.assert_frame_equal(results, expected_results)
+
+
+@pytest.mark.parametrize(
+    'series_type', ['dict', 'long'], ids=lambda st: f'series_type: {st}'
+)
+def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_one_step_ahead_initial_train_size_greater_than_longest_series(series_type):
+    """
+    Test output of grid_search_forecaster_multiseries with a OneStepAheadFold
+    when the series do not cover the same period and `initial_train_size` (35)
+    is greater than the length of the longest series (30) but smaller than the
+    span of the series (50), over which the train and test sets are split.
+    Only 'l2' has values in the test set, so the three aggregated metrics are
+    equal. The best forecaster is refitted on all the observations of both
+    series.
+    """
+    series = series_dict_dt_different_periods
+    if series_type == 'long':
+        series = reshape_series_wide_to_long(pd.DataFrame(series)).dropna()
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = Ridge(random_state=123),
+                     lags               = 3,
+                     encoding           = 'ordinal',
+                     transformer_series = None
+                 )
+    cv = OneStepAheadFold(initial_train_size=35)
+
+    results = grid_search_forecaster_multiseries(
+                  forecaster        = forecaster,
+                  series            = series,
+                  cv                = cv,
+                  param_grid        = {'alpha': [0.01, 1]},
+                  lags_grid         = [3, 5],
+                  metric            = 'mean_absolute_error',
+                  aggregate_metric  = ['average', 'weighted_average', 'pooling'],
+                  return_best       = True,
+                  verbose           = False,
+                  show_progress     = False,
+                  suppress_warnings = True
+              )
+
+    expected_mae = [
+        0.22297398871870422, 0.22814308884928106, 0.22917458933203,
+        0.23035548103646877
+    ]
+    expected_results = pd.DataFrame({
+        'levels': [['l1', 'l2']] * 4,
+        'lags': [
+            np.array([1, 2, 3, 4, 5]), np.array([1, 2, 3]),
+            np.array([1, 2, 3]), np.array([1, 2, 3, 4, 5])
+        ],
+        'lags_label': [
+            np.array([1, 2, 3, 4, 5]), np.array([1, 2, 3]),
+            np.array([1, 2, 3]), np.array([1, 2, 3, 4, 5])
+        ],
+        'params': [{'alpha': 1}, {'alpha': 0.01}, {'alpha': 1}, {'alpha': 0.01}],
+        'mean_absolute_error__average': expected_mae,
+        'mean_absolute_error__weighted_average': expected_mae,
+        'mean_absolute_error__pooling': expected_mae,
+        'n_evaluated': [15] * 4,
+        'alpha': [1., 0.01, 1., 0.01]
+    })
+
+    pd.testing.assert_frame_equal(results, expected_results)
+    np.testing.assert_array_equal(forecaster.lags, np.array([1, 2, 3, 4, 5]))
+    assert forecaster.estimator.alpha == 1
+    assert forecaster.series_names_in_ == ['l1', 'l2']
+    assert forecaster.training_range_['l1'][-1] == pd.Timestamp('2020-01-30')
+    assert forecaster.training_range_['l2'][-1] == pd.Timestamp('2020-02-19')
+
+
+def test_output_grid_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_one_step_ahead_series_ends_at_end_of_train():
+    """
+    Test output of grid_search_forecaster_multiseries with a OneStepAheadFold
+    when a series ends at the end of the training set ('l1' ends at position
+    29 and `initial_train_size` is 30). It has nothing to evaluate, so it is
+    left out of the test set and the candidates are evaluated with 'l2'.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = Ridge(random_state=123),
+                     lags               = 3,
+                     encoding           = 'ordinal',
+                     transformer_series = None
+                 )
+    cv = OneStepAheadFold(initial_train_size=30)
+
+    results = grid_search_forecaster_multiseries(
+                  forecaster        = forecaster,
+                  series            = series_dict_dt_different_periods,
+                  cv                = cv,
+                  param_grid        = {'alpha': [0.01, 1]},
+                  lags_grid         = [3, 5],
+                  metric            = 'mean_absolute_error',
+                  aggregate_metric  = ['average', 'weighted_average', 'pooling'],
+                  return_best       = False,
+                  verbose           = False,
+                  show_progress     = False,
+                  suppress_warnings = True
+              )
+
+    expected_mae = [
+        0.2139719995055757, 0.21511679537252698, 0.2164188294756968,
+        0.23456642114215853
+    ]
+    expected_results = pd.DataFrame({
+        'levels': [['l1', 'l2']] * 4,
+        'lags': [
+            np.array([1, 2, 3, 4, 5]), np.array([1, 2, 3]),
+            np.array([1, 2, 3]), np.array([1, 2, 3, 4, 5])
+        ],
+        'lags_label': [
+            np.array([1, 2, 3, 4, 5]), np.array([1, 2, 3]),
+            np.array([1, 2, 3]), np.array([1, 2, 3, 4, 5])
+        ],
+        'params': [{'alpha': 1}, {'alpha': 1}, {'alpha': 0.01}, {'alpha': 0.01}],
+        'mean_absolute_error__average': expected_mae,
+        'mean_absolute_error__weighted_average': expected_mae,
+        'mean_absolute_error__pooling': expected_mae,
+        'n_evaluated': [20] * 4,
+        'alpha': [1., 1., 0.01, 0.01]
+    })
+
+    pd.testing.assert_frame_equal(results, expected_results)
+
+
+@pytest.mark.parametrize(
+    "cv_class", [TimeSeriesFold, OneStepAheadFold], ids=lambda cv: cv.__name__
+)
+def test_grid_search_forecaster_multiseries_cv_differentiation_is_ignored(cv_class):
+    """
+    Test that `differentiation` of the cv has no effect in
+    grid_search_forecaster_multiseries with a dict as `differentiation`: a value
+    different from the maximum order gives the same results as `None`.
+    """
+    kwargs = {'steps': 4} if cv_class is TimeSeriesFold else {}
+    cv = cv_class(initial_train_size=30, verbose=False, **kwargs)
+    with pytest.warns(FutureWarning, match="`differentiation` is deprecated"):
+        cv_explicit = cv_class(
+            initial_train_size=30, differentiation=1, verbose=False, **kwargs
+        )
+
+    results = []
+    for cv_search in [cv, cv_explicit]:
+        forecaster = ForecasterRecursiveMultiSeries(
+            estimator=Ridge(random_state=123),
+            lags=2,
+            differentiation={'l1': 1, 'l2': 2, '_unknown_level': 1},
+        )
+        results.append(
+            grid_search_forecaster_multiseries(
+                forecaster=forecaster, series=series_dict_range, cv=cv_search,
+                param_grid={'alpha': [0.01, 1]}, metric='mean_absolute_error',
+                show_progress=False
+            )
+        )
+
+    pd.testing.assert_frame_equal(results[0], results[1])
+    assert len(results[0]) == 2
+
+
+@pytest.mark.parametrize(
+    "forecaster, metric_name",
+    [
+        (
+            ForecasterRecursiveMultiSeries(estimator=Ridge(random_state=123), lags=2),
+            "r2_score__weighted_average",
+        ),
+        (
+            ForecasterDirectMultiVariate(
+                estimator=Ridge(random_state=123), level="l1", steps=3, lags=2
+            ),
+            "r2_score",
+        ),
+    ],
+    ids=lambda dt: f"{type(dt).__name__ if not isinstance(dt, str) else dt}",
+)
+def test_grid_search_forecaster_multiseries_maximizes_metric_when_greater_is_better(
+    forecaster, metric_name
+):
+    """
+    Test that, with a metric in which greater values are better (`r2_score`),
+    the results are sorted in descending order by the first metric (with the
+    suffix of the aggregation when there are several levels) and
+    `return_best` refits the forecaster with the best candidate.
+    """
+    forecaster = deepcopy(forecaster)
+    cv = TimeSeriesFold(
+        steps=3, initial_train_size=len(series_wide_range) - 12, refit=False
+    )
+    results = grid_search_forecaster_multiseries(
+        forecaster=forecaster,
+        series=series_wide_range,
+        cv=cv,
+        param_grid={"alpha": [0.01, 1, 100]},
+        metric=[r2_score, "mean_absolute_error"],
+        aggregate_metric=["weighted_average", "average"],
+        return_best=True,
+    )
+
+    assert results.columns[4] == metric_name
+    assert results[metric_name].nunique() > 1
+    assert results[metric_name].is_monotonic_decreasing
+    assert forecaster.estimator.alpha == results.loc[0, "alpha"]
+
+
+def test_grid_search_forecaster_multiseries_when_exog_has_NaN_in_test_fold_and_estimator_is_linear_model():
+    """
+    Test grid_search_forecaster_multiseries evaluates every candidate when
+    `exog` has a missing value in the test set of a fold and the estimator is a
+    linear model: the backtesting of each candidate returns NaN predictions for
+    the dates that cannot be predicted, which are left out of the metrics with
+    a MissingValuesWarning, instead of skipping the candidate.
+    """
+    idx = pd.date_range("2020-01-01", periods=120, freq="D")
+    rng = np.random.default_rng(0)
+    series = {
+        "a": pd.Series(rng.normal(100, 5, 120), index=idx, name="a"),
+        "b": pd.Series(rng.normal(100, 5, 120), index=idx, name="b"),
+    }
+    exog = pd.Series(rng.normal(0, 1, 120), index=idx, name="x")
+    exog.iloc[95] = np.nan
+    forecaster = ForecasterRecursiveMultiSeries(Ridge(), lags=3)
+    cv = TimeSeriesFold(steps=10, initial_train_size=60, refit=False)
+
+    warn_msg = re.escape(
+        "NaN predictions per series: {'a': 5, 'b': 5} (10 in total)."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        results = grid_search_forecaster_multiseries(
+                      forecaster    = forecaster,
+                      series        = series,
+                      exog          = exog,
+                      cv            = cv,
+                      param_grid    = {'alpha': [0.1, 1.]},
+                      metric        = 'mean_absolute_error',
+                      return_best   = False,
+                      n_jobs        = 1,
+                      verbose       = False,
+                      show_progress = False
+                  )
+
+    assert len(results) == 2
+    assert sorted(params['alpha'] for params in results['params']) == [0.1, 1.]
+    assert not results['mean_absolute_error__average'].isna().any()
+
+
+@pytest.mark.parametrize(
+    "estimator, refit, n_jobs, expected_n_jobs",
+    [(Ridge(), True, 'auto', 1),
+     (HistGradientBoostingRegressor(max_iter=5), True, 'auto', max(1, cpu_count() - 1)),
+     (HistGradientBoostingRegressor(max_iter=5), False, 'auto', max(1, cpu_count() - 1)),
+     (DecisionTreeRegressor(max_depth=2), False, 'auto', 1),
+     (HistGradientBoostingRegressor(max_iter=5), True, 2, 2)],
+    ids=[
+        'auto, Ridge', 'auto, HistGradientBoostingRegressor',
+        'auto, HistGradientBoostingRegressor, no refit',
+        'auto, DecisionTreeRegressor, no refit', 'int'
+    ]
+)
+def test_grid_search_forecaster_multiseries_n_jobs_auto_resolved_with_the_rules_of_each_candidate(
+    estimator, refit, n_jobs, expected_n_jobs
+):
+    """
+    Test that grid_search_forecaster_multiseries resolves `n_jobs='auto'` with
+    `select_n_jobs_backtesting` for each candidate and passes the integer to
+    `backtesting_forecaster_multiseries`, so the work threshold of a single backtesting does not
+    reduce it. Without refit, the rules give one job, except with
+    `HistGradientBoostingRegressor`. `Parallel` is mocked with a
+    sequential one, so no workers are started.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=estimator, lags=3)
+    cv = TimeSeriesFold(
+             steps              = 10,
+             initial_train_size = 10,
+             refit              = refit,
+             fixed_train_size   = False
+         )
+
+    with (
+        patch(
+            "skforecast.model_selection._search.backtesting_forecaster_multiseries",
+            wraps=backtesting_forecaster_multiseries
+        ) as mock_backtesting,
+        patch(
+            "skforecast.model_selection._validation.Parallel",
+            side_effect=lambda **kwargs: Parallel(n_jobs=1)
+        ) as mock_parallel
+    ):
+        grid_search_forecaster_multiseries(
+            forecaster    = forecaster,
+            series        = series_wide_range,
+            cv            = cv,
+            param_grid    = {'random_state': [1, 2]},
+            metric        = 'mean_absolute_error',
+            return_best   = False,
+            n_jobs        = n_jobs,
+            show_progress = False
+        )
+
+    assert mock_backtesting.call_count == 2
+    for call in mock_backtesting.call_args_list:
+        assert call.kwargs['n_jobs'] == expected_n_jobs
+    for call in mock_parallel.call_args_list:
+        assert call.kwargs == {'n_jobs': expected_n_jobs}

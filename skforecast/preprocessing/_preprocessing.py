@@ -326,9 +326,15 @@ class TimeSeriesDifferentiator(BaseEstimator, TransformerMixin):
         y: Any = None
     ) -> np.ndarray:
         """
-        Reverts the differentiation. The input array `X` is assumed to be a 
+        Reverts the differentiation. The input array `X` is assumed to be a
         differentiated time series of order n that starts right after the
-        the time series used to fit the transformer.
+        time series used to fit the transformer.
+
+        Each value is added to the previous reverted value, as when predicting
+        several steps ahead (each prediction is built on the previous one).
+        It is not suited to one-step-ahead predictions, each built on the
+        observed values before it: the error of each prediction would be
+        carried into the following ones.
 
         Parameters
         ----------
@@ -1313,6 +1319,12 @@ class RollingFeatures():
             )        
         if isinstance(stats, str):
             stats = [stats]
+        if len(stats) == 0:
+            raise ValueError(
+                "`stats` must contain at least one statistic. If no window "
+                "feature is needed (for example, the feature selection did not "
+                "select any), set `window_features=None` in the forecaster."
+            )
 
         for stat in set(stats):
             if stat not in allowed_stats:
@@ -1942,6 +1954,12 @@ class RollingFeaturesClassification():
             )        
         if isinstance(stats, str):
             stats = [stats]
+        if len(stats) == 0:
+            raise ValueError(
+                "`stats` must contain at least one statistic. If no window "
+                "feature is needed (for example, the feature selection did not "
+                "select any), set `window_features=None` in the forecaster."
+            )
 
         for stat in set(stats):
             if stat not in allowed_stats:

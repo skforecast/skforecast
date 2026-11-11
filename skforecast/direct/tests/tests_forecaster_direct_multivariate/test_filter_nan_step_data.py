@@ -1,5 +1,6 @@
 # Unit test _filter_nan_X_y_step ForecasterDirectMultiVariate
 # ==============================================================================
+import re
 import pytest
 import numpy as np
 import pandas as pd
@@ -93,19 +94,29 @@ def test_filter_nan_X_y_step_nan_in_both_X_and_y_dropna_False():
 
 
 @pytest.mark.parametrize(
-    'dropna_from_series, X, y',
+    'dropna_from_series, X, y, err_msg',
     [
         (True,
          np.array([[np.nan, 2.0], [3.0, np.nan]]),
-         np.array([10.0, 20.0])),
+         np.array([10.0, 20.0]),
+         "All samples have been removed due to NaNs: every row has a missing "
+         "value in the target or in the predictors (largest lag: 3). This can "
+         "happen when the missing values of `series` are closer together than the "
+         "lags, or when `exog` has a missing value in every row. To keep "
+         "training samples, fill the missing values of `series` and `exog`, use "
+         "fewer lags, or use an estimator that accepts NaNs (for example, "
+         "LightGBM or scikit-learn HistGradientBoosting models) and set "
+         "`dropna_from_series = False`."),
         (False,
          np.array([[1.0, 2.0], [3.0, 4.0]]),
-         np.array([np.nan, np.nan])),
+         np.array([np.nan, np.nan]),
+         "All samples have been removed due to NaNs: the target is NaN in "
+         "every row. Review `series` or fill its missing values."),
     ],
     ids=['all_X_NaN_dropna_True', 'all_y_NaN_dropna_False']
 )
 def test_filter_nan_X_y_step_ValueError_when_all_samples_removed(
-    dropna_from_series, X, y
+    dropna_from_series, X, y, err_msg
 ):
     """
     Test that ValueError is raised when all samples are removed due to NaN,
@@ -117,8 +128,7 @@ def test_filter_nan_X_y_step_ValueError_when_all_samples_removed(
     )
     idx = pd.date_range('2020-01-01', periods=len(y), freq='D')
 
-    err_msg = "All samples have been removed due to NaNs"
-    with pytest.raises(ValueError, match=err_msg):
+    with pytest.raises(ValueError, match=re.escape(err_msg)):
         forecaster._filter_nan_X_y_step(X, y, idx)
 
 

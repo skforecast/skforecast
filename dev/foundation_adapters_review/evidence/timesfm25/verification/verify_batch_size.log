@@ -1,0 +1,4 @@
+timesfm 3.0.2 | torch 2.15.0+cpu
+per_core_batch_size=1: global_batch_size 1
+per_core_batch_size=4: global_batch_size 4
+max |b4 - b1|: 1.53e-05

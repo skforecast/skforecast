@@ -1,0 +1,36 @@
+# Hub LICENSE head (https://huggingface.co/taharnbl/TS-ICL/raw/main/LICENSE)
+TS-ICL NON-COMMERCIAL LICENSE v1.0
+EDF SA
+Version: 1.0  |  Last Revised: June 30, 2026
+
+EDF SA ("we" or "our" or "Company") makes available the TS-ICL Model (as defined below) free of charge for your non-commercial and non-production use as set forth in this TS-ICL Non-Commercial License ("License"). The "TS-ICL Model" means the pre-trained models developed by Company, consisting of the architecture coupled with the parameters and checkpoints resulting from its training, and the inference code (collectively, "TS-ICL Model").
+
+By downloading, accessing, using, Distributing (as defined below), or creating a Derivative (as defined below) of the TS-ICL Model, you agree to the terms of this License. If you do not agree to this License, then you do not have any rights to access, use, Distribute or create a Derivative of the TS-ICL Model and you must immediately cease using the TS-ICL Model. If you are agreeing to be bound by the terms of this License on behalf of your employer or other entity, you represent and warrant to us that you have full legal authority to bind your employer or such entity to this License. If you do not have the requisite authority, you may not accept the License or access the TS-ICL Model on behalf of your employer or other entity.
+
+
+1. Definitions
+
+a. "Derivative" means any model or work that directly incorporates, in whole or in part, the inference code, the weights, parameters, or checkpoints of the TS-ICL Model, or that is produced by fine-tuning or distilling the TS-ICL Model (including through the use of its Outputs). This includes any customized or fine-tuned version of the TS-ICL Model produced by direct technical means.
+
+# Hub commits (api/models/taharnbl/TS-ICL/commits/main)
+19c9403143 2026-07-07 commit
+f01f3869a7 2026-06-18 add link to doc
+a4dd3acede 2026-06-18 Update README.md
+8a23045edf 2026-06-18 Update README.md
+c23dba7c4d 2026-06-18 fix path
+3e6b893a70 2026-06-14 fix tag
+aa759b249b 2026-06-14 first commit
+568966254e 2026-06-14 initial commit
+
+# tree with sizes and lfs sha
+.gitattributes 1519 
+LICENSE 14927 
+README.md 1224 
+config.json 30 
+tsicl-v1.ckpt 219150987 a67ae9f694c2a83c
+# tree at revision f01f3869a7 (before 2026-07-07 commit)
+.gitattributes 1519 
+LICENSE 15704 
+README.md 1224 
+config.json 30 
+tsicl-v1.ckpt 219150987 a67ae9f694c2a83c

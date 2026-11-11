@@ -1,0 +1,10 @@
+# robots.txt of https://skforecast.org. It must be at the root of the site that
+# Netlify publishes (the branch where mike writes the versions; mike only
+# rewrites the version folders and versions.json, so this file is kept between
+# deployments). Every version declares a canonical URL in /latest/, so old
+# versions stay crawlable instead of being disallowed.
+# Copy it there by hand after editing it.
+User-agent: *
+Allow: /
+
+Sitemap: https://skforecast.org/latest/sitemap.xml

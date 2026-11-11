@@ -275,3 +275,84 @@ def test_predict_out_of_range_detection():
     results_subset = results[cols_to_check].reset_index(drop=True)
     
     pd.testing.assert_frame_equal(results_subset, expected)
+
+
+def test_predict_categorical_feature_with_unused_and_unseen_categories():
+    """
+    Test predict when a `category` feature has unused categories (counted as 0
+    by `value_counts`, which made `chi2_contingency` raise a ValueError) and the
+    new data has a category not seen in the reference data. The Chi2 and
+    Jensen-Shannon statistics are the same as without the unused categories.
+    """
+    pattern = ['A', 'B', 'C', 'A', 'A', 'B', 'A', 'C', 'B', 'A', 'A']
+    index_ref = pd.date_range('2020-01-01', periods=110, freq='D')
+    new_values = ['C', 'C', 'B', 'A', 'E'] * 8
+    index_new = pd.date_range('2020-04-20', periods=40, freq='D')
+
+    detector = PopulationDriftDetector(chunk_size=10, threshold=3)
+    detector.fit(pd.DataFrame(
+        {'category': pd.Categorical(pattern * 10, categories=['A', 'B', 'C', 'D'])},
+        index=index_ref
+    ))
+    results, _ = detector.predict(pd.DataFrame(
+        {'category': pd.Categorical(new_values, categories=['A', 'B', 'C', 'D', 'E'])},
+        index=index_new
+    ))
+
+    detector_observed = PopulationDriftDetector(chunk_size=10, threshold=3)
+    detector_observed.fit(pd.DataFrame(
+        {'category': pd.Categorical(pattern * 10, categories=['A', 'B', 'C'])},
+        index=index_ref
+    ))
+    results_observed, _ = detector_observed.predict(pd.DataFrame(
+        {'category': pd.Categorical(new_values, categories=['A', 'B', 'C', 'E'])},
+        index=index_new
+    ))
+
+    expected = pd.DataFrame({
+        'chi2_statistic': [26.480938416422287] * 4,
+        'js_statistic': [0.4407976665328458] * 4,
+        'drift_detected': [True] * 4,
+    })
+    cols_to_check = ['chi2_statistic', 'js_statistic', 'drift_detected']
+    pd.testing.assert_frame_equal(
+        results[cols_to_check].reset_index(drop=True), expected
+    )
+    pd.testing.assert_frame_equal(
+        results[cols_to_check], results_observed[cols_to_check], check_exact=True
+    )
+
+
+def test_predict_multiple_series_with_categorical_level_and_unused_categories():
+    """
+    Test predict with multiple series when the series level of the index is a
+    `category` with unused categories (it raised a KeyError). The results and
+    the summary are the same as with a plain series level.
+    """
+    dates = pd.date_range('2020-01-01', periods=100, freq='D')
+
+    def make_X(level):
+        rng = np.random.default_rng(123)
+        return pd.DataFrame(
+            {'x': rng.normal(size=200), 'y': rng.integers(0, 3, size=200)},
+            index=pd.MultiIndex.from_arrays(
+                [level, np.tile(dates, 2)], names=['series_id', 'datetime']
+            )
+        )
+
+    X_categorical = make_X(
+        pd.Categorical(['s1'] * 100 + ['s2'] * 100, categories=['s1', 's2', 's3'])
+    )
+    X_plain = make_X(['s1'] * 100 + ['s2'] * 100)
+
+    detector = PopulationDriftDetector(chunk_size=10, threshold=3)
+    detector.fit(X_categorical)
+    results, summary = detector.predict(X_categorical)
+
+    detector_plain = PopulationDriftDetector(chunk_size=10, threshold=3)
+    detector_plain.fit(X_plain)
+    results_plain, summary_plain = detector_plain.predict(X_plain)
+
+    assert results['series_id'].unique().tolist() == ['s1', 's2']
+    pd.testing.assert_frame_equal(results, results_plain, check_exact=True)
+    pd.testing.assert_frame_equal(summary, summary_plain, check_exact=True)

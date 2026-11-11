@@ -1,0 +1,12 @@
+....s.                                                                   [100%]
+=============================== warnings summary ===============================
+tools/foundation_compat/tests/test_smoke.py::test_predict_output_when_multiple_series
+tools/foundation_compat/tests/test_smoke.py::test_backtesting_foundation_output_when_two_folds
+  skforecast/utils/utils.py:4394: InputTypeWarning: Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It is recommended to use a dictionary of pandas Series instead. For more details, see: https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html#input-data
+  You can suppress this warning using: warnings.simplefilter('ignore', category=InputTypeWarning)
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+SKIPPED [1] tools/foundation_compat/tests/test_smoke.py:133: The adapter does not support exogenous variables.
+5 passed, 1 skipped, 2 warnings in 19.53s

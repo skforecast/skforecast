@@ -1,0 +1,20 @@
+Python 3.12.3 | torch 2.14.1+cpu | numpy 2.5.4 | pandas 2.3.3 | h2ofm 0.43.1 | huggingface-hub 2.4.0 | skforecast 0.27.0 | threads 4 | cpus 4 | x86_64 | Linux 6.18.44
+1. backend, past_covariates: max abs diff vs none 0.00e+00 | warnings ['UserWarning: This checkpoint does not use past covariates; past_covariates are validated and ignored. Pass covariates known']
+1. FoundationModel, past-only column: max abs diff vs none 0.00e+00 | warnings ['IgnoredArgumentWarning: TimeH2OAdapter only uses covariates that also have future values. Historical exog columns without future value']
+1. FoundationModel, past-only + future column vs future column only: max abs diff 0.00e+00 | warnings ['IgnoredArgumentWarning: TimeH2OAdapter only uses covariates that also have future values. Historical exog columns without future value']
+2. indicator (level +8 when True, 10% of the steps): MAE none 1.325 | bool (categorical) 0.413 | float 0/1 (numeric) 0.413 | max abs diff bool vs float 0.000
+2. labels low/mid/high (-5/0/+5): MAE none 3.089 | strings (categorical) 0.434 | integer codes (numeric) 1.348 | category dtype equals strings True
+2. label not seen in the history over the whole horizon: MAE 3.109 | one missing label (None): finite True warnings []
+3. numeric covariate: MAE none 0.401 | full 0.407 | 100 NaN in the history and 3 in the horizon 0.401 | whole history NaN 0.401 (equal to no covariate: True)
+4. covariate with inf: ValueError: future_covariates may contain NaN, but not infinity
+4. series with inf: ValueError: Series may contain NaN for missing observations, but not infinity
+4. FoundationModel, series with inf: ValueError: Series may contain NaN for missing observations, but not infinity
+5. no covariate                         median max     2.09 | q0.9 max     4.29 | q0.99 max     6.07 | series with q0.99 > 100: 0/32
+5. flat price                           median max     4.76 | q0.9 max   181.73 | q0.99 max   326.79 | series with q0.99 > 100: 28/32
+5. price that moves in the context      median max     2.11 | q0.9 max     4.44 | q0.99 max     6.39 | series with q0.99 > 100: 0/32
+5. flat price, history set to NaN       median max     2.09 | q0.9 max     4.29 | q0.99 max     6.07 | series with q0.99 > 100: 0/32
+5. indicator 0/1 (float)                median max     6.05 | q0.9 max    78.70 | q0.99 max   138.43 | series with q0.99 > 100: 4/32
+5. indicator 0/1 (bool, categorical)    median max     2.09 | q0.9 max     4.03 | q0.99 max     5.67 | series with q0.99 > 100: 0/32
+5. indicator, history set to NaN        median max     2.09 | q0.9 max     4.29 | q0.99 max     6.07 | series with q0.99 > 100: 0/32
+6. tiny with a future covariate: equal to no covariate True | warnings ['UserWarning: This checkpoint does not use future covariates; they are validated and ignored.']
+6. tiny, second call with a covariate: warnings []

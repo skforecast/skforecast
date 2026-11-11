@@ -1,0 +1,8 @@
+python 3.12.3 | tabicl 2.2.0 | skforecast 0.27.0
+'soda-inria/tabicl'                           -> TabICLAdapter
+'soda-inria/tabicl-v2'                        -> TabICLAdapter
+'soda-inria/tabicl-regressor-v2-20260212'     -> TabICLAdapter
+'soda-inria/TabICL'                           -> ValueError: No adapter found for model 'soda-inria/TabICL'. Registered p
+'jingang/TabICL'                              -> ValueError: No adapter found for model 'jingang/TabICL'. Registered pref
+'jingang/tabicl'                              -> ValueError: No adapter found for model 'jingang/tabicl'. Registered pref
+'tabicl'                                      -> ValueError: No adapter found for model 'tabicl'. Registered prefixes: ['

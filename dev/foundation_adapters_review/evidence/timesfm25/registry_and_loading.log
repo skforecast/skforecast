@@ -1,0 +1,39 @@
+timesfm 3.0.2 | huggingface_hub 2.4.0 | skforecast 0.27.0
+
+== 1. _resolve_adapter
+google/timesfm-1.0-200m-pytorch          -> ValueError: No adapter found for model 'google/timesfm-1.0-200m-pytorch'. Registered prefixe
+google/timesfm-2.0-500m-pytorch          -> ValueError: No adapter found for model 'google/timesfm-2.0-500m-pytorch'. Registered prefixe
+google/timesfm-2.5-200m-pytorch          -> TimesFM25Adapter
+google/timesfm-2.5-200m-flax             -> TimesFM25Adapter
+google/timesfm-2.5-200m-transformers     -> TimesFM25Adapter
+google/timesfm-3.0-pytorch               -> TimesFM3Adapter
+
+== 2. get_model_info
+  model_id: google/timesfm-2.5-200m-pytorch
+  adapter: TimesFM25Adapter
+  model_id_prefixes: ('google/timesfm-2.5',)
+  default_model_id: google/timesfm-2.5-200m-pytorch
+  default_context_length: 512
+  backend_package: timesfm[torch]
+  allow_exog: False
+  supports_past_only_covariates: False
+  supports_categorical_covariates: False
+  supports_heterogeneous_covariates: True
+  supports_nan_in_series: True
+  supported_quantiles: (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
+  requires_hf_auth: False
+  requires_provider_auth: False
+  weights_repo_id: google/timesfm-2.5-200m-pytorch
+  weights_in_hf_cache: True
+  license: Apache-2.0
+  license_url: https://huggingface.co/google/timesfm-2.5-200m-pytorch
+  commercial_use_restricted: False
+
+== 3. load google/timesfm-2.5-200m-flax through the adapter
+  RemoteEntryNotFoundError: 404 Client Error. (Request ID: Root=1-6aeddeac-671359d5745fdd1855204644;ebbb15cb-905e-4040-bd9a-3840e5f16d54)
+
+== 4. google/timesfm-2.5-200m-transformers vs the torch module keys
+  module keys: 232
+  -pytorch keys equal to module keys: True
+  -transformers keys: 272, missing for strict load: 228, unexpected: 268
+  => load_state_dict(strict=True) would raise: True

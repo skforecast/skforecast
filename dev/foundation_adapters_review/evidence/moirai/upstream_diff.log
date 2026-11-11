@@ -1,0 +1,36 @@
+### upstream: SalesforceAIResearch/uni2ts, git clone into ~/fm-review-src/uni2ts
+tags: 1.1.0 1.2.0 2.0.0 
+tag 2.0.0 -> 8062ef5 2025-08-12 Update README.md (#223)
+HEAD (main) -> cfd46d4 2026-06-02 Upload required SECURITY.md file for compliance
+
+### commits 2.0.0..HEAD
+cfd46d4 2026-06-02 Upload required SECURITY.md file for compliance
+7a4e77c 2026-01-29 Update TiRex model URL to avoid leakage (#249)
+b4ad1f4 2026-01-29 Moirai Agent: Update Chronos-2 model path (#247)
+9a78b80 2026-01-16 Update README.md (#245)
+b0cc474 2026-01-15 Add moirai agent replication scripts (#244)
+8d2a08d 2025-11-10 Upload required file(s) for compliance
+2554076 2025-11-07 Update ECCN comment in CODEOWNERS file
+
+### paths changed 2.0.0..HEAD (top-level dir counts)
+      1 CODEOWNERS
+      1 SECURITY.md
+     35 project
+
+### git diff --stat 2.0.0 HEAD -- src pyproject.toml (empty = no change)
+
+### installed wheel uni2ts 2.0.0 (PyPI, 2025-11-04) vs git archive 2.0.0:src/uni2ts
+identical
+
+### moirai2 module present per tag
+1.1.0: moirai 
+1.2.0: moirai moirai_moe 
+2.0.0: moirai moirai2 moirai_moe 
+uni2ts 1.1.1 wheel (PyPI): files matching moirai2 = 0
+
+### signatures in the installed backend
+Moirai2Forecast.__init__ (self, prediction_length: int, target_dim: int, feat_dynamic_real_dim: int, past_feat_dynamic_real_dim: int, context_length: int, module_kwargs: Optional[dict[str, Any]] = None, module: Optional[uni2ts.model.moirai2.module.Moirai2Module] = None)
+Moirai2Forecast.hparams_context (self, prediction_length: Optional[int] = None, target_dim: Optional[int] = None, feat_dynamic_real_dim: Optional[int] = None, past_feat_dynamic_real_dim: Optional[int] = None, context_length: Optional[int] = None) -> Generator[ForwardRef('Moirai2Forecast'), NoneType, NoneType]
+Moirai2Forecast.predict (self, past_target: List[jaxtyping.Float[ndarray, 'past_time tgt']], feat_dynamic_real: Optional[List[jaxtyping.Float[ndarray, 'batch past_time tgt']]] = None, past_feat_dynamic_real: Optional[List[jaxtyping.Float[ndarray, 'batch past_time tgt']]] = None) -> jaxtyping.Float[ndarray, 'batch num_quantiles future_time *tgt']
+Moirai2Forecast.create_predictor (self, batch_size: int, device: str = 'auto') -> gluonts.torch.model.predictor.PyTorchPredictor
+Moirai2Module.__init__ (self, d_model: int, d_ff: int, num_layers: int, patch_size: int, max_seq_len: int, attn_dropout_p: float, dropout_p: float, scaling: bool = True, num_predict_token: int = 1, quantile_levels: tuple[float] = (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9))

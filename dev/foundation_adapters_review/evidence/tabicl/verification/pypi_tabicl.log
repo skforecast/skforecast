@@ -1,0 +1,74 @@
+package         : tabicl
+latest          : 2.2.0
+requires_python : >=3.10
+license         : BSD 3-Clause License
+requires_dist   :
+    einops>=0.7
+    huggingface-hub
+    numpy
+    psutil
+    scikit-learn>=1.3.0
+    scipy
+    torch>=2.2
+    tqdm>=4.64.0
+    matplotlib>=3.10.3; extra == "all"
+    numba; extra == "all"
+    pandas; extra == "all"
+    pandas>=2.1.2; extra == "all"
+    pydata-sphinx-theme; extra == "all"
+    pytest; extra == "all"
+    shap>=0.42; extra == "all"
+    shapiq>=1.0; extra == "all"
+    skrub; extra == "all"
+    sphinx; extra == "all"
+    sphinx-copybutton; extra == "all"
+    sphinx-gallery; extra == "all"
+    sphinxext-opengraph; extra == "all"
+    statsmodels>=0.14.5; extra == "all"
+    transformers; extra == "all"
+    wandb; extra == "all"
+    xgboost; extra == "all"
+    matplotlib>=3.10.3; extra == "doc"
+    numba; extra == "doc"
+    pandas; extra == "doc"
+    pydata-sphinx-theme; extra == "doc"
+    shap>=0.42; extra == "doc"
+    shapiq>=1.0; extra == "doc"
+    skrub; extra == "doc"
+    sphinx; extra == "doc"
+    sphinx-copybutton; extra == "doc"
+    sphinx-gallery; extra == "doc"
+    sphinxext-opengraph; extra == "doc"
+    transformers; extra == "finetune"
+    wandb; extra == "finetune"
+    matplotlib>=3.10.3; extra == "forecast"
+    pandas>=2.1.2; extra == "forecast"
+    statsmodels>=0.14.5; extra == "forecast"
+    transformers; extra == "pretrain"
+    wandb; extra == "pretrain"
+    xgboost; extra == "pretrain"
+    matplotlib>=3.10.3; extra == "shap"
+    numba; extra == "shap"
+    shap>=0.42; extra == "shap"
+    shapiq>=1.0; extra == "shap"
+    pandas; extra == "test"
+    pytest; extra == "test"
+releases (upload date of the first file):
+    2025-03-12  0.0.1
+    2025-03-13  0.0.2
+    2025-03-17  0.0.3
+    2025-03-18  0.0.4
+    2025-03-19  0.0.5
+    2025-03-19  0.0.6
+    2025-05-05  0.1.0
+    2025-05-06  0.1.1
+    2025-05-20  0.1.2
+    2025-07-08  0.1.3
+    2025-11-28  0.1.4
+    2026-02-12  2.0.0
+    2026-02-14  2.0.1
+    2026-02-23  2.0.2
+    2026-03-02  2.0.3
+    2026-04-21  2.1.0
+    2026-04-29  2.1.1
+    2026-09-02  2.2.0

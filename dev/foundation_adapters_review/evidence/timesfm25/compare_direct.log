@@ -1,0 +1,46 @@
+python 3.12.3 | Linux-6.18.44-fc-v242-x86_64-with-glibc2.39 | cpu threads 4
+timesfm 3.0.2
+torch 2.15.0+cpu
+huggingface_hub 2.4.0
+numpy 2.5.4
+pandas 2.3.3
+skforecast 0.27.0
+
+== 1. FoundationModel vs direct call
+adapter model class: _TimesFMCompat | mro: ['_TimesFMCompat', 'TimesFM_2p5_200M_torch', 'TimesFM_2p5']
+compiled ForecastConfig: ForecastConfig(max_context=224, max_horizon=128, normalize_inputs=False, window_size=0, per_core_batch_size=1, use_continuous_quantile_head=False, force_flip_invariance=True, infer_is_positive=True, fix_quantile_crossing=False, return_backcast=False)
+global_batch_size: 1 | model device: cpu
+direct output shapes: (3, 24) (3, 24, 10)
+max |adapter - direct| point: 0.000e+00
+max |adapter - direct| quantiles [0.1, 0.5, 0.9]: 0.000e+00
+predict_quantiles columns: ['level', 'q_0.1', 'q_0.5', 'q_0.9']
+
+== 2. Point forecast channel
+point == quantile channel 5 (q0.5): True
+point == channel 0 (mean): False
+max |channel 0 - channel 5|: 0.1999
+
+== 3. torch_compile and _from_pretrained workaround
+adapter-loaded instance torch_compile: False
+adapter-loaded model.forward type: method
+direct (no workaround) instance torch_compile: False
+direct load without _TimesFMCompat: OK (no TypeError)
+from_pretrained(torch_compile=True) -> torch_compile: True | model.forward type: function
+
+== 4. Edge cases
+return_backcast=True: adapter.predict shape (216, 1)
+return_backcast=True: ValueError: could not broadcast input array from shape (216,1) into shape (24,1)
+max_context in kwargs: TypeError: timesfm.configs.ForecastConfig() got multiple values for keyword argument 'max_context'
+context_length=16384: ValueError: Context + horizon must be less than the context limit. 16384 + 128 > 16384.
+context_length=16000: adapter.predict shape (24, 1)
+context_length=16000: FoundationModel.predict rows 24
+use_continuous_quantile_head, steps<=1024: adapter.predict shape (24, 1)
+use_continuous_quantile_head, steps<=1024: FoundationModel.predict rows 24
+
+== 5. per_core_batch_size
+global_batch_size: 4
+max |batch 4 - batch 1| point: 7.629e-06, quantiles: 7.629e-06
+
+== 6. Nullable Float64 series with pd.NA
+dtype: Float64 | n NA: 5
+OK, max |nullable - float64 direct|: 0.000e+00

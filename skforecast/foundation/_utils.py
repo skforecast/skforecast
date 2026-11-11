@@ -109,6 +109,56 @@ def _validate_supported_quantiles(
     return quantile_list
 
 
+def _match_quantile_indices(
+    quantile_grid: list[float],
+    quantiles: list[float],
+    tol: float = 1e-6,
+) -> list[int]:
+    """
+    Map requested quantile levels to column indices in `quantile_grid`.
+
+    Parameters
+    ----------
+    quantile_grid : list of float
+        Quantile levels corresponding to the columns of the model's
+        quantile output, in order (e.g. the quantile grid of the loaded
+        checkpoint).
+    quantiles : list of float
+        Requested quantile levels.
+    tol : float, default 1e-6
+        Maximum allowed absolute difference between a requested
+        quantile and its nearest match in `quantile_grid`.
+
+    Returns
+    -------
+    indices : list of int
+        Column index in `quantile_grid` for each entry in
+        `quantiles`, in the same order.
+
+    Notes
+    -----
+    A `ValueError` is raised if a requested quantile has no match
+    within `tol`. Matching against the model's own quantile grid
+    (synced from the loaded checkpoint) rather than a fixed formula
+    keeps the mapping correct even if a checkpoint ships a different
+    quantile grid.
+
+    """
+
+    indices = []
+    for q in quantiles:
+        diffs = [abs(g - q) for g in quantile_grid]
+        best_idx = diffs.index(min(diffs))
+        if diffs[best_idx] > tol:
+            raise ValueError(
+                f"Quantile {q} not found in the model's quantile grid "
+                f"{quantile_grid} (tolerance {tol})."
+            )
+        indices.append(best_idx)
+
+    return indices
+
+
 def _apply_set_params(
     instance: Any,
     params: dict[str, Any],
@@ -242,6 +292,12 @@ _MODEL_LICENSES: dict[str, tuple[str, str | None, bool, str | None]] = {
         True,
         "TimesFM Non-Commercial License v1.0",
     ),
+    "NX-AI/TiRex-2": (
+        "Apache-2.0",
+        None,
+        False,
+        None,
+    ),
     "Salesforce/moirai": (
         "CC-BY-NC-4.0",
         None,
@@ -279,6 +335,15 @@ _MODEL_LICENSES: dict[str, tuple[str, str | None, bool, str | None]] = {
         "https://huggingface.co/taharnbl/TS-ICL/blob/main/LICENSE",
         True,
         "tsicl-v1-license-v1.0 (non-commercial)",
+    ),
+    # The model cards declare `license: other` with no `license_name`, and
+    # the four checkpoints publish the same LICENSE file.
+    "mistralai/Timestral": (
+        "other",
+        "https://huggingface.co/mistralai/Timestral-209M/blob/main/LICENSE",
+        True,
+        "Timestral Modified MIT License (no rights for companies with a monthly "
+        "revenue above USD 20 million)",
     ),
 }
 
@@ -587,3 +652,147 @@ def align_context_exog(
         )
 
     return context_exog_aligned
+
+
+def drop_past_only_exog(
+    context_exog: dict[str, pd.DataFrame | None],
+    exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+    series_names_in: list[str],
+) -> dict[str, pd.DataFrame | None]:
+    """
+    Remove, from the historical exogenous variables of each series, the
+    columns that have no future values (past-only covariates).
+
+    Parameters
+    ----------
+    context_exog : dict
+        Per-series historical exogenous variables as returned by
+        `align_context_exog`: each value is a pandas DataFrame or `None`.
+    exog : dict, None
+        Per-series future exogenous variables. Missing keys or `None` values
+        mean the series has no future exog, so all its historical columns
+        are removed.
+    series_names_in : list
+        Series to filter. Defines the keys of the output dict.
+
+    Returns
+    -------
+    context_exog_filtered : dict
+        Per-series dict with exactly the keys in `series_names_in`. Each
+        value holds only the historical columns that are also in the future
+        exog of the series, in their original order, or `None` if no column
+        is left.
+
+    Notes
+    -----
+    `FoundationModel.predict` applies it to adapters that declare
+    `supports_past_only_covariates=False`, so that they never receive a
+    covariate without future values. The input objects are not modified.
+
+    """
+
+    context_exog_filtered: dict[str, pd.DataFrame | None] = {}
+    for series_name in series_names_in:
+        series_exog = context_exog.get(series_name)
+        if series_exog is None:
+            context_exog_filtered[series_name] = None
+            continue
+        future_cols = _extract_exog_columns(
+            exog.get(series_name) if exog is not None else None
+        )
+        cols_to_keep = [col for col in series_exog.columns if col in future_cols]
+        if not cols_to_keep:
+            context_exog_filtered[series_name] = None
+        elif len(cols_to_keep) == len(series_exog.columns):
+            context_exog_filtered[series_name] = series_exog
+        else:
+            context_exog_filtered[series_name] = series_exog[cols_to_keep]
+
+    return context_exog_filtered
+
+
+def _left_pad_context(
+    context: dict[str, pd.Series],
+    context_exog: dict[str, pd.DataFrame | None] | None,
+) -> tuple[dict[str, pd.Series], dict[str, pd.DataFrame | None] | None]:
+    """
+    Left-pad the context window of every series with NaN to the length of the
+    longest one, so that all of them end at their own forecast origin.
+
+    Parameters
+    ----------
+    context : dict
+        Per-series context windows.
+    context_exog : dict, None
+        Per-series historical exogenous variables, aligned to the index of
+        their context.
+
+    Returns
+    -------
+    context : dict
+        Per-series context windows, all of length `width` (the longest
+        context) and indexed by `pandas.RangeIndex(width)`.
+    context_exog : dict, None
+        Per-series historical exogenous variables padded and indexed in the
+        same way, or `None` if `context_exog` is `None`.
+
+    Notes
+    -----
+    The padding is positional: the original timestamps are replaced by a
+    `RangeIndex`, so the result does not depend on the frequency or on the
+    time zone of each series (no timestamps are generated, which could not
+    exist or be ambiguous around a daylight saving change). Adapters that
+    declare `requires_equal_length_context` only use the values;
+    `FoundationModel` builds the index of the predictions from the unpadded
+    context.
+
+    A padded context series with a NumPy dtype is returned as float (a float
+    dtype is kept, any other becomes float64). Boolean exog columns (also the
+    nullable `boolean` dtype) are cast to float in every series, because a
+    bool column cannot hold NaN (pandas would turn it into an `object`
+    column). NumPy integer columns become float only in the series that are
+    padded, so within a group an integer column can be int or float depending
+    on the series. Nullable extension dtypes (`Int64`, `Float64`), in the
+    context and in the exog, keep their dtype and hold `pd.NA` in the padded
+    rows. Adapters must only rely on whether a column is numeric. The other
+    columns keep their dtype. The input objects are not modified.
+
+    """
+
+    width = max(len(series_values) for series_values in context.values())
+    index = pd.RangeIndex(width)
+    padded_context: dict[str, pd.Series] = {}
+    padded_exog: dict[str, pd.DataFrame | None] | None = (
+        {} if context_exog is not None else None
+    )
+    for series_name, series_values in context.items():
+        n_pad = width - len(series_values)
+        positions = pd.RangeIndex(n_pad, width)
+        if n_pad > 0 and isinstance(series_values.dtype, np.dtype):
+            # NumPy dtypes: fill an array by position, about 5 times faster
+            # than `reindex`. A float dtype is kept, any other becomes float64.
+            dtype = (
+                series_values.dtype if series_values.dtype.kind == "f" else np.float64
+            )
+            values = np.full(width, np.nan, dtype=dtype)
+            values[n_pad:] = series_values.to_numpy()
+            padded_context[series_name] = pd.Series(
+                values, index=index, name=series_values.name
+            )
+        else:
+            series_values = series_values.set_axis(positions)
+            padded_context[series_name] = (
+                series_values.reindex(index) if n_pad > 0 else series_values
+            )
+        if padded_exog is not None:
+            series_exog = context_exog.get(series_name)
+            if series_exog is not None:
+                series_exog = series_exog.set_axis(positions)
+                for col, dtype in series_exog.dtypes.items():
+                    if pd.api.types.is_bool_dtype(dtype):
+                        series_exog[col] = series_exog[col].astype(float)
+                if n_pad > 0:
+                    series_exog = series_exog.reindex(index)
+            padded_exog[series_name] = series_exog
+
+    return padded_context, padded_exog

@@ -1,0 +1,23 @@
+skforecast           0.27.0
+chronos-forecasting  2.3.2
+torch                2.15.0+cpu
+transformers         5.22.1
+  SUPPORTED_QUANTILES                  None
+  allow_exog                           True
+  supports_past_only_covariates        True
+  supports_categorical_covariates      True
+  supports_heterogeneous_covariates    False
+  requires_equal_length_context        False
+  supports_nan_in_series               True
+  requires_hf_auth                     False
+  requires_provider_auth               False
+  weights_repo_id                      None
+  weights_in_hf_cache                  True
+  backend_package                      'chronos-forecasting'
+  default_model_id                     'autogluon/chronos-2-small'
+heterogeneous covariate keys in one call: ValueError: All past_covariates must have same keys. Expected ['x'], got [] at index 1. Heterogeneous lists are not suppor
+past-only covariate, adapter vs direct max_abs_diff: 0.0
+different lengths + NaN, finite: True
+weights in HF cache under model_id: True
+trained quantiles: [0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99]
+model_context_length: 8192 model_prediction_length: 1024

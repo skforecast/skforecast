@@ -1,5 +1,6 @@
 # Unit test plot_prediction_intervals
 # ==============================================================================
+import re
 import pytest
 import numpy as np
 import pandas as pd
@@ -140,3 +141,77 @@ def test_plot_prediction_intervals_output_y_true_as_dataframe():
 
     assert len(ax.lines) >= 2
     assert len(ax.collections) >= 1
+
+
+@pytest.mark.parametrize(
+    'use_y_true_column',
+    [True, False],
+    ids=lambda use: f'y_true column in predictions: {use}'
+)
+def test_plot_prediction_intervals_output_when_y_true_or_target_variable_omitted(use_y_true_column):
+    """
+    Test that the real values come from the column 'y_true' of `predictions`
+    when `y_true` is not given, and from the only column of `y_true` when
+    `target_variable` is not given.
+    """
+    predictions, y_true, _ = _make_fixtures()
+    expected = y_true.loc[predictions.index].to_numpy()
+    fig, ax = plt.subplots()
+
+    if use_y_true_column:
+        predictions = predictions.assign(y_true=y_true.loc[predictions.index])
+        plot_prediction_intervals(predictions=predictions, ax=ax)
+    else:
+        plot_prediction_intervals(predictions=predictions, y_true=y_true, ax=ax)
+
+    real_value_line = ax.lines[0]
+    assert real_value_line.get_label() == "real value"
+    np.testing.assert_array_almost_equal(real_value_line.get_ydata(), expected)
+
+
+def _predictions_multiple_levels():
+    """
+    Predictions of two levels in long format, as returned by the multi-series
+    backtesting.
+    """
+    predictions, _, _ = _make_fixtures()
+    return pd.concat([
+        predictions.assign(level="l1", y_true=0.0),
+        predictions.assign(level="l2", y_true=0.0),
+    ])
+
+
+@pytest.mark.parametrize(
+    'kwargs, err_msg',
+    [
+        (
+            {'predictions': _make_fixtures()[0]},
+            "`y_true` must be provided when `predictions` does not have the "
+            "column 'y_true' (the predictions of the backtesting functions "
+            "include it)."
+        ),
+        (
+            {'predictions': _predictions_multiple_levels()},
+            "`predictions` contains more than one level. Filter the rows of one "
+            "level before plotting, for example: "
+            "`predictions[predictions['level'] == 'level_name']`."
+        ),
+        (
+            {
+                'predictions': _make_fixtures()[0],
+                'y_true': _make_fixtures()[1].to_frame().assign(other=1.0),
+            },
+            "`target_variable` must be provided when `y_true` has more "
+            "than one column."
+        ),
+    ],
+    ids=['no y_true', 'multiple levels', 'y_true several columns']
+)
+def test_plot_prediction_intervals_ValueError_when_invalid_inputs(kwargs, err_msg):
+    """
+    Test ValueError when the real values cannot be determined: no `y_true` and
+    no column 'y_true' in `predictions`, predictions of several levels, or a
+    `y_true` with several columns and no `target_variable`.
+    """
+    with pytest.raises(ValueError, match=re.escape(err_msg)):
+        plot_prediction_intervals(**kwargs)

@@ -65,6 +65,38 @@ def ks_2samp_from_ecdf(
     return distance
 
 
+def _chi2_statistic(
+    ref_counts: np.ndarray,
+    new_counts: np.ndarray
+) -> float:
+    """
+    Chi-square statistic of the contingency table with rows = [reference, new]
+    and columns = categories. Categories with no observations in either row
+    (unused categories of a `category` dtype, which `value_counts` returns
+    with count 0) are dropped: they do not change the statistic, and a column
+    of zeros makes `scipy.stats.chi2_contingency` raise a `ValueError`.
+
+    Parameters
+    ----------
+    ref_counts : numpy ndarray
+        Counts of each category in the reference data.
+    new_counts : numpy ndarray
+        Counts of each category in the new data, aligned with `ref_counts`.
+
+    Returns
+    -------
+    chi2_stat : float
+        Chi-square statistic.
+
+    """
+
+    observed = (ref_counts + new_counts) > 0
+    contingency_table = np.array([ref_counts[observed], new_counts[observed]])
+    chi2_stat = chi2_contingency(contingency_table)[0]
+
+    return chi2_stat
+
+
 class PopulationDriftDetector:
     """
     A class to detect population drift between reference and new datasets.
@@ -581,9 +613,7 @@ class PopulationDriftDetector:
                     new_counts = new.value_counts().reindex(all_cats, fill_value=0).to_numpy()
                     ref_counts_aligned = ref_stats_counts.reindex(all_cats, fill_value=0).to_numpy()
                     if new_counts.sum() > 0 and ref_counts_aligned.sum() > 0:
-                        # Create contingency table with rows = [reference, new], columns = categories
-                        contingency_table = np.array([ref_counts_aligned, new_counts])
-                        chi2_stat = chi2_contingency(contingency_table)[0]
+                        chi2_stat = _chi2_statistic(ref_counts_aligned, new_counts)
 
                 self.empirical_dist_ks_[feature].append(ks_stat)
                 self.empirical_dist_chi2_[feature].append(chi2_stat)
@@ -679,7 +709,7 @@ class PopulationDriftDetector:
             )
 
         if isinstance(X.index, pd.MultiIndex):
-            X = X.groupby(level=0)
+            X = X.groupby(level=0, observed=True)
 
             for idx, group in X:
                 group = group.droplevel(0)
@@ -784,13 +814,19 @@ class PopulationDriftDetector:
                             ref_probs=ref_probs_aligned, new_probs=new_probs
                         )
 
-                        all_cats = set(self.ref_categories_[feature]).union(set(new_counts_dict.keys()))
+                        # Reference categories first, then the unseen ones in the
+                        # order `value_counts` returns them: a stable order keeps
+                        # the statistic identical between runs (a set made it
+                        # depend on PYTHONHASHSEED in the last bits).
+                        ref_categories_set = set(ref_categories)
+                        all_cats = ref_categories + [
+                            cat for cat in new_counts_dict
+                            if cat not in ref_categories_set
+                        ]
                         new_counts = new_value_counts.reindex(all_cats, fill_value=0).to_numpy()
                         ref_counts_aligned = ref_counts.reindex(all_cats, fill_value=0).to_numpy()
                         if new_counts.sum() > 0 and ref_counts_aligned.sum() > 0:
-                            # Create contingency table: rows = [reference, new], columns = categories
-                            contingency_table = np.array([ref_counts_aligned, new_counts])
-                            chi2_stat = chi2_contingency(contingency_table)[0]
+                            chi2_stat = _chi2_statistic(ref_counts_aligned, new_counts)
 
                 results.append({
                     "chunk": chunk_label,
@@ -854,7 +890,7 @@ class PopulationDriftDetector:
 
         if isinstance(X.index, pd.MultiIndex):
             results = []
-            for idx, group in X.groupby(level=0):
+            for idx, group in X.groupby(level=0, observed=True):
                 group = group.droplevel(0)
                 if idx not in self.detectors_:
                     warnings.warn(

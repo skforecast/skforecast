@@ -131,9 +131,17 @@ BACKEND_CONTRACTS = {
     ],
     "t0": [
         {"target": "t0:T0Forecaster.from_pretrained"},
+        # `from_pretrained` forwards `dtype` (`torch_dtype`) to the constructor.
+        {"target": "t0:T0Forecaster", "kwargs": ["dtype"]},
         {
             "target": "t0:T0Forecaster.predict",
-            "kwargs": ["context", "horizon", "quantiles", "future_covariates"],
+            "n_positional": 1,
+            "kwargs": [
+                "horizon",
+                "quantile_levels",
+                "future_covariates",
+                "trim_leading_missing",
+            ],
         },
     ],
     "nori": [
@@ -161,6 +169,37 @@ BACKEND_CONTRACTS = {
                 "denormalize",
                 "squeeze_output",
             ],
+        },
+    ],
+    "timestral": [
+        {
+            "target": "timestral:TimestralForecaster.from_pretrained",
+            "n_positional": 1,
+            "kwargs": ["device"],
+        },
+        {
+            "target": "timestral:TimestralForecaster.forecast",
+            "kwargs": [
+                "context",
+                "prediction_length",
+                "past_covariates",
+                "known_covariates",
+                "categorical_past_covariates",
+                "categorical_known_covariates",
+            ],
+        },
+        {"target": "timestral:Forecast", "kwargs": ["quantiles", "quantile_levels"]},
+    ],
+    "tirex2": [
+        {"target": "tirex2:load_model", "n_positional": 1, "kwargs": ["device"]},
+        {
+            "target": "tirex2:TimeseriesType",
+            "kwargs": ["target", "past_covariates", "future_covariates"],
+        },
+        {
+            "target": "tirex2:ForecastModel.forecast",
+            "n_positional": 1,
+            "kwargs": ["prediction_length", "output_type"],
         },
     ],
 }

@@ -26,10 +26,12 @@ from ..base import ForecasterBase
 from ._forecaster_direct import _fit_one_step_estimator
 from ..exceptions import (
     DataTransformationWarning,
-    MissingValuesWarning,
     ResidualsUsageWarning
 )
 from ..utils import (
+    _all_samples_removed_message,
+    _prefers_c_contiguous_X,
+    _warn_nan_training_rows_direct,
     initialize_lags,
     initialize_window_features,
     initialize_weights,
@@ -53,9 +55,12 @@ from ..utils import (
     select_n_jobs_fit_forecaster,
     configure_estimator_categorical_features,
     cast_catboost_categorical_columns,
+    _get_catboost_cat_feature_indices,
     manage_warnings,
     get_style_repr_html,
     _build_predict_function,
+    _check_differentiation_last_values,
+    _NonFinitePredictorsError,
     scale_correction_factor_differentiation
 )
 from ..preprocessing import TimeSeriesDifferentiator, QuantileBinner
@@ -367,6 +372,13 @@ class ForecasterDirectMultiVariate(ForecasterBase):
     _probabilistic_mode: str, bool
         Private attribute used to indicate whether the forecaster should perform 
         some calculations during backtesting.
+    _allow_nan_predictions : bool
+        Private attribute. If `True`, a linear model of scikit-learn returns NaN
+        predictions when a predictor is NaN, instead of raising a `ValueError`.
+        It is set to `True` only by `backtesting_forecaster_multiseries`, in
+        its copy of the forecaster, to evaluate the series and dates that can
+        be predicted; the NaN predictions are warned when calculating the
+        metrics.
     encoding : Ignored
         Not used, present here for API consistency by convention.
 
@@ -446,6 +458,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         self.python_version                       = sys.version.split(" ")[0]
         self.forecaster_id                        = forecaster_id
         self._probabilistic_mode                  = "binned"
+        self._allow_nan_predictions               = False
         self.encoding                             = None   # Ignored in this forecaster
 
         if not isinstance(level, str):
@@ -1193,7 +1206,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                             )
                         )
 
-            check_exog(exog=exog, allow_nan=False)
             if self.categorical_features is None:
                 check_exog_dtypes(exog, call_check_exog=False)
 
@@ -1345,17 +1357,32 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 f"Duplicated feature names detected in X_train: {duplicated_names}."
             )
 
-        any_nan_y = np.isnan(y_train).any()
-        if any_nan_y:
-            # NOTE: NaN values in `y_train` are warned here but dropped in the 
-            # `_filter_nan_X_y_step` method during the training of each step.
-            warnings.warn(
-                "NaNs detected in `y_train`. They have been dropped because the "
-                "target variable cannot have NaN values. Same rows have been "
-                "dropped from `X_train` to maintain alignment. This is caused by "
-                "interspersed NaNs in `series`.",
-                MissingValuesWarning
-            )
+        # NOTE: With only lags (or only window features), `X_train_autoreg` is a
+        # view of `sliding_window_view` that is neither C nor F contiguous. Some
+        # linear models copy it again in every product with `X`. Without exog or
+        # calendar features every step uses `X_train_autoreg` as it is, so one
+        # copy here serves all the steps (with them, each step is built with
+        # `np.concatenate`, which is already C-contiguous).
+        if (
+            X_train_exog is None
+            and X_train_calendar is None
+            and _prefers_c_contiguous_X(self.estimator)
+        ):
+            X_train_autoreg = np.ascontiguousarray(X_train_autoreg)
+
+        # NOTE: NaN rows are counted per step here, without building the
+        # training matrix of each step, and dropped in the `_filter_nan_X_y_step`
+        # method during the training of each step. Rows with a NaN target are
+        # always dropped; rows with NaN predictors (and a non-NaN target) only
+        # if `dropna_from_series` is `True`.
+        _warn_nan_training_rows_direct(
+            y_train            = y_train,
+            X_train_autoreg    = X_train_autoreg,
+            X_train_exog       = X_train_exog,
+            steps              = self.steps,
+            dropna_from_series = self.dropna_from_series,
+            series_name        = "`series`"
+        )
 
         y_train = {
             step: y_train[:, step - 1] for step in self.steps
@@ -1365,29 +1392,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             step: series_index[self.window_size + step - 1:][:len_train_index]
             for step in self.steps
         }
-
-        any_nan_X = np.isnan(X_train_autoreg).any()
-        if X_train_exog is not None and not any_nan_X:
-            any_nan_X = pd.isna(X_train_exog).any()
-
-        if any_nan_X:
-            if self.dropna_from_series:
-                # NOTE: NaN values in `X_train` are warned here but dropped in the 
-                # `_filter_nan_X_y_step` method during the training of each step.
-                warnings.warn(
-                    "NaNs detected in `X_train`. They have been dropped. If "
-                    "you want to keep them, set `forecaster.dropna_from_series = False`. "
-                    "Same rows have been removed from `y_train` to maintain alignment. "
-                    "This is caused by interspersed NaNs in `series` or `exog`.",
-                    MissingValuesWarning
-                )
-            else:
-                warnings.warn(
-                    "NaNs detected in `X_train`. Some estimators do not allow "
-                    "NaN values during training. If you want to drop them, "
-                    "set `forecaster.dropna_from_series = True`.",
-                    MissingValuesWarning
-                )
 
         return (
             X_train_autoreg,
@@ -1518,9 +1522,13 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
         if len(y_train_step) == 0:
             raise ValueError(
-                "All samples have been removed due to NaNs. Set "
-                "`forecaster.dropna_from_series = False` or review `series` and "
-                "`exog` values."
+                _all_samples_removed_message(
+                    series_name              = "`series`",
+                    dropna_from_series       = self.dropna_from_series,
+                    max_lag                  = self.max_lag,
+                    max_size_window_features = self.max_size_window_features,
+                    estimator                = self.estimator
+                )
             )
 
         return X_train_step, y_train_step, train_index_step
@@ -2020,6 +2028,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         self.filter_train_X_y_columns_cache_      = {}
         self.is_fitted                            = False
         self.fit_date                             = None
+        # NOTE: `self` is sent to every step task of `Parallel`, so the fitted
+        # estimators of a previous fit would be serialized once per step.
+        self.estimators_ = {step: clone(self.estimator) for step in self.steps}
 
         (
             X_train_autoreg,
@@ -2248,6 +2259,10 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             last window values. `None` if no differentiation is applied. 
             This is used to reverse the differentiation of predictions 
             without mutating the forecaster's internal state.
+        Xs_index : pandas Index
+            Index of the rows of `Xs`, one per step predicted. With
+            differentiation, it has the dates of all the steps from 1 to
+            `max(steps)`, as `Xs`.
         
         """
         
@@ -2304,9 +2319,20 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             
             if self.differentiation is not None:
                 differentiator = copy(self.differentiator_[series])
-                last_window_series = differentiator.fit_transform(last_window_series)
                 if series == self.level:
+                    # NOTE: Only the differentiation of the level is reverted.
+                    # Backtesting allows NaN predictions, which it handles
+                    # when calculating the metrics. `getattr` keeps forecasters
+                    # saved with previous versions working.
+                    if not getattr(self, '_allow_nan_predictions', False):
+                        _check_differentiation_last_values(
+                            last_window_values = last_window_series,
+                            last_window_index  = last_window.index,
+                            order              = differentiator.order,
+                            series             = series
+                        )
                     differentiator_level = differentiator
+                last_window_series = differentiator.fit_transform(last_window_series)
 
             if self.lags is not None:
                 X_lags = last_window_series[-self.lags_[series]]
@@ -2413,12 +2439,13 @@ class ForecasterDirectMultiVariate(ForecasterBase):
 
             Xs = [Xs_array[i:i + 1] for i in range(len(Xs_steps))]
 
-        return Xs, Xs_col_names, steps, prediction_index, differentiator_level
+        return Xs, Xs_col_names, steps, prediction_index, differentiator_level, Xs_index
 
     def _direct_predict(
         self,
         steps: list[int],
-        Xs: list[np.ndarray]
+        Xs: list[np.ndarray],
+        Xs_index: pd.Index | None = None
     ) -> np.ndarray:
         """
         Generate predictions for the specified steps using the fitted estimators.
@@ -2437,6 +2464,10 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         Xs : list[np.ndarray]
             List of numpy arrays with the predictors for each step.
             Each array has shape (1, n_features).
+        Xs_index : pandas Index, default None
+            Index of the rows of `Xs`, one per step in `steps`, used to give
+            the date of the step in the error raised when a linear model gets
+            NaN predictors.
 
         Returns
         -------
@@ -2453,10 +2484,17 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 message="X does not have valid feature names", 
                 category=UserWarning
             )
-            predict_fns = [_build_predict_function(est) for est in estimators]
-            predictions = np.array(
-                [fn(X).item() for fn, X in zip(predict_fns, Xs)]
-            )
+            predict_fns = [
+                _build_predict_function(estimator=est, forecaster=self)
+                for est in estimators
+            ]
+            predictions = np.empty(len(steps), dtype=float)
+            for i, (fn, X, step) in enumerate(zip(predict_fns, Xs, steps)):
+                try:
+                    predictions[i] = fn(X).item()
+                except _NonFinitePredictorsError as e:
+                    date = Xs_index[i] if Xs_index is not None else None
+                    raise ValueError(e.message(step=step, date=date)) from None
 
         return predictions
 
@@ -2516,7 +2554,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             Xs_col_names,
             steps,
             prediction_index,
-            differentiator
+            differentiator,
+            _
         ) = self._create_predict_inputs(
                 steps        = steps,
                 last_window  = last_window,
@@ -2610,7 +2649,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             _,
             steps,
             prediction_index,
-            differentiator
+            differentiator,
+            Xs_index
         ) = self._create_predict_inputs(
                 steps        = steps,
                 last_window  = last_window,
@@ -2621,7 +2661,11 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         # NOTE: With differentiation, `Xs` has the predictors of all the steps
         # from 1 to `max(steps)`.
         Xs_steps = steps if differentiator is None else list(range(1, max(steps) + 1))
-        predictions = self._direct_predict(steps=Xs_steps, Xs=Xs)
+        predictions = self._direct_predict(
+                          steps    = Xs_steps,
+                          Xs       = Xs,
+                          Xs_index = Xs_index
+                      )
 
         if differentiator is not None:
             predictions = differentiator.inverse_transform_next_window(predictions)
@@ -2720,7 +2764,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             _,
             steps,
             prediction_index,
-            differentiator
+            differentiator,
+            Xs_index
         ) = self._create_predict_inputs(
                 steps                   = steps, 
                 last_window             = last_window, 
@@ -2741,7 +2786,11 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         # With differentiation, `Xs` has the predictors of all the steps from 1
         # to `max(steps)`.
         Xs_steps = steps if differentiator is None else list(range(1, max(steps) + 1))
-        predictions = self._direct_predict(steps=Xs_steps, Xs=Xs)
+        predictions = self._direct_predict(
+                          steps    = Xs_steps,
+                          Xs       = Xs,
+                          Xs_index = Xs_index
+                      )
         
         rng = np.random.default_rng(seed=random_state)
         if not use_binned_residuals:
@@ -2856,7 +2905,8 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             _,
             steps,
             prediction_index,
-            differentiator
+            differentiator,
+            Xs_index
         ) = self._create_predict_inputs(
                 steps                   = steps, 
                 last_window             = last_window, 
@@ -2877,7 +2927,11 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         # With differentiation, `Xs` has the predictors of all the steps from 1
         # to `max(steps)`.
         Xs_steps = steps if differentiator is None else list(range(1, max(steps) + 1))
-        predictions = self._direct_predict(steps=Xs_steps, Xs=Xs)
+        predictions = self._direct_predict(
+                          steps    = Xs_steps,
+                          Xs       = Xs,
+                          Xs_index = Xs_index
+                      )
         
         if use_binned_residuals:
             correction_factor_by_bin = {
@@ -3584,6 +3638,16 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                                                 X_train_step = X_train_step,
                                                 y_train_step = y_train_step,
                                             )
+
+            # NOTE: Same cast as in `fit`, with the categorical features of the
+            # fitted estimator of the step.
+            cat_indices = _get_catboost_cat_feature_indices(self.estimators_[step])
+            if len(cat_indices) > 0:
+                X_train_step = cast_catboost_categorical_columns(
+                    X          = X_train_step,
+                    fit_kwargs = {'cat_features': cat_indices},
+                    estimator  = self.estimators_[step]
+                )
 
             with warnings.catch_warnings():
                 warnings.filterwarnings(

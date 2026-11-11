@@ -1,6 +1,6 @@
 # Foundation backends compatibility
 
-Checks that each foundation model adapter of `skforecast/foundation` still works with its backend library (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`).
+Checks that each foundation model adapter of `skforecast/foundation` still works with its backend library (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`, `timestral`, `tirex-2`).
 
 Those libraries release often and change their API without notice, and the unit tests of the adapters use fakes of them, so they stay green when a backend changes. This check installs the real backend of each adapter in its own environment and runs two levels of tests against it.
 
@@ -25,7 +25,7 @@ python tools/foundation_compat/run.py --adapter moirai --level contract
 python tools/foundation_compat/summarize.py results
 ```
 
-On macOS the result may differ from CI (Linux): `tfc-t0` and `timesfm` ship an MLX runtime with other signatures. CI is the reference.
+On macOS the result may differ from CI (Linux): `timesfm` ships an MLX runtime with other signatures. CI is the reference.
 
 ## Environment
 
@@ -39,11 +39,11 @@ skforecast is installed from the checkout with its core dependencies only, in th
 
 | Trigger | Code checked | Notes |
 |:--------|:-------------|:---------|
-| Schedule (Mondays) | The highest release branch (`X.Y.x`), where the development happens | A failure opens or updates the issue labeled `backend-compat`. |
+| Schedule (Mondays) | The highest release branch (`X.Y.x`), where the development happens | A failure opens or updates the issue labeled `backend-compat`; the first run in which every environment passes closes it. |
 | Pull request to `main` (the release one) that touches `skforecast/foundation/**` or this folder | The branch of the pull request | A failing check does not prevent the merge unless it is marked as required. |
 | Manual (`workflow_dispatch`) | Any branch | |
 
-Pull requests to the release branches (`*.x`) do not run the workflow: their changes are checked by the next scheduled run. To check a change of an adapter right away, run `run.py` locally or launch the workflow by hand on the branch (Actions > Foundation Backends Compatibility > Run workflow), which is possible once the workflow is on `main`.
+Pull requests to the release branches (`*.x`) do not run the workflow: their changes are checked by the next scheduled run. Neither do the pull requests of Dependabot. To check a change of an adapter right away, run `run.py` locally or launch the workflow by hand on the branch (Actions > Foundation Backends Compatibility > Run workflow), which is possible once the workflow is on `main`.
 
 Secrets of the repository: `HF_TOKEN` and `TABPFN_TOKEN`. They are exposed to third-party packages that are not pinned, so use read-only tokens of a dedicated account. Without `TABPFN_TOKEN` (for example in pull requests from forks), the smoke tests of TabPFN are reported as skipped.
 

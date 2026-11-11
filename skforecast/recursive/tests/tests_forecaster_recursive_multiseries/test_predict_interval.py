@@ -1313,3 +1313,36 @@ def test_predict_interval_output_when_unknown_level_and_out_sample_binned_residu
         'l1': 7, 'l2': 7, '_unknown_level': 8
     }
     pd.testing.assert_frame_equal(results, expected)
+
+
+def test_predict_interval_output_when_series_names_are_integers_and_encoding_onehot():
+    """
+    Test predict_interval output with conformal method when the series names
+    are integers and `encoding='onehot'`. The in-sample residuals are stored
+    with the integer names as keys and the intervals are the same as with
+    the names as strings ('l1', 'l2').
+    """
+    series = {
+        1: series_dict_dt['l1'].rename(1),
+        2: series_dict_dt['l2'].rename(2)
+    }
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, encoding='onehot'
+    )
+    forecaster.fit(series=series, store_in_sample_residuals=True)
+    results = forecaster.predict_interval(
+        steps=2, levels=[2], method='conformal', interval=[0.1, 0.9]
+    )
+
+    expected = pd.DataFrame(
+        data=np.array([
+            [0.502465006861565, 0.2394549102881363, 0.7654751034349938],
+            [0.5174295272142598, 0.380973079297564, 0.6538859751309556]
+        ]),
+        columns=['pred', 'lower_bound', 'upper_bound'],
+        index=pd.DatetimeIndex(['2000-02-20', '2000-02-21'])
+    )
+    expected.insert(0, 'level', [2, 2])
+
+    assert set(forecaster.in_sample_residuals_.keys()) == {1, 2, '_unknown_level'}
+    pd.testing.assert_frame_equal(results, expected)

@@ -1,8 +1,10 @@
 # Unit test random_search_forecaster_multiseries
 # ==============================================================================
+import warnings
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import Ridge
+from sklearn.metrics import r2_score
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirectMultiVariate
 from skforecast.model_selection import random_search_forecaster_multiseries
@@ -92,6 +94,7 @@ def test_output_random_search_forecaster_multiseries_ForecasterRecursiveMultiSer
                     0.2107879393001434,
                 ]
             ),
+            "n_evaluated": [24] * 6,
             "alpha": np.array(
                 [
                     1e-05,
@@ -170,6 +173,7 @@ def test_output_random_search_forecaster_multiseries_ForecasterDirectMultiVariat
             "mean_absolute_error": np.array(
                 [0.20107097, 0.20135665, 0.20991177, 0.21121154, 0.22640335, 0.22645387]
             ),
+            "n_evaluated": [12] * 6,
             "alpha": np.array(
                 [
                     1.00000000e-05,
@@ -185,3 +189,73 @@ def test_output_random_search_forecaster_multiseries_ForecasterDirectMultiVariat
     )
 
     pd.testing.assert_frame_equal(results, expected_results)
+
+
+def test_random_search_forecaster_multiseries_maximizes_metric_when_greater_is_better():
+    """
+    Test that, with a metric in which greater values are better (`r2_score`),
+    the results are sorted in descending order by the aggregated metric and
+    `return_best` refits the forecaster with the best candidate.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=Ridge(random_state=123), lags=2
+    )
+    cv = TimeSeriesFold(
+        steps=3, initial_train_size=len(series_wide_range) - 12, refit=False
+    )
+    results = random_search_forecaster_multiseries(
+        forecaster=forecaster,
+        series=series_wide_range,
+        cv=cv,
+        param_distributions={"alpha": [0.01, 1, 100]},
+        metric=r2_score,
+        aggregate_metric="average",
+        n_iter=3,
+        random_state=123,
+        return_best=True,
+    )
+
+    assert results["r2_score__average"].nunique() > 1
+    assert results["r2_score__average"].is_monotonic_decreasing
+    assert forecaster.estimator.alpha == results.loc[0, "alpha"]
+
+
+def test_random_search_forecaster_multiseries_UserWarning_when_space_smaller_than_n_iter():
+    """
+    Test that, when the total space of parameters is smaller than `n_iter`,
+    a single UserWarning refers to `grid_search_forecaster_multiseries`, not to
+    scikit-learn's `GridSearchCV`, and every combination is evaluated for each
+    value of `lags_grid`.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = Ridge(random_state=123),
+                     lags               = 2,
+                     transformer_series = None
+                 )
+    cv = TimeSeriesFold(
+            initial_train_size = len(series_dict_dt['l1']) - 12,
+            steps              = 3,
+            refit              = False
+         )
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results = random_search_forecaster_multiseries(
+                      forecaster          = forecaster,
+                      series              = series_dict_dt,
+                      param_distributions = {'alpha': [0.1, 1.0]},
+                      cv                  = cv,
+                      metric              = 'mean_absolute_error',
+                      lags_grid           = [2, 4],
+                      n_iter              = 5,
+                      return_best         = False,
+                      verbose             = False
+                  )
+
+    assert len(results) == 4
+    messages = [str(w.message) for w in record if w.category is UserWarning]
+    assert messages == [
+        "The total space of parameters (2) is smaller than `n_iter` (5), so the "
+        "search evaluates the 2 combinations for each value of `lags_grid`. For "
+        "an exhaustive search, use `grid_search_forecaster_multiseries`."
+    ]

@@ -1353,10 +1353,9 @@ def test_create_train_X_y_MissingValuesWarning_when_y_has_NaN_in_target_position
                  )
 
     warn_msg = re.escape(
-        "NaNs detected in `y_train`. They have been dropped because the "
-        "target variable cannot have NaN values. Same rows have been "
-        "dropped from `X_train` to maintain alignment. This is caused by "
-        "interspersed NaNs in `y`."
+        "Some rows of the training matrix have missing values. 1 of 5 rows "
+        "is dropped, with a NaN target. They come from interspersed NaNs in "
+        "`y` or `exog`."
     )
     with pytest.warns(MissingValuesWarning, match=warn_msg):
         results = forecaster._create_train_X_y(y=y, exog=exog)
@@ -1416,7 +1415,11 @@ def test_create_train_X_y_MissingValuesWarning_and_output_when_NaN_in_X_train_an
                  )
 
     warn_msg = re.escape(
-        "NaNs detected in `X_train`. They have been dropped."
+        "Some rows of the training matrix have missing values. 3 of 5 rows "
+        "are dropped, with NaN predictors (lags, window features or exog). "
+        "They come from interspersed NaNs in `y` or `exog`. To keep the "
+        "rows with NaN predictors, set `forecaster.dropna_from_series = "
+        "False` (the estimator must support NaN)."
     )
     with pytest.warns(MissingValuesWarning, match=warn_msg):
         results = forecaster._create_train_X_y(y=y, exog=exog)
@@ -1477,9 +1480,11 @@ def test_create_train_X_y_MissingValuesWarning_and_output_when_NaN_in_X_train_an
                  )
 
     warn_msg = re.escape(
-        "NaNs detected in `X_train`. Some estimators do not allow "
-        "NaN values during training. If you want to drop them, "
-        "set `forecaster.dropna_from_series = True`."
+        "Some rows of the training matrix have missing values. 3 of 5 rows "
+        "are kept with NaN predictors (lags, window features or exog). They "
+        "come from interspersed NaNs in `y` or `exog`. The estimator must "
+        "support NaN. To drop those rows, set "
+        "`forecaster.dropna_from_series = True`."
     )
     with pytest.warns(MissingValuesWarning, match=warn_msg):
         results = forecaster._create_train_X_y(y=y, exog=exog)
@@ -1534,8 +1539,14 @@ def test_create_train_X_y_ValueError_when_all_samples_removed_due_to_NaN():
                  )
 
     err_msg = re.escape(
-        "All samples have been removed due to NaNs. Set "
-        "`forecaster.dropna_from_series = False` or review `y` and `exog` values."
+        "All samples have been removed due to NaNs: every row has a missing "
+        "value in the target or in the predictors (largest lag: 2). This can "
+        "happen when the missing values of `y` are closer together than the "
+        "lags, or when `exog` has a missing value in every row. To keep "
+        "training samples, fill the missing values of `y` and `exog`, use "
+        "fewer lags, or use an estimator that accepts NaNs (for example, "
+        "LightGBM or scikit-learn HistGradientBoosting models) and set "
+        "`dropna_from_series = False`."
     )
     with pytest.raises(ValueError, match=err_msg):
         forecaster._create_train_X_y(y=y)
@@ -1673,3 +1684,57 @@ def test_create_train_X_y_output_when_window_features_calendar_and_exog_transfor
         assert results[9][k] == expected[9][k]
     for k in results[10].keys():
         assert results[10][k] == expected[10][k]
+
+
+@pytest.mark.parametrize(
+    "nan_in, dropna_from_series, counts, n_rows_kept",
+    [
+        ("y", True, "4 of 9 rows are dropped: 1 with a NaN target and 3 with NaN predictors (lags, window features or exog).", 5),
+        ("y", False, "1 of 9 rows is dropped (NaN target) and 3 are kept with NaN predictors (lags, window features or exog).", 8),
+        ("exog", True, "1 of 9 rows is dropped, with NaN predictors (lags, window features or exog).", 8),
+        ("exog", False, "1 of 9 rows is kept with NaN predictors (lags, window features or exog).", 9),
+        ("both", True, "5 of 9 rows are dropped: 1 with a NaN target and 4 with NaN predictors (lags, window features or exog).", 4),
+        ("both", False, "1 of 9 rows is dropped (NaN target) and 4 are kept with NaN predictors (lags, window features or exog).", 8),
+    ],
+    ids=lambda x: f"{x}"[:20]
+)
+def test_create_train_X_y_single_MissingValuesWarning_with_counts_of_NaN_rows(
+    nan_in, dropna_from_series, counts, n_rows_kept
+):
+    """
+    Test a single MissingValuesWarning is raised with the number of rows of
+    the training matrix with a NaN target (always dropped) and with NaN
+    predictors (dropped only if `dropna_from_series=True`), and that the
+    rows kept match the counts. NaN in `y` at position 5 (target of one row
+    and lag of the next 3) and in `exog` at position 10.
+    """
+    y = pd.Series(np.arange(12, dtype=float), name='y')
+    exog = pd.Series(np.arange(100, 112, dtype=float), name='exog')
+    if nan_in in ("y", "both"):
+        y.iloc[5] = np.nan
+    if nan_in in ("exog", "both"):
+        exog.iloc[10] = np.nan
+    forecaster = ForecasterRecursive(
+                     estimator          = LinearRegression(),
+                     lags               = 3,
+                     dropna_from_series = dropna_from_series
+                 )
+
+    action = (
+        "To keep the rows with NaN predictors, set "
+            "`forecaster.dropna_from_series = False` (the estimator must "
+            "support NaN)."
+        if dropna_from_series else
+        "The estimator must support NaN. To drop those rows, set "
+            "`forecaster.dropna_from_series = True`."
+    )
+    warn_msg = re.escape(
+        f"Some rows of the training matrix have missing values. {counts} "
+        f"They come from interspersed NaNs in `y` or `exog`. {action}"
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg) as record:
+        X_train, y_train = forecaster.create_train_X_y(y=y, exog=exog)
+
+    assert sum(issubclass(w.category, MissingValuesWarning) for w in record) == 1
+    assert len(y_train) == n_rows_kept
+    assert len(X_train) == n_rows_kept

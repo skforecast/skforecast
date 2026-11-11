@@ -4,12 +4,16 @@ import os
 import re
 import platform
 import pytest
+from unittest.mock import patch
+from joblib import Parallel, cpu_count
+from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.tree import DecisionTreeRegressor
 from pytest import approx
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Ridge
-from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.preprocessing import StandardScaler
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirectMultiVariate
@@ -17,7 +21,7 @@ from skforecast.model_selection import backtesting_forecaster_multiseries
 from skforecast.model_selection import bayesian_search_forecaster_multiseries
 from skforecast.model_selection._split import TimeSeriesFold, OneStepAheadFold
 from skforecast.preprocessing import RollingFeatures
-from skforecast.exceptions import OneStepAheadValidationWarning
+from skforecast.exceptions import MissingValuesWarning, OneStepAheadValidationWarning
 from skforecast.metrics import mean_absolute_scaled_error
 from sklearn.metrics import mean_absolute_percentage_error
 from lightgbm import LGBMRegressor
@@ -47,6 +51,26 @@ from ..fixtures_model_selection_multiseries import (
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)  # hide progress bar
+
+# NOTE: `short` has 20 values, 5 of them in the training set of
+# `initial_train_size=45`, so the candidates with more than 4 lags do not
+# predict it and evaluate fewer points than the others.
+index_short = pd.date_range('2020-01-01', periods=60, freq='D')
+series_short = {
+    'l1': pd.Series(10 + np.sin(np.arange(60)), index=index_short),
+    'l2': pd.Series(20 + 2 * np.cos(np.arange(60) / 2), index=index_short),
+    'short': pd.Series(5 + np.arange(20) % 3, index=index_short[-20:], dtype=float),
+}
+# NOTE: `short` has 6 values, 5 of them in the training set of
+# `initial_train_size=45` and 1 in the test set, so the candidates with more
+# than 4 lags do not predict it, but evaluate more than 95% of the points of
+# the others (30 of 31): the warning of the levels not predicted is shown, the
+# warning of the points evaluated is not.
+series_short_one_point = {
+    'l1': series_short['l1'],
+    'l2': series_short['l2'],
+    'short': pd.Series(5 + np.arange(6) % 3, index=index_short[40:46], dtype=float),
+}
 
 
 def test_TypeError_bayesian_search_forecaster_multiseries_when_cv_not_valid():
@@ -165,6 +189,45 @@ def test_ValueError_bayesian_search_forecaster_multiseries_metric_list_duplicate
             aggregate_metric   = 'weighted_average',
             n_trials           = 10,
             random_state       = 123,
+            return_best        = False,
+            verbose            = False,
+        )
+
+
+def test_ValueError_bayesian_search_forecaster_multiseries_when_metric_named_n_evaluated():
+    """
+    Test ValueError is raised in bayesian_search_forecaster_multiseries, before
+    the first trial, when a metric is named `n_evaluated`, the column of the
+    backtesting metrics with the number of points evaluated.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator = Ridge(random_state=123),
+                     lags      = 2,
+                     encoding  = 'onehot'
+                 )
+    cv = TimeSeriesFold(initial_train_size=len(series_dict_range['l1']) - 12, steps=3)
+
+    def search_space(trial):  # pragma: no cover
+        search_space  = {'alpha': trial.suggest_float('alpha', 1e-2, 1.0)}
+
+        return search_space
+
+    def n_evaluated(y_true, y_pred):  # pragma: no cover
+        return mean_absolute_error(y_true, y_pred)
+
+    err_msg = re.escape(
+        "The backtesting metrics include the column 'n_evaluated' with the "
+        "number of points evaluated. Rename the metric 'n_evaluated' passed in "
+        "`metric`."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        bayesian_search_forecaster_multiseries(
+            forecaster         = forecaster,
+            series             = series_dict_range,
+            search_space       = search_space,
+            cv                 = cv,
+            metric             = n_evaluated,
+            n_trials           = 10,
             return_best        = False,
             verbose            = False,
         )
@@ -451,6 +514,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_with_mocked_when_
             columns=['levels', 'lags', 'params', 'mean_absolute_error__weighted_average', 'n_estimators', 'min_samples_leaf', 'max_features'],
             index=pd.RangeIndex(start=0, stop=10, step=1)
         ).astype({'mean_absolute_error__weighted_average': float, 'n_estimators': int, 'min_samples_leaf': float})
+    expected_results.insert(4, 'n_evaluated', [24] * 10)
 
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results, check_dtype=False)
 
@@ -552,6 +616,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursi
         columns=['levels', 'lags', 'params', 'mean_absolute_error', 'alpha'],
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error': float, 'alpha': float})
+    expected_results.insert(4, 'n_evaluated', [12] * 10)
 
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results, check_dtype=False)
 
@@ -669,41 +734,42 @@ def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursi
             0.21480607764821472,
         ],
         'mean_absolute_scaled_error__weighted_average': [
-            0.7923109431516052,
-            0.7923475860368283,
-            0.7923580182679315,
-            0.7923859027861416,
-            0.7924185605513081,
-            0.7880617091025902,
-            0.7881186058178458,
-            0.7881345955402543,
-            0.788166413485017,
-            0.788230970932795,
+            0.8084924984578482,
+            0.8085285927426056,
+            0.8085388684381026,
+            0.8085663337875469,
+            0.8085984992176032,
+            0.8122435105284239,
+            0.812304474197548,
+            0.8123216088216401,
+            0.8123557075995427,
+            0.8124249035245317,
         ],
         'mean_absolute_scaled_error__average': [
-            0.7923109431516052,
-            0.7923475860368283,
-            0.7923580182679316,
-            0.7923859027861416,
-            0.7924185605513081,
-            0.7880617091025902,
-            0.7881186058178459,
-            0.7881345955402543,
-            0.7881664134850169,
-            0.788230970932795,
+            0.8084924984578482,
+            0.8085285927426056,
+            0.8085388684381026,
+            0.8085663337875469,
+            0.8085984992176032,
+            0.8122435105284239,
+            0.812304474197548,
+            0.8123216088216401,
+            0.8123557075995427,
+            0.8124249035245317,
         ],
         'mean_absolute_scaled_error__pooling': [
-            0.7819568303260771,
-            0.7819952284192204,
-            0.7820061611367338,
-            0.7820353851137734,
-            0.7820696147769971,
-            0.7760652225280101,
-            0.776118808411715,
-            0.7761338679242804,
-            0.7761638351556942,
-            0.7762246388626313,
+            0.8084924984578482,
+            0.8085285927426057,
+            0.8085388684381026,
+            0.8085663337875469,
+            0.8085984992176033,
+            0.8122435105284239,
+            0.8123044741975481,
+            0.8123216088216401,
+            0.8123557075995427,
+            0.8124249035245316,
         ],
+        'n_evaluated': [24] * 10,
         'alpha': [
             0.5558016213920624,
             0.6995044937418831,
@@ -840,41 +906,42 @@ def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursi
             0.2685748853275215,
         ],
         'mean_absolute_scaled_error__weighted_average': [
-            0.9930667497722298,
-            0.9937439823757044,
-            0.9923479377236472,
-            0.9944435611595945,
-            0.994744372168292,
-            0.9941069879981377,
-            0.9960491623317846,
-            0.9953844945941341,
-            0.996195904784012,
-            1.0008499618646218,
+            1.0142905506018567,
+            1.0149997591332736,
+            1.0206034392577787,
+            1.0157310866394318,
+            1.0160451899601735,
+            1.0224567223463021,
+            1.0174054769157717,
+            1.0237982534464667,
+            1.0246491591611153,
+            1.0295211614058168,
         ],
         'mean_absolute_scaled_error__average': [
-            0.9930667497722299,
-            0.9937439823757045,
-            0.9923479377236472,
-            0.9944435611595946,
-            0.994744372168292,
-            0.9941069879981376,
-            0.9960491623317846,
-            0.9953844945941341,
-            0.996195904784012,
-            1.000849961864622,
+            1.0142905506018567,
+            1.0149997591332736,
+            1.0206034392577787,
+            1.0157310866394318,
+            1.0160451899601735,
+            1.0224567223463021,
+            1.0174054769157717,
+            1.0237982534464667,
+            1.0246491591611153,
+            1.0295211614058168,
         ],
         'mean_absolute_scaled_error__pooling': [
-            0.969431956811412,
-            0.9700438532186673,
-            0.9626684384225735,
-            0.970682040215464,
-            0.970958168704471,
-            0.9642489487589695,
-            0.9721662056891969,
-            0.9654200592524217,
-            0.9661702655321596,
-            0.9705239518983445,
+            1.0142905506018567,
+            1.0149997591332738,
+            1.0206034392577787,
+            1.015731086639432,
+            1.0160451899601737,
+            1.0224567223463024,
+            1.0174054769157717,
+            1.023798253446467,
+            1.024649159161115,
+            1.0295211614058168,
         ],
+        'n_evaluated': [24] * 10,
         'alpha': [
             0.9809565564007693,
             0.8509374761370117,
@@ -994,6 +1061,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_with_kwargs_creat
         columns=['levels', 'lags', 'params', 'mean_absolute_error__weighted_average', 'alpha'],
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error__weighted_average': float, 'alpha': float})
+    expected_results.insert(4, 'n_evaluated', [24] * 10)
 
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
@@ -1094,6 +1162,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_with_kwargs_study
         columns=['levels', 'lags', 'params', 'mean_absolute_error__weighted_average', 'alpha'],
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error__weighted_average': float, 'alpha': float})
+    expected_results.insert(4, 'n_evaluated', [24] * 10)
 
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
@@ -1190,6 +1259,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_when_lags_is_not_
         columns=['levels', 'lags', 'params', 'mean_absolute_error__weighted_average', 'alpha'],
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error__weighted_average': float, 'alpha': float})
+    expected_results.insert(4, 'n_evaluated', [24] * 10)
 
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
@@ -1289,6 +1359,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_ForecasterDirectM
         columns=['levels', 'lags', 'params', 'mean_absolute_error', 'alpha'],
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error': float, 'alpha': float})
+    expected_results.insert(4, 'n_evaluated', [12] * 10)
 
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
@@ -1391,6 +1462,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_ForecasterDirectM
         columns=['levels', 'lags', 'params', 'mean_absolute_error', 'alpha'],
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error': float, 'alpha': float})
+    expected_results.insert(4, 'n_evaluated', [12] * 10)
 
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
@@ -1731,12 +1803,13 @@ def test_bayesian_search_forecaster_multiseries_ForecasterDirectMultiVariate_one
             0.05626606940150185,
         ],
         "mean_absolute_scaled_error": [
-            0.5253268062267301,
-            0.5254424666423076,
-            0.548427455162373,
-            0.5502249908743697,
-            0.7389051285340059,
+            0.5247378371038117,
+            0.5248518532368515,
+            0.5484532928870661,
+            0.5501878507612773,
+            0.7384349487035564,
         ],
+        "n_evaluated": [88] * 5,
         "alpha": [
             0.2252709077935534,
             0.4279898484823994,
@@ -1828,6 +1901,7 @@ def test_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries(s
         'mean_absolute_error__weighted_average': float, 
         'alpha': float
     })
+    expected_results.insert(4, 'n_evaluated', [24] * 10)
 
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
@@ -1953,26 +2027,27 @@ def test_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_o
                 0.14287737387127633,
             ],
             "mean_absolute_scaled_error__average": [
-                0.9807885628114613,
-                0.9887040054273549,
-                0.9887272793513265,
-                0.9982897158009892,
-                0.999726922014544,
+                0.9691643000951734,
+                0.9758185153413943,
+                0.9758412904180057,
+                0.986012246542154,
+                0.9874124640526697,
             ],
             "mean_absolute_scaled_error__weighted_average": [
-                0.9807885628114613,
-                0.9887040054273548,
-                0.9887272793513265,
-                0.9982897158009892,
-                0.9997269220145439,
+                0.9691643000951734,
+                0.9758185153413943,
+                0.9758412904180057,
+                0.986012246542154,
+                0.9874124640526697,
             ],
             "mean_absolute_scaled_error__pooling": [
-                0.994386675351447,
-                1.0309527259247835,
-                1.0309910949992809,
-                1.039045301850066,
-                1.0413476602398484,
+                0.9691643000951735,
+                0.9758185153413942,
+                0.9758412904180056,
+                0.9860122465421542,
+                0.9874124640526695,
             ],
+            "n_evaluated": [291] * 5,
             "alpha": [
                 766.6289057556013,
                 0.4279898484823994,
@@ -2108,26 +2183,27 @@ def test_bayesian_search_forecaster_multiseries_ForecasterRecursiveMultiSeries_o
                 0.14287737387127633,
             ],
             "mean_absolute_scaled_error__average": [
-                0.9807885628114613,
-                0.9887040054273549,
-                0.9887272793513265,
-                0.9982897158009892,
-                0.999726922014544,
+                0.9691643000951734,
+                0.9758185153413943,
+                0.9758412904180057,
+                0.986012246542154,
+                0.9874124640526697,
             ],
             "mean_absolute_scaled_error__weighted_average": [
-                0.9807885628114613,
-                0.9887040054273548,
-                0.9887272793513265,
-                0.9982897158009892,
-                0.9997269220145439,
+                0.9691643000951734,
+                0.9758185153413943,
+                0.9758412904180057,
+                0.986012246542154,
+                0.9874124640526697,
             ],
             "mean_absolute_scaled_error__pooling": [
-                0.994386675351447,
-                1.0309527259247835,
-                1.0309910949992809,
-                1.039045301850066,
-                1.0413476602398484,
+                0.9691643000951735,
+                0.9758185153413942,
+                0.9758412904180056,
+                0.9860122465421542,
+                0.9874124640526695,
             ],
+            "n_evaluated": [291] * 5,
             "alpha": [
                 766.6289057556013,
                 0.4279898484823994,
@@ -2208,14 +2284,14 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_mult
                 {"n_estimators": 4, "max_depth": 3},
             ],
             "mean_absolute_error__weighted_average": [
-                749.8761502029433,
-                760.659082077477,
-                777.6874712018467,
-            ],
-            "mean_absolute_error__average": [
                 709.8836514262415,
                 721.1848222120482,
                 754.3537196425694,
+            ],
+            "mean_absolute_error__average": [
+                749.8761502029433,
+                760.659082077477,
+                777.6874712018467,
             ],
             "mean_absolute_error__pooling": [
                 709.8836514262414,
@@ -2223,20 +2299,21 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_mult
                 754.3537196425694,
             ],
             "mean_absolute_scaled_error__weighted_average": [
-                1.720281630023928,
-                1.7468333254211739,
-                1.7217882951816943,
+                2.0052208137248195,
+                2.0370854962864047,
+                2.129617512493558,
             ],
             "mean_absolute_scaled_error__average": [
-                2.0713511786893473,
-                2.104173580194738,
-                2.06373433155371,
+                1.676905499101462,
+                1.702819118496393,
+                1.769230876612916,
             ],
             "mean_absolute_scaled_error__pooling": [
-                1.7240004031507636,
-                1.7514460598462835,
-                1.7678687830707494,
+                2.0052208137248195,
+                2.0370854962864047,
+                2.129617512493558,
             ],
+            "n_evaluated": [417] * 3,
             "n_estimators": [4, 3, 4],
             "max_depth": [3, 3, 3],
         }
@@ -2319,6 +2396,7 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_wind
                     721.2904821438083,
                     744.3600945094412,
                 ],
+                'n_evaluated': [417] * 3,
                 'n_estimators': [4, 3, 4],
                 'max_depth': [3, 3, 3],
             })
@@ -2423,6 +2501,7 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_with
             "max_depth": int,
         }
     )
+    expected.insert(4, 'n_evaluated', [417] * 3)
 
     results_search = results_search.astype(
         {
@@ -2488,13 +2567,13 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_with
     expected = pd.DataFrame(
         np.array([[list(['id_1000', 'id_1001', 'id_1002', 'id_1003', 'id_1004']),
         np.array([1,  7, 14]), {'n_estimators': 4, 'max_depth': 3}, 
-            718.447039241195, 694.843611295513, 694.843611295513, 4, 3],
+            694.843611295513, 718.447039241195, 694.843611295513, 4, 3],
         [list(['id_1000', 'id_1001', 'id_1002', 'id_1003', 'id_1004']),
         np.array([1,  7, 14]), {'n_estimators': 3, 'max_depth': 3},
-            726.7646039380159, 704.8898538858386, 704.8898538858386, 3, 3],
+            704.8898538858386, 726.7646039380159, 704.8898538858386, 3, 3],
         [list(['id_1000', 'id_1001', 'id_1002', 'id_1003', 'id_1004']),
          np.array([5]), {'n_estimators': 4, 'max_depth': 3},
-            735.3584948212444, 730.1888301097707, 730.1888301097707, 4, 3]], dtype=object),
+            730.1888301097707, 735.3584948212444, 730.1888301097707, 4, 3]], dtype=object),
         columns=['levels', 'lags', 'params', 
                  'mean_absolute_error__weighted_average', 
                  'mean_absolute_error__average', 
@@ -2508,6 +2587,7 @@ def test_output_bayesian_search_forecaster_multiseries_series_and_exog_dict_with
         'n_estimators': int,
         'max_depth': int
     })
+    expected.insert(6, 'n_evaluated', [225] * 3)
 
     results_search = results_search.astype({
         'mean_absolute_error__weighted_average': float,
@@ -2621,6 +2701,7 @@ def test_results_output_bayesian_search_forecaster_multiseries_ForecasterRecursi
         columns=['levels', 'lags', 'params', 'mean_absolute_error__weighted_average', 'alpha'],
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error__weighted_average': float, 'alpha': float})
+    expected_results.insert(4, 'n_evaluated', [24] * 10)
 
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
@@ -2718,6 +2799,7 @@ def test_results_output_bayesian_search_forecaster_multivariate_ForecasterDirect
         columns=['levels', 'lags', 'params', 'mean_absolute_error', 'alpha'],
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error': float, 'alpha': float})
+    expected_results.insert(4, 'n_evaluated', [12] * 10)
 
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
@@ -2820,6 +2902,7 @@ def test_results_output_bayesian_search_forecaster_multivariate_ForecasterDirect
         columns=['levels', 'lags', 'params', 'mean_absolute_error', 'alpha'],
         index=pd.RangeIndex(start=0, stop=10, step=1)
     ).astype({'mean_absolute_error': float, 'alpha': float})
+    expected_results.insert(4, 'n_evaluated', [12] * 10)
 
     pd.testing.assert_frame_equal(results.drop(columns=["trial_number"]), expected_results)
 
@@ -2927,9 +3010,485 @@ def test_bayesian_search_forecaster_multiseries_xgboost_categorical_no_ValueErro
         'mean_absolute_error__pooling': [
             0.232613, 0.243916, 0.243916, 0.244897, 0.244897, 0.246239
         ],
+        'n_evaluated': [30] * 6,
         'n_estimators': [7, 7, 7, 6, 6, 9],
     }, index=pd.RangeIndex(start=0, stop=6, step=1))
 
     pd.testing.assert_frame_equal(
         results.drop(columns=['trial_number']), expected_results, atol=1e-4
     )
+
+
+@pytest.mark.parametrize(
+    "kwargs_create_study, expected_direction",
+    [(None, "maximize"), ({"direction": "minimize"}, "minimize")],
+    ids=lambda dt: f"{dt}",
+)
+def test_bayesian_search_forecaster_multiseries_direction_when_metric_greater_is_better(
+    kwargs_create_study, expected_direction
+):
+    """
+    Test that, with a metric in which greater values are better (`r2_score`),
+    the study is maximized by default, and that the results (sorted by the
+    aggregated metric) and `return_best` follow the direction of the study,
+    also when it is set in `kwargs_create_study` (with a warning when it
+    contradicts the metric).
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=Ridge(random_state=123), lags=2
+    )
+    cv = TimeSeriesFold(
+        steps=3, initial_train_size=len(series_wide_range) - 12, refit=False
+    )
+
+    def search_space(trial):
+        return {"alpha": trial.suggest_float("alpha", 1e-2, 1e2, log=True)}
+
+    kwargs = dict(
+        forecaster=forecaster,
+        series=series_wide_range,
+        cv=cv,
+        search_space=search_space,
+        metric=r2_score,
+        aggregate_metric="average",
+        n_trials=8,
+        random_state=123,
+        return_best=True,
+        kwargs_create_study=kwargs_create_study,
+    )
+    if expected_direction == "minimize":
+        with pytest.warns(UserWarning, match="The optuna study direction is 'minimize'"):
+            results, study = bayesian_search_forecaster_multiseries(**kwargs)
+    else:
+        results, study = bayesian_search_forecaster_multiseries(**kwargs)
+
+    assert study.direction.name.lower() == expected_direction
+    assert results["r2_score__average"].nunique() > 1
+    if expected_direction == "maximize":
+        assert results["r2_score__average"].is_monotonic_decreasing
+    else:
+        assert results["r2_score__average"].is_monotonic_increasing
+    assert results.loc[0, "trial_number"] == study.best_trial.number
+    assert forecaster.estimator.alpha == study.best_params["alpha"]
+
+
+@pytest.mark.parametrize(
+    "cv",
+    [
+        TimeSeriesFold(steps=10, initial_train_size=213, refit=False),
+        OneStepAheadFold(initial_train_size=213),
+    ],
+    ids=lambda cv: f"cv: {type(cv).__name__}",
+)
+def test_bayesian_search_forecaster_multiseries_aggregated_metrics_match_their_column(cv):
+    """
+    Test that each column `<metric>__<aggregation>` of the results, and the
+    value optimized by optuna (the first one), contain the metric of their
+    aggregation with the default `aggregate_metric` (weighted average first).
+    The series are evaluated on different numbers of points, so the weighted
+    average differs from the average. The expected values are those of a
+    search with each aggregation alone (the first trials are random, so all
+    the searches evaluate the same parameters).
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=LGBMRegressor(n_estimators=5, random_state=123, verbose=-1),
+        lags=3,
+    )
+
+    def search_space(trial):
+        return {"n_estimators": trial.suggest_int("n_estimators", 2, 20)}
+
+    def search(aggregate_metric):
+        results, _ = bayesian_search_forecaster_multiseries(
+            forecaster       = forecaster,
+            series           = series_dict_nans,
+            cv               = cv,
+            search_space     = search_space,
+            metric           = "mean_absolute_error",
+            aggregate_metric = aggregate_metric,
+            n_trials         = 3,
+            random_state     = 123,
+            return_best      = False,
+            show_progress    = False,
+        )
+        return results.set_index(results["params"].astype(str)).sort_index()
+
+    results = search(["weighted_average", "average", "pooling"])
+    for aggregation in ["weighted_average", "average", "pooling"]:
+        column = f"mean_absolute_error__{aggregation}"
+        pd.testing.assert_series_equal(results[column], search(aggregation)[column])
+    assert not np.allclose(
+        results["mean_absolute_error__weighted_average"],
+        results["mean_absolute_error__average"],
+    )
+
+
+@pytest.mark.parametrize(
+    "cv",
+    [
+        TimeSeriesFold(initial_train_size=45, steps=5, refit=False),
+        OneStepAheadFold(initial_train_size=45),
+    ],
+    ids=lambda cv: f"cv: {type(cv).__name__}",
+)
+def test_bayesian_search_forecaster_multiseries_n_evaluated_user_attr_and_MissingValuesWarning_once(cv):
+    """
+    Test that the number of points evaluated of each trial is stored as the
+    `user_attr` `n_evaluated` and in the column `n_evaluated` of the results,
+    without changing the value optimized by optuna, and that a single
+    MissingValuesWarning is raised at the end of the search when some trials
+    evaluate less than 95% of the points of the most complete one.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
+
+    def search_space(trial):
+        search_space = {
+            'alpha': trial.suggest_float('alpha', 0.1, 1.0),
+            'lags': trial.suggest_categorical('lags', [2, 8]),
+        }
+
+        return search_space
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results, study = bayesian_search_forecaster_multiseries(
+            forecaster         = forecaster,
+            series             = series_short,
+            search_space       = search_space,
+            cv                 = cv,
+            metric             = 'mean_absolute_error',
+            aggregate_metric   = 'weighted_average',
+            n_trials           = 6,
+            random_state       = 123,
+            return_best        = False,
+            verbose            = False,
+            show_progress      = False
+        )
+
+    for trial in study.trials:
+        n_evaluated = 30 if trial.params['lags'] == 8 else 45
+        assert trial.user_attrs['n_evaluated'] == n_evaluated
+        assert trial.value == trial.user_attrs['mean_absolute_error__weighted_average']
+    pd.testing.assert_series_equal(
+        results['n_evaluated'],
+        pd.Series(
+            [study.trials[n].user_attrs['n_evaluated'] for n in results['trial_number']],
+            name='n_evaluated'
+        )
+    )
+
+    messages = [
+        str(w.message) for w in record
+        if w.category is MissingValuesWarning
+        and "evaluated on fewer points than the most complete one" in str(w.message)
+    ]
+    n_affected = (results['n_evaluated'] == 30).sum()
+    assert 0 < n_affected < len(results)
+    assert len(messages) == 1
+    assert (
+        f"{n_affected} of 6 trials are evaluated on fewer points than the "
+        f"most complete one"
+    ) in messages[0]
+    trials_affected = results.loc[results['n_evaluated'] == 30, 'trial_number'].tolist()
+    if n_affected == 1:
+        expected_trials = f"trial {trials_affected[0]}"
+    else:
+        expected_trials = (
+            f"{n_affected} trials ({', '.join(map(str, trials_affected))})"
+        )
+    assert (
+        f"Trials with less than 95% of the 45 points of the most complete one:\n"
+        f"  - lags: [1, 2, ..., 8], {expected_trials}: 30 (66.7%)"
+    ) in messages[0]
+    assert (
+        "Series that every candidate evaluates on the same points:\n"
+        "  levels=['l1', 'l2']"
+    ) in messages[0]
+
+
+@pytest.mark.parametrize(
+    "n_jobs",
+    [1, 2],
+    ids=lambda n_jobs: f"n_jobs: {n_jobs}",
+)
+def test_bayesian_search_forecaster_multiseries_warnings_of_trials_once_with_count(n_jobs):
+    """
+    Test that the warning of the levels not predicted, raised in the trials
+    with 8 lags, is shown once at the end of the search with the number of
+    trials in which it is raised, also when optuna runs the trials in threads
+    (`n_jobs` of `study.optimize`). The trials evaluate more than 95% of the
+    points of the most complete one, so there is no warning of the points
+    evaluated.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
+
+    def search_space(trial):
+        search_space = {
+            'alpha': trial.suggest_float('alpha', 0.1, 1.0),
+            'lags': trial.suggest_categorical('lags', [2, 8]),
+        }
+
+        return search_space
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        _, study = bayesian_search_forecaster_multiseries(
+            forecaster            = forecaster,
+            series                = series_short_one_point,
+            search_space          = search_space,
+            cv                    = TimeSeriesFold(initial_train_size=45, steps=5, refit=False),
+            metric                = 'mean_absolute_error',
+            n_trials              = 8,
+            random_state          = 123,
+            return_best           = False,
+            show_progress         = False,
+            kwargs_study_optimize = {'n_jobs': n_jobs}
+        )
+
+    n_lags_8 = sum(trial.params['lags'] == 8 for trial in study.trials)
+    assert 0 < n_lags_8 < 8
+    messages = [
+        w.message.message for w in record if w.category is MissingValuesWarning
+    ]
+    assert len(messages) == 1
+    assert messages[0].startswith(
+        f"Some levels are not predicted in folds where they have observed "
+        f"values, so their metrics, and the aggregated metrics, do not include "
+        f"those folds (in {n_lags_8} of 8 trials)."
+    )
+
+
+def test_bayesian_search_forecaster_multiseries_when_study_is_loaded_from_storage():
+    """
+    Test that a study loaded from storage with trials of a previous call
+    (`load_if_exists=True`) can be resumed: the results include every trial
+    with its `n_evaluated`, and the warning about the points evaluated only
+    uses the trials of this call (4 of the 8 trials of the study).
+    """
+    storage = optuna.storages.InMemoryStorage()
+
+    def search_space(trial):
+        search_space = {
+            'alpha': trial.suggest_float('alpha', 0.1, 1.0),
+            'lags': trial.suggest_categorical('lags', [2, 8]),
+        }
+
+        return search_space
+
+    kwargs = {
+        'series': series_short,
+        'search_space': search_space,
+        'cv': TimeSeriesFold(initial_train_size=45, steps=5, refit=False),
+        'metric': 'mean_absolute_error',
+        'n_trials': 4,
+        'return_best': False,
+        'show_progress': False,
+        'kwargs_create_study': {
+            'storage': storage, 'study_name': 'resumed', 'load_if_exists': True
+        },
+    }
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results_first, _ = bayesian_search_forecaster_multiseries(
+            forecaster   = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2),
+            random_state = 123,
+            **kwargs
+        )
+        results, study = bayesian_search_forecaster_multiseries(
+            forecaster   = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2),
+            random_state = 456,
+            **kwargs
+        )
+
+    assert len(results) == 8
+    assert len(study.trials) == 8
+    assert results['n_evaluated'].isin([30, 45]).all()
+    messages = [
+        str(w.message) for w in record
+        if w.category is MissingValuesWarning
+        and "evaluated on fewer points than the most complete one" in str(w.message)
+    ]
+    assert len(messages) == 2
+    assert results.loc[0, 'trial_number'] == 4
+    assert messages[-1].startswith(
+        "1 of 4 trials is evaluated on fewer points than the most complete "
+        "one, so its metrics are not comparable. It is the best candidate of the "
+        "ranking"
+    )
+
+
+
+@pytest.mark.parametrize(
+    "cv",
+    [TimeSeriesFold(steps=5, initial_train_size=45, refit=False),
+     OneStepAheadFold(initial_train_size=45)],
+    ids=lambda cv: f"cv: {type(cv).__name__}"
+)
+def test_bayesian_search_forecaster_multiseries_skips_trials_whose_evaluation_fails(cv):
+    """
+    Test that the trials whose evaluation fails (50 lags, not smaller than
+    `initial_train_size`) are marked as failed and reported in the warning of
+    the candidates skipped, identified by their number, instead of stopping
+    the search. With a `OneStepAheadFold`, the split of the lags that fail is
+    cached with its error.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
+
+    def search_space(trial):
+        return {'lags': trial.suggest_categorical('lags', [2, 50])}
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results, study = bayesian_search_forecaster_multiseries(
+                             forecaster    = forecaster,
+                             series        = series_short,
+                             cv            = cv,
+                             search_space  = search_space,
+                             metric        = 'mean_absolute_error',
+                             n_trials      = 6,
+                             return_best   = True,
+                             show_progress = False
+                         )
+
+    failed = [t.number for t in study.trials if t.state == optuna.trial.TrialState.FAIL]
+    assert failed == [t.number for t in study.trials if t.params['lags'] == 50]
+    assert 0 < len(failed) < 6
+    assert len(results) == 6 - len(failed)
+    assert forecaster.max_lag == 2
+    messages = [str(w.message) for w in record if w.category is RuntimeWarning]
+    assert len(messages) == 1
+    for trial_number in failed:
+        assert f"  - trial {trial_number}, params: {{'lags': 50}}" in messages[0]
+
+
+def test_bayesian_search_forecaster_multiseries_every_trial_fails_returns_empty_results():
+    """
+    Test that, when the evaluation of every trial fails, the results are
+    empty, with the columns of the metrics, and the forecaster is not
+    refitted.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=2)
+
+    def search_space(trial):
+        return {'lags': trial.suggest_categorical('lags', [50, 55])}
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results, _ = bayesian_search_forecaster_multiseries(
+                         forecaster    = forecaster,
+                         series        = series_short,
+                         cv            = TimeSeriesFold(steps=5, initial_train_size=45),
+                         search_space  = search_space,
+                         metric        = 'mean_absolute_error',
+                         n_trials      = 3,
+                         return_best   = True,
+                         show_progress = False
+                     )
+
+    # NOTE: The column `params` is duplicated when the results are empty.
+    assert results.empty
+    assert list(dict.fromkeys(results.columns)) == [
+        'trial_number', 'levels', 'lags', 'params',
+        'mean_absolute_error__weighted_average', 'mean_absolute_error__average',
+        'mean_absolute_error__pooling', 'n_evaluated'
+    ]
+    assert not forecaster.is_fitted
+    assert any(
+        str(w.message).startswith("Parameters skipped: 3 of 3 trials raise an error")
+        for w in record
+    )
+
+
+def test_bayesian_search_forecaster_multiseries_refit_without_series_too_short():
+    """
+    Test that the refit of the best trial leaves out the series with
+    `window_size` observations or fewer (`short` has 6 values and the
+    forecaster 8 lags) with a RuntimeWarning, instead of failing at the end of
+    the search.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=8)
+
+    def search_space(trial):
+        return {'alpha': trial.suggest_float('alpha', 0.1, 1)}
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        results, _ = bayesian_search_forecaster_multiseries(
+                         forecaster    = forecaster,
+                         series        = series_short_one_point,
+                         cv            = TimeSeriesFold(initial_train_size=45, steps=5),
+                         search_space  = search_space,
+                         metric        = 'mean_absolute_error',
+                         n_trials      = 3,
+                         return_best   = True,
+                         show_progress = False
+                     )
+
+    assert len(results) == 3
+    assert forecaster.series_names_in_ == ['l1', 'l2']
+    assert any(
+        w.category is RuntimeWarning
+        and str(w.message).endswith("Series left out: 'short' (6 observations).")
+        for w in record
+    )
+
+
+@pytest.mark.parametrize(
+    "estimator, refit, n_jobs, expected_n_jobs",
+    [(Ridge(), True, 'auto', 1),
+     (HistGradientBoostingRegressor(max_iter=5), True, 'auto', max(1, cpu_count() - 1)),
+     (HistGradientBoostingRegressor(max_iter=5), False, 'auto', max(1, cpu_count() - 1)),
+     (DecisionTreeRegressor(max_depth=2), False, 'auto', 1),
+     (HistGradientBoostingRegressor(max_iter=5), True, 2, 2)],
+    ids=[
+        'auto, Ridge', 'auto, HistGradientBoostingRegressor',
+        'auto, HistGradientBoostingRegressor, no refit',
+        'auto, DecisionTreeRegressor, no refit', 'int'
+    ]
+)
+def test_bayesian_search_forecaster_multiseries_n_jobs_auto_resolved_with_the_rules_of_each_candidate(
+    estimator, refit, n_jobs, expected_n_jobs
+):
+    """
+    Test that bayesian_search_forecaster_multiseries resolves `n_jobs='auto'` with
+    `select_n_jobs_backtesting` for each candidate and passes the integer to
+    `backtesting_forecaster_multiseries`, so the work threshold of a single backtesting does not
+    reduce it. Without refit, the rules give one job, except with
+    `HistGradientBoostingRegressor`. `Parallel` is mocked with a
+    sequential one, so no workers are started.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(estimator=estimator, lags=3)
+    cv = TimeSeriesFold(
+             steps              = 10,
+             initial_train_size = 10,
+             refit              = refit,
+             fixed_train_size   = False
+         )
+
+    with (
+        patch(
+            "skforecast.model_selection._search.backtesting_forecaster_multiseries",
+            wraps=backtesting_forecaster_multiseries
+        ) as mock_backtesting,
+        patch(
+            "skforecast.model_selection._validation.Parallel",
+            side_effect=lambda **kwargs: Parallel(n_jobs=1)
+        ) as mock_parallel
+    ):
+        bayesian_search_forecaster_multiseries(
+            forecaster    = forecaster,
+            series        = series_wide_range,
+            cv            = cv,
+            search_space  = lambda trial: {'random_state': trial.suggest_int('random_state', 1, 2)},
+            metric        = 'mean_absolute_error',
+            n_trials      = 2,
+            return_best   = False,
+            n_jobs        = n_jobs,
+            show_progress = False
+        )
+
+    assert mock_backtesting.call_count == 2
+    for call in mock_backtesting.call_args_list:
+        assert call.kwargs['n_jobs'] == expected_n_jobs
+    for call in mock_parallel.call_args_list:
+        assert call.kwargs == {'n_jobs': expected_n_jobs}

@@ -78,8 +78,8 @@ def test_backtesting_forecaster_multiseries_ForecasterRnn():
                          verbose    = False
                      )
 
-    assert metrics.shape == (1, 2)
-    assert preds.shape == (15, 3)
+    assert metrics.shape == (1, 3)
+    assert preds.shape == (15, 5)
 
 
 def test_backtesting_forecaster_multiseries_ForecasterRnn_with_exog():
@@ -106,8 +106,8 @@ def test_backtesting_forecaster_multiseries_ForecasterRnn_with_exog():
                          verbose    = False
                      )
 
-    assert metrics.shape == (6, 2)
-    assert preds.shape == (54, 3)
+    assert metrics.shape == (6, 3)
+    assert preds.shape == (54, 5)
 
 
 @pytest.mark.parametrize(
@@ -144,5 +144,25 @@ def test_backtesting_forecaster_multiseries_ForecasterRnn_with_exog_and_interval
                          verbose              = False
                      )
 
-    assert metrics.shape == (5, 2)
-    assert preds.shape == (52, 5)
+    assert list(metrics.columns) == [
+        'levels', 'mean_absolute_error', 'coverage', 'interval_width', 'n_evaluated'
+    ]
+    assert metrics.shape == (5, 5)
+    assert metrics['coverage'].between(0, 1).all()
+    assert (metrics['interval_width'] > 0).all()
+    assert list(preds.columns) == [
+        'level', 'fold', 'step', 'y_true', 'pred', 'lower_bound', 'upper_bound'
+    ]
+    assert preds.shape == (52, 7)
+    # With gap=2 and steps=3, the steps of each fold go from 3 to 5.
+    assert preds.groupby(['fold', 'level'])['step'].agg(list).map(
+        lambda steps: steps == [3, 4, 5][:len(steps)]
+    ).all()
+    np.testing.assert_array_equal(
+        preds['y_true'],
+        [series.loc[idx, level] for idx, level in zip(preds.index, preds['level'])]
+    )
+    # Dates evaluated once per level (fold_stride < steps): 18 dates per level.
+    assert metrics.set_index('levels')['n_evaluated'].to_dict() == {
+        '1': 18, '2': 18, 'average': 36, 'weighted_average': 36, 'pooling': 36
+    }

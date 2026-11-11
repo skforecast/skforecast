@@ -168,7 +168,7 @@ All marked with `<!-- AUTO-GENERATED -->` header and tracked in `.gitattributes`
 | `feature-selection` | — | RFECV, SelectFromModel |
 | `drift-detection` | — | RangeDriftDetector, PopulationDriftDetector |
 | `deep-learning-forecasting` | `architecture-options.md` | ForecasterRnn, LSTM/GRU |
-| `foundation-forecasting` | `adapter-parameters.md` | ForecasterFoundation, Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL |
+| `foundation-forecasting` | `adapter-parameters.md` | ForecasterFoundation, Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL, Timestral, TiRex-2 |
 | `choosing-a-forecaster` | — | Decision guide for forecaster selection |
 | `baseline-forecasting` | — | ForecasterEquivalentDate and naive baselines |
 | `troubleshooting-common-errors` | — | Common mistakes and fixes |
@@ -232,7 +232,13 @@ python tools/ai/generate_ai_context_files.py --check-urls --ignore-urls llms-ful
 
 URL validation requests each link with `HEAD`, falls back to `GET` when the server
 rejects or stalls on `HEAD`, and retries transient failures (timeouts, connection
-errors, HTTP 408/425/429/5xx) up to 3 times with an increasing delay.
+errors, HTTP 408/425/429/5xx) up to 3 times with an increasing delay. A link that
+still fails with one of them after the last attempt is printed as a warning and
+does not fail the check: the server is down at the moment (it happens with
+`doi.org` and Zenodo), which says nothing about the link. A 404, a DNS error or a
+redirect that is not allowed still fail it. A VCS requirement of pip
+(`git+https://github.com/<org>/<repo>.git`) is checked through the page of the
+repository, since the `.git` URL redirects.
 
 A `https://skforecast.org/latest/...` page that returns 404 is reported as
 "pending publication" instead of an error when its source exists in `docs/`
@@ -336,9 +342,9 @@ Claude Code (VS Code extension, CLI and cloud sessions on claude.ai/code) reads 
 | Always-loaded instructions | `CLAUDE.md`, which imports `tools/ai/ai_context_header.md` (not the full `AGENTS.md`, to keep the fixed context small) | Yes |
 | Path-scoped rules (tests, docstrings, foundation, docs, AI context files) | `.claude/rules/*.md`, loaded when Claude reads a file matching their `paths` | Yes |
 | Permissions, env, hooks and attribution (off: commits and PRs are authored by the user alone) | `.claude/settings.json` | Yes |
-| Hooks (standard library Python) | `.claude/hooks/`: `protect_generated.py` blocks edits to generated files, `ruff_check.py` reports new ruff findings after an edit, `session_start_remote.py` installs the environment in cloud sessions (without `torch` and `keras` unless `SKFORECAST_CLOUD_DL=1`, for a faster install), `attribution_guard.py` blocks AI attribution in commits and PRs. Tests: `python -m pytest .claude/hooks -q -p no:cacheprovider` | Yes |
-| Contributor workflows | `.claude/skills/`: `verify` (definition of done: lint, affected tests, conditional checks), `ai-context-sync`, `release-note` (adds or updates the release notes entry of a finished change), `/open-pr`, `/release-bump`, `/handoff` (writes `dev/handoff_<slug>.md` to continue in another session), `/review-user-guide` (reviews a user guide against the code and reports before editing) | Yes |
-| Machine-specific permissions | `.claude/settings.local.json` (git-ignored) | No |
+| Hooks (standard library Python) | `.claude/hooks/`: `protect_generated.py` blocks edits to generated files, `ruff_check.py` reports new ruff findings after an edit (ruff from the project environment or `PATH`; `dev/` is skipped), `session_start_local.py` puts the environment named by `SKFORECAST_PYTHON_ENV` on `PATH` in local sessions, `session_start_remote.py` installs the environment in cloud sessions (with ruff, without `torch` and `keras` unless `SKFORECAST_CLOUD_DL=1`, for a faster install, and says which branch to work on), `attribution_guard.py` blocks AI attribution in commits and PRs, `push_guard.py` blocks force pushes, pushes to `main` and pushing the branches that Claude Code names itself (`claude/...`, `worktree-...`), and asks for confirmation before pushing package code to the release branch or merging a pull request. Tests: `python -m pytest .claude/hooks .claude/skills -q -p no:cacheprovider` | Yes |
+| Contributor workflows | `.claude/skills/`: `verify` (definition of done: lint, affected tests, conditional checks; `affected.py` decides the scope), `ai-context-sync`, `release-note` (adds or updates the release notes entry of a finished change), `/open-pr`, `/release-bump`, `/release-publish` (rehearsal on TestPyPI, GitHub release and approval of the PyPI deployment of `publish-pypi.yml`), `/handoff` (writes `dev/handoff_<slug>.md` to continue in another session), `/review-user-guide` (reviews a user guide against the code and reports before editing), `/run-docs-notebooks` (executes the documentation notebooks of a release branch with the runner and reviews failures, warnings and changed outputs) | Yes |
+| Machine-specific permissions and environment (`SKFORECAST_PYTHON_ENV`, `SKFORECAST_DYLD_LIBRARY_PATH`) | `.claude/settings.local.json` (git-ignored) | No |
 | Personal instructions for this repo | `CLAUDE.local.md` (git-ignored) | No |
 | Model, effort, attribution, permission mode | `~/.claude/settings.json` | No |
 | Auto memory | `~/.claude/projects/<repo>/memory/` (machine-local, never reaches cloud sessions) | No |
@@ -348,7 +354,7 @@ Conventions that should apply to everyone go into `CLAUDE.md` or `.claude/rules/
 ### Local setup (VS Code)
 
 1. Use Claude Code 2.1.283 or later (`claude --version`), needed for teleport and the current permission modes.
-2. Open the repository with the conda environment active. If the extension does not inherit it, enable `claudeCode.usePythonEnvironment` in the VS Code user settings.
+2. Point the agent to your conda environment: in `.claude/settings.local.json`, add `"env": {"SKFORECAST_PYTHON_ENV": "<prefix of the env>"}` (e.g. `/opt/homebrew/Caskroom/miniconda/base/envs/skforecast_py14`). The `session_start_local.py` hook puts it on `PATH` in every session, since agent shells do not inherit the active environment. On macOS, if LightGBM and torch clash over `libomp`, also add `"SKFORECAST_DYLD_LIBRARY_PATH": "/opt/homebrew/opt/libomp/lib"`. Restart Claude Code after changing it.
 3. Optional VS Code user settings: `claudeCode.initialPermissionMode` (the starting mode cannot be set from project settings).
 4. Hooks run with `python3` (or `python` if `python3` is missing). On Windows, if hooks fail, disable the `python3` App Execution Alias of the Microsoft Store so the real interpreter is used.
 5. Run `/hooks` and `/memory` once to confirm the project hooks and rules are loaded.

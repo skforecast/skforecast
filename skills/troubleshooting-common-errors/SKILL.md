@@ -102,6 +102,52 @@ data = data.ffill()                      # Forward fill
 data = data.interpolate(method='linear') # Linear interpolation
 ```
 
+### "ValueError: Input X contains NaN" when predicting or backtesting
+
+A predictor has a missing value when predicting and the estimator does not
+accept them. Usually a gap in `exog` in the forecast horizon, or in the last
+window.
+
+- Linear models of scikit-learn (`LinearRegression`, `Ridge`, `Lasso`...):
+  `Input X contains NaN in the predictors ['x'] ... at step 6 (2020-04-05)`,
+  with the predictor, the step, the date and, in
+  `ForecasterRecursiveMultiSeries`, the series.
+- Other estimators that reject NaN (SVR, KNN...): scikit-learn's own
+  `Input X contains NaN.`, without those details.
+
+If the predictor is `_level_skforecast`, the NaN is not in the data: a series
+not seen during training gets NaN with an ordinal encoding. Predict it with
+`encoding='onehot'` or `encoding=None`, or with an estimator that accepts NaN.
+
+```python
+# Fix 1: fill the gaps of exog before predicting or backtesting
+exog = exog.interpolate(method='linear')
+
+# Fix 2: use an estimator that accepts missing values
+forecaster = ForecasterRecursive(
+    estimator=HistGradientBoostingRegressor(),  # or LGBMRegressor(verbose=-1)
+    lags=14,
+)
+```
+
+With `differentiation`, any estimator (also HistGradientBoostingRegressor)
+raises `The series (or last_window) has missing values (NaN) at [...]` when
+one of the last `differentiation` values of the series or of `last_window` is
+missing: the predictions are reverted to the original scale from them, so all
+of them would be NaN. Fill that value (an estimator that accepts NaN does not
+help).
+
+Backtesting does not raise these errors: the dates that cannot be predicted
+get NaN predictions, so a missing value that only affects the discarded steps
+of the `gap` does not matter. If NaN predictions reach the scored dates:
+
+- `backtesting_forecaster` (one series) raises
+  `N backtesting predictions are NaN at dates with observed values ...`,
+  with the first date, the likely causes and the remedy (same fixes as above).
+- `backtesting_forecaster_multiseries` leaves them out of the metrics with a
+  `MissingValuesWarning` that gives their number per series. Read it: the
+  metrics use fewer values than predicted.
+
 ### "ValueError: exog must have the same index as y" / "exog does not cover forecast horizon"
 
 ```python

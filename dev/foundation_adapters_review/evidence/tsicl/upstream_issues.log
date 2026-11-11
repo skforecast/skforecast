@@ -1,0 +1,25 @@
+# gh api search/issues q='repo:EDF-Lab/ts-icl is:issue'
+23	open	2026-10-30		`batch_size` does not limit target series per batch for irregular list inputs
+22	open	2026-10-30		Empty quantile lists produce NaN point forecasts; duplicate quantiles affect the mean
+21	open	2026-10-30		Internal covariate forecasting overwrites the context length used by subsequent batches
+20	open	2026-10-30		`squeeze_output=True` removes all singleton dimensions, including horizon and quantiles
+19	open	2026-10-30		Forecast return type changes with historical input lengths
+18	open	2026-10-30		Clarify shape interpretation and DataFrame semantics in the forecast API
+17	open	2026-10-30		Forecast input validation: edge cases produce unclear errors or silently invalid outputs
+16	open	2026-10-30		Inconsistent handling of variable counts across list inputs
+15	open	2026-10-30		Reject mismatched batch sizes instead of implicitly repeating covariates
+14	open	2026-10-30		Inconsistent validation of covariate lengths: short inputs fail with a late IndexError
+13	open	2026-10-30		Invalid past/future covariate lengths are accepted when their total matches context + horizon
+12	open	2026-10-30		Reject conflicting covariate sources instead of silently overriding `covars`
+11	open	2026-10-30		Covariates in later samples are silently ignored when the first sample has none
+10	open	2026-10-30		Future covariates are silently dropped when historical lengths differ across samples
+9	open	2026-10-30		Is the hardcoded median for intermediate covariate forecasts intentional?
+8	open	2026-10-30		Covariate availability masks are shared across the batch in the Perceiver encoder
+7	open	2026-10-30		Clarification on training support for past-only and mixed-availability covariates
+5	open	2026-10-30		Preserve historical covariates when only a subset has future values
+3	open	2026-10-30		Past-only covariates are silently ignored unless allow_covar_forecast=True: is this intentional?
+# gh api search/issues q='repo:EDF-Lab/ts-icl is:pull-request'
+6	open	2026-10-30		Preserve mixed covariates
+4	open	2026-10-30		use_past_only_covariates
+2	open	2026-10-21		Improve checkpoint loading and support configurable Hugging Face repo
+1	closed	2026-07-16	2026-07-17	Fix covariate rollout in _rollout_f: concat along time (dim=-2) and correct per-step horizon indexing

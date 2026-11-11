@@ -1,0 +1,23 @@
+ChronosAdapter._to_covariate_array patched (Categorical -> object)
+{
+  "model_id": "autogluon/chronos-2-small",
+  "context_length": 500,
+  "exog": true,
+  "kwargs": {},
+  "mae": 171.267,
+  "elapsed_s": 5.31,
+  "n_predictions": 720,
+  "versions": {
+    "python": "3.12.3",
+    "skforecast": "0.27.0",
+    "torch": "2.15.0+cpu",
+    "numpy": "2.5.4",
+    "pandas": "2.3.3",
+    "scikit-learn": "1.9.1",
+    "transformers": "5.22.1",
+    "huggingface_hub": "2.4.0",
+    "chronos-forecasting": "2.3.2"
+  },
+  "hardware": "Intel(R) Xeon(R) Processor @ 2.10GHz, 4 logical CPUs, Linux"
+}
+max abs diff predictions 0.0

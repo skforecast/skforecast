@@ -1,0 +1,18 @@
+skforecast 0.27.0
+timesfm 3.0.2
+torch 2.15.0+cpu
+numpy 2.5.4
+pandas 2.3.3
+python 3.12.3
+MAE from csv 162.43520906024307
+fold 0 index matches True
+fold 0 FoundationModel vs csv maxdiff 0.0
+fold 0 direct predict_batch(edge) vs FoundationModel maxdiff 0.0009765625
+direct vs direct (second call) maxdiff 0.0
+stored context dtype float64
+adapter kwargs ['contexts', 'horizon', 'padding_mode', 'past_future_covariates', 'past_only_covariates', 'return_quantiles']
+context equal True float64
+past_only [True]
+pf shape (2, 524) (2, 524) maxdiff 33.849998474121094
+replay of captured kwargs vs FoundationModel maxdiff 0.0
+pf equals reversed column order True

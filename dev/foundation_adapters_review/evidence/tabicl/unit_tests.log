@@ -1,0 +1,15 @@
+..................................................                       [100%]
+=============================== warnings summary ===============================
+skforecast/foundation/tests/tests_foundation_models/test_TabICLAdapter.py::test_TabICLAdapter_fit_multi_series_stores_context[wide_dataframe]
+skforecast/foundation/tests/tests_foundation_models/test_TabICLAdapter.py::test_TabICLAdapter_predict_point_forecast_multi_series[wide_dataframe]
+  skforecast/utils/utils.py:4394: InputTypeWarning: Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It is recommended to use a dictionary of pandas Series instead. For more details, see: https://skforecast.org/latest/user_guides/independent-multi-time-series-forecasting.html#input-data
+  You can suppress this warning using: warnings.simplefilter('ignore', category=InputTypeWarning)
+    warnings.warn(
+
+skforecast/foundation/tests/tests_foundation_models/test_TabICLAdapter.py::test_TabICLAdapter_predict_range_index_issues_warning_and_returns_arrays
+skforecast/foundation/tests/tests_foundation_models/test_TabICLAdapter.py::test_TabICLAdapter_predict_range_index_timestamps_are_datetime
+  skforecast/foundation/_adapters.py:2631: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+    start   = pd.Timestamp("2000-01-01") + pd.Timedelta(days=n),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+50 passed, 4 warnings in 1.21s

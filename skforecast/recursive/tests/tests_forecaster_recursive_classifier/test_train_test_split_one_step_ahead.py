@@ -32,7 +32,7 @@ def test_train_test_split_one_step_ahead_when_lags_and_exog():
     forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=5)
 
     (
-        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index
     ) = forecaster._train_test_split_one_step_ahead(
         y=y, exog=exog, initial_train_size=10
     )
@@ -60,6 +60,7 @@ def test_train_test_split_one_step_ahead_when_lags_and_exog():
     np.testing.assert_array_almost_equal(y_train, expected_y_train)
     np.testing.assert_array_almost_equal(X_test, expected_X_test)
     np.testing.assert_array_almost_equal(y_test, expected_y_test)
+    pd.testing.assert_index_equal(test_index, y.index[10:])
     assert sample_weight is None
     assert fit_kwargs == {}
 
@@ -78,7 +79,7 @@ def test_train_test_split_one_step_ahead_when_no_exog():
     forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=3)
 
     (
-        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index
     ) = forecaster._train_test_split_one_step_ahead(
         y=y, initial_train_size=10
     )
@@ -134,7 +135,7 @@ def test_train_test_split_one_step_ahead_when_weight_func():
     )
 
     (
-        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index
     ) = forecaster._train_test_split_one_step_ahead(
         y=y, initial_train_size=10
     )
@@ -168,7 +169,7 @@ def test_train_test_split_one_step_ahead_when_lightgbm_native_categoricals():
     )
 
     (
-        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index
     ) = forecaster._train_test_split_one_step_ahead(
         y=y, initial_train_size=15
     )
@@ -209,7 +210,7 @@ def test_train_test_split_one_step_ahead_when_lightgbm_native_categoricals_and_e
     )
 
     (
-        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index
     ) = forecaster._train_test_split_one_step_ahead(
         y=y, exog=exog, initial_train_size=15
     )
@@ -251,7 +252,7 @@ def test_train_test_split_one_step_ahead_when_features_encoding_ordinal():
     )
 
     (
-        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index
     ) = forecaster._train_test_split_one_step_ahead(
         y=y, exog=exog, initial_train_size=15
     )
@@ -294,7 +295,7 @@ def test_train_test_split_one_step_ahead_when_catboost_native_categoricals():
     )
 
     (
-        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index
     ) = forecaster._train_test_split_one_step_ahead(
         y=y, exog=exog, initial_train_size=15
     )
@@ -336,7 +337,7 @@ def test_train_test_split_one_step_ahead_when_fit_kwargs_no_categorical():
     )
 
     (
-        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index
     ) = forecaster._train_test_split_one_step_ahead(
         y=y, initial_train_size=15
     )
@@ -368,7 +369,7 @@ def test_train_test_split_one_step_ahead_when_non_contiguous_lags():
     )
 
     (
-        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index
     ) = forecaster._train_test_split_one_step_ahead(
         y=y, exog=exog, initial_train_size=15
     )
@@ -446,7 +447,7 @@ def test_train_test_split_one_step_ahead_fit_predict_with_categorical(
     )
 
     (
-        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs
+        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index
     ) = forecaster._train_test_split_one_step_ahead(
         y=y, exog=exog, initial_train_size=40
     )

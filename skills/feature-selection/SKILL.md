@@ -58,13 +58,13 @@ selected_lags, selected_window_features, selected_exog, selected_calendar_featur
     selector=RFECV(
         estimator=RandomForestRegressor(n_estimators=50, random_state=123),
         step=1,
-        cv=3,
+        cv=3,                  # Records reach the selector in random order: random folds
     ),
     y=y_train,
     exog=exog_train,
     select_only=None,          # 'autoreg' (lags+window), 'exog', 'calendar', a list of them, or None (all)
     force_inclusion=None,      # Features to always keep (list or regex string)
-    subsample=0.5,             # Use 50% of the records (without replacement) for faster selection
+    subsample=0.5,             # Use 50% of the records (without replacement, in random order)
     random_state=123,
     verbose=True,
 )
@@ -161,4 +161,5 @@ selected_lags, selected_wf, selected_exog, selected_cal = select_features(
 2. **Too small subsample**: If `subsample` is too small, selection may be unreliable. Use at least 0.3.
 3. **Not updating forecaster**: After selection, update the forecaster with `forecaster.set_lags(selected_lags)` — the original is not modified in place by `select_features`.
 4. **Running on full dataset**: Always run on training data only (`y_train`, `exog_train`).
-5. **Confusing `selected_window_features` with `RollingFeatures`**: The returned `selected_window_features` is a list of **feature name strings** (e.g. `['roll_mean_7', 'roll_std_14']`), not the `RollingFeatures` object itself. Use these names to verify which window features were kept, but pass the original `RollingFeatures` instance to the forecaster.
+5. **Confusing `selected_window_features` with `RollingFeatures`**: The returned `selected_window_features` is a list of **feature name strings** (e.g. `['roll_mean_7', 'roll_std_14']`), not the `RollingFeatures` object itself. Create a new `RollingFeatures` with only the selected statistics and window sizes (e.g. `RollingFeatures(stats=['mean', 'std'], window_sizes=[7, 14])`). If none was selected, set `window_features=None`: `RollingFeatures(stats=[])` raises a `ValueError`.
+6. **Using `TimeSeriesSplit` as the `cv` of the selector**: The records are sampled without replacement and passed to the selector in random order, so its folds are random (an integer `cv` gives the same folds as `KFold(shuffle=True)`, with the records of every series spread over the folds in multi-series). A `TimeSeriesSplit` gives no temporal validation and raises a warning. Validate the selection with backtesting.

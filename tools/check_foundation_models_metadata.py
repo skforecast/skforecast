@@ -9,7 +9,7 @@ or a backend switches to other weights. This script compares what
 
 - `weights_repo_id` exists on the Hub.
 - `license` is the license of the model card (its `license_name` when the
-  card declares `license: other`).
+  card declares `license: other`, or `other` when it has no `license_name`).
 - `requires_hf_auth` matches the gating of the repository.
 - `license_url` is reachable.
 
@@ -44,6 +44,12 @@ EXTRA_MODEL_IDS = (
     "theforecastingcompany/t0-beta",
     "Synthefy/Nori-30M",
     "Synthefy/Nori-100M",
+    "mistralai/Timestral-5M",
+    "mistralai/Timestral-123M",
+    "mistralai/Timestral-209M",
+    "NX-AI/TiRex-2-gifteval-zs",
+    "NX-AI/TiRex-2-gifteval-pretrain",
+    "NX-AI/TiRex-2-fevbench",
 )
 
 
@@ -93,7 +99,7 @@ def check_model(model_id: str) -> list[str]:
     card_data = card.get("cardData") or {}
     hub_license = card_data.get("license")
     if hub_license == "other":
-        hub_license = card_data.get("license_name")
+        hub_license = card_data.get("license_name") or "other"
     if str(hub_license).lower() != info.license.lower():
         errors.append(
             f"license is '{info.license}' in skforecast and '{hub_license}' "

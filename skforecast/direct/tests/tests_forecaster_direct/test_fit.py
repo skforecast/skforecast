@@ -6,7 +6,7 @@ import pytest
 from pytest import approx
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.preprocessing import StandardScaler
 from catboost import CatBoostRegressor
@@ -400,6 +400,37 @@ def test_fit_resets_out_sample_residuals_on_refit():
     assert forecaster.out_sample_residuals_by_bin_ is None
 
 
+def test_fit_step_tasks_receive_unfitted_estimators_on_refit(monkeypatch):
+    """
+    Test that, when the forecaster is refitted, the forecaster sent to each
+    step task of `Parallel` carries unfitted estimators, so the estimators of
+    the previous fit are not serialized once per step. The fitted estimators
+    are stored at the end of `fit`.
+    """
+    from skforecast.direct import _forecaster_direct
+
+    fitted_in_tasks = []
+    fit_one_step_estimator = _forecaster_direct._fit_one_step_estimator
+
+    def spy(forecaster, **kwargs):
+        fitted_in_tasks.append(
+            [hasattr(est, "coef_") for est in forecaster.estimators_.values()]
+        )
+        return fit_one_step_estimator(forecaster=forecaster, **kwargs)
+
+    # `n_jobs=1` runs the step tasks in this process, so the patched function
+    # is the one called.
+    forecaster = ForecasterDirect(
+        estimator=LinearRegression(), lags=3, steps=2, n_jobs=1
+    )
+    forecaster.fit(y=y)
+    monkeypatch.setattr(_forecaster_direct, "_fit_one_step_estimator", spy)
+    forecaster.fit(y=y)
+
+    assert fitted_in_tasks == [[False, False], [False, False]]
+    assert all(hasattr(est, "coef_") for est in forecaster.estimators_.values())
+
+
 # ==============================================================================
 # Tests: fit with categorical features and configure_estimator_categorical_features
 # ==============================================================================
@@ -563,7 +594,12 @@ def test_fit_with_interspersed_NaN_and_dropna_from_series_True():
                  )
 
     warn_msg = re.escape(
-        "NaNs detected in `X_train`. They have been dropped."
+        "Some rows of the training matrix have missing values. 3 of 6 rows "
+        "are dropped per step, with NaN predictors (lags, window features "
+        "or exog). They come from interspersed NaNs in `y` or `exog`. To "
+        "keep the rows with NaN predictors, set "
+        "`forecaster.dropna_from_series = False` (the estimator must "
+        "support NaN)."
     )
     with pytest.warns(MissingValuesWarning, match=warn_msg):
         forecaster.fit(y=y_nan)
@@ -595,8 +631,11 @@ def test_fit_with_interspersed_NaN_and_dropna_from_series_False():
                  )
 
     warn_msg = re.escape(
-        "NaNs detected in `X_train`. Some estimators do not allow "
-        "NaN values during training."
+        "Some rows of the training matrix have missing values. 3 of 6 rows "
+        "are kept per step with NaN predictors (lags, window features or "
+        "exog). They come from interspersed NaNs in `y` or `exog`. The "
+        "estimator must support NaN. To drop those rows, set "
+        "`forecaster.dropna_from_series = True`."
     )
     with pytest.warns(MissingValuesWarning, match=warn_msg):
         forecaster.fit(y=y_nan)
@@ -606,3 +645,56 @@ def test_fit_with_interspersed_NaN_and_dropna_from_series_False():
     predictions = forecaster.predict(steps=2)
     assert len(predictions) == 2
     assert not predictions.isna().any()
+
+
+
+@pytest.mark.parametrize(
+    "estimator, expected_c_contiguous",
+    [
+        (Ridge(), True),
+        (HistGradientBoostingRegressor(max_iter=5, random_state=123), False),
+    ],
+    ids=lambda x: type(x).__name__ if not isinstance(x, bool) else f"C: {x}"
+)
+def test_fit_training_matrix_layout_received_by_estimator(
+    estimator, expected_c_contiguous, monkeypatch
+):
+    """
+    Test the memory layout of the training matrix that the estimator receives
+    in `fit` when the predictors are only lags: a C-contiguous copy for the
+    estimators that prefer it (Ridge), and the view of `sliding_window_view`,
+    not copied, for the rest (HistGradientBoostingRegressor).
+    """
+    flags = []
+    original_fit = type(estimator).fit
+
+    def recording_fit(self, X, y, *args, **kwargs):
+        flags.append(np.asarray(X).flags)
+        return original_fit(self, X, y, *args, **kwargs)
+
+    monkeypatch.setattr(type(estimator), "fit", recording_fit)
+    forecaster = ForecasterDirect(
+        estimator=estimator, lags=5, steps=3, n_jobs=1
+    )
+    forecaster.fit(y=y)
+
+    assert len(flags) == 3
+    for flag in flags:
+        assert flag.c_contiguous is expected_c_contiguous
+        assert flag.owndata is expected_c_contiguous
+
+
+def test_fit_predictions_equal_with_c_contiguous_training_matrix():
+    """
+    Test that the copy of the training matrix to a C-contiguous array does not
+    change the predictions with Ridge: they are equal to the ones of skforecast
+    0.27.x before the copy, when the estimator received the view of
+    `sliding_window_view`, up to the rounding of the BLAS library, which differs
+    between platforms (about 1e-16).
+    """
+    forecaster = ForecasterDirect(estimator=Ridge(), lags=5, steps=3)
+    forecaster.fit(y=y)
+    predictions = forecaster.predict().to_numpy().ravel()
+    expected = np.array([0.5744465650619979, 0.49472555185085426, 0.47254469297492097])
+
+    np.testing.assert_allclose(predictions, expected, rtol=1e-12, atol=0)

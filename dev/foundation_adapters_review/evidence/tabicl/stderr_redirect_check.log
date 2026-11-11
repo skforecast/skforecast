@@ -1,0 +1,8 @@
+### show_progress=False (stdout and stderr merged)
+tabicl 2.2.0 | skforecast 0.27.0 | show_progress False
+done
+### show_progress=True (stdout and stderr merged)
+tabicl 2.2.0 | skforecast 0.27.0 | show_progress True
+~/.venvs/fm-review-tabicl/lib/python3.12/site-packages/tabicl/forecast/_forecaster.py:260: UserWarning: Some covariate values in future_tsdf are missing (NaN). This may affect prediction quality.
+  context_tsdf, future_tsdf = self._align_covariates(context_tsdf, future_tsdf)
+done

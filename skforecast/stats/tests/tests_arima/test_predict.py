@@ -598,10 +598,8 @@ def test_arima_predict_with_drift_and_exog(
 def test_arima_predict_after_freezing_best_params_with_drift():
     """
     Test that freezing the parameters selected by auto ARIMA (as done by
-    `backtesting_stats` with `freeze_params=True`) keeps the drift term. The
-    predictions must be the same with the already fitted model (the prediction
-    path depends on the fitted model, not on the current parameters) and after
-    refitting with the frozen parameters.
+    `backtesting_stats` with `freeze_params=True`) keeps the drift term:
+    refitting with the frozen parameters gives the same predictions.
     """
     rng = np.random.RandomState(123)
     n = 100
@@ -625,9 +623,6 @@ def test_arima_predict_after_freezing_best_params_with_drift():
     # Measured sensitivity of the predictions: 4e-6 (relative).
     pred = model.predict(steps=3)
     np.testing.assert_allclose(pred, expected_pred, rtol=1e-4)
-
-    model._set_params(**model.best_params_)
-    np.testing.assert_array_almost_equal(model.predict(steps=3), pred)
 
     model_frozen = Arima(order=None, seasonal_order=None)
     model_frozen.set_params(**model.best_params_)

@@ -51,16 +51,41 @@ def test_plot_residuals_output(input_type):
 
 def test_plot_residuals_output_custom_fig_and_titles():
     """
-    Test that plot_residuals uses a provided Figure (identity check) and sets
-    the expected subplot titles.
+    Test that plot_residuals uses a provided Figure (identity check) even when
+    another figure is active, and sets the expected subplot titles.
     """
     rng = np.random.default_rng(123)
     residuals = rng.standard_normal(100)
     custom_fig = plt.figure()
+    other_fig = plt.figure()
 
     fig = plot_residuals(residuals=residuals, fig=custom_fig)
 
     assert fig is custom_fig
+    assert len(custom_fig.axes) == 3
+    assert len(other_fig.axes) == 0
     assert fig.axes[0].get_title() == "Residuals"
     assert fig.axes[1].get_title() == "Distribution"
     assert fig.axes[2].get_title() == "Autocorrelation"
+
+
+def test_plot_residuals_new_figure_when_fig_is_None_and_another_figure_is_active():
+    """
+    Test that plot_residuals creates a new Figure, with constrained layout and
+    `fig_kw` applied, when `fig` is None, leaving the active figure untouched.
+    """
+    rng = np.random.default_rng(123)
+    residuals = rng.standard_normal(100)
+    other_fig = plt.figure()
+    n_figures = len(plt.get_fignums())
+
+    fig = plot_residuals(residuals=residuals, figsize=(8, 5))
+
+    assert fig is not other_fig
+    assert len(plt.get_fignums()) == n_figures + 1
+    assert len(fig.axes) == 3
+    assert len(other_fig.axes) == 0
+    assert isinstance(
+        fig.get_layout_engine(), matplotlib.layout_engine.ConstrainedLayoutEngine
+    )
+    np.testing.assert_array_almost_equal(fig.get_size_inches(), [8, 5])

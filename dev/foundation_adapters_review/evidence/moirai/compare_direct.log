@@ -1,0 +1,73 @@
+python 3.12.3
+skforecast 0.27.0
+uni2ts 2.0.0
+torch 2.4.1+cpu
+numpy 1.26.4
+pandas 2.3.3
+scipy 1.17.1
+huggingface_hub 2.4.0
+gluonts 0.14.3
+cpus 4 Linux x86_64
+
+==============================================================================
+1. Routing of model ids (_resolve_adapter)
+==============================================================================
+Salesforce/moirai-2.0-R-small            -> MoiraiAdapter
+Salesforce/moirai-2.0-R-base             -> MoiraiAdapter
+Salesforce/moirai-2.0-R-large            -> MoiraiAdapter
+Salesforce/moirai-1.1-R-small            -> ValueError: No adapter found for model 'Salesforce/moirai-1.1-R-small'. 
+Salesforce/moirai-moe-1.0-R-small        -> ValueError: No adapter found for model 'Salesforce/moirai-moe-1.0-R-smal
+Salesforce/moirai-agent                  -> ValueError: No adapter found for model 'Salesforce/moirai-agent'. Regist
+salesforce/moirai-2.0-R-small            -> ValueError: No adapter found for model 'salesforce/moirai-2.0-R-small'. 
+ChengShengchuan/moirai-2.0-R-small       -> ValueError: No adapter found for model 'ChengShengchuan/moirai-2.0-R-sma
+
+==============================================================================
+2. Quantile levels of the checkpoint vs SUPPORTED_QUANTILES
+==============================================================================
+module.quantile_levels  : [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+SUPPORTED_QUANTILES     : [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+equal                   : True
+patch_size, num_predict_token, max_seq_len: 16 4 512
+forecast obj device     : cpu
+param dtype             : torch.float32
+
+==============================================================================
+3. Adapter vs direct uni2ts call (same input, same context_length)
+==============================================================================
+equal length, 2 series, steps=24: raw shape (2, 9, 24)
+  a: adapter (24, 9) max|adapter - direct| = 0.000e+00
+  b: adapter (24, 9) max|adapter - direct| = 0.000e+00
+  a: max|batched - alone| = 1.526e-05
+  b: max|batched - alone| = 1.526e-05
+different lengths (700, 300, 40), steps=24: raw shape (3, 9, 24)
+  a: adapter (24, 9) max|adapter - direct| = 0.000e+00
+  b: adapter (24, 9) max|adapter - direct| = 0.000e+00
+  c: adapter (24, 9) max|adapter - direct| = 0.000e+00
+  a: max|batched - alone| = 1.526e-05
+  b: max|batched - alone| = 1.526e-05
+  c: max|batched - alone| = 7.629e-06
+long horizon steps=150 (> num_predict_token * patch_size = 64): raw shape (1, 9, 150)
+  a: adapter (150, 9) max|adapter - direct| = 0.000e+00
+  a: max|batched - alone| = 0.000e+00
+default context_length=2048, series of 3000: raw shape (1, 9, 48)
+  a: adapter (48, 9) max|adapter - direct| = 0.000e+00
+  a: max|batched - alone| = 0.000e+00
+
+==============================================================================
+4. NaN in the series (supports_nan_in_series=True)
+==============================================================================
+interior NaN: finite: True | max|adapter - direct| = 0.000e+00
+leading NaN: finite: True
+
+==============================================================================
+5. Very short series and long contexts
+==============================================================================
+n=5, context_length=512: shape (24, 9), finite True
+n=17, context_length=512: shape (24, 9), finite True
+n=9000, context_length=8192: shape (24, 9), finite True
+
+==============================================================================
+6. Point forecast column equals the 0.5 quantile
+==============================================================================
+max|pred - q_0.5| = 0.000e+00
+

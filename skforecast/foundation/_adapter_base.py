@@ -26,6 +26,34 @@ class _AdapterBase(ABC):
     Adapters only translate already-normalized per-series inputs into the
     backend call. Generic handling of the inputs belongs to `FoundationModel`,
     driven by the capability class attributes.
+
+    `requires_equal_length_context` (bool) declares whether the backend needs
+    every series of a call to have the same context length. If `True`,
+    `FoundationModel` left-pads `context` and `context_exog` of every call
+    with NaN to the length of the longest series of the call, so the adapter
+    receives the context with a positional pandas RangeIndex and must not
+    rely on its timestamps. The same applies to `context_exog`, while the
+    future `exog` keeps the index of the forecast horizon: history and future
+    must be joined by position, never aligned by index. Boolean exog columns
+    arrive as float, and NumPy integer columns of the padded series as float
+    (nullable `Int64` and `Float64` columns keep their dtype and hold
+    `pd.NA`). Requires `supports_nan_in_series=True`; adapters that derive
+    features from the timestamps must keep it `False`.
+
+    `supports_past_only_covariates` (bool) declares whether the backend uses
+    the historical exog columns that have no future values (past-only
+    covariates). If `False`, `FoundationModel` removes those columns from
+    `context_exog` before every call, so the adapter only receives
+    covariates that also have future values in `exog` and needs no filtering
+    of its own.
+
+    `max_series_per_call` (int, None) caps the number of series sent to the
+    backend in one call. If it is an integer, `FoundationModel` splits each
+    group of series into consecutive chunks of at most that size and calls
+    `predict` once per chunk (the left padding above is applied per chunk).
+    `None` sends every series of a group in one call. Declare it for
+    backends whose cost per series, or memory, grows with the size of the
+    batch.
     """
 
     _REQUIRED_CLASS_ATTRIBUTES = (
@@ -34,6 +62,8 @@ class _AdapterBase(ABC):
         "supports_past_only_covariates",
         "supports_categorical_covariates",
         "supports_heterogeneous_covariates",
+        "requires_equal_length_context",
+        "max_series_per_call",
         "supports_nan_in_series",
         "requires_hf_auth",
         "requires_provider_auth",
@@ -110,9 +140,16 @@ class _AdapterBase(ABC):
         steps : int
             Number of steps ahead to forecast.
         context : dict pandas Series
-            Per-series context windows (already trimmed to `context_length`).
+            Per-series context windows (already trimmed to `context_length`),
+            left-padded with NaN to a common length and indexed by a
+            positional pandas RangeIndex when `requires_equal_length_context`
+            is `True`. It holds at most `max_series_per_call` series when that
+            attribute is not `None`.
         context_exog : dict pandas DataFrame, pandas Series, or None
-            Per-series past covariates (already trimmed).
+            Per-series past covariates (already trimmed), left-padded and
+            indexed like `context` when `requires_equal_length_context` is
+            `True`. When `supports_past_only_covariates` is `False`, they
+            only hold columns that also have future values in `exog`.
         exog : dict pandas DataFrame, pandas Series, or None
             Per-series future covariates for the forecast horizon.
         quantiles : list of float, tuple of float, None

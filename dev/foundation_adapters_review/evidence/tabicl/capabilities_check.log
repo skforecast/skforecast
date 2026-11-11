@@ -1,0 +1,19 @@
+python 3.12.3 | tabicl 2.2.0 | torch 2.15.0+cpu | pandas 2.3.3 | skforecast 0.27.0
+[quantiles=[0, 0.5, 1] (int levels)] ERROR ValueError: Quantiles must be a list of floats
+[quantiles as numpy float32] ERROR ValueError: Quantiles must be a list of floats
+[quantiles as tuple (0.05, 0.95)] OK (6, 3)
+[string covariate, direct predict_df] ERROR ValueError: NumPy arrays passed to TabICL must be castable to a numeric dtype, but casting to float64 failed with: could not convert string to float: 'a'. If your data contains categorical or string columns, pass
+[category covariate through FoundationModel] ERROR ValueError: NumPy arrays passed to TabICL must be castable to a numeric dtype, but casting to float64 failed with: could not convert string to float: 'a'. If your data contains categorical or string columns, pass
+[integer timestamps, direct predict_df] OK timestamps parsed as [Timestamp('1970-01-01 00:00:00.000000120'), Timestamp('1970-01-01 00:00:00.000000121')]
+[RangeIndex series through FoundationModel] OK [120, 121]
+    warning -> UserWarning: TabICLAdapter received series with a non-DatetimeIndex. TabICL requires datetime timestamps internally; a synt
+[NaN in series / one valid value] OK {'a': 8.948, 'b': 7.89}
+[past-only covariate] OK (6, 2)
+    warning -> IgnoredArgumentWarning: TabICLAdapter only uses covariates that also have future values. Historical exog columns without future values
+[NaN in future covariate] OK True
+    warning -> UserWarning: Some covariate values in future_tsdf are missing (NaN). This may affect prediction quality.
+[show_progress=False (default)] OK stderr chars=0; contains 'Predicting time series'=False
+[show_progress=True] OK stderr chars=135; contains 'Predicting time series'=True
+[tabicl_config={'device': 'cpu', 'n_estimators': 2}] OK (6, 2)
+[tabicl_config checkpoint_version (explicit default)] OK (6, 2)
+[model_id with arbitrary suffix] OK adapter=TabICLAdapter, shape=(6, 2)

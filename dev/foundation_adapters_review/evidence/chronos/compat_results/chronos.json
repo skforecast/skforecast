@@ -1,0 +1,37 @@
+{
+  "adapter": "chronos",
+  "adapter_class": "ChronosAdapter",
+  "backend": "chronos-forecasting",
+  "model_id": "autogluon/chronos-2-small",
+  "overrides": [],
+  "versions": {
+    "chronos-forecasting": "2.3.2",
+    "torch": "2.15.0+cpu",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1",
+    "pandas": "2.3.3",
+    "huggingface_hub": "2.4.0"
+  },
+  "latest_on_pypi": "2.3.2",
+  "held_back": false,
+  "install": {
+    "status": "passed",
+    "error": ""
+  },
+  "levels": {
+    "contract": {
+      "status": "passed",
+      "tests": 3,
+      "errors": [],
+      "duration": 13.1
+    },
+    "smoke": {
+      "status": "passed",
+      "tests": 6,
+      "errors": [],
+      "duration": 10.5
+    }
+  },
+  "duration": 25.2,
+  "status": "passed"
+}

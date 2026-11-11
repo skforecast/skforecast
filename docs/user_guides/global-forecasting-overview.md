@@ -100,7 +100,7 @@ There is no single answer, since it depends on the data. However, some general g
 
 + **`ForecasterRnn`**: when there is a large amount of data and the patterns are too complex for the other options.
 
-In every case, compare the candidates with backtesting on the same data before choosing one.
+In every case, compare the candidates with backtesting on the same data before choosing one, as done in [Comparing forecasting models](comparing-forecasting-models.ipynb).
 
 !!! tip
 

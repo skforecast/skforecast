@@ -12,6 +12,8 @@ from skforecast.foundation._adapters import (
     T0Adapter,
     NoriAdapter,
     TSICLAdapter,
+    TimestralAdapter,
+    TiRex2Adapter,
     _resolve_adapter,
     _ADAPTER_REGISTRY,
 )
@@ -35,6 +37,11 @@ from skforecast.foundation._adapters import (
         ("theforecastingcompany/t0-alpha", T0Adapter),
         ("Synthefy/Nori", NoriAdapter),
         ("taharnbl/TS-ICL", TSICLAdapter),
+        ("mistralai/Timestral-5M", TimestralAdapter),
+        ("mistralai/Timestral-28M", TimestralAdapter),
+        ("mistralai/Timestral-123M", TimestralAdapter),
+        ("mistralai/Timestral-209M", TimestralAdapter),
+        ("NX-AI/TiRex-2", TiRex2Adapter),
     ],
     ids=lambda x: str(x),
 )
@@ -53,6 +60,7 @@ def test_resolve_adapter_returns_correct_class(model_id, expected_cls):
         "google/timesfm-1.0-200m-pytorch",
         "google/timesfm-2.0-500m-pytorch",
         "google/timesfm",
+        "mistralai/Mistral-7B-v0.1",
     ],
     ids=lambda x: str(x),
 )
@@ -60,7 +68,8 @@ def test_resolve_adapter_ValueError_when_unknown_prefix(model_id):
     """
     Test that _resolve_adapter raises ValueError with a clear message
     including the registered prefixes when no prefix matches. TimesFM ids
-    that are not 2.5 or 3.0 are not served by any adapter.
+    that are not 2.5 or 3.0, and Mistral AI models other than Timestral, are
+    not served by any adapter.
     """
     err_msg = re.escape(f"No adapter found for model '{model_id}'.")
     with pytest.raises(ValueError, match=err_msg) as exc_info:
@@ -127,6 +136,8 @@ def test_ADAPTER_REGISTRY_contains_all_expected_entries():
         "theforecastingcompany/t0": T0Adapter,
         "Synthefy/Nori": NoriAdapter,
         "taharnbl/TS-ICL": TSICLAdapter,
+        "mistralai/Timestral": TimestralAdapter,
+        "NX-AI/TiRex-2": TiRex2Adapter,
     }
     for prefix, cls in expected.items():
         assert prefix in _ADAPTER_REGISTRY

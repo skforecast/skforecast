@@ -48,7 +48,17 @@ def test_backtesting_with_ForecasterEquivalentDate(initial_train_size):
     )
     expected.insert(0, 'fold', [0] * 5 + [1] * 5 + [2] * 5 + [3] * 5)
 
+    expected_metric.insert(1, 'n_evaluated', [20])
     pd.testing.assert_frame_equal(metric, expected_metric)
+    expected.insert(1, 'step', [
+        1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5
+    ])
+    expected.insert(2, 'y_true', [
+        0.09210494, 0.43370117, 0.43086276, 0.4936851, 0.42583029, 0.31226122,
+        0.42635131, 0.89338916, 0.94416002, 0.50183668, 0.62395295, 0.1156184,
+        0.31728548, 0.41482621, 0.86630916, 0.25045537, 0.48303426, 0.98555979,
+        0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(predictions, expected)
 
 
@@ -81,6 +91,8 @@ def test_backtesting_with_ForecasterEquivalentDate_interval(initial_train_size):
     )
     
     expected_metric = pd.DataFrame({'mean_absolute_error': [0.2273233665]})
+    expected_metric['coverage'] = [0.55]
+    expected_metric['interval_width'] = [0.5699479935999998]
     expected = pd.DataFrame(
                    data = np.array([
                               [0.60004613,  0.1257829 ,  1.07430936],
@@ -108,5 +120,15 @@ def test_backtesting_with_ForecasterEquivalentDate_interval(initial_train_size):
                )
     expected.insert(0, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6])
 
+    expected_metric.insert(3, 'n_evaluated', [20])
     pd.testing.assert_frame_equal(metric, expected_metric)
+    expected.insert(1, 'step', [
+        1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2
+    ])
+    expected.insert(2, 'y_true', [
+        0.09210494, 0.43370117, 0.43086276, 0.4936851, 0.42583029, 0.31226122,
+        0.42635131, 0.89338916, 0.94416002, 0.50183668, 0.62395295, 0.1156184,
+        0.31728548, 0.41482621, 0.86630916, 0.25045537, 0.48303426, 0.98555979,
+        0.51948512, 0.61289453
+    ])
     pd.testing.assert_frame_equal(predictions, expected)

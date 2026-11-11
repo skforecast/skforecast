@@ -1,0 +1,23 @@
+### pip user path: python 3.12 venv, 'pip install -e .' (skforecast) then 'pip install uni2ts' as the docs say
+Using CPython 3.12.3 interpreter at: <system python3.12>
+Creating virtual environment with seed packages at: ~/.venvs/fm-review-moirai-pip
+ + pip==26.3
+Activate with: source ~/.venvs/fm-review-moirai-pip/bin/activate
+pip 26.3 from ~/.venvs/fm-review-moirai-pip/lib/python3.12/site-packages/pip (python 3.12)
+  
+  !!
+    with strategy, WheelFile(wheel_path, "w") as wheel_obj:
+scipy after skforecast: 1.18.1
+### pip install uni2ts (torch from the CPU index)
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+skforecast 0.27.0 requires pandas<3.0,>=2.2, but you have pandas 2.1.4 which is incompatible.
+skforecast 0.27.0 requires scipy>=1.12, but you have scipy 1.11.4 which is incompatible.
+Successfully installed ... scipy-1.11.4 ... uni2ts-2.0.0
+skforecast 0.27.0 has requirement pandas<3.0,>=2.2, but you have pandas 2.1.4.
+skforecast 0.27.0 has requirement scipy>=1.12, but you have scipy 1.11.4.
+### skforecast + MoiraiAdapter with this env
+{'skforecast': '0.27.0', 'uni2ts': '2.0.0', 'scipy': '1.11.4', 'numpy': '1.26.4', 'torch': '2.4.1+cpu'}
+(3, 2)
+
+### pandas caps in this pip env (who forces pandas 2.1.4)
+gluonts 0.14.4 -> pandas <2.2.0,>=1.0 (pip picked gluonts 0.14.4; uv with skforecast in the same resolution picks gluonts 0.14.3, which has no cap, and pandas 2.3.3: see requirements-freeze.txt)

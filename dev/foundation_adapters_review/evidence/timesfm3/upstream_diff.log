@@ -1,0 +1,180 @@
+# git clone https://github.com/google-research/timesfm (~/fm-review-src/timesfm), fetched 2026-11-06
+# tags
+v3.0.0 331c6d33cb1ac2611de3056d0ac7164aab6301eb 2026-08-28
+v3.0.2 8cb0628371af142e16b8c232cc9fbf667ffb12f9 2026-09-09
+# no v3.0.1 tag; PyPI 3.0.1 wheel differs from 3.0.0 only in evaluator imports and model.py library_name (diff -r of the wheels)
+# origin/master
+e51928e27119cb17bebc005be2696b75e0a9e688 2026-09-29 Update README.md
+
+# git log --oneline v3.0.0..v3.0.2
+8cb0628 chore: bump version to 3.0.2
+1494fae fix(timesfm3/mlx): gracefully handle missing mlx on non-mac platforms
+8cb7eda Merge pull request #476 from rachittshah/feat/timesfm3-mlx
+751f75b feat(timesfm3/mlx): support use_znorm and padding_mode="edge"
+e158a34 feat(timesfm3/mlx): support use_symmetric_averaging
+55f2d8d fix(timesfm3/mlx): accept a 2D ndarray of contexts in predict_batch
+fea9c86 fix(timesfm3): keep old top-level import paths working after the torch move
+36c0244 feat(timesfm3/mlx): reject checkpoints needing frozen running stats
+8f5fea3 docs(timesfm3): document the MLX covariate and long-horizon paths
+1bad88b feat(timesfm3/mlx): support multivariate targets and covariates
+f40faab feat(timesfm3/mlx): cap context at global_context before decode
+3a66516 style(timesfm3): use the repo's 2-space indentation in the MLX backend
+56f6ee8 Add an MLX (Apple silicon) backend for TimesFM 3.0
+9de33f6 Move the TimesFM3 PyTorch backend into a torch/ subpackage
+0df95ae Merge pull request #499 from google-research/siriuz42-patch-4
+3dd66fc Update README.md
+444899b Merge pull request #494 from devendrasinghjodha/fix/reject-invalid-swiglu
+03675bf Merge pull request #492 from devendrasinghjodha/fix-kv-cache-batch-indexing
+c461c6a fix: reject unsupported swiglu activation
+8680259 Fix TimesFM3 KV cache indexing for batched decoding
+aa48015 style(timesfm3): rewrite dict() call as dict literal in test mock
+e611571 Merge pull request #483 from LngelKyo/fix/pf-covariate-window-alignment
+93d2c64 fix(timesfm3): shape covariate placeholders like the batch's real covariates, not the target
+0ac3663 fix(timesfm3): keep past-future covariate windows aligned when the context is truncated
+45e0a3b Update pyproject.toml
+7360853 fix(timesfm3): remove library_name override in PyTorchModelHubMixin for download tracking
+
+# git log --oneline v3.0.2..origin/master
+e51928e Update README.md
+e31dadd Merge pull request #510 from matdou/fix-weights-cached-stale-ref
+482888a Merge pull request #509 from matdou/mlx-torch-parity-fix
+5b83be4 fix(timesfm3/mlx): fall back to scanning cached snapshots in _weights_cached()
+b07d288 fix(timesfm3/mlx): accept "silu" as an activation alias, add deeper CPM refine coverage
+d9c47b7 fix(timesfm3/mlx): honor ff_activation, v_norm, causal_attention, use_rope_var, and use_memory_efficient_attention
+3114393 fix(timesfm3/mlx): match torch on stitching, cpm revin, residual activation, and NaN handling
+
+# diff of the forecaster: v3.0.0:src/timesfm3/timesfm3_forecaster.py vs v3.0.2:src/timesfm3/torch/timesfm3_forecaster.py (formatting-only hunks included)
+154,156c154
+<         row[nan_mask[r]] = np.interp(
+<           nan_indices, non_nan_indices, non_nan_values
+<         )
+---
+>         row[nan_mask[r]] = np.interp(nan_indices, non_nan_indices, non_nan_values)
+232a231,236
+>         # Keep the covariate window aligned with the target window: the
+>         # future part of `past_future_covariates` may be shorter than
+>         # `self.horizon` (the patch-rounded horizon) when padding_mode is
+>         # "none", so slice by the covariate's own future length rather than
+>         # by `self.horizon`.
+>         future_len = past_future_covariates.shape[-1] - self.context_length
+234c238
+<           :, -(context_len + self.horizon) :
+---
+>           :, -(context_len + future_len) :
+481,483c485
+<     original_ts_ids = (
+<       list(ts_ids) if ts_ids is not None else [None] * num_original_ts
+<     )
+---
+>     original_ts_ids = list(ts_ids) if ts_ids is not None else [None] * num_original_ts
+485c487
+<     if not contexts:
+---
+>     if len(contexts) == 0:
+506,510c508
+<       po_arr = (
+<         np.atleast_2d(np.array(po, dtype=np.float32))
+<         if po is not None
+<         else None
+<       )
+---
+>       po_arr = np.atleast_2d(np.array(po, dtype=np.float32)) if po is not None else None
+512,516c510
+<       pf_arr = (
+<         np.atleast_2d(np.array(pf, dtype=np.float32))
+<         if pf is not None
+<         else None
+<       )
+---
+>       pf_arr = np.atleast_2d(np.array(pf, dtype=np.float32)) if pf is not None else None
+688,691c682,688
+<         po_arrs = [
+<           po if po is not None else np.zeros_like(batched_tgt[j])
+<           for j, po in enumerate(batched_po)
+<         ]
+---
+>         # A query without covariates in a batch where others have them gets
+>         # a zero placeholder shaped like the real covariate arrays (channel
+>         # count and width), not like the target: the covariate channel count
+>         # need not equal the number of target variates, and np.stack needs
+>         # every entry to have the same shape.
+>         po_ref = next(po for po in batched_po if po is not None)
+>         po_arrs = [po if po is not None else np.zeros_like(po_ref) for po in batched_po]
+698,701c695,702
+<         pf_arrs = [
+<           pf if pf is not None else np.zeros_like(batched_tgt[j])
+<           for j, pf in enumerate(batched_pf)
+<         ]
+---
+>         # Same for past-future covariates. decode infers the horizon from
+>         # the covariate width (pf.shape[-1] - context) and slices the future
+>         # part, so the placeholder must match the real arrays' width as well
+>         # as their channel count. Real arrays in one batch already share both:
+>         # their context is the batch context and their future part is the
+>         # requested horizon.
+>         pf_ref = next(pf for pf in batched_pf if pf is not None)
+>         pf_arrs = [pf if pf is not None else np.zeros_like(pf_ref) for pf in batched_pf]
+
+# master vs v3.0.2 for the torch forecaster and model
+(empty stat = no change)
+
+# signatures at v3.0.2
+  def from_pretrained(
+    cls,
+    pretrained_model_name_or_path: str = "google/timesfm-3.0-pytorch",
+    device: str | None = None,
+    **kwargs: Any,
+  ) -> TimesFM3Forecaster:
+  def predict(
+    self,
+    context: np.ndarray,
+    horizon: int,
+    past_only_covariates: np.ndarray | None = None,
+    past_future_covariates: np.ndarray | None = None,
+    ts_id: str | None = None,
+    return_quantiles: bool = False,
+    use_symmetric_averaging: bool = False,
+    make_positive: bool = False,
+    sort_quantiles: bool = True,
+    use_znorm: bool = False,
+    padding_mode: str = "none",
+  ) -> ForecastOutput:
+  def predict_batch(
+    self,
+    contexts: list[np.ndarray],
+    horizon: int,
+    past_only_covariates: list[np.ndarray | None] | None = None,
+    past_future_covariates: list[np.ndarray | None] | None = None,
+    ts_ids: list[str] | None = None,
+    return_quantiles: bool = False,
+    use_symmetric_averaging: bool = False,
+    make_positive: bool = False,
+    sort_quantiles: bool = True,
+    use_znorm: bool = False,
+    padding_mode: str = "none",
+  ) -> Iterator[ForecastOutput]:
+
+# timesfm3/__init__.py at v3.0.2 (lazy torch exports)
+"""TimesFM3 API.
+
+The PyTorch backend lives in ``timesfm3.torch`` and the MLX (Apple Silicon) backend in
+``timesfm3.mlx``. For backward compatibility the PyTorch API is also re-exported at the top level
+(``from timesfm3 import TimesFM3Forecaster``); these names are resolved lazily so that importing
+``timesfm3`` — or ``timesfm3.mlx`` — does not require PyTorch to be installed.
+"""
+
+def __getattr__(name):  # PEP 562: lazily re-export the torch backend at the top level
+  if name in _TORCH_EXPORTS:
+    from . import torch as _torch_backend
+
+    return getattr(_torch_backend, name)
+  raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+# timesfm/__init__.py at v3.0.2
+
+try:
+  from timesfm3 import TimesFM3Forecaster, TimesFM3Torch
+except ImportError:
+  pass
+
+# decode does not use the KV cache (PR #492 only touches cached decoding)
+19:  - decode(): non-autoregressive and cached decoding with frozen stats and

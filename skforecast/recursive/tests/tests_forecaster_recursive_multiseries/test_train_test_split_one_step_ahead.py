@@ -1,5 +1,6 @@
 ﻿# Unit test _train_test_split_one_step_ahead ForecasterRecursiveMultiSeries
 # ==============================================================================
+import re
 import pytest
 import numpy as np
 import pandas as pd
@@ -1416,6 +1417,126 @@ def test_train_test_split_one_step_ahead_when_ordinal_category_and_level_without
     )
 
 
+def test_train_test_split_one_step_ahead_when_series_with_window_size_values_in_train():
+    """
+    Test _train_test_split_one_step_ahead when a series has exactly
+    `window_size` values in the training set. It is left out of both the
+    training and the test sets, since `fit` needs more than `window_size`
+    values to create a training row.
+    """
+    series_late = {
+        "series_1": pd.Series(
+            np.arange(15, dtype=float),
+            index=pd.date_range("2020-01-01", periods=15)
+        ),
+        "series_2": pd.Series(
+            np.arange(50, 58, dtype=float),
+            index=pd.date_range("2020-01-08", periods=8)
+        ),
+    }
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, encoding='ordinal'
+    )
+
+    X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
+        forecaster._train_test_split_one_step_ahead(
+            series=series_late, initial_train_size=10
+        )
+    )
+
+    assert X_train_encoding.unique().tolist() == ['series_1']
+    assert X_test_encoding.unique().tolist() == ['series_1']
+    np.testing.assert_array_almost_equal(y_train.to_numpy(), np.arange(3, 10))
+    np.testing.assert_array_almost_equal(y_test.to_numpy(), np.arange(10, 15))
+
+
+def test_train_test_split_one_step_ahead_when_series_ends_at_end_of_train():
+    """
+    Test _train_test_split_one_step_ahead when a series ends at the end of the
+    training set. It is in the training set but it has no observed values in
+    the test set, so it is left out of the test set.
+    """
+    series_end = {
+        "series_1": pd.Series(
+            np.arange(15, dtype=float),
+            index=pd.date_range("2020-01-01", periods=15)
+        ),
+        "series_2": pd.Series(
+            np.arange(50, 60, dtype=float),
+            index=pd.date_range("2020-01-01", periods=10)
+        ),
+    }
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, encoding='ordinal'
+    )
+
+    X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
+        forecaster._train_test_split_one_step_ahead(
+            series=series_end, initial_train_size=10
+        )
+    )
+
+    assert X_train_encoding.unique().tolist() == ['series_1', 'series_2']
+    assert X_test_encoding.unique().tolist() == ['series_1']
+    np.testing.assert_array_almost_equal(
+        y_train.to_numpy(), np.concatenate([np.arange(3, 10), np.arange(53, 60)])
+    )
+    np.testing.assert_array_almost_equal(y_test.to_numpy(), np.arange(10, 15))
+
+
+@pytest.mark.parametrize(
+    "series_1_periods, series_2_start, err_msg",
+    [
+        (
+            3, "2020-01-11",
+            "No series can be used to train the forecaster: none has more than "
+            "`window_size` (3) observations in the first `initial_train_size` (5) "
+            "positions of the span of `series`. Review `initial_train_size` of "
+            "`cv` or the span of the series."
+        ),
+        (
+            5, "2020-01-08",
+            "No series can be evaluated in the test set: none of the series used "
+            "to train can be predicted after the training set and has observed "
+            "values in the test set. Review `initial_train_size` of `cv` or the "
+            "span of the series."
+        ),
+    ],
+    ids=['no series to train', 'no series to evaluate']
+)
+def test_train_test_split_one_step_ahead_ValueError_when_no_series_to_train_or_evaluate(
+    series_1_periods, series_2_start, err_msg
+):
+    """
+    Test ValueError is raised in _train_test_split_one_step_ahead when no series
+    has more than `window_size` values in the training set ('series_1' has 3,
+    'series_2' starts after it), or when no series of the training set can be
+    evaluated ('series_1' ends at the end of the training set and 'series_2'
+    starts after it, so it is not in the training set).
+    """
+    series_gap = {
+        "series_1": pd.Series(
+            np.arange(series_1_periods, dtype=float),
+            index=pd.date_range("2020-01-01", periods=series_1_periods)
+        ),
+        "series_2": pd.Series(
+            np.arange(50, 60, dtype=float),
+            index=pd.date_range(series_2_start, periods=10)
+        ),
+    }
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, encoding='ordinal'
+    )
+
+    with pytest.raises(ValueError, match=re.escape(err_msg)):
+        forecaster._train_test_split_one_step_ahead(
+            series=series_gap, initial_train_size=5
+        )
+
+
 def test_train_test_split_one_step_ahead_when_weight_func_and_series_weights():
     """
     Test _train_test_split_one_step_ahead when both weight_func and
@@ -1685,3 +1806,42 @@ def test_train_test_split_one_step_ahead_when_forecaster_fitted_with_other_serie
     )
     assert X_train_encoding.to_list() == ['a'] * 8 + ['b'] * 8
     assert X_test_encoding.to_list() == ['a'] * 5 + ['b'] * 5
+
+
+@pytest.mark.parametrize(
+    "encoding",
+    ['ordinal', 'onehot', None],
+    ids=lambda encoding: f'encoding: {encoding}'
+)
+def test_train_test_split_one_step_ahead_when_series_names_are_integers(encoding):
+    """
+    Test _train_test_split_one_step_ahead when the series names are integers.
+    X_train_encoding and X_test_encoding keep the integer names, also with
+    `encoding='onehot'`, whose columns are named after the series as strings.
+    """
+    index = pd.date_range('2020-01-01', periods=15)
+    series_int = {
+        10: pd.Series(np.arange(100, 115, dtype=float), index=index, name=10),
+        2: pd.Series(np.arange(15, dtype=float), index=index, name=2)
+    }
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=2, encoding=encoding
+    )
+
+    (
+        X_train, y_train, X_test, y_test,
+        X_train_encoding, X_test_encoding,
+        sample_weight, fit_kwargs
+    ) = forecaster._train_test_split_one_step_ahead(
+            series=series_int, initial_train_size=10
+        )
+
+    assert X_train_encoding.to_list() == [10] * 8 + [2] * 8
+    assert X_test_encoding.to_list() == [10] * 5 + [2] * 5
+    if encoding == 'onehot':
+        assert X_train.columns.to_list() == ['lag_1', 'lag_2', '2', '10']
+        np.testing.assert_array_equal(
+            X_test[['2', '10']].to_numpy(),
+            np.array([[0., 1.]] * 5 + [[1., 0.]] * 5)
+        )

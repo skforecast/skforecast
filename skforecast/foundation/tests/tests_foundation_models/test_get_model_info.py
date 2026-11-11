@@ -113,6 +113,47 @@ def test_get_model_info_output_TimesFM3():
     assert info == expected
 
 
+def test_get_model_info_output_Timestral():
+    """
+    Test the full output of get_model_info for Timestral, whose weights carry
+    a registered license with a commercial-use restriction (with no
+    `license_name` in the model card), which only supports a fixed set of
+    quantiles and whose backend is installed from git.
+    """
+    info = get_model_info(model_id="mistralai/Timestral-209M")
+
+    expected = FoundationModelInfo(
+        model_id                          = "mistralai/Timestral-209M",
+        adapter                           = "TimestralAdapter",
+        model_id_prefixes                 = ("mistralai/Timestral",),
+        default_model_id                  = "mistralai/Timestral-28M",
+        default_context_length            = 4096,
+        backend_package                   = (
+            "timestral @ git+https://github.com/mistralai/timestral.git"
+        ),
+        allow_exog                        = True,
+        supports_past_only_covariates     = True,
+        supports_categorical_covariates   = True,
+        supports_heterogeneous_covariates = False,
+        supports_nan_in_series            = True,
+        supported_quantiles               = (
+            0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5,
+            0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99,
+        ),
+        requires_hf_auth                  = False,
+        requires_provider_auth            = False,
+        weights_repo_id                   = "mistralai/Timestral-209M",
+        weights_in_hf_cache               = True,
+        license                           = "other",
+        license_url                       = (
+            "https://huggingface.co/mistralai/Timestral-209M/blob/main/LICENSE"
+        ),
+        commercial_use_restricted         = True,
+    )
+
+    assert info == expected
+
+
 @pytest.mark.parametrize(
     "model_id, expected",
     [
@@ -122,6 +163,8 @@ def test_get_model_info_output_TimesFM3():
          ("TimesFM25Adapter", 512, "timesfm[torch]", False, False, False)),
         ("google/timesfm-3.0-pytorch",
          ("TimesFM3Adapter", 2048, "timesfm[torch]", True, False, False)),
+        ("NX-AI/TiRex-2",
+         ("TiRex2Adapter", 2048, "tirex-2", True, False, False)),
         ("Salesforce/moirai-2.0-R-small",
          ("MoiraiAdapter", 2048, "uni2ts", False, False, False)),
         ("soda-inria/tabicl",
@@ -129,11 +172,15 @@ def test_get_model_info_output_TimesFM3():
         ("priorlabs/tabpfn-ts",
          ("TabPFNAdapter", 32768, "tabpfn-time-series>=1.3", True, False, False)),
         ("theforecastingcompany/t0-alpha",
-         ("T0Adapter", 8192, "tfc-t0", True, False, False)),
+         ("T0Adapter", 8192, "tfc-t0[torch]>=0.6", True, False, False)),
         ("Synthefy/Nori",
          ("NoriAdapter", 4096, "synthefy-nori", True, False, False)),
         ("taharnbl/TS-ICL",
          ("TSICLAdapter", 4096, "tsicl", True, False, False)),
+        ("mistralai/Timestral-28M",
+         ("TimestralAdapter", 4096,
+          "timestral @ git+https://github.com/mistralai/timestral.git",
+          True, True, False)),
     ],
     ids=lambda x: str(x),
 )
@@ -161,14 +208,18 @@ def test_get_model_info_output_for_each_adapter(model_id, expected):
         ("soda-inria/tabicl", None),
         ("google/timesfm-2.5-200m-pytorch", (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)),
         ("Salesforce/moirai-2.0-R-small", (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)),
+        ("NX-AI/TiRex-2", (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)),
         ("taharnbl/TS-ICL", tuple(round(0.01 * i, 2) for i in range(1, 100))),
+        ("mistralai/Timestral-5M",
+         (0.01,) + tuple(round(0.05 * i, 2) for i in range(1, 20)) + (0.99,)),
     ],
     ids=lambda x: str(x)[:40],
 )
 def test_get_model_info_supported_quantiles(model_id, expected):
     """
     Test that `supported_quantiles` is `None` for adapters that accept any
-    level and the tuple of accepted levels otherwise (a 0.01 grid for TS-ICL).
+    level and the tuple of accepted levels otherwise (a 0.01 grid for TS-ICL,
+    and 0.01, every multiple of 0.05 and 0.99 for Timestral).
     """
     info = get_model_info(model_id=model_id)
 
@@ -184,12 +235,14 @@ def test_get_model_info_supported_quantiles(model_id, expected):
         ("Salesforce/moirai-2.0-R-small", "Salesforce/moirai", True),
         ("priorlabs/tabpfn-ts", "priorlabs/tabpfn", True),
         ("taharnbl/TS-ICL", "taharnbl/TS-ICL", True),
+        ("mistralai/Timestral-209M", "mistralai/Timestral", True),
         ("autogluon/chronos-2-small", "autogluon/chronos-2", False),
         ("amazon/chronos-2", "amazon/chronos-2", False),
         ("google/timesfm-2.5-200m-pytorch", "google/timesfm-2.5", False),
         ("soda-inria/tabicl", "soda-inria/tabicl", False),
         ("theforecastingcompany/t0-alpha", "theforecastingcompany/t0", False),
         ("Synthefy/Nori", "Synthefy/Nori", False),
+        ("NX-AI/TiRex-2", "NX-AI/TiRex-2", False),
     ],
     ids=lambda x: str(x),
 )
@@ -221,6 +274,8 @@ def test_get_model_info_license_fields_match_LicenseWarning_registry(
         ("priorlabs/tabpfn-ts",
          "https://huggingface.co/Prior-Labs/tabpfn_3_5/blob/main/LICENSE"),
         ("taharnbl/TS-ICL", "https://huggingface.co/taharnbl/TS-ICL/blob/main/LICENSE"),
+        ("mistralai/Timestral-5M",
+         "https://huggingface.co/mistralai/Timestral-209M/blob/main/LICENSE"),
     ],
     ids=lambda x: str(x),
 )
@@ -252,6 +307,8 @@ def test_get_model_info_license_url(model_id, expected):
          ("theforecastingcompany/t0-alpha", True, False)),
         ("Synthefy/Nori", ("Synthefy/Nori", True, False)),
         ("taharnbl/TS-ICL", ("taharnbl/TS-ICL", True, False)),
+        ("mistralai/Timestral-123M", ("mistralai/Timestral-123M", True, False)),
+        ("NX-AI/TiRex-2", ("NX-AI/TiRex-2", True, False)),
     ],
     ids=lambda x: str(x),
 )
@@ -294,7 +351,7 @@ def test_get_model_info_does_not_import_backend_libraries():
     """
     backends = [
         "chronos", "timesfm", "uni2ts", "tabicl", "tabpfn_time_series",
-        "t0", "tsicl", "synthefy_nori",
+        "t0", "tsicl", "synthefy_nori", "timestral", "tirex2",
     ]
     code = (
         "import sys\n"

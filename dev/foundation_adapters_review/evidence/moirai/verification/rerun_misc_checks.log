@@ -1,0 +1,27 @@
+python 3.12.3 | skforecast 0.27.0 | uni2ts 2.0.0 | torch 2.4.1+cpu
+
+1. uni2ts without uni2ts.model.moirai2
+   ImportError: uni2ts is required for MoiraiAdapter. Install it with `pip install uni2ts`.
+   cause: ModuleNotFoundError: import of uni2ts.model.moirai2 halted; None in sys.modules
+
+2. MPS fallback warning location (simulated MPS availability)
+   device='mps'    via FoundationModel.predict       -> warnings 1, at ['dev/foundation_adapters_review/evidence/moirai/misc_checks.py:90'], model device cpu
+   device='mps'    via ForecasterFoundation.predict  -> warnings 1, at ['dev/foundation_adapters_review/evidence/moirai/misc_checks.py:71'], model device cpu
+   device='mps:0'  via FoundationModel.predict       -> warnings 1, at ['dev/foundation_adapters_review/evidence/moirai/misc_checks.py:90'], model device cpu
+   device='mps:0'  via ForecasterFoundation.predict  -> warnings 1, at ['dev/foundation_adapters_review/evidence/moirai/misc_checks.py:71'], model device cpu
+   device='auto'   via FoundationModel.predict       -> warnings 1, at ['dev/foundation_adapters_review/evidence/moirai/misc_checks.py:90'], model device cpu
+   device='auto'   via ForecasterFoundation.predict  -> warnings 1, at ['dev/foundation_adapters_review/evidence/moirai/misc_checks.py:71'], model device cpu
+
+3. dtype of the predictions
+╭─────────────────────────────── LicenseWarning ───────────────────────────────╮
+│ The weights for 'Salesforce/moirai-2.0-R-small' are released under           │
+│ CC-BY-NC-4.0. Review the license terms before commercial or production use.  │
+│ See https://huggingface.co/Salesforce/moirai-2.0-R-small.                    │
+│                                                                              │
+│ Category : skforecast.exceptions.LicenseWarning                              │
+│ Location : skforecast/foundation/_adapters.py:2069     │
+│ Suppress : warnings.simplefilter('ignore', category=LicenseWarning)          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+   pred dtype: float64
+   adapter.predict array dtype: float32 (3, 2)
+EXIT 0

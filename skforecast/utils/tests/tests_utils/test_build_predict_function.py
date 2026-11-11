@@ -1,6 +1,9 @@
 # Unit test _build_predict_function
 # ==============================================================================
+import re
+from types import SimpleNamespace
 import numpy as np
+import pandas as pd
 import pytest
 from catboost import CatBoostRegressor
 from sklearn.datasets import make_regression
@@ -14,9 +17,14 @@ from sklearn.linear_model import Lasso, LinearRegression, Ridge
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeRegressor, ExtraTreeRegressor
+from threadpoolctl import threadpool_info
 from lightgbm import LGBMRegressor
 from xgboost import XGBRegressor
-from skforecast.utils.utils import _build_predict_function
+from skforecast.utils.utils import (
+    _build_predict_function,
+    _get_threadpool_controller,
+    _NonFinitePredictorsError,
+)
 
 
 # Fixtures
@@ -71,7 +79,7 @@ def make_clipped_subclass(base):
         ),
         pytest.param(
             HistGradientBoostingRegressor(max_iter=10, random_state=123),
-            id="HistGradientBoostingRegressor_fallback",
+            id="HistGradientBoostingRegressor",
         ),
         pytest.param(
             make_pipeline(StandardScaler(), Ridge(alpha=1.0)),
@@ -150,6 +158,143 @@ def test_build_predict_function_xgboost_output_equals_estimator_predict(
     np.testing.assert_allclose(predict_fn(X[:1]), expected[:1])
 
 
+def spy_booster_predict(estimator):
+    """
+    Replace `predict` of the booster of a fitted LGBMRegressor by a wrapper that
+    records the keyword arguments of each call, and return the list of records.
+    """
+    booster = estimator.booster_
+    booster_predict = booster.predict
+    calls_kwargs = []
+
+    def spy_predict(data, **kwargs):
+        calls_kwargs.append(kwargs)
+        return booster_predict(data, **kwargs)
+
+    booster.predict = spy_predict
+
+    return calls_kwargs
+
+
+@pytest.mark.parametrize(
+    "estimator_kwargs",
+    [
+        {"n_jobs": 1},
+        {"n_jobs": 2},
+        {"n_jobs": -1},
+        {"n_jobs": None},
+        {"num_threads": 3},
+        {"nthread": 3},
+    ],
+    ids=lambda estimator_kwargs: f"estimator_kwargs: {estimator_kwargs}",
+)
+@pytest.mark.parametrize(
+    "booster_params",
+    [None, {}, {"num_threads": 1000}],
+    ids=["fitted", "deepcopy_lightgbm_lt_4_7", "fitted_on_another_machine"],
+)
+def test_build_predict_function_lightgbm_num_threads_equals_estimator_predict(
+    estimator_kwargs, booster_params, regression_data, monkeypatch
+):
+    """
+    Test that the predict function of an LGBMRegressor passes to the booster
+    the same `num_threads` as `estimator.predict` (from `n_jobs` or from
+    `num_threads`) when `OMP_NUM_THREADS` is not set. Without it, the booster
+    predicts with all the OpenMP threads of the machine. The threads do not
+    depend on `booster_.params`, which a deepcopy of the booster empties with
+    lightgbm < 4.7 (backtesting with `initial_train_size=None` raised a
+    `KeyError`), and which keep the threads of the machine where it was fitted.
+    """
+    monkeypatch.delenv("OMP_NUM_THREADS", raising=False)
+    X, y = regression_data
+    estimator = LGBMRegressor(n_estimators=10, verbose=-1, **estimator_kwargs)
+    estimator.fit(X, y)
+    if booster_params is not None:
+        estimator.booster_.params = booster_params
+
+    calls_kwargs = spy_booster_predict(estimator)
+    predict_fn = _build_predict_function(estimator)
+    predict_fn(X[:1])
+    estimator.predict(X[:1])
+
+    assert len(calls_kwargs) == 2
+    assert calls_kwargs[0].get("num_threads") == calls_kwargs[1]["num_threads"]
+
+
+@pytest.mark.parametrize(
+    "omp_num_threads, expected",
+    [("1", 1), ("8", 2), ("0", 2), ("2,1", 2)],
+    ids=["capped", "above_n_jobs", "zero_ignored", "list_ignored"],
+)
+def test_build_predict_function_lightgbm_num_threads_capped_at_OMP_NUM_THREADS(
+    omp_num_threads, expected, regression_data, monkeypatch
+):
+    """
+    Test that the `num_threads` passed to the booster of an LGBMRegressor
+    (`n_jobs=2`) is capped at `OMP_NUM_THREADS`, which joblib sets in its
+    workers, and that values other than a positive integer are ignored.
+    """
+    X, y = regression_data
+    estimator = LGBMRegressor(n_estimators=10, n_jobs=2, verbose=-1)
+    estimator.fit(X, y)
+
+    monkeypatch.setenv("OMP_NUM_THREADS", omp_num_threads)
+    calls_kwargs = spy_booster_predict(estimator)
+    predict_fn = _build_predict_function(estimator)
+    predict_fn(X[:1])
+
+    assert calls_kwargs[0]["num_threads"] == expected
+
+
+@pytest.mark.parametrize(
+    "pipeline", [False, True], ids=["estimator", "Pipeline"]
+)
+def test_build_predict_function_HistGradientBoostingRegressor_one_openmp_thread_up_to_100_rows(
+    pipeline
+):
+    """
+    Test that the predict function of a HistGradientBoostingRegressor, alone or
+    as the last step of a Pipeline, limits the OpenMP threads to 1 when `X` has
+    up to 100 rows and uses the default threads with more rows. The predictions
+    are the same as `estimator.predict`.
+    """
+    def openmp_num_threads():
+        return {
+            info["num_threads"] for info in threadpool_info()
+            if info["user_api"] == "openmp"
+        }
+
+    default_num_threads = openmp_num_threads()
+    if not default_num_threads:
+        pytest.skip("No OpenMP library is loaded.")
+
+    X, y = make_regression(n_samples=150, n_features=5, noise=0.1, random_state=123)
+    hgb = HistGradientBoostingRegressor(max_iter=10, random_state=123)
+    estimator = make_pipeline(StandardScaler(), hgb) if pipeline else hgb
+    estimator.fit(X, y)
+    expected = estimator.predict(X)
+
+    num_threads = []
+    original_predict = hgb.predict
+
+    def spy_predict(X, **kwargs):
+        num_threads.append(openmp_num_threads())
+        return original_predict(X, **kwargs)
+
+    # NOTE: The controller is created again, so that it knows every OpenMP
+    # library loaded by the previous tests.
+    _get_threadpool_controller.cache_clear()
+    hgb.predict = spy_predict
+    predict_fn = _build_predict_function(estimator)
+    result_100 = predict_fn(X[:100])
+    result_101 = predict_fn(X[:101])
+
+    assert num_threads == [{1}, default_num_threads]
+    assert openmp_num_threads() == default_num_threads
+    np.testing.assert_allclose(result_100, expected[:100])
+    np.testing.assert_allclose(result_101, expected[:101])
+
+
 @pytest.mark.parametrize(
     "base, estimator_kwargs",
     [
@@ -200,24 +345,143 @@ def test_build_predict_function_user_subclass_uses_its_own_predict(
         pytest.param(ExtraTreeRegressor(random_state=123), id="ExtraTreeRegressor"),
     ],
 )
-def test_build_predict_function_trees_with_missing_values(estimator, regression_data):
+@pytest.mark.parametrize(
+    "fit_with_nan",
+    [True, False],
+    ids=lambda fit_with_nan: f"fit_with_nan: {fit_with_nan}"
+)
+def test_build_predict_function_trees_with_missing_values(
+    estimator, fit_with_nan, regression_data
+):
     """
     Test that the fast path of the tree-based models of scikit-learn gives the
-    same predictions as `estimator.predict()` when the estimator is fitted 
-    with missing values and predicts rows with missing values.
+    same predictions as `estimator.predict()` when it predicts rows with
+    missing values, whether the estimator is fitted with missing values or not.
     """
     X, y = regression_data
     X = X.copy()
     rng = np.random.default_rng(123)
-    X[rng.random(X.shape) < 0.1] = np.nan
+    X_nan = X.copy()
+    X_nan[rng.random(X.shape) < 0.1] = np.nan
+    estimator.fit(X_nan if fit_with_nan else X, y)
+
+    predict_fn = _build_predict_function(estimator)
+    result = predict_fn(X_nan)
+    expected = estimator.predict(X_nan)
+
+    assert np.isnan(X_nan).any(axis=1).sum() > 0
+    np.testing.assert_allclose(result, expected)
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    [
+        pytest.param(LGBMRegressor(n_estimators=10, verbose=-1), id="LGBMRegressor"),
+        pytest.param(XGBRegressor(n_estimators=10, verbosity=0), id="XGBRegressor"),
+    ],
+)
+def test_build_predict_function_gradient_boosting_with_missing_values(
+    estimator, regression_data
+):
+    """
+    Test that the fast paths of LightGBM and XGBoost, which accept missing
+    values, give the same predictions as `estimator.predict()` when predicting
+    rows with missing values with an estimator fitted without them.
+    """
+    X, y = regression_data
+    X_nan = X.copy()
+    X_nan[np.random.default_rng(123).random(X.shape) < 0.1] = np.nan
     estimator.fit(X, y)
 
     predict_fn = _build_predict_function(estimator)
-    result = predict_fn(X)
-    expected = estimator.predict(X)
+    result = predict_fn(X_nan)
+    expected = estimator.predict(X_nan)
 
-    assert np.isnan(X).any(axis=1).sum() > 0
-    np.testing.assert_allclose(result, expected)
+    assert np.isnan(X_nan).any(axis=1).sum() > 0
+    np.testing.assert_allclose(result, expected, rtol=1e-5)
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    [
+        pytest.param(LinearRegression(), id="LinearRegression"),
+        pytest.param(Ridge(alpha=1.0), id="Ridge"),
+        pytest.param(Lasso(alpha=0.1), id="Lasso"),
+    ],
+)
+@pytest.mark.parametrize(
+    "value, value_name",
+    [(np.nan, "NaN"), (np.inf, "infinity")],
+    ids=lambda value: f"value: {value}"
+)
+def test_build_predict_function_linear_models_ValueError_when_X_not_finite(
+    estimator, value, value_name, regression_data
+):
+    """
+    Test that the fast path of linear models raises a ValueError
+    (`_NonFinitePredictorsError`) naming the predictors and storing the rows
+    with non-finite values, as `estimator.predict()` raises, instead of
+    returning NaN predictions. The predictors are named after the
+    `X_train_features_names_out_` of the forecaster, or by their position
+    without forecaster. A forecaster without `_allow_nan_predictions` (saved
+    with a previous version) raises.
+    """
+    X, y = regression_data
+    estimator.fit(X, y)
+    X_bad = X[:4].copy()
+    X_bad[1, 2] = value
+    X_bad[3, 4] = value
+    forecaster = SimpleNamespace(
+        X_train_features_names_out_=[f"x_{i}" for i in range(X.shape[1])]
+    )
+
+    with pytest.raises(ValueError):
+        estimator.predict(X_bad)
+
+    predict_fn = _build_predict_function(estimator, forecaster=forecaster)
+    with pytest.raises(_NonFinitePredictorsError) as exc_info:
+        predict_fn(X_bad)
+    np.testing.assert_array_equal(exc_info.value.rows, [1, 3])
+    assert exc_info.value.predictors == ["x_2", "x_4"]
+    assert str(exc_info.value).startswith(
+        f"Input X contains {value_name} in the predictors ['x_2', 'x_4']. "
+        f"{type(estimator).__name__} does not accept"
+    )
+
+    predict_fn = _build_predict_function(estimator)
+    err_msg = re.escape(
+        f"Input X contains {value_name} in the predictors ['column 2', 'column 4']."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        predict_fn(X_bad)
+
+
+def test_NonFinitePredictorsError_message_with_series_step_and_date():
+    """
+    Test the message of `_NonFinitePredictorsError` with the context added by
+    the prediction loops: series, step and date.
+    """
+    error = _NonFinitePredictorsError(
+        estimator_name = "Ridge",
+        rows           = np.array([0, 1]),
+        predictors     = ["exog"],
+        has_nan        = True
+    )
+
+    expected = (
+        "Input X contains NaN in the predictors ['exog'] of series ['a', 'b'] "
+        "at step 6 (2020-04-05 00:00:00). Ridge does not accept missing values "
+        "encoded as NaN, so its predictions would be NaN. Fill the missing "
+        "values of the series (or `last_window`) and `exog`, or use an "
+        "estimator that accepts them, for example HistGradientBoostingRegressor "
+        "or LGBMRegressor."
+    )
+    message = error.message(
+        series=["a", "b"], step=6, date=pd.Timestamp("2020-04-05")
+    )
+
+    assert isinstance(error, ValueError)
+    assert message == expected
 
 
 def test_build_predict_function_catboost_with_cat_features():
@@ -275,3 +539,60 @@ def test_build_predict_function_catboost_without_cat_features():
     expected = estimator.predict(X).ravel()
     result = predict_fn(X)
     np.testing.assert_allclose(result, expected)
+
+
+def test_build_predict_function_linear_models_NaN_predictions_when_allow_nan_predictions_True(
+    regression_data
+):
+    """
+    Test that the fast path of linear models returns NaN predictions for the
+    rows with NaN values, and the predictions of `estimator.predict()` for the
+    rest, when the forecaster has `_allow_nan_predictions=True` (set by
+    backtesting in its copy of the forecaster).
+    """
+    X, y = regression_data
+    estimator = Ridge(alpha=1.0).fit(X, y)
+    X_nan = X[:4].copy()
+    X_nan[1, 2] = np.nan
+
+    forecaster = SimpleNamespace(
+        X_train_features_names_out_=[f"x_{i}" for i in range(X.shape[1])],
+        _allow_nan_predictions=True
+    )
+    predict_fn = _build_predict_function(estimator, forecaster=forecaster)
+    result = predict_fn(X_nan)
+
+    np.testing.assert_array_equal(np.isnan(result), [False, True, False, False])
+    np.testing.assert_allclose(
+        result[[0, 2, 3]], estimator.predict(X_nan[[0, 2, 3]])
+    )
+
+
+@pytest.mark.parametrize(
+    "predictors, expected_remedy",
+    [(["_level_skforecast"],
+      "Predict the series not seen during training with `encoding='onehot'` "
+      "or `encoding=None` (an ordinal encoding gives them NaN), or use"),
+     (["exog", "_level_skforecast"],
+      "Fill the missing values of the series (or `last_window`) and `exog`; "
+      "predict the series not seen during training with `encoding='onehot'` "
+      "or `encoding=None` (an ordinal encoding gives them NaN), or use")],
+    ids=lambda x: f"{x}"
+)
+def test_NonFinitePredictorsError_message_when_level_skforecast_is_NaN(
+    predictors, expected_remedy
+):
+    """
+    Test the message of `_NonFinitePredictorsError` when `_level_skforecast`
+    is NaN (a series not seen during training with an ordinal encoding): it
+    points to the encoding, and keeps the remedy for the missing values of
+    the data when other predictors are NaN too.
+    """
+    error = _NonFinitePredictorsError(
+        estimator_name = "Ridge",
+        rows           = np.array([0]),
+        predictors     = predictors,
+        has_nan        = True
+    )
+
+    assert expected_remedy in error.message()

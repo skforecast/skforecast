@@ -422,37 +422,63 @@ class FakeT0Forecast:
     axis equals its quantile level, making column-order assertions trivial.
     """
 
-    def __init__(self, batch_size, horizon, quantiles):
-        q_values = np.array(quantiles, dtype=float)
+    def __init__(self, batch_size, horizon, quantile_levels):
+        q_values = np.array(quantile_levels, dtype=float)
         self.quantiles = np.broadcast_to(
-            q_values, (batch_size, horizon, len(quantiles))
+            q_values, (batch_size, horizon, len(quantile_levels))
         ).copy()
-        self.quantile_levels = tuple(quantiles)
+        self.quantile_levels = tuple(quantile_levels)
 
 
 class FakeT0Forecaster:
     """
     Fake ``t0.T0Forecaster`` for testing without torch/tfc-t0.
 
-    Records the last call arguments (notably ``future_covariates``) for
-    inspection and returns a `FakeT0Forecast`.
+    ``predict`` has the signature of ``tfc-t0`` 0.6.0, the oldest version the
+    adapter supports, without ``**kwargs``: an argument that version does not
+    accept raises a ``TypeError``, as the real backend does. The arguments of
+    every call are stored in ``calls``, and those of the last one also in the
+    ``last_*`` attributes.
     """
 
     def __init__(self):
+        self.calls = []
         self.last_context = None
         self.last_horizon = None
         self.last_quantiles = None
         self.last_future_covariates = None
+        self.last_trim_leading_missing = None
 
-    def predict(self, context, horizon, quantiles, future_covariates=None):
-        context = np.asarray(context)
+    def predict(
+        self,
+        model_input,
+        horizon,
+        quantile_levels=(0.1, 0.5, 0.9),
+        *,
+        context_length=None,
+        future_covariates=None,
+        mask=None,
+        group_ids=None,
+        trim_leading_missing=False,
+        symmetric_averaging=False,
+        clip_nonnegative=False,
+        snap_integers=False,
+    ):
+        context = np.asarray(model_input)
         self.last_context = context
         self.last_horizon = horizon
-        self.last_quantiles = list(quantiles)
+        self.last_quantiles = list(quantile_levels)
         self.last_future_covariates = (
             None if future_covariates is None else np.asarray(future_covariates)
         )
-        return FakeT0Forecast(context.shape[0], horizon, quantiles)
+        self.last_trim_leading_missing = trim_leading_missing
+        self.calls.append(
+            {
+                "context": self.last_context,
+                "future_covariates": self.last_future_covariates,
+            }
+        )
+        return FakeT0Forecast(context.shape[0], horizon, quantile_levels)
 
 
 # Fake TabICL forecaster
@@ -633,3 +659,245 @@ class FakeNoriRegressor:
         return np.tile(
             np.asarray(quantiles, dtype=float).reshape(-1, 1), (1, n)
         )
+
+
+# Fake Timestral forecaster
+# ==============================================================================
+TIMESTRAL_QUANTILES = (
+    0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5,
+    0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99,
+)
+
+
+class _FakeTimestralForecast:
+    """
+    Fake `timestral.Forecast` returned by `FakeTimestralForecaster.forecast`.
+
+    `quantiles` has shape `(B, V, prediction_length, Q)` and every entry on
+    the last axis equals its quantile level, making column-order assertions
+    trivial. `quantile_levels` is a tuple, as in the real dataclass.
+    """
+
+    def __init__(self, quantiles, quantile_levels):
+        self.quantiles = quantiles
+        self.quantile_levels = tuple(quantile_levels)
+
+
+class _FakeTensor:
+    """
+    Minimal stand-in for a torch tensor (`detach().cpu().numpy()`), used when
+    `as_tensor=True` to cover `_tensor_to_numpy`.
+    """
+
+    def __init__(self, arr):
+        self._arr = arr
+
+    def detach(self):
+        return self
+
+    def cpu(self):
+        return self
+
+    def numpy(self):
+        return self._arr
+
+
+class FakeTimestralForecaster:
+    """
+    Fake `timestral.TimestralForecaster` for testing without torch/timestral.
+
+    `forecast()` checks the shapes the real backend asserts (`context`
+    3-D `(B, V, T)`, past covariates `(B, C, T)` and known covariates
+    `(B, C, T + prediction_length)`), records every call in `calls` (and the
+    last one in the `last_*` attributes), and returns a
+    `_FakeTimestralForecast`. `quantile_levels` defaults to the 21 Timestral
+    levels but can be overridden to test the quantile-index mapping.
+    """
+
+    def __init__(self, quantile_levels=None, as_tensor=False):
+        self.quantile_levels = tuple(
+            quantile_levels if quantile_levels is not None else TIMESTRAL_QUANTILES
+        )
+        self.as_tensor = as_tensor
+        self.last_context = None
+        self.last_prediction_length = None
+        self.last_past_covariates = None
+        self.last_known_covariates = None
+        self.last_categorical_past_covariates = None
+        self.last_categorical_known_covariates = None
+        self.last_kwargs = None
+        self.calls = []
+
+    @classmethod
+    def from_pretrained(cls, path_or_repo_id, device="cpu", **kwargs):
+        return cls()
+
+    def forecast(
+        self,
+        context,
+        prediction_length,
+        observation_mask=None,
+        past_covariates=None,
+        known_covariates=None,
+        categorical_past_covariates=None,
+        categorical_known_covariates=None,
+        symmetric_averaging=True,
+        clip_nonnegative=True,
+    ):
+        # Same signature as the real `forecast` (no **kwargs), so an unknown
+        # `predict_kwargs` key raises TypeError as with the backend.
+        kwargs = {
+            "symmetric_averaging": symmetric_averaging,
+            "clip_nonnegative": clip_nonnegative,
+        }
+        context = np.asarray(context, dtype=float)
+        if context.ndim != 3:
+            raise AssertionError(f"context must be (B, V, T), got {context.shape}")
+        b, v, t = context.shape
+        covariates = {
+            "past_covariates": (past_covariates, t),
+            "known_covariates": (known_covariates, t + prediction_length),
+            "categorical_past_covariates": (categorical_past_covariates, t),
+            "categorical_known_covariates": (
+                categorical_known_covariates, t + prediction_length
+            ),
+        }
+        recorded = {}
+        for name, (values, length) in covariates.items():
+            if values is not None:
+                values = np.asarray(values, dtype=float)
+                if (
+                    values.ndim != 3
+                    or values.shape[0] != b
+                    or values.shape[-1] != length
+                ):
+                    raise AssertionError(
+                        f"{name} must be (B={b}, C, {length}), got {values.shape}"
+                    )
+            recorded[name] = values
+
+        self.last_context = context
+        self.last_prediction_length = prediction_length
+        self.last_past_covariates = recorded["past_covariates"]
+        self.last_known_covariates = recorded["known_covariates"]
+        self.last_categorical_past_covariates = recorded["categorical_past_covariates"]
+        self.last_categorical_known_covariates = recorded[
+            "categorical_known_covariates"
+        ]
+        self.last_kwargs = kwargs
+        self.calls.append({
+            "context": context,
+            "prediction_length": prediction_length,
+            "observation_mask": observation_mask,
+            **recorded,
+            "kwargs": kwargs,
+        })
+
+        q_values = np.array(self.quantile_levels, dtype=float)
+        quantiles = np.broadcast_to(
+            q_values, (b, v, prediction_length, len(q_values))
+        ).copy()
+        if self.as_tensor:
+            quantiles = _FakeTensor(quantiles)
+
+        return _FakeTimestralForecast(quantiles, self.quantile_levels)
+
+
+# Fake TiRex-2 backend
+# ==============================================================================
+class FakeTensor(np.ndarray):
+    """
+    Minimal `torch.Tensor` stand-in, so the real torch is not needed. `to` is
+    what the backend calls on the tensors the adapter builds; here it marks the
+    object as a tensor, so `FakeTimeseriesType` can check that the adapter
+    converted its inputs with `torch.as_tensor`.
+    """
+
+    def to(self, device):
+        return self
+
+
+class FakeTorch:
+    """
+    Minimal `torch` stand-in with the two attributes the adapter uses:
+    `float32` and `as_tensor`. The tensors it builds are numpy arrays viewed as
+    `FakeTensor`, so their values and shapes can be asserted directly.
+    """
+
+    float32 = np.float32
+
+    @staticmethod
+    def as_tensor(value, dtype=None):
+        return np.asarray(value, dtype=dtype).view(FakeTensor)
+
+
+class FakeTimeseriesType:
+    """
+    Minimal `tirex2.TimeseriesType` stand-in. Asserts that the adapter passes
+    tensor-like objects (not lists or plain arrays) for the target and for each
+    covariate block, then stores them for inspection.
+    """
+
+    def __init__(self, target, past_covariates, future_covariates):
+        assert hasattr(target, "to")
+        if past_covariates is not None:
+            assert hasattr(past_covariates, "to")
+        if future_covariates is not None:
+            assert hasattr(future_covariates, "to")
+        self.target = target
+        self.past_covariates = past_covariates
+        self.future_covariates = future_covariates
+
+
+class FakeTirex2Model:
+    """
+    Fake TiRex-2 `ForecastModel` for testing without tirex-2/torch.
+
+    `forecast()` returns the native layout `(n_targets, n_quantiles, horizon)`
+    with one entry per input `TimeseriesType`; every quantile row is filled with
+    the quantile level itself (1, 2, ..., 9), so selecting a row and selecting a
+    quantile level are both checkable. `quantiles` and `future_len` hold the
+    quantile levels and the maximum horizon of the checkpoint, as the real
+    `ForecastModel` exposes them. Records every call in `calls` as
+    `(timeseries, prediction_length, output_type, kwargs)`.
+    """
+
+    def __init__(self, future_len=320):
+        self.calls = []
+        self.quantiles = np.arange(1, 10) / 10
+        self.future_len = future_len
+
+    def forecast(self, timeseries, prediction_length, output_type, **kwargs):
+        self.calls.append((timeseries, prediction_length, output_type, kwargs))
+        return [
+            np.broadcast_to(
+                np.arange(1, 10, dtype=float)[None, :, None],
+                (1, 9, prediction_length),
+            ).copy()
+            for _ in timeseries
+        ]
+
+
+def fake_tirex2_modules(monkeypatch, model=None):
+    """
+    Patch `sys.modules` so `TiRex2Adapter` can run without tirex-2 installed.
+
+    Registers the `tirex2` and `torch` modules used by the adapter and returns
+    a `FakeTirex2Model`, or `model` when one is provided, so a test can inspect
+    the calls the adapter made.
+    """
+    import sys
+    from types import SimpleNamespace
+
+    if model is None:
+        model = FakeTirex2Model()
+    monkeypatch.setitem(
+        sys.modules,
+        "tirex2",
+        SimpleNamespace(
+            TimeseriesType=FakeTimeseriesType,
+            load_model=lambda *args, **kwargs: model,
+        ),
+    )
+    monkeypatch.setitem(sys.modules, "torch", FakeTorch)
+    return model
