@@ -229,6 +229,156 @@ def git_status(path):
     ).stdout
 
 
+ADAPTERS_TOML = """\
+# One table per environment.
+
+[alpha]
+adapter = "AlphaAdapter"
+backend_package = "alpha"
+
+[beta]
+adapter = "BetaAdapter"
+backend_package = "beta"
+"""
+CONTRACTS_PY = """\
+BACKEND_CONTRACTS = {
+    "alpha": [{"target": "alpha:Model.predict", "kwargs": ["horizon"]}],
+    "beta": [{"target": "beta:Model.predict", "kwargs": ["horizon"]}],
+}
+"""
+COMPAT = "tools/foundation_compat"
+
+
+def make_compat_repo(path):
+    (path / COMPAT / "tests").mkdir(parents=True)
+    (path / COMPAT / "adapters.toml").write_text(ADAPTERS_TOML)
+    (path / COMPAT / "tests" / "contracts.py").write_text(CONTRACTS_PY)
+    (path / COMPAT / "tests" / "conftest.py").write_text("import pytest\n")
+    (path / COMPAT / "run.py").write_text("print('run')\n")
+    (path / COMPAT / "README.md").write_text("# Compatibility\n")
+    make_repo(path)
+
+
+def compat_command(adapter):
+    return f"python {COMPAT}/run.py --adapter {adapter} --level contract"
+
+
+def test_build_plan_foundation_compat_command_for_each_changed_entry(tmp_path):
+    make_compat_repo(tmp_path)
+    (tmp_path / COMPAT / "adapters.toml").write_text(
+        ADAPTERS_TOML.replace('"beta"', '"beta[torch]>=2"')
+    )
+    (tmp_path / COMPAT / "tests" / "contracts.py").write_text(
+        CONTRACTS_PY.replace('"alpha:Model.predict", "kwargs": ["horizon"]',
+                             '"alpha:Model.predict", "kwargs": ["steps"]')
+    )
+    (tmp_path / COMPAT / "README.md").write_text("# Compatibility check\n")
+
+    plan = affected.build_plan(
+        [
+            f"{COMPAT}/README.md",
+            f"{COMPAT}/adapters.toml",
+            f"{COMPAT}/tests/contracts.py",
+        ],
+        str(tmp_path),
+        base="HEAD",
+    )
+    # One command per entry, in the order of adapters.toml, that runs as is.
+    assert plan["checks"] == [compat_command("alpha"), compat_command("beta")]
+    assert not any("cannot be told" in note for note in plan["notes"])
+    assert any("smoke tests" in note for note in plan["notes"])
+
+
+@pytest.mark.parametrize(
+    "path, base",
+    [
+        (f"{COMPAT}/run.py", "HEAD"),
+        (f"{COMPAT}/tests/conftest.py", "HEAD"),
+        # Explicit files (`--files`): there is no base to compare the entries with.
+        (f"{COMPAT}/adapters.toml", None),
+    ],
+)
+def test_build_plan_foundation_compat_note_when_the_adapter_is_unknown(
+    tmp_path, path, base
+):
+    make_compat_repo(tmp_path)
+    plan = affected.build_plan([path], str(tmp_path), base=base)
+    # A note that names the command and the entries, never a command that fails.
+    assert plan["checks"] == []
+    notes = [note for note in plan["notes"] if "cannot be told" in note]
+    assert len(notes) == 1
+    assert path in notes[0]
+    assert "(alpha, beta)" in notes[0]
+    assert f"`{compat_command('<entry>')}`" in notes[0]
+
+
+def test_build_plan_foundation_compat_known_and_unknown_together(tmp_path):
+    make_compat_repo(tmp_path)
+    (tmp_path / COMPAT / "adapters.toml").write_text(
+        ADAPTERS_TOML + '\n[gamma]\nadapter = "GammaAdapter"\n'
+    )
+    plan = affected.build_plan(
+        [f"{COMPAT}/adapters.toml", f"{COMPAT}/run.py"], str(tmp_path), base="HEAD"
+    )
+    assert plan["checks"] == [compat_command("gamma")]
+    assert any(
+        "cannot be told" in note and f"{COMPAT}/run.py" in note
+        and f"{COMPAT}/adapters.toml," not in note
+        for note in plan["notes"]
+    )
+
+
+def test_build_plan_foundation_compat_nothing_to_run(tmp_path):
+    # Documentation, comments and removed entries leave no adapter to check.
+    make_compat_repo(tmp_path)
+    (tmp_path / COMPAT / "adapters.toml").write_text(
+        ADAPTERS_TOML.replace("# One table", "# Exactly one table")
+    )
+    (tmp_path / COMPAT / "tests" / "contracts.py").write_text(
+        "\n".join(line for line in CONTRACTS_PY.splitlines() if "beta" not in line)
+    )
+    plan = affected.build_plan(
+        [
+            f"{COMPAT}/README.md",
+            f"{COMPAT}/adapters.toml",
+            f"{COMPAT}/tests/contracts.py",
+        ],
+        str(tmp_path),
+        base="HEAD",
+    )
+    assert plan["checks"] == []
+    assert plan["notes"] == []
+
+
+def test_foundation_compat_parsers_read_the_files_of_this_repository():
+    adapters = affected.toml_tables(
+        (PROJECT_DIR / affected.COMPAT_ADAPTERS).read_text(encoding="utf-8")
+    )
+    contracts = affected.contract_entries(
+        (PROJECT_DIR / affected.COMPAT_CONTRACTS).read_text(encoding="utf-8")
+    )
+    assert "chronos" in adapters and all(adapters.values())
+    # Every environment has a contract, so a changed contract maps to a command.
+    assert set(contracts) == set(adapters)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 11), reason="run.py needs tomllib")
+def test_foundation_compat_command_is_accepted_by_run_py():
+    # `--help` exits with 0 only after the arguments before it are accepted,
+    # without creating any environment: an unknown option, level or adapter
+    # exits with 2.
+    adapter = next(iter(affected.toml_tables(
+        (PROJECT_DIR / affected.COMPAT_ADAPTERS).read_text(encoding="utf-8")
+    )))
+    command = affected.COMPAT_COMMAND.format(adapter=adapter).split()
+    assert command[0] == "python"
+    result = subprocess.run(
+        [sys.executable, *command[1:], "--help"],
+        cwd=PROJECT_DIR, capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+
+
 def test_main_with_files(capsys):
     code = affected.main(["--files", "dev/x.py", "--root", str(PROJECT_DIR)])
     assert code == 0

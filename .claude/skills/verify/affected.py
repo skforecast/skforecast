@@ -19,6 +19,7 @@ Usage:
 """
 
 import argparse
+import ast
 import json
 import os
 import re
@@ -56,12 +57,19 @@ EXCEPTIONS = {
 }
 HARNESS_TESTS = ".claude/hooks .claude/skills"
 STAMP_FILE = "verify_stamp.json"  # Inside the git dir: per worktree, never committed.
+# The tests of tools/foundation_compat need `--backend` and the backend of one
+# adapter installed, so they cannot be launched with pytest from this
+# environment: `run.py` installs the backend in an isolated one. The files
+# below hold one entry per adapter, so the adapters to check are the entries
+# that changed; any other file of the folder affects all of them.
+COMPAT_ADAPTERS = "tools/foundation_compat/adapters.toml"
+COMPAT_CONTRACTS = "tools/foundation_compat/tests/contracts.py"
+COMPAT_COMMAND = "python tools/foundation_compat/run.py --adapter {adapter} --level contract"
 
 CHECKS = {
     "ai_context": "python tools/ai/generate_ai_context_files.py --check",
     "harness": f"python -m pytest {HARNESS_TESTS} -q -p no:cacheprovider",
     "docs": "python tools/docs/hooks/page_meta.py",
-    "foundation_compat": "python -m pytest tools/foundation_compat/tests -q",
 }
 NOTES = {
     "deps": (
@@ -91,17 +99,21 @@ def release_branch(root):
     return f"{match.group(1)}.{match.group(2)}.x" if match else None
 
 
-def changed_files(root):
-    """Return (base description, sorted changed files) for the working tree."""
+def find_base(root):
+    """Return (commit, description) of the base the working tree is compared with."""
     branch = release_branch(root)
-    base, base_desc = "HEAD", "HEAD"
     # origin first: on the release branch itself, the merge base with the local
     # branch is HEAD and would hide the commits not pushed yet.
     for ref in ([f"origin/{branch}", branch] if branch else []):
         merge_base = git(["merge-base", "HEAD", ref], root)
         if merge_base:
-            base, base_desc = merge_base.strip(), f"merge base with {ref}"
-            break
+            return merge_base.strip(), f"merge base with {ref}"
+    return "HEAD", "HEAD"
+
+
+def changed_files(root):
+    """Return (base description, sorted changed files) for the working tree."""
+    base, base_desc = find_base(root)
     files = set((git(["diff", "--name-only", base], root) or "").split())
     files |= set((git(["ls-files", "--others", "--exclude-standard"], root) or "").split())
     return base_desc, sorted(files)
@@ -217,6 +229,97 @@ def tests_for_test_file(path, root):
     return os.path.dirname(path)
 
 
+def toml_tables(text):
+    """
+    Return {table name: lines of its body} of a TOML file made of `[name]`
+    tables, without blank lines and comments. Written by hand because `tomllib`
+    needs Python 3.11 and the body is only compared, never interpreted.
+    """
+    tables, name = {}, None
+    for line in text.splitlines():
+        line = line.strip()
+        header = re.fullmatch(r"\[([^\[\]]+)\]", line)
+        if header:
+            name = header.group(1).strip()
+            tables[name] = []
+        elif name is not None and line and not line.startswith("#"):
+            tables[name].append(line)
+    return tables
+
+
+def contract_entries(text):
+    """Return {entry: dump of its calls} of the `BACKEND_CONTRACTS` dict literal."""
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        return {}
+    for node in tree.body:
+        if (
+            isinstance(node, ast.Assign)
+            and isinstance(node.value, ast.Dict)
+            and any(getattr(t, "id", None) == "BACKEND_CONTRACTS" for t in node.targets)
+        ):
+            return {
+                key.value: ast.dump(value)
+                for key, value in zip(node.value.keys, node.value.values)
+                if isinstance(key, ast.Constant)
+            }
+    return {}
+
+
+def read_file(path, root):
+    try:
+        with open(os.path.join(root, path), encoding="utf-8") as f:
+            return f.read()
+    except OSError:
+        return None
+
+
+def foundation_compat_plan(paths, root, base):
+    """
+    Return (checks, notes) for the changed files of tools/foundation_compat.
+
+    The adapters to check are the entries of adapters.toml and contracts.py
+    that were added or modified since `base`: each one gets a command that can
+    be run as is. When the adapter cannot be told (any other file of the
+    folder, no `base` to compare with, or a file that cannot be parsed), a
+    note names the command and the entries to choose from instead of a command
+    that fails. Documentation needs no check.
+    """
+    adapters = list(toml_tables(read_file(COMPAT_ADAPTERS, root) or ""))
+    parsers = {COMPAT_ADAPTERS: toml_tables, COMPAT_CONTRACTS: contract_entries}
+    changed, unknown = set(), []
+    for path in paths:
+        if path.endswith(".md"):
+            continue
+        new_text = read_file(path, root)
+        new = parsers[path](new_text) if path in parsers and new_text else {}
+        if base is None or not new:
+            unknown.append(path)
+            continue
+        old = parsers[path](git(["show", f"{base}:{path}"], root) or "")
+        # A removed entry has nothing left to run.
+        changed |= {name for name, entry in new.items() if old.get(name) != entry}
+
+    checks = [COMPAT_COMMAND.format(adapter=name) for name in adapters if name in changed]
+    notes = []
+    if unknown:
+        entries = ", ".join(adapters) or f"see {COMPAT_ADAPTERS}"
+        notes.append(
+            f"{', '.join(unknown)} changed: the adapter to check cannot be told "
+            f"from the changed files. Choose at least one entry of {COMPAT_ADAPTERS} "
+            f"({entries}) and run `{COMPAT_COMMAND.format(adapter='<entry>')}`"
+        )
+    if checks or unknown:
+        notes.append(
+            "tools/foundation_compat: run.py needs uv and Python >= 3.11 and "
+            "installs the backend in its own environment. `--level contract` "
+            "downloads no weights; without it, the smoke tests also run and "
+            "download them: do it when the backend call of an adapter changed"
+        )
+    return checks, notes
+
+
 def deduplicate(paths):
     """Drop paths inside another selected folder; keep the order."""
     unique = list(dict.fromkeys(paths))
@@ -226,7 +329,7 @@ def deduplicate(paths):
     ]
 
 
-def build_plan(files, root):
+def build_plan(files, root, base=None):
     by_category = {}
     for path in files:
         by_category.setdefault(classify(path), []).append(path)
@@ -278,7 +381,11 @@ def build_plan(files, root):
             "relative to docs/>`"
         )
     if "foundation_compat" in by_category:
-        checks.append(CHECKS["foundation_compat"])
+        compat_checks, compat_notes = foundation_compat_plan(
+            by_category["foundation_compat"], root, base
+        )
+        checks += compat_checks
+        notes += compat_notes
     for category in ("deps", "ci", "other"):
         if category in by_category:
             notes.append(f"{NOTES[category]}: {', '.join(by_category[category])}")
@@ -344,13 +451,14 @@ def main(argv=None):
         print(f"Stamped the green verify: tree {stamp['tree'][:12]}, {stamp['time']}")
         return 0
     if args.files:
-        base_desc, files = "files given", sorted(set(args.files))
+        base, base_desc, files = None, "files given", sorted(set(args.files))
         stamp = None
     else:
+        base = find_base(root)[0]
         base_desc, files = changed_files(root)
         stamp = matching_stamp(root)
 
-    plan = build_plan(files, root)
+    plan = build_plan(files, root, base)
     plan["unchanged_since"] = stamp["time"] if stamp else None
     if args.json:
         print(json.dumps(plan, indent=2))
