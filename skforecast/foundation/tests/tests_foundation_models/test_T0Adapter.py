@@ -7,6 +7,7 @@ import importlib.metadata
 import pytest
 import numpy as np
 import pandas as pd
+from skforecast.exceptions import IgnoredArgumentWarning
 from skforecast.foundation._adapters import T0Adapter
 from skforecast.foundation._foundation_model import FoundationModel
 from .fixtures_adapters import (
@@ -316,6 +317,42 @@ def test_T0Adapter_predict_one_call_per_covariate_signature():
     assert fake.calls[2]["future_covariates"].shape == (1, 1, 35)
     assert list(preds["level"].unique()) == ["with_exog", "no_exog", "other_exog"]
     assert preds.shape == (15, 2)
+
+
+@pytest.mark.parametrize(
+    "exog_columns",
+    [["feat_a"], None],
+    ids=lambda exog_columns: f"exog_columns: {exog_columns}",
+)
+def test_T0Adapter_predict_past_only_exog_removed_by_FoundationModel(exog_columns):
+    """
+    Test that, through FoundationModel, the historical exog columns without
+    future values are not part of the covariates sent to the backend: only
+    the column with future values is, and no covariates at all when
+    predicting without future exog.
+    """
+    steps = 3
+    fake = FakeT0Forecaster()
+    model = FoundationModel("theforecastingcompany/t0-alpha", model=fake)
+    model.fit(series=y, exog=exog)
+    future_index = pd.date_range(
+        y.index[-1] + y.index.freq, periods=steps, freq=y.index.freq
+    )
+    future_exog = (
+        pd.DataFrame({"feat_a": np.arange(steps, dtype=float)}, index=future_index)
+        if exog_columns is not None else None
+    )
+
+    with pytest.warns(IgnoredArgumentWarning, match="are ignored for series"):
+        model.predict(steps=steps, exog=future_exog)
+
+    fc = fake.last_future_covariates
+    if exog_columns is None:
+        assert fc is None
+    else:
+        assert fc.shape == (1, 1, len(y) + steps)
+        np.testing.assert_allclose(fc[0, 0, :len(y)], exog["feat_a"].to_numpy())
+        np.testing.assert_allclose(fc[0, 0, len(y):], np.arange(steps, dtype=float))
 
 
 def test_T0Adapter_predict_no_exog_passes_none_covariates():

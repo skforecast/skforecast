@@ -1,6 +1,7 @@
 # Unit test predict FoundationModel
 # ==============================================================================
 import re
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
@@ -950,3 +951,203 @@ def test_predict_TimestralAdapter_calls_backend_in_chunks_of_50_series():
     assert predictions.shape == (230 * 3, 2)
     assert predictions["level"].tolist() == list(series) * 3
 
+
+# Tests predict: past-only covariates
+# ==============================================================================
+def _stub_adapter_predict(monkeypatch, model):
+    """
+    Replace `model.adapter.predict` with a stub that stores the keyword
+    arguments of every call and returns zeros, so that no backend is needed,
+    and return the list of calls.
+    """
+    calls = []
+
+    def stub_predict(**kwargs):
+        calls.append(kwargs)
+        n_quantiles = 1 if kwargs["quantiles"] is None else len(kwargs["quantiles"])
+        return {
+            series_name: np.zeros((kwargs["steps"], n_quantiles))
+            for series_name in kwargs["context"]
+        }
+
+    monkeypatch.setattr(model.adapter, "predict", stub_predict)
+
+    return calls
+
+
+def _count_past_only_warnings(record):
+    """
+    Number of IgnoredArgumentWarning about historical exog columns without
+    future values in a list of recorded warnings.
+    """
+    return sum(
+        issubclass(w.category, IgnoredArgumentWarning)
+        and "Historical exog columns without future values are ignored"
+        in str(w.message)
+        for w in record
+    )
+
+
+@pytest.mark.parametrize(
+    "check_inputs",
+    [True, False],
+    ids=lambda check_inputs: f"check_inputs: {check_inputs}",
+)
+@pytest.mark.parametrize(
+    "model_id, expected_columns",
+    [
+        ("autogluon/chronos-2-small", ["p", "k"]),
+        ("google/timesfm-3.0-pytorch", ["p", "k"]),
+        ("taharnbl/TS-ICL", ["p", "k"]),
+        ("mistralai/Timestral-28M", ["p", "k"]),
+        ("NX-AI/TiRex-2", ["p", "k"]),
+        ("soda-inria/tabicl", ["k"]),
+        ("priorlabs/tabpfn-ts", ["k"]),
+        ("theforecastingcompany/t0-alpha", ["k"]),
+        ("Synthefy/Nori", ["k"]),
+        ("google/timesfm-2.5-200m-pytorch", None),
+        ("Salesforce/moirai-2.0-R-small", None),
+    ],
+    ids=lambda value: f"{value}",
+)
+def test_predict_adapter_receives_past_only_exog_only_when_it_supports_it(
+    monkeypatch, model_id, expected_columns, check_inputs
+):
+    """
+    Test the historical exog that every adapter receives when a column has
+    no future values ('p'): adapters with supports_past_only_covariates=True
+    receive it, adapters with supports_past_only_covariates=False only
+    receive the columns with future values ('k'), and adapters with
+    allow_exog=False receive no exog. The column is removed also with
+    check_inputs=False, while the IgnoredArgumentWarning that names it is
+    issued once and only with check_inputs=True.
+    """
+    context = {"s1": pd.Series(_p, index=_HETERO_INDEX, name="s1")}
+    context_exog = {
+        "s1": pd.DataFrame({"p": _p * 2, "k": _p * 3}, index=_HETERO_INDEX)
+    }
+    exog = {
+        "s1": pd.DataFrame({"k": np.arange(3, dtype=float)}, index=_HETERO_FUTURE_INDEX)
+    }
+    m = FoundationModel(model_id)
+    calls = _stub_adapter_predict(monkeypatch, m)
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        predictions = m.predict(
+            steps        = 3,
+            context      = context,
+            context_exog = context_exog,
+            exog         = exog,
+            check_inputs = check_inputs,
+        )
+
+    assert len(calls) == 1
+    if expected_columns is None:
+        assert m.allow_exog is False
+        assert calls[0]["context_exog"] is None
+        assert calls[0]["exog"] is None
+    else:
+        assert m.supports_past_only_covariates is (expected_columns == ["p", "k"])
+        assert list(calls[0]["context_exog"]["s1"].columns) == expected_columns
+        np.testing.assert_array_almost_equal(
+            calls[0]["context_exog"]["s1"]["k"].to_numpy(), _p * 3
+        )
+        assert list(calls[0]["exog"]["s1"].columns) == ["k"]
+    expected_warnings = 1 if expected_columns == ["k"] and check_inputs else 0
+    assert _count_past_only_warnings(record) == expected_warnings
+    if expected_warnings:
+        messages = [str(w.message) for w in record]
+        assert any("ignored for series {'s1': ['p']}." in msg for msg in messages)
+    assert list(context_exog["s1"].columns) == ["p", "k"]
+    assert predictions.shape == (3, 2)
+
+
+@pytest.mark.parametrize(
+    "check_inputs",
+    [True, False],
+    ids=lambda check_inputs: f"check_inputs: {check_inputs}",
+)
+@pytest.mark.parametrize(
+    "context_from",
+    ["fit", "predict"],
+    ids=lambda context_from: f"context_from: {context_from}",
+)
+def test_predict_adapter_receives_no_exog_when_exog_None_and_no_past_only_support(
+    monkeypatch, context_from, check_inputs
+):
+    """
+    Test that, for an adapter with supports_past_only_covariates=False
+    (TabICL), predicting without future exog removes every historical exog
+    column, both with the context stored in fit and with the one passed to
+    predict, also with check_inputs=False. The exog stored in fit is not
+    modified, and the IgnoredArgumentWarning is issued once and only with
+    check_inputs=True.
+    """
+    context = {
+        "s1": pd.Series(_p, index=_HETERO_INDEX, name="s1"),
+        "s2": pd.Series(_p * 2, index=_HETERO_INDEX, name="s2"),
+    }
+    context_exog = {
+        "s1": pd.DataFrame({"a": _p, "b": _p * 2}, index=_HETERO_INDEX),
+        "s2": pd.DataFrame({"a": _p * 3}, index=_HETERO_INDEX),
+    }
+    m = FoundationModel("soda-inria/tabicl")
+    calls = _stub_adapter_predict(monkeypatch, m)
+    if context_from == "fit":
+        m.fit(series=context, exog=context_exog)
+        predict_kwargs = {}
+    else:
+        predict_kwargs = {"context": context, "context_exog": context_exog}
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        predictions = m.predict(steps=3, check_inputs=check_inputs, **predict_kwargs)
+
+    assert len(calls) == 1
+    assert calls[0]["context_exog"] == {"s1": None, "s2": None}
+    assert calls[0]["exog"] == {"s1": None, "s2": None}
+    assert _count_past_only_warnings(record) == (1 if check_inputs else 0)
+    if check_inputs:
+        messages = [str(w.message) for w in record]
+        assert any(
+            "ignored for series {'s1': ['a', 'b'], 's2': ['a']}." in msg
+            for msg in messages
+        )
+    if context_from == "fit":
+        assert list(m.context_exog_["s1"].columns) == ["a", "b"]
+        assert list(m.context_exog_["s2"].columns) == ["a"]
+    assert predictions.shape == (6, 2)
+
+
+def test_predict_groups_series_after_dropping_past_only_exog(monkeypatch):
+    """
+    Test that, for an adapter with supports_past_only_covariates=False and
+    supports_heterogeneous_covariates=False (TabICL), the historical columns
+    without future values are removed before grouping the series by exog
+    columns: the series whose only exog column is past-only is forecast in
+    the same call as the series without exog, and no call receives a
+    past-only column.
+    """
+    context, context_exog, exog = _make_heterogeneous_inputs()
+    m = FoundationModel("soda-inria/tabicl")
+    calls = _stub_adapter_predict(monkeypatch, m)
+    m.fit(series=context, exog=context_exog)
+
+    warn_msg = re.escape(
+        "ignored for series {'full': ['p'], 'past': ['p'], 'full2': ['p']}."
+    )
+    with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
+        predictions = m.predict(steps=3, exog=exog)
+
+    assert [list(call["context"]) for call in calls] == [
+        ["full", "full2"], ["none", "past"]
+    ]
+    assert [list(df.columns) for df in calls[0]["context_exog"].values()] == [
+        ["k"], ["k"]
+    ]
+    assert calls[1]["context_exog"] == {"none": None, "past": None}
+    assert [list(df.columns) for df in calls[0]["exog"].values()] == [["k"], ["k"]]
+    assert calls[1]["exog"] == {"none": None, "past": None}
+    assert list(predictions["level"].unique()) == ["full", "none", "past", "full2"]
+    assert predictions.shape == (12, 2)

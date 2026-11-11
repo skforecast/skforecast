@@ -40,6 +40,13 @@ class _AdapterBase(ABC):
     `pd.NA`). Requires `supports_nan_in_series=True`; adapters that derive
     features from the timestamps must keep it `False`.
 
+    `supports_past_only_covariates` (bool) declares whether the backend uses
+    the historical exog columns that have no future values (past-only
+    covariates). If `False`, `FoundationModel` removes those columns from
+    `context_exog` before every call, so the adapter only receives
+    covariates that also have future values in `exog` and needs no filtering
+    of its own.
+
     `max_series_per_call` (int, None) caps the number of series sent to the
     backend in one call. If it is an integer, `FoundationModel` splits each
     group of series into consecutive chunks of at most that size and calls
@@ -141,7 +148,8 @@ class _AdapterBase(ABC):
         context_exog : dict pandas DataFrame, pandas Series, or None
             Per-series past covariates (already trimmed), left-padded and
             indexed like `context` when `requires_equal_length_context` is
-            `True`.
+            `True`. When `supports_past_only_covariates` is `False`, they
+            only hold columns that also have future values in `exog`.
         exog : dict pandas DataFrame, pandas Series, or None
             Per-series future covariates for the forecast horizon.
         quantiles : list of float, tuple of float, None
