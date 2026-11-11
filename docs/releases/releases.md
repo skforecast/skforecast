@@ -34,7 +34,7 @@ The main changes in this release are:
 
 + <span class="badge text-bg-fix">Fix</span> <code>[mean_absolute_scaled_error]</code> and <code>[root_mean_squared_scaled_error]</code> can now compare models in backtesting and hyperparameter search: their scale no longer depends on the lags of the forecaster or on `refit`. ([#1471](https://github.com/skforecast/skforecast/pull/1471))
 
-+ <span class="badge text-bg-fix">Fix</span> <code>[T0Adapter]</code> works again with the current versions of `tfc-t0`: it failed with `tfc-t0` 0.4 or later, the version installed by default. The backend is now installed with `pip install "tfc-t0[torch]>=0.6"`. ([#1385](https://github.com/skforecast/skforecast/issues/1385))
++ <span class="badge text-bg-fix">Fix</span> <code>[T0Adapter]</code> works again with the current versions of `tfc-t0`: it failed with `tfc-t0` 0.4 or later, the version installed by default. The backend is now installed with `pip install "tfc-t0[torch]>=0.6"`. ([#1385](https://github.com/skforecast/skforecast/issues/1385), [#1478](https://github.com/skforecast/skforecast/pull/1478))
 
 !!! warning "Before upgrading"
 
@@ -207,9 +207,9 @@ The main changes in this release are:
 
 + <code>[FoundationModel]</code>, <code>[ForecasterFoundation]</code> and <code>[backtesting_foundation]</code> raised a `MissingValuesWarning` saying that the future `exog` had been reindexed and its missing timestamps filled with NaN when it covered every date of the forecast horizon but held missing values (NaN, `None`, `pd.NA`). The warning is now raised only when dates are missing. ([#1451](https://github.com/skforecast/skforecast/pull/1451))
 
-+ <code>[T0Adapter]</code> failed with `tfc-t0` 0.4 or later (`TypeError: T0Forecaster.predict() got an unexpected keyword argument 'context'`), so T0 did not work with the version installed by default. It now requires `tfc-t0` 0.6 or later with its PyTorch runtime (`pip install "tfc-t0[torch]>=0.6"`), and an older version raises an `ImportError` that says how to upgrade. ([#1385](https://github.com/skforecast/skforecast/issues/1385))
++ <code>[T0Adapter]</code> failed with `tfc-t0` 0.4 or later (`TypeError: T0Forecaster.predict() got an unexpected keyword argument 'context'`), so T0 did not work with the version installed by default. It now requires `tfc-t0` 0.6 or later with its PyTorch runtime (`pip install "tfc-t0[torch]>=0.6"`), and an older version raises an `ImportError` that says how to upgrade. ([#1385](https://github.com/skforecast/skforecast/issues/1385), [#1478](https://github.com/skforecast/skforecast/pull/1478))
 
-+ Fixed two issues in <code>[T0Adapter]</code>: the forecast of a series changed, by up to 6% in tests, when it was predicted together with longer series or with series that have other exogenous variables (these are now sent in separate calls, `supports_heterogeneous_covariates=False`), and `torch_dtype` raised a `RuntimeError` in `predict`. `torch_dtype` now enables mixed precision with `torch.bfloat16` or `torch.float16`. ([#1385](https://github.com/skforecast/skforecast/issues/1385))
++ Fixed two issues in <code>[T0Adapter]</code>: the forecast of a series changed, by up to 6% in tests, when it was predicted together with longer series or with series that have other exogenous variables (these are now sent in separate calls, `supports_heterogeneous_covariates=False`), and `torch_dtype` raised a `RuntimeError` in `predict`. `torch_dtype` now enables mixed precision with `torch.bfloat16` or `torch.float16`. ([#1385](https://github.com/skforecast/skforecast/issues/1385), [#1478](https://github.com/skforecast/skforecast/pull/1478))
 
 + <code>[PopulationDriftDetector]</code> raised a `ValueError` from `chi2_contingency` in `fit` and `predict` when a `category` feature had categories with no observations. In addition, the `chi2_statistic` returned by `predict` could change in its last digits between Python sessions. ([#1445](https://github.com/skforecast/skforecast/pull/1445))
 
