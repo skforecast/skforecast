@@ -12,6 +12,7 @@ from __future__ import annotations
 from typing import Any
 import contextlib
 import io
+import re
 import numpy as np
 import pandas as pd
 import warnings
@@ -3466,8 +3467,11 @@ class T0Adapter(_AdapterBase):
         available accelerator (CUDA > MPS > CPU). Also accepts explicit
         values such as `"cuda"`, `"mps"`, or `"cpu"`.
     torch_dtype : object, default None
-        Torch dtype the loaded model is cast to (e.g. `torch.bfloat16`).
-        When `None` the model keeps its default `float32` weights.
+        Torch dtype used for mixed-precision inference, passed to
+        `T0Forecaster.from_pretrained` as `dtype`. With `torch.bfloat16` or
+        `torch.float16` the predictions are computed under autocast, while
+        the weights stay in `float32`. With `None`, or any other dtype,
+        inference runs in `float32`.
 
     Attributes
     ----------
@@ -3485,16 +3489,21 @@ class T0Adapter(_AdapterBase):
         Torch dtype for model loading.
     supports_heterogeneous_covariates : bool
         Whether series with different covariate columns can be forecast in
-        the same backend call. `True`: T0 defines NaN as an absent covariate
-        value, so the adapter pools the columns of all series and fills the
-        missing cells with NaN.
+        the same backend call. `False` for T0, which takes the covariates of
+        all the series as a single array: a covariate that a series lacks
+        would be a row of missing values that can change its forecast, so
+        `FoundationModel` groups the series by covariate signature and calls
+        `predict` once per group.
     requires_equal_length_context : bool
         Whether the backend needs every series of a call to have the same
         context length. `True` for T0, which takes the context of all the
         series as a single array: `FoundationModel` left-pads `context` and
-        `context_exog` with NaN, which T0 treats as missing, to the length
-        of the longest series of the call, and indexes them by a positional
-        pandas RangeIndex. History and future exog are joined by position.
+        `context_exog` with NaN to the length of the longest series of the
+        call, and indexes them by a positional pandas RangeIndex. T0 reads
+        that padding as padding, not as missing observations
+        (`trim_leading_missing=True`), so the forecast of a series does not
+        depend on the length of the others. History and future exog are
+        joined by position.
     max_series_per_call : int, None
         Maximum number of series sent to the backend in one call. `None`:
         `FoundationModel` sends every series of a group in one call.
@@ -3543,6 +3552,18 @@ class T0Adapter(_AdapterBase):
     before passing them. A series with no future exog is forecast without
     covariates.
 
+    NaN values before the first observation of a series are treated as
+    padding (`trim_leading_missing=True`), the rest as missing observations.
+    The other inference options of `T0Forecaster.predict` keep the default
+    of the installed `tfc-t0`. Since `tfc-t0` 0.6.1, a covariate whose
+    observed values are all equal over the context of a series is ignored
+    for that series (`drop_constant_covariates`). `tfc-t0` 0.6.1 requires
+    Python 3.11 or later: on Python 3.10, pip installs 0.6.0, which keeps
+    those covariates, so the forecasts can differ between Python versions.
+
+    `tfc-t0` 0.6 or later is required, with its PyTorch runtime (the `torch`
+    extra).
+
     References
     ----------
     .. [1] https://github.com/theforecastingcompany/tfc-t0
@@ -3555,7 +3576,7 @@ class T0Adapter(_AdapterBase):
     allow_exog: bool = True
     supports_past_only_covariates: bool = False
     supports_categorical_covariates: bool = False
-    supports_heterogeneous_covariates: bool = True
+    supports_heterogeneous_covariates: bool = False
     requires_equal_length_context: bool = True
     max_series_per_call: int | None = None
     supports_nan_in_series: bool = True
@@ -3563,7 +3584,7 @@ class T0Adapter(_AdapterBase):
     requires_provider_auth: bool = False
     weights_repo_id: str | None = None
     weights_in_hf_cache: bool = True
-    backend_package: str = "tfc-t0"
+    backend_package: str = "tfc-t0[torch]>=0.6"
     default_model_id: str = "theforecastingcompany/t0-alpha"
 
     def __init__(
@@ -3597,8 +3618,11 @@ class T0Adapter(_AdapterBase):
             available accelerator (CUDA > MPS > CPU). Also accepts explicit
             values such as `"cuda"`, `"mps"`, or `"cpu"`.
         torch_dtype : object, default None
-            Torch dtype the loaded model is cast to (e.g. `torch.bfloat16`).
-            When `None` the model keeps its default `float32` weights.
+            Torch dtype used for mixed-precision inference, passed to
+            `T0Forecaster.from_pretrained` as `dtype`. With `torch.bfloat16`
+            or `torch.float16` the predictions are computed under autocast,
+            while the weights stay in `float32`. With `None`, or any other
+            dtype, inference runs in `float32`.
 
         """
 
@@ -3703,9 +3727,9 @@ class T0Adapter(_AdapterBase):
         """
         Generate predictions using the T0 model.
 
-        All input normalization, validation, context trimming and padding is
-        performed upstream by `FoundationModel`; this method receives
-        pre-processed dicts only.
+        All input normalization, validation, context trimming, padding and
+        grouping of the series by covariate signature is performed upstream
+        by `FoundationModel`; this method receives pre-processed dicts only.
 
         Parameters
         ----------
@@ -3719,7 +3743,8 @@ class T0Adapter(_AdapterBase):
             Per-series past covariates (already trimmed), left-padded and
             indexed like `context`.
         exog : dict
-            Per-series future covariates for the forecast horizon.
+            Per-series future covariates for the forecast horizon. Every
+            series of a call has the same covariate columns.
         quantiles : list of float or None
             Quantile levels to return, in the requested order. If `None`, a
             point forecast (median, quantile 0.5) is produced.
@@ -3741,11 +3766,10 @@ class T0Adapter(_AdapterBase):
         # reindex the columns back to the order the caller asked for.
         query_levels = sorted(set(requested))
 
-        # All series are forecast in a single batched call.
+        # All series of the call are forecast in a single batched call.
         # `FoundationModel` left-pads the context of every series to the same
-        # length (`requires_equal_length_context=True`) with NaN, which T0
-        # treats as missing, so the forecast origin aligns at the end of the
-        # window for every series.
+        # length (`requires_equal_length_context=True`) with NaN, so the
+        # forecast origin aligns at the end of the window for every series.
         series_names = list(context.keys())
         context_batch = np.stack([
             context[series_name].to_numpy(dtype=np.float32)
@@ -3761,11 +3785,16 @@ class T0Adapter(_AdapterBase):
             steps          = steps,
         )
 
+        # `trim_leading_missing=True` makes T0 read the NaN before the first
+        # observation of a series as padding instead of missing observations:
+        # otherwise the forecast of a series depends on how much it was
+        # padded, that is, on the length of the other series of the call.
         forecast = self._model.predict(
-            context           = context_batch,
-            horizon           = steps,
-            quantiles         = query_levels,
-            future_covariates = future_covariates,
+            context_batch,
+            horizon              = steps,
+            quantile_levels      = query_levels,
+            future_covariates    = future_covariates,
+            trim_leading_missing = True,
         )
 
         q_arr = _tensor_to_numpy(forecast.quantiles)
@@ -3789,10 +3818,18 @@ class T0Adapter(_AdapterBase):
         The model is imported lazily from `t0` and loaded via
         `T0Forecaster.from_pretrained`, then moved to the resolved device and
         switched to eval mode. This method is a no-op when `self._model` is
-        already populated. `tfc-t0` must be installed; an `ImportError` is
-        raised otherwise. An `OSError` is raised if
+        already populated. An `ImportError` is raised if `tfc-t0` is not
+        installed, if the installed version is older than 0.6 (the API of
+        `T0Forecaster.predict` used by the adapter), or if its PyTorch
+        runtime cannot be imported (since `tfc-t0` 0.6 it is the optional
+        `torch` extra). An `OSError` is raised if
         `T0Forecaster.from_pretrained` fails to build the model because the
         configuration of the checkpoint could not be downloaded.
+
+        `torch_dtype` is passed to `T0Forecaster.from_pretrained` as `dtype`
+        and not applied with `model.to(dtype)`: T0 keeps its weights in
+        `float32` and runs the forward pass under autocast, so casting the
+        weights makes `predict` fail.
 
         When the repository's `config.json` cannot be downloaded (e.g. a
         wrong model ID, no network connection, or a gated repository whose
@@ -3807,16 +3844,48 @@ class T0Adapter(_AdapterBase):
 
         if self._model is not None:
             return
+
+        try:
+            import t0  # noqa: F401
+        except ImportError as exc:
+            raise ImportError(
+                f"tfc-t0 is required for T0Adapter. "
+                f'Install it with `pip install "{self.backend_package}"`.'
+            ) from exc
+
+        from importlib.metadata import PackageNotFoundError, version
+
+        try:
+            installed = version("tfc-t0")
+        except PackageNotFoundError:
+            installed = None
+
+        # Only the numeric components are compared, so that pre-releases
+        # (`0.6.0rc1`) are accepted. Without metadata the check is skipped.
+        release = tuple(
+            int(part) for part in re.findall(r"\d+", installed or "")[:2]
+        )
+        if release and release < (0, 6):
+            raise ImportError(
+                f"T0Adapter requires `tfc-t0>=0.6`, but tfc-t0 {installed} is "
+                f"installed. Upgrade with "
+                f'`pip install -U "{self.backend_package}"`.'
+            )
+
+        # Since tfc-t0 0.6 the PyTorch runtime is an optional extra: `t0`
+        # imports without torch, but `T0Forecaster` does not.
         try:
             from t0 import T0Forecaster
         except ImportError as exc:
             raise ImportError(
-                f"{self.backend_package} is required for T0Adapter. "
-                f"Install it with `pip install {self.backend_package}`."
+                f"tfc-t0 is installed but its PyTorch runtime could not be "
+                f"imported ({exc}). Install it with "
+                f'`pip install "{self.backend_package}"`.'
             ) from exc
 
+        model_kwargs = {} if self.torch_dtype is None else {"dtype": self.torch_dtype}
         try:
-            model = T0Forecaster.from_pretrained(self.model_id)
+            model = T0Forecaster.from_pretrained(self.model_id, **model_kwargs)
         except TypeError as exc:
             raise OSError(
                 f"Could not load model '{self.model_id}' from the Hugging "
@@ -3831,8 +3900,6 @@ class T0Adapter(_AdapterBase):
 
         device = _resolve_torch_device(self.device_map)
         model = model.to(device)
-        if self.torch_dtype is not None:
-            model = model.to(self.torch_dtype)
         self._model = model.eval()
 
     def _build_future_covariates(
@@ -3847,12 +3914,13 @@ class T0Adapter(_AdapterBase):
         Assemble T0's batched `[n_series, n_covariates, context_length + steps]`
         covariate array from per-series past and future exogenous values.
 
-        Covariate columns are pooled across all series (first-seen order). For
-        each series and column the historical values (from `context_exog`) are
+        Every series of a call has the same covariate columns
+        (`FoundationModel` groups the series by covariate signature), so the
+        columns, and their order, are those of the first series. For each
+        series and column the historical values (from `context_exog`) are
         placed flush against the forecast origin and the future values (from
-        `exog`) cover the horizon. Every unfilled cell (a padded timestep, or a
-        column/series that lacks that covariate) stays NaN, which T0 treats as
-        missing.
+        `exog`) cover the horizon. Every unfilled cell (a padded timestep, or
+        a column without historical values) stays NaN.
 
         Parameters
         ----------
@@ -3871,46 +3939,34 @@ class T0Adapter(_AdapterBase):
         -------
         future_covariates : numpy ndarray or None
             Array of shape `(n_series, n_covariates, context_length + steps)`,
-            or `None` when no series has future exog.
+            or `None` when the series have no future exog.
 
         """
 
-        if exog is None:
+        if exog is None or exog.get(series_names[0]) is None:
             return None
 
         future_frames = {
             series_name: (
-                series_exog
-                if isinstance(series_exog, pd.DataFrame)
-                else series_exog.to_frame()
+                exog[series_name]
+                if isinstance(exog[series_name], pd.DataFrame)
+                else exog[series_name].to_frame()
             )
-            for series_name, series_exog in exog.items()
-            if series_exog is not None
+            for series_name in series_names
         }
-        if not future_frames:
-            return None
-
-        columns: list[str] = list(
-            dict.fromkeys(
-                col for frame in future_frames.values() for col in frame.columns
-            )
-        )
+        columns = list(future_frames[series_names[0]].columns)
 
         total_length = context_length + steps
         covariates = np.full(
             (len(series_names), len(columns), total_length), np.nan, dtype=np.float32
         )
-        column_index = {col: j for j, col in enumerate(columns)}
         for row, series_name in enumerate(series_names):
-            future_df = future_frames.get(series_name)
-            if future_df is None:
-                continue
+            future_df = future_frames[series_name]
             past_df = None
             if context_exog is not None and context_exog.get(series_name) is not None:
                 ctx = context_exog[series_name]
                 past_df = ctx if isinstance(ctx, pd.DataFrame) else ctx.to_frame()
-            for col in future_df.columns:
-                j = column_index[col]
+            for j, col in enumerate(columns):
                 future_values = self._to_float_array(future_df[col])
                 covariates[row, j, context_length:context_length + future_values.shape[0]] = future_values
                 if past_df is not None and col in past_df.columns:

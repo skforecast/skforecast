@@ -424,12 +424,11 @@ class FoundationModel:
         -------
         supports_heterogeneous_covariates : bool
             `True` if the backend accepts, in one call, series whose exog
-            columns differ (TFC-T0, TabPFN-TS, Nori, TiRex-2, and the
-            adapters that ignore exog). `False` if every series in a call
-            must have the same columns (Chronos-2, TS-ICL, TabICL,
-            TimesFM 3.0, Timestral); in that case `predict` groups the
-            series by their exog columns and calls the adapter once per
-            group.
+            columns differ (TabPFN-TS, Nori, TiRex-2, and the adapters that
+            ignore exog). `False` if every series in a call must have the
+            same columns (Chronos-2, TS-ICL, TabICL, TimesFM 3.0, TFC-T0,
+            Timestral); in that case `predict` groups the series by their
+            exog columns and calls the adapter once per group.
         """
         return self.adapter.supports_heterogeneous_covariates
 

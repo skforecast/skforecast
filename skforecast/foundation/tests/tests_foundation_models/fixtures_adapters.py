@@ -422,37 +422,63 @@ class FakeT0Forecast:
     axis equals its quantile level, making column-order assertions trivial.
     """
 
-    def __init__(self, batch_size, horizon, quantiles):
-        q_values = np.array(quantiles, dtype=float)
+    def __init__(self, batch_size, horizon, quantile_levels):
+        q_values = np.array(quantile_levels, dtype=float)
         self.quantiles = np.broadcast_to(
-            q_values, (batch_size, horizon, len(quantiles))
+            q_values, (batch_size, horizon, len(quantile_levels))
         ).copy()
-        self.quantile_levels = tuple(quantiles)
+        self.quantile_levels = tuple(quantile_levels)
 
 
 class FakeT0Forecaster:
     """
     Fake ``t0.T0Forecaster`` for testing without torch/tfc-t0.
 
-    Records the last call arguments (notably ``future_covariates``) for
-    inspection and returns a `FakeT0Forecast`.
+    ``predict`` has the signature of ``tfc-t0`` 0.6.0, the oldest version the
+    adapter supports, without ``**kwargs``: an argument that version does not
+    accept raises a ``TypeError``, as the real backend does. The arguments of
+    every call are stored in ``calls``, and those of the last one also in the
+    ``last_*`` attributes.
     """
 
     def __init__(self):
+        self.calls = []
         self.last_context = None
         self.last_horizon = None
         self.last_quantiles = None
         self.last_future_covariates = None
+        self.last_trim_leading_missing = None
 
-    def predict(self, context, horizon, quantiles, future_covariates=None):
-        context = np.asarray(context)
+    def predict(
+        self,
+        model_input,
+        horizon,
+        quantile_levels=(0.1, 0.5, 0.9),
+        *,
+        context_length=None,
+        future_covariates=None,
+        mask=None,
+        group_ids=None,
+        trim_leading_missing=False,
+        symmetric_averaging=False,
+        clip_nonnegative=False,
+        snap_integers=False,
+    ):
+        context = np.asarray(model_input)
         self.last_context = context
         self.last_horizon = horizon
-        self.last_quantiles = list(quantiles)
+        self.last_quantiles = list(quantile_levels)
         self.last_future_covariates = (
             None if future_covariates is None else np.asarray(future_covariates)
         )
-        return FakeT0Forecast(context.shape[0], horizon, quantiles)
+        self.last_trim_leading_missing = trim_leading_missing
+        self.calls.append(
+            {
+                "context": self.last_context,
+                "future_covariates": self.last_future_covariates,
+            }
+        )
+        return FakeT0Forecast(context.shape[0], horizon, quantile_levels)
 
 
 # Fake TabICL forecaster

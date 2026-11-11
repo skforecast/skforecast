@@ -58,7 +58,7 @@ pip install "timesfm[torch]"       # For TimesFM 2.5 and 3.0
 pip install uni2ts                 # For Moirai-2
 pip install tabicl[forecast]       # For TabICL
 pip install "tabpfn-time-series>=1.3"  # For TabPFN-TS
-pip install "tfc-t0<0.4"           # For T0
+pip install "tfc-t0[torch]>=0.6"   # For T0
 pip install tsicl                  # For TS-ICL
 pip install synthefy-nori          # For Nori
 pip install "timestral @ git+https://github.com/mistralai/timestral.git"  # For Timestral (not on PyPI)
@@ -128,7 +128,7 @@ model = FoundationModel(
 
 ## With Exogenous Variables (Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL, Timestral, and TiRex-2)
 
-Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL, Timestral, and TiRex-2 (`allow_exog=True`) accept exogenous variables. TimesFM 2.5 and Moirai-2 ignore them. At predict time the future `exog` columns are validated per series against the historical exog: a future column with no history raises `ValueError`; a historical column with no future values is a past-only covariate, used by Chronos-2, TS-ICL, TimesFM 3.0, Timestral and TiRex-2 (`supports_past_only_covariates=True`) and ignored with an `IgnoredArgumentWarning` by TabICL, TabPFN-TS, TFC-T0 and Nori. Series in a multi-series input may differ in length and in their exog columns: each series is forecast with its own columns, and adapters whose backend needs identical columns per batch (`supports_heterogeneous_covariates=False`: Chronos-2, TS-ICL, TabICL, TimesFM 3.0, Timestral) are called once per group of series sharing the same columns, so the forecast of a series never depends on the exog of the others.
+Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL, Timestral, and TiRex-2 (`allow_exog=True`) accept exogenous variables. TimesFM 2.5 and Moirai-2 ignore them. At predict time the future `exog` columns are validated per series against the historical exog: a future column with no history raises `ValueError`; a historical column with no future values is a past-only covariate, used by Chronos-2, TS-ICL, TimesFM 3.0, Timestral and TiRex-2 (`supports_past_only_covariates=True`) and ignored with an `IgnoredArgumentWarning` by TabICL, TabPFN-TS, TFC-T0 and Nori. Series in a multi-series input may differ in length and in their exog columns: each series is forecast with its own columns, and adapters whose backend needs identical columns per batch (`supports_heterogeneous_covariates=False`: Chronos-2, TS-ICL, TabICL, TimesFM 3.0, TFC-T0, Timestral) are called once per group of series sharing the same columns, so the forecast of a series never depends on the exog of the others.
 
 ```python
 # Historical + future exog (must cover the forecast horizon)
@@ -282,7 +282,7 @@ automatically to the last `context_length` observations.
 3. **Passing `exog` to TimesFM 2.5 / Moirai-2**: ignored with an `IgnoredArgumentWarning`. Only Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL, Timestral, and TiRex-2 support exogenous variables.
 4. **Requesting unsupported quantiles**: TimesFM (2.5 and 3.0), Moirai-2 and TiRex-2 are restricted to the nine deciles `0.1 … 0.9` ; TS-ICL is restricted to a 0.01 grid in `[0.01, 0.99]`; Timestral to its 21 levels (`0.01`, `0.05`, `0.1`, ..., `0.95`, `0.99`).
 5. **Large model downloads**: first call can be slow; consider using smaller variants (`*-small`) for experimentation.
-6. **Forgetting to install the backend**: each foundation model requires its own library (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`, `timestral`, `tirex-2`). Install only the one(s) you need. `tirex-2` requires Python >= 3.11.
+6. **Forgetting to install the backend**: each foundation model requires its own library (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`, `timestral`, `tirex-2`). Install only the one(s) you need. `tfc-t0` needs its PyTorch runtime, the `torch` extra (`pip install "tfc-t0[torch]>=0.6"`). `tirex-2` requires Python >= 3.11.
 7. **Tuning a parameter that forces a model reload**: `model_id` and device/dtype arguments reload the model on every trial, and `context_length` does the same on TimesFM 2.5 (but **not** TimesFM 3.0), Moirai-2, TabICL and TabPFN-TS.
 8. **Assuming TimesFM 3.0 accepts categorical covariates**: it does not, and neither do Nori, T0, TS-ICL, and TiRex-2 (`ValueError`). Only Chronos-2 and Timestral accept them natively. `ForecasterFoundation` has no `transformer_exog`, so encode categoricals as numbers in `exog` before passing it to `fit` and `predict`.
 9. **Passing a future `exog` column that was not in the historical exog** (`fit` without that column, or `context` without `context_exog`): `ValueError` on every adapter. Pass the same columns to `fit` (or `context_exog`) and to `predict`.
