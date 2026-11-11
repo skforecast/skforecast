@@ -180,8 +180,28 @@ elementos del roadmap", abajo).
     (la más probable: series de distinta longitud), `independent-multi-time-series-forecasting`,
     `dependent-multi-series-multivariate-forecasting`, `metrics`,
     `foundation-forecasting-models`, `faq/parallelization-skforecast` y
-    `faq/parameters-search-backtesting-vs-one-step-ahead`.
-  - Pinball con el cuantil en el nombre: `probabilistic-forecasting-quantile-regression`.
+    `faq/parameters-search-backtesting-vs-one-step-ahead`. **Estado del 2026-11-11:** las
+    cinco que no se nombran abajo ya se volvieron a ejecutar después de #1437 y #1438
+    (2026-11-09 a 2026-11-11). Quedan `independent-multi-time-series-forecasting` (última
+    ejecución el 2026-10-20) y `dependent-multi-series-multivariate-forecasting`
+    (2026-10-10).
+  - Pinball con el cuantil en el nombre: `probabilistic-forecasting-quantile-regression`
+    (pendiente: última ejecución el 2026-10-08).
+- (DEP-python310) Anunciar en la nota de la 0.27.0 que la 0.28.0 retira Python 3.10
+  (decidido el 2026-11-11, detalle en `dev/roadmap_0.28.0/roadmap.md`). Aún no está en
+  `releases.md`.
+- (#1417) Relanzar `foundation-backends.yml` sobre `0.27.x` tras #1478 y #1479 y cerrar el
+  issue si sale en verde. La última ejecución (2026-11-09) falló en T0 y no dio resultado
+  para Timestral ni TiRex-2.
+- (#1476, guía de exógenas pronosticadas) Único PR abierto contra `0.27.x`: decidir si
+  entra.
+- `torch>=2.4, <2.16` (commit `7f7c4b804`, 2026-11-11): valorar una línea en la nota de la
+  versión; hoy no aparece.
+- Suite completa y tests con las versiones mínimas: solo corren en el PR de `0.27.x` a
+  `main`. Ninguna se ha ejecutado sobre `0.27.x`: abrir ese PR con margen.
+- Plan 10 de `dev/foundation_adapters_review/` (re-ejecutar entera la guía de foundation
+  justo antes de la release): solo se re-ejecutó la sección de T0. Depende de qué planes 02
+  a 09 entren en la 0.27.0 (sin decidir; propuesta del 2026-11-11: 02 y 03).
   - El resto de guías con backtesting (unas 26) solo cambian las columnas mostradas; ninguna
     lee las salidas por posición de una forma que se rompa (`metric.iloc[0, 0]` sigue siendo
     la primera métrica).
@@ -432,9 +452,9 @@ cargar modelos foundation afinados) resultó más grande que el bug. Se planific
 0.28.0. `dev/PLAN_UnifiedFinetunedCheckpoint.md` está muy desactualizado: hay que
 reescribirlo con lo de abajo (la revisión se hizo sin leerlo, a propósito).
 
-**Lo que ya existe (no fusionado).** Rama local `fix/foundation-clone-preloaded-model`
-(worktree `.claude/worktrees/fix-foundation-clone-preloaded-model`), 4 commits sobre
-`0.27.x` anterior a #1479, sin push ni PR. Puede servir de punto de partida:
+**Lo que se hizo (descartado).** Hubo una rama local `fix/foundation-clone-preloaded-model`
+con el arreglo (4 commits, sin push ni PR), borrada el 2026-11-11 al aplazar el tema. Su
+diseño queda aquí como punto de partida:
 
 - Contrato: dos atributos obligatorios nuevos en `_REQUIRED_CLASS_ATTRIBUTES`,
   `backend_attribute` (`'_pipeline'`, `'_module'` o `'_model'`) y `backend_param`
@@ -462,8 +482,8 @@ reescribirlo con lo de abajo (la revisión se hizo sin leerlo, a propósito).
 2. Con un objeto precargado, buscar `context_length` lo descarta (con aviso) en TimesFM 2.5,
    Moirai-2, TabICL y TabPFN-TS, porque ese parámetro reinicia el backend: documentarlo; en
    Moirai-2 se evita con unas 6 líneas (PR aparte).
-3. Merge con `0.27.x`: el código se fusionaba sin conflictos con #1479; chocan
-   `releases.md` (sección ya consolidada) y este roadmap.
+3. Al rehacerlo: el código de la rama se fusionaba sin conflictos con #1479 (los dos tocan
+   `_adapter_base.py`, `_adapters.py` y `_foundation_model.py`).
 
 **Revisión de los backends (2026-11-11).** Fuentes: código de los paquetes instalados y de
 las últimas versiones (chronos-forecasting 2.3.2, timesfm 3.0.1, uni2ts 2.0.0, tabicl
@@ -505,7 +525,7 @@ los pesos base), que hoy solo bloquea el prefijo de `model_id`.
 
 **Propuesta para la 0.28.0:**
 
-- BUG-04 con la rama de arriba, más los puntos 1 y 2.
+- BUG-04 con el diseño de arriba, más los puntos 1 y 2.
 - Argumento `adapter` en `FoundationModel` (nombre o clase) que sustituye a la resolución
   por prefijo: `FoundationModel("./chronos2-ft", adapter="chronos")`. `model_id` describe
   los pesos y llega tal cual a la carga del backend (sirve sin más en Chronos-2, TimesFM
@@ -1185,7 +1205,7 @@ BUG-stats-interval-ignored son hallazgos laterales (verificación de FE-02, de F
 | **BUG-classifier-nan-last-window** (encontrado el 2026-11-06, en BUG-backtesting-nan-y-true; prioridad baja) | Con un estimador que no admite NaN (`LogisticRegression`) y un NaN en la última ventana de un fold, el backtesting de `ForecasterRecursiveClassifier` lanza en la predicción el error genérico de scikit-learn (`Input X contains NaN. LogisticRegression does not accept missing values...`). Los regresores lineales dan predicciones NaN y el error de #1432, con la fecha, la causa y el remedio. Ya existía. (El `TypeError` del clasificador con NaN en `y` de la línea base era BUG-backtesting-nan-y-true: lo lanzaba `accuracy_score` y queda resuelto.) | recursive (classifier) | S | `ForecasterRecursiveClassifier(LogisticRegression(), lags=3)`, `y_clf` con NaN en las posiciones 42 y 47, `TimeSeriesFold(steps=5, initial_train_size=40)` | Revisar si el camino de #1432 (permitir predicciones NaN en el backtesting y lanzar el error con la causa) se puede aplicar a los clasificadores lineales (`LinearClassifierMixin`), o dar al menos un mensaje con la fecha y la causa |
 | **BUG-01** | `backtesting` con `initial_train_size=None` sobre un forecaster ya ajustado evalúa in-sample sin ningún aviso | model_selection | S | `dev/roadmap_0.27.0/repro/BUG-01.py` | En la rama `else` de `check_backtesting_input` (`skforecast/model_selection/_utils.py:370-380`), comparar la primera fecha de test (`index[window_size + gap]`) con `forecaster.training_range_` (dict por serie en multiserie) y emitir un aviso silenciable con `suppress_warnings` con el número y rango de predicciones in-sample. Que el `NotFittedError` sugiera primero `initial_train_size` |
 | **BUG-02** | Con `fold_stride < steps` la métrica solo mide los horizontes `1..fold_stride` (con 1, el error a 1 paso) y todas las búsquedas seleccionan por ese error | model_selection | S | `dev/roadmap_0.27.0/repro/BUG-02.py` | Parámetro en `TimeSeriesFold`, p. ej. `overlapping_metric="last"` o `"all"`, aplicado en los 5 puntos de deduplicación (`_validation.py:662-667,1488-1493,2159-2164,2643-2648,2674-2679`; números de línea anteriores a #1409; el de stats usa (fecha, `estimator_id`) con varios estimadores tras BUG-09 (a)); aviso mientras el defecto sea `"last"` (como `OneStepAheadValidationWarning`, `_utils.py:653-658`); no cambiar el defecto sin anunciarlo (la receta de meses naturales depende de `"last"`); corregir `skills/backtesting-configuration/SKILL.md:202-208`, la guía y `llms-base.txt`. Coordinar con BUG-09. Tras QW-12 (2026-10-30): con la opción de evaluar todos los pares origen-fecha, `n_evaluated` cuenta todas las filas, y el aviso puede citar las dos cifras (puntos evaluados frente a predichos) y la columna `step` para el error por horizonte |
-| **BUG-04** | Un pipeline o modelo precargado (p. ej. Chronos-2 con fine-tuning) se descarta en silencio al crear `ForecasterFoundation`: `clone` lo pierde y se recarga el checkpoint base | foundation | S | `dev/roadmap_0.27.0/repro/BUG-04.py` | `FoundationModel.__sklearn_clone__`: clon estándar y, si el usuario pasó el objeto, copiar la referencia al clon sin copiar pesos. Así lo heredan `ForecasterFoundation.__init__` (`_forecaster_foundation.py:156`), `deepcopy_forecaster` (`utils.py:4999`) y `bayesian_search_foundation`. Cada adaptador declara su atributo de backend (compartido con QW-05). Requisito de PLAN-CKPT (`dev/PLAN_UnifiedFinetunedCheckpoint.md`) **Aplazado a la 0.28.0 (decisión del 2026-11-11)**, junto con todo lo de modelos afinados: sección "BUG-04 y modelos afinados" (sección 0). Arreglo hecho en la rama local `fix/foundation-clone-preloaded-model`, sin fusionar |
+| **BUG-04** | Un pipeline o modelo precargado (p. ej. Chronos-2 con fine-tuning) se descarta en silencio al crear `ForecasterFoundation`: `clone` lo pierde y se recarga el checkpoint base | foundation | S | `dev/roadmap_0.27.0/repro/BUG-04.py` | `FoundationModel.__sklearn_clone__`: clon estándar y, si el usuario pasó el objeto, copiar la referencia al clon sin copiar pesos. Así lo heredan `ForecasterFoundation.__init__` (`_forecaster_foundation.py:156`), `deepcopy_forecaster` (`utils.py:4999`) y `bayesian_search_foundation`. Cada adaptador declara su atributo de backend (compartido con QW-05). Requisito de PLAN-CKPT (`dev/PLAN_UnifiedFinetunedCheckpoint.md`) **Aplazado a la 0.28.0 (decisión del 2026-11-11)**, junto con todo lo de modelos afinados: sección "BUG-04 y modelos afinados" (sección 0). El arreglo se hizo en una rama local, borrada; su diseño está en esa sección |
 | **BUG-10** | TabICL (medido) y TabPFN-TS (mismo código) no ignoran las covariables solo pasadas aunque `IgnoredArgumentWarning` diga que sí: predicciones absurdas en silencio al ajustar con exog y predecir sin ella o con menos columnas | foundation | S | `dev/roadmap_0.27.0/repro/BUG-10.py` (requiere `tabicl`) | **Hecho con #1479 (rama `fix/foundation-drop-past-only-exog`), fusionado en `0.27.x` el 2026-11-11.** `FoundationModel.predict` quita las columnas históricas sin valores futuros (`drop_past_only_exog` en `_utils.py`) cuando `supports_past_only_covariates` es False, siempre (también con `check_inputs=False`) y antes de agrupar por firma; el aviso no cambia y sale una vez. Afectados de verdad: TabICL (medido con tabicl 2.2.0: 5,21 frente a -17,29 antes, idénticos después; MAE de 5 folds 15,5 frente a 3,6 antes, 3,6 y 3,6 después) y TabPFN-TS (leído en `tabpfn-time-series` 1.4.0, no medido: los dos backends calculan la intersección de covariables pero no descartan el resto). T0 y Nori ya las ignoraban; TimesFM 2.5 y Moirai no reciben exog. Quitado el filtro propio de Nori (`_known_future_columns`); T0 no tenía uno separable (construye las covariables a partir de las columnas futuras). Test de humo nuevo con backend real en `tools/foundation_compat` (pasa con TabICL). Esbozo original: En `FoundationModel.predict`, si `adapter.supports_past_only_covariates` es False, quitar de `context_exog` las columnas sin futuro antes de llamar al adaptador (arreglo centralizado). Causa: `_adapters.py:2679-2685` (TabICL) y `:3347-3353` (TabPFN) concatenan toda la exog de contexto; T0 (`:3869-3878`) y Nori (`:4795-4799`) ya filtran bien |
 | **BUG-stats-interval-ignored** | `ForecasterStats.predict_interval` ignora `interval` porque `alpha=0.05` por defecto tiene precedencia: `interval=[0.1, 0.9]` devuelve el intervalo del 95%. La skill lo usa como ejemplo de intervalo del 80% | stats | S | `dev/roadmap_0.27.0/repro/BUG-stats-interval-ignored.py` | **Hecho: #1416, fusionado en `0.27.x` el 2026-10-19.** `alpha=None` por defecto; se usa `interval` si se pasa y el 95% si no se pasa ninguno; `alpha` sigue como alias (sin deprecar, decisión 5) y pasar los dos da `ValueError`, en `predict_interval` y en `backtesting_stats`. `backtesting_stats` traduce `alpha` a `interval` al principio. `interval` pasa a ir antes que `alpha` en las dos firmas (una llamada posicional antigua falla con `TypeError`, no en silencio; no hay ninguna en el repo). Ahora también se valida `alpha` (entre 0 y 1) en `predict_interval`. Corregidos `skills/statistical-models/SKILL.md`, `skills/prediction-intervals/` y `skills/complete-api-reference/`, la guía `forecasting-statistical-models.ipynb` (re-ejecutada, mismas predicciones) y `releases.md` (Fixed, Changed, highlight y "Before upgrading") |
 | **BUG-06** | En TabICL y Nori (`point_estimate='mean'` por defecto) y TabPFN con `point_estimate` distinto de `'median'`, `predict()` da la media pero `predict_interval()['pred']` y la métrica de `backtesting_foundation` con `quantiles` usan `q_0.5`; además la salida pierde `pred` | foundation | M | `dev/roadmap_0.27.0/repro/BUG-06.py` | `FoundationModel.predict(quantiles=..., include_point=True)` devuelve `pred` junto a `q_*` (reutiliza `q_0.5` si `point_is_median`; TabICL y TabPFN-TS ya calculan el punto en la misma llamada; Nori necesita otra). `predict_interval` (`_forecaster_foundation.py:946-960`) y `_backtesting_foundation` (`_validation.py:2590-2599,2650-2653,2683-2686`) usan ese `pred`. Corregir el docstring (`_foundation_model.py:1041,1058`) y la tabla de la guía (TimesFM 2.5 usa la mediana) |

@@ -29,7 +29,8 @@ Esfuerzo: S (horas a 1 día, con tests y docs), M (2 a 5 días), L (más de una 
 Los tres son pequeños y no dependen entre sí, salvo `tomli` (MAINT-test-deps), que se quita
 con DEP-python310.
 
-No forma parte de este roadmap: `torch>=2.4, <2.16` se sube en la 0.27.0. Probado con torch
+No forma parte de este roadmap: `torch>=2.4, <2.16` se subió en la 0.27.0 (commit
+`7f7c4b804`, junto con la retirada de `pytest-xdist` del extra `test`). Probado con torch
 2.15.0: `pytest skforecast/deep_learning` da 157 passed, 45 skipped (los de TensorFlow, que
 no se ejecutan en Python 3.14).
 
@@ -66,7 +67,7 @@ T0 (en 3.10 pip instala `tfc-t0` 0.6.0, que se comporta distinto que la 0.6.1).
 Cambios:
 
 - [ ] `pyproject.toml:65`: `requires-python = ">=3.11"`; quitar el classifier de la línea 26.
-- [ ] `pyproject.toml:69,74,84,113`: `statsmodels>=0.13.3`. La 0.13.2 no tiene wheel para
+- [ ] `pyproject.toml:69,74,84,112`: `statsmodels>=0.13.3`. La 0.13.2 no tiene wheel para
   Python 3.11 y el resolvedor de mínimos ya elige la 0.13.3. El resto de mínimos se resuelven
   igual en 3.11 que en 3.10.
 - [ ] `.github/workflows/unit-tests.yml:22`: quitar `'3.10'` de la matriz.
@@ -77,7 +78,7 @@ Cambios:
 - [ ] `skforecast/foundation/tests/tests_foundation_models/test_backends_compat_config.py:9-12`:
   quitar el `try/except` de `tomli`.
 - [ ] `.claude/skills/verify/test_affected.py:365`: quitar el `skipif` de Python menor que 3.11.
-- [ ] `pyproject.toml:124`: quitar `tomli>=2.0` del extra `test`.
+- [ ] `pyproject.toml:123`: quitar `tomli>=2.0` del extra `test`.
 - [ ] `skforecast/foundation/_adapters.py:3561`: quitar la nota de Python 3.10 del docstring
   de `T0Adapter`. Decidir si el mínimo pasa a `tfc-t0[torch]>=0.6.1`
   (`tools/foundation_compat/adapters.toml:53`).
@@ -142,9 +143,9 @@ solo a pandas 3 (ver la sección 2).
 
 Limpiezas:
 
-- [ ] Quitar `pytest-xdist>=3.8` (`pyproject.toml:109`): ningún workflow usa `-n`, las reglas
-  de tests lo prohíben y `.claude/settings.json` lo deniega.
-- [ ] `pandas[parquet]>=2.2, <3.0` (`pyproject.toml:125`), por coherencia con el core. No
+- [x] Quitar `pytest-xdist>=3.8`: hecho en la 0.27.0 (commit `7f7c4b804`). Ningún workflow
+  usa `-n`, las reglas de tests lo prohíben y `.claude/settings.json` lo deniega.
+- [ ] `pandas[parquet]>=2.2, <3.0` (`pyproject.toml:124`), por coherencia con el core. No
   cambia la resolución.
 - [ ] `tomli>=2.0`: se quita con DEP-python310.
 
