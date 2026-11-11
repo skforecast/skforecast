@@ -142,6 +142,30 @@ def test_predict_output_when_exog(model, backend_config):
     assert np.isfinite(predictions["pred"].to_numpy(dtype=float)).all()
 
 
+def test_predict_output_when_exog_has_no_future_values(model, backend_config):
+    """
+    Test that, for the adapters that only use covariates with future values
+    (`supports_past_only_covariates=False`), an exogenous variable without
+    future values does not change the forecast: predicting with the exog
+    stored in fit and no future exog gives the predictions of a forecaster
+    without exog.
+    """
+    model_info = get_model_info(backend_config["model_id"])
+    if not model_info.allow_exog:
+        pytest.skip("The adapter does not support exogenous variables.")
+    if model_info.supports_past_only_covariates:
+        pytest.skip("The adapter uses past-only covariates.")
+
+    forecaster = ForecasterFoundation(estimator=model)
+    forecaster.fit(series=series["series_1"])
+    expected = forecaster.predict(steps=STEPS)
+    forecaster.fit(series=series["series_1"], exog=exog)
+    with pytest.warns(Warning, match="are ignored for series"):
+        predictions = forecaster.predict(steps=STEPS)
+
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
 def test_backtesting_foundation_output_when_two_folds(model):
     """
     Test the shape and values of the metrics and predictions of

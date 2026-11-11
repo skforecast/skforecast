@@ -4,7 +4,9 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
+from skforecast.exceptions import IgnoredArgumentWarning
 from skforecast.foundation._adapters import TabICLAdapter
+from skforecast.foundation._foundation_model import FoundationModel
 from .fixtures_adapters import (
     y, exog, y_wide, y_dict, exog_shared,
     FakeTabICLForecaster,
@@ -492,6 +494,43 @@ def test_TabICLAdapter_predict_exog_forwarded_to_context_df_and_future_df():
     # future_df must contain the exog columns
     for col in exog.columns:
         assert col in fake.last_future_df.columns
+
+
+@pytest.mark.parametrize(
+    "exog_columns",
+    [["feat_a"], None],
+    ids=lambda exog_columns: f"exog_columns: {exog_columns}",
+)
+def test_TabICLAdapter_predict_past_only_exog_removed_by_FoundationModel(exog_columns):
+    """
+    Test that, through FoundationModel, the historical exog columns without
+    future values do not reach the context_df passed to the backend, which
+    does not discard them: only the columns of the future exog are
+    forwarded, and none when predicting without future exog.
+    """
+    steps = 3
+    fake = FakeTabICLForecaster()
+    model = FoundationModel("soda-inria/tabicl", model=fake)
+    model.fit(series=y, exog=exog)
+    future_index = pd.date_range(
+        y.index[-1] + y.index.freq, periods=steps, freq=y.index.freq
+    )
+    future_exog = (
+        pd.DataFrame({"feat_a": np.arange(steps, dtype=float)}, index=future_index)
+        if exog_columns is not None else None
+    )
+
+    with pytest.warns(IgnoredArgumentWarning, match="are ignored for series"):
+        model.predict(steps=steps, exog=future_exog)
+
+    expected_exog_columns = exog_columns if exog_columns is not None else []
+    assert list(fake.last_context_df.columns) == (
+        ["item_id", "timestamp", "target"] + expected_exog_columns
+    )
+    assert list(fake.last_future_df.columns) == (
+        ["item_id", "timestamp"] + expected_exog_columns
+    )
+    assert list(model.context_exog_["sales"].columns) == ["feat_a", "feat_b"]
 
 
 # ==============================================================================

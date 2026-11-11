@@ -123,7 +123,7 @@ There is no compile step and no horizon ceiling. For each series, columns presen
 ## TabPFNAdapter: Prior Labs TabPFN-TS
 
 - **`model_id` prefix**: `priorlabs/tabpfn`
-- **`allow_exog`**: `True` (known-future covariates; covariates without future values are discarded by the library)
+- **`allow_exog`**: `True` (known-future covariates; covariates without future values are ignored with an `IgnoredArgumentWarning`)
 - **Quantiles**: any value in `(0, 1)`
 
 | Parameter             | Type  | Default    | Description                                                                      |
@@ -278,12 +278,12 @@ All adapters implement the same minimal interface:
 
 ### Exog column validation at predict time
 
-`FoundationModel.predict` (and therefore `ForecasterFoundation.predict`, `predict_interval`, `predict_quantiles`) validates, per series, the columns of the future `exog` against the historical exog used as context (the one stored by `fit`, or `context_exog` when `context` is given). The check is skipped on the internal backtesting path, where both come from the same DataFrame. On every path, before the adapter is called, the historical exog of each series is reindexed to the index of its context and the future `exog` to the forecast horizon; missing timestamps are filled with NaN and reported with a `MissingValuesWarning`. No columns are ever added: a series only carries its own exog columns.
+`FoundationModel.predict` (and therefore `ForecasterFoundation.predict`, `predict_interval`, `predict_quantiles`) validates, per series, the columns of the future `exog` against the historical exog used as context (the one stored by `fit`, or `context_exog` when `context` is given). The check is skipped on the internal backtesting path, where both come from the same DataFrame. On every path, before the adapter is called, the historical exog of each series is reindexed to the index of its context and the future `exog` to the forecast horizon; missing timestamps are filled with NaN and reported with a `MissingValuesWarning`. No columns are ever added: a series only carries its own exog columns. For adapters with `supports_past_only_covariates=False`, the historical columns without future values are removed before the adapter is called, also on the backtesting path, so the forecast is the same as without those columns (the backends of TabICL and TabPFN-TS do not discard them on their own).
 
 | Situation (per series)                                  | Adapters with `supports_past_only_covariates=True` (Chronos-2, TS-ICL, TimesFM 3.0, Timestral, TiRex-2) | Adapters with `supports_past_only_covariates=False` (TabICL, TabPFN-TS, T0, Nori) |
 |---------------------------------------------------------|---------------------------------------------------------------|---------------------------------------------------------------|
 | Future `exog` column with no historical values          | `ValueError`                                                  | `ValueError`                                                  |
-| Historical column with no future values (`exog=None` or a subset of columns) | Used as a past-only covariate, no warning        | Ignored, `IgnoredArgumentWarning` listing the columns and series |
+| Historical column with no future values (`exog=None` or a subset of columns) | Used as a past-only covariate, no warning        | Removed before calling the adapter, `IgnoredArgumentWarning` listing the columns and series |
 | Same columns on both sides (any order)                  | OK                                                            | OK                                                            |
 
 Backend libraries (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0`, `synthefy-nori`, `tsicl`, `timestral`, `tirex-2`) are imported **lazily** inside the adapter method that needs them, so only the backend for the adapter you actually use needs to be installed.

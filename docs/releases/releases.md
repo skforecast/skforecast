@@ -60,6 +60,8 @@ The main changes in this release are:
 
     + <code>[T0Adapter]</code>: the predictions of series forecast together change when they have different lengths or different exogenous variables, since each series now gets the forecast it has when predicted alone. With `tfc-t0` 0.6.1 or later (Python 3.11 or later), the backend also ignores an exogenous variable that is constant over the context of a series.
 
+    + <code>[TabICLAdapter]</code> and <code>[TabPFNAdapter]</code>: the predictions change when a historical exogenous variable has no future values (for example, predicting without `exog` after fitting with it): it is now ignored, as the warning said.
+
     And some code needs to be updated:
 
     + Forecasters with a linear model of scikit-learn (`LinearRegression`, `Ridge`, `Lasso`...) raise a `ValueError` in `predict` when a predictor has a missing value, for example a gap in `exog`: fill the gaps or use an estimator that accepts missing values. This includes <code>[ForecasterRecursiveMultiSeries]</code> with `encoding='ordinal'` predicting a series not seen in training; use `encoding='onehot'` or `None` to predict it.
@@ -198,6 +200,8 @@ The main changes in this release are:
 *Foundation models*
 
 + Fixed three issues in <code>[T0Adapter]</code>: it failed with `tfc-t0` 0.4 or later (`TypeError: T0Forecaster.predict() got an unexpected keyword argument 'context'`); the forecast of a series changed when it was predicted together with longer series or with series that have other exogenous variables; and `torch_dtype` raised a `RuntimeError` in `predict`. It now requires `tfc-t0` 0.6 or later with its PyTorch runtime (`pip install "tfc-t0[torch]>=0.6"`), and `torch_dtype` enables mixed precision with `torch.bfloat16` or `torch.float16`. ([#1385](https://github.com/skforecast/skforecast/issues/1385), [#1478](https://github.com/skforecast/skforecast/pull/1478))
+
++ <code>[TabICLAdapter]</code> and <code>[TabPFNAdapter]</code> used the historical exogenous variables without future values (for example, when predicting without `exog` after fitting with it), although the `IgnoredArgumentWarning` said they were ignored: the predictions were wrong without any error (in a test with TabICL, around 5 for a series around -16). They are now removed before calling the model, so the predictions are those obtained without them. ([#1479](https://github.com/skforecast/skforecast/pull/1479))
 
 + Fixed two issues in <code>[FoundationModel]</code> and <code>[ForecasterFoundation]</code>: Moirai-2 with an MPS device with an index (`device='mps:0'`) moved the model to MPS, which uni2ts does not support, instead of falling back to CPU as with `device='mps'`; and a `MissingValuesWarning` said that the future `exog` had been reindexed when it covered every date of the forecast horizon but held missing values. ([#1450](https://github.com/skforecast/skforecast/pull/1450), [#1451](https://github.com/skforecast/skforecast/pull/1451))
 

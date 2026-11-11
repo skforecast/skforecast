@@ -11,6 +11,7 @@ from skforecast.foundation._utils import (
     get_exog_signature,
     group_series_by_exog_signature,
     align_context_exog,
+    drop_past_only_exog,
     _warn_if_non_commercial,
     _get_model_license,
     _MODEL_LICENSES,
@@ -542,6 +543,59 @@ def test_align_context_exog_MissingValuesWarning_when_exog_shorter_than_context(
     expected_s2 = pd.DataFrame({"a": [np.nan, 0.0, 1.0, 2.0]}, index=ctx_idx)
     pd.testing.assert_frame_equal(results["s1"], expected_s1)
     pd.testing.assert_frame_equal(results["s2"], expected_s2)
+
+
+# ===========================================================================
+# drop_past_only_exog
+# ===========================================================================
+
+def test_drop_past_only_exog_output():
+    """
+    Test that drop_past_only_exog keeps, per series, only the historical
+    columns that are also in the future exog (in their original order,
+    whatever the order in the future exog and also when it is a pandas
+    Series), returns None when no column is left (no future exog, a None
+    value, a missing key or `exog=None`), returns the same object when
+    nothing is removed, and does not modify its inputs.
+    """
+    p = np.arange(3, dtype=float)
+    context_exog = {
+        "mixed":   pd.DataFrame({"p": p, "k": p * 2, "j": p * 3}),
+        "all":     pd.DataFrame({"k": p, "j": p}),
+        "series":  pd.DataFrame({"p": p, "k": p}),
+        "past":    pd.DataFrame({"p": p}),
+        "missing": pd.DataFrame({"p": p}),
+        "none":    None,
+    }
+    exog = {
+        "mixed":  pd.DataFrame({"j": p, "k": p}),
+        "all":    pd.DataFrame({"j": p, "k": p}),
+        "series": pd.Series(p, name="k"),
+        "past":   None,
+        "none":   None,
+    }
+    series_names_in = ["mixed", "all", "series", "past", "missing", "none"]
+    columns_before = {
+        k: list(v.columns) for k, v in context_exog.items() if v is not None
+    }
+
+    results = drop_past_only_exog(context_exog, exog, series_names_in)
+
+    assert list(results.keys()) == series_names_in
+    pd.testing.assert_frame_equal(
+        results["mixed"], context_exog["mixed"][["k", "j"]]
+    )
+    assert results["all"] is context_exog["all"]
+    pd.testing.assert_frame_equal(results["series"], context_exog["series"][["k"]])
+    assert results["past"] is None
+    assert results["missing"] is None
+    assert results["none"] is None
+    assert columns_before == {
+        k: list(v.columns) for k, v in context_exog.items() if v is not None
+    }
+
+    results = drop_past_only_exog(context_exog, None, ["mixed", "none"])
+    assert results == {"mixed": None, "none": None}
 
 
 # ===========================================================================

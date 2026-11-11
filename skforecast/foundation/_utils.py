@@ -654,6 +654,63 @@ def align_context_exog(
     return context_exog_aligned
 
 
+def drop_past_only_exog(
+    context_exog: dict[str, pd.DataFrame | None],
+    exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+    series_names_in: list[str],
+) -> dict[str, pd.DataFrame | None]:
+    """
+    Remove, from the historical exogenous variables of each series, the
+    columns that have no future values (past-only covariates).
+
+    Parameters
+    ----------
+    context_exog : dict
+        Per-series historical exogenous variables as returned by
+        `align_context_exog`: each value is a pandas DataFrame or `None`.
+    exog : dict, None
+        Per-series future exogenous variables. Missing keys or `None` values
+        mean the series has no future exog, so all its historical columns
+        are removed.
+    series_names_in : list
+        Series to filter. Defines the keys of the output dict.
+
+    Returns
+    -------
+    context_exog_filtered : dict
+        Per-series dict with exactly the keys in `series_names_in`. Each
+        value holds only the historical columns that are also in the future
+        exog of the series, in their original order, or `None` if no column
+        is left.
+
+    Notes
+    -----
+    `FoundationModel.predict` applies it to adapters that declare
+    `supports_past_only_covariates=False`, so that they never receive a
+    covariate without future values. The input objects are not modified.
+
+    """
+
+    context_exog_filtered: dict[str, pd.DataFrame | None] = {}
+    for series_name in series_names_in:
+        series_exog = context_exog.get(series_name)
+        if series_exog is None:
+            context_exog_filtered[series_name] = None
+            continue
+        future_cols = _extract_exog_columns(
+            exog.get(series_name) if exog is not None else None
+        )
+        cols_to_keep = [col for col in series_exog.columns if col in future_cols]
+        if not cols_to_keep:
+            context_exog_filtered[series_name] = None
+        elif len(cols_to_keep) == len(series_exog.columns):
+            context_exog_filtered[series_name] = series_exog
+        else:
+            context_exog_filtered[series_name] = series_exog[cols_to_keep]
+
+    return context_exog_filtered
+
+
 def _left_pad_context(
     context: dict[str, pd.Series],
     context_exog: dict[str, pd.DataFrame | None] | None,

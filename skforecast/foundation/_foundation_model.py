@@ -23,6 +23,7 @@ from ._utils import (
     check_preprocess_series_foundation,
     group_series_by_exog_signature,
     align_context_exog,
+    drop_past_only_exog,
     _extract_exog_columns,
     _left_pad_context,
 )
@@ -972,9 +973,10 @@ class FoundationModel:
         with no historical values in its `context_exog`: no adapter can use a
         covariate without history. A column present in the history but absent
         from the future `exog` is a past-only covariate; adapters with
-        `supports_past_only_covariates=False` ignore it, so an
-        `IgnoredArgumentWarning` is issued for them. Column names are
-        compared as sets, so order does not matter.
+        `supports_past_only_covariates=False` cannot use it, so an
+        `IgnoredArgumentWarning` is issued for them. This method only
+        validates and warns: `predict` removes those columns afterwards.
+        Column names are compared as sets, so order does not matter.
 
         Only predict-time inputs are compared (never `fit` metadata), so the
         check also applies in zero-shot mode. It runs only on the user-facing
@@ -1114,8 +1116,11 @@ class FoundationModel:
         used as context. A future column with no historical values raises a
         `ValueError`. A historical column with no future values is a
         past-only covariate: it is used as such when
-        `supports_past_only_covariates` is `True`, and ignored with an
-        `IgnoredArgumentWarning` otherwise.
+        `supports_past_only_covariates` is `True`. Otherwise it is removed
+        from the historical exog before calling the adapter, so the
+        prediction is the same as without that column, and an
+        `IgnoredArgumentWarning` is issued (the warning, like the rest of
+        the column validation, only with `check_inputs=True`).
 
         Before calling the adapter, the historical exog of each series is
         aligned to the index of its context and the future `exog` to its
@@ -1220,7 +1225,7 @@ class FoundationModel:
             # Alignment runs on every path: adapters rely on `context_exog`
             # sharing the index of `context` and on `exog` covering exactly
             # `steps` rows. With `check_inputs=False` (internal backtesting
-            # path) only the column check is skipped:
+            # path) only the column check, and its warning, is skipped:
             # `_extract_data_folds_multiseries` slices `context_exog` and
             # `exog` from the same per-series DataFrame, so their columns
             # always match by construction.
@@ -1242,6 +1247,20 @@ class FoundationModel:
                     exog            = exog,
                     series_names_in = series_names_in,
                 )
+            # Adapters that cannot use past-only covariates never receive
+            # them. The historical columns without future values are removed
+            # on every path, since the adapter would otherwise forward them
+            # to the backend, and before grouping the series, since they are
+            # part of the covariate signature.
+            if (
+                context_exog is not None
+                and not self.adapter.supports_past_only_covariates
+            ):
+                context_exog = drop_past_only_exog(
+                                   context_exog    = context_exog,
+                                   exog            = exog,
+                                   series_names_in = series_names_in,
+                               )
 
         if not self.adapter.supports_nan_in_series:
             series_with_nan = [

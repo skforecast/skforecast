@@ -2246,10 +2246,12 @@ class TabICLAdapter(_AdapterBase):
     TabICL supports arbitrary quantile levels (any float in `[0, 1]`),
     unlike models with fixed quantile sets such as TimesFM or Moirai.
 
-    Covariate support is available: extra columns in `context` and `exog`
-    are forwarded as covariates. TabICL uses only the intersection of columns
-    present in both context and future data. NaN values in the future
-    covariates are accepted by TabICL with a warning.
+    Covariate support is available for *known-future* covariates: columns
+    present in both the historical context and the forecast horizon are
+    forwarded as covariates. Historical columns without future values are
+    removed by `FoundationModel` before calling the adapter, because TabICL
+    does not discard them. NaN values in the future covariates are accepted
+    by TabICL with a warning.
 
     Series with a `RangeIndex` are accepted. Internally, TabICL requires
     datetime timestamps, so a synthetic daily `DatetimeIndex` (starting
@@ -2470,8 +2472,10 @@ class TabICLAdapter(_AdapterBase):
         context : dict pandas Series
             Per-series context windows (already trimmed to
             `context_length`).
-        context_exog : dict pandas DataFrame, pandas Series, or None
-            Per-series past covariates (already trimmed).
+        context_exog : dict pandas DataFrame, or None
+            Per-series past covariates (already trimmed). They only hold
+            columns that also have future values in `exog`: `FoundationModel`
+            removes the others.
         exog : dict pandas DataFrame, pandas Series, or None
             Per-series future covariates for the forecast horizon.
         quantiles : list of float or None
@@ -2899,8 +2903,9 @@ class TabPFNAdapter(_AdapterBase):
 
     Covariate support is available for *known-future* covariates: extra
     columns present in both the historical context and the forecast horizon
-    are used by the model. Covariates without future values are discarded by
-    the library.
+    are used by the model. Historical columns without future values are
+    removed by `FoundationModel` before calling the adapter, because the
+    library does not discard them.
 
     Series with a `RangeIndex` are accepted. Internally, TabPFN-TS requires
     datetime timestamps, so a synthetic daily `DatetimeIndex` (starting
@@ -3139,8 +3144,10 @@ class TabPFNAdapter(_AdapterBase):
         context : dict pandas Series
             Per-series context windows (already trimmed to
             `context_length`).
-        context_exog : dict pandas DataFrame, pandas Series, or None
-            Per-series past covariates (already trimmed).
+        context_exog : dict pandas DataFrame, or None
+            Per-series past covariates (already trimmed). They only hold
+            columns that also have future values in `exog`: `FoundationModel`
+            removes the others.
         exog : dict pandas DataFrame, pandas Series, or None
             Per-series future covariates for the forecast horizon.
         quantiles : list of float or None
@@ -3741,7 +3748,8 @@ class T0Adapter(_AdapterBase):
             positional pandas RangeIndex.
         context_exog : dict
             Per-series past covariates (already trimmed), left-padded and
-            indexed like `context`.
+            indexed like `context`. They only hold columns that also have
+            future values in `exog`: `FoundationModel` removes the others.
         exog : dict
             Per-series future covariates for the forecast horizon. Every
             series of a call has the same covariate columns.
@@ -3915,7 +3923,8 @@ class T0Adapter(_AdapterBase):
         covariate array from per-series past and future exogenous values.
 
         Every series of a call has the same covariate columns
-        (`FoundationModel` groups the series by covariate signature), so the
+        (`FoundationModel` removes the historical columns without future
+        values and groups the series by covariate signature), so the
         columns, and their order, are those of the first series. For each
         series and column the historical values (from `context_exog`) are
         placed flush against the forecast origin and the future values (from
@@ -4618,8 +4627,9 @@ class NoriAdapter(_AdapterBase):
 
     Covariate support is available for *known-future* covariates: columns present
     in both the historical context and the forecast horizon are used as features.
-    Covariates without future values are ignored. Covariates must be numeric;
-    encode categoricals as numbers before passing them.
+    Covariates without future values are ignored: `FoundationModel` removes
+    them before calling the adapter. Covariates must be numeric; encode
+    categoricals as numbers before passing them.
 
     Series with a `RangeIndex` are accepted; only running-index and
     Fourier(index) features are meaningful there (calendar features are skipped).
@@ -4853,8 +4863,10 @@ class NoriAdapter(_AdapterBase):
             Number of steps ahead to forecast.
         context : dict pandas Series
             Per-series context windows (already trimmed to `context_length`).
-        context_exog : dict pandas DataFrame, pandas Series, or None
-            Per-series past covariates (already trimmed).
+        context_exog : dict pandas DataFrame, or None
+            Per-series past covariates (already trimmed). They only hold
+            columns that also have future values in `exog`: `FoundationModel`
+            removes the others.
         exog : dict pandas DataFrame, pandas Series, or None
             Per-series future covariates for the forecast horizon.
         quantiles : list of float or None
@@ -4910,7 +4922,9 @@ class NoriAdapter(_AdapterBase):
                 context_exog.get(series_name) if context_exog is not None else None
             )
             fut_exog = exog.get(series_name) if exog is not None else None
-            exog_cols = self._known_future_columns(ctx_exog, fut_exog)
+            # `FoundationModel` removes the historical columns without future
+            # values, so every column of `ctx_exog` is a known-future one.
+            exog_cols = list(ctx_exog.columns) if ctx_exog is not None else []
 
             X_ctx = self._featurize(
                 series, is_datetime, ctx_exog, exog_cols, offset=0, n=len(series)
@@ -5014,48 +5028,6 @@ class NoriAdapter(_AdapterBase):
             values = values.detach().cpu().numpy()
 
         return np.asarray(values, dtype=float)
-
-    @staticmethod
-    def _known_future_columns(
-        ctx_exog: pd.DataFrame | pd.Series | None,
-        fut_exog: pd.DataFrame | pd.Series | None,
-    ) -> list:
-        """
-        Return covariate columns present in both context and future exog.
-
-        Only known-future covariates (columns available over both the
-        historical context and the forecast horizon) are usable by Nori.
-
-        Parameters
-        ----------
-        ctx_exog : pandas DataFrame, pandas Series, or None
-            Historical (past) covariates for a single series.
-        fut_exog : pandas DataFrame, pandas Series, or None
-            Future covariates for a single series.
-
-        Returns
-        -------
-        columns : list
-            Column names present in both `ctx_exog` and `fut_exog`, in the
-            order they appear in `ctx_exog`. Empty when either input is `None`.
-
-        """
-
-        if ctx_exog is None or fut_exog is None:
-            return []
-        c = (
-            ctx_exog.columns
-            if isinstance(ctx_exog, pd.DataFrame)
-            else pd.Index([ctx_exog.name])
-        )
-        f = (
-            fut_exog.columns
-            if isinstance(fut_exog, pd.DataFrame)
-            else pd.Index([fut_exog.name])
-        )
-        f_set = set(f)
-
-        return [col for col in c if col in f_set]
 
     def _featurize(
         self,

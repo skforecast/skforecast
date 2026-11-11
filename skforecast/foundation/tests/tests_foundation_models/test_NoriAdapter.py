@@ -6,7 +6,9 @@ import types
 import pytest
 import numpy as np
 import pandas as pd
+from skforecast.exceptions import IgnoredArgumentWarning
 from skforecast.foundation._adapters import NoriAdapter
+from skforecast.foundation._foundation_model import FoundationModel
 from .fixtures_adapters import (
     y,
     exog,
@@ -300,14 +302,11 @@ def test_NoriAdapter_predict_datetime_builds_calendar_and_fourier_features():
 def test_NoriAdapter_predict_rangeindex_uses_index_and_fourier_only():
     """
     Test that RangeIndex series skip calendar features (running index +
-    Fourier(index) only) and that known-future exog columns are appended
-    while context-only columns are dropped.
+    Fourier(index) only) and that known-future exog columns are appended.
     """
     fake = FakeNoriRegressor()
     adapter = NoriAdapter(model_id="Synthefy/Nori", model=fake)
-    ctx_exog = pd.DataFrame(
-        {"temp": np.arange(50, dtype=float), "drop_me": np.zeros(50)}
-    )
+    ctx_exog = pd.DataFrame({"temp": np.arange(50, dtype=float)})
     fut_exog = pd.DataFrame({"temp": np.arange(50, 55, dtype=float)})
     adapter.fit({"sales": y_range}, {"sales": ctx_exog})
     preds = adapter.predict(
@@ -316,6 +315,40 @@ def test_NoriAdapter_predict_rangeindex_uses_index_and_fourier_only():
     assert preds["sales"].shape == (5, 1)
     # running index (1) + Fourier 2 terms (4) + known-future 'temp' (1)
     assert fake.n_features_in_ == 1 + 4 + 1
+
+
+@pytest.mark.parametrize(
+    "exog_columns, n_exog_features",
+    [(["temp"], 1), (None, 0)],
+    ids=lambda value: f"{value}",
+)
+def test_NoriAdapter_predict_past_only_exog_removed_by_FoundationModel(
+    exog_columns, n_exog_features
+):
+    """
+    Test that, through FoundationModel, the historical exog columns without
+    future values are not used as features: only the known-future column is
+    appended, and none when predicting without future exog. NoriAdapter has
+    no filtering of its own, it relies on the one of FoundationModel.
+    """
+    fake = FakeNoriRegressor()
+    model = FoundationModel("Synthefy/Nori", model=fake)
+    ctx_exog = pd.DataFrame(
+        {"temp": np.arange(50, dtype=float), "drop_me": np.zeros(50)}
+    )
+    fut_exog = (
+        pd.DataFrame(
+            {"temp": np.arange(50, 55, dtype=float)}, index=pd.RangeIndex(50, 55)
+        )
+        if exog_columns is not None else None
+    )
+    model.fit(series=y_range, exog=ctx_exog)
+    with pytest.warns(IgnoredArgumentWarning, match="are ignored for series"):
+        preds = model.predict(steps=5, exog=fut_exog)
+
+    assert preds.shape == (5, 2)
+    # running index (1) + Fourier 2 terms (4) + known-future covariates
+    assert fake.n_features_in_ == 1 + 4 + n_exog_features
 
 
 def test_NoriAdapter_predict_warns_on_rangeindex():
