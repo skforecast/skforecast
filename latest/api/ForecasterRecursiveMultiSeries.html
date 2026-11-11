@@ -6970,9 +6970,10 @@ is equal to <code>exog_dtypes_in_</code>.</p>
             <td>
               <div class="doc-md-description">
                 <p>Names of the series (levels) included in the matrix <code>X_train</code> created
-internally for training. It can be different from <code>series_names_in_</code> if
-some series are dropped during the training process because of NaNs or 
-because they are not present in the training period.</p>
+internally for training, in the same order as <code>series_names_in_</code>. It can
+be different from <code>series_names_in_</code> if some series are dropped during
+the training process because of NaNs or because they are not present in
+the training period.</p>
               </div>
             </td>
           </tr>
@@ -7361,6 +7362,22 @@ some calculations during backtesting.</p>
               </div>
             </td>
           </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="skforecast.recursive._forecaster_recursive_multiseries.ForecasterRecursiveMultiSeries._allow_nan_predictions">_allow_nan_predictions</span></code></td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Private attribute. If <code>True</code>, a linear model of scikit-learn returns NaN
+predictions when a predictor is NaN, instead of raising a <code>ValueError</code>.
+It is set to <code>True</code> only by <code>backtesting_forecaster_multiseries</code>, in
+its copy of the forecaster, to evaluate the series and dates that can
+be predicted; the NaN predictions are warned when calculating the
+metrics.</p>
+              </div>
+            </td>
+          </tr>
       </tbody>
     </table>
 
@@ -7537,21 +7554,7 @@ weight to certain dates.</li>
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">408</span>
-<span class="normal">409</span>
-<span class="normal">410</span>
-<span class="normal">411</span>
-<span class="normal">412</span>
-<span class="normal">413</span>
-<span class="normal">414</span>
-<span class="normal">415</span>
-<span class="normal">416</span>
-<span class="normal">417</span>
-<span class="normal">418</span>
-<span class="normal">419</span>
-<span class="normal">420</span>
-<span class="normal">421</span>
-<span class="normal">422</span>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">422</span>
 <span class="normal">423</span>
 <span class="normal">424</span>
 <span class="normal">425</span>
@@ -7800,7 +7803,22 @@ weight to certain dates.</li>
 <span class="normal">668</span>
 <span class="normal">669</span>
 <span class="normal">670</span>
-<span class="normal">671</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">671</span>
+<span class="normal">672</span>
+<span class="normal">673</span>
+<span class="normal">674</span>
+<span class="normal">675</span>
+<span class="normal">676</span>
+<span class="normal">677</span>
+<span class="normal">678</span>
+<span class="normal">679</span>
+<span class="normal">680</span>
+<span class="normal">681</span>
+<span class="normal">682</span>
+<span class="normal">683</span>
+<span class="normal">684</span>
+<span class="normal">685</span>
+<span class="normal">686</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">estimator</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
     <span class="n">lags</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">range</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -7867,6 +7885,7 @@ weight to certain dates.</li>
     <span class="bp">self</span><span class="o">.</span><span class="n">python_version</span>                       <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">" "</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">forecaster_id</span>                        <span class="o">=</span> <span class="n">forecaster_id</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_probabilistic_mode</span>                  <span class="o">=</span> <span class="s2">"binned"</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_allow_nan_predictions</span>               <span class="o">=</span> <span class="kc">False</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">lags</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lags_names</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_lag</span> <span class="o">=</span> <span class="n">initialize_lags</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">lags</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">lags_are_contiguous</span> <span class="o">=</span> <span class="p">(</span>
@@ -9427,7 +9446,10 @@ across series for each variable.</li>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1762</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1759</span>
+<span class="normal">1760</span>
+<span class="normal">1761</span>
+<span class="normal">1762</span>
 <span class="normal">1763</span>
 <span class="normal">1764</span>
 <span class="normal">1765</span>
@@ -9497,10 +9519,7 @@ across series for each variable.</li>
 <span class="normal">1829</span>
 <span class="normal">1830</span>
 <span class="normal">1831</span>
-<span class="normal">1832</span>
-<span class="normal">1833</span>
-<span class="normal">1834</span>
-<span class="normal">1835</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@manage_warnings</span>
+<span class="normal">1832</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@manage_warnings</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">create_train_X_y</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
@@ -9670,25 +9689,7 @@ types of weights.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2171</span>
-<span class="normal">2172</span>
-<span class="normal">2173</span>
-<span class="normal">2174</span>
-<span class="normal">2175</span>
-<span class="normal">2176</span>
-<span class="normal">2177</span>
-<span class="normal">2178</span>
-<span class="normal">2179</span>
-<span class="normal">2180</span>
-<span class="normal">2181</span>
-<span class="normal">2182</span>
-<span class="normal">2183</span>
-<span class="normal">2184</span>
-<span class="normal">2185</span>
-<span class="normal">2186</span>
-<span class="normal">2187</span>
-<span class="normal">2188</span>
-<span class="normal">2189</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2189</span>
 <span class="normal">2190</span>
 <span class="normal">2191</span>
 <span class="normal">2192</span>
@@ -9791,7 +9792,25 @@ types of weights.</p>
 <span class="normal">2289</span>
 <span class="normal">2290</span>
 <span class="normal">2291</span>
-<span class="normal">2292</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_sample_weights</span><span class="p">(</span>
+<span class="normal">2292</span>
+<span class="normal">2293</span>
+<span class="normal">2294</span>
+<span class="normal">2295</span>
+<span class="normal">2296</span>
+<span class="normal">2297</span>
+<span class="normal">2298</span>
+<span class="normal">2299</span>
+<span class="normal">2300</span>
+<span class="normal">2301</span>
+<span class="normal">2302</span>
+<span class="normal">2303</span>
+<span class="normal">2304</span>
+<span class="normal">2305</span>
+<span class="normal">2306</span>
+<span class="normal">2307</span>
+<span class="normal">2308</span>
+<span class="normal">2309</span>
+<span class="normal">2310</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_sample_weights</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">series_names_in_</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
     <span class="n">X_train</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
@@ -10128,25 +10147,7 @@ cells that were NaN before training, so a step that fills them in place
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2294</span>
-<span class="normal">2295</span>
-<span class="normal">2296</span>
-<span class="normal">2297</span>
-<span class="normal">2298</span>
-<span class="normal">2299</span>
-<span class="normal">2300</span>
-<span class="normal">2301</span>
-<span class="normal">2302</span>
-<span class="normal">2303</span>
-<span class="normal">2304</span>
-<span class="normal">2305</span>
-<span class="normal">2306</span>
-<span class="normal">2307</span>
-<span class="normal">2308</span>
-<span class="normal">2309</span>
-<span class="normal">2310</span>
-<span class="normal">2311</span>
-<span class="normal">2312</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2312</span>
 <span class="normal">2313</span>
 <span class="normal">2314</span>
 <span class="normal">2315</span>
@@ -10373,7 +10374,25 @@ cells that were NaN before training, so a step that fills them in place
 <span class="normal">2536</span>
 <span class="normal">2537</span>
 <span class="normal">2538</span>
-<span class="normal">2539</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@manage_warnings</span>
+<span class="normal">2539</span>
+<span class="normal">2540</span>
+<span class="normal">2541</span>
+<span class="normal">2542</span>
+<span class="normal">2543</span>
+<span class="normal">2544</span>
+<span class="normal">2545</span>
+<span class="normal">2546</span>
+<span class="normal">2547</span>
+<span class="normal">2548</span>
+<span class="normal">2549</span>
+<span class="normal">2550</span>
+<span class="normal">2551</span>
+<span class="normal">2552</span>
+<span class="normal">2553</span>
+<span class="normal">2554</span>
+<span class="normal">2555</span>
+<span class="normal">2556</span>
+<span class="normal">2557</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@manage_warnings</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
@@ -10799,86 +10818,7 @@ index.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3288</span>
-<span class="normal">3289</span>
-<span class="normal">3290</span>
-<span class="normal">3291</span>
-<span class="normal">3292</span>
-<span class="normal">3293</span>
-<span class="normal">3294</span>
-<span class="normal">3295</span>
-<span class="normal">3296</span>
-<span class="normal">3297</span>
-<span class="normal">3298</span>
-<span class="normal">3299</span>
-<span class="normal">3300</span>
-<span class="normal">3301</span>
-<span class="normal">3302</span>
-<span class="normal">3303</span>
-<span class="normal">3304</span>
-<span class="normal">3305</span>
-<span class="normal">3306</span>
-<span class="normal">3307</span>
-<span class="normal">3308</span>
-<span class="normal">3309</span>
-<span class="normal">3310</span>
-<span class="normal">3311</span>
-<span class="normal">3312</span>
-<span class="normal">3313</span>
-<span class="normal">3314</span>
-<span class="normal">3315</span>
-<span class="normal">3316</span>
-<span class="normal">3317</span>
-<span class="normal">3318</span>
-<span class="normal">3319</span>
-<span class="normal">3320</span>
-<span class="normal">3321</span>
-<span class="normal">3322</span>
-<span class="normal">3323</span>
-<span class="normal">3324</span>
-<span class="normal">3325</span>
-<span class="normal">3326</span>
-<span class="normal">3327</span>
-<span class="normal">3328</span>
-<span class="normal">3329</span>
-<span class="normal">3330</span>
-<span class="normal">3331</span>
-<span class="normal">3332</span>
-<span class="normal">3333</span>
-<span class="normal">3334</span>
-<span class="normal">3335</span>
-<span class="normal">3336</span>
-<span class="normal">3337</span>
-<span class="normal">3338</span>
-<span class="normal">3339</span>
-<span class="normal">3340</span>
-<span class="normal">3341</span>
-<span class="normal">3342</span>
-<span class="normal">3343</span>
-<span class="normal">3344</span>
-<span class="normal">3345</span>
-<span class="normal">3346</span>
-<span class="normal">3347</span>
-<span class="normal">3348</span>
-<span class="normal">3349</span>
-<span class="normal">3350</span>
-<span class="normal">3351</span>
-<span class="normal">3352</span>
-<span class="normal">3353</span>
-<span class="normal">3354</span>
-<span class="normal">3355</span>
-<span class="normal">3356</span>
-<span class="normal">3357</span>
-<span class="normal">3358</span>
-<span class="normal">3359</span>
-<span class="normal">3360</span>
-<span class="normal">3361</span>
-<span class="normal">3362</span>
-<span class="normal">3363</span>
-<span class="normal">3364</span>
-<span class="normal">3365</span>
-<span class="normal">3366</span>
-<span class="normal">3367</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3367</span>
 <span class="normal">3368</span>
 <span class="normal">3369</span>
 <span class="normal">3370</span>
@@ -10980,7 +10920,87 @@ index.</p>
 <span class="normal">3466</span>
 <span class="normal">3467</span>
 <span class="normal">3468</span>
-<span class="normal">3469</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@manage_warnings</span>
+<span class="normal">3469</span>
+<span class="normal">3470</span>
+<span class="normal">3471</span>
+<span class="normal">3472</span>
+<span class="normal">3473</span>
+<span class="normal">3474</span>
+<span class="normal">3475</span>
+<span class="normal">3476</span>
+<span class="normal">3477</span>
+<span class="normal">3478</span>
+<span class="normal">3479</span>
+<span class="normal">3480</span>
+<span class="normal">3481</span>
+<span class="normal">3482</span>
+<span class="normal">3483</span>
+<span class="normal">3484</span>
+<span class="normal">3485</span>
+<span class="normal">3486</span>
+<span class="normal">3487</span>
+<span class="normal">3488</span>
+<span class="normal">3489</span>
+<span class="normal">3490</span>
+<span class="normal">3491</span>
+<span class="normal">3492</span>
+<span class="normal">3493</span>
+<span class="normal">3494</span>
+<span class="normal">3495</span>
+<span class="normal">3496</span>
+<span class="normal">3497</span>
+<span class="normal">3498</span>
+<span class="normal">3499</span>
+<span class="normal">3500</span>
+<span class="normal">3501</span>
+<span class="normal">3502</span>
+<span class="normal">3503</span>
+<span class="normal">3504</span>
+<span class="normal">3505</span>
+<span class="normal">3506</span>
+<span class="normal">3507</span>
+<span class="normal">3508</span>
+<span class="normal">3509</span>
+<span class="normal">3510</span>
+<span class="normal">3511</span>
+<span class="normal">3512</span>
+<span class="normal">3513</span>
+<span class="normal">3514</span>
+<span class="normal">3515</span>
+<span class="normal">3516</span>
+<span class="normal">3517</span>
+<span class="normal">3518</span>
+<span class="normal">3519</span>
+<span class="normal">3520</span>
+<span class="normal">3521</span>
+<span class="normal">3522</span>
+<span class="normal">3523</span>
+<span class="normal">3524</span>
+<span class="normal">3525</span>
+<span class="normal">3526</span>
+<span class="normal">3527</span>
+<span class="normal">3528</span>
+<span class="normal">3529</span>
+<span class="normal">3530</span>
+<span class="normal">3531</span>
+<span class="normal">3532</span>
+<span class="normal">3533</span>
+<span class="normal">3534</span>
+<span class="normal">3535</span>
+<span class="normal">3536</span>
+<span class="normal">3537</span>
+<span class="normal">3538</span>
+<span class="normal">3539</span>
+<span class="normal">3540</span>
+<span class="normal">3541</span>
+<span class="normal">3542</span>
+<span class="normal">3543</span>
+<span class="normal">3544</span>
+<span class="normal">3545</span>
+<span class="normal">3546</span>
+<span class="normal">3547</span>
+<span class="normal">3548</span>
+<span class="normal">3549</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@manage_warnings</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">create_predict_X</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -11056,7 +11076,8 @@ index.</p>
                           <span class="n">levels</span>           <span class="o">=</span> <span class="n">levels</span><span class="p">,</span>
                           <span class="n">last_window</span>      <span class="o">=</span> <span class="n">last_window</span><span class="p">,</span>
                           <span class="n">exog_values_dict</span> <span class="o">=</span> <span class="n">exog_values_dict</span><span class="p">,</span>
-                          <span class="n">calendar_values</span>  <span class="o">=</span> <span class="n">calendar_values</span>
+                          <span class="n">calendar_values</span>  <span class="o">=</span> <span class="n">calendar_values</span><span class="p">,</span>
+                          <span class="n">prediction_index</span> <span class="o">=</span> <span class="n">prediction_index</span>
                       <span class="p">)</span>
 
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lags</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -11339,87 +11360,7 @@ and <code>pred</code>.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3471</span>
-<span class="normal">3472</span>
-<span class="normal">3473</span>
-<span class="normal">3474</span>
-<span class="normal">3475</span>
-<span class="normal">3476</span>
-<span class="normal">3477</span>
-<span class="normal">3478</span>
-<span class="normal">3479</span>
-<span class="normal">3480</span>
-<span class="normal">3481</span>
-<span class="normal">3482</span>
-<span class="normal">3483</span>
-<span class="normal">3484</span>
-<span class="normal">3485</span>
-<span class="normal">3486</span>
-<span class="normal">3487</span>
-<span class="normal">3488</span>
-<span class="normal">3489</span>
-<span class="normal">3490</span>
-<span class="normal">3491</span>
-<span class="normal">3492</span>
-<span class="normal">3493</span>
-<span class="normal">3494</span>
-<span class="normal">3495</span>
-<span class="normal">3496</span>
-<span class="normal">3497</span>
-<span class="normal">3498</span>
-<span class="normal">3499</span>
-<span class="normal">3500</span>
-<span class="normal">3501</span>
-<span class="normal">3502</span>
-<span class="normal">3503</span>
-<span class="normal">3504</span>
-<span class="normal">3505</span>
-<span class="normal">3506</span>
-<span class="normal">3507</span>
-<span class="normal">3508</span>
-<span class="normal">3509</span>
-<span class="normal">3510</span>
-<span class="normal">3511</span>
-<span class="normal">3512</span>
-<span class="normal">3513</span>
-<span class="normal">3514</span>
-<span class="normal">3515</span>
-<span class="normal">3516</span>
-<span class="normal">3517</span>
-<span class="normal">3518</span>
-<span class="normal">3519</span>
-<span class="normal">3520</span>
-<span class="normal">3521</span>
-<span class="normal">3522</span>
-<span class="normal">3523</span>
-<span class="normal">3524</span>
-<span class="normal">3525</span>
-<span class="normal">3526</span>
-<span class="normal">3527</span>
-<span class="normal">3528</span>
-<span class="normal">3529</span>
-<span class="normal">3530</span>
-<span class="normal">3531</span>
-<span class="normal">3532</span>
-<span class="normal">3533</span>
-<span class="normal">3534</span>
-<span class="normal">3535</span>
-<span class="normal">3536</span>
-<span class="normal">3537</span>
-<span class="normal">3538</span>
-<span class="normal">3539</span>
-<span class="normal">3540</span>
-<span class="normal">3541</span>
-<span class="normal">3542</span>
-<span class="normal">3543</span>
-<span class="normal">3544</span>
-<span class="normal">3545</span>
-<span class="normal">3546</span>
-<span class="normal">3547</span>
-<span class="normal">3548</span>
-<span class="normal">3549</span>
-<span class="normal">3550</span>
-<span class="normal">3551</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3551</span>
 <span class="normal">3552</span>
 <span class="normal">3553</span>
 <span class="normal">3554</span>
@@ -11435,7 +11376,88 @@ and <code>pred</code>.</p>
 <span class="normal">3564</span>
 <span class="normal">3565</span>
 <span class="normal">3566</span>
-<span class="normal">3567</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@manage_warnings</span>
+<span class="normal">3567</span>
+<span class="normal">3568</span>
+<span class="normal">3569</span>
+<span class="normal">3570</span>
+<span class="normal">3571</span>
+<span class="normal">3572</span>
+<span class="normal">3573</span>
+<span class="normal">3574</span>
+<span class="normal">3575</span>
+<span class="normal">3576</span>
+<span class="normal">3577</span>
+<span class="normal">3578</span>
+<span class="normal">3579</span>
+<span class="normal">3580</span>
+<span class="normal">3581</span>
+<span class="normal">3582</span>
+<span class="normal">3583</span>
+<span class="normal">3584</span>
+<span class="normal">3585</span>
+<span class="normal">3586</span>
+<span class="normal">3587</span>
+<span class="normal">3588</span>
+<span class="normal">3589</span>
+<span class="normal">3590</span>
+<span class="normal">3591</span>
+<span class="normal">3592</span>
+<span class="normal">3593</span>
+<span class="normal">3594</span>
+<span class="normal">3595</span>
+<span class="normal">3596</span>
+<span class="normal">3597</span>
+<span class="normal">3598</span>
+<span class="normal">3599</span>
+<span class="normal">3600</span>
+<span class="normal">3601</span>
+<span class="normal">3602</span>
+<span class="normal">3603</span>
+<span class="normal">3604</span>
+<span class="normal">3605</span>
+<span class="normal">3606</span>
+<span class="normal">3607</span>
+<span class="normal">3608</span>
+<span class="normal">3609</span>
+<span class="normal">3610</span>
+<span class="normal">3611</span>
+<span class="normal">3612</span>
+<span class="normal">3613</span>
+<span class="normal">3614</span>
+<span class="normal">3615</span>
+<span class="normal">3616</span>
+<span class="normal">3617</span>
+<span class="normal">3618</span>
+<span class="normal">3619</span>
+<span class="normal">3620</span>
+<span class="normal">3621</span>
+<span class="normal">3622</span>
+<span class="normal">3623</span>
+<span class="normal">3624</span>
+<span class="normal">3625</span>
+<span class="normal">3626</span>
+<span class="normal">3627</span>
+<span class="normal">3628</span>
+<span class="normal">3629</span>
+<span class="normal">3630</span>
+<span class="normal">3631</span>
+<span class="normal">3632</span>
+<span class="normal">3633</span>
+<span class="normal">3634</span>
+<span class="normal">3635</span>
+<span class="normal">3636</span>
+<span class="normal">3637</span>
+<span class="normal">3638</span>
+<span class="normal">3639</span>
+<span class="normal">3640</span>
+<span class="normal">3641</span>
+<span class="normal">3642</span>
+<span class="normal">3643</span>
+<span class="normal">3644</span>
+<span class="normal">3645</span>
+<span class="normal">3646</span>
+<span class="normal">3647</span>
+<span class="normal">3648</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@manage_warnings</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -11508,7 +11530,8 @@ and <code>pred</code>.</p>
                           <span class="n">levels</span>           <span class="o">=</span> <span class="n">levels</span><span class="p">,</span>
                           <span class="n">last_window</span>      <span class="o">=</span> <span class="n">last_window</span><span class="p">,</span>
                           <span class="n">exog_values_dict</span> <span class="o">=</span> <span class="n">exog_values_dict</span><span class="p">,</span>
-                          <span class="n">calendar_values</span>  <span class="o">=</span> <span class="n">calendar_values</span>
+                          <span class="n">calendar_values</span>  <span class="o">=</span> <span class="n">calendar_values</span><span class="p">,</span>
+                          <span class="n">prediction_index</span> <span class="o">=</span> <span class="n">prediction_index</span>
                       <span class="p">)</span>
 
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">level</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">levels</span><span class="p">):</span>
@@ -11774,88 +11797,7 @@ are <code>level</code>, <code>pred_boot_0</code>, <code>pred_boot_1</code>, ...,
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3569</span>
-<span class="normal">3570</span>
-<span class="normal">3571</span>
-<span class="normal">3572</span>
-<span class="normal">3573</span>
-<span class="normal">3574</span>
-<span class="normal">3575</span>
-<span class="normal">3576</span>
-<span class="normal">3577</span>
-<span class="normal">3578</span>
-<span class="normal">3579</span>
-<span class="normal">3580</span>
-<span class="normal">3581</span>
-<span class="normal">3582</span>
-<span class="normal">3583</span>
-<span class="normal">3584</span>
-<span class="normal">3585</span>
-<span class="normal">3586</span>
-<span class="normal">3587</span>
-<span class="normal">3588</span>
-<span class="normal">3589</span>
-<span class="normal">3590</span>
-<span class="normal">3591</span>
-<span class="normal">3592</span>
-<span class="normal">3593</span>
-<span class="normal">3594</span>
-<span class="normal">3595</span>
-<span class="normal">3596</span>
-<span class="normal">3597</span>
-<span class="normal">3598</span>
-<span class="normal">3599</span>
-<span class="normal">3600</span>
-<span class="normal">3601</span>
-<span class="normal">3602</span>
-<span class="normal">3603</span>
-<span class="normal">3604</span>
-<span class="normal">3605</span>
-<span class="normal">3606</span>
-<span class="normal">3607</span>
-<span class="normal">3608</span>
-<span class="normal">3609</span>
-<span class="normal">3610</span>
-<span class="normal">3611</span>
-<span class="normal">3612</span>
-<span class="normal">3613</span>
-<span class="normal">3614</span>
-<span class="normal">3615</span>
-<span class="normal">3616</span>
-<span class="normal">3617</span>
-<span class="normal">3618</span>
-<span class="normal">3619</span>
-<span class="normal">3620</span>
-<span class="normal">3621</span>
-<span class="normal">3622</span>
-<span class="normal">3623</span>
-<span class="normal">3624</span>
-<span class="normal">3625</span>
-<span class="normal">3626</span>
-<span class="normal">3627</span>
-<span class="normal">3628</span>
-<span class="normal">3629</span>
-<span class="normal">3630</span>
-<span class="normal">3631</span>
-<span class="normal">3632</span>
-<span class="normal">3633</span>
-<span class="normal">3634</span>
-<span class="normal">3635</span>
-<span class="normal">3636</span>
-<span class="normal">3637</span>
-<span class="normal">3638</span>
-<span class="normal">3639</span>
-<span class="normal">3640</span>
-<span class="normal">3641</span>
-<span class="normal">3642</span>
-<span class="normal">3643</span>
-<span class="normal">3644</span>
-<span class="normal">3645</span>
-<span class="normal">3646</span>
-<span class="normal">3647</span>
-<span class="normal">3648</span>
-<span class="normal">3649</span>
-<span class="normal">3650</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3650</span>
 <span class="normal">3651</span>
 <span class="normal">3652</span>
 <span class="normal">3653</span>
@@ -11955,7 +11897,89 @@ are <code>level</code>, <code>pred_boot_0</code>, <code>pred_boot_1</code>, ...,
 <span class="normal">3747</span>
 <span class="normal">3748</span>
 <span class="normal">3749</span>
-<span class="normal">3750</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@manage_warnings</span>
+<span class="normal">3750</span>
+<span class="normal">3751</span>
+<span class="normal">3752</span>
+<span class="normal">3753</span>
+<span class="normal">3754</span>
+<span class="normal">3755</span>
+<span class="normal">3756</span>
+<span class="normal">3757</span>
+<span class="normal">3758</span>
+<span class="normal">3759</span>
+<span class="normal">3760</span>
+<span class="normal">3761</span>
+<span class="normal">3762</span>
+<span class="normal">3763</span>
+<span class="normal">3764</span>
+<span class="normal">3765</span>
+<span class="normal">3766</span>
+<span class="normal">3767</span>
+<span class="normal">3768</span>
+<span class="normal">3769</span>
+<span class="normal">3770</span>
+<span class="normal">3771</span>
+<span class="normal">3772</span>
+<span class="normal">3773</span>
+<span class="normal">3774</span>
+<span class="normal">3775</span>
+<span class="normal">3776</span>
+<span class="normal">3777</span>
+<span class="normal">3778</span>
+<span class="normal">3779</span>
+<span class="normal">3780</span>
+<span class="normal">3781</span>
+<span class="normal">3782</span>
+<span class="normal">3783</span>
+<span class="normal">3784</span>
+<span class="normal">3785</span>
+<span class="normal">3786</span>
+<span class="normal">3787</span>
+<span class="normal">3788</span>
+<span class="normal">3789</span>
+<span class="normal">3790</span>
+<span class="normal">3791</span>
+<span class="normal">3792</span>
+<span class="normal">3793</span>
+<span class="normal">3794</span>
+<span class="normal">3795</span>
+<span class="normal">3796</span>
+<span class="normal">3797</span>
+<span class="normal">3798</span>
+<span class="normal">3799</span>
+<span class="normal">3800</span>
+<span class="normal">3801</span>
+<span class="normal">3802</span>
+<span class="normal">3803</span>
+<span class="normal">3804</span>
+<span class="normal">3805</span>
+<span class="normal">3806</span>
+<span class="normal">3807</span>
+<span class="normal">3808</span>
+<span class="normal">3809</span>
+<span class="normal">3810</span>
+<span class="normal">3811</span>
+<span class="normal">3812</span>
+<span class="normal">3813</span>
+<span class="normal">3814</span>
+<span class="normal">3815</span>
+<span class="normal">3816</span>
+<span class="normal">3817</span>
+<span class="normal">3818</span>
+<span class="normal">3819</span>
+<span class="normal">3820</span>
+<span class="normal">3821</span>
+<span class="normal">3822</span>
+<span class="normal">3823</span>
+<span class="normal">3824</span>
+<span class="normal">3825</span>
+<span class="normal">3826</span>
+<span class="normal">3827</span>
+<span class="normal">3828</span>
+<span class="normal">3829</span>
+<span class="normal">3830</span>
+<span class="normal">3831</span>
+<span class="normal">3832</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@manage_warnings</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">predict_bootstrapping</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -12107,6 +12131,7 @@ are <code>level</code>, <code>pred_boot_0</code>, <code>pred_boot_1</code>, ...,
             <span class="n">use_binned_residuals</span> <span class="o">=</span> <span class="n">use_binned_residuals</span><span class="p">,</span>
             <span class="n">exog_values_dict</span>     <span class="o">=</span> <span class="n">exog_values_dict</span><span class="p">,</span>
             <span class="n">calendar_values</span>      <span class="o">=</span> <span class="n">calendar_values</span><span class="p">,</span>
+            <span class="n">prediction_index</span>     <span class="o">=</span> <span class="n">prediction_index</span>
         <span class="p">)</span>
 
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">level</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">levels</span><span class="p">):</span>
@@ -12433,90 +12458,7 @@ bounds of the estimated interval. The columns are <code>level</code>, <code>pred
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3921</span>
-<span class="normal">3922</span>
-<span class="normal">3923</span>
-<span class="normal">3924</span>
-<span class="normal">3925</span>
-<span class="normal">3926</span>
-<span class="normal">3927</span>
-<span class="normal">3928</span>
-<span class="normal">3929</span>
-<span class="normal">3930</span>
-<span class="normal">3931</span>
-<span class="normal">3932</span>
-<span class="normal">3933</span>
-<span class="normal">3934</span>
-<span class="normal">3935</span>
-<span class="normal">3936</span>
-<span class="normal">3937</span>
-<span class="normal">3938</span>
-<span class="normal">3939</span>
-<span class="normal">3940</span>
-<span class="normal">3941</span>
-<span class="normal">3942</span>
-<span class="normal">3943</span>
-<span class="normal">3944</span>
-<span class="normal">3945</span>
-<span class="normal">3946</span>
-<span class="normal">3947</span>
-<span class="normal">3948</span>
-<span class="normal">3949</span>
-<span class="normal">3950</span>
-<span class="normal">3951</span>
-<span class="normal">3952</span>
-<span class="normal">3953</span>
-<span class="normal">3954</span>
-<span class="normal">3955</span>
-<span class="normal">3956</span>
-<span class="normal">3957</span>
-<span class="normal">3958</span>
-<span class="normal">3959</span>
-<span class="normal">3960</span>
-<span class="normal">3961</span>
-<span class="normal">3962</span>
-<span class="normal">3963</span>
-<span class="normal">3964</span>
-<span class="normal">3965</span>
-<span class="normal">3966</span>
-<span class="normal">3967</span>
-<span class="normal">3968</span>
-<span class="normal">3969</span>
-<span class="normal">3970</span>
-<span class="normal">3971</span>
-<span class="normal">3972</span>
-<span class="normal">3973</span>
-<span class="normal">3974</span>
-<span class="normal">3975</span>
-<span class="normal">3976</span>
-<span class="normal">3977</span>
-<span class="normal">3978</span>
-<span class="normal">3979</span>
-<span class="normal">3980</span>
-<span class="normal">3981</span>
-<span class="normal">3982</span>
-<span class="normal">3983</span>
-<span class="normal">3984</span>
-<span class="normal">3985</span>
-<span class="normal">3986</span>
-<span class="normal">3987</span>
-<span class="normal">3988</span>
-<span class="normal">3989</span>
-<span class="normal">3990</span>
-<span class="normal">3991</span>
-<span class="normal">3992</span>
-<span class="normal">3993</span>
-<span class="normal">3994</span>
-<span class="normal">3995</span>
-<span class="normal">3996</span>
-<span class="normal">3997</span>
-<span class="normal">3998</span>
-<span class="normal">3999</span>
-<span class="normal">4000</span>
-<span class="normal">4001</span>
-<span class="normal">4002</span>
-<span class="normal">4003</span>
-<span class="normal">4004</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">4004</span>
 <span class="normal">4005</span>
 <span class="normal">4006</span>
 <span class="normal">4007</span>
@@ -12588,7 +12530,90 @@ bounds of the estimated interval. The columns are <code>level</code>, <code>pred
 <span class="normal">4073</span>
 <span class="normal">4074</span>
 <span class="normal">4075</span>
-<span class="normal">4076</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@manage_warnings</span>
+<span class="normal">4076</span>
+<span class="normal">4077</span>
+<span class="normal">4078</span>
+<span class="normal">4079</span>
+<span class="normal">4080</span>
+<span class="normal">4081</span>
+<span class="normal">4082</span>
+<span class="normal">4083</span>
+<span class="normal">4084</span>
+<span class="normal">4085</span>
+<span class="normal">4086</span>
+<span class="normal">4087</span>
+<span class="normal">4088</span>
+<span class="normal">4089</span>
+<span class="normal">4090</span>
+<span class="normal">4091</span>
+<span class="normal">4092</span>
+<span class="normal">4093</span>
+<span class="normal">4094</span>
+<span class="normal">4095</span>
+<span class="normal">4096</span>
+<span class="normal">4097</span>
+<span class="normal">4098</span>
+<span class="normal">4099</span>
+<span class="normal">4100</span>
+<span class="normal">4101</span>
+<span class="normal">4102</span>
+<span class="normal">4103</span>
+<span class="normal">4104</span>
+<span class="normal">4105</span>
+<span class="normal">4106</span>
+<span class="normal">4107</span>
+<span class="normal">4108</span>
+<span class="normal">4109</span>
+<span class="normal">4110</span>
+<span class="normal">4111</span>
+<span class="normal">4112</span>
+<span class="normal">4113</span>
+<span class="normal">4114</span>
+<span class="normal">4115</span>
+<span class="normal">4116</span>
+<span class="normal">4117</span>
+<span class="normal">4118</span>
+<span class="normal">4119</span>
+<span class="normal">4120</span>
+<span class="normal">4121</span>
+<span class="normal">4122</span>
+<span class="normal">4123</span>
+<span class="normal">4124</span>
+<span class="normal">4125</span>
+<span class="normal">4126</span>
+<span class="normal">4127</span>
+<span class="normal">4128</span>
+<span class="normal">4129</span>
+<span class="normal">4130</span>
+<span class="normal">4131</span>
+<span class="normal">4132</span>
+<span class="normal">4133</span>
+<span class="normal">4134</span>
+<span class="normal">4135</span>
+<span class="normal">4136</span>
+<span class="normal">4137</span>
+<span class="normal">4138</span>
+<span class="normal">4139</span>
+<span class="normal">4140</span>
+<span class="normal">4141</span>
+<span class="normal">4142</span>
+<span class="normal">4143</span>
+<span class="normal">4144</span>
+<span class="normal">4145</span>
+<span class="normal">4146</span>
+<span class="normal">4147</span>
+<span class="normal">4148</span>
+<span class="normal">4149</span>
+<span class="normal">4150</span>
+<span class="normal">4151</span>
+<span class="normal">4152</span>
+<span class="normal">4153</span>
+<span class="normal">4154</span>
+<span class="normal">4155</span>
+<span class="normal">4156</span>
+<span class="normal">4157</span>
+<span class="normal">4158</span>
+<span class="normal">4159</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@manage_warnings</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">predict_interval</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -13003,90 +13028,7 @@ For example, if <code>quantiles = [0.05, 0.5, 0.95]</code>, the columns are
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">4078</span>
-<span class="normal">4079</span>
-<span class="normal">4080</span>
-<span class="normal">4081</span>
-<span class="normal">4082</span>
-<span class="normal">4083</span>
-<span class="normal">4084</span>
-<span class="normal">4085</span>
-<span class="normal">4086</span>
-<span class="normal">4087</span>
-<span class="normal">4088</span>
-<span class="normal">4089</span>
-<span class="normal">4090</span>
-<span class="normal">4091</span>
-<span class="normal">4092</span>
-<span class="normal">4093</span>
-<span class="normal">4094</span>
-<span class="normal">4095</span>
-<span class="normal">4096</span>
-<span class="normal">4097</span>
-<span class="normal">4098</span>
-<span class="normal">4099</span>
-<span class="normal">4100</span>
-<span class="normal">4101</span>
-<span class="normal">4102</span>
-<span class="normal">4103</span>
-<span class="normal">4104</span>
-<span class="normal">4105</span>
-<span class="normal">4106</span>
-<span class="normal">4107</span>
-<span class="normal">4108</span>
-<span class="normal">4109</span>
-<span class="normal">4110</span>
-<span class="normal">4111</span>
-<span class="normal">4112</span>
-<span class="normal">4113</span>
-<span class="normal">4114</span>
-<span class="normal">4115</span>
-<span class="normal">4116</span>
-<span class="normal">4117</span>
-<span class="normal">4118</span>
-<span class="normal">4119</span>
-<span class="normal">4120</span>
-<span class="normal">4121</span>
-<span class="normal">4122</span>
-<span class="normal">4123</span>
-<span class="normal">4124</span>
-<span class="normal">4125</span>
-<span class="normal">4126</span>
-<span class="normal">4127</span>
-<span class="normal">4128</span>
-<span class="normal">4129</span>
-<span class="normal">4130</span>
-<span class="normal">4131</span>
-<span class="normal">4132</span>
-<span class="normal">4133</span>
-<span class="normal">4134</span>
-<span class="normal">4135</span>
-<span class="normal">4136</span>
-<span class="normal">4137</span>
-<span class="normal">4138</span>
-<span class="normal">4139</span>
-<span class="normal">4140</span>
-<span class="normal">4141</span>
-<span class="normal">4142</span>
-<span class="normal">4143</span>
-<span class="normal">4144</span>
-<span class="normal">4145</span>
-<span class="normal">4146</span>
-<span class="normal">4147</span>
-<span class="normal">4148</span>
-<span class="normal">4149</span>
-<span class="normal">4150</span>
-<span class="normal">4151</span>
-<span class="normal">4152</span>
-<span class="normal">4153</span>
-<span class="normal">4154</span>
-<span class="normal">4155</span>
-<span class="normal">4156</span>
-<span class="normal">4157</span>
-<span class="normal">4158</span>
-<span class="normal">4159</span>
-<span class="normal">4160</span>
-<span class="normal">4161</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">4161</span>
 <span class="normal">4162</span>
 <span class="normal">4163</span>
 <span class="normal">4164</span>
@@ -13095,7 +13037,90 @@ For example, if <code>quantiles = [0.05, 0.5, 0.95]</code>, the columns are
 <span class="normal">4167</span>
 <span class="normal">4168</span>
 <span class="normal">4169</span>
-<span class="normal">4170</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@manage_warnings</span>
+<span class="normal">4170</span>
+<span class="normal">4171</span>
+<span class="normal">4172</span>
+<span class="normal">4173</span>
+<span class="normal">4174</span>
+<span class="normal">4175</span>
+<span class="normal">4176</span>
+<span class="normal">4177</span>
+<span class="normal">4178</span>
+<span class="normal">4179</span>
+<span class="normal">4180</span>
+<span class="normal">4181</span>
+<span class="normal">4182</span>
+<span class="normal">4183</span>
+<span class="normal">4184</span>
+<span class="normal">4185</span>
+<span class="normal">4186</span>
+<span class="normal">4187</span>
+<span class="normal">4188</span>
+<span class="normal">4189</span>
+<span class="normal">4190</span>
+<span class="normal">4191</span>
+<span class="normal">4192</span>
+<span class="normal">4193</span>
+<span class="normal">4194</span>
+<span class="normal">4195</span>
+<span class="normal">4196</span>
+<span class="normal">4197</span>
+<span class="normal">4198</span>
+<span class="normal">4199</span>
+<span class="normal">4200</span>
+<span class="normal">4201</span>
+<span class="normal">4202</span>
+<span class="normal">4203</span>
+<span class="normal">4204</span>
+<span class="normal">4205</span>
+<span class="normal">4206</span>
+<span class="normal">4207</span>
+<span class="normal">4208</span>
+<span class="normal">4209</span>
+<span class="normal">4210</span>
+<span class="normal">4211</span>
+<span class="normal">4212</span>
+<span class="normal">4213</span>
+<span class="normal">4214</span>
+<span class="normal">4215</span>
+<span class="normal">4216</span>
+<span class="normal">4217</span>
+<span class="normal">4218</span>
+<span class="normal">4219</span>
+<span class="normal">4220</span>
+<span class="normal">4221</span>
+<span class="normal">4222</span>
+<span class="normal">4223</span>
+<span class="normal">4224</span>
+<span class="normal">4225</span>
+<span class="normal">4226</span>
+<span class="normal">4227</span>
+<span class="normal">4228</span>
+<span class="normal">4229</span>
+<span class="normal">4230</span>
+<span class="normal">4231</span>
+<span class="normal">4232</span>
+<span class="normal">4233</span>
+<span class="normal">4234</span>
+<span class="normal">4235</span>
+<span class="normal">4236</span>
+<span class="normal">4237</span>
+<span class="normal">4238</span>
+<span class="normal">4239</span>
+<span class="normal">4240</span>
+<span class="normal">4241</span>
+<span class="normal">4242</span>
+<span class="normal">4243</span>
+<span class="normal">4244</span>
+<span class="normal">4245</span>
+<span class="normal">4246</span>
+<span class="normal">4247</span>
+<span class="normal">4248</span>
+<span class="normal">4249</span>
+<span class="normal">4250</span>
+<span class="normal">4251</span>
+<span class="normal">4252</span>
+<span class="normal">4253</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@manage_warnings</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">predict_quantiles</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -13447,90 +13472,7 @@ for each step. The columns are <code>level</code>, <code>param_0</code>, <code>p
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">4172</span>
-<span class="normal">4173</span>
-<span class="normal">4174</span>
-<span class="normal">4175</span>
-<span class="normal">4176</span>
-<span class="normal">4177</span>
-<span class="normal">4178</span>
-<span class="normal">4179</span>
-<span class="normal">4180</span>
-<span class="normal">4181</span>
-<span class="normal">4182</span>
-<span class="normal">4183</span>
-<span class="normal">4184</span>
-<span class="normal">4185</span>
-<span class="normal">4186</span>
-<span class="normal">4187</span>
-<span class="normal">4188</span>
-<span class="normal">4189</span>
-<span class="normal">4190</span>
-<span class="normal">4191</span>
-<span class="normal">4192</span>
-<span class="normal">4193</span>
-<span class="normal">4194</span>
-<span class="normal">4195</span>
-<span class="normal">4196</span>
-<span class="normal">4197</span>
-<span class="normal">4198</span>
-<span class="normal">4199</span>
-<span class="normal">4200</span>
-<span class="normal">4201</span>
-<span class="normal">4202</span>
-<span class="normal">4203</span>
-<span class="normal">4204</span>
-<span class="normal">4205</span>
-<span class="normal">4206</span>
-<span class="normal">4207</span>
-<span class="normal">4208</span>
-<span class="normal">4209</span>
-<span class="normal">4210</span>
-<span class="normal">4211</span>
-<span class="normal">4212</span>
-<span class="normal">4213</span>
-<span class="normal">4214</span>
-<span class="normal">4215</span>
-<span class="normal">4216</span>
-<span class="normal">4217</span>
-<span class="normal">4218</span>
-<span class="normal">4219</span>
-<span class="normal">4220</span>
-<span class="normal">4221</span>
-<span class="normal">4222</span>
-<span class="normal">4223</span>
-<span class="normal">4224</span>
-<span class="normal">4225</span>
-<span class="normal">4226</span>
-<span class="normal">4227</span>
-<span class="normal">4228</span>
-<span class="normal">4229</span>
-<span class="normal">4230</span>
-<span class="normal">4231</span>
-<span class="normal">4232</span>
-<span class="normal">4233</span>
-<span class="normal">4234</span>
-<span class="normal">4235</span>
-<span class="normal">4236</span>
-<span class="normal">4237</span>
-<span class="normal">4238</span>
-<span class="normal">4239</span>
-<span class="normal">4240</span>
-<span class="normal">4241</span>
-<span class="normal">4242</span>
-<span class="normal">4243</span>
-<span class="normal">4244</span>
-<span class="normal">4245</span>
-<span class="normal">4246</span>
-<span class="normal">4247</span>
-<span class="normal">4248</span>
-<span class="normal">4249</span>
-<span class="normal">4250</span>
-<span class="normal">4251</span>
-<span class="normal">4252</span>
-<span class="normal">4253</span>
-<span class="normal">4254</span>
-<span class="normal">4255</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">4255</span>
 <span class="normal">4256</span>
 <span class="normal">4257</span>
 <span class="normal">4258</span>
@@ -13549,7 +13491,90 @@ for each step. The columns are <code>level</code>, <code>param_0</code>, <code>p
 <span class="normal">4271</span>
 <span class="normal">4272</span>
 <span class="normal">4273</span>
-<span class="normal">4274</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@manage_warnings</span>
+<span class="normal">4274</span>
+<span class="normal">4275</span>
+<span class="normal">4276</span>
+<span class="normal">4277</span>
+<span class="normal">4278</span>
+<span class="normal">4279</span>
+<span class="normal">4280</span>
+<span class="normal">4281</span>
+<span class="normal">4282</span>
+<span class="normal">4283</span>
+<span class="normal">4284</span>
+<span class="normal">4285</span>
+<span class="normal">4286</span>
+<span class="normal">4287</span>
+<span class="normal">4288</span>
+<span class="normal">4289</span>
+<span class="normal">4290</span>
+<span class="normal">4291</span>
+<span class="normal">4292</span>
+<span class="normal">4293</span>
+<span class="normal">4294</span>
+<span class="normal">4295</span>
+<span class="normal">4296</span>
+<span class="normal">4297</span>
+<span class="normal">4298</span>
+<span class="normal">4299</span>
+<span class="normal">4300</span>
+<span class="normal">4301</span>
+<span class="normal">4302</span>
+<span class="normal">4303</span>
+<span class="normal">4304</span>
+<span class="normal">4305</span>
+<span class="normal">4306</span>
+<span class="normal">4307</span>
+<span class="normal">4308</span>
+<span class="normal">4309</span>
+<span class="normal">4310</span>
+<span class="normal">4311</span>
+<span class="normal">4312</span>
+<span class="normal">4313</span>
+<span class="normal">4314</span>
+<span class="normal">4315</span>
+<span class="normal">4316</span>
+<span class="normal">4317</span>
+<span class="normal">4318</span>
+<span class="normal">4319</span>
+<span class="normal">4320</span>
+<span class="normal">4321</span>
+<span class="normal">4322</span>
+<span class="normal">4323</span>
+<span class="normal">4324</span>
+<span class="normal">4325</span>
+<span class="normal">4326</span>
+<span class="normal">4327</span>
+<span class="normal">4328</span>
+<span class="normal">4329</span>
+<span class="normal">4330</span>
+<span class="normal">4331</span>
+<span class="normal">4332</span>
+<span class="normal">4333</span>
+<span class="normal">4334</span>
+<span class="normal">4335</span>
+<span class="normal">4336</span>
+<span class="normal">4337</span>
+<span class="normal">4338</span>
+<span class="normal">4339</span>
+<span class="normal">4340</span>
+<span class="normal">4341</span>
+<span class="normal">4342</span>
+<span class="normal">4343</span>
+<span class="normal">4344</span>
+<span class="normal">4345</span>
+<span class="normal">4346</span>
+<span class="normal">4347</span>
+<span class="normal">4348</span>
+<span class="normal">4349</span>
+<span class="normal">4350</span>
+<span class="normal">4351</span>
+<span class="normal">4352</span>
+<span class="normal">4353</span>
+<span class="normal">4354</span>
+<span class="normal">4355</span>
+<span class="normal">4356</span>
+<span class="normal">4357</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@manage_warnings</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">predict_dist</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -13732,29 +13757,29 @@ unfitted state. The <code>fit</code> method must be called before prediction.</p
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">4276</span>
-<span class="normal">4277</span>
-<span class="normal">4278</span>
-<span class="normal">4279</span>
-<span class="normal">4280</span>
-<span class="normal">4281</span>
-<span class="normal">4282</span>
-<span class="normal">4283</span>
-<span class="normal">4284</span>
-<span class="normal">4285</span>
-<span class="normal">4286</span>
-<span class="normal">4287</span>
-<span class="normal">4288</span>
-<span class="normal">4289</span>
-<span class="normal">4290</span>
-<span class="normal">4291</span>
-<span class="normal">4292</span>
-<span class="normal">4293</span>
-<span class="normal">4294</span>
-<span class="normal">4295</span>
-<span class="normal">4296</span>
-<span class="normal">4297</span>
-<span class="normal">4298</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_params</span><span class="p">(</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">4359</span>
+<span class="normal">4360</span>
+<span class="normal">4361</span>
+<span class="normal">4362</span>
+<span class="normal">4363</span>
+<span class="normal">4364</span>
+<span class="normal">4365</span>
+<span class="normal">4366</span>
+<span class="normal">4367</span>
+<span class="normal">4368</span>
+<span class="normal">4369</span>
+<span class="normal">4370</span>
+<span class="normal">4371</span>
+<span class="normal">4372</span>
+<span class="normal">4373</span>
+<span class="normal">4374</span>
+<span class="normal">4375</span>
+<span class="normal">4376</span>
+<span class="normal">4377</span>
+<span class="normal">4378</span>
+<span class="normal">4379</span>
+<span class="normal">4380</span>
+<span class="normal">4381</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_params</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -13862,55 +13887,55 @@ unfitted state. The <code>fit</code> method must be called before prediction.</p
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">4300</span>
-<span class="normal">4301</span>
-<span class="normal">4302</span>
-<span class="normal">4303</span>
-<span class="normal">4304</span>
-<span class="normal">4305</span>
-<span class="normal">4306</span>
-<span class="normal">4307</span>
-<span class="normal">4308</span>
-<span class="normal">4309</span>
-<span class="normal">4310</span>
-<span class="normal">4311</span>
-<span class="normal">4312</span>
-<span class="normal">4313</span>
-<span class="normal">4314</span>
-<span class="normal">4315</span>
-<span class="normal">4316</span>
-<span class="normal">4317</span>
-<span class="normal">4318</span>
-<span class="normal">4319</span>
-<span class="normal">4320</span>
-<span class="normal">4321</span>
-<span class="normal">4322</span>
-<span class="normal">4323</span>
-<span class="normal">4324</span>
-<span class="normal">4325</span>
-<span class="normal">4326</span>
-<span class="normal">4327</span>
-<span class="normal">4328</span>
-<span class="normal">4329</span>
-<span class="normal">4330</span>
-<span class="normal">4331</span>
-<span class="normal">4332</span>
-<span class="normal">4333</span>
-<span class="normal">4334</span>
-<span class="normal">4335</span>
-<span class="normal">4336</span>
-<span class="normal">4337</span>
-<span class="normal">4338</span>
-<span class="normal">4339</span>
-<span class="normal">4340</span>
-<span class="normal">4341</span>
-<span class="normal">4342</span>
-<span class="normal">4343</span>
-<span class="normal">4344</span>
-<span class="normal">4345</span>
-<span class="normal">4346</span>
-<span class="normal">4347</span>
-<span class="normal">4348</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_lags</span><span class="p">(</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">4383</span>
+<span class="normal">4384</span>
+<span class="normal">4385</span>
+<span class="normal">4386</span>
+<span class="normal">4387</span>
+<span class="normal">4388</span>
+<span class="normal">4389</span>
+<span class="normal">4390</span>
+<span class="normal">4391</span>
+<span class="normal">4392</span>
+<span class="normal">4393</span>
+<span class="normal">4394</span>
+<span class="normal">4395</span>
+<span class="normal">4396</span>
+<span class="normal">4397</span>
+<span class="normal">4398</span>
+<span class="normal">4399</span>
+<span class="normal">4400</span>
+<span class="normal">4401</span>
+<span class="normal">4402</span>
+<span class="normal">4403</span>
+<span class="normal">4404</span>
+<span class="normal">4405</span>
+<span class="normal">4406</span>
+<span class="normal">4407</span>
+<span class="normal">4408</span>
+<span class="normal">4409</span>
+<span class="normal">4410</span>
+<span class="normal">4411</span>
+<span class="normal">4412</span>
+<span class="normal">4413</span>
+<span class="normal">4414</span>
+<span class="normal">4415</span>
+<span class="normal">4416</span>
+<span class="normal">4417</span>
+<span class="normal">4418</span>
+<span class="normal">4419</span>
+<span class="normal">4420</span>
+<span class="normal">4421</span>
+<span class="normal">4422</span>
+<span class="normal">4423</span>
+<span class="normal">4424</span>
+<span class="normal">4425</span>
+<span class="normal">4426</span>
+<span class="normal">4427</span>
+<span class="normal">4428</span>
+<span class="normal">4429</span>
+<span class="normal">4430</span>
+<span class="normal">4431</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_lags</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">lags</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">range</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -14040,55 +14065,55 @@ are created from the original time series and are included as predictors.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">4350</span>
-<span class="normal">4351</span>
-<span class="normal">4352</span>
-<span class="normal">4353</span>
-<span class="normal">4354</span>
-<span class="normal">4355</span>
-<span class="normal">4356</span>
-<span class="normal">4357</span>
-<span class="normal">4358</span>
-<span class="normal">4359</span>
-<span class="normal">4360</span>
-<span class="normal">4361</span>
-<span class="normal">4362</span>
-<span class="normal">4363</span>
-<span class="normal">4364</span>
-<span class="normal">4365</span>
-<span class="normal">4366</span>
-<span class="normal">4367</span>
-<span class="normal">4368</span>
-<span class="normal">4369</span>
-<span class="normal">4370</span>
-<span class="normal">4371</span>
-<span class="normal">4372</span>
-<span class="normal">4373</span>
-<span class="normal">4374</span>
-<span class="normal">4375</span>
-<span class="normal">4376</span>
-<span class="normal">4377</span>
-<span class="normal">4378</span>
-<span class="normal">4379</span>
-<span class="normal">4380</span>
-<span class="normal">4381</span>
-<span class="normal">4382</span>
-<span class="normal">4383</span>
-<span class="normal">4384</span>
-<span class="normal">4385</span>
-<span class="normal">4386</span>
-<span class="normal">4387</span>
-<span class="normal">4388</span>
-<span class="normal">4389</span>
-<span class="normal">4390</span>
-<span class="normal">4391</span>
-<span class="normal">4392</span>
-<span class="normal">4393</span>
-<span class="normal">4394</span>
-<span class="normal">4395</span>
-<span class="normal">4396</span>
-<span class="normal">4397</span>
-<span class="normal">4398</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_window_features</span><span class="p">(</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">4433</span>
+<span class="normal">4434</span>
+<span class="normal">4435</span>
+<span class="normal">4436</span>
+<span class="normal">4437</span>
+<span class="normal">4438</span>
+<span class="normal">4439</span>
+<span class="normal">4440</span>
+<span class="normal">4441</span>
+<span class="normal">4442</span>
+<span class="normal">4443</span>
+<span class="normal">4444</span>
+<span class="normal">4445</span>
+<span class="normal">4446</span>
+<span class="normal">4447</span>
+<span class="normal">4448</span>
+<span class="normal">4449</span>
+<span class="normal">4450</span>
+<span class="normal">4451</span>
+<span class="normal">4452</span>
+<span class="normal">4453</span>
+<span class="normal">4454</span>
+<span class="normal">4455</span>
+<span class="normal">4456</span>
+<span class="normal">4457</span>
+<span class="normal">4458</span>
+<span class="normal">4459</span>
+<span class="normal">4460</span>
+<span class="normal">4461</span>
+<span class="normal">4462</span>
+<span class="normal">4463</span>
+<span class="normal">4464</span>
+<span class="normal">4465</span>
+<span class="normal">4466</span>
+<span class="normal">4467</span>
+<span class="normal">4468</span>
+<span class="normal">4469</span>
+<span class="normal">4470</span>
+<span class="normal">4471</span>
+<span class="normal">4472</span>
+<span class="normal">4473</span>
+<span class="normal">4474</span>
+<span class="normal">4475</span>
+<span class="normal">4476</span>
+<span class="normal">4477</span>
+<span class="normal">4478</span>
+<span class="normal">4479</span>
+<span class="normal">4480</span>
+<span class="normal">4481</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_window_features</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">window_features</span><span class="p">:</span> <span class="nb">object</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -14216,26 +14241,26 @@ method of the estimator.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">4400</span>
-<span class="normal">4401</span>
-<span class="normal">4402</span>
-<span class="normal">4403</span>
-<span class="normal">4404</span>
-<span class="normal">4405</span>
-<span class="normal">4406</span>
-<span class="normal">4407</span>
-<span class="normal">4408</span>
-<span class="normal">4409</span>
-<span class="normal">4410</span>
-<span class="normal">4411</span>
-<span class="normal">4412</span>
-<span class="normal">4413</span>
-<span class="normal">4414</span>
-<span class="normal">4415</span>
-<span class="normal">4416</span>
-<span class="normal">4417</span>
-<span class="normal">4418</span>
-<span class="normal">4419</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_fit_kwargs</span><span class="p">(</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">4483</span>
+<span class="normal">4484</span>
+<span class="normal">4485</span>
+<span class="normal">4486</span>
+<span class="normal">4487</span>
+<span class="normal">4488</span>
+<span class="normal">4489</span>
+<span class="normal">4490</span>
+<span class="normal">4491</span>
+<span class="normal">4492</span>
+<span class="normal">4493</span>
+<span class="normal">4494</span>
+<span class="normal">4495</span>
+<span class="normal">4496</span>
+<span class="normal">4497</span>
+<span class="normal">4498</span>
+<span class="normal">4499</span>
+<span class="normal">4500</span>
+<span class="normal">4501</span>
+<span class="normal">4502</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_fit_kwargs</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">fit_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -14406,90 +14431,7 @@ information.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">4421</span>
-<span class="normal">4422</span>
-<span class="normal">4423</span>
-<span class="normal">4424</span>
-<span class="normal">4425</span>
-<span class="normal">4426</span>
-<span class="normal">4427</span>
-<span class="normal">4428</span>
-<span class="normal">4429</span>
-<span class="normal">4430</span>
-<span class="normal">4431</span>
-<span class="normal">4432</span>
-<span class="normal">4433</span>
-<span class="normal">4434</span>
-<span class="normal">4435</span>
-<span class="normal">4436</span>
-<span class="normal">4437</span>
-<span class="normal">4438</span>
-<span class="normal">4439</span>
-<span class="normal">4440</span>
-<span class="normal">4441</span>
-<span class="normal">4442</span>
-<span class="normal">4443</span>
-<span class="normal">4444</span>
-<span class="normal">4445</span>
-<span class="normal">4446</span>
-<span class="normal">4447</span>
-<span class="normal">4448</span>
-<span class="normal">4449</span>
-<span class="normal">4450</span>
-<span class="normal">4451</span>
-<span class="normal">4452</span>
-<span class="normal">4453</span>
-<span class="normal">4454</span>
-<span class="normal">4455</span>
-<span class="normal">4456</span>
-<span class="normal">4457</span>
-<span class="normal">4458</span>
-<span class="normal">4459</span>
-<span class="normal">4460</span>
-<span class="normal">4461</span>
-<span class="normal">4462</span>
-<span class="normal">4463</span>
-<span class="normal">4464</span>
-<span class="normal">4465</span>
-<span class="normal">4466</span>
-<span class="normal">4467</span>
-<span class="normal">4468</span>
-<span class="normal">4469</span>
-<span class="normal">4470</span>
-<span class="normal">4471</span>
-<span class="normal">4472</span>
-<span class="normal">4473</span>
-<span class="normal">4474</span>
-<span class="normal">4475</span>
-<span class="normal">4476</span>
-<span class="normal">4477</span>
-<span class="normal">4478</span>
-<span class="normal">4479</span>
-<span class="normal">4480</span>
-<span class="normal">4481</span>
-<span class="normal">4482</span>
-<span class="normal">4483</span>
-<span class="normal">4484</span>
-<span class="normal">4485</span>
-<span class="normal">4486</span>
-<span class="normal">4487</span>
-<span class="normal">4488</span>
-<span class="normal">4489</span>
-<span class="normal">4490</span>
-<span class="normal">4491</span>
-<span class="normal">4492</span>
-<span class="normal">4493</span>
-<span class="normal">4494</span>
-<span class="normal">4495</span>
-<span class="normal">4496</span>
-<span class="normal">4497</span>
-<span class="normal">4498</span>
-<span class="normal">4499</span>
-<span class="normal">4500</span>
-<span class="normal">4501</span>
-<span class="normal">4502</span>
-<span class="normal">4503</span>
-<span class="normal">4504</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">4504</span>
 <span class="normal">4505</span>
 <span class="normal">4506</span>
 <span class="normal">4507</span>
@@ -14523,7 +14465,102 @@ information.</p>
 <span class="normal">4535</span>
 <span class="normal">4536</span>
 <span class="normal">4537</span>
-<span class="normal">4538</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@manage_warnings</span>
+<span class="normal">4538</span>
+<span class="normal">4539</span>
+<span class="normal">4540</span>
+<span class="normal">4541</span>
+<span class="normal">4542</span>
+<span class="normal">4543</span>
+<span class="normal">4544</span>
+<span class="normal">4545</span>
+<span class="normal">4546</span>
+<span class="normal">4547</span>
+<span class="normal">4548</span>
+<span class="normal">4549</span>
+<span class="normal">4550</span>
+<span class="normal">4551</span>
+<span class="normal">4552</span>
+<span class="normal">4553</span>
+<span class="normal">4554</span>
+<span class="normal">4555</span>
+<span class="normal">4556</span>
+<span class="normal">4557</span>
+<span class="normal">4558</span>
+<span class="normal">4559</span>
+<span class="normal">4560</span>
+<span class="normal">4561</span>
+<span class="normal">4562</span>
+<span class="normal">4563</span>
+<span class="normal">4564</span>
+<span class="normal">4565</span>
+<span class="normal">4566</span>
+<span class="normal">4567</span>
+<span class="normal">4568</span>
+<span class="normal">4569</span>
+<span class="normal">4570</span>
+<span class="normal">4571</span>
+<span class="normal">4572</span>
+<span class="normal">4573</span>
+<span class="normal">4574</span>
+<span class="normal">4575</span>
+<span class="normal">4576</span>
+<span class="normal">4577</span>
+<span class="normal">4578</span>
+<span class="normal">4579</span>
+<span class="normal">4580</span>
+<span class="normal">4581</span>
+<span class="normal">4582</span>
+<span class="normal">4583</span>
+<span class="normal">4584</span>
+<span class="normal">4585</span>
+<span class="normal">4586</span>
+<span class="normal">4587</span>
+<span class="normal">4588</span>
+<span class="normal">4589</span>
+<span class="normal">4590</span>
+<span class="normal">4591</span>
+<span class="normal">4592</span>
+<span class="normal">4593</span>
+<span class="normal">4594</span>
+<span class="normal">4595</span>
+<span class="normal">4596</span>
+<span class="normal">4597</span>
+<span class="normal">4598</span>
+<span class="normal">4599</span>
+<span class="normal">4600</span>
+<span class="normal">4601</span>
+<span class="normal">4602</span>
+<span class="normal">4603</span>
+<span class="normal">4604</span>
+<span class="normal">4605</span>
+<span class="normal">4606</span>
+<span class="normal">4607</span>
+<span class="normal">4608</span>
+<span class="normal">4609</span>
+<span class="normal">4610</span>
+<span class="normal">4611</span>
+<span class="normal">4612</span>
+<span class="normal">4613</span>
+<span class="normal">4614</span>
+<span class="normal">4615</span>
+<span class="normal">4616</span>
+<span class="normal">4617</span>
+<span class="normal">4618</span>
+<span class="normal">4619</span>
+<span class="normal">4620</span>
+<span class="normal">4621</span>
+<span class="normal">4622</span>
+<span class="normal">4623</span>
+<span class="normal">4624</span>
+<span class="normal">4625</span>
+<span class="normal">4626</span>
+<span class="normal">4627</span>
+<span class="normal">4628</span>
+<span class="normal">4629</span>
+<span class="normal">4630</span>
+<span class="normal">4631</span>
+<span class="normal">4632</span>
+<span class="normal">4633</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@manage_warnings</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_in_sample_residuals</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
@@ -14620,6 +14657,18 @@ information.</p>
     <span class="bp">self</span><span class="o">.</span><span class="n">in_sample_residuals_</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">in_sample_residuals_by_bin_</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">y_train</span> <span class="o">=</span> <span class="n">y_train</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+
+    <span class="c1"># NOTE: Same cast as in `fit`, with the categorical features of the</span>
+    <span class="c1"># fitted estimator.</span>
+    <span class="n">cat_indices</span> <span class="o">=</span> <span class="n">_get_catboost_cat_feature_indices</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cat_indices</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">X_train_estimator</span> <span class="o">=</span> <span class="n">cast_catboost_categorical_columns_dataframe</span><span class="p">(</span>
+            <span class="n">X</span>             <span class="o">=</span> <span class="n">X_train_estimator</span><span class="p">,</span>
+            <span class="n">fit_kwargs</span>    <span class="o">=</span> <span class="p">{</span><span class="s1">'cat_features'</span><span class="p">:</span> <span class="n">cat_indices</span><span class="p">},</span>
+            <span class="n">estimator</span>     <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="p">,</span>
+            <span class="n">feature_names</span> <span class="o">=</span> <span class="n">X_train_features_names_out_</span><span class="p">,</span>
+        <span class="p">)</span>
+
     <span class="n">y_pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_train_estimator</span><span class="p">)</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoding</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">level_slices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_level_row_slices</span><span class="p">(</span><span class="n">X_train</span><span class="o">=</span><span class="n">X_train</span><span class="p">)</span>
@@ -14792,102 +14841,7 @@ key '_unknown_level', binned with the binner fitted for that key.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">4540</span>
-<span class="normal">4541</span>
-<span class="normal">4542</span>
-<span class="normal">4543</span>
-<span class="normal">4544</span>
-<span class="normal">4545</span>
-<span class="normal">4546</span>
-<span class="normal">4547</span>
-<span class="normal">4548</span>
-<span class="normal">4549</span>
-<span class="normal">4550</span>
-<span class="normal">4551</span>
-<span class="normal">4552</span>
-<span class="normal">4553</span>
-<span class="normal">4554</span>
-<span class="normal">4555</span>
-<span class="normal">4556</span>
-<span class="normal">4557</span>
-<span class="normal">4558</span>
-<span class="normal">4559</span>
-<span class="normal">4560</span>
-<span class="normal">4561</span>
-<span class="normal">4562</span>
-<span class="normal">4563</span>
-<span class="normal">4564</span>
-<span class="normal">4565</span>
-<span class="normal">4566</span>
-<span class="normal">4567</span>
-<span class="normal">4568</span>
-<span class="normal">4569</span>
-<span class="normal">4570</span>
-<span class="normal">4571</span>
-<span class="normal">4572</span>
-<span class="normal">4573</span>
-<span class="normal">4574</span>
-<span class="normal">4575</span>
-<span class="normal">4576</span>
-<span class="normal">4577</span>
-<span class="normal">4578</span>
-<span class="normal">4579</span>
-<span class="normal">4580</span>
-<span class="normal">4581</span>
-<span class="normal">4582</span>
-<span class="normal">4583</span>
-<span class="normal">4584</span>
-<span class="normal">4585</span>
-<span class="normal">4586</span>
-<span class="normal">4587</span>
-<span class="normal">4588</span>
-<span class="normal">4589</span>
-<span class="normal">4590</span>
-<span class="normal">4591</span>
-<span class="normal">4592</span>
-<span class="normal">4593</span>
-<span class="normal">4594</span>
-<span class="normal">4595</span>
-<span class="normal">4596</span>
-<span class="normal">4597</span>
-<span class="normal">4598</span>
-<span class="normal">4599</span>
-<span class="normal">4600</span>
-<span class="normal">4601</span>
-<span class="normal">4602</span>
-<span class="normal">4603</span>
-<span class="normal">4604</span>
-<span class="normal">4605</span>
-<span class="normal">4606</span>
-<span class="normal">4607</span>
-<span class="normal">4608</span>
-<span class="normal">4609</span>
-<span class="normal">4610</span>
-<span class="normal">4611</span>
-<span class="normal">4612</span>
-<span class="normal">4613</span>
-<span class="normal">4614</span>
-<span class="normal">4615</span>
-<span class="normal">4616</span>
-<span class="normal">4617</span>
-<span class="normal">4618</span>
-<span class="normal">4619</span>
-<span class="normal">4620</span>
-<span class="normal">4621</span>
-<span class="normal">4622</span>
-<span class="normal">4623</span>
-<span class="normal">4624</span>
-<span class="normal">4625</span>
-<span class="normal">4626</span>
-<span class="normal">4627</span>
-<span class="normal">4628</span>
-<span class="normal">4629</span>
-<span class="normal">4630</span>
-<span class="normal">4631</span>
-<span class="normal">4632</span>
-<span class="normal">4633</span>
-<span class="normal">4634</span>
-<span class="normal">4635</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">4635</span>
 <span class="normal">4636</span>
 <span class="normal">4637</span>
 <span class="normal">4638</span>
@@ -14965,7 +14919,102 @@ key '_unknown_level', binned with the binner fitted for that key.</p>
 <span class="normal">4710</span>
 <span class="normal">4711</span>
 <span class="normal">4712</span>
-<span class="normal">4713</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_out_sample_residuals</span><span class="p">(</span>
+<span class="normal">4713</span>
+<span class="normal">4714</span>
+<span class="normal">4715</span>
+<span class="normal">4716</span>
+<span class="normal">4717</span>
+<span class="normal">4718</span>
+<span class="normal">4719</span>
+<span class="normal">4720</span>
+<span class="normal">4721</span>
+<span class="normal">4722</span>
+<span class="normal">4723</span>
+<span class="normal">4724</span>
+<span class="normal">4725</span>
+<span class="normal">4726</span>
+<span class="normal">4727</span>
+<span class="normal">4728</span>
+<span class="normal">4729</span>
+<span class="normal">4730</span>
+<span class="normal">4731</span>
+<span class="normal">4732</span>
+<span class="normal">4733</span>
+<span class="normal">4734</span>
+<span class="normal">4735</span>
+<span class="normal">4736</span>
+<span class="normal">4737</span>
+<span class="normal">4738</span>
+<span class="normal">4739</span>
+<span class="normal">4740</span>
+<span class="normal">4741</span>
+<span class="normal">4742</span>
+<span class="normal">4743</span>
+<span class="normal">4744</span>
+<span class="normal">4745</span>
+<span class="normal">4746</span>
+<span class="normal">4747</span>
+<span class="normal">4748</span>
+<span class="normal">4749</span>
+<span class="normal">4750</span>
+<span class="normal">4751</span>
+<span class="normal">4752</span>
+<span class="normal">4753</span>
+<span class="normal">4754</span>
+<span class="normal">4755</span>
+<span class="normal">4756</span>
+<span class="normal">4757</span>
+<span class="normal">4758</span>
+<span class="normal">4759</span>
+<span class="normal">4760</span>
+<span class="normal">4761</span>
+<span class="normal">4762</span>
+<span class="normal">4763</span>
+<span class="normal">4764</span>
+<span class="normal">4765</span>
+<span class="normal">4766</span>
+<span class="normal">4767</span>
+<span class="normal">4768</span>
+<span class="normal">4769</span>
+<span class="normal">4770</span>
+<span class="normal">4771</span>
+<span class="normal">4772</span>
+<span class="normal">4773</span>
+<span class="normal">4774</span>
+<span class="normal">4775</span>
+<span class="normal">4776</span>
+<span class="normal">4777</span>
+<span class="normal">4778</span>
+<span class="normal">4779</span>
+<span class="normal">4780</span>
+<span class="normal">4781</span>
+<span class="normal">4782</span>
+<span class="normal">4783</span>
+<span class="normal">4784</span>
+<span class="normal">4785</span>
+<span class="normal">4786</span>
+<span class="normal">4787</span>
+<span class="normal">4788</span>
+<span class="normal">4789</span>
+<span class="normal">4790</span>
+<span class="normal">4791</span>
+<span class="normal">4792</span>
+<span class="normal">4793</span>
+<span class="normal">4794</span>
+<span class="normal">4795</span>
+<span class="normal">4796</span>
+<span class="normal">4797</span>
+<span class="normal">4798</span>
+<span class="normal">4799</span>
+<span class="normal">4800</span>
+<span class="normal">4801</span>
+<span class="normal">4802</span>
+<span class="normal">4803</span>
+<span class="normal">4804</span>
+<span class="normal">4805</span>
+<span class="normal">4806</span>
+<span class="normal">4807</span>
+<span class="normal">4808</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_out_sample_residuals</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">y_true</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">],</span>
     <span class="n">y_pred</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">],</span>
@@ -15219,62 +15268,62 @@ importances in the attribute <code>feature_importances_</code> or <code>coef_</c
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/recursive/_forecaster_recursive_multiseries.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">4900</span>
-<span class="normal">4901</span>
-<span class="normal">4902</span>
-<span class="normal">4903</span>
-<span class="normal">4904</span>
-<span class="normal">4905</span>
-<span class="normal">4906</span>
-<span class="normal">4907</span>
-<span class="normal">4908</span>
-<span class="normal">4909</span>
-<span class="normal">4910</span>
-<span class="normal">4911</span>
-<span class="normal">4912</span>
-<span class="normal">4913</span>
-<span class="normal">4914</span>
-<span class="normal">4915</span>
-<span class="normal">4916</span>
-<span class="normal">4917</span>
-<span class="normal">4918</span>
-<span class="normal">4919</span>
-<span class="normal">4920</span>
-<span class="normal">4921</span>
-<span class="normal">4922</span>
-<span class="normal">4923</span>
-<span class="normal">4924</span>
-<span class="normal">4925</span>
-<span class="normal">4926</span>
-<span class="normal">4927</span>
-<span class="normal">4928</span>
-<span class="normal">4929</span>
-<span class="normal">4930</span>
-<span class="normal">4931</span>
-<span class="normal">4932</span>
-<span class="normal">4933</span>
-<span class="normal">4934</span>
-<span class="normal">4935</span>
-<span class="normal">4936</span>
-<span class="normal">4937</span>
-<span class="normal">4938</span>
-<span class="normal">4939</span>
-<span class="normal">4940</span>
-<span class="normal">4941</span>
-<span class="normal">4942</span>
-<span class="normal">4943</span>
-<span class="normal">4944</span>
-<span class="normal">4945</span>
-<span class="normal">4946</span>
-<span class="normal">4947</span>
-<span class="normal">4948</span>
-<span class="normal">4949</span>
-<span class="normal">4950</span>
-<span class="normal">4951</span>
-<span class="normal">4952</span>
-<span class="normal">4953</span>
-<span class="normal">4954</span>
-<span class="normal">4955</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_feature_importances</span><span class="p">(</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">4995</span>
+<span class="normal">4996</span>
+<span class="normal">4997</span>
+<span class="normal">4998</span>
+<span class="normal">4999</span>
+<span class="normal">5000</span>
+<span class="normal">5001</span>
+<span class="normal">5002</span>
+<span class="normal">5003</span>
+<span class="normal">5004</span>
+<span class="normal">5005</span>
+<span class="normal">5006</span>
+<span class="normal">5007</span>
+<span class="normal">5008</span>
+<span class="normal">5009</span>
+<span class="normal">5010</span>
+<span class="normal">5011</span>
+<span class="normal">5012</span>
+<span class="normal">5013</span>
+<span class="normal">5014</span>
+<span class="normal">5015</span>
+<span class="normal">5016</span>
+<span class="normal">5017</span>
+<span class="normal">5018</span>
+<span class="normal">5019</span>
+<span class="normal">5020</span>
+<span class="normal">5021</span>
+<span class="normal">5022</span>
+<span class="normal">5023</span>
+<span class="normal">5024</span>
+<span class="normal">5025</span>
+<span class="normal">5026</span>
+<span class="normal">5027</span>
+<span class="normal">5028</span>
+<span class="normal">5029</span>
+<span class="normal">5030</span>
+<span class="normal">5031</span>
+<span class="normal">5032</span>
+<span class="normal">5033</span>
+<span class="normal">5034</span>
+<span class="normal">5035</span>
+<span class="normal">5036</span>
+<span class="normal">5037</span>
+<span class="normal">5038</span>
+<span class="normal">5039</span>
+<span class="normal">5040</span>
+<span class="normal">5041</span>
+<span class="normal">5042</span>
+<span class="normal">5043</span>
+<span class="normal">5044</span>
+<span class="normal">5045</span>
+<span class="normal">5046</span>
+<span class="normal">5047</span>
+<span class="normal">5048</span>
+<span class="normal">5049</span>
+<span class="normal">5050</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_feature_importances</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">sort_importance</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>

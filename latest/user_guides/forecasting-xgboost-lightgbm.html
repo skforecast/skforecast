@@ -5961,6 +5961,9 @@ All of the gradient boosting libraries mentioned above (<b>XGBoost</b>, <b>Light
 <p>
 <b>XGBoost</b>, <b>LightGBM</b> and <b>CatBoost</b> can benefit from GPU acceleration, which can significantly speed up the training process. To learn more about how to enable GPU acceleration, please refer to the following link: <a href="https://skforecast.org/latest/user_guides/skforecast-in-gpu">Skforecast GPU acceleration</a>.
 </p>
+<p>
+These libraries use several threads by default, which can compete with the processes that skforecast starts in backtesting and hyperparameter search (<code>n_jobs</code> argument). The default <code>n_jobs='auto'</code> takes the threads of LightGBM into account. To choose <code>n_jobs</code> yourself, see <a href="https://skforecast.org/latest/faq/parallelization-skforecast.html">Parallelization in skforecast</a>.
+</p>
 </div>
 </div>
 </div>
@@ -6084,23 +6087,20 @@ data = fetch_dataset('h2o_exog')</div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">╭─────────────────────────────────── <span style="font-weight: bold">h2o_exog</span> ────────────────────────────────────╮
-│ <span style="font-weight: bold">Description:</span>                                                                    │
-│ Monthly expenditure ($AUD) on corticosteroid drugs that the Australian health   │
-│ system had between 1991 and 2008. Two additional variables (exog_1, exog_2) are │
-│ simulated.                                                                      │
-│                                                                                 │
-│ <span style="font-weight: bold">Source:</span>                                                                         │
-│ Hyndman R (2023). fpp3: Data for Forecasting: Principles and Practice (3rd      │
-│ Edition). http://pkg.robjhyndman.com/fpp3package/,                              │
-│ https://github.com/robjhyndman/fpp3package, http://OTexts.com/fpp3.             │
-│                                                                                 │
-│ <span style="font-weight: bold">URL:</span>                                                                            │
-│ https://raw.githubusercontent.com/skforecast/skforecast-                        │
-│ datasets/main/data/h2o_exog.csv                                                 │
-│                                                                                 │
-│ <span style="font-weight: bold">Shape:</span> 195 rows x 3 columns                                                     │
-╰─────────────────────────────────────────────────────────────────────────────────╯
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">╭─────────────────────────────────────────────────── <span style="font-weight: bold">h2o_exog</span> ────────────────────────────────────────────────────╮
+│ <span style="font-weight: bold">Description:</span>                                                                                                    │
+│ Monthly expenditure ($AUD) on corticosteroid drugs that the Australian health system had between 1991 and 2008. │
+│ Two additional variables (exog_1, exog_2) are simulated.                                                        │
+│                                                                                                                 │
+│ <span style="font-weight: bold">Source:</span>                                                                                                         │
+│ Hyndman R (2023). fpp3: Data for Forecasting: Principles and Practice (3rd Edition).                            │
+│ http://pkg.robjhyndman.com/fpp3package/, https://github.com/robjhyndman/fpp3package, http://OTexts.com/fpp3.    │
+│                                                                                                                 │
+│ <span style="font-weight: bold">URL:</span>                                                                                                            │
+│ https://raw.githubusercontent.com/skforecast/skforecast-datasets/main/data/h2o_exog.csv                         │
+│                                                                                                                 │
+│ <span style="font-weight: bold">Shape:</span> 195 rows x 3 columns                                                                                     │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 </pre>
 </div>
 </div>
@@ -6263,7 +6263,7 @@ forecaster_lgbm</div>
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[4]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <style>
-        .container-90b565f4ba454ea7a8edda472a697c2f {
+        .container-ea3ab5760bf046f1be42ff76bdab2d50 {
             font-family: 'Arial', sans-serif;
             font-size: 0.9em;
             color: #333333;
@@ -6274,7 +6274,7 @@ forecaster_lgbm</div>
             max-width: 600px;
             #margin: auto;
         }
-        .container-90b565f4ba454ea7a8edda472a697c2f h2 {
+        .container-ea3ab5760bf046f1be42ff76bdab2d50 h2 {
             font-size: 1.5em;
             color: #222222;
             border-bottom: 2px solid #ddd;
@@ -6282,11 +6282,11 @@ forecaster_lgbm</div>
             margin-bottom: 15px;
             margin-top: 5px;
         }
-        .container-90b565f4ba454ea7a8edda472a697c2f details {
+        .container-ea3ab5760bf046f1be42ff76bdab2d50 details {
             margin: 10px 0;
             border-color: #b3dbfd;
         }
-        .container-90b565f4ba454ea7a8edda472a697c2f summary {
+        .container-ea3ab5760bf046f1be42ff76bdab2d50 summary {
             font-weight: bold;
             font-size: 1.1em;
             color: #000000;
@@ -6296,38 +6296,38 @@ forecaster_lgbm</div>
             padding: 5px;
             border-radius: 5px;
         }
-        .container-90b565f4ba454ea7a8edda472a697c2f summary:hover {
+        .container-ea3ab5760bf046f1be42ff76bdab2d50 summary:hover {
             color: #000000;
             background-color: #e0e0e0;
         }
-        .container-90b565f4ba454ea7a8edda472a697c2f ul {
+        .container-ea3ab5760bf046f1be42ff76bdab2d50 ul {
             font-family: 'Courier New', monospace;
             list-style-type: none;
             padding-left: 20px;
             margin: 10px 0;
             line-height: normal;
         }
-        .container-90b565f4ba454ea7a8edda472a697c2f li {
+        .container-ea3ab5760bf046f1be42ff76bdab2d50 li {
             margin: 5px 0;
             font-family: 'Courier New', monospace;
         }
-        .container-90b565f4ba454ea7a8edda472a697c2f li strong {
+        .container-ea3ab5760bf046f1be42ff76bdab2d50 li strong {
             font-weight: bold;
             color: #444444;
         }
-        .container-90b565f4ba454ea7a8edda472a697c2f li::before {
+        .container-ea3ab5760bf046f1be42ff76bdab2d50 li::before {
             content: "- ";
             color: #666666;
         }
-        .container-90b565f4ba454ea7a8edda472a697c2f a {
+        .container-ea3ab5760bf046f1be42ff76bdab2d50 a {
             color: #001633;
             text-decoration: none;
         }
-        .container-90b565f4ba454ea7a8edda472a697c2f a:hover {
+        .container-ea3ab5760bf046f1be42ff76bdab2d50 a:hover {
             color: #359ccb; 
         }
     </style>
-<div class="container-90b565f4ba454ea7a8edda472a697c2f">
+<div class="container-ea3ab5760bf046f1be42ff76bdab2d50">
 <p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;">ForecasterRecursive</p>
 <details open="">
 <summary>General Information</summary>
@@ -6343,9 +6343,9 @@ forecaster_lgbm</div>
 <li><strong>Weight function included:</strong> False</li>
 <li><strong>Differentiation order:</strong> None</li>
 <li><strong>Drop NaN from series:</strong> False</li>
-<li><strong>Creation date:</strong> 2026-10-08 19:49:12</li>
-<li><strong>Last fit date:</strong> 2026-10-08 19:49:12</li>
-<li><strong>Skforecast version:</strong> 0.26.0</li>
+<li><strong>Creation date:</strong> 2026-11-11 13:31:06</li>
+<li><strong>Last fit date:</strong> 2026-11-11 13:31:06</li>
+<li><strong>Skforecast version:</strong> 0.27.0</li>
 <li><strong>Python version:</strong> 3.14.3</li>
 <li><strong>Forecaster id:</strong> None</li>
 </ul>
@@ -6382,9 +6382,9 @@ forecaster_lgbm</div>
                 </ul>
 </details>
 <p>
-<a href="https://skforecast.org/0.26.0/api/forecasterrecursive.html">📖 <strong>API Reference</strong></a>
+<a href="https://skforecast.org/0.27.0/api/forecasterrecursive.html">📖 <strong>API Reference</strong></a>
                   
-                <a href="https://skforecast.org/0.26.0/user_guides/autoregressive-forecaster.html">📝 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/0.27.0/user_guides/autoregressive-forecaster.html">📝 <strong>User Guide</strong></a>
 </p>
 </div>
 </div>
@@ -6639,7 +6639,7 @@ forecaster_xgb</div>
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[7]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <style>
-        .container-162bd7d3801f4879ae56186a8065cad9 {
+        .container-9d2bdb00699a4925b8f69276e49b5b9e {
             font-family: 'Arial', sans-serif;
             font-size: 0.9em;
             color: #333333;
@@ -6650,7 +6650,7 @@ forecaster_xgb</div>
             max-width: 600px;
             #margin: auto;
         }
-        .container-162bd7d3801f4879ae56186a8065cad9 h2 {
+        .container-9d2bdb00699a4925b8f69276e49b5b9e h2 {
             font-size: 1.5em;
             color: #222222;
             border-bottom: 2px solid #ddd;
@@ -6658,11 +6658,11 @@ forecaster_xgb</div>
             margin-bottom: 15px;
             margin-top: 5px;
         }
-        .container-162bd7d3801f4879ae56186a8065cad9 details {
+        .container-9d2bdb00699a4925b8f69276e49b5b9e details {
             margin: 10px 0;
             border-color: #b3dbfd;
         }
-        .container-162bd7d3801f4879ae56186a8065cad9 summary {
+        .container-9d2bdb00699a4925b8f69276e49b5b9e summary {
             font-weight: bold;
             font-size: 1.1em;
             color: #000000;
@@ -6672,38 +6672,38 @@ forecaster_xgb</div>
             padding: 5px;
             border-radius: 5px;
         }
-        .container-162bd7d3801f4879ae56186a8065cad9 summary:hover {
+        .container-9d2bdb00699a4925b8f69276e49b5b9e summary:hover {
             color: #000000;
             background-color: #e0e0e0;
         }
-        .container-162bd7d3801f4879ae56186a8065cad9 ul {
+        .container-9d2bdb00699a4925b8f69276e49b5b9e ul {
             font-family: 'Courier New', monospace;
             list-style-type: none;
             padding-left: 20px;
             margin: 10px 0;
             line-height: normal;
         }
-        .container-162bd7d3801f4879ae56186a8065cad9 li {
+        .container-9d2bdb00699a4925b8f69276e49b5b9e li {
             margin: 5px 0;
             font-family: 'Courier New', monospace;
         }
-        .container-162bd7d3801f4879ae56186a8065cad9 li strong {
+        .container-9d2bdb00699a4925b8f69276e49b5b9e li strong {
             font-weight: bold;
             color: #444444;
         }
-        .container-162bd7d3801f4879ae56186a8065cad9 li::before {
+        .container-9d2bdb00699a4925b8f69276e49b5b9e li::before {
             content: "- ";
             color: #666666;
         }
-        .container-162bd7d3801f4879ae56186a8065cad9 a {
+        .container-9d2bdb00699a4925b8f69276e49b5b9e a {
             color: #001633;
             text-decoration: none;
         }
-        .container-162bd7d3801f4879ae56186a8065cad9 a:hover {
+        .container-9d2bdb00699a4925b8f69276e49b5b9e a:hover {
             color: #359ccb; 
         }
     </style>
-<div class="container-162bd7d3801f4879ae56186a8065cad9">
+<div class="container-9d2bdb00699a4925b8f69276e49b5b9e">
 <p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;">ForecasterRecursive</p>
 <details open="">
 <summary>General Information</summary>
@@ -6719,9 +6719,9 @@ forecaster_xgb</div>
 <li><strong>Weight function included:</strong> False</li>
 <li><strong>Differentiation order:</strong> None</li>
 <li><strong>Drop NaN from series:</strong> False</li>
-<li><strong>Creation date:</strong> 2026-10-08 19:49:12</li>
-<li><strong>Last fit date:</strong> 2026-10-08 19:49:12</li>
-<li><strong>Skforecast version:</strong> 0.26.0</li>
+<li><strong>Creation date:</strong> 2026-11-11 13:31:06</li>
+<li><strong>Last fit date:</strong> 2026-11-11 13:31:06</li>
+<li><strong>Skforecast version:</strong> 0.27.0</li>
 <li><strong>Python version:</strong> 3.14.3</li>
 <li><strong>Forecaster id:</strong> None</li>
 </ul>
@@ -6758,9 +6758,9 @@ forecaster_xgb</div>
                 </ul>
 </details>
 <p>
-<a href="https://skforecast.org/0.26.0/api/forecasterrecursive.html">📖 <strong>API Reference</strong></a>
+<a href="https://skforecast.org/0.27.0/api/forecasterrecursive.html">📖 <strong>API Reference</strong></a>
                   
-                <a href="https://skforecast.org/0.26.0/user_guides/autoregressive-forecaster.html">📝 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/0.27.0/user_guides/autoregressive-forecaster.html">📝 <strong>User Guide</strong></a>
 </p>
 </div>
 </div>

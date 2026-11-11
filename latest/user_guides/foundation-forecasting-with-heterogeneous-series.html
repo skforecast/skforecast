@@ -6051,7 +6051,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </tr>
 <tr>
 <td style="text-align:left">Does batching series together change their forecasts?</td>
-<td style="text-align:left">Not for Chronos-2, TS-ICL and TabICL: the forecast of a series is identical to forecasting it alone. TimesFM 3.0 with covariates can shift the forecast of a short series slightly when batched with longer ones.</td>
+<td style="text-align:left">Not for Chronos-2, TS-ICL and TabICL: the forecast of a series is identical to forecasting it alone. With TFC-T0, Timestral and TiRex-2, the differences are of the order of float32 rounding. TimesFM 3.0 with covariates can shift the forecast of a short series slightly when batched with longer ones.</td>
 </tr>
 <tr>
 <td style="text-align:left">How do I know what a backend needs?</td>
@@ -6397,9 +6397,7 @@ exog_dict_test    = {k: v.loc[end_train:] for k, v in exog_dict.items()}</div>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> frequency.                                                                           <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>                                                                                      <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Category : skforecast.exceptions.MissingValuesWarning                                <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Location :                                                                           <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> /root/fm/env_main/lib/python3.12/site-packages/skforecast/preprocessing/_preprocessi <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> ng.py:586                                                                            <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
+<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Location : /home/user/skforecast/skforecast/preprocessing/_preprocessing.py:592      <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Suppress : warnings.simplefilter('ignore', category=MissingValuesWarning)            <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">╰──────────────────────────────────────────────────────────────────────────────────────╯</span>
 </pre>
@@ -6577,7 +6575,9 @@ plt.tight_layout()</div>
 <span class="c1"># "priorlabs/tabpfn-ts",</span>
 <span class="c1"># "theforecastingcompany/t0-alpha",</span>
 <span class="c1"># "Synthefy/Nori",</span>
-<span class="c1"># "taharnbl/TS-ICL"</span>
+<span class="c1"># "taharnbl/TS-ICL",</span>
+<span class="c1"># "mistralai/Timestral-28M",</span>
+<span class="c1"># "NX-AI/TiRex-2"</span>
 
 <span class="n">forecaster</span> <span class="o">=</span> <span class="n">ForecasterFoundation</span><span class="p">(</span>
     <span class="n">estimator</span><span class="o">=</span><span class="n">FoundationModel</span><span class="p">(</span>
@@ -6599,7 +6599,9 @@ plt.tight_layout()</div>
 # "priorlabs/tabpfn-ts",
 # "theforecastingcompany/t0-alpha",
 # "Synthefy/Nori",
-# "taharnbl/TS-ICL"
+# "taharnbl/TS-ICL",
+# "mistralai/Timestral-28M",
+# "NX-AI/TiRex-2"
 
 forecaster = ForecasterFoundation(
     estimator=FoundationModel(
@@ -6622,7 +6624,7 @@ forecaster</div>
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[5]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <style>
-        .container-e60f63dfd6254c49b65bbdb8dd60d684 {
+        .container-b6d50d6b0bb4471ea10132a495553a68 {
             font-family: 'Arial', sans-serif;
             font-size: 0.9em;
             color: #333333;
@@ -6633,7 +6635,7 @@ forecaster</div>
             max-width: 600px;
             #margin: auto;
         }
-        .container-e60f63dfd6254c49b65bbdb8dd60d684 h2 {
+        .container-b6d50d6b0bb4471ea10132a495553a68 h2 {
             font-size: 1.5em;
             color: #222222;
             border-bottom: 2px solid #ddd;
@@ -6641,11 +6643,11 @@ forecaster</div>
             margin-bottom: 15px;
             margin-top: 5px;
         }
-        .container-e60f63dfd6254c49b65bbdb8dd60d684 details {
+        .container-b6d50d6b0bb4471ea10132a495553a68 details {
             margin: 10px 0;
             border-color: #b3dbfd;
         }
-        .container-e60f63dfd6254c49b65bbdb8dd60d684 summary {
+        .container-b6d50d6b0bb4471ea10132a495553a68 summary {
             font-weight: bold;
             font-size: 1.1em;
             color: #000000;
@@ -6655,38 +6657,38 @@ forecaster</div>
             padding: 5px;
             border-radius: 5px;
         }
-        .container-e60f63dfd6254c49b65bbdb8dd60d684 summary:hover {
+        .container-b6d50d6b0bb4471ea10132a495553a68 summary:hover {
             color: #000000;
             background-color: #e0e0e0;
         }
-        .container-e60f63dfd6254c49b65bbdb8dd60d684 ul {
+        .container-b6d50d6b0bb4471ea10132a495553a68 ul {
             font-family: 'Courier New', monospace;
             list-style-type: none;
             padding-left: 20px;
             margin: 10px 0;
             line-height: normal;
         }
-        .container-e60f63dfd6254c49b65bbdb8dd60d684 li {
+        .container-b6d50d6b0bb4471ea10132a495553a68 li {
             margin: 5px 0;
             font-family: 'Courier New', monospace;
         }
-        .container-e60f63dfd6254c49b65bbdb8dd60d684 li strong {
+        .container-b6d50d6b0bb4471ea10132a495553a68 li strong {
             font-weight: bold;
             color: #444444;
         }
-        .container-e60f63dfd6254c49b65bbdb8dd60d684 li::before {
+        .container-b6d50d6b0bb4471ea10132a495553a68 li::before {
             content: "- ";
             color: #666666;
         }
-        .container-e60f63dfd6254c49b65bbdb8dd60d684 a {
+        .container-b6d50d6b0bb4471ea10132a495553a68 a {
             color: #001633;
             text-decoration: none;
         }
-        .container-e60f63dfd6254c49b65bbdb8dd60d684 a:hover {
+        .container-b6d50d6b0bb4471ea10132a495553a68 a:hover {
             color: #359ccb; 
         }
     </style>
-<div class="container-e60f63dfd6254c49b65bbdb8dd60d684">
+<div class="container-b6d50d6b0bb4471ea10132a495553a68">
 <p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;">ForecasterFoundation</p>
 <details open="">
 <summary>General Information</summary>
@@ -6696,9 +6698,9 @@ forecaster</div>
 <li><strong>Window size:</strong> 500</li>
 <li><strong>Series names:</strong> id_1000, id_1001, id_1002, id_1003, id_1004</li>
 <li><strong>Exogenous included:</strong> True</li>
-<li><strong>Creation date:</strong> 2026-10-09 07:24:26</li>
-<li><strong>Last fit date:</strong> 2026-10-09 07:24:26</li>
-<li><strong>Skforecast version:</strong> 0.26.0</li>
+<li><strong>Creation date:</strong> 2026-11-11 12:25:26</li>
+<li><strong>Last fit date:</strong> 2026-11-11 12:25:26</li>
+<li><strong>Skforecast version:</strong> 0.27.0</li>
 <li><strong>Python version:</strong> 3.12.3</li>
 <li><strong>Forecaster id:</strong> None</li>
 </ul>
@@ -6722,9 +6724,9 @@ forecaster</div>
 </ul>
 </details>
 <p>
-<a href="https://skforecast.org/0.26.0/api/forecasterfoundation.html">📖 <strong>API Reference</strong></a>
+<a href="https://skforecast.org/0.27.0/api/forecasterfoundation.html">📖 <strong>API Reference</strong></a>
                   
-                <a href="https://skforecast.org/0.26.0/user_guides/foundation-forecasting-models.html">📝 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/0.27.0/user_guides/foundation-forecasting-models.html">📝 <strong>User Guide</strong></a>
 </p>
 </div>
 </div>
@@ -6776,10 +6778,16 @@ predictions.head(10)</div>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> horizon. Missing timestamps were filled with NaN.                                    <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>                                                                                      <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Category : skforecast.exceptions.MissingValuesWarning                                <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Location : /tmp/ipykernel_1004/961589088.py:3                                        <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
+<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Location : /tmp/ipykernel_3260/961589088.py:3                                        <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Suppress : warnings.simplefilter('ignore', category=MissingValuesWarning)            <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">╰──────────────────────────────────────────────────────────────────────────────────────╯</span>
 </pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
+<div style="display:flex;align-items:center;gap:0.6em;margin:0.15em 0"><span>Loading weights: 100%</span><span style="flex:0 1 18em;height:1em;background:rgba(128,128,128,0.25);border-radius:2px;overflow:hidden"><span style="display:block;width:100%;height:100%;background:#388e3c"></span></span><span>92/92 [00:00&lt;00:00, 2464.62it/s]</span></div>
 </div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
@@ -6877,10 +6885,10 @@ predictions.head(10)</div>
 <ul>
 <li>The horizon of every series starts right after its own last training observation: <code>id_1000</code>, <code>id_1001</code>, <code>id_1003</code> and <code>id_1004</code> are forecast from 2016-08-01, <code>id_1002</code> from 2016-07-02.</li>
 <li><code>exog_dict_test['id_1002']</code> is empty because that series (and its exog) ended before the split. Its future exog is reindexed to the horizon and filled with NaN, and a <code>MissingValuesWarning</code> names the series. Chronos-2 treats those NaN as missing covariate values.</li>
-<li>Every series is validated against its own history, so <code>id_1000</code> is forecast with two covariates, <code>id_1003</code> with three and the other series with four. Chronos-2 requires identical covariate columns in a batch, so the five series are forecast in three backend calls: one for <code>id_1000</code>, one for <code>id_1003</code>, and one for <code>id_1001</code>, <code>id_1002</code> and <code>id_1004</code>. With TabPFN-TS or TFC-T0 the same input would be a single call.</li>
+<li>Every series is validated against its own history, so <code>id_1000</code> is forecast with two covariates, <code>id_1003</code> with three and the other series with four. Chronos-2 requires identical covariate columns in a batch, so the five series are forecast in three backend calls: one for <code>id_1000</code>, one for <code>id_1003</code>, and one for <code>id_1001</code>, <code>id_1002</code> and <code>id_1004</code>. With TabPFN-TS or TiRex-2 the same input would be a single call.</li>
 <li>The NaN blocks in <code>id_1003</code> stay in its context window. With a backend declaring <code>supports_nan_in_series=False</code>, <code>predict</code> would raise a <code>ValueError</code> naming the series.</li>
 </ul>
-<p>The same code runs unchanged with any other covariate-aware <code>model_id</code> (<code>google/timesfm-3.0-pytorch</code>, <code>soda-inria/tabicl</code>, <code>priorlabs/tabpfn-ts</code>, <code>theforecastingcompany/t0-alpha</code>, <code>Synthefy/Nori</code>, <code>taharnbl/TS-ICL</code>); with <code>google/timesfm-2.5-200m-pytorch</code> or <code>Salesforce/moirai-2.0-R-small</code> the exog is ignored with an <code>IgnoredArgumentWarning</code>.</p>
+<p>The same code runs unchanged with any other covariate-aware <code>model_id</code> (<code>google/timesfm-3.0-pytorch</code>, <code>soda-inria/tabicl</code>, <code>priorlabs/tabpfn-ts</code>, <code>theforecastingcompany/t0-alpha</code>, <code>Synthefy/Nori</code>, <code>taharnbl/TS-ICL</code>, <code>mistralai/Timestral-28M</code>, <code>NX-AI/TiRex-2</code>); with <code>google/timesfm-2.5-200m-pytorch</code> or <code>Salesforce/moirai-2.0-R-small</code> the exog is ignored with an <code>IgnoredArgumentWarning</code>.</p>
 </div>
 </div>
 </div>
@@ -6967,6 +6975,12 @@ metrics_levels</div>
 <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
+<div style="display:flex;align-items:center;gap:0.6em;margin:0.15em 0"><span>100%</span><span style="flex:0 1 18em;height:1em;background:rgba(128,128,128,0.25);border-radius:2px;overflow:hidden"><span style="display:block;width:100%;height:100%;background:#388e3c"></span></span><span>7/7 [00:00&lt;00:00, 10.91it/s]</span></div>
+</div>
+</div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[7]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
@@ -6990,6 +7004,7 @@ metrics_levels</div>
 <th></th>
 <th>levels</th>
 <th>mean_absolute_error</th>
+<th>n_evaluated</th>
 </tr>
 </thead>
 <tbody>
@@ -6997,41 +7012,49 @@ metrics_levels</div>
 <th>0</th>
 <td>id_1000</td>
 <td>158.233861</td>
+<td>153</td>
 </tr>
 <tr>
 <th>1</th>
 <td>id_1001</td>
 <td>399.117174</td>
+<td>153</td>
 </tr>
 <tr>
 <th>2</th>
 <td>id_1002</td>
 <td>NaN</td>
+<td>0</td>
 </tr>
 <tr>
 <th>3</th>
 <td>id_1003</td>
 <td>218.181637</td>
+<td>80</td>
 </tr>
 <tr>
 <th>4</th>
 <td>id_1004</td>
 <td>654.984999</td>
+<td>31</td>
 </tr>
 <tr>
 <th>5</th>
 <td>average</td>
 <td>357.629418</td>
+<td>417</td>
 </tr>
 <tr>
 <th>6</th>
 <td>weighted_average</td>
 <td>295.045022</td>
+<td>417</td>
 </tr>
 <tr>
 <th>7</th>
 <td>pooling</td>
 <td>295.045022</td>
+<td>417</td>
 </tr>
 </tbody>
 </table>
@@ -7150,7 +7173,7 @@ plt.tight_layout()</div>
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h2 id="how-it-works">How it works<a class="anchor-link" href="#how-it-works">¶</a></h2><p>For a foundation model, the differences among series matter because inference is done in <strong>batches</strong>: one call to the backend receives the context window and the covariates of every series and returns every forecast. Working series by series, a user would never notice the constraints that the backends impose on that batch:</p>
 <ul>
-<li><strong>Same covariate columns for every series in a batch.</strong> Chronos-2, TS-ICL, TimesFM 3.0 and TabICL require that all the series in one call carry exactly the same covariate columns. A batch with different columns per series is either rejected by the backend or handed columns, filled with NaN, that some series do not have.</li>
+<li><strong>Same covariate columns for every series in a batch.</strong> Chronos-2, TS-ICL, TimesFM 3.0, TabICL, TFC-T0 and Timestral require that all the series in one call carry exactly the same covariate columns. A batch with different columns per series is either rejected by the backend or handed columns, filled with NaN, that some series do not have.</li>
 <li><strong>Padding the missing columns is not free.</strong> Giving every series the union of all columns and filling the missing ones with NaN changes the forecast in some backends (Chronos-2 measurably), so it cannot be applied by default.</li>
 <li><strong>NaN in the data.</strong> Backends differ in what they do with NaN in the target or in the covariates: some treat it as missing, some interpolate it, some drop the row, and one rejects it. No backend can use a context window that is entirely NaN.</li>
 </ul>
@@ -7268,7 +7291,7 @@ supports_nan_in_series            : True
 </tr>
 <tr>
 <td style="text-align:left">A historical column has no future values</td>
-<td style="text-align:left">Past-only covariate. Used as such if <code>supports_past_only_covariates</code> is <code>True</code>, otherwise ignored with an <code>IgnoredArgumentWarning</code>.</td>
+<td style="text-align:left">Past-only covariate. Used as such if <code>supports_past_only_covariates</code> is <code>True</code>. Otherwise it is removed before the backend is called, with an <code>IgnoredArgumentWarning</code>: the forecast is the same as without the column.</td>
 </tr>
 <tr>
 <td style="text-align:left">Same columns in both</td>
@@ -7281,12 +7304,12 @@ supports_nan_in_series            : True
 </tbody>
 </table>
 <ol start="4">
-<li><p><strong>Series are grouped by their exog columns when the backend needs it.</strong> If <code>supports_heterogeneous_covariates</code> is <code>False</code>, the series are grouped by their pair <code>(past-only columns, future columns)</code> and the backend is called once per group, which is the minimum number of calls the backend allows. In the example above, Chronos-2 receives <code>id_1000</code> alone (two columns), <code>id_1003</code> alone (three columns) and <code>id_1001</code>, <code>id_1002</code> and <code>id_1004</code> together (four columns). The merged output keeps the order of the input series, and a dataset where every series has the same exog columns still makes a single call. For Chronos-2, <code>cross_learning=True</code> shares information among the series of the same group only, since the backend cannot see series from other groups.</p>
+<li><p><strong>Series are grouped by their exog columns when the backend needs it.</strong> If <code>supports_heterogeneous_covariates</code> is <code>False</code>, the series are grouped by their pair <code>(past-only columns, future columns)</code> and the backend is called once per group, which is the minimum number of calls the backend allows. The past-only columns that a backend cannot use (TabICL, TFC-T0) are removed before grouping, so series that differ only in those columns share a call. In the example above, Chronos-2 receives <code>id_1000</code> alone (two columns), <code>id_1003</code> alone (three columns) and <code>id_1001</code>, <code>id_1002</code> and <code>id_1004</code> together (four columns). The merged output keeps the order of the input series, and a dataset where every series has the same exog columns still makes a single call. For Chronos-2, <code>cross_learning=True</code> shares information among the series of the same group only, since the backend cannot see series from other groups.</p>
 </li>
 <li><p><strong>NaN in the context is checked.</strong> If <code>supports_nan_in_series</code> is <code>False</code>, a context with NaN raises a <code>ValueError</code> naming the series before the backend is called.</p>
 </li>
 </ol>
-<p>This layer only <strong>splits and aligns</strong>. It never imputes, drops or fabricates values or columns: a series only ever carries its own exog columns, and a NaN that reaches the backend is either a NaN present in the user's data or a timestamp the user did not provide. Anything that changes values is a documented, backend-specific decision inside the adapter (see the reference below).</p>
+<p>This layer only <strong>splits and aligns</strong>. It never imputes or fabricates values or columns, and the only columns it drops are the historical ones without future values, for the backends that cannot use them: a series only ever carries its own exog columns, and a NaN that reaches the backend is either a NaN present in the user's data or a timestamp the user did not provide. Anything that changes values is a documented, backend-specific decision inside the adapter (see the reference below).</p>
 </div>
 </div>
 </div>
@@ -7303,7 +7326,7 @@ supports_nan_in_series            : True
 <li>A series cannot be <strong>entirely NaN</strong>.</li>
 <li>The exog of a series must share the index type of the series. Rows are matched by timestamp, so an exog can start or end on different dates than its series.</li>
 <li>Only the last <code>context_length</code> observations of each series are used. A series shorter than <code>context_length</code> is used in full; a series longer is truncated from the left.</li>
-<li>Covariates must be numeric (or boolean) for most backends. Only Chronos-2 accepts string and categorical columns natively; for the other backends, encode categoricals as numbers before passing <code>exog</code> (<code>ForecasterFoundation</code> has no <code>transformer_exog</code>).</li>
+<li>Covariates must be numeric (or boolean) for most backends. Only Chronos-2 and Timestral accept string and categorical columns natively; for the other backends, encode categoricals as numbers before passing <code>exog</code> (<code>ForecasterFoundation</code> has no <code>transformer_exog</code>).</li>
 </ul>
 <h3 id="adapter-capabilities">Adapter capabilities<a class="anchor-link" href="#adapter-capabilities">¶</a></h3><p>The table summarizes, for each adapter, the declared capabilities and how the backend treats missing values. "Grouped" means <code>supports_heterogeneous_covariates=False</code>: <code>FoundationModel</code> calls the backend once per group of series sharing the same exog columns.</p>
 <table>
@@ -7368,11 +7391,11 @@ supports_nan_in_series            : True
 </tr>
 <tr>
 <td style="text-align:left"><strong>TFC-T0</strong> (<code>theforecastingcompany/t0</code>)</td>
-<td style="text-align:left">Known-future</td>
+<td style="text-align:left">Known-future, numeric only</td>
 <td style="text-align:left">No (ignored with a warning)</td>
-<td style="text-align:left">Single call</td>
-<td style="text-align:left">Accepted</td>
-<td style="text-align:left">NaN means "covariate absent"</td>
+<td style="text-align:left">Grouped</td>
+<td style="text-align:left">Treated as missing values, leading NaN as padding</td>
+<td style="text-align:left">Treated as missing values</td>
 </tr>
 <tr>
 <td style="text-align:left"><strong>Synthefy Nori</strong> (<code>Synthefy/Nori</code>)</td>
@@ -7390,6 +7413,22 @@ supports_nan_in_series            : True
 <td style="text-align:left">Accepted</td>
 <td style="text-align:left">Accepted</td>
 </tr>
+<tr>
+<td style="text-align:left"><strong>Timestral</strong> (<code>mistralai/Timestral</code>)</td>
+<td style="text-align:left">Past and known-future, numeric and categorical</td>
+<td style="text-align:left">Yes</td>
+<td style="text-align:left">Grouped</td>
+<td style="text-align:left">Treated as missing values</td>
+<td style="text-align:left">Treated as missing values</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>TiRex-2</strong> (<code>NX-AI/TiRex-2</code>)</td>
+<td style="text-align:left">Past and known-future, numeric only</td>
+<td style="text-align:left">Yes</td>
+<td style="text-align:left">Single call (at most 64 series per call)</td>
+<td style="text-align:left">Treated as missing values</td>
+<td style="text-align:left">Treated as missing values</td>
+</tr>
 </tbody>
 </table>
 <p>Notes per adapter, limited to what the table cannot show:</p>
@@ -7400,15 +7439,19 @@ supports_nan_in_series            : True
 </li>
 <li><p><strong>TimesFM 2.5 and Moirai-2.</strong> They do not use covariates: any exog is ignored with an <code>IgnoredArgumentWarning</code> and all the series go in a single call. Mixed lengths and NaN are handled by the backend.</p>
 </li>
-<li><p><strong>TabICL.</strong> The backend builds one long-format frame per call and uses only the covariate columns present in both the context and the future data, so grouping keeps a series from receiving NaN-filled columns it does not have.</p>
+<li><p><strong>TabICL.</strong> The backend builds one long-format frame per call, with the same columns for every series, so grouping keeps a series from receiving NaN-filled columns it does not have. It does not discard the historical columns without future values, so <code>FoundationModel</code> removes them before the call.</p>
 </li>
-<li><p><strong>TabPFN-TS.</strong> A single call serves every series: the library imputes the cells of the columns a series does not have and drops the rows with NaN target.</p>
+<li><p><strong>TabPFN-TS.</strong> A single call serves every series: the library imputes the cells of the columns a series does not have and drops the rows with NaN target. As with TabICL, <code>FoundationModel</code> removes the historical columns without future values before the call.</p>
 </li>
-<li><p><strong>TFC-T0.</strong> A single call serves every series: the adapter pools the columns of all series and fills the missing cells with NaN, which T0 defines as "covariate absent".</p>
+<li><p><strong>TFC-T0.</strong> The backend takes the context and the covariates of a call as rectangular arrays, so grouping is mandatory, and <code>FoundationModel</code> left-pads the shorter series of each call (and their historical exog) with NaN, which the adapter asks T0 to read as padding (<code>trim_leading_missing=True</code>) instead of missing values. Both protect the forecasts: in tests with <code>t0-alpha</code> and <code>tfc-t0</code> 0.6.0, a series batched with series that have other exog columns moved by up to 6 percent, and a shorter series whose padding was read as missing values by about 3 percent, whereas with grouping and padding a series forecast in a batch differed from its forecast alone only by float32 rounding (relative differences of the order of 1e-7). Since <code>tfc-t0</code> 0.6.1 the backend ignores, for each series, a covariate whose values are all equal over its context. Covariates must be numeric.</p>
 </li>
 <li><p><strong>Synthefy Nori.</strong> Each series is fitted in-context and predicted in its own <code>NoriRegressor</code> call, so there is no batching constraint. The regressor rejects NaN, so the adapter drops the context rows whose target or covariates are NaN while keeping the remaining rows correctly positioned in time. A series with no NaN-free row in its context raises a <code>ValueError</code>, and a future exog with gaps (filled with NaN by <code>FoundationModel</code>) may be rejected by the regressor.</p>
 </li>
 <li><p><strong>TS-ICL.</strong> As with Chronos-2, every element of a batch must carry identical covariate keys, so grouping is mandatory. Past-only covariates are supported.</p>
+</li>
+<li><p><strong>Timestral.</strong> The backend takes the context and the covariates of a call as rectangular arrays, so grouping is mandatory, and <code>FoundationModel</code> left-pads the shorter series of each call (and their historical exog) with NaN, which Timestral treats as missing values. Groups of more than 50 series are sent in calls of at most 50 series (<code>max_series_per_call</code>): the cost per series and the memory of the backend grow with the size of the batch, so a single call with hundreds of series is several times slower and can exhaust the memory of the GPU. In tests with <code>Timestral-28M</code>, a series forecast in a batch with series of other lengths differed from its forecast alone by less than 1e-4. Non-numeric columns are passed as categorical covariates. A known covariate that is constant over the context and changes over the horizon can make the upper quantiles very large (<a href="https://github.com/mistralai/timestral/issues/7">mistralai/timestral#7</a>); a <code>FeatureOutOfRangeWarning</code> names the affected series and columns.</p>
+</li>
+<li><p><strong>TiRex-2.</strong> Each series is passed to the backend as its own <code>TimeseriesType</code> with its own covariates, so every series goes in the same call whatever its exog columns; the backend left-pads the shorter series of a call with NaN and masks the NaN of the target and the covariates. Calls are limited to 64 series (<code>max_series_per_call</code>): the backend attends over the variates of all the series of a call, so its memory grows faster than linearly with the size of the call. In tests with <code>NX-AI/TiRex-2</code>, a series forecast in a batch differed from its forecast alone only by float32 rounding (relative differences of the order of 1e-7). Covariates must be numeric.</p>
 </li>
 </ul>
 <div class="admonition note" name="html-admonition" style="background: rgba(255,145,0,.1); padding-top: 0px; padding-bottom: 6px; border-radius: 8px; border-left: 8px solid #ff9100; border-color: #ff9100; padding-left: 10px; padding-right: 10px;">

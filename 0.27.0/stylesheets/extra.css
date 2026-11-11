@@ -1,0 +1,565 @@
+/*
+===============================
+Jupyter Wrapper Styles
+===============================
+*/
+
+/* Hide output prompt in Jupyter */
+.jupyter-wrapper .jp-OutputPrompt,
+.jupyter-wrapper .jp-CodeCell .jp-Cell-inputWrapper .jp-InputPrompt,
+.jupyter-wrapper .jp-Notebook .jp-Cell:not(.jp-mod-active) .jp-InputPrompt {
+  display: none;
+}
+
+/* Size of code cells in Jupyter Notebooks */
+.jupyter-wrapper .jp-CodeCell .jp-InputArea-editor .CodeMirror {
+  font-size: 0.95em; /* Adjust the size as needed */
+}
+
+/* Size of output cells in Jupyter Notebooks */
+.jupyter-wrapper .jp-RenderedText.jp-OutputArea-output pre {
+  font-size: 1.2em; /* Adjust the size as needed */
+}
+
+/* Size of rich HTML output cells in Jupyter Notebooks */
+.jupyter-wrapper .jp-RenderedHTMLCommon.jp-OutputArea-output pre {
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+
+/* Display inline tables for dataframes in Jupyter */
+.jupyter-wrapper table.dataframe {
+  display: inline;
+}
+
+/*
+===============================
+Markdown Content Styles
+===============================
+*/
+
+.md-typeset h1 {
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--md-default-fg-color);
+}
+
+.md-typeset h2 {
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--md-default-fg-color);
+}
+
+.md-typeset h3 {
+  font-size: 1.25em;
+  font-weight: 500;
+  letter-spacing: -.01em;
+  line-height: 1.5;
+  margin: 1.6em 0 .8em;
+  color: var(--md-default-fg-color);
+}
+
+
+/* Justify text */
+.md-typeset p {
+  text-align: justify;
+}
+
+/* Increase font size of code blocks in Markdown cells */
+.md-typeset pre {
+  font-size: 0.95em; /* Adjust the size as needed */
+}
+
+.md-typeset pre>code {
+  border-bottom-left-radius: 0;
+  border-top-left-radius: 0;
+  font-size: 1.1em;
+  white-space: pre-wrap; 
+  word-break: break-word;
+}
+
+.md-typeset code:not(.focus-visible) {
+  font-size: 1.1em;
+}
+
+/* Larger names, types and descriptions in the parameter tables of the API
+   reference (mkdocstrings), whose cells hold a single element. Not applied to
+   other tables: a cell with several elements, such as two links, would show
+   each one at a different size. */
+.md-typeset tr.doc-section-item > td > * {
+  font-size: 1.1em;
+}
+
+/*
+===============================
+Color Scheme Styles
+===============================
+*/
+/* Light color scheme styles. "light" is not a Material scheme (the light one
+   is "default"), but it was used in mkdocs.yml until 0.26.0 and Material
+   re-applies the scheme saved in the browser of returning visitors, so it is
+   kept here until those saved values have expired. */
+[data-md-color-scheme="default"],
+[data-md-color-scheme="light"] {
+  --md-primary-fg-color:        #001633;
+  --md-primary-fg-color--light: #001633;
+  --md-primary-fg-color--dark:  #001633;
+  --md-accent-fg-color:         #f79939;
+  --md-accent-fg-color--light:  #f79939;
+  --md-accent-fg-color--dark:   #f79939;
+  --md-accent-fg-color--transparent: #f799391a;
+  --md-primary-bg-color:        #f79939;
+  /* Links: the brand orange darkened on the same hue, the lightest one with a
+     contrast of at least 4.5:1 on white (WCAG AA) and 3:1 against the body
+     text, so links stand out by color alone. #f79939 on white is only 2.2:1. */
+  --md-typeset-a-color:         #b35e07;
+  --md-default-fg-color:        #2c2c2c;
+}
+
+/* Slate color scheme styles */
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color:        #001633;
+  --md-primary-fg-color--light: #001633;
+  --md-primary-fg-color--dark:  #001633;
+  --md-accent-fg-color:         #f79939;
+  --md-accent-fg-color--light:  #f79939;
+  --md-accent-fg-color--dark:   #f79939;
+  --md-accent-fg-color--transparent: #f799391a;
+  --md-primary-bg-color:        #f79939;
+  --md-typeset-a-color:         #f79939;
+}
+  
+/* Material hides the #only-dark images in "default" and the #only-light images
+   in "slate". Same behavior for the legacy "light" value (see above). */
+[data-md-color-scheme="light"] {
+  color-scheme: light;
+}
+
+[data-md-color-scheme="light"] img[src$="#only-dark"],
+[data-md-color-scheme="light"] img[src$="#gh-dark-mode-only"] {
+  display: none;
+}
+
+/*
+===============================
+Badge Styles
+=============================== 
+*/
+.badge {
+  display: inline-block;
+  padding: 0.2em 0.4em;
+  font-size: 0.75em; 
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  border-radius: 0.25rem;
+}
+
+/* Feature Badge */
+.text-bg-feature {
+  color: #fff;
+  background-color: #28a745;
+}
+
+/* Enhancement Badge */
+.text-bg-enhancement {
+  color: #fff;
+  background-color: #17a2b8;
+}
+
+/* API Change Badge */
+.text-bg-api-change {
+  color: #fff;
+  background-color: #ffc107;
+}
+
+/* Fix Badge */
+.text-bg-fix {
+  color: #fff;
+  background-color: #dc3545;
+}
+
+/* Docs Badge: documentation-only changes (pages, guides, notebooks) */
+.text-bg-docs {
+  color: #fff;
+  background-color: #6f42c1;
+}
+
+
+/*
+===============================
+Team cards
+===============================
+*/
+
+/* Component in docs/overrides/partials/team.html, used on the home page and on
+   the More pages. Colors come from Material's variables, so the cards follow
+   the light and dark schemes. */
+.sk-team {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 1.2em 0;
+}
+
+.sk-person {
+  flex: 1 1 320px;
+  max-width: 480px;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  padding: 20px 22px;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 12px;
+  background: var(--md-default-bg-color);
+}
+
+.sk-person__photo {
+  flex: none;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.sk-person__body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sk-person__name {
+  font-size: 17.5px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--md-default-fg-color);
+}
+
+.sk-person__role {
+  font-size: 14px;
+  color: var(--md-default-fg-color--light);
+}
+
+/* Emails only where the cards are wrapped in <div class="sk-team-contact"> */
+.sk-person__email {
+  display: none;
+  font-size: 13.5px;
+  overflow-wrap: anywhere;
+}
+
+.sk-team-contact .sk-person__email {
+  display: block;
+}
+
+.sk-person__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.sk-team .sk-person__links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--md-default-fg-color);
+  text-decoration: none;
+  transition: border-color 0.2s ease;
+}
+
+.sk-team .sk-person__links a:hover {
+  border-color: var(--md-accent-fg-color);
+}
+
+.sk-team .sk-person__links svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+.sk-team .sk-person__linkedin svg {
+  fill: #0a66c2;
+}
+
+[data-md-color-scheme="slate"] .sk-team .sk-person__linkedin svg {
+  fill: #3f8fe0;
+}
+
+/*
+===============================
+Examples Section Styles
+===============================
+*/
+/* Card grids and language switcher on the Examples pages. Markup is generated
+   by tools/docs/hooks/examples_grid.py. Colors come from Material CSS variables
+   so both the light and slate schemes work without extra rules. */
+
+/* Material's own grid uses auto-fit, which collapses empty tracks and makes
+   the cards of a short section stretch across the full content width. */
+.md-typeset .ex-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+  grid-gap: 0.8rem;
+}
+
+/* Section icon in the accent color, the only accent-colored element of a
+   section so it does not compete with the card titles. */
+.md-typeset .ex-section__icon {
+  margin-right: 0.2em;
+  color: var(--md-accent-fg-color);
+}
+
+/* Card. A flex column so the tag row sits at the bottom of every card in a
+   grid row, whatever the length of the title and summary above it. */
+.md-typeset .grid.cards > ul > li.ex-card {
+  display: flex;
+  flex-direction: column;
+  position: relative; /* anchor for the stretched title link below */
+  /* A slightly stronger outline than Material's default (7% alpha). Hover
+     keeps Material's behaviour: the border turns transparent and the shadow
+     takes over. */
+  border-color: var(--md-default-fg-color--lighter);
+  border-color: color-mix(in srgb, var(--md-default-fg-color) 18%, transparent);
+  border-radius: 0.3rem;
+}
+
+/* Featured section (the other products of the skforecast team): narrower
+   tracks so its three cards share one row, and an accent tint. Declared before
+   the hover rule below so the border still turns transparent on hover. */
+.md-typeset .ex-grid--featured {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+}
+
+.md-typeset .grid.cards.ex-grid--featured > ul > li.ex-card {
+  border-color: color-mix(in srgb, var(--md-accent-fg-color) 55%, transparent);
+  background: color-mix(in srgb, var(--md-accent-fg-color) 7%, transparent);
+}
+
+/* Same specificity as Material's hover rule and declared later, so the
+   transparent border has to be restated here. */
+.md-typeset .grid.cards > ul > li.ex-card:hover,
+.md-typeset .grid.cards > ul > li.ex-card:focus-within,
+.md-typeset .grid.cards.ex-grid--featured > ul > li.ex-card:hover,
+.md-typeset .grid.cards.ex-grid--featured > ul > li.ex-card:focus-within {
+  border-color: transparent;
+}
+
+/* The global `.md-typeset p { text-align: justify }` leaves ugly word gaps in
+   narrow card columns. */
+.md-typeset .ex-card p {
+  text-align: left;
+}
+
+.md-typeset .ex-card__title {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+/* Titles in the text color: the hover shadow Material gives the card and the
+   stretched link below already make the whole card read as clickable.
+   Declared after Material's `.md-typeset a:hover` (same specificity) so the
+   hover color wins. */
+.md-typeset .ex-card__title a {
+  color: var(--md-default-fg-color);
+  text-decoration: none;
+}
+
+.md-typeset .ex-card__title a:hover,
+.md-typeset .ex-card__title a:focus-visible {
+  color: var(--md-accent-fg-color);
+}
+
+/* Make the whole card clickable while keeping exactly one link in the
+   accessibility tree and one tab stop per card. */
+.md-typeset .ex-card__title a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.md-typeset .ex-card__summary {
+  margin: 0.7em 0 0;
+  color: var(--md-default-fg-color--light);
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+.md-typeset .ex-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: auto 0 0; /* auto top margin pins the row to the card bottom */
+  padding-top: 0.8em;
+}
+
+/* Tags shown inside a card: plain muted text separated by a middle dot. */
+.md-typeset .ex-tag {
+  color: var(--md-default-fg-color--light);
+  font-size: 0.66rem;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.md-typeset .ex-tag + .ex-tag::before {
+  content: "\00b7";
+  margin: 0 0.45em;
+}
+
+/* The level tag gets a colored dot. The text is always present, so the color
+   is a scanning aid, not the only carrier of the information. Hues chosen to
+   stay away from the orange accent and to hold up on both schemes. */
+.md-typeset .ex-tag--level {
+  color: var(--md-default-fg-color);
+  font-weight: 600;
+}
+
+.md-typeset .ex-tag--level::before {
+  content: "";
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  margin-right: 0.4em;
+  border-radius: 50%;
+  vertical-align: 0.05em;
+  background: var(--ex-level-color);
+}
+
+.md-typeset .ex-tag--beginner { --ex-level-color: #34a853; }
+.md-typeset .ex-tag--intermediate { --ex-level-color: #4285f4; }
+.md-typeset .ex-tag--advanced { --ex-level-color: #a142f4; }
+
+/* Language switcher, styled as underlined tabs so it reads as navigation. */
+.md-typeset .ex-langs {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 1.2em;
+  border-bottom: 0.05rem solid var(--md-default-fg-color--lighter);
+  text-align: left;
+}
+
+.md-typeset .ex-lang {
+  margin-bottom: -0.05rem; /* overlaps the row border with the active one */
+  padding: 0.35em 0.9em;
+  border-bottom: 0.15rem solid transparent;
+  color: var(--md-default-fg-color--light);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.md-typeset .ex-lang:hover {
+  color: var(--md-accent-fg-color);
+}
+
+/* The :hover selector is needed because Material's `.md-typeset a:hover`
+   would otherwise recolor the current tab on hover. */
+.md-typeset .ex-lang--active,
+.md-typeset .ex-lang--active:hover {
+  border-bottom-color: var(--md-accent-fg-color);
+  color: var(--md-default-fg-color);
+}
+
+@media print {
+  .md-typeset .ex-langs {
+    display: none !important;
+  }
+
+  .md-typeset .ex-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/*
+===============================
+Table of Contents Cards
+===============================
+*/
+/* One card per section in the tables of contents of the user guides and the
+   FAQ, generated by tools/docs/hooks/toc_cards.py. Two columns read row by
+   row, so the order is the one of the navigation. The sections have from 1 to
+   10 links: each card keeps its own height instead of stretching to the
+   tallest of its row. */
+.md-typeset .grid.cards.toc-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-gap: 0.8rem;
+  align-items: start;
+}
+
+@media screen and (max-width: 44.9375em) {
+  .md-typeset .grid.cards.toc-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.md-typeset .grid.cards.toc-grid > ul > li {
+  border-color: color-mix(in srgb, var(--md-default-fg-color) 18%, transparent);
+  border-radius: 0.3rem;
+}
+
+.md-typeset .toc-grid h2 {
+  margin: 0 0 0.4em;
+  font-size: 1.1em;
+  font-weight: 700;
+}
+
+/* Muted and left aligned: the global justified text leaves word gaps in
+   narrow columns. */
+.md-typeset .toc-grid p {
+  margin: 0 0 0.6em;
+  color: var(--md-default-fg-color--light);
+  font-size: 0.9em;
+  text-align: left;
+}
+
+.md-typeset .toc-grid li ul {
+  margin: 0;
+}
+
+.md-typeset .toc-grid li ul li {
+  margin-bottom: 0.15em;
+}
+
+/*
+===============================
+Sticky Banner Styles
+===============================
+*/
+/* The outdated version banner positioning and offset are handled by
+   version-switcher.js to avoid layout issues when the banner is not visible. */
+
+/*
+===============================
+Announcement Bar Styles
+===============================
+*/
+/* Brand accent, scoped to the announce bar only (not the outdated banner). */
+[data-md-component="announce"] .md-banner a {
+  color: var(--md-accent-fg-color);
+  font-weight: 600;
+}
+
+[data-md-component="announce"] .md-banner a:hover {
+  text-decoration: underline;
+}
+
+/* Animations (docs/animations/*.html) embedded with an iframe.
+   Height = stage (width x --skf-ratio) + 48px controls bar. The default ratio
+   matches a 1280x640 stage; override it inline for other sizes, for example
+   style="--skf-ratio: 0.5625" for 1280x720. */
+.skf-anim-embed {
+  container-type: inline-size;
+  margin: 1.5em 0;
+}
+.skf-anim-embed iframe {
+  display: block;
+  width: 100%;
+  height: calc(var(--skf-ratio, 0.5) * 100cqw + 48px);
+  border: 0;
+}

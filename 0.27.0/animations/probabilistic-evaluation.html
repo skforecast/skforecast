@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<!--
+  Copyright (c) 2021-present Joaquín Amat Rodrigo and Javier Escobar Ortiz.
+  Part of the skforecast documentation, licensed under CC BY-NC-SA 4.0
+  (https://creativecommons.org/licenses/by-nc-sa/4.0/). It is not covered by the
+  BSD-3-Clause license of the skforecast software.
+  The skforecast trademark and logo are registered with the EUIPO (application
+  number 019109684) and may not be used without permission.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Evaluating prediction intervals</title>
+<meta name="description" content="Animated explanation of how to evaluate prediction intervals: three intervals for the same forecast are compared by their coverage, which measures calibration, and their width, which measures sharpness. Scores such as the Winkler score combine both in a single number.">
+<link rel="stylesheet" href="skf-anim.css">
+</head>
+<body>
+<div class="skf-anim"></div>
+<script src="skf-anim.js"></script>
+<script>
+(function(){
+"use strict";
+const {ease, lin, P, lerp, V, text, rect, line, circle, path, polyline, header} = SkfAnim;
+
+/* ------------------------------------------------------------------ data */
+// The same point forecast and the same 20 true values, shown in three panels with
+// a nominal 80% interval of different width: A too narrow, B too wide and C
+// calibrated. Every number shown is computed from these data.
+const NT = 20, ALPHA = .2, TARGET = .8;
+const m = i => 50 + 9*Math.sin(2*Math.PI*(i + 1)/20);                  // forecast
+// The errors are set by hand, in three sizes that are far from the bounds of the
+// three intervals, so that each value is clearly inside or clearly outside each
+// of them: small (inside the three), medium (outside A only) and large (outside
+// A and C). The values outside an interval are never consecutive.
+const RT = [.8, 5, -1, -9.5, .5, -5, 1.1, 5.2, -.6, 9.6, -1.1, -4.8, .9, -9.4, -.4, 5, 1, -5.1, -.8, 9.5];
+const Y = RT.map((r, i) => m(i) + r);
+const MODELS = [
+  {name:'Interval A', h:3,  verdict:'Narrow, but it misses too often'},
+  {name:'Interval B', h:13, verdict:'Covers everything, but far too wide'},
+  {name:'Interval C', h:7,  verdict:'On target, and much narrower than B'}
+];
+// Winkler score (skforecast.metrics.winkler_score): mean over the observations of
+// width + (2/alpha)*distance below the lower bound + (2/alpha)*distance above the upper bound.
+for (const M of MODELS){
+  M.obs = Y.map((y, i) => {
+    const lo = m(i) - M.h, hi = m(i) + M.h;
+    const pen = (2/ALPHA)*(Math.max(0, lo - y) + Math.max(0, y - hi));
+    return {lo, hi, inside: pen === 0, pen};
+  });
+  M.cov = M.obs.filter(o => o.inside).length;
+  M.width = 2*M.h;
+  M.winkler = M.width + M.obs.reduce((s, o) => s + o.pen, 0)/NT;
+  M.far = Math.abs(M.cov/NT - TARGET) > .1;
+}
+const BEST = MODELS.reduce((b, M) => M.winkler < b.winkler ? M : b);
+const pct = c => Math.round(100*c/NT) + '%';
+
+/* -------------------------------------------------------------- timeline */
+const T = {
+  panels:[0.2,0.9], fcst:[1.0,2.0], obs:[2.0,3.4], band:[3.8,5.0],
+  cov:7.5, count:[8.0,11.6,15.2], step:.12, drop:.4, covEnd:19.0,
+  width:[19.6,21.2,22.8], both:27.2, verdict:[27.7,28.6,29.5], best:[30.3,30.9],
+  score:32.7, scores:[33.3,34.5,35.7],
+  fadeOut:[44.0,44.8], total:44.8
+};
+const CAPTIONS = [
+  [0.0, T.cov,      'Three 80% intervals for the same forecast and the same true values. Which one is the best?'],
+  [T.cov, 11.4,     'Coverage: the share of true values inside the interval. Interval A covers ' + pct(MODELS[0].cov) + ', far below its 80% target.'],
+  [11.4, 15.0,      'Interval B covers every value, more than the 80% it promises: high coverage is not the goal, the target is.'],
+  [15.0, T.covEnd,  'Interval C covers ' + pct(MODELS[2].cov) + ' of the values, as promised: it is calibrated.'],
+  [T.covEnd, T.both,'Width: the narrower the interval, the more it says about the future. Covering everything is easy with a wide one.'],
+  [T.both, T.score, 'A good interval has both: a coverage close to its target (calibrated) and the smallest width that achieves it (sharp).'],
+  [T.score, 99,     'Scores such as the Winkler score combine coverage and width in a single number to rank intervals: lower is better.']
+];
+const STEPS = [['Three intervals',0,T.cov],['Coverage',T.cov,T.covEnd],['Width',T.covEnd,T.both],['Both',T.both,99]];
+
+/* ---------------------------------------------------------------- layout */
+const PG = 20, PW = (1200 - 2*PG)/3, PY0 = 118, PY1 = 592;
+const pX = i => 40 + i*(PW + PG);
+const VLO = 27, VHI = 73, CYT = 172, SC = 5, CYB = CYT + (VHI - VLO)*SC;
+const yv = v => CYB - (v - VLO)*SC;
+const DXI = (PW - 62)/(NT - 1);                    // room is left on the right for the width
+const xi = (px, i) => px + 24 + i*DXI;
+const SY = CYB + 26;                               // strip of inside / outside marks
+const ROWS = [SY + 40, SY + 68, SY + 96];          // coverage, width, Winkler score
+const VY = PY1 - 22;                               // verdict
+
+/* ----------------------------------------------------------------- panel */
+function panel(t, o, p){
+  const M = MODELS[p], px = pX(p), A = P(t, ...T.panels);
+  if (A <= 0) return;
+  // while the coverage of a panel is counted, the other two are dimmed
+  const cs = T.count[p], ce = p < 2 ? T.count[p + 1] - .3 : T.covEnd - .5;
+  const act = P(t, cs - .3, cs)*(1 - P(t, ce, ce + .3));
+  const dim = P(t, T.count[0] - .4, T.count[0])*(1 - P(t, T.covEnd - .5, T.covEnd - .1));
+  const op = A*(1 - .55*dim*(1 - act));
+  const best = M === BEST ? P(t, ...T.best) : 0;
+
+  o.push(rect(px, PY0, PW, PY1 - PY0, {rx:12, fill:V('panel'), stroke:V('border'), sw:1.5, op:A}));
+  o.push(rect(px, PY0, PW, PY1 - PY0, {rx:12, stroke:V('target'), sw:2, op:A*Math.max(act*dim, best)}));
+  o.push(text(px + 24, PY0 + 34, M.name, {size:18, weight:700, op}));
+
+  // interval
+  const bp = lin(t, ...T.band);
+  if (bp > 0){
+    const up = [], lo = [];
+    for (let i = 0; i < NT; i++){ up.push([xi(px, i), yv(m(i) + M.h)]); lo.push([xi(px, i), yv(m(i) - M.h)]); }
+    const pu = polyline(up, bp), pl = polyline(lo, bp);
+    const lr = lo.slice(0, Math.max(1, Math.ceil(bp*(NT - 1)) + 1));
+    o.push(path(pu + ' ' + polyline(lr.reverse(), 1).replace('M', 'L') + ' Z', {fill:V('target'), op:op*.18}));
+    o.push(path(pu, {stroke:V('target'), sw:1.3, op:op*.8}));
+    o.push(path(pl, {stroke:V('target'), sw:1.3, op:op*.8}));
+  }
+  // forecast
+  const fpts = [];
+  for (let i = 0; i < NT; i++) fpts.push([xi(px, i), yv(m(i))]);
+  o.push(path(polyline(fpts, P(t, ...T.fcst)), {stroke:V('target'), sw:2, dash:'5 4', op}));
+
+  // true values: neutral first, then marked as inside or outside while they are
+  // counted. A copy of each mark drops to the strip under the chart.
+  let n = 0, cov = 0;
+  for (let i = 0; i < NT; i++){
+    const x = xi(px, i), y = yv(Y[i]), ob = M.obs[i];
+    const a = lin(t, lerp(T.obs[0], T.obs[1] - .25, i/(NT - 1)), lerp(T.obs[0], T.obs[1] - .25, i/(NT - 1)) + .25);
+    if (a <= 0) continue;
+    const s = cs + i*T.step, mark = lin(t, s, s + .15), q = ease(lin(t, s, s + T.drop));
+    if (!ob.inside && mark > 0){
+      const edge = yv(Y[i] > ob.hi ? ob.hi : ob.lo);
+      o.push(line(x, edge, x, y, {stroke:V('miss'), sw:1.5, dash:'2 3', op:op*mark}));
+      o.push(circle(x, y, 3.2, {fill:V('series'), op:op*a*(1 - mark)}));
+      o.push(circle(x, y, 4, {fill:V('bg'), stroke:V('miss'), sw:2, op:op*mark}));
+    } else {
+      o.push(circle(x, y, 3.2, {fill:V('series'), op:op*a}));
+    }
+    if (q > 0){
+      const ys = lerp(y, SY, q);
+      if (ob.inside) o.push(circle(x, ys, 3.2, {fill:V('series'), op}));
+      else o.push(circle(x, ys, 4, {fill:V('bg'), stroke:V('miss'), sw:2, op}));
+    }
+    if (t >= s + T.drop){ n++; if (ob.inside) cov++; }
+  }
+
+  // width of the interval, measured at the last step
+  const wa = P(t, T.width[p], T.width[p] + .9);
+  if (wa > 0){
+    const x = xi(px, NT - 1) + 14, yt = yv(m(NT - 1) + M.h), yb = yv(m(NT - 1) - M.h);
+    o.push(line(x, lerp((yt + yb)/2, yt, wa), x, lerp((yt + yb)/2, yb, wa), {stroke:V('fg'), sw:1.6, op}));
+    o.push(line(x - 5, yt, x + 5, yt, {stroke:V('fg'), sw:1.6, op:op*wa}));
+    o.push(line(x - 5, yb, x + 5, yb, {stroke:V('fg'), sw:1.6, op:op*wa}));
+  }
+
+  // figures of the interval
+  const xl = px + 24, xr = px + PW - 24;
+  const ca = P(t, cs - .3, cs + .2), done = n === NT && t >= cs + (NT - 1)*T.step + T.drop + .3;
+  o.push(text(xl, ROWS[0], 'coverage (target 80%)', {size:14, fill:V('muted'), op:op*ca}));
+  o.push(text(xr, ROWS[0], done ? `${M.cov} / ${NT} = ${pct(M.cov)}` : `${cov} / ${n}`, {size:14, cls:'m', weight:700, anchor:'end', fill: done && M.far ? V('miss') : V('fg'), op:op*ca}));
+  o.push(text(xl, ROWS[1], 'width', {size:14, fill:V('muted'), op:op*wa}));
+  o.push(text(xr, ROWS[1], M.width.toFixed(1), {size:14, cls:'m', weight:700, anchor:'end', op:op*wa}));
+  const sa = P(t, T.scores[p], T.scores[p] + .7);
+  o.push(text(xl, ROWS[2], 'Winkler score (lower is better)', {size:14, fill:V('muted'), op:op*sa}));
+  o.push(text(xr, ROWS[2], M.winkler.toFixed(1), {size:14, cls:'m', weight:700, anchor:'end', fill: M === BEST ? V('targetText') : V('fg'), op:op*sa}));
+
+  // verdict
+  const va = P(t, T.verdict[p], T.verdict[p] + .5);
+  o.push(line(xl, VY - 24, xr, VY - 24, {stroke:V('border'), op:op*va}));
+  o.push(text(xl, VY, M.verdict, {size:14, weight:700, fill: M === BEST ? V('targetText') : V('fg'), op:op*va}));
+}
+
+/* ---------------------------------------------------------------- legend */
+function legend(t, o){
+  const a = P(t, ...T.fcst), b = P(t, ...T.obs), c = P(t, T.count[0] - .4, T.count[0]), y = 620;
+  o.push(line(40, y - 4, 64, y - 4, {stroke:V('target'), sw:2, dash:'5 4', op:a}));
+  o.push(text(72, y, 'forecast', {size:13, fill:V('muted'), op:a}));
+  o.push(circle(152, y - 4, 3.2, {fill:V('series'), op:b}));
+  o.push(text(162, y, 'true value', {size:13, fill:V('muted'), op:b}));
+  o.push(circle(252, y - 4, 4, {fill:V('bg'), stroke:V('miss'), sw:2, op:c}));
+  o.push(text(263, y, 'true value outside the interval', {size:13, fill:V('muted'), op:c}));
+}
+
+/* ------------------------------------------------------------------ run */
+SkfAnim.run({
+  title: 'Evaluating prediction intervals',
+  desc: 'Three panels show the same forecast and the same 20 true values with a nominal 80% interval of different ' +
+        'width. Interval A is narrow (width ' + MODELS[0].width.toFixed(1) + ') and covers ' + pct(MODELS[0].cov) +
+        ' of the values; interval B covers ' + pct(MODELS[1].cov) + ' with a width of ' + MODELS[1].width.toFixed(1) +
+        '; interval C covers ' + pct(MODELS[2].cov) + ' with a width of ' + MODELS[2].width.toFixed(1) +
+        '. A good interval is calibrated (coverage close to its target) and sharp (as narrow as possible), as ' +
+        'interval C. The Winkler score combines both in a single number, where lower is better: ' +
+        MODELS[2].winkler.toFixed(1) + ' for C, against ' + MODELS[0].winkler.toFixed(1) + ' for A and ' +
+        MODELS[1].winkler.toFixed(1) + ' for B.',
+  total: T.total,
+  height: 640,
+  still: 40,
+  fadeOut: T.fadeOut,
+  render(t, o){
+    header(t, o, {title:'Evaluating prediction intervals', captions:CAPTIONS, steps:STEPS});
+    for (let p = 0; p < 3; p++) panel(t, o, p);
+    legend(t, o);
+  }
+});
+})();
+</script>
+</body>
+</html>

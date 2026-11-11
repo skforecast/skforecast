@@ -6267,9 +6267,9 @@ Estimator parameters:
     'n_jobs': None, 'oob_score': False, 'random_state': 123, 'verbose': 0,
     'warm_start': False} 
 fit_kwargs: {} 
-Creation date: 2026-10-08 19:51:31 
-Last fit date: 2026-10-08 19:51:31 
-Skforecast version: 0.26.0 
+Creation date: 2026-11-11 13:41:02 
+Last fit date: 2026-11-11 13:41:02 
+Skforecast version: 0.27.0 
 Python version: 3.14.3 
 Forecaster id: forecaster_001 
 
@@ -6583,7 +6583,11 @@ except UntrustedTypesFoundException as e:
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Untrusted types found in the file: ['pandas._libs.tslibs.offsets.MonthBegin', 'pandas.core.indexes.datetimes.DatetimeIndex', 'skforecast.preprocessing._preprocessing.QuantileBinner', 'skforecast.recursive._forecaster_recursive.ForecasterRecursive'].
+<pre>Untrusted types found in the file: ['pandas._libs.tslibs.offsets.MonthBegin', 'pandas.core.indexes.datetimes.DatetimeIndex', 'skforecast.preprocessing._preprocessing.QuantileBinner', 'skforecast.recursive._forecaster_recursive.ForecasterRecursive', 'sklearn.tree._tree.Tree'].
+
+- sklearn.tree._tree.Tree: sklearn.tree._tree.Tree (the shared node storage for DecisionTree*, RandomForest*, ExtraTrees*, and GradientBoosting* models) stores raw node indices (left_child, right_child, feature) that scikit-learn indexes into without bounds checking. A malicious file can set these to out-of-range values: skops loads the object successfully, but calling .predict() on it can then crash the process (segfault) or read out-of-bounds memory. If you created the file yourself or otherwise fully trust its source, you can load it with trusted=["sklearn.tree._tree.Tree"].
+
+Only add the specific types you have reviewed and trust to the `trusted` argument; avoid passing everything reported by get_untrusted_types() just to make a file load.
 skops does not load these types unless you explicitly trust them. To review the full list of untrusted types in the file, run `skops.io.get_untrusted_types(file='forecaster_001.skops')`. If you trust the source of 'forecaster_001.skops', reload with `load_forecaster(..., trusted=True)` to trust them all, or pass the reviewed list via `trusted=[...]`.
 </pre>
 </div>
@@ -6637,7 +6641,8 @@ untrusted_types</div>
 <pre>['pandas._libs.tslibs.offsets.MonthBegin',
  'pandas.core.indexes.datetimes.DatetimeIndex',
  'skforecast.preprocessing._preprocessing.QuantileBinner',
- 'skforecast.recursive._forecaster_recursive.ForecasterRecursive']</pre>
+ 'skforecast.recursive._forecaster_recursive.ForecasterRecursive',
+ 'sklearn.tree._tree.Tree']</pre>
 </div>
 </div>
 </div>
@@ -7001,7 +7006,8 @@ save_forecaster(
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>                                                                                      <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Category : skforecast.exceptions.SaveLoadSkforecastWarning                           <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Location :                                                                           <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> /Users/javier.escobar/code/github/skforecast/skforecast/utils/utils.py:3564          <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
+<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> /Users/javier.escobar/code/github/skforecast/.claude/worktrees/docs-execute-notebook <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
+<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> s-0.27/skforecast/utils/utils.py:3530                                                <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Suppress : warnings.simplefilter('ignore', category=SaveLoadSkforecastWarning)       <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">╰──────────────────────────────────────────────────────────────────────────────────────╯</span>
 </pre>
@@ -7022,7 +7028,8 @@ save_forecaster(
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>                                                                                      <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Category : skforecast.exceptions.SaveLoadSkforecastWarning                           <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Location :                                                                           <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> /Users/javier.escobar/code/github/skforecast/skforecast/utils/utils.py:3603          <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
+<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> /Users/javier.escobar/code/github/skforecast/.claude/worktrees/docs-execute-notebook <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
+<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> s-0.27/skforecast/utils/utils.py:3569                                                <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Suppress : warnings.simplefilter('ignore', category=SaveLoadSkforecastWarning)       <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">╰──────────────────────────────────────────────────────────────────────────────────────╯</span>
 </pre>
@@ -7113,9 +7120,9 @@ Estimator parameters:
     'n_jobs': None, 'oob_score': False, 'random_state': 123, 'verbose': 0,
     'warm_start': False} 
 fit_kwargs: {} 
-Creation date: 2026-10-08 19:51:36 
-Last fit date: 2026-10-08 19:51:36 
-Skforecast version: 0.26.0 
+Creation date: 2026-11-11 13:41:08 
+Last fit date: 2026-11-11 13:41:08 
+Skforecast version: 0.27.0 
 Python version: 3.14.3 
 Forecaster id: forecaster_custom_features 
 
@@ -7323,9 +7330,9 @@ Estimator parameters:
     'n_jobs': None, 'oob_score': False, 'random_state': 123, 'verbose': 0,
     'warm_start': False} 
 fit_kwargs: {} 
-Creation date: 2026-10-08 19:51:36 
-Last fit date: 2026-10-08 19:51:36 
-Skforecast version: 0.26.0 
+Creation date: 2026-11-11 13:41:08 
+Last fit date: 2026-11-11 13:41:08 
+Skforecast version: 0.27.0 
 Python version: 3.14.3 
 Forecaster id: forecaster_custom_features 
 
@@ -7803,7 +7810,8 @@ forecaster</div>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>                                                                                      <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Category : skforecast.exceptions.InputTypeWarning                                    <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Location :                                                                           <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> /Users/javier.escobar/code/github/skforecast/skforecast/utils/utils.py:4204          <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
+<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> /Users/javier.escobar/code/github/skforecast/.claude/worktrees/docs-execute-notebook <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
+<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> s-0.27/skforecast/utils/utils.py:4425                                                <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Suppress : warnings.simplefilter('ignore', category=InputTypeWarning)                <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">╰──────────────────────────────────────────────────────────────────────────────────────╯</span>
 </pre>
@@ -7813,7 +7821,7 @@ forecaster</div>
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[24]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <style>
-        .container-8adbda8ec8534a95bc4929b9765e40eb {
+        .container-e8b6c3e09fcd4d73b696127fddc0619c {
             font-family: 'Arial', sans-serif;
             font-size: 0.9em;
             color: #333333;
@@ -7824,7 +7832,7 @@ forecaster</div>
             max-width: 600px;
             #margin: auto;
         }
-        .container-8adbda8ec8534a95bc4929b9765e40eb h2 {
+        .container-e8b6c3e09fcd4d73b696127fddc0619c h2 {
             font-size: 1.5em;
             color: #222222;
             border-bottom: 2px solid #ddd;
@@ -7832,11 +7840,11 @@ forecaster</div>
             margin-bottom: 15px;
             margin-top: 5px;
         }
-        .container-8adbda8ec8534a95bc4929b9765e40eb details {
+        .container-e8b6c3e09fcd4d73b696127fddc0619c details {
             margin: 10px 0;
             border-color: #b3dbfd;
         }
-        .container-8adbda8ec8534a95bc4929b9765e40eb summary {
+        .container-e8b6c3e09fcd4d73b696127fddc0619c summary {
             font-weight: bold;
             font-size: 1.1em;
             color: #000000;
@@ -7846,38 +7854,38 @@ forecaster</div>
             padding: 5px;
             border-radius: 5px;
         }
-        .container-8adbda8ec8534a95bc4929b9765e40eb summary:hover {
+        .container-e8b6c3e09fcd4d73b696127fddc0619c summary:hover {
             color: #000000;
             background-color: #e0e0e0;
         }
-        .container-8adbda8ec8534a95bc4929b9765e40eb ul {
+        .container-e8b6c3e09fcd4d73b696127fddc0619c ul {
             font-family: 'Courier New', monospace;
             list-style-type: none;
             padding-left: 20px;
             margin: 10px 0;
             line-height: normal;
         }
-        .container-8adbda8ec8534a95bc4929b9765e40eb li {
+        .container-e8b6c3e09fcd4d73b696127fddc0619c li {
             margin: 5px 0;
             font-family: 'Courier New', monospace;
         }
-        .container-8adbda8ec8534a95bc4929b9765e40eb li strong {
+        .container-e8b6c3e09fcd4d73b696127fddc0619c li strong {
             font-weight: bold;
             color: #444444;
         }
-        .container-8adbda8ec8534a95bc4929b9765e40eb li::before {
+        .container-e8b6c3e09fcd4d73b696127fddc0619c li::before {
             content: "- ";
             color: #666666;
         }
-        .container-8adbda8ec8534a95bc4929b9765e40eb a {
+        .container-e8b6c3e09fcd4d73b696127fddc0619c a {
             color: #001633;
             text-decoration: none;
         }
-        .container-8adbda8ec8534a95bc4929b9765e40eb a:hover {
+        .container-e8b6c3e09fcd4d73b696127fddc0619c a:hover {
             color: #359ccb; 
         }
     </style>
-<div class="container-8adbda8ec8534a95bc4929b9765e40eb">
+<div class="container-e8b6c3e09fcd4d73b696127fddc0619c">
 <p style="font-size: 1.5em; font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em;">ForecasterRecursiveMultiSeries</p>
 <details open="">
 <summary>General Information</summary>
@@ -7894,9 +7902,9 @@ forecaster</div>
 <li><strong>Series weights:</strong> None</li>
 <li><strong>Differentiation order:</strong> None</li>
 <li><strong>Drop NaN from series:</strong> False</li>
-<li><strong>Creation date:</strong> 2026-10-08 19:51:37</li>
-<li><strong>Last fit date:</strong> 2026-10-08 19:51:37</li>
-<li><strong>Skforecast version:</strong> 0.26.0</li>
+<li><strong>Creation date:</strong> 2026-11-11 13:41:08</li>
+<li><strong>Last fit date:</strong> 2026-11-11 13:41:09</li>
+<li><strong>Skforecast version:</strong> 0.27.0</li>
 <li><strong>Python version:</strong> 3.14.3</li>
 <li><strong>Forecaster id:</strong> None</li>
 </ul>
@@ -7934,9 +7942,9 @@ forecaster</div>
                 </ul>
 </details>
 <p>
-<a href="https://skforecast.org/0.26.0/api/forecasterrecursivemultiseries.html">📖 <strong>API Reference</strong></a>
+<a href="https://skforecast.org/0.27.0/api/forecasterrecursivemultiseries.html">📖 <strong>API Reference</strong></a>
                   
-                <a href="https://skforecast.org/0.26.0/user_guides/independent-multi-time-series-forecasting.html">📝 <strong>User Guide</strong></a>
+                <a href="https://skforecast.org/0.27.0/user_guides/independent-multi-time-series-forecasting.html">📝 <strong>User Guide</strong></a>
 </p>
 </div>
 </div>
@@ -8002,7 +8010,8 @@ save_forecaster(
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>                                                                                      <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Category : skforecast.exceptions.SaveLoadSkforecastWarning                           <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Location :                                                                           <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> /Users/javier.escobar/code/github/skforecast/skforecast/utils/utils.py:3564          <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
+<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> /Users/javier.escobar/code/github/skforecast/.claude/worktrees/docs-execute-notebook <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
+<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> s-0.27/skforecast/utils/utils.py:3530                                                <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Suppress : warnings.simplefilter('ignore', category=SaveLoadSkforecastWarning)       <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">╰──────────────────────────────────────────────────────────────────────────────────────╯</span>
 </pre>
@@ -8023,7 +8032,8 @@ save_forecaster(
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>                                                                                      <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Category : skforecast.exceptions.SaveLoadSkforecastWarning                           <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Location :                                                                           <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
-<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> /Users/javier.escobar/code/github/skforecast/skforecast/utils/utils.py:3603          <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
+<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> /Users/javier.escobar/code/github/skforecast/.claude/worktrees/docs-execute-notebook <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
+<span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> s-0.27/skforecast/utils/utils.py:3569                                                <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span> Suppress : warnings.simplefilter('ignore', category=SaveLoadSkforecastWarning)       <span style="color: #ffaf00; text-decoration-color: #ffaf00">│</span>
 <span style="color: #ffaf00; text-decoration-color: #ffaf00">╰──────────────────────────────────────────────────────────────────────────────────────╯</span>
 </pre>
@@ -8115,9 +8125,9 @@ Estimator parameters:
     'n_jobs': None, 'oob_score': False, 'random_state': 123, 'verbose': 0,
     'warm_start': False} 
 fit_kwargs: {} 
-Creation date: 2026-10-08 19:51:37 
-Last fit date: 2026-10-08 19:51:37 
-Skforecast version: 0.26.0 
+Creation date: 2026-11-11 13:41:08 
+Last fit date: 2026-11-11 13:41:09 
+Skforecast version: 0.27.0 
 Python version: 3.14.3 
 Forecaster id: None 
 

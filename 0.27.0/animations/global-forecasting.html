@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<!--
+  Copyright (c) 2021-present Joaquín Amat Rodrigo and Javier Escobar Ortiz.
+  Part of the skforecast documentation, licensed under CC BY-NC-SA 4.0
+  (https://creativecommons.org/licenses/by-nc-sa/4.0/). It is not covered by the
+  BSD-3-Clause license of the skforecast software.
+  The skforecast trademark and logo are registered with the EUIPO (application
+  number 019109684) and may not be used without permission.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Global forecasting models</title>
+<meta name="description" content="Animated introduction to global forecasting: local models (one per series) versus a single global model trained on all the series, and the four global approaches available in skforecast.">
+<link rel="stylesheet" href="skf-anim.css">
+</head>
+<body>
+<div class="skf-anim"></div>
+<script src="skf-anim.js"></script>
+<script>
+(function(){
+"use strict";
+const {cl, ease, lin, P, lerp, V, mw, text, rect, line, circle, path, polyline, arrow, header} = SkfAnim;
+
+/* ------------------------------------------------------------------ data */
+// Shared weekly pattern (Mon..Sun). Each series follows it with its own
+// strength, trend, noise and quirks (late start, missing values, level shift).
+const W = [1.00, 1.05, 1.02, 0.97, 1.08, 0.72, 0.66];
+let seed = 7;
+const rnd = () => (seed = (seed*16807) % 2147483647)/2147483647 - .5;
+
+const NT = 12, NK = 14, NF = 3;          // tiles, observed days, forecast days
+const SPECS = [
+  {amp:1.0, trend:0,    noise:.03},
+  {amp:.8,  trend:.25,  noise:.03},                  // growing
+  {amp:1.5, trend:0,    noise:.02},                  // strong weekly pattern
+  {amp:.35, trend:0,    noise:.10},                  // weak pattern, noisy
+  {amp:1.0, trend:.1,   noise:.03, k0:8},            // starts later
+  {amp:.9,  trend:-.25, noise:.03},                  // declining
+  {amp:1.1, trend:0,    noise:.03, gap:[5, 7]},      // missing values
+  {amp:.8,  trend:0,    noise:.03, shift:[7, .3]},   // level shift
+  {amp:1.3, trend:.2,   noise:.04},
+  {amp:.5,  trend:-.1,  noise:.08},
+  {amp:.9,  trend:.15,  noise:.04, k0:6},            // starts later
+  {amp:1.4, trend:0,    noise:.03, gap:[9, 10]}      // missing values
+];
+// Per-series variation of the 3 forecast values, so that they do not all look alike.
+const FC_VAR = [[0, .08, .02], [.05, .12, .2], [0, -.1, .04], [.06, -.04, .1], [-.06, .04, .12], [0, -.08, -.14],
+                [.04, .12, 0], [-.05, .07, -.03], [.1, .02, .16], [-.07, 0, -.1], [.03, .14, .06], [-.1, .05, -.04]];
+const TILES = SPECS.map((sp, i) => {
+  const k0 = sp.k0 || 0, v = [];
+  for (let k = 0; k < NK + NF; k++){
+    const missing = k < k0 || (sp.gap && k >= sp.gap[0] && k <= sp.gap[1]);
+    const shift = sp.shift && k >= sp.shift[0] ? sp.shift[1] : 0;
+    v.push(missing ? null : 1 + sp.trend*(k - 7)/7 + sp.amp*(W[k % 7] - 1) + shift + (k < NK ? 2*sp.noise*rnd() : FC_VAR[i][k - NK]));
+  }
+  // Common minimum range, so that a weak pattern looks weak.
+  const obs = v.filter(x => x !== null), lo = Math.min(...obs), hi = Math.max(...obs), r = Math.max(hi - lo, .6);
+  return {k0, gap: sp.gap, v, lo: (lo + hi)/2 - r/2, hi: (lo + hi)/2 + r/2};
+});
+
+/* -------------------------------------------------------------- timeline */
+const T = {
+  tiles:[0.3,3.0], more:[2.8,3.4], counter:[0.6,1.1],
+  local:4.3, localStep:.12, many:[6.4,8.6], countUp:[6.4,8.8],
+  merge:[10.6,12.6], box:[11.8,12.8], count1:[11.6,12.4],
+  fit:13.2, fitStep:.08, fitDur:.8, pattern:[14.2,15.2],
+  predCode:[15.6,16.0], predOutline:[15.6,16.0], predArrow:[15.8,16.4], fcst:16.4, fcstStep:.03, short:[16.8,20.6],
+  out:[21.1,21.7], panels:[21.6,22.2], slot0:22.4, slot:4.0, allLit:38.4,
+  fadeOut:[41.4,42.2], total:42.2
+};
+const CAPTIONS = [
+  [0.0, 4.0, 'Many forecasting problems involve many related series: products, stores, sensors…'],
+  [4.0, 6.4, 'Local approach: one model per series, each one learning only from its own history.'],
+  [6.4, 10.6,'With hundreds of series, that means hundreds of models to train, tune and maintain.'],
+  [10.6,13.2,'Global approach: all those models are replaced by a single one.'],
+  [13.2,15.6,'The global model is trained with all the series at once and learns the patterns they share.'],
+  [15.6,T.out[0],'The same model then forecasts every series, including the short ones.'],
+  [T.out[0],T.slot0,'Global models differ in how they use the series.'],
+  ...[
+    'Independent: each series is forecast from its own past, with one model shared by all.',
+    'Dependent (multivariate): the past of all the series is used to forecast one of them.',
+    'Foundation models forecast zero-shot: pre-trained on many series, they predict new ones without training.',
+    'Deep learning: a recurrent network reads all the series and forecasts several at once.'
+  ].map((msg, n) => [T.slot0 + n*T.slot, T.slot0 + (n + 1)*T.slot, msg]),
+  [T.allLit, 99, 'There is no single best option: compare them with backtesting on your own data.']
+];
+const STEPS = [['Many series',0,4],['Local',4,10.6],['Global',10.6,T.out[0]],['Approaches',T.out[0],99]];
+
+/* ---------------------------------------------------------------- layout */
+const GX0 = 40, TW = 150, TH = 104, GAPX = 15, GAPY = 14, GY0 = 118;
+const tileX = i => GX0 + (i % 3)*(TW + GAPX);
+const tileY = i => GY0 + Math.floor(i/3)*(TH + GAPY);
+const GX1 = tileX(2) + TW, GY1 = tileY(NT - 1) + TH;
+const tdx = (TW - 22)/(NK + NF - 1);
+const tx = (i, k) => tileX(i) + 11 + k*tdx;
+const ty = (i, v) => { const s = TILES[i]; return tileY(i) + TH - 12 - (v - s.lo)/(s.hi - s.lo)*(TH - 44); };
+const CNX = 620, CNY = 190;                          // counter
+// Local models: one labelled box per series, then hundreds of small ones.
+const LW = 100, LH = 50, LGX = 12, LGY = 12, LX0 = 620, LY0 = 236;
+const lbX = i => LX0 + (i % 3)*(LW + LGX), lbY = i => LY0 + Math.floor(i/3)*(LH + LGY);
+const MX0 = lbX(2) + LW + 22, MX1 = 1240, MY0 = LY0, MY1 = lbY(NT - 1) + LH;
+const MINI = [];
+for (let y = MY0; y + 12 <= MY1; y += 16) for (let x = MX0; x + 18 <= MX1; x += 23) MINI.push([x, y]);
+const MINI_AT = MINI.map((_, n) => ((n*37) % MINI.length)/MINI.length);   // appearance order
+const BX0 = 640, BX1 = 1200, BY0 = 262, BY1 = 470;   // global model box
+const BCX = (BX0 + BX1)/2, BCY = (BY0 + BY1)/2;
+
+/* ----------------------------------------------------- scenes 1 to 3 */
+function counter(t, o, a){
+  const ca = P(t, ...T.counter)*a;
+  if (ca <= 0) return;
+  const series = Math.round(NT*lin(t, ...T.tiles));
+  const models = Math.round(NT + (500 - NT)*P(t, ...T.countUp));
+  const l1 = P(t, T.local, T.local + .4), q = P(t, ...T.count1);
+  const block = (num, lab, sub, op) => {
+    if (op <= 0) return;
+    o.push(text(CNX, CNY, num, {size:64, weight:700, fill:V('title'), op}));
+    const x = CNX + mw('0', 64, 700)*num.length + 18;   // digits are measured as '0' so the label never overlaps
+    o.push(text(x, CNY - 22, lab, {size:21, weight:700, op}));
+    o.push(text(x, CNY + 2, sub, {size:15, fill:V('muted'), op}));
+  };
+  block(String(series), 'series', 'in practice, hundreds or thousands', ca*(1 - l1));
+  block(String(models), 'models', 'to train, tune and maintain', ca*l1*(1 - q));
+  block('1', 'model', 'for all the series', ca*q);
+}
+
+// Position of a local model box while merging into the global box.
+const toBox = (x, y, w, h, q) => [lerp(x, BCX - w/2, q), lerp(y, BCY - h/2, q) - 30*Math.sin(Math.PI*q)];
+
+function localModels(t, o, a){
+  const q = P(t, ...T.merge);
+  if (q >= 1) return;
+  const fade = a*(1 - lin(q, .6, 1));
+  for (let i = 0; i < NT; i++){
+    const s0 = T.local + i*T.localStep, la = P(t, s0, s0 + .35)*fade;
+    if (la <= 0) continue;
+    const [x, y] = toBox(lbX(i), lbY(i), LW, LH, q);
+    const pair = Math.max(0, 1 - Math.abs(t - (s0 + .35))/.3)*(1 - q);
+    o.push(rect(x, y, LW, LH, {rx:8, fill:V('panel'), stroke:V('border'), sw:1.3, op:la}));
+    o.push(rect(x, y, LW, LH, {rx:8, stroke:V('fg'), sw:1.6, op:la*pair}));
+    o.push(text(x + LW/2, y + LH/2 + 4.5, 'model ' + (i + 1), {size:12.5, cls:'m', weight:700, anchor:'middle', op:la}));
+  }
+  const ma = P(t, T.many[0], T.many[0] + .3);
+  MINI.forEach(([mx, my], n) => {
+    const s0 = lerp(T.many[0], T.many[1] - .3, MINI_AT[n]), la = P(t, s0, s0 + .3)*fade;
+    if (la <= 0) return;
+    const [x, y] = toBox(mx, my, 18, 12, q);
+    o.push(rect(x, y, 18, 12, {rx:3, fill:V('panel'), stroke:V('border'), sw:1, op:la}));
+  });
+  o.push(text((LX0 + MX1)/2, MY1 + 34, '+ hundreds more models', {size:14, cls:'i', anchor:'middle', fill:V('muted'), op:ma*a*(1 - q)}));
+}
+
+function seriesPath(i, p = 1){
+  // observed values of tile i, drawn segment by segment (missing values break the line)
+  const s = TILES[i], dk = s.k0 + p*(NK - 1 - s.k0), out = [];
+  let seg = [];
+  for (let k = s.k0; k <= NK; k++){
+    if (k < NK && s.v[k] !== null){ seg.push(k); continue; }
+    if (seg.length > 1){
+      const sp = cl((dk - seg[0])/(seg[seg.length - 1] - seg[0]));
+      out.push(polyline(seg.map(kk => [tx(i, kk), ty(i, s.v[kk])]), sp));
+    }
+    seg = [];
+  }
+  return out.join(' ');
+}
+
+function tiles(t, o, a){
+  const outline = P(t, ...T.predOutline);
+  for (let i = 0; i < NT; i++){
+    const ta = P(t, T.tiles[0] + i*.2, T.tiles[0] + i*.2 + .5)*a;
+    if (ta <= 0) continue;
+    const s = TILES[i], x0 = tileX(i), y0 = tileY(i);
+    const pair = Math.max(0, 1 - Math.abs(t - (T.local + i*T.localStep + .35))/.3)*(1 - P(t, ...T.merge));
+    o.push(rect(x0, y0, TW, TH, {rx:9, fill:V('panel'), fo:.6, stroke:V('border'), so:.8, op:ta}));
+    o.push(rect(x0, y0, TW, TH, {rx:9, stroke:V('fg'), sw:1.6, op:ta*pair}));
+    o.push(text(x0 + 10, y0 + 19, 'series ' + (i + 1), {size:11, cls:'m', fill:V('muted'), op:ta}));
+    // periods without data: before the series starts, and gaps
+    const noData = (ka, kb, hl = 0) => {
+      o.push(rect(tx(i, ka) - 4, y0 + 30, tx(i, kb) - tx(i, ka) + 8, TH - 40, {rx:6, stroke:V('faint'), dash:'3 3', op:ta}));
+      o.push(rect(tx(i, ka) - 4, y0 + 30, tx(i, kb) - tx(i, ka) + 8, TH - 40, {rx:6, fill:V('fg'), fo:.06, stroke:V('fg'), sw:1.4, dash:'3 3', op:ta*hl}));
+    };
+    // when the caption mentions the short series, their missing history is highlighted
+    const hl = P(t, T.short[0], T.short[0] + .4)*(1 - P(t, T.short[1] - .4, T.short[1]));
+    if (s.k0 > 0) noData(0, s.k0 - 1, hl);
+    if (s.gap) noData(...s.gap);
+    o.push(path(seriesPath(i, P(t, T.tiles[0] + i*.2 + .1, T.tiles[0] + i*.2 + .8)), {stroke:V('series'), sw:1.7, op:ta}));
+    // forecast
+    const fs = T.fcst + i*T.fcstStep, fp = P(t, fs, fs + .6);
+    if (fp > 0){
+      const fpts = [[tx(i, NK - 1), ty(i, s.v[NK - 1])]];
+      for (let k = NK; k < NK + NF; k++) fpts.push([tx(i, k), ty(i, s.v[k])]);
+      o.push(path(polyline(fpts, fp), {stroke:V('target'), sw:2, dash:'4 3', op:ta}));
+      o.push(circle(tx(i, NK + NF - 1), ty(i, s.v[NK + NF - 1]), 3, {fill:V('target'), op:ta*lin(fp, .9, 1)}));
+    }
+  }
+  o.push(text((GX0 + GX1)/2, GY1 + 30, '+ hundreds more series', {size:14, cls:'i', anchor:'middle', fill:V('muted'), op:P(t, ...T.more)*a}));
+  // every series is forecast by the same model
+  o.push(rect(GX0 - 8, GY0 - 8, GX1 - GX0 + 16, GY1 - GY0 + 16, {rx:14, stroke:V('target'), sw:2, op:outline*a}));
+}
+
+function fitGhosts(t, o, a){
+  // every series lights up and a small copy of it travels from the grid into the
+  // global model: the model is trained with all of them
+  const sc = .3;
+  for (let i = 0; i < NT; i++){
+    const fs = T.fit + i*T.fitStep, q = ease(lin(t, fs, fs + T.fitDur));
+    const x0 = tileX(i), y0 = tileY(i);
+    const flash = Math.max(0, 1 - Math.abs(t - fs)/.35);
+    if (flash > 0) o.push(rect(x0, y0, TW, TH, {rx:9, stroke:V('lag'), sw:1.8, op:a*flash}));
+    if (q <= 0 || q >= 1) continue;
+    const sx = GX1 + 8, sy = y0 + TH/2 - TH*sc/2;
+    const x = lerp(sx, BCX - TW*sc/2, q), y = lerp(sy, BCY - TH*sc/2, q);
+    const g = [rect(0, 0, TW, TH, {rx:9, fill:V('panel'), stroke:V('lag'), sw:3}),
+      `<g transform="translate(${-x0} ${-y0})">${path(seriesPath(i), {stroke:V('series'), sw:3})}</g>`];
+    const op = a*lin(q, 0, .15)*(1 - lin(q, .85, 1));
+    o.push(`<g transform="translate(${x.toFixed(2)} ${y.toFixed(2)}) scale(${sc})" opacity="${op.toFixed(2)}">${g.join('')}</g>`);
+  }
+}
+
+function globalModel(t, o, a){
+  const g = P(t, ...T.box), ba = g*a;
+  if (ba <= 0) return;
+  // the box grows from the point where the local models merged
+  const sc = lerp(.15, 1, g), w = (BX1 - BX0)*sc, h = (BY1 - BY0)*sc;
+  o.push(rect(BCX - w/2, BCY - h/2, w, h, {rx:12, fill:V('panel'), stroke:V('border'), sw:1.5, op:ba}));
+  const ca = lin(g, .7, 1)*a;
+  o.push(text(BX0 + 24, BY0 + 34, 'One global model', {size:19, weight:700, op:ca}));
+  const pc = P(t, ...T.predCode);
+  o.push(text(BX1 - 24, BY0 + 34, '.fit(all series)', {size:14, cls:'m', anchor:'end', op:ca*(1 - pc)}));
+  o.push(text(BX1 - 24, BY0 + 34, '.predict(all series)', {size:14, cls:'m', weight:700, anchor:'end', fill:V('targetText'), op:ca*pc}));
+  const pa = P(t, T.pattern[0] - .2, T.pattern[0] + .2)*a;
+  o.push(text(BX0 + 24, BY0 + 60, 'learns the shared weekly pattern', {size:13.5, fill:V('muted'), op:pa}));
+  // learned pattern: two weeks of W
+  const px0 = BX0 + 24, px1 = BX1 - 24, py0 = BY0 + 80, py1 = BY1 - 22;
+  const pts = [];
+  for (let k = 0; k < 15; k++) pts.push([lerp(px0, px1, k/14), py1 - (W[k % 7] - .6)/(1.12 - .6)*(py1 - py0)]);
+  o.push(line(px0, py1 + 4, px1, py1 + 4, {op:pa}));
+  o.push(path(polyline(pts, P(t, ...T.pattern)), {stroke:V('lag'), sw:2.6, op:a}));
+  // one arrow from the model to all the series
+  arrow(o, BX0 - 4, BCY, GX1 + 12, BCY, P(t, ...T.predArrow), V('targetText'), a, 50);
+}
+
+/* ------------------------------------------------------- scene 4 */
+const APPROACHES = [
+  {kind:'independent', name:'Independent', fc:'ForecasterRecursiveMultiSeries', box:'Estimator', fit:'all series, stacked',
+   use:['Many related series:', 'products, stores, customers']},
+  {kind:'dependent', name:'Dependent', fc:'ForecasterDirectMultiVariate', box:'Estimator', fit:'all series as features',
+   use:['A few series that', 'influence each other']},
+  {kind:'foundation', name:'Foundation', fc:'ForecasterFoundation', box:'Pre-trained', tag:'zero-shot',
+   use:['Pre-trained on many series, it', 'forecasts yours without training']},
+  {kind:'rnn', name:'Deep learning', fc:'ForecasterRnn', box:'RNN', fit:'all series',
+   use:['Large datasets with complex,', 'non-linear patterns']}
+];
+const APW = 285, APG = 20, APY0 = 118, APY1 = 592;
+const apX = i => 40 + i*(APW + APG);
+const ROWY = [266, 354, 442];
+// A: weekly pattern with weekend dips, B: upward trend, C: irregular peaks.
+// Forecasts continue each one: A goes into the next dip, B keeps growing, C peaks again.
+const ROWV = [
+  [0.2, 0.6, 0.3, 0.0, 0.7, -0.8, -1.0, 0.3, 0.8, 0.4],
+  [-0.9, -0.7, -0.8, -0.5, -0.5, -0.2, -0.1, 0.2, 0.1, 0.4],
+  [0.0, -0.3, 0.9, -0.2, -0.4, 0.0, 0.8, -0.3, -0.2, 0.1]
+];
+const ROWF = [[0.6, -0.5, -0.9], [0.5, 0.7, 0.8], [-0.2, 0.8, -0.3]];
+
+function hArrow(o, x0, x1, y, p, color, op){
+  if (p <= 0 || op <= 0) return;
+  const xe = lerp(x0, x1, p);
+  o.push(line(x0, y, xe, y, {stroke:color, sw:1.8, op}));
+  if (p > .9) o.push(path(`M${x1 + 1} ${y} l-7 -4 v8 z`, {fill:color, op:op*lin(p, .9, 1)}));
+}
+
+function approach(t, o, i, A){
+  const d = APPROACHES[i], px = apX(i), kind = d.kind;
+  const s0 = T.slot0 + i*T.slot, p = lin(t, s0, s0 + T.slot);
+  const active = P(t, s0 - .25, s0 + .15)*(1 - P(t, s0 + T.slot - .2, s0 + T.slot + .1));
+  const lit = Math.max(active, P(t, T.allLit, T.allLit + .4));
+  const op = A*(.4 + .6*lit);
+  o.push(rect(px, APY0, APW, APY1 - APY0, {rx:12, fill:V('panel'), stroke:V('border'), sw:1.5, op:A}));
+  o.push(rect(px, APY0, APW, APY1 - APY0, {rx:12, stroke:V('target'), sw:2, op:A*active}));
+  o.push(text(px + 20, APY0 + 34, d.name, {size:18, weight:700, op}));
+  o.push(text(px + 20, APY0 + 56, d.fc, {size:12, cls:'m', fill:V('muted'), op}));
+
+  const sx = k => px + 38 + k*8.4;             // series x
+  const MB0 = px + 144, MB1 = px + 210;        // model box
+  const fx = n => px + 232 + n*15;             // forecast x
+  const vy = (r, v) => ROWY[r] - v*16;
+
+  // which rows are read (window, input arrow) and written (output arrow, forecast) at progress p
+  const F = [0, 1, 2].map(r => {
+    if (kind === 'independent'){               // one series at a time
+      const sub = (p - r/3)*3;
+      return {win: lin(sub, 0, .15)*(1 - lin(sub, .85, 1)), ain: lin(sub, .1, .4), aout: lin(sub, .4, .7), fp: lin(sub, .65, .95)};
+    }
+    const out = kind !== 'dependent' || r === 0;   // dependent: only series A is forecast
+    return {win: lin(p, 0, .15), ain: lin(p, .12, .42), aout: out ? lin(p, .45, .72) : 0, fp: out ? lin(p, .65, .92) : 0};
+  });
+
+  // model box, with its internal wiring (which inputs reach which outputs)
+  const my0 = ROWY[0] - 40, my1 = ROWY[2] + 40, mcx = (MB0 + MB1)/2;
+  if (kind === 'dependent'){                   // direct strategy: one model per step
+    o.push(rect(MB0 + 6, my0 - 6, MB1 - MB0, my1 - my0, {rx:8, fill:V('panel'), stroke:V('border'), sw:1.2, op}));
+    o.push(rect(MB0 + 3, my0 - 3, MB1 - MB0, my1 - my0, {rx:8, fill:V('panel'), stroke:V('border'), sw:1.2, op}));
+  }
+  o.push(rect(MB0, my0, MB1 - MB0, my1 - my0, {rx:8, fill:V('bg'), stroke:V('series'), sw:1.5, op}));
+  o.push(text(mcx, my0 - (kind === 'dependent' ? 16 : 11), d.box, {size:12.5, weight:700, anchor:'middle', op}));
+  const WIRES = {
+    independent: [[0, 0], [1, 1], [2, 2]],
+    dependent:   [[0, 0], [1, 0], [2, 0]],
+    rnn:         [[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2], [2, 0], [2, 1], [2, 2]],
+    foundation:  []
+  }[kind];
+  for (const [a, b] of WIRES){
+    const x0 = MB0 + 7, x1 = MB1 - 7;
+    const wd = `M${x0} ${ROWY[a]} C${x0 + 26} ${ROWY[a]} ${x1 - 26} ${ROWY[b]} ${x1} ${ROWY[b]}`;
+    o.push(path(wd, {stroke:V('faint'), sw:1.4, op}));
+    o.push(path(wd, {stroke:V('lag'), sw:1.6, op:op*lin(F[a].ain, .8, 1)}));
+  }
+  if (kind === 'rnn'){                         // recurrent loop next to the label
+    const lx = mcx + 26, ly = my0 - 15;
+    o.push(path(`M${lx - 5} ${ly + 5} a6 6 0 1 0 1 -9`, {stroke:V('muted'), sw:1.5, op}));
+    o.push(path(`M${lx - 4} ${ly - 7} l4 -3 l-1 5 z`, {fill:V('muted'), op}));
+  }
+  if (kind === 'foundation'){                  // pre-trained on many series
+    // small series of different kinds, filling the box
+    const PRETRAIN = [
+      k => Math.sin(k*1.6),                          // seasonal
+      k => k/5 - .8,                                 // growing trend
+      k => (k % 4 === 1 ? 1 : -.6),                  // intermittent peaks
+      k => (k < 5 ? -.7 : .7),                       // level shift
+      k => .9 - k/5 + .25*Math.sin(k*2.3),           // declining with noise
+      k => Math.exp(-k/3)*Math.sin(k*1.9)*1.6,       // damped
+      k => (k % 3)/1.5 - .6,                         // sawtooth
+      k => Math.exp(k/3.5)/6 - .8                    // exponential growth
+    ];
+    const n0 = my0 + 62, gap = (my1 - 16 - n0)/(PRETRAIN.length - 1);
+    PRETRAIN.forEach((fn, n) => {
+      const pts = [];
+      for (let k = 0; k < 9; k++) pts.push([MB0 + 8 + k*6.2, n0 + n*gap - 6*cl(fn(k), -1.2, 1.2)]);
+      o.push(path(polyline(pts), {stroke:V('faint'), sw:1.1, op}));
+    });
+    o.push(text(mcx, my0 + 26, 'trained', {size:10.5, cls:'m', anchor:'middle', fill:V('muted'), op}));
+    o.push(text(mcx, my0 + 40, 'elsewhere', {size:10.5, cls:'m', anchor:'middle', fill:V('muted'), op}));
+  }
+
+  // series rows
+  for (let r = 0; r < 3; r++){
+    const y = ROWY[r], {ain, aout, fp} = F[r], win = F[r].win*active;
+    o.push(text(px + 20, y + 4.5, 'ABC'[r], {size:12.5, weight:700, fill:V('s' + (r + 1)), op}));
+    if (win > 0) o.push(rect(sx(7) - 5, y - 21, sx(9) - sx(7) + 10, 42, {rx:6, fill:V('lag'), fo:.12, stroke:V('lag'), so:.6, op:op*win}));
+    const pts = ROWV[r].map((v, k) => [sx(k), vy(r, v)]);
+    o.push(path(polyline(pts), {stroke:V('series'), sw:1.7, op}));
+    for (let k = 7; k < 10; k++) o.push(circle(sx(k), vy(r, ROWV[r][k]), 3.2, {fill:V('lag'), op:op*win}));
+    hArrow(o, sx(9) + 10, MB0 - 3, y, ain, V('lag'), op);
+    hArrow(o, MB1 + (kind === 'dependent' ? 9 : 4), fx(0) - 8, y, aout, V('targetText'), op);
+    if (fp > 0){
+      for (let n = 0; n < 3; n++) o.push(circle(fx(n), vy(r, ROWF[r][n]), 3.6, {fill:V('target'), op:op*lin(fp, n/3, n/3 + .34)}));
+    }
+  }
+
+  // fit and typical use
+  const fy = ROWY[2] + 76;
+  o.push(line(px + 20, fy - 22, px + APW - 20, fy - 22, {op}));
+  if (d.tag){                                  // foundation: zero-shot instead of fit
+    o.push(text(px + 20, fy, d.tag, {size:12.5, cls:'m', weight:700, op}));
+  } else {
+    o.push(text(px + 20, fy, 'fit:', {size:12.5, cls:'m', fill:V('muted'), op}));
+    o.push(text(px + 20 + mw('fit: ', 12.5, 400, 'm'), fy, d.fit, {size:12.5, cls:'m', weight:700, op}));
+  }
+  d.use.forEach((s, n) => o.push(text(px + 20, fy + 30 + n*19, s, {size:13.5, fill:V('muted'), op})));
+}
+
+/* ---------------------------------------------------------------- run */
+SkfAnim.run({
+  title: 'Global forecasting models',
+  desc: 'Many related series are shown. A local approach trains one model per series, so short series have little ' +
+        'to learn from and the number of models grows with the number of series. A global approach trains a single ' +
+        'model on all the series, which learns their shared weekly pattern and forecasts all of them. Four global ' +
+        'approaches are then compared: independent (ForecasterRecursiveMultiSeries, each series forecast from its own ' +
+        'past), dependent (ForecasterDirectMultiVariate, all series used to forecast one), foundation models ' +
+        '(ForecasterFoundation, pre-trained, no training needed) and deep learning (ForecasterRnn, all series in ' +
+        'and several forecast at once).',
+  total: T.total,
+  height: 640,
+  still: 40.5,
+  fadeOut: T.fadeOut,
+  render(t, o){
+    header(t, o, {title:'Global forecasting models', captions:CAPTIONS, steps:STEPS});
+    const a = 1 - P(t, ...T.out);
+    if (a > 0){ tiles(t, o, a); counter(t, o, a); localModels(t, o, a); globalModel(t, o, a); fitGhosts(t, o, a); }
+    const A = P(t, ...T.panels);
+    if (A > 0) for (let i = 0; i < 4; i++) approach(t, o, i, A);
+  }
+});
+})();
+</script>
+</body>
+</html>

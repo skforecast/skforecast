@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<!--
+  Copyright (c) 2021-present Joaquín Amat Rodrigo and Javier Escobar Ortiz.
+  Part of the skforecast documentation, licensed under CC BY-NC-SA 4.0
+  (https://creativecommons.org/licenses/by-nc-sa/4.0/). It is not covered by the
+  BSD-3-Clause license of the skforecast software.
+  The skforecast trademark and logo are registered with the EUIPO (application
+  number 019109684) and may not be used without permission.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dependent multi-series forecasting</title>
+<meta name="description" content="Animated explanation of dependent (multivariate) multi-series forecasting with ForecasterDirectMultiVariate: the lags of all the series are used as features to forecast one of them, with one model per step.">
+<link rel="stylesheet" href="skf-anim.css">
+</head>
+<body>
+<div class="skf-anim"></div>
+<script src="skf-anim.js"></script>
+<script>
+(function(){
+"use strict";
+const {cl, ease, lin, P, lerp, V, mw, text, rect, line, circle, path, polyline, chip, header} = SkfAnim;
+
+/* ------------------------------------------------------------------ data */
+// Hourly sensors of a compressor and its operating mode (exogenous, scheduled in
+// advance). Pressure jumps and then discharges slowly; each jump is followed by a
+// peak in flow one hour later and by a rise in temperature one hour after that.
+// In 'full' mode flow runs higher. k = 0..11 observed, k = 12..14 forecast
+// (steps = 3). The level is flow.
+const S = [
+  {name:'flow', c:'s1', lo:56, hi:79,
+   v:[60.1,60.8,64.9,65.3,65.8,75.2,63.5,60.9,65.1,65.6,75.8,62.4], f:[60.6,64.8,65.2]},
+  {name:'temp', c:'s2', lo:40.5, hi:44,
+   v:[41.0,41.2,41.5,41.6,41.7,42.0,43.3,42.5,42.0,41.9,42.4,43.5]},
+  {name:'pressure', c:'s3', lo:3.8, hi:5.6,
+   v:[4.2,4.1,4.2,4.1,5.3,5.0,4.7,4.4,4.2,5.2,4.9,4.6]}
+];
+const MODE = ['eco','eco','full','full','full','full','eco','eco','full','full','full','eco','eco','full','full'];
+const LAGS = 2, STEPS = 3, NK = 12;
+const f1 = v => v.toFixed(1);
+
+// Columns of X and y, as built by ForecasterDirectMultiVariate.create_train_X_y:
+// lags of every series (flow_lag_1, ...), the exogenous variable at each step
+// (mode_step_1, ...) and one target per step (flow_step_1, ...). The model of
+// step k only uses mode_step_k.
+const COLS = [];
+S.forEach((s, si) => { for (let l = 1; l <= LAGS; l++) COLS.push({key:`${s.name}_lag_${l}`, si, lag:l, sub:'lag_' + l}); });
+for (let st = 1; st <= STEPS; st++) COLS.push({key:'mode_step_' + st, si:0, ex:st, sub:'step_' + st});
+for (let st = 1; st <= STEPS; st++) COLS.push({key:'flow_step_' + st, si:0, step:st, sub:'step_' + st});
+
+// Row with origin t: features are the values at t-1, t-2 of every series,
+// targets are flow at t, t+1, t+2.
+const ROWS = [];
+for (let t = LAGS; t + STEPS - 1 < NK; t++) ROWS.push({t});
+const NTRAIN = ROWS.length;
+ROWS.push({t: NK, pred:true});
+const cellValue = (r, c) => c.lag ? f1(S[c.si].v[r.t - c.lag]) : c.ex ? MODE[r.t + c.ex - 1] : r.pred ? f1(S[0].f[c.step - 1]) : f1(S[0].v[r.t + c.step - 1]);
+
+/* -------------------------------------------------------------- timeline */
+const T = {
+  panels:[0.1,0.7], draw:[0.5,3.2], exog:[2.4,3.4], chain:4.4, chainOut:[9.5,9.9], level:[9.9,10.4], goalOut:[12.1,12.5],
+  head:[12.5,13.1], rows0:13.1, slow:4.2, medium:1.3, fast:.5, winOut:[21.6,22.0],
+  models:[22.1,22.7], fit0:22.7, fitSlot:2.4, fitOut:[29.7,30.1],
+  pred:[30.1,30.7], predArrow:[32.5,33.0], fly:33.3, flyDur:1.0, flyStep:.25,
+  fadeOut:[39.0,39.8], total:39.8
+};
+const RS = [], RD = [];
+{
+  let t = T.rows0;
+  for (let i = 0; i < NTRAIN; i++){ const d = i === 0 ? T.slow : i === 1 ? T.medium : T.fast; RS.push(t); RD.push(d); t += d; }
+}
+const landAt = s => T.fly + s*T.flyStep + T.flyDur;
+const CAPTIONS = [
+  [0.0, 4.0, 'Three sensors of a compressor (flow, temperature, pressure) and its operating mode, scheduled in advance.'],
+  [4.0, 9.9, 'The series influence each other: a jump in pressure is followed by one in flow, then in temperature.'],
+  [9.9, 12.5,'The goal is to forecast one of them, flow (the level), for the next 3 hours.'],
+  [12.5,17.3,'Each training row uses the lags of all the series as features.'],
+  [17.3,19.7,'The targets are the next 3 values of flow, one column per step.'],
+  [19.7,22.1,'The mode is known in advance, so its value at each target hour is also a feature.'],
+  [22.1,30.1,'Direct strategy: one model per step, with the lags, the mode of its step and its own target.'],
+  [30.1,32.9,'To forecast, the last values of all the series and the future mode form a single row.'],
+  [32.9,99,  'Each model predicts its own step. The other series and the mode are used only as predictors.']
+];
+const STEPPER = [['Series',0,12.5],['Training table',12.5,22.1],['One model per step',22.1,30.1],['Predict',30.1,99]];
+
+/* ---------------------------------------------------------------- layout */
+const CX0 = 112, DX = 29, xk = k => CX0 + k*DX;
+const PX0 = 36, PX1 = 560;
+S.forEach((s, si) => { s.top = 118 + si*128; s.SA0 = s.top + 26; s.SA1 = s.top + 100; s.bot = s.top + 112; });
+const EP0 = 508, EY = 538;                              // exogenous panel (mode)
+const yv = (s, v) => s.SA1 - 6 - (v - s.lo)/(s.hi - s.lo)*(s.SA1 - s.SA0 - 12);
+const WY0 = S[0].top + 22, WY1 = S[2].bot - 6;          // tall window across the panels
+
+const TX0 = 588, RY0 = 182, RH = 26, CW = 50, EW = 54, TW = 54, TGAP = 14;
+{
+  let x = TX0;
+  for (const c of COLS){ if (c.step === 1) x += TGAP; c.x = x; c.w = c.step ? TW : c.ex ? EW : CW; x += c.w; }
+}
+const TX1 = COLS[COLS.length - 1].x + TW;
+const FX0 = COLS[0].x, FX1 = COLS[LAGS*S.length - 1].x + CW;   // lags block
+const exCol = st => COLS.find(c => c.ex === st);
+const EX1 = exCol(STEPS).x + EW;                                // end of the features
+const rowY = i => RY0 + i*RH + (i >= NTRAIN ? 14 : 0);
+const colOf = (step) => COLS.find(c => c.step === step);
+const MBW = (TX1 - TX0 - 2*16)/3, MY0 = 494, MY1 = 570;
+const mbX = s => TX0 + s*(MBW + 16);
+
+/* ------------------------------------------------------- derived state */
+function windowState(t){
+  const a = P(t, T.rows0 - .35, T.rows0 + .05)*(1 - P(t, ...T.winOut));
+  let i = -1;
+  for (let j = 0; j < NTRAIN; j++) if (t >= RS[j]) i = j;
+  if (i < 0) return {i:0, t:ROWS[0].t, a};
+  const r = ROWS[i];
+  return {i, t: i === 0 ? r.t : r.t - 1 + ease(cl((t - RS[i])/RD[i]/.4)), a};
+}
+function flightsFor(i){
+  const r = ROWS[i], st = RS[i], d = RD[i];
+  return COLS.map((c, j) => {
+    const fs = st + d*(.1 + j*.055);
+    if (c.ex) return {c, fs, fe: fs + d*.22, x0: xk(r.t + c.ex - 1), y0: EY, col: 'exog', v: cellValue(r, c)};
+    const k = c.lag ? r.t - c.lag : r.t + c.step - 1, s = S[c.si];
+    return {c, fs, fe: fs + d*.22, x0: xk(k), y0: yv(s, s.v[k]), col: c.lag ? 'lag' : 'target', v: cellValue(r, c)};
+  });
+}
+function cellTiming(t, i, c){
+  if (i >= NTRAIN){
+    if (c.step){ const L = landAt(c.step - 1); return {a: lin(t, L, L + .15), flash: .45*(1 - lin(t, L, L + .9))}; }
+    const s = T.pred[0] + COLS.indexOf(c)*.05;
+    return {a: lin(t, s, s + .25), flash: .3*(1 - lin(t, s + .1, s + .7))};
+  }
+  const st = RS[i], d = RD[i];
+  if (i === 0){
+    const f = flightsFor(0).find(q => q.c === c);
+    return {a: lin(t, f.fe - .04, f.fe + .1), flash: .4*(1 - lin(t, f.fe, f.fe + .7))};
+  }
+  return {a: lin(t, st + d*.25, st + d*.7), flash: .35*(1 - lin(t, st + d*.5, st + d*1.3))};
+}
+
+/* ----------------------------------------------------------------- scenes */
+function vArrow(o, x0, y0, x1, y1, p, color, op){
+  if (p <= 0 || op <= 0) return;
+  const b = (y1 - y0)*.5;
+  const d = `M${x0} ${y0} C${x0} ${y0 + b} ${x1} ${y1 - b} ${x1} ${y1}`;
+  o.push(`<path d="${d}" pathLength="1" style="fill:none;stroke:${color};stroke-width:2;stroke-dasharray:${p} 1;stroke-linecap:round" opacity="${op}"/>`);
+  if (p > .96) o.push(path(`M${x1} ${y1 + 1} l-5 -9 h10 z`, {fill:color, op:op*lin(p, .96, 1)}));
+}
+
+function panels(t, o){
+  const pa = P(t, ...T.panels);
+  const dp = P(t, ...T.draw)*(NK - 1);
+  const w = windowState(t);
+  const pk = P(t, ...T.pred);
+  const goal = P(t, ...T.level)*(1 - P(t, ...T.goalOut));
+  const kr = Math.round(w.t);
+
+  // tall lag window across every panel (training rows, then prediction)
+  const lagWin = (tt, a) => {
+    if (a <= 0) return;
+    const x0 = xk(tt - LAGS) - 11, x1 = xk(tt - 1) + 11;
+    o.push(rect(x0, WY0, x1 - x0, WY1 - WY0, {rx:8, fill:V('lag'), fo:.08, stroke:V('lag'), so:.55, op:a}));
+    o.push(text((x0 + x1)/2, WY1 + 17, 'lags', {size:12, weight:700, anchor:'middle', fill:V('lag'), op:a}));
+  };
+  lagWin(w.t, w.a);
+  lagWin(NK, pk);
+
+  S.forEach((s, si) => {
+    o.push(rect(PX0, s.top - 8, PX1 - PX0, s.bot - s.top + 8, {rx:10, fill:V('panel'), fo:.6, stroke:V('border'), so:.8, op:pa}));
+    o.push(rect(52, s.top + 4, 10, 10, {rx:2.5, fill:V(s.c), op:pa}));
+    o.push(text(70, s.top + 14, s.name, {size:14, weight:700, op:pa}));
+    o.push(line(CX0 - 6, s.SA1 + 1, xk(NK + STEPS - 1) + 12, s.SA1 + 1, {op:pa}));
+    for (const v of [s.lo + (s.hi - s.lo)*.25, s.lo + (s.hi - s.lo)*.75]){
+      o.push(text(CX0 - 16, yv(s, v) + 4, s.hi > 10 ? Math.round(v) : v.toFixed(1), {size:11, cls:'m', anchor:'end', fill:V('muted'), op:pa}));
+    }
+    if (si === 0){
+      const la = P(t, ...T.level);
+      const bx = 70 + mw(s.name, 14, 700) + 10, bw = mw('level', 11.5, 700, 'm') + 12;
+      o.push(rect(bx, s.top + 1, bw, 18, {rx:5, fill:V('target'), fo:.18, op:la}));
+      o.push(text(bx + bw/2, s.top + 14, 'level', {size:11.5, cls:'m', weight:700, anchor:'middle', fill:V('targetText'), op:la}));
+    }
+
+    // target window (training rows) and forecast window, only on flow
+    if (si === 0){
+      const tw = (tt, a, dashed) => {
+        if (a <= 0) return;
+        const x0 = xk(tt) - 11, x1 = xk(tt + STEPS - 1) + 11;
+        o.push(rect(x0, s.SA0 - 6, x1 - x0, s.SA1 - s.SA0 + 12, {rx:8, fill:V('target'), fo:.12, stroke:V('target'), so:.8, dash: dashed ? '4 3' : '', op:a}));
+        o.push(text((x0 + x1)/2, s.SA0 - 12, dashed ? 'next 3 hours' : 'targets', {size:12, weight:700, anchor:'middle', fill:V('targetText'), op:a}));
+      };
+      tw(w.t, w.a, false);
+      tw(NK, Math.max(goal, pk), true);
+    }
+
+    // series
+    const pts = [];
+    for (let k = 0; k < NK; k++) pts.push([xk(k), yv(s, s.v[k])]);
+    o.push(path(polyline(pts, dp/(NK - 1)), {stroke:V('series'), sw:2.2, op:pa}));
+    for (let k = 0; k < NK; k++){
+      const a = cl((dp - k + .35)/.35)*pa;
+      if (a <= 0) continue;
+      const x = xk(k), y = yv(s, s.v[k]);
+      o.push(circle(x, y, 3.8, {fill:V('bg'), stroke:V('series'), sw:1.8, op:a}));
+      if (w.a > 0){
+        if (k >= kr - LAGS && k <= kr - 1) o.push(circle(x, y, 4.9, {fill:V('lag'), op:w.a}));
+        if (si === 0 && k >= kr && k <= kr + STEPS - 1) o.push(circle(x, y, 5.3, {fill:V('target'), op:w.a}));
+      }
+      if (pk > 0 && k >= NK - LAGS) o.push(circle(x, y, 4.9, {fill:V('lag'), op:pk}));
+    }
+
+    // forecast of flow
+    if (si === 0){
+      o.push(text(xk(NK + 1), (s.SA0 + s.SA1)/2 + 7, '?', {size:20, weight:700, anchor:'middle', fill:V('targetText'), op:Math.max(goal, pk)*(1 - lin(t, landAt(0), landAt(0) + .2))}));
+      let prev = [xk(NK - 1), yv(s, s.v[NK - 1])];
+      for (let st = 0; st < STEPS; st++){
+        const L = landAt(st), la = lin(t, L, L + .3);
+        if (la <= 0) break;
+        const cur = [xk(NK + st), yv(s, s.f[st])], q = lin(t, L, L + .9);
+        o.push(line(prev[0], prev[1], lerp(prev[0], cur[0], la), lerp(prev[1], cur[1], la), {stroke:V('target'), sw:2.2, dash:'5 4'}));
+        o.push(circle(cur[0], cur[1], 5.5 + 14*q, {stroke:V('target'), sw:2, op:(1 - q)*.7}));
+        o.push(circle(cur[0], cur[1], 5.5, {fill:V('target'), op:la}));
+        prev = cur;
+      }
+    }
+  });
+
+  // exogenous variable: operating mode, known in advance (also for the forecast horizon)
+  const ea = P(t, ...T.exog);
+  o.push(rect(PX0, EP0 - 8, PX1 - PX0, 58, {rx:10, fill:V('panel'), fo:.6, stroke:V('border'), so:.8, op:ea}));
+  o.push(rect(52, EP0 + 4, 10, 10, {rx:2.5, fill:V('exog'), op:ea}));
+  o.push(text(70, EP0 + 14, 'mode', {size:14, weight:700, op:ea}));
+  o.push(text(70 + mw('mode', 14, 700) + 10, EP0 + 14, 'exogenous, known in advance', {size:12, fill:V('muted'), op:ea}));
+  const lgx = PX1 - 120;
+  o.push(rect(lgx, EP0 + 4, 10, 10, {rx:2, fill:V('exog'), op:ea}));
+  o.push(text(lgx + 15, EP0 + 13, 'full', {size:11.5, cls:'m', fill:V('muted'), op:ea}));
+  o.push(rect(lgx + 56, EP0 + 4, 10, 10, {rx:2, stroke:V('exog'), sw:1.3, op:ea}));
+  o.push(text(lgx + 71, EP0 + 13, 'eco', {size:11.5, cls:'m', fill:V('muted'), op:ea}));
+  const ep = lin(t, ...T.exog)*(NK + STEPS);
+  for (let k = 0; k < NK + STEPS; k++){
+    const a = cl((ep - k + .5)/.5)*ea*(k < NK ? 1 : .85);
+    const full = MODE[k] === 'full';
+    o.push(rect(xk(k) - 9, EY - 8, 18, 16, {rx:3, fill: full ? V('exog') : 'none', stroke: full ? 'none' : V('exog'), sw:1.3, op:a}));
+  }
+  // the mode at the target hours goes with each row (mode_step_1..3)
+  const exWin = (tt, a, dashed) => {
+    if (a <= 0) return;
+    o.push(rect(xk(tt) - 13, EY - 13, xk(tt + STEPS - 1) - xk(tt) + 26, 26, {rx:7, stroke:V('exog'), sw:1.8, dash: dashed ? '4 3' : '', op:a}));
+  };
+  exWin(w.t, w.a, false);
+  exWin(NK, pk, true);
+
+  // pressure -> flow -> temperature chain: numbered rings joined by dashed arrows
+  const ca = 1 - P(t, ...T.chainOut);
+  const chain = [[2, 4], [0, 5], [1, 6]];
+  const at = n => T.chain + n*.6;
+  chain.forEach(([si, k], n) => {
+    if (n === 0) return;
+    const [ps, pk2] = chain[n - 1];
+    const x0 = xk(pk2), y0 = yv(S[ps], S[ps].v[pk2]), x1 = xk(k), y1 = yv(S[si], S[si].v[k]);
+    const dir = y1 > y0 ? 1 : -1, ya = y0 + dir*11, yb = y1 - dir*11;
+    const p = P(t, at(n) - .45, at(n) - .05), a = ca*.75;
+    const d = `M${x0} ${ya} C${x0} ${lerp(ya, yb, .5)} ${x1} ${lerp(ya, yb, .5)} ${x1} ${yb}`;
+    if (p > 0) o.push(`<path d="${d}" pathLength="1" style="fill:none;stroke:var(--lag);stroke-width:1.8;stroke-dasharray:${Math.min(p, .999)*.94} 0.03 0 1" opacity="${a}"/>`);
+    if (p > .96) o.push(path(`M${x1} ${yb} l-4.5 ${-dir*8} h9 z`, {fill:V('lag'), op:a*lin(p, .96, 1)}));
+  });
+  chain.forEach(([si, k], n) => {
+    const s = S[si], a = P(t, at(n), at(n) + .35)*ca, x = xk(k), y = yv(s, s.v[k]);
+    o.push(circle(x, y, 9, {stroke:V('lag'), sw:2, op:a}));
+    o.push(circle(x + 17, y - 12, 8.5, {fill:V('lag'), op:a}));
+    o.push(text(x + 17, y - 8, String(n + 1), {size:11, weight:700, anchor:'middle', fill:V('chip'), op:a}));
+  });
+}
+
+function table(t, o){
+  const head = P(t, ...T.head);
+  if (head <= 0) return;
+  const pk = P(t, ...T.pred);
+  const rvP = lin(t, T.pred[0], T.pred[0] + .2);
+  const rowVis = i => i >= NTRAIN ? rvP : lin(t, RS[i], RS[i] + .15);
+  const fitSlot = Math.floor((t - T.fit0)/T.fitSlot);
+  const fitting = t >= T.fit0 && fitSlot < STEPS ? fitSlot : -1;
+  const fitA = fitting >= 0 ? P(t, T.fit0 + fitting*T.fitSlot, T.fit0 + fitting*T.fitSlot + .3)*(1 - P(t, T.fit0 + (fitting + 1)*T.fitSlot - .3, T.fit0 + (fitting + 1)*T.fitSlot)) : 0;
+
+  // group labels
+  const bracket = (x0, x1, y, c) => {
+    o.push(line(x0, y, x1, y, {stroke:c, sw:1.2, op:head}));
+    o.push(line(x0, y, x0, y + 5, {stroke:c, sw:1.2, op:head}));
+    o.push(line(x1, y, x1, y + 5, {stroke:c, sw:1.2, op:head}));
+  };
+  const tX0 = colOf(1).x, tX1 = TX1;
+  bracket(FX0 + 2, EX1 - 2, 117, V('border'));
+  o.push(text((FX0 + EX1)/2, 110, 'features  X', {size:12.5, weight:700, anchor:'middle', fill:V('muted'), op:head}));
+  bracket(tX0 + 2, tX1 - 2, 117, V('target'));
+  o.push(text((tX0 + tX1)/2, 110, 'targets  y', {size:12.5, weight:700, anchor:'middle', fill:V('targetText'), op:head}));
+  // series name over each pair of lag columns, and over the targets
+  S.forEach((s, si) => {
+    const x0 = COLS[si*LAGS].x, x1 = COLS[si*LAGS + LAGS - 1].x + CW;
+    o.push(text((x0 + x1)/2, 140, s.name + '_', {size:12.5, cls:'m', weight:700, anchor:'middle', fill:V(s.c), op:head}));
+  });
+  o.push(text((exCol(1).x + EX1)/2, 140, 'mode_', {size:12.5, cls:'m', weight:700, anchor:'middle', fill:V('exog'), op:head}));
+  o.push(text((tX0 + tX1)/2, 140, 'flow_', {size:12.5, cls:'m', weight:700, anchor:'middle', fill:V('targetText'), op:head}));
+  for (const c of COLS){
+    o.push(rect(c.x + 1.5, 148, c.w - 3, 26, {rx:5, fill:V('panel'), op:head}));
+    o.push(rect(c.x + 4, 171, c.w - 8, 3, {rx:1.5, fill: c.step ? V('target') : c.ex ? V('exog') : V(S[c.si].c), op:head}));
+    o.push(text(c.x + c.w/2, 166, c.sub, {size:12.5, cls:'m', weight: c.step ? 700 : 400, anchor:'middle', fill: c.step ? V('targetText') : V('fg'), op:head}));
+  }
+
+  // body
+  for (let i = 0; i < ROWS.length; i++){
+    const rv = rowVis(i);
+    if (rv <= 0) continue;
+    const y = rowY(i);
+    for (const c of COLS) o.push(rect(c.x + 1.5, y, c.w - 3, RH, {fill: c.step ? V('target') : c.ex ? V('exog') : V('lag'), fo: c.step ? .12 : .06, op:rv}));
+    if (i < NTRAIN) o.push(line(TX0, y + RH, TX1, y + RH, {op:rv}));
+  }
+  o.push(line(TX0, rowY(NTRAIN) - 7, TX1, rowY(NTRAIN) - 7, {stroke:V('border'), dash:'4 4', sw:1.2, op:rvP}));
+
+  // cells
+  const dim = 1 - .45*pk;
+  for (let i = 0; i < ROWS.length; i++){
+    const r = ROWS[i], y = rowY(i);
+    for (const c of COLS){
+      const tm = cellTiming(t, i, c);
+      if (tm.a <= 0) continue;
+      const isF = i >= NTRAIN && c.step;
+      // while fitting step s, the other target columns fade
+      const other = (c.step && c.step !== fitting + 1) || (c.ex && c.ex !== fitting + 1);
+      const fd = fitting >= 0 && other && i < NTRAIN ? 1 - .6*fitA : 1;
+      if (tm.flash > 0) o.push(rect(c.x + 2, y + 2, c.w - 4, RH - 4, {rx:4, fill: c.step ? V('target') : c.ex ? V('exog') : V('lag'), fo:tm.flash}));
+      o.push(text(c.x + c.w/2, y + RH/2 + 4.5, cellValue(r, c), {size:12.5, cls:'m', weight: isF ? 700 : 400, anchor:'middle',
+        fill: isF ? V('targetText') : V('fg'), op: tm.a*(i < NTRAIN ? dim : 1)*fd}));
+    }
+  }
+
+  // prediction row: "?" placeholders and outline
+  for (let st = 1; st <= STEPS; st++){
+    const c = colOf(st), L = landAt(st - 1);
+    const q = lin(t, T.pred[0] + .5, T.pred[0] + .8)*(1 - lin(t, L - .05, L + .1));
+    o.push(rect(c.x + 5, rowY(NTRAIN) + 3, c.w - 10, RH - 6, {rx:4, stroke:V('target'), sw:1.3, dash:'3 3', op:q}));
+    o.push(text(c.x + c.w/2, rowY(NTRAIN) + RH/2 + 5, '?', {size:13, weight:700, anchor:'middle', fill:V('targetText'), op:q}));
+  }
+  o.push(rect(TX0 - 3, rowY(NTRAIN) - 1, TX1 - TX0 + 6, RH + 2, {rx:6, stroke:V('target'), sw:1.5, so:.9, op:rvP}));
+
+  // row being built
+  const w = windowState(t);
+  if (w.a > 0 && t >= RS[w.i]) o.push(rect(TX0 - 3, rowY(w.i) - 1, TX1 - TX0 + 6, RH + 2, {rx:6, stroke:V('fg'), sw:1.3, so:.5, op:w.a}));
+
+  // fitting step s: lags + mode_step_s as features, flow_step_s as target
+  if (fitA > 0){
+    const yb = rowY(NTRAIN - 1) + RH + 2, c = colOf(fitting + 1), e = exCol(fitting + 1);
+    o.push(rect(FX0, 146, FX1 - FX0, yb - 146, {rx:6, stroke:V('lag'), sw:2, op:fitA}));
+    o.push(rect(e.x, 146, e.w, yb - 146, {rx:6, stroke:V('exog'), sw:2, op:fitA}));
+    o.push(rect(c.x, 146, c.w, yb - 146, {rx:6, stroke:V('target'), sw:2, op:fitA}));
+  }
+}
+
+function models(t, o){
+  const a = P(t, ...T.models);
+  if (a <= 0) return;
+  const predOn = P(t, T.predArrow[0], T.predArrow[0] + .3);
+  for (let s = 0; s < STEPS; s++){
+    const x0 = mbX(s), s0 = T.fit0 + s*T.fitSlot;
+    const active = P(t, s0, s0 + .3)*(1 - P(t, s0 + T.fitSlot - .3, s0 + T.fitSlot));
+    const fly = t >= T.fly + s*T.flyStep && t <= landAt(s) ? 1 : 0;
+    o.push(rect(x0, MY0, MBW, MY1 - MY0, {rx:12, fill:V('panel'), stroke:V('border'), sw:1.5, op:a}));
+    o.push(rect(x0, MY0, MBW, MY1 - MY0, {rx:12, stroke:V('target'), sw:2, op:a*Math.max(active, fly)}));
+    o.push(text(x0 + 18, MY0 + 28, 'Model step ' + (s + 1), {size:16, weight:700, op:a}));
+    o.push(text(x0 + 18, MY0 + 50, `.fit(X, y_step_${s + 1})`, {size:12.5, cls:'m', fill:V('muted'), op:a*(1 - predOn)}));
+    o.push(text(x0 + 18, MY0 + 50, '.predict(X)', {size:12.5, cls:'m', weight:700, fill:V('targetText'), op:a*predOn}));
+    const bw = MBW - 36;
+    o.push(rect(x0 + 18, MY1 - 12, bw, 4, {rx:2, fill:V('grid'), op:a}));
+    o.push(rect(x0 + 18, MY1 - 12, bw*lin(t, s0 + .3, s0 + T.fitSlot - .3), 4, {rx:2, fill:V('series'), op:a*(1 - predOn)}));
+    o.push(rect(x0 + 18, MY1 - 12, bw*lin(t, T.fly + s*T.flyStep, landAt(s)), 4, {rx:2, fill:V('target'), op:a*predOn}));
+
+    // fit: target column -> model
+    const c = colOf(s + 1), fo = 1 - P(t, ...T.fitOut);
+    vArrow(o, c.x + c.w/2, rowY(NTRAIN - 1) + RH + 6, x0 + MBW/2, MY0 - 4, P(t, s0 + .2, s0 + .8), V('series'), .8*fo);
+    // predict: prediction row -> every model
+    vArrow(o, x0 + MBW/2, rowY(NTRAIN) + RH + 5, x0 + MBW/2, MY0 - 4, P(t, ...T.predArrow), V('targetText'), 1);
+  }
+}
+
+function chips(t, o){
+  const i = 0;
+  if (t >= RS[i] && t <= RS[i] + RD[i]){
+    for (const f of flightsFor(i)){
+      if (t < f.fs || t > f.fe) continue;
+      const q = ease(lin(t, f.fs, f.fe));
+      chip(o, lerp(f.x0, f.c.x + f.c.w/2, q), lerp(f.y0, rowY(i) + RH/2, q) - 40*Math.sin(Math.PI*q), f.v, f.col);
+    }
+  }
+  for (let s = 0; s < STEPS; s++){
+    const fs = T.fly + s*T.flyStep, fe = landAt(s);
+    if (t < fs || t > fe) continue;
+    const q = ease(lin(t, fs, fe)), x0 = mbX(s) + MBW/2, y0 = MY0 + 30, v = f1(S[0].f[s]), c = colOf(s + 1);
+    chip(o, lerp(x0, xk(NK + s), q), lerp(y0, yv(S[0], S[0].f[s]), q) - 40*Math.sin(Math.PI*q), v, 'target');
+    chip(o, lerp(x0, c.x + c.w/2, q), lerp(y0, rowY(NTRAIN) + RH/2, q) - 20*Math.sin(Math.PI*q), v, 'target');
+  }
+}
+
+/* ---------------------------------------------------------------- run */
+SkfAnim.run({
+  title: 'Dependent multi-series forecasting',
+  desc: 'Three hourly sensors of a compressor (flow, temperature and pressure) influence each other: a jump in ' +
+        'pressure is followed by a peak in flow and then by a rise in temperature. The operating mode of the ' +
+        'compressor (eco or full) is an exogenous variable scheduled in advance. ForecasterDirectMultiVariate ' +
+        'forecasts one series, flow (the level), for the next 3 hours. Each training row uses the last 2 values of ' +
+        'every series and the mode at each target hour as features, and the next 3 values of flow as targets. ' +
+        'Following the direct strategy, one model is trained for each step with the lags, the mode of its step and ' +
+        'its own target. To forecast, the last values of all the series and the future mode form a single row and ' +
+        'each model predicts its own step.',
+  total: T.total,
+  height: 640,
+  still: 37.5,
+  fadeOut: T.fadeOut,
+  render(t, o){
+    header(t, o, {title:'Dependent multi-series forecasting', captions:CAPTIONS, steps:STEPPER});
+    panels(t, o); table(t, o); models(t, o); chips(t, o);
+  }
+});
+})();
+</script>
+</body>
+</html>

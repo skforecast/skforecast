@@ -5367,7 +5367,11 @@ source calendar feature in <code>selected_calendar_features</code>.</p>
             <td>
               <div class="doc-md-description">
                 <p>Proportion of records to use for feature selection, in (0, 1]. Records
-are sampled without replacement and kept in their original time order.</p>
+are sampled without replacement and passed to the selector in random
+order, so the folds of its internal cross-validation (for example, the
+<code>cv</code> of <code>RFECV</code>) are random: an integer <code>cv</code> gives the same kind of
+folds as <code>KFold(shuffle=True)</code>. A <code>TimeSeriesSplit</code> does not give a
+temporal validation, and a warning is raised.</p>
               </div>
             </td>
             <td>
@@ -5383,8 +5387,8 @@ are sampled without replacement and kept in their original time order.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Sets a seed for the random subsample so that the subsampling process 
-is always deterministic.</p>
+                <p>Sets a seed for the random subsample, and the order of its records, so
+that the subsampling process is always deterministic.</p>
               </div>
             </td>
             <td>
@@ -5467,8 +5471,7 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/feature_selection/feature_selection.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 17</span>
-<span class="normal"> 18</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 18</span>
 <span class="normal"> 19</span>
 <span class="normal"> 20</span>
 <span class="normal"> 21</span>
@@ -5783,7 +5786,11 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
 <span class="normal">330</span>
 <span class="normal">331</span>
 <span class="normal">332</span>
-<span class="normal">333</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">select_features</span><span class="p">(</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">select_features</span><span class="p">(</span>
     <span class="n">forecaster</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
     <span class="n">selector</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
     <span class="n">y</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
@@ -5859,10 +5866,14 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
 <span class="sd">        source calendar feature in `selected_calendar_features`.</span>
 <span class="sd">    subsample : float, default 0.5</span>
 <span class="sd">        Proportion of records to use for feature selection, in (0, 1]. Records</span>
-<span class="sd">        are sampled without replacement and kept in their original time order.</span>
+<span class="sd">        are sampled without replacement and passed to the selector in random</span>
+<span class="sd">        order, so the folds of its internal cross-validation (for example, the</span>
+<span class="sd">        `cv` of `RFECV`) are random: an integer `cv` gives the same kind of</span>
+<span class="sd">        folds as `KFold(shuffle=True)`. A `TimeSeriesSplit` does not give a</span>
+<span class="sd">        temporal validation, and a warning is raised.</span>
 <span class="sd">    random_state : int, default 123</span>
-<span class="sd">        Sets a seed for the random subsample so that the subsampling process </span>
-<span class="sd">        is always deterministic.</span>
+<span class="sd">        Sets a seed for the random subsample, and the order of its records, so</span>
+<span class="sd">        that the subsampling process is always deterministic.</span>
 <span class="sd">    verbose : bool, default True</span>
 <span class="sd">        Print information about feature selection process.</span>
 
@@ -5986,14 +5997,13 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
             <span class="s2">"forecaster includes features for the selected group(s)."</span>
         <span class="p">)</span>
 
-    <span class="c1"># Sample without replacement and keep the time order of the records, so</span>
-    <span class="c1"># that the selector's internal cross-validation never sees the same record</span>
-    <span class="c1"># in train and validation, and a `TimeSeriesSplit` can be used as its `cv`.</span>
-    <span class="n">n_samples</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span> <span class="o">*</span> <span class="n">subsample</span><span class="p">))</span>
-    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">random_state</span><span class="p">)</span>
-    <span class="n">sample</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">X_train</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
-    <span class="n">X_train_sample</span> <span class="o">=</span> <span class="n">X_train</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">sample</span><span class="p">,</span> <span class="p">:]</span>
-    <span class="n">y_train_sample</span> <span class="o">=</span> <span class="n">y_train</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">sample</span><span class="p">]</span>
+    <span class="n">_warn_time_series_split_cv</span><span class="p">(</span><span class="n">selector</span><span class="o">=</span><span class="n">selector</span><span class="p">)</span>
+    <span class="n">X_train_sample</span><span class="p">,</span> <span class="n">y_train_sample</span> <span class="o">=</span> <span class="n">_subsample_records</span><span class="p">(</span>
+                                         <span class="n">X_train</span>      <span class="o">=</span> <span class="n">X_train</span><span class="p">,</span>
+                                         <span class="n">y_train</span>      <span class="o">=</span> <span class="n">y_train</span><span class="p">,</span>
+                                         <span class="n">subsample</span>    <span class="o">=</span> <span class="n">subsample</span><span class="p">,</span>
+                                         <span class="n">random_state</span> <span class="o">=</span> <span class="n">random_state</span>
+                                     <span class="p">)</span>
     <span class="n">selector</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train_sample</span><span class="p">,</span> <span class="n">y_train_sample</span><span class="p">)</span>
     <span class="n">selected_features</span> <span class="o">=</span> <span class="p">[</span>
         <span class="nb">str</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">selector</span><span class="o">.</span><span class="n">get_feature_names_out</span><span class="p">()</span>
@@ -6293,10 +6303,14 @@ source calendar feature in <code>selected_calendar_features</code>.</p>
             <td>
               <div class="doc-md-description">
                 <p>Proportion of records to use for feature selection, in (0, 1]. Records
-are sampled without replacement and kept in the order of the training
-matrix, where the series are stacked one after another, so the records
-of each series are in time order but the series are not interleaved by
-date.</p>
+are sampled without replacement and passed to the selector in random
+order, so the folds of its internal cross-validation (for example, the
+<code>cv</code> of <code>RFECV</code>) are random: an integer <code>cv</code> gives the same kind of
+folds as <code>KFold(shuffle=True)</code>. In the training matrix of
+<code>ForecasterRecursiveMultiSeries</code>, where the series are stacked one after
+another, the records of every series are spread over the folds. A
+<code>TimeSeriesSplit</code> does not give a temporal validation, and a warning is
+raised.</p>
               </div>
             </td>
             <td>
@@ -6312,8 +6326,8 @@ date.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Sets a seed for the random subsample so that the subsampling process 
-is always deterministic.</p>
+                <p>Sets a seed for the random subsample, and the order of its records, so
+that the subsampling process is always deterministic.</p>
               </div>
             </td>
             <td>
@@ -6367,7 +6381,11 @@ as the lags can be different for each series.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>List of selected window features.</p>
+                <p>List of selected window features. If the forecaster is a
+ForecasterDirectMultiVariate, each name starts with its series (for
+example, <code>s1_roll_mean_7</code>). The forecaster computes the same window
+features for all the series, so a selection that keeps a window
+feature for only some of them cannot be reproduced exactly.</p>
               </div>
             </td>
           </tr>
@@ -6398,11 +6416,7 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/feature_selection/feature_selection.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">336</span>
-<span class="normal">337</span>
-<span class="normal">338</span>
-<span class="normal">339</span>
-<span class="normal">340</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">340</span>
 <span class="normal">341</span>
 <span class="normal">342</span>
 <span class="normal">343</span>
@@ -6769,7 +6783,16 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
 <span class="normal">704</span>
 <span class="normal">705</span>
 <span class="normal">706</span>
-<span class="normal">707</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">select_features_multiseries</span><span class="p">(</span>
+<span class="normal">707</span>
+<span class="normal">708</span>
+<span class="normal">709</span>
+<span class="normal">710</span>
+<span class="normal">711</span>
+<span class="normal">712</span>
+<span class="normal">713</span>
+<span class="normal">714</span>
+<span class="normal">715</span>
+<span class="normal">716</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">select_features_multiseries</span><span class="p">(</span>
     <span class="n">forecaster</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
     <span class="n">selector</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
     <span class="n">series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
@@ -6843,13 +6866,17 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
 <span class="sd">        source calendar feature in `selected_calendar_features`.</span>
 <span class="sd">    subsample : float, default 0.5</span>
 <span class="sd">        Proportion of records to use for feature selection, in (0, 1]. Records</span>
-<span class="sd">        are sampled without replacement and kept in the order of the training</span>
-<span class="sd">        matrix, where the series are stacked one after another, so the records</span>
-<span class="sd">        of each series are in time order but the series are not interleaved by</span>
-<span class="sd">        date.</span>
+<span class="sd">        are sampled without replacement and passed to the selector in random</span>
+<span class="sd">        order, so the folds of its internal cross-validation (for example, the</span>
+<span class="sd">        `cv` of `RFECV`) are random: an integer `cv` gives the same kind of</span>
+<span class="sd">        folds as `KFold(shuffle=True)`. In the training matrix of</span>
+<span class="sd">        `ForecasterRecursiveMultiSeries`, where the series are stacked one after</span>
+<span class="sd">        another, the records of every series are spread over the folds. A</span>
+<span class="sd">        `TimeSeriesSplit` does not give a temporal validation, and a warning is</span>
+<span class="sd">        raised.</span>
 <span class="sd">    random_state : int, default 123</span>
-<span class="sd">        Sets a seed for the random subsample so that the subsampling process </span>
-<span class="sd">        is always deterministic.</span>
+<span class="sd">        Sets a seed for the random subsample, and the order of its records, so</span>
+<span class="sd">        that the subsampling process is always deterministic.</span>
 <span class="sd">    verbose : bool, default True</span>
 <span class="sd">        Print information about feature selection process.</span>
 
@@ -6860,7 +6887,11 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
 <span class="sd">        the output is a dict with the selected lags for each series, {series_name: lags},</span>
 <span class="sd">        as the lags can be different for each series.</span>
 <span class="sd">    selected_window_features : list</span>
-<span class="sd">        List of selected window features.</span>
+<span class="sd">        List of selected window features. If the forecaster is a</span>
+<span class="sd">        ForecasterDirectMultiVariate, each name starts with its series (for</span>
+<span class="sd">        example, `s1_roll_mean_7`). The forecaster computes the same window</span>
+<span class="sd">        features for all the series, so a selection that keeps a window</span>
+<span class="sd">        feature for only some of them cannot be reproduced exactly.</span>
 <span class="sd">    selected_exog : list</span>
 <span class="sd">        List of selected exogenous features.</span>
 <span class="sd">    selected_calendar_features : list</span>
@@ -6997,16 +7028,13 @@ encoding suffix). Empty list if the forecaster has no calendar features.</p>
             <span class="s2">"forecaster includes features for the selected group(s)."</span>
         <span class="p">)</span>
 
-    <span class="c1"># Sample without replacement, so that the selector's internal cross-validation</span>
-    <span class="c1"># never sees the same record in train and validation. Sorting keeps the order</span>
-    <span class="c1"># of X_train: each series in time order, but series are stacked one after</span>
-    <span class="c1"># another, so a `TimeSeriesSplit` as the selector's `cv` does not give a</span>
-    <span class="c1"># temporal validation.</span>
-    <span class="n">n_samples</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span> <span class="o">*</span> <span class="n">subsample</span><span class="p">))</span>
-    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">random_state</span><span class="p">)</span>
-    <span class="n">sample</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">X_train</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
-    <span class="n">X_train_sample</span> <span class="o">=</span> <span class="n">X_train</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">sample</span><span class="p">,</span> <span class="p">:]</span>
-    <span class="n">y_train_sample</span> <span class="o">=</span> <span class="n">y_train</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">sample</span><span class="p">]</span>
+    <span class="n">_warn_time_series_split_cv</span><span class="p">(</span><span class="n">selector</span><span class="o">=</span><span class="n">selector</span><span class="p">)</span>
+    <span class="n">X_train_sample</span><span class="p">,</span> <span class="n">y_train_sample</span> <span class="o">=</span> <span class="n">_subsample_records</span><span class="p">(</span>
+                                         <span class="n">X_train</span>      <span class="o">=</span> <span class="n">X_train</span><span class="p">,</span>
+                                         <span class="n">y_train</span>      <span class="o">=</span> <span class="n">y_train</span><span class="p">,</span>
+                                         <span class="n">subsample</span>    <span class="o">=</span> <span class="n">subsample</span><span class="p">,</span>
+                                         <span class="n">random_state</span> <span class="o">=</span> <span class="n">random_state</span>
+                                     <span class="p">)</span>
     <span class="n">selector</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train_sample</span><span class="p">,</span> <span class="n">y_train_sample</span><span class="p">)</span>
     <span class="n">selected_features</span> <span class="o">=</span> <span class="p">[</span>
         <span class="nb">str</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">selector</span><span class="o">.</span><span class="n">get_feature_names_out</span><span class="p">()</span>

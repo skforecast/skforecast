@@ -11660,8 +11660,7 @@ number of features as used during fitting.</p>
 <span class="normal">760</span>
 <span class="normal">761</span>
 <span class="normal">762</span>
-<span class="normal">763</span>
-<span class="normal">764</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+<span class="normal">763</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> 
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> 
@@ -11719,8 +11718,7 @@ number of features as used during fitting.</p>
     <span class="c1"># NOTE: forecast_arima is used for both manual and automatic models</span>
     <span class="c1"># because it adds the future drift term and reverts the Box-Cox</span>
     <span class="c1"># transformation when the fitted model includes them. The fitted model</span>
-    <span class="c1"># determines this, not the current parameters, which may change after</span>
-    <span class="c1"># fitting (e.g. `_set_params` when freezing parameters in backtesting).</span>
+    <span class="c1"># determines this, not the current parameters.</span>
     <span class="n">predictions</span> <span class="o">=</span> <span class="n">forecast_arima</span><span class="p">(</span>
         <span class="n">model</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="p">,</span>
         <span class="n">h</span>       <span class="o">=</span> <span class="n">steps</span><span class="p">,</span>
@@ -11918,7 +11916,8 @@ are back-transformed from the Box-Cox scale.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/stats/_arima.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">766</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">765</span>
+<span class="normal">766</span>
 <span class="normal">767</span>
 <span class="normal">768</span>
 <span class="normal">769</span>
@@ -12037,8 +12036,7 @@ are back-transformed from the Box-Cox scale.</p>
 <span class="normal">882</span>
 <span class="normal">883</span>
 <span class="normal">884</span>
-<span class="normal">885</span>
-<span class="normal">886</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+<span class="normal">885</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">predict_interval</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
@@ -12241,7 +12239,8 @@ observations (diffuse initialization).</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/stats/_arima.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">888</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">887</span>
+<span class="normal">888</span>
 <span class="normal">889</span>
 <span class="normal">890</span>
 <span class="normal">891</span>
@@ -12262,8 +12261,7 @@ observations (diffuse initialization).</p>
 <span class="normal">906</span>
 <span class="normal">907</span>
 <span class="normal">908</span>
-<span class="normal">909</span>
-<span class="normal">910</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+<span class="normal">909</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_residuals</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Get in-sample residuals (observed - fitted) from the ARIMA model.</span>
@@ -12368,7 +12366,8 @@ observations (diffuse initialization).</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/stats/_arima.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">912</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">911</span>
+<span class="normal">912</span>
 <span class="normal">913</span>
 <span class="normal">914</span>
 <span class="normal">915</span>
@@ -12389,8 +12388,7 @@ observations (diffuse initialization).</p>
 <span class="normal">930</span>
 <span class="normal">931</span>
 <span class="normal">932</span>
-<span class="normal">933</span>
-<span class="normal">934</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+<span class="normal">933</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_fitted_values</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Get in-sample fitted values from the ARIMA model.</span>
@@ -12437,14 +12435,14 @@ observations (diffuse initialization).</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/stats/_arima.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">936</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">935</span>
+<span class="normal">936</span>
 <span class="normal">937</span>
 <span class="normal">938</span>
 <span class="normal">939</span>
 <span class="normal">940</span>
 <span class="normal">941</span>
-<span class="normal">942</span>
-<span class="normal">943</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+<span class="normal">942</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_feature_importances</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Get feature importances for Arima model."""</span>
     <span class="n">importances</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
@@ -12530,7 +12528,8 @@ observations (diffuse initialization).</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/stats/_arima.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">945</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">944</span>
+<span class="normal">945</span>
 <span class="normal">946</span>
 <span class="normal">947</span>
 <span class="normal">948</span>
@@ -12559,8 +12558,7 @@ observations (diffuse initialization).</p>
 <span class="normal">971</span>
 <span class="normal">972</span>
 <span class="normal">973</span>
-<span class="normal">974</span>
-<span class="normal">975</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+<span class="normal">974</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Compute R^2 score using in-sample fitted values.</span>
@@ -12670,7 +12668,8 @@ observations (diffuse initialization).</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/stats/_arima.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 977</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 976</span>
+<span class="normal"> 977</span>
 <span class="normal"> 978</span>
 <span class="normal"> 979</span>
 <span class="normal"> 980</span>
@@ -12700,8 +12699,7 @@ observations (diffuse initialization).</p>
 <span class="normal">1004</span>
 <span class="normal">1005</span>
 <span class="normal">1006</span>
-<span class="normal">1007</span>
-<span class="normal">1008</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+<span class="normal">1007</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_info_criteria</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">criteria</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'aic'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Get the selected information criterion.</span>
@@ -12812,7 +12810,8 @@ contained subobjects that are estimators.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/stats/_arima.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1010</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1009</span>
+<span class="normal">1010</span>
 <span class="normal">1011</span>
 <span class="normal">1012</span>
 <span class="normal">1013</span>
@@ -12865,8 +12864,7 @@ contained subobjects that are estimators.</p>
 <span class="normal">1060</span>
 <span class="normal">1061</span>
 <span class="normal">1062</span>
-<span class="normal">1063</span>
-<span class="normal">1064</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deep</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="normal">1063</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deep</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Get parameters for this estimator.</span>
 
@@ -13025,7 +13023,41 @@ are changed, requiring the model to be refitted before making predictions.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/stats/_arima.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1099</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1065</span>
+<span class="normal">1066</span>
+<span class="normal">1067</span>
+<span class="normal">1068</span>
+<span class="normal">1069</span>
+<span class="normal">1070</span>
+<span class="normal">1071</span>
+<span class="normal">1072</span>
+<span class="normal">1073</span>
+<span class="normal">1074</span>
+<span class="normal">1075</span>
+<span class="normal">1076</span>
+<span class="normal">1077</span>
+<span class="normal">1078</span>
+<span class="normal">1079</span>
+<span class="normal">1080</span>
+<span class="normal">1081</span>
+<span class="normal">1082</span>
+<span class="normal">1083</span>
+<span class="normal">1084</span>
+<span class="normal">1085</span>
+<span class="normal">1086</span>
+<span class="normal">1087</span>
+<span class="normal">1088</span>
+<span class="normal">1089</span>
+<span class="normal">1090</span>
+<span class="normal">1091</span>
+<span class="normal">1092</span>
+<span class="normal">1093</span>
+<span class="normal">1094</span>
+<span class="normal">1095</span>
+<span class="normal">1096</span>
+<span class="normal">1097</span>
+<span class="normal">1098</span>
+<span class="normal">1099</span>
 <span class="normal">1100</span>
 <span class="normal">1101</span>
 <span class="normal">1102</span>
@@ -13050,27 +13082,7 @@ are changed, requiring the model to be refitted before making predictions.</p>
 <span class="normal">1121</span>
 <span class="normal">1122</span>
 <span class="normal">1123</span>
-<span class="normal">1124</span>
-<span class="normal">1125</span>
-<span class="normal">1126</span>
-<span class="normal">1127</span>
-<span class="normal">1128</span>
-<span class="normal">1129</span>
-<span class="normal">1130</span>
-<span class="normal">1131</span>
-<span class="normal">1132</span>
-<span class="normal">1133</span>
-<span class="normal">1134</span>
-<span class="normal">1135</span>
-<span class="normal">1136</span>
-<span class="normal">1137</span>
-<span class="normal">1138</span>
-<span class="normal">1139</span>
-<span class="normal">1140</span>
-<span class="normal">1141</span>
-<span class="normal">1142</span>
-<span class="normal">1143</span>
-<span class="normal">1144</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Arima"</span><span class="p">:</span>
+<span class="normal">1124</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Arima"</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Set the parameters of this estimator and reset the fitted state.</span>
 
@@ -13102,7 +13114,21 @@ are changed, requiring the model to be refitted before making predictions.</p>
                 <span class="sa">f</span><span class="s2">"Invalid parameter '</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">'. Valid parameters are: </span><span class="si">{</span><span class="n">valid_params</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
 
-    <span class="bp">self</span><span class="o">.</span><span class="n">_set_params</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">is_auto</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">seasonal_order</span> <span class="ow">is</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_auto</span><span class="p">:</span>
+        <span class="n">estimator_name_</span> <span class="o">=</span> <span class="s2">"AutoArima()"</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">p</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">order</span>
+        <span class="n">P</span><span class="p">,</span> <span class="n">D</span><span class="p">,</span> <span class="n">Q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">seasonal_order</span>
+        <span class="k">if</span> <span class="n">P</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">D</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">Q</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">estimator_name_</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Arima(</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">q</span><span class="si">}</span><span class="s2">)"</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">estimator_name_</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Arima(</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">q</span><span class="si">}</span><span class="s2">)(</span><span class="si">{</span><span class="n">P</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">D</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">Q</span><span class="si">}</span><span class="s2">)[</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="si">}</span><span class="s2">]"</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">estimator_name_</span> <span class="o">=</span> <span class="n">estimator_name_</span>
 
     <span class="n">fitted_attrs</span> <span class="o">=</span> <span class="p">[</span>
         <span class="s1">'model_'</span><span class="p">,</span> <span class="s1">'y_train_'</span><span class="p">,</span> <span class="s1">'coef_'</span><span class="p">,</span> <span class="s1">'coef_names_'</span><span class="p">,</span> <span class="s1">'sigma2_'</span><span class="p">,</span> <span class="s1">'loglik_'</span><span class="p">,</span>
@@ -13142,7 +13168,27 @@ If reduce_memory() has been called, summary information will be limited.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/stats/_arima.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1146</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1126</span>
+<span class="normal">1127</span>
+<span class="normal">1128</span>
+<span class="normal">1129</span>
+<span class="normal">1130</span>
+<span class="normal">1131</span>
+<span class="normal">1132</span>
+<span class="normal">1133</span>
+<span class="normal">1134</span>
+<span class="normal">1135</span>
+<span class="normal">1136</span>
+<span class="normal">1137</span>
+<span class="normal">1138</span>
+<span class="normal">1139</span>
+<span class="normal">1140</span>
+<span class="normal">1141</span>
+<span class="normal">1142</span>
+<span class="normal">1143</span>
+<span class="normal">1144</span>
+<span class="normal">1145</span>
+<span class="normal">1146</span>
 <span class="normal">1147</span>
 <span class="normal">1148</span>
 <span class="normal">1149</span>
@@ -13175,27 +13221,7 @@ If reduce_memory() has been called, summary information will be limited.</p>
 <span class="normal">1176</span>
 <span class="normal">1177</span>
 <span class="normal">1178</span>
-<span class="normal">1179</span>
-<span class="normal">1180</span>
-<span class="normal">1181</span>
-<span class="normal">1182</span>
-<span class="normal">1183</span>
-<span class="normal">1184</span>
-<span class="normal">1185</span>
-<span class="normal">1186</span>
-<span class="normal">1187</span>
-<span class="normal">1188</span>
-<span class="normal">1189</span>
-<span class="normal">1190</span>
-<span class="normal">1191</span>
-<span class="normal">1192</span>
-<span class="normal">1193</span>
-<span class="normal">1194</span>
-<span class="normal">1195</span>
-<span class="normal">1196</span>
-<span class="normal">1197</span>
-<span class="normal">1198</span>
-<span class="normal">1199</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+<span class="normal">1179</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Print a summary of the fitted ARIMA model.</span>
@@ -13303,7 +13329,27 @@ need access to diagnostic information.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/stats/_arima.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1201</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1181</span>
+<span class="normal">1182</span>
+<span class="normal">1183</span>
+<span class="normal">1184</span>
+<span class="normal">1185</span>
+<span class="normal">1186</span>
+<span class="normal">1187</span>
+<span class="normal">1188</span>
+<span class="normal">1189</span>
+<span class="normal">1190</span>
+<span class="normal">1191</span>
+<span class="normal">1192</span>
+<span class="normal">1193</span>
+<span class="normal">1194</span>
+<span class="normal">1195</span>
+<span class="normal">1196</span>
+<span class="normal">1197</span>
+<span class="normal">1198</span>
+<span class="normal">1199</span>
+<span class="normal">1200</span>
+<span class="normal">1201</span>
 <span class="normal">1202</span>
 <span class="normal">1203</span>
 <span class="normal">1204</span>
@@ -13318,27 +13364,7 @@ need access to diagnostic information.</p>
 <span class="normal">1213</span>
 <span class="normal">1214</span>
 <span class="normal">1215</span>
-<span class="normal">1216</span>
-<span class="normal">1217</span>
-<span class="normal">1218</span>
-<span class="normal">1219</span>
-<span class="normal">1220</span>
-<span class="normal">1221</span>
-<span class="normal">1222</span>
-<span class="normal">1223</span>
-<span class="normal">1224</span>
-<span class="normal">1225</span>
-<span class="normal">1226</span>
-<span class="normal">1227</span>
-<span class="normal">1228</span>
-<span class="normal">1229</span>
-<span class="normal">1230</span>
-<span class="normal">1231</span>
-<span class="normal">1232</span>
-<span class="normal">1233</span>
-<span class="normal">1234</span>
-<span class="normal">1235</span>
-<span class="normal">1236</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+<span class="normal">1216</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">reduce_memory</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Arima"</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Free memory by deleting large attributes after fitting.</span>
@@ -18128,7 +18154,9 @@ This is updated after fitting to reflect the selected model.</p>
             <td>
               <div class="doc-md-description">
                 <p>If automatic model selection was used (model="ZZZ" or model=None), this dictionary contains
-the parameters of the selected best model. Otherwise, it is None.</p>
+the parameters of the selected best model. Otherwise, it is None. It
+includes the Box-Cox lambda used in the fit (<code>lambda_param</code>, with
+<code>lambda_auto=False</code>), also when it was selected with <code>lambda_auto=True</code>.</p>
               </div>
             </td>
           </tr>
@@ -18258,9 +18286,7 @@ the parameters of the selected best model. Otherwise, it is None.</p>
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>skforecast/stats/_ets.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">173</span>
 <span class="normal">174</span>
 <span class="normal">175</span>
 <span class="normal">176</span>
@@ -18318,7 +18344,9 @@ the parameters of the selected best model. Otherwise, it is None.</p>
 <span class="normal">228</span>
 <span class="normal">229</span>
 <span class="normal">230</span>
-<span class="normal">231</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">m</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
     <span class="n">model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"ZZZ"</span><span class="p">,</span>
@@ -19143,9 +19171,7 @@ the parameters of the selected best model. Otherwise, it is None.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/stats/_ets.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">249</span>
-<span class="normal">250</span>
-<span class="normal">251</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">251</span>
 <span class="normal">252</span>
 <span class="normal">253</span>
 <span class="normal">254</span>
@@ -19257,7 +19283,13 @@ the parameters of the selected best model. Otherwise, it is None.</p>
 <span class="normal">360</span>
 <span class="normal">361</span>
 <span class="normal">362</span>
-<span class="normal">363</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">exog</span><span class="p">:</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Ets</span><span class="p">:</span>
+<span class="normal">363</span>
+<span class="normal">364</span>
+<span class="normal">365</span>
+<span class="normal">366</span>
+<span class="normal">367</span>
+<span class="normal">368</span>
+<span class="normal">369</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">exog</span><span class="p">:</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Ets</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Fit the ETS model to a univariate time series.</span>
 
@@ -19317,6 +19349,10 @@ the parameters of the selected best model. Otherwise, it is None.</p>
             <span class="n">verbose</span>                    <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="p">)</span>
 
+        <span class="c1"># NOTE: The Box-Cox lambda used in the fit is stored (also when it</span>
+        <span class="c1"># is selected with `lambda_auto`), as R's `ets(y, model = fit)`</span>
+        <span class="c1"># does, so the same model is fitted with these parameters.</span>
+        <span class="n">transform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="o">.</span><span class="n">transform</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">best_params_</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">"m"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">m</span><span class="p">,</span>
             <span class="s2">"model"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">error</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">trend</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">season</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
@@ -19325,8 +19361,8 @@ the parameters of the selected best model. Otherwise, it is None.</p>
             <span class="s2">"beta"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span>
             <span class="s2">"gamma"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">gamma</span><span class="p">,</span>
             <span class="s2">"phi"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">phi</span><span class="p">,</span>
-            <span class="s2">"lambda_param"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_param</span><span class="p">,</span>
-            <span class="s2">"lambda_auto"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_auto</span><span class="p">,</span>
+            <span class="s2">"lambda_param"</span><span class="p">:</span> <span class="n">transform</span><span class="o">.</span><span class="n">lambda_param</span> <span class="k">if</span> <span class="n">transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">"lambda_auto"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
             <span class="s2">"bias_adjust"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bias_adjust</span><span class="p">,</span>
             <span class="s2">"bounds"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">,</span>
             <span class="s2">"seasonal"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">seasonal</span><span class="p">,</span>
@@ -19466,13 +19502,7 @@ the parameters of the selected best model. Otherwise, it is None.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/stats/_ets.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">365</span>
-<span class="normal">366</span>
-<span class="normal">367</span>
-<span class="normal">368</span>
-<span class="normal">369</span>
-<span class="normal">370</span>
-<span class="normal">371</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">371</span>
 <span class="normal">372</span>
 <span class="normal">373</span>
 <span class="normal">374</span>
@@ -19494,7 +19524,13 @@ the parameters of the selected best model. Otherwise, it is None.</p>
 <span class="normal">390</span>
 <span class="normal">391</span>
 <span class="normal">392</span>
-<span class="normal">393</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">exog</span><span class="p">:</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Generate mean forecasts steps ahead.</span>
@@ -19654,13 +19690,7 @@ range (e.g., 0.8 for 80% intervals).</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/stats/_ets.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">395</span>
-<span class="normal">396</span>
-<span class="normal">397</span>
-<span class="normal">398</span>
-<span class="normal">399</span>
-<span class="normal">400</span>
-<span class="normal">401</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">401</span>
 <span class="normal">402</span>
 <span class="normal">403</span>
 <span class="normal">404</span>
@@ -19723,7 +19753,13 @@ range (e.g., 0.8 for 80% intervals).</p>
 <span class="normal">461</span>
 <span class="normal">462</span>
 <span class="normal">463</span>
-<span class="normal">464</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span>
+<span class="normal">467</span>
+<span class="normal">468</span>
+<span class="normal">469</span>
+<span class="normal">470</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">predict_interval</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
@@ -19840,19 +19876,19 @@ range (e.g., 0.8 for 80% intervals).</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/stats/_ets.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">466</span>
-<span class="normal">467</span>
-<span class="normal">468</span>
-<span class="normal">469</span>
-<span class="normal">470</span>
-<span class="normal">471</span>
-<span class="normal">472</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">472</span>
 <span class="normal">473</span>
 <span class="normal">474</span>
 <span class="normal">475</span>
 <span class="normal">476</span>
 <span class="normal">477</span>
-<span class="normal">478</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+<span class="normal">478</span>
+<span class="normal">479</span>
+<span class="normal">480</span>
+<span class="normal">481</span>
+<span class="normal">482</span>
+<span class="normal">483</span>
+<span class="normal">484</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_residuals</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Get in-sample residuals (observed - fitted) from the ETS model.</span>
@@ -19912,19 +19948,19 @@ range (e.g., 0.8 for 80% intervals).</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/stats/_ets.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">480</span>
-<span class="normal">481</span>
-<span class="normal">482</span>
-<span class="normal">483</span>
-<span class="normal">484</span>
-<span class="normal">485</span>
-<span class="normal">486</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">486</span>
 <span class="normal">487</span>
 <span class="normal">488</span>
 <span class="normal">489</span>
 <span class="normal">490</span>
 <span class="normal">491</span>
-<span class="normal">492</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+<span class="normal">492</span>
+<span class="normal">493</span>
+<span class="normal">494</span>
+<span class="normal">495</span>
+<span class="normal">496</span>
+<span class="normal">497</span>
+<span class="normal">498</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_fitted_values</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Get in-sample fitted values from the ETS model.</span>
@@ -20015,13 +20051,7 @@ range (e.g., 0.8 for 80% intervals).</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/stats/_ets.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">494</span>
-<span class="normal">495</span>
-<span class="normal">496</span>
-<span class="normal">497</span>
-<span class="normal">498</span>
-<span class="normal">499</span>
-<span class="normal">500</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">500</span>
 <span class="normal">501</span>
 <span class="normal">502</span>
 <span class="normal">503</span>
@@ -20045,7 +20075,13 @@ range (e.g., 0.8 for 80% intervals).</p>
 <span class="normal">521</span>
 <span class="normal">522</span>
 <span class="normal">523</span>
-<span class="normal">524</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+<span class="normal">524</span>
+<span class="normal">525</span>
+<span class="normal">526</span>
+<span class="normal">527</span>
+<span class="normal">528</span>
+<span class="normal">529</span>
+<span class="normal">530</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    R^2 using in-sample fitted values.</span>
@@ -20155,13 +20191,7 @@ contained subobjects that are estimators.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/stats/_ets.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">526</span>
-<span class="normal">527</span>
-<span class="normal">528</span>
-<span class="normal">529</span>
-<span class="normal">530</span>
-<span class="normal">531</span>
-<span class="normal">532</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">532</span>
 <span class="normal">533</span>
 <span class="normal">534</span>
 <span class="normal">535</span>
@@ -20189,7 +20219,13 @@ contained subobjects that are estimators.</p>
 <span class="normal">557</span>
 <span class="normal">558</span>
 <span class="normal">559</span>
-<span class="normal">560</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deep</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="normal">560</span>
+<span class="normal">561</span>
+<span class="normal">562</span>
+<span class="normal">563</span>
+<span class="normal">564</span>
+<span class="normal">565</span>
+<span class="normal">566</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">deep</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Get parameters for this estimator.</span>
 
@@ -20248,13 +20284,7 @@ contained subobjects that are estimators.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/stats/_ets.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">562</span>
-<span class="normal">563</span>
-<span class="normal">564</span>
-<span class="normal">565</span>
-<span class="normal">566</span>
-<span class="normal">567</span>
-<span class="normal">568</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">568</span>
 <span class="normal">569</span>
 <span class="normal">570</span>
 <span class="normal">571</span>
@@ -20269,7 +20299,13 @@ contained subobjects that are estimators.</p>
 <span class="normal">580</span>
 <span class="normal">581</span>
 <span class="normal">582</span>
-<span class="normal">583</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+<span class="normal">583</span>
+<span class="normal">584</span>
+<span class="normal">585</span>
+<span class="normal">586</span>
+<span class="normal">587</span>
+<span class="normal">588</span>
+<span class="normal">589</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_feature_importances</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Get feature importances for Eta model."""</span>
     <span class="n">features</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'alpha (level)'</span><span class="p">]</span>
@@ -20369,13 +20405,7 @@ contained subobjects that are estimators.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/stats/_ets.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">585</span>
-<span class="normal">586</span>
-<span class="normal">587</span>
-<span class="normal">588</span>
-<span class="normal">589</span>
-<span class="normal">590</span>
-<span class="normal">591</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">591</span>
 <span class="normal">592</span>
 <span class="normal">593</span>
 <span class="normal">594</span>
@@ -20395,7 +20425,13 @@ contained subobjects that are estimators.</p>
 <span class="normal">608</span>
 <span class="normal">609</span>
 <span class="normal">610</span>
-<span class="normal">611</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+<span class="normal">611</span>
+<span class="normal">612</span>
+<span class="normal">613</span>
+<span class="normal">614</span>
+<span class="normal">615</span>
+<span class="normal">616</span>
+<span class="normal">617</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_info_criteria</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">criteria</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Get information criteria.</span>
@@ -20528,7 +20564,31 @@ are changed, requiring the model to be refitted before making predictions.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/stats/_ets.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">643</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">619</span>
+<span class="normal">620</span>
+<span class="normal">621</span>
+<span class="normal">622</span>
+<span class="normal">623</span>
+<span class="normal">624</span>
+<span class="normal">625</span>
+<span class="normal">626</span>
+<span class="normal">627</span>
+<span class="normal">628</span>
+<span class="normal">629</span>
+<span class="normal">630</span>
+<span class="normal">631</span>
+<span class="normal">632</span>
+<span class="normal">633</span>
+<span class="normal">634</span>
+<span class="normal">635</span>
+<span class="normal">636</span>
+<span class="normal">637</span>
+<span class="normal">638</span>
+<span class="normal">639</span>
+<span class="normal">640</span>
+<span class="normal">641</span>
+<span class="normal">642</span>
+<span class="normal">643</span>
 <span class="normal">644</span>
 <span class="normal">645</span>
 <span class="normal">646</span>
@@ -20563,21 +20623,7 @@ are changed, requiring the model to be refitted before making predictions.</p>
 <span class="normal">675</span>
 <span class="normal">676</span>
 <span class="normal">677</span>
-<span class="normal">678</span>
-<span class="normal">679</span>
-<span class="normal">680</span>
-<span class="normal">681</span>
-<span class="normal">682</span>
-<span class="normal">683</span>
-<span class="normal">684</span>
-<span class="normal">685</span>
-<span class="normal">686</span>
-<span class="normal">687</span>
-<span class="normal">688</span>
-<span class="normal">689</span>
-<span class="normal">690</span>
-<span class="normal">691</span>
-<span class="normal">692</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Ets</span><span class="p">:</span>
+<span class="normal">678</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Ets</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Set the parameters of this estimator and reset the fitted state.</span>
 
@@ -20612,7 +20658,17 @@ are changed, requiring the model to be refitted before making predictions.</p>
                 <span class="sa">f</span><span class="s2">"Valid parameters are: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">valid_params</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
 
-    <span class="bp">self</span><span class="o">.</span><span class="n">_set_params</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">is_auto</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">==</span> <span class="s2">"ZZZ"</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_auto</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="s2">"ZZZ"</span>
+        <span class="n">estimator_name_</span> <span class="o">=</span> <span class="s2">"AutoEts()"</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">estimator_name_</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Ets(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="si">}</span><span class="s2">)"</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">estimator_name_</span> <span class="o">=</span> <span class="n">estimator_name_</span>
 
     <span class="c1"># Reset fitted state - model needs to be refitted with new parameters</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">model_</span>               <span class="o">=</span> <span class="kc">None</span>
@@ -20651,7 +20707,21 @@ are changed, requiring the model to be refitted before making predictions.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/stats/_ets.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">694</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">680</span>
+<span class="normal">681</span>
+<span class="normal">682</span>
+<span class="normal">683</span>
+<span class="normal">684</span>
+<span class="normal">685</span>
+<span class="normal">686</span>
+<span class="normal">687</span>
+<span class="normal">688</span>
+<span class="normal">689</span>
+<span class="normal">690</span>
+<span class="normal">691</span>
+<span class="normal">692</span>
+<span class="normal">693</span>
+<span class="normal">694</span>
 <span class="normal">695</span>
 <span class="normal">696</span>
 <span class="normal">697</span>
@@ -20688,21 +20758,7 @@ are changed, requiring the model to be refitted before making predictions.</p>
 <span class="normal">728</span>
 <span class="normal">729</span>
 <span class="normal">730</span>
-<span class="normal">731</span>
-<span class="normal">732</span>
-<span class="normal">733</span>
-<span class="normal">734</span>
-<span class="normal">735</span>
-<span class="normal">736</span>
-<span class="normal">737</span>
-<span class="normal">738</span>
-<span class="normal">739</span>
-<span class="normal">740</span>
-<span class="normal">741</span>
-<span class="normal">742</span>
-<span class="normal">743</span>
-<span class="normal">744</span>
-<span class="normal">745</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+<span class="normal">731</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Print a summary of the fitted ETS model.</span>
@@ -20815,7 +20871,21 @@ will raise an error:</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>skforecast/stats/_ets.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">747</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">733</span>
+<span class="normal">734</span>
+<span class="normal">735</span>
+<span class="normal">736</span>
+<span class="normal">737</span>
+<span class="normal">738</span>
+<span class="normal">739</span>
+<span class="normal">740</span>
+<span class="normal">741</span>
+<span class="normal">742</span>
+<span class="normal">743</span>
+<span class="normal">744</span>
+<span class="normal">745</span>
+<span class="normal">746</span>
+<span class="normal">747</span>
 <span class="normal">748</span>
 <span class="normal">749</span>
 <span class="normal">750</span>
@@ -20839,21 +20909,7 @@ will raise an error:</p>
 <span class="normal">768</span>
 <span class="normal">769</span>
 <span class="normal">770</span>
-<span class="normal">771</span>
-<span class="normal">772</span>
-<span class="normal">773</span>
-<span class="normal">774</span>
-<span class="normal">775</span>
-<span class="normal">776</span>
-<span class="normal">777</span>
-<span class="normal">778</span>
-<span class="normal">779</span>
-<span class="normal">780</span>
-<span class="normal">781</span>
-<span class="normal">782</span>
-<span class="normal">783</span>
-<span class="normal">784</span>
-<span class="normal">785</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
+<span class="normal">771</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@check_is_fitted</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">reduce_memory</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Ets</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Reduce memory usage by removing internal arrays not needed for prediction.</span>
