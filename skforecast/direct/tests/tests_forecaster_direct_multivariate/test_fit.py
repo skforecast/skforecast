@@ -885,12 +885,13 @@ def test_fit_training_matrix_layout_received_by_estimator(
         assert flag.owndata is expected_c_contiguous
 
 
-def test_fit_predictions_equal_bit_for_bit_with_c_contiguous_training_matrix():
+def test_fit_predictions_equal_with_c_contiguous_training_matrix():
     """
     Test that the copy of the training matrix to a C-contiguous array does not
-    change the predictions with Ridge: they are equal, bit for bit, to the ones
-    of skforecast 0.27.x before the copy, when the estimator received the view
-    of `sliding_window_view`.
+    change the predictions with Ridge: they are equal to the ones of skforecast
+    0.27.x before the copy, when the estimator received the view of
+    `sliding_window_view`, up to the rounding of the BLAS library, which differs
+    between platforms (about 1e-16).
     """
     forecaster = ForecasterDirectMultiVariate(
         estimator=Ridge(), level='l1', lags={'l1': 5, 'l2': None}, steps=3
@@ -899,4 +900,4 @@ def test_fit_predictions_equal_bit_for_bit_with_c_contiguous_training_matrix():
     predictions = forecaster.predict()['pred'].to_numpy()
     expected = np.array([0.6082589917205449, 0.48916463678696753, 0.46781960614767354])
 
-    np.testing.assert_array_equal(predictions, expected)
+    np.testing.assert_allclose(predictions, expected, rtol=1e-12, atol=0)
