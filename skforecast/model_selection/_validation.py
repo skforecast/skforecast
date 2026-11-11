@@ -479,12 +479,25 @@ def _backtesting_forecaster(
         - interval_width: mean of `upper_bound - lower_bound`, in the units of
         the series.
 
+        The last column, `n_evaluated`, is the number of points used to
+        compute the metrics: true value and prediction not missing, each date
+        counted once (with the prediction of its last fold when the folds
+        overlap).
+
         **New in version 0.27.0**
     backtest_predictions : pandas DataFrame
-        Value of predictions. The DataFrame includes the following columns:
+        Value of predictions. The DataFrame includes the following columns, in
+        this order:
 
         - fold: Indicates the fold number where the prediction was made.
+        - step: Step of the forecast horizon at which the prediction was made,
+        from `gap + 1` to `gap + steps`.
+        - y_true: True value of the series (NaN if it is missing).
         - pred: Predicted values for the corresponding series and time steps.
+        With a `ForecasterRecursiveClassifier`, the predicted class, followed
+        by one column with the probability of each class (e.g., `a_proba`).
+
+        **New in version 0.27.0**: columns `step` and `y_true`.
 
         If `interval` is not `None`, additional columns are included depending on the method:
         
@@ -497,7 +510,11 @@ def _backtesting_forecaster(
         - For `scipy.stats` distribution objects: One column for each estimated 
         parameter of the distribution (e.g., `loc`, `scale`).
 
-        If `return_predictors` is `True`, one column per predictor is created.
+        If `return_predictors` is `True`, one column per predictor is added
+        after the predictions, with the names of `X_train_features_names_out_`.
+        Select them by name, for example with
+        `backtest_predictions[forecaster.X_train_features_names_out_]` once the
+        forecaster is fitted, not by position.
 
         Depending on the relation between `steps` and `fold_stride`, the output
         may include repeated indexes (if `fold_stride < steps`) or gaps
@@ -898,12 +915,25 @@ def backtesting_forecaster(
         - interval_width: mean of `upper_bound - lower_bound`, in the units of
         the series.
 
+        The last column, `n_evaluated`, is the number of points used to
+        compute the metrics: true value and prediction not missing, each date
+        counted once (with the prediction of its last fold when the folds
+        overlap).
+
         **New in version 0.27.0**
     backtest_predictions : pandas DataFrame
-        Value of predictions. The DataFrame includes the following columns:
+        Value of predictions. The DataFrame includes the following columns, in
+        this order:
 
         - fold: Indicates the fold number where the prediction was made.
+        - step: Step of the forecast horizon at which the prediction was made,
+        from `gap + 1` to `gap + steps`.
+        - y_true: True value of the series (NaN if it is missing).
         - pred: Predicted values for the corresponding series and time steps.
+        With a `ForecasterRecursiveClassifier`, the predicted class, followed
+        by one column with the probability of each class (e.g., `a_proba`).
+
+        **New in version 0.27.0**: columns `step` and `y_true`.
 
         If `interval` is not `None`, additional columns are included depending on the method:
         
@@ -916,7 +946,11 @@ def backtesting_forecaster(
         - For `scipy.stats` distribution objects: One column for each estimated 
         parameter of the distribution (e.g., `loc`, `scale`).
 
-        If `return_predictors` is `True`, one column per predictor is created.
+        If `return_predictors` is `True`, one column per predictor is added
+        after the predictions, with the names of `X_train_features_names_out_`.
+        Select them by name, for example with
+        `backtest_predictions[forecaster.X_train_features_names_out_]` once the
+        forecaster is fitted, not by position.
 
         Depending on the relation between `steps` and `fold_stride`, the output
         may include repeated indexes (if `fold_stride < steps`) or gaps
@@ -1326,7 +1360,9 @@ def _backtesting_forecaster_multiseries(
     Returns
     -------
     metrics_levels : pandas DataFrame
-        Value(s) of the metric(s). Index are the levels and columns the metrics.
+        Value(s) of the metric(s): one row per level, named in the column
+        `levels`, followed by the rows of the aggregated metrics if
+        `add_aggregated_metric` is `True`, and one column per metric.
         A level that is not predicted in any fold (for example, a series
         shorter than the window size of the forecaster) has NaN metrics and is
         left out of the aggregated metrics. A `MissingValuesWarning` names the
@@ -1343,14 +1379,25 @@ def _backtesting_forecaster_multiseries(
         - interval_width: mean of `upper_bound - lower_bound`, in the units of
         the series.
 
+        The last column, `n_evaluated`, is the number of points used to
+        compute the metrics of each level: true value and prediction not
+        missing, each date counted once (with the prediction of its last fold
+        when the folds overlap). In the aggregated rows, it is the sum over the
+        levels; `weighted_average` is weighted by it.
+
         **New in version 0.27.0**
     backtest_predictions : pandas DataFrame
         Long-format DataFrame containing the predicted values for each series. The 
-        DataFrame includes the following columns:
+        DataFrame includes the following columns, in this order:
         
         - level: Identifier for the time series or level being predicted.
         - fold: Indicates the fold number where the prediction was made.
+        - step: Step of the forecast horizon at which the prediction was made,
+        from `gap + 1` to `gap + steps`.
+        - y_true: True value of the series (NaN if it is missing).
         - pred: Predicted values for the corresponding series and time steps.
+
+        **New in version 0.27.0**: columns `step` and `y_true`.
 
         If `interval` is not `None`, additional columns are included depending on the method:
         
@@ -1363,7 +1410,11 @@ def _backtesting_forecaster_multiseries(
         - For `scipy.stats` distribution objects: One column for each estimated 
         parameter of the distribution (e.g., `loc`, `scale`).
 
-        If `return_predictors` is `True`, one column per predictor is created.
+        If `return_predictors` is `True`, one column per predictor is added
+        after the predictions, with the names of `X_train_features_names_out_`.
+        Select them by name, for example with
+        `backtest_predictions[forecaster.X_train_features_names_out_]` once the
+        forecaster is fitted, not by position.
 
         Depending on the relation between `steps` and `fold_stride`, the output
         may include repeated indexes (if `fold_stride < steps`) or gaps
@@ -1908,7 +1959,9 @@ def backtesting_forecaster_multiseries(
     Returns
     -------
     metrics_levels : pandas DataFrame
-        Value(s) of the metric(s). Index are the levels and columns the metrics.
+        Value(s) of the metric(s): one row per level, named in the column
+        `levels`, followed by the rows of the aggregated metrics if
+        `add_aggregated_metric` is `True`, and one column per metric.
         A level that is not predicted in any fold (for example, a series
         shorter than the window size of the forecaster) has NaN metrics and is
         left out of the aggregated metrics. A `MissingValuesWarning` names the
@@ -1925,14 +1978,25 @@ def backtesting_forecaster_multiseries(
         - interval_width: mean of `upper_bound - lower_bound`, in the units of
         the series.
 
+        The last column, `n_evaluated`, is the number of points used to
+        compute the metrics of each level: true value and prediction not
+        missing, each date counted once (with the prediction of its last fold
+        when the folds overlap). In the aggregated rows, it is the sum over the
+        levels; `weighted_average` is weighted by it.
+
         **New in version 0.27.0**
     backtest_predictions : pandas DataFrame
         Long-format DataFrame containing the predicted values for each series. The 
-        DataFrame includes the following columns:
+        DataFrame includes the following columns, in this order:
         
         - level: Identifier for the time series or level being predicted.
         - fold: Indicates the fold number where the prediction was made.
+        - step: Step of the forecast horizon at which the prediction was made,
+        from `gap + 1` to `gap + steps`.
+        - y_true: True value of the series (NaN if it is missing).
         - pred: Predicted values for the corresponding series and time steps.
+
+        **New in version 0.27.0**: columns `step` and `y_true`.
 
         If `interval` is not `None`, additional columns are included depending on the method:
         
@@ -1945,7 +2009,11 @@ def backtesting_forecaster_multiseries(
         - For `scipy.stats` distribution objects: One column for each estimated 
         parameter of the distribution (e.g., `loc`, `scale`).
 
-        If `return_predictors` is `True`, one column per predictor is created.
+        If `return_predictors` is `True`, one column per predictor is added
+        after the predictions, with the names of `X_train_features_names_out_`.
+        Select them by name, for example with
+        `backtest_predictions[forecaster.X_train_features_names_out_]` once the
+        forecaster is fitted, not by position.
 
         Depending on the relation between `steps` and `fold_stride`, the output
         may include repeated indexes (if `fold_stride < steps`) or gaps
@@ -2260,20 +2328,34 @@ def _backtesting_stats(
     Returns
     -------
     metric_values : pandas DataFrame
-        Value(s) of the metric(s), one row per estimator if the forecaster
-        has several. If `interval` (or `alpha`) is not `None`, two more 
+        Value(s) of the metric(s), one row per estimator, named in the first
+        column, `estimator_id`, if the forecaster has several. If `interval`
+        (or `alpha`) is not `None`, two more 
         columns are added after the metrics:
 
         - coverage: share of true values inside the interval (bounds included).
         - interval_width: mean of `upper_bound - lower_bound`, in the units of
         the series.
 
+        The last column, `n_evaluated`, is the number of points used to
+        compute the metrics: true value and prediction not missing, each date
+        counted once (with the prediction of its last fold when the folds
+        overlap).
+
         **New in version 0.27.0**
     backtest_predictions : pandas DataFrame
-        Value of predictions. The DataFrame includes the following columns:
+        Value of predictions. The DataFrame includes the following columns, in
+        this order:
 
+        - estimator_id: Identifier of the estimator, only if the forecaster has
+        several (one row per estimator and date).
         - fold: Indicates the fold number where the prediction was made.
+        - step: Step of the forecast horizon at which the prediction was made,
+        from `gap + 1` to `gap + steps`.
+        - y_true: True value of the series (NaN if it is missing).
         - pred: Predicted values for the corresponding series and time steps.
+
+        **New in version 0.27.0**: columns `step` and `y_true`.
 
         If `interval` is not `None`, additional columns are included:
 
@@ -2665,20 +2747,34 @@ def backtesting_stats(
     Returns
     -------
     metric_values : pandas DataFrame
-        Value(s) of the metric(s), one row per estimator if the forecaster
-        has several. If `interval` (or `alpha`) is not `None`, two more 
+        Value(s) of the metric(s), one row per estimator, named in the first
+        column, `estimator_id`, if the forecaster has several. If `interval`
+        (or `alpha`) is not `None`, two more 
         columns are added after the metrics:
 
         - coverage: share of true values inside the interval (bounds included).
         - interval_width: mean of `upper_bound - lower_bound`, in the units of
         the series.
 
+        The last column, `n_evaluated`, is the number of points used to
+        compute the metrics: true value and prediction not missing, each date
+        counted once (with the prediction of its last fold when the folds
+        overlap).
+
         **New in version 0.27.0**
     backtest_predictions : pandas DataFrame
-        Value of predictions. The DataFrame includes the following columns:
+        Value of predictions. The DataFrame includes the following columns, in
+        this order:
 
+        - estimator_id: Identifier of the estimator, only if the forecaster has
+        several (one row per estimator and date).
         - fold: Indicates the fold number where the prediction was made.
+        - step: Step of the forecast horizon at which the prediction was made,
+        from `gap + 1` to `gap + steps`.
+        - y_true: True value of the series (NaN if it is missing).
         - pred: Predicted values for the corresponding series and time steps.
+
+        **New in version 0.27.0**: columns `step` and `y_true`.
 
         If `interval` is not `None`, additional columns are included:
         
@@ -2838,7 +2934,9 @@ def _backtesting_foundation(
     Returns
     -------
     metrics_levels : pandas DataFrame
-        Value(s) of the metric(s).
+        Value(s) of the metric(s). In multi-series mode, one row per level,
+        named in the column `levels`, followed by the rows of the aggregated
+        metrics if `add_aggregated_metric` is `True`.
         In multi-series mode, a level that is not predicted in any fold (for
         example, a series with no observed values in its context window) has
         NaN metrics and is left out of the aggregated metrics. A
@@ -2853,13 +2951,25 @@ def _backtesting_foundation(
         - interval_width: mean of `upper_bound - lower_bound`, in the units of
         the series.
 
+        The last column, `n_evaluated`, is the number of points used to
+        compute the metrics (of each level in multi-series mode): true value
+        and prediction not missing, each date counted once (with the
+        prediction of its last fold when the folds overlap). In the aggregated
+        rows, it is the sum over the levels.
+
         **New in version 0.27.0**
     backtest_predictions : pandas DataFrame
-        Value of predictions. The DataFrame includes the following columns:
+        Value of predictions. The DataFrame includes the following columns, in
+        this order:
 
+        - level: Identifies the series (also with a single series).
         - fold: Indicates the fold number where the prediction was made.
-        - level: Identifies the series.
+        - step: Step of the forecast horizon at which the prediction was made,
+        from `gap + 1` to `gap + steps`.
+        - y_true: True value of the series (NaN if it is missing).
         - pred: Predicted values.
+
+        **New in version 0.27.0**: columns `step` and `y_true`.
 
         If `quantiles` is provided, one column per quantile is included
         (e.g. `q_0.1`, `q_0.5`, `q_0.9`) instead of pred.
@@ -3267,7 +3377,9 @@ def backtesting_foundation(
     Returns
     -------
     metrics_levels : pandas DataFrame
-        Value(s) of the metric(s).
+        Value(s) of the metric(s). In multi-series mode, one row per level,
+        named in the column `levels`, followed by the rows of the aggregated
+        metrics if `add_aggregated_metric` is `True`.
         In multi-series mode, a level that is not predicted in any fold (for
         example, a series with no observed values in its context window) has
         NaN metrics and is left out of the aggregated metrics. A
@@ -3282,13 +3394,25 @@ def backtesting_foundation(
         - interval_width: mean of `upper_bound - lower_bound`, in the units of
         the series.
 
+        The last column, `n_evaluated`, is the number of points used to
+        compute the metrics (of each level in multi-series mode): true value
+        and prediction not missing, each date counted once (with the
+        prediction of its last fold when the folds overlap). In the aggregated
+        rows, it is the sum over the levels.
+
         **New in version 0.27.0**
     backtest_predictions : pandas DataFrame
-        Value of predictions. The DataFrame includes the following columns:
+        Value of predictions. The DataFrame includes the following columns, in
+        this order:
 
+        - level: Identifies the series (also with a single series).
         - fold: Indicates the fold number where the prediction was made.
-        - level: Identifies the series.
+        - step: Step of the forecast horizon at which the prediction was made,
+        from `gap + 1` to `gap + steps`.
+        - y_true: True value of the series (NaN if it is missing).
         - pred: Predicted values.
+
+        **New in version 0.27.0**: columns `step` and `y_true`.
 
         If `quantiles` is provided, one column per quantile is included
         (e.g. `q_0.1`, `q_0.5`, `q_0.9`) instead of pred.

@@ -2,9 +2,11 @@
 # ==============================================================================
 import re
 import pytest
+import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.feature_selection import RFE
+from sklearn.model_selection import KFold, TimeSeriesSplit
 from sklearn.preprocessing import StandardScaler
 from skforecast.preprocessing import RollingFeatures, CalendarFeatures
 from skforecast.direct import ForecasterDirectMultiVariate
@@ -154,10 +156,13 @@ def test_ValueError_select_features_multiseries_when_subsample_not_greater_0_les
 @pytest.mark.parametrize("subsample, expected_n_records", 
                          [(1, 90), (1.0, 90), (0.5, 45)], 
                          ids=lambda ss: f'subsample, expected_n_records: {ss}')
-def test_select_features_multiseries_subsample_without_replacement(subsample, expected_n_records):
+def test_select_features_multiseries_subsample_without_replacement_and_in_random_order(subsample, expected_n_records):
     """
     Test that select_features_multiseries samples `subsample` proportion of
-    the records without replacement. `subsample=1` uses all the records.
+    the records without replacement and passes them to the selector in random
+    order, set by `random_state`, so that an integer `cv` of the selector does
+    not give folds with whole series not seen in training. `subsample=1` uses
+    all the records.
     """
     forecaster = ForecasterRecursiveMultiSeries(
                      estimator = LinearRegression(),
@@ -166,16 +171,58 @@ def test_select_features_multiseries_subsample_without_replacement(subsample, ex
     selector = SelectorAllFeatures()
 
     select_features_multiseries(
-        selector   = selector,
-        forecaster = forecaster,
-        series     = series_dict_range,
-        exog       = exog,
-        subsample  = subsample,
-        verbose    = False,
+        selector     = selector,
+        forecaster   = forecaster,
+        series       = series_dict_range,
+        exog         = exog,
+        subsample    = subsample,
+        random_state = 123,
+        verbose      = False,
     )
+
+    X_train, y_train = forecaster.create_train_X_y(series=series_dict_range, exog=exog)
+    levels = X_train['_level_skforecast'].to_numpy()
+    X_train = X_train.drop(columns='_level_skforecast')
+    rng = np.random.default_rng(seed=123)
+    sample = rng.choice(len(X_train), size=expected_n_records, replace=False)
 
     assert len(selector.X_fit_) == expected_n_records
     assert not selector.X_fit_.duplicated().any()
+    pd.testing.assert_frame_equal(selector.X_fit_, X_train.iloc[sample, :])
+    pd.testing.assert_series_equal(selector.y_fit_, y_train.iloc[sample])
+
+    # Each fold of a KFold without shuffling (an integer `cv`) has records of
+    # all the series.
+    levels_sample = levels[sample]
+    for _, test_index in KFold(n_splits=3).split(levels_sample):
+        assert set(levels_sample[test_index]) == set(levels)
+
+
+def test_select_features_multiseries_UserWarning_when_selector_cv_is_TimeSeriesSplit():
+    """
+    Test that select_features_multiseries warns when the `cv` of the selector
+    is a `TimeSeriesSplit`, since the records are passed in random order.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator = LinearRegression(),
+                     lags      = 5,
+                 )
+    selector = SelectorAllFeatures()
+    selector.cv = TimeSeriesSplit(n_splits=3)
+
+    warn_msg = re.escape(
+        "The `cv` of the selector is a `TimeSeriesSplit`, but the records "
+        "are passed to the selector in random order, so its folds are not "
+        "a temporal validation."
+    )
+    with pytest.warns(UserWarning, match=warn_msg):
+        select_features_multiseries(
+            selector   = selector,
+            forecaster = forecaster,
+            series     = series_dict_range,
+            exog       = exog,
+            verbose    = False,
+        )
 
 
 def test_select_features_multiseries_output_is_str_when_selector_returns_np_str():

@@ -552,7 +552,7 @@ selected_lags, selected_window_features, selected_exog, selected_calendar_featur
     exog=exog_train,
     select_only=None,              # 'autoreg', 'exog', 'calendar', a list of them, or None (all features)
     force_inclusion=None,          # Features to always include (list or regex str)
-    subsample=0.5,                 # Proportion of records in (0, 1], sampled without replacement
+    subsample=0.5,                 # Proportion of records in (0, 1], sampled without replacement and in random order (random cv folds)
     random_state=123,
     verbose=True
 )

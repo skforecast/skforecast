@@ -314,7 +314,7 @@ select_features(
     exog=None,               # pd.Series | pd.DataFrame | None
     select_only=None,        # 'autoreg' | 'exog' | 'calendar' | list of them | None (select all)
     force_inclusion=None,    # list[str] | str (regex) | None
-    subsample=0.5,           # float in (0, 1], proportion of records (sampled without replacement)
+    subsample=0.5,           # float in (0, 1], proportion of records (without replacement, random order)
     random_state=123,        # int
     verbose=True             # bool
 ) -> tuple[list[int], list[str], list[str], list[str]]
@@ -327,7 +327,7 @@ select_features_multiseries(
     exog=None,               # pd.Series | pd.DataFrame | dict | None
     select_only=None,        # 'autoreg' | 'exog' | 'calendar' | list of them | None
     force_inclusion=None,    # list[str] | str (regex) | None
-    subsample=0.5,           # float in (0, 1]
+    subsample=0.5,           # float in (0, 1], proportion of records (without replacement, random order)
     random_state=123,        # int
     verbose=True             # bool
 ) -> tuple[list[int] | dict[str, list[int]], list[str], list[str], list[str]]

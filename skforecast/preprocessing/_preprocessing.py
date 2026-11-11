@@ -1319,6 +1319,12 @@ class RollingFeatures():
             )        
         if isinstance(stats, str):
             stats = [stats]
+        if len(stats) == 0:
+            raise ValueError(
+                "`stats` must contain at least one statistic. If no window "
+                "feature is needed (for example, the feature selection did not "
+                "select any), set `window_features=None` in the forecaster."
+            )
 
         for stat in set(stats):
             if stat not in allowed_stats:
@@ -1948,6 +1954,12 @@ class RollingFeaturesClassification():
             )        
         if isinstance(stats, str):
             stats = [stats]
+        if len(stats) == 0:
+            raise ValueError(
+                "`stats` must contain at least one statistic. If no window "
+                "feature is needed (for example, the feature selection did not "
+                "select any), set `window_features=None` in the forecaster."
+            )
 
         for stat in set(stats):
             if stat not in allowed_stats:
