@@ -13,7 +13,7 @@ cloudpickle==3.1.2
 colorlog==6.12.0
 contourpy==1.4.0
 cycler==0.12.1
-datasets==4.8.5
+datasets==5.0.1
 dill==0.4.1
 distro==1.9.0
 einops==0.8.2
