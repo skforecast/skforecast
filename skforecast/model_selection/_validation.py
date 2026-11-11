@@ -2330,8 +2330,8 @@ def _backtesting_stats(
     metric_values : pandas DataFrame
         Value(s) of the metric(s), one row per estimator, named in the first
         column, `estimator_id`, if the forecaster has several. If `interval`
-        (or `alpha`) is not `None`, two more 
-        columns are added after the metrics:
+        (or `alpha`) is not `None`, two more columns are added after the
+        metrics:
 
         - coverage: share of true values inside the interval (bounds included).
         - interval_width: mean of `upper_bound - lower_bound`, in the units of
@@ -2749,8 +2749,8 @@ def backtesting_stats(
     metric_values : pandas DataFrame
         Value(s) of the metric(s), one row per estimator, named in the first
         column, `estimator_id`, if the forecaster has several. If `interval`
-        (or `alpha`) is not `None`, two more 
-        columns are added after the metrics:
+        (or `alpha`) is not `None`, two more columns are added after the
+        metrics:
 
         - coverage: share of true values inside the interval (bounds included).
         - interval_width: mean of `upper_bound - lower_bound`, in the units of

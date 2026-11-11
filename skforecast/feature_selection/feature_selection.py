@@ -416,8 +416,9 @@ def select_features_multiseries(
         `cv` of `RFECV`) are random: an integer `cv` gives the same kind of
         folds as `KFold(shuffle=True)`. In the training matrix of
         `ForecasterRecursiveMultiSeries`, where the series are stacked one after
-        another, each fold has records of all the series. A `TimeSeriesSplit`
-        does not give a temporal validation, and a warning is raised.
+        another, the records of every series are spread over the folds. A
+        `TimeSeriesSplit` does not give a temporal validation, and a warning is
+        raised.
     random_state : int, default 123
         Sets a seed for the random subsample, and the order of its records, so
         that the subsampling process is always deterministic.
@@ -751,7 +752,7 @@ def _subsample_records(
     # without shuffling), contiguous records form contiguous folds, that is,
     # periods of time not seen in training or, in the stacked matrix of
     # ForecasterRecursiveMultiSeries, whole series not seen in training. With
-    # those folds the selection was unstable and could keep almost no feature.
+    # those folds the selection is unstable and can keep almost no feature.
     n_samples = max(1, int(len(X_train) * subsample))
     rng = np.random.default_rng(seed=random_state)
     sample = rng.choice(len(X_train), size=n_samples, replace=False)

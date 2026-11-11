@@ -4710,7 +4710,7 @@ selected_lags, selected_wf, selected_exog, selected_cal = select_features(
 3. **Not updating forecaster**: After selection, update the forecaster with `forecaster.set_lags(selected_lags)` — the original is not modified in place by `select_features`.
 4. **Running on full dataset**: Always run on training data only (`y_train`, `exog_train`).
 5. **Confusing `selected_window_features` with `RollingFeatures`**: The returned `selected_window_features` is a list of **feature name strings** (e.g. `['roll_mean_7', 'roll_std_14']`), not the `RollingFeatures` object itself. Create a new `RollingFeatures` with only the selected statistics and window sizes (e.g. `RollingFeatures(stats=['mean', 'std'], window_sizes=[7, 14])`). If none was selected, set `window_features=None`: `RollingFeatures(stats=[])` raises a `ValueError`.
-6. **Using `TimeSeriesSplit` as the `cv` of the selector**: The records are sampled without replacement and passed to the selector in random order, so its folds are random (an integer `cv` gives the same folds as `KFold(shuffle=True)`, with every series in each fold in multi-series). A `TimeSeriesSplit` gives no temporal validation and raises a warning. Validate the selection with backtesting.
+6. **Using `TimeSeriesSplit` as the `cv` of the selector**: The records are sampled without replacement and passed to the selector in random order, so its folds are random (an integer `cv` gives the same folds as `KFold(shuffle=True)`, with the records of every series spread over the folds in multi-series). A `TimeSeriesSplit` gives no temporal validation and raises a warning. Validate the selection with backtesting.
 
 ================================================================================
 # SKILL: prediction-intervals
