@@ -15,7 +15,7 @@
       "Bash(python .claude/skills/verify/affected.py)",
       "Bash(python .claude/skills/verify/affected.py *)",
       "Bash(python -m pytest .claude/hooks *)",
-      "Bash(python -m pytest tools/foundation_compat/tests *)",
+      "Bash(python tools/foundation_compat/run.py *)",
       "Bash(python tools/docs/hooks/page_meta.py)",
       "Bash(python tools/docs/execute_notebooks/execute_notebooks.py --check *)",
       "Bash(gh pr view *)",
