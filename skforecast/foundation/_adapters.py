@@ -492,7 +492,7 @@ class ChronosAdapter(_AdapterBase):
         # on those produces dtype=object with pd.NA sentinels instead of float32.
         if isinstance(col_data, pd.Series):
             if pd.api.types.is_numeric_dtype(col_data) or pd.api.types.is_bool_dtype(col_data):
-                return col_data.to_numpy(dtype=np.float32)
+                return col_data.to_numpy(dtype=np.float32, na_value=np.nan)
             return col_data.to_numpy()
 
         # Fallback for numpy arrays, lists, etc.
@@ -1545,7 +1545,7 @@ class TimesFM3Adapter(_AdapterBase):
 
         if isinstance(col_data, pd.Series):
             if pd.api.types.is_numeric_dtype(col_data) or pd.api.types.is_bool_dtype(col_data):
-                return col_data.to_numpy(dtype=np.float32)
+                return col_data.to_numpy(dtype=np.float32, na_value=np.nan)
             raise ValueError(
                 f"TimesFM3Adapter supports only numeric covariates. Column "
                 f"{col_data.name!r} has dtype {col_data.dtype}. Encode "
@@ -2018,7 +2018,7 @@ class MoiraiAdapter(_AdapterBase):
 
         series_names_in = list(context.keys())
         inputs_list = [
-            context[series_name].to_numpy(dtype=np.float32).reshape(-1, 1)
+            context[series_name].to_numpy(dtype=np.float32, na_value=np.nan).reshape(-1, 1)
             for series_name in series_names_in
         ]
 
@@ -3780,7 +3780,7 @@ class T0Adapter(_AdapterBase):
         # forecast origin aligns at the end of the window for every series.
         series_names = list(context.keys())
         context_batch = np.stack([
-            context[series_name].to_numpy(dtype=np.float32)
+            context[series_name].to_numpy(dtype=np.float32, na_value=np.nan)
             for series_name in series_names
         ])
         context_length = context_batch.shape[1]
@@ -4008,7 +4008,7 @@ class T0Adapter(_AdapterBase):
         """
 
         if pd.api.types.is_numeric_dtype(col_data) or pd.api.types.is_bool_dtype(col_data):
-            return col_data.to_numpy(dtype=np.float32)
+            return col_data.to_numpy(dtype=np.float32, na_value=np.nan)
 
         raise ValueError(
             f"T0Adapter supports only numeric covariates. Column "
@@ -4429,7 +4429,7 @@ class TSICLAdapter(_AdapterBase):
 
         if isinstance(col_data, pd.Series):
             if pd.api.types.is_numeric_dtype(col_data) or pd.api.types.is_bool_dtype(col_data):
-                return col_data.to_numpy(dtype=np.float32)
+                return col_data.to_numpy(dtype=np.float32, na_value=np.nan)
             raise ValueError(
                 f"TSICLAdapter supports only numeric covariates. Column "
                 f"{col_data.name!r} has dtype {col_data.dtype}. Encode "
@@ -5139,7 +5139,7 @@ class NoriAdapter(_AdapterBase):
         """
 
         if pd.api.types.is_numeric_dtype(col_data) or pd.api.types.is_bool_dtype(col_data):
-            return col_data.to_numpy(dtype=np.float32)
+            return col_data.to_numpy(dtype=np.float32, na_value=np.nan)
 
         raise ValueError(
             f"NoriAdapter supports only numeric covariates. Column "
@@ -5629,7 +5629,7 @@ class TimestralAdapter(_AdapterBase):
 
         forecast = self._model.forecast(
             context           = np.stack([
-                                    context[series_name].to_numpy(dtype=np.float64)
+                                    context[series_name].to_numpy(dtype=np.float64, na_value=np.nan)
                                     for series_name in names
                                 ])[:, np.newaxis, :],
             prediction_length = steps,
@@ -6351,7 +6351,7 @@ class TiRex2Adapter(_AdapterBase):
                 future_cols,
             )
             target = torch.as_tensor(
-                context[name].to_numpy(dtype=np.float32)[None, :],
+                context[name].to_numpy(dtype=np.float32, na_value=np.nan)[None, :],
                 dtype=torch.float32,
             )
             if past is not None:
@@ -6428,7 +6428,7 @@ class TiRex2Adapter(_AdapterBase):
                     "TiRex2Adapter supports only numeric covariates. "
                     f"Column {values.name!r} has dtype {values.dtype}."
                 )
-            return values.to_numpy(dtype=np.float32)
+            return values.to_numpy(dtype=np.float32, na_value=np.nan)
         array = np.asarray(values)
         if array.dtype.kind not in "iufb":
             raise ValueError(
