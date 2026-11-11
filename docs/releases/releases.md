@@ -144,7 +144,7 @@ The main changes in this release are:
 
 *Feature selection*
 
-+ Since 0.26.0, <code>[select_features]</code> and <code>[select_features_multiseries]</code> passed the sampled records to the selector in time order, so an integer `cv` (for example, `RFECV(cv=3)`) validated on periods or, with <code>[ForecasterRecursiveMultiSeries]</code>, on whole series not seen in training: the selection was unstable and could keep almost no feature. The records are now passed in random order, still without replacement, and a `TimeSeriesSplit` as `cv` raises a warning.
++ Since 0.26.0, <code>[select_features]</code> and <code>[select_features_multiseries]</code> passed the sampled records to the selector in time order, so an integer `cv` (for example, `RFECV(cv=3)`) validated on periods or, with <code>[ForecasterRecursiveMultiSeries]</code>, on whole series not seen in training: the selection was unstable and could keep almost no feature. The records are now passed in random order, still without replacement, and a `TimeSeriesSplit` as `cv` raises a warning. ([#1483](https://github.com/skforecast/skforecast/pull/1483))
 
 *Statistical models*
 
@@ -173,7 +173,7 @@ The main changes in this release are:
 
 + Fixed an issue in the forecasters with an `LGBMRegressor` where the predictions ignored its `n_jobs` (or `num_threads`) and used all the threads of the machine, which made recursive forecasts slower: <code>[backtesting_forecaster]</code> with `n_jobs=1` was 17 to 28 times slower on Linux under WSL2 (10,000 rows, 48 steps, no refit, 22-core CPU). Predictions are unchanged. ([#1464](https://github.com/skforecast/skforecast/pull/1464), [#1472](https://github.com/skforecast/skforecast/pull/1472))
 
-+ <code>[RollingFeatures]</code> and <code>[RollingFeaturesClassification]</code> with an empty list of `stats` (for example, rebuilt from a feature selection that kept no window feature) raised `ValueError: max() iterable argument is empty`. They now raise a `ValueError` that suggests `window_features=None`.
++ <code>[RollingFeatures]</code> and <code>[RollingFeaturesClassification]</code> with an empty list of `stats` (for example, rebuilt from a feature selection that kept no window feature) raised `ValueError: max() iterable argument is empty`. They now raise a `ValueError` that suggests `window_features=None`. ([#1483](https://github.com/skforecast/skforecast/pull/1483))
 
 *Multiple series*
 
