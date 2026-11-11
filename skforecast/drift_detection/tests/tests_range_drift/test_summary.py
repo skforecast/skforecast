@@ -1,5 +1,6 @@
 # Unit test _summary
 # ============================================================================== 
+import pytest
 from skforecast.drift_detection import RangeDriftDetector
 
 
@@ -87,3 +88,32 @@ def test_summary_both_out_of_range(capsys):
     captured = capsys.readouterr()
     assert "'series1' has values outside the observed range [1.00000, 10.00000]." in captured.out
     assert "'exog1' has values outside the observed range [0.00000, 5.00000]." in captured.out
+
+
+@pytest.mark.parametrize(
+    "columns",
+    ["200", "60"],
+    ids=lambda x: f"columns: {x}"
+)
+def test_summary_panel_width(capsys, monkeypatch, columns):
+    """
+    Test _summary prints a panel as wide as the panels of the skforecast
+    warnings (88 characters) in a wide console, also when its content is
+    short, and no wider than the console when it is narrower (rich uses one
+    column less in legacy Windows consoles).
+    """
+    monkeypatch.setenv("COLUMNS", columns)
+    RangeDriftDetector._summary(
+        out_of_range_series=[],
+        out_of_range_series_ranges=[],
+        out_of_range_exog=[],
+        out_of_range_exog_ranges=[]
+    )
+
+    captured = capsys.readouterr()
+    widths = {len(line) for line in captured.out.splitlines()}
+    assert len(widths) == 1
+    if columns == "200":
+        assert widths == {88}
+    else:
+        assert widths.pop() in (59, 60)

@@ -371,7 +371,7 @@ class RangeDriftDetector:
             f"[bold]Series:[/bold]\n{msg_series}\n"
             f"[bold]Exogenous Variables:[/bold]\n{msg_exog}"
         )
-        console.print(Panel(content, title="[bold]Out-of-range summary[/bold]", expand=False))
+        console.print(Panel(content, title="[bold]Out-of-range summary[/bold]", width=88))
 
     def _normalize_input(
         self, 
