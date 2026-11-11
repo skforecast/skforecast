@@ -131,9 +131,17 @@ BACKEND_CONTRACTS = {
     ],
     "t0": [
         {"target": "t0:T0Forecaster.from_pretrained"},
+        # `from_pretrained` forwards `dtype` (`torch_dtype`) to the constructor.
+        {"target": "t0:T0Forecaster", "kwargs": ["dtype"]},
         {
             "target": "t0:T0Forecaster.predict",
-            "kwargs": ["context", "horizon", "quantiles", "future_covariates"],
+            "n_positional": 1,
+            "kwargs": [
+                "horizon",
+                "quantile_levels",
+                "future_covariates",
+                "trim_leading_missing",
+            ],
         },
     ],
     "nori": [

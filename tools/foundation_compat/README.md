@@ -25,7 +25,7 @@ python tools/foundation_compat/run.py --adapter moirai --level contract
 python tools/foundation_compat/summarize.py results
 ```
 
-On macOS the result may differ from CI (Linux): `tfc-t0` and `timesfm` ship an MLX runtime with other signatures. CI is the reference.
+On macOS the result may differ from CI (Linux): `timesfm` ships an MLX runtime with other signatures. CI is the reference.
 
 ## Environment
 
