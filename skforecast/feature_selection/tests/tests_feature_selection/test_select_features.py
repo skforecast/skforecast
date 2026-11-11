@@ -2,8 +2,11 @@
 # ==============================================================================
 import re
 import pytest
+import numpy as np
+import pandas as pd
 from sklearn.feature_selection import RFE
 from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import TimeSeriesSplit
 from skforecast.preprocessing import RollingFeatures, CalendarFeatures
 from skforecast.recursive import ForecasterRecursive
 from skforecast.direct import ForecasterDirect
@@ -146,11 +149,12 @@ def test_ValueError_select_features_subsample_not_greater_0_less_equal_1(subsamp
 @pytest.mark.parametrize("subsample, expected_n_records", 
                          [(1, 495), (1.0, 495), (0.5, 247)], 
                          ids=lambda ss: f'subsample, expected_n_records: {ss}')
-def test_select_features_subsample_without_replacement_and_in_time_order(subsample, expected_n_records):
+def test_select_features_subsample_without_replacement_and_in_random_order(subsample, expected_n_records):
     """
     Test that select_features samples `subsample` proportion of the records
-    without replacement and keeps their time order. `subsample=1` uses all
-    the records.
+    without replacement and passes them to the selector in random order, set
+    by `random_state`, so that an integer `cv` of the selector does not give
+    contiguous blocks of time. `subsample=1` uses all the records.
     """
     forecaster = ForecasterRecursive(
                      estimator = LinearRegression(),
@@ -159,17 +163,51 @@ def test_select_features_subsample_without_replacement_and_in_time_order(subsamp
     selector = SelectorAllFeatures()
 
     select_features(
-        selector   = selector,
-        forecaster = forecaster,
-        y          = y,
-        exog       = exog,
-        subsample  = subsample,
-        verbose    = False,
+        selector     = selector,
+        forecaster   = forecaster,
+        y            = y,
+        exog         = exog,
+        subsample    = subsample,
+        random_state = 123,
+        verbose      = False,
     )
+
+    X_train, y_train = forecaster.create_train_X_y(y=y, exog=exog)
+    rng = np.random.default_rng(seed=123)
+    sample = rng.choice(len(X_train), size=expected_n_records, replace=False)
 
     assert len(selector.X_fit_) == expected_n_records
     assert selector.X_fit_.index.is_unique
-    assert selector.X_fit_.index.is_monotonic_increasing
+    assert not selector.X_fit_.index.is_monotonic_increasing
+    pd.testing.assert_frame_equal(selector.X_fit_, X_train.iloc[sample, :])
+    pd.testing.assert_series_equal(selector.y_fit_, y_train.iloc[sample])
+
+
+def test_select_features_UserWarning_when_selector_cv_is_TimeSeriesSplit():
+    """
+    Test that select_features warns when the `cv` of the selector is a
+    `TimeSeriesSplit`, since the records are passed in random order.
+    """
+    forecaster = ForecasterRecursive(
+                     estimator = LinearRegression(),
+                     lags      = 5,
+                 )
+    selector = SelectorAllFeatures()
+    selector.cv = TimeSeriesSplit(n_splits=3)
+
+    warn_msg = re.escape(
+        "The `cv` of the selector is a `TimeSeriesSplit`, but the records "
+        "are passed to the selector in random order, so its folds are not "
+        "a temporal validation."
+    )
+    with pytest.warns(UserWarning, match=warn_msg):
+        select_features(
+            selector   = selector,
+            forecaster = forecaster,
+            y          = y,
+            exog       = exog,
+            verbose    = False,
+        )
 
 
 def test_select_features_output_is_str_when_selector_returns_np_str():
