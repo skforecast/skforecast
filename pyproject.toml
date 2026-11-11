@@ -99,7 +99,7 @@ docs = [
     # Pinned like the rest: Material only requires >=10.2, and a new major
     # version can break mkdocstrings (12.x needs mkdocstrings>=1.0.7)
     "pymdown-extensions==12.2",
-    "black==26.5.1",
+    "black==26.10.1",
 ]
 
 test = [
