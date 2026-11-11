@@ -62,7 +62,7 @@ The main changes in this release are:
 
     + <code>[TabICLAdapter]</code> and <code>[TabPFNAdapter]</code>: the predictions change when a historical exogenous variable has no future values (for example, predicting without `exog` after fitting with it): it is now ignored, as the warning said.
 
-    + <code>[select_features]</code> and <code>[select_features_multiseries]</code>: the selected features change with a selector that has an internal cross-validation (`RFECV`, `SequentialFeatureSelector`...). To get the same kind of folds with skforecast 0.26.0, pass `cv=KFold(n_splits=3, shuffle=True, random_state=123)` to the selector.
+    + <code>[select_features]</code> and <code>[select_features_multiseries]</code>: the selected features change with a selector that has an internal cross-validation (`RFECV`, `SequentialFeatureSelector`...) or an estimator that samples the records (for example, a random forest). To get the same kind of folds with skforecast 0.26.0, pass `cv=KFold(n_splits=3, shuffle=True, random_state=123)` to the selector.
 
     And some code needs to be updated:
 
