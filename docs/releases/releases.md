@@ -12,7 +12,7 @@ All significant changes to this project are documented in this release file.
 
 
 
-## 0.27.0 <small>In development</small> { id="0.27.0" }
+## 0.27.0 <small>Nov 11, 2026</small> { id="0.27.0" }
 
 The main changes in this release are:
 
@@ -62,7 +62,7 @@ The main changes in this release are:
 
     + <code>[TabICLAdapter]</code> and <code>[TabPFNAdapter]</code>: the predictions change when a historical exogenous variable has no future values (for example, predicting without `exog` after fitting with it): it is now ignored, as the warning said.
 
-    + <code>[select_features]</code> and <code>[select_features_multiseries]</code>: the selected features change with a selector that has an internal cross-validation (`RFECV`, `SequentialFeatureSelector`...) or an estimator that samples the records (for example, a random forest). To get the same kind of folds with skforecast 0.26.0, pass `cv=KFold(n_splits=3, shuffle=True, random_state=123)` to the selector.
+    + <code>[select_features]</code> and <code>[select_features_multiseries]</code>: the selected features change with a selector that has an internal cross-validation (`RFECV`, `SequentialFeatureSelector`...) or an estimator that samples the records (for example, a random forest). Users who stay on skforecast 0.26.0 get similar folds by passing `cv=KFold(n_splits=3, shuffle=True, random_state=123)` to the selector.
 
     And some code needs to be updated:
 
@@ -70,7 +70,7 @@ The main changes in this release are:
 
     + With `differentiation`, any estimator raises a `ValueError` when one of the last `differentiation` values of the series (or of `last_window`) is missing: fill it.
 
-    + Backtesting keeps predicting those dates as NaN: with one series it raises a clear error if they are scored, and with several series it leaves them out of the metrics with a `MissingValuesWarning`.
+    + Backtesting keeps predicting as NaN the dates of those errors: with one series it raises a clear error if they are scored, and with several series it leaves them out of the metrics with a `MissingValuesWarning`.
 
     + Passing both `alpha` and `interval` to <code>[ForecasterStats]</code> or <code>[backtesting_stats]</code> raises a `ValueError`.
 
@@ -142,10 +142,6 @@ The main changes in this release are:
 
 + The function returned by <code>[create_mean_pinball_loss]</code> is named after its quantile (`mean_pinball_loss_q_0.9` instead of `mean_pinball_loss_q`), so the pinball losses of several quantiles are different columns of the backtesting metrics and of the search results. ([#1438](https://github.com/skforecast/skforecast/pull/1438))
 
-*Feature selection*
-
-+ Since 0.26.0, <code>[select_features]</code> and <code>[select_features_multiseries]</code> passed the sampled records to the selector in time order, so an integer `cv` (for example, `RFECV(cv=3)`) validated on periods or, with <code>[ForecasterRecursiveMultiSeries]</code>, on whole series not seen in training: the selection was unstable and could keep almost no feature. The records are now passed in random order, still without replacement, and a `TimeSeriesSplit` as `cv` raises a warning. ([#1483](https://github.com/skforecast/skforecast/pull/1483))
-
 *Statistical models*
 
 + In the `predict_interval` method of <code>[ForecasterStats]</code> and in <code>[backtesting_stats]</code>, `alpha` is an alias of `interval` (`alpha=0.05` is equivalent to `interval=[0.025, 0.975]`), and passing both raises a `ValueError`. Previously, `alpha` took precedence over `interval`. `interval` now comes before `alpha` in the signature. ([#1416](https://github.com/skforecast/skforecast/pull/1416))
@@ -172,8 +168,6 @@ The main changes in this release are:
 + The `set_in_sample_residuals` method of <code>[ForecasterRecursive]</code>, <code>[ForecasterDirect]</code>, <code>[ForecasterRecursiveMultiSeries]</code> and <code>[ForecasterDirectMultiVariate]</code> raised a `CatBoostError` about `cat_features` with a `CatBoostRegressor` and categorical exogenous variables, while `fit(store_in_sample_residuals=True)` worked with the same data. ([#1354](https://github.com/skforecast/skforecast/issues/1354))
 
 + Fixed an issue in the forecasters with an `LGBMRegressor` where the predictions ignored its `n_jobs` (or `num_threads`) and used all the threads of the machine, which made recursive forecasts slower: <code>[backtesting_forecaster]</code> with `n_jobs=1` was 17 to 28 times slower on Linux under WSL2 (10,000 rows, 48 steps, no refit, 22-core CPU). Predictions are unchanged. ([#1464](https://github.com/skforecast/skforecast/pull/1464), [#1472](https://github.com/skforecast/skforecast/pull/1472))
-
-+ <code>[RollingFeatures]</code> and <code>[RollingFeaturesClassification]</code> with an empty list of `stats` (for example, rebuilt from a feature selection that kept no window feature) raised `ValueError: max() iterable argument is empty`. They now raise a `ValueError` that suggests `window_features=None`. ([#1483](https://github.com/skforecast/skforecast/pull/1483))
 
 *Multiple series*
 
@@ -202,6 +196,12 @@ The main changes in this release are:
 + Backtesting with two metrics of the same name (a name and the function it names, two lambdas, the pinball losses of two quantiles) returned duplicated columns, and <code>[backtesting_forecaster_multiseries]</code> raised a `TypeError`. A `ValueError` now names the duplicated metrics, as the hyperparameter searches already did. ([#1438](https://github.com/skforecast/skforecast/pull/1438))
 
 + The warnings raised in the folds of <code>[backtesting_forecaster]</code>, <code>[backtesting_forecaster_multiseries]</code> and <code>[backtesting_stats]</code> that run in parallel processes ignored the warning filters, were repeated in every candidate of the hyperparameter searches and looked broken in Jupyter. They now reach the main process as with `n_jobs=1`, once the folds finish: with `warnings.simplefilter("error")`, the backtesting fails at the end, not in the first fold. ([#1467](https://github.com/skforecast/skforecast/pull/1467))
+
+*Feature selection*
+
++ Since 0.26.0, <code>[select_features]</code> and <code>[select_features_multiseries]</code> passed the sampled records to the selector in time order, so an integer `cv` (for example, `RFECV(cv=3)`) validated on periods or, with <code>[ForecasterRecursiveMultiSeries]</code>, on whole series not seen in training: the selection was unstable and could keep almost no feature. The records are now passed in random order, still without replacement, and a `TimeSeriesSplit` as `cv` raises a warning. ([#1483](https://github.com/skforecast/skforecast/pull/1483))
+
++ <code>[RollingFeatures]</code> and <code>[RollingFeaturesClassification]</code> with an empty list of `stats` (for example, rebuilt from a feature selection that kept no window feature) raised `ValueError: max() iterable argument is empty`. They now raise a `ValueError` that suggests `window_features=None`. ([#1483](https://github.com/skforecast/skforecast/pull/1483))
 
 *Statistical models*
 
