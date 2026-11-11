@@ -84,7 +84,7 @@ reproducen con sus scripts. QW-03 se confirma en el código: el `ValueError` de
 pero `_validation.py:513-518` la sobrescribe después con la del forecaster. El resto de
 cifras son las de la sesión en la nube y no se han vuelto a medir.
 
-### Estado y prioridad (revisión del 2026-11-03)
+### Estado y prioridad (revisión del 2026-11-11)
 
 **Hecho en `0.27.x`:** PR-1400 (compilación de Ets), #1412 (ISSUE-1357, IDs enteros),
 #1415 (ISSUE-1406), #1416 (BUG-stats-interval-ignored), #1418 (ISSUE-1410), #1419 (BUG-09 a),
@@ -140,6 +140,33 @@ un solo nombre como string, y la frecuencia y descripción de `australia_tourism
 `version` de `fetch_dataset`, `load_demo_dataset` y `show_datasets_info` deprecado, sin
 efecto, con `FutureWarning` y eliminación en la 0.29.0; `load_demo_dataset` se apoya en
 `fetch_dataset('h2o')`).
+**ISSUE-1385 (T0) hecho con #1478** (fusionado el 2026-11-11, plan 01 de
+`dev/foundation_adapters_review/`): `T0Adapter` vuelve a funcionar con `tfc-t0` actual
+(`tfc-t0[torch]>=0.6`, API nueva con `model_input` y `quantile_levels`, `ImportError` claro
+si falta el paquete, la versión o el runtime de PyTorch), `trim_leading_missing=True` (el
+relleno de las series cortas cambiaba la predicción de las demás),
+`supports_heterogeneous_covariates=False` y `torch_dtype` en `from_pretrained`. Va en
+"Before upgrading". Quedan los planes 02 a 10 de esa revisión (sección "Fuera de los
+elementos del roadmap", abajo).
+**Fuera de los elementos del roadmap, fusionado en `0.27.x` del 2026-11-03 al 2026-11-11:**
+- Foundation: #1450 (relleno a la izquierda del contexto en `FoundationModel` y fallback
+  de MPS), #1451 (aviso engañoso con NaN en la exog futura), #1454 (`TimestralAdapter`),
+  #1455 (covariables a `float32` sin `Series` intermedia), #1459 (`max_series_per_call`),
+  #1463 y #1465 (`TiRex2Adapter`, con los commits de PR-1341 a través de la rama
+  `feature/tirex2-adapter-1341`; cierra ISSUE-1190 y la decisión pendiente 5), #1478 (T0).
+  Planes y análisis en `dev/`: #1449 (Timestral), #1453 (TimeH2O) y #1457 (revisión de
+  los adaptadores, `dev/foundation_adapters_review/`: planes 02 a 10 pendientes).
+- Rendimiento y `n_jobs`: #1460 (Direct y DMV no envían los estimadores del ajuste anterior
+  a cada tarea), #1462 (`n_jobs='auto'` según el estimador), #1464 y #1472 (hilos de
+  LightGBM en el atajo de predicción y tras `deepcopy`), #1468 (`backtesting_stats` con
+  Sarimax y `n_jobs > 1`), #1475 (`n_jobs='auto'` no paraleliza cuando no compensa) y
+  #1477 (búsquedas sin refit en paralelo con CatBoost).
+- Datasets y drift: #1441 (aviso cuando `fetch_dataset` rellena o quita filas al fijar la
+  frecuencia), #1442 (test opcional con los ficheros reales), #1445 y #1448
+  (`PopulationDriftDetector` con categorías sin usar, chi2 determinista).
+- Infraestructura: #1429 (guardas de push y merge), #1443 (tests de `backtesting_stats`
+  con varios estimadores), #1444 (arnés de verificación de pandas 3), #1474 (publicación
+  en PyPI con Trusted Publishing desde una release de GitHub) y #1446 (dependabot).
 **Pendiente antes de la release:**
 - ~~(BUG-08) Volver a ejecutar `docs/user_guides/comparing-forecasting-models.ipynb`~~
   **Hecho con #1473** (2026-11-09), con las métricas tomadas del backtesting.
@@ -268,7 +295,7 @@ efecto, con `FutureWarning` y eliminación en la 0.29.0; `load_demo_dataset` se 
 | Rendimiento con modelos lineales | ~~PERF-contiguous-lags~~ (hecho, #1469) | **Hecho con #1469**, fusionado el 2026-11-08. S. Nuevo (2026-11-08), después del refactor de los avisos (toca la misma zona de los forecasters). Con solo lags, Recursive, Direct y DMV pasan al estimador una vista no contigua de `sliding_window_view`. Copiarla a orden C solo cuando la clase del estimador es LinearRegression, Ridge, Lars o LassoLars (un `Pipeline` nunca se copia) reduce el `fit` con 20.000 filas entre un 9 y un 30 % en Recursive y entre un 14 y un 40 % en Direct. En un solo `fit` son milisegundos; se nota en el backtesting con `refit=True` y en las búsquedas (entre un 6 y un 33 % menos). Las predicciones no cambian (residuos in-sample: menos de 2e-13), la memoria pico sube un 12 % de la matriz como mucho (solo con LinearRegression) y con los demás estimadores no cambia nada. Una lista y una función privada en `utils`, y dos líneas en tres forecasters. Medición, lista y cambios en [`PERF-contiguous-lags.md`](PERF-contiguous-lags.md), secciones 14 a 16 |
 | Paneles multiserie | QW-01, BUG-07, ISSUE-1410 | Hechos: ISSUE-1357 (IDs enteros) con #1412, que sustituye a PR-1408 (cerrado), e ISSUE-1410 con #1418 (2026-10-19); folds sin series con #1427 y `initial_train_size` contra el span con #1430 (2026-10-21, sección 6) |
 | Stats: corrección y rendimiento | BUG-08, PERF-02, PR-1400 | PR-1400 ya está fusionado en `0.27.x`. BUG-08 hecho con #1425 (fusionado el 2026-10-20). Volver a medir PERF-02 después de BUG-08 |
-| PRs externos | PR-1402, PR-1387, PR-1388, PR-1389 | Hecho: PR-1387 fusionado en `0.27.x` (2026-10-20); PR-1388 sustituido por #1433, que conserva su commit (fusionado el 2026-10-26); PR-1389 sustituido por el commit `6a5d933a4` (ISSUE-1354, 2026-10-27) y cerrado. PR-1402 fusionado en `0.27.x` el 2026-10-28. Queda abierto PR-1341 (TiRex-2, decisión pendiente 5), que apunta a `0.26.x` |
+| PRs externos | PR-1402, PR-1387, PR-1388, PR-1389 | Hecho: PR-1387 fusionado en `0.27.x` (2026-10-20); PR-1388 sustituido por #1433, que conserva su commit (fusionado el 2026-10-26); PR-1389 sustituido por el commit `6a5d933a4` (ISSUE-1354, 2026-10-27) y cerrado. PR-1402 fusionado en `0.27.x` el 2026-10-28. PR-1341 (TiRex-2) aceptado a través de #1463 (2026-11-08). Abierto: #1476 (guía de exógenas pronosticadas, contra `0.27.x`) |
 | Pequeños | QW-07, DEP-python310 (anunciar la retirada en 0.28), DEP-arima-dictstyle | |
 
 El orden dentro de cada tema sigue las dependencias de la sección 1. En particular:
@@ -345,7 +372,8 @@ Revisado el 2026-10-30: QW-08 (lo que quedaba), QW-04, QW-10 y QW-12 van en un s
 3. **QW-02** (aviso en foundation cuando se ajusta con exog y `predict` no la recibe):
    invierte un silencio documentado. Propuesta: hacerlo; en ML el mismo olvido ya da error.
 4. **HANDOFF-T2/T3/T4** (`dev/handoff_utils_pendiente.md`): pendientes de decisión de Joaquín.
-5. **PR-1341** (TiRex-2): aceptarlo o no; la revisión es grande (L).
+5. ~~**PR-1341** (TiRex-2)~~ **Resuelto el 2026-11-08:** aceptado, con sus commits, a través
+   de la rama `feature/tirex2-adapter-1341` y #1463 (más #1465).
 6. **BUG-search-short-series**: decidido el 2026-10-29 informar en lugar de cambiar la
    evaluación (c2 aparcada). Las decisiones de la sección 8 de
    [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md) se
@@ -1229,10 +1257,10 @@ BUG-stats-interval-ignored son hallazgos laterales (verificación de FE-02, de F
 | ISSUE-1410 | https://github.com/skforecast/skforecast/issues/1410, https://github.com/skforecast/skforecast/pull/1418 | Resuelto: #1418, fusionado en `0.27.x` el 2026-10-19 | Nada. Una serie con `window_size` valores o menos en el entrenamiento de un fold queda fuera de ese fold; `backtesting_foundation` usa `window_size=0`. FE-04 debe usar la misma frontera |
 | Folds sin series | https://github.com/skforecast/skforecast/pull/1427 | Resuelto: fusionado en `0.27.x` el 2026-10-21; sin issue (hallado desde skforecast-ai) | Nada. Un fold sin series que entrenar o predecir se salta y se lista en el `MissingValuesWarning`; si no se puede predecir ni evaluar ningún fold, `ValueError` antes de entrenar. También: `weighted_average` ya no es NaN cuando un nivel se predice sin valores observados (es la métrica que ordena las búsquedas por defecto), y la extracción de folds no retiene el entrenamiento de los folds sin refit (2000 series y 100 folds: pico de memoria de 1383 a 1022 MB) |
 | `initial_train_size` contra el span | https://github.com/skforecast/skforecast/pull/1430 | Resuelto: fusionado en `0.27.x` el 2026-10-21; sin issue (hallado desde skforecast-ai) | Nada. `check_backtesting_input` y `check_one_step_ahead_input` validan contra el span de un dict de series, no contra la serie más larga; `OneStepAheadFold.split` devolvía el número de series como final del test con un dict; el test del one-step-ahead deja fuera las series sin valores tras el entrenamiento (antes la búsqueda entera fallaba), con `ValueError` claro si no hay nada que entrenar o evaluar. Pendiente con BUG-search-short-series: tratar por candidato el error de la búsqueda one-step-ahead (sección 5.2, punto 4, de [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md)) |
-| ISSUE-1385 (T0) | https://github.com/skforecast/skforecast/issues/1385; `skforecast/foundation/_adapters.py:3724-3729` | Sin PR; no reproducido aquí (sin `tfc-t0`) | Adaptar a `tfc-t0>=0.4` (`predict` sin `context` ni `quantiles`; torch como extra desde 0.6.0) |
+| ISSUE-1385 (T0) | https://github.com/skforecast/skforecast/issues/1385; `skforecast/foundation/_adapters.py:3724-3729` | Resuelto: #1478, fusionado en `0.27.x` el 2026-11-11; el issue está cerrado | Nada. `tfc-t0[torch]>=0.6`, API nueva y tres arreglos más del adaptador (plan 01 de `dev/foundation_adapters_review/`) |
 | ISSUE-1409 + DISC-1119 + GAP-backtesting-interval-metrics | https://github.com/skforecast/skforecast/issues/1409, https://github.com/skforecast/skforecast/discussions/1119 | Sin PR | Se implementan por separado como QW-09 (`coverage` e `interval_width`, #1409) y QW-10 (columna `step`, D1119) (sección 2). Sin aviso de infracobertura (sección 7) |
 | GAP-foundation-backtesting-interval | `skforecast/model_selection/_validation.py:2712-2720` (`backtesting_foundation` solo tiene `quantiles`); `skforecast/model_selection/_search.py:2091` (única búsqueda foundation) | Asimetría de API, comprobada en las firmas; sin medir | Aceptar `interval` en `backtesting_foundation` después de BUG-06; `grid_search_foundation` opcional |
-| PR-1341 / ISSUE-1190 (TiRex-2) | https://github.com/skforecast/skforecast/pull/1341, https://github.com/skforecast/skforecast/issues/1190 | PR externo +1376 líneas, blocked; no revisado | Decidir: foco foundation y demanda recurrente (TabPFN, T0 y Nori ya entraron así); revisión L |
+| PR-1341 / ISSUE-1190 (TiRex-2) | https://github.com/skforecast/skforecast/pull/1341, https://github.com/skforecast/skforecast/issues/1190 | Resuelto: PR-1341 fusionado en la rama `feature/tirex2-adapter-1341` el 2026-11-08 y llevado a `0.27.x` con #1463 (más #1465) | Nada |
 | ISSUE-1131 (exógenas as-of) | https://github.com/skforecast/skforecast/issues/1131 | Aplazado en marzo "a la release siguiente"; no verificado | Decidir el alcance: FE-02 cubre las variables nunca conocidas a futuro en foundation; las exógenas que son previsiones publicadas (propuesta `exog_builder`) siguen abiertas (L) |
 | DEP-stats-alpha | `skforecast/recursive/_forecaster_stats.py:1047-1055`; `backtesting_stats` | Descartado el 2026-10-19 (decisión 5) | Nada: `alpha` queda como alias de `interval` y pasar los dos da `ValueError` (hecho con BUG-stats-interval-ignored) |
 | DEP-python310 | `pyproject.toml:26,65`; `.github/workflows/unit-tests-min-deps.yml:30` | Python 3.10 llega a fin de vida en octubre de 2026 (PEP 619) | Anunciar en 0.27 y retirar en 0.28 (precedente: 3.9 en la 0.19.0) |
