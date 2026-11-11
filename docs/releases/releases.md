@@ -97,6 +97,8 @@ The main changes in this release are:
 
 + `metric='root_mean_squared_error'` (RMSE, from scikit-learn) is accepted by name in backtesting and hyperparameter search, as `'mean_squared_error'` already was. Before, it had to be passed as a function. ([#1424](https://github.com/skforecast/skforecast/pull/1424))
 
++ Added `torch 2.15` compatibility.
+
 
 **Changed**
 
@@ -147,6 +149,10 @@ The main changes in this release are:
 + The `version` argument of <code>[fetch_dataset]</code>, <code>[load_demo_dataset]</code> and <code>[show_datasets_info]</code> is deprecated and has no effect: datasets are always fetched from the main branch of skforecast-datasets, which has no published versions. Passing it emits a `FutureWarning`; it will be removed in version 0.29.0. ([#1440](https://github.com/skforecast/skforecast/pull/1440))
 
 + <code>[fetch_dataset]</code> raises a `MissingValuesWarning` when setting the frequency adds rows with NaN for missing dates (currently only `wikipedia_visits`, with 59 missing days), and keeps the order of the series within each date when sorting long-format datasets. ([#1441](https://github.com/skforecast/skforecast/pull/1441))
+
+*Dependencies*
+
++ Deprecated support for Python 3.10, which reached its end of life in October 2026. skforecast 0.27.0 is the last version that supports it: 0.28.0 will require Python 3.11 or later.
 
 
 **Fixed**

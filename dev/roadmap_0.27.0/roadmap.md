@@ -17,6 +17,14 @@ Esfuerzo: S (horas a 1 día, con tests y docs), M (2 a 5 días), L (más de una 
 
 ## 0. Revisión: lo que queremos hacer en 0.27.0
 
+> **Limpieza del 2026-11-11.** Se borraron los documentos de detalle de los elementos ya
+> hechos (`BUG-search-short-series.md`, `BUG-search-short-series-transparency.md`,
+> `BUG-backtesting-nan-y-true.md`, `BUG-mase-window-size.md`, `BUG-osa-differentiation.md`,
+> `PERF-contiguous-lags.md`, `QW-13.md` y `REFACTOR-warnings.md`), los scripts de `repro/`
+> de esos elementos y las verificaciones de `work/verify/` de BUG-03, BUG-08, QW-03, QW-04 y
+> QW-08. Están en el historial de git: `git show d24e5b852:dev/roadmap_0.27.0/<fichero>`. Lo
+> que la 0.28.0 necesitaba de ellos está copiado en `dev/roadmap_0.28.0/roadmap.md`.
+
 Revisión del 2026-10-18 sobre este informe. **Esta sección manda sobre la sección 1**, que
 mete en 0.27.0 unos 40 elementos porque el análisis se hizo sin límite de tiempo. Las
 secciones 1 a 7 quedan como referencia: evidencia, antes y después, y esbozos de cada arreglo.
@@ -31,9 +39,9 @@ secciones 1 a 7 quedan como referencia: evidencia, antes y después, y esbozos d
 > QW-12, que **va antes y bloquea este arreglo**) con un solo aviso al final de la búsqueda, y ordenar los avisos y
 > errores de las búsquedas (hoy dependen del orden del grid, se repiten en cada trial de
 > bayesian o abortan la búsqueda con `OneStepAheadFold`). En
-> [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md). La
+> `BUG-search-short-series-transparency.md`. La
 > opción c2 queda aparcada; la investigación, en
-> [`BUG-search-short-series.md`](BUG-search-short-series.md). Tamaño medido con M5 completo:
+> `BUG-search-short-series.md`. Tamaño medido con M5 completo:
 > despreciable en paneles maduros con lags cortos (0.03% de puntos fuera con `lags=56`),
 > relevante con rotación de catálogo o lags anuales (13% con `lags=365` en un periodo con
 > lanzamientos).
@@ -48,12 +56,12 @@ secciones 1 a 7 quedan como referencia: evidencia, antes y después, y esbozos d
 > `initial_train_size`, aviso de `n_evaluated` con una serie y
 > BUG-osa-initial-window-check. Detalle en las secciones
 > 11, 12, 14 y 15 de
-> [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md).
+> `BUG-search-short-series-transparency.md`.
 > BUG-backtesting-nan-y-true fusionado el 2026-11-07 (#1458) y QW-13 el 2026-11-08
 > (#1466). **PR 2c fusionado el 2026-11-08 (#1467;** sección 15): los avisos de los folds
 > que corren en los procesos de joblib se registran en el proceso y se reemiten en el
 > principal (filtros del usuario, registro de las búsquedas, Jupyter); no cambia
-> resultados. Incluye el refactor de [`REFACTOR-warnings.md`](REFACTOR-warnings.md).
+> resultados. Incluye el refactor de `REFACTOR-warnings.md`.
 > PERF-contiguous-lags fusionado el 2026-11-08 (#1469). Sección 13 de ese documento,
 > puntos 1, 2 y 4 (guías de búsqueda y de NaN), fusionados el 2026-11-08 (#1470). **El
 > bug está cerrado en código y en sus guías.** Punto 3 (`y_true` en las páginas con
@@ -74,8 +82,8 @@ secciones 1 a 7 quedan como referencia: evidencia, antes y después, y esbozos d
 > escalados. Con `OneStepAheadFold` y `differentiation`, las métricas se calculan sobre
 > predicciones a un paso en la escala original. Resuelve también PERF-04 (MASE multiserie
 > de 6,4 s y 2,6 GB a 2,2 s y 68 MB). Detalle en
-> [`BUG-mase-window-size.md`](BUG-mase-window-size.md) y
-> [`BUG-osa-differentiation.md`](BUG-osa-differentiation.md).
+> `BUG-mase-window-size.md` y
+> `BUG-osa-differentiation.md`.
 
 **Comprobado en local** (Python 3.14.3, numpy 2.5.3, pandas 2.3.3, scikit-learn 1.9.1,
 numba 0.68.0, statsmodels 0.14.6): BUG-03, BUG-01 y BUG-stats-interval-ignored se
@@ -84,7 +92,7 @@ reproducen con sus scripts. QW-03 se confirma en el código: el `ValueError` de
 pero `_validation.py:513-518` la sobrescribe después con la del forecaster. El resto de
 cifras son las de la sesión en la nube y no se han vuelto a medir.
 
-### Estado y prioridad (revisión del 2026-11-11)
+### Estado y prioridad (revisión del 2026-11-11; alcance cerrado: lo no hecho pasa a la 0.28.0)
 
 **Hecho en `0.27.x`:** PR-1400 (compilación de Ets), #1412 (ISSUE-1357, IDs enteros),
 #1415 (ISSUE-1406), #1416 (BUG-stats-interval-ignored), #1418 (ISSUE-1410), #1419 (BUG-09 a),
@@ -131,7 +139,7 @@ cualquier estimador. El backtesting sigue prediciendo (trabaja sobre una copia c
 `_allow_nan_predictions`): en multiserie avisa con `MissingValuesWarning` del número de
 predicciones NaN por serie que quedan fuera de las métricas; con una serie da un error claro
 antes de las métricas. Va en "Before upgrading". Añade QW-12 (sección 2) y anota en
-[`BUG-search-short-series.md`](BUG-search-short-series.md) su relación con ese bug.
+`BUG-search-short-series.md` su relación con ese bug.
 **Datasets** (sin elemento previo en el roadmap salvo PR-1402): PR-1402 (fusionado el
 2026-10-28: `website_visits` y `m5`), #1439 (2026-11-02: arreglos pequeños de
 `fetch_dataset` y `show_datasets_info`, como `sep` en `kwargs_read`, el error sin pyarrow o
@@ -182,36 +190,38 @@ elementos del roadmap", abajo).
     `foundation-forecasting-models`, `faq/parallelization-skforecast` y
     `faq/parameters-search-backtesting-vs-one-step-ahead`. **Estado del 2026-11-11:** las
     cinco que no se nombran abajo ya se volvieron a ejecutar después de #1437 y #1438
-    (2026-11-09 a 2026-11-11). Quedan `independent-multi-time-series-forecasting` (última
-    ejecución el 2026-10-20) y `dependent-multi-series-multivariate-forecasting`
-    (2026-10-10).
-  - Pinball con el cuantil en el nombre: `probabilistic-forecasting-quantile-regression`
-    (pendiente: última ejecución el 2026-10-08).
-- (DEP-python310) Anunciar en la nota de la 0.27.0 que la 0.28.0 retira Python 3.10
-  (decidido el 2026-11-11, detalle en `dev/roadmap_0.28.0/roadmap.md`). Aún no está en
-  `releases.md`.
-- (#1417) Relanzar `foundation-backends.yml` sobre `0.27.x` tras #1478 y #1479 y cerrar el
-  issue si sale en verde. La última ejecución (2026-11-09) falló en T0 y no dio resultado
-  para Timestral ni TiRex-2.
-- (#1476, guía de exógenas pronosticadas) Único PR abierto contra `0.27.x`: decidir si
-  entra.
-- `torch>=2.4, <2.16` (commit `7f7c4b804`, 2026-11-11): valorar una línea en la nota de la
-  versión; hoy no aparece.
-- Suite completa y tests con las versiones mínimas: solo corren en el PR de `0.27.x` a
-  `main`. Ninguna se ha ejecutado sobre `0.27.x`: abrir ese PR con margen.
-- Plan 10 de `dev/foundation_adapters_review/` (re-ejecutar entera la guía de foundation
-  justo antes de la release): solo se re-ejecutó la sección de T0. Depende de qué planes 02
-  a 09 entren en la 0.27.0 (sin decidir; propuesta del 2026-11-11: 02 y 03).
+    (2026-11-09 a 2026-11-11). Las otras dos, `independent-multi-time-series-forecasting`
+    y `dependent-multi-series-multivariate-forecasting`, se volvieron a ejecutar el
+    2026-11-11 con `execute_notebooks.py`.
+  - Pinball con el cuantil en el nombre: `probabilistic-forecasting-quantile-regression`,
+    ejecutada el 2026-11-11 con `execute_notebooks.py`.
   - El resto de guías con backtesting (unas 26) solo cambian las columnas mostradas; ninguna
     lee las salidas por posición de una forma que se rompa (`metric.iloc[0, 0]` sigue siendo
     la primera métrica).
+- ~~(DEP-python310) Anunciar en la nota de la 0.27.0 que la 0.28.0 retira Python 3.10~~
+  **Hecho el 2026-11-11:** entrada en Changed, grupo *Dependencies*.
+- ~~`torch>=2.4, <2.16` (commit `7f7c4b804`): línea en la nota de la versión~~ **Hecho el
+  2026-11-11:** "Added `torch 2.15` compatibility."
+- (#1417) Relanzar `foundation-backends.yml` (tras #1478 y #1479) y cerrar el issue si sale
+  en verde: **se hace con el PR de `0.27.x` a `main`** (decisión del 2026-11-11). La última
+  ejecución (2026-11-09) falló en T0 y no dio resultado para Timestral ni TiRex-2.
+- (#1476, guía de exógenas pronosticadas) Único PR abierto contra `0.27.x`: lo decide el
+  mantenedor (solo docs, sin seguimiento aquí).
+- Suite completa y tests con las versiones mínimas: **con los workflows del PR de `0.27.x` a
+  `main`** (decisión del 2026-11-11). Ninguna se ha ejecutado sobre `0.27.x`: abrir ese PR
+  con margen.
+- Plan 10 de `dev/foundation_adapters_review/`, solo la parte de guías (re-ejecutar enteras
+  `foundation-forecasting-models.ipynb` y `foundation-forecasting-with-heterogeneous-series.ipynb`
+  en un único entorno con todos los backends): **en una sesión en la nube** (2026-11-11).
+  Hasta ahora solo se re-ejecutó la sección de T0. La parte de CI del plan 10 y los planes
+  02 a 09 pasan a la 0.28.0.
 
 **Orden recomendado para lo que queda:**
 
 1. **BUG-search-short-series: aplazado (decisión del 2026-10-20)** hasta terminar los
    arreglos rápidos (S) de los puntos 2 a 8. Sigue siendo el resultado erróneo silencioso más
    grave que queda. Con la propuesta del 2026-10-29
-   ([`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md):
+   (`BUG-search-short-series-transparency.md`:
    columna por candidato, aviso único y avisos de las búsquedas) baja de M a L a S a M.
    **Bloqueado por QW-12** (decisión del 2026-10-29): primero la columna de observaciones
    en las métricas del backtesting, en su propio PR; después este arreglo la lleva a las
@@ -238,7 +248,7 @@ elementos del roadmap", abajo).
    saltan con un "Parameters skipped" por candidato y la búsqueda devuelve un DataFrame
    vacío. Validar el nombre reservado al principio de las búsquedas, junto a la unicidad que
    ya comprueban, cuando la columna llegue a sus resultados (ver
-   [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md),
+   `BUG-search-short-series-transparency.md`,
    sección 8). **Hecho en el PR 1.**
    **PR 1 hecho en local el 2026-11-03** (rama `fix/search-short-series-n-evaluated`, 5
    commits, sin push ni PR): `n_evaluated` por candidato en grid, random y bayesian
@@ -284,7 +294,7 @@ elementos del roadmap", abajo).
 4. **BUG-04 y BUG-10** (S cada uno): foundation es foco, y los dos hacen que se prediga con
    otro modelo u otros datos sin aviso. **BUG-10 hecho con #1479** (fusionado el
    2026-11-11). **BUG-04 aplazado a la 0.28.0** (decisión del 2026-11-11), junto con todo lo
-   de modelos afinados: sección "BUG-04 y modelos afinados".
+   de modelos afinados: sección 3.1 de `dev/roadmap_0.28.0/roadmap.md`.
 5. **PERF-03 y BUG-02.** QW-04, QW-10 y lo que quedaba de QW-08 (el RMSE por nombre ya se
    hizo con #1424) pasan al PR de salidas del backtesting del punto 1. PERF-03 va justo
    detrás (toca `_get_metric`, como QW-08). BUG-02 no bloquea `step` ni `n_evaluated`, y
@@ -313,8 +323,8 @@ elementos del roadmap", abajo).
 | Comparar modelos | FE-05 | M. Nuevo (2026-10-20). Una llamada para el backtesting de varios forecasters de cualquier familia sobre los mismos puntos. Sustituye el código que hoy repite la guía `comparing-forecasting-models.ipynb`. Diseño analizado y prototipado (sección 3). Requisitos: QW-03 (hecho, #1423) y BUG-06 |
 | Feature engineering | QW-11 | S. Nuevo (2026-10-20). `hour_of_week` y el número de días de fin de semana del mes en `CalendarFeatures`, siempre opcionales, más un aviso y una guía de codificación. Medido en 18 series: `hour_of_week` reduce el MAE una mediana del 24% con Ridge en series horarias. Los festivos, que son lo que más aporta en series diarias, quedan como feature aparte (FE-06) |
 | Foundation para producción | QW-05, BUG-06, QW-02 | QW-02 pendiente de decisión |
-| **Búsquedas multiserie con series cortas (MUY IMPORTANTE)** | QW-12, después BUG-search-short-series | QW-12 hecho (#1437); PR 1 (#1447), PR 2a (#1452) y PR 2b (#1456) del arreglo fusionados; falta el PR 2c (avisos de los procesos de joblib; alcance aprobado el 2026-11-08, sección 15 del documento). S (QW-12) y S a M (el arreglo). Resultado erróneo silencioso en un uso habitual de los modelos globales. QW-12 va antes y bloquea el arreglo. Propuesta vigente (2026-10-29) en [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md): la columna de QW-12 en el backtesting y, después, por candidato en las búsquedas, un solo aviso al final cuando los candidatos no se evalúan sobre los mismos puntos, y avisos y errores de las búsquedas que salgan una vez y donde deben. No cambia resultados. Investigación y opción c2 (aparcada) en [`BUG-search-short-series.md`](BUG-search-short-series.md). QW-12 hecho con #1437 (2026-11-03): el arreglo ya no está bloqueado |
-| Rendimiento con modelos lineales | ~~PERF-contiguous-lags~~ (hecho, #1469) | **Hecho con #1469**, fusionado el 2026-11-08. S. Nuevo (2026-11-08), después del refactor de los avisos (toca la misma zona de los forecasters). Con solo lags, Recursive, Direct y DMV pasan al estimador una vista no contigua de `sliding_window_view`. Copiarla a orden C solo cuando la clase del estimador es LinearRegression, Ridge, Lars o LassoLars (un `Pipeline` nunca se copia) reduce el `fit` con 20.000 filas entre un 9 y un 30 % en Recursive y entre un 14 y un 40 % en Direct. En un solo `fit` son milisegundos; se nota en el backtesting con `refit=True` y en las búsquedas (entre un 6 y un 33 % menos). Las predicciones no cambian (residuos in-sample: menos de 2e-13), la memoria pico sube un 12 % de la matriz como mucho (solo con LinearRegression) y con los demás estimadores no cambia nada. Una lista y una función privada en `utils`, y dos líneas en tres forecasters. Medición, lista y cambios en [`PERF-contiguous-lags.md`](PERF-contiguous-lags.md), secciones 14 a 16 |
+| **Búsquedas multiserie con series cortas (MUY IMPORTANTE)** | QW-12, después BUG-search-short-series | QW-12 hecho (#1437); PR 1 (#1447), PR 2a (#1452) y PR 2b (#1456) del arreglo fusionados; falta el PR 2c (avisos de los procesos de joblib; alcance aprobado el 2026-11-08, sección 15 del documento). S (QW-12) y S a M (el arreglo). Resultado erróneo silencioso en un uso habitual de los modelos globales. QW-12 va antes y bloquea el arreglo. Propuesta vigente (2026-10-29) en `BUG-search-short-series-transparency.md`: la columna de QW-12 en el backtesting y, después, por candidato en las búsquedas, un solo aviso al final cuando los candidatos no se evalúan sobre los mismos puntos, y avisos y errores de las búsquedas que salgan una vez y donde deben. No cambia resultados. Investigación y opción c2 (aparcada) en `BUG-search-short-series.md`. QW-12 hecho con #1437 (2026-11-03): el arreglo ya no está bloqueado |
+| Rendimiento con modelos lineales | ~~PERF-contiguous-lags~~ (hecho, #1469) | **Hecho con #1469**, fusionado el 2026-11-08. S. Nuevo (2026-11-08), después del refactor de los avisos (toca la misma zona de los forecasters). Con solo lags, Recursive, Direct y DMV pasan al estimador una vista no contigua de `sliding_window_view`. Copiarla a orden C solo cuando la clase del estimador es LinearRegression, Ridge, Lars o LassoLars (un `Pipeline` nunca se copia) reduce el `fit` con 20.000 filas entre un 9 y un 30 % en Recursive y entre un 14 y un 40 % en Direct. En un solo `fit` son milisegundos; se nota en el backtesting con `refit=True` y en las búsquedas (entre un 6 y un 33 % menos). Las predicciones no cambian (residuos in-sample: menos de 2e-13), la memoria pico sube un 12 % de la matriz como mucho (solo con LinearRegression) y con los demás estimadores no cambia nada. Una lista y una función privada en `utils`, y dos líneas en tres forecasters. Medición, lista y cambios en `PERF-contiguous-lags.md`, secciones 14 a 16 |
 | Paneles multiserie | QW-01, BUG-07, ISSUE-1410 | Hechos: ISSUE-1357 (IDs enteros) con #1412, que sustituye a PR-1408 (cerrado), e ISSUE-1410 con #1418 (2026-10-19); folds sin series con #1427 y `initial_train_size` contra el span con #1430 (2026-10-21, sección 6) |
 | Stats: corrección y rendimiento | BUG-08, PERF-02, PR-1400 | PR-1400 ya está fusionado en `0.27.x`. BUG-08 hecho con #1425 (fusionado el 2026-10-20). Volver a medir PERF-02 después de BUG-08 |
 | PRs externos | PR-1402, PR-1387, PR-1388, PR-1389 | Hecho: PR-1387 fusionado en `0.27.x` (2026-10-20); PR-1388 sustituido por #1433, que conserva su commit (fusionado el 2026-10-26); PR-1389 sustituido por el commit `6a5d933a4` (ISSUE-1354, 2026-10-27) y cerrado. PR-1402 fusionado en `0.27.x` el 2026-10-28. PR-1341 (TiRex-2) aceptado a través de #1463 (2026-11-08). Abierto: #1476 (guía de exógenas pronosticadas, contra `0.27.x`) |
@@ -398,7 +408,7 @@ Revisado el 2026-10-30: QW-08 (lo que quedaba), QW-04, QW-10 y QW-12 van en un s
    de la rama `feature/tirex2-adapter-1341` y #1463 (más #1465).
 6. **BUG-search-short-series**: decidido el 2026-10-29 informar en lugar de cambiar la
    evaluación (c2 aparcada). Las decisiones de la sección 8 de
-   [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md) se
+   `BUG-search-short-series-transparency.md` se
    cerraron el 2026-11-03: aviso cuando un candidato evalúa menos del 95% de los puntos del
    más completo; `suppress_warnings` no silencia "Parameters skipped" (agrupado en un aviso);
    en bayesian, aviso al final y `n_evaluated` como `user_attr`, sin tocar Optuna. Se hace en
@@ -430,118 +440,17 @@ Revisado el 2026-10-30: QW-08 (lo que quedaba), QW-04, QW-10 y QW-12 van en un s
 
 ### Para después de 0.27.0
 
-FE-02, FE-03, FE-04, PERF-01 (gana 3,4 veces con una serie y nada con 50), QW-06, BUG-09 (b)
-(la parte (a) se adelantó a 0.27.0, ver la tabla de bugs), BUG-11, GAP-foundation-backtesting-interval (depende de BUG-06), ISSUE-1131 y todo lo de la
-sección 5.
-
-En la 0.29.0, quitar las deprecaciones de la 0.27.0: DEP-cv-differentiation (#1423, detalle
-en su fila de la sección 2) y DEP-datasets-version (#1440: el argumento `version` de
-`fetch_dataset`, `load_demo_dataset` y `show_datasets_info`, y sus tests de la deprecación).
-
-Mantenimiento de dependencias aplazado a la 0.28.0 (2026-11-11): retirar Python 3.10
-(DEP-python310) y revisar los extras `docs` y `test`. Detalle y medidas en
-[`dev/roadmap_0.28.0/roadmap.md`](../roadmap_0.28.0/roadmap.md).
-
-BUG-04 y todo lo de modelos afinados, aplazados a la 0.28.0 (2026-11-11): ver la sección
-siguiente.
+**Alcance cerrado el 2026-11-11:** todo lo que no está hecho (BUG-04 y modelos afinados,
+planes 02 a 09 de foundation, FE-05, BUG-02, PERF-03, QW-01, BUG-01, QW-11, FE-06 y el
+resto) pasa a la 0.28.0, sección 3 de
+[`dev/roadmap_0.28.0/roadmap.md`](../roadmap_0.28.0/roadmap.md), junto con el mantenimiento
+de dependencias (sección 1 de ese documento) y la retirada de las deprecaciones de la 0.27.0
+en la 0.29.0. Las filas de este documento quedan como evidencia.
 
 ### BUG-04 y modelos afinados: aplazado a la 0.28.0 (decisión del 2026-11-11)
 
-**Decisión.** El arreglo de BUG-04 no entra en la 0.27.0: al revisarlo, el tema (usar y
-cargar modelos foundation afinados) resultó más grande que el bug. Se planifica entero en la
-0.28.0. `dev/PLAN_UnifiedFinetunedCheckpoint.md` (PLAN-CKPT, parámetro común
-`finetuned_checkpoint`) se eliminó el 2026-11-11 por desactualizado: **queda pendiente
-crear un plan nuevo** a partir de lo de abajo (la revisión se hizo sin leerlo, a propósito,
-y propone otro diseño: un argumento `adapter`).
-
-**Lo que se hizo (descartado).** Hubo una rama local `fix/foundation-clone-preloaded-model`
-con el arreglo (4 commits, sin push ni PR), borrada el 2026-11-11 al aplazar el tema. Su
-diseño queda aquí como punto de partida:
-
-- Contrato: dos atributos obligatorios nuevos en `_REQUIRED_CLASS_ATTRIBUTES`,
-  `backend_attribute` (`'_pipeline'`, `'_module'` o `'_model'`) y `backend_param`
-  (`'pipeline'`, `'module'`, `'model'` o `None`). Los 11 adaptadores aceptan un objeto
-  precargado. `_AdapterBase` no es pública (no aparece en docs, skills ni `llms-base.txt`).
-- `FoundationModel.__sklearn_clone__` clona `get_params()` y pasa al clon la misma
-  referencia del objeto del usuario (anotado en `adapter._preloaded_backend`), sin copiar
-  pesos; un backend cargado de forma perezosa no pasa al clon. Meterlo en `get_params` se
-  descartó: `clone` haría un `deepcopy` (Chronos-2 small: 112 MB y unos 0,1 s por copia; 5
-  `deepcopy_forecaster` suman +20 MB de RSS con la referencia frente a +562 MB copiando).
-- `set_params` que cambia un parámetro fijado en el backend (`model_id`, dispositivo,
-  dtype...) descarta el objeto con `IgnoredArgumentWarning`. El repr muestra solo la clase.
-- `save_forecaster` guarda el objeto con sus pesos. Para QW-05 basta comparar por
-  identidad con `_preloaded_backend` en `__getstate__` (prototipo: 0,01 MB con backend
-  perezoso, 111,81 MB con el del usuario).
-- `BUG-04.py`: las dos partes dan lo esperado con la rama (A7 cambiado para comprobar que
-  `clone` comparte el objeto; parte B con `ft.model.eval()`).
-
-**Pendiente de la revisión del 2026-11-11 sobre esa rama:**
-
-1. Llamar a `eval()` sobre el objeto del usuario antes de predecir:
-   `BaseChronosPipeline.fit` (chronos-forecasting 2.3.2) devuelve el modelo en modo
-   entrenamiento y, con dropout activo, dos `predict` seguidos difieren hasta 0,35. Los
-   adaptadores ya lo hacen cuando cargan ellos el modelo (Moirai-2, T0).
-2. Con un objeto precargado, buscar `context_length` lo descarta (con aviso) en TimesFM 2.5,
-   Moirai-2, TabICL y TabPFN-TS, porque ese parámetro reinicia el backend: documentarlo; en
-   Moirai-2 se evita con unas 6 líneas (PR aparte).
-3. Al rehacerlo: el código de la rama se fusionaba sin conflictos con #1479 (los dos tocan
-   `_adapter_base.py`, `_adapters.py` y `_foundation_model.py`).
-
-**Revisión de los backends (2026-11-11).** Fuentes: código de los paquetes instalados y de
-las últimas versiones (chronos-forecasting 2.3.2, timesfm 3.0.1, uni2ts 2.0.0, tabicl
-2.2.0, tabpfn-time-series 1.4.0 con tabpfn 9.2.0, tfc-t0 0.6.1, synthefy-nori 0.23.0,
-tsicl 0.2.1, timestral git a534bdb, tirex-2 0.5.0) y un fine-tuning real de Chronos-2
-small.
-
-| Backend | Afinar | Ruta local o repositorio propio con la carga actual del adaptador | Checkpoint que dice su familia |
-|---|---|---|---|
-| Chronos-2 | Oficial: `pipeline.fit(...)`, completo o LoRA | Sí, el completo (`save_pretrained`, probado). LoRA probablemente no: `BaseChronosPipeline.from_pretrained` no tiene la rama de LoRA de `Chronos2Pipeline.from_pretrained` (sin probar, falta `peft`) | Sí (`architectures`, `chronos_pipeline_class`) |
-| TimesFM 2.5 | Ejemplo oficial con LoRA sobre el port de transformers | Sí, pero el resultado del ejemplo tiene otro formato (4 de 232 tensores coinciden): no se carga | No |
-| TimesFM 3 | No (solo inferencia) | Sí (directorio o `.safetensors`/`.pth`) | No |
-| Moirai-2 | No (uni2ts solo afina Moirai 1.x) | Sí | No |
-| TabICL | Oficial, pero sobre tablas (`FinetunedTabICLRegressor`) | No por `model_id` (repositorio fijo); sí con `tabicl_config={"model_path": ...}` | En parte |
-| TabPFN-TS | Solo el de `tabpfn`, sobre tablas | No por `model_id`; sí con `model_path` en su configuración, solo en modo local | En parte |
-| T0 | Lo escribe el usuario (`forward`) | Sí (`PyTorchModelHubMixin`) | No |
-| Nori | No aplica (aprendizaje en contexto) | No por `model_id`; sí con `nori_config={"model_path": ...}` | En parte |
-| TS-ICL | No aplica (aprendizaje en contexto) | No: el backend tiene `model_path`, skforecast no lo expone | No |
-| Timestral | No | Sí (directorio) | No |
-| TiRex-2 | Solo en la versión de pago | Sí (directorio) | No |
-
-**En skforecast:**
-
-- `_resolve_adapter` elige el adaptador por el prefijo de `model_id`: una ruta local o un
-  repositorio propio (`./chronos2-ft`, `miorg/chronos2-ft`) da `ValueError: No adapter
-  found`, aunque el backend sepa cargarlo. El único camino hoy es el objeto precargado, con
-  `model_id` como simple etiqueta.
-- `_warn_if_non_commercial` también va por el prefijo de `model_id`: con una ruta local se
-  perdería el aviso de licencia (copias de TimesFM 3, Moirai-2 o TS-ICL, cuya licencia
-  cubre también las versiones afinadas).
-- TabICL y TS-ICL descargan en silencio los pesos preentrenados en `model_path` si no
-  existe: una ruta mal escrita da el modelo base sin aviso.
-- skforecast no afina: el `fit` de los adaptadores solo guarda el contexto.
-
-**Qué necesitan los usuarios:** (1) usar en memoria un modelo recién afinado (lo resuelve
-BUG-04 con el punto 1 de arriba); (2) cargar un checkpoint desde disco o desde su propio
-repositorio (producción, reproducibilidad, entornos sin internet, también copias locales de
-los pesos base), que hoy solo bloquea el prefijo de `model_id`.
-
-**Propuesta para la 0.28.0:**
-
-- BUG-04 con el diseño de arriba, más los puntos 1 y 2.
-- Argumento `adapter` en `FoundationModel` (nombre o clase) que sustituye a la resolución
-  por prefijo: `FoundationModel("./chronos2-ft", adapter="chronos")`. `model_id` describe
-  los pesos y llega tal cual a la carga del backend (sirve sin más en Chronos-2, TimesFM
-  2.5 y 3, Moirai-2, T0, Timestral y TiRex-2), y el forecaster guardado lleva la ruta, no
-  los pesos (encaja con QW-05). S a M: `_resolve_adapter`, `get_params`, repr,
-  `get_model_info`, el aviso de licencia por adaptador y origen de los pesos, y convivencia
-  con la tabla de ids no soportados (plan 02 de `dev/foundation_adapters_review/`).
-  Descartados: un `finetuned_checkpoint` aparte (duplica `model_id`) y detectar la familia
-  por los ficheros (solo fiable con Chronos-2).
-- Pequeños: cargar Chronos-2 con `Chronos2Pipeline.from_pretrained` para aceptar LoRA
-  (probar con `peft`); comprobar que `model_path` existe antes de pasárselo a TabICL y
-  TS-ICL; exponer `model_path` en TS-ICL solo si se pide.
-- Fuera de alcance: TimesFM 2.5 afinado con transformers (otro formato) y ofrecer el
-  fine-tuning desde skforecast.
+Movido entero, con la revisión de los backends y la propuesta, a la sección 3.1 de
+[`dev/roadmap_0.28.0/roadmap.md`](../roadmap_0.28.0/roadmap.md).
 
 ### Huecos del análisis a cubrir al implementar
 
@@ -630,10 +539,10 @@ los pesos base), que hoy solo bloquea el prefijo de `model_id`.
 | **QW-08** RMSE como string y nombres de métrica únicos | metrics | `metric='root_mean_squared_error'` sin importar sklearn; nombres de pinball con el cuantil; error claro en backtesting con dos métricas del mismo nombre | RMSE: flujo habitual (ahorro diario pequeño); pinball con varios cuantiles: nicho | S (+7/-1 y validación) | `skforecast/metrics/metrics.py:45-62` (solo la variante escalada, `:52`) y `:555-558`; medido: dos pinball dan columnas duplicadas, y en multiserie `TypeError` (`_utils.py:1247`); las búsquedas ya validan nombres únicos (`_search.py:394-400`) | Añadir RMSE a `allowed_metrics`; validar unicidad en los backtesting; `__name__ = f"mean_pinball_loss_q_{alpha}"` (Changed: renombra una columna). Completar los docstrings de `metric` (MedAE, sMAPE). **Hecho con #1438 (fusionado en `0.27.x` el 2026-11-02); el RMSE por nombre, con #1424.** |
 | **QW-06** Alinear `exog` por índice en `predict` de Recursive y Direct | recursive / direct | Pasar un único DataFrame de exog (pasado y futuro) sin recortarlo, como ya hacen MultiSeries y Foundation | Flujo habitual de producción con calendario o meteo; coherencia entre forecasters | S (+36/-1 en el prototipo) | `utils.py:1656` (`align_by_index` solo en MultiSeries) y `:1738-1745`; prototipo: mismos resultados que el recorte manual, 871 tests pasan (1 a adaptar); con RangeIndex reseteado daría `[-1.331, ...]` frente a `[1.005, ...]` en silencio | Solo con `DatetimeIndex`: si el índice contiene el primer paso esperado, `exog.iloc[pos:]` antes del chequeo de NaN y de `transform_dataframe`; también Classifier y DirectMultiVariate; RangeIndex mantiene el chequeo estricto; `fit` no cambia. Toca el mismo camino de `predict` que HANDOFF-DOUBLE-WARN (sección 5): resolver el doble aviso a la vez si sale barato |
 | **QW-11** Más features en `CalendarFeatures` (añadido el 2026-10-20, revisado con el análisis de abajo) | preprocessing | La hora de la semana (día de la semana por hora) en series horarias y los días de fin de semana del mes en series mensuales, que hoy hay que construir a mano como exógenas; un aviso cuando una feature anual se usa con menos de un año de datos; y una guía de codificación por tipo de modelo | Series horarias con modelos lineales (el mayor efecto medido) y series mensuales con modelos lineales; con árboles el efecto es pequeño | S (cada feature es una entrada en `datetime_attrs` y en `_FEATURE_KNOWN_CATEGORIES`; tests y docs) | `skforecast/preprocessing/_calendar.py:20-30,193-205` (11 features: `year`, `month`, `week`, `day_of_week`, `day_of_month`, `day_of_year`, `weekend`, `hour`, `minute`, `second`, `quarter`); análisis medido en 18 series (`repro/QW-11-calendar-analysis.py`, resultados en `.csv`) y revisión de 7 librerías, ver "QW-11: análisis" debajo. Sin peticiones en GitHub | Añadir, sin cambiar la lista por defecto: `hour_of_week` (0 a 167, codificable con 168) y `weekend_days_in_month` (8 a 10, sin codificar; además, valorar el conteo de cada día de la semana en el mes, 7 columnas). Opcional por paridad: `is_month_start`, `is_month_end` y `days_in_month`. No añadir `is_quarter_*` ni `is_year_*` (redundantes con `month` y `day_of_year`), ni Fourier con K armónicos (la codificación spline ya existente rinde igual). Aviso en `fit` si una feature anual (`month`, `week`, `day_of_year`, `quarter`) se usa con menos de un año de datos. Guía: one-hot o spline con modelos lineales, enteros (`encoding=None`) con árboles |
-| **QW-12** Número de predicciones evaluadas por serie en las métricas del backtesting multiserie (añadido el 2026-10-27; va antes y bloquea BUG-search-short-series, decisión del 2026-10-29) | model_selection | Señal robusta de que una serie o un candidato se evaluó con menos puntos de los predichos. Hoy la única señal es un aviso: `suppress_warnings=True` lo silencia y grid y random search solo lo muestran para el primer candidato | Backtesting y búsquedas multiserie con series cortas, huecos en las series o, desde #1432, modelos lineales con huecos en `exog` | S | #1432: con `suppress_warnings=True`, 10 predicciones NaN y 0 avisos; `_evaluate_grid_hyperparameters_multiseries` (`_search.py`) silencia los avisos tras el primer candidato (BUG-search-short-series, sección 2.2); `_calculate_metrics_backtesting_multiseries` (`model_selection/_utils.py`) ya cuenta las predicciones por nivel para `weighted_average`, pero no las devuelve | Columna `n_evaluated` (nombre decidido el 2026-10-30) en la tabla de métricas con los puntos que entran en las métricas de cada nivel (predicción y valor real no NaN, tras la deduplicación de folds solapados), y la suma en los agregados; los pesos de `weighted_average` salen de la misma cuenta. En los cuatro backtesting, no solo en multiserie (#1432 también deja puntos fuera con una serie, y FE-05 necesita la misma tabla en todas las familias), en un PR junto a QW-10, QW-04 y lo que queda de QW-08. Las búsquedas leen hoy la tabla de métricas por posición (`_search.py`, `iloc[:, 1:]` en multiserie e `iloc[0, :]` con una serie): el PR las pasa a seleccionar por nombre. Solo backtesting: llevarla a las búsquedas (por candidato, también con `OneStepAheadFold`) es parte de BUG-search-short-series, que depende de esta. Es la pieza central de su propuesta vigente (2026-10-29, [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md), sección 4.2): la columna por candidato es la que dice si todos los candidatos se evalúan sobre los mismos puntos, así que QW-12 fija el nombre y la cuenta (predicción y valor real no NaN; suma en los agregados). Cambio de salida anunciado, como QW-09; nombre reservado frente a las métricas del usuario, como `coverage`. **Hecho con #1437 (fusionado en `0.27.x` el 2026-11-03).** |
-| **QW-13** Un solo aviso, con cuentas, para las filas de entrenamiento con NaN (añadido el 2026-11-06; línea base, decisiones y resultado en [`QW-13.md`](QW-13.md). **Hecho con #1466**, fusionado el 2026-11-08: un solo aviso con recuentos en los 5 forecasters, por paso en Direct y DMV, sin el aviso de `exog` con NaN en Classifier, Direct y DMV. Con `OneStepAheadFold` la búsqueda daba un aviso por valor de `lags` y matriz (2 → 8 con 4 `lags`): arreglado agrupando en `_SearchWarnings.emit` los avisos de fuera de los candidatos (1 aviso, "8 times in the search"), secciones 8.3 y 8.4. El filtrado y el recuento, que estaban repetidos en los 5 forecasters, pasan a dos funciones de `utils` (sección 8.6). Las dos guías que muestran el aviso se vuelven a ejecutar con la sección 13 de `BUG-search-short-series-transparency.md`) | recursive / direct / utils | Un hueco en `y` da siempre dos `MissingValuesWarning` ("NaNs detected in `y_train`" por la fila con objetivo NaN y "NaNs detected in `X_train`" por las `window_size` filas siguientes, con el NaN en sus lags), y ninguno dice cuántas filas se pierden. Un solo aviso con las dos cuentas y el total | Flujo habitual con huecos en `y` (también en las búsquedas: celda 21 del notebook 09 de BUG-search-short-series) | S | Medido el 2026-11-06 con `ForecasterRecursive(lags=5)` y 100 valores: 2 huecos en `y` dan 2 avisos y dejan 83 de 95 filas (`dropna_from_series=True`) o 93 de 95 (`False`); un NaN en `exog` da 1. El texto está copiado en 5 forecasters: `ForecasterRecursive`, `ForecasterRecursiveClassifier`, `ForecasterRecursiveMultiSeries`, `ForecasterDirect` y `ForecasterDirectMultiVariate` (`create_train_X_y` o `_create_train_X_y`) | Helper en `utils` que construye y emite el aviso a partir de las filas con objetivo NaN, las filas con predictores NaN, `dropna_from_series` y el nombre de los datos (`y` o `series`); el código que quita las filas se queda en cada forecaster (numpy en Recursive y Classifier, pandas en multiserie; Direct y DMV avisan en `create_train_X_y` y quitan las filas por paso en `_filter_nan_X_y_step`). Primera frase fija y las cuentas después, para que las búsquedas lo agrupen (misma lección que el aviso de predicciones NaN en #1452). Propuesta con `True`: "Some training rows have missing values and are dropped. 2 rows have a NaN target and 10 have NaN predictors (lags, window features or exog), 12 of 95 in total. This is caused by interspersed NaNs in `y` or `exog`. To keep the rows with NaN predictors, set `forecaster.dropna_from_series = False` (the estimator must support NaN)." Con `False`: las filas con objetivo NaN se quitan y las de predictores NaN se mantienen (el estimador debe admitir NaN, o `True` para quitarlas). **Decisiones abiertas:** (1) en Direct y DMV las filas quitadas dependen del paso: contar "en al menos un paso" (recomendado) o dar el texto sin cuentas; (2) el texto exacto. Coste: unos 15 archivos de tests buscan los mensajes; las guías `handling-missing-values` y `multi-series-with-different-length-and-different_exog` muestran los avisos (volver a ejecutarlas con las de la sección 13 de `BUG-search-short-series-transparency.md`); un filtro por mensaje deja de coincidir (por categoría sigue funcionando): nota en Changed. Independiente de BUG-backtesting-nan-y-true (aquel toca `_validation.py`); hacerlo después y antes de volver a ejecutar las guías |
-| **QW-14** Un solo aviso de `exog` con NaN en `predict` (añadido el 2026-11-08, hallazgo 4 de la sección 15.2 de [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md); verifica HANDOFF-DOUBLE-WARN de la sección 5) | utils / recursive / direct | Un hueco en `exog` en el periodo que se predice da un solo aviso, que habla de predecir, en lugar de dos casi iguales, uno de ellos sobre ajustar | Flujo habitual de producción y de backtesting con huecos en `exog` (en multiserie, dos avisos por serie) | S | Medido el 2026-11-08 (caso B1 de `repro/PR-2c_joblib_warnings.py`): `ForecasterRecursive` con un NaN en `exog` del test da "`exog` has missing values. Most of machine learning models do not allow missing values. Prediction method may fail." (`check_predict_input`, `utils.py:1669`) y "`exog` has missing values. Most machine learning models do not allow missing values. Fitting the forecaster may fail." (`check_exog`, `utils.py:1084`, que `predict` también llama) | Que `predict` no llame al aviso de `check_exog` (o lo llame con `allow_nan=True`), dejando el de `check_predict_input`; revisar los 5 forecasters y multiserie (#1375, mismo patrón). Coste: tests que buscan los dos textos. Mismo camino de `predict` que QW-06 |
-| **QW-15** Avisos del `fit` en paralelo de `ForecasterDirect` y `ForecasterDirectMultiVariate` (añadido el 2026-11-08, decisión 5 de la sección 15.7 de [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md)) | direct | Los avisos del estimador de cada paso (`ConvergenceWarning`...) llegan al proceso principal cuando `n_jobs` del forecaster reparte los pasos en procesos, como los de los folds tras el PR 2c | Direct y DMV con estimadores no lineales (`n_jobs='auto'` usa procesos salvo con modelos lineales) | S (no medido) | `Parallel` de `_fit_one_step_estimator` en `_forecaster_direct.py` y `_forecaster_direct_multivariate.py`; solo pueden salir avisos del estimador | Reutilizar los helpers del PR 2c (`_run_recording_worker_warnings` y `_reemit_worker_warnings`), ya en `skforecast/utils/_warnings.py` ([`REFACTOR-warnings.md`](REFACTOR-warnings.md)). Medir antes con un estimador que avise (MLP con pocas iteraciones) |
+| **QW-12** Número de predicciones evaluadas por serie en las métricas del backtesting multiserie (añadido el 2026-10-27; va antes y bloquea BUG-search-short-series, decisión del 2026-10-29) | model_selection | Señal robusta de que una serie o un candidato se evaluó con menos puntos de los predichos. Hoy la única señal es un aviso: `suppress_warnings=True` lo silencia y grid y random search solo lo muestran para el primer candidato | Backtesting y búsquedas multiserie con series cortas, huecos en las series o, desde #1432, modelos lineales con huecos en `exog` | S | #1432: con `suppress_warnings=True`, 10 predicciones NaN y 0 avisos; `_evaluate_grid_hyperparameters_multiseries` (`_search.py`) silencia los avisos tras el primer candidato (BUG-search-short-series, sección 2.2); `_calculate_metrics_backtesting_multiseries` (`model_selection/_utils.py`) ya cuenta las predicciones por nivel para `weighted_average`, pero no las devuelve | Columna `n_evaluated` (nombre decidido el 2026-10-30) en la tabla de métricas con los puntos que entran en las métricas de cada nivel (predicción y valor real no NaN, tras la deduplicación de folds solapados), y la suma en los agregados; los pesos de `weighted_average` salen de la misma cuenta. En los cuatro backtesting, no solo en multiserie (#1432 también deja puntos fuera con una serie, y FE-05 necesita la misma tabla en todas las familias), en un PR junto a QW-10, QW-04 y lo que queda de QW-08. Las búsquedas leen hoy la tabla de métricas por posición (`_search.py`, `iloc[:, 1:]` en multiserie e `iloc[0, :]` con una serie): el PR las pasa a seleccionar por nombre. Solo backtesting: llevarla a las búsquedas (por candidato, también con `OneStepAheadFold`) es parte de BUG-search-short-series, que depende de esta. Es la pieza central de su propuesta vigente (2026-10-29, `BUG-search-short-series-transparency.md`, sección 4.2): la columna por candidato es la que dice si todos los candidatos se evalúan sobre los mismos puntos, así que QW-12 fija el nombre y la cuenta (predicción y valor real no NaN; suma en los agregados). Cambio de salida anunciado, como QW-09; nombre reservado frente a las métricas del usuario, como `coverage`. **Hecho con #1437 (fusionado en `0.27.x` el 2026-11-03).** |
+| **QW-13** Un solo aviso, con cuentas, para las filas de entrenamiento con NaN (añadido el 2026-11-06; línea base, decisiones y resultado en `QW-13.md`. **Hecho con #1466**, fusionado el 2026-11-08: un solo aviso con recuentos en los 5 forecasters, por paso en Direct y DMV, sin el aviso de `exog` con NaN en Classifier, Direct y DMV. Con `OneStepAheadFold` la búsqueda daba un aviso por valor de `lags` y matriz (2 → 8 con 4 `lags`): arreglado agrupando en `_SearchWarnings.emit` los avisos de fuera de los candidatos (1 aviso, "8 times in the search"), secciones 8.3 y 8.4. El filtrado y el recuento, que estaban repetidos en los 5 forecasters, pasan a dos funciones de `utils` (sección 8.6). Las dos guías que muestran el aviso se vuelven a ejecutar con la sección 13 de `BUG-search-short-series-transparency.md`) | recursive / direct / utils | Un hueco en `y` da siempre dos `MissingValuesWarning` ("NaNs detected in `y_train`" por la fila con objetivo NaN y "NaNs detected in `X_train`" por las `window_size` filas siguientes, con el NaN en sus lags), y ninguno dice cuántas filas se pierden. Un solo aviso con las dos cuentas y el total | Flujo habitual con huecos en `y` (también en las búsquedas: celda 21 del notebook 09 de BUG-search-short-series) | S | Medido el 2026-11-06 con `ForecasterRecursive(lags=5)` y 100 valores: 2 huecos en `y` dan 2 avisos y dejan 83 de 95 filas (`dropna_from_series=True`) o 93 de 95 (`False`); un NaN en `exog` da 1. El texto está copiado en 5 forecasters: `ForecasterRecursive`, `ForecasterRecursiveClassifier`, `ForecasterRecursiveMultiSeries`, `ForecasterDirect` y `ForecasterDirectMultiVariate` (`create_train_X_y` o `_create_train_X_y`) | Helper en `utils` que construye y emite el aviso a partir de las filas con objetivo NaN, las filas con predictores NaN, `dropna_from_series` y el nombre de los datos (`y` o `series`); el código que quita las filas se queda en cada forecaster (numpy en Recursive y Classifier, pandas en multiserie; Direct y DMV avisan en `create_train_X_y` y quitan las filas por paso en `_filter_nan_X_y_step`). Primera frase fija y las cuentas después, para que las búsquedas lo agrupen (misma lección que el aviso de predicciones NaN en #1452). Propuesta con `True`: "Some training rows have missing values and are dropped. 2 rows have a NaN target and 10 have NaN predictors (lags, window features or exog), 12 of 95 in total. This is caused by interspersed NaNs in `y` or `exog`. To keep the rows with NaN predictors, set `forecaster.dropna_from_series = False` (the estimator must support NaN)." Con `False`: las filas con objetivo NaN se quitan y las de predictores NaN se mantienen (el estimador debe admitir NaN, o `True` para quitarlas). **Decisiones abiertas:** (1) en Direct y DMV las filas quitadas dependen del paso: contar "en al menos un paso" (recomendado) o dar el texto sin cuentas; (2) el texto exacto. Coste: unos 15 archivos de tests buscan los mensajes; las guías `handling-missing-values` y `multi-series-with-different-length-and-different_exog` muestran los avisos (volver a ejecutarlas con las de la sección 13 de `BUG-search-short-series-transparency.md`); un filtro por mensaje deja de coincidir (por categoría sigue funcionando): nota en Changed. Independiente de BUG-backtesting-nan-y-true (aquel toca `_validation.py`); hacerlo después y antes de volver a ejecutar las guías |
+| **QW-14** Un solo aviso de `exog` con NaN en `predict` (añadido el 2026-11-08, hallazgo 4 de la sección 15.2 de `BUG-search-short-series-transparency.md`; verifica HANDOFF-DOUBLE-WARN de la sección 5) | utils / recursive / direct | Un hueco en `exog` en el periodo que se predice da un solo aviso, que habla de predecir, en lugar de dos casi iguales, uno de ellos sobre ajustar | Flujo habitual de producción y de backtesting con huecos en `exog` (en multiserie, dos avisos por serie) | S | Medido el 2026-11-08 (caso B1 de `repro/PR-2c_joblib_warnings.py`): `ForecasterRecursive` con un NaN en `exog` del test da "`exog` has missing values. Most of machine learning models do not allow missing values. Prediction method may fail." (`check_predict_input`, `utils.py:1669`) y "`exog` has missing values. Most machine learning models do not allow missing values. Fitting the forecaster may fail." (`check_exog`, `utils.py:1084`, que `predict` también llama) | Que `predict` no llame al aviso de `check_exog` (o lo llame con `allow_nan=True`), dejando el de `check_predict_input`; revisar los 5 forecasters y multiserie (#1375, mismo patrón). Coste: tests que buscan los dos textos. Mismo camino de `predict` que QW-06 |
+| **QW-15** Avisos del `fit` en paralelo de `ForecasterDirect` y `ForecasterDirectMultiVariate` (añadido el 2026-11-08, decisión 5 de la sección 15.7 de `BUG-search-short-series-transparency.md`) | direct | Los avisos del estimador de cada paso (`ConvergenceWarning`...) llegan al proceso principal cuando `n_jobs` del forecaster reparte los pasos en procesos, como los de los folds tras el PR 2c | Direct y DMV con estimadores no lineales (`n_jobs='auto'` usa procesos salvo con modelos lineales) | S (no medido) | `Parallel` de `_fit_one_step_estimator` en `_forecaster_direct.py` y `_forecaster_direct_multivariate.py`; solo pueden salir avisos del estimador | Reutilizar los helpers del PR 2c (`_run_recording_worker_warnings` y `_reemit_worker_warnings`), ya en `skforecast/utils/_warnings.py` (`REFACTOR-warnings.md`). Medir antes con un estimador que avise (MLP con pocas iteraciones) |
 
 ### QW-03: antes y después
 
@@ -1207,7 +1116,7 @@ BUG-stats-interval-ignored son hallazgos laterales (verificación de FE-02, de F
 | **BUG-classifier-nan-last-window** (encontrado el 2026-11-06, en BUG-backtesting-nan-y-true; prioridad baja) | Con un estimador que no admite NaN (`LogisticRegression`) y un NaN en la última ventana de un fold, el backtesting de `ForecasterRecursiveClassifier` lanza en la predicción el error genérico de scikit-learn (`Input X contains NaN. LogisticRegression does not accept missing values...`). Los regresores lineales dan predicciones NaN y el error de #1432, con la fecha, la causa y el remedio. Ya existía. (El `TypeError` del clasificador con NaN en `y` de la línea base era BUG-backtesting-nan-y-true: lo lanzaba `accuracy_score` y queda resuelto.) | recursive (classifier) | S | `ForecasterRecursiveClassifier(LogisticRegression(), lags=3)`, `y_clf` con NaN en las posiciones 42 y 47, `TimeSeriesFold(steps=5, initial_train_size=40)` | Revisar si el camino de #1432 (permitir predicciones NaN en el backtesting y lanzar el error con la causa) se puede aplicar a los clasificadores lineales (`LinearClassifierMixin`), o dar al menos un mensaje con la fecha y la causa |
 | **BUG-01** | `backtesting` con `initial_train_size=None` sobre un forecaster ya ajustado evalúa in-sample sin ningún aviso | model_selection | S | `dev/roadmap_0.27.0/repro/BUG-01.py` | En la rama `else` de `check_backtesting_input` (`skforecast/model_selection/_utils.py:370-380`), comparar la primera fecha de test (`index[window_size + gap]`) con `forecaster.training_range_` (dict por serie en multiserie) y emitir un aviso silenciable con `suppress_warnings` con el número y rango de predicciones in-sample. Que el `NotFittedError` sugiera primero `initial_train_size` |
 | **BUG-02** | Con `fold_stride < steps` la métrica solo mide los horizontes `1..fold_stride` (con 1, el error a 1 paso) y todas las búsquedas seleccionan por ese error | model_selection | S | `dev/roadmap_0.27.0/repro/BUG-02.py` | Parámetro en `TimeSeriesFold`, p. ej. `overlapping_metric="last"` o `"all"`, aplicado en los 5 puntos de deduplicación (`_validation.py:662-667,1488-1493,2159-2164,2643-2648,2674-2679`; números de línea anteriores a #1409; el de stats usa (fecha, `estimator_id`) con varios estimadores tras BUG-09 (a)); aviso mientras el defecto sea `"last"` (como `OneStepAheadValidationWarning`, `_utils.py:653-658`); no cambiar el defecto sin anunciarlo (la receta de meses naturales depende de `"last"`); corregir `skills/backtesting-configuration/SKILL.md:202-208`, la guía y `llms-base.txt`. Coordinar con BUG-09. Tras QW-12 (2026-10-30): con la opción de evaluar todos los pares origen-fecha, `n_evaluated` cuenta todas las filas, y el aviso puede citar las dos cifras (puntos evaluados frente a predichos) y la columna `step` para el error por horizonte |
-| **BUG-04** | Un pipeline o modelo precargado (p. ej. Chronos-2 con fine-tuning) se descarta en silencio al crear `ForecasterFoundation`: `clone` lo pierde y se recarga el checkpoint base | foundation | S | `dev/roadmap_0.27.0/repro/BUG-04.py` | `FoundationModel.__sklearn_clone__`: clon estándar y, si el usuario pasó el objeto, copiar la referencia al clon sin copiar pesos. Así lo heredan `ForecasterFoundation.__init__` (`_forecaster_foundation.py:156`), `deepcopy_forecaster` (`utils.py:4999`) y `bayesian_search_foundation`. Cada adaptador declara su atributo de backend (compartido con QW-05). Era requisito de PLAN-CKPT (plan eliminado el 2026-11-11; pendiente crear uno nuevo). **Aplazado a la 0.28.0 (decisión del 2026-11-11)**, junto con todo lo de modelos afinados: sección "BUG-04 y modelos afinados" (sección 0). El arreglo se hizo en una rama local, borrada; su diseño está en esa sección |
+| **BUG-04** | Un pipeline o modelo precargado (p. ej. Chronos-2 con fine-tuning) se descarta en silencio al crear `ForecasterFoundation`: `clone` lo pierde y se recarga el checkpoint base | foundation | S | `dev/roadmap_0.27.0/repro/BUG-04.py` | `FoundationModel.__sklearn_clone__`: clon estándar y, si el usuario pasó el objeto, copiar la referencia al clon sin copiar pesos. Así lo heredan `ForecasterFoundation.__init__` (`_forecaster_foundation.py:156`), `deepcopy_forecaster` (`utils.py:4999`) y `bayesian_search_foundation`. Cada adaptador declara su atributo de backend (compartido con QW-05). Era requisito de PLAN-CKPT (plan eliminado el 2026-11-11; pendiente crear uno nuevo). **Aplazado a la 0.28.0 (decisión del 2026-11-11)**, junto con todo lo de modelos afinados: sección 3.1 de `dev/roadmap_0.28.0/roadmap.md`. El arreglo se hizo en una rama local, borrada; su diseño está en esa sección |
 | **BUG-10** | TabICL (medido) y TabPFN-TS (mismo código) no ignoran las covariables solo pasadas aunque `IgnoredArgumentWarning` diga que sí: predicciones absurdas en silencio al ajustar con exog y predecir sin ella o con menos columnas | foundation | S | `dev/roadmap_0.27.0/repro/BUG-10.py` (requiere `tabicl`) | **Hecho con #1479 (rama `fix/foundation-drop-past-only-exog`), fusionado en `0.27.x` el 2026-11-11.** `FoundationModel.predict` quita las columnas históricas sin valores futuros (`drop_past_only_exog` en `_utils.py`) cuando `supports_past_only_covariates` es False, siempre (también con `check_inputs=False`) y antes de agrupar por firma; el aviso no cambia y sale una vez. Afectados de verdad: TabICL (medido con tabicl 2.2.0: 5,21 frente a -17,29 antes, idénticos después; MAE de 5 folds 15,5 frente a 3,6 antes, 3,6 y 3,6 después) y TabPFN-TS (leído en `tabpfn-time-series` 1.4.0, no medido: los dos backends calculan la intersección de covariables pero no descartan el resto). T0 y Nori ya las ignoraban; TimesFM 2.5 y Moirai no reciben exog. Quitado el filtro propio de Nori (`_known_future_columns`); T0 no tenía uno separable (construye las covariables a partir de las columnas futuras). Test de humo nuevo con backend real en `tools/foundation_compat` (pasa con TabICL). Esbozo original: En `FoundationModel.predict`, si `adapter.supports_past_only_covariates` es False, quitar de `context_exog` las columnas sin futuro antes de llamar al adaptador (arreglo centralizado). Causa: `_adapters.py:2679-2685` (TabICL) y `:3347-3353` (TabPFN) concatenan toda la exog de contexto; T0 (`:3869-3878`) y Nori (`:4795-4799`) ya filtran bien |
 | **BUG-stats-interval-ignored** | `ForecasterStats.predict_interval` ignora `interval` porque `alpha=0.05` por defecto tiene precedencia: `interval=[0.1, 0.9]` devuelve el intervalo del 95%. La skill lo usa como ejemplo de intervalo del 80% | stats | S | `dev/roadmap_0.27.0/repro/BUG-stats-interval-ignored.py` | **Hecho: #1416, fusionado en `0.27.x` el 2026-10-19.** `alpha=None` por defecto; se usa `interval` si se pasa y el 95% si no se pasa ninguno; `alpha` sigue como alias (sin deprecar, decisión 5) y pasar los dos da `ValueError`, en `predict_interval` y en `backtesting_stats`. `backtesting_stats` traduce `alpha` a `interval` al principio. `interval` pasa a ir antes que `alpha` en las dos firmas (una llamada posicional antigua falla con `TypeError`, no en silencio; no hay ninguna en el repo). Ahora también se valida `alpha` (entre 0 y 1) en `predict_interval`. Corregidos `skills/statistical-models/SKILL.md`, `skills/prediction-intervals/` y `skills/complete-api-reference/`, la guía `forecasting-statistical-models.ipynb` (re-ejecutada, mismas predicciones) y `releases.md` (Fixed, Changed, highlight y "Before upgrading") |
 | **BUG-06** | En TabICL y Nori (`point_estimate='mean'` por defecto) y TabPFN con `point_estimate` distinto de `'median'`, `predict()` da la media pero `predict_interval()['pred']` y la métrica de `backtesting_foundation` con `quantiles` usan `q_0.5`; además la salida pierde `pred` | foundation | M | `dev/roadmap_0.27.0/repro/BUG-06.py` | `FoundationModel.predict(quantiles=..., include_point=True)` devuelve `pred` junto a `q_*` (reutiliza `q_0.5` si `point_is_median`; TabICL y TabPFN-TS ya calculan el punto en la misma llamada; Nori necesita otra). `predict_interval` (`_forecaster_foundation.py:946-960`) y `_backtesting_foundation` (`_validation.py:2590-2599,2650-2653,2683-2686`) usan ese `pred`. Corregir el docstring (`_foundation_model.py:1041,1058`) y la tabla de la guía (TimesFM 2.5 usa la mediana) |
@@ -1355,12 +1264,12 @@ BUG-stats-interval-ignored son hallazgos laterales (verificación de FE-02, de F
 | Validar el cv una vez antes del bucle de grid | Hallazgo de QW-03 | Junto con BUG-05. La `differentiation` del cv ya no se comprueba (DEP-cv-differentiation la depreca y la ignora); queda el resto de comprobaciones del cv |
 | MultiSeries con exog de RangeIndex reseteado da un resultado erróneo en silencio | Hallazgo de QW-06, medido | Poco frecuente; anotar y tratarlo con QW-06 si el diseño lo permite |
 | skops en `ForecasterFoundation` | Hallazgo de QW-05 | Posible cuando el backend quede fuera del estado |
-| PLAN-CKPT (`finetuned_checkpoint`) y PLAN-TTM (adaptador TinyTimeMixer) | PLAN-TTM: plan sin código (`dev/PLAN_TinyTimeMixerAdapter.md`), no verificado. PLAN-CKPT: eliminado el 2026-11-11 por desactualizado | PLAN-CKPT: aplazado a la 0.28.0 con BUG-04; pendiente crear un plan nuevo a partir de la sección "BUG-04 y modelos afinados" (sección 0) |
+| PLAN-CKPT (`finetuned_checkpoint`) y PLAN-TTM (adaptador TinyTimeMixer) | PLAN-TTM: plan sin código (`dev/PLAN_TinyTimeMixerAdapter.md`), no verificado. PLAN-CKPT: eliminado el 2026-11-11 por desactualizado | PLAN-CKPT: aplazado a la 0.28.0 con BUG-04; pendiente crear un plan nuevo a partir de la sección 3.1 de `dev/roadmap_0.28.0/roadmap.md` |
 | `grid_search_equivalent_date` multiserie | Fuera del alcance de FE-04 | Después de FE-04 |
 | Kalman de Arima estacional más rápido | `work/lens_stats.md` | 14 ms por evaluación, 729 evaluaciones con n=5000 y m=24; esfuerzo L |
 | HANDOFF-STATS-LW: `fit(store_last_window=False)` y `predict(last_window=...)` dan `AttributeError` | No verificado | `skforecast/recursive/_forecaster_stats.py:626`; sin decisión |
 | HANDOFF-DOUBLE-WARN: doble aviso de NaN en la exog de `predict` de Recursive/Direct | **Verificado el 2026-11-08, pasa a QW-14** | Mismo patrón que #1375 en multiserie; junto con QW-06 (mismo camino de `predict`) o con los avisos agregados |
-| Agrupar los avisos repetidos de un backtesting ("(in 6 of 7 folds)"), con cualquier `n_jobs` (añadido el 2026-11-08, alternativa E y decisión 4 de la sección 15 de [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md)) | Medido, candidato (M) | Con refit, el mismo aviso sale en cada fold, también con `n_jobs=1` (el `catch_warnings` de cada `fit`/`predict` invalida el registro de avisos ya mostrados): 7 paneles con 7 folds y huecos en `y` (QW-13) o un `ConvergenceWarning`. Un registro por backtesting, como `_SearchWarnings`. Cambia lo que se ve con `n_jobs=1`; retomarlo si molesta en las guías |
+| Agrupar los avisos repetidos de un backtesting ("(in 6 of 7 folds)"), con cualquier `n_jobs` (añadido el 2026-11-08, alternativa E y decisión 4 de la sección 15 de `BUG-search-short-series-transparency.md`) | Medido, candidato (M) | Con refit, el mismo aviso sale en cada fold, también con `n_jobs=1` (el `catch_warnings` de cada `fit`/`predict` invalida el registro de avisos ya mostrados): 7 paneles con 7 folds y huecos en `y` (QW-13) o un `ConvergenceWarning`. Un registro por backtesting, como `_SearchWarnings`. Cambia lo que se ve con `n_jobs=1`; retomarlo si molesta en las guías |
 | DISC-1153: asimetría en `RollingFeatures` y errores difíciles de diagnosticar en window features propias | No verificado | https://github.com/skforecast/skforecast/discussions/1153 (14 comentarios); FE-03 reduce parte de la necesidad |
 | ISSUE-995: pruning de Optuna en la búsqueda bayesiana | No verificado | https://github.com/skforecast/skforecast/issues/995; pregunta abierta desde 2025-07 |
 | TODO-multivariate-gap: formato largo con varios niveles y `gap>0` en multivariante | No verificado | `skforecast/model_selection/_validation.py:1099`; comprobar antes si es un caso real |
@@ -1383,7 +1292,7 @@ BUG-stats-interval-ignored son hallazgos laterales (verificación de FE-02, de F
 | PR-1387 / ISSUE-1386 | https://github.com/skforecast/skforecast/pull/1387, https://github.com/skforecast/skforecast/issues/1386 | Resuelto: fusionado en `0.27.x` el 2026-10-20 con la autoría del contribuidor, más un commit nuestro (nota de la versión en la 0.27.0 y test de `fig=None`); #1386 cerrada | Nada. `plot_residuals` usa `fig.add_subplot`; ninguna otra función que acepte `fig` o `ax` (`plot_multivariate_time_series_corr`, `plot_prediction_intervals`, `ForecasterRnn.plot_history`) tiene el mismo bug |
 | ISSUE-1410 | https://github.com/skforecast/skforecast/issues/1410, https://github.com/skforecast/skforecast/pull/1418 | Resuelto: #1418, fusionado en `0.27.x` el 2026-10-19 | Nada. Una serie con `window_size` valores o menos en el entrenamiento de un fold queda fuera de ese fold; `backtesting_foundation` usa `window_size=0`. FE-04 debe usar la misma frontera |
 | Folds sin series | https://github.com/skforecast/skforecast/pull/1427 | Resuelto: fusionado en `0.27.x` el 2026-10-21; sin issue (hallado desde skforecast-ai) | Nada. Un fold sin series que entrenar o predecir se salta y se lista en el `MissingValuesWarning`; si no se puede predecir ni evaluar ningún fold, `ValueError` antes de entrenar. También: `weighted_average` ya no es NaN cuando un nivel se predice sin valores observados (es la métrica que ordena las búsquedas por defecto), y la extracción de folds no retiene el entrenamiento de los folds sin refit (2000 series y 100 folds: pico de memoria de 1383 a 1022 MB) |
-| `initial_train_size` contra el span | https://github.com/skforecast/skforecast/pull/1430 | Resuelto: fusionado en `0.27.x` el 2026-10-21; sin issue (hallado desde skforecast-ai) | Nada. `check_backtesting_input` y `check_one_step_ahead_input` validan contra el span de un dict de series, no contra la serie más larga; `OneStepAheadFold.split` devolvía el número de series como final del test con un dict; el test del one-step-ahead deja fuera las series sin valores tras el entrenamiento (antes la búsqueda entera fallaba), con `ValueError` claro si no hay nada que entrenar o evaluar. Pendiente con BUG-search-short-series: tratar por candidato el error de la búsqueda one-step-ahead (sección 5.2, punto 4, de [`BUG-search-short-series-transparency.md`](BUG-search-short-series-transparency.md)) |
+| `initial_train_size` contra el span | https://github.com/skforecast/skforecast/pull/1430 | Resuelto: fusionado en `0.27.x` el 2026-10-21; sin issue (hallado desde skforecast-ai) | Nada. `check_backtesting_input` y `check_one_step_ahead_input` validan contra el span de un dict de series, no contra la serie más larga; `OneStepAheadFold.split` devolvía el número de series como final del test con un dict; el test del one-step-ahead deja fuera las series sin valores tras el entrenamiento (antes la búsqueda entera fallaba), con `ValueError` claro si no hay nada que entrenar o evaluar. Pendiente con BUG-search-short-series: tratar por candidato el error de la búsqueda one-step-ahead (sección 5.2, punto 4, de `BUG-search-short-series-transparency.md`) |
 | ISSUE-1385 (T0) | https://github.com/skforecast/skforecast/issues/1385; `skforecast/foundation/_adapters.py:3724-3729` | Resuelto: #1478, fusionado en `0.27.x` el 2026-11-11; el issue está cerrado | Nada. `tfc-t0[torch]>=0.6`, API nueva y tres arreglos más del adaptador (plan 01 de `dev/foundation_adapters_review/`) |
 | ISSUE-1409 + DISC-1119 + GAP-backtesting-interval-metrics | https://github.com/skforecast/skforecast/issues/1409, https://github.com/skforecast/skforecast/discussions/1119 | Sin PR | Se implementan por separado como QW-09 (`coverage` e `interval_width`, #1409) y QW-10 (columna `step`, D1119) (sección 2). Sin aviso de infracobertura (sección 7) |
 | GAP-foundation-backtesting-interval | `skforecast/model_selection/_validation.py:2712-2720` (`backtesting_foundation` solo tiene `quantiles`); `skforecast/model_selection/_search.py:2091` (única búsqueda foundation) | Asimetría de API, comprobada en las firmas; sin medir | Aceptar `interval` en `backtesting_foundation` después de BUG-06; `grid_search_foundation` opcional |
