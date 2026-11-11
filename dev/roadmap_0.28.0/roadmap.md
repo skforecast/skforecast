@@ -303,7 +303,7 @@ los pesos base), que hoy solo bloquea el prefijo de `model_id`.
 | FE-04 | `ForecasterEquivalentDate` en `backtesting_forecaster_multiseries`, con los mismos folds que el modelo global | M | | Sección 3 |
 | BUG-refit-directmultivariate-short | Búsquedas de `ForecasterDirectMultiVariate` con series cortas y refit | S a M | Hallado en el PR 2b de BUG-search-short-series | Sección 4 |
 | BUG-09 (b) | Resto de BUG-09 en `backtesting_stats` (la parte a se hizo, #1419) | S | Nicho | Sección 4 |
-| Agrupar los avisos repetidos de un backtesting | "(in 6 of 7 folds)", con cualquier `n_jobs` | M | Medido; alternativa E de la sección 15 de `BUG-search-short-series-transparency.md` | Sección 5 |
+| Agrupar los avisos repetidos de un backtesting | Hoy un backtesting con `refit=True` emite el mismo aviso una vez por fold, con cualquier `n_jobs`: 7 avisos iguales con huecos en `y` (QW-13), con `ConvergenceWarning` de un MLP o con QW-13 en multiserie (medido el 2026-11-08 con #1467). Propuesta: uno solo con "(in 6 of 7 folds)", como ya hacen las búsquedas | M | Fuera de #1467 (PR 2c) a propósito: cambia también lo que se ve con `n_jobs=1` | Alternativa E de la sección 15.5 del documento de BUG-search-short-series (borrado el 2026-11-11, en el historial de git) |
 
 ### 3.4 Forecasters y multiserie
 
@@ -315,7 +315,7 @@ los pesos base), que hoy solo bloquea el prefijo de `model_id`.
 | QW-15 | Avisos del `fit` en paralelo de Direct y DMV | S | Sin medir | Sección 2 |
 | BUG-07 | El formato largo con MultiIndex solo funciona si sale de `reshape_series_wide_to_long` | S | | Sección 4 |
 | BUG-classifier-nan-last-window | Clasificador sin soporte de NaN y NaN en la última ventana | S | Prioridad baja | Sección 4 |
-| `RollingFeatures.transform` con NaN | En predicción ignora los NaN y `min_periods`; en entrenamiento (`transform_batch`) los respeta. Hacerlo coherente mejora un 2% en el experimento 5 | S | Elemento nuevo: estaba solo en la sección 7 de `BUG-search-short-series-transparency.md` | Ese documento |
+| `RollingFeatures.transform` con NaN | En predicción ignora los NaN y `min_periods`; en entrenamiento (`transform_batch`) los respeta. Hacerlo coherente mejora un 2% en el experimento 5 | S | Elemento nuevo (2026-11-11): estaba solo en la sección 7 del documento de BUG-search-short-series, borrado | Experimento 5 de ese documento, en el historial de git |
 | HANDOFF-T2, T3 y T4 | Categóricas nativas dentro de `CalibratedClassifierCV` o `TransformedTargetRegressor` (T2); Pipeline con LightGBM o CatBoost y exog categórica (T3); T4 | S | Pendientes de decisión de Joaquín; no reverificados | `dev/handoff_utils_pendiente.md`; sección 6 |
 
 ### 3.5 Preprocessing
@@ -344,7 +344,10 @@ los pesos base), que hoy solo bloquea el prefijo de `model_id`.
 | Rama `ci/minimum-versions-job` y #1404 | Borrar la rama; fusionar #1404 (dependabot, contra `main`) o reabrirlo contra la rama de release | XS | | Sección 6 |
 
 Para versiones posteriores (sin cambios): la sección 5 del roadmap de la 0.27.0 (BUG-05,
-FE-01 completo, WAPE, Kalman de Arima estacional más rápido, ISSUE-995, ISSUE-974...).
+FE-01 completo, WAPE, Kalman de Arima estacional más rápido, ISSUE-995, ISSUE-974...). Y,
+aparcada, la opción c2 de BUG-search-short-series (predecir series con menos historia que la
+ventana, cold start), solo como argumento explícito del usuario: su investigación se borró
+el 2026-11-11 y está en el historial de git (`dev/roadmap_0.27.0/BUG-search-short-series.md`).
 
 En la 0.29.0: quitar las deprecaciones de la 0.27.0, DEP-cv-differentiation (#1423) y
 DEP-datasets-version (#1440).
