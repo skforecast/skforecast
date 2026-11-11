@@ -15,8 +15,8 @@ forma directa de pedir que se evalúen combinaciones concretas (la configuració
 producción, los valores por defecto del modelo, las mejores de una búsqueda anterior).
 
 Hoy solo se consigue con un rodeo poco evidente (crear un `study` en un storage, llamar a
-`study.enqueue_trial` y pasarlo con `load_if_exists`), con trampas comprobadas en esta
-sesión (optuna 5.0.0):
+`study.enqueue_trial` y pasarlo con `load_if_exists`), con trampas comprobadas (optuna
+5.0.0):
 
 - Una clave que no existe en el `search_space` se ignora sin avisar.
 - Un valor categórico (o de `lags`) que no está entre las opciones aborta la búsqueda a
@@ -30,35 +30,33 @@ es peor que la combinación dada, con la misma validación), no acelerar la bús
 experimento con `n_trials=8` el MAE medio no mejoró (0.9289 con combinación inicial,
 0.9210 sin ella).
 
-## Paso previo (lo decide el usuario)
+## Paso previo
 
 La versión 0.27.0 ya está publicada (existe el tag `v0.27.0`, `releases.md` la fecha el
 11 de noviembre de 2026 y `__version__` sigue en `0.27.0`). No hay sección "en desarrollo"
-para la nota de versión. Antes de implementar hay que ejecutar `/release-bump 0.28.0`
-(solo lo puede lanzar el usuario) y trabajar sobre la rama de versión resultante; o
-indicar otra rama y sección.
+para la nota de versión. Antes de implementar hay que ejecutar `/release-bump 0.28.0` y
+trabajar sobre la rama de versión resultante, o elegir otra rama y sección.
 
 ## Decisiones de diseño
 
 | Decisión | Elección | Motivo |
 |---|---|---|
-| Nombre | `initial_trials: dict \| list[dict] \| None = None` | Elegido por el usuario. Hace pareja con `n_trials`. |
+| Nombre | `initial_trials: dict \| list[dict] \| None = None` | Hace pareja con `n_trials` y no sugiere que excluya `lags`. |
 | Posición en la firma | Al final, después de `kwargs_study_optimize` | Las llamadas posicionales existentes siguen funcionando. |
 | Mecanismo | `study.enqueue_trial(params, skip_if_exists=True)` | API pública de Optuna (>=4.0). No repite combinaciones, tampoco al reanudar un study guardado. |
 | Presupuesto | Cuentan dentro de `n_trials` | Convención de Optuna, Ray Tune y hyperopt. `ValueError` si hay más combinaciones que `n_trials`. |
 | Combinaciones | Completas: un valor por cada parámetro del `search_space` | Ver abajo. Relajarlo más adelante es compatible hacia atrás. |
 | Clave que el `search_space` no usa | `ValueError` antes de buscar | Optuna la ignora en silencio. |
 | Categórico o `lags` fuera de las opciones | `ValueError` antes de buscar | Optuna no puede representarlo; hoy rompe la búsqueda a mitad. |
-| Numérico fuera de rango | Aviso y se evalúa | Elegido por el usuario. Es el comportamiento de Optuna; su aviso llega agrupado por `_SearchWarnings`. Comprobado que TPE multivariante sigue funcionando con ese valor en el historial (30 trials). |
+| Numérico fuera de rango | Aviso y se evalúa | Es el comportamiento de Optuna; su aviso llega agrupado por `_SearchWarnings`. Comprobado que TPE multivariante sigue funcionando con ese valor en el historial (30 trials). |
 | `results` | Sin columnas nuevas | Los trials iniciales son los primeros `trial_number` de la llamada. |
 
 ### Por qué combinaciones completas, validadas con `optuna.trial.FixedTrial`
 
-Cambio respecto al borrador inicial (que permitía combinaciones parciales), tras una
-revisión independiente del diseño:
+Cambio respecto al borrador inicial, que permitía combinaciones parciales:
 
-- Con combinaciones parciales en espacios condicionales la validación es arbitraria: la
-  revisión midió que `{'rate_drop': 0.3}` (parámetro que solo existe con
+- Con combinaciones parciales en espacios condicionales la validación es arbitraria: se
+  midió que `{'rate_drop': 0.3}` (parámetro que solo existe con
   `booster='dart'`) se marcaba como "clave no usada" en 3 de 8 semillas.
 - Una combinación parcial es en parte aleatoria, así que debilita la garantía que
   justifica la función. Los casos de uso reales (producción, valores por defecto,
@@ -258,4 +256,4 @@ de storage existente. `test_bayesian_search_foundation.py`: evaluadas primero y 
    `lags` fuera de las opciones y fuera de rango; y storage sqlite reanudado
    (`load_if_exists=True`) para ver que no se repiten.
 4. Skill `verify` (ruff, tests afectados, contexto de IA, notas de versión) antes de dar
-   el cambio por terminado y antes del commit. Sin pull request salvo que se pida.
+   el cambio por terminado y antes del commit.
