@@ -143,6 +143,12 @@ REMOVED_WARNINGS = [
         r"[^\n]*(?:\n|$)(?:  [^\n]*(?:\n|$))?",
         re.MULTILINE,
     ),
+    # tabpfn-time-series running TabPFN-TS in local mode without a GPU
+    re.compile(
+        r"^[^\n]*UserWarning: Running TabPFN locally on CPU"
+        r"[^\n]*(?:\n|$)(?:  [^\n]*(?:\n|$))?",
+        re.MULTILINE,
+    ),
 ]
 
 

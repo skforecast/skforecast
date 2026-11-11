@@ -210,10 +210,14 @@ elementos del roadmap", abajo).
 - Suite completa y tests con las versiones mínimas: **con los workflows del PR de `0.27.x` a
   `main`** (decisión del 2026-11-11). Ninguna se ha ejecutado sobre `0.27.x`: abrir ese PR
   con margen.
-- Plan 10 de `dev/foundation_adapters_review/`, solo la parte de guías (re-ejecutar enteras
+- ~~Plan 10 de `dev/foundation_adapters_review/`, solo la parte de guías (re-ejecutar enteras
   `foundation-forecasting-models.ipynb` y `foundation-forecasting-with-heterogeneous-series.ipynb`
-  en un único entorno con todos los backends): **en una sesión en la nube** (2026-11-11).
-  Hasta ahora solo se re-ejecutó la sección de T0. La parte de CI del plan 10 y los planes
+  en un único entorno con todos los backends)~~ **Hecho con #1480** (2026-11-11), en una
+  sesión en la nube: Python 3.12.3, torch 2.9.1+cpu y los once backends en el mismo kernel
+  (`tfc-t0` 0.6.1 y `tirex-2` 0.5.0, que el CI de compatibilidad aún no ha comprobado, ver
+  #1417). La tabla comparativa cuadra con las referencias de la sección 4.3 (Chronos-2
+  171.2670, TimesFM-3.0 162.4352, Nori 185.9507, T0 172.2662) y Moirai da lo mismo que en
+  el entorno que respeta los requisitos de uni2ts. La parte de CI del plan 10 y los planes
   02 a 09 pasan a la 0.28.0.
 
 **Orden recomendado para lo que queda:**
