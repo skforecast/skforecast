@@ -416,6 +416,10 @@ En la 0.29.0, quitar las deprecaciones de la 0.27.0: DEP-cv-differentiation (#14
 en su fila de la sección 2) y DEP-datasets-version (#1440: el argumento `version` de
 `fetch_dataset`, `load_demo_dataset` y `show_datasets_info`, y sus tests de la deprecación).
 
+Mantenimiento de dependencias aplazado a la 0.28.0 (2026-11-11): retirar Python 3.10
+(DEP-python310) y revisar los extras `docs` y `test`. Detalle y medidas en
+[`dev/roadmap_0.28.0/roadmap.md`](../roadmap_0.28.0/roadmap.md).
+
 ### Huecos del análisis a cubrir al implementar
 
 - **Foundation**: solo se ejecutaron Chronos-2 y TabICL con pesos reales. BUG-04, QW-05 y
@@ -1263,7 +1267,7 @@ BUG-stats-interval-ignored son hallazgos laterales (verificación de FE-02, de F
 | PR-1341 / ISSUE-1190 (TiRex-2) | https://github.com/skforecast/skforecast/pull/1341, https://github.com/skforecast/skforecast/issues/1190 | Resuelto: PR-1341 fusionado en la rama `feature/tirex2-adapter-1341` el 2026-11-08 y llevado a `0.27.x` con #1463 (más #1465) | Nada |
 | ISSUE-1131 (exógenas as-of) | https://github.com/skforecast/skforecast/issues/1131 | Aplazado en marzo "a la release siguiente"; no verificado | Decidir el alcance: FE-02 cubre las variables nunca conocidas a futuro en foundation; las exógenas que son previsiones publicadas (propuesta `exog_builder`) siguen abiertas (L) |
 | DEP-stats-alpha | `skforecast/recursive/_forecaster_stats.py:1047-1055`; `backtesting_stats` | Descartado el 2026-10-19 (decisión 5) | Nada: `alpha` queda como alias de `interval` y pasar los dos da `ValueError` (hecho con BUG-stats-interval-ignored) |
-| DEP-python310 | `pyproject.toml:26,65`; `.github/workflows/unit-tests-min-deps.yml:30` | Python 3.10 llega a fin de vida en octubre de 2026 (PEP 619) | Anunciar en 0.27 y retirar en 0.28 (precedente: 3.9 en la 0.19.0) |
+| DEP-python310 | `pyproject.toml:26,65`; `.github/workflows/unit-tests-min-deps.yml:30` | Python 3.10 llega a fin de vida en octubre de 2026 (PEP 619) | Anunciar en 0.27 y retirar en 0.28 (precedente: 3.9 en la 0.19.0). Confirmado el 2026-11-11; lista de cambios en [`dev/roadmap_0.28.0/roadmap.md`](../roadmap_0.28.0/roadmap.md) |
 | DEP-arima-dictstyle | `skforecast/stats/arima/_arima_base.py:271-290` | `FutureWarning` sin versión desde la 0.22; única deprecación activa | Retirar en 0.27 o fijar la versión; valorar usar `runtime_deprecated` (`skforecast/exceptions/exceptions.py:21`), que no se usa |
 | DOC-skills-percentiles-stale | `skills/prediction-intervals/SKILL.md:55-57,70,265`; `references/interval-compatibility.md:23,205`; `skills/complete-api-reference/references/forecaster-methods.md:432,455` (`set_params` marcado como ausente en EquivalentDate) | Desactualizado (percentiles dan `ValueError` desde 0.25) | Corregir junto a QW-07 (b) y regenerar el contexto IA |
 | HANDOFF-T2 | `dev/handoff_utils_pendiente.md` (T2) | Pendiente, marcado "para la 0.27"; no reverificado | Implementar: categóricas nativas no llegan al estimador dentro de `CalibratedClassifierCV` o `TransformedTargetRegressor` |

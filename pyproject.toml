@@ -84,7 +84,7 @@ all = [
     "statsmodels>=0.13.2, <0.16",
     "keras>=3.3, <4.0",
     'tensorflow>=2.18, <2.22; python_version < "3.14"',
-    "torch>=2.4, <2.15"
+    "torch>=2.4, <2.16"
 ]
 
 full = ["skforecast[all]"]
@@ -106,7 +106,6 @@ test = [
     # Testing
     "pytest>=9.1.0",
     "pytest-cov>=7.1.0",
-    "pytest-xdist>=3.8",
     "pytest-github-actions-annotate-failures>=0.4.2",
     
     # Stats and plotting
@@ -118,7 +117,7 @@ test = [
     "xgboost>=2.1, <4.0",
     "catboost>=1.2, <2.0",
     "keras>=3.3, <4.0",
-    "torch>=2.4, <2.15",
+    "torch>=2.4, <2.16",
     "cloudpickle>=3.0",
     "skops>=0.14",
     "tomli>=2.0",
