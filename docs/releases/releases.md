@@ -24,7 +24,7 @@ The main changes in this release are:
 
 + The panels of <code>[show_datasets_info]</code>, <code>[fetch_dataset]</code>, <code>[load_demo_dataset]</code> and the out-of-range summary of <code>[RangeDriftDetector]</code> are 88 characters wide, like the skforecast warnings, and the URL of each dataset is a clickable link. ([#1493](https://github.com/skforecast/skforecast/pull/1493))
 
-+ Removed support for Python 3.10, which reached its end of life in October 2026: skforecast now requires Python 3.11 or later. With Python 3.10, pip keeps installing skforecast 0.27.0. The minimum version of `statsmodels` is now 0.13.3 (0.13.2 has no wheels for Python 3.11).
++ Removed support for Python 3.10, which reached its end of life in October 2026: skforecast now requires Python 3.11 or later. With Python 3.10, pip keeps installing skforecast 0.27.0. The minimum version of `statsmodels` is now 0.13.3 (0.13.2 has no wheels for Python 3.11). ([#1496](https://github.com/skforecast/skforecast/pull/1496))
 
 
 **Fixed**
