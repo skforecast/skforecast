@@ -2111,8 +2111,22 @@ pandas y numpy (`python-dateutil` 2.9.0.post0 en los tres).
   Quedan 21 en 12 sitios de ficheros de tests (`assert_index_equal` con
   `freq`, `exact` por defecto, operación con tupla en
   `test_fit_pytorch.py`), para la PR 5.
-- Siguiente: PR contra `0.28.x` y CI lanzada a mano
-  (`unit-tests-min-deps.yml` y `unit-tests-latest-deps.yml`).
+- PR #1495 contra `0.28.x` (cabeza `c83735261`), fusionada el 2026-11-12
+  (merge `e4cf42c19`). CI lanzada a mano sobre la rama:
+  - `unit-tests-min-deps.yml` (run 43303305289): en verde. Todavía con
+    Python 3.10, porque DEP-python310 se fusionó después.
+  - `unit-tests-latest-deps.yml` (run 43303414921, pandas 3 en Linux): en
+    rojo, como se esperaba. 91 fallos, 7973 en verde y 27 omitidos, frente a
+    94, 7970 y 27 en local (el mismo total, 8091). Se comprobaron 55 de los
+    91 nombres y todos están en `fallos_base_p3_2026-11-04.txt`. Los otros
+    36 se dan por iguales sin comprobarlos: los registros de los jobs piden
+    sesión en GitHub, y la página pública solo muestra 10 anotaciones por
+    job. Ningún fallo nuevo conocido.
+- DEP-python310 (mínimo Python 3.11, `statsmodels>=0.13.3`, sin `tomli`) se
+  fusionó como #1496 (merge `4016ede06`) el mismo día. La PR 6 ya no espera
+  nada de ella.
+- Siguiente: PR 4. La PR 3 (F26) puede ir en paralelo; falta decidir si F26
+  se corrige también en `0.27.x`.
 
 ### Historial de lo pendiente entre sesiones
 

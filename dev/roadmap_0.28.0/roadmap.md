@@ -22,7 +22,7 @@ Esfuerzo: S (horas a 1 día, con tests y docs), M (2 a 5 días), L (más de una 
 
 | ID | Qué | Esfuerzo | Estado |
 |---|---|---|---|
-| DEP-python310 | Retirar Python 3.10 | S | Decidido el 2026-11-11: se retira en 0.28.0 y se anuncia en 0.27.0 |
+| DEP-python310 | Retirar Python 3.10 | S | Hecho: #1496, fusionada en `0.28.x` el 2026-11-12 |
 | MAINT-docs-deps | Actualizar los pins del extra `docs`, salvo `mkdocs-jupyter` | S | Opcional, medido: sin efecto visible |
 | MAINT-test-deps | Limpiar el extra `test` | S | Opcional |
 
@@ -69,37 +69,44 @@ Motivo:
 El beneficio en el código es modesto: desaparecen `tomli` en los tests y el caso especial de
 T0 (en 3.10 pip instala `tfc-t0` 0.6.0, que se comporta distinto que la 0.6.1).
 
-Cambios:
+Cambios (hechos en #1496, merge `4016ede06`, salvo lo indicado):
 
-- [ ] `pyproject.toml:65`: `requires-python = ">=3.11"`; quitar el classifier de la línea 26.
-- [ ] `pyproject.toml:69,74,84,112`: `statsmodels>=0.13.3`. La 0.13.2 no tiene wheel para
+- [x] `pyproject.toml:65`: `requires-python = ">=3.11"`; quitar el classifier de la línea 26.
+- [x] `pyproject.toml:69,74,84,112`: `statsmodels>=0.13.3`. La 0.13.2 no tiene wheel para
   Python 3.11 y el resolvedor de mínimos ya elige la 0.13.3. El resto de mínimos se resuelven
   igual en 3.11 que en 3.10. La PR 6 de la migración a pandas 3 lo sube después a
   `>=0.14.6` (la 0.14.5 no se importa con pandas 3.1; `dev/pandas3_migration/INFORME.md`,
   sección 7).
-- [ ] `.github/workflows/unit-tests.yml:22`: quitar `'3.10'` de la matriz.
-- [ ] `.github/workflows/unit-tests-min-deps.yml:27-30`: Python 3.11.
-- [ ] `.github/workflows/publish-pypi.yml:142`: `['3.11', '3.14']`.
-- [ ] `skforecast/utils/tests/tests_utils/test_check_optional_dependency.py:5`: `tomli` por
+- [x] `.github/workflows/unit-tests.yml:22`: quitar `'3.10'` de la matriz.
+- [x] `.github/workflows/unit-tests-min-deps.yml:27-30`: Python 3.11.
+- [x] `.github/workflows/publish-pypi.yml:142`: `['3.11', '3.14']`.
+- [x] `skforecast/utils/tests/tests_utils/test_check_optional_dependency.py:5`: `tomli` por
   `tomllib`.
-- [ ] `skforecast/foundation/tests/tests_foundation_models/test_backends_compat_config.py:9-12`:
+- [x] `skforecast/foundation/tests/tests_foundation_models/test_backends_compat_config.py:9-12`:
   quitar el `try/except` de `tomli`.
-- [ ] `.claude/skills/verify/test_affected.py:365`: quitar el `skipif` de Python menor que 3.11.
-- [ ] `pyproject.toml:123`: quitar `tomli>=2.0` del extra `test`.
-- [ ] `skforecast/foundation/_adapters.py:3561`: quitar la nota de Python 3.10 del docstring
+- [x] `.claude/skills/verify/test_affected.py:365`: quitar el `skipif` de Python menor que 3.11.
+- [x] `pyproject.toml:123`: quitar `tomli>=2.0` del extra `test`.
+- [x] `skforecast/foundation/_adapters.py:3561`: quitar la nota de Python 3.10 del docstring
   de `T0Adapter`. Decidir si el mínimo pasa a `tfc-t0[torch]>=0.6.1`
-  (`tools/foundation_compat/adapters.toml:53`).
-- [ ] Docs: `docs/quick-start/how-to-install.md:5,10`, `README.md:11` (badge) y
+  (`tools/foundation_compat/adapters.toml:53`). Decidido: se queda en
+  `tfc-t0[torch]>=0.6`. La 0.6.0 ya no se instala en Python 3.11 o superior, porque pip
+  elige la 0.6.1, y subir el mínimo no aporta nada.
+- [x] Docs: `docs/quick-start/how-to-install.md:5,10`, `README.md:11` (badge) y
   `docs/skforecast-ai/skforecast-ai.md:3,30` (comprobar antes si skforecast-ai sigue la
-  misma versión mínima).
-- [ ] Contexto IA: `tools/ai/llms-base.txt:13` y `tools/ai/ai_context_header.md:68`
+  misma versión mínima). `skforecast-ai.md` no se tocó: describe skforecast-ai, que
+  todavía admite 3.10. Pendiente: abrir un issue en `skforecast/skforecast-ai` para que suba
+  su mínimo y, después, actualizar la página.
+- [x] Contexto IA: `tools/ai/llms-base.txt:13` y `tools/ai/ai_context_header.md:68`
   (`uv venv ... --python 3.10`), y regenerar (skill `ai-context-sync`).
-- [ ] Nota en `docs/releases/releases.md`, sección 0.28.0.
+- [x] Nota en `docs/releases/releases.md`, sección 0.28.0.
 
 Sin comprobar: la suite con las versiones mínimas en Python 3.11 (es la suite completa, la
 ejecuta `unit-tests-min-deps.yml`). Solo se resolvieron las versiones, con
 `uv pip compile --resolution lowest-direct --python-version 3.11 --only-binary :all:` en
-macOS arm64; falta confirmarlo en Linux.
+macOS arm64. La #1496 no ejecutó ese workflow, porque las PR a `0.28.x` no lanzan los tests.
+Lanzarlo a mano sobre `0.28.x`, o esperar a la PR de la release a `main`. Al publicar la
+0.28.0, subir también en el feedstock de conda-forge el mínimo de Python a 3.11 y el de
+`statsmodels` a 0.13.3.
 
 ### MAINT-docs-deps: pins del extra `docs`
 
@@ -155,7 +162,7 @@ Limpiezas:
 - [ ] `pandas[parquet]>=2.2, <3.0` (`pyproject.toml:124`), por coherencia con el core. No
   cambia la resolución. Si se hace, la PR 6 de la migración a pandas 3 tiene que pasarlo a
   `<4.0` junto con el core.
-- [ ] `tomli>=2.0`: se quita con DEP-python310.
+- [x] `tomli>=2.0`: se quita con DEP-python310. Hecho en #1496.
 
 ---
 
