@@ -413,8 +413,7 @@ def test_calculate_distance_from_holiday_warns_and_fills_nan_in_dataframe():
         result = calculate_distance_from_holiday(df, holiday_column="is_holiday")
 
     df_filled = df.copy()
-    with pd.option_context("future.no_silent_downcasting", True):
-        df_filled["is_holiday"] = df_filled["is_holiday"].fillna(False).astype(bool)
+    df_filled["is_holiday"] = [True, False, False, True, False]
     expected = calculate_distance_from_holiday(df_filled, holiday_column="is_holiday")
     pd.testing.assert_frame_equal(result, expected)
 

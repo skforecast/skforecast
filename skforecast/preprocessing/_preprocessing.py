@@ -20,6 +20,7 @@ from sklearn.exceptions import NotFittedError
 from .. import __version__
 from ..exceptions import IgnoredArgumentWarning, MissingValuesWarning
 from ..metrics import calculate_coverage
+from ..utils import _pandas_compat as compat
 from ..utils import get_style_repr_html
 from ..utils.utils import _date_range_from_index, _is_utc_anchored_index
 
@@ -777,7 +778,10 @@ def reshape_exog_long_to_dict(
 
     if consolidate_dtypes and nans_introduced:
         new_dtypes = {col: float for col in cols_float_dtype}
-        exog_dict = {k: v.astype(new_dtypes, copy=False) for k, v in exog_dict.items()}
+        exog_dict = {
+            k: compat.astype(v, new_dtypes, changed_only=True)
+            for k, v in exog_dict.items()
+        }
 
     if drop_all_nan_cols:
         exog_dict = {k: v.dropna(how="all", axis=1) for k, v in exog_dict.items()}

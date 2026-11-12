@@ -1126,10 +1126,10 @@ def test_predict_with_exog_window_features_and_calendar():
     )
 
     exog_calendar = exog_dt.to_frame()
-    exog_calendar['day_of_week'] = exog_calendar.index.dayofweek
+    exog_calendar['day_of_week'] = exog_calendar.index.day_of_week
     exog_calendar['weekend'] = exog_calendar['day_of_week'].isin([5, 6]).astype(int)
     exog_predict_calendar = exog_predict_dt.to_frame()
-    exog_predict_calendar['day_of_week'] = exog_predict_calendar.index.dayofweek
+    exog_predict_calendar['day_of_week'] = exog_predict_calendar.index.day_of_week
     exog_predict_calendar['weekend'] = (
         exog_predict_calendar['day_of_week'].isin([5, 6]).astype(int)
     )

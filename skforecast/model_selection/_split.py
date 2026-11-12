@@ -302,7 +302,7 @@ class BaseFold():
         # are ignored (`differentiation` in all classes, `window_size` in
         # `OneStepAheadFold`).
         if 'window_size' not in self._deprecated_params and (
-            not isinstance(window_size, (int, np.integer, pd.DateOffset, type(None)))
+            not isinstance(window_size, (int, np.integer, pd.offsets.BaseOffset, type(None)))
             or isinstance(window_size, (int, np.integer))
             and window_size < 1
         ):
@@ -1049,7 +1049,7 @@ class TimeSeriesFold(BaseFold):
                 f"Got {type(X)}."
             )
         
-        window_size_as_date_offset = isinstance(self.window_size, pd.tseries.offsets.DateOffset)
+        window_size_as_date_offset = isinstance(self.window_size, pd.offsets.BaseOffset)
         if window_size_as_date_offset:
             # Calculate the window_size in steps. This is not a exact calculation
             # because the offset follows the calendar rules and the distance between

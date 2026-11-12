@@ -137,10 +137,10 @@ series_long_dt_item_sales = reshape_series_wide_to_long(series_wide_dt_item_sale
 series_dict_dt_item_sales = series_wide_dt_item_sales.copy().to_dict(orient='series')
 series_dict_range_item_sales = series_wide_range_item_sales.copy().to_dict(orient='series')
 exog_wide_dt_item_sales = pd.DataFrame(
-    {'day_of_week': series_wide_dt_item_sales.index.dayofweek}, index = series_wide_dt_item_sales.index
+    {'day_of_week': series_wide_dt_item_sales.index.day_of_week}, index = series_wide_dt_item_sales.index
 )
 exog_wide_range_item_sales = pd.DataFrame(
-    {'day_of_week': series_wide_dt_item_sales.index.dayofweek}, index = series_wide_range_item_sales.index
+    {'day_of_week': series_wide_dt_item_sales.index.day_of_week}, index = series_wide_range_item_sales.index
 )
 exog_long_dt_item_sales = exog_wide_dt_item_sales.copy()
 exog_long_dt_item_sales.index.name = "datetime"

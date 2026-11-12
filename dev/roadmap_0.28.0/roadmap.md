@@ -39,6 +39,11 @@ no se ejecutan en Python 3.14).
 Ya estaba en el roadmap de la 0.27.0 ("anunciar en 0.27 y retirar en 0.28"). Anunciado en
 la nota de la 0.27.0 el 2026-11-11 (Changed, grupo *Dependencies*).
 
+Va en su propia PR, no en la PR 6 de la migración a pandas 3, que lo preveía (decisión D1
+(b) de `dev/pandas3_migration/INFORME.md`; cambio acordado el 2026-11-12). No depende de
+pandas 3 y puede ir a `0.28.x` en cualquier momento, pero antes de la PR 6, cuya matriz de
+CI da por hecho el mínimo 3.11.
+
 Motivo:
 
 - Python 3.10 llegó a fin de vida el 2026-10-01. Precedente: 3.9 (fin de vida en octubre de
@@ -69,7 +74,9 @@ Cambios:
 - [ ] `pyproject.toml:65`: `requires-python = ">=3.11"`; quitar el classifier de la línea 26.
 - [ ] `pyproject.toml:69,74,84,112`: `statsmodels>=0.13.3`. La 0.13.2 no tiene wheel para
   Python 3.11 y el resolvedor de mínimos ya elige la 0.13.3. El resto de mínimos se resuelven
-  igual en 3.11 que en 3.10.
+  igual en 3.11 que en 3.10. La PR 6 de la migración a pandas 3 lo sube después a
+  `>=0.14.6` (la 0.14.5 no se importa con pandas 3.1; `dev/pandas3_migration/INFORME.md`,
+  sección 7).
 - [ ] `.github/workflows/unit-tests.yml:22`: quitar `'3.10'` de la matriz.
 - [ ] `.github/workflows/unit-tests-min-deps.yml:27-30`: Python 3.11.
 - [ ] `.github/workflows/publish-pypi.yml:142`: `['3.11', '3.14']`.
@@ -146,7 +153,8 @@ Limpiezas:
 - [x] Quitar `pytest-xdist>=3.8`: hecho en la 0.27.0 (commit `7f7c4b804`). Ningún workflow
   usa `-n`, las reglas de tests lo prohíben y `.claude/settings.json` lo deniega.
 - [ ] `pandas[parquet]>=2.2, <3.0` (`pyproject.toml:124`), por coherencia con el core. No
-  cambia la resolución.
+  cambia la resolución. Si se hace, la PR 6 de la migración a pandas 3 tiene que pasarlo a
+  `<4.0` junto con el core.
 - [ ] `tomli>=2.0`: se quita con DEP-python310.
 
 ---
@@ -157,7 +165,8 @@ Limpiezas:
   saltándose el límite y da 91 failed y 6732 passed en Python 3.14, sobre `main` (run del
   2026-11-09; 91 failed también en 3.12 y 3.13). Son fallos de índices, dtypes, zonas
   horarias y frecuencias. El workflow lleva en rojo al menos desde el 2026-10-05. El trabajo
-  de compatibilidad está en `dev/pandas3_migration/`.
+  de compatibilidad está en `dev/pandas3_migration/`: el límite pasa a `<4.0` en su PR 6,
+  y hasta entonces se mantiene `<3.0`.
 - **tensorflow**: el límite `<2.22` es correcto hoy (última estable: 2.21.0). La 2.22.0rc0 ya
   trae wheels para Python 3.14: cuando salga la final, subir a `<2.23` y revisar el marcador
   `python_version < "3.14"` (`pyproject.toml:86`) y los `skipif` de los tres tests de

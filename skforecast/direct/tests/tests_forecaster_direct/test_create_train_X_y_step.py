@@ -343,7 +343,7 @@ def test_create_train_X_y_step_with_calendar_features_same_as_exog():
     )
 
     exog_calendar = exog_datetime.to_frame()
-    exog_calendar['day_of_week'] = exog_calendar.index.dayofweek.astype(float)
+    exog_calendar['day_of_week'] = exog_calendar.index.day_of_week.astype(float)
     exog_calendar['weekend'] = exog_calendar['day_of_week'].isin([5, 6]).astype(float)
 
     rolling = RollingFeatures(stats=['mean', 'sum'], window_sizes=[5, 6])

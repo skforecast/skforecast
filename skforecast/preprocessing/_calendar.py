@@ -16,6 +16,7 @@ from sklearn.preprocessing import SplineTransformer
 from sklearn.utils.validation import check_is_fitted
 
 from ..exceptions import IgnoredArgumentWarning
+from ..utils import _pandas_compat as compat
 
 
 _FEATURE_KNOWN_CATEGORIES = {
@@ -196,10 +197,10 @@ def create_calendar_features(
         "year": "year",
         "month": "month",
         "week": lambda idx: idx.isocalendar().week.astype(int),
-        "day_of_week": "dayofweek",
+        "day_of_week": "day_of_week",
         "day_of_month": "day",
-        "day_of_year": "dayofyear",
-        "weekend": lambda idx: (idx.dayofweek >= 5).astype(int),
+        "day_of_year": "day_of_year",
+        "weekend": lambda idx: (idx.day_of_week >= 5).astype(int),
         "hour": "hour",
         "minute": "minute",
         "second": "second",
@@ -846,8 +847,9 @@ def calculate_distance_from_holiday(
             stacklevel=2,
         )
         X = X.copy()
-        with pd.option_context("future.no_silent_downcasting", True):
-            X[holiday_column] = X[holiday_column].fillna(False).astype(bool)
+        X[holiday_column] = np.where(
+            X[holiday_column].isna(), False, X[holiday_column].to_numpy()
+        ).astype(bool)
 
     if date_column is None:
         if not isinstance(X.index, pd.DatetimeIndex):
@@ -859,13 +861,14 @@ def calculate_distance_from_holiday(
 
         freq_str = X.index.freqstr if X.index.freq is not None else None
         if freq_str is None:
-            freq_str = pd.infer_freq(X.index)
+            inferred = compat.infer_freq(X.index)
+            freq_str = inferred.freqstr if inferred is not None else None
         if freq_str is None:
             warnings.warn(
                 "Could not determine the frequency of the index. "
                 "The output column unit defaults to 'hours'. To avoid this "
-                "warning, either set `X.index.freq = pd.infer_freq(X.index)` "
-                "or pass an index with a known frequency.",
+                "warning, pass an index with a known frequency, for example "
+                "with `X.asfreq('D')`.",
                 UserWarning,
                 stacklevel=2,
             )
