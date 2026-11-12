@@ -24,10 +24,10 @@ jobs:
       with:
         persist-credentials: false
 
-    - name: Set up uv and Python 3.10
+    - name: Set up uv and Python 3.11
       uses: astral-sh/setup-uv@v10.3.3
       with:
-        python-version: '3.10'  # minimum supported version of Python
+        python-version: '3.11'  # minimum supported version of Python
         activate-environment: true  # creates .venv and puts it on PATH for the next steps
         enable-cache: true
         cache-dependency-glob: "pyproject.toml"

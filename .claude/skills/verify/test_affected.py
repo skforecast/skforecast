@@ -362,7 +362,6 @@ def test_foundation_compat_parsers_read_the_files_of_this_repository():
     assert set(contracts) == set(adapters)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 11), reason="run.py needs tomllib")
 def test_foundation_compat_command_is_accepted_by_run_py():
     # `--help` exits with 0 only after the arguments before it are accepted,
     # without creating any environment: an unknown option, level or adapter

@@ -23,7 +23,6 @@ classifiers = [
     "Operating System :: Unix",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -62,16 +61,16 @@ dependencies = [
     "numba>=0.59",
     "rich>=13.9"
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 [project.optional-dependencies]
 stats = [
-    "statsmodels>=0.13.2, <0.16"
+    "statsmodels>=0.13.3, <0.16"
 ]
 
 plotting = [
     "matplotlib>=3.7, <3.12",
-    "statsmodels>=0.13.2, <0.16"
+    "statsmodels>=0.13.3, <0.16"
 ]
 
 deeplearning = [
@@ -81,7 +80,7 @@ deeplearning = [
 
 all = [
     "matplotlib>=3.7, <3.12",
-    "statsmodels>=0.13.2, <0.16",
+    "statsmodels>=0.13.3, <0.16",
     "keras>=3.3, <4.0",
     'tensorflow>=2.18, <2.22; python_version < "3.14"',
     "torch>=2.4, <2.16"
@@ -109,7 +108,7 @@ test = [
     "pytest-github-actions-annotate-failures>=0.4.2",
     
     # Stats and plotting
-    "statsmodels>=0.13.2, <0.16",
+    "statsmodels>=0.13.3, <0.16",
     "matplotlib>=3.7, <3.12",
     
     # Other optional dependencies
@@ -120,7 +119,6 @@ test = [
     "torch>=2.4, <2.16",
     "cloudpickle>=3.0",
     "skops>=0.14",
-    "tomli>=2.0",
     "pandas[parquet]>=2.2"
 ]
 

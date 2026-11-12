@@ -153,7 +153,7 @@ There is no compile step and no horizon ceiling. For each series, columns presen
 | `device_map`     | str    | `'auto'` | Device placement: `'auto'` (CUDA > MPS > CPU), `'cuda'`, `'mps'`, `'cpu'`. |
 | `torch_dtype`    | object | `None`   | Mixed-precision inference: `torch.bfloat16` or `torch.float16` (weights stay in `float32`). |
 
-Point forecasts use the median (quantile `0.5`). Covariates must be numeric; encode categoricals as numbers before passing them. A series with no future exog is forecast without covariates. Series of different lengths are batched together: the NaN before the first observation of a series is read as padding, so its forecast does not depend on the length of the others. Since `tfc-t0` 0.6.1 a covariate whose values are all equal over the context of a series (e.g. a holiday flag with a short `context_length`) is ignored for that series; `tfc-t0` 0.6.1 needs Python >= 3.11, so on Python 3.10 pip installs 0.6.0, which keeps those covariates.
+Point forecasts use the median (quantile `0.5`). Covariates must be numeric; encode categoricals as numbers before passing them. A series with no future exog is forecast without covariates. Series of different lengths are batched together: the NaN before the first observation of a series is read as padding, so its forecast does not depend on the length of the others. Since `tfc-t0` 0.6.1 a covariate whose values are all equal over the context of a series (e.g. a holiday flag with a short `context_length`) is ignored for that series.
 
 ## TSICLAdapter: EDF Lab TS-ICL
 
