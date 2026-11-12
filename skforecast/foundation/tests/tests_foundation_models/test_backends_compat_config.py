@@ -1,15 +1,11 @@
 # Unit test configuration of the foundation backends compatibility check
 # ==============================================================================
 import re
+import tomllib
 from pathlib import Path
 import pytest
 from packaging.requirements import Requirement
 from skforecast.foundation._adapters import _ADAPTER_REGISTRY, _resolve_adapter
-
-try:
-    import tomllib
-except ModuleNotFoundError:  # Python 3.10
-    import tomli as tomllib
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 ADAPTERS_FILE = REPO_ROOT / "tools" / "foundation_compat" / "adapters.toml"

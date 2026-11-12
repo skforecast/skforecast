@@ -233,8 +233,8 @@ def tests_for_test_file(path, root):
 def toml_tables(text):
     """
     Return {table name: lines of its body} of a TOML file made of `[name]`
-    tables, without blank lines and comments. Written by hand because `tomllib`
-    needs Python 3.11 and the body is only compared, never interpreted.
+    tables, without blank lines and comments. Written by hand, not with
+    `tomllib`, because the body is only compared, never interpreted.
     """
     tables, name = {}, None
     for line in text.splitlines():

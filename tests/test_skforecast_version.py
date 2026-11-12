@@ -1,7 +1,7 @@
 # Unit test skforecast version
 # ==============================================================================
+import tomllib
 from skforecast import __version__
-import tomli
 
 version = "0.28.0"
 
@@ -16,7 +16,7 @@ def test_version_in_init_and_pyproject_toml():
     """
 
     with open("./pyproject.toml", mode='rb') as fp:
-        pyproject = tomli.load(fp)
+        pyproject = tomllib.load(fp)
 
     version_in_tolm = pyproject['project']['version']
     version_in_init = __version__

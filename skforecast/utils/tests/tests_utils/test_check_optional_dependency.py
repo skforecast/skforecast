@@ -1,8 +1,8 @@
 # Unit test check_optional_dependency
 # ==============================================================================
 import re
+import tomllib
 import pytest
-import tomli
 from skforecast.utils import optional_dependencies
 from skforecast.utils.utils import _find_optional_dependency
 
@@ -14,7 +14,7 @@ def test_skforecast_utils_optional_dependencies_match_dependences_in_toml():
     """
 
     with open("./pyproject.toml", mode='rb') as fp:
-        pyproject = tomli.load(fp)
+        pyproject = tomllib.load(fp)
     
     optional_dependencies_in_toml = {
         k: v

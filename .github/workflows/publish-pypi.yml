@@ -139,7 +139,7 @@ jobs:
       matrix:
         # The minimum Python of requires-python and the latest one, each with
         # the newest dependencies that support it.
-        python-version: ['3.10', '3.14']
+        python-version: ['3.11', '3.14']
     steps:
       # Only the scripts: the package comes from the wheel.
       - name: Checkout the release scripts

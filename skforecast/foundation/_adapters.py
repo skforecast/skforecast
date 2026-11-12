@@ -3564,9 +3564,7 @@ class T0Adapter(_AdapterBase):
     The other inference options of `T0Forecaster.predict` keep the default
     of the installed `tfc-t0`. Since `tfc-t0` 0.6.1, a covariate whose
     observed values are all equal over the context of a series is ignored
-    for that series (`drop_constant_covariates`). `tfc-t0` 0.6.1 requires
-    Python 3.11 or later: on Python 3.10, pip installs 0.6.0, which keeps
-    those covariates, so the forecasts can differ between Python versions.
+    for that series (`drop_constant_covariates`).
 
     `tfc-t0` 0.6 or later is required, with its PyTorch runtime (the `torch`
     extra).
