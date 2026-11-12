@@ -847,9 +847,9 @@ def calculate_distance_from_holiday(
             stacklevel=2,
         )
         X = X.copy()
-        is_holiday = X[holiday_column].to_numpy()
-        is_holiday = np.where(X[holiday_column].isna(), False, is_holiday)
-        X[holiday_column] = is_holiday.astype(bool)
+        X[holiday_column] = np.where(
+            X[holiday_column].isna(), False, X[holiday_column].to_numpy()
+        ).astype(bool)
 
     if date_column is None:
         if not isinstance(X.index, pd.DatetimeIndex):
@@ -867,8 +867,8 @@ def calculate_distance_from_holiday(
             warnings.warn(
                 "Could not determine the frequency of the index. "
                 "The output column unit defaults to 'hours'. To avoid this "
-                "warning, either set `X.index.freq = pd.infer_freq(X.index)` "
-                "or pass an index with a known frequency.",
+                "warning, pass an index with a known frequency, for example "
+                "with `X.asfreq('D')`.",
                 UserWarning,
                 stacklevel=2,
             )

@@ -2048,8 +2048,41 @@ renombrados están en el commit `e947903`, el resto sin commit):
   `model_selection`): 5613 en verde, 1 omitido, 20 min; paquetes no
   cubiertos por esa pasada (`stats`, `plot`, `deep_learning`, `metrics`,
   `datasets`) sí lo están por la suite completa en p3 (fallos idénticos a
-  la base). Verify sellado. Queda el commit del usuario y, cuando exista
-  `0.28.x`, el rebase y la PR.
+  la base). Verify sellado. Commit `757468559`, subido en
+  `chore/pandas3-compat` el 2026-11-05.
+
+**PR 1 + 2 sobre `0.28.x`, el 2026-11-12**: en lugar de rebase, rama nueva
+`chore/pandas3-compat-0.28` desde `origin/0.28.x` en `05bb34de5` (subida de
+versión a 0.28.0) con `--no-track`, y cherry-pick de los dos commits
+(`013c21925` renombrados, `6b5572df4` módulo). Dos conflictos, ambos de
+imports (`_forecaster_recursive_classifier.py` y `utils/utils.py`),
+resueltos con las mismas líneas añadidas y quitadas que el original.
+Búsqueda en `skforecast/` de los patrones migrados (`copy=` en `astype` y
+`concat` de pandas, `pd.infer_freq`, `dayofweek`/`dayofyear`,
+`isinstance(..., DateOffset)`, `no_silent_downcasting`): ninguno nuevo en
+`0.28.x`. Entornos gemelos alineados en lo que afecta al rendimiento de
+pandas y numpy (`python-dateutil` 2.9.0.post0 en los tres).
+
+- Verify sobre la rama: lint sin hallazgos nuevos; tests afectados en p2
+  6221 en verde, 1 omitido y 1 fallo de entorno
+  (`test_backtesting_forecaster_warnings_of_fold_that_fails_in_process_same_as_n_jobs_1`:
+  ruta `c:` frente a `C:` en el aviso por la caché de `.pyc` reescrita por
+  pytest; pasa con el directorio en mayúscula y una caché nueva, y pasa en
+  la base); `test_pandas_compat.py` 12 en verde en 2.2.3, 2.3.3 y 3.1.0.
+- Revisión final del 2026-11-12, sin incidencias de fondo; detalles
+  corregidos: comentario de `infer_freq` (la opción existe desde pandas
+  3.1, no desde 3.0), `PANDAS_GE_3` con `.major` (una versión preliminar de
+  3.0 contaba como pandas 2), relleno de NaN de
+  `calculate_distance_from_holiday` en una expresión, y aviso de frecuencia
+  desconocida de esa función sin la recomendación de `pd.infer_freq` (que
+  avisa en pandas 3.1 y que ya ha fallado cuando se emite el aviso).
+- Pendiente (máquina ocupada): arnés `run_ab.py --identity --bench all
+  --memory --base origin/0.28.x` en p2 y p3 (salida en
+  `harness/results/pr12_028/`) y suite completa en p3 con `warnrec` en la
+  rama y en la base exportada, para comparar fallos con
+  `fallos_base_p3_2026-11-04.txt`. Después, push de la rama, PR contra
+  `0.28.x` y CI lanzada a mano (`unit-tests-min-deps.yml` y
+  `unit-tests-latest-deps.yml`).
 
 ### Historial de lo pendiente entre sesiones
 

@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 from pandas.tseries.frequencies import to_offset
 
-PANDAS_GE_3 = Version(pd.__version__) >= Version("3")
+PANDAS_GE_3 = Version(pd.__version__).major >= 3
 
 
 def concat(
@@ -118,8 +118,8 @@ def infer_freq(index: pd.DatetimeIndex) -> pd.offsets.BaseOffset | None:
         with pd.option_context("future.infer_freq_returns_offset", True):
             inferred = pd.infer_freq(index)
     except pd.errors.OptionError:
-        # pandas 2: the option does not exist and `pd.infer_freq` returns a
-        # string without warnings.
+        # pandas < 3.1: the option does not exist and `pd.infer_freq` returns
+        # a string without warnings.
         inferred = pd.infer_freq(index)
 
     return to_offset(inferred) if inferred is not None else None
