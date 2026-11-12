@@ -779,11 +779,10 @@ def _print_dataset_info(
     url = info['url']
     if '{version}' in url:
         url = url.format(version='main')
-    # rich wraps the text to the width of the console
     content = (
         f"[bold]Description:[/bold]\n{escape(info['description'])}\n\n"
         f"[bold]Source:[/bold]\n{escape(info['source'])}\n\n"
-        f"[bold]URL:[/bold]\n{escape(url)}"
+        f"[bold]URL:[/bold]\n[link={url}]{escape(url)}[/link]"
     )
 
     if shape is not None:
@@ -792,7 +791,7 @@ def _print_dataset_info(
         else:
             content += f"\n\n[bold]Shape:[/bold] {shape[0]} rows x {shape[1]} columns"
 
-    console.print(Panel(content, title=f"[bold]{dataset_name}[/bold]", expand=False))
+    console.print(Panel(content, title=f"[bold]{dataset_name}[/bold]", width=88))
 
 
 def fetch_dataset(
