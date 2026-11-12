@@ -12,6 +12,23 @@ All significant changes to this project are documented in this release file.
 
 
 
+## 0.28.0 <small>In development</small> { id="0.28.0" }
+
+The main changes in this release are:
+
+
+**Added**
+
+
+**Changed**
+
++ The panels of <code>[show_datasets_info]</code>, <code>[fetch_dataset]</code>, <code>[load_demo_dataset]</code> and the out-of-range summary of <code>[RangeDriftDetector]</code> are 88 characters wide, like the skforecast warnings, and the URL of each dataset is a clickable link. ([#1493](https://github.com/skforecast/skforecast/pull/1493))
+
+
+**Fixed**
+
+
+
 ## 0.27.0 <small>Nov 11, 2026</small> { id="0.27.0" }
 
 The main changes in this release are:
