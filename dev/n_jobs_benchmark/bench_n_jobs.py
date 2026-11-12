@@ -598,6 +598,20 @@ def resolve_config(config: str, n_cpus: int):
     return int(config)
 
 
+def cpu_seconds_used() -> float | None:
+    """
+    CPU time used by the whole machine since it started, in seconds. On a
+    machine that runs nothing else, its increase during a call is the CPU time
+    of the call, with its workers and threads.
+    """
+    try:
+        fields = [int(v) for v in Path("/proc/stat").read_text().split("\n")[0].split()[1:]]
+        idle = fields[3] + (fields[4] if len(fields) > 4 else 0)
+        return (sum(fields) - idle) / os.sysconf("SC_CLK_TCK")
+    except (OSError, ValueError, IndexError):
+        return None
+
+
 def process_memory() -> dict:
     """Memory of this process and of its descendants (the workers), in MB."""
     def status(pid, field):
@@ -632,8 +646,10 @@ def process_memory() -> dict:
                     grew = True
         family.discard(os.getpid())
         rss = [status(pid, "VmRSS") for pid in family]
+        peak = [status(pid, "VmHWM") for pid in family]
         out["n_descendants"] = len(family)
         out["descendants_rss_mb"] = sum(r for r in rss if r)
+        out["descendants_peak_mb"] = sum(r for r in peak if r)
     except OSError:
         pass
     return out
@@ -677,11 +693,17 @@ def op_timed(spec: dict) -> dict:
     while len(calls) < n_calls:
         recorder.reset()
         executor_before = _executor_state()
+        cpu_before = cpu_seconds_used()
         start = time.perf_counter()
         result = case["run"](n_jobs)
         seconds = time.perf_counter() - start
+        cpu_after = cpu_seconds_used()
         calls.append({
             "seconds": seconds,
+            "cpu_seconds": (
+                cpu_after - cpu_before
+                if cpu_before is not None and cpu_after is not None else None
+            ),
             "executor_before": executor_before,
             "executor_after": _executor_state(),
             "signature": result,
@@ -719,7 +741,7 @@ def _start_task(forecaster, seconds):
     """Task of the start block: one prediction, then a short wait."""
     forecaster.predict(steps=2)
     time.sleep(seconds)
-    return os.getpid()
+    return [os.getpid(), len(allowed_cpus()), os.environ.get("OMP_NUM_THREADS")]
 
 
 def _small_forecaster(window_features: bool):
@@ -763,12 +785,14 @@ def op_start(spec: dict) -> dict:
     calls = []
     for _ in range(spec["calls"]):
         start = time.perf_counter()
-        pids = Parallel(n_jobs=n_jobs)(
+        workers = Parallel(n_jobs=n_jobs)(
             delayed(_start_task)(forecaster, wait) for _ in range(n_jobs)
         )
         calls.append({
             "seconds": time.perf_counter() - start,
-            "n_workers_used": len(set(pids)),
+            "n_workers_used": len({w[0] for w in workers}),
+            "worker_cpus": sorted({w[1] for w in workers}),
+            "worker_omp_threads": sorted({str(w[2]) for w in workers}),
         })
     return {"n_cpus": n_cpus, "n_jobs": n_jobs, "wait": wait, "calls": calls,
             "post": process_memory()}
@@ -792,14 +816,15 @@ def op_resize(spec: dict) -> dict:
     calls = []
     for n_jobs in sequence:
         start = time.perf_counter()
-        pids = Parallel(n_jobs=n_jobs)(
+        workers = Parallel(n_jobs=n_jobs)(
             delayed(_start_task)(forecaster, wait) for _ in range(n_jobs)
         )
         calls.append({
             "n_jobs": n_jobs,
             "seconds": time.perf_counter() - start,
             "threads_per_worker": max(n_cpus // n_jobs, 1),
-            "n_workers_used": len(set(pids)),
+            "n_workers_used": len({w[0] for w in workers}),
+            "worker_omp_threads": sorted({str(w[2]) for w in workers}),
             **_executor_state(),
         })
     return {"n_cpus": n_cpus, "wait": wait, "calls": calls}
@@ -1072,6 +1097,15 @@ def op_info(spec: dict) -> dict:
         except Exception as error:
             out["os_threads_after_fit"][est] = f"ERROR: {error!r}"
     out["thread_pools"] = thread_pools()
+    try:
+        from importlib import metadata
+
+        out["packages"] = sorted(
+            f"{dist.metadata['Name']}=={dist.version}"
+            for dist in metadata.distributions() if dist.metadata["Name"]
+        )
+    except Exception as error:
+        out["packages"] = f"ERROR: {error!r}"
 
     # Cost of the first use of the window features (numba) in a new process.
     try:
@@ -1267,6 +1301,9 @@ def build_plan(levels: list[int], total: int, args) -> list[dict]:
         for case in ("bt_norefit", "bt_refit", "gs_norefit"):
             timed(p, r, case, THREAD_VARIANTS, ["1", "max"], cpus)
         timed(p, r, "bt_refit", ["hgb", "lgbm_1t", "xgb"], ["half", "all"], cpus)
+        # Fewer workers start faster: do they keep the gain without refit?
+        for case in ("bt_norefit", "gs_norefit"):
+            timed(p, r, case, ["xgb", "hgb", "catboost"], ["half"], cpus)
         timed(p, r, "ms_norefit", MULTISERIES, ["1", "max"], cpus)
         timed(p, r, "ms_refit", MULTISERIES, ["1", "max"], cpus)
         if args.direct:
@@ -1407,6 +1444,19 @@ def worker_checks(result: dict) -> list[str]:
     """
     problems = []
     calls = result.get("calls", [])
+    spec = result.get("spec", {})
+    if spec.get("op") == "start":
+        # The workers must see the CPUs of the emulated machine, and the
+        # threads that joblib gives them: cpu_count() // n_jobs.
+        expected = str(max(result["n_cpus"] // result["n_jobs"], 1))
+        for call in calls:
+            if call.get("worker_cpus") not in (None, [spec["cpus"]]):
+                problems.append(f"the workers see {call['worker_cpus']} CPUs")
+            if call.get("worker_omp_threads") not in (None, [expected]):
+                problems.append(
+                    f"OMP_NUM_THREADS of the workers is {call['worker_omp_threads']}"
+                )
+        return sorted(set(problems))
     for i, call in enumerate(calls):
         before, after = call.get("executor_before"), call.get("executor_after")
         if before is None or after is None or "error" in before or "error" in after:
@@ -1505,8 +1555,15 @@ def run(args) -> None:
     budget = args.budget_minutes * 60
     start = time.perf_counter()
     n_run = 0
+    stage = None
     for i, cell in enumerate(pending, start=1):
         elapsed = time.perf_counter() - start
+        if cell["stage"] != stage and elapsed <= budget:
+            stage = cell["stage"]
+            n_stage = sum(c["stage"] == stage for c in pending)
+            print(f"--- Stage {stage}: {n_stage} measures"
+                  f" (elapsed {elapsed / 60:.1f} of {args.budget_minutes:.0f} min)",
+                  flush=True)
         if elapsed > budget:
             print(f"Time budget reached ({args.budget_minutes} min): "
                   f"{len(pending) - i + 1} measures left. Run again to continue.")
@@ -1558,6 +1615,14 @@ def fmt(value, digits=2, suffix=""):
 
 def first_seconds(cells):
     return med([c["calls"][0]["seconds"] for c in cells])
+
+
+def next_cpu(cells):
+    """CPU seconds of the calls that follow the first one."""
+    return med([
+        med([call.get("cpu_seconds") for call in c["calls"][1:]])
+        for c in cells if len(c["calls"]) > 1
+    ])
 
 
 def next_seconds(cells):
@@ -1614,18 +1679,22 @@ def worker_summary(ok: list[dict]) -> str:
         r for r in timed
         if max(r["calls"][0].get("parallel_n_jobs") or [1]) > 1
     ]
-    bad = [(cell_key(r["spec"]), worker_checks(r)) for r in timed]
+    starts = [r for r in ok if r["spec"].get("op") == "start"]
+    bad = [(cell_key(r["spec"]), worker_checks(r)) for r in timed + starts]
     bad = [(key, problems) for key, problems in bad if problems]
     text = (
         f"{len(timed)} timed measures, {len(parallel)} in parallel. In all of"
         " them the first call started its workers and the following calls"
-        " reused the same ones"
+        f" reused the same ones. In the {len(starts)} measures of the start of"
+        " the workers, they saw the CPUs of their machine and the threads that"
+        " joblib gives them"
     )
     if not bad:
         return text + "."
     return (
-        f"{len(bad)} of {len(timed)} timed measures did NOT follow the first /"
-        " next protocol: " + "; ".join(f"{key} ({', '.join(p)})" for key, p in bad)
+        f"{len(bad)} of {len(timed) + len(starts)} measures did NOT pass the"
+        " checks of the workers: "
+        + "; ".join(f"{key} ({', '.join(p)})" for key, p in bad)
     )
 
 
@@ -1857,7 +1926,10 @@ def summarize(out_dir: Path) -> None:
                                        else None, 2, "x"),
                     fmt(med([c["post"].get("pickle_mb")
                              for cs in configs.values() for c in cs]), 1),
-                    fmt(med([c["post"].get("descendants_rss_mb") for c in par]), 0),
+                    fmt(med([c["post"].get("descendants_peak_mb")
+                             or c["post"].get("descendants_rss_mb") for c in par]), 0),
+                    fmt(next_cpu(seq) if seq else None, 1),
+                    fmt(next_cpu(par) if par else None, 1),
                     "yes" if same else "NO", extra,
                 ])
             lines += [f"### {CASE_NOTES.get(title, title)}", ""] + table(
@@ -1865,7 +1937,8 @@ def summarize(out_dir: Path) -> None:
                  "par first", "par next",
                  "speedup next", "start cost", "break-even", "rule", "auto first/next",
                  "auto vs best first", "auto vs best next", "estimate / real",
-                 "fit after par / seq", "model MB", "workers MB", "same result",
+                 "fit after par / seq", "model MB", "workers peak MB", "CPU s seq next",
+                 "CPU s par next", "same result",
                  "other configs (first/next)"], rows
             ) + [""]
 

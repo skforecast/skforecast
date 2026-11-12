@@ -131,10 +131,15 @@ todo su grupo de procesos, para que no quede ningún worker.
 **Tamaños de máquina.** Todos los CPU, y 8 y 4 CPU emulados fijando la
 afinidad del proceso antes de importar ninguna librería (un hilo por núcleo
 físico mientras quedan núcleos). joblib, OpenMP, LightGBM y CatBoost ven
-entonces una máquina de ese tamaño.
+entonces una máquina de ese tamaño. En el bloque `start` se comprueba además
+desde dentro de los workers: que ven los CPU de su máquina y los hilos que
+joblib les asigna (`cpu_count() // n_jobs`).
 
 **Configuraciones de `n_jobs`.** `1`, `max` (`cpu_count() - 1`, lo que usa
-`'auto'` cuando paraleliza), `auto`, y `half` y `all` en algunos casos.
+`'auto'` cuando paraleliza) y `auto`. En algunos casos, también `half` (la
+mitad de los CPU) y `all`: con refit, para ver cuál es el mejor número de
+procesos; sin refit, para ver si menos procesos, que arrancan antes, conservan
+la ganancia.
 
 ## Qué mide
 
@@ -168,12 +173,20 @@ entrenamiento, 8 exógenas, 48 lags y una media móvil de 72 horas) y
 **`ForecasterDirect`** queda fuera del plan por defecto: con 500 árboles,
 ajustar sus pasos en paralelo compensa siempre. Se incluye con `--direct`.
 
-Además de los tiempos, cada medida guarda: el `n_jobs` que llega a
-`joblib.Parallel`, lo que recibe y devuelve `limit_n_jobs_by_workload`, la
-duración de los ajustes del proceso principal, un ajuste suelto al final (para
-ver si una ejecución en paralelo ralentiza los ajustes posteriores), el tamaño
-del forecaster serializado, la memoria del proceso y de sus procesos hijos, y
-una firma de las predicciones para comprobar que no cambian.
+Además de los tiempos, cada medida guarda:
+
+- el `n_jobs` que llega a `joblib.Parallel`, y lo que recibe y devuelve
+  `limit_n_jobs_by_workload`;
+- la CPU consumida en cada llamada por toda la máquina (procesos e hilos), para
+  distinguir una opción más rápida de una que solo gasta más;
+- la duración de los ajustes del proceso principal, y un ajuste suelto al final
+  (para ver si una ejecución en paralelo ralentiza los ajustes posteriores);
+- el tamaño del forecaster serializado, y la memoria del proceso y de sus
+  workers (al final y su pico);
+- una firma de las predicciones, para comprobar que no cambian.
+
+`machine.json` guarda la máquina (CPU, núcleos, memoria), el commit de
+skforecast y la lista completa de paquetes del entorno con sus versiones.
 
 ## Orden y presupuesto
 
