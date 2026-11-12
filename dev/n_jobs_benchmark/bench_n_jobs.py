@@ -118,7 +118,8 @@ CASES = {
     # 16 folds of 240 steps, 15 refits: enough tasks for 15 workers.
     "bt_refit": {"op": "bt", "steps": 240, "refit": True, "n_val": None, "calls": 2},
     # 6 folds of 168 steps, 5 refits: fewer tasks than workers.
-    "bt_refit_small": {"op": "bt", "steps": 168, "refit": True, "n_val": 1008, "calls": 3},
+    "bt_refit_small": {"op": "bt", "steps": 168, "refit": True, "n_val": 1008,
+                       "calls": 3},
     # Grid search of 3 candidates, 40 folds of 24 steps each, without refit.
     "gs_norefit": {"op": "gs", "steps": 24, "refit": False, "n_val": 960, "calls": 2,
                    "n_candidates": 3},
@@ -212,7 +213,8 @@ def cpu_busy(seconds: float = 0.25) -> float | None:
     whether something else was using the machine.
     """
     def read():
-        fields = [int(v) for v in Path("/proc/stat").read_text().split("\n")[0].split()[1:]]
+        first_line = Path("/proc/stat").read_text().split("\n")[0]
+        fields = [int(v) for v in first_line.split()[1:]]
         idle = fields[3] + (fields[4] if len(fields) > 4 else 0)
         return idle, sum(fields)
 
@@ -605,7 +607,8 @@ def cpu_seconds_used() -> float | None:
     of the call, with its workers and threads.
     """
     try:
-        fields = [int(v) for v in Path("/proc/stat").read_text().split("\n")[0].split()[1:]]
+        first_line = Path("/proc/stat").read_text().split("\n")[0]
+        fields = [int(v) for v in first_line.split()[1:]]
         idle = fields[3] + (fields[4] if len(fields) > 4 else 0)
         return (sum(fields) - idle) / os.sysconf("SC_CLK_TCK")
     except (OSError, ValueError, IndexError):
@@ -850,7 +853,9 @@ def op_predict(spec: dict) -> dict:
     exog = data.drop(columns="users")
     forecaster = make_recursive(est, case_trees(spec))
     forecaster.fit(y=y.iloc[:n_train], exog=exog.iloc[:n_train])
-    X_train, _ = forecaster.create_train_X_y(y=y.iloc[:n_train], exog=exog.iloc[:n_train])
+    X_train, _ = forecaster.create_train_X_y(
+        y=y.iloc[:n_train], exog=exog.iloc[:n_train]
+    )
     X = np.ascontiguousarray(X_train.to_numpy(dtype=float))
     estimator = forecaster.estimator
     controller = ThreadpoolController()
@@ -891,7 +896,9 @@ def op_predict(spec: dict) -> dict:
     elif base == "catboost":
         variants["default"] = estimator.predict
         for k in thread_counts:
-            variants[f"native={k}"] = functools.partial(estimator.predict, thread_count=k)
+            variants[f"native={k}"] = functools.partial(
+                estimator.predict, thread_count=k
+            )
     else:
         raise ValueError(est)
 
@@ -1276,7 +1283,9 @@ def build_plan(levels: list[int], total: int, args) -> list[dict]:
         # Threads of the prediction.
         # Threads of the prediction: by rows and threads with 100, the default
         # and 1000 trees, and the loop of the forecaster with the default.
-        small = {"rows": (1, 50), "loop_folds": 5, "reps_inner": 2} if args.smoke else {}
+        small = (
+            {"rows": (1, 50), "loop_folds": 5, "reps_inner": 2} if args.smoke else {}
+        )
         for est in PREDICT:
             add(core_priority, 1, "predict", est, "inproc", cpus, op="predict", **small)
             for trees in (100, 1000):
@@ -1873,7 +1882,9 @@ def summarize(out_dir: Path) -> None:
                     else:
                         auto_time[label] = None
                 best = {
-                    "first": min([t for t in (seq_first, par_first) if t], default=None),
+                    "first": min(
+                        [t for t in (seq_first, par_first) if t], default=None
+                    ),
                     "next": min([t for t in (seq_next, par_next) if t], default=None),
                 }
                 regret = {
@@ -1995,7 +2006,9 @@ def summarize(out_dir: Path) -> None:
             "",
         ]
         rows = []
-        for (cpus, label), entries in sorted(policy.items(), key=lambda i: (-i[0][0], i[0][1])):
+        for (cpus, label), entries in sorted(
+            policy.items(), key=lambda item: (-item[0][0], item[0][1])
+        ):
             row = [cpus, label, len(entries)]
             for name in ("seq", "par", "auto", "best"):
                 row.append(fmt(sum(e[name] for e in entries), 1))
