@@ -196,7 +196,7 @@ To understand what can be done when initializing a forecaster with **skforecast*
 
 Exogenous variables are predictors that are independent of the model being used for forecasting, and **their future values must be known** in order to include them in the prediction process. The inclusion of exogenous variables can **enhance the accuracy of forecasts**.
 
-In skforecast, [exogenous variables](../user_guides/exogenous-variables.ipynb) can be easily included as predictors in all forecasting models. To ensure that their effects are accurately accounted for, it is crucial to include these variables during both the training and prediction phases. This will help to optimize the accuracy of forecasts and provide more reliable predictions.
+In skforecast, [exogenous variables](../user_guides/exogenous-variables.ipynb) can be easily included as predictors in all forecasting models. To ensure that their effects are accurately accounted for, it is crucial to include these variables during both the training and prediction phases. This will help to optimize the accuracy of forecasts and provide more reliable predictions. When an exogenous variable is a forecast itself, such as the weather, see [Forecasted exogenous variables](../user_guides/forecasted-exogenous-variables.ipynb) to evaluate the model without look-ahead bias.
 
 <p style="text-align: center">
     <img src="../img/matrix_transformation_with_exog_variable.png" style="width: 550px;">

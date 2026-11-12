@@ -244,6 +244,8 @@ forecaster.fit(y=y_train, exog=exog_train)
 predictions = forecaster.predict(steps=10, exog=exog_test)
 ```
 
+When an exogenous variable is a forecast itself (weather, prices, plans), a backtest that predicts with its observed values is optimistic (look-ahead bias). Build a point-in-time column instead: for each timestamp, the last forecast published at or before the moment it is predicted, derived from `initial_train_size`, `gap` and `fold_stride` of `TimeSeriesFold` (requires `fold_stride >= steps`). See the `backtesting-configuration` skill and the [Forecasted exogenous variables](https://skforecast.org/latest/user_guides/forecasted-exogenous-variables.html) guide.
+
 ## Categorical Exogenous Variables
 
 All ML forecasters (ForecasterRecursive, ForecasterDirect, ForecasterRecursiveMultiSeries, ForecasterDirectMultiVariate, ForecasterRecursiveClassifier) include a `categorical_features` parameter to handle categorical exogenous variables automatically.

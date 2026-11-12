@@ -173,6 +173,8 @@ The main changes in this release are:
 
 + Deprecated support for Python 3.10, which reached its end of life in October 2026. skforecast 0.27.0 is the last version that supports it: 0.28.0 will require Python 3.11 or later.
 
++ New user guide [Forecasted exogenous variables](../user_guides/forecasted-exogenous-variables.ipynb): how to backtest a model whose exogenous variables are forecasts themselves (weather, prices, plans) with the values available when each prediction is made, instead of the observed ones, which make the metrics optimistic, and how to use them in production. ([#1476](https://github.com/skforecast/skforecast/pull/1476))
+
 
 **Fixed**
 
