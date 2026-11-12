@@ -1,7 +1,8 @@
 # Notas del estudio de `n_jobs`: hallazgos preliminares
 
-Estado a 12 de noviembre de 2026. Son conclusiones provisionales, a la espera
-de la segunda repetición del benchmark en la EC2. Sirven para retomar el
+Estado a 12 de noviembre de 2026. Son las conclusiones provisionales, previas
+a la segunda repetición del benchmark en la EC2. Las definitivas están en
+`REPORT.md`; aquí queda el detalle del prototipo de serialización. Sirven para retomar el
 análisis final sin depender de la conversación en la que se hicieron.
 
 ## Origen
