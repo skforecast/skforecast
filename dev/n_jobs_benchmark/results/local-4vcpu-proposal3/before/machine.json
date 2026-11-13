@@ -1,0 +1,224 @@
+{
+ "platform": "Linux-6.18.44-fc-v445-x86_64-with-glibc2.39",
+ "python": "3.12.3",
+ "executable": "/root/.venvs/skforecast/bin/python",
+ "os_cpu_count": 4,
+ "allowed_cpus": [
+  0,
+  1,
+  2,
+  3
+ ],
+ "cores": [
+  [
+   0
+  ],
+  [
+   1
+  ],
+  [
+   2
+  ],
+  [
+   3
+  ]
+ ],
+ "env": {},
+ "lscpu": "Architecture:                            x86_64\nCPU op-mode(s):                          32-bit, 64-bit\nAddress sizes:                           52 bits physical, 57 bits virtual\nByte Order:                              Little Endian\nCPU(s):                                  4\nOn-line CPU(s) list:                     0-3\nVendor ID:                               GenuineIntel\nModel name:                              Intel(R) Xeon(R) Processor @ 2.10GHz\nCPU family:                              6\nModel:                                   207\nThread(s) per core:                      1\nCore(s) per socket:                      4\nSocket(s):                               1\nStepping:                                2\nBogoMIPS:                                4200.00\nFlags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology nonstop_tsc cpuid tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves avx_vnni avx512_bf16 wbnoinvd arat avx512vbmi umip avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid cldemote movdiri movdir64b fsrm md_clear serialize tsxldtrk amx_bf16 avx512_fp16 amx_tile amx_int8 arch_capabilities\nHypervisor vendor:                       KVM\nVirtualization type:                     full\nL1d cache:                               192 KiB (4 instances)\nL1i cache:                               128 KiB (4 instances)\nL2 cache:                                8 MiB (4 instances)\nL3 cache:                                260 MiB (1 instance)\nNUMA node(s):                            1\nNUMA node0 CPU(s):                       0-3\nVulnerability Gather data sampling:      Not affected\nVulnerability Ghostwrite:                Not affected\nVulnerability Indirect target selection: Not affected\nVulnerability Itlb multihit:             Not affected\nVulnerability L1tf:                      Not affected\nVulnerability Mds:                       Not affected\nVulnerability Meltdown:                  Not affected\nVulnerability Mmio stale data:           Not affected\nVulnerability Old microcode:             Not affected\nVulnerability Reg file data sampling:    Not affected\nVulnerability Retbleed:                  Not affected\nVulnerability Spec rstack overflow:      Not affected\nVulnerability Spec store bypass:         Mitigation; Speculative Store Bypass disabled via prctl\nVulnerability Spectre v1:                Mitigation; usercopy/swapgs barriers and __user pointer sanitization\nVulnerability Spectre v2:                Mitigation; Enhanced / Automatic IBRS; IBPB conditional; PBRSB-eIBRS SW sequence; BHI Vulnerable\nVulnerability Srbds:                     Not affected\nVulnerability Tsa:                       Not affected\nVulnerability Tsx async abort:           Not affected\nVulnerability Vmscape:                   Not affected\n",
+ "mem_total_gb": 16.5,
+ "git_commit": "15c7be63bf76f2b55f4a00135f71c4878507c0fd",
+ "git_status": "",
+ "levels": {
+  "4": [
+   0,
+   1,
+   2,
+   3
+  ]
+ },
+ "schema": 1,
+ "args": {
+  "command": "run",
+  "budget_minutes": 30.0,
+  "out": "/tmp/claude-0/-home-user-skforecast/36d153c3-6ec4-5d68-b7c0-d9679bf80ca2/scratchpad/p3_before",
+  "smoke": false,
+  "smoke_full": false,
+  "cpus": null,
+  "reps": 1,
+  "size": "S",
+  "trees": 500,
+  "rf_trees": 100,
+  "direct": false,
+  "blocks": [
+   "bt_norefit"
+  ],
+  "estimators": [
+   "hgb",
+   "catboost",
+   "xgb"
+  ],
+  "max_priority": 4,
+  "seed": 123,
+  "list": false,
+  "refresh_info": false
+ },
+ "prepare": {
+  "bike": [
+   14448,
+   9
+  ],
+  "sales": [
+   1826,
+   50
+  ],
+  "cell_seconds": 34.47692219699991
+ },
+ "libraries": {
+  "4": {
+   "cell_seconds": 6.734289217000082,
+   "ok": true,
+   "n_cpus": 4,
+   "physical_cores": 4,
+   "os_cpu_count": 4,
+   "affinity": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "versions": {
+    "skforecast": "0.28.0",
+    "numpy": "2.5.4",
+    "pandas": "2.3.3",
+    "sklearn": "1.9.1",
+    "scipy": "1.18.1",
+    "joblib": "1.6.0",
+    "threadpoolctl": "3.8.0",
+    "lightgbm": "4.7.0",
+    "xgboost": "3.4.1",
+    "catboost": "1.2.10",
+    "numba": "0.68.1",
+    "optuna": "5.0.0"
+   },
+   "os_threads_after_fit": {
+    "ridge": [
+     8,
+     8
+    ],
+    "lgbm": [
+     8,
+     11
+    ],
+    "xgb": [
+     11,
+     14
+    ],
+    "hgb": [
+     14,
+     14
+    ],
+    "catboost": [
+     14,
+     17
+    ],
+    "rf": [
+     17,
+     17
+    ],
+    "rf_all": [
+     17,
+     19
+    ]
+   },
+   "skforecast_file": "/home/user/skforecast/skforecast/__init__.py",
+   "thread_pools": [
+    [
+     "openmp",
+     "libgomp.so.1.0.0",
+     4
+    ],
+    [
+     "blas",
+     "libscipy_openblas-5f890258.so",
+     4
+    ],
+    [
+     "openmp",
+     "libgomp-e985bcbb.so.1.0.0",
+     4
+    ],
+    [
+     "blas",
+     "libscipy_openblas64_-f48b354e.so",
+     4
+    ]
+   ],
+   "packages": [
+    "Mako==1.4.3",
+    "MarkupSafe==3.0.4",
+    "PyYAML==6.0.3",
+    "Pygments==2.21.0",
+    "SQLAlchemy==2.1.8",
+    "alembic==1.20.1",
+    "catboost==1.2.10",
+    "cloudpickle==3.1.2",
+    "colorlog==6.12.0",
+    "contourpy==1.4.0",
+    "coverage==7.17.3",
+    "cycler==0.12.1",
+    "execnet==2.1.2",
+    "fonttools==4.68.0",
+    "formulaic==1.2.2",
+    "graphviz==0.21",
+    "iniconfig==2.3.1",
+    "interface_meta==2.0.1",
+    "joblib==1.6.0",
+    "kiwisolver==1.5.1",
+    "lightgbm==4.7.0",
+    "llvmlite==0.50.0",
+    "markdown-it-py==4.3.0",
+    "matplotlib==3.11.2",
+    "mdurl==0.1.2",
+    "narwhals==2.28.0",
+    "numba==0.68.1",
+    "numpy==2.5.4",
+    "nvidia-nccl-cu13==2.32.6",
+    "optuna==5.0.0",
+    "packaging==26.3",
+    "pandas==2.3.3",
+    "patsy==1.0.3",
+    "pillow==13.0.0",
+    "plotly==7.1.0",
+    "pluggy==1.7.0",
+    "prettytable==3.18.0",
+    "pyarrow==26.0.1",
+    "pyparsing==3.3.3",
+    "pytest-cov==7.1.0",
+    "pytest-github-actions-annotate-failures==0.4.2",
+    "pytest-xdist==3.8.0",
+    "pytest==9.2.0",
+    "python-dateutil==4.0.0",
+    "pytz==2026.6",
+    "rich==15.0.0",
+    "ruff==0.17.5",
+    "scikit-learn==1.9.1",
+    "scipy==1.18.1",
+    "six==1.17.0",
+    "skforecast==0.28.0",
+    "skops==0.16.0",
+    "statsmodels==0.15.0",
+    "threadpoolctl==3.8.0",
+    "tomli==2.5.0",
+    "tqdm==4.70.1",
+    "typing_extensions==4.16.0",
+    "tzdata==2026.6",
+    "wcwidth==0.9.4",
+    "wrapt==2.5.2",
+    "xgboost==3.4.1"
+   ],
+   "window_features_first_call": 0.00015742899995530024,
+   "window_features_second_call": 8.170199998858152e-05,
+   "child_seconds": 6.327780353999856
+  }
+ }
+}
