@@ -183,6 +183,12 @@ ralentizarse (de 1,64 veces a entre 0,98 y 1,06) y el de LightGBM también (de
   caliente en paralelo con 16 CPU. XGBoost, LightGBM con un hilo y CatBoost
   siguen perdiendo en frío y ganan poco en caliente; RandomForest sigue
   perdiendo. Ver `results/ec2-proposal1/README.md`.
+- **Medido (rama `perf/n-jobs-auto-prediction-workload`, versión mínima):**
+  sin refit, con HistGB o CatBoost, se predice el primer fold en el proceso
+  principal y se paraleliza el resto si la predicción estimada supera 6 s
+  (Linux y macOS) o 12 s (Windows). HistGB con `'auto'` pasa de 19,2 a 8,1 s
+  en frío y de 19,1 a 5,0 en caliente con 16 CPU; CatBoost sigue en un
+  proceso. Detalle en `results/ec2-proposal3/README.md`.
 
 ### 4. Decisión de criterio: `cpu_count()` en lugar de `cpu_count() - 1`
 
