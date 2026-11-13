@@ -326,7 +326,8 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict():
                 "2016-08-05",
                 "2016-08-05",
                 "2016-08-05",
-            ]
+            ],
+            dtype="datetime64[ns]"
         ),
     )
 
@@ -503,7 +504,8 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict_unknown_lev
                 "2016-08-05",
                 "2016-08-05",
                 "2016-08-05",
-            ]
+            ],
+            dtype="datetime64[ns]"
         ),
     )
 
@@ -680,7 +682,8 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict_unknown_lev
                 "2016-08-05",
                 "2016-08-05",
                 "2016-08-05",
-            ]
+            ],
+            dtype="datetime64[ns]"
         ),
     )
 
@@ -858,7 +861,8 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict_encoding_No
                 "2016-08-05",
                 "2016-08-05",
                 "2016-08-05",
-            ]
+            ],
+            dtype="datetime64[ns]"
         ),
     )
 
@@ -1036,7 +1040,8 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict_encoding_No
                 "2016-08-05",
                 "2016-08-05",
                 "2016-08-05",
-            ]
+            ],
+            dtype="datetime64[ns]"
         ),
     )
 

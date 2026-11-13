@@ -1455,6 +1455,35 @@ def test_output_backtesting_foundation_fold_skipped_when_no_levels_to_predict():
     pd.testing.assert_frame_equal(backtest_predictions, expected_predictions)
 
 
+def test_output_backtesting_foundation_level_dtype_when_fold_skipped_single_series():
+    """
+    Test that, with a single series, a skipped fold does not change the dtype
+    of the `level` column: it is the text dtype of pandas (`object` in pandas
+    2, `str` in pandas 3), as when no fold is skipped.
+    """
+    cv = TimeSeriesFold(
+        steps=3,
+        initial_train_size=38,
+        refit=False,
+        verbose=False,
+    )
+    with patch(
+        "skforecast.model_selection._validation.deepcopy_forecaster",
+        side_effect=deepcopy,
+    ):
+        _, backtest_predictions = backtesting_foundation(
+            forecaster=make_forecaster(),
+            series=series_dict_hetero["s2"],
+            cv=cv,
+            metric="mean_absolute_error",
+            verbose=False,
+            show_progress=False,
+        )
+
+    assert backtest_predictions["fold"].unique().tolist() == [0, 2, 3]
+    assert backtest_predictions["level"].dtype == pd.Series(["s2"]).dtype
+
+
 def test_output_backtesting_foundation_all_folds_skipped():
     """
     Test that, when the requested level ends before every test window, every

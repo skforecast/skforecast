@@ -136,6 +136,36 @@ def test_output_expand_index_when_index_is_tz_aware_and_utc_anchored(
     'freq, start, tz, n_index, steps',
     [
         ('D',  '2025-10-15', 'Europe/Madrid', 7, 10),
+        ('W',  '2025-09-07', 'America/New_York', 5, 6),
+        ('MS', '2025-06-01', 'America/New_York', 4, 8),
+        ('QS', '2025-01-01', 'Europe/Madrid', 4, 4),
+        ('QS', '2025-01-01', 'America/New_York', 4, 4),
+    ],
+    ids=lambda x: f'{x}'
+)
+def test_output_expand_index_when_index_is_tz_aware_and_utc_anchored_without_freq(
+    freq, start, tz, n_index, steps
+):
+    """
+    Test expand_index when the index is timezone-aware, advances in fixed UTC
+    steps and has no frequency (pandas 3 `tz_convert` drops it). The frequency
+    must be inferred on the UTC timestamps: in local time it is `ME` instead
+    of `MS` west of UTC (the new index would be one day early), or none.
+    """
+    full_index = pd.date_range(
+        start=start, periods=n_index + steps, freq=freq, tz='UTC'
+    ).tz_convert(tz)
+    index = pd.DatetimeIndex(full_index[:n_index].to_list())
+    expected = full_index[n_index:]
+    results = expand_index(index, steps=steps)
+
+    pd.testing.assert_index_equal(results, expected)
+
+
+@pytest.mark.parametrize(
+    'freq, start, tz, n_index, steps',
+    [
+        ('D',  '2025-10-15', 'Europe/Madrid', 7, 10),
         ('D',  '2026-03-20', 'Europe/Madrid', 7, 14),
         ('D',  '2025-10-15 08:00', 'Europe/Madrid', 7, 10),
         ('D',  '2025-10-20', 'Europe/Madrid', 10, 170),

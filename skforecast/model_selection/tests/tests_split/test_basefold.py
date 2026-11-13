@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from ....exceptions import IgnoredArgumentWarning
 from skforecast.model_selection._split import BaseFold
+from skforecast.utils._pandas_compat import PANDAS_GE_3
 
 
 valid_params = {
@@ -368,17 +369,32 @@ def test_basefold_extract_index_when_X_is_dict():
 
 
 @pytest.mark.parametrize(
+    "freq",
+    [
+        pytest.param(
+            "D",
+            marks=pytest.mark.skipif(
+                PANDAS_GE_3, reason="Since pandas 3, `tz_convert` drops 'D'."
+            ),
+        ),
+        "24h",
+    ],
+    ids=lambda freq: f"freq: {freq}"
+)
+@pytest.mark.parametrize(
     "start", ["2025-10-01", "2026-03-01"], ids=lambda start: f"start: {start}"
 )
-def test_basefold_extract_index_when_X_is_dict_tz_aware_and_utc_anchored(start):
+def test_basefold_extract_index_when_X_is_dict_tz_aware_and_utc_anchored(start, freq):
     """
     Test that the index is correctly extracted when X is a dict of series with
     a timezone-aware index that advances in fixed UTC steps (created in UTC and
-    converted to a local timezone) and crosses a daylight saving change.
+    converted to a local timezone) and crosses a daylight saving change. With
+    'D' the index keeps its frequency only in pandas 2; '24h' is the frequency
+    that keeps it in both versions.
     """
     cv = BaseFold()
     expected_index = pd.date_range(
-        start=start, periods=50, freq="D", tz="UTC"
+        start=start, periods=50, freq=freq, tz="UTC"
     ).tz_convert("Europe/Madrid")
     X = {
         "a": pd.Series(np.arange(40), index=expected_index[:40]),
@@ -438,10 +454,62 @@ def test_basefold_extract_index_raise_error_when_X_is_dict_with_series_with_diff
     msg = re.escape(
         "If `X` is a dictionary, all series must have a Pandas "
         "RangeIndex or DatetimeIndex with the same step/frequency. "
-        "Found frequencies: [<Day>, <2 * Days>]"
+        "Found frequencies: [<2 * Days>, <Day>]"
     )
     with pytest.raises(ValueError, match=msg):
         cv._extract_index(X)
+
+
+@pytest.mark.parametrize(
+    "index_b, expected_freqs",
+    [
+        (pd.date_range(start="2022-01-01", periods=10, freq="MS"), "[<Day>, <MonthBegin>]"),
+        (pd.RangeIndex(start=0, stop=10, step=1), "[1, <Day>]"),
+    ],
+    ids=["Day and MonthBegin", "Day and step"],
+)
+def test_basefold_extract_index_raise_error_when_X_is_dict_with_freqs_that_cannot_be_compared(
+    index_b, expected_freqs
+):
+    """
+    Test that ValueError (not TypeError) is raised when X is a dict with
+    series whose frequencies cannot be compared.
+    """
+    cv = BaseFold()
+    X = {
+        "a": pd.Series(np.arange(10), index=pd.date_range(start="2022-01-01", periods=10, freq="D")),
+        "b": pd.Series(np.arange(10), index=index_b),
+    }
+    msg = re.escape(
+        "If `X` is a dictionary, all series must have a Pandas "
+        "RangeIndex or DatetimeIndex with the same step/frequency. "
+        f"Found frequencies: {expected_freqs}"
+    )
+    with pytest.raises(ValueError, match=msg):
+        cv._extract_index(X)
+
+
+@pytest.mark.parametrize("tz", [None, "Europe/Madrid"], ids=lambda tz: f"tz: {tz}")
+def test_basefold_extract_index_raise_error_when_X_is_dict_with_series_without_freq(tz):
+    """
+    Test that ValueError is raised when X is a dict with a series without
+    frequency, and that the message explains how to keep it when the index
+    is timezone-aware, with pandas 3 (its `tz_convert` drops 'D').
+    """
+    cv = BaseFold()
+    index = pd.date_range(start="2022-01-01", periods=10, freq="D", tz=tz)
+    X = {
+        "a": pd.Series(np.arange(10), index=index),
+        "b": pd.Series(np.arange(10), index=pd.DatetimeIndex(index.to_list())),
+    }
+    msg = re.escape(
+        "If `X` is a dictionary, all series must have a Pandas "
+        "RangeIndex or DatetimeIndex with the same step/frequency. "
+        "Found series with no frequency or step."
+    )
+    with pytest.raises(ValueError, match=msg) as exc_info:
+        cv._extract_index(X)
+    assert ("freq='24h'" in str(exc_info.value)) == (tz is not None and PANDAS_GE_3)
 
 
 def test_basefold_set_params_TypeError_non_dict():

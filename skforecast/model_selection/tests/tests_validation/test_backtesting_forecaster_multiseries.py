@@ -1582,7 +1582,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
             [1403.93625654, 2013.4379576 ,        np.nan, 7285.52781428],
             [1403.93625654, 2013.4379576 ,        np.nan, 7285.52781428]
         ]),
-        index=pd.date_range('2016-08-01', periods=10, freq='D'),
+        index=pd.date_range('2016-08-01', periods=10, freq='D', unit='ns'),
         columns=['id_1000', 'id_1001', 'id_1003', 'id_1004']
     )
     expected_predictions.insert(1, 'fold', [0] * 10)
@@ -1680,7 +1680,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
             [1350.672861399203 , 2262.059553163019 ,             np.nan, 8711.415912895141],
             [1351.2038198214527, 2342.99402742723  ,             np.nan, 8651.787902986322]
         ]),
-        index=pd.date_range('2016-08-01', periods=10, freq='D'),
+        index=pd.date_range('2016-08-01', periods=10, freq='D', unit='ns'),
         columns=['id_1000', 'id_1001', 'id_1003', 'id_1004']
     )
     expected_predictions.insert(1, 'fold', [0] * 10)
@@ -1882,7 +1882,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
                        [1403.93625654, 2013.4379576, np.nan, 7285.52781428],
                        [1403.93625654, 2013.4379576, np.nan, 7285.52781428]]),
         columns=['id_1000', 'id_1001', 'id_1003', 'id_1004'],
-        index=pd.date_range('2016-08-01', periods=10, freq='D')
+        index=pd.date_range('2016-08-01', periods=10, freq='D', unit='ns')
     )
     expected_predictions.insert(1, 'fold', [0] * 10)
     expected_predictions = expected_df_to_long_format(
@@ -2067,7 +2067,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
             [1473.95692547, 3159.99921219,        np.nan, 6740.53028097],
             [1596.51499989, 3449.40467366,        np.nan, 7172.21235605],
             [1572.31317919, 3507.56355926,        np.nan, 7506.35124681]]),
-        index=pd.date_range('2016-08-01', periods=10, freq='D'),
+        index=pd.date_range('2016-08-01', periods=10, freq='D', unit='ns'),
         columns=['id_1000', 'id_1001', 'id_1003', 'id_1004']
     )
     expected_predictions.insert(1, 'fold', [0] * 10)
@@ -2184,7 +2184,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSerie
             [ 1768.39356058, 13476.42137718,         np.nan,  7960.28068817],
             [ 1902.92132925, 16618.90352301,         np.nan,  8691.77459165],
             [ 1930.50552359, 18784.85993513,         np.nan,  8759.63500202]]),
-        index=pd.date_range('2016-08-01', periods=10, freq='D'),
+        index=pd.date_range('2016-08-01', periods=10, freq='D', unit='ns'),
         columns=['id_1000', 'id_1001', 'id_1003', 'id_1004']
     )
     expected_predictions.insert(1, 'fold', [0] * 10)
@@ -4562,7 +4562,7 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
                     ['2020-02-08', '2020-02-09', '2020-02-10', '2020-02-11', 
                      '2020-02-12', '2020-02-13', '2020-02-14', '2020-02-15', 
                      '2020-02-16', '2020-02-17', '2020-02-18', '2020-02-19'],
-                    dtype='datetime64[ns]', freq=None)
+                    freq=None)
     )
     expected_predictions.insert(1, 'fold', [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
     expected_predictions = expected_df_to_long_format(

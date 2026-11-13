@@ -22,6 +22,9 @@ from .fixtures_forecaster_recursive_multiseries import (
     exog_dict_unordered
 )
 
+# Default dtype of a text column: object in pandas 2, str in pandas 3
+STR_DTYPE = pd.Series(['a']).dtype
+
 
 def test_create_train_X_y_TypeError_when_exog_is_categorical_of_no_int():
     """
@@ -914,7 +917,7 @@ def test_create_train_X_y_output_when_series_10_and_exog_is_series_of_bool_str(e
         None,
         None,
         ['exog'],
-        {'exog': np.dtype(dtype)} if dtype is bool else {'exog': np.dtype('O')},
+        {'exog': np.dtype(dtype)} if dtype is bool else {'exog': STR_DTYPE},
         expected_dtypes_out,
         None
     )
@@ -999,7 +1002,7 @@ def test_create_train_X_y_output_when_series_10_and_exog_is_dataframe_of_bool_st
         ['exog_1', 'exog_2'],
         ({'exog_1': np.dtype(dtype), 'exog_2': np.dtype(dtype)} 
          if dtype is bool 
-         else {'exog_1': np.dtype('O'), 'exog_2': np.dtype('O')}),
+         else {'exog_1': STR_DTYPE, 'exog_2': STR_DTYPE}),
         ({'exog_1': np.dtype(dtype), 'exog_2': np.dtype(dtype)} 
          if dtype is bool 
          else {'exog_1': np.dtype('float64'), 'exog_2': np.dtype('float64')}),
@@ -1960,7 +1963,7 @@ def test_create_train_X_y_output_when_transformer_series_and_transformer_exog(tr
         None,
         None,
         ['exog_1', 'exog_2_a', 'exog_2_b'],
-        {'exog_1': np.dtype('float'), 'exog_2': np.dtype('O')},
+        {'exog_1': np.dtype('float'), 'exog_2': STR_DTYPE},
         {'exog_1': np.dtype('float'), 'exog_2_a': np.dtype('float'), 'exog_2_b': np.dtype('float')},
         {'1': pd.Series(
                   data  = np.array([7., 8., 9.]),
@@ -2193,7 +2196,7 @@ def test_create_train_X_y_output_when_transformer_series_and_transformer_exog_wi
         None,
         None,
         ['exog_1', 'exog_2_a', 'exog_2_b'],
-        {'exog_1': np.dtype('float'), 'exog_2': np.dtype('O')},
+        {'exog_1': np.dtype('float'), 'exog_2': STR_DTYPE},
         {'exog_1': np.dtype('float'), 'exog_2_a': np.dtype('float'), 'exog_2_b': np.dtype('float')},
          None
     )
@@ -2938,7 +2941,7 @@ def test_create_train_X_y_output_series_dict_and_exog_dict():
         None,
         None,
         ['exog_1', 'exog_2'],
-        {'exog_1': np.dtype('float'), 'exog_2': np.dtype('O')},
+        {'exog_1': np.dtype('float'), 'exog_2': STR_DTYPE},
         {'exog_1': np.dtype('float'), 'exog_2': np.dtype('float64')},
         {'l1': pd.Series(
                    data  = np.array([7., 8., 9.]),
@@ -3106,7 +3109,7 @@ def test_create_train_X_y_output_series_dict_and_exog_dict_ordinal_encoding(
         None,
         None,
         ['exog_1', 'exog_2'],
-        {'exog_1': np.dtype('float'), 'exog_2': np.dtype('O')},
+        {'exog_1': np.dtype('float'), 'exog_2': STR_DTYPE},
         {'exog_1': np.dtype('float'), 'exog_2': np.dtype('float64')},
         {
             "l1": pd.Series(
@@ -3601,7 +3604,7 @@ def test_create_train_X_y_output_series_dict_and_exog_dict_window_and_calendar_f
         ['roll_mean_3', 'roll_median_3', 'roll_sum_4'],
         ['weekend', 'day_of_week_sin', 'day_of_week_cos'],
         ['exog_1', 'exog_2'],
-        {'exog_1': np.dtype('float'), 'exog_2': np.dtype('O')},
+        {'exog_1': np.dtype('float'), 'exog_2': STR_DTYPE},
         {'exog_1': np.dtype('float'), 'exog_2': np.dtype('float64')},
         {'l1': pd.Series(
                    data  = np.array([6., 7., 8., 9.]),
@@ -4354,11 +4357,11 @@ def test_create_train_X_y_output_when_exog_dict_object_column_with_different_val
     pd.testing.assert_frame_equal(results[0], expected[0])
     pd.testing.assert_series_equal(results[1], expected[1])
     assert results[6] == ['exog_2']
-    assert results[10] == {'exog_1': np.dtype(float), 'exog_2': np.dtype(object)}
+    assert results[10] == {'exog_1': np.dtype(float), 'exog_2': STR_DTYPE}
     assert results[11] == {'exog_1': np.dtype(float), 'exog_2': np.dtype(float)}
     pd.testing.assert_index_equal(
         pd.Index(forecaster.categorical_encoder.categories_[0]),
-        pd.Index(['a', 'b', 'c', 'd', np.nan], dtype=object)
+        pd.Index(['a', 'b', 'c', 'd', np.nan], dtype=STR_DTYPE)
     )
 
 
@@ -4825,7 +4828,7 @@ def test_create_train_X_y_output_when_int_exog_columns_are_inserted_or_concatena
     expected_exog_float = pd.DataFrame(
         data    = np.vstack([exog_float[2:], exog_float[2:] + 1000]),
         index   = expected_index,
-        columns = float_cols
+        columns = pd.Index(float_cols, dtype=STR_DTYPE)
     )
     expected_exog_int = pd.DataFrame(
         data    = np.vstack([exog_int[2:], exog_int[2:] + 1000]),
@@ -5195,7 +5198,7 @@ def test_create_train_X_y_output_when_exog_dict_window_features_transformers_and
         ['roll_ratio_min_max_4', 'roll_median_4'],
         None,
         ['col_1', 'col_2_a', 'col_2_b'],
-        {'col_1': np.dtype('float'), 'col_2': np.dtype('O')},
+        {'col_1': np.dtype('float'), 'col_2': STR_DTYPE},
         {'col_1': np.dtype('float'), 'col_2_a': np.dtype('float'),
          'col_2_b': np.dtype('float')},
         {'l1': pd.Series(

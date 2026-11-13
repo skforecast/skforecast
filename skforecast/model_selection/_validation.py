@@ -3124,7 +3124,9 @@ def _backtesting_foundation(
             col_names = ["pred"] if quantiles is None else [f"q_{q}" for q in quantiles]
             pred = pd.DataFrame(
                 {
-                    "level": pd.Series(dtype=object),
+                    # NOTE: `str` is `object` in pandas 2. In pandas 3, `object`
+                    # would turn the `str` column of the other folds into `object`.
+                    "level": pd.Series(dtype=str),
                     **{col: pd.Series(dtype=float) for col in col_names},
                 },
                 index=span_index[:0],

@@ -8,6 +8,7 @@ import pandas as pd
 from skforecast.exceptions import IgnoredArgumentWarning, InputTypeWarning
 from skforecast.preprocessing import reshape_series_wide_to_long
 from skforecast.utils import check_preprocess_series
+from skforecast.utils._pandas_compat import PANDAS_GE_3
 from skforecast.recursive.tests.tests_forecaster_recursive_multiseries.fixtures_forecaster_recursive_multiseries import (
     series_wide_range,
     series_wide_dt,
@@ -43,7 +44,7 @@ def test_TypeError_check_preprocess_series_when_series_is_pandas_DataFrame_Multi
     err_msg = re.escape(
         "The second level of the MultiIndex in `series` must be a pandas "
         "DatetimeIndex with the same frequency for each series. "
-        "Found <class 'pandas.core.indexes.base.Index'>."
+        f"Found {type(series.index.levels[1])}."
     )
     with pytest.raises(TypeError, match = err_msg):
         check_preprocess_series(series=series)
@@ -131,13 +132,31 @@ def test_ValueError_check_preprocess_series_when_series_is_dict_with_different_f
         "RangeIndex or DatetimeIndex with the same step/frequency. "
         "If it a MultiIndex DataFrame, the second level must be a DatetimeIndex "
         "with the same frequency for each series. "
-        "Found frequencies: [<Day>, <2 * Days>]"
+        "Found frequencies: [<2 * Days>, <Day>]"
     )
     with pytest.raises(ValueError, match = err_msg):
         check_preprocess_series(series = series_dict)
 
 
-@pytest.mark.parametrize("index_l2, expected_freqs", 
+@pytest.mark.parametrize("tz", [None, "Europe/Madrid"], ids=lambda tz: f"tz: {tz}")
+def test_ValueError_check_preprocess_series_message_when_series_without_freq_is_tz_aware(tz):
+    """
+    Test the error message of a series without frequency explains how to keep
+    the frequency of a timezone-aware index with pandas 3 (its `tz_convert`
+    drops 'D'), and only then.
+    """
+    index = pd.date_range(start='2000-01-01', periods=10, freq='D', tz=tz)
+    series_dict = {
+        'l1': pd.Series(np.arange(10), index=index),
+        'l2': pd.Series(np.arange(10), index=pd.DatetimeIndex(index.to_list()))
+    }
+
+    with pytest.raises(ValueError, match="Found series with no frequency or step") as exc_info:
+        check_preprocess_series(series = series_dict)
+    assert ("freq='24h'" in str(exc_info.value)) == (tz is not None and PANDAS_GE_3)
+
+
+@pytest.mark.parametrize("index_l2, expected_freqs",
                          [(pd.date_range(start='2000-01-01', periods=10, freq='MS'), "[<Day>, <MonthBegin>]"),
                           (pd.RangeIndex(start=0, stop=10, step=1), "[1, <Day>]")], 
                          ids = ['Day and MonthBegin', 'Day and step'])
@@ -248,7 +267,7 @@ def test_ValueError_check_preprocess_series_when_series_is_DataFrame_MultiIndex_
         "RangeIndex or DatetimeIndex with the same step/frequency. "
         "If it a MultiIndex DataFrame, the second level must be a DatetimeIndex "
         "with the same frequency for each series. "
-        "Found frequencies: [<Day>, <3 * Days>]"
+        "Found frequencies: [<3 * Days>, <Day>]"
     )
     with pytest.raises(ValueError, match = err_msg):
         check_preprocess_series(series=series)

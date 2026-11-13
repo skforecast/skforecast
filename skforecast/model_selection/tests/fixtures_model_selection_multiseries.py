@@ -115,6 +115,10 @@ exog = pd.DataFrame({
 })
 
 THIS_DIR = Path(__file__).parent
+# NOTE: These fixtures were saved with pandas 2: their index is
+# `datetime64[ns]` in every pandas version (pandas 3 creates `datetime64[us]`
+# by default), so the tests that use them create the expected index in
+# nanoseconds.
 series_dict_nans = joblib.load(THIS_DIR/'fixture_sample_multi_series.joblib')
 exog_dict_nans = joblib.load(THIS_DIR/'fixture_sample_multi_series_exog.joblib')
 

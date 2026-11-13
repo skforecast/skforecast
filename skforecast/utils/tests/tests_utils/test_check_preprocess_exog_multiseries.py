@@ -18,6 +18,9 @@ from skforecast.recursive.tests.tests_forecaster_recursive_multiseries.fixtures_
     exog_dict_dt,
 )
 
+# Default dtype of a text column: object in pandas 2, str in pandas 3
+STR_DTYPE = pd.Series(['a']).dtype
+
 
 def test_TypeError_check_preprocess_exog_multiseries_when_exog_is_not_valid_type():
     """
@@ -54,7 +57,7 @@ def test_TypeError_check_preprocess_exog_multiseries_when_exog_is_not_dict_and_s
         "When input data are pandas MultiIndex DataFrame, "
         "`series` and `exog` second level index must be a "
         "pandas DatetimeIndex. Found `exog` index type: "
-        "<class 'pandas.core.indexes.base.Index'>."
+        f"{type(not_valid_exog.index.levels[1])}."
     )
     with pytest.raises(TypeError, match = err_msg):
         check_preprocess_exog_multiseries(
@@ -75,8 +78,8 @@ def test_TypeError_check_preprocess_exog_multiseries_when_exog_pandas_with_diffe
     err_msg = re.escape(
         "`exog` must have the same index type as `series`, pandas "
         "RangeIndex or pandas DatetimeIndex.\n"
-        "    `series` index type : <class 'pandas.core.indexes.datetimes.DatetimeIndex'>.\n"
-        "    `exog`   index type : <class 'pandas.core.indexes.range.RangeIndex'>."
+        f"    `series` index type : {pd.DatetimeIndex}.\n"
+        f"    `exog`   index type : {pd.RangeIndex}."
     )
     with pytest.raises(TypeError, match = err_msg):
         check_preprocess_exog_multiseries(
@@ -192,8 +195,12 @@ def test_TypeError_check_preprocess_exog_multiseries_when_exog_dict_with_differe
          'l2': pd.DataFrame(
                    {'exog_1': pd.Categorical(np.tile([0, 1], 25), categories=[0, 1, 2])}
                )},
+        {'l1': pd.DataFrame(
+                   {'exog_1': pd.Categorical(np.tile(['a', 'b'], 25))}
+               ),
+         'l2': pd.DataFrame({'exog_1': np.tile(['a', 'b'], 25)})},
     ],
-    ids=['float and str', 'category with different categories'],
+    ids=['float and str', 'category with different categories', 'category and text'],
 )
 def test_TypeError_check_preprocess_exog_multiseries_when_exog_dict_with_different_dtypes_same_column(
     not_valid_exog
@@ -220,6 +227,41 @@ def test_TypeError_check_preprocess_exog_multiseries_when_exog_dict_with_differe
             exog              = not_valid_exog,
             exog_dict         = {'l1': None, 'l2': None}
         )
+
+
+@pytest.mark.parametrize(
+    "exog_l2",
+    [
+        pd.DataFrame({'exog_1': [None] * 50}),
+        pd.DataFrame({'exog_1': np.tile(['a', 'b'], 25)}).astype(object),
+        pd.DataFrame({'exog_1': np.tile(['a', 'b'], 25)}).astype('string'),
+    ],
+    ids=['all missing (object)', 'text cast to object', 'string dtype'],
+)
+def test_output_check_preprocess_exog_multiseries_when_text_exog_has_different_text_dtypes(
+    exog_l2
+):
+    """
+    Test no error is raised when a text exog has different text dtypes in
+    different series. Since pandas 3 a text column is `str`, but `object` when
+    all its values are missing or when it is cast.
+    """
+    _, series_indexes = check_preprocess_series(series=series_dict_range)
+    exog = {
+        'l1': pd.DataFrame({'exog_1': np.tile(['a', 'b'], 25)}),
+        'l2': exog_l2,
+    }
+
+    exog_dict, exog_names_in_ = check_preprocess_exog_multiseries(
+        series_names_in_  = ['l1', 'l2'],
+        series_index_type = type(series_indexes['l1']),
+        exog              = exog,
+        exog_dict         = {'l1': None, 'l2': None}
+    )
+
+    assert exog_names_in_ == ['exog_1']
+    assert exog_dict['l1']['exog_1'].dtype == exog['l1']['exog_1'].dtype
+    assert exog_dict['l2']['exog_1'].dtype == exog_l2['exog_1'].dtype
 
 
 def test_ValueError_check_preprocess_exog_multiseries_when_exog_has_columns_named_as_series():
@@ -466,7 +508,10 @@ def test_output_check_preprocess_exog_multiseries_when_exog_DataFrame_MultiIndex
     for k in exog_dict:
         assert isinstance(exog_dict[k], pd.DataFrame)
         pd.testing.assert_frame_equal(exog_dict[k], expected_exog_dict[k])
-        pd.testing.assert_index_equal(exog_dict[k].index, series_dict[k].index)
+        # The exog index has no `freq`, compare only the timestamps
+        pd.testing.assert_index_equal(
+            exog_dict[k].index, pd.DatetimeIndex(series_dict[k].index, freq=None)
+        )
 
     assert exog_names_in_ == expected_exog_names_in_
 
@@ -512,7 +557,7 @@ def test_output_check_preprocess_exog_multiseries_when_exog_MultiIndex_with_diff
     expected_exog_dict['l1'].index.freq = None
     expected_exog_dict['l2'].index.freq = None
     expected_exog_dict['l2']['exog_2'] = np.nan
-    expected_exog_dict['l2']['exog_2'] = expected_exog_dict['l2']['exog_2'].astype(object)
+    expected_exog_dict['l2']['exog_2'] = expected_exog_dict['l2']['exog_2'].astype(STR_DTYPE)
     expected_exog_names_in_ = ['exog_1', 'exog_2']
     
     assert isinstance(exog_dict, dict)

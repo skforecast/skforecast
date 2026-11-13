@@ -19,6 +19,7 @@ from skforecast.model_selection import backtesting_forecaster_multiseries
 from skforecast.model_selection._utils import _predict_and_calculate_metrics_one_step_ahead_multiseries
 from skforecast.model_selection._split import TimeSeriesFold
 from skforecast.metrics import mean_absolute_scaled_error
+from skforecast.utils._pandas_compat import PANDAS_GE_3
 
 # Fixtures
 from ..fixtures_model_selection_multiseries import (
@@ -635,7 +636,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_Forecas
                              [27.55737144, 14.83278091, 11.57715035],
                              [27.21146088, 14.01618597,  8.15729678]]),
             columns = ['item_1', 'item_2', 'item_3'],
-            index = pd.date_range(start='2014-07-16', periods=10, freq='D')
+            index = pd.date_range(start='2014-07-16', periods=10, freq='D', unit='ns')
         )
     )
 
@@ -725,7 +726,7 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_output_Forecas
                              [26.24504265],
                              [26.26450239]]),
             columns = ['item_1'],
-            index = pd.date_range(start='2014-07-16', periods=10, freq='D')
+            index = pd.date_range(start='2014-07-16', periods=10, freq='D', unit='ns')
         )
     )
 
@@ -1156,15 +1157,30 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_equivalence_ba
     pd.testing.assert_frame_equal(pred_one_step_ahead, pred_backtesting, check_dtype=False)
 
 
-def test_predict_and_calculate_metrics_one_step_ahead_multiseries_when_index_is_tz_aware_and_utc_anchored():
+@pytest.mark.parametrize(
+    "freq",
+    [
+        pytest.param(
+            "D",
+            marks=pytest.mark.skipif(
+                PANDAS_GE_3, reason="Since pandas 3, `tz_convert` drops 'D'."
+            ),
+        ),
+        "24h",
+    ],
+    ids=lambda freq: f"freq: {freq}"
+)
+def test_predict_and_calculate_metrics_one_step_ahead_multiseries_when_index_is_tz_aware_and_utc_anchored(freq):
     """
     Test the output of _predict_and_calculate_metrics_one_step_ahead_multiseries
     when the series have a timezone-aware index that advances in fixed UTC steps
     (created in UTC and converted to a local timezone) and both the training
-    and the test sets cross a daylight saving change.
+    and the test sets cross a daylight saving change. With 'D' the index keeps
+    its frequency only in pandas 2; '24h' is the frequency that keeps it in
+    both versions.
     """
     index = pd.date_range(
-        start="2025-09-01", periods=250, freq="D", tz="UTC"
+        start="2025-09-01", periods=250, freq=freq, tz="UTC"
     ).tz_convert("Europe/Madrid")
     rng = np.random.default_rng(123)
     series = {

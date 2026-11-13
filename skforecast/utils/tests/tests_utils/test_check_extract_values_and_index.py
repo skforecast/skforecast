@@ -5,6 +5,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from skforecast.utils import check_extract_values_and_index
+from skforecast.utils._pandas_compat import PANDAS_GE_3
 
 
 def test_check_extract_values_and_index_ValueError_when_DatetimeIndex_without_frequency():
@@ -23,6 +24,25 @@ def test_check_extract_values_and_index_ValueError_when_DatetimeIndex_without_fr
     )
     with pytest.raises(ValueError, match = err_msg):
         check_extract_values_and_index(data=data, data_label='`exog`')
+
+
+@pytest.mark.parametrize("tz", [None, "Europe/Madrid"], ids=lambda tz: f"tz: {tz}")
+def test_check_extract_values_and_index_ValueError_message_when_DatetimeIndex_without_frequency_is_tz_aware(tz):
+    """
+    Check the error message explains how to keep the frequency of a
+    timezone-aware index with pandas 3 (its `tz_convert` drops 'D'), and
+    only then.
+    """
+
+    if tz is None:
+        index = pd.date_range("2021-03-20", periods=15, freq="D")
+    else:
+        index = pd.date_range("2021-03-20", periods=15, freq="D", tz="UTC").tz_convert(tz)
+    data = pd.Series(np.arange(15.0), index=pd.DatetimeIndex(index.to_list()), name='y')
+
+    with pytest.raises(ValueError, match="without a frequency") as exc_info:
+        check_extract_values_and_index(data=data, data_label='`y`')
+    assert ("freq='24h'" in str(exc_info.value)) == (tz is not None and PANDAS_GE_3)
 
 
 def test_check_extract_values_and_index_TypeError_when_no_DatetimeIndex_or_RangeIndex():

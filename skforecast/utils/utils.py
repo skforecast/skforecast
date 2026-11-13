@@ -81,6 +81,17 @@ _SKLEARN_C_CONTIGUOUS_ESTIMATORS = frozenset({
     'Ridge',
 })
 
+# Appended (it starts with a space) to the errors raised when a timezone-aware
+# DatetimeIndex has no frequency. Empty with pandas 2, where `tz_convert`
+# keeps the frequency.
+_TZ_MISSING_FREQ_HINT = (
+    " Since pandas 3, `tz_convert` drops calendar frequencies such as 'D', 'W' "
+    "or 'MS'. If the index advances in fixed UTC steps (created in UTC and "
+    "converted to a local timezone), use `freq='24h'` for daily or "
+    "`freq='168h'` for weekly data, which pandas keeps, or keep the index "
+    "in UTC."
+) if _pandas_compat.PANDAS_GE_3 else ""
+
 optional_dependencies = {
     'stats': [
         'statsmodels>=0.13.3, <0.16'
@@ -2057,9 +2068,10 @@ def check_extract_values_and_index(
     
     if isinstance(data.index, pd.DatetimeIndex):            
         if not ignore_freq and data.index.freq is None:
+            hint = _TZ_MISSING_FREQ_HINT if data.index.tz is not None else ""
             raise ValueError(
                 f"{data_label} has a pandas DatetimeIndex without a frequency. "
-                f"To avoid this error, set the frequency of the DatetimeIndex."
+                f"To avoid this error, set the frequency of the DatetimeIndex.{hint}"
             )
         data_index = data.index
     elif isinstance(data.index, pd.RangeIndex):
@@ -2327,6 +2339,47 @@ def _date_range_from_index(
     return span_index
 
 
+def _infer_freq_from_index(
+    index: pd.DatetimeIndex
+) -> pd.DateOffset | None:
+    """
+    Infer the frequency of a DatetimeIndex without one. A timezone-aware index
+    that advances in fixed UTC steps (timestamps created in UTC and converted
+    to a local timezone) is regular in UTC, not in local time, so for it the
+    frequency is inferred on the UTC timestamps.
+
+    Parameters
+    ----------
+    index : pandas DatetimeIndex
+        Index whose frequency is inferred.
+
+    Returns
+    -------
+    freq : pandas DateOffset, None
+        Inferred frequency, or `None` if the index has fewer than 3 values or
+        is not regularly spaced.
+
+    Notes
+    -----
+    Since pandas 3, `DatetimeIndex.tz_convert` drops frequencies that are not
+    fixed (`'D'`, `'MS'`...), so these indexes reach skforecast without one.
+    Inferring the frequency in local time gives a wrong one (`'ME'` instead of
+    `'MS'` west of UTC, where UTC midnight is the previous local day) or none.
+
+    """
+
+    if len(index) < 3:
+        return None
+
+    freq = _pandas_compat.infer_freq(index)
+    if index.tz is not None:
+        freq_utc = _pandas_compat.infer_freq(index.tz_convert("UTC"))
+        if freq_utc is not None and _is_utc_anchored_index(index=index, freq=freq_utc):
+            freq = freq_utc
+
+    return freq
+
+
 def date_to_index_position(
     index: pd.Index,
     date_input: int | str | pd.Timestamp,
@@ -2467,7 +2520,7 @@ def expand_index(
         if isinstance(index, pd.DatetimeIndex):
             freq = index.freq
             if freq is None:
-                freq = _pandas_compat.infer_freq(index) if len(index) >= 3 else None
+                freq = _infer_freq_from_index(index)
             if freq is None:
                 raise ValueError(
                     "Could not infer a frequency from `index`. This can happen "
@@ -3579,6 +3632,39 @@ def save_forecaster(
         forecaster.summary()
 
 
+def _add_note_pandas_3_file(
+    exc: Exception,
+    file_name: str
+) -> None:
+    """
+    Add a note to an error raised while loading a forecaster with pandas 2,
+    in case the file was saved with pandas 3. Some pandas objects saved with
+    pandas 3 cannot be rebuilt with pandas 2, which then fails with errors
+    that do not tell the reason (an empty `AssertionError`, a `TypeError` of
+    `StringDtype`...).
+
+    Parameters
+    ----------
+    exc : Exception
+        Error raised while loading the file.
+    file_name : str
+        Name of the file.
+
+    Returns
+    -------
+    None
+
+    """
+
+    if not _pandas_compat.PANDAS_GE_3:
+        exc.add_note(
+            f"If '{file_name}' was saved with pandas 3, it cannot be loaded with "
+            f"pandas {pd.__version__}. A forecaster saved with pandas 3 can be "
+            f"loaded with pandas 3, or with pandas 2.3 if it was saved with "
+            f"backend='skops'."
+        )
+
+
 @manage_warnings
 def load_forecaster(
     file_name: str,
@@ -3659,12 +3745,7 @@ def load_forecaster(
             f"{', '.join(repr(b) for b in sorted(valid_backends))}."
         )
 
-    if backend == 'joblib':
-        forecaster = joblib.load(filename=Path(file_name))
-    elif backend == 'pickle':
-        with open(file_name, 'rb') as file:
-            forecaster = pickle.load(file)
-    elif backend == 'cloudpickle':
+    if backend == 'cloudpickle':
         try:
             import cloudpickle  # noqa: F401 — needed to unpickle cloudpickle files
         except ImportError as exc:
@@ -3672,8 +3753,17 @@ def load_forecaster(
                 "'cloudpickle' is required for backend='cloudpickle' but is not "
                 "installed. Install it with: pip install cloudpickle"
             ) from exc
-        with open(file_name, 'rb') as file:
-            forecaster = pickle.load(file)
+
+    if backend in ('joblib', 'pickle', 'cloudpickle'):
+        try:
+            if backend == 'joblib':
+                forecaster = joblib.load(filename=Path(file_name))
+            else:
+                with open(file_name, 'rb') as file:
+                    forecaster = pickle.load(file)
+        except (AssertionError, NotImplementedError, TypeError) as exc:
+            _add_note_pandas_3_file(exc=exc, file_name=file_name)
+            raise
     elif backend == 'skops':
         try:
             import skops.io
@@ -3698,6 +3788,7 @@ def load_forecaster(
             trusted_types = trusted
         try:
             forecaster = skops.io.load(file=file_name, trusted=trusted_types)
+            _skops_reconstruct_forecaster(forecaster)
         except UntrustedTypesFoundException as exc:
             exc.args = (
                 f"{exc.args[0]}\n"
@@ -3708,7 +3799,9 @@ def load_forecaster(
                 f"to trust them all, or pass the reviewed list via `trusted=[...]`.",
             )
             raise
-        _skops_reconstruct_forecaster(forecaster)
+        except (AssertionError, NotImplementedError, TypeError) as exc:
+            _add_note_pandas_3_file(exc=exc, file_name=file_name)
+            raise
 
     forecaster_v = forecaster.skforecast_version
 
@@ -4483,26 +4576,28 @@ def check_preprocess_series(
             f"Review series: {not_valid_index}"
         )
     if None in indexes_freq:
+        hint = (
+            _TZ_MISSING_FREQ_HINT
+            if any(tz is not None for tz in indexes_tz)
+            else ""
+        )
         raise ValueError(
-            "If `series` is a dictionary, all series must have a Pandas "
-            "RangeIndex or DatetimeIndex with the same step/frequency. "
-            "If it a MultiIndex DataFrame, the second level must be a DatetimeIndex "
-            "with the same frequency for each series. Found series with no "
-            "frequency or step."
+            f"If `series` is a dictionary, all series must have a Pandas "
+            f"RangeIndex or DatetimeIndex with the same step/frequency. "
+            f"If it a MultiIndex DataFrame, the second level must be a DatetimeIndex "
+            f"with the same frequency for each series. Found series with no "
+            f"frequency or step.{hint}"
         )
     if not len(indexes_freq) == 1:
-        # NOTE: Frequencies of different types (e.g. `Day` and `MonthBegin`, or
-        # a frequency and a step) cannot be compared.
-        try:
-            indexes_freq = sorted(indexes_freq)
-        except TypeError:
-            indexes_freq = sorted(indexes_freq, key=str)
+        # NOTE: Sorted by their text: frequencies of different types (e.g.
+        # `Day` and `MonthBegin`, or a frequency and a step) cannot be compared,
+        # and since pandas 3 neither can two `Day`.
         raise ValueError(
             f"If `series` is a dictionary, all series must have a Pandas "
             f"RangeIndex or DatetimeIndex with the same step/frequency. "
             f"If it a MultiIndex DataFrame, the second level must be a DatetimeIndex "
             f"with the same frequency for each series. "
-            f"Found frequencies: {indexes_freq}"
+            f"Found frequencies: {sorted(indexes_freq, key=str)}"
         )
     if len(indexes_tz) > 1:
         raise ValueError(
@@ -4677,6 +4772,19 @@ def check_preprocess_exog_multiseries(
             {k: df.dtypes for k, df in exog_dict.items() if df is not None}
         )
         exog_dtypes_nunique = exog_dtypes_buffer.nunique(axis=1)
+        if not (exog_dtypes_nunique == 1).all():
+            # NOTE: Text dtypes are compared as one: since pandas 3 a text column
+            # is `str`, but `object` if all its values are missing (or if it is
+            # cast), so the same variable can have both dtypes in different
+            # series. Only done when the dtypes differ, it is slower.
+            is_text = pd.api.types.is_string_dtype
+            exog_dtypes_nunique = pd.DataFrame(
+                {
+                    k: df.dtypes.map(lambda dtype: 'text' if is_text(dtype) else dtype)
+                    for k, df in exog_dict.items()
+                    if df is not None
+                }
+            ).nunique(axis=1)
         if not (exog_dtypes_nunique == 1).all():
             non_unique_dtypes_exogs = exog_dtypes_nunique[exog_dtypes_nunique != 1].index.to_list()
             raise TypeError(

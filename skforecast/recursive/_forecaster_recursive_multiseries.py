@@ -2033,12 +2033,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 X_train = X_train.drop(columns="_level_skforecast")
                 X_test = X_test.drop(columns="_level_skforecast")
         
-        X_train_encoding = pd.Series(
-            data=X_train_encoding, index=X_train.index
-        ).fillna("_unknown_level")
-        X_test_encoding = pd.Series(
-            data=X_test_encoding, index=X_test.index
-        ).fillna("_unknown_level")
+        # NOTE: Every row belongs to a series of `encoding_mapping_`, the test
+        # set only has series used to train, so no identifier is missing.
+        X_train_encoding = pd.Series(data=X_train_encoding, index=X_train.index)
+        X_test_encoding = pd.Series(data=X_test_encoding, index=X_test.index)
 
         X_train_features_names_out_ = X_train.columns.to_list()
         if self.categorical_features is not None:

@@ -92,10 +92,19 @@ def test_filter_nan_train_X_y_rows_dropped_and_warning(
     assert type(y_train) is type(y)
     np.testing.assert_array_equal(np.asarray(X_train), X_expected)
     np.testing.assert_array_equal(np.asarray(y_train), y_expected)
-    pd.testing.assert_index_equal(train_index, index_expected)
+    # Only the timestamps are compared: whether the rows kept have a `freq`
+    # depends on pandas (consecutive rows keep it, and a DataFrame also infers
+    # it for evenly spaced rows)
+    pd.testing.assert_index_equal(
+        pd.DatetimeIndex(train_index, freq=None), index_expected
+    )
     if kind == "pandas":
-        pd.testing.assert_index_equal(X_train.index, index_expected)
-        pd.testing.assert_index_equal(y_train.index, index_expected)
+        pd.testing.assert_index_equal(
+            pd.DatetimeIndex(X_train.index, freq=None), index_expected
+        )
+        pd.testing.assert_index_equal(
+            pd.DatetimeIndex(y_train.index, freq=None), index_expected
+        )
         assert X_train.columns.to_list() == ["lag_1", "lag_2"]
         assert y_train.name == "y"
 
