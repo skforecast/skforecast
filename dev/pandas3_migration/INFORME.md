@@ -2321,9 +2321,10 @@ No son compatibilidad y se quedan: `_infer_freq_from_index` y
 3), la comparación de dtypes de texto de las exógenas (`str` y `object`
 conviven en pandas 3), `sorted(..., key=str)` y `pd.Series(dtype=str)`.
 
-**PR #1497 contra `0.28.x`** (cabeza `ed7d20f0c`), abierta el 2026-11-13.
-Checks de la PR en verde (CodeQL, AI Context Check, Docs Page Meta Check);
-falta una revisión aprobada para fusionarla. CI lanzada a mano sobre la rama:
+**PR #1497 contra `0.28.x`** (cabeza `ed7d20f0c`), abierta el 2026-11-13 y
+fusionada ese mismo día (merge `e1c928b9f`). Checks de la PR en verde
+(CodeQL, AI Context Check, Docs Page Meta Check). CI lanzada a mano sobre la
+rama:
 
 - `unit-tests-latest-deps.yml` (run 43399976714, pandas 3 en Linux): en
   rojo, como se esperaba. 85 fallos en Python 3.12, 3.13 y 3.14 (91 en la
@@ -2334,11 +2335,38 @@ falta una revisión aprobada para fusionarla. CI lanzada a mano sobre la rama:
   no es de esta PR. Doce ficheros de tests leen fixtures `.parquet` y pandas
   2.2.0 no consigue cargar pyarrow 26.0.1. pyarrow 26 exige Python 3.11 o
   superior: con Python 3.10 se resolvía pyarrow 25.0.1 (run 43303305289,
-  en verde), y desde DEP-python310 (#1496) se resuelve la 26. Que el fallo
-  venga de numpy 1.26.1 es una hipótesis, sin reproducir (pandas oculta el
-  error original). Necesita su propia PR contra `0.28.x`: limitar pyarrow
-  por debajo de 26 en el extra `test`, o subir el mínimo de numpy, según lo
-  que muestre la reproducción.
+  en verde), y desde DEP-python310 (#1496) se resuelve la 26. Causa
+  confirmada y arreglada en la PR #1498 (abajo).
+
+**PR #1498 contra `0.28.x`** (rama `fix/min-deps-pyarrow`, cabeza
+`617afbd5d`), abierta el 2026-11-13: arregla el fallo de recogida de
+`unit-tests-min-deps.yml`.
+
+- Reproducción en un entorno aparte (Windows, Python 3.11.18, pandas 2.2.0,
+  numpy 1.26.1, pyarrow 26.0.1): `import pyarrow` da
+  `ImportError: pyarrow requires NumPy 2.0 or newer, found 1.26.1`, que
+  pandas muestra como "Missing optional dependency 'pyarrow'". pyarrow 26 no
+  declara numpy en sus metadatos, así que el resolutor no lo evita. Con
+  pyarrow 25.0.1 los fixtures se leen bien.
+- Subir el mínimo de numpy a 2.0 se descartó: pandas 2.2.0 no importa con
+  numpy 2 (`numpy.dtype size changed`; además declara `numpy<2`), así que
+  obligaría también a pandas>=2.2.2, dos mínimos del núcleo por un problema
+  del entorno de tests.
+- Arreglo: el workflow pasa `pyarrow<26` a uv como restricción
+  (`--constraints`, un fichero en `$RUNNER_TEMP`), no como requisito: con
+  `--resolution lowest-direct` un requisito instalaría la pyarrow más baja
+  permitida (10.0.1, el mínimo de `pandas[parquet]` 2.2.0). No cambia
+  `pyproject.toml`, ni latest-deps, ni los entornos de desarrollo. Se puede
+  quitar cuando el mínimo de numpy sea 2.0.
+- Comprobación local (uv 0.13.8): sin la restricción se queda pyarrow
+  26.0.1, con ella 25.0.1 y nada más cambia. Con el extra `test` en las
+  versiones mínimas se recogen 7932 tests sin errores de parquet; los 21
+  errores que quedan son de torch 2.4.0, que en Windows no carga
+  `fbgemm.dll` (el job corre en Linux). Los 3 ficheros que leen `.parquet`:
+  84 pasan.
+- `unit-tests-min-deps.yml` lanzado a mano sobre la rama (run 43407008918):
+  en verde, con pyarrow 25.0.1, numpy 1.26.1, pandas 2.2.0, scikit-learn
+  1.6.0 y torch 2.4.0+cpu: 8107 pasan, 27 omitidos.
 
 ### Historial de lo pendiente entre sesiones
 
