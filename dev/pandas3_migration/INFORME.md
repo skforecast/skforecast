@@ -2596,8 +2596,12 @@ el detalle, en la entrada DEP-numpy2-pandas23 de `dev/roadmap_0.28.0/roadmap.md`
   pandas 2 de `unit-tests.yml` prueba la serie 2.3. La nota de la 0.28.0 ya tiene un
   "Before upgrading" con los mínimos: la PR 6 añade ahí `pandas<4.0`.
 - Verificación: `verify` en verde; sin suite completa local ni arnés (decisión del
-  usuario). Pendiente: `unit-tests-min-deps.yml` y `foundation-backends.yml` lanzados
-  a mano sobre la rama una vez subida.
+  usuario). PR #1500 abierta el 2026-11-13. `foundation-backends.yml` lanzado a mano
+  sobre la rama: los once backends pasan. `unit-tests-min-deps.yml`: 8114 pasan en el
+  segundo intento; en el primero falló un test inestable ajeno a la PR
+  (`test_bayesian_search_forecaster_warnings_of_folds_in_processes_with_trials_in_threads`,
+  se pierde el aviso de un trial en un hilo), a tener en cuenta en la línea base de la
+  PR 6. Falta el merge.
 
 Pendiente actualizado: los puntos 2 a 4 de la lista anterior siguen igual, salvo que
 la PR 6 ya no toca statsmodels y que su fila 6 debe quitarlo de la sección 7.

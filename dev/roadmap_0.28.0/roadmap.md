@@ -23,7 +23,7 @@ Esfuerzo: S (horas a 1 día, con tests y docs), M (2 a 5 días), L (más de una 
 | ID | Qué | Esfuerzo | Estado |
 |---|---|---|---|
 | DEP-python310 | Retirar Python 3.10 | S | Hecho: #1496, fusionada en `0.28.x` el 2026-11-12 |
-| DEP-numpy2-pandas23 | Subir los mínimos a numpy 2.0 y pandas 2.3 | S | Implementado el 2026-11-13 en `chore/numpy2-pandas23-minimums` (sin commit; faltan los workflows a mano); antes de la PR 6 de la migración a pandas 3 |
+| DEP-numpy2-pandas23 | Subir los mínimos a numpy 2.0 y pandas 2.3 | S | PR #1500 abierta el 2026-11-13 (`chore/numpy2-pandas23-minimums`), workflows a mano en verde, falta el merge; antes de la PR 6 de la migración a pandas 3 |
 | MAINT-docs-deps | Actualizar los pins del extra `docs`, salvo `mkdocs-jupyter` | S | Opcional, medido: sin efecto visible |
 | MAINT-test-deps | Limpiar el extra `test` | S | Opcional |
 
@@ -274,9 +274,26 @@ Revisión final, el 2026-11-13 (misma rama, sin commit):
   test en `test_MoiraiAdapter.py`. El "Before upgrading" queda resumido a dos líneas; el
   detalle de los mínimos está en Changed.
 
-Pendiente: lanzar a mano sobre la rama `unit-tests-min-deps.yml` (la suite completa con los
-mínimos nuevos, en Linux) y `foundation-backends.yml` (moirai con los overrides nuevos),
-una vez subida.
+PR #1500 contra `0.28.x`, abierta el 2026-11-13 (commits `d54902731`, `b507ce6eb` y
+`590e90660`, este último con el enlace de la PR en la nota de versión). Workflows lanzados
+a mano sobre la rama (commit `b507ce6eb`), resultados en un comentario de la PR:
+
+- `unit-tests-min-deps.yml` (run 43472223734; Python 3.11.18, numpy 2.0.0, pandas 2.3.0,
+  scipy 1.13.0, numba 0.60.0, scikit-learn 1.6.0, statsmodels 0.14.6, matplotlib 3.8.4,
+  lightgbm 4.4.0, xgboost 2.1.0, catboost 1.2.8, optuna 4.0.0, skops 0.14.0, keras 3.3.0,
+  torch 2.4.0+cpu, pyarrow 26.0.1): primer intento 8113 pasan y 1 falla; segundo intento,
+  mismo commit, 8114 pasan y 27 omitidos.
+- El fallo del primer intento es de un test inestable, ajeno a esta PR:
+  `test_bayesian_search_forecaster_warnings_of_folds_in_processes_with_trials_in_threads`
+  (del 2026-11-08) esperaba "in 5 of 8 trials" y recibió "in 4 of 8": se perdió el aviso de
+  un trial que corre en un hilo. En local pasa 12 de 12 con los mínimos y 12 de 12 en el
+  entorno de desarrollo (Windows). Probable condición de carrera entre los hilos de los
+  trials; pendiente de mirar aparte.
+- `foundation-backends.yml` (run 43472229780): los once backends pasan. Moirai con los
+  overrides nuevos: uni2ts 2.0.0, gluonts 0.14.3, numpy 2.5.4, pandas 2.3.3; contrato 5
+  pasan, smoke 5 pasan y 2 omitidos.
+
+Pendiente: el merge de la PR (del usuario).
 
 Al publicar la 0.28.0, subir los mismos mínimos en el feedstock de conda-forge.
 
