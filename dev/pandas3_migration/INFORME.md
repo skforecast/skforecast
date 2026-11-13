@@ -2321,6 +2321,25 @@ No son compatibilidad y se quedan: `_infer_freq_from_index` y
 3), la comparación de dtypes de texto de las exógenas (`str` y `object`
 conviven en pandas 3), `sorted(..., key=str)` y `pd.Series(dtype=str)`.
 
+**PR #1497 contra `0.28.x`** (cabeza `ed7d20f0c`), abierta el 2026-11-13.
+Checks de la PR en verde (CodeQL, AI Context Check, Docs Page Meta Check);
+falta una revisión aprobada para fusionarla. CI lanzada a mano sobre la rama:
+
+- `unit-tests-latest-deps.yml` (run 43399976714, pandas 3 en Linux): en
+  rojo, como se esperaba. 85 fallos en Python 3.12, 3.13 y 3.14 (91 en la
+  PR #1495). Esta vez se comprobaron los 85 nombres: todos están en
+  `fallos_base_p3_2026-11-04.txt`, ningún fallo nuevo.
+- `unit-tests-min-deps.yml` (run 43399971425): falla al recoger los tests,
+  sin ejecutar ninguno. Pasa lo mismo en `0.28.x` (run 43401237517), así que
+  no es de esta PR. Doce ficheros de tests leen fixtures `.parquet` y pandas
+  2.2.0 no consigue cargar pyarrow 26.0.1. pyarrow 26 exige Python 3.11 o
+  superior: con Python 3.10 se resolvía pyarrow 25.0.1 (run 43303305289,
+  en verde), y desde DEP-python310 (#1496) se resuelve la 26. Que el fallo
+  venga de numpy 1.26.1 es una hipótesis, sin reproducir (pandas oculta el
+  error original). Necesita su propia PR contra `0.28.x`: limitar pyarrow
+  por debajo de 26 en el extra `test`, o subir el mínimo de numpy, según lo
+  que muestre la reproducción.
+
 ### Historial de lo pendiente entre sesiones
 
 Lo que quedó sin cerrar por el límite de uso de la primera sesión; los
