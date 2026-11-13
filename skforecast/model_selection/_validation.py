@@ -27,6 +27,7 @@ from ..model_selection._utils import (
     _initialize_levels_model_selection_multiseries,
     check_backtesting_input,
     limit_n_jobs_by_workload,
+    limit_n_jobs_by_prediction_workload,
     select_n_jobs_backtesting,
     _extract_data_folds_multiseries,
     _select_fit_folds_multiseries,
@@ -680,34 +681,8 @@ def _backtesting_forecaster(
     fold_data_list = _prepare_fold_data(folds, y, exog)
     fold_items = list(zip(folds, fold_data_list))
 
-    if n_jobs_auto:
-        n_jobs = limit_n_jobs_by_workload(
-                     n_jobs      = n_jobs,
-                     n_tasks     = len(fold_items),
-                     n_fits      = sum(fold[5] is True for fold in folds),
-                     fit_seconds = fit_seconds
-                 )
-
-    if show_progress:
-        fold_items = tqdm(fold_items)
-
-    # NOTE: With several processes, joblib serializes the arguments of every
-    # task, so the forecaster would be pickled once per fold, in a secondary
-    # thread of the main process. Serializing it once here, in the main thread,
-    # removes that cost per fold. It also prevents estimators that use OpenMP
-    # (XGBoost, LightGBM) from starting a second pool of threads in the main
-    # process when they are pickled from that thread, which slows down their
-    # later fits in it. It is serialized with the pickler of loky (`cloudpickle`
-    # if it is installed), so the forecasters that can be sent to the workers
-    # are the same as when joblib serializes them.
-    forecaster_to_send = forecaster
-    if n_jobs != 1:
-        forecaster_to_send = bytes(
-            loky_dumps(forecaster, protocol=pickle.HIGHEST_PROTOCOL)
-        )
-
     kwargs_fit_predict_forecaster = {
-        "forecaster": forecaster_to_send,
+        "forecaster": forecaster,
         "store_in_sample_residuals": store_in_sample_residuals,
         "gap": gap,
         "interval": interval,
@@ -727,8 +702,68 @@ def _backtesting_forecaster(
     # there and shown here, after the folds, as with `n_jobs=1`. If a fold raises
     # an error, the warnings raised in it before the error come with the error.
     main_pid = os.getpid()
+
+    # NOTE: Without refit, the folds only predict, so the workload is estimated
+    # by predicting the first fold here, in the main process. It is only done
+    # when `select_n_jobs_backtesting` allows parallel folds without refit
+    # (estimators that predict a few rows slowly). Its prediction is kept, so
+    # nothing is predicted twice.
+    n_fits = sum(fold[5] is True for fold in folds)
+    first_fold_predictions = []
+    if n_jobs_auto:
+        if n_jobs > 1 and n_fits == 0 and len(fold_items) > 1:
+            fold, fold_data = fold_items[0]
+            predict_start = time.perf_counter()
+            first_fold_predictions.append(
+                _run_recording_worker_warnings(
+                    function      = _fit_predict_forecaster,
+                    main_pid      = main_pid,
+                    fold          = fold,
+                    y_train       = fold_data['y_train'],
+                    last_window_y = fold_data['last_window_y'],
+                    exog_train    = fold_data['exog_train'],
+                    exog_test     = fold_data['exog_test'],
+                    **kwargs_fit_predict_forecaster
+                )
+            )
+            predict_seconds = time.perf_counter() - predict_start
+            fold_items = fold_items[1:]
+            n_jobs = limit_n_jobs_by_prediction_workload(
+                         n_jobs          = n_jobs,
+                         n_tasks         = len(fold_items),
+                         predict_seconds = predict_seconds
+                     )
+        else:
+            n_jobs = limit_n_jobs_by_workload(
+                         n_jobs      = n_jobs,
+                         n_tasks     = len(fold_items),
+                         n_fits      = n_fits,
+                         fit_seconds = fit_seconds
+                     )
+
+    if show_progress:
+        fold_items = tqdm(
+            fold_items,
+            initial = len(first_fold_predictions),
+            total   = len(first_fold_predictions) + len(fold_items)
+        )
+
+    # NOTE: With several processes, joblib serializes the arguments of every
+    # task, so the forecaster would be pickled once per fold, in a secondary
+    # thread of the main process. Serializing it once here, in the main thread,
+    # removes that cost per fold. It also prevents estimators that use OpenMP
+    # (XGBoost, LightGBM) from starting a second pool of threads in the main
+    # process when they are pickled from that thread, which slows down their
+    # later fits in it. It is serialized with the pickler of loky (`cloudpickle`
+    # if it is installed), so the forecasters that can be sent to the workers
+    # are the same as when joblib serializes them.
+    if n_jobs != 1:
+        kwargs_fit_predict_forecaster["forecaster"] = bytes(
+            loky_dumps(forecaster, protocol=pickle.HIGHEST_PROTOCOL)
+        )
+
     try:
-        backtest_predictions = Parallel(n_jobs=n_jobs)(
+        backtest_predictions = first_fold_predictions + Parallel(n_jobs=n_jobs)(
             delayed(_run_recording_worker_warnings)(
                 function      = _fit_predict_forecaster,
                 main_pid      = main_pid,

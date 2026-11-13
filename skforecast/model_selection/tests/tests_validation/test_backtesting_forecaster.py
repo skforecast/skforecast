@@ -991,3 +991,57 @@ def test_backtesting_forecaster_serializes_forecaster_once_only_with_n_jobs_grea
     assert all(isinstance(f, ForecasterRecursive) for f in received_n_jobs_1)
     assert all(isinstance(f, bytes) for f in received_n_jobs_2)
     assert received_n_jobs_2[0] is received_n_jobs_2[1]
+
+
+@pytest.mark.parametrize(
+    "min_work, expected_n_jobs",
+    [(0.0, min(max(1, cpu_count() - 1), 4)),
+     (1e6, 1)],
+    ids=["enough work", "too little work"]
+)
+def test_backtesting_forecaster_n_jobs_auto_no_refit_limited_by_the_prediction_workload(
+    min_work, expected_n_jobs
+):
+    """
+    Test that, with `n_jobs='auto'` and no refit, backtesting_forecaster with a
+    `HistGradientBoostingRegressor` predicts the first fold in the main process,
+    and runs the other 4 folds in parallel only if their estimated work is
+    above the minimum of the platform (`min_work`, patched), with at most one
+    job per fold. The predictions are the same as with `n_jobs=1`. `Parallel`
+    is mocked with a sequential one, so no workers are started.
+    """
+    cv = TimeSeriesFold(steps=4, initial_train_size=30, refit=False, verbose=False)
+
+    def run_backtesting(n_jobs):
+        forecaster = ForecasterRecursive(
+                         estimator=HistGradientBoostingRegressor(max_iter=5), lags=3
+                     )
+        return backtesting_forecaster(
+                   forecaster    = forecaster,
+                   y             = y,
+                   cv            = cv,
+                   metric        = 'mean_absolute_error',
+                   n_jobs        = n_jobs,
+                   show_progress = False
+               )
+
+    expected_metric, expected_predictions = run_backtesting(n_jobs=1)
+    with (
+        patch.dict(
+            "skforecast.model_selection._utils._MIN_PARALLEL_PREDICTION_SECONDS",
+            {sys.platform: min_work}
+        ),
+        patch(
+            "skforecast.model_selection._utils._MIN_PARALLEL_PREDICTION_SECONDS_DEFAULT",
+            min_work
+        ),
+        patch(
+            "skforecast.model_selection._validation.Parallel",
+            side_effect=lambda **kwargs: Parallel(n_jobs=1)
+        ) as mock_parallel
+    ):
+        metric, predictions = run_backtesting(n_jobs='auto')
+
+    assert mock_parallel.call_args.kwargs == {'n_jobs': expected_n_jobs}
+    pd.testing.assert_frame_equal(metric, expected_metric)
+    pd.testing.assert_frame_equal(predictions, expected_predictions)
