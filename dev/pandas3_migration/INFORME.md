@@ -2445,10 +2445,18 @@ Verificación (Python 3.13.18, numpy 2.5.4):
   los tienen) y pandas 2.2.0 con numpy 1.26.1, que queda para
   `unit-tests-min-deps.yml` sobre la rama.
 
-Pendiente: commit, PR contra `0.28.x` y CI a mano
-(`unit-tests-min-deps.yml` y `unit-tests-latest-deps.yml`). Con la PR 5,
-D5 (`-W error` en `unit-tests-latest-deps.yml`) ya se puede activar en la
-PR 6.
+PR #1499 contra `0.28.x` (commits `cdb4922b2` y `1c0c5bd1e`). CI lanzada a
+mano sobre la rama el 2026-11-13, las dos en verde:
+
+- `unit-tests-min-deps.yml` (pandas 2.2.0, numpy 1.26.1): 8114 pasan y 27
+  omitidos.
+- `unit-tests-latest-deps.yml` (pandas 3.1.1, numpy 2.5.4): 8107 pasan y 34
+  omitidos en Python 3.12 y 3.13; 8062 pasan y 79 omitidos en Python 3.14.
+  Antes de la PR tenía 85 fallos en cada versión de Python. Es la primera
+  ejecución con pandas 3.1.1 (los gemelos locales tienen 3.1.0).
+
+Pendiente: fusionar la PR. Con la PR 5, D5 (`-W error` en
+`unit-tests-latest-deps.yml`) ya se puede activar en la PR 6.
 
 ### Historial de lo pendiente entre sesiones
 
