@@ -142,6 +142,12 @@ ralentizarse (de 1,64 veces a entre 0,98 y 1,06) y el de LightGBM también (de
   necesita invalidación: mejor dejarla para una segunda fase.
 - **Validación:** este mismo benchmark antes y después, en la máquina de 16
   CPU. Las predicciones deben ser idénticas.
+- **Medido (rama `perf/serialize-forecaster-once`, variante simple):**
+  predicciones idénticas; medidas en paralelo un 21 % más rápidas en caliente
+  con 16 CPU y un 13 % con 8; ajuste posterior de XGBoost de 6,4 a 1,7 s; la
+  búsqueda con refit de XGBoost pasa de 45,1 a 31,0 s en caliente (un proceso:
+  31,5). Detalle en `results/ec2-proposal1/README.md` y, en 4 vCPU, en
+  `results/local-4vcpu-proposal1/README.md`.
 
 ### 2. No arrancar más procesos que folds, también en las búsquedas y con `n_jobs` entero
 
@@ -172,6 +178,11 @@ ralentizarse (de 1,64 veces a entre 0,98 y 1,06) y el de LightGBM también (de
 - **Depende de la propuesta 1:** con la serialización actual el umbral saldría
   distinto para cada estimador. Hay que hacerla después y calibrar con este
   benchmark.
+- **Con la propuesta 1 medida:** el backtesting suelto de HistGB sin refit
+  tarda 19,1 s con un proceso (lo que elige `'auto'`) y 8,0 en frío y 4,8 en
+  caliente en paralelo con 16 CPU. XGBoost, LightGBM con un hilo y CatBoost
+  siguen perdiendo en frío y ganan poco en caliente; RandomForest sigue
+  perdiendo. Ver `results/ec2-proposal1/README.md`.
 
 ### 4. Decisión de criterio: `cpu_count()` en lugar de `cpu_count() - 1`
 
