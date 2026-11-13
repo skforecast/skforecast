@@ -24,6 +24,12 @@ from ...utils import _skops_reconstruct_forecaster
 from ....recursive import ForecasterRecursive
 from ....recursive import ForecasterRecursiveMultiSeries
 
+# Time zone class that pandas builds from a time zone name: pytz in pandas 2,
+# zoneinfo in pandas 3
+TZ_NAME_IS_ZONEINFO = isinstance(
+    pd.Timestamp('2024-01-01', tz='Europe/Madrid').tz, zoneinfo.ZoneInfo
+)
+
 
 @pytest.mark.parametrize(
     "tz",
@@ -57,7 +63,7 @@ def test_decompose_index_ValueError_when_time_zone_cannot_be_rebuilt(tz):
     "index, expected_payload",
     [
         (
-            pd.date_range('2020-01-01', periods=4, freq='MS', name='dt'),
+            pd.date_range('2020-01-01', periods=4, freq='MS', name='dt', unit='ns'),
             {
                 'index_type_': 'datetime',
                 'index': np.array([
@@ -74,7 +80,9 @@ def test_decompose_index_ValueError_when_time_zone_cannot_be_rebuilt(tz):
             },
         ),
         (
-            pd.date_range('2024-03-31', periods=4, freq='h', tz='Europe/Madrid'),
+            pd.date_range(
+                '2024-03-31', periods=4, freq='h', tz='Europe/Madrid', unit='ns'
+            ),
             {
                 'index_type_': 'datetime',
                 'index': np.array([
@@ -85,7 +93,7 @@ def test_decompose_index_ValueError_when_time_zone_cannot_be_rebuilt(tz):
                 ]),
                 'unit': 'ns',
                 'tz': 'Europe/Madrid',
-                'tz_zoneinfo': False,
+                'tz_zoneinfo': TZ_NAME_IS_ZONEINFO,
                 'freq': pd.offsets.Hour(),
                 'index_name': None,
             },

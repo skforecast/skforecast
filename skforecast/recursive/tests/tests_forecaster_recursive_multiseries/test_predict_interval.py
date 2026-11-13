@@ -482,7 +482,7 @@ def test_predict_interval_output_when_series_and_exog_dict():
             [1403.93625654, 1271.81039554, 1712.6314556 , 2089.11038884,
              900.67253042, 2775.32496318, 2035.99448247, 1352.22100994,
              2023.10287794, 7488.18398744, 4576.01555597, 9477.77316645]]),
-        index=pd.date_range(start="2016-08-01", periods=5, freq="D"),
+        index=pd.date_range(start="2016-08-01", periods=5, freq="D", unit="ns"),
         columns=[
             'id_1000',
             'id_1000_lower_bound',
@@ -558,7 +558,7 @@ def test_predict_interval_output_when_series_and_exog_dict_unknown_level():
              1363.74911381,  2889.04815824,  2197.45288166,  1495.02913524,
              2195.10669302,  8536.31820994,  7008.65077106,  9540.86051966,
              5213.7612468 ,  4296.64990694,  6414.60074985]]),
-        index=pd.date_range(start="2016-08-01", periods=5, freq="D"),
+        index=pd.date_range(start="2016-08-01", periods=5, freq="D", unit="ns"),
         columns=[
             'id_1000',
             'id_1000_lower_bound',
@@ -753,7 +753,8 @@ def test_predict_interval_output_when_series_and_exog_dict_unknown_level_binned_
                 "2016-08-05",
                 "2016-08-05",
                 "2016-08-05",
-            ]
+            ],
+            dtype="datetime64[ns]"
         ),
     )
 
@@ -816,7 +817,7 @@ def test_predict_interval_output_when_series_and_exog_dict_encoding_None_unknown
              2669.37848396, 5273.44882377, 3385.66459202, 1843.03033853,
              6001.13573768, 7915.94534006, 7115.27808438, 9998.45490231,
              7281.15539217, 5039.18009578, 8656.83019612]]),
-        index=pd.date_range(start="2016-08-01", periods=5, freq="D"),
+        index=pd.date_range(start="2016-08-01", periods=5, freq="D", unit="ns"),
         columns=[
             'id_1000',
             'id_1000_lower_bound',
@@ -1012,7 +1013,8 @@ def test_predict_interval_output_when_series_and_exog_dict_encoding_None_unknown
                 "2016-08-05",
                 "2016-08-05",
                 "2016-08-05",
-            ]
+            ],
+            dtype="datetime64[ns]"
         ),
     )
 
@@ -1159,7 +1161,8 @@ def test_predict_interval_conformal_output_when_series_and_exog_dict(interval):
                 "2016-08-05",
                 "2016-08-05",
                 "2016-08-05",
-            ]
+            ],
+            dtype="datetime64[ns]"
         ),
     )
 

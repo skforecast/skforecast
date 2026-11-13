@@ -15,6 +15,19 @@ results_nannyml = joblib.load(THIS_DIR / 'fixture_results_nannyml.joblib')
 results_multiseries = joblib.load(THIS_DIR / 'fixture_results_multiseries.joblib')
 summary_multiseries = joblib.load(THIS_DIR / 'fixture_summary_multiseries.joblib')
 
+# The multiseries fixtures were saved with pandas 2: their text columns and
+# column labels are object, the default dtype of text in pandas 2 (str in
+# pandas 3)
+STR_DTYPE = pd.Series(['a']).dtype
+results_multiseries = results_multiseries.astype(
+    {'series_id': STR_DTYPE, 'feature': STR_DTYPE}
+)
+results_multiseries.columns = results_multiseries.columns.astype(STR_DTYPE)
+summary_multiseries = summary_multiseries.astype(
+    {'series_id': STR_DTYPE, 'feature': STR_DTYPE}
+)
+summary_multiseries.columns = summary_multiseries.columns.astype(STR_DTYPE)
+
 
 # NOTE: Code used to generate fixture_results_nannyml
 # detector = nml.UnivariateDriftCalculator(

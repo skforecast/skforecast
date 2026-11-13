@@ -20,6 +20,7 @@ from lightgbm import LGBMRegressor
 from skforecast.preprocessing import RollingFeatures, TimeSeriesDifferentiator, CalendarFeatures
 from skforecast.direct import ForecasterDirect
 from skforecast.exceptions import MissingValuesWarning
+from skforecast.utils._pandas_compat import PANDAS_GE_3
 
 # Fixtures
 from .fixtures_forecaster_direct import y as y_categorical
@@ -984,16 +985,31 @@ def test_predict_with_exog_window_features_and_calendar():
 
 
 @pytest.mark.parametrize(
+    "freq",
+    [
+        pytest.param(
+            "D",
+            marks=pytest.mark.skipif(
+                PANDAS_GE_3, reason="Since pandas 3, `tz_convert` drops 'D'."
+            ),
+        ),
+        "24h",
+    ],
+    ids=lambda freq: f"freq: {freq}"
+)
+@pytest.mark.parametrize(
     "steps", [None, [1, 5, 10]], ids=lambda steps: f"steps: {steps}"
 )
-def test_predict_output_index_when_index_is_tz_aware_and_utc_anchored(steps):
+def test_predict_output_index_when_index_is_tz_aware_and_utc_anchored(steps, freq):
     """
     Test the index of the predictions when the series has a timezone-aware
     index that advances in fixed UTC steps (created in UTC and converted to a
     local timezone) and the forecast horizon crosses a daylight saving change.
+    With 'D' the index keeps its frequency only in pandas 2; '24h' is the
+    frequency that keeps it in both versions.
     """
     index = pd.date_range(
-        start="2025-09-01", periods=60, freq="D", tz="UTC"
+        start="2025-09-01", periods=60, freq=freq, tz="UTC"
     ).tz_convert("Europe/Madrid")
     y_tz = pd.Series(np.arange(60, dtype=float), index=index, name="y")
 

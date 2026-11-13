@@ -13,6 +13,9 @@ from .fixtures_preprocessing import exog_A, exog_B, exog_C, n_exog_A, n_exog_B, 
 from .fixtures_preprocessing import exog_long
 exog_long_multiindex = exog_long.set_index(["series_id", "datetime"])
 
+# Default dtype of a text column: object in pandas 2, str in pandas 3
+STR_DTYPE = pd.Series(['a']).dtype
+
 
 def test_TypeError_when_data_is_not_dataframe():
     """
@@ -113,7 +116,7 @@ def test_check_output_reshape_exog_long_to_dict_dropna_False():
 
     for k in expected.keys():
         expected[k]['exog_1'] = expected[k]['exog_1'].astype(int)
-        expected[k]['exog_2'] = expected[k]['exog_2'].astype(object)
+        expected[k]['exog_2'] = expected[k]['exog_2'].astype(STR_DTYPE)
         expected[k]['exog_3'] = expected[k]['exog_3'].astype(float)
 
     results = reshape_exog_long_to_dict(
@@ -162,7 +165,7 @@ def test_check_output_reshape_exog_long_to_dict_dropna_False_when_multiindex():
 
     for k in expected.keys():
         expected[k]['exog_1'] = expected[k]['exog_1'].astype(int)
-        expected[k]['exog_2'] = expected[k]['exog_2'].astype(object)
+        expected[k]['exog_2'] = expected[k]['exog_2'].astype(STR_DTYPE)
         expected[k]['exog_3'] = expected[k]['exog_3'].astype(float)
 
     results = reshape_exog_long_to_dict(
@@ -264,7 +267,7 @@ def test_MissingValuesWarning_when_exog_are_incomplete_and_dropna_False():
 
     for k in expected.keys():
         expected[k]['exog_1'] = expected[k]['exog_1'].astype(float)
-        expected[k]['exog_2'] = expected[k]['exog_2'].astype(object)
+        expected[k]['exog_2'] = expected[k]['exog_2'].astype(STR_DTYPE)
         expected[k]['exog_3'] = expected[k]['exog_3'].astype(float)
     
     warn_msg = re.escape(

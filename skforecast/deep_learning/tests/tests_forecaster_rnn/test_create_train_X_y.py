@@ -32,7 +32,7 @@ def test_create_train_X_y_TypeError_when_series_not_dataframe():
     series = pd.Series(np.arange(7))
 
     err_msg = (
-        "`series` must be a pandas DataFrame. Got <class 'pandas.core.series.Series'>."
+        f"`series` must be a pandas DataFrame. Got {pd.Series}."
     )
     with pytest.raises(TypeError, match=err_msg):
         forecaster._create_train_X_y(series=series)

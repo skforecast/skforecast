@@ -24,6 +24,9 @@ from skforecast.recursive.tests.tests_forecaster_recursive_multiseries.fixtures_
     exog_dict_dt
 )
 
+# Default dtype of a text column: object in pandas 2, str in pandas 3
+STR_DTYPE = pd.Series(['a']).dtype
+
 
 def test_output_align_series_and_exog_multiseries_when_series_is_DataFrame_and_exog_None():
     """
@@ -260,7 +263,10 @@ def test_output_align_series_and_exog_multiseries_when_input_series_is_DataFrame
     assert list(exog_dict.keys()) == ['1', '2']
     for k in exog_dict:
         pd.testing.assert_frame_equal(exog_dict[k], expected_exog_dict[k])
-        pd.testing.assert_index_equal(exog_dict[k].index, series_dict[k].index)
+        # The exog index has no `freq`, compare only the timestamps
+        pd.testing.assert_index_equal(
+            exog_dict[k].index, pd.DatetimeIndex(series_dict[k].index, freq=None)
+        )
 
 
 def test_output_align_series_and_exog_multiseries_when_input_series_is_DataFrame_and_exog_dict():
@@ -725,7 +731,7 @@ def test_output_align_series_and_exog_multiseries_when_series_is_dict_and_differ
                             )),
                   index   = pd.date_range(start='2000-01-11', periods=len(expected_series_dict['l1']), freq='D'),
                   columns = ['exog_1', 'exog_2']
-              ).astype({'exog_1': float, 'exog_2': object}),
+              ).astype({'exog_1': float, 'exog_2': STR_DTYPE}),
         'l2': pd.DataFrame(
                   data    = exog_half_intersection['l2'].to_numpy(),
                   index   = pd.date_range(start='2000-01-01', periods=len(exog_half_intersection['l2']), freq='D'),
