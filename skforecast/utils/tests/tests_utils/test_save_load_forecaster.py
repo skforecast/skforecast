@@ -1296,3 +1296,46 @@ def test_save_forecaster_NotImplementedError_when_skops_unsupported():
             backend='skops',
             verbose=False,
         )
+
+
+@pytest.mark.parametrize(
+    'backend, loader',
+    [
+        ('joblib', 'skforecast.utils.utils.joblib.load'),
+        ('pickle', 'skforecast.utils.utils.pickle.load'),
+        ('skops', 'skops.io.load'),
+    ],
+    ids=lambda x: f'{x}'
+)
+@pytest.mark.parametrize(
+    'pandas_ge_3', [False, True], ids=lambda x: f'pandas >= 3: {x}'
+)
+def test_load_forecaster_adds_note_when_file_cannot_be_rebuilt_with_pandas_2(
+    backend, loader, pandas_ge_3, tmp_path, monkeypatch
+):
+    """
+    Test that, with pandas 2, the error raised when a file saved with pandas 3
+    cannot be rebuilt (simulated here) keeps its type and gets a note with
+    the reason, and that no note is added with pandas 3.
+    """
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
+    forecaster.fit(y=pd.Series(np.arange(20, dtype=float)))
+    file_name = tmp_path / 'forecaster'
+    save_forecaster(forecaster, file_name=str(file_name), backend=backend, verbose=False)
+    file_name = next(tmp_path.iterdir())
+
+    def failing_load(*args, **kwargs):
+        raise AssertionError()
+
+    monkeypatch.setattr(loader, failing_load)
+    monkeypatch.setattr('skforecast.utils._pandas_compat.PANDAS_GE_3', pandas_ge_3)
+
+    with pytest.raises(AssertionError) as exc_info:
+        load_forecaster(str(file_name), trusted=True, verbose=False)
+
+    notes = getattr(exc_info.value, '__notes__', [])
+    if pandas_ge_3:
+        assert notes == []
+    else:
+        assert len(notes) == 1
+        assert notes[0].startswith(f"If '{file_name}' was saved with pandas 3, it cannot be loaded")

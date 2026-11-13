@@ -17,6 +17,7 @@ from ..utils import (
     date_to_index_position,
     get_style_repr_html
 )
+from ..utils.utils import _TZ_MISSING_FREQ_HINT
 from ..exceptions import IgnoredArgumentWarning
 from ._utils import _check_initial_train_size
 
@@ -376,16 +377,25 @@ class BaseFold():
                 )
 
             if None in indexes_freq:
-                raise ValueError(
-                    "If `X` is a dictionary, all series must have a Pandas "
-                    "RangeIndex or DatetimeIndex with the same step/frequency. "
-                    "Found series with no frequency or step."
+                is_tz_aware = any(
+                    isinstance(v.index, pd.DatetimeIndex) and v.index.tz is not None
+                    for v in X.values()
+                    if v is not None
                 )
-            if not len(indexes_freq) == 1:
+                hint = _TZ_MISSING_FREQ_HINT if is_tz_aware else ""
                 raise ValueError(
                     f"If `X` is a dictionary, all series must have a Pandas "
                     f"RangeIndex or DatetimeIndex with the same step/frequency. "
-                    f"Found frequencies: {sorted(indexes_freq)}"
+                    f"Found series with no frequency or step.{hint}"
+                )
+            if not len(indexes_freq) == 1:
+                # NOTE: Sorted by their text: frequencies of different types
+                # (e.g. `Day` and `MonthBegin`, or a frequency and a step)
+                # cannot be compared, and since pandas 3 neither can two `Day`.
+                raise ValueError(
+                    f"If `X` is a dictionary, all series must have a Pandas "
+                    f"RangeIndex or DatetimeIndex with the same step/frequency. "
+                    f"Found frequencies: {sorted(indexes_freq, key=str)}"
                 )
             
             if isinstance(idx, pd.DatetimeIndex):

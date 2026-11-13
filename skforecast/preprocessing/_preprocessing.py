@@ -22,7 +22,11 @@ from ..exceptions import IgnoredArgumentWarning, MissingValuesWarning
 from ..metrics import calculate_coverage
 from ..utils import _pandas_compat as compat
 from ..utils import get_style_repr_html
-from ..utils.utils import _date_range_from_index, _is_utc_anchored_index
+from ..utils.utils import (
+    _date_range_from_index,
+    _infer_freq_from_index,
+    _is_utc_anchored_index
+)
 
 
 def _check_X_numpy_ndarray_1d(ensure_1d=True):
@@ -442,7 +446,9 @@ def reshape_series_wide_to_long(
     """
     Convert a pandas DataFrame where each column represents a different time series
     into a long format DataFrame with a MultiIndex. The index of the input DataFrame
-    must be a pandas DatetimeIndex with a defined frequency. The function reshapes the
+    must be a pandas DatetimeIndex with a frequency; if it has none, the frequency
+    is inferred from the dates and a `ValueError` is raised if it cannot be
+    inferred (for example, with missing dates). The function reshapes the
     DataFrame from wide format to long format, where each row corresponds to a
     specific time point and series ID. The resulting DataFrame will have a MultiIndex
     with the series IDs as the first level and a pandas DatetimeIndex as the second
@@ -452,8 +458,9 @@ def reshape_series_wide_to_long(
     Parameters
     ----------
     data: pandas DataFrame
-        Wide format series. The index must be a pandas DatetimeIndex with a 
-        defined frequency and each column must represent a different time series.
+        Wide format series. The index must be a pandas DatetimeIndex with a
+        frequency, or with regularly spaced dates from which it can be inferred,
+        and each column must represent a different time series.
     return_multi_index: bool, default True
         If True, the returned DataFrame will have a MultiIndex with the series IDs
         as the first level and a pandas DatetimeIndex as the second level. If False,
@@ -475,8 +482,22 @@ def reshape_series_wide_to_long(
         raise TypeError("`data` index must be a pandas DatetimeIndex.")
     
     freq = data.index.freq
-    data.index.name = "datetime"
-    data = data.reset_index()
+    if freq is None:
+        # NOTE: The frequency is only inferred from regularly spaced dates, so
+        # `asfreq` adds no rows. Without a frequency, `asfreq` would use a
+        # daily one: it would drop rows of hourly data and add rows of monthly
+        # data. The dates are sorted because `asfreq` returns them sorted, and
+        # the frequency of descending dates is negative.
+        freq = _infer_freq_from_index(data.index.sort_values())
+        if freq is None:
+            raise ValueError(
+                "`data` index has no frequency and it cannot be inferred: the "
+                "dates are not regularly spaced or there are fewer than 3. Set "
+                "the frequency of the index, for example with "
+                "`data = data.asfreq('D')`."
+            )
+    # NOTE: `names` avoids renaming the index of the user's DataFrame.
+    data = data.reset_index(names="datetime")
     data = pd.melt(data, id_vars="datetime", var_name="series_id", value_name="value")
     data = data.groupby("series_id", sort=False).apply(
         lambda x: _asfreq_from_index(x.set_index("datetime"), freq),

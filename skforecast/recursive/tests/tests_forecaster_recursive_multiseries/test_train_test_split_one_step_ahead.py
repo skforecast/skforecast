@@ -1,6 +1,7 @@
 ﻿# Unit test _train_test_split_one_step_ahead ForecasterRecursiveMultiSeries
 # ==============================================================================
 import re
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
@@ -1275,6 +1276,34 @@ def test_train_test_split_one_step_ahead_restores_is_fitted(initial_is_fitted):
     )
 
     assert forecaster.is_fitted == initial_is_fitted
+
+
+@pytest.mark.parametrize(
+    'encoding',
+    ['ordinal', 'ordinal_category', 'onehot', None],
+    ids=lambda encoding: f'encoding: {encoding}'
+)
+def test_train_test_split_one_step_ahead_encodings_when_series_names_are_int(encoding):
+    """
+    Test the series identifiers of each row are the series names, also when
+    they are integers, without warnings (with `encoding='onehot'`, filling
+    missing identifiers raised a FutureWarning of pandas 2 on downcasting).
+    """
+    series_int = {1: series['series_1'], 2: series['series_2']}
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=3, encoding=encoding
+    )
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", category=FutureWarning)
+        _, _, _, _, X_train_encoding, X_test_encoding, _, _ = (
+            forecaster._train_test_split_one_step_ahead(
+                series=series_int, initial_train_size=10
+            )
+        )
+
+    assert X_train_encoding.tolist() == [1] * 7 + [2] * 7
+    assert X_test_encoding.tolist() == [1] * 5 + [2] * 5
 
 
 def test_train_test_split_one_step_ahead_sample_weight_and_fit_kwargs_ordinal():

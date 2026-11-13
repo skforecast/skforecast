@@ -26,8 +26,22 @@ The main changes in this release are:
 
 + Removed support for Python 3.10, which reached its end of life in October 2026: skforecast now requires Python 3.11 or later. With Python 3.10, pip keeps installing skforecast 0.27.0. The minimum version of `statsmodels` is now 0.13.3 (0.13.2 has no wheels for Python 3.11). ([#1496](https://github.com/skforecast/skforecast/pull/1496))
 
++ With pandas 3, the error raised when a timezone-aware index has no frequency explains how to keep it: `tz_convert` now drops calendar frequencies such as `'D'` or `'MS'`, and `freq='24h'` (daily) or `freq='168h'` (weekly) keep the same dates.
+
++ When <code>[load_forecaster]</code> fails with pandas 2, the error notes that a forecaster saved with pandas 3 can only be loaded with pandas 3, or with pandas 2.3 if it was saved with `backend='skops'`.
+
 
 **Fixed**
+
++ <code>[reshape_series_wide_to_long]</code> assumed a daily frequency when the index had none: hourly data lost rows and monthly data gained daily rows of NaN (also in the `'long'` outputs of <code>[TimeSeriesSplitter]</code>). The frequency is now inferred from the dates and, if it cannot be inferred, a `ValueError` is raised: daily data with missing dates, which worked before, needs `data.asfreq('D')` first. The index of the input DataFrame is no longer renamed.
+
++ The `split` method of <code>[TimeSeriesFold]</code> and <code>[OneStepAheadFold]</code> raised a `TypeError` instead of the `ValueError` that lists the frequencies when the series of a dict had frequencies that cannot be compared, such as `'D'` and `'MS'`, or a DatetimeIndex and a RangeIndex.
+
++ <code>[expand_index]</code> returned dates one day early with a monthly timezone-aware index without frequency that advances in fixed UTC steps west of UTC (dates at UTC midnight converted to, for example, `'America/New_York'`), and raised a `ValueError` with quarterly or weekly ones. The frequency is now inferred on the UTC dates.
+
++ <code>[ForecasterRecursiveMultiSeries]</code> raised a `TypeError` when a text exogenous variable had different text dtypes in different series, such as `string` and `object`, or, with pandas 3, `str` and `object` (a column with all values missing is `object`).
+
++ Hyperparameter searches with <code>[OneStepAheadFold]</code> and <code>[ForecasterRecursiveMultiSeries]</code> with `encoding='onehot'` and integer series names raised a `FutureWarning` of pandas about downcasting.
 
 
 
