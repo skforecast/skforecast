@@ -30,7 +30,7 @@ pip install git+https://github.com/skforecast/skforecast@main
 The following dependencies are installed with the default installation:
 
 + numpy>=2.0
-+ pandas>=2.3, <3.0
++ pandas>=2.3, <4.0
 + tqdm>=4.66
 + scikit-learn>=1.6
 + scipy>=1.13
