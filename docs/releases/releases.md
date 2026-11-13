@@ -26,6 +26,8 @@ The main changes in this release are:
 
 + Removed support for Python 3.10, which reached its end of life in October 2026: skforecast now requires Python 3.11 or later. With Python 3.10, pip keeps installing skforecast 0.27.0. The minimum version of `statsmodels` is now 0.13.3 (0.13.2 has no wheels for Python 3.11). ([#1496](https://github.com/skforecast/skforecast/pull/1496))
 
++ <code>[backtesting_forecaster]</code> and the hyperparameter searches of single series (<code>[grid_search_forecaster]</code>, <code>[random_search_forecaster]</code>, <code>[bayesian_search_forecaster]</code>) send the forecaster to the parallel processes once instead of once per fold, which takes up to 40 % less time without refit with XGBoost and LightGBM on 4 CPUs. XGBoost and LightGBM models fitted afterwards in the same session are no longer slowed down. Results are unchanged.
+
 
 **Fixed**
 
