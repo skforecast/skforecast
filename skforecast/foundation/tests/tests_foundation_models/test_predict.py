@@ -274,7 +274,10 @@ def test_predict_output_when_context_multiseries(context_input):
     expected_index = pd.date_range(
         start=expected_start, periods=4, freq=new_idx.freq
     )
-    pd.testing.assert_index_equal(result.index.unique(), expected_index)
+    # `unique` of the long index has no `freq`, compare only the timestamps
+    pd.testing.assert_index_equal(
+        result.index.unique(), pd.DatetimeIndex(expected_index, freq=None)
+    )
 
 
 def test_predict_output_when_context_without_fit():

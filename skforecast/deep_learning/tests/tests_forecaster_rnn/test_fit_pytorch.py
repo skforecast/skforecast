@@ -64,7 +64,7 @@ def test_fit_without_validation_data():
     assert forecaster.series_names_in_ == ["1", "2"]
     assert forecaster.X_train_series_names_in_ == ["1", "2"]
 
-    assert all(forecaster.training_range_ == (0, 4))
+    assert forecaster.training_range_.to_list() == [0, 4]
 
     last_window = pd.DataFrame({"1": [2, 3, 4], "2": [2, 3, 4]})
     np.testing.assert_array_almost_equal(forecaster.last_window_, last_window)

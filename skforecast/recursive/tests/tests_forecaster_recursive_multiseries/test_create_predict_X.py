@@ -731,7 +731,7 @@ def test_create_predict_X_output_when_series_and_exog_dict():
                        columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                                   '_level_skforecast', 'sin_day_of_week', 
                                   'cos_day_of_week', 'air_temperature', 'wind_speed'],
-                       index = pd.date_range(start='2016-08-01', periods=5, freq='D')
+                       index = pd.date_range(start='2016-08-01', periods=5, freq='D', unit='ns')
                    ),
         'id_1001': pd.DataFrame(
                        data = np.array([
@@ -748,7 +748,7 @@ def test_create_predict_X_output_when_series_and_exog_dict():
                        columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                                   '_level_skforecast', 'sin_day_of_week', 
                                   'cos_day_of_week', 'air_temperature', 'wind_speed'],
-                       index = pd.date_range(start='2016-08-01', periods=5, freq='D')
+                       index = pd.date_range(start='2016-08-01', periods=5, freq='D', unit='ns')
                    ),
         'id_1003': pd.DataFrame(
                        data = np.array([
@@ -765,7 +765,7 @@ def test_create_predict_X_output_when_series_and_exog_dict():
                        columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                                   '_level_skforecast', 'sin_day_of_week', 
                                   'cos_day_of_week', 'air_temperature', 'wind_speed'],
-                       index = pd.date_range(start='2016-08-01', periods=5, freq='D')
+                       index = pd.date_range(start='2016-08-01', periods=5, freq='D', unit='ns')
                    ),
         'id_1004': pd.DataFrame(
                        data = np.array([
@@ -782,7 +782,7 @@ def test_create_predict_X_output_when_series_and_exog_dict():
                        columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                                   '_level_skforecast', 'sin_day_of_week', 
                                   'cos_day_of_week', 'air_temperature', 'wind_speed'],
-                       index = pd.date_range(start='2016-08-01', periods=5, freq='D')
+                       index = pd.date_range(start='2016-08-01', periods=5, freq='D', unit='ns')
                    )
     }
     expected = expected_df_to_long_format(expected, method='bootstrapping')
@@ -930,7 +930,7 @@ def test_create_predict_X_output_when_series_and_exog_dict_encoding_None():
                                    -0.60444947, -1.26286725,      np.nan,      np.nan]]),
                        columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                                   'sin_day_of_week', 'cos_day_of_week', 'air_temperature', 'wind_speed'],
-                       index = pd.date_range(start='2016-08-01', periods=5, freq='D')
+                       index = pd.date_range(start='2016-08-01', periods=5, freq='D', unit='ns')
                    ),
         'id_1001': pd.DataFrame(
                        data = np.array([
@@ -946,7 +946,7 @@ def test_create_predict_X_output_when_series_and_exog_dict_encoding_None():
                                    -0.60444947, -1.26286725,  1.00599776, -0.62314633]]),
                        columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                                   'sin_day_of_week', 'cos_day_of_week', 'air_temperature', 'wind_speed'],
-                       index = pd.date_range(start='2016-08-01', periods=5, freq='D')
+                       index = pd.date_range(start='2016-08-01', periods=5, freq='D', unit='ns')
                    ),
         'id_1003': pd.DataFrame(
                        data = np.array([
@@ -962,7 +962,7 @@ def test_create_predict_X_output_when_series_and_exog_dict_encoding_None():
                                    -0.60444947,      np.nan,  1.00599776, -0.62314633]]),
                        columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                                   'sin_day_of_week', 'cos_day_of_week', 'air_temperature', 'wind_speed'],
-                       index = pd.date_range(start='2016-08-01', periods=5, freq='D')
+                       index = pd.date_range(start='2016-08-01', periods=5, freq='D', unit='ns')
                    ),
         'id_1004': pd.DataFrame(
                        data = np.array([
@@ -978,7 +978,7 @@ def test_create_predict_X_output_when_series_and_exog_dict_encoding_None():
         -0.60444947, -1.26286725,  1.00599776, -0.62314633]]),
                        columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                                   'sin_day_of_week', 'cos_day_of_week', 'air_temperature', 'wind_speed'],
-                       index = pd.date_range(start='2016-08-01', periods=5, freq='D')
+                       index = pd.date_range(start='2016-08-01', periods=5, freq='D', unit='ns')
                    )
     }
     expected = expected_df_to_long_format(expected, method='bootstrapping')
@@ -1029,7 +1029,7 @@ def test_create_predict_X_output_when_series_and_exog_dict_unknown_level():
                        columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                                   '_level_skforecast', 'sin_day_of_week', 
                                   'cos_day_of_week', 'air_temperature', 'wind_speed'],
-                       index = pd.date_range(start='2016-08-01', periods=5, freq='D')
+                       index = pd.date_range(start='2016-08-01', periods=5, freq='D', unit='ns')
                    ),
         'id_1001': pd.DataFrame(
                        data = np.array([
@@ -1046,7 +1046,7 @@ def test_create_predict_X_output_when_series_and_exog_dict_unknown_level():
                        columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                                   '_level_skforecast', 'sin_day_of_week', 
                                   'cos_day_of_week', 'air_temperature', 'wind_speed'],
-                       index = pd.date_range(start='2016-08-01', periods=5, freq='D')
+                       index = pd.date_range(start='2016-08-01', periods=5, freq='D', unit='ns')
                    ),
         'id_1003': pd.DataFrame(
                        data = np.array([
@@ -1063,7 +1063,7 @@ def test_create_predict_X_output_when_series_and_exog_dict_unknown_level():
                        columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                                   '_level_skforecast', 'sin_day_of_week', 
                                   'cos_day_of_week', 'air_temperature', 'wind_speed'],
-                       index = pd.date_range(start='2016-08-01', periods=5, freq='D')
+                       index = pd.date_range(start='2016-08-01', periods=5, freq='D', unit='ns')
                    ),
         'id_1004': pd.DataFrame(
                        data = np.array([
@@ -1080,7 +1080,7 @@ def test_create_predict_X_output_when_series_and_exog_dict_unknown_level():
                        columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                                   '_level_skforecast', 'sin_day_of_week', 
                                   'cos_day_of_week', 'air_temperature', 'wind_speed'],
-                       index = pd.date_range(start='2016-08-01', periods=5, freq='D')
+                       index = pd.date_range(start='2016-08-01', periods=5, freq='D', unit='ns')
                    ),
         'id_1005': pd.DataFrame(
                        data = np.array([
@@ -1097,7 +1097,7 @@ def test_create_predict_X_output_when_series_and_exog_dict_unknown_level():
                        columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                                   '_level_skforecast', 'sin_day_of_week', 
                                   'cos_day_of_week', 'air_temperature', 'wind_speed'],
-                       index = pd.date_range(start='2016-08-01', periods=5, freq='D')
+                       index = pd.date_range(start='2016-08-01', periods=5, freq='D', unit='ns')
                    )
     }
     expected = expected_df_to_long_format(expected, method='bootstrapping')
@@ -1149,7 +1149,7 @@ def test_create_predict_X_output_when_series_and_exog_dict_encoding_None_unknown
                             -0.60444947, -1.26286725,      np.nan,      np.nan]]),
                        columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                                   'sin_day_of_week', 'cos_day_of_week', 'air_temperature', 'wind_speed'],
-                       index = pd.date_range(start='2016-08-01', periods=5, freq='D')
+                       index = pd.date_range(start='2016-08-01', periods=5, freq='D', unit='ns')
                    ),
         'id_1001': pd.DataFrame(
                        data = np.array([
@@ -1165,7 +1165,7 @@ def test_create_predict_X_output_when_series_and_exog_dict_encoding_None_unknown
                             -0.60444947, -1.26286725,  1.00599776, -0.62314633]]),
                        columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                                   'sin_day_of_week', 'cos_day_of_week', 'air_temperature', 'wind_speed'],
-                       index = pd.date_range(start='2016-08-01', periods=5, freq='D')
+                       index = pd.date_range(start='2016-08-01', periods=5, freq='D', unit='ns')
                    ),
         'id_1003': pd.DataFrame(
                        data = np.array([
@@ -1181,7 +1181,7 @@ def test_create_predict_X_output_when_series_and_exog_dict_encoding_None_unknown
                             -0.60444947,      np.nan,  1.00599776, -0.62314633]]),
                        columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                                   'sin_day_of_week', 'cos_day_of_week', 'air_temperature', 'wind_speed'],
-                       index = pd.date_range(start='2016-08-01', periods=5, freq='D')
+                       index = pd.date_range(start='2016-08-01', periods=5, freq='D', unit='ns')
                    ),
         'id_1004': pd.DataFrame(
                        data = np.array([
@@ -1197,7 +1197,7 @@ def test_create_predict_X_output_when_series_and_exog_dict_encoding_None_unknown
                             -0.60444947, -1.26286725,  1.00599776, -0.62314633]]),
                        columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                                   'sin_day_of_week', 'cos_day_of_week', 'air_temperature', 'wind_speed'],
-                       index = pd.date_range(start='2016-08-01', periods=5, freq='D')
+                       index = pd.date_range(start='2016-08-01', periods=5, freq='D', unit='ns')
                    ),
         'id_1005': pd.DataFrame(
                        data = np.array([
@@ -1213,7 +1213,7 @@ def test_create_predict_X_output_when_series_and_exog_dict_encoding_None_unknown
                             -0.60444947, -1.26286725,  1.00599776, -0.62314633]]),
                        columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                                   'sin_day_of_week', 'cos_day_of_week', 'air_temperature', 'wind_speed'],
-                       index = pd.date_range(start='2016-08-01', periods=5, freq='D')
+                       index = pd.date_range(start='2016-08-01', periods=5, freq='D', unit='ns')
                    )
     }
     expected = expected_df_to_long_format(expected, method='bootstrapping')

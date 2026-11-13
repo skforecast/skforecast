@@ -793,7 +793,7 @@ def test_predict_output_when_series_and_exog_dict():
                 [1403.93625654, 2089.11038884, 2035.99448247, 7488.18398744],
             ]
         ),
-        index=pd.date_range(start="2016-08-01", periods=5, freq="D"),
+        index=pd.date_range(start="2016-08-01", periods=5, freq="D", unit="ns"),
         columns=["id_1000", "id_1001", "id_1003", "id_1004"],
     )
 
@@ -1189,7 +1189,7 @@ def test_predict_output_when_series_and_exog_dict_encoding_None_unknown_level(le
             [1367.56233886, 3595.37617537, 3861.96220571, 7599.93110962, 6018.65643062],
             [1349.98221742, 3730.36025071, 3900.14738742, 7997.86353537, 6213.61087632],
             [1330.33321825, 3752.7395927 , 3850.39111741, 7923.44398373, 6128.67898851]]),
-        index=pd.date_range(start="2016-08-01", periods=5, freq="D"),
+        index=pd.date_range(start="2016-08-01", periods=5, freq="D", unit="ns"),
         columns=["id_1000", "id_1001", "id_1003", "id_1004", "id_1005"],
     )
 
@@ -1238,7 +1238,7 @@ def test_predict_output_when_series_and_exog_dict_encoding_None_transformer_seri
             [1466.94536267, 3215.9383148 , 2991.20843378, 8565.22794876, 8506.18236246],
             [1427.46483497, 3512.06387649, 2806.20216519, 8343.01317975, 8561.27068389],
             [1411.73980543, 3275.61791117, 1959.1294473 , 8360.01068926, 7633.82955233]]),
-        index=pd.date_range(start="2016-08-01", periods=5, freq="D"),
+        index=pd.date_range(start="2016-08-01", periods=5, freq="D", unit="ns"),
         columns=["id_1000", "id_1001", "id_1003", "id_1004", "id_1005"],
     )
 
@@ -1287,7 +1287,7 @@ def test_predict_output_when_series_and_exog_dict_unknown_level(levels):
             [1419.2856951 , 2451.51448204, 2183.50817345, 8473.84457748, 4721.84643207],
             [1368.78988907, 2477.40763584, 2180.37278483, 8528.07173563, 4559.15070243],
             [1324.15676752, 2566.91100046, 2186.03652396, 8767.76813577, 4966.9971064 ]]),
-        index=pd.date_range(start="2016-08-01", periods=5, freq="D"),
+        index=pd.date_range(start="2016-08-01", periods=5, freq="D", unit="ns"),
         columns=["id_1000", "id_1001", "id_1003", "id_1004", "id_1005"],
     )
 

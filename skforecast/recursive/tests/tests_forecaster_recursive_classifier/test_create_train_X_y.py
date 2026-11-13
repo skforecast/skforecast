@@ -1743,7 +1743,8 @@ def test_create_train_X_y_MissingValuesWarning_and_output_when_NaN_in_X_train_an
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
     np.testing.assert_array_almost_equal(results[1], expected[1])
-    pd.testing.assert_index_equal(results[2], expected[2])
+    # pandas 3 keeps a RangeIndex after dropping the NaN rows (pandas 2 an Index)
+    pd.testing.assert_index_equal(results[2], expected[2], exact='equiv')
     for k in results[3].keys():
         assert results[3][k] == expected[3][k]
     assert results[4] == expected[4]
@@ -1897,7 +1898,8 @@ def test_create_train_X_y_MissingValuesWarning_when_y_has_NaN_in_target_position
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
     np.testing.assert_array_almost_equal(results[1], expected[1])
-    pd.testing.assert_index_equal(results[2], expected[2])
+    # pandas 3 keeps a RangeIndex after dropping the NaN rows (pandas 2 an Index)
+    pd.testing.assert_index_equal(results[2], expected[2], exact='equiv')
     for k in results[3].keys():
         assert results[3][k] == expected[3][k]
     assert results[4] == expected[4]

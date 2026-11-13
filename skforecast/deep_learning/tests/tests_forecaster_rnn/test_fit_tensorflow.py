@@ -83,7 +83,7 @@ def test_fit_without_validation_data():
     assert forecaster.X_train_series_names_in_ == ["1", "2"]
 
     # Assert that the training range is set correctly
-    assert all(forecaster.training_range_ == (0, 4))
+    assert forecaster.training_range_.to_list() == [0, 4]
 
     # Assert that the last window is set correctly
     last_window = pd.DataFrame({"1": [2, 3, 4], "2": [2, 3, 4]})

@@ -77,8 +77,8 @@ def test_TypeError_series_exog_dict_to_long_different_index_type():
         'series_2': pd.Series([4, 5, 6], name='exog_2')
     }
 
-    series_idx_type = "<class 'pandas.core.indexes.datetimes.DatetimeIndex'>"
-    exog_idx_type = "<class 'pandas.core.indexes.base.Index'>"
+    series_idx_type = f"{pd.DatetimeIndex}"
+    exog_idx_type = f"{pd.Index}"
 
     error_msg = re.escape(
         f"Index type mismatch: series has index of type "

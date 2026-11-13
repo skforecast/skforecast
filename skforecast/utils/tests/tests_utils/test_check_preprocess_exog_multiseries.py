@@ -18,6 +18,9 @@ from skforecast.recursive.tests.tests_forecaster_recursive_multiseries.fixtures_
     exog_dict_dt,
 )
 
+# Default dtype of a text column: object in pandas 2, str in pandas 3
+STR_DTYPE = pd.Series(['a']).dtype
+
 
 def test_TypeError_check_preprocess_exog_multiseries_when_exog_is_not_valid_type():
     """
@@ -54,7 +57,7 @@ def test_TypeError_check_preprocess_exog_multiseries_when_exog_is_not_dict_and_s
         "When input data are pandas MultiIndex DataFrame, "
         "`series` and `exog` second level index must be a "
         "pandas DatetimeIndex. Found `exog` index type: "
-        "<class 'pandas.core.indexes.base.Index'>."
+        f"{type(not_valid_exog.index.levels[1])}."
     )
     with pytest.raises(TypeError, match = err_msg):
         check_preprocess_exog_multiseries(
@@ -75,8 +78,8 @@ def test_TypeError_check_preprocess_exog_multiseries_when_exog_pandas_with_diffe
     err_msg = re.escape(
         "`exog` must have the same index type as `series`, pandas "
         "RangeIndex or pandas DatetimeIndex.\n"
-        "    `series` index type : <class 'pandas.core.indexes.datetimes.DatetimeIndex'>.\n"
-        "    `exog`   index type : <class 'pandas.core.indexes.range.RangeIndex'>."
+        f"    `series` index type : {pd.DatetimeIndex}.\n"
+        f"    `exog`   index type : {pd.RangeIndex}."
     )
     with pytest.raises(TypeError, match = err_msg):
         check_preprocess_exog_multiseries(
@@ -505,7 +508,10 @@ def test_output_check_preprocess_exog_multiseries_when_exog_DataFrame_MultiIndex
     for k in exog_dict:
         assert isinstance(exog_dict[k], pd.DataFrame)
         pd.testing.assert_frame_equal(exog_dict[k], expected_exog_dict[k])
-        pd.testing.assert_index_equal(exog_dict[k].index, series_dict[k].index)
+        # The exog index has no `freq`, compare only the timestamps
+        pd.testing.assert_index_equal(
+            exog_dict[k].index, pd.DatetimeIndex(series_dict[k].index, freq=None)
+        )
 
     assert exog_names_in_ == expected_exog_names_in_
 
@@ -551,7 +557,7 @@ def test_output_check_preprocess_exog_multiseries_when_exog_MultiIndex_with_diff
     expected_exog_dict['l1'].index.freq = None
     expected_exog_dict['l2'].index.freq = None
     expected_exog_dict['l2']['exog_2'] = np.nan
-    expected_exog_dict['l2']['exog_2'] = expected_exog_dict['l2']['exog_2'].astype(object)
+    expected_exog_dict['l2']['exog_2'] = expected_exog_dict['l2']['exog_2'].astype(STR_DTYPE)
     expected_exog_names_in_ = ['exog_1', 'exog_2']
     
     assert isinstance(exog_dict, dict)

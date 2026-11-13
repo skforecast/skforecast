@@ -260,7 +260,7 @@ def test_predict_output_ForecasterStats_with_exog_multiple_estimators():
                  '2052-12-31', '2052-12-31', '2052-12-31',
                  '2053-12-31', '2053-12-31', '2053-12-31',
                  '2054-12-31', '2054-12-31', '2054-12-31'],
-                dtype='datetime64[ns]', freq=None)
+                freq=None)
     )
     
     pd.testing.assert_frame_equal(predictions, expected)

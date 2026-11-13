@@ -4,6 +4,11 @@ import re
 import pytest
 import pandas as pd
 from skforecast.utils import date_to_index_position
+from skforecast.utils._pandas_compat import PANDAS_GE_3
+
+skip_freq_D_in_pandas_3 = pytest.mark.skipif(
+    PANDAS_GE_3, reason="Since pandas 3, `tz_convert` drops 'D'."
+)
 
 
 def test_ValueError_date_to_index_position_when_method_not_valid():
@@ -146,26 +151,34 @@ def test_output_date_to_index_position_when_date_is_first_date_and_method_is_val
 
 
 @pytest.mark.parametrize(
-    'start, utc_anchored',
-    [('2025-10-01', True), ('2026-03-01', True),
-     ('2025-10-01', False), ('2026-03-01', False)],
+    'start, utc_anchored, freq',
+    [
+        pytest.param('2025-10-01', True, 'D', marks=skip_freq_D_in_pandas_3),
+        pytest.param('2026-03-01', True, 'D', marks=skip_freq_D_in_pandas_3),
+        ('2025-10-01', True, '24h'),
+        ('2026-03-01', True, '24h'),
+        ('2025-10-01', False, 'D'),
+        ('2026-03-01', False, 'D'),
+    ],
     ids=lambda x: f'{x}'
 )
 def test_output_date_to_index_position_when_index_is_tz_aware_and_crosses_dst_change(
-    start, utc_anchored
+    start, utc_anchored, freq
 ):
     """
     Test it returns the correct position when the index is timezone-aware and
     the range between the index and `date_input` crosses a daylight saving
     change, both when the index advances in fixed UTC steps (created in UTC
-    and converted to a local timezone) and in local calendar steps.
+    and converted to a local timezone) and in local calendar steps. In fixed
+    UTC steps, 'D' keeps the frequency only in pandas 2; '24h' is the
+    frequency that keeps it in both versions.
     """
     if utc_anchored:
         index = pd.date_range(
-            start=start, periods=50, freq='D', tz='UTC'
+            start=start, periods=50, freq=freq, tz='UTC'
         ).tz_convert('Europe/Madrid')
     else:
-        index = pd.date_range(start=start, periods=50, freq='D', tz='Europe/Madrid')
+        index = pd.date_range(start=start, periods=50, freq=freq, tz='Europe/Madrid')
 
     results_prediction = date_to_index_position(
         index=index[:20], date_input=index[45], method='prediction'

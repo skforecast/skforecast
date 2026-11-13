@@ -44,7 +44,7 @@ def test_TypeError_check_preprocess_series_when_series_is_pandas_DataFrame_Multi
     err_msg = re.escape(
         "The second level of the MultiIndex in `series` must be a pandas "
         "DatetimeIndex with the same frequency for each series. "
-        "Found <class 'pandas.core.indexes.base.Index'>."
+        f"Found {type(series.index.levels[1])}."
     )
     with pytest.raises(TypeError, match = err_msg):
         check_preprocess_series(series=series)

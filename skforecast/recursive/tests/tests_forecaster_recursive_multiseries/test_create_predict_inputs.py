@@ -534,7 +534,7 @@ def test_create_predict_inputs_output_when_series_and_exog_dict():
              'id_1001': np.array([0.21800529, 0.36936645, 0.67896814, 1.16332175, 1.1523137]),
              'id_1003': np.array([-0.62651976, -0.74685959, -1.03823091, -0.37837738, 3.39980134]),
              'id_1004': np.array([0.61495753, 0.8322971, 0.6719899, -0.24309812, -0.75073762])},
-            index = pd.date_range(start='2016-07-27', periods=5, freq='D')
+            index = pd.date_range(start='2016-07-27', periods=5, freq='D', unit='ns')
         ),
         {1: np.array([[0.00821644, 1.42962482, np.nan, np.nan],
                       [0.00821644, 1.42962482, 1.11141113, -0.87943526],
@@ -559,7 +559,7 @@ def test_create_predict_inputs_output_when_series_and_exog_dict():
         },
         None,
         ['id_1000', 'id_1001', 'id_1003', 'id_1004'],
-        pd.date_range(start='2016-08-01', periods=5, freq='D')
+        pd.date_range(start='2016-08-01', periods=5, freq='D', unit='ns')
     )
 
     pd.testing.assert_frame_equal(results[0], expected[0])
@@ -740,7 +740,7 @@ def test_create_predict_inputs_when_series_and_exog_dict_unknown_level_calendar_
              'id_1003': np.array([-0.62651976, -0.74685959, -1.03823091, -0.37837738, 3.39980134]),
              'id_1004': np.array([0.61495753, 0.8322971, 0.6719899, -0.24309812, -0.75073762]),
              'id_1005': np.array([2.38367241, 2.56743042, 2.4318926, 1.65819658, 1.22899343])},
-            index = pd.date_range(start='2016-07-27', periods=5, freq='D')
+            index = pd.date_range(start='2016-07-27', periods=5, freq='D', unit='ns')
         ),
         {1: np.array([[0.00821644, 1.42962482, np.nan, np.nan],
                       [0.00821644, 1.42962482, 1.11141113, -0.87943526],
@@ -774,7 +774,7 @@ def test_create_predict_inputs_when_series_and_exog_dict_unknown_level_calendar_
                   [ 0.        ,  0.43388374, -0.90096887],
                   [ 0.        , -0.43388374, -0.90096887]]),
         ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005'],
-        pd.date_range(start='2016-08-01', periods=5, freq='D')
+        pd.date_range(start='2016-08-01', periods=5, freq='D', unit='ns')
     )
 
     pd.testing.assert_frame_equal(results[0], expected[0])
@@ -824,7 +824,7 @@ def test_create_predict_inputs_when_series_and_exog_dict_unknown_level_encoding_
              'id_1003': np.array([-0.56650418, -0.59023234, -0.64768383, -0.51757641,  0.22739054]),
              'id_1004': np.array([2.38367241, 2.56743042, 2.4318926, 1.65819658, 1.22899343]),
              'id_1005': np.array([2.38367241, 2.56743042, 2.4318926, 1.65819658, 1.22899343])},
-            index = pd.date_range(start='2016-07-27', periods=5, freq='D')
+            index = pd.date_range(start='2016-07-27', periods=5, freq='D', unit='ns')
         ),
         {1: np.array([[0.00821644, 1.42962482, np.nan, np.nan],
                       [0.00821644, 1.42962482, 1.11141113, -0.87943526],
@@ -854,7 +854,7 @@ def test_create_predict_inputs_when_series_and_exog_dict_unknown_level_encoding_
         },
         None,
         ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005'],
-        pd.date_range(start='2016-08-01', periods=5, freq='D')
+        pd.date_range(start='2016-08-01', periods=5, freq='D', unit='ns')
     )
 
     pd.testing.assert_frame_equal(results[0], expected[0])
@@ -908,7 +908,7 @@ def test_create_predict_inputs_when_unknown_level_and_differentiation(differenti
              'id_1003': np.array([np.nan, -0.36050495, -0.12033983, -0.29137132,  0.65985353,  3.77817872]),
              'id_1004': np.array([np.nan,  0.05600424,  0.21733957, -0.16030719, -0.91508802, -0.5076395 ]),
              'id_1005': np.array([np.nan,  0.04735092,  0.18375801, -0.13553782, -0.77369602, -0.42920315])},
-            index = pd.date_range(start='2016-07-26', periods=6, freq='D')
+            index = pd.date_range(start='2016-07-26', periods=6, freq='D', unit='ns')
         ),
         {1: np.array([[ 0.01311204,  1.42216832,         np.nan,         np.nan],
                       [ 0.01311204,  1.42216832,  1.11184323, -0.90109483],
@@ -938,7 +938,7 @@ def test_create_predict_inputs_when_unknown_level_and_differentiation(differenti
         },
         None,
         ['id_1000', 'id_1001', 'id_1003', 'id_1004', 'id_1005'],
-        pd.date_range(start='2016-08-01', periods=5, freq='D')
+        pd.date_range(start='2016-08-01', periods=5, freq='D', unit='ns')
     )
 
     pd.testing.assert_frame_equal(results[0], expected[0])

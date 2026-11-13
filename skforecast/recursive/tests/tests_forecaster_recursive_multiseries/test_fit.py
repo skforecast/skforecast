@@ -32,6 +32,9 @@ from .fixtures_forecaster_recursive_multiseries import (
     exog_dict_unordered
 )
 
+# Default dtype of a text column: object in pandas 2, str in pandas 3
+STR_DTYPE = pd.Series(['a']).dtype
+
 
 class LinearRegressionAddingColumn(LinearRegression):
     """
@@ -287,7 +290,7 @@ def test_forecaster_series_exog_features_stored():
     exog_names_in_ = ['exog_1', 'exog_2']
     exog_dtypes_in_ = {
         'exog_1': np.dtype(float), 
-        'exog_2': np.dtype(object)
+        'exog_2': STR_DTYPE
     }
     # All floats
     exog_dtypes_out_ = {
