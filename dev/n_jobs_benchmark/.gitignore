@@ -1,0 +1,5 @@
+_cache/
+results/smoke/
+results/pilot*/
+*.log
+.lock
