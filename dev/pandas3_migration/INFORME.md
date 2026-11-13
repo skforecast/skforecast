@@ -2128,6 +2128,198 @@ pandas y numpy (`python-dateutil` 2.9.0.post0 en los tres).
 - Siguiente: PR 4. La PR 3 (F26) puede ir en paralelo; falta decidir si F26
   se corrige también en `0.27.x`.
 
+**PR 4 sobre `0.28.x`, el 2026-11-13** (rama `fix/pandas3-robustness` desde
+`origin/0.28.x` en `f436e485b`, sin commit al escribir esto).
+
+Revisión previa del plan contra el código de `0.28.x`, con cada caso
+reproducido en pandas 2.2.3, 2.3.3 y 3.1.0. Decisiones del usuario, todas
+con la recomendación de la revisión:
+
+- **D10, (b) con `key=str`**: los dos mensajes ordenan las frecuencias con
+  `sorted(..., key=str)` y sin `try`. El texto es idéntico en las tres
+  versiones, que era el objetivo de D10. La clave por duración del plan solo
+  conservaba el orden exacto de pandas 2. De paso se arregla el `TypeError`
+  de `_split.py` con `D`/`MS` o fecha y paso, que también ocurre en pandas 2.
+  Cambia el orden de algunos mensajes en pandas 2 (3 tests actualizados).
+- **D15, opción nueva (c)**: `reshape_series_wide_to_long` infiere la
+  frecuencia cuando el índice no la tiene y lanza `ValueError` si no puede.
+  La guardia general (a) rompía el índice diario sin `freq` de `read_csv`,
+  que hoy funciona. Inferida la frecuencia, las fechas son regulares y
+  `asfreq` no añade filas. Arregla la pérdida de filas con datos horarios y
+  las filas de NaN con mensuales, en las dos versiones. El índice del usuario
+  ya no se renombra (`reset_index(names="datetime")`).
+- **D12, cerrada sin cambios**: el `stack` ya no existe porque las métricas
+  multiserie se reescribieron. MASE y RMSSE con NaN en la serie ancha dan lo
+  mismo en pandas 2 y 3, y con DataFrame y con dict.
+- **D6, (a) ampliada**: el error de índice tz-aware sin frecuencia sugiere
+  `freq='24h'`/`'168h'` o dejar el índice en UTC, en los tres sitios de
+  validación (`check_extract_values_and_index`, `check_preprocess_series` y
+  `_split.py`). Hallazgo nuevo: con pandas 3, un índice anclado en UTC con
+  frecuencia de calendario no puede tener `freq`. `tz_convert` la descarta y
+  pandas no deja fijarla con `MS` o `QS`, ni con `W` al oeste de UTC (ni con
+  `D` si cruza un cambio de hora). Para mensuales y trimestrales la única
+  salida es el índice en UTC: documentarlo en la PR 7 (sección 6).
+- **D8, (b)**: `load_forecaster` añade con pandas 2 una nota
+  (`exc.add_note`, Python 3.11) a `AssertionError`, `NotImplementedError` y
+  `TypeError` con los tres backends de pickle y con skops. Verificado con
+  ficheros reales: joblib y pickle de pandas 3 fallan en 2.2.3 y 2.3.3, y
+  skops con exógenas de texto falla en 2.2.3 pero carga en 2.3.3.
+
+Cambios respecto a la fila 4 de la sección 7:
+
+- Sin `compat.is_string_dtype`: `pd.api.types.is_string_dtype` da lo mismo en
+  las tres versiones. Los dtypes de texto se igualan solo cuando la
+  comparación directa falla: la primera versión, que los normalizaba
+  siempre, hacía `check_preprocess_exog_multiseries` 1,6 veces más lenta con
+  1000 series.
+- `fillna("_unknown_level")` del one-step-ahead eliminado, en lugar de
+  `dtype=object`: es código muerto (`_extract_data_folds_multiseries` solo
+  deja en la última ventana series de `series_train`), y en pandas 2 emitía
+  un `FutureWarning` de downcasting con `encoding='onehot'` y nombres
+  enteros.
+- Helper `_infer_freq_from_index` (`utils.py`), compartido por
+  `expand_index` y `reshape_series_wide_to_long`.
+- `pd.Series(dtype=str)` del fold vacío de `_backtesting_foundation`: solo se
+  nota con una serie. Con varias, el `set_index`/`reset_index` ya reconstruía
+  `str`.
+- Fuera del plan: `TimeSeriesSplitter` (experimental) construía el frame
+  ancho sin frecuencia, y con la inferencia sus formatos `long` fallaban con
+  series de distinto tramo. Ahora le aplica la frecuencia de las series con
+  `_asfreq_from_index`: en diario da lo mismo que la base, y en horario
+  corrige la misma pérdida de filas.
+
+Verificación:
+
+- Tests nuevos o actualizados: los de cada caso corregido fallan con la base
+  (con pandas 2, con pandas 3 o con ambos) y pasan con la rama en 2.2.3, 2.3.3
+  y 3.1.0. Los casos de control (`tz=None`, pandas 3 en la nota de
+  `load_forecaster`) pasan también con la base.
+- Suite completa, rama y base exportada (`C:` en mayúscula y caché nueva):
+  pandas 2.3.3, 3 fallos en las dos (los de `test_fit_tensorflow.py`);
+  pandas 3.1.0, 88 en la rama y 94 en la base. Los 94 son la lista de
+  `fallos_base_p3_2026-11-04.txt` y la rama arregla 6 sin añadir ninguno:
+  `expand_index` con `MS`, `reshape_series_wide_to_long` ×2 con índices
+  anclados en UTC y los 3 de orden de frecuencias. La rama tiene 41 tests
+  más; la base 4 omitidos más (el `git archive` no lleva `tools/`).
+  `Pandas4Warning` del paquete: 0 en los dos árboles. Los 2 `FutureWarning`
+  del `fillna` en pandas 2 desaparecen. Tras el cambio de
+  `check_preprocess_exog_multiseries` se repitieron `foundation`,
+  `model_selection`, `utils` y `tests_forecaster_recursive_multiseries`: sin
+  fallos nuevos.
+- Arnés `run_ab.py --identity --bench all --memory --base origin/0.28.x`
+  (`harness/results/pr4_028/summary.md`; Python 3.13.18, numpy 2.5.4,
+  scikit-learn 1.9.1): identidad estricta OK en p2 y p3 (205 de 205),
+  tiempo con mínimos entre 0,95 y 1,05 (ruido; ningún benchmark del arnés
+  pasa por el código cambiado), memoria 1,000 en p2 y entre 0,97 y 1,02 en
+  p3.
+- Microbenchmarks A/B de las funciones cambiadas (mínimo de 4 rondas
+  alternas): `check_preprocess_exog_multiseries` con 1000 series 1,03 (p2) y
+  1,01 (p3); `reshape_series_wide_to_long` con frecuencia 0,98 y 0,99;
+  `_train_test_split_one_step_ahead` de 200 series 0,96 a 1,00;
+  `expand_index` con frecuencia 0,96 y 0,98. Lo único más lento es
+  `expand_index` de un índice tz-aware sin frecuencia, 1,10 a 1,13 (de 0,7 a
+  0,78 ms, la segunda inferencia en UTC): camino raro, porque el ajuste
+  exige la frecuencia.
+- Hallazgo ajeno a la PR: `foundation/_adapters.py:2656` y `:3337` emiten un
+  `DeprecationWarning` de numpy (unidad `generic` de `timedelta`) en los dos
+  árboles.
+
+Revisión final antes del commit (2026-11-13), con dos decisiones del usuario:
+
+- **D15, se mantiene el `ValueError`**, sabiendo lo que deja de funcionar.
+  La revisión previa solo había comprobado el diario regular. Con índice sin
+  frecuencia, la base (que asumía diario) acertaba en tres casos que ahora
+  lanzan `ValueError`: diario con días faltantes, diario desordenado y diario
+  con menos de 3 filas. El mensaje indica el arreglo (`data.asfreq('D')`) y
+  la nota de versión lo dice. Volver a diario cuando la inferencia falla se
+  descartó: no distingue el diario con huecos del mensual con huecos, que
+  seguiría dando filas diarias de NaN sin avisar. Los días laborables pasan
+  de `D` con NaN en fines de semana a `B`, igual que con el índice ya en
+  `B`. Pendiente al consolidar la versión: una línea en «Before upgrading».
+- **D6, la pista solo con pandas 3**: `_TZ_MISSING_FREQ_HINT` queda vacía con
+  pandas 2, donde `tz_convert` conserva la frecuencia y la pista no explica
+  el error. Se decide en la constante; los tres puntos de uso no cambian.
+- Retoques: dos líneas de más de 88 caracteres, el comentario de la
+  constante y las notas de versión (la de **Changed** partida en dos, la de
+  `reshape_series_wide_to_long` dentro del límite de la convención).
+- Comprobado de extremo a extremo: `fit` y `predict` de
+  `ForecasterRecursiveMultiSeries` con una exógena de texto en `str` y
+  `object` (todo NaN o convertida) o `string` pasan en pandas 2.3.3 y 3.1.0;
+  la base falla los tres casos en pandas 3 y el de `string` en pandas 2.
+  `TimeSeriesSplitter` con huecos entre tramos y series mensuales: la base
+  daba 1096 filas diarias con mensual y la rama 38.
+- Tras los retoques no se repitieron la suite completa ni los benchmarks;
+  sí los tests afectados en las tres versiones, sin fallos nuevos. Tres
+  tests comparan rutas y dependen de cómo llegue la letra de la unidad: dos
+  de `tests_utils` (`..._warning_points_to_the_caller`) fallan desde Git Bash
+  (unidad en minúscula) y pasan desde PowerShell, y
+  `test_backtesting_forecaster_warnings_of_fold_that_fails_in_process_same_as_n_jobs_1`
+  al revés. Es ajeno a la PR y solo ocurre en Windows.
+
+Segunda revisión antes del commit (2026-11-13), con una corrección:
+
+- **Corregido: índice sin frecuencia y sin ordenar en
+  `reshape_series_wide_to_long`.** Con fechas descendentes la frecuencia
+  inferida es negativa (`-1D`) y `asfreq` devolvía un marco vacío: un
+  `IndexError` sin explicación donde la base funcionaba con datos diarios.
+  La frecuencia se infiere ahora sobre las fechas ordenadas
+  (`data.index.sort_values()`), que es el orden en que `asfreq` las
+  devuelve. El diario desordenado vuelve a funcionar (sale de los casos de
+  D15, que quedan en dos: días faltantes y menos de 3 filas) y el horario y
+  el mensual desordenados, que la base daba mal, salen bien. Test nuevo con
+  orden descendente y aleatorio. Un índice que ya trae frecuencia negativa
+  sigue dando el `IndexError`, igual que en la base (fuera del alcance).
+- **Rendimiento, microbenchmarks repetidos** (base y rama alternadas, mínimo
+  de 4 rondas, rama / base en pandas 2.3.3 y 3.1.0):
+  `check_preprocess_exog_multiseries` con 1000 series 1,01 y 0,98 (el 1,67
+  y 1,59 de una medición anterior era de antes de normalizar los dtypes solo
+  cuando difieren); `reshape_series_wide_to_long` con frecuencia 0,97 y
+  0,97; partición one-step-ahead 0,95 a 1,02; `expand_index` sin frecuencia
+  y con zona horaria 1,11 y 1,11 (0,08 ms más por llamada), con frecuencia
+  1,03 y 1,00.
+- **Cuántas veces se infiere la frecuencia.** Contando las llamadas a
+  `_pandas_compat.infer_freq`: 0 en `fit`, `predict` y backtesting de
+  `ForecasterRecursive` y `ForecasterRecursiveMultiSeries` (con y sin zona
+  horaria), porque los forecasters exigen un índice con frecuencia. Solo se
+  infiere cuando el índice no la trae, una vez por llamada (dos con zona
+  horaria: en local y en UTC) en `expand_index` y en
+  `reshape_series_wide_to_long`. Coste de `_infer_freq_from_index`: menos de
+  1 ms con 1000 fechas; con 100 000 fechas, 0,6 ms sin zona horaria, 4 a 5 ms
+  con zona horaria y 19 a 44 ms si además avanza en pasos UTC fijos.
+  `reshape_series_wide_to_long` con 200 series de 1000 filas: 83,1 ms con
+  frecuencia y 84,0 ms sin ella (pandas 2.3.3).
+- **Nota de `load_forecaster`, con ficheros reales** guardados con pandas
+  3.1.0: en 2.3.3 y 2.2.3 los de joblib y pickle fallan (`AssertionError`
+  vacío o `TypeError` de `StringDtype`) y llevan la nota; los de skops
+  cargan en 2.3.3, y en 2.2.3 el que tiene una exógena de texto falla con la
+  nota. En 3.1.0 cargan todos.
+- Comentario de `_TZ_MISSING_FREQ_HINT` reducido a tres líneas (repetía lo
+  que ya explican la propia pista y `_infer_freq_from_index`).
+- Verificación tras la corrección: lint en verde; tests afectados en pandas
+  2.3.3: 2611 pasan y falla solo el test de rutas de `tests_validation` lanzado desde PowerShell, que pasa desde Git Bash; ficheros tocados en 2.2.3: 499 pasan; en 3.1.0: 489
+  pasan y 10 fallan, los diez en la lista base. La suite completa no se
+  repitió (el cambio se limita a `reshape_series_wide_to_long`).
+
+**Al retirar pandas 2** (versión futura), lo que se puede simplificar se
+encuentra buscando `PANDAS_GE_3` y `_pandas_compat` en `skforecast/`:
+
+- `_pandas_compat.concat` pasa a ser `pd.concat` (2 usos) y
+  `_pandas_compat.astype` pierde la rama `copy=False` (se conserva
+  `changed_only`). `PANDAS_GE_3` desaparece. `_pandas_compat.infer_freq` se
+  queda hasta que el mínimo sea pandas 4 (hoy cubre pandas menor que 3.1).
+- `_TZ_MISSING_FREQ_HINT` deja de ser condicional.
+- `_add_note_pandas_3_file` y los dos `try`/`except` de `load_forecaster`
+  que la llaman se eliminan, con su test.
+- Tests: las condiciones `PANDAS_GE_3` de los tres tests de la pista y el
+  test de la propia constante.
+- Fuera del paquete: el mínimo de pandas en `pyproject.toml`, la matriz de
+  CI y los entornos gemelos.
+
+No son compatibilidad y se quedan: `_infer_freq_from_index` y
+`_is_utc_anchored_index` (el comportamiento de `tz_convert` es el de pandas
+3), la comparación de dtypes de texto de las exógenas (`str` y `object`
+conviven en pandas 3), `sorted(..., key=str)` y `pd.Series(dtype=str)`.
+
 ### Historial de lo pendiente entre sesiones
 
 Lo que quedó sin cerrar por el límite de uso de la primera sesión; los
