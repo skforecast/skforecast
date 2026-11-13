@@ -7730,8 +7730,11 @@ def test_output_backtesting_forecaster_multiseries_pinball_losses_of_several_qua
     [('auto', True, 0.0, min(max(1, cpu_count() - 1), 4)),
      ('auto', True, 1e6, 1),
      ('auto', False, 0.0, 1),
-     (2, True, 1e6, 2)],
-    ids=['auto, enough work', 'auto, too little work', 'auto, no refit', 'int']
+     (2, True, 1e6, 2),
+     (10, True, 1e6, 4),
+     (-1, False, 1e6, min(cpu_count(), 4))],
+    ids=['auto, enough work', 'auto, too little work', 'auto, no refit', 'int',
+         'int above folds', '-1']
 )
 def test_backtesting_forecaster_multiseries_n_jobs_auto_limited_by_the_workload(
     n_jobs, refit, min_work, expected_n_jobs
@@ -7741,8 +7744,9 @@ def test_backtesting_forecaster_multiseries_n_jobs_auto_limited_by_the_workload(
     when the work estimated from the initial fit is below the minimum of the
     platform (`min_work`, patched) or there is no refit, and otherwise with
     the jobs of `select_n_jobs_backtesting` limited to the number of folds
-    (4). An integer `n_jobs` is not limited. `Parallel` is mocked with
-    a sequential one, so no workers are started.
+    (4). An integer `n_jobs` (`-1` is all the processors) is only limited to
+    the number of folds. `Parallel` is mocked with a sequential one, so no
+    workers are started.
     """
     forecaster = ForecasterRecursiveMultiSeries(
                      estimator=HistGradientBoostingRegressor(max_iter=5), lags=3

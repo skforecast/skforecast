@@ -16,7 +16,7 @@ All significant changes to this project are documented in this release file.
 
 The main changes in this release are:
 
-+ <span class="badge text-bg-enhancement">Enhancement</span> Faster parallel backtesting and hyperparameter search: the forecaster is sent to the parallel processes once instead of once per fold (a grid search of XGBoost with refit is 1.45 times faster with 16 CPUs), and XGBoost models fitted afterwards in the same session are no longer slowed down.
++ <span class="badge text-bg-enhancement">Enhancement</span> Faster parallel backtesting and hyperparameter search: the forecaster is sent to the parallel processes once instead of once per fold, and `n_jobs='auto'` runs a backtesting without refit in parallel when its predictions take long enough. With 16 CPUs, a grid search of XGBoost with refit is 1.45 times faster, and a backtesting without refit with a `HistGradientBoostingRegressor` 2.4 times faster. [User guide](../faq/parallelization-skforecast.ipynb)
 
 
 **Added**

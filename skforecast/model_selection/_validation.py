@@ -460,8 +460,9 @@ def _backtesting_forecaster(
     return_predictors : bool, default False
         If `True`, the predictors used to make the predictions are also returned.
     n_jobs : int, 'auto', default 'auto'
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
+        The number of jobs to run in parallel, never more than the number of
+        folds. If `-1`, then the number of jobs is set to the number of cores. If
+        'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting, and set to 1
         when the workload of the folds, estimated from the time of the initial fit
         (without refit, from the time of the prediction of the first fold), is
@@ -743,6 +744,13 @@ def _backtesting_forecaster(
                          fit_seconds = fit_seconds
                      )
 
+    # NOTE: No more workers are started than there are folds, also with an
+    # integer `n_jobs` (the value of `'auto'` resolved by the hyperparameter
+    # searches for each candidate included): the extra workers would only
+    # start and wait. With fewer workers, joblib also gives more threads to the
+    # estimator in each one (`cpu_count() // n_jobs`).
+    n_jobs = min(n_jobs, max(1, len(fold_items)))
+
     if show_progress:
         fold_items = tqdm(
             fold_items,
@@ -947,8 +955,9 @@ def backtesting_forecaster(
     return_predictors : bool, default False
         If `True`, the predictors used to make the predictions are also returned.
     n_jobs : int, 'auto', default 'auto'
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
+        The number of jobs to run in parallel, never more than the number of
+        folds. If `-1`, then the number of jobs is set to the number of cores. If
+        'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting, and set to 1
         when the workload of the folds, estimated from the time of the initial fit
         (without refit, from the time of the prediction of the first fold), is
@@ -1402,8 +1411,9 @@ def _backtesting_forecaster_multiseries(
     return_predictors : bool, default False
         If `True`, the predictors used to make the predictions are also returned.
     n_jobs : int, 'auto', default 'auto'
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
+        The number of jobs to run in parallel, never more than the number of
+        folds. If `-1`, then the number of jobs is set to the number of cores. If
+        'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting, and set to 1
         when the workload of the folds, estimated from the time of the initial fit, is
         too small to pay the start of the workers (for example, without refit).
@@ -1753,6 +1763,13 @@ def _backtesting_forecaster_multiseries(
                      fit_seconds = fit_seconds
                  )
 
+    # NOTE: No more workers are started than there are folds, also with an
+    # integer `n_jobs` (the value of `'auto'` resolved by the hyperparameter
+    # searches for each candidate included): the extra workers would only
+    # start and wait. With fewer workers, joblib also gives more threads to the
+    # estimator in each one (`cpu_count() // n_jobs`).
+    n_jobs = min(n_jobs, max(1, len(data_folds_list)))
+
     if show_progress:
         data_folds_list = tqdm(data_folds_list)
 
@@ -2001,8 +2018,9 @@ def backtesting_forecaster_multiseries(
     return_predictors : bool, default False
         If `True`, the predictors used to make the predictions are also returned.
     n_jobs : int, 'auto', default 'auto'
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
+        The number of jobs to run in parallel, never more than the number of
+        folds. If `-1`, then the number of jobs is set to the number of cores. If
+        'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting, and set to 1
         when the workload of the folds, estimated from the time of the initial fit, is
         too small to pay the start of the workers (for example, without refit).
