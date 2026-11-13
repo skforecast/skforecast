@@ -17,7 +17,7 @@ Linux sin supervisión. No modifica nada fuera de esta carpeta.
 ## Preparación
 
 ```bash
-git clone --depth 1 -b chore/n-jobs-benchmark https://github.com/skforecast/skforecast.git
+git clone --depth 1 -b 0.28.x https://github.com/skforecast/skforecast.git
 ```
 
 ```bash
