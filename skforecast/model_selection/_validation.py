@@ -463,9 +463,11 @@ def _backtesting_forecaster(
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting, and set to 1
-        when the workload of the folds, estimated from the time of the initial fit, is
-        too small to pay the start of the workers (for example, without refit).
-        See skforecast.model_selection._utils.limit_n_jobs_by_workload.
+        when the workload of the folds, estimated from the time of the initial fit
+        (without refit, from the time of the prediction of the first fold), is
+        too small to pay the start of the workers. See
+        skforecast.model_selection._utils.limit_n_jobs_by_workload and
+        skforecast.model_selection._utils.limit_n_jobs_by_prediction_workload.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used 
         for backtesting.
@@ -948,9 +950,11 @@ def backtesting_forecaster(
         The number of jobs to run in parallel. If `-1`, then the number of jobs is 
         set to the number of cores. If 'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting, and set to 1
-        when the workload of the folds, estimated from the time of the initial fit, is
-        too small to pay the start of the workers (for example, without refit).
-        See skforecast.model_selection._utils.limit_n_jobs_by_workload.
+        when the workload of the folds, estimated from the time of the initial fit
+        (without refit, from the time of the prediction of the first fold), is
+        too small to pay the start of the workers. See
+        skforecast.model_selection._utils.limit_n_jobs_by_workload and
+        skforecast.model_selection._utils.limit_n_jobs_by_prediction_workload.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used 
         for backtesting.

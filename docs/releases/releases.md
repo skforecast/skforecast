@@ -34,6 +34,8 @@ The main changes in this release are:
 
 + <code>[backtesting_forecaster]</code> and the hyperparameter searches of single series (<code>[grid_search_forecaster]</code>, <code>[random_search_forecaster]</code>, <code>[bayesian_search_forecaster]</code>) send the forecaster to the parallel processes once instead of once per fold. With 16 CPUs, a grid search of XGBoost with refit takes 31 s instead of 45 s, and a backtesting without refit with `n_jobs` greater than 1 is up to 3 times faster. XGBoost models fitted afterwards in the same session are no longer up to 3.8 times slower. Results are unchanged.
 
++ With `n_jobs='auto'`, <code>[backtesting_forecaster]</code> without refit runs the folds in parallel when the estimator is a `HistGradientBoostingRegressor` or a `CatBoostRegressor` and the predictions take long enough (estimated from the first fold, predicted in the main process). A backtesting of 100 folds with a `HistGradientBoostingRegressor` is 1.7 to 1.9 times faster on 4 CPUs. Results are unchanged. [User guide](../faq/parallelization-skforecast.ipynb)
+
 
 **Fixed**
 
