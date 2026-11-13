@@ -23,11 +23,13 @@ Esfuerzo: S (horas a 1 día, con tests y docs), M (2 a 5 días), L (más de una 
 | ID | Qué | Esfuerzo | Estado |
 |---|---|---|---|
 | DEP-python310 | Retirar Python 3.10 | S | Hecho: #1496, fusionada en `0.28.x` el 2026-11-12 |
+| DEP-numpy2-pandas23 | Subir los mínimos a numpy 2.0 y pandas 2.3 | S | Decidido el 2026-11-13; por hacer, antes de la PR 6 de la migración a pandas 3 |
 | MAINT-docs-deps | Actualizar los pins del extra `docs`, salvo `mkdocs-jupyter` | S | Opcional, medido: sin efecto visible |
 | MAINT-test-deps | Limpiar el extra `test` | S | Opcional |
 
-Los tres son pequeños y no dependen entre sí, salvo `tomli` (MAINT-test-deps), que se quita
-con DEP-python310.
+Son pequeños y no dependen entre sí, salvo `tomli` (MAINT-test-deps), que se quita con
+DEP-python310, y `pandas[parquet]` (MAINT-test-deps), cuyo mínimo sube con
+DEP-numpy2-pandas23.
 
 No forma parte de este roadmap: `torch>=2.4, <2.16` se subió en la 0.27.0 (commit
 `7f7c4b804`, junto con la retirada de `pytest-xdist` del extra `test`). Probado con torch
@@ -108,6 +110,92 @@ Lanzarlo a mano sobre `0.28.x`, o esperar a la PR de la release a `main`. Al pub
 0.28.0, subir también en el feedstock de conda-forge el mínimo de Python a 3.11 y el de
 `statsmodels` a 0.13.3.
 
+### DEP-numpy2-pandas23: numpy 2.0 y pandas 2.3 como mínimos
+
+Decidido por el usuario el 2026-11-13, durante la revisión de la PR 6 de la migración a
+pandas 3 (`dev/pandas3_migration/INFORME.md`, sección 10, "Revisión de la PR 6, el
+2026-11-13"). Va en su propia PR, como DEP-python310, y antes de la PR 6: cambia lo que
+prueba la matriz de CI de la PR 6 (la celda de pandas 2 y el job de mínimos). En la
+migración sustituye a la decisión D2 (a) (mínimo pandas 2.2.0) por la (c).
+
+Motivo:
+
+- numpy 1.26 (la última 1.x, 2023-10) ya no recibe correcciones y no tiene wheels para
+  Python 3.13 ni 3.14. pandas 2.3 es la única serie 2.x que aún recibe correcciones.
+- Con numpy 1.x como mínimo, el pin `pandas<4.0` de la PR 6 permite una combinación que no
+  prueba ningún job: si otra librería fija `numpy<2`, el resolvedor elige pandas 3.0.6 con
+  numpy 1.26.4 (pandas 3.0.x acepta numpy 1.26; 3.1 exige 2.0.2). En ese entorno, la suite
+  completa (Windows, Python 3.12, pyarrow 25.0.1) dio 255 fallos: unos 220 son columnas
+  enteras `int32` en lugar de `int64` (efecto de numpy 1.x en Windows, también con pandas
+  2.2.0) y unos 30 sin clasificar.
+- Quita trabajo: la restricción `pyarrow<26` de `unit-tests-min-deps.yml` (#1498; pyarrow 26
+  exige numpy 2 sin declararlo) deja de hacer falta, y las columnas enteras dejan de salir
+  `int32` en Windows (numpy 2 usa int64 por defecto).
+- SPEC 0 (soporte de lo publicado en los dos últimos años) pediría hoy numpy 2.2, pandas
+  2.3, scipy 1.15 y numba 0.61. Esta PR solo sube lo que exige numpy 2.0 más pandas 2.3;
+  alinearse con SPEC 0 es otra decisión.
+- Quien no pueda salir de numpy 1.x o de pandas 2.2 se queda en la 0.27: pip lo resuelve
+  solo.
+
+Mínimos nuevos. Calculados con `uv pip compile --resolution lowest-direct` (uv 0.13.8, Python
+3.11, Linux) y comprobados importando cada paquete con numpy 2.0.0 en Windows. Las versiones
+intermedias que se citan declaran `numpy<2` (no se instalan) o se instalan y fallan al
+importar (`numpy.dtype size changed` o `numpy.core.multiarray failed to import`):
+
+| Paquete | Ahora | Nuevo | Por qué | Fecha |
+|---|---|---|---|---|
+| numpy | 1.26.1 | 2.0 | Decisión | 2024-06-16 |
+| pandas | 2.2 | 2.3 | Decisión (2.2.0 y 2.2.1 no funcionan con numpy 2) | 2025-06-05 |
+| scipy | 1.12 | 1.13 | 1.12 declara `numpy<2` | 2024-04-02 |
+| numba | 0.59 | 0.60 | Primera con numpy 2 | 2024-06-13 |
+| statsmodels (extras) | 0.13.3 | 0.14.6 (ver abajo) | 0.13.3 a 0.14.1 fallan; 0.14.2 funciona | 2025-12-05 |
+| matplotlib (extras) | 3.7 | 3.8.4 | 3.7.0 a 3.8.3 fallan o no se instalan | 2024-04-04 |
+| catboost (extra `test`) | 1.2 | 1.2.8 | 1.2 a 1.2.5 fallan; 1.2.6 y 1.2.7 no se instalan | 2025-04-13 |
+| `pandas[parquet]` (extra `test`) | 2.2 | 2.3 | Coherencia con el core | |
+
+Sin cambio, comprobados con numpy 2.0.0: scikit-learn 1.6.0, lightgbm 4.0.0, xgboost
+2.1.0, optuna 4.0.0, skops 0.14.0, pyarrow 26.0.1 (ya no hace falta limitarlo), keras 3.3.0
+y torch 2.4.0 (compatible con numpy 2 desde la 2.3; en Windows no carga `fbgemm.dll`, como
+siempre, el job de mínimos corre en Linux).
+
+statsmodels: la primera versión compatible con numpy 2 es la 0.14.2, pero la PR 6 necesita
+la 0.14.6 (la 0.14.5 no se importa con pandas 3.1). Propuesta: subir aquí directamente a
+`>=0.14.6`, un solo cambio para los usuarios, y la PR 6 deja de tocar statsmodels. Por
+decidir.
+
+Moirai: `uni2ts` 2.0.0 (2025-11-04, el backend del `MoiraiAdapter`) exige `numpy~=1.26.0`
+y `scipy~=1.11.3`. Con numpy 2 como mínimo, skforecast 0.28 y `uni2ts` no se pueden
+instalar juntos sin forzar versiones. Precedente: `tools/foundation_compat/adapters.toml`
+ya fuerza `scipy>=1.12` en su entorno (`overrides`). Si `uni2ts` funciona con numpy 2,
+basta añadir `numpy>=2` a esos `overrides` y explicarlo en la guía y el docstring del
+adaptador. Sin comprobar.
+
+Cambios:
+
+- [ ] `pyproject.toml:54-61`: `numpy>=2.0`, `pandas>=2.3, <3.0` (la PR 6 lo abre a `<4.0`),
+  `scipy>=1.13`, `numba>=0.60`.
+- [ ] `pyproject.toml:72, 78, 82, 112`: `matplotlib>=3.8.4, <3.12`.
+- [ ] `pyproject.toml:68, 73, 83, 111`: statsmodels, según la decisión de arriba.
+- [ ] `pyproject.toml:117`: `catboost>=1.2.8, <2.0`; `:122`: `pandas[parquet]>=2.3`.
+- [ ] `skforecast/utils/utils.py:95-106` (`optional_dependencies`): matplotlib y
+  statsmodels. `test_check_optional_dependency.py` exige que coincida con
+  `pyproject.toml`.
+- [ ] `.github/workflows/unit-tests-min-deps.yml:44-49`: quitar la restricción `pyarrow<26`
+  y su comentario.
+- [ ] `tools/foundation_compat/adapters.toml` (moirai): según la comprobación de `uni2ts`.
+- [ ] Docs: `docs/quick-start/how-to-install.md:32, 33, 36, 39, 59, 68, 69, 79`.
+- [ ] Contexto IA: `tools/ai/ai_context_header.md:39-40`, y regenerar (skill
+  `ai-context-sync`).
+- [ ] Nota en `docs/releases/releases.md`, sección 0.28.0, con su "Before upgrading".
+- [ ] Opcional: el docstring de `test_covariate_arrays.py:45` ("With pandas < 2.3...") ya
+  no describe un caso posible.
+
+Verificación: `verify` y `unit-tests-min-deps.yml` lanzado a mano sobre la rama (la suite
+completa con los mínimos nuevos, en Linux). En local, un entorno `lowest-direct` en Python
+3.11 sirve para los tests que no usan torch.
+
+Al publicar la 0.28.0, subir los mismos mínimos en el feedstock de conda-forge.
+
 ### MAINT-docs-deps: pins del extra `docs`
 
 Nada es obligatorio: los pins actuales construyen el sitio sin avisos.
@@ -161,7 +249,8 @@ Limpiezas:
   usa `-n`, las reglas de tests lo prohíben y `.claude/settings.json` lo deniega.
 - [ ] `pandas[parquet]>=2.2, <3.0` (`pyproject.toml:124`), por coherencia con el core. No
   cambia la resolución. Si se hace, la PR 6 de la migración a pandas 3 tiene que pasarlo a
-  `<4.0` junto con el core.
+  `<4.0` junto con el core. El mínimo pasa a 2.3 con DEP-numpy2-pandas23 (hoy está en la
+  línea 122, sin techo).
 - [x] `tomli>=2.0`: se quita con DEP-python310. Hecho en #1496.
 
 ---
