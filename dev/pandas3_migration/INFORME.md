@@ -45,6 +45,7 @@ fichero y línea de las fuentes RST (`doc/source/whatsnew/v3.0.0.rst` y
 9. Preguntas abiertas y lo no verificado
 10. Pendiente para retomar (empieza por "Cómo retomarlo": decisiones, punto de partida, arnés y orden de PRs; después, la revisión de compatibilidad del 2026-11-03)
 11. Siguientes pasos después de la migración: el camino de `predict` en numpy (11.5 dónde va el tiempo de un fold de backtesting; 11.6 lo que falta decidir antes de implementarlo)
+12. Siguientes pasos después de la migración: las versiones de las dependencias al guardar un forecaster
 
 ## 1. Resumen ejecutivo
 
@@ -2580,6 +2581,38 @@ o su medida:
    benchmarks que usa 11.4 se versionan en la PR 1 de la migración. Esta PR
    va después de ella.
 8. **Esfuerzo.** Sin estimar. Depende sobre todo de los puntos 2 y 5.
+
+## 12. Siguientes pasos después de la migración: las versiones de las dependencias al guardar un forecaster
+
+Esta sección tampoco forma parte de la migración. Surge de la revisión de la
+PR #1497 (la nota de `load_forecaster` para ficheros guardados con pandas 3):
+se propone como una mejora aparte.
+
+**Qué no resuelve.** No sustituye a esa nota. Cuando un fichero de pandas 3
+no se carga en pandas 2, el error salta mientras pickle reconstruye los
+atributos del forecaster, antes de que el objeto tenga ninguno, así que no
+hay un `pandas_version` que leer (por la misma razón, `load_forecaster` no
+llega hoy a comparar `skforecast_version` en ese caso). Para que la nota
+dijera con certeza la versión de pandas habría que guardar las versiones
+fuera del objeto serializado (un registro de metadatos delante, o el
+`schema.json` de skops), cambiando el formato de los ficheros de cada
+backend: más código que la nota actual, para poco.
+
+**Qué aporta.** Avisar cuando la carga funciona pero las versiones difieren
+y el modelo puede comportarse distinto sin decirlo. Hoy `load_forecaster`
+solo compara `skforecast_version` (`SkforecastVersionWarning`).
+
+**La propuesta:**
+
+1. Guardar las versiones en `save_forecaster`, no al crear el forecaster:
+   lo que importa es con qué versiones se serializó. Hoy
+   `skforecast_version` y `python_version` se guardan en `__init__`.
+2. Incluir pandas, numpy, scikit-learn y Python.
+3. Avisar solo cuando cambie la versión mayor, para no avisar en cada
+   actualización menor.
+4. Sin atributos nuevos obligatorios: un forecaster guardado con una
+   versión anterior no los tiene, y `load_forecaster` tiene que seguir
+   cargándolo sin aviso ni error.
 
 ## Anexo: cómo reproducir los números
 
