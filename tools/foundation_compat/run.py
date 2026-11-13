@@ -287,8 +287,10 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="foundation_compat_") as tmp:
         work_dir = Path(tmp)
         venv_dir = work_dir / "venv"
-        bin_dir = "Scripts" if os.name == "nt" else "bin"
-        venv_python = venv_dir / bin_dir / "python"
+        if os.name == "nt":
+            venv_python = venv_dir / "Scripts" / "python.exe"
+        else:
+            venv_python = venv_dir / "bin" / "python"
 
         subprocess.run(
             ["uv", "venv", str(venv_dir), "--python", args.python], check=True

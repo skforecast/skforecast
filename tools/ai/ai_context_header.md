@@ -36,8 +36,8 @@ do not override it.
 
 ### Dependencies
 
-Core: numpy>=1.26.1, pandas>=2.2,<3.0, scikit-learn>=1.6, scipy>=1.12, optuna>=4.0, joblib>=1.3, numba>=0.59, tqdm>=4.66, rich>=13.9
-Optional: statsmodels>=0.13.3,<0.16 (stats), matplotlib>=3.7,<3.12 (plotting), keras>=3.3,<4.0 (deep learning)
+Core: numpy>=2.0, pandas>=2.3,<3.0, scikit-learn>=1.6, scipy>=1.13, optuna>=4.0, joblib>=1.3, numba>=0.60, tqdm>=4.66, rich>=13.9
+Optional: statsmodels>=0.14.6,<0.16 (stats), matplotlib>=3.8.4,<3.12 (plotting), keras>=3.3,<4.0 (deep learning)
 
 ### Python environment
 

@@ -41,12 +41,7 @@ jobs:
         # lowest-direct installs the minimum version declared in pyproject.toml for
         # each direct dependency (core and test extra) and the latest compatible
         # version of the transitive ones.
-        # pyarrow 26 requires numpy>=2 at runtime but does not declare it, and the
-        # minimum numpy is 1.26.1: keep pyarrow below 26 until that minimum is 2.
-        # A constraint, not a requirement: lowest-direct would pick its lowest version.
-        echo "pyarrow<26" > "$RUNNER_TEMP/min-deps-constraints.txt"
-        uv pip install --resolution lowest-direct -e ".[test]" \
-          --constraints "$RUNNER_TEMP/min-deps-constraints.txt"
+        uv pip install --resolution lowest-direct -e ".[test]"
 
     - name: Show environment info
       run: |

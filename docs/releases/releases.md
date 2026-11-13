@@ -17,6 +17,15 @@ All significant changes to this project are documented in this release file.
 The main changes in this release are:
 
 
+!!! warning "Before upgrading"
+
+    Some environments and code need to be updated (see **Changed**):
+
+    + skforecast now requires Python 3.11, numpy 2.0 and pandas 2.3. Installing it upgrades numpy and pandas if they are older, and code written for numpy 1.x may need the changes of the [numpy 2.0 migration guide](https://numpy.org/doc/stable/numpy_2_0_migration_guide.html). Forecasters saved with numpy 1.x still load.
+
+    + <code>[MoiraiAdapter]</code>: `pip install uni2ts` alone downgrades numpy, scipy and pandas. Install it as explained in the [foundation models guide](../user_guides/foundation-forecasting-models.ipynb).
+
+
 **Added**
 
 
@@ -24,7 +33,11 @@ The main changes in this release are:
 
 + The panels of <code>[show_datasets_info]</code>, <code>[fetch_dataset]</code>, <code>[load_demo_dataset]</code> and the out-of-range summary of <code>[RangeDriftDetector]</code> are 88 characters wide, like the skforecast warnings, and the URL of each dataset is a clickable link. ([#1493](https://github.com/skforecast/skforecast/pull/1493))
 
-+ Removed support for Python 3.10, which reached its end of life in October 2026: skforecast now requires Python 3.11 or later. With Python 3.10, pip keeps installing skforecast 0.27.0. The minimum version of `statsmodels` is now 0.13.3 (0.13.2 has no wheels for Python 3.11). ([#1496](https://github.com/skforecast/skforecast/pull/1496))
++ Removed support for Python 3.10, which reached its end of life in October 2026: skforecast now requires Python 3.11 or later. With Python 3.10, pip keeps installing skforecast 0.27.0. ([#1496](https://github.com/skforecast/skforecast/pull/1496))
+
++ The minimum supported versions of numpy and pandas are now 2.0 and 2.3 (previously 1.26.1 and 2.2): numpy 1.x no longer receives fixes and 2.3 is the only maintained pandas 2 series. The other minimums rise to versions that work with numpy 2: scipy 1.13, numba 0.60, statsmodels 0.14.6 and matplotlib 3.8.4. Installing skforecast 0.28.0 upgrades these libraries if they are older; to keep numpy 1.x or pandas 2.2, pin `skforecast<0.28`. ([#1500](https://github.com/skforecast/skforecast/pull/1500))
+
++ `uni2ts`, the backend of <code>[MoiraiAdapter]</code>, declares numpy 1.26 and scipy 1.11, which skforecast no longer supports, but works with numpy 2: the [foundation models guide](../user_guides/foundation-forecasting-models.ipynb) and the `ImportError` raised when it is missing explain how to install it. ([#1500](https://github.com/skforecast/skforecast/pull/1500))
 
 + With pandas 3, the error raised when a timezone-aware index has no frequency explains how to keep it: `tz_convert` now drops calendar frequencies such as `'D'` or `'MS'`, and `freq='24h'` (daily) or `freq='168h'` (weekly) keep the same dates. ([#1497](https://github.com/skforecast/skforecast/pull/1497))
 
