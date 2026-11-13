@@ -26,6 +26,7 @@ from skforecast.metrics import (
 )
 from skforecast.model_selection import backtesting_forecaster
 from skforecast.model_selection._split import TimeSeriesFold
+from skforecast.model_selection._validation import _fit_predict_forecaster
 from skforecast.exceptions import MissingValuesWarning
 
 # Fixtures
@@ -906,3 +907,87 @@ def test_backtesting_forecaster_RuntimeWarning_and_NaN_when_scale_is_zero():
     assert np.isnan(metric.loc[0, "mean_absolute_scaled_error"])
     assert np.isnan(metric.loc[0, "root_mean_squared_scaled_error"])
     assert metric.loc[0, "n_evaluated"] == 20
+
+
+@pytest.mark.parametrize(
+    "refit",
+    [True, False],
+    ids=lambda refit: f"refit: {refit}",
+)
+def test_backtesting_forecaster_folds_in_processes_same_output_as_n_jobs_1(refit):
+    """
+    Test that the folds that run in worker processes, which receive the
+    forecaster serialized once in the main process, return the same metrics
+    and predictions (intervals included) as with `n_jobs=1`. The forecaster
+    has a lambda as `weight_func`, which only `cloudpickle` can serialize.
+    """
+    def run_backtesting(n_jobs):
+        forecaster = ForecasterRecursive(
+            estimator   = Ridge(random_state=123),
+            lags        = 3,
+            weight_func = lambda index: np.where(index < 20, 0.5, 1.0)
+        )
+        cv = TimeSeriesFold(
+                 steps              = 5,
+                 initial_train_size = 30,
+                 refit              = refit,
+                 verbose            = False
+             )
+
+        return backtesting_forecaster(
+                   forecaster    = forecaster,
+                   y             = y,
+                   exog          = exog,
+                   cv            = cv,
+                   metric        = "mean_absolute_error",
+                   interval      = [0.1, 0.9],
+                   n_jobs        = n_jobs,
+                   show_progress = False
+               )
+
+    expected_metric, expected_predictions = run_backtesting(n_jobs=1)
+    metric, predictions = run_backtesting(n_jobs=2)
+
+    pd.testing.assert_frame_equal(metric, expected_metric)
+    pd.testing.assert_frame_equal(predictions, expected_predictions)
+
+
+def test_backtesting_forecaster_serializes_forecaster_once_only_with_n_jobs_greater_than_1():
+    """
+    Test that, with `n_jobs` greater than 1, the folds receive the forecaster
+    serialized once, as the same bytes object, and that, with `n_jobs=1`, they
+    receive the forecaster itself. `Parallel` is mocked with a sequential one,
+    so no workers are started.
+    """
+    received = []
+
+    def fit_predict_recording(forecaster, **kwargs):
+        received.append(forecaster)
+        return _fit_predict_forecaster(forecaster=forecaster, **kwargs)
+
+    cv = TimeSeriesFold(steps=10, initial_train_size=30, refit=True, verbose=False)
+    for n_jobs in [1, 2]:
+        with (
+            patch(
+                "skforecast.model_selection._validation.Parallel",
+                side_effect=lambda **kwargs: Parallel(n_jobs=1)
+            ),
+            patch(
+                "skforecast.model_selection._validation._fit_predict_forecaster",
+                side_effect=fit_predict_recording
+            )
+        ):
+            backtesting_forecaster(
+                forecaster    = ForecasterRecursive(estimator=Ridge(), lags=3),
+                y             = y,
+                cv            = cv,
+                metric        = "mean_absolute_error",
+                n_jobs        = n_jobs,
+                show_progress = False
+            )
+
+    received_n_jobs_1, received_n_jobs_2 = received[:2], received[2:]
+    assert len(received_n_jobs_1) == len(received_n_jobs_2) == 2
+    assert all(isinstance(f, ForecasterRecursive) for f in received_n_jobs_1)
+    assert all(isinstance(f, bytes) for f in received_n_jobs_2)
+    assert received_n_jobs_2[0] is received_n_jobs_2[1]

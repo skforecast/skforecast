@@ -9,11 +9,13 @@ from __future__ import annotations
 from typing import Callable, Any
 from copy import deepcopy
 import os
+import pickle
 import time
 import warnings
 import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed, cpu_count
+from joblib.externals.loky.backend.reduction import dumps as loky_dumps
 from tqdm.auto import tqdm
 from ..metrics import add_y_train_argument, _get_metric
 from ..exceptions import (
@@ -170,7 +172,7 @@ def _fit_predict_forecaster(
     last_window_y: pd.Series | None,
     exog_train: pd.Series | pd.DataFrame | None,
     exog_test: pd.Series | pd.DataFrame | None,
-    forecaster: object,
+    forecaster: object | bytes,
     store_in_sample_residuals: bool,
     gap: int,
     interval: float | list[float] | tuple[float, ...] | str | object | None,
@@ -213,8 +215,10 @@ def _fit_predict_forecaster(
     exog_test : pandas Series, pandas DataFrame, or None
         Pre-sliced test exogenous variables. `None` when no exogenous
         variables are used.
-    forecaster : object
-        Forecaster model.
+    forecaster : object, bytes
+        Forecaster model, or the forecaster serialized with the pickler of loky
+        when the folds run in several processes. In that case, it is deserialized
+        here, in the worker, so each fold works on its own copy.
     store_in_sample_residuals : bool
         Whether to store in-sample residuals during `fit()`.
     gap : int
@@ -255,6 +259,9 @@ def _fit_predict_forecaster(
         Predictions for the fold.
     
     """
+
+    if isinstance(forecaster, bytes):
+        forecaster = pickle.loads(forecaster)
 
     test_iloc_start = fold[3][0]
     test_iloc_end   = fold[3][1]
@@ -684,8 +691,23 @@ def _backtesting_forecaster(
     if show_progress:
         fold_items = tqdm(fold_items)
 
+    # NOTE: With several processes, joblib serializes the arguments of every
+    # task, so the forecaster would be pickled once per fold, in a secondary
+    # thread of the main process. Serializing it once here, in the main thread,
+    # removes that cost per fold. It also prevents estimators that use OpenMP
+    # (XGBoost, LightGBM) from starting a second pool of threads in the main
+    # process when they are pickled from that thread, which slows down their
+    # later fits in it. It is serialized with the pickler of loky (`cloudpickle`
+    # if it is installed), so the forecasters that can be sent to the workers
+    # are the same as when joblib serializes them.
+    forecaster_to_send = forecaster
+    if n_jobs != 1:
+        forecaster_to_send = bytes(
+            loky_dumps(forecaster, protocol=pickle.HIGHEST_PROTOCOL)
+        )
+
     kwargs_fit_predict_forecaster = {
-        "forecaster": forecaster,
+        "forecaster": forecaster_to_send,
         "store_in_sample_residuals": store_in_sample_residuals,
         "gap": gap,
         "interval": interval,
