@@ -23,9 +23,10 @@ Esfuerzo: S (horas a 1 día, con tests y docs), M (2 a 5 días), L (más de una 
 | ID | Qué | Esfuerzo | Estado |
 |---|---|---|---|
 | DEP-python310 | Retirar Python 3.10 | S | Hecho: #1496, fusionada en `0.28.x` el 2026-11-12 |
-| DEP-numpy2-pandas23 | Subir los mínimos a numpy 2.0 y pandas 2.3 | S | PR #1500 abierta el 2026-11-13 (`chore/numpy2-pandas23-minimums`), workflows a mano en verde, falta el merge; antes de la PR 6 de la migración a pandas 3 |
+| DEP-numpy2-pandas23 | Subir los mínimos a numpy 2.0 y pandas 2.3 | S | Hecho: #1500, fusionada en `0.28.x` el 2026-11-13 (merge `2256bf287`) |
 | MAINT-docs-deps | Actualizar los pins del extra `docs`, salvo `mkdocs-jupyter` | S | Opcional, medido: sin efecto visible |
 | MAINT-test-deps | Limpiar el extra `test` | S | Opcional |
+| MAINT-bench-pandas3 | Pasar los benchmarks de `benchmarks/` a pandas 3, con una medición puente | S | Pendiente: al final de la 0.28.0, antes de publicar |
 
 Son pequeños y no dependen entre sí, salvo `tomli` (MAINT-test-deps), que se quita con
 DEP-python310, y `pandas[parquet]` (MAINT-test-deps), cuyo mínimo sube con
@@ -293,7 +294,7 @@ a mano sobre la rama (commit `b507ce6eb`), resultados en un comentario de la PR:
   overrides nuevos: uni2ts 2.0.0, gluonts 0.14.3, numpy 2.5.4, pandas 2.3.3; contrato 5
   pasan, smoke 5 pasan y 2 omitidos.
 
-Pendiente: el merge de la PR (del usuario).
+Fusionada en `0.28.x` el 2026-11-13 (merge `2256bf287`).
 
 Al publicar la 0.28.0, subir los mismos mínimos en el feedstock de conda-forge.
 
@@ -353,6 +354,38 @@ Limpiezas:
   `<4.0` junto con el core. El mínimo pasa a 2.3 con DEP-numpy2-pandas23 (hoy está en la
   línea 122, sin techo).
 - [x] `tomli>=2.0`: se quita con DEP-python310. Hecho en #1496.
+
+### MAINT-bench-pandas3: benchmarks con pandas 3
+
+Añadida el 2026-11-14, al revisar la PR 6 de la migración a pandas 3
+(`dev/pandas3_migration/INFORME.md`, sección 10, "PR 6 sobre `0.28.x`").
+
+Desde la 0.28.0, un entorno nuevo recibe pandas 3, pero
+`benchmarks/requirements_benchmarks.txt` fija `pandas==2.3.3` (el histórico de
+`benchmarks/benchmark.joblib` lo lleva desde la 0.19.1 hasta la 0.27.0). Con el mismo
+código, pandas 3.1.1 es más lento que 2.3.3 en lo que mide el benchmark (arnés de la
+migración: `create_train_X_y` de 1,33 a 3,01 veces, bucle de `predict` 1,32), así que el
+cambio de pin no se puede mezclar con los cambios de código de la 0.28.0. Las versiones
+anteriores no se pueden volver a medir con pandas 3 (su techo es `<3.0`): la 0.28.0 es la
+única que se puede medir con las dos.
+
+Se hace al final, con todo el código de la 0.28.0 fusionado (incluida la PR 3 de la
+migración a pandas 3), y en este orden:
+
+- [ ] Lanzar `benchmarks.yml` sobre la 0.28.0 con el pin actual (`pandas==2.3.3`): es el
+  último punto comparable con la 0.27.0 y aísla los cambios de código.
+- [ ] En una PR propia, cambiar en `benchmarks/requirements_benchmarks.txt` solo
+  `pandas==2.3.3` por la última 3.x (hoy `pandas==3.1.1`), sin tocar los demás pins.
+- [ ] Volver a lanzar `benchmarks.yml` sobre la 0.28.0: la diferencia entre las dos tandas
+  es el efecto de pandas.
+- [ ] `docs/faq/skforecast-benchmark.ipynb`: las gráficas y el resumen de regresiones
+  agrupan solo por `skforecast_version`, así que las dos tandas de la 0.28.0 se
+  mezclarían en la mediana. Filtrar por `pandas_version` en esa versión y añadir una nota
+  con el cambio de pandas.
+
+Sin comprobar: la suite de `benchmarks/` no se ha ejecutado con pandas 3. Con el resto del
+pin actual debería funcionar (statsmodels 0.14.6 pasa sus tests con pandas 3.1.1 y el
+workflow silencia sus avisos con `PYTHONWARNINGS=ignore`).
 
 ---
 
