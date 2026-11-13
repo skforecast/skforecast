@@ -192,8 +192,12 @@ def test_TypeError_check_preprocess_exog_multiseries_when_exog_dict_with_differe
          'l2': pd.DataFrame(
                    {'exog_1': pd.Categorical(np.tile([0, 1], 25), categories=[0, 1, 2])}
                )},
+        {'l1': pd.DataFrame(
+                   {'exog_1': pd.Categorical(np.tile(['a', 'b'], 25))}
+               ),
+         'l2': pd.DataFrame({'exog_1': np.tile(['a', 'b'], 25)})},
     ],
-    ids=['float and str', 'category with different categories'],
+    ids=['float and str', 'category with different categories', 'category and text'],
 )
 def test_TypeError_check_preprocess_exog_multiseries_when_exog_dict_with_different_dtypes_same_column(
     not_valid_exog
@@ -220,6 +224,41 @@ def test_TypeError_check_preprocess_exog_multiseries_when_exog_dict_with_differe
             exog              = not_valid_exog,
             exog_dict         = {'l1': None, 'l2': None}
         )
+
+
+@pytest.mark.parametrize(
+    "exog_l2",
+    [
+        pd.DataFrame({'exog_1': [None] * 50}),
+        pd.DataFrame({'exog_1': np.tile(['a', 'b'], 25)}).astype(object),
+        pd.DataFrame({'exog_1': np.tile(['a', 'b'], 25)}).astype('string'),
+    ],
+    ids=['all missing (object)', 'text cast to object', 'string dtype'],
+)
+def test_output_check_preprocess_exog_multiseries_when_text_exog_has_different_text_dtypes(
+    exog_l2
+):
+    """
+    Test no error is raised when a text exog has different text dtypes in
+    different series. Since pandas 3 a text column is `str`, but `object` when
+    all its values are missing or when it is cast.
+    """
+    _, series_indexes = check_preprocess_series(series=series_dict_range)
+    exog = {
+        'l1': pd.DataFrame({'exog_1': np.tile(['a', 'b'], 25)}),
+        'l2': exog_l2,
+    }
+
+    exog_dict, exog_names_in_ = check_preprocess_exog_multiseries(
+        series_names_in_  = ['l1', 'l2'],
+        series_index_type = type(series_indexes['l1']),
+        exog              = exog,
+        exog_dict         = {'l1': None, 'l2': None}
+    )
+
+    assert exog_names_in_ == ['exog_1']
+    assert exog_dict['l1']['exog_1'].dtype == exog['l1']['exog_1'].dtype
+    assert exog_dict['l2']['exog_1'].dtype == exog_l2['exog_1'].dtype
 
 
 def test_ValueError_check_preprocess_exog_multiseries_when_exog_has_columns_named_as_series():

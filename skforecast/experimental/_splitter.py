@@ -7,6 +7,7 @@ from typing import Literal
 from .. import __version__
 from ..utils import check_preprocess_series
 from ..preprocessing import reshape_series_wide_to_long
+from ..preprocessing._preprocessing import _asfreq_from_index
 
 
 class TimeSeriesSplitter:
@@ -527,6 +528,38 @@ class TimeSeriesSplitter:
 
         return [split_data[name] for name in split_names]
 
+    @staticmethod
+    def _wide_with_freq(split_dict: dict[str, pd.Series]) -> pd.DataFrame:
+        """
+        Build the wide DataFrame of a split with the frequency of its series.
+
+        Parameters
+        ----------
+        split_dict : dict[str, pd.Series]
+            Series of a split, all with the same frequency.
+
+        Returns
+        -------
+        pd.DataFrame
+            Wide DataFrame. With a DatetimeIndex, it has the frequency of the
+            series, and the dates between their spans are added with NaN.
+        """
+        wide = pd.DataFrame.from_dict(split_dict)
+        # NOTE: The union of the indexes of series with different spans has no
+        # frequency, and it may have gaps, so it is set from the series.
+        freq = next(
+            (
+                s.index.freq
+                for s in split_dict.values()
+                if isinstance(s.index, pd.DatetimeIndex)
+            ),
+            None
+        )
+        if freq is not None and wide.index.freq is None:
+            wide = _asfreq_from_index(wide, freq)
+
+        return wide
+
     def _convert_output(
         self,
         split_dicts: list[dict[str, pd.Series]],
@@ -559,7 +592,7 @@ class TimeSeriesSplitter:
             case 'long' | 'long_multi_index':
                 return tuple(
                     reshape_series_wide_to_long(
-                        pd.DataFrame.from_dict(split_dict),
+                        self._wide_with_freq(split_dict),
                         return_multi_index=(output_format == 'long_multi_index'),
                     )
                     for split_dict in split_dicts

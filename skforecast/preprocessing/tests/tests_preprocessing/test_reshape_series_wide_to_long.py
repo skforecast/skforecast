@@ -88,3 +88,69 @@ def test_reshape_series_wide_to_long_output_when_index_is_tz_aware_and_utc_ancho
         np.testing.assert_array_equal(
             results.loc[k, "value"].to_numpy(), values * factor
         )
+
+
+@pytest.mark.parametrize(
+    "freq", ["h", "D", "MS"], ids=lambda freq: f"freq: {freq}"
+)
+def test_reshape_series_wide_to_long_output_when_index_has_no_freq(freq):
+    """
+    Test the frequency is inferred when the index has none, so the output is
+    the same as with the frequency. Before, `asfreq` used a daily frequency:
+    hourly data lost rows and monthly data gained rows of NaN. The index of
+    the input DataFrame is not renamed.
+    """
+    index = pd.date_range(start="2020-01-01", periods=30, freq=freq, name="my_index")
+    values = np.arange(30, dtype=float)
+    data = pd.DataFrame({"A": values, "B": values * 2}, index=index)
+    data_no_freq = data.set_axis(pd.DatetimeIndex(index.to_list(), name="my_index"))
+    data_no_freq_copy = data_no_freq.copy()
+
+    results = reshape_series_wide_to_long(data=data_no_freq)
+    expected = reshape_series_wide_to_long(data=data)
+
+    pd.testing.assert_frame_equal(results, expected)
+    pd.testing.assert_frame_equal(data_no_freq, data_no_freq_copy)
+    assert data_no_freq.index.name == "my_index"
+    assert data.index.name == "my_index"
+
+@pytest.mark.parametrize(
+    "order", ["descending", "shuffled"], ids=lambda order: f"order: {order}"
+)
+def test_reshape_series_wide_to_long_output_when_index_has_no_freq_and_is_not_sorted(order):
+    """
+    Test the frequency is inferred on the sorted dates when the index has no
+    frequency and is not sorted, so the output is the same as with the sorted
+    data (the frequency of descending dates is negative).
+    """
+    index = pd.date_range(start="2020-01-01", periods=30, freq="D")
+    values = np.arange(30, dtype=float)
+    data = pd.DataFrame({"A": values, "B": values * 2}, index=index)
+    if order == "descending":
+        positions = np.arange(30)[::-1]
+    else:
+        positions = np.random.default_rng(123).permutation(30)
+    data_not_sorted = data.iloc[positions].set_axis(
+        pd.DatetimeIndex(index[positions].to_list())
+    )
+
+    results = reshape_series_wide_to_long(data=data_not_sorted)
+    expected = reshape_series_wide_to_long(data=data)
+
+    pd.testing.assert_frame_equal(results, expected)
+
+
+def test_reshape_series_wide_to_long_ValueError_when_index_has_no_freq_and_it_cannot_be_inferred():
+    """
+    Raise ValueError when the index has no frequency and the dates are not
+    regularly spaced, so it cannot be inferred.
+    """
+    index = pd.DatetimeIndex(["2020-01-01", "2020-01-02", "2020-01-04", "2020-01-05"])
+    data = pd.DataFrame({"A": np.arange(4.0), "B": np.arange(4.0)}, index=index)
+
+    err_msg = re.escape(
+        "`data` index has no frequency and it cannot be inferred: the dates "
+        "are not regularly spaced or there are fewer than 3."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        reshape_series_wide_to_long(data=data)

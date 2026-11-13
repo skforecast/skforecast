@@ -598,6 +598,38 @@ class TestConvertOutput:
         assert len(result) == 2
         assert isinstance(result[0], pd.DataFrame)
 
+    @pytest.mark.parametrize('freq', ['D', 'h'])
+    def test_convert_output_long_format_series_with_different_spans(self, freq):
+        """
+        Test converting series with different spans to long format: the dates
+        between their spans are added with NaN, in the frequency of the series.
+        """
+        series = {
+            'series_a': pd.Series(
+                range(10), index=pd.date_range('2023-01-01', periods=10, freq=freq),
+                dtype=float
+            ),
+            'series_b': pd.Series(
+                range(10), index=pd.date_range('2023-01-01', periods=20, freq=freq)[10:],
+                dtype=float
+            ),
+        }
+        splitter = TimeSeriesSplitter(series)
+        positions = {'train': (0, 6), 'test': (7, 9)}
+        splits = splitter._split_series_dict(splitter.series_groups_[0], positions)
+
+        train, test = splitter._convert_output(splits, 'long_multi_index')
+
+        expected_train_index = pd.date_range('2023-01-01', periods=17, freq=freq)
+        for long in (train, test):
+            for series_id in ('series_a', 'series_b'):
+                assert long.loc[series_id].index.freq == pd.tseries.frequencies.to_offset(freq)
+        pd.testing.assert_index_equal(
+            train.loc['series_a'].index, expected_train_index, check_names=False
+        )
+        assert train['value'].notna().sum() == 14
+        assert test['value'].notna().sum() == 6
+
     def test_convert_output_long_multi_index_format(self, df_datetime_wide):
         """Test converting to long multi-index format."""
         splitter = TimeSeriesSplitter(df_datetime_wide)
