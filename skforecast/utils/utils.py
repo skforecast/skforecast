@@ -94,15 +94,15 @@ _TZ_MISSING_FREQ_HINT = (
 
 optional_dependencies = {
     'stats': [
-        'statsmodels>=0.13.3, <0.16'
+        'statsmodels>=0.14.6, <0.16'
     ],
     'plotting': [
-        'matplotlib>=3.7, <3.12',
-        'statsmodels>=0.13.3, <0.16'
+        'matplotlib>=3.8.4, <3.12',
+        'statsmodels>=0.14.6, <0.16'
     ],
         'deeplearning': [
         'keras>=3.3, <4.0',
-        'matplotlib>=3.7, <3.12',
+        'matplotlib>=3.8.4, <3.12',
     ]
 }
 

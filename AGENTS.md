@@ -40,8 +40,8 @@ do not override it.
 
 ### Dependencies
 
-Core: numpy>=1.26.1, pandas>=2.2,<3.0, scikit-learn>=1.6, scipy>=1.12, optuna>=4.0, joblib>=1.3, numba>=0.59, tqdm>=4.66, rich>=13.9
-Optional: statsmodels>=0.13.3,<0.16 (stats), matplotlib>=3.7,<3.12 (plotting), keras>=3.3,<4.0 (deep learning)
+Core: numpy>=2.0, pandas>=2.3,<3.0, scikit-learn>=1.6, scipy>=1.13, optuna>=4.0, joblib>=1.3, numba>=0.60, tqdm>=4.66, rich>=13.9
+Optional: statsmodels>=0.14.6,<0.16 (stats), matplotlib>=3.8.4,<3.12 (plotting), keras>=3.3,<4.0 (deep learning)
 
 ### Python environment
 
@@ -543,7 +543,7 @@ forecaster = ForecasterStats(estimator=Ets(m=12, model='AAA'))
 
 ## Foundation Models (Zero-Shot)
 
-Pre-trained time series foundation models that forecast without task-specific training. Each model requires its own backend library installed separately (`chronos-forecasting`, `timesfm`, `uni2ts`, `tabicl`, `tabpfn-time-series`, `tfc-t0[torch]` (>= 0.6), `synthefy-nori`, `tsicl`, `tirex-2` (Python >= 3.11), `timestral`, installed from git with `pip install "timestral @ git+https://github.com/mistralai/timestral.git"`). Models are downloaded from HuggingFace on first use.
+Pre-trained time series foundation models that forecast without task-specific training. Each model requires its own backend library installed separately (`chronos-forecasting`, `timesfm`, `uni2ts` (declares numpy 1.26 and scipy 1.11 but works with numpy 2: `pip install uni2ts "pandas>=2.3"`, then `pip install "numpy>=2" "scipy>=1.13"`), `tabicl`, `tabpfn-time-series`, `tfc-t0[torch]` (>= 0.6), `synthefy-nori`, `tsicl`, `tirex-2` (Python >= 3.11), `timestral`, installed from git with `pip install "timestral @ git+https://github.com/mistralai/timestral.git"`). Models are downloaded from HuggingFace on first use.
 
 `FoundationModel` is the low-level interface; `ForecasterFoundation` wraps it to integrate with the rest of the skforecast ecosystem (backtesting, model selection, uniform `predict` / `predict_interval` / `predict_quantiles` API).
 

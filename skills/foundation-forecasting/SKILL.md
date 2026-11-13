@@ -55,7 +55,7 @@ Foundation model backends are **not** bundled with skforecast. Install only the 
 ```bash
 pip install chronos-forecasting    # For Chronos-2
 pip install "timesfm[torch]"       # For TimesFM 2.5 and 3.0
-pip install uni2ts                 # For Moirai-2
+pip install uni2ts "pandas>=2.3"  # For Moirai-2 (see the note below)
 pip install tabicl[forecast]       # For TabICL
 pip install "tabpfn-time-series>=1.3"  # For TabPFN-TS
 pip install "tfc-t0[torch]>=0.6"   # For T0
@@ -64,6 +64,8 @@ pip install synthefy-nori          # For Nori
 pip install "timestral @ git+https://github.com/mistralai/timestral.git"  # For Timestral (not on PyPI)
 pip install tirex-2                # For TiRex-2 (Python >= 3.11)
 ```
+
+`uni2ts` declares `numpy~=1.26.0` and `scipy~=1.11.3`, but works with numpy 2: after `pip install uni2ts "pandas>=2.3"`, run `pip install "numpy>=2" "scipy>=1.13"` (ignore the pip conflict message about `uni2ts`).
 
 Models are downloaded from HuggingFace on first use.
 

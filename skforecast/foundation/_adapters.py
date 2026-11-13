@@ -1814,6 +1814,14 @@ class MoiraiAdapter(_AdapterBase):
     covariates require. Passing `exog` or `context_exog` issues an
     `IgnoredArgumentWarning` and the values are discarded.
 
+    `uni2ts` declares `numpy~=1.26.0` and `scipy~=1.11.3`, older than the
+    versions skforecast requires, but it works with numpy 2. Install it with
+    `pip install uni2ts "pandas>=2.3"` and then restore numpy and scipy with
+    `pip install "numpy>=2" "scipy>=1.13"` (pip reports a conflict with the
+    pins of `uni2ts`, which can be ignored), or with uv in a single command,
+    `uv pip install skforecast uni2ts --override overrides.txt`, with
+    `numpy>=2` and `scipy>=1.13` in `overrides.txt`.
+
     References
     ----------
     .. [1] https://github.com/SalesforceAIResearch/uni2ts
@@ -2056,7 +2064,11 @@ class MoiraiAdapter(_AdapterBase):
         except ImportError as exc:
             raise ImportError(
                 f"{self.backend_package} is required for MoiraiAdapter. "
-                f"Install it with `pip install {self.backend_package}`."
+                f"Install it with `pip install {self.backend_package} "
+                f'"pandas>=2.3"` and then run `pip install "numpy>=2" '
+                f'"scipy>=1.13"`: {self.backend_package} downgrades numpy '
+                f"and scipy below the versions skforecast requires, but "
+                f"works with the newer ones."
             ) from exc
         _warn_if_non_commercial(self.model_id)
         self._module = Moirai2Module.from_pretrained(self.model_id)

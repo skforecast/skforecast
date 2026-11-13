@@ -75,7 +75,7 @@ def test_catboost_regressor_casts_float_categorical_columns_to_int_no_nan():
         feature_names=['lag_1', 'cat_a'],
     )
 
-    assert result['cat_a'].dtype == np.int64 or result['cat_a'].dtype == np.int32
+    assert result['cat_a'].dtype == np.int64
     np.testing.assert_array_equal(result['cat_a'].to_numpy(), np.array([0, 1]))
     np.testing.assert_array_equal(result['lag_1'].to_numpy(), np.array([1.5, 2.5]))
 

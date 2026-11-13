@@ -96,6 +96,7 @@ There is no compile step and no horizon ceiling. For each series, columns presen
 - **`model_id` prefix**: `Salesforce/moirai-2` (Moirai 1.x and Moirai-MoE checkpoints are not supported)
 - **`allow_exog`**: `False`
 - **Supported quantiles**: `[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]`
+- **Backend**: `pip install uni2ts "pandas>=2.3"`, then `pip install "numpy>=2" "scipy>=1.13"`: `uni2ts` declares `numpy~=1.26.0` and `scipy~=1.11.3` but works with numpy 2 (ignore the pip conflict message)
 
 | Parameter        | Type | Default  | Description                                                              |
 |------------------|------|----------|--------------------------------------------------------------------------|

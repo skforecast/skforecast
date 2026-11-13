@@ -34,8 +34,10 @@ model_id = "google/timesfm-3.0-pytorch"
 adapter = "MoiraiAdapter"
 backend_package = "uni2ts"
 model_id = "Salesforce/moirai-2.0-R-small"
-# uni2ts requires scipy<1.12 and skforecast requires scipy>=1.12.
-overrides = ["scipy>=1.12"]
+# uni2ts requires numpy~=1.26.0 and scipy~=1.11.3, below the minimums of
+# skforecast (numpy>=2.0, scipy>=1.13). It works with numpy 2. An override also
+# replaces the requirement of skforecast, so it repeats its minimum.
+overrides = ["numpy>=2", "scipy>=1.13"]
 
 [tabicl]
 adapter = "TabICLAdapter"
