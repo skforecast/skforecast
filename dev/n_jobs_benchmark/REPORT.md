@@ -148,6 +148,13 @@ ralentizarse (de 1,64 veces a entre 0,98 y 1,06) y el de LightGBM también (de
   búsqueda con refit de XGBoost pasa de 45,1 a 31,0 s en caliente (un proceso:
   31,5). Detalle en `results/ec2-proposal1/README.md` y, en 4 vCPU, en
   `results/local-4vcpu-proposal1/README.md`.
+- **Medido en multiserie (rama `perf/n-jobs-auto-strategy`, commit e3eadd9):**
+  el mismo cambio en `_backtesting_forecaster_multiseries`. Con XGBoost y 16
+  CPU, en caliente, el backtesting sin refit en paralelo pasa de 8,9 a 3,2 s y
+  con refit de 10,1 a 5,4 (lo que elige `'auto'`); el ajuste posterior de
+  XGBoost deja de ser hasta 5,3 veces más lento. Sin refit, en frío, un proceso
+  sigue ganando, así que `'auto'` no cambia. Predicciones idénticas. Detalle en
+  `results/ec2-ms-serialization/README.md`.
 
 ### 2. No arrancar más procesos que folds, también en las búsquedas y con `n_jobs` entero
 
