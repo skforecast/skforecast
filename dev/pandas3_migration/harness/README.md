@@ -27,8 +27,11 @@ sección 10, "Decisiones y arranque del 2026-11-03"):
 | Nombre | pandas | conda |
 |---|---|---|
 | `p2` | 2.3.3 | `skforecast_27_py13` |
-| `p3` | 3.1.0 | `skforecast_27_py13_p3` |
-| `p22` | 2.2.3 | `skforecast_27_py13_p22` |
+| `p3` | 3.1.1 | `skforecast_27_py13_p3` |
+
+`p3` pasó de pandas 3.1.0 a 3.1.1 el 2026-11-13 (la versión de la CI). `p22`
+(pandas 2.2.3, `skforecast_27_py13_p22`) se borró ese día: el mínimo es pandas
+2.3 desde la #1500.
 
 Se llama siempre al `python.exe` de cada entorno: los lanzadores
 `Scripts\*.exe` de los clones apuntan al intérprete del entorno original.

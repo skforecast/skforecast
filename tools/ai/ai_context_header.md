@@ -36,7 +36,7 @@ do not override it.
 
 ### Dependencies
 
-Core: numpy>=2.0, pandas>=2.3,<3.0, scikit-learn>=1.6, scipy>=1.13, optuna>=4.0, joblib>=1.3, numba>=0.60, tqdm>=4.66, rich>=13.9
+Core: numpy>=2.0, pandas>=2.3,<4.0, scikit-learn>=1.6, scipy>=1.13, optuna>=4.0, joblib>=1.3, numba>=0.60, tqdm>=4.66, rich>=13.9
 Optional: statsmodels>=0.14.6,<0.16 (stats), matplotlib>=3.8.4,<3.12 (plotting), keras>=3.3,<4.0 (deep learning)
 
 ### Python environment
@@ -67,7 +67,10 @@ whose preinstalled packages may be outdated. To test with the minimum versions,
 as `unit-tests-min-deps.yml` does, create a separate environment (e.g.
 `uv venv ~/.venvs/skforecast-min --python 3.11` and
 `uv pip install --python ~/.venvs/skforecast-min/bin/python --resolution lowest-direct -e ".[test]" --torch-backend cpu`);
-never downgrade the main one.
+never downgrade the main one. The hook installs pandas 3, but skforecast also
+supports pandas 2.3: when a change depends on pandas (dtypes, dates, copies),
+also run the touched tests with pandas 2 in a separate environment, created the
+same way with `-e ".[test]" "pandas<3"`.
 
 Benchmarks of a change (in a pull request) run with the latest versions of the
 dependencies, and report Python and the versions of the packages involved
