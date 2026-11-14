@@ -16,7 +16,7 @@ All significant changes to this project are documented in this release file.
 
 The main changes in this release are:
 
-+ <span class="badge text-bg-feature">Feature</span> Support for pandas 3: skforecast works with pandas 2.3 and 3 and returns the same predictions and metrics with both.
++ <span class="badge text-bg-feature">Feature</span> Support for pandas 3: skforecast works with pandas 2.3 and 3 and returns the same predictions and metrics with both. ([#1501](https://github.com/skforecast/skforecast/pull/1501))
 
 !!! warning "Before upgrading"
 
@@ -31,7 +31,7 @@ The main changes in this release are:
 
 **Added**
 
-+ Added pandas 3 compatibility (`pandas>=2.3, <4.0`). Predictions and metrics are the same with pandas 2.3 and 3; outputs use the default dtypes of the installed version. The backends of <code>[MoiraiAdapter]</code> and <code>[TabPFNAdapter]</code> (`gluonts`) still require pandas 2: installing them downgrades pandas to 2.3.
++ Added pandas 3 compatibility (`pandas>=2.3, <4.0`). Predictions and metrics are the same with pandas 2.3 and 3; outputs use the default dtypes of the installed version. The backends of <code>[MoiraiAdapter]</code> and <code>[TabPFNAdapter]</code> (`gluonts`) still require pandas 2: installing them downgrades pandas to 2.3. ([#1501](https://github.com/skforecast/skforecast/pull/1501))
 
 
 **Changed**
