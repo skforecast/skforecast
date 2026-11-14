@@ -1568,10 +1568,11 @@ reflejaría en ellos.
 | 7 | Documentación y contexto de IA (con la PR 6 o después) | `docs/releases/releases.md` (revisión final del texto de la sección 6; cada PR ya añadió su nota); guías de usuario de datos de entrada (resolución y `freq="24h"`), persistencia (joblib frente a skops entre versiones, según D2; quien pase `trusted=[...]` a skops con ficheros de pandas 3 debe añadir `pandas.StringDtype`) y categóricas (`str`); `skills/troubleshooting-common-errors` (índice sin frecuencia en pandas 3; joblib entre versiones; `.as_unit` en pandas 2), `skills/forecasting-single-series` (nota `24h`), `skills/drift-detection/SKILL.md:96` (`'ME'`); nota de que `X_train` sin exógenas es de solo lectura (D13); `pd.DateOffset(days=n)` como offset recomendado en `ForecasterEquivalentDate` con índices tz-aware (3.3); `check_inputs=False` en la guía de rendimiento (11.3); `tools/ai/llms-base.txt` y skills si cambia algún ejemplo; `python tools/ai/generate_ai_context_files.py` y `--check`; `dayofweek`/`dayofyear` → `day_of_week`/`day_of_year` en los 3 notebooks que los usan (`user_guides/probabilistic-forecasting-global-models`, `user_guides/forecasting-with-deep-learning-rnn-lstm`, `faq/parameters-search-backtesting-vs-one-step-ahead`); reejecutar los notebooks afectados cuando el entorno de docs use pandas 3 (3 notebooks imprimen `[ns]`, 4 `dtype: object`) | - | `ai-context-check.yml`, `docs-page-meta-check.yml` | n/a |
 | 8 | Opcionales medidos | Descomponer `pd.StringDtype` en `_decompose_dtype` para skops neutros (3.2; solo hacía falta para que skops funcionase entre pandas 3 y 2.2: con D2 (c), decidida el 2026-11-13, pandas 2.2 deja de estar soportado y skops ya funciona en los dos sentidos entre 2.3 y 3) | Según cambio | Identidad; benchmark | Sí |
 
-Qué queda para pandas 4 (no bloquea ahora): quitar el helper `copy=` del
-módulo de compatibilidad y el `copy=False` de los constructores cuando se
-abandone pandas 2; `pd.infer_freq` devolverá offsets (el helper ya lo
-absorbe); `future.infer_string` y `mode.copy_on_write` desaparecen (no se
+Qué queda para después (no bloquea ahora): lo que cambia al retirar pandas 2 está en
+la sección 10, "Al retirar pandas 2: lista viva". El `copy=False` de los
+constructores no se quita: en pandas 3 es lo que evita la copia (este párrafo decía lo
+contrario hasta el 2026-11-14). Para pandas 4: `pd.infer_freq` devolverá offsets (el
+helper ya lo absorbe); `future.infer_string` y `mode.copy_on_write` desaparecen (no se
 usan).
 
 Orden recomendado: 1 → 2 → 4 → 5 → 6 (con 7). La PR 2 va después de la 1
@@ -2309,25 +2310,8 @@ Segunda revisión antes del commit (2026-11-13), con una corrección:
   pasan y 10 fallan, los diez en la lista base. La suite completa no se
   repitió (el cambio se limita a `reshape_series_wide_to_long`).
 
-**Al retirar pandas 2** (versión futura), lo que se puede simplificar se
-encuentra buscando `PANDAS_GE_3` y `_pandas_compat` en `skforecast/`:
-
-- `_pandas_compat.concat` pasa a ser `pd.concat` (2 usos) y
-  `_pandas_compat.astype` pierde la rama `copy=False` (se conserva
-  `changed_only`). `PANDAS_GE_3` desaparece. `_pandas_compat.infer_freq` se
-  queda hasta que el mínimo sea pandas 4 (hoy cubre pandas menor que 3.1).
-- `_TZ_MISSING_FREQ_HINT` deja de ser condicional.
-- `_add_note_pandas_3_file` y los dos `try`/`except` de `load_forecaster`
-  que la llaman se eliminan, con su test.
-- Tests: las condiciones `PANDAS_GE_3` de los tres tests de la pista y el
-  test de la propia constante.
-- Fuera del paquete: el mínimo de pandas en `pyproject.toml`, la matriz de
-  CI y los entornos gemelos.
-
-No son compatibilidad y se quedan: `_infer_freq_from_index` y
-`_is_utc_anchored_index` (el comportamiento de `tz_convert` es el de pandas
-3), la comparación de dtypes de texto de las exógenas (`str` y `object`
-conviven en pandas 3), `sorted(..., key=str)` y `pd.Series(dtype=str)`.
+**Al retirar pandas 2**: la lista que había aquí se ha movido, ampliada, a "Al retirar
+pandas 2: lista viva", al final de esta sección.
 
 **PR #1497 contra `0.28.x`** (cabeza `ed7d20f0c`), abierta el 2026-11-13 y
 fusionada ese mismo día (merge `e1c928b9f`). Checks de la PR en verde
@@ -2978,6 +2962,107 @@ depende el cambio, con scripts nuevos (espacio temporal de la sesión):
    lectura (punto 1 de "Corregido" y la tabla de la revisión final).
 4. Errores previos anotados, sin PR: el alias `X_train`/`y_train` de pandas 2 y
    `filter_train_X_y_for_step` sin exógenas.
+5. Mantener al día "Al retirar pandas 2: lista viva" con la 3b y la PR 7.
+
+### Al retirar pandas 2: lista viva
+
+Qué hay que cambiar el día que el mínimo pase a pandas 3 (versión futura, sin fecha).
+Sustituye a la lista que estaba en "PR 4 sobre `0.28.x`" y al párrafo de la sección 7.
+Actualizada el 2026-11-14 con las PR 1 a 6 y la 3a. **Cada PR de la migración que quede
+(3b, 7) añade aquí lo suyo.** Los números de línea son de `perf/pandas3-copies`
+(`252e3de15`). Para localizarlo todo de nuevo: buscar `PANDAS_GE_3`, `_pandas_compat`,
+`STR_DTYPE` y "pandas 2" en `skforecast/`, y `pandas` en `.github/workflows/`,
+`pyproject.toml` y `tools/ai/`.
+
+**Condiciones antes de decidirlo:**
+
+- Los backends de `MoiraiAdapter` y `TabPFNAdapter` (`gluonts`) exigen pandas 2:
+  instalarlos baja pandas a 2.3 (nota de versión de la 0.28.0). Mientras sea así, retirar
+  pandas 2 deja esos dos adaptadores sin backend instalable.
+- pandas 3 exige Python 3.11, que ya es el mínimo (DEP-python310).
+- Persistencia: comprobar y documentar que los forecasters guardados con pandas 2 (joblib
+  y skops) se cargan con pandas 3. La guía de persistencia entre versiones es de la PR 7.
+
+**Paquete, lo que se simplifica:**
+
+1. `skforecast/utils/_pandas_compat.py`:
+   - `PANDAS_GE_3` desaparece.
+   - `concat` pasa a ser `pd.concat` (2 usos, `_forecaster_recursive_multiseries.py:1336,
+     1575`).
+   - `astype` pierde la rama `copy=False` y se queda solo por `changed_only` (10 usos).
+   - `infer_freq` se queda hasta que el mínimo sea pandas 4 (3 usos: `_calendar.py:864`,
+     `utils.py:2374, 2376`). Su `except OptionError` cubre pandas menor que 3.1 y se quita
+     si el mínimo es 3.1 o posterior.
+   - El docstring del módulo ("the only module of the package that looks at the pandas
+     version") se reescribe.
+2. `_TZ_MISSING_FREQ_HINT` (`utils.py:85-93`) deja de ser condicional.
+3. `_add_note_pandas_3_file` (`utils.py:3659`) y los dos `try`/`except` de
+   `load_forecaster` que la llaman se eliminan, con su test.
+4. Comentarios que citan pandas 2, solo texto: los de los cuatro constructores de la 3a
+   ("as in pandas 2"), `utils.py:85` y `_validation.py:3105`.
+
+**Paquete, lo que se queda (no es compatibilidad):**
+
+- `copy=False` en los constructores de `DataFrame` y `Series`: los cuatro del
+  `create_train_X_y` público (3a) y los de `_forecaster_recursive_multiseries.py:1236 a
+  1331`. En pandas 3 es justo lo que evita la copia, y el keyword de los constructores no
+  está deprecado. El párrafo de la sección 7 decía lo contrario hasta el 2026-11-14.
+- `exog.copy(deep=False)` antes de codificar las categóricas (9 sitios, 3a): protege el
+  objeto del usuario, no sus arrays.
+- `_infer_freq_from_index` y `_is_utc_anchored_index` (el comportamiento de `tz_convert`
+  es el de pandas 3), la comparación de dtypes de texto de las exógenas (`utils.py:4776`;
+  `str` y `object` conviven en pandas 3), el orden de offsets por duración (`_split.py:394`,
+  `utils.py:4594`), `sorted(..., key=str)` y `pd.Series(dtype=str)`.
+- Desaparecen solos: el alias `X_train`/`y_train` de pandas 2 y la columna de pandas 2 de
+  la tabla de matrices de solo lectura ("Revisión final de la 3a").
+
+**Tests:**
+
+- `PANDAS_GE_3` (8 ficheros):
+  - Los casos `'D'` de los cuatro tests parametrizados por frecuencia se eliminan y queda
+    `'24h'`: `skipif` en `tests_forecaster_direct/test_predict.py:1038`,
+    `tests_split/test_basefold.py:377`,
+    `tests_utils/test_predict_and_calculate_metrics_one_step_ahead_multiseries.py:1166` y
+    `tests_utils/test_date_to_index_position.py:10`.
+  - Los tres `assert ... == (tz is not None and PANDAS_GE_3)` pasan a `tz is not None`:
+    `test_basefold.py:512`, `test_check_extract_values_and_index.py:45` y
+    `test_check_preprocess_series.py:156`.
+  - `test_pandas_compat.py`: el test de la constante y el de `concat`.
+  - `test_save_load_forecaster.py:1317 a 1331`: el test de la nota de `load_forecaster`.
+- `TZ_NAME_IS_ZONEINFO` (`test_skops_decompose_compose.py:27`) es siempre `True`.
+- Opcional, solo limpieza:
+  - `STR_DTYPE = pd.Series(['a']).dtype` (6 ficheros) se puede sustituir por el dtype
+    `str`.
+  - Los cuatro `assert_index_equal(..., exact='equiv')` con el comentario "pandas 3 keeps
+    a RangeIndex after dropping the NaN rows (pandas 2 an Index)"
+    (`tests_forecaster_recursive/test_create_train_X_y.py:1383, 1449` y
+    `tests_forecaster_recursive_classifier/test_create_train_X_y.py:1746, 1901`) pueden
+    comparar con un `RangeIndex` exacto.
+  - Las fixtures guardadas con pandas 2 (`fixtures_model_selection_multiseries.py:118`,
+    `fixtures_forecaster_recursive_multiseries.py:141` y los resultados del detector de
+    deriva) siguen valiendo: índice `datetime64[ns]` y texto `object`. Regenerarlas con
+    pandas 3 permitiría quitar `unit='ns'` y los casts de los valores esperados.
+
+**CI, empaquetado y documentación:**
+
+- `pyproject.toml:55` (`pandas>=2.3, <4.0`) y `:122` (`pandas[parquet]>=2.3`).
+- `unit-tests.yml:24 a 34 y 69`: la clave `pandas` de la matriz y la celda `pandas<3`.
+- `unit-tests-min-deps.yml`: sin cambio, instala el mínimo que declare `pyproject.toml`.
+- `unit-tests-latest-deps.yml:59 a 68`: el filtro de `Pandas4Warning` ya no tiene que
+  evitar los trabajos con pandas 2; valorar llevarlo a `filterwarnings` de
+  `pyproject.toml`.
+- `tools/ai/ai_context_header.md:39` (línea de dependencias) y `:70 a 73` (la frase de
+  pandas 2 de las sesiones cloud), y regenerar el contexto de IA.
+- `docs/quick-start/how-to-install.md:33` y la nota de versión ("Before upgrading").
+- La receta de conda-forge (mínimo de pandas).
+- Entornos locales y arnés: el entorno de desarrollo es hoy pandas 2.3.3. Los gemelos p2
+  y p3 y la comparación entre versiones del arnés dejan de hacer falta; el A/B de la base
+  frente a la rama se queda. Los benchmarks de `benchmarks/` pasan a pandas 3 antes, con
+  MAINT-bench-pandas3 del roadmap.
+
+**Pendiente de añadir:** lo de la 3b (la regla de copia de la entrada de los
+transformadores no depende de pandas 2 y se queda) y lo de la PR 7 (las guías que hablen de
+las dos versiones).
 
 ### Historial de lo pendiente entre sesiones
 
