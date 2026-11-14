@@ -142,6 +142,19 @@ ralentizarse (de 1,64 veces a entre 0,98 y 1,06) y el de LightGBM también (de
   necesita invalidación: mejor dejarla para una segunda fase.
 - **Validación:** este mismo benchmark antes y después, en la máquina de 16
   CPU. Las predicciones deben ser idénticas.
+- **Medido (rama `perf/serialize-forecaster-once`, variante simple):**
+  predicciones idénticas; medidas en paralelo un 21 % más rápidas en caliente
+  con 16 CPU y un 13 % con 8; ajuste posterior de XGBoost de 6,4 a 1,7 s; la
+  búsqueda con refit de XGBoost pasa de 45,1 a 31,0 s en caliente (un proceso:
+  31,5). Detalle en `results/ec2-proposal1/README.md` y, en 4 vCPU, en
+  `results/local-4vcpu-proposal1/README.md`.
+- **Medido en multiserie (rama `perf/n-jobs-auto-strategy`, commit e3eadd9):**
+  el mismo cambio en `_backtesting_forecaster_multiseries`. Con XGBoost y 16
+  CPU, en caliente, el backtesting sin refit en paralelo pasa de 8,9 a 3,2 s y
+  con refit de 10,1 a 5,4 (lo que elige `'auto'`); el ajuste posterior de
+  XGBoost deja de ser hasta 5,3 veces más lento. Sin refit, en frío, un proceso
+  sigue ganando, así que `'auto'` no cambia. Predicciones idénticas. Detalle en
+  `results/ec2-ms-serialization/README.md`.
 
 ### 2. No arrancar más procesos que folds, también en las búsquedas y con `n_jobs` entero
 
@@ -159,6 +172,17 @@ ralentizarse (de 1,64 veces a entre 0,98 y 1,06) y el de LightGBM también (de
 - **Riesgo:** bajo. El número de folds es constante dentro de una búsqueda, así
   que no provoca reinicios de los workers. Falta medirlo directamente en una
   búsqueda.
+- **Medido (rama `perf/n-jobs-auto-strategy`, commit 8e9223b, sobre las
+  propuestas 1 y 3):** `n_jobs = min(n_jobs, folds)` en los dos backtestings,
+  así que cubre las búsquedas y el `n_jobs` entero. Con 16 CPU, la búsqueda con
+  refit de 3 candidatos de 6 folds con `'auto'` pasa de 15 procesos a 6 y es
+  del 16 al 30 % más rápida en frío; en caliente, XGBoost pasa de 31,0 a
+  23,6 s (un proceso: 32,8), HistGB de 22,5 a 21,2 y LightGBM de un hilo no
+  cambia. El backtesting con `n_jobs=15` es del 25 al 37 % más rápido en
+  caliente. La memoria de los workers baja a menos de la mitad. Con 8 CPU (7
+  procesos frente a 6), sin diferencias. Los resultados encajan con la
+  hipótesis de los workers sin estrenar y, en caliente, con los hilos extra
+  que joblib da a cada worker. Detalle en `results/ec2-proposal2/README.md`.
 
 ### 3. Sin refit: decidir por carga en lugar de por lista de estimadores
 
@@ -172,6 +196,28 @@ ralentizarse (de 1,64 veces a entre 0,98 y 1,06) y el de LightGBM también (de
 - **Depende de la propuesta 1:** con la serialización actual el umbral saldría
   distinto para cada estimador. Hay que hacerla después y calibrar con este
   benchmark.
+- **Con la propuesta 1 medida:** el backtesting suelto de HistGB sin refit
+  tarda 19,1 s con un proceso (lo que elige `'auto'`) y 8,0 en frío y 4,8 en
+  caliente en paralelo con 16 CPU. XGBoost, LightGBM con un hilo y CatBoost
+  siguen perdiendo en frío y ganan poco en caliente; RandomForest sigue
+  perdiendo. Ver `results/ec2-proposal1/README.md`.
+- **Medido (rama `perf/n-jobs-auto-prediction-workload`, versión mínima):**
+  sin refit, con HistGB o CatBoost, se predice el primer fold en el proceso
+  principal y se paraleliza el resto si la predicción estimada supera 6 s
+  (Linux y macOS) o 12 s (Windows). HistGB con `'auto'` pasa de 19,2 a 8,1 s
+  en frío y de 19,1 a 5,0 en caliente con 16 CPU; CatBoost sigue en un
+  proceso. Detalle en `results/ec2-proposal3/README.md`.
+- **Medido en Windows (22 CPU, `results/win-22cpu/README.md`):** con todos
+  los cambios, la búsqueda de XGBoost con refit y `'auto'` pasa de 26,9 / 20,1
+  s a 16,3 / 13,7 (en frío / en caliente), y el backtesting con refit y
+  `n_jobs` entero tarda la mitad en caliente. Sin refit, el paralelo compensa
+  en frío a partir de unos 7 s de predicción, pero se mantiene el umbral de
+  12 s (una máquina, una repetición, riesgo asimétrico). Cerca del umbral, la
+  decisión cambia entre llamadas: el primer fold de la primera llamada es más
+  lento y empuja la estimación por encima de 12 s (21 procesos), y las
+  siguientes vuelven a uno aunque los workers ya estén arrancados (8,0 s en
+  lugar de 2,5). Mejora futura: no contar el arranque de los workers cuando ya
+  están en marcha. El ajuste posterior de XGBoost no se ralentiza en Windows.
 
 ### 4. Decisión de criterio: `cpu_count()` en lugar de `cpu_count() - 1`
 

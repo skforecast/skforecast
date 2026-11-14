@@ -1,0 +1,15 @@
+{
+  "python": "3.12.16",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "processor": "Intel64 Family 6 Model 170 Stepping 4, GenuineIntel",
+  "cpu_count": 22,
+  "os_cpu_count": 22,
+  "skforecast": "0.27.0",
+  "numpy": "2.5.4",
+  "pandas": "2.3.3",
+  "scikit-learn": "1.9.1",
+  "joblib": "1.6.0",
+  "xgboost": "3.4.1",
+  "catboost": "1.2.10",
+  "skforecast_commit": "046e511cdf4b7632d8e1739390c17df5f18c1079"
+}
