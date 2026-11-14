@@ -882,6 +882,10 @@ numpy 2.x (los entornos `p22` y `p2` de este estudio usan numpy 2.5.4).
 
 Propuesta de matriz con el pin `pandas>=2.2, <4.0` (sección 7):
 
+> Desfasada desde el 2026-11-13: Python 3.10 ya no está en la matriz (#1496), los mínimos
+> pasan a numpy 2.0 y pandas 2.3 (DEP-numpy2-pandas23) y el filtro de D5 cambia. La
+> versión vigente está en la sección 10, "Revisión de la PR 6, el 2026-11-13".
+
 - `unit-tests.yml`: sin cambios en la matriz. Con el nuevo pin `uv` resuelve
   pandas 3.x en Python 3.11 a 3.14 y pandas 2.3.x en 3.10 (pandas 3 no se
   instala en 3.10), así que los dos mayores quedan cubiertos sin pasos nuevos.
@@ -1560,9 +1564,9 @@ reflejaría en ellos.
 | 3 | Copias evitables y transformadores in situ | `pd.DataFrame(..., copy=False)` directamente (keyword no deprecado; en pandas 2 no cambia nada, medido con el cambio real en 4.8; sin helper ni rama) sobre arrays privados en `create_train_X_y` de `_forecaster_recursive.py:1100-1104`, `_forecaster_recursive_classifier.py:1120-1124`, `_forecaster_direct.py:1506-1510`, `_forecaster_direct_multivariate.py:1623-1627` (solo acelera el `create_train_X_y` público y `feature_selection`: `fit`, el backtesting y la búsqueda one-step-ahead ya trabajan con el array y no pagaban esa copia, 3.6); la vista `sliding_window_view` de los lags sin exógenas (nace en `_forecaster_recursive.py:653`, `_forecaster_recursive_classifier.py:632`, `_forecaster_direct.py:854-858` y `_forecaster_direct_multivariate.py:895-897`, F36) según D13 (por defecto se conserva: `copy=False` sobre la vista, matriz de solo lectura como hoy en pandas 2); **los 9 `exog.copy()` de 3.1 a `copy(deep=False)`** (`_forecaster_recursive.py:897, 1637`, `_forecaster_recursive_classifier.py:903, 1608`, `_forecaster_recursive_multiseries.py:2846`, `_forecaster_direct.py:1114, 2202`, `_forecaster_direct_multivariate.py:1194, 2377`); **corrección F26 completa** (D14): `y.to_numpy(copy=True)` en `_forecaster_recursive_multiseries.py:990` y copia previa **dentro de** `transform_series`/`transform_dataframe` (`utils.py:2641-2841`, llamadas al transformador en `:2802-2807`), no en las llamadas de `fit`, para cubrir `fit`, `predict` y backtesting de todos los llamadores: `transformer_y` (`_forecaster_recursive.py:817`, `_forecaster_direct.py:1032`) y `transformer_exog` (`_forecaster_recursive.py:870, 1627`, `_forecaster_recursive_classifier.py:877, 1599`, `_forecaster_direct.py:1087, 2192`, `_forecaster_direct_multivariate.py:1167, 2367`), con la condición de D14 (nota de versión); copias redundantes a `copy(deep=False)` o eliminadas (`_forecaster_equivalent_date.py:640, 672, 868, 894`, `_forecaster_stats.py:637`, `_forecaster_recursive_multiseries.py:2756-2761, 2793-2795, 2934-2935`, `_range_drift.py:427-428`, `_forecaster_rnn.py:1352-1356`, `utils.py:812-818, 4387-4392`, `_preprocessing.py:538-540, 656-657`; candidatos a medir: `_preprocessing.py:2750, 2870`, `_forecaster_direct_multivariate.py:2312`, `model_selection/_utils.py:1988`); opcional, `.copy()` de `Arima.coef_` (`_arima.py:673`, de solo lectura en pandas 3); `copy=False` en los `DataFrame`/`Series` de los caminos de `predict` listados en 3.1 **solo si** `predict_loop` y `backtesting_recursive` lo justifican (hoy sin medida; en pandas 2 no aporta nada). Si D11 es (b), la corrección F26 sale a una PR propia en 0.27 | Tests nuevos para F26 en los cinco forecasters (incluido `ForecasterRecursiveClassifier`) con `StandardScaler(copy=False)`, `make_pipeline(StandardScaler(copy=False))` y `make_column_transformer((StandardScaler(copy=False), cols))`: `y`/`series`/`exog` del usuario intactos (`equals` antes y después) tras `fit` y tras `predict`, dos `predict` seguidos iguales, y predicciones iguales a las de `copy=True`; test de `exog` del usuario intacto con `categorical_features` sin `transformer_exog`; test de la matriz sin exógenas según D13 | Identidad ampliada (PR 1: entradas intactas y `predict` repetido, que es lo que puede romper `copy(deep=False)`); tabla de 4.8 más `predict_loop` con exógena categórica sin transformador, `create_train_X_y` sin exógenas (200k, lags 24), `predict_loop` con un `Pipeline` como `transformer_exog` (coste de la copia de F26) y `predict_loop`/`backtesting_recursive` con los `copy=False` de `predict`; tracemalloc de las copias eliminadas | Sí en las salidas (identidad ampliada; medido); F26 cambia solo el caso con transformador in situ |
 | 4 | Robustez con pandas 3 (código) | Orden de offsets en `_split.py:383-388` y `utils.py:4467-4471` (D10): conservar `try: sorted(...)` y, en el `except TypeError`, ordenar por duración cuando todos son `Tick` o `Day` (`pd.Timedelta(days=f.n)` para `Day`, `pd.Timedelta(f.nanos, unit="ns")` para el resto) y por `str` en otro caso; copiar el `try/except` actual con `key=str` no basta (`{Hour, Day}` da `[<Hour>, <Day>]` en pandas 2 y `[<Day>, <Hour>]` en pandas 3), y la clave propuesta da en pandas 3 el texto de pandas 2 en los 9 casos probados (`Day`/`2*Day`, `Hour`/`Day`, `30min`/`Hour`, `Day`/`MonthBegin`, `BDay`/`Hour`, `Week`/`Day`, `2*Day`/`MonthEnd`, `1`/`Day`, `15min`/`Hour`/`2*Day`) sin avisos en 2.2.3, 2.3.3 y 3.1.0; guardia `freq is None` en `reshape_series_wide_to_long` (`_preprocessing.py:470`), limitada según D15, y `data.rename_axis("datetime")` en lugar de `data.index.name = "datetime"` (`:471`, hoy renombra el índice del `DataFrame` del usuario en las dos versiones); `compat.is_string_dtype` (se añade aquí) para que `object`/`str` sean equivalentes en `check_preprocess_exog_multiseries` (`utils.py:4646-4661`); inferencia en UTC en `expand_index` (`utils.py:2456-2463`) y, si se adopta D6, mensaje con `freq="24h"` en `utils.py:2047-2051`; `pd.Series(dtype=str)` en `_validation.py:2909`; `dtype=object` antes del `fillna` en `_forecaster_recursive_multiseries.py:2051-2056`; `stack(future_stack=True)` en `model_selection/_utils.py:1662` (D12, nota de versión; los `stack` de `_search.py` ya no existen desde #1438); mensaje claro en `load_forecaster` (D8) | Tests nuevos: `_split.py` con `Day`/`MonthBegin` y `Day`/paso (hoy `TypeError` también en pandas 2), orden de offsets con los 9 casos anteriores, `reshape_series_wide_to_long` sin `freq` (tz-aware y, según D15, tz-naive diario y horario) y con el nombre del índice del usuario intacto, exógena de texto `object`/`str` entre series, `expand_index` `MS`/`QS` anclado en UTC sin `freq`, MASE/RMSSE con NaN en la serie objetivo ancha | Tests nuevos en los tres pandas; identidad | Sí salvo D12 (MASE/RMSSE con NaN en la serie objetivo ancha), los mensajes de `_split.py` (antes `TypeError`) y la guardia de `reshape_series_wide_to_long` (D15); nota de versión para cada uno |
 | 5 | Tests neutrales entre versiones (después de la PR 4; hecha el 2026-11-13 con tres correcciones a esta fila: `'D'` con `skipif(PANDAS_GE_3)` más una variante `'24h'` en lugar de solo `'24h'` en G3-RC1a, fixtures del drift normalizados a `STR_DTYPE` en lugar de `check_column_type=False`, y sin arnés; sección 10, "PR 5 sobre `0.28.x`") | `STR_DTYPE = pd.Series(["a"]).dtype` compartido y expectativas con él (19 tests de G2-RC1, ficheros en 2.2); `columns=pd.Index(float_cols, dtype=STR_DTYPE)` y `check_column_type=False` o fixture regenerado (G2-RC2, 7); mensajes construidos con `f"{pd.RangeIndex}"`/`{type(x.index.levels[1])}` (G2-RC3/RC4, 6); `unit="ns"` en las expectativas que comparan con fixtures persistidos (G1-RC1a, 38: `test_create_predict_inputs.py` 8 `date_range`, `test_predict.py`, `test_create_predict_X.py`, `test_predict_interval*.py`, `test_backtesting_forecaster_multiseries.py`, `test_predict_and_calculate_metrics_one_step_ahead_multiseries.py`) y sin el pin `[ns]` donde la entrada se construye con `date_range` (G1-RC1b, 7); `unit="ns"` y `tz_zoneinfo` calculado en `test_skops_decompose_compose.py:60-90`; `freq="24h"` en los 7 tests de índices anclados en UTC (G3-RC1a) y en `test_reshape_series_wide_to_long.py:75-77`; `exact=` explícito donde 3.1 avisa y, para `freq`, la expectativa construida con el mismo `freq` (nunca `check_freq=` en `assert_index_equal`: no existe en pandas 2.2 ni 2.3); no usar `pd.StringDtype(na_value=np.nan)` en los tests (no existe en 2.2.x: `TypeError` en 2.2.3) | 86 tests (los 90 de la línea base, lista exacta en `results/baseline_pandas3.1.0/failures_by_group.json`, menos los 4 que pasan con el código de la PR 4: G1-RC3, G3-RC2 y G2-RC5 ×2) | Suite completa en p3 **en verde** y en p2 (requiere antes corregir, fuera de la migración, los 2 tests de `backtesting_stats` que fallan fuera de macOS con los dos pandas; sección 10, "Revisión del 2026-11-03"), y `-W error::pandas.errors.Pandas4Warning` sobre la suite completa en p3; una pasada en p3 con `SKFORECAST_CLOUD_DL=1` (`deep_learning/` y `foundation/` nunca se han ejecutado con pandas 3; incluye los índices `[us]` de `_adapters.py:2597, 2630, 3266, 3299`); los tests que cambian también con `unit-tests-min-deps.yml` lanzado sobre la rama o en un entorno de versiones mínimas creado para la PR (`uv venv ~/.venvs/skforecast-min --python 3.11`, o 3.10 si DEP-python310 aún no se ha fusionado, y `--resolution lowest-direct`: pandas 2.2.0 con numpy 1.26.1, que el estudio no tuvo; `unit=` sin verificar en 2.2.0) | n/a |
-| 6 | `pyproject.toml`, CI y línea de dependencias (después de DEP-python310) | `pandas>=2.2, <4.0`; el mínimo Python 3.11 (D1 (b)) ya no va aquí: lo hace la PR DEP-python310 de `dev/roadmap_0.28.0/roadmap.md` (sección 10, cambio del 2026-11-12); `pandas[parquet]` del extra `test` a `<4.0` si MAINT-test-deps (mismo roadmap) le puso `<3.0`, y sin cambio si no; `statsmodels>=0.14.6, <0.16` en los extras que lo declaran (`pyproject.toml:69, 74, 84, 113`; DEP-python310 lo deja en `>=0.13.3`): statsmodels 0.14.5 no se importa con pandas 3.1 y arrastra a `skforecast.stats` (3.4, "Dependencias"); matriz de 3.5 (`include` de pandas 2 en Python 3.12; `-W error` en `unit-tests-latest-deps.yml` según D5); `benchmarks/requirements_benchmarks.txt` según D9; línea de dependencias en `tools/ai/ai_context_header.md:39` y `docs/quick-start/how-to-install.md:33` (`pandas>=2.2,<4`; `tools/ai/llms-base.txt` no tiene pin de pandas) con la regeneración de los ficheros de contexto de IA | - | `unit-tests.yml` lanzado con `workflow_dispatch` sobre la rama: 16 combinaciones en verde (las 15 de la matriz más el `include`); `unit-tests-min-deps.yml` igual. Los jobs programados (`unit-tests-latest-deps.yml`, `foundation-backends.yml`) se ejecutan sobre `main` y solo validan la migración cuando llegue con la release | n/a |
+| 6 | `pyproject.toml`, CI y línea de dependencias (después de DEP-python310 y de DEP-numpy2-pandas23; fila revisada el 2026-11-13, sección 10, "Revisión de la PR 6, el 2026-11-13"; implementada el 2026-11-13 en `chore/pandas3-pin` (commits `83f06a4f4` y `fa575a3bd`, rama publicada el 2026-11-14, los cuatro workflows en verde, PR #1501 abierta contra `0.28.x` el 2026-11-14), con estas correcciones: filtro de D5 con `-o` acotado a skforecast, una sola celda de pandas 2, frase de pandas 2 para las sesiones en la nube en la cabecera de IA, 9 de 11 backends con pandas 3, y verificación con suite completa y arnés p2 frente a p3; sección 10, "PR 6 sobre `0.28.x`") | Techo de pandas a `<4.0` en `pyproject.toml:55` (el mínimo 2.3 lo pone DEP-numpy2-pandas23 de `dev/roadmap_0.28.0/roadmap.md`, decisión D2 (c); el mínimo Python 3.11 lo puso DEP-python310, #1496); `pandas[parquet]` (`:122`) no tiene techo: sin cambio; statsmodels sin cambio: DEP-numpy2-pandas23 ya lo sube a `>=0.14.6` (statsmodels 0.14.5 no se importa con pandas 3.1 y arrastra a `skforecast.stats`, 3.4, "Dependencias"; decidido el 2026-11-13), así que `optional_dependencies` tampoco cambia; `unit-tests.yml`: celda de pandas 2 con la clave `pandas` en la matriz (sin ella, el `include` se fusiona con la celda 3.12/ubuntu en lugar de añadir una); `unit-tests-latest-deps.yml`: el filtro de D5 (forma corregida en la sección 8); `benchmarks/requirements_benchmarks.txt` sin cambio (D9 (a); la versión de pandas ya se registra en `benchmarks/benchmarks/benchmark_runner.py:66`); línea de dependencias en `tools/ai/ai_context_header.md:39` y `docs/quick-start/how-to-install.md:33` (las de statsmodels ya no cambian; `tools/ai/llms-base.txt` no tiene pins) con la regeneración de los ficheros de contexto de IA; nota de versión | `test_check_optional_dependency.py` (sin cambios, debe pasar) | `verify`; lanzados a mano sobre la rama `unit-tests.yml` (13 celdas: las 12 de la matriz, Python 3.11 a 3.14 en tres sistemas, con pandas 3.1.1, más la de pandas 2.3), `unit-tests-min-deps.yml` y `unit-tests-latest-deps.yml` (con el filtro); `foundation-backends.yml` recomendado: su ejecución programada corre sobre la rama `X.Y.x` más alta (`0.28.x`), no sobre `main`, así que desde el lunes siguiente a la fusión usa el pin nuevo (9 de 11 backends resuelven pandas 3.1.1; moirai y tabpfn se quedan en 2.3.3 por `gluonts`). `unit-tests-latest-deps.yml` sí corre sobre `main` | n/a |
 | 7 | Documentación y contexto de IA (con la PR 6 o después) | `docs/releases/releases.md` (revisión final del texto de la sección 6; cada PR ya añadió su nota); guías de usuario de datos de entrada (resolución y `freq="24h"`), persistencia (joblib frente a skops entre versiones, según D2; quien pase `trusted=[...]` a skops con ficheros de pandas 3 debe añadir `pandas.StringDtype`) y categóricas (`str`); `skills/troubleshooting-common-errors` (índice sin frecuencia en pandas 3; joblib entre versiones; `.as_unit` en pandas 2), `skills/forecasting-single-series` (nota `24h`), `skills/drift-detection/SKILL.md:96` (`'ME'`); nota de que `X_train` sin exógenas es de solo lectura (D13); `pd.DateOffset(days=n)` como offset recomendado en `ForecasterEquivalentDate` con índices tz-aware (3.3); `check_inputs=False` en la guía de rendimiento (11.3); `tools/ai/llms-base.txt` y skills si cambia algún ejemplo; `python tools/ai/generate_ai_context_files.py` y `--check`; `dayofweek`/`dayofyear` → `day_of_week`/`day_of_year` en los 3 notebooks que los usan (`user_guides/probabilistic-forecasting-global-models`, `user_guides/forecasting-with-deep-learning-rnn-lstm`, `faq/parameters-search-backtesting-vs-one-step-ahead`); reejecutar los notebooks afectados cuando el entorno de docs use pandas 3 (3 notebooks imprimen `[ns]`, 4 `dtype: object`) | - | `ai-context-check.yml`, `docs-page-meta-check.yml` | n/a |
-| 8 | Opcionales medidos | Descomponer `pd.StringDtype` en `_decompose_dtype` para skops neutros (3.2; pasa a la PR 4 si D2 mantiene pandas 2.2 y se quiere que skops funcione entre pandas 3 y 2.2) | Según cambio | Identidad; benchmark | Sí |
+| 8 | Opcionales medidos | Descomponer `pd.StringDtype` en `_decompose_dtype` para skops neutros (3.2; solo hacía falta para que skops funcionase entre pandas 3 y 2.2: con D2 (c), decidida el 2026-11-13, pandas 2.2 deja de estar soportado y skops ya funciona en los dos sentidos entre 2.3 y 3) | Según cambio | Identidad; benchmark | Sí |
 
 Qué queda para pandas 4 (no bloquea ahora): quitar el helper `copy=` del
 módulo de compatibilidad y el `copy=False` de los constructores cuando se
@@ -1574,7 +1578,9 @@ Orden recomendado: 1 → 2 → 4 → 5 → 6 (con 7). La PR 2 va después de la 
 porque su verificación de avisos necesita los renombrados; la 5 después de
 la 4 porque su suite en verde necesita los 4 tests que arregla el código; la
 6 cuando la 5 está mezclada (y también DEP-python310 del roadmap de 0.28.0,
-que sube el mínimo a Python 3.11; cambio del 2026-11-12, sección 10), y la 7
+que sube el mínimo a Python 3.11, cambio del 2026-11-12, y DEP-numpy2-pandas23
+del mismo roadmap, que sube los mínimos a numpy 2.0 y pandas 2.3, cambio del
+2026-11-13; sección 10), y la 7
 con la 6 o después, porque cambia la línea de dependencias. La 3 y la 8
 pueden ir en paralelo tras la 2. Las PR 1
 a 5 no cambian ninguna salida en pandas 2 salvo las correcciones señaladas,
@@ -1588,15 +1594,17 @@ con categorías sin usar (PR 1), D12 en MASE/RMSSE con NaN en la serie objetivo 
 **Decididas el 2026-11-03** (detalle en la sección 10, "Decisiones y
 arranque del 2026-11-03"): D1 (b), D2 (a), D3 (a) y D11 (a), con una rama
 nueva por PR. Quedan abiertas D4 a D10 y D12 a D15, que se deciden en la PR
-que las necesita.
+que las necesita. **Cambiada el 2026-11-13**: D2 pasa a (c), pandas 2.3 como
+mínimo, junto con numpy 2.0 (DEP-numpy2-pandas23; sección 10, "Revisión de la
+PR 6, el 2026-11-13").
 
 | Id | Decisión | Opciones | Recomendación |
 |---|---|---|---|
 | D1 | Pin de pandas y de Python | (a) `pandas>=2.2, <4.0` y `requires-python >=3.10` (pandas 3 solo se instala en 3.11+, pandas 2.3 queda para 3.10); (b) además subir `requires-python` a 3.11 y `pandas>=2.2`; (c) esperar a 0.28 | **(a)** para 0.27: no deja fuera a nadie y el código no necesita ramas salvo el módulo de compatibilidad. Hay que saber que la celda de Python 3.10 ya no prueba dependencias actuales: numpy 2.3, scikit-learn 1.8 y scipy 1.16 exigen Python 3.11 (metadatos de PyPI), así que en 3.10 se instalan numpy ≤2.2, scikit-learn ≤1.7 y scipy ≤1.15, y pandas 2 con dependencias actuales solo se prueba en la celda `include` de 3.12. Python 3.10 llega al fin de soporte en octubre de 2026 (PEP 619): retirarlo en 0.28. **Revisión del 2026-11-03**: esa fecha ya ha pasado y 0.27.0 sigue en desarrollo, así que (b) ya no deja fuera a nadie con soporte y simplifica la matriz de CI; queda a tu elección entre (a) y (b) |
-| D2 | Mínimo de pandas 2 | (a) mantener 2.2.0; (b) subir a 2.2.3 (última 2.2, 2024-09); (c) subir a 2.3 (última serie 2.x, la única que aún recibe correcciones) | **(a)** si se acepta que skops no sirve entre pandas 3 y 2.2: un `.skops` escrito con pandas 3 con exógenas de texto no se carga en pandas 2.2 (`TypeError` de `StringDtype.__init__`, verificado en 2.2.3; en 2.3.3 sí carga), y la documentación de persistencia dirá "entre pandas 2.3 y 3"; si se quiere en los dos sentidos con 2.2, la descomposición de `pd.StringDtype` de la PR 8 pasa a la PR 4. Nada más del plan necesita una API posterior a 2.2 (`date_range(unit=)`, `as_unit`, `day_of_week`, `pd.offsets.BaseOffset`, `stack(future_stack=True)` existen en 2.2) y las 106 salidas del estudio son idénticas en 2.2.3 y 2.3.3; que `unit-tests-min-deps.yml` siga en verde con 2.2.0 y numpy 1.26.1 se comprueba con su `workflow_dispatch` en las PR 1 a 6 (el estudio no tuvo ese entorno). **(c)** es la alternativa si se prefiere una sola serie 2.x y skops en los dos sentidos sin código; anunciarla para 0.28 o para cuando se retire Python 3.10 |
+| D2 | Mínimo de pandas 2 | (a) mantener 2.2.0; (b) subir a 2.2.3 (última 2.2, 2024-09); (c) subir a 2.3 (última serie 2.x, la única que aún recibe correcciones) | **(a)** si se acepta que skops no sirve entre pandas 3 y 2.2: un `.skops` escrito con pandas 3 con exógenas de texto no se carga en pandas 2.2 (`TypeError` de `StringDtype.__init__`, verificado en 2.2.3; en 2.3.3 sí carga), y la documentación de persistencia dirá "entre pandas 2.3 y 3"; si se quiere en los dos sentidos con 2.2, la descomposición de `pd.StringDtype` de la PR 8 pasa a la PR 4. Nada más del plan necesita una API posterior a 2.2 (`date_range(unit=)`, `as_unit`, `day_of_week`, `pd.offsets.BaseOffset`, `stack(future_stack=True)` existen en 2.2) y las 106 salidas del estudio son idénticas en 2.2.3 y 2.3.3; que `unit-tests-min-deps.yml` siga en verde con 2.2.0 y numpy 1.26.1 se comprueba con su `workflow_dispatch` en las PR 1 a 6 (el estudio no tuvo ese entorno). **(c)** es la alternativa si se prefiere una sola serie 2.x y skops en los dos sentidos sin código; anunciarla para 0.28 o para cuando se retire Python 3.10. **Decidida (c) el 2026-11-13**, junto con numpy 2.0 como mínimo (pandas 2.2.0 y 2.2.1 no funcionan con numpy 2), en la PR DEP-numpy2-pandas23 de `dev/roadmap_0.28.0/roadmap.md`, antes de la PR 6 |
 | D3 | Dónde vive la rama por versión | (a) un módulo `skforecast/utils/_pandas_compat.py` con `PANDAS_GE_3` y los helpers (`concat`, `astype`, `is_string_dtype`, `infer_freq`); (b) comprobaciones `pd.__version__` donde hagan falta; (c) sin rama, aceptando la copia extra de `astype` y `concat` en pandas 2 | **(a)**, con tres ramas: `concat` y `astype`, que pasan `copy=False` solo en pandas 2, e `infer_freq` (opción `future.infer_freq_returns_offset`). (c) se descarta por 4.5: quitar `copy=False` en pandas 2 cuesta hasta 1,9 veces el tiempo y un 22 % más de memoria en las matrices multiseries |
 | D4 | dtype `str` en salidas y atributos | (a) aceptar y documentar; (b) normalizar a `object` en `exog_dtypes_in_`, columna `level`, columnas de `X_train` | **(a)**: (b) cuesta conversiones, va contra pandas 3 y no cambia ningún valor |
-| D5 | Avisos de deprecación en CI | (a) `-W error::pandas.errors.Pandas4Warning` solo en `unit-tests-latest-deps.yml` (semanal); (b) también en `unit-tests.yml`; (c) nada | **(a)**, activado cuando la PR 5 elimine los avisos que emiten los propios tests (32) y una ejecución en pandas 3 confirme 0 `Pandas4Warning` del paquete (la suite sobre el prototipo dejó 81, con `infer_freq`, `_calendar` y `_adapters` sin prototipar). Filtrar por módulo (`-W error::pandas.errors.Pandas4Warning:skforecast`) para no fallar por avisos de dependencias (statsmodels 0.14.4 emite uno al importar). El job semanal se ejecuta sobre `main`: hasta la release solo vigila la rama si se lanza a mano. En cualquier opción, solo en jobs con pandas 3: `pandas.errors.Pandas4Warning` no existe en pandas 2 y `-W error::` con una clase inexistente hace fallar el arranque |
+| D5 | Avisos de deprecación en CI | (a) `-W error::pandas.errors.Pandas4Warning` solo en `unit-tests-latest-deps.yml` (semanal); (b) también en `unit-tests.yml`; (c) nada | **(a)**, activado cuando la PR 5 elimine los avisos que emiten los propios tests (32) y una ejecución en pandas 3 confirme 0 `Pandas4Warning` del paquete (la suite sobre el prototipo dejó 81, con `infer_freq`, `_calendar` y `_adapters` sin prototipar). Filtrar por módulo (`-W error::pandas.errors.Pandas4Warning:skforecast`) para no fallar por avisos de dependencias (statsmodels 0.14.4 emite uno al importar). El job semanal se ejecuta sobre `main`: hasta la release solo vigila la rama si se lanza a mano. En cualquier opción, solo en jobs con pandas 3: `pandas.errors.Pandas4Warning` no existe en pandas 2 y `-W error::` con una clase inexistente hace fallar el arranque. **Corrección del 2026-11-13**: el filtro `-W error::pandas.errors.Pandas4Warning:skforecast` no hace nada. En la línea de órdenes, pytest escapa el módulo y exige que coincida entero, y ningún aviso se atribuye al módulo `skforecast` a secas (comprobado con pandas 3.1.0). La forma que filtra por prefijo es `-o "filterwarnings=error::pandas.errors.Pandas4Warning:skforecast"`, que sí cubre los tests (todos sus directorios tienen `__init__.py`, sus módulos empiezan por `skforecast.`), pero sustituye la lista `filterwarnings` del ini (hoy comentada). La alternativa es `-W error::pandas.errors.Pandas4Warning` sin módulo, que también falla por avisos de dependencias. Hoy pasan las dos: la ejecución de latest-deps sobre #1499 no tiene ningún `Pandas4Warning`. Forma por decidir en la PR 6. **Decidida el 2026-11-13**: `-o "filterwarnings=error::pandas.errors.Pandas4Warning:skforecast"` en `unit-tests-latest-deps.yml`. Con statsmodels 0.14.6 (el mínimo) y pandas 3.1.1, la forma `-W` sin módulo rompe la recolección (statsmodels emite 131 `Pandas4Warning` al importarse); la forma `-o` los ignora y sí falla con los avisos nacidos en skforecast o en sus tests (control positivo; sección 10, "PR 6 sobre `0.28.x`") |
 | D6 | Índices tz-aware anclados en UTC sin `freq` (G3-RC1a) | (a) documentar `freq="24h"` y mejorar el mensaje de error de `check_extract_values_and_index` (`utils.py:2047-2051`) con esa sugerencia; (b) además inferir la frecuencia en UTC en las validaciones (como el arreglo de `expand_index`) y aceptar la serie sin `freq`; (c) nada | **(a)**: la librería ya exige `freq` explícita por diseño; (b) adivina la convención del usuario y añade una rama en cuatro sitios |
 | D7 | `encoding=None` con exógenas: dos copias en pandas 3 por el `drop` perezoso | (a) nada; (b) consolidar tras `drop` cuando `nblocks > 1` | **Cerrada, (a)**: la brecha de `encoding=None` (1,11) no supera la de `ms_fit_linear`, que no hace `drop` (1,18), y las dos están dentro del ruido entre procesos (3.6); ninguna variante "consolidar" se ha medido, así que no hay ganancia que justificar |
 | D8 | Persistencia entre versiones | (a) documentar (joblib y pickle: solo hacia delante; skops: ambos sentidos entre pandas 2.3 y 3, ver D2); (b) añadir una comprobación en `load_forecaster` que convierta el `AssertionError`/`NotImplementedError` de pandas en un mensaje claro | **(a) + (b)**: (b) son unas líneas alrededor de las cargas de `utils.py:3700-3714` (`joblib.load`, `pickle.load` y cloudpickle: los tres fallan igual con un fichero de pandas 3 abierto en pandas 2; verificado con joblib y pickle) y evita un traceback opaco |
@@ -2455,8 +2463,288 @@ mano sobre la rama el 2026-11-13, las dos en verde:
   Antes de la PR tenía 85 fallos en cada versión de Python. Es la primera
   ejecución con pandas 3.1.1 (los gemelos locales tienen 3.1.0).
 
-Pendiente: fusionar la PR. Con la PR 5, D5 (`-W error` en
+Fusionada en `0.28.x` el 2026-11-13 (merge `541786939`, que incluye el commit
+`97700b532` con estos resultados de CI). Con la PR 5, D5 (`-W error` en
 `unit-tests-latest-deps.yml`) ya se puede activar en la PR 6.
+
+### Revisión de la PR 6, el 2026-11-13
+
+Contraste de la fila 6 con `origin/0.28.x` en `541786939` (todo lo anterior
+fusionado: #1495 a #1499), antes de implementar nada. Sesión local en Windows;
+resoluciones con `uv pip compile` (uv 0.13.8) para Linux, como la CI; entornos de
+prueba con `uv venv` en el espacio temporal de la sesión, ya descartables. Ningún
+cambio en el repositorio salvo este bloque, la fila 6, D2, D5, la nota de 3.5 y la
+entrada DEP-numpy2-pandas23 del roadmap de 0.28.0.
+
+**La fila 6 frente al código** (fila ya corregida en la sección 7):
+
+- Líneas de statsmodels en `pyproject.toml`: 68, 73, 83 y 111 (la fila decía 69,
+  74, 84 y 113). `tools/ai/ai_context_header.md:39` y
+  `docs/quick-start/how-to-install.md:33` eran correctas.
+- Faltaban: `skforecast/utils/utils.py:95-106` (`optional_dependencies`, con el pin
+  de statsmodels; un test exige que coincida con `pyproject.toml`, así que la PR toca
+  un fichero del paquete, aunque solo cambia texto), la línea 40 de la cabecera de IA
+  y las líneas 59 y 69 de la guía de instalación (statsmodels).
+- `pandas[parquet]>=2.2` (`pyproject.toml:122`) no tiene techo: no cambia en la PR 6.
+- La matriz de `unit-tests.yml` es Python 3.11 a 3.14 en tres sistemas: 12 celdas más
+  la de pandas 2, 13 (no 16). Con el pin nuevo, las 12 instalan pandas 3.1.1 (numpy
+  2.4.6 en 3.11, porque numpy 2.5 ya no admite 3.11; 2.5.4 en el resto), así que la
+  celda de pandas 2 es la única de ese workflow con pandas 2. La clave `pandas` tiene
+  que estar en la matriz: un `include` con una clave nueva se fusiona con la celda que
+  coincide (3.12/ubuntu) y la convierte, en lugar de añadir otra.
+- `foundation-backends.yml` no se ejecuta sobre `main`: su paso `setup` elige la rama
+  `X.Y.x` más alta (`0.28.x`). Desde el lunes siguiente a la fusión corre con el pin
+  nuevo. Con él, 8 de 10 backends resuelven pandas 3.1.1 (Python 3.12); moirai (con
+  numpy 1.26.4, porque `uni2ts` 2.0.0 exige `numpy~=1.26.0`) y tabpfn (`gluonts`
+  0.17.0 exige `pandas<3`) se quedan en pandas 2.3.3. `unit-tests-latest-deps.yml`
+  sí corre sobre `main`.
+- Benchmarks (D9 (a)): `requirements_benchmarks.txt` sigue en `pandas==2.3.3` y la
+  versión de pandas ya se registra (`benchmark_runner.py:66`). Para después de la
+  release: las versiones antiguas de skforecast exigen `pandas<3`, así que medirlas
+  con pandas 3 no será posible.
+
+**Las versiones de las dependencias.** Configuraciones tras la PR 6 con los mínimos
+de entonces (numpy 1.26.1, pandas 2.2):
+
+| Dónde | Python | numpy | pandas | statsmodels |
+|---|---|---|---|---|
+| `unit-tests.yml`, 12 celdas | 3.11 / 3.12 a 3.14 | 2.4.6 / 2.5.4 | 3.1.1 | 0.15.0 |
+| `unit-tests.yml`, celda de pandas 2 | 3.12 | 2.5.4 | 2.3.3 | 0.15.0 |
+| `unit-tests-min-deps.yml` | 3.11 | 1.26.1 | 2.2.0 | 0.14.6 (pyarrow 25.0.1) |
+| `unit-tests-latest-deps.yml` | 3.12 a 3.14 | 2.5.4 | 3.1.1 | 0.15.0 |
+
+Conflictos encontrados: (1) pandas 2.2.0 y 2.2.1 no funcionan con numpy 2; (2)
+pyarrow 26 exige numpy 2 sin declararlo (#1498); (3) statsmodels anterior a 0.14.6 no
+se importa con pandas 3.1 (lo resuelve la PR 6); (4) **nuevo con la PR 6**: pandas
+3.0.x acepta numpy 1.26, así que si otra librería fija `numpy<2` el resolvedor elige
+pandas 3.0.6 con numpy 1.26.4 (y pyarrow 26.0.1, que no carga: pandas 3 guarda
+entonces el texto con almacenamiento `python`), una combinación que no prueba ningún
+job; (5) backends de foundation que fijan numpy 1.26 o `pandas<3`.
+
+- statsmodels 0.14.6 con los mínimos de entonces (Python 3.11.18, numpy 1.26.1,
+  pandas 2.2.0, scipy 1.12.0, pyarrow 25.0.1): en la resolución `lowest-direct` solo
+  cambia statsmodels (0.13.3 → 0.14.6) y se importa. Tests que usan statsmodels: 1517
+  pasan y 29 fallan; 1 es `test_check_optional_dependency` (`utils.py` sin actualizar
+  en la copia) y 28 son `test_backtesting_stats` con la columna `fold` en `int32`
+  (numpy 1.x en Windows; fallan igual con statsmodels 0.13.3; el job corre en Linux).
+- Suite completa con pandas 3.0.6, numpy 1.26.4 y pyarrow 25.0.1 (Windows, Python
+  3.12, `-W error::pandas.errors.Pandas4Warning`): 7852 pasan, 34 omitidos y 255
+  fallan. Unos 220 son columnas enteras en `int32` (numpy 1.x en Windows: `fold` del
+  backtesting, categorías, matrices de entrenamiento); unos 30, sin clasificar
+  (valores de `ForecasterStats`, listas del multiserie, los 3 de tensorflow,
+  `test_check_optional_dependency` y uno de `test_pandas_compat`). No se investigaron:
+  con numpy 2 como mínimo la combinación deja de existir. Con pyarrow 26.0.1 la suite
+  ni siquiera se recoge (12 errores de parquet, como en #1498).
+- No repetido: que statsmodels 0.14.5 no se importa con pandas 3.1 (la red se cortó
+  durante la comprobación); sigue apoyado en 3.4.
+
+**Decisión del usuario**: numpy 1.x es demasiado antiguo y pandas 2.3 es la única
+serie 2.x mantenida. Los mínimos pasan a numpy 2.0 y pandas 2.3 (D2 (c)) en una PR
+propia antes de la PR 6, DEP-numpy2-pandas23 de `dev/roadmap_0.28.0/roadmap.md`, con
+el detalle de lo que arrastran (scipy 1.13, numba 0.60, matplotlib 3.8.4, catboost
+1.2.8, statsmodels al menos 0.14.2) y lo comprobado. Con ella desaparecen los
+conflictos 1, 2 y 4.
+
+**Filtro de D5.** `-W error::pandas.errors.Pandas4Warning:skforecast` no hace nada:
+pytest escapa el módulo de la línea de órdenes y exige que coincida entero.
+Comprobado con pandas 3.1.0 en un paquete de prueba que emite el aviso desde su
+código y desde un test: con `-W ...:pkgx` y `-W ...:pkgx.*` los dos tests pasan con
+el aviso; con `-W` sin módulo y con
+`-o "filterwarnings=error::pandas.errors.Pandas4Warning:pkgx"` fallan los dos. Todos
+los directorios de tests tienen `__init__.py`, así que la forma con `-o` cubre
+también los tests. Avisos de hoy: la ejecución de latest-deps sobre #1499 (run
+43429781256; pandas 3.1.1, statsmodels 0.15.0) no tiene ningún `Pandas4Warning` ni
+`Pandas5Warning`, ni del paquete, ni de los tests, ni de las dependencias; el resto
+son avisos propios de skforecast, de convergencia de sklearn y statsmodels y un
+`DeprecationWarning` de keras.
+
+**Pendiente, en este orden:**
+
+1. DEP-numpy2-pandas23: decidir el mínimo de statsmodels (0.14.6 directamente, y la
+   PR 6 deja de tocarlo, o 0.14.2) y comprobar si `uni2ts` funciona con numpy 2
+   (decide qué pasa con moirai).
+2. PR 6, puntos por decidir: forma del filtro de D5 (con `-o` acotado a skforecast o
+   `-W` sin módulo); una o dos celdas de pandas 2 (con los mínimos nuevos prueba la
+   serie 2.3, y el job de mínimos, pandas 2.3.0 con numpy 2.0.0); texto de la nota de
+   versión; verificación (propuesta: sin suite local ni arnés, porque del paquete solo
+   cambia el texto de `optional_dependencies`; `verify`, los tres workflows y
+   `foundation-backends.yml` lanzados a mano); una frase en la cabecera de IA sobre
+   probar con `pandas<3` en las sesiones en la nube, que desde la PR 6 instalan
+   pandas 3.
+3. Entornos gemelos: subir p3 a pandas 3.1.1 (la de la CI). Con pandas 2.3 como
+   mínimo, p22 (2.2.3) deja de servir.
+4. Dónde encaja la PR 3 (copias evitables y F26), que debe entrar antes de 0.28.0.
+
+### DEP-numpy2-pandas23, el 2026-11-13
+
+Punto 1 de la lista anterior, cerrado. Implementado en la rama
+`chore/numpy2-pandas23-minimums` (desde `origin/0.28.x` en `2c789bf0b`, sin commit);
+el detalle, en la entrada DEP-numpy2-pandas23 de `dev/roadmap_0.28.0/roadmap.md`.
+
+- statsmodels: `>=0.14.6` (decisión del usuario). **La fila 6 ya no toca
+  statsmodels**: ni `pyproject.toml:68, 73, 83, 111` ni `optional_dependencies`.
+- Moirai: `uni2ts` 2.0.0 funciona con numpy 2.0.2 y 2.5.4 (contrato, smoke con los
+  pesos reales, unitarios; cuantiles idénticos bit a bit a numpy 1.26.4).
+  `adapters.toml` pasa a `overrides = ["numpy>=2", "scipy>=1.13"]` y la guía, el
+  docstring y el skill de foundation explican la instalación. Con pandas 3, moirai
+  seguirá en pandas 2.3.3 (`gluonts` 0.14.x exige `pandas<3`), como ya preveía la
+  revisión de la PR 6; cambia solo su numpy (1.26.4 a 2.5.4).
+- Lo que la PR 6 hereda: el job de mínimos instala numpy 2.0.0, pandas 2.3.0, scipy
+  1.13.0, numba 0.60.0, statsmodels 0.14.6, lightgbm 4.4.0 (las 4.0 a 4.3 fallan con
+  numpy 2, detectado en la revisión final) y pyarrow 26.0.1 (sin restricción); la
+  combinación pandas 3.0.x con numpy 1.26 (conflicto 4) deja de existir; la celda de
+  pandas 2 de `unit-tests.yml` prueba la serie 2.3. La nota de la 0.28.0 ya tiene un
+  "Before upgrading" con los mínimos: la PR 6 añade ahí `pandas<4.0`.
+- Verificación: `verify` en verde; sin suite completa local ni arnés (decisión del
+  usuario). PR #1500 abierta el 2026-11-13. `foundation-backends.yml` lanzado a mano
+  sobre la rama: los once backends pasan. `unit-tests-min-deps.yml`: 8114 pasan en el
+  segundo intento; en el primero falló un test inestable ajeno a la PR
+  (`test_bayesian_search_forecaster_warnings_of_folds_in_processes_with_trials_in_threads`,
+  se pierde el aviso de un trial en un hilo), a tener en cuenta en la línea base de la
+  PR 6. Fusionada en `0.28.x` el 2026-11-13 (merge `2256bf287`).
+
+Pendiente actualizado: los puntos 2 a 4 de la lista anterior siguen igual, salvo que
+la PR 6 ya no toca statsmodels y que su fila 6 debe quitarlo de la sección 7.
+
+### PR 6 sobre `0.28.x`, el 2026-11-13
+
+Rama `chore/pandas3-pin`, desde `origin/0.28.x` en `2256bf287` (la #1500 ya fusionada),
+con `--no-track`, sin commit al escribir esto. Sesión local en Windows; resoluciones con `uv pip compile`
+(uv 0.13.8) para la plataforma de cada job.
+
+**Revisión del plan contra `origin/0.28.x`, antes de implementar.**
+
+- Vigente: `pyproject.toml:55`, `tools/ai/ai_context_header.md:39` y
+  `docs/quick-start/how-to-install.md:33` (líneas exactas); `pandas[parquet]>=2.3` sin
+  techo; statsmodels y `optional_dependencies` sin cambio; la clave `pandas` en la matriz
+  de `unit-tests.yml`; `benchmarks/requirements_benchmarks.txt` sin cambio (`benchmarks.yml`
+  instala `pandas==2.3.3` y después `uv pip install .`, que lo conserva);
+  `foundation-backends.yml` sobre la rama `X.Y.x` más alta.
+- Obsoleto: "8 de 10 backends" pasa a **9 de 11** (tirex2 también resuelve pandas 3.1.1;
+  moirai y tabpfn se quedan en 2.3.3 por `gluonts`, `pandas<3`, igual con el pin viejo y
+  con el nuevo); la tabla de versiones de "Revisión de la PR 6" (el job de mínimos ya es
+  numpy 2.0.0, pandas 2.3.0, scipy 1.13.0, numba 0.60.0, statsmodels 0.14.6, lightgbm
+  4.4.0 y pyarrow 26.0.1, y la PR 6 no lo cambia); la introducción de la sección 7
+  (latest-deps ya no se salta ningún pin y min-deps prueba pandas 2.3.0).
+- Matizado: D5 decía que hoy pasan las dos formas del filtro. Es cierto en la CI
+  (statsmodels 0.15.0), pero statsmodels 0.14.6, el mínimo, emite con pandas 3.1.1 131
+  `Pandas4Warning` al importarse (`Appender` y `Substitution` de
+  `pandas.util._decorators`, desde su código). Con `-W error::pandas.errors.Pandas4Warning`
+  la recolección falla; con `-o "filterwarnings=error::...:skforecast"` pasa. Control
+  positivo con un test temporal: la forma `-o` falla con un aviso emitido desde un test y
+  con otro emitido desde `_pandas_compat.py` (con `PANDAS_GE_3` forzado a `False`).
+- Faltaba: (1) el hook `.claude/hooks/session_start_remote.py` instala `-e .[test]
+  --upgrade`, así que las sesiones en la nube pasan a pandas 3; (2) `codecov.yml` (Python
+  3.14) mide la cobertura con pandas 3, y las ramas de pandas 2 de `_pandas_compat`
+  aparecerán sin cubrir (informativo); (3) `foundation-models-metadata.yml` pasa a pandas 3
+  (no comprobado; solo lee metadatos); (4) instalar los backends de moirai o tabpfn en un
+  entorno con pandas 3 lo baja a 2.3.3 (va en la nota de versión); (5) al publicar,
+  subir el techo de pandas en el feedstock de conda-forge.
+- Comprobado: la última versión de pandas es la 3.1.1 (2026-11-04), la de la CI.
+  statsmodels 0.14.6 con pandas 3.1.1 (venv sobre p3 que solo cambia statsmodels): los 15
+  ficheros o carpetas de test que lo usan dan 1546 pasan, igual que con 0.15.0. La 0.14.5
+  sí falla con pandas 3.1.1 (`TypeError` de `deprecate_kwarg` al importar
+  `statsmodels.api`; importar solo `sarimax` no lo muestra): el mínimo 0.14.6 es correcto.
+  `pip install -U skforecast` con pandas 2.3.3 instalado lo conserva (`--dry-run` con el
+  paquete construido desde la rama); `--upgrade-strategy eager` y `uv pip install -U` lo
+  suben a 3.1.1.
+
+Resoluciones con el pin nuevo:
+
+| Dónde | Python | numpy | pandas | statsmodels |
+|---|---|---|---|---|
+| `unit-tests.yml`, 12 celdas (Linux, Windows, macOS arm) | 3.11 / 3.12 a 3.14 | 2.4.6 / 2.5.4 | 3.1.1 | 0.15.0 |
+| `unit-tests.yml`, celda `pandas<3` (Linux) | 3.12 | 2.5.4 | 2.3.3 | 0.15.0 |
+| `unit-tests-min-deps.yml` (Linux) | 3.11 | 2.0.0 | 2.3.0 | 0.14.6 |
+| `unit-tests-latest-deps.yml` y `codecov.yml` (Linux) | 3.12 a 3.14 | 2.5.4 | 3.1.1 | 0.15.0 |
+| `foundation-backends.yml`, 9 backends | 3.12 | 2.5.4 | 3.1.1 | |
+| `foundation-backends.yml`, moirai y tabpfn | 3.12 | 2.5.4 | 2.3.3 | |
+
+**Decisiones del usuario** (2026-11-13): filtro de D5 con `-o` acotado a skforecast; una
+celda de pandas 2 (Linux, Python 3.12; Windows con pandas 2 lo cubre el entorno de
+desarrollo local); nota de versión con destacado (Feature), viñeta propia en "Before
+upgrading" y entrada en Added; la frase de pandas 2 para las sesiones en la nube va en
+esta PR; la PR 7 va después, en su propia PR, antes de publicar 0.28.0; verificación con
+la suite completa en p2 y p3 sobre la rama, comparada con la de la PR 5 en lugar de
+reejecutar una base con el mismo código, y el arnés p2 frente a p3. Entornos: p3 subido a
+pandas 3.1.1 (el `pip freeze` solo cambia en esa línea, `pip check` limpio); p22 borrado.
+
+**Cambios** (8 ficheros):
+
+- `pyproject.toml:55`: `pandas>=2.3, <4.0`.
+- `.github/workflows/unit-tests.yml`: `pandas: ['']` en la matriz, `include` con 3.12,
+  ubuntu y `pandas: '<3'` (13 celdas, comprobado simulando la expansión), instalación en
+  una sola resolución (`uv pip install -e ".[test]" "pandas<3"`) y `name` del job que
+  conserva el formato actual en las 12 celdas (`main` no exige checks por nombre: solo
+  revisiones).
+- `.github/workflows/unit-tests-latest-deps.yml`: el filtro de D5 con su comentario (por
+  qué `-o`, que sustituye a la opción `filterwarnings` de `pyproject.toml` (hoy
+  comentada, así que no se pierde ningún filtro), que no va en jobs de pandas 2 y que hay
+  que actualizarlo cuando salga pandas 4: este job lo instala aunque el techo sea `<4.0`,
+  y `Pandas4Warning` puede no existir entonces).
+- `tools/ai/ai_context_header.md`: línea de dependencias y frase de pandas 2 en las
+  sesiones en la nube; ficheros generados regenerados.
+- `docs/quick-start/how-to-install.md:33`.
+- `docs/releases/releases.md`, sección 0.28.0: destacado, viñeta del "Before upgrading"
+  (y "see **Added** and **Changed**") y entrada en Added, sin enlace hasta abrir la PR.
+
+**Verificación.**
+
+- `verify` en verde: contexto de IA, `page_meta`; sin ficheros
+  `.py`; `test_check_optional_dependency.py` y `test_pandas_compat.py` (15) en p2 y p3.
+- Suite completa sobre la rama, cwd en `C:` mayúscula y prefijos de pycache nuevos:
+  - p2 (pandas 2.3.3): 8111 pasan, 27 omitidos, 3 fallan.
+  - p3 (pandas 3.1.1, con el filtro de D5): 8104 pasan, 34 omitidos, 3 fallan.
+  - Los 3 son `test_fit_tensorflow.py` (`KERAS_BACKEND=torch` de la máquina), igual que
+    en la PR 5. Ningún `Pandas4Warning` de skforecast ni de sus tests. Frente a la PR 5
+    (8095 y 8102 pasan, 12 fallan) desaparecen los 9 fallos de red de los datasets. El
+    test inestable de la búsqueda bayesiana pasó en los dos.
+- Arnés (`results/pr6_028`, ignorado por git): identidad base frente a rama 205/205 en
+  p2 y p3 (control nulo: mismo código); p2 frente a p3 sobre la rama, normalizada, 205
+  salidas, 0 valores distintos, 68 con dtype distinto (`Index[str]`, columnas `str`), las
+  esperadas, y los pares de memoria compartida de `multiseries_long` en p3 (Copy-on-Write).
+- Tiempo y memoria de p2 frente a p3 con el mismo árbol (script del espacio temporal que
+  alterna procesos de `bench_hotspots.py` entre los dos entornos, 4 rondas, 20 muestras
+  por entorno, mínimo; CPU de la máquina, mediana 4 %): `fit` de los forecasters de
+  matriz numpy 1,00 a 1,04; `ms_fit_linear` 1,02; backtesting 1,06 a 1,13;
+  `predict_loop` 1,32 y `expand_index_check_predict_input` 1,32; multiseries
+  `create_train_X_y` 0,94 a 1,14; el `create_train_X_y` público de los forecasters de
+  una serie, 1,33 a 3,01 (memoria 1,44 a 1,75). Es el patrón de la tabla 4.1: la copia
+  del constructor de `DataFrame` que quita la PR 3, sin fusionar, y el coste por objeto de
+  pandas 3 en `predict` (sección 11). La PR 6 no lo introduce, pero desde ella lo ven los
+  usuarios con pandas 3: la PR 3 debe entrar antes de publicar 0.28.0.
+
+**Commits y CI, el 2026-11-14.** Commits `83f06a4f4` (paquete, CI y documentación) y
+`fa575a3bd` (`dev/`), rama publicada con upstream en `origin/chore/pandas3-pin`. Los cuatro
+workflows, lanzados a mano sobre `fa575a3bd`, en verde y sin reintentos (ningún `FAILED`
+en los logs; el test inestable de la búsqueda bayesiana pasó en todas las celdas):
+
+| Workflow (run) | Celdas | pandas | Resultado |
+|---|---|---|---|
+| `unit-tests.yml` (43529301717) | 12 de la matriz | 3.1.1 | Linux y Windows: 8107 pasan, 34 omitidos (Python 3.14: 8062 y 79); macOS, sin `deep_learning`: 7888 pasan, 51 omitidos |
+| `unit-tests.yml` (43529301717) | `build (3.12, ubuntu-latest, pandas<3)` | 2.3.3 | 8114 pasan, 27 omitidos |
+| `unit-tests-min-deps.yml` (43529306395) | Python 3.11 | 2.3.0 | 8114 pasan, 27 omitidos |
+| `unit-tests-latest-deps.yml` (43529310263), con el filtro de D5 | Python 3.12 a 3.14 | 3.1.1 | 8107 pasan, 34 omitidos (3.14: 8062 y 79) |
+| `foundation-backends.yml` (43529314105) | 9 backends | 3.1.1 | contrato y smoke en verde |
+| `foundation-backends.yml` (43529314105) | moirai y tabpfn | 2.3.3 | contrato y smoke en verde |
+
+La matriz se expandió a 13 celdas en GitHub y las 12 de siempre conservan su nombre. Las
+versiones instaladas coinciden con la tabla de resoluciones de arriba (numpy 2.4.6 en
+Python 3.11 y 2.5.4 en el resto; statsmodels 0.15.0; en min-deps numpy 2.0.0, scipy
+1.13.0, numba 0.60.0, statsmodels 0.14.6, lightgbm 4.4.0 y pyarrow 26.0.1). Ningún
+`Pandas4Warning` en los resúmenes de avisos de `unit-tests.yml`.
+
+**Pendiente:**
+
+1. El merge de la PR #1501 (del usuario). Abierta contra `0.28.x` el 2026-11-14, con su
+   enlace en el destacado y en la entrada de Added de la nota de versión (commit
+   `2ed23ed05`).
+2. Después: la PR 3 (copias evitables y F26) antes de 0.28.0; la PR 7 (documentación y
+   contexto de IA); en la release, el techo de pandas en conda-forge.
+3. Al final de la 0.28.0, antes de publicar: pasar los benchmarks de `benchmarks/` a
+   pandas 3 con una medición puente (lanzar `benchmarks.yml` con `pandas==2.3.3`, cambiar
+   el pin de `benchmarks/requirements_benchmarks.txt` a pandas 3 y volver a lanzarlo).
+   Los pasos están en `dev/roadmap_0.28.0/roadmap.md`, MAINT-bench-pandas3.
 
 ### Historial de lo pendiente entre sesiones
 

@@ -21,6 +21,17 @@ jobs:
       matrix:
         python-version: ['3.11', '3.12', '3.13', '3.14']
         platform: [ubuntu-latest, macos-26, windows-latest]
+        # The cells above get pandas 3. The `pandas` key must be in the matrix:
+        # an `include` with a new key would be merged into the matching cell
+        # (3.12, ubuntu) instead of adding one.
+        pandas: ['']
+        include:
+          # pandas 2 with the latest versions of the other dependencies
+          # (unit-tests-min-deps.yml tests the minimum, pandas 2.3.0).
+          - python-version: '3.12'
+            platform: ubuntu-latest
+            pandas: '<3'
+    name: build (${{ matrix.python-version }}, ${{ matrix.platform }}${{ matrix.pandas && format(', pandas{0}', matrix.pandas) || '' }})
     runs-on: ${{ matrix.platform }}
 
     steps:
@@ -55,7 +66,7 @@ jobs:
         if [[ "$RUNNER_OS" == "Linux" ]]; then
           export UV_TORCH_BACKEND=cpu
         fi
-        uv pip install -e ".[test]"
+        uv pip install -e ".[test]" ${{ matrix.pandas && format('"pandas{0}"', matrix.pandas) || '' }}
 
     - name: Show environment info
       run: |

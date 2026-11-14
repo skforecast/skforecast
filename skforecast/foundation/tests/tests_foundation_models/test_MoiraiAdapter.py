@@ -433,8 +433,10 @@ def test_MoiraiAdapter_predict_context_length_trims_history():
 def test_MoiraiAdapter_load_module_ImportError_no_LicenseWarning(monkeypatch):
     """
     Test that _load_module raises ImportError when uni2ts is not installed,
-    and that no LicenseWarning is issued in that case, since the warning is
-    only relevant once the module is actually about to be loaded.
+    with the two installation steps that keep the numpy and scipy versions
+    skforecast requires, and that no LicenseWarning is issued in that case,
+    since the warning is only relevant once the module is actually about to
+    be loaded.
     """
     real_import = builtins.__import__
 
@@ -446,9 +448,16 @@ def test_MoiraiAdapter_load_module_ImportError_no_LicenseWarning(monkeypatch):
     adapter = MoiraiAdapter(model_id="Salesforce/moirai-2.0-R-small")
 
     monkeypatch.setattr(builtins, "__import__", mock_import)
+    err_msg = re.escape(
+        "uni2ts is required for MoiraiAdapter. Install it with "
+        '`pip install uni2ts "pandas>=2.3"` and then run '
+        '`pip install "numpy>=2" "scipy>=1.13"`: uni2ts downgrades numpy '
+        "and scipy below the versions skforecast requires, but works with "
+        "the newer ones."
+    )
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        with pytest.raises(ImportError, match="uni2ts"):
+        with pytest.raises(ImportError, match=err_msg):
             adapter._load_module()
     assert not any(issubclass(w.category, LicenseWarning) for w in caught)
 

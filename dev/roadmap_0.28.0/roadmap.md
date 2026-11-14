@@ -23,11 +23,14 @@ Esfuerzo: S (horas a 1 día, con tests y docs), M (2 a 5 días), L (más de una 
 | ID | Qué | Esfuerzo | Estado |
 |---|---|---|---|
 | DEP-python310 | Retirar Python 3.10 | S | Hecho: #1496, fusionada en `0.28.x` el 2026-11-12 |
+| DEP-numpy2-pandas23 | Subir los mínimos a numpy 2.0 y pandas 2.3 | S | Hecho: #1500, fusionada en `0.28.x` el 2026-11-13 (merge `2256bf287`) |
 | MAINT-docs-deps | Actualizar los pins del extra `docs`, salvo `mkdocs-jupyter` | S | Opcional, medido: sin efecto visible |
 | MAINT-test-deps | Limpiar el extra `test` | S | Opcional |
+| MAINT-bench-pandas3 | Pasar los benchmarks de `benchmarks/` a pandas 3, con una medición puente | S | Pendiente: al final de la 0.28.0, antes de publicar |
 
-Los tres son pequeños y no dependen entre sí, salvo `tomli` (MAINT-test-deps), que se quita
-con DEP-python310.
+Son pequeños y no dependen entre sí, salvo `tomli` (MAINT-test-deps), que se quita con
+DEP-python310, y `pandas[parquet]` (MAINT-test-deps), cuyo mínimo sube con
+DEP-numpy2-pandas23.
 
 No forma parte de este roadmap: `torch>=2.4, <2.16` se subió en la 0.27.0 (commit
 `7f7c4b804`, junto con la retirada de `pytest-xdist` del extra `test`). Probado con torch
@@ -106,7 +109,194 @@ ejecuta `unit-tests-min-deps.yml`). Solo se resolvieron las versiones, con
 macOS arm64. La #1496 no ejecutó ese workflow, porque las PR a `0.28.x` no lanzan los tests.
 Lanzarlo a mano sobre `0.28.x`, o esperar a la PR de la release a `main`. Al publicar la
 0.28.0, subir también en el feedstock de conda-forge el mínimo de Python a 3.11 y el de
-`statsmodels` a 0.13.3.
+`statsmodels` a 0.14.6 (era 0.13.3 hasta DEP-numpy2-pandas23).
+
+### DEP-numpy2-pandas23: numpy 2.0 y pandas 2.3 como mínimos
+
+Decidido por el usuario el 2026-11-13, durante la revisión de la PR 6 de la migración a
+pandas 3 (`dev/pandas3_migration/INFORME.md`, sección 10, "Revisión de la PR 6, el
+2026-11-13"). Va en su propia PR, como DEP-python310, y antes de la PR 6: cambia lo que
+prueba la matriz de CI de la PR 6 (la celda de pandas 2 y el job de mínimos). En la
+migración sustituye a la decisión D2 (a) (mínimo pandas 2.2.0) por la (c).
+
+Motivo:
+
+- numpy 1.26 (la última 1.x, 2023-10) ya no recibe correcciones y no tiene wheels para
+  Python 3.13 ni 3.14. pandas 2.3 es la única serie 2.x que aún recibe correcciones.
+- Con numpy 1.x como mínimo, el pin `pandas<4.0` de la PR 6 permite una combinación que no
+  prueba ningún job: si otra librería fija `numpy<2`, el resolvedor elige pandas 3.0.6 con
+  numpy 1.26.4 (pandas 3.0.x acepta numpy 1.26; 3.1 exige 2.0.2). En ese entorno, la suite
+  completa (Windows, Python 3.12, pyarrow 25.0.1) dio 255 fallos: unos 220 son columnas
+  enteras `int32` en lugar de `int64` (efecto de numpy 1.x en Windows, también con pandas
+  2.2.0) y unos 30 sin clasificar.
+- Quita trabajo: la restricción `pyarrow<26` de `unit-tests-min-deps.yml` (#1498; pyarrow 26
+  exige numpy 2 sin declararlo) deja de hacer falta, y las columnas enteras dejan de salir
+  `int32` en Windows (numpy 2 usa int64 por defecto).
+- SPEC 0 (soporte de lo publicado en los dos últimos años) pediría hoy numpy 2.2, pandas
+  2.3, scipy 1.15 y numba 0.61. Esta PR solo sube lo que exige numpy 2.0 más pandas 2.3;
+  alinearse con SPEC 0 es otra decisión.
+- Quien no pueda salir de numpy 1.x o de pandas 2.2 se queda en la 0.27, pero tiene que
+  fijar `skforecast<0.28`: `pip install -U skforecast` no se queda en la 0.27, sube numpy y
+  pandas (comprobado con `--dry-run` sobre numpy 1.26.4 y pandas 2.2.3: instalaría numpy
+  2.5.4, pandas 2.3.3, scipy 1.18.1 y numba 0.68.1). pip solo elige la 0.27 cuando `numpy<2`
+  entra en la misma resolución.
+
+Mínimos nuevos. Calculados con `uv pip compile --resolution lowest-direct` (uv 0.13.8, Python
+3.11, Linux) y comprobados importando cada paquete con numpy 2.0.0 en Windows (importar no
+basta: ver lightgbm en la revisión final, más abajo). Las versiones
+intermedias que se citan declaran `numpy<2` (no se instalan) o se instalan y fallan al
+importar (`numpy.dtype size changed` o `numpy.core.multiarray failed to import`):
+
+| Paquete | Ahora | Nuevo | Por qué | Fecha |
+|---|---|---|---|---|
+| numpy | 1.26.1 | 2.0 | Decisión | 2024-06-16 |
+| pandas | 2.2 | 2.3 | Decisión (2.2.0 y 2.2.1 no funcionan con numpy 2) | 2025-06-05 |
+| scipy | 1.12 | 1.13 | 1.12 declara `numpy<2` | 2024-04-02 |
+| numba | 0.59 | 0.60 | Primera con numpy 2 | 2024-06-13 |
+| statsmodels (extras) | 0.13.3 | 0.14.6 (ver abajo) | 0.13.3 a 0.14.1 fallan; 0.14.2 funciona | 2025-12-05 |
+| matplotlib (extras) | 3.7 | 3.8.4 | 3.7.0 a 3.8.3 fallan o no se instalan | 2024-04-04 |
+| catboost (extra `test`) | 1.2 | 1.2.8 | 1.2 a 1.2.5 fallan; 1.2.6 y 1.2.7 no se instalan | 2025-04-13 |
+| lightgbm (extra `test`) | 4.0 | 4.4 | 4.0.0 a 4.3.0 se importan pero fallan al usarlos (revisión final) | 2024-06-15 |
+| `pandas[parquet]` (extra `test`) | 2.2 | 2.3 | Coherencia con el core | |
+
+Sin cambio, comprobados con numpy 2.0.0: scikit-learn 1.6.0, xgboost
+2.1.0, optuna 4.0.0, skops 0.14.0, pyarrow 26.0.1 (ya no hace falta limitarlo), keras 3.3.0
+y torch 2.4.0 (compatible con numpy 2 desde la 2.3; en Windows no carga `fbgemm.dll`, como
+siempre, el job de mínimos corre en Linux).
+
+statsmodels: la primera versión compatible con numpy 2 es la 0.14.2, pero la PR 6 necesita
+la 0.14.6 (la 0.14.5 no se importa con pandas 3.1). **Decidido el 2026-11-13: `>=0.14.6`**
+directamente, un solo cambio para los usuarios; la PR 6 deja de tocar statsmodels (con
+`pandas<4.0` y un mínimo 0.14.2, el resolvedor podría elegir 0.14.2 a 0.14.5 con pandas 3,
+y `skforecast.stats` no se importaría).
+
+Moirai: `uni2ts` 2.0.0 (2025-11-04, el backend del `MoiraiAdapter`, la última versión)
+exige `numpy~=1.26.0`, `scipy~=1.11.3` y `torch<2.5`, y su dependencia `gluonts` 0.14.4,
+`pandas<2.2` (la 0.14.3 admite `pandas<3`). **Comprobado el 2026-11-13: funciona con numpy
+2.** Copia de `origin/0.28.x` con los mínimos nuevos, Windows, Python 3.12, `uv` 0.13.8,
+`overrides = ["numpy>=2", "scipy>=1.13"]`; resuelve uni2ts 2.0.0, gluonts 0.14.3, torch
+2.4.1+cpu (carga en Windows; el fallo de `fbgemm.dll` es de la 2.4.0), pandas 2.3.3 y scipy
+1.18.1:
+
+| numpy | Contrato | Smoke (pesos reales) | `test_MoiraiAdapter.py` | `skforecast/foundation/tests` |
+|---|---|---|---|---|
+| 2.5.4 | 5 pasan | 5 pasan, 2 omitidos (sin exog) | 36 pasan | 1130 pasan |
+| 2.0.2 | 5 pasan | 5 pasan, 2 omitidos | 36 pasan | 1130 pasan |
+
+Los cuantiles de `predict_quantiles` (dos series, 24 pasos) son idénticos bit a bit con
+numpy 1.26.4 (entorno de hoy, `origin/0.28.x` sin cambios), 2.0.2 y 2.5.4. Sin el override
+de numpy, el entorno de moirai no se resuelve (el job programado fallaría). Los otros diez
+backends resuelven exactamente lo mismo antes y después (Linux, Python 3.12, `uv pip
+compile`); solo moirai pasa de numpy 1.26.4 a 2.5.4.
+
+Para el usuario el problema ya existía: con la 0.27 publicada, `pip install skforecast
+uni2ts` resuelve a skforecast 0.20.1 (sin `MoiraiAdapter`) por el conflicto de scipy, y
+`pip install uni2ts` sobre un skforecast instalado baja numpy a 1.26.4, scipy a 1.11.4 y
+pandas a 2.1.4. Receta comprobada con pip en un entorno limpio (skforecast de la copia,
+después `pip install uni2ts "pandas>=2.3"` y `pip install "numpy>=2" "scipy>=1.13"`): queda
+numpy 2.5.4, pandas 2.3.3, gluonts 0.14.3, y pasan el contrato y el smoke. Con uv, un solo
+comando con `--override`. Decisión del usuario: overrides más documentación; si algún
+adaptador dejara de ser compatible, se podría deprecar o desactivar (no hace falta con
+Moirai).
+
+Comprobado también: un forecaster guardado con numpy 1.26.4 se carga con numpy 2.5.4 y al
+revés, con joblib y con skops, con las mismas predicciones (Ridge, `transformer_y`, exog).
+
+Cambios (rama `chore/numpy2-pandas23-minimums`, sin commit):
+
+- [x] `pyproject.toml:54-61`: `numpy>=2.0`, `pandas>=2.3, <3.0` (la PR 6 lo abre a `<4.0`),
+  `scipy>=1.13`, `numba>=0.60`.
+- [x] `pyproject.toml:72, 78, 82, 112`: `matplotlib>=3.8.4, <3.12`.
+- [x] `pyproject.toml:68, 73, 83, 111`: `statsmodels>=0.14.6, <0.16`.
+- [x] `pyproject.toml:117`: `catboost>=1.2.8, <2.0`; `:122`: `pandas[parquet]>=2.3`;
+  `:115`: `lightgbm>=4.4, <5.0` (revisión final).
+- [x] `skforecast/utils/utils.py:95-106` (`optional_dependencies`): matplotlib y
+  statsmodels. `test_check_optional_dependency.py` exige que coincida con
+  `pyproject.toml`.
+- [x] `.github/workflows/unit-tests-min-deps.yml:44-49`: quitar la restricción `pyarrow<26`
+  y su comentario.
+- [x] `tools/foundation_compat/adapters.toml` (moirai): `overrides = ["numpy>=2",
+  "scipy>=1.13"]` (un override sustituye también el requisito de skforecast, así que repite
+  su mínimo de scipy), con el comentario.
+- [x] Docs: `docs/quick-start/how-to-install.md:32, 33, 36, 39, 59, 68, 69, 79`.
+- [x] Moirai: tarjeta de la tabla de backends de
+  `docs/user_guides/foundation-forecasting-models.ipynb` (`pip install uni2ts
+  "pandas>=2.3"`) y celda markdown nueva tras la tabla con la receta completa (pip y uv);
+  Notes del docstring de `MoiraiAdapter`; `skills/foundation-forecasting/SKILL.md`
+  (instalación), `references/adapter-parameters.md` (línea **Backend**) y
+  `tools/ai/llms-base.txt` (sección de foundation).
+- [x] Contexto IA: `tools/ai/ai_context_header.md:39-40`, y regenerar (skill
+  `ai-context-sync`).
+- [x] Nota en `docs/releases/releases.md`, sección 0.28.0, con su "Before upgrading" (dos
+  entradas sin enlace hasta abrir la PR), y quitada la frase de statsmodels 0.13.3 de la
+  entrada de la #1496.
+- [x] El docstring de `test_covariate_arrays.py:45` ("With pandas < 2.3...").
+- [x] Restos de numpy 1.x (revisión de todo el repositorio, salvo `dev/` y las notas de
+  versiones): la ruta a `np.trapz` de `skforecast/metrics/metrics.py:587-590` y la
+  tolerancia `int64 or int32` de `test_cast_catboost_categorical_columns_dataframe.py:78`
+  (`astype(int)` da int64 en Windows con numpy 2). Se quedan: los `int(...)` comentados
+  "Required since numpy 2.0" (`model_selection/_utils.py:128`, `_split.py:1231`), la rama
+  `int32` de Windows de `test_reshape_exog_long_to_dict.py:372` (`np.random.randint` sigue
+  dando int32 en Windows con numpy 2.5.4) y `WINDOWS_LEGACY_BLAS` (Python 3.11, no numpy 1).
+- [x] Fuera de la entrada: `tools/foundation_compat/run.py:290-291` pasaba
+  `venv\Scripts\python` sin `.exe` a uv y no funcionaba en Windows.
+
+Verificación hecha: `verify` en verde (ruff; 2188 tests de `foundation`, `metrics` y
+`utils` con el cwd en `C:` mayúscula; contexto IA, `page_meta`, `--check` del notebook;
+`run.py --adapter moirai --level contract`: 5 pasan, `held_back: false`). Resolución
+`lowest-direct` del job de mínimos (Linux, Python 3.11) sin la restricción de pyarrow:
+numpy 2.0.0, pandas 2.3.0, scipy 1.13.0, numba 0.60.0, statsmodels 0.14.6, matplotlib 3.8.4,
+catboost 1.2.8, pyarrow 26.0.1, torch 2.4.0. Sin suite completa local ni arnés (decisión del
+usuario: el código del paquete no cambia y el entorno de desarrollo ya está en el rango
+nuevo).
+
+Revisión final, el 2026-11-13 (misma rama, sin commit):
+
+- **lightgbm 4.0.0 no funciona con numpy 2** y era el mínimo del extra `test`: el job de
+  mínimos habría fallado. Con un DataFrame, la 4.0.0 llama a `np.find_common_type`
+  (eliminada en numpy 2.0), y las 4.1.0 a 4.3.0 fallan en `set_label` con
+  `np.array(..., copy=False)` (101 tests de 2121). La 4.4.0 es la primera que pasa.
+  `pyproject.toml:115` pasa a `lightgbm>=4.4, <5.0` (solo el extra `test`, sin nota de
+  versión). La comprobación anterior solo importaba cada paquete.
+- Comprobado en un entorno con los mínimos (Windows, Python 3.11, `lowest-direct`, sin
+  torch ni keras: numpy 2.0.0, pandas 2.3.0, scikit-learn 1.6.0, scipy 1.13.0, numba
+  0.60.0, lightgbm 4.4.0, xgboost 2.1.0, catboost 1.2.8): los 78 ficheros de test que
+  importan lightgbm, xgboost o catboost, 2121 pasan. El resto de la suite con los mínimos
+  (statsmodels, matplotlib, optuna, skops, keras, torch) solo lo prueba el job de CI.
+- Nota de versión: quitada la frase "With older versions, pip keeps installing skforecast
+  0.27.0" (falsa para dependencias, ver "Motivo") y la de "the first versions that work
+  with numpy 2" (no es cierta para statsmodels 0.14.6); el enlace a la guía de migración
+  de numpy apunta a `doc/stable` en lugar de `devdocs`.
+- `uv pip install skforecast uni2ts --override overrides.txt` comprobado con `uv pip
+  compile`: mantiene el skforecast más reciente y resuelve gluonts 0.14.3, numpy 2.5.4,
+  pandas 2.3.3 y scipy 1.18.1.
+- El `ImportError` de `MoiraiAdapter` decía `pip install uni2ts`, que por sí solo baja
+  numpy, scipy y pandas: ahora da los dos pasos de la receta (decisión del usuario), con su
+  test en `test_MoiraiAdapter.py`. El "Before upgrading" queda resumido a dos líneas; el
+  detalle de los mínimos está en Changed.
+
+PR #1500 contra `0.28.x`, abierta el 2026-11-13 (commits `d54902731`, `b507ce6eb` y
+`590e90660`, este último con el enlace de la PR en la nota de versión). Workflows lanzados
+a mano sobre la rama (commit `b507ce6eb`), resultados en un comentario de la PR:
+
+- `unit-tests-min-deps.yml` (run 43472223734; Python 3.11.18, numpy 2.0.0, pandas 2.3.0,
+  scipy 1.13.0, numba 0.60.0, scikit-learn 1.6.0, statsmodels 0.14.6, matplotlib 3.8.4,
+  lightgbm 4.4.0, xgboost 2.1.0, catboost 1.2.8, optuna 4.0.0, skops 0.14.0, keras 3.3.0,
+  torch 2.4.0+cpu, pyarrow 26.0.1): primer intento 8113 pasan y 1 falla; segundo intento,
+  mismo commit, 8114 pasan y 27 omitidos.
+- El fallo del primer intento es de un test inestable, ajeno a esta PR:
+  `test_bayesian_search_forecaster_warnings_of_folds_in_processes_with_trials_in_threads`
+  (del 2026-11-08) esperaba "in 5 of 8 trials" y recibió "in 4 of 8": se perdió el aviso de
+  un trial que corre en un hilo. En local pasa 12 de 12 con los mínimos y 12 de 12 en el
+  entorno de desarrollo (Windows). Probable condición de carrera entre los hilos de los
+  trials; pendiente de mirar aparte.
+- `foundation-backends.yml` (run 43472229780): los once backends pasan. Moirai con los
+  overrides nuevos: uni2ts 2.0.0, gluonts 0.14.3, numpy 2.5.4, pandas 2.3.3; contrato 5
+  pasan, smoke 5 pasan y 2 omitidos.
+
+Fusionada en `0.28.x` el 2026-11-13 (merge `2256bf287`).
+
+Al publicar la 0.28.0, subir los mismos mínimos en el feedstock de conda-forge.
 
 ### MAINT-docs-deps: pins del extra `docs`
 
@@ -161,8 +351,41 @@ Limpiezas:
   usa `-n`, las reglas de tests lo prohíben y `.claude/settings.json` lo deniega.
 - [ ] `pandas[parquet]>=2.2, <3.0` (`pyproject.toml:124`), por coherencia con el core. No
   cambia la resolución. Si se hace, la PR 6 de la migración a pandas 3 tiene que pasarlo a
-  `<4.0` junto con el core.
+  `<4.0` junto con el core. El mínimo pasa a 2.3 con DEP-numpy2-pandas23 (hoy está en la
+  línea 122, sin techo).
 - [x] `tomli>=2.0`: se quita con DEP-python310. Hecho en #1496.
+
+### MAINT-bench-pandas3: benchmarks con pandas 3
+
+Añadida el 2026-11-14, al revisar la PR 6 de la migración a pandas 3
+(`dev/pandas3_migration/INFORME.md`, sección 10, "PR 6 sobre `0.28.x`").
+
+Desde la 0.28.0, un entorno nuevo recibe pandas 3, pero
+`benchmarks/requirements_benchmarks.txt` fija `pandas==2.3.3` (el histórico de
+`benchmarks/benchmark.joblib` lo lleva desde la 0.19.1 hasta la 0.27.0). Con el mismo
+código, pandas 3.1.1 es más lento que 2.3.3 en lo que mide el benchmark (arnés de la
+migración: `create_train_X_y` de 1,33 a 3,01 veces, bucle de `predict` 1,32), así que el
+cambio de pin no se puede mezclar con los cambios de código de la 0.28.0. Las versiones
+anteriores no se pueden volver a medir con pandas 3 (su techo es `<3.0`): la 0.28.0 es la
+única que se puede medir con las dos.
+
+Se hace al final, con todo el código de la 0.28.0 fusionado (incluida la PR 3 de la
+migración a pandas 3), y en este orden:
+
+- [ ] Lanzar `benchmarks.yml` sobre la 0.28.0 con el pin actual (`pandas==2.3.3`): es el
+  último punto comparable con la 0.27.0 y aísla los cambios de código.
+- [ ] En una PR propia, cambiar en `benchmarks/requirements_benchmarks.txt` solo
+  `pandas==2.3.3` por la última 3.x (hoy `pandas==3.1.1`), sin tocar los demás pins.
+- [ ] Volver a lanzar `benchmarks.yml` sobre la 0.28.0: la diferencia entre las dos tandas
+  es el efecto de pandas.
+- [ ] `docs/faq/skforecast-benchmark.ipynb`: las gráficas y el resumen de regresiones
+  agrupan solo por `skforecast_version`, así que las dos tandas de la 0.28.0 se
+  mezclarían en la mediana. Filtrar por `pandas_version` en esa versión y añadir una nota
+  con el cambio de pandas.
+
+Sin comprobar: la suite de `benchmarks/` no se ha ejecutado con pandas 3. Con el resto del
+pin actual debería funcionar (statsmodels 0.14.6 pasa sus tests con pandas 3.1.1 y el
+workflow silencia sus avisos con `PYTHONWARNINGS=ignore`).
 
 ---
 

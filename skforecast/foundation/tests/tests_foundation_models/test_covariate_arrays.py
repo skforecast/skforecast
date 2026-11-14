@@ -42,8 +42,6 @@ def test_covariate_arrays_nullable_dtype_with_missing_values_to_nan(
     """
     Test that the adapters convert a covariate with a nullable pandas dtype
     and missing values to a float array with NaN in the missing positions.
-    With pandas < 2.3, `Series.to_numpy` raises a `ValueError` for these
-    dtypes unless `na_value` is given.
     """
     col_data = pd.Series(values, dtype=dtype, name="feat")
     result = converter(col_data)

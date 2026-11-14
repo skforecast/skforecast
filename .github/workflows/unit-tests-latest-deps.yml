@@ -56,4 +56,13 @@ jobs:
         # -q keeps the log short so failures are easy to find; -ra lists them at the end;
         # verbosity_assertions=2 keeps the full assertion diffs of -vv. Failed tests are
         # also shown as annotations (pytest-github-actions-annotate-failures).
-        pytest -q -ra -o verbosity_assertions=2 --exclude-warning-annotations
+        # A deprecation of pandas raised from skforecast or its tests fails the
+        # job here, before the next pandas major release. Dependencies are left
+        # out on purpose (the module prefix only matches `skforecast.*`). `-o`
+        # is needed: with `-W`, pytest escapes the module and requires an exact
+        # match, so the filter never matches. It overrides the `filterwarnings`
+        # option of pyproject.toml (not set today). `Pandas4Warning` only exists
+        # in pandas 3: do not add this filter to a job with pandas 2, and update
+        # it when pandas 4 is released (this job installs it despite the ceiling).
+        pytest -q -ra -o verbosity_assertions=2 --exclude-warning-annotations \
+          -o "filterwarnings=error::pandas.errors.Pandas4Warning:skforecast"

@@ -584,10 +584,7 @@ def crps_from_quantiles(
 
         # Compute the integrand values and integrate using the trapezoidal rule
         integrand_values = crps_integrand(x_values)
-        if hasattr(np, "trapezoid"):
-            crps = np.trapezoid(integrand_values, x=x_values)
-        else:
-            crps = np.trapz(integrand_values, x_values)
+        crps = np.trapezoid(integrand_values, x=x_values)
         crps = crps + tail_area
     else:
         # All predicted quantiles are identical, the forecast is a point mass
