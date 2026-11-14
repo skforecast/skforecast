@@ -1104,7 +1104,7 @@ def backtesting_forecaster(
 
 def _fit_predict_forecaster_multiseries(
     data_fold: tuple,
-    forecaster: object,
+    forecaster: object | bytes,
     store_in_sample_residuals: bool,
     levels: list[str],
     gap: int,
@@ -1137,8 +1137,10 @@ def _fit_predict_forecaster_multiseries(
         exog_train, exog_test, fold)`.
         The forecaster is fitted only if `series_train` is not `None`. For
         the folds without fit, `series_train` and `exog_train` are `None`.
-    forecaster : object
-        Forecaster model.
+    forecaster : object, bytes
+        Forecaster model, or the forecaster serialized with the pickler of loky
+        when the folds run in several processes. In that case, it is deserialized
+        here, in the worker, so each fold works on its own copy.
     store_in_sample_residuals : bool
         Whether to store in-sample residuals during `fit()`.
     levels : list of str
@@ -1185,6 +1187,9 @@ def _fit_predict_forecaster_multiseries(
     folds without refit), `None` is returned instead of the tuple.
     
     """
+
+    if isinstance(forecaster, bytes):
+        forecaster = pickle.loads(forecaster)
 
     (
         series_train,
@@ -1790,6 +1795,15 @@ def _backtesting_forecaster_multiseries(
         "return_predictors": return_predictors,
         "suppress_warnings": suppress_warnings
     }
+
+    # NOTE: With several processes, the forecaster is serialized once here, in
+    # the main thread, instead of once per fold in a secondary thread of joblib.
+    # See the same note in `_backtesting_forecaster`.
+    if n_jobs != 1:
+        kwargs_fit_predict_forecaster["forecaster"] = bytes(
+            loky_dumps(forecaster, protocol=pickle.HIGHEST_PROTOCOL)
+        )
+
     # NOTE: The warnings of the folds that run in worker processes are recorded
     # there and shown here, after the folds, as with `n_jobs=1`. If a fold raises
     # an error, the warnings raised in it before the error come with the error.
