@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from skforecast.exceptions import MissingValuesWarning
 from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.compose import ColumnTransformer
 from sklearn.compose import make_column_transformer
 from sklearn.preprocessing import StandardScaler
@@ -3761,3 +3762,33 @@ def test_create_train_X_y_single_MissingValuesWarning_with_counts_of_NaN_rows_pe
             y_train_step = y_train_step
         )
         assert len(y_train_step) == n_rows
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    [LinearRegression(), HistGradientBoostingRegressor()],
+    ids=lambda estimator: f"estimator: {type(estimator).__name__}"
+)
+def test_create_train_X_y_does_not_share_memory_with_y_when_only_lags(estimator):
+    """
+    Test that the training matrix created only with lags does not share memory
+    with the `y` of the user, so modifying `y` afterwards does not change
+    `X_train`. With an estimator that does not need a C-contiguous matrix,
+    `X_train` wraps a view of the internal copy of `y`.
+    """
+    y_local = pd.Series(np.arange(10, dtype=float), name='y')
+    forecaster = ForecasterDirect(estimator=estimator, steps=2, lags=3)
+    X_train, _ = forecaster.create_train_X_y(y=y_local)
+
+    assert not np.shares_memory(X_train.to_numpy(), y_local.to_numpy())
+    y_local.iloc[:] = -1.
+
+    expected = pd.DataFrame(
+        data = {
+            'lag_1': [2., 3., 4., 5., 6., 7.],
+            'lag_2': [1., 2., 3., 4., 5., 6.],
+            'lag_3': [0., 1., 2., 3., 4., 5.]
+        },
+        index = pd.RangeIndex(start=4, stop=10, step=1)
+    )
+    pd.testing.assert_frame_equal(X_train, expected)
