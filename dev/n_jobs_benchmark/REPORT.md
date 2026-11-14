@@ -207,6 +207,17 @@ ralentizarse (de 1,64 veces a entre 0,98 y 1,06) y el de LightGBM también (de
   (Linux y macOS) o 12 s (Windows). HistGB con `'auto'` pasa de 19,2 a 8,1 s
   en frío y de 19,1 a 5,0 en caliente con 16 CPU; CatBoost sigue en un
   proceso. Detalle en `results/ec2-proposal3/README.md`.
+- **Medido en Windows (22 CPU, `results/win-22cpu/README.md`):** con todos
+  los cambios, la búsqueda de XGBoost con refit y `'auto'` pasa de 26,9 / 20,1
+  s a 16,3 / 13,7 (en frío / en caliente), y el backtesting con refit y
+  `n_jobs` entero tarda la mitad en caliente. Sin refit, el paralelo compensa
+  en frío a partir de unos 7 s de predicción, pero se mantiene el umbral de
+  12 s (una máquina, una repetición, riesgo asimétrico). Cerca del umbral, la
+  decisión cambia entre llamadas: el primer fold de la primera llamada es más
+  lento y empuja la estimación por encima de 12 s (21 procesos), y las
+  siguientes vuelven a uno aunque los workers ya estén arrancados (8,0 s en
+  lugar de 2,5). Mejora futura: no contar el arranque de los workers cuando ya
+  están en marcha. El ajuste posterior de XGBoost no se ralentiza en Windows.
 
 ### 4. Decisión de criterio: `cpu_count()` en lugar de `cpu_count() - 1`
 
