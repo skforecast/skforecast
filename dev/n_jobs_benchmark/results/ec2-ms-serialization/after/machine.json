@@ -1,0 +1,406 @@
+{
+ "platform": "Linux-7.0.0-1017-aws-x86_64-with-glibc2.43",
+ "python": "3.12.13",
+ "executable": "/home/ubuntu/.venvs/skforecast-bench/bin/python",
+ "os_cpu_count": 16,
+ "allowed_cpus": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15
+ ],
+ "cores": [
+  [
+   0,
+   8
+  ],
+  [
+   1,
+   9
+  ],
+  [
+   2,
+   10
+  ],
+  [
+   3,
+   11
+  ],
+  [
+   4,
+   12
+  ],
+  [
+   5,
+   13
+  ],
+  [
+   6,
+   14
+  ],
+  [
+   7,
+   15
+  ]
+ ],
+ "env": {},
+ "lscpu": "Architecture:                            x86_64\nCPU op-mode(s):                          32-bit, 64-bit\nAddress sizes:                           48 bits physical, 48 bits virtual\nByte Order:                              Little Endian\nCPU(s):                                  16\nOn-line CPU(s) list:                     0-15\nVendor ID:                               AuthenticAMD\nModel name:                              AMD EPYC 7571\nCPU family:                              23\nModel:                                   1\nThread(s) per core:                      2\nCore(s) per socket:                      8\nSocket(s):                               1\nStepping:                                2\nBogoMIPS:                                4399.97\nFlags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl nonstop_tsc cpuid extd_apicid aperfmperf tsc_known_freq pni pclmulqdq ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand hypervisor lahf_lm cmp_legacy cr8_legacy abm sse4a misalignsse 3dnowprefetch topoext perfctr_core vmmcall fsgsbase bmi1 avx2 smep bmi2 rdseed adx smap clflushopt sha_ni xsaveopt xsavec xgetbv1 clzero xsaveerptr arat npt nrip_save\nHypervisor vendor:                       KVM\nVirtualization type:                     full\nL1d cache:                               256 KiB (8 instances)\nL1i cache:                               512 KiB (8 instances)\nL2 cache:                                4 MiB (8 instances)\nL3 cache:                                16 MiB (2 instances)\nNUMA node(s):                            1\nNUMA node0 CPU(s):                       0-15\nVulnerability Gather data sampling:      Not affected\nVulnerability Ghostwrite:                Not affected\nVulnerability Indirect target selection: Not affected\nVulnerability Itlb multihit:             Not affected\nVulnerability L1tf:                      Not affected\nVulnerability Mds:                       Not affected\nVulnerability Meltdown:                  Not affected\nVulnerability Mmio stale data:           Not affected\nVulnerability Old microcode:             Not affected\nVulnerability Reg file data sampling:    Not affected\nVulnerability Retbleed:                  Mitigation; untrained return thunk; SMT vulnerable\nVulnerability Spec rstack overflow:      Vulnerable: Safe RET, no microcode\nVulnerability Spec store bypass:         Vulnerable\nVulnerability Spectre v1:                Mitigation; usercopy/swapgs barriers and __user pointer sanitization\nVulnerability Spectre v2:                Mitigation; Retpolines; STIBP disabled; RSB filling; PBRSB-eIBRS Not affected; BHI Not affected\nVulnerability Srbds:                     Not affected\nVulnerability Tsa:                       Not affected\nVulnerability Tsx async abort:           Not affected\nVulnerability Vmscape:                   Not affected\n",
+ "mem_total_gb": 130.8,
+ "git_commit": "aa4ec3be0399552e9a29cef6a20612b142c05eff",
+ "git_status": "",
+ "levels": {
+  "16": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15
+  ],
+  "8": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7
+  ]
+ },
+ "schema": 1,
+ "args": {
+  "command": "run",
+  "budget_minutes": 60.0,
+  "out": "results/ec2-ms-serialization/after",
+  "smoke": false,
+  "smoke_full": false,
+  "cpus": [
+   16,
+   8
+  ],
+  "reps": 2,
+  "size": "S",
+  "trees": 500,
+  "rf_trees": 100,
+  "direct": false,
+  "blocks": [
+   "ms_refit",
+   "ms_norefit"
+  ],
+  "estimators": [
+   "xgb",
+   "hgb",
+   "lgbm_1t"
+  ],
+  "max_priority": 4,
+  "seed": 123,
+  "list": false,
+  "refresh_info": false
+ },
+ "prepare": {
+  "bike": [
+   14448,
+   9
+  ],
+  "sales": [
+   1826,
+   50
+  ],
+  "cell_seconds": 12.255060384999979
+ },
+ "libraries": {
+  "16": {
+   "cell_seconds": 6.246575998000026,
+   "ok": true,
+   "n_cpus": 16,
+   "physical_cores": 8,
+   "os_cpu_count": 16,
+   "affinity": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "versions": {
+    "skforecast": "0.28.0",
+    "numpy": "2.5.4",
+    "pandas": "2.3.3",
+    "sklearn": "1.9.1",
+    "scipy": "1.18.1",
+    "joblib": "1.6.0",
+    "threadpoolctl": "3.8.0",
+    "lightgbm": "4.7.0",
+    "xgboost": "3.4.1",
+    "catboost": "1.2.10",
+    "numba": "0.68.1",
+    "optuna": "5.0.0"
+   },
+   "os_threads_after_fit": {
+    "ridge": [
+     31,
+     31
+    ],
+    "lgbm": [
+     31,
+     38
+    ],
+    "xgb": [
+     38,
+     53
+    ],
+    "hgb": [
+     53,
+     45
+    ],
+    "catboost": [
+     45,
+     66
+    ],
+    "rf": [
+     63,
+     60
+    ],
+    "rf_all": [
+     60,
+     70
+    ]
+   },
+   "skforecast_file": "/home/ubuntu/varios/skforecast-bench/skforecast/__init__.py",
+   "thread_pools": [
+    [
+     "openmp",
+     "libgomp.so.1.0.0",
+     16
+    ],
+    [
+     "blas",
+     "libscipy_openblas64_-f48b354e.so",
+     16
+    ],
+    [
+     "blas",
+     "libscipy_openblas-5f890258.so",
+     16
+    ],
+    [
+     "openmp",
+     "libgomp-e985bcbb.so.1.0.0",
+     16
+    ]
+   ],
+   "packages": [
+    "Mako==1.4.3",
+    "MarkupSafe==3.0.4",
+    "PyYAML==6.0.3",
+    "Pygments==2.21.0",
+    "SQLAlchemy==2.1.8",
+    "alembic==1.20.1",
+    "catboost==1.2.10",
+    "cloudpickle==3.1.2",
+    "colorlog==6.12.0",
+    "contourpy==1.4.0",
+    "cycler==0.12.1",
+    "fonttools==4.68.0",
+    "graphviz==0.21",
+    "joblib==1.6.0",
+    "kiwisolver==1.5.1",
+    "lightgbm==4.7.0",
+    "llvmlite==0.50.0",
+    "markdown-it-py==4.3.0",
+    "matplotlib==3.11.2",
+    "mdurl==0.1.2",
+    "narwhals==2.28.0",
+    "numba==0.68.1",
+    "numpy==2.5.4",
+    "nvidia-nccl-cu13==2.32.6",
+    "optuna==5.0.0",
+    "packaging==26.3",
+    "pandas==2.3.3",
+    "pillow==13.0.0",
+    "plotly==7.1.0",
+    "pyparsing==3.3.3",
+    "python-dateutil==4.0.0",
+    "pytz==2026.6",
+    "rich==15.0.0",
+    "scikit-learn==1.9.1",
+    "scipy==1.18.1",
+    "six==1.17.0",
+    "skforecast==0.27.0",
+    "threadpoolctl==3.8.0",
+    "tqdm==4.70.1",
+    "typing_extensions==4.16.0",
+    "tzdata==2026.6",
+    "xgboost==3.4.1"
+   ],
+   "window_features_first_call": 0.000156556000092678,
+   "window_features_second_call": 5.564200000662822e-05,
+   "child_seconds": 5.8068421359998865
+  },
+  "8": {
+   "cell_seconds": 6.401887262999935,
+   "ok": true,
+   "n_cpus": 8,
+   "physical_cores": 8,
+   "os_cpu_count": 16,
+   "affinity": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "versions": {
+    "skforecast": "0.28.0",
+    "numpy": "2.5.4",
+    "pandas": "2.3.3",
+    "sklearn": "1.9.1",
+    "scipy": "1.18.1",
+    "joblib": "1.6.0",
+    "threadpoolctl": "3.8.0",
+    "lightgbm": "4.7.0",
+    "xgboost": "3.4.1",
+    "catboost": "1.2.10",
+    "numba": "0.68.1",
+    "optuna": "5.0.0"
+   },
+   "os_threads_after_fit": {
+    "ridge": [
+     15,
+     15
+    ],
+    "lgbm": [
+     15,
+     22
+    ],
+    "xgb": [
+     22,
+     29
+    ],
+    "hgb": [
+     29,
+     29
+    ],
+    "catboost": [
+     29,
+     36
+    ],
+    "rf": [
+     36,
+     36
+    ],
+    "rf_all": [
+     36,
+     41
+    ]
+   },
+   "skforecast_file": "/home/ubuntu/varios/skforecast-bench/skforecast/__init__.py",
+   "thread_pools": [
+    [
+     "blas",
+     "libscipy_openblas-5f890258.so",
+     8
+    ],
+    [
+     "openmp",
+     "libgomp-e985bcbb.so.1.0.0",
+     8
+    ],
+    [
+     "openmp",
+     "libgomp.so.1.0.0",
+     8
+    ],
+    [
+     "blas",
+     "libscipy_openblas64_-f48b354e.so",
+     8
+    ]
+   ],
+   "packages": [
+    "Mako==1.4.3",
+    "MarkupSafe==3.0.4",
+    "PyYAML==6.0.3",
+    "Pygments==2.21.0",
+    "SQLAlchemy==2.1.8",
+    "alembic==1.20.1",
+    "catboost==1.2.10",
+    "cloudpickle==3.1.2",
+    "colorlog==6.12.0",
+    "contourpy==1.4.0",
+    "cycler==0.12.1",
+    "fonttools==4.68.0",
+    "graphviz==0.21",
+    "joblib==1.6.0",
+    "kiwisolver==1.5.1",
+    "lightgbm==4.7.0",
+    "llvmlite==0.50.0",
+    "markdown-it-py==4.3.0",
+    "matplotlib==3.11.2",
+    "mdurl==0.1.2",
+    "narwhals==2.28.0",
+    "numba==0.68.1",
+    "numpy==2.5.4",
+    "nvidia-nccl-cu13==2.32.6",
+    "optuna==5.0.0",
+    "packaging==26.3",
+    "pandas==2.3.3",
+    "pillow==13.0.0",
+    "plotly==7.1.0",
+    "pyparsing==3.3.3",
+    "python-dateutil==4.0.0",
+    "pytz==2026.6",
+    "rich==15.0.0",
+    "scikit-learn==1.9.1",
+    "scipy==1.18.1",
+    "six==1.17.0",
+    "skforecast==0.27.0",
+    "threadpoolctl==3.8.0",
+    "tqdm==4.70.1",
+    "typing_extensions==4.16.0",
+    "tzdata==2026.6",
+    "xgboost==3.4.1"
+   ],
+   "window_features_first_call": 0.00012458400033210637,
+   "window_features_second_call": 5.422200001703459e-05,
+   "child_seconds": 5.9673368600001595
+  }
+ }
+}
