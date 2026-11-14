@@ -165,6 +165,17 @@ ralentizarse (de 1,64 veces a entre 0,98 y 1,06) y el de LightGBM también (de
 - **Riesgo:** bajo. El número de folds es constante dentro de una búsqueda, así
   que no provoca reinicios de los workers. Falta medirlo directamente en una
   búsqueda.
+- **Medido (rama `perf/n-jobs-auto-strategy`, commit 8e9223b, sobre las
+  propuestas 1 y 3):** `n_jobs = min(n_jobs, folds)` en los dos backtestings,
+  así que cubre las búsquedas y el `n_jobs` entero. Con 16 CPU, la búsqueda con
+  refit de 3 candidatos de 6 folds con `'auto'` pasa de 15 procesos a 6 y es
+  del 16 al 30 % más rápida en frío; en caliente, XGBoost pasa de 31,0 a
+  23,6 s (un proceso: 32,8), HistGB de 22,5 a 21,2 y LightGBM de un hilo no
+  cambia. El backtesting con `n_jobs=15` es del 25 al 37 % más rápido en
+  caliente. La memoria de los workers baja a menos de la mitad. Con 8 CPU (7
+  procesos frente a 6), sin diferencias. Los resultados encajan con la
+  hipótesis de los workers sin estrenar y, en caliente, con los hilos extra
+  que joblib da a cada worker. Detalle en `results/ec2-proposal2/README.md`.
 
 ### 3. Sin refit: decidir por carga en lugar de por lista de estimadores
 
