@@ -36,7 +36,8 @@ from scipy.stats import norm
 from sklearn.compose import make_column_transformer
 from sklearn.feature_selection import SelectFromModel
 from sklearn.linear_model import LinearRegression, Ridge
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardScaler
 from sklearn.tree import DecisionTreeClassifier
 
 from skforecast.direct import ForecasterDirect, ForecasterDirectMultiVariate
@@ -609,6 +610,113 @@ def case_stats_ets(ctx, d):
 
 def case_stats_arar(ctx, d):
     _stats(ctx, d, Arar())
+
+
+# ---------------------------------------------------------------------------
+# Transformers (PR 3 of the migration: in-place transformers, F26)
+# ---------------------------------------------------------------------------
+
+def case_recursive_transformers(ctx, d):
+    """
+    A scaler that copies its input and a Pipeline: copying the input of the
+    transformers must not change any output.
+    """
+    y = ctx.inp("y", train(d["y"]))
+    exog = ctx.inp("exog", train(d["exog"]))
+    exog_test = ctx.inp("exog_test", test(d["exog"]))
+    y_true = ctx.inp("y_true", test(d["y"]))
+    f = ForecasterRecursive(
+        estimator=LinearRegression(), lags=5,
+        transformer_y=StandardScaler(),
+        transformer_exog=make_pipeline(StandardScaler()),
+    )
+    ctx.out("create_train_X_y", f.create_train_X_y(y=y, exog=exog))
+    f.fit(y=y, exog=exog, store_in_sample_residuals=True)
+    fit_outputs(ctx, f)
+    pred = ctx.twice("predict", lambda: f.predict(steps=STEPS, exog=exog_test))
+    ctx.twice("predict_interval", lambda: f.predict_interval(
+        steps=STEPS, exog=exog_test, n_boot=50, use_binned_residuals=False))
+    f.set_out_sample_residuals(y_true=y_true, y_pred=pred.copy())
+    ctx.out("out_sample_residuals_", f.out_sample_residuals_)
+
+
+def case_multiseries_transformers(ctx, d):
+    series = ctx.inp("series", train(d["series"]))
+    exog = ctx.inp("exog", train(d["exog"]))
+    exog_test = ctx.inp("exog_test", test(d["exog"]))
+    f = ForecasterRecursiveMultiSeries(
+        estimator=Ridge(), lags=5,
+        transformer_series=make_pipeline(StandardScaler()),
+        transformer_exog=StandardScaler(),
+    )
+    ctx.out("create_train_X_y", f.create_train_X_y(series=series, exog=exog))
+    f.fit(series=series, exog=exog, store_in_sample_residuals=True)
+    fit_outputs(ctx, f)
+    ctx.twice("predict", lambda: f.predict(steps=STEPS, exog=exog_test))
+
+
+def case_stats_transformers(ctx, d):
+    y = ctx.inp("y", train(d["y"]))
+    exog = ctx.inp("exog", train(d["exog"]))
+    exog_test = ctx.inp("exog_test", test(d["exog"]))
+    f = ForecasterStats(
+        estimator=Arima(order=(1, 0, 0)),
+        transformer_y=StandardScaler(),
+        transformer_exog=make_pipeline(StandardScaler()),
+    )
+    f.fit(y=y, exog=exog)
+    ctx.twice("predict", lambda: f.predict(steps=STEPS, exog=exog_test))
+
+
+def case_inplace_transformers(ctx, d):
+    """
+    In-place transformers (F26): the case whose outputs the fix of F26 is
+    expected to change. The inputs are copies, so that the data shared by the
+    other cases is never modified. Only float columns in `exog`: an integer
+    column would make scikit-learn convert (and copy) the whole matrix.
+    """
+    float_cols = ["exog_1", "exog_2"]
+    y = ctx.inp("y", train(d["y"]).copy())
+    exog = ctx.inp("exog", train(d["exog"][float_cols]).copy())
+    exog_test = ctx.inp("exog_test", test(d["exog"][float_cols]).copy())
+    f = ForecasterRecursive(
+        estimator=LinearRegression(), lags=5,
+        transformer_y=StandardScaler(copy=False),
+        transformer_exog=make_pipeline(StandardScaler(copy=False)),
+    )
+    f.fit(y=y, exog=exog)
+    fit_outputs(ctx, f)
+    pred = ctx.twice("predict", lambda: f.predict(steps=STEPS, exog=exog_test))
+    y_true = ctx.inp("y_true", test(d["y"]).copy())
+    y_pred = ctx.inp("y_pred", pred.copy())
+    f.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
+    ctx.out("out_sample_residuals_", f.out_sample_residuals_)
+
+    series = ctx.inp("series", train(d["series"]).copy())
+    fm = ForecasterRecursiveMultiSeries(
+        estimator=Ridge(), lags=5, transformer_series=StandardScaler(copy=False)
+    )
+    fm.fit(series=series)
+    fit_outputs(ctx, fm, prefix="multiseries_")
+    ctx.twice("multiseries_predict", lambda: fm.predict(steps=STEPS))
+
+
+def case_categorical_identity_transformer(ctx, d):
+    """
+    A `transformer_exog` that returns its input (identity
+    `FunctionTransformer`) with categorical features: the current code encodes
+    the user's `exog` in place, and the second `predict` fails.
+    """
+    y = ctx.inp("y", train(d["y"]).copy())
+    exog = ctx.inp("exog", train(d["exog_cat"]).copy())
+    exog_test = ctx.inp("exog_test", test(d["exog_cat"]).copy())
+    f = ForecasterRecursive(
+        estimator=lgbm(), lags=5, transformer_exog=FunctionTransformer(),
+        categorical_features="auto",
+    )
+    f.fit(y=y, exog=exog)
+    fit_outputs(ctx, f)
+    ctx.twice("predict", lambda: f.predict(steps=STEPS, exog=exog_test))
 
 
 CASES = {

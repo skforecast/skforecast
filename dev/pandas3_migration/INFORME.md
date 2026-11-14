@@ -1561,10 +1561,10 @@ reflejaría en ellos.
 |---|---|---|---|---|---|
 | 1 | Renombrados y arnés de verificación | `dayofweek`/`dayofyear` → `day_of_week`/`day_of_year` en `preprocessing/_calendar.py:199-202` y `foundation/_adapters.py:4995-5001`; `isinstance(x, pd.DateOffset)` → `pd.offsets.BaseOffset` en `model_selection/_split.py:304, 1051`, `model_selection/_utils.py:325`, `recursive/_forecaster_equivalent_date.py:218, 382, 412, 506, 670, 892`, `drift_detection/_population_drift.py:238, 288, 318, 394` (el alias `'Q'` de `australia_tourism` ya lo corrigió #1439); `freq='d'` → `'D'` en `experimental/_splitter.py:67`; `groupby(..., observed=True)` en `_population_drift.py:682, 857` y `foundation/_foundation_model.py:738`; `fillna(False)` + `future.no_silent_downcasting` → ruta numpy en `_calendar.py:849-850`. **Arnés**: versionar `identity_cases.py`, `identity_compare.py` y `bench_hotspots.py` (en `dev/pandas3_migration/` o `benchmarks/`, a decidir) para que las huellas de referencia sean comparables entre PRs, y ampliarlo: los casos que la sección 5 da por no cubiertos, la huella de todas las entradas antes y después de cada caso, `predict` dos veces seguidas con comparación de salidas, y `np.shares_memory` entre salidas y entradas | Fixtures y tests que usan `dayofweek` (`fixtures_model_selection_multiseries.py:140-143`, 10 tests de `direct`/`recursive` listados en 2.3); el test de `_calendar` que usa `future.no_silent_downcasting`; test nuevo de `PopulationDriftDetector` con un nivel 0 categórico con categorías sin usar | Tests tocados en los tres pandas; identidad | Sí, salvo `groupby(observed=True)`: con un nivel 0 categórico con categorías sin usar, pandas 2 iteraba grupos vacíos (`PopulationDriftDetector.predict` lanzaba `KeyError` y foundation creaba entradas vacías), como ya no hace pandas 3; nota de versión |
 | 2 | Módulo de compatibilidad y keyword `copy` (después de la PR 1) | Nuevo `skforecast/utils/_pandas_compat.py` (`PANDAS_GE_3`, `concat`, `astype`, `infer_freq`; el borrador `prototypes/pandas_compat_draft.py` no está al día: no tiene `infer_freq` y conserva `frame_from_array` y `writable_array`, retirados del plan; `is_string_dtype` se añade en la PR 4, su único uso); `pd.concat(copy=False)` → `compat.concat` en `_forecaster_recursive_multiseries.py:1333, 1567`; en `create_train_X_y` (`_forecaster_recursive.py:1109`, `_forecaster_recursive_classifier.py:1129`, `_forecaster_direct.py:1520`, `_forecaster_direct_multivariate.py:1637`) y en `reshape_exog_long_to_dict` (`_preprocessing.py:774`), `compat.astype` (pasa `copy=False` solo bajo pandas 2) sobre solo las columnas cuyo dtype cambia, saltando la llamada si no cambia ninguna, igual en las dos versiones (pandas 2 dentro del ruido con el cambio real, 4.8); en `create_predict_X` (`_forecaster_recursive.py:2042`, `_forecaster_recursive_classifier.py:1843`, `_forecaster_direct.py:2407`, `_forecaster_direct_multivariate.py:2586`, `_forecaster_recursive_multiseries.py:3552`), sin escaneo por llamada: `compat.astype` con el dict completo (perezoso en pandas 3, `copy=False` en pandas 2, es decir, la llamada de hoy; sin atributo nuevo, para que un forecaster guardado con 0.26 o 0.27.0 siga funcionando al cargarlo); `Series.astype("float64", copy=False)` → `to_numpy(dtype="float64")` en `_population_drift.py:502`; `pd.infer_freq` → `compat.infer_freq` en `utils.py:2458` y `_calendar.py:862` (con `to_offset(...).freqstr` en `_freq_to_timedelta_unit`) | Ninguno (sin cambio de resultados) | Identidad en p2 y p3; con el plugin `warnrec`, 0 `Pandas4Warning` emitidos desde `skforecast/` fuera de `tests/` en p3 y el mismo conjunto de fallos que la línea base (`-W error::pandas.errors.Pandas4Warning` sobre la suite completa no puede estar en verde hasta la PR 5: los tests emiten 32 avisos propios); tabla de 4.8 repetida sobre la rama (pandas 2 dentro del ruido) | Sí (medido) |
-| 3 | Copias evitables y transformadores in situ | `pd.DataFrame(..., copy=False)` directamente (keyword no deprecado; en pandas 2 no cambia nada, medido con el cambio real en 4.8; sin helper ni rama) sobre arrays privados en `create_train_X_y` de `_forecaster_recursive.py:1100-1104`, `_forecaster_recursive_classifier.py:1120-1124`, `_forecaster_direct.py:1506-1510`, `_forecaster_direct_multivariate.py:1623-1627` (solo acelera el `create_train_X_y` público y `feature_selection`: `fit`, el backtesting y la búsqueda one-step-ahead ya trabajan con el array y no pagaban esa copia, 3.6); la vista `sliding_window_view` de los lags sin exógenas (nace en `_forecaster_recursive.py:653`, `_forecaster_recursive_classifier.py:632`, `_forecaster_direct.py:854-858` y `_forecaster_direct_multivariate.py:895-897`, F36) según D13 (por defecto se conserva: `copy=False` sobre la vista, matriz de solo lectura como hoy en pandas 2); **los 9 `exog.copy()` de 3.1 a `copy(deep=False)`** (`_forecaster_recursive.py:897, 1637`, `_forecaster_recursive_classifier.py:903, 1608`, `_forecaster_recursive_multiseries.py:2846`, `_forecaster_direct.py:1114, 2202`, `_forecaster_direct_multivariate.py:1194, 2377`); **corrección F26 completa** (D14): `y.to_numpy(copy=True)` en `_forecaster_recursive_multiseries.py:990` y copia previa **dentro de** `transform_series`/`transform_dataframe` (`utils.py:2641-2841`, llamadas al transformador en `:2802-2807`), no en las llamadas de `fit`, para cubrir `fit`, `predict` y backtesting de todos los llamadores: `transformer_y` (`_forecaster_recursive.py:817`, `_forecaster_direct.py:1032`) y `transformer_exog` (`_forecaster_recursive.py:870, 1627`, `_forecaster_recursive_classifier.py:877, 1599`, `_forecaster_direct.py:1087, 2192`, `_forecaster_direct_multivariate.py:1167, 2367`), con la condición de D14 (nota de versión); copias redundantes a `copy(deep=False)` o eliminadas (`_forecaster_equivalent_date.py:640, 672, 868, 894`, `_forecaster_stats.py:637`, `_forecaster_recursive_multiseries.py:2756-2761, 2793-2795, 2934-2935`, `_range_drift.py:427-428`, `_forecaster_rnn.py:1352-1356`, `utils.py:812-818, 4387-4392`, `_preprocessing.py:538-540, 656-657`; candidatos a medir: `_preprocessing.py:2750, 2870`, `_forecaster_direct_multivariate.py:2312`, `model_selection/_utils.py:1988`); opcional, `.copy()` de `Arima.coef_` (`_arima.py:673`, de solo lectura en pandas 3); `copy=False` en los `DataFrame`/`Series` de los caminos de `predict` listados en 3.1 **solo si** `predict_loop` y `backtesting_recursive` lo justifican (hoy sin medida; en pandas 2 no aporta nada). Si D11 es (b), la corrección F26 sale a una PR propia en 0.27 | Tests nuevos para F26 en los cinco forecasters (incluido `ForecasterRecursiveClassifier`) con `StandardScaler(copy=False)`, `make_pipeline(StandardScaler(copy=False))` y `make_column_transformer((StandardScaler(copy=False), cols))`: `y`/`series`/`exog` del usuario intactos (`equals` antes y después) tras `fit` y tras `predict`, dos `predict` seguidos iguales, y predicciones iguales a las de `copy=True`; test de `exog` del usuario intacto con `categorical_features` sin `transformer_exog`; test de la matriz sin exógenas según D13 | Identidad ampliada (PR 1: entradas intactas y `predict` repetido, que es lo que puede romper `copy(deep=False)`); tabla de 4.8 más `predict_loop` con exógena categórica sin transformador, `create_train_X_y` sin exógenas (200k, lags 24), `predict_loop` con un `Pipeline` como `transformer_exog` (coste de la copia de F26) y `predict_loop`/`backtesting_recursive` con los `copy=False` de `predict`; tracemalloc de las copias eliminadas | Sí en las salidas (identidad ampliada; medido); F26 cambia solo el caso con transformador in situ |
+| 3 | Copias evitables y transformadores in situ (revisada el 2026-11-14 contra `origin/0.28.x`, con correcciones al plan, y dividida en dos PRs: 3a de rendimiento y 3b con la corrección F26; sección 10, "PR 3 sobre `0.28.x`, el 2026-11-14") | **3a** (`perf/pandas3-copies`, hecha el 2026-11-14, sin commit al escribir esto): `pd.DataFrame(..., copy=False)` en el `create_train_X_y` público (`_forecaster_recursive.py:1090`, `_forecaster_recursive_classifier.py:1103`, `_forecaster_direct.py:1505`, `_forecaster_direct_multivariate.py:1623`), sin exógenas con D13 (a); los 9 `exog.copy()` a `copy(deep=False)` (`_forecaster_recursive.py:901, 1637`, `_forecaster_recursive_classifier.py:908, 1601`, `_forecaster_recursive_multiseries.py:2832`, `_forecaster_direct.py:1118, 2215`, `_forecaster_direct_multivariate.py:1198, 2383`). Fuera, por no dar una mejora medible (medido): las copias "redundantes" de la lista anterior (la de la ruta ancha de `check_preprocess_series`, `utils.py:4488`, además no admite `copy(deep=False)`: en pandas 2 renombraría el índice del usuario), `copy=False` en los constructores de `predict` y en `y_train`, `Arima.coef_` y la copia de la salida en `transform_dataframe`; `model_selection/_utils.py:1988` ya no existe. **3b** (`fix/inplace-transformers`, pendiente): copiar la entrada dentro de `transform_numpy`, `transform_series` y `transform_dataframe` (`utils.py:2568, 2701, 2812`) cuando `getattr(transformer, "copy", None) is not True` (D14 (a) ampliada a `transform_numpy`), en lugar de `y.to_numpy(copy=True)` en multiseries; cubre los llamadores que el plan no listaba: `ForecasterStats` (`fit` y `predict`), `ForecasterRnn`, el `predict` de multiseries con `exog` `DataFrame`, `set_out_sample_residuals` de cinco forecasters (modifica `y_true` e `y_pred` del usuario), el `ValueError: output array is read-only` de pandas 3 con un `FunctionTransformer` in situ (`fit` de multiseries, `predict` del multivariante, `set_out_sample_residuals`) y un `FunctionTransformer` identidad con `categorical_features` (codifica in situ la `exog` del usuario y el segundo `predict` falla); nota de versión en Fixed | 3a: `test_predict_does_not_modify_exog_with_categorical_features` en los cinco forecasters (`'auto'` y una lista con una columna `float`, cuyos códigos tienen su mismo dtype, y otra `float` sin codificar en su mismo bloque; falla sin la copia, comprobado) y `test_create_train_X_y_does_not_share_memory_with_y_when_only_lags` en el recursivo, el directo y el multivariante (D13; con `LinearRegression` y `HistGradientBoostingRegressor`). 3b: tests de los tres helpers con `StandardScaler(copy=False)`, `make_pipeline(StandardScaler(copy=False))`, `make_column_transformer((StandardScaler(copy=False), cols))` y un `FunctionTransformer` in situ, e integración por forecaster (incluidos `ForecasterStats`, `set_out_sample_residuals` y el `FunctionTransformer` identidad) | Arnés con los casos de transformadores y los benchmarks añadidos en la 3a (sección 10); suite completa en p2 y p3 | 3a sí (medido: 257 de 257 salidas en p2 y p3); 3b cambia solo los casos con transformador in situ |
 | 4 | Robustez con pandas 3 (código) | Orden de offsets en `_split.py:383-388` y `utils.py:4467-4471` (D10): conservar `try: sorted(...)` y, en el `except TypeError`, ordenar por duración cuando todos son `Tick` o `Day` (`pd.Timedelta(days=f.n)` para `Day`, `pd.Timedelta(f.nanos, unit="ns")` para el resto) y por `str` en otro caso; copiar el `try/except` actual con `key=str` no basta (`{Hour, Day}` da `[<Hour>, <Day>]` en pandas 2 y `[<Day>, <Hour>]` en pandas 3), y la clave propuesta da en pandas 3 el texto de pandas 2 en los 9 casos probados (`Day`/`2*Day`, `Hour`/`Day`, `30min`/`Hour`, `Day`/`MonthBegin`, `BDay`/`Hour`, `Week`/`Day`, `2*Day`/`MonthEnd`, `1`/`Day`, `15min`/`Hour`/`2*Day`) sin avisos en 2.2.3, 2.3.3 y 3.1.0; guardia `freq is None` en `reshape_series_wide_to_long` (`_preprocessing.py:470`), limitada según D15, y `data.rename_axis("datetime")` en lugar de `data.index.name = "datetime"` (`:471`, hoy renombra el índice del `DataFrame` del usuario en las dos versiones); `compat.is_string_dtype` (se añade aquí) para que `object`/`str` sean equivalentes en `check_preprocess_exog_multiseries` (`utils.py:4646-4661`); inferencia en UTC en `expand_index` (`utils.py:2456-2463`) y, si se adopta D6, mensaje con `freq="24h"` en `utils.py:2047-2051`; `pd.Series(dtype=str)` en `_validation.py:2909`; `dtype=object` antes del `fillna` en `_forecaster_recursive_multiseries.py:2051-2056`; `stack(future_stack=True)` en `model_selection/_utils.py:1662` (D12, nota de versión; los `stack` de `_search.py` ya no existen desde #1438); mensaje claro en `load_forecaster` (D8) | Tests nuevos: `_split.py` con `Day`/`MonthBegin` y `Day`/paso (hoy `TypeError` también en pandas 2), orden de offsets con los 9 casos anteriores, `reshape_series_wide_to_long` sin `freq` (tz-aware y, según D15, tz-naive diario y horario) y con el nombre del índice del usuario intacto, exógena de texto `object`/`str` entre series, `expand_index` `MS`/`QS` anclado en UTC sin `freq`, MASE/RMSSE con NaN en la serie objetivo ancha | Tests nuevos en los tres pandas; identidad | Sí salvo D12 (MASE/RMSSE con NaN en la serie objetivo ancha), los mensajes de `_split.py` (antes `TypeError`) y la guardia de `reshape_series_wide_to_long` (D15); nota de versión para cada uno |
 | 5 | Tests neutrales entre versiones (después de la PR 4; hecha el 2026-11-13 con tres correcciones a esta fila: `'D'` con `skipif(PANDAS_GE_3)` más una variante `'24h'` en lugar de solo `'24h'` en G3-RC1a, fixtures del drift normalizados a `STR_DTYPE` en lugar de `check_column_type=False`, y sin arnés; sección 10, "PR 5 sobre `0.28.x`") | `STR_DTYPE = pd.Series(["a"]).dtype` compartido y expectativas con él (19 tests de G2-RC1, ficheros en 2.2); `columns=pd.Index(float_cols, dtype=STR_DTYPE)` y `check_column_type=False` o fixture regenerado (G2-RC2, 7); mensajes construidos con `f"{pd.RangeIndex}"`/`{type(x.index.levels[1])}` (G2-RC3/RC4, 6); `unit="ns"` en las expectativas que comparan con fixtures persistidos (G1-RC1a, 38: `test_create_predict_inputs.py` 8 `date_range`, `test_predict.py`, `test_create_predict_X.py`, `test_predict_interval*.py`, `test_backtesting_forecaster_multiseries.py`, `test_predict_and_calculate_metrics_one_step_ahead_multiseries.py`) y sin el pin `[ns]` donde la entrada se construye con `date_range` (G1-RC1b, 7); `unit="ns"` y `tz_zoneinfo` calculado en `test_skops_decompose_compose.py:60-90`; `freq="24h"` en los 7 tests de índices anclados en UTC (G3-RC1a) y en `test_reshape_series_wide_to_long.py:75-77`; `exact=` explícito donde 3.1 avisa y, para `freq`, la expectativa construida con el mismo `freq` (nunca `check_freq=` en `assert_index_equal`: no existe en pandas 2.2 ni 2.3); no usar `pd.StringDtype(na_value=np.nan)` en los tests (no existe en 2.2.x: `TypeError` en 2.2.3) | 86 tests (los 90 de la línea base, lista exacta en `results/baseline_pandas3.1.0/failures_by_group.json`, menos los 4 que pasan con el código de la PR 4: G1-RC3, G3-RC2 y G2-RC5 ×2) | Suite completa en p3 **en verde** y en p2 (requiere antes corregir, fuera de la migración, los 2 tests de `backtesting_stats` que fallan fuera de macOS con los dos pandas; sección 10, "Revisión del 2026-11-03"), y `-W error::pandas.errors.Pandas4Warning` sobre la suite completa en p3; una pasada en p3 con `SKFORECAST_CLOUD_DL=1` (`deep_learning/` y `foundation/` nunca se han ejecutado con pandas 3; incluye los índices `[us]` de `_adapters.py:2597, 2630, 3266, 3299`); los tests que cambian también con `unit-tests-min-deps.yml` lanzado sobre la rama o en un entorno de versiones mínimas creado para la PR (`uv venv ~/.venvs/skforecast-min --python 3.11`, o 3.10 si DEP-python310 aún no se ha fusionado, y `--resolution lowest-direct`: pandas 2.2.0 con numpy 1.26.1, que el estudio no tuvo; `unit=` sin verificar en 2.2.0) | n/a |
-| 6 | `pyproject.toml`, CI y línea de dependencias (después de DEP-python310 y de DEP-numpy2-pandas23; fila revisada el 2026-11-13, sección 10, "Revisión de la PR 6, el 2026-11-13"; implementada el 2026-11-13 en `chore/pandas3-pin` (commits `83f06a4f4` y `fa575a3bd`, rama publicada el 2026-11-14, los cuatro workflows en verde, PR #1501 abierta contra `0.28.x` el 2026-11-14), con estas correcciones: filtro de D5 con `-o` acotado a skforecast, una sola celda de pandas 2, frase de pandas 2 para las sesiones en la nube en la cabecera de IA, 9 de 11 backends con pandas 3, y verificación con suite completa y arnés p2 frente a p3; sección 10, "PR 6 sobre `0.28.x`") | Techo de pandas a `<4.0` en `pyproject.toml:55` (el mínimo 2.3 lo pone DEP-numpy2-pandas23 de `dev/roadmap_0.28.0/roadmap.md`, decisión D2 (c); el mínimo Python 3.11 lo puso DEP-python310, #1496); `pandas[parquet]` (`:122`) no tiene techo: sin cambio; statsmodels sin cambio: DEP-numpy2-pandas23 ya lo sube a `>=0.14.6` (statsmodels 0.14.5 no se importa con pandas 3.1 y arrastra a `skforecast.stats`, 3.4, "Dependencias"; decidido el 2026-11-13), así que `optional_dependencies` tampoco cambia; `unit-tests.yml`: celda de pandas 2 con la clave `pandas` en la matriz (sin ella, el `include` se fusiona con la celda 3.12/ubuntu en lugar de añadir una); `unit-tests-latest-deps.yml`: el filtro de D5 (forma corregida en la sección 8); `benchmarks/requirements_benchmarks.txt` sin cambio (D9 (a); la versión de pandas ya se registra en `benchmarks/benchmarks/benchmark_runner.py:66`); línea de dependencias en `tools/ai/ai_context_header.md:39` y `docs/quick-start/how-to-install.md:33` (las de statsmodels ya no cambian; `tools/ai/llms-base.txt` no tiene pins) con la regeneración de los ficheros de contexto de IA; nota de versión | `test_check_optional_dependency.py` (sin cambios, debe pasar) | `verify`; lanzados a mano sobre la rama `unit-tests.yml` (13 celdas: las 12 de la matriz, Python 3.11 a 3.14 en tres sistemas, con pandas 3.1.1, más la de pandas 2.3), `unit-tests-min-deps.yml` y `unit-tests-latest-deps.yml` (con el filtro); `foundation-backends.yml` recomendado: su ejecución programada corre sobre la rama `X.Y.x` más alta (`0.28.x`), no sobre `main`, así que desde el lunes siguiente a la fusión usa el pin nuevo (9 de 11 backends resuelven pandas 3.1.1; moirai y tabpfn se quedan en 2.3.3 por `gluonts`). `unit-tests-latest-deps.yml` sí corre sobre `main` | n/a |
+| 6 | `pyproject.toml`, CI y línea de dependencias (después de DEP-python310 y de DEP-numpy2-pandas23; fila revisada el 2026-11-13, sección 10, "Revisión de la PR 6, el 2026-11-13"; implementada el 2026-11-13 en `chore/pandas3-pin` (commits `83f06a4f4` y `fa575a3bd`, rama publicada el 2026-11-14, los cuatro workflows en verde, PR #1501 fusionada en `0.28.x` el 2026-11-14, merge `046e511cd`), con estas correcciones: filtro de D5 con `-o` acotado a skforecast, una sola celda de pandas 2, frase de pandas 2 para las sesiones en la nube en la cabecera de IA, 9 de 11 backends con pandas 3, y verificación con suite completa y arnés p2 frente a p3; sección 10, "PR 6 sobre `0.28.x`") | Techo de pandas a `<4.0` en `pyproject.toml:55` (el mínimo 2.3 lo pone DEP-numpy2-pandas23 de `dev/roadmap_0.28.0/roadmap.md`, decisión D2 (c); el mínimo Python 3.11 lo puso DEP-python310, #1496); `pandas[parquet]` (`:122`) no tiene techo: sin cambio; statsmodels sin cambio: DEP-numpy2-pandas23 ya lo sube a `>=0.14.6` (statsmodels 0.14.5 no se importa con pandas 3.1 y arrastra a `skforecast.stats`, 3.4, "Dependencias"; decidido el 2026-11-13), así que `optional_dependencies` tampoco cambia; `unit-tests.yml`: celda de pandas 2 con la clave `pandas` en la matriz (sin ella, el `include` se fusiona con la celda 3.12/ubuntu en lugar de añadir una); `unit-tests-latest-deps.yml`: el filtro de D5 (forma corregida en la sección 8); `benchmarks/requirements_benchmarks.txt` sin cambio (D9 (a); la versión de pandas ya se registra en `benchmarks/benchmarks/benchmark_runner.py:66`); línea de dependencias en `tools/ai/ai_context_header.md:39` y `docs/quick-start/how-to-install.md:33` (las de statsmodels ya no cambian; `tools/ai/llms-base.txt` no tiene pins) con la regeneración de los ficheros de contexto de IA; nota de versión | `test_check_optional_dependency.py` (sin cambios, debe pasar) | `verify`; lanzados a mano sobre la rama `unit-tests.yml` (13 celdas: las 12 de la matriz, Python 3.11 a 3.14 en tres sistemas, con pandas 3.1.1, más la de pandas 2.3), `unit-tests-min-deps.yml` y `unit-tests-latest-deps.yml` (con el filtro); `foundation-backends.yml` recomendado: su ejecución programada corre sobre la rama `X.Y.x` más alta (`0.28.x`), no sobre `main`, así que desde el lunes siguiente a la fusión usa el pin nuevo (9 de 11 backends resuelven pandas 3.1.1; moirai y tabpfn se quedan en 2.3.3 por `gluonts`). `unit-tests-latest-deps.yml` sí corre sobre `main` | n/a |
 | 7 | Documentación y contexto de IA (con la PR 6 o después) | `docs/releases/releases.md` (revisión final del texto de la sección 6; cada PR ya añadió su nota); guías de usuario de datos de entrada (resolución y `freq="24h"`), persistencia (joblib frente a skops entre versiones, según D2; quien pase `trusted=[...]` a skops con ficheros de pandas 3 debe añadir `pandas.StringDtype`) y categóricas (`str`); `skills/troubleshooting-common-errors` (índice sin frecuencia en pandas 3; joblib entre versiones; `.as_unit` en pandas 2), `skills/forecasting-single-series` (nota `24h`), `skills/drift-detection/SKILL.md:96` (`'ME'`); nota de que `X_train` sin exógenas es de solo lectura (D13); `pd.DateOffset(days=n)` como offset recomendado en `ForecasterEquivalentDate` con índices tz-aware (3.3); `check_inputs=False` en la guía de rendimiento (11.3); `tools/ai/llms-base.txt` y skills si cambia algún ejemplo; `python tools/ai/generate_ai_context_files.py` y `--check`; `dayofweek`/`dayofyear` → `day_of_week`/`day_of_year` en los 3 notebooks que los usan (`user_guides/probabilistic-forecasting-global-models`, `user_guides/forecasting-with-deep-learning-rnn-lstm`, `faq/parameters-search-backtesting-vs-one-step-ahead`); reejecutar los notebooks afectados cuando el entorno de docs use pandas 3 (3 notebooks imprimen `[ns]`, 4 `dtype: object`) | - | `ai-context-check.yml`, `docs-page-meta-check.yml` | n/a |
 | 8 | Opcionales medidos | Descomponer `pd.StringDtype` en `_decompose_dtype` para skops neutros (3.2; solo hacía falta para que skops funcionase entre pandas 3 y 2.2: con D2 (c), decidida el 2026-11-13, pandas 2.2 deja de estar soportado y skops ya funciona en los dos sentidos entre 2.3 y 3) | Según cambio | Identidad; benchmark | Sí |
 
@@ -2736,15 +2736,242 @@ Python 3.11 y 2.5.4 en el resto; statsmodels 0.15.0; en min-deps numpy 2.0.0, sc
 
 **Pendiente:**
 
-1. El merge de la PR #1501 (del usuario). Abierta contra `0.28.x` el 2026-11-14, con su
+1. Hecho: la PR #1501 se fusionó en `0.28.x` el 2026-11-14 (merge `046e511cd`), con su
    enlace en el destacado y en la entrada de Added de la nota de versión (commit
-   `2ed23ed05`).
-2. Después: la PR 3 (copias evitables y F26) antes de 0.28.0; la PR 7 (documentación y
+   `2ed23ed05`). Checks de la PR en verde (contexto de IA, metadatos de docs y CodeQL).
+   Rama `chore/pandas3-pin` borrada en GitHub y en local.
+2. Después: la PR 3 (copias evitables y F26) antes de 0.28.0 (3a hecha el 2026-11-14,
+   ver "PR 3 sobre `0.28.x`"); la PR 7 (documentación y
    contexto de IA); en la release, el techo de pandas en conda-forge.
 3. Al final de la 0.28.0, antes de publicar: pasar los benchmarks de `benchmarks/` a
    pandas 3 con una medición puente (lanzar `benchmarks.yml` con `pandas==2.3.3`, cambiar
    el pin de `benchmarks/requirements_benchmarks.txt` a pandas 3 y volver a lanzarlo).
    Los pasos están en `dev/roadmap_0.28.0/roadmap.md`, MAINT-bench-pandas3.
+
+### PR 3 sobre `0.28.x`, el 2026-11-14
+
+Base `origin/0.28.x` en `046e511cd` (la #1501 fusionada). Sesión local en Windows.
+
+**Revisión del plan antes de cambiar nada.** Experimentos en p2 y p3 sobre el código de
+`0.28.x` sin cambios (scripts en el espacio temporal de la sesión, no versionados):
+
+- Vigente: el `DataFrame(..., copy=False)` del `create_train_X_y` público de los cuatro
+  forecasters de matriz numpy y los 9 `exog.copy()`.
+  - Constructor: la matriz es un `np.concatenate` nuevo o una vista de la copia privada que
+    hace `check_extract_values_and_index` (en el multivariante, `to_numpy(copy=True)` de cada
+    serie). No comparte memoria con la entrada del usuario en ninguna versión (comprobado en
+    los cuatro, con lags contiguos y no contiguos y con NaN). Las escrituras posteriores del
+    clasificador (`encoded=False`) sustituyen columnas, lo que funciona sobre la vista de solo
+    lectura.
+  - Copias superficiales: la única escritura es `exog[cols] = códigos`, que en pandas 2 y 3
+    sustituye las columnas y nunca escribe in situ, también cuando los códigos tienen el mismo
+    dtype que la columna (`float` o `int` declaradas categóricas; comprobado).
+    `categorical_features='auto'` es el valor por defecto de los cinco forecasters, así que es
+    el camino por defecto con cualquier exógena no numérica.
+  - Ninguno de los dos toca el estado del forecaster: dos `predict` seguidos no pueden
+    diferir por ellos.
+- Obsoleto: los números de línea; `model_selection/_utils.py:1988` (`y_train.copy()`) ya no
+  existe; la cláusula de D11 (b).
+- Corregido:
+  1. F36 ya no es uniforme en pandas 2. `_prefers_c_contiguous_X`, posterior al estudio, copia
+     la vista con `LinearRegression`, `Ridge`, `Lars` y `LassoLars`: la matriz sin exógenas
+     solo es de solo lectura con otros estimadores, lags contiguos y sin NaN. D13 (a) deja
+     pandas 3 igual que pandas 2 (sin copia: 0,06 ms frente a 6,1 ms con 200k × 24; se puede
+     asignar una columna, no escribir una celda); (b) costaría 8 ms y 37 MiB en las dos
+     versiones. En ese caso, en pandas 2, `X_train` e `y_train` comparten memoria (escribir en
+     `y_train` cambia `X_train`): error previo, solo de pandas 2, que no se arregla aquí. La
+     nota de la PR 7 sobre la matriz de solo lectura tiene que decir en qué casos lo es.
+     "Igual que pandas 2" tiene una excepción, vista en la revisión final (más abajo): con
+     una sola columna de window features y nada más, la matriz es de solo lectura en
+     pandas 3 y escribible en pandas 2.
+  2. "En pandas 3 la vista es de solo lectura y scikit-learn copia" no vale para un
+     `FunctionTransformer` in situ, que no valida su entrada: `ValueError: output array is
+     read-only` en el `fit` de multiseries, el `predict` del multivariante y
+     `set_out_sample_residuals`. Es una regresión de pandas 3 (en pandas 2 funcionan, con F26).
+  3. La copia de la ruta ancha de `check_preprocess_series` (`utils.py:4488`) no admite
+     `copy(deep=False)`: en pandas 2, `index.name = None` sobre la copia superficial renombra
+     el índice del usuario (comprobado).
+- Faltaba, para la 3b (F26): `transform_numpy` (multiseries y `set_out_sample_residuals`, que
+  modifica `y_true` e `y_pred` del usuario: los `Series` en pandas 2, los `ndarray` en las dos
+  versiones); `ForecasterStats` (modifica `y` y `exog` en `fit` y la `exog` de `predict`, en las
+  dos versiones); el `predict` de multiseries con `exog` `DataFrame`; `ForecasterRnn` (por
+  lectura, sin ejecutar); y un `FunctionTransformer` identidad con `categorical_features`: el
+  comentario "la copia solo hace falta sin `transformer_exog`" es falso para un transformador
+  que devuelve su entrada, la codificación escribe en la `exog` del usuario y el segundo
+  `predict` falla, en las dos versiones. El arnés de identidad no tenía ningún caso con
+  transformadores.
+- Errores previos fuera del alcance: el alias `X_train`/`y_train` de pandas 2 del punto 1, y
+  que `filter_train_X_y_for_step` de los directos, sin exógenas, cambia el índice del
+  `X_train` que le pasa el usuario (y el nombre de `y_train`).
+- Descartado por no dar una mejora medible (microbenchmarks en p2 y p3): las copias de las
+  rutas `MultiIndex` (`utils.py:4508`, `_preprocessing.py:566, 684`: 0,9 ms de 40 a 84 ms),
+  `_range_drift.py:428` (2 a 3 % de `predict` con 500 series), `_forecaster_equivalent_date.py`,
+  `_forecaster_stats.py:637`, `_forecaster_rnn.py:1354`, `_forecaster_direct_multivariate.py:2308`,
+  `_preprocessing.py:2793, 2913` y la conversión de CatBoost (`utils.py:835`), todas sobre
+  objetos pequeños o fuera de los caminos medidos; `copy=False` en los constructores de
+  `predict` (iguales) y en `y_train` (0,3 ms de 200k en pandas 3, y volvería el alias con
+  `X_train`); `Arima.coef_` (solo se lee).
+- Coste de D14: copiar la `exog` de `predict` cuesta de 8 a 10 µs frente a 1100 a 1300 µs de
+  `predict` (menos del 1 %); copiar siempre (b) en `fit` con escaladores por defecto cuesta
+  como mucho de +2 a +5 % de tiempo y +15 MiB de pico (cota con la copia viva durante todo el
+  `fit`, 200k × 10).
+
+**Decisiones del usuario** (2026-11-14, todas con la recomendación de la revisión): D13 (a);
+D14 (a) ampliada a `transform_numpy` (si el arnés no ve diferencia con (b), pasar a (b)); como
+rendimiento, solo los constructores y las 9 copias; dos PRs, primero la de rendimiento (3a,
+sin nota de versión: en pandas 2 no cambia nada y pandas 3 no se ha publicado) y después la
+corrección (3b, con nota en Fixed).
+
+**PR 3a: `perf/pandas3-copies`**, desde `origin/0.28.x` con `--no-track`, sin commit al
+escribir esto. Lleva también el cambio de este INFORME que registraba la fusión de la #1501.
+
+- Paquete (5 ficheros): `copy=False` en los cuatro constructores, con un comentario, y las 9
+  copias a `copy(deep=False)`, con el mismo comentario en los 9 sitios en lugar de "This copy
+  is only necessary if `transformer_exog` is not used".
+- Tests (8 ficheros, 16 tests): los dos de la fila 3.
+- Arnés: 5 casos de identidad (`recursive_transformers`, `multiseries_transformers`,
+  `stats_transformers`, `inplace_transformers`, `categorical_identity_transformer`; los dos
+  últimos reproducen F26 en el código actual y son los que la 3b debe cambiar) y 7 benchmarks
+  (`recursive_create_train_X_y_noexog`, `recursive_create_train_X_y_wide_exog`,
+  `predict_loop_categorical`, `predict_loop_scaler`, `predict_loop_pipeline`,
+  `fit_recursive_transformers`, `fit_recursive_wide_exog`; los de transformadores son la base
+  de la medida de D14 en la 3b). Los casos in situ reciben copias, para no modificar los datos
+  que comparten los demás casos.
+
+**Verificación de la 3a.**
+
+- `verify`: lint sin hallazgos en las líneas nuevas (los 2 `E721` de
+  `tests_forecaster_recursive/test_create_train_X_y.py` son previos); tests de los cinco
+  forecasters en p2: 2380 pasan y 1 omitido; sin checks; nota de versión: no (decidido).
+  Los tests nuevos pasan en p2 y p3, y el de categóricas falla en los dos sin la copia.
+- Suite completa (cwd con `C:` mayúscula y caché de `.pyc` nueva): p2 8127 pasan, 27
+  omitidos y 3 fallan; p3 8120, 34 y 3. Frente a la PR 6, 16 tests más (los nuevos) y los
+  mismos 3 fallos de `test_fit_tensorflow.py`. El test inestable de la búsqueda bayesiana pasó
+  a la primera en los dos.
+- Entornos: el `pip freeze` de p2 tiene paquetes que p3 no (backends de foundation, pymc,
+  sktime, `scikit-learn-intelex`...), y tensorflow 2.20 frente a 2.21; los que intervienen
+  son iguales (Python 3.13.18, numpy 2.5.4, scipy 1.18.1, scikit-learn 1.9.1, numba 0.68.0,
+  lightgbm 4.7.0, pyarrow 26.0.0). El A/B base frente a rama se hace dentro de cada entorno.
+- Arnés (`run_ab.py --identity --bench all --memory --base origin/0.28.x`,
+  `results/pr3_perf_028`, ignorado por git):
+  - Identidad base frente a rama, estricta: 257 de 257 salidas iguales en p2 y en p3,
+    `Result: OK`, sin pares nuevos de memoria compartida. Las entradas modificadas y el
+    `predict` repetido distinto de `inplace_transformers` y
+    `categorical_identity_transformer` son los mismos en la base y en la rama (F26, para la 3b).
+  - p2 frente a p3 con la rama (normalizada, informativa): 133 iguales, 122 con dtype distinto
+    (los esperados), 2 valores distintos: `inplace_transformers.multiseries_last_window_` y
+    `multiseries_predict`, el F26 de multiseries (pandas 2 transforma dos veces). Los pares de
+    memoria compartida de `multiseries_long` en p3, como en la PR 6.
+  - Tiempo (mínimo de 20 muestras en procesos alternos) y memoria pico (tracemalloc), base
+    frente a rama; Python 3.13.18, numpy 2.5.4, scikit-learn 1.9.1, numba 0.68.0, pandas 2.3.3
+    (p2) y 3.1.1 (p3); CPU de la máquina antes de cada benchmark, mediana 2 %:
+
+    | Benchmark | p2 tiempo, ms (razón) | p3 tiempo, ms (razón) | p3 memoria, MiB (razón) |
+    |---|---|---|---|
+    | `recursive_create_train_X_y` | 45,9 → 44,4 (0,97) | 83,6 → 51,0 (0,61) | 90,0 → 59,1 (0,66) |
+    | `recursive_create_train_X_y_float` | 15,6 → 15,3 (0,98) | 45,0 → 16,0 (0,36) | 83,9 → 48,1 (0,57) |
+    | `recursive_create_train_X_y_noexog` | 4,2 → 4,1 (0,99) | 10,7 → 4,6 (0,43) | 39,7 → 6,4 (0,16) |
+    | `recursive_create_train_X_y_wide_exog` | 106,8 → 102,0 (0,96) | 153,5 → 71,8 (0,47) | 166,3 → 140,2 (0,84) |
+    | `direct_create_train_X_y_float` | 13,9 → 13,7 (0,99) | 24,1 → 13,5 (0,56) | 59,9 → 41,6 (0,69) |
+    | `direct_create_train_X_y` | 31,9 → 31,3 (0,98) | 49,1 → 37,2 (0,76) | 89,2 → 66,5 (0,75) |
+    | `direct_multivariate_create_train_X_y` | 34,9 → 34,8 (1,00) | 53,2 → 38,1 (0,72) | 104,3 → 72,9 (0,70) |
+    | `classifier_create_train_X_y` | 38,9 → 39,7 (1,02) | 57,6 → 44,5 (0,77) | 45,0 → 34,7 (0,77) |
+    | `fit_recursive_wide_exog` | 352,5 → 331,7 (0,94) | 319,0 → 304,6 (0,95) | 178,2 → 178,2 (1,00) |
+    | Los otros 22 (multiseries, `fit`, `predict_loop` y variantes, backtesting, window features) | 0,97 a 1,02 | 0,97 a 1,03 | 1,00 |
+
+    La memoria de p2 es idéntica en todos. `fit_recursive_wide_exog` en p2 dio 1,08 en
+    mínimos y 0,98 en medianas en la primera tanda (dispersión del 20 % por los hilos de
+    BLAS); repetido con 8 rondas (`results/pr3_perf_028_wide_fit_p2`, con la máquina más
+    cargada, CPU mediana 17 %), 0,94 en mínimos y en medianas. En la tabla de "otros", la
+    memoria de los benchmarks de menos de 1 MiB (`predict_loop*`) varía entre 0,95 y 1,10 sin
+    significado.
+  - Lectura: el constructor sin copia quita en pandas 3 la copia del `create_train_X_y`
+    público (de 0,36 a 0,77 en tiempo y de 0,16 a 0,84 en memoria) y no cambia nada en
+    pandas 2. Las copias superficiales solo se notan con una `exog` ancha (200k × 30):
+    `create_train_X_y` 0,96 en pandas 2 y `fit` 0,94 a 0,95 en las dos versiones; con 4
+    columnas no se distinguen del ruido, porque el pico de memoria lo marca después la
+    construcción de `X_train`.
+  - Lo que verá un usuario al pasar de pandas 2 a pandas 3 con la rama (mínimos de la rama en
+    las dos tandas del arnés, sin alternar entornos): `create_train_X_y` de 0,70 a 1,19 en
+    tiempo (`recursive` 1,15, `recursive_float` 1,05, `noexog` 1,12, `direct_float` 0,99,
+    `direct` 1,19, multivariante 1,09, clasificador 1,12; con `exog` ancha, 0,70) y de 1,00 a
+    1,14 en memoria, frente al 1,33 a 3,01 y 1,44 a 1,75 de la PR 6.
+
+**Revisión final de la 3a** (2026-11-14, sobre el árbol de trabajo, antes del commit).
+Se releyó el diff completo y se repitieron en p2 y p3 las comprobaciones de las que
+depende el cambio, con scripts nuevos (espacio temporal de la sesión):
+
+- Constructor: la copia interna es incondicional (`to_numpy(copy=True)` en
+  `check_extract_values_and_index`; en el clasificador, además, la vista es del `y`
+  codificado, un array nuevo). En los cuatro forecasters, con solo lags, solo window
+  features, diferenciación y `LinearRegression` o `HistGradientBoosting`: `X_train` no
+  comparte memoria con la entrada del usuario en ninguna versión; en pandas 3 tampoco con
+  `y_train` (el constructor de `Series` copia), así que escribir en `y_train` no cambia
+  `X_train` (en pandas 2 sí, el error previo ya anotado). Los únicos llamadores internos
+  del `create_train_X_y` público son los dos de `feature_selection.py`, que no escriben en
+  la matriz.
+- Matriz de solo lectura (escribir una celda lanza `ValueError`; asignar una columna
+  funciona), igual en los cuatro forecasters:
+
+  | Predictores | p2 | p3 con la rama | p3 con la base |
+  |---|---|---|---|
+  | Solo lags contiguos, estimador fuera de `_prefers_c_contiguous_X` (y el clasificador con cualquiera) | solo lectura | solo lectura | escribible |
+  | Solo lags contiguos, `LinearRegression`, `Ridge`, `Lars`, `LassoLars` | escribible | escribible | escribible |
+  | **Solo una columna de window features** | **escribible** | **solo lectura** | escribible |
+  | Lags no contiguos, lags y window features, dos columnas de `RollingFeatures`, varias series en el multivariante, exógenas, NaN | escribible | escribible | escribible |
+
+  Las columnas p2 y p3 con la rama son medidas; la de la base se deduce de que el
+  constructor de pandas 3 copia por defecto (comprobado con un array de solo lectura). La
+  fila en negrita es la única diferencia entre versiones que deja la 3a: en pandas 3,
+  `to_numpy()` de un `DataFrame` de un bloque es una vista de solo lectura, y con una
+  columna ya es contigua, así que tampoco la copia `_prefers_c_contiguous_X`. Caso
+  estrecho (sin lags, sin exógenas, sin calendario y una sola window feature) y de la
+  misma clase que D13 (a); se deja así (decisión del usuario, 2026-11-14) y se
+  lleva a la nota de la PR 7 con una regla que no dependa de enumerar casos: la matriz de
+  `create_train_X_y` puede ser de solo lectura y hay que copiarla antes de modificarla
+  in situ.
+- Copias superficiales: los 9 sitios se siguieron hasta el último uso de `exog`. Después
+  de la asignación solo se leen dtypes y columnas y se llama a `to_numpy()` (o `iloc` y
+  `pd.concat` en multiseries), que con algún bloque sustituido siempre devuelve un array
+  nuevo: ninguna matriz comparte memoria con la `exog` del usuario. Comprobado en los
+  cinco forecasters (y multiseries con un solo nivel), en `fit`, dos `predict` y
+  `create_train_X_y`, con una `exog` de tres `float` y dos `int` en sendos bloques y una
+  categoría, codificando parte de un bloque, bloques enteros y `'auto'`: entradas, dtypes
+  y nombres de índice intactos y `predict` repetible, en p2 y p3.
+- Cambios de la revisión (ninguno de comportamiento):
+  1. El comentario de los cuatro constructores dice ahora por qué hace falta `copy=False`
+     (pandas 3 copia por defecto), por qué no hace falta la copia y que la matriz puede
+     ser de solo lectura. En el clasificador decía "copia interna de `y`" y es el `y`
+     codificado.
+  2. Los 5 tests de categóricas llevan una cuarta columna `float` sin codificar
+     (`exog_4`), que pandas guarda en el mismo bloque que `exog_1` (comprobado en 2.3.3 y
+     3.1.1): con la lista se cubre la sustitución parcial de un bloque compartido con el
+     usuario, que los tests no ejercitaban (cada columna era un bloque).
+  3. Arnés: `_exog_wide` en lugar de construir dos veces la `exog` ancha (mismos datos,
+     comprobado con `assert_frame_equal`; las medidas no cambian).
+  4. Los tres tests de memoria compartida pierden `X_train_` del nombre, para que la
+     línea del `def` no pase de 88 caracteres.
+- Sin cambio: `test_create_train_X_y_does_not_share_memory_...` no existe para
+  el clasificador a propósito (su vista nunca puede ser de la `y` del usuario); el
+  `predict_loop` anterior del arnés duplica `_predict_loop` y no se ha tocado, para no
+  cambiar un benchmark ya medido.
+- Verificación tras los cambios: lint sin hallazgos nuevos (los 2 `E721` previos); tests
+  de las cinco carpetas de forecasters, p2 2380 pasan y 1 omitido, p3 2378 pasan y 3
+  omitidos; sin la copia (mutación en una copia del árbol, fuera del repositorio) los 10
+  tests de categóricas fallan en p2 y en p3. No se han repetido la suite completa ni el
+  arnés: desde su ejecución, el paquete solo ha cambiado en comentarios.
+
+**Pendiente:**
+
+1. Commit y PR de la 3a (del usuario).
+2. La 3b (`fix/inplace-transformers`): desde `origin/0.28.x` cuando la 3a esté fusionada (el
+   árbol de trabajo tiene la 3a sin commit), o en otro worktree. Incluye medir D14 (a) frente a
+   (b) con `predict_loop_scaler`, `predict_loop_pipeline` y `fit_recursive_transformers`, y la
+   identidad: solo pueden cambiar `inplace_transformers` y `categorical_identity_transformer`.
+3. La PR 7 (documentación y contexto de IA), con la nota corregida sobre la matriz de solo
+   lectura (punto 1 de "Corregido" y la tabla de la revisión final).
+4. Errores previos anotados, sin PR: el alias `X_train`/`y_train` de pandas 2 y
+   `filter_train_X_y_for_step` sin exógenas.
 
 ### Historial de lo pendiente entre sesiones
 
