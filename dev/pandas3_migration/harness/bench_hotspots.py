@@ -26,7 +26,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import psutil
+from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 
 from skforecast.direct import ForecasterDirect, ForecasterDirectMultiVariate
 from skforecast.model_selection import (
@@ -88,6 +91,17 @@ def _exog_int(n: int, k: int = 10, seed: int = 2) -> pd.DataFrame:
     rng = np.random.default_rng(seed)
     return pd.DataFrame(rng.integers(0, 100, size=(n, k)), index=_index(n),
                         columns=[f"i{i}" for i in range(k)])
+
+
+def _exog_wide(n: int, seed: int = 4) -> pd.DataFrame:
+    """
+    29 float + 1 category: a wide `exog`, whose copy is large.
+    """
+    rng = np.random.default_rng(seed)
+    exog = pd.DataFrame(rng.normal(size=(n, 29)), index=_index(n),
+                        columns=[f"f{i}" for i in range(29)])
+    exog["c1"] = pd.Categorical(rng.choice(list("abcde"), size=n))
+    return exog
 
 
 def _series_wide(n_series: int, n: int, seed: int = 3) -> pd.DataFrame:
@@ -344,6 +358,86 @@ def fit_classifier():
                 {"y": _y_class(100_000), "exog": _exog_fit(100_000)})
 
 
+def recursive_create_train_X_y_noexog():
+    """
+    Only lags, with an estimator that does not need a C-contiguous matrix:
+    `X_train` wraps the view of the lags (D13 of the INFORME).
+    """
+    y = _y(200_000)
+    f = ForecasterRecursive(estimator=HistGradientBoostingRegressor(), lags=LAGS)
+    return lambda: f.create_train_X_y(y=y)
+
+
+def _predict_loop(f, y, exog):
+    f.fit(y=y, exog=exog)
+    exog_future = _future(exog, 500)
+    exog_one = exog_future.iloc[:1]
+
+    def run():
+        for _ in range(200):
+            f.predict(steps=1, exog=exog_one)
+        return f.predict(steps=500, exog=exog_future)
+
+    return run
+
+
+def predict_loop_categorical():
+    """
+    `predict_loop` with a categorical exog encoded without `transformer_exog`
+    (the shallow copy of `exog` before the encoding).
+    """
+    return _predict_loop(
+        ForecasterRecursive(estimator=LinearRegression(), lags=LAGS),
+        _y(3000), _exog_fit(3000)
+    )
+
+
+def predict_loop_scaler():
+    """
+    `predict_loop` with scalers that copy their input (`copy=True`).
+    """
+    return _predict_loop(
+        ForecasterRecursive(estimator=LinearRegression(), lags=LAGS,
+                            transformer_y=StandardScaler(),
+                            transformer_exog=StandardScaler()),
+        _y(3000), _exog_float(3000)
+    )
+
+
+def predict_loop_pipeline():
+    """
+    `predict_loop` with Pipelines as transformers (no `copy` attribute).
+    """
+    return _predict_loop(
+        ForecasterRecursive(estimator=LinearRegression(), lags=LAGS,
+                            transformer_y=make_pipeline(StandardScaler()),
+                            transformer_exog=make_pipeline(StandardScaler())),
+        _y(3000), _exog_float(3000)
+    )
+
+
+def fit_recursive_transformers():
+    return _fit(lambda: ForecasterRecursive(estimator=LinearRegression(), lags=LAGS,
+                                            transformer_y=StandardScaler(),
+                                            transformer_exog=StandardScaler()),
+                {"y": _y(100_000), "exog": _exog_float(100_000)})
+
+
+def recursive_create_train_X_y_wide_exog():
+    """
+    A wide `exog` with a category encoded without `transformer_exog`: the
+    copy of `exog` before the encoding is large.
+    """
+    y, exog = _y(200_000), _exog_wide(200_000)
+    f = ForecasterRecursive(estimator=LinearRegression(), lags=LAGS)
+    return lambda: f.create_train_X_y(y=y, exog=exog)
+
+
+def fit_recursive_wide_exog():
+    return _fit(lambda: ForecasterRecursive(estimator=LinearRegression(), lags=LAGS),
+                {"y": _y(200_000), "exog": _exog_wide(200_000)})
+
+
 BENCHMARKS = {
     fn.__name__: fn for fn in [
         ms_create_train_X_y_block, ms_create_train_X_y_concat,
@@ -355,6 +449,9 @@ BENCHMARKS = {
         predict_loop, expand_index_check_predict_input, backtesting_recursive,
         backtesting_recursive_refit, backtesting_multiseries, window_features,
         fit_recursive, fit_direct, fit_direct_multivariate, fit_classifier,
+        recursive_create_train_X_y_noexog, predict_loop_categorical,
+        predict_loop_scaler, predict_loop_pipeline, fit_recursive_transformers,
+        recursive_create_train_X_y_wide_exog, fit_recursive_wide_exog,
     ]
 }
 

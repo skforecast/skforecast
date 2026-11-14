@@ -1111,9 +1111,11 @@ class ForecasterDirect(ForecasterBase):
                     categorical_features_names_in_ = list(self.categorical_features)
 
                 if categorical_features_names_in_:
-                    # This copy is only necessary if `transformer_exog` is not used
+                    # NOTE: Without `transformer_exog`, `exog` can be the user's
+                    # object. A shallow copy protects it: assigning the encoded columns
+                    # replaces them, it never writes into the user's arrays.
                     if self.transformer_exog is None:
-                        exog = exog.copy()
+                        exog = exog.copy(deep=False)
                     if fit_transformer:
                         exog[categorical_features_names_in_] = (
                             self.categorical_encoder.fit_transform(
@@ -1496,10 +1498,15 @@ class ForecasterDirect(ForecasterBase):
         else:
             X_train = np.concatenate(X_train, axis=1)
 
+        # NOTE: pandas 3 copies a numpy array passed to the constructor unless
+        # `copy=False`. The copy is not needed: `X_train` is never an array of
+        # the user (with only lags, it is a view of the internal copy of `y`).
+        # Without the copy, as in pandas 2, `X_train` can be read-only.
         X_train = pd.DataFrame(
                       data    = X_train,
                       index   = train_index[self.max_step],
-                      columns = X_train_direct_features_names_out_
+                      columns = X_train_direct_features_names_out_,
+                      copy    = False
                   )
         
         if exog_dtypes_out_ is not None:
@@ -2201,9 +2208,11 @@ class ForecasterDirect(ForecasterBase):
                    )
 
             if self.categorical_features is not None and self.categorical_features_names_in_:
-                # This copy is only necessary if `transformer_exog` is not used
+                # NOTE: Without `transformer_exog`, `exog` can be the user's
+                # object. A shallow copy protects it: assigning the encoded columns
+                # replaces them, it never writes into the user's arrays.
                 if self.transformer_exog is None:
-                    exog = exog.copy()
+                    exog = exog.copy(deep=False)
                 exog[self.categorical_features_names_in_] = (
                     self.categorical_encoder.transform(
                         exog[self.categorical_features_names_in_]

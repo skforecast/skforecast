@@ -9,7 +9,7 @@ que no se versionó.
 |---|---|
 | `identity_cases.py` | Ejecuta los casos de identidad (los 21 del estudio más la ampliación de la sección 5) y escribe un JSON con las huellas de cada salida y las comprobaciones |
 | `identity_compare.py` | Compara dos JSON de `identity_cases.py` |
-| `bench_hotspots.py` | Mide en un proceso los benchmarks (los 20 del estudio y el `fit` de los cuatro forecasters de matriz numpy) |
+| `bench_hotspots.py` | Mide en un proceso los benchmarks (los 20 del estudio, el `fit` de los cuatro forecasters de matriz numpy y los 7 de la PR 3: matriz sin exógenas y con `exog` ancha, `predict_loop` con exógena categórica y con transformadores, y `fit` con transformadores y con `exog` ancha) |
 | `run_ab.py` | Orquesta la comparación de una rama con su base en uno o varios entornos: identidad, tiempo y memoria; escribe `summary.md` |
 | `warnrec.py` | Plugin de pytest que vuelca los avisos capturados a JSON (línea base de avisos) |
 | `common.py` | Huellas, memoria compartida, captura de avisos y descripción del entorno |
@@ -35,7 +35,10 @@ sección 10, "Decisiones y arranque del 2026-11-03"):
 
 Se llama siempre al `python.exe` de cada entorno: los lanzadores
 `Scripts\*.exe` de los clones apuntan al intérprete del entorno original.
-Antes de medir, el `pip freeze` de los entornos solo puede diferir en pandas.
+Antes de medir, compara el `pip freeze` de los entornos. Desde el 2026-11-05, p2 tiene
+paquetes que p3 no (los backends de foundation, pymc, sktime...) y otra versión de
+tensorflow; ninguno lo importa el arnés. Los que intervienen (Python, numpy, scipy,
+scikit-learn, numba, lightgbm, pyarrow) tienen que coincidir.
 
 ## Uso habitual en una PR
 
@@ -119,10 +122,13 @@ En Windows, el separador de `PYTHONPATH` es `;`.
 
 ## Diferencias con el arnés del estudio
 
-- Los casos de identidad pasan de 21 a 30: diferenciación,
+- Los casos de identidad pasan de 21 a 35: diferenciación,
   `predict_quantiles`/`predict_dist` con residuos fuera de muestra,
   `encoding=None`, los dos detectores de drift, `select_features` y
-  Sarimax, Ets y Arar en `ForecasterStats`. Las salidas incluyen los
+  Sarimax, Ets y Arar en `ForecasterStats`, y los transformadores de la PR 3
+  (que copian su entrada, in situ y un `FunctionTransformer` identidad con
+  categóricas; los casos in situ reciben copias de los datos para no modificar
+  los que comparten los demás casos). Las salidas incluyen los
   atributos que guarda `fit` (`exog_dtypes_in_`, `last_window_`, residuos,
   `training_range_`...).
 - El A/B de rendimiento alterna procesos de dos copias del paquete (el método

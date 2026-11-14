@@ -2825,8 +2825,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                        )
                 
                 if self.categorical_features is not None and self.categorical_features_names_in_:
+                    # NOTE: Without `transformer_exog`, `exog` can be the user's
+                    # object. A shallow copy protects it: assigning the encoded columns
+                    # replaces them, it never writes into the user's arrays.
                     if self.transformer_exog is None:
-                        exog = exog.copy()
+                        exog = exog.copy(deep=False)
 
                     exog[self.categorical_features_names_in_] = (
                         self.categorical_encoder.transform(

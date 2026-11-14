@@ -403,6 +403,13 @@ workflow silencia sus avisos con `PYTHONWARNINGS=ignore`).
   TensorFlow en `skforecast/deep_learning/tests/`.
 - **Límites inferiores**: correctos. `unit-tests-min-deps.yml` pasó el 2026-11-03 con las
   versiones mínimas declaradas en Python 3.10 (7363 passed, 27 skipped).
+- **Retirar pandas 2 (versión futura, sin fecha).** No es de la 0.28.0, que soporta
+  pandas 2.3 y 3. Lo que habrá que cambiar ese día (módulo de compatibilidad, tests
+  condicionados, celda `pandas<3` de CI, pin y documentación) está inventariado en
+  `dev/pandas3_migration/INFORME.md`, sección 10, "Al retirar pandas 2: lista viva".
+  Condición previa: los backends de `MoiraiAdapter` y `TabPFNAdapter` (`gluonts`) aún
+  exigen pandas 2. Si se borra `dev/pandas3_migration/`, mover antes esa lista al roadmap
+  de la versión que toque.
 
 ---
 
