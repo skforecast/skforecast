@@ -15,7 +15,10 @@ import warnings
 import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed, cpu_count
-from joblib.externals.loky.backend.reduction import dumps as loky_dumps
+try:
+    from joblib.externals.loky.backend.reduction import dumps as loky_dumps
+except ImportError:  # pragma: no cover
+    loky_dumps = None
 from tqdm.auto import tqdm
 from ..metrics import add_y_train_argument, _get_metric
 from ..exceptions import (
@@ -167,6 +170,60 @@ def _restore_out_sample_residuals(
             forecaster.binner_intervals_ = forecaster.binner.intervals_
 
 
+def _serialize_forecaster_for_workers(
+    forecaster: object,
+    n_jobs: int
+) -> object | bytes:
+    """
+    Serialize the forecaster once, in the main thread, when the folds of a
+    backtesting run in parallel (`n_jobs` other than 1). Each fold deserializes
+    it at its start, so each fold works on its own copy.
+
+    With several processes, joblib serializes the arguments of every task, so
+    the forecaster would be pickled once per fold, in a secondary thread of the
+    main process. Serializing it once removes that cost per fold. It also
+    prevents estimators that use OpenMP (XGBoost, LightGBM) from starting a
+    second pool of threads in the main process when they are pickled from that
+    thread, which slows down their later fits in it (measured on Linux).
+
+    It is serialized with the pickler of loky, as joblib does (`cloudpickle` if
+    it is installed, `pickle` otherwise), so the forecasters that can be sent to
+    the workers are the same as before. If the pickler of loky cannot be
+    imported, `cloudpickle` is used if it is installed, and `pickle` otherwise.
+
+    It is also serialized when the active backend of joblib runs the tasks in
+    threads (for example, inside `joblib.parallel_config(backend="threading")`):
+    otherwise the folds would share the same forecaster, and the folds with
+    refit would fit it at the same time.
+
+    Parameters
+    ----------
+    forecaster : object
+        Forecaster model.
+    n_jobs : int
+        Number of jobs of the `joblib.Parallel` that runs the folds.
+
+    Returns
+    -------
+    forecaster : object, bytes
+        The forecaster serialized, or the forecaster itself if `n_jobs` is 1.
+
+    """
+
+    if n_jobs == 1:
+        return forecaster
+
+    if loky_dumps is not None:
+        return bytes(loky_dumps(forecaster, protocol=pickle.HIGHEST_PROTOCOL))
+
+    try:
+        import cloudpickle
+    except ImportError:
+        return pickle.dumps(forecaster, protocol=pickle.HIGHEST_PROTOCOL)
+
+    return cloudpickle.dumps(forecaster, protocol=pickle.HIGHEST_PROTOCOL)
+
+
 def _fit_predict_forecaster(
     fold: list,
     y_train: pd.Series | None,
@@ -217,9 +274,9 @@ def _fit_predict_forecaster(
         Pre-sliced test exogenous variables. `None` when no exogenous
         variables are used.
     forecaster : object, bytes
-        Forecaster model, or the forecaster serialized with the pickler of loky
-        when the folds run in several processes. In that case, it is deserialized
-        here, in the worker, so each fold works on its own copy.
+        Forecaster model, or the forecaster serialized when the folds run in
+        parallel (see `_serialize_forecaster_for_workers`). In that case, it is
+        deserialized here, so each fold works on its own copy.
     store_in_sample_residuals : bool
         Whether to store in-sample residuals during `fit()`.
     gap : int
@@ -722,10 +779,10 @@ def _backtesting_forecaster(
                     function      = _fit_predict_forecaster,
                     main_pid      = main_pid,
                     fold          = fold,
-                    y_train       = fold_data['y_train'],
-                    last_window_y = fold_data['last_window_y'],
-                    exog_train    = fold_data['exog_train'],
-                    exog_test     = fold_data['exog_test'],
+                    y_train       = fold_data["y_train"],
+                    last_window_y = fold_data["last_window_y"],
+                    exog_train    = fold_data["exog_train"],
+                    exog_test     = fold_data["exog_test"],
                     **kwargs_fit_predict_forecaster
                 )
             )
@@ -758,19 +815,10 @@ def _backtesting_forecaster(
             total   = len(first_fold_predictions) + len(fold_items)
         )
 
-    # NOTE: With several processes, joblib serializes the arguments of every
-    # task, so the forecaster would be pickled once per fold, in a secondary
-    # thread of the main process. Serializing it once here, in the main thread,
-    # removes that cost per fold. It also prevents estimators that use OpenMP
-    # (XGBoost, LightGBM) from starting a second pool of threads in the main
-    # process when they are pickled from that thread, which slows down their
-    # later fits in it. It is serialized with the pickler of loky (`cloudpickle`
-    # if it is installed), so the forecasters that can be sent to the workers
-    # are the same as when joblib serializes them.
-    if n_jobs != 1:
-        kwargs_fit_predict_forecaster["forecaster"] = bytes(
-            loky_dumps(forecaster, protocol=pickle.HIGHEST_PROTOCOL)
-        )
+    kwargs_fit_predict_forecaster["forecaster"] = _serialize_forecaster_for_workers(
+        forecaster = forecaster,
+        n_jobs     = n_jobs
+    )
 
     try:
         backtest_predictions = first_fold_predictions + Parallel(n_jobs=n_jobs)(
@@ -1138,9 +1186,9 @@ def _fit_predict_forecaster_multiseries(
         The forecaster is fitted only if `series_train` is not `None`. For
         the folds without fit, `series_train` and `exog_train` are `None`.
     forecaster : object, bytes
-        Forecaster model, or the forecaster serialized with the pickler of loky
-        when the folds run in several processes. In that case, it is deserialized
-        here, in the worker, so each fold works on its own copy.
+        Forecaster model, or the forecaster serialized when the folds run in
+        parallel (see `_serialize_forecaster_for_workers`). In that case, it is
+        deserialized here, so each fold works on its own copy.
     store_in_sample_residuals : bool
         Whether to store in-sample residuals during `fit()`.
     levels : list of str
@@ -1796,13 +1844,10 @@ def _backtesting_forecaster_multiseries(
         "suppress_warnings": suppress_warnings
     }
 
-    # NOTE: With several processes, the forecaster is serialized once here, in
-    # the main thread, instead of once per fold in a secondary thread of joblib.
-    # See the same note in `_backtesting_forecaster`.
-    if n_jobs != 1:
-        kwargs_fit_predict_forecaster["forecaster"] = bytes(
-            loky_dumps(forecaster, protocol=pickle.HIGHEST_PROTOCOL)
-        )
+    kwargs_fit_predict_forecaster["forecaster"] = _serialize_forecaster_for_workers(
+        forecaster = forecaster,
+        n_jobs     = n_jobs
+    )
 
     # NOTE: The warnings of the folds that run in worker processes are recorded
     # there and shown here, after the folds, as with `n_jobs=1`. If a fold raises
@@ -2405,8 +2450,9 @@ def _backtesting_stats(
         and adds an `estimator_params` column to the output with the model
         selected in each fold.
     n_jobs : int, 'auto', default 'auto'
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
+        The number of jobs to run in parallel, never more than the number of
+        folds. If `-1`, then the number of jobs is set to the number of cores. If
+        'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used 
@@ -2591,6 +2637,10 @@ def _backtesting_stats(
                 LongTrainingWarning
             )
        
+    # NOTE: No more workers are started than there are folds, as in the other
+    # backtesting functions: the extra workers would only start and wait.
+    n_jobs = min(n_jobs, max(1, len(folds)))
+
     folds_tqdm = tqdm(folds) if show_progress else folds
 
     kwargs_fit_predict_forecaster = {
@@ -2824,8 +2874,9 @@ def backtesting_stats(
         and adds an `estimator_params` column to the output with the model
         selected in each fold.
     n_jobs : int, 'auto', default 'auto'
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
+        The number of jobs to run in parallel, never more than the number of
+        folds. If `-1`, then the number of jobs is set to the number of cores. If
+        'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used 

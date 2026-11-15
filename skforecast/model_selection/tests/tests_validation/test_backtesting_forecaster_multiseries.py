@@ -16,7 +16,7 @@ from sklearn.compose import make_column_transformer, make_column_selector
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.metrics import mean_absolute_error
 from scipy.stats import norm
-from joblib import Parallel, cpu_count
+from joblib import Parallel, cpu_count, parallel_config
 
 from skforecast.exceptions import IgnoredArgumentWarning
 from skforecast.metrics import create_mean_pinball_loss
@@ -7903,6 +7903,47 @@ def test_backtesting_forecaster_multiseries_serializes_forecaster_once_only_with
     assert all(isinstance(f, ForecasterRecursiveMultiSeries) for f in received_n_jobs_1)
     assert all(isinstance(f, bytes) for f in received_n_jobs_2)
     assert received_n_jobs_2[0] is received_n_jobs_2[1]
+
+
+@pytest.mark.parametrize(
+    "refit",
+    [True, False],
+    ids=lambda refit: f"refit: {refit}",
+)
+def test_backtesting_forecaster_multiseries_threading_backend_same_output_as_n_jobs_1(refit):
+    """
+    Test that, when the active backend of joblib runs the folds in threads,
+    they return the same metrics and predictions as with `n_jobs=1`. Each fold
+    receives its own copy of the forecaster, so the folds with refit do not fit
+    the same forecaster at the same time.
+    """
+    def run_backtesting(n_jobs):
+        forecaster = ForecasterRecursiveMultiSeries(
+            estimator=Ridge(random_state=123), lags=3
+        )
+        cv = TimeSeriesFold(
+                 steps              = 5,
+                 initial_train_size = 30,
+                 refit              = refit,
+                 verbose            = False
+             )
+
+        return backtesting_forecaster_multiseries(
+                   forecaster    = forecaster,
+                   series        = series_wide_range,
+                   exog          = exog_multiseries,
+                   cv            = cv,
+                   metric        = "mean_absolute_error",
+                   n_jobs        = n_jobs,
+                   show_progress = False
+               )
+
+    expected_metrics, expected_predictions = run_backtesting(n_jobs=1)
+    with parallel_config(backend="threading"):
+        metrics, predictions = run_backtesting(n_jobs=4)
+
+    pd.testing.assert_frame_equal(metrics, expected_metrics)
+    pd.testing.assert_frame_equal(predictions, expected_predictions)
 
 
 def test_backtesting_forecaster_multiseries_scaled_metrics_same_with_wide_DataFrame_and_dict():

@@ -998,6 +998,45 @@ def test_backtesting_forecaster_serializes_forecaster_once_only_with_n_jobs_grea
 
 
 @pytest.mark.parametrize(
+    "refit",
+    [True, False],
+    ids=lambda refit: f"refit: {refit}",
+)
+def test_backtesting_forecaster_threading_backend_same_output_as_n_jobs_1(refit):
+    """
+    Test that, when the active backend of joblib runs the folds in threads,
+    they return the same metrics and predictions as with `n_jobs=1`. Each fold
+    receives its own copy of the forecaster, so the folds with refit do not fit
+    the same forecaster at the same time.
+    """
+    def run_backtesting(n_jobs):
+        forecaster = ForecasterRecursive(estimator=Ridge(random_state=123), lags=3)
+        cv = TimeSeriesFold(
+                 steps              = 5,
+                 initial_train_size = 30,
+                 refit              = refit,
+                 verbose            = False
+             )
+
+        return backtesting_forecaster(
+                   forecaster    = forecaster,
+                   y             = y,
+                   exog          = exog,
+                   cv            = cv,
+                   metric        = "mean_absolute_error",
+                   n_jobs        = n_jobs,
+                   show_progress = False
+               )
+
+    expected_metric, expected_predictions = run_backtesting(n_jobs=1)
+    with parallel_config(backend="threading"):
+        metric, predictions = run_backtesting(n_jobs=4)
+
+    pd.testing.assert_frame_equal(metric, expected_metric)
+    pd.testing.assert_frame_equal(predictions, expected_predictions)
+
+
+@pytest.mark.parametrize(
     "min_work, expected_n_jobs",
     [(0.0, min(max(1, cpu_count() - 1), 4)),
      (1e6, 1)],

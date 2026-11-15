@@ -54,7 +54,7 @@ The main changes in this release are:
 
 + With `n_jobs='auto'`, <code>[backtesting_forecaster]</code> without refit runs the folds in parallel when the estimator is a `HistGradientBoostingRegressor` or a `CatBoostRegressor` and the predictions take long enough (estimated from the first fold, predicted in the main process). A backtesting of 100 folds with a `HistGradientBoostingRegressor` is 2.4 times faster with 16 CPUs (8 s instead of 19 s). Results are unchanged. [User guide](../faq/parallelization-skforecast.ipynb)
 
-+ <code>[backtesting_forecaster]</code>, <code>[backtesting_forecaster_multiseries]</code> and the hyperparameter searches start no more parallel processes than there are folds, also with an integer `n_jobs` (before, only a backtesting with `n_jobs='auto'` did). With 16 CPUs, a grid search of XGBoost with refit and 6 folds per candidate takes 24 s instead of 31 s, and its parallel processes use less than half the memory. Results are unchanged.
++ <code>[backtesting_forecaster]</code>, <code>[backtesting_forecaster_multiseries]</code>, <code>[backtesting_stats]</code> and the hyperparameter searches start no more parallel processes than there are folds, also with an integer `n_jobs` (before, only a backtesting with `n_jobs='auto'` did). With 16 CPUs, a grid search of XGBoost with refit and 6 folds per candidate takes 24 s instead of 31 s, and its parallel processes use less than half the memory. Results are unchanged.
 
 
 **Fixed**

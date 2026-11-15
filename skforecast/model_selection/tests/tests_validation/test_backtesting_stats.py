@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 import numpy as np
 import pandas as pd
-from joblib import Parallel
+from joblib import Parallel, cpu_count
 from sklearn.linear_model import Ridge
 import skforecast.stats._arima as arima_module
 import skforecast.stats._ets as ets_module
@@ -1841,6 +1841,43 @@ def test_backtesting_stats_Parallel_mmap_mode_c_only_with_Sarimax(
         )
 
     assert mock_parallel.call_args.kwargs == expected_kwargs
+
+
+@pytest.mark.parametrize(
+    "n_jobs, expected_n_jobs",
+    [(1, 1), (10, 2), (-1, min(cpu_count(), 2))],
+    ids=["1", "int above folds", "-1"]
+)
+def test_backtesting_stats_n_jobs_limited_by_the_number_of_folds(n_jobs, expected_n_jobs):
+    """
+    Test that backtesting_stats starts no more workers than there are folds
+    (2), also with an integer `n_jobs` (`-1` is all the processors). `Parallel`
+    is mocked with a sequential one, so no workers are started.
+    """
+    forecaster = ForecasterStats(estimator=Arima(order=(1, 0, 0)))
+    cv = TimeSeriesFold(
+             steps              = 6,
+             initial_train_size = len(y_datetime) - 12,
+             refit              = True,
+             fixed_train_size   = False,
+             verbose            = False
+         )
+
+    with patch(
+        "skforecast.model_selection._validation.Parallel",
+        side_effect=lambda **kwargs: Parallel(n_jobs=1)
+    ) as mock_parallel:
+        backtesting_stats(
+            forecaster        = forecaster,
+            y                 = y_datetime,
+            cv                = cv,
+            metric            = "mean_absolute_error",
+            n_jobs            = n_jobs,
+            show_progress     = False,
+            suppress_warnings = True
+        )
+
+    assert mock_parallel.call_args.kwargs == {"n_jobs": expected_n_jobs}
 
 
 @pytest.mark.parametrize(
