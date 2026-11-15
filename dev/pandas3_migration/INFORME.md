@@ -3359,6 +3359,99 @@ reintentos y sin ningún fallo.
   falló una vez en local con p3, pasa en las 17 celdas.
 - Pendiente: la PR 7 y la revisión independiente 4.
 
+**Revisión independiente 4: `/code-review ultra` de `0.28.x` frente a `main`** (2026-11-16;
+casilla 4 de "Revisiones independientes"). Adelantada a la PR de la versión por decisión del
+usuario. El diff completo de `0.28.x` supera el límite de la revisión (8000 líneas; son unas
+14 500, 9806 de ellas en `dev/`), así que se lanzó sobre una rama temporal local,
+`chore/review-0.28.0-no-dev`: `e1889b82f` más un commit que deja `dev/` como en `main`. Nunca
+se subió y está borrada. Alcance: 117 ficheros, 3728 líneas añadidas y 965 quitadas, todo lo
+que hay fuera de `dev/`. Primera de las 3 ejecuciones gratuitas de la cuenta. 2 hallazgos,
+comprobados uno a uno en la sesión de trabajo antes de cambiar nada.
+
+- Hallazgo 1, cierto. `calculate_distance_from_holiday` (`preprocessing/_calendar.py:864`)
+  infiere la frecuencia con `compat.infer_freq` sobre la hora local, sin pasar por
+  `_infer_freq_from_index`, que la PR 4 creó para inferir en UTC. Con un índice diario creado
+  en UTC, convertido a una zona con cambio de hora y que cruza uno, pandas 3 retira la
+  frecuencia en `tz_convert` y la inferencia en hora local da `None`: la unidad pasa a horas
+  y las distancias salen multiplicadas por 24, con el aviso "Could not determine the
+  frequency of the index". Medido con 13 índices de 60 valores y festivos en las posiciones
+  10 y 45 (`time_to_holiday` de la primera fila; lo correcto es 10 días, 70 en el semanal):
+
+  | Índice | pandas 2.3.3 | pandas 3.1.1 |
+  |---|---|---|
+  | Diario en UTC convertido a `Europe/Madrid` o `America/New_York`, cruza un cambio de hora | 10 | 240, con aviso |
+  | El mismo, sin cruzar un cambio de hora | 10 | 10 |
+  | Semanal en UTC convertido a `Europe/Madrid` | 70 | 1680, sin aviso (infiere `168h`) |
+  | El diario que cruza, sin frecuencia (`pd.DatetimeIndex(list(...))`) | 240, con aviso | 240, con aviso |
+  | Diario en UTC, sin zona o en hora local; mensual; horario | igual en las dos | igual en las dos |
+
+  - El caso semanal no lo dio el revisor: no hay aviso, porque la frecuencia inferida es
+    `168h` y se toma como horaria.
+  - Sin frecuencia en el índice, el fallo ya existe con pandas 2 y en la 0.27.0 publicada
+    (240 con aviso en el diario, 1680 sin aviso en el semanal). pandas 3 lo extiende a los
+    índices que salen de `tz_convert`, que en pandas 2 conservaban la frecuencia.
+  - Con `_infer_freq_from_index` en esa línea (simulado sin tocar el árbol): los 5
+    resultados erróneos de los 26 pasan a ser correctos y sin aviso, y los otros 21 no
+    cambian.
+- Hallazgo 2, cierto e intencionado; no se cambia. `reshape_series_wide_to_long` lanza
+  `ValueError` si el índice no tiene frecuencia y no se puede inferir (fechas diarias con
+  huecos, menos de 3 filas). Es D15 (c), decidida en la PR 4: está en la nota de versión
+  (Fixed, #1497) y la fija
+  `test_reshape_series_wide_to_long_ValueError_when_index_has_no_freq_and_it_cannot_be_inferred`.
+  La alternativa del revisor (volver al `asfreq` diario con un aviso) recupera el caso
+  diario con huecos a cambio de volver a perder filas en silencio con datos horarios
+  irregulares.
+- Error anterior, visto al comprobar el hallazgo 1 y ajeno a la migración: con un índice
+  diario en hora local (`date_range(..., freq='D', tz='Europe/Madrid')`) que cruza el cambio
+  de hora de primavera, la distancia sale un día corta (33 en lugar de 34), porque el día
+  de 23 horas se trunca al convertir a días. Igual en la 0.27.0, en p2 y en p3. También
+  con índices semanales y mensuales en hora local.
+- Límite de la revisión: cubre `0.28.x` hasta `e1889b82f`. El código que entre después en
+  la 0.28.0 no está revisado; la PR de la versión a `main` es el sitio para repetirla si
+  hace falta.
+- Pendiente: la PR 7.
+
+**Arreglos tras la revisión 4** (2026-11-16, rama `fix/holiday-distance-utc-freq` desde
+`e1889b82f`; decisión del usuario: arreglar el hallazgo 1 y el error del día de 23 horas,
+y dejar el hallazgo 2 como está). Los dos en `calculate_distance_from_holiday`
+(`preprocessing/_calendar.py`).
+
+- Hallazgo 1: la frecuencia se infiere con `_infer_freq_from_index` en lugar de
+  `compat.infer_freq`. Efecto añadido: un índice sin frecuencia y con menos de 3 fechas
+  lanzaba el `ValueError` de pandas ("Need at least 3 dates to infer frequency") y ahora
+  da el aviso y las horas que dice el docstring.
+- Día de 23 horas: cuando la unidad son días y el índice tiene zona horaria y no avanza
+  en pasos fijos de UTC (`_is_utc_anchored_index`), los días se cuentan entre las fechas
+  locales (`index.tz_localize(None)`). Con pasos fijos de UTC se mantiene el tiempo
+  transcurrido, que ya es un número entero de días. Contar siempre fechas locales
+  fallaría con un índice en UTC a las 22:30 convertido a `Europe/Madrid`, que cambia de
+  fecha local con el cambio de hora.
+- Contraste con 1260 índices (6 zonas, 7 frecuencias de días o más, 3 horas del día, con
+  y sin cambio de hora, en hora local y en pasos de UTC, con y sin frecuencia) frente a
+  la distancia en días de calendario:
+
+  | | pandas 2.3.3 | pandas 3.1.1 |
+  |---|---|---|
+  | Mal en `0.28.x` | 281 | 392 |
+  | Mal con los arreglos | 12 | 24 |
+  | Correctos en `0.28.x` que cambian de valor o de avisos | 0 | 0 |
+
+  Los que siguen mal son los mismos 12 índices (en p3 cuentan dos veces, con y sin
+  `tz_convert`): días laborables, `MS` y `QS` creados en UTC a las 22:30 y convertidos a
+  una zona donde caen en el día siguiente. La frecuencia no se puede inferir ni en hora
+  local ni en UTC, y dan horas con el aviso, igual que antes.
+- Tests: 13 casos nuevos con valores fijos (pasos de UTC diario y semanal, pasos locales
+  diario, semanal y mensual, con y sin frecuencia, y menos de 3 fechas). Sobre el código
+  de `0.28.x` fallan 10 en p2 y 13 en p3.
+- Tiempo (18 000 filas, mínimo de 15): sin zona horaria, igual (3,3 ms en p2 y 1,4 en
+  p3). Diario en hora local con zona: de 95 a 6 ms en p2 y de 134 a 4 en p3, porque ya
+  no opera con un array de objetos `Timestamp`. Diario en pasos de UTC sin frecuencia:
+  de 96 a 101 ms en p2 y de 132 a 142 en p3 (la inferencia en UTC).
+- Verificación: lint sin hallazgos; `skforecast/preprocessing/tests` 370 pasan en p2 y en
+  p3; `page_meta.py` y los ficheros de contexto de IA sin problemas. No se ha ejecutado
+  la suite completa ni el arnés: la función no la llama ningún otro módulo del paquete.
+- Nota de versión en Fixed, sin enlace hasta que exista la PR.
+
 ### Revisiones independientes: cuándo y cómo
 
 Acordado el 2026-11-15. Todas las revisiones de las PR 1 a 6 y de la 3a las hizo quien
@@ -3389,7 +3482,10 @@ lista que sobrevive al borrado de `dev/pandas3_migration/` está en
    mínimas (scikit-learn 1.6), en Linux y en macOS. En este cambio protege más que otra
    lectura del diff: el riesgo son las diferencias de comportamiento entre versiones de
    pandas, que detectan los tests y el arnés.
-4. [ ] **En la PR de la versión, `0.28.x` a `main`.** `/code-review ultra <nº de la PR>`:
+4. [x] **En la PR de la versión, `0.28.x` a `main`.** Hecha el 2026-11-16, antes de abrir
+   esa PR, sobre `e1889b82f` sin `dev/`: 2 hallazgos, uno cierto y arreglado en la rama
+   `fix/holiday-distance-utc-freq` (`calculate_distance_from_holiday` devuelve horas en
+   lugar de días con pandas 3) y uno intencionado ("Revisión independiente 4", arriba). `/code-review ultra <nº de la PR>`:
    revisión multiagente en la nube, de pago, que solo puede lanzar el usuario. Es la única
    revisión independiente de las PR de la migración ya fusionadas (#1495, #1497, #1499,
    #1500 y #1501) y el único punto donde se ve todo junto. Su diff es toda la 0.28.0, no
