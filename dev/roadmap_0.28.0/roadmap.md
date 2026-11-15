@@ -27,7 +27,7 @@ Esfuerzo: S (horas a 1 día, con tests y docs), M (2 a 5 días), L (más de una 
 | MAINT-docs-deps | Actualizar los pins del extra `docs`, salvo `mkdocs-jupyter` | S | Opcional, medido: sin efecto visible |
 | MAINT-test-deps | Limpiar el extra `test` | S | Opcional |
 | MAINT-bench-pandas3 | Pasar los benchmarks de `benchmarks/` a pandas 3, con una medición puente | S | Pendiente: al final de la 0.28.0, antes de publicar |
-| MAINT-review-pandas3 | Revisiones independientes de la migración a pandas 3 y CI completo sobre `0.28.x` | S | En curso: 4 de 4 hechas (2026-11-16); queda fusionar el arreglo de un hallazgo de la última (rama `fix/holiday-distance-utc-freq`) |
+| MAINT-review-pandas3 | Revisiones independientes de la migración a pandas 3 y CI completo sobre `0.28.x` | S | En curso: 4 de 4 hechas (2026-11-16); queda fusionar el arreglo de un hallazgo de la última (#1505) |
 
 Son pequeños y no dependen entre sí, salvo `tomli` (MAINT-test-deps), que se quita con
 DEP-python310, y `pandas[parquet]` (MAINT-test-deps), cuyo mínimo sube con
@@ -413,7 +413,7 @@ y cómo"; esta copia es la que queda si se borra esa carpeta.
   ejecuta con las versiones mínimas, en Linux y en macOS.
 - [x] En la PR de la versión, `0.28.x` a `main` (paso 2 de `/release-publish`). Hecha el
   2026-11-16, antes de abrir esa PR, sobre `e1889b82f` sin `dev/` (117 ficheros, 4693
-  líneas): 2 hallazgos. Uno cierto y arreglado en la rama `fix/holiday-distance-utc-freq`,
+  líneas): 2 hallazgos. Uno cierto y arreglado en la #1505 (`fix/holiday-distance-utc-freq`),
   junto con un error anterior de la misma función: `calculate_distance_from_holiday`
   devuelve horas en lugar de días con pandas 3 y un índice diario o semanal creado en UTC,
   convertido a otra zona y que cruza un cambio de hora. El otro, intencionado (el

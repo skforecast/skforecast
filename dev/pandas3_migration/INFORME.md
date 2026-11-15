@@ -3446,11 +3446,11 @@ y dejar el hallazgo 2 como está). Los dos en `calculate_distance_from_holiday`
 - Tiempo (18 000 filas, mínimo de 15): sin zona horaria, igual (3,3 ms en p2 y 1,4 en
   p3). Diario en hora local con zona: de 95 a 6 ms en p2 y de 134 a 4 en p3, porque ya
   no opera con un array de objetos `Timestamp`. Diario en pasos de UTC sin frecuencia:
-  de 96 a 101 ms en p2 y de 132 a 142 en p3 (la inferencia en UTC).
+  de 96 a 101 ms en p2 y de 131 a 141 en p3 (la inferencia en UTC).
 - Verificación: lint sin hallazgos; `skforecast/preprocessing/tests` 370 pasan en p2 y en
   p3; `page_meta.py` y los ficheros de contexto de IA sin problemas. No se ha ejecutado
   la suite completa ni el arnés: la función no la llama ningún otro módulo del paquete.
-- Nota de versión en Fixed, sin enlace hasta que exista la PR.
+- Nota de versión en Fixed. PR #1505, abierta el 2026-11-16 (commit `ab182c1d4`).
 
 ### Revisiones independientes: cuándo y cómo
 
@@ -3483,8 +3483,8 @@ lista que sobrevive al borrado de `dev/pandas3_migration/` está en
    lectura del diff: el riesgo son las diferencias de comportamiento entre versiones de
    pandas, que detectan los tests y el arnés.
 4. [x] **En la PR de la versión, `0.28.x` a `main`.** Hecha el 2026-11-16, antes de abrir
-   esa PR, sobre `e1889b82f` sin `dev/`: 2 hallazgos, uno cierto y arreglado en la rama
-   `fix/holiday-distance-utc-freq` (`calculate_distance_from_holiday` devuelve horas en
+   esa PR, sobre `e1889b82f` sin `dev/`: 2 hallazgos, uno cierto y arreglado en la #1505
+   (rama `fix/holiday-distance-utc-freq`; `calculate_distance_from_holiday` devuelve horas en
    lugar de días con pandas 3) y uno intencionado ("Revisión independiente 4", arriba). `/code-review ultra <nº de la PR>`:
    revisión multiagente en la nube, de pago, que solo puede lanzar el usuario. Es la única
    revisión independiente de las PR de la migración ya fusionadas (#1495, #1497, #1499,
