@@ -3075,8 +3075,8 @@ por defecto de cada pandas: pandas 2 no la copia y pandas 3 sí.
 1. Hecho: la #1502 se fusionó en `0.28.x` el 2026-11-15 (merge `3db7f86f4`), con los
    cambios de la revisión independiente (`3be91fa93`) y los tiempos repetidos del arnés
    (`009f99cc8`). No se repitieron la suite completa ni los tiempos con la máquina libre.
-2. La 3b (`fix/inplace-transformers`), en curso desde el 2026-11-15: ver "PR 3b sobre
-   `0.28.x`", más abajo. La revisión cambió el plan: D14 pasa a (b) y la función de `utils`
+2. La 3b (`fix/inplace-transformers`), PR #1504 abierta el 2026-11-15 y pendiente de la
+   revisión independiente 2 y de fusionar: ver "PR 3b sobre `0.28.x`", más abajo. La revisión cambió el plan: D14 pasa a (b) y la función de `utils`
    para los 9 bloques se descarta (el hallazgo 4 lo corrige la copia de
    `transform_dataframe`; el 5 es solo limpieza).
 3. La PR 7 (documentación y contexto de IA). Con D13 (c), la nota sobre la matriz de solo
@@ -3256,8 +3256,10 @@ comprobaciones nuevas, con scripts en el espacio temporal de la sesión.
 - `verify` repetido y sellado con el árbol final: lint con el mismo hallazgo previo,
   `page_meta.py` y los ficheros de contexto de IA sin problemas, y la suite completa como
   ejecución de tests.
-- Pendiente: commits (paquete y tests; `dev/`), PR a `0.28.x`, el enlace de la PR en la
-  nota de versión y la revisión independiente 2 antes de fusionar.
+- Hecho el 2026-11-15, a petición del usuario: un commit con todo (`9436e0c9b`), push y la
+  PR #1504 a `0.28.x`, con su enlace en la nota de versión.
+- Pendiente: la revisión independiente 2 (`/code-review high 1504` en una sesión nueva)
+  antes de fusionar.
 
 ### Revisiones independientes: cuándo y cómo
 
