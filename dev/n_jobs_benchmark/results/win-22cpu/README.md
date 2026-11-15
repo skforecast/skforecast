@@ -18,8 +18,9 @@ python bench_windows.py compare before after
 Una repetición por medida, cada una en un proceso nuevo con tres llamadas: la
 primera arranca los workers (en frío) y las otras dos los reutilizan (en
 caliente, mediana). Salida completa en `compare.txt`. Las medidas con un
-proceso varían hasta un 15 % entre llamadas: solo se comentan diferencias
-mayores. Predicciones idénticas en todas las medidas.
+proceso varían hasta un 45 % entre llamadas (HistGB de 100 folds: de 8,1 a
+11,8 s): solo se comentan diferencias claramente mayores que ese ruido.
+Predicciones idénticas en todas las medidas.
 
 ## Búsquedas y refit (propuestas 1 y 2)
 
@@ -58,7 +59,9 @@ Segundos en frío / en caliente.
   bastan para bajarlo, y el riesgo es asimétrico: un umbral alto solo deja de
   ganar algo entre 7 y 12 s, y uno bajo, en un Windows que arranque procesos
   más despacio (menos núcleos, antivirus), haría el backtesting más lento que
-  con un proceso. Con 12 s, cuando `'auto'` eligió el paralelo, ganó.
+  con un proceso. Con 12 s, cuando `'auto'` eligió el paralelo, ganó. Además,
+  el caso que sitúa el equilibrio en unos 7 s (HistGB de 100 folds) es el más
+  ruidoso de todos.
 
 ### La decisión cambia entre llamadas cerca del umbral
 

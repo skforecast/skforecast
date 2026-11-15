@@ -30,7 +30,8 @@ Tabla generada con `python compare.py .` (columnas como en
   y 139,1 → 125,3 s (−10 %). En frío: −7 % y −6 %.
 - XGBoost, ajuste posterior en el proceso principal: 6,4 → 1,7 s con 16 CPU
   y 4,4 → 2,1 s con 8: la contaminación desaparece por completo.
-- Búsqueda con refit de XGBoost, 16 CPU (la mayor pérdida de `'auto'`):
+- Búsqueda con refit de XGBoost, 16 CPU, con `n_jobs=15`, lo que resuelve
+  `'auto'` (la mayor pérdida de `'auto'`):
   45,1 → 31,0 s en caliente (un proceso: 31,5) y 46,8 → 37,3 en frío
   (un proceso: 31,8). Con 8 CPU, 39,0 → 32,1 (un proceso: 38,7).
 - XGBoost con refit y 6 folds, 16 CPU, `'auto'` (6 procesos): en caliente

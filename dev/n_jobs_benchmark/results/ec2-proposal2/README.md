@@ -23,8 +23,8 @@ Mediana de 2 repeticiones; segundos en frío / en caliente.
 
 ## 16 CPU
 
-Búsqueda con refit (3 candidatos de 6 folds) con `'auto'`, que pasa de 15
-procesos a 6:
+Búsqueda con refit (3 candidatos de 6 folds) con `n_jobs=15`, lo que resuelve
+`'auto'` con 16 CPU, que pasa de 15 procesos a 6:
 
 | Estimador | Antes | Después | Un proceso |
 |---|---|---|---|

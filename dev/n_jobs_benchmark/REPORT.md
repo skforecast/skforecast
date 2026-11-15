@@ -3,6 +3,14 @@
 13 de noviembre de 2026. Sustituye a las conclusiones provisionales de
 `NOTES.md`, que conserva el detalle del prototipo de serialización.
 
+**Estado (15 de noviembre de 2026).** Las propuestas 1 (también en el
+backtesting multiserie), 2 y 3 (versión mínima) están implementadas en la rama
+`perf/n-jobs-auto-strategy`. Las secciones Conclusión, Causa común y
+Propuestas describen el comportamiento anterior a esos cambios; el resultado
+de cada propuesta está en sus apartados "Medido" y en `results/*/README.md`
+(Linux en la EC2 y Windows en `results/win-22cpu/`). El resto de propuestas
+queda para pull requests posteriores.
+
 ## Conclusión
 
 `n_jobs='auto'` decide bien: en los casos medidos queda entre un 2 % y un 6 %
@@ -175,7 +183,8 @@ ralentizarse (de 1,64 veces a entre 0,98 y 1,06) y el de LightGBM también (de
 - **Medido (rama `perf/n-jobs-auto-strategy`, commit 8e9223b, sobre las
   propuestas 1 y 3):** `n_jobs = min(n_jobs, folds)` en los dos backtestings,
   así que cubre las búsquedas y el `n_jobs` entero. Con 16 CPU, la búsqueda con
-  refit de 3 candidatos de 6 folds con `'auto'` pasa de 15 procesos a 6 y es
+  refit de 3 candidatos de 6 folds con `n_jobs=15` (lo que resuelve `'auto'`)
+  pasa de 15 procesos a 6 y es
   del 16 al 30 % más rápida en frío; en caliente, XGBoost pasa de 31,0 a
   23,6 s (un proceso: 32,8), HistGB de 22,5 a 21,2 y LightGBM de un hilo no
   cambia. El backtesting con `n_jobs=15` es del 25 al 37 % más rápido en
@@ -265,16 +274,20 @@ medir el umbral de filas en Windows
   con claridad en 3 de las 12 combinaciones medidas de caso y tamaño de
   máquina.
 - No añadir condiciones nuevas por sistema operativo.
-- No detectar si los procesos ya están arrancados: la ganancia se limita a
-  cargas por debajo del umbral (1,8 frente a 0,5 s) y depende de la API privada
-  de joblib.
+- No detectar si los procesos ya están arrancados en esta fase: la ganancia
+  se limita a cargas por debajo del umbral (1,8 frente a 0,5 s) y depende de
+  la API privada de joblib. La medida de Windows (`results/win-22cpu/`, 8,0
+  frente a 2,5 s cerca del umbral sin refit) la deja como posible mejora
+  futura, sopesando esos dos inconvenientes.
 - La excepción de CatBoost en búsquedas sin refit: pierde poco en frío y gana
   poco en caliente.
 
 ## Límites
 
-- Un solo hardware (AMD, Linux). Windows no se ha medido aquí; el informe
-  original medía en Windows que paralelizar XGBoost ganaba 2 veces.
+- Linux: un solo hardware (AMD). Windows: un portátil de 22 CPU, con una
+  repetición por medida y solo los casos de `bench_windows.py`
+  (`results/win-22cpu/`); el informe original medía en Windows que
+  paralelizar XGBoost ganaba 2 veces.
 - macOS queda fuera. Lo que depende de joblib debería trasladarse; lo que
   depende de OpenMP (XGBoost y LightGBM en paralelo), no necesariamente.
 - Un tamaño de datos (5.112 filas, 500 árboles). Las reglas dependen del
