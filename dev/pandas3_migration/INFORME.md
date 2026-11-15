@@ -3055,6 +3055,16 @@ por defecto de cada pandas: pandas 2 no la copia y pandas 3 sí.
     1,00 (39,7 MiB en la base y en la rama). **Los tiempos de esa tanda no valen**: la
     máquina estaba cargada (CPU mediana 10 %, máximos del 27 y el 41 %; tiempos absolutos
     el doble que el 2026-11-14) y p2 da razones de 0,84 a 1,17 en un camino que no cambia.
+- Después del commit (2026-11-15): los tests de `feature_selection`, el único llamador
+  del método en el paquete, 72 pasan en p2 y en p3. Tiempos del arnés repetidos con 8
+  rondas (`results/pr3_perf_028_review_time`), con la máquina aún cargada (CPU mediana
+  12 % y máximo 73 % en p2; 7 % y 20 % en p3; tiempos absolutos de 1,3 a 2 veces los del
+  2026-11-14). En p3, coherentes con la tabla de la 3a: `noexog` 21,3 → 20,4 ms (0,96 en
+  mínimos, 1,01 en medianas) y los otros siete de 0,39 a 0,84. En p2 no valen: razones
+  de 1,05 a 1,23 en los ocho, cuando en siete de ellos el código que se ejecuta es el
+  mismo que el 2026-11-14 dio de 0,96 a 1,02 (la matriz es escribible y el constructor
+  recibe `copy=False`, como en `d1aba0aa1`), y la tanda anterior del mismo día dio de
+  0,84 a 1,17. La tabla de la PR no se ha cambiado.
 - No repetido: la suite completa (el cambio es el argumento `copy` de cuatro constructores
   del método público, que solo usan los tests y `feature_selection.py`) ni los tiempos del
   arnés con la máquina libre. La fila `recursive_create_train_X_y_noexog` de la tabla de
