@@ -12,6 +12,7 @@ from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import FunctionTransformer
 from sklearn.metrics import mean_absolute_percentage_error
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 from skforecast.direct import ForecasterDirectMultiVariate
@@ -1284,3 +1285,87 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_differentiatio
         received['y_true'], y_item_1.loc[test_index].to_numpy()
     )
     np.testing.assert_array_almost_equal(received['y_pred'], expected_y_pred)
+
+
+def _multiply_in_place(X):
+    """
+    Multiply the input by 2 in place and return it.
+    """
+    X *= 2.
+    return X
+
+
+def _divide_in_place(X):
+    """
+    Divide the input by 2 in place and return it.
+    """
+    X /= 2.
+    return X
+
+
+@pytest.mark.parametrize(
+    "transformer_series, expected_mae",
+    [(StandardScaler(copy=False), 1.1335822684856576),
+     (FunctionTransformer(func=_multiply_in_place, inverse_func=_divide_in_place),
+      1.1332140328848632)],
+    ids=['StandardScaler(copy=False)', 'in-place FunctionTransformer']
+)
+def test_predict_and_calculate_metrics_one_step_ahead_multiseries_ForecasterDirectMultiVariate_with_in_place_transformer(
+    transformer_series, expected_mae
+):
+    """
+    Test _predict_and_calculate_metrics_one_step_ahead_multiseries with
+    ForecasterDirectMultiVariate, without differentiation, when
+    `transformer_series` writes into its input: `y_test`, a read-only array,
+    is not modified and the metrics are the same when it is called again with
+    the same `y_test`, as a search does with each candidate.
+    """
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator          = Ridge(random_state=678),
+                     level              = 'item_1',
+                     lags               = 3,
+                     steps              = 1,
+                     transformer_series = transformer_series
+                 )
+    (
+        X_train,
+        y_train,
+        X_test,
+        y_test,
+        X_train_encoding,
+        X_test_encoding,
+        sample_weight,
+        fit_kwargs
+    ) = forecaster._train_test_split_one_step_ahead(
+            series             = series_wide_dt_item_sales,
+            exog               = None,
+            initial_train_size = 927,
+        )
+    y_test_copy = np.asarray(y_test).copy()
+
+    expected = pd.DataFrame(
+        {'levels': ['item_1'],
+         'mean_absolute_error': [expected_mae],
+         'n_evaluated': [170]}
+    )
+
+    for _ in range(2):
+        results = _predict_and_calculate_metrics_one_step_ahead_multiseries(
+            forecaster            = forecaster,
+            series                = series_wide_dt_item_sales,
+            X_train               = X_train,
+            y_train               = y_train,
+            X_test                = X_test,
+            y_test                = y_test,
+            X_train_encoding      = X_train_encoding,
+            X_test_encoding       = X_test_encoding,
+            levels                = ['item_1'],
+            metrics               = ['mean_absolute_error'],
+            add_aggregated_metric = False,
+            sample_weight         = sample_weight,
+            fit_kwargs            = fit_kwargs,
+            return_predictions    = False
+        )
+
+        np.testing.assert_array_equal(np.asarray(y_test), y_test_copy)
+        pd.testing.assert_frame_equal(results[0], expected)

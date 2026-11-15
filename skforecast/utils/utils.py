@@ -2880,10 +2880,10 @@ def transform_dataframe(
 
     # NOTE: The transformer may write into its input or return it as is (see
     # `transform_numpy`), so it receives a copy. A shallow copy is not enough:
-    # scikit-learn makes the read-only arrays of pandas >= 3 writeable. As the
-    # output is never the caller's DataFrame, not even with an identity
-    # transformer, the forecasters can assign the encoded categorical features
-    # to it.
+    # scikit-learn makes the read-only arrays of pandas >= 3 writeable. With a
+    # transformer, the output is never the caller's DataFrame, not even with
+    # an identity one, so the forecasters can assign the encoded categorical
+    # features to it. Without a transformer, they make a shallow copy first.
     df = df.copy()
 
     if inverse_transform:

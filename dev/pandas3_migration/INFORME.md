@@ -3075,8 +3075,8 @@ por defecto de cada pandas: pandas 2 no la copia y pandas 3 sí.
 1. Hecho: la #1502 se fusionó en `0.28.x` el 2026-11-15 (merge `3db7f86f4`), con los
    cambios de la revisión independiente (`3be91fa93`) y los tiempos repetidos del arnés
    (`009f99cc8`). No se repitieron la suite completa ni los tiempos con la máquina libre.
-2. La 3b (`fix/inplace-transformers`), PR #1504 abierta el 2026-11-15 y pendiente de la
-   revisión independiente 2 y de fusionar: ver "PR 3b sobre `0.28.x`", más abajo. La revisión cambió el plan: D14 pasa a (b) y la función de `utils`
+2. La 3b (`fix/inplace-transformers`), PR #1504 abierta el 2026-11-15, con la revisión
+   independiente 2 hecha y pendiente de fusionar: ver "PR 3b sobre `0.28.x`", más abajo. La revisión cambió el plan: D14 pasa a (b) y la función de `utils`
    para los 9 bloques se descarta (el hallazgo 4 lo corrige la copia de
    `transform_dataframe`; el 5 es solo limpieza).
 3. La PR 7 (documentación y contexto de IA). Con D13 (c), la nota sobre la matriz de solo
@@ -3258,8 +3258,81 @@ comprobaciones nuevas, con scripts en el espacio temporal de la sesión.
   ejecución de tests.
 - Hecho el 2026-11-15, a petición del usuario: un commit con todo (`9436e0c9b`), push y la
   PR #1504 a `0.28.x`, con su enlace en la nota de versión.
-- Pendiente: la revisión independiente 2 (`/code-review high 1504` en una sesión nueva)
-  antes de fusionar.
+- Revisión independiente 2: hecha el 2026-11-15, ver el bloque siguiente.
+
+**Revisión independiente de la 3b** (2026-11-15; casilla 2 de "Revisiones independientes").
+`/code-review high 1504` en una sesión nueva: 8 hallazgos, comprobados uno a uno en la
+sesión de trabajo antes de cambiar nada.
+
+- Hallazgos 1 y 2, ciertos y corregidos. `_calculate_metrics_one_step_ahead`
+  (`model_selection/_utils.py:1377`) y la rama del multivariante de
+  `_predict_and_calculate_metrics_one_step_ahead_multiseries` (`:2822`) llamaban a
+  `inverse_transform` del transformador directamente, sin pasar por los helpers. La revisión
+  del plan no los vio: buscó solo los llamadores de los tres helpers y probó la búsqueda
+  one-step-ahead solo con diferenciación.
+  - Sin diferenciación, `y_test` se comparte entre los candidatos de la búsqueda y un
+    transformador in situ lo va transformando. `ForecasterRecursive` con
+    `StandardScaler(copy=False)` y tres candidatos idénticos: MAE 0,89, 116,9 y 411,3 en
+    lugar de 0,89 tres veces (0,93, 466 y 5315 con `MinMaxScaler(copy=False)`), sin aviso,
+    en p2 y p3.
+  - `ForecasterDirect` y `ForecasterDirectMultiVariate` con un `FunctionTransformer` in
+    situ: `y_test` es de solo lectura, todos los candidatos se descartan con
+    `ValueError: output array is read-only` y la tabla de resultados sale vacía.
+  - Arreglo: `transform_numpy(..., inverse_transform=True)` en los dos sitios, con un
+    comentario. Reproducción con 40 combinaciones (4 forecasters, 5 transformadores, con y
+    sin diferenciación) en p2 y p3: las 6 erróneas quedan bien y las otras 34 no cambian.
+    El tercer sitio con llamada directa (`:2957`, multiseries) no falla en ninguna versión:
+    transforma `predictions_level[["y_true"]]`, que ya es una copia. No se toca.
+  - Tests: `test_calculate_metrics_one_step_ahead_with_in_place_transformer` (recursivo y
+    directo, con `StandardScaler(copy=False)` y un `FunctionTransformer` in situ) y
+    `..._multiseries_ForecasterDirectMultiVariate_with_in_place_transformer`. Llaman dos
+    veces con el mismo `y_test`, como hace una búsqueda. De los 6 casos, 4 fallan sin el
+    arreglo en p2 y p3; los 2 de `StandardScaler(copy=False)` con `y_test` de solo lectura
+    ya funcionaban.
+  - Nota de versión: "one-step-ahead searches", sin "with differentiation".
+- Hallazgos 3 y 4 (la copia también se hace con tablas y arrays que el forecaster ya
+  posee), ciertos. No se cambia: evitarlo pide un parámetro `copy` en una función pública y
+  acertar en qué llamadas se puede saltar, que es la complejidad descartada con (b).
+  Medido, base frente a rama:
+
+  | Medida | p2 | p3 |
+  |---|---|---|
+  | `transform_dataframe`, 2 000 000 × 10 desde un array numpy | 107 a 276 ms | 163 a 177 ms |
+  | `transform_dataframe`, 200 000 × 10 desde un array numpy | 12,8 a 23,8 ms | 13,1 a 21,1 ms |
+  | `create_train_X_y` de multiseries, 200 series × 5000 filas y 10 exógenas | 512 a 583 ms | 629 a 611 ms |
+  | Memoria máxima de ese `create_train_X_y` | 408 a 408 MiB | 408 a 408 MiB |
+  | `predict` de multiseries, 200 series y 24 pasos | 60,0 a 58,4 ms | 60,1 a 65,2 ms |
+
+  En p2, `df.copy()` de una tabla creada desde un array numpy cambia la disposición en
+  memoria y cuesta el triple que con la tabla ya contigua por columnas (135 frente a 43 ms
+  con 2 000 000 × 10).
+- Hallazgo 5 (la nota de versión no menciona el redondeo en p2). Se mantiene la decisión
+  del usuario. El revisor añade que fallarían tests propios con igualdad exacta y que un
+  árbol puede cambiar un corte si un valor escalado cae en el umbral; es la misma
+  diferencia que ya hay entre p2 y p3, y está en la descripción de la PR.
+- Hallazgo 6 (la garantía de que la salida no es la tabla del llamador está en el helper y
+  en los 9 bloques). Cierto; su propuesta es la función de `utils` descartada. Solo se
+  aclara el comentario de `transform_dataframe`: la garantía vale con transformador, y sin
+  él los forecasters hacen antes la copia superficial.
+- Hallazgo 7, cierto y corregido. La guía de tests pide valores esperados fijos, no
+  calculados al ejecutar. Pasan a valores fijos 6 tests: el de backtesting con `refit`, los
+  4 de `set_out_sample_residuals` y el de `_revert_differentiation_one_step_ahead` (con 15
+  valores en lugar de 40).
+- Hallazgo 8 (helpers de test repetidos en tres ficheros). Cierto y menor; se deja: la guía
+  permite fixtures pequeños en el propio fichero y `tests_utils` no tiene módulo de
+  fixtures.
+- Verificación: lint con el mismo hallazgo previo; `page_meta.py` y los ficheros de
+  contexto de IA sin problemas; suite completa con el árbol final, p2 8176 pasan, 27 omitidos y 3 fallan y p3 8168 pasan, 34 omitidos y 4 fallan.
+  Son 42 tests más que en `0.28.x` (36 de la primera versión y 6 de esta revisión). Fallan
+  los 3 de `test_fit_tensorflow` (entorno) y, solo en p3 y solo en esa pasada,
+  `test_bayesian_search_forecaster_multiseries_warnings_of_trials_once_with_count[n_jobs: 2]`:
+  ninguna de las 8 pruebas de optuna, que corren en 2 hilos, eligió 8 lags
+  (`assert 0 < n_lags_8 < 8`). No usa transformadores ni `OneStepAheadFold`, así que no
+  ejecuta código cambiado; repetido 20 veces en p3 y 20 en p2, pasa las 40. No se repite el
+  arnés: el cambio solo toca las dos llamadas de la búsqueda one-step-ahead, que no están en
+  sus benchmarks.
+- Pendiente: fusionar la #1504 y, con la 3a y la 3b en `0.28.x`, la revisión 3 (los cuatro
+  workflows de tests a mano).
 
 ### Revisiones independientes: cuándo y cómo
 
@@ -3276,8 +3349,12 @@ lista que sobrevive al borrado de `dev/pandas3_migration/` está en
    los hallazgos quedan como comentarios en la PR. Mientras corre, la sesión de trabajo no
    cambia de rama ni toca el árbol (las dos comparten el directorio). Los hallazgos se
    comprueban uno a uno contra el código en la sesión de trabajo antes de cambiar nada.
-2. [ ] **Antes de fusionar la PR de la 3b.** Lo mismo, con su número de PR. Importa más
-   que en la 3a: la 3b cambia comportamiento (nota de versión en Fixed).
+2. [x] **Antes de fusionar la PR de la 3b.** Hecha el 2026-11-15 (`/code-review high
+   1504`): 8 hallazgos. Dos eran errores que la PR dejaba sin arreglar (las búsquedas
+   one-step-ahead sin diferenciación) y uno un incumplimiento de la guía de tests; los
+   tres están corregidos ("Revisión independiente de la 3b", arriba). Lo mismo, con su
+   número de PR. Importa más que en la 3a: la 3b cambia comportamiento (nota de versión en
+   Fixed).
 3. [ ] **Con la 3a y la 3b fusionadas, antes de la PR 7.** Lanzar a mano sobre `0.28.x` los
    cuatro workflows de tests, como en la PR 6 ("Commits y CI, el 2026-11-14"):
    `unit-tests.yml`, `unit-tests-min-deps.yml`, `unit-tests-latest-deps.yml` y

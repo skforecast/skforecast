@@ -914,39 +914,46 @@ def test_backtesting_forecaster_refit_with_in_place_transformers():
     """
     Test backtesting_forecaster with refit does not modify y and exog when
     the transformers write into their input (`StandardScaler(copy=False)`,
-    also inside a Pipeline), so the metric and the predictions are the same
-    as with `StandardScaler()`.
+    also inside a Pipeline), so each fold is trained with the original data.
     """
     y_local = y.copy()
     exog_local = exog.copy()
     y_copy = y_local.copy()
     exog_copy = exog_local.copy()
+    forecaster = ForecasterRecursive(
+                     estimator        = Ridge(random_state=123),
+                     lags             = 3,
+                     transformer_y    = StandardScaler(copy=False),
+                     transformer_exog = make_pipeline(StandardScaler(copy=False))
+                 )
     cv = TimeSeriesFold(steps=5, initial_train_size=30, refit=True)
 
-    results = []
-    for transformer_y, transformer_exog, y_input, exog_input in [
-        (StandardScaler(copy=False), make_pipeline(StandardScaler(copy=False)),
-         y_local, exog_local),
-        (StandardScaler(), make_pipeline(StandardScaler()), y, exog),
-    ]:
-        forecaster = ForecasterRecursive(
-                         estimator        = Ridge(random_state=123),
-                         lags             = 3,
-                         transformer_y    = transformer_y,
-                         transformer_exog = transformer_exog
-                     )
-        results.append(
-            backtesting_forecaster(
-                forecaster    = forecaster,
-                y             = y_input,
-                exog          = exog_input,
-                cv            = cv,
-                metric        = 'mean_absolute_error',
-                show_progress = False
-            )
-        )
+    metric, predictions = backtesting_forecaster(
+                              forecaster    = forecaster,
+                              y             = y_local,
+                              exog          = exog_local,
+                              cv            = cv,
+                              metric        = 'mean_absolute_error',
+                              show_progress = False
+                          )
+
+    expected_metric = pd.DataFrame(
+        {'mean_absolute_error': [0.20581842374949408],
+         'n_evaluated': [20]}
+    )
+    expected_predictions = pd.Series(
+        data  = np.array([0.5529943509303938, 0.44468250372498735, 0.499618464515808,
+                          0.5359711073124629, 0.48049600811673987, 0.437379006150009,
+                          0.4576063805213535, 0.4464441831030807, 0.4447874201244352,
+                          0.4501510754297612, 0.4478070043902567, 0.4960083322138661,
+                          0.5186123537052421, 0.44921063487890267, 0.4514353011151097,
+                          0.6304570032646761, 0.626060031922705, 0.49443812251542385,
+                          0.5207804467729616, 0.5110457023621588]),
+        index = pd.RangeIndex(start=30, stop=50, step=1),
+        name  = 'pred'
+    )
 
     pd.testing.assert_series_equal(y_local, y_copy)
     pd.testing.assert_series_equal(exog_local, exog_copy)
-    pd.testing.assert_frame_equal(results[0][0], results[1][0])
-    pd.testing.assert_frame_equal(results[0][1], results[1][1])
+    pd.testing.assert_frame_equal(metric, expected_metric)
+    pd.testing.assert_series_equal(predictions['pred'], expected_predictions)

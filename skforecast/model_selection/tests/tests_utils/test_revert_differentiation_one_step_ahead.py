@@ -73,14 +73,13 @@ def test_revert_differentiation_one_step_ahead_with_transformer(order):
 def test_revert_differentiation_one_step_ahead_with_in_place_transformer():
     """
     Test that, with a transformer that writes into its input
-    (`StandardScaler(copy=False)`), `y_true` is returned in the original
-    scale, `y_observed` is not modified and the results are the same as with
-    `StandardScaler()`.
+    (`StandardScaler(copy=False)`), `y_observed` is not modified, `y_true` is
+    returned in the original scale and `y_pred` is correctly reverted.
     """
     rng = np.random.default_rng(456)
-    y = 50 + rng.normal(size=40).cumsum()
-    transformer = StandardScaler().fit(y[:20].reshape(-1, 1))
-    transformer_in_place = StandardScaler(copy=False).fit(y[:20].reshape(-1, 1))
+    y = 50 + rng.normal(size=15).cumsum()
+    transformer = StandardScaler().fit(y[:10].reshape(-1, 1))
+    transformer_in_place = StandardScaler(copy=False).fit(y[:10].reshape(-1, 1))
     y_transformed = transformer.transform(y.reshape(-1, 1)).ravel()
     diff_true = np.diff(y_transformed)
     diff_pred = diff_true + rng.normal(scale=0.1, size=len(diff_true))
@@ -90,10 +89,12 @@ def test_revert_differentiation_one_step_ahead_with_in_place_transformer():
         y_observed=y_observed, diff_true=diff_true, diff_pred=diff_pred,
         transformer=transformer_in_place
     )
-    _, expected_y_pred = _revert_differentiation_one_step_ahead(
-        y_observed=y[1:], diff_true=diff_true, diff_pred=diff_pred,
-        transformer=transformer
-    )
+
+    expected_y_pred = np.array([48.9347976323268, 50.54295039124713, 50.237346322320825,
+                                48.05491038374166, 47.64617559551785, 46.98892789108069,
+                                46.618735677696705, 46.29599503735768, 48.17417686847276,
+                                49.09218675971109, 49.7133494011952, 49.34536430929774,
+                                49.884054023179104, 51.75853786518943])
 
     np.testing.assert_array_equal(y_observed, y[1:])
     np.testing.assert_array_almost_equal(y_true, y[1:])

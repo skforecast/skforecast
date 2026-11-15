@@ -477,7 +477,7 @@ def test_set_out_sample_residuals_does_not_modify_y_true_y_pred_with_in_place_tr
     """
     Test set_out_sample_residuals does not modify `y_true` and `y_pred` when
     `transformer_series` writes into its input (`StandardScaler(copy=False)`),
-    and the residuals are the same as with `StandardScaler()`.
+    and the residuals are those of the transformed values.
     """
     rng = np.random.default_rng(12345)
     series_train = pd.DataFrame(
@@ -488,23 +488,32 @@ def test_set_out_sample_residuals_does_not_modify_y_true_y_pred_with_in_place_tr
     y_true_copy = {k: v.copy() for k, v in y_true.items()}
     y_pred_copy = {k: v.copy() for k, v in y_pred.items()}
 
-    forecasters = []
-    for transformer_series in [StandardScaler(copy=False), StandardScaler()]:
-        forecaster = ForecasterDirectMultiVariate(
-                         estimator          = LinearRegression(),
-                         level              = 'l1',
-                         steps              = 2,
-                         lags               = 5,
-                         transformer_series = transformer_series,
-                         binner_kwargs      = {"n_bins": 3}
-                     )
-        forecaster.fit(series=series_train.copy())
-        forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
-        forecasters.append(forecaster)
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator          = LinearRegression(),
+                     level              = 'l1',
+                     steps              = 2,
+                     lags               = 5,
+                     transformer_series = StandardScaler(copy=False),
+                     binner_kwargs      = {"n_bins": 3}
+                 )
+    forecaster.fit(series=series_train)
+    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
+
+    expected = np.array([-4.382700980548516, -1.1863487914769864, -1.0954466896357098,
+                         -0.7987926695847332, -0.6811382798295397, 1.379048829525637,
+                         3.3043741887643447, -1.1651212695165496, 2.01722508830765,
+                         -0.20510828678577486, -0.13600641251608236, 2.103346550461191,
+                         1.284533568961286, -2.5352979462714185, 0.7080565560889285,
+                         0.267892526481709, 1.7140776475065793, -0.9634741657707807,
+                         -0.01790692999191701, 0.26923539417181225, 0.7428444152817337,
+                         -2.7107201457204777, 1.2882591811200312, 1.217004369900467,
+                         -2.193797496677896, 2.1476145242300104, -2.6163603610260093,
+                         0.7865733202391159, 1.1977391291402446, -1.797715990318925,
+                         -0.47729794324154123, -1.210359690606245, 4.04146480487436,
+                         -1.6027155604376262, 4.075723648114714, 1.5644756226289032])
 
     pd.testing.assert_series_equal(y_true['l1'], y_true_copy['l1'])
     np.testing.assert_array_equal(y_pred['l1'], y_pred_copy['l1'])
     np.testing.assert_array_almost_equal(
-        forecasters[0].out_sample_residuals_['l1'],
-        forecasters[1].out_sample_residuals_['l1']
+        forecaster.out_sample_residuals_['l1'], expected
     )
