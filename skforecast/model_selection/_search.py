@@ -133,8 +133,9 @@ def grid_search_forecaster(
     return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
     n_jobs : int, 'auto', default 'auto'
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
+        The number of jobs to run in parallel, never more than the number of
+        folds. If `-1`, then the number of jobs is set to the number of cores. If
+        'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting. Ignored for
         `OneStepAheadFold`.
     verbose : bool, default False
@@ -271,8 +272,9 @@ def random_search_forecaster(
     return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
     n_jobs : int, 'auto', default 'auto'
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
+        The number of jobs to run in parallel, never more than the number of
+        folds. If `-1`, then the number of jobs is set to the number of cores. If
+        'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting. Ignored for
         `OneStepAheadFold`.
     verbose : bool, default False
@@ -408,8 +410,9 @@ def _evaluate_grid_hyperparameters(
     return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
     n_jobs : int, 'auto', default 'auto'
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
+        The number of jobs to run in parallel, never more than the number of
+        folds. If `-1`, then the number of jobs is set to the number of cores. If
+        'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting. Ignored for
         `OneStepAheadFold`.
     verbose : bool, default False
@@ -774,8 +777,9 @@ def bayesian_search_forecaster(
     return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
     n_jobs : int, 'auto', default 'auto'
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
+        The number of jobs to run in parallel, never more than the number of
+        folds. If `-1`, then the number of jobs is set to the number of cores. If
+        'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting. Ignored for
         `OneStepAheadFold`.
     verbose : bool, default False
@@ -1251,8 +1255,9 @@ def grid_search_forecaster_multiseries(
     return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
     n_jobs : int, 'auto', default 'auto'
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
+        The number of jobs to run in parallel, never more than the number of
+        folds. If `-1`, then the number of jobs is set to the number of cores. If
+        'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting. Ignored for
         `OneStepAheadFold`.
     verbose : bool, default False
@@ -1406,8 +1411,9 @@ def random_search_forecaster_multiseries(
     return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
     n_jobs : int, 'auto', default 'auto'
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
+        The number of jobs to run in parallel, never more than the number of
+        folds. If `-1`, then the number of jobs is set to the number of cores. If
+        'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting. Ignored for
         `OneStepAheadFold`.
     verbose : bool, default False
@@ -1560,8 +1566,9 @@ def _evaluate_grid_hyperparameters_multiseries(
     return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
     n_jobs : int, 'auto', default 'auto'
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
+        The number of jobs to run in parallel, never more than the number of
+        folds. If `-1`, then the number of jobs is set to the number of cores. If
+        'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting. Ignored for
         `OneStepAheadFold`.
     verbose : bool, default False
@@ -2033,8 +2040,9 @@ def bayesian_search_forecaster_multiseries(
     return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
     n_jobs : int, 'auto', default 'auto'
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
+        The number of jobs to run in parallel, never more than the number of
+        folds. If `-1`, then the number of jobs is set to the number of cores. If
+        'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting. Ignored for
         `OneStepAheadFold`.
     verbose : bool, default False
@@ -3050,8 +3058,9 @@ def grid_search_stats(
     return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
     n_jobs : int, 'auto', default 'auto'
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
+        The number of jobs to run in parallel, never more than the number of
+        folds. If `-1`, then the number of jobs is set to the number of cores. If
+        'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting. Ignored for
         `OneStepAheadFold`.
     verbose : bool, default False
@@ -3169,8 +3178,9 @@ def random_search_stats(
     return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
     n_jobs : int, 'auto', default 'auto'
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
+        The number of jobs to run in parallel, never more than the number of
+        folds. If `-1`, then the number of jobs is set to the number of cores. If
+        'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting. Ignored for
         `OneStepAheadFold`.
     verbose : bool, default False
@@ -3287,8 +3297,9 @@ def _evaluate_grid_hyperparameters_stats(
     return_best : bool, default True
         Refit the `forecaster` using the best found parameters on the whole data.
     n_jobs : int, 'auto', default 'auto'
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
+        The number of jobs to run in parallel, never more than the number of
+        folds. If `-1`, then the number of jobs is set to the number of cores. If
+        'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting. Ignored for
         `OneStepAheadFold`.
     verbose : bool, default False
@@ -3539,8 +3550,9 @@ def grid_search_equivalent_date(
     return_best : bool, default True
         Refit the `forecaster` using the best found configuration on the whole data.
     n_jobs : int, 'auto', default 'auto'
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
+        The number of jobs to run in parallel, never more than the number of
+        folds. If `-1`, then the number of jobs is set to the number of cores. If
+        'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting.
     verbose : bool, default False
         Print number of folds used for cv or backtesting.

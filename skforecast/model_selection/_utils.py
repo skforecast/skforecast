@@ -930,9 +930,9 @@ _MIN_PARALLEL_WORKLOAD_SECONDS_DEFAULT = 4.0
 # NOTE: Without refit, the workers also load the fitted forecaster and the
 # libraries of its estimator before predicting, so they need more work to pay
 # off than when they fit. Measured on Linux with 16 and 8 CPUs, a backtesting of
-# 100 folds whose predictions take 3.8 seconds in one process was 1.3 to 1.4
-# times slower in parallel in the first call (`CatBoostRegressor`), and one of
-# 19 seconds was 2.4 times faster (`HistGradientBoostingRegressor`).
+# 100 folds whose predictions take 3.8 to 4.1 seconds in one process was 1.2 to
+# 1.4 times slower in parallel in the first call (`CatBoostRegressor`), and one
+# of 19 seconds was 2.4 times faster (`HistGradientBoostingRegressor`).
 _MIN_PARALLEL_PREDICTION_SECONDS = {"win32": 12.0, "linux": 6.0, "darwin": 6.0}
 _MIN_PARALLEL_PREDICTION_SECONDS_DEFAULT = 12.0
 
@@ -951,7 +951,10 @@ def limit_n_jobs_by_workload(
 
     - If `n_jobs` is 1, there is at most one task or no task fits the
     forecaster (no refit), then `n_jobs = 1`. Predicting the folds of a fitted
-    forecaster takes less time than the workers take to start.
+    forecaster usually takes less time than the workers take to start. A single
+    backtesting without refit (`backtesting_forecaster`) whose estimator
+    predicts slowly is limited with `limit_n_jobs_by_prediction_workload`
+    instead.
     - If the estimated workload, `n_fits * fit_seconds`, is below the minimum
     of the platform (4 seconds on Windows, 2 seconds on Linux and macOS), then
     `n_jobs = 1`. If the time of the initial fit is not known

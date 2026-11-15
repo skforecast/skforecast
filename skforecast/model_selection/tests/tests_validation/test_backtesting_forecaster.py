@@ -581,11 +581,13 @@ def test_backtesting_forecaster_n_jobs_auto_limited_by_the_workload(
     """
     Test that, with `n_jobs='auto'`, backtesting_forecaster runs the folds with one job
     when the work estimated from the initial fit is below the minimum of the
-    platform (`min_work`, patched) or there is no refit, and otherwise with
-    the jobs of `select_n_jobs_backtesting` limited to the number of folds
-    (4). An integer `n_jobs` (`-1` is all the processors) is only limited to
-    the number of folds. `Parallel` is mocked with a sequential one, so no
-    workers are started.
+    platform (`min_work`, patched) or, without refit, the work estimated from
+    the prediction of the first fold is below its own minimum (patched to a
+    value that is never reached), and otherwise with the jobs of
+    `select_n_jobs_backtesting` limited to the number of folds (4). An integer
+    `n_jobs` (`-1` is all the processors) is only limited to the number of
+    folds. `Parallel` is mocked with a sequential one, so no workers are
+    started.
     """
     forecaster = ForecasterRecursive(
                      estimator=HistGradientBoostingRegressor(max_iter=5), lags=3
@@ -606,6 +608,14 @@ def test_backtesting_forecaster_n_jobs_auto_limited_by_the_workload(
         patch(
             "skforecast.model_selection._utils._MIN_PARALLEL_WORKLOAD_SECONDS_DEFAULT",
             min_work
+        ),
+        patch.dict(
+            "skforecast.model_selection._utils._MIN_PARALLEL_PREDICTION_SECONDS",
+            {sys.platform: 1e6}
+        ),
+        patch(
+            "skforecast.model_selection._utils._MIN_PARALLEL_PREDICTION_SECONDS_DEFAULT",
+            1e6
         ),
         patch(
             "skforecast.model_selection._validation.Parallel",
