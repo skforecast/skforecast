@@ -1084,14 +1084,16 @@ class ForecasterRecursive(ForecasterBase):
         ) = self._create_train_X_y(y=y, exog=exog)
 
         # NOTE: pandas 3 copies a numpy array passed to the constructor unless
-        # `copy=False`. The copy is not needed: `X_train` is never an array of
-        # the user (with only lags, it is a view of the internal copy of `y`).
-        # Without the copy, as in pandas 2, `X_train` can be read-only.
+        # `copy=False`. A writeable `X_train` is a new array in pandas 3, so
+        # the copy is not needed. A read-only `X_train` is a view (with only
+        # lags, of the internal copy of `y`; with only window features, of
+        # their output) and keeps the default of each pandas version: pandas 2
+        # does not copy it, pandas 3 does.
         X_train = pd.DataFrame(
                       data    = X_train,
                       index   = train_index,
                       columns = X_train_features_names_out_,
-                      copy    = False
+                      copy    = False if X_train.flags.writeable else None
                   )
         
         if exog_dtypes_out_ is not None:

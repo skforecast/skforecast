@@ -2022,3 +2022,29 @@ def test_create_train_X_y_single_MissingValuesWarning_with_counts_of_NaN_rows(
     assert sum(issubclass(w.category, MissingValuesWarning) for w in record) == 1
     assert len(y_train) == n_rows_kept
     assert len(X_train) == n_rows_kept
+
+
+def test_create_train_X_y_output_is_writeable_when_only_one_window_feature():
+    """
+    Test that the training matrix created only with one window feature can be
+    modified in place. The matrix comes from a view of the output of the window
+    feature, which is read-only with pandas 3 and is copied when the DataFrame
+    is created.
+    """
+    y_local = pd.Series(np.array([1, 1, 2, 2, 2, 1, 1, 1, 2, 2]), name='y')
+    forecaster = ForecasterRecursiveClassifier(
+                     estimator       = LogisticRegression(),
+                     lags            = None,
+                     window_features = RollingFeaturesClassification(
+                                           stats=['mode'], window_sizes=3
+                                       )
+                 )
+    X_train, _ = forecaster.create_train_X_y(y=y_local)
+    X_train.iloc[0, 0] = -1.
+
+    # The mode is calculated on the encoded classes (0 and 1).
+    expected = pd.DataFrame(
+        data  = {'roll_mode_3': [-1., 1., 1., 1., 0., 0., 0.]},
+        index = pd.RangeIndex(start=3, stop=10, step=1)
+    )
+    pd.testing.assert_frame_equal(X_train, expected)
