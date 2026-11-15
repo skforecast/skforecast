@@ -28,6 +28,8 @@ lentos durante el resto de la sesión.
 - Python 3.12.13, skforecast 0.27.0 (commit `6fa488c`), numpy 2.5.4,
   pandas 2.3.3, scikit-learn 1.9.1, joblib 1.6.0, lightgbm 4.7.0,
   xgboost 3.4.1, catboost 1.2.10, numba 0.68.1.
+- Datos en `results/ip-10-2-1-64/` (nombre de la máquina): `results.jsonl`
+  con cada medida y `summary.md` con las tablas.
 - 724 medidas, ninguna fallida. Etapas 1 a 6 completas: los casos principales
   tienen dos repeticiones en los tres tamaños, y los casos extendidos
   (búsqueda con refit, multiserie, variantes de hilos, número de procesos),
