@@ -297,3 +297,37 @@ medir el umbral de filas en Windows
   la máquina real libre para el sistema.
 - No se han medido los intervalos de predicción, los modelos estadísticos ni
   el refit intermitente.
+
+## Siguientes pasos (fuera de esta pull request, sin decidir)
+
+Ideas por evaluar, no compromisos. Cada una necesita sus propias medidas antes
+de decidir si se hace.
+
+- **No contar el arranque si los workers ya están en marcha.** En Windows,
+  cerca del umbral sin refit, `'auto'` vuelve a un proceso en las llamadas
+  siguientes aunque los 21 workers ya estén arrancados (8,0 s en lugar de 2,5;
+  `results/win-22cpu/README.md`). Inconvenientes: depende del estado interno de
+  loky (API privada) y haría que la decisión dependa de lo ejecutado antes en
+  la sesión. Falta: diseñar cómo detectarlo y medir el beneficio en Linux y
+  Windows.
+- **Umbral de predicción en Windows (12 s).** En el portátil de 22 CPU el
+  paralelo compensa en frío desde unos 7 s, pero con una repetición y mucho
+  ruido. Falta: más máquinas Windows (con menos núcleos, con antivirus) y más
+  repeticiones, con predicciones de unos 6, 8 y 10 s.
+- **XGBoost con refit y pocos CPU.** Antes de los cambios, con 4 CPU, el
+  paralelo perdía con 6 folds (21,7 frente a 17,9 s) y en multiserie (14,9
+  frente a 10,5). Con 16 folds y 4 CPU ya ganaba tras la propuesta 1
+  (`results/local-4vcpu-proposal1/`). Falta: repetir los casos de 6 folds y
+  multiserie con 4 CPU sobre la rama actual antes de pensar en una regla.
+- **Caché del forecaster en cada worker.** Evitaría deserializarlo en cada
+  fold, a cambio de retener memoria en los workers y de necesitar invalidarla
+  entre llamadas. Falta: medir cuánto pesa hoy la deserialización por fold.
+- **`cpu_count()` frente a `cpu_count() - 1`** (propuesta 4). Decisión de
+  criterio; la alternativa barata es documentar `n_jobs=-1`.
+- **`backtesting_stats` sin la serialización única.** Sigue enviando el
+  forecaster con cada fold; con un backend de hilos y refit, los folds
+  comparten el mismo forecaster, como ocurría antes en los otros
+  backtestings. Falta: aplicarle `_serialize_forecaster_for_workers` teniendo
+  en cuenta el `mmap_mode='c'` de SARIMAX, y medirlo.
+- **XGBoost con un hilo al predecir pocas filas** (propuesta 6). Falta medir
+  el umbral de filas en Windows.
