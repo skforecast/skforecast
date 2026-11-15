@@ -2951,11 +2951,12 @@ depende el cambio, con scripts nuevos (espacio temporal de la sesión):
 
 **Pendiente:**
 
-1. Revisar y fusionar la PR #1502 (del usuario). El check de contexto de IA pasó al
-   abrirla y el análisis de CodeQL de Python seguía en curso al escribir esto; los tests
+1. Revisar y fusionar la PR #1502 (del usuario), después de su revisión independiente
+   (punto 1 de "Revisiones independientes", abajo). Todos los checks (contexto de IA y
+   CodeQL) estaban en verde el 2026-11-15 y solo faltaba la revisión requerida; los tests
    unitarios no se ejecutan en CI en las PR a ramas de versión.
-2. La 3b (`fix/inplace-transformers`): desde `origin/0.28.x` cuando la 3a esté fusionada (el
-   árbol de trabajo tiene la 3a sin commit), o en otro worktree. Incluye medir D14 (a) frente a
+2. La 3b (`fix/inplace-transformers`): desde `origin/0.28.x` cuando la 3a esté fusionada, o
+   en otro worktree. Incluye medir D14 (a) frente a
    (b) con `predict_loop_scaler`, `predict_loop_pipeline` y `fit_recursive_transformers`, y la
    identidad: solo pueden cambiar `inplace_transformers` y `categorical_identity_transformer`.
 3. La PR 7 (documentación y contexto de IA), con la nota corregida sobre la matriz de solo
@@ -2963,6 +2964,38 @@ depende el cambio, con scripts nuevos (espacio temporal de la sesión):
 4. Errores previos anotados, sin PR: el alias `X_train`/`y_train` de pandas 2 y
    `filter_train_X_y_for_step` sin exógenas.
 5. Mantener al día "Al retirar pandas 2: lista viva" con la 3b y la PR 7.
+6. Las revisiones independientes del apartado siguiente, cada una en su momento.
+
+### Revisiones independientes: cuándo y cómo
+
+Acordado el 2026-11-15. Todas las revisiones de las PR 1 a 6 y de la 3a las hizo quien
+escribió el código, en la misma sesión de trabajo. Estas cuatro no parten de sus
+conclusiones. Marcar cada una al hacerla, con la fecha y el resultado. La copia de esta
+lista que sobrevive al borrado de `dev/pandas3_migration/` está en
+`dev/roadmap_0.28.0/roadmap.md`, MAINT-review-pandas3.
+
+1. [ ] **Antes de fusionar la #1502 (3a).** En una sesión nueva de Claude Code (no la de
+   trabajo), con la rama `perf/pandas3-copies`: `/code-review high 1502`. Con `--comment`
+   los hallazgos quedan como comentarios en la PR. Mientras corre, la sesión de trabajo no
+   cambia de rama ni toca el árbol (las dos comparten el directorio). Los hallazgos se
+   comprueban uno a uno contra el código en la sesión de trabajo antes de cambiar nada.
+2. [ ] **Antes de fusionar la PR de la 3b.** Lo mismo, con su número de PR. Importa más
+   que en la 3a: la 3b cambia comportamiento (nota de versión en Fixed).
+3. [ ] **Con la 3a y la 3b fusionadas, antes de la PR 7.** Lanzar a mano sobre `0.28.x` los
+   cuatro workflows de tests, como en la PR 6 ("Commits y CI, el 2026-11-14"):
+   `unit-tests.yml`, `unit-tests-min-deps.yml`, `unit-tests-latest-deps.yml` y
+   `foundation-backends.yml`. Es lo único que ejecuta la 3a y la 3b con las versiones
+   mínimas (scikit-learn 1.6), en Linux y en macOS. En este cambio protege más que otra
+   lectura del diff: el riesgo son las diferencias de comportamiento entre versiones de
+   pandas, que detectan los tests y el arnés.
+4. [ ] **En la PR de la versión, `0.28.x` a `main`.** `/code-review ultra <nº de la PR>`:
+   revisión multiagente en la nube, de pago, que solo puede lanzar el usuario. Es la única
+   revisión independiente de las PR de la migración ya fusionadas (#1495, #1497, #1499,
+   #1500 y #1501) y el único punto donde se ve todo junto. Su diff es toda la 0.28.0, no
+   solo pandas.
+
+La PR 7 (documentación y contexto de IA) no cambia código del paquete y no entra en esta
+lista.
 
 ### Al retirar pandas 2: lista viva
 
