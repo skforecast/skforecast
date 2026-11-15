@@ -471,3 +471,40 @@ def test_set_out_sample_residuals_ResidualsUsageWarning_when_few_residuals_per_b
     )
     with pytest.warns(ResidualsUsageWarning, match=warn_msg):
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
+
+
+def test_set_out_sample_residuals_does_not_modify_y_true_y_pred_with_in_place_transformer():
+    """
+    Test set_out_sample_residuals does not modify `y_true` and `y_pred` when
+    `transformer_series` writes into its input (`StandardScaler(copy=False)`),
+    and the residuals are the same as with `StandardScaler()`.
+    """
+    rng = np.random.default_rng(12345)
+    series_train = pd.DataFrame(
+        rng.normal(loc=0, scale=1, size=(100, 2)), columns=['l1', 'l2']
+    )
+    y_true = {'l1': pd.Series(rng.normal(loc=0, scale=1, size=36), index=range(100, 136))}
+    y_pred = {'l1': rng.uniform(low=-2.5, high=2, size=36)}
+    y_true_copy = {k: v.copy() for k, v in y_true.items()}
+    y_pred_copy = {k: v.copy() for k, v in y_pred.items()}
+
+    forecasters = []
+    for transformer_series in [StandardScaler(copy=False), StandardScaler()]:
+        forecaster = ForecasterDirectMultiVariate(
+                         estimator          = LinearRegression(),
+                         level              = 'l1',
+                         steps              = 2,
+                         lags               = 5,
+                         transformer_series = transformer_series,
+                         binner_kwargs      = {"n_bins": 3}
+                     )
+        forecaster.fit(series=series_train.copy())
+        forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
+        forecasters.append(forecaster)
+
+    pd.testing.assert_series_equal(y_true['l1'], y_true_copy['l1'])
+    np.testing.assert_array_equal(y_pred['l1'], y_pred_copy['l1'])
+    np.testing.assert_array_almost_equal(
+        forecasters[0].out_sample_residuals_['l1'],
+        forecasters[1].out_sample_residuals_['l1']
+    )

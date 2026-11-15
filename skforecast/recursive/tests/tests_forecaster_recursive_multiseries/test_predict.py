@@ -62,8 +62,12 @@ series_2 = pd.DataFrame(
          "window_features": RollingFeatures(stats=['mean'], window_sizes=3),
          "transformer_series": StandardScaler(), "transformer_exog": StandardScaler(),
          "differentiation": 1},
+        {"estimator": LinearRegression(), "lags": 3,
+         "transformer_series": StandardScaler(copy=False),
+         "transformer_exog": make_pipeline(StandardScaler(copy=False))},
     ],
-    ids=["base", "window_features", "transformers", "differentiation"]
+    ids=["base", "window_features", "transformers", "differentiation",
+         "in_place_transformers"]
 )
 def test_predict_does_not_modify_series_exog(forecaster_kwargs):
     """
@@ -92,15 +96,23 @@ def test_predict_does_not_modify_series_exog(forecaster_kwargs):
 
 
 @pytest.mark.parametrize(
+    "transformer_exog",
+    [None, FunctionTransformer()],
+    ids=["no_transformer_exog", "identity_transformer_exog"]
+)
+@pytest.mark.parametrize(
     "categorical_features",
     ["auto", ["exog_1", "exog_2", "exog_3"]],
     ids=["auto", "list_with_float_column"]
 )
-def test_predict_does_not_modify_exog_with_categorical_features(categorical_features):
+def test_predict_does_not_modify_exog_with_categorical_features(
+    categorical_features, transformer_exog
+):
     """
     Test forecaster.fit and forecaster.predict do not modify exog and
     exog_predict when the categorical features are encoded without
-    `transformer_exog`. With the list, the float column `exog_1` is also
+    `transformer_exog` or with one that returns its input (identity
+    `FunctionTransformer`). With the list, the float column `exog_1` is also
     encoded, with codes of its same dtype, while `exog_4`, which pandas
     stores in the same array, is not.
     """
@@ -129,6 +141,7 @@ def test_predict_does_not_modify_exog_with_categorical_features(categorical_feat
     forecaster = ForecasterRecursiveMultiSeries(
                      estimator            = LinearRegression(),
                      lags                 = 3,
+                     transformer_exog     = transformer_exog,
                      categorical_features = categorical_features
                  )
     forecaster.fit(series=series_local, exog=exog_local)

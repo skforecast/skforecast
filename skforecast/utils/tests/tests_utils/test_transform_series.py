@@ -269,3 +269,51 @@ def test_transform_series_when_Pipeline_expands_columns_without_get_feature_name
          'transformed_1': [0.0, 1.0, 4.0, 9.0]}
     )
     pd.testing.assert_frame_equal(results, expected)
+
+
+def _multiply_in_place(X):
+    """
+    Multiply the first column of the input DataFrame by 2 in place and
+    return it.
+    """
+    X.iloc[:, 0] = X.iloc[:, 0] * 2.
+    return X
+
+
+def _divide_in_place(X):
+    """
+    Divide the first column of the input DataFrame by 2 in place and return
+    it.
+    """
+    X.iloc[:, 0] = X.iloc[:, 0] / 2.
+    return X
+
+
+@pytest.mark.parametrize(
+    "transformer",
+    [StandardScaler(copy=False),
+     make_pipeline(StandardScaler(copy=False)),
+     FunctionTransformer(func=_multiply_in_place, inverse_func=_divide_in_place),
+     FunctionTransformer()],
+    ids=['StandardScaler(copy=False)', 'Pipeline with StandardScaler(copy=False)',
+         'in-place FunctionTransformer', 'identity FunctionTransformer']
+)
+def test_transform_series_does_not_modify_input_series(transformer):
+    """
+    Test transform_series does not modify the input series, with fit,
+    transform and inverse_transform, when the transformer writes into its
+    input or returns it as is. The output does not share memory with the
+    input.
+    """
+    input_series = pd.Series(np.arange(10, dtype=float), name='y')
+    input_series_copy = input_series.copy()
+
+    for fit, inverse_transform in [(True, False), (False, False), (False, True)]:
+        results = transform_series(
+                      series            = input_series,
+                      transformer       = transformer,
+                      fit               = fit,
+                      inverse_transform = inverse_transform
+                  )
+        pd.testing.assert_series_equal(input_series, input_series_copy)
+        assert not np.shares_memory(results.to_numpy(), input_series.to_numpy())

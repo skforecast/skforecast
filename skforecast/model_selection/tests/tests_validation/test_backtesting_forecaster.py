@@ -16,6 +16,8 @@ from sklearn.ensemble import (
 )
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.metrics import mean_absolute_error
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 from skforecast.recursive import ForecasterRecursive
 from skforecast.recursive import ForecasterRecursiveClassifier
 from skforecast.recursive import ForecasterRecursiveMultiSeries
@@ -906,3 +908,45 @@ def test_backtesting_forecaster_RuntimeWarning_and_NaN_when_scale_is_zero():
     assert np.isnan(metric.loc[0, "mean_absolute_scaled_error"])
     assert np.isnan(metric.loc[0, "root_mean_squared_scaled_error"])
     assert metric.loc[0, "n_evaluated"] == 20
+
+
+def test_backtesting_forecaster_refit_with_in_place_transformers():
+    """
+    Test backtesting_forecaster with refit does not modify y and exog when
+    the transformers write into their input (`StandardScaler(copy=False)`,
+    also inside a Pipeline), so the metric and the predictions are the same
+    as with `StandardScaler()`.
+    """
+    y_local = y.copy()
+    exog_local = exog.copy()
+    y_copy = y_local.copy()
+    exog_copy = exog_local.copy()
+    cv = TimeSeriesFold(steps=5, initial_train_size=30, refit=True)
+
+    results = []
+    for transformer_y, transformer_exog, y_input, exog_input in [
+        (StandardScaler(copy=False), make_pipeline(StandardScaler(copy=False)),
+         y_local, exog_local),
+        (StandardScaler(), make_pipeline(StandardScaler()), y, exog),
+    ]:
+        forecaster = ForecasterRecursive(
+                         estimator        = Ridge(random_state=123),
+                         lags             = 3,
+                         transformer_y    = transformer_y,
+                         transformer_exog = transformer_exog
+                     )
+        results.append(
+            backtesting_forecaster(
+                forecaster    = forecaster,
+                y             = y_input,
+                exog          = exog_input,
+                cv            = cv,
+                metric        = 'mean_absolute_error',
+                show_progress = False
+            )
+        )
+
+    pd.testing.assert_series_equal(y_local, y_copy)
+    pd.testing.assert_series_equal(exog_local, exog_copy)
+    pd.testing.assert_frame_equal(results[0][0], results[1][0])
+    pd.testing.assert_frame_equal(results[0][1], results[1][1])
