@@ -91,6 +91,53 @@ def test_predict_does_not_modify_series_exog(forecaster_kwargs):
     pd.testing.assert_frame_equal(last_window_local, last_window_copy)
 
 
+@pytest.mark.parametrize(
+    "categorical_features",
+    ["auto", ["exog_1", "exog_2", "exog_3"]],
+    ids=["auto", "list_with_float_column"]
+)
+def test_predict_does_not_modify_exog_with_categorical_features(categorical_features):
+    """
+    Test forecaster.fit and forecaster.predict do not modify exog and
+    exog_predict when the categorical features are encoded without
+    `transformer_exog`. With the list, the float column `exog_1` is also
+    encoded, with codes of its same dtype, while `exog_4`, which pandas
+    stores in the same array, is not.
+    """
+    series_local = {
+        'l1': pd.Series(np.arange(20, dtype=float), name='l1'),
+        'l2': pd.Series(np.arange(20, 40, dtype=float), name='l2')
+    }
+    exog_local = pd.DataFrame({
+        'exog_1': np.tile([1., 2., 3., 4.], 5),
+        'exog_2': pd.Categorical(np.tile(['a', 'b', 'c', 'd'], 5)),
+        'exog_3': np.tile(['u', 'v'], 10),
+        'exog_4': np.arange(20, dtype=float)
+    })
+    exog_predict_local = pd.DataFrame(
+        {
+            'exog_1': [1., 2.],
+            'exog_2': pd.Categorical(['a', 'b'], categories=['a', 'b', 'c', 'd']),
+            'exog_3': ['u', 'v'],
+            'exog_4': [20., 21.]
+        },
+        index=pd.RangeIndex(20, 22)
+    )
+    exog_copy = exog_local.copy()
+    exog_predict_copy = exog_predict_local.copy()
+
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator            = LinearRegression(),
+                     lags                 = 3,
+                     categorical_features = categorical_features
+                 )
+    forecaster.fit(series=series_local, exog=exog_local)
+    _ = forecaster.predict(steps=2, exog=exog_predict_local)
+
+    pd.testing.assert_frame_equal(exog_local, exog_copy)
+    pd.testing.assert_frame_equal(exog_predict_local, exog_predict_copy)
+
+
 def test_predict_NotFittedError_when_fitted_is_False():
     """
     Test NotFittedError is raised when fitted is False.

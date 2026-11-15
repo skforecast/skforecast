@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from skforecast.exceptions import MissingValuesWarning
 from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.compose import ColumnTransformer
 from sklearn.compose import make_column_transformer
 from sklearn.preprocessing import StandardScaler
@@ -4318,3 +4319,72 @@ def test_create_train_X_y_single_MissingValuesWarning_with_counts_of_NaN_rows_pe
             y_train_step = y_train_step
         )
         assert len(y_train_step) == n_rows
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    [LinearRegression(), HistGradientBoostingRegressor()],
+    ids=lambda estimator: f"estimator: {type(estimator).__name__}"
+)
+def test_create_train_X_y_does_not_share_memory_with_series_when_only_lags(estimator):
+    """
+    Test that the training matrix created only with lags does not share memory
+    with the `series` of the user, so modifying `series` afterwards does not
+    change `X_train`. With an estimator that does not need a C-contiguous
+    matrix, `X_train` is created from a view of the internal copy of the
+    series.
+    """
+    series_local = pd.DataFrame({'l1': np.arange(10, dtype=float)})
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator          = estimator,
+                     level              = 'l1',
+                     steps              = 2,
+                     lags               = 3,
+                     transformer_series = None
+                 )
+    X_train, _ = forecaster.create_train_X_y(series=series_local)
+
+    assert not np.shares_memory(X_train.to_numpy(), series_local.to_numpy())
+    series_local.iloc[:, 0] = -1.
+
+    expected = pd.DataFrame(
+        data = {
+            'l1_lag_1': [2., 3., 4., 5., 6., 7.],
+            'l1_lag_2': [1., 2., 3., 4., 5., 6.],
+            'l1_lag_3': [0., 1., 2., 3., 4., 5.]
+        },
+        index = pd.RangeIndex(start=4, stop=10, step=1)
+    )
+    pd.testing.assert_frame_equal(X_train, expected)
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    [LinearRegression(), HistGradientBoostingRegressor()],
+    ids=lambda estimator: f"estimator: {type(estimator).__name__}"
+)
+def test_create_train_X_y_output_is_writeable_when_only_one_window_feature(estimator):
+    """
+    Test that the training matrix created only with one window feature can be
+    modified in place. The matrix comes from a view of the output of the window
+    feature, which is read-only with pandas 3 and is copied when the DataFrame
+    is created.
+    """
+    series_local = pd.DataFrame({'l1': np.arange(10, dtype=float)})
+    window_features = RollingFeatures(stats=['mean'], window_sizes=3)
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator          = estimator,
+                     level              = 'l1',
+                     steps              = 2,
+                     lags               = None,
+                     window_features    = window_features,
+                     transformer_series = None
+                 )
+    X_train, _ = forecaster.create_train_X_y(series=series_local)
+    X_train.iloc[0, 0] = -1.
+
+    expected = pd.DataFrame(
+        data  = {'l1_roll_mean_3': [-1., 2., 3., 4., 5., 6.]},
+        index = pd.RangeIndex(start=4, stop=10, step=1)
+    )
+    pd.testing.assert_frame_equal(X_train, expected)

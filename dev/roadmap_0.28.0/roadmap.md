@@ -27,6 +27,7 @@ Esfuerzo: S (horas a 1 día, con tests y docs), M (2 a 5 días), L (más de una 
 | MAINT-docs-deps | Actualizar los pins del extra `docs`, salvo `mkdocs-jupyter` | S | Opcional, medido: sin efecto visible |
 | MAINT-test-deps | Limpiar el extra `test` | S | Opcional |
 | MAINT-bench-pandas3 | Pasar los benchmarks de `benchmarks/` a pandas 3, con una medición puente | S | Pendiente: al final de la 0.28.0, antes de publicar |
+| MAINT-review-pandas3 | Revisiones independientes de la migración a pandas 3 y CI completo sobre `0.28.x` | S | En curso: 1 de 4 hecha (2026-11-15); la última, en la PR de la versión a `main` |
 
 Son pequeños y no dependen entre sí, salvo `tomli` (MAINT-test-deps), que se quita con
 DEP-python310, y `pandas[parquet]` (MAINT-test-deps), cuyo mínimo sube con
@@ -387,6 +388,27 @@ Sin comprobar: la suite de `benchmarks/` no se ha ejecutado con pandas 3. Con el
 pin actual debería funcionar (statsmodels 0.14.6 pasa sus tests con pandas 3.1.1 y el
 workflow silencia sus avisos con `PYTHONWARNINGS=ignore`).
 
+### MAINT-review-pandas3: revisiones independientes de la migración a pandas 3
+
+Añadida el 2026-11-15. La migración a pandas 3 es un cambio crítico y todas sus revisiones
+las hizo quien escribió el código. Estas cuatro no parten de sus conclusiones. El detalle
+está en `dev/pandas3_migration/INFORME.md`, sección 10, "Revisiones independientes: cuándo
+y cómo"; esta copia es la que queda si se borra esa carpeta.
+
+- [x] Antes de fusionar la #1502 (PR 3a, copias evitables): en una sesión nueva de Claude
+  Code, `/code-review high 1502`. Los hallazgos se comprueban contra el código antes de
+  cambiar nada. Hecha el 2026-11-15 (Fable 5.2, nivel `high`): 5 hallazgos, ninguno
+  cambia resultados. Uno cambió la PR (la matriz de `create_train_X_y` vuelve a ser
+  siempre escribible en pandas 3) y dos van a la 3b.
+- [ ] Antes de fusionar la PR 3b (`fix/inplace-transformers`): lo mismo, con su número.
+- [ ] Con la 3a y la 3b fusionadas: lanzar a mano sobre `0.28.x` `unit-tests.yml`,
+  `unit-tests-min-deps.yml`, `unit-tests-latest-deps.yml` y `foundation-backends.yml`. En
+  las PR a `0.28.x` no corre ningún test unitario en CI, así que es lo único que las
+  ejecuta con las versiones mínimas, en Linux y en macOS.
+- [ ] En la PR de la versión, `0.28.x` a `main` (paso 2 de `/release-publish`):
+  `/code-review ultra <nº de la PR>`. De pago y solo la lanza el usuario. Es la única
+  revisión independiente de las PR ya fusionadas (#1495, #1497, #1499, #1500 y #1501).
+
 ---
 
 ## 2. Otros hallazgos de la misma revisión (sin tarea asignada)
@@ -403,6 +425,13 @@ workflow silencia sus avisos con `PYTHONWARNINGS=ignore`).
   TensorFlow en `skforecast/deep_learning/tests/`.
 - **Límites inferiores**: correctos. `unit-tests-min-deps.yml` pasó el 2026-11-03 con las
   versiones mínimas declaradas en Python 3.10 (7363 passed, 27 skipped).
+- **Retirar pandas 2 (versión futura, sin fecha).** No es de la 0.28.0, que soporta
+  pandas 2.3 y 3. Lo que habrá que cambiar ese día (módulo de compatibilidad, tests
+  condicionados, celda `pandas<3` de CI, pin y documentación) está inventariado en
+  `dev/pandas3_migration/INFORME.md`, sección 10, "Al retirar pandas 2: lista viva".
+  Condición previa: los backends de `MoiraiAdapter` y `TabPFNAdapter` (`gluonts`) aún
+  exigen pandas 2. Si se borra `dev/pandas3_migration/`, mover antes esa lista al roadmap
+  de la versión que toque.
 
 ---
 
