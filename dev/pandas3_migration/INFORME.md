@@ -3075,8 +3075,8 @@ por defecto de cada pandas: pandas 2 no la copia y pandas 3 sí.
 1. Hecho: la #1502 se fusionó en `0.28.x` el 2026-11-15 (merge `3db7f86f4`), con los
    cambios de la revisión independiente (`3be91fa93`) y los tiempos repetidos del arnés
    (`009f99cc8`). No se repitieron la suite completa ni los tiempos con la máquina libre.
-2. La 3b (`fix/inplace-transformers`), PR #1504 abierta el 2026-11-15, con la revisión
-   independiente 2 hecha y pendiente de fusionar: ver "PR 3b sobre `0.28.x`", más abajo. La revisión cambió el plan: D14 pasa a (b) y la función de `utils`
+2. Hecho: la 3b (`fix/inplace-transformers`, #1504) se fusionó en `0.28.x` el 2026-11-15
+   (merge `658bf68b7`), con la revisión independiente 2 hecha; rama borrada. Ver "PR 3b sobre `0.28.x`", más abajo. La revisión cambió el plan: D14 pasa a (b) y la función de `utils`
    para los 9 bloques se descarta (el hallazgo 4 lo corrige la copia de
    `transform_dataframe`; el 5 es solo limpieza).
 3. La PR 7 (documentación y contexto de IA). Con D13 (c), la nota sobre la matriz de solo
@@ -3331,8 +3331,33 @@ sesión de trabajo antes de cambiar nada.
   ejecuta código cambiado; repetido 20 veces en p3 y 20 en p2, pasa las 40. No se repite el
   arnés: el cambio solo toca las dos llamadas de la búsqueda one-step-ahead, que no están en
   sus benchmarks.
-- Pendiente: fusionar la #1504 y, con la 3a y la 3b en `0.28.x`, la revisión 3 (los cuatro
-  workflows de tests a mano).
+- La #1504 se fusionó en `0.28.x` el 2026-11-15 (merge `658bf68b7`) y la rama se borró.
+
+**Revisión independiente 3: la CI completa sobre `0.28.x`** (casilla 3 de "Revisiones
+independientes"). Los cuatro workflows, lanzados a mano el 2026-11-15 (22:48 UTC) sobre el
+merge de la #1504 (`658bf68b7`), con la 3a y la 3b dentro. Los cuatro en verde, sin
+reintentos y sin ningún fallo.
+
+| Workflow | Ejecución | Celdas | Resultado |
+|---|---|---|---|
+| `unit-tests.yml` | 43771361848 | Python 3.11 a 3.13 en Linux y Windows, pandas 3.1.1 | 8172 pasan, 34 omitidos |
+| | | Python 3.14 en Linux y Windows, pandas 3.1.1 | 8127 pasan, 79 omitidos |
+| | | Python 3.11 a 3.14 en macOS, pandas 3.1.1 | 7952 pasan, 51 omitidos |
+| | | Python 3.12 en Linux con `pandas<3` | 8179 pasan, 27 omitidos |
+| `unit-tests-min-deps.yml` | 43771365169 | pandas 2.3.0, numpy 2.0.0, scikit-learn 1.6.0 | 8179 pasan, 27 omitidos |
+| `unit-tests-latest-deps.yml` | 43771368282 | Python 3.12 y 3.13, pandas 3.1.1, numpy 2.5.5 | 8172 pasan, 34 omitidos |
+| | | Python 3.14 | 8127 pasan, 79 omitidos |
+| `foundation-backends.yml` | 43771371633 | 11 backends: 9 con pandas 3.1.1; `moirai` y `tabpfn` con 2.3.3 | todos en verde |
+
+- Frente a la CI de la PR 6 ("Commits y CI, el 2026-11-14") son 65 tests más en cada celda:
+  23 de la 3a y 42 de la 3b. En macOS son 64, porque el workflow no ejecuta allí
+  `skforecast/deep_learning` (`--ignore`) y uno de los tests nuevos es de `ForecasterRnn`.
+- Es la primera ejecución de la 3a y la 3b con las versiones mínimas (scikit-learn 1.6.0,
+  numpy 2.0.0 y pandas 2.3.0), en Linux y en macOS, y con numpy 2.5.5 (en local, 2.5.4).
+  Los valores esperados fijos de los tests nuevos valen en todas las celdas.
+- `test_bayesian_search_forecaster_multiseries_warnings_of_trials_once_with_count`, que
+  falló una vez en local con p3, pasa en las 17 celdas.
+- Pendiente: la PR 7 y la revisión independiente 4.
 
 ### Revisiones independientes: cuándo y cómo
 
@@ -3355,7 +3380,9 @@ lista que sobrevive al borrado de `dev/pandas3_migration/` está en
    tres están corregidos ("Revisión independiente de la 3b", arriba). Lo mismo, con su
    número de PR. Importa más que en la 3a: la 3b cambia comportamiento (nota de versión en
    Fixed).
-3. [ ] **Con la 3a y la 3b fusionadas, antes de la PR 7.** Lanzar a mano sobre `0.28.x` los
+3. [x] **Con la 3a y la 3b fusionadas, antes de la PR 7.** Hecha el 2026-11-15 sobre
+   `658bf68b7`: los cuatro workflows en verde, sin fallos ("Revisión independiente 3",
+   arriba). Lanzar a mano sobre `0.28.x` los
    cuatro workflows de tests, como en la PR 6 ("Commits y CI, el 2026-11-14"):
    `unit-tests.yml`, `unit-tests-min-deps.yml`, `unit-tests-latest-deps.yml` y
    `foundation-backends.yml`. Es lo único que ejecuta la 3a y la 3b con las versiones

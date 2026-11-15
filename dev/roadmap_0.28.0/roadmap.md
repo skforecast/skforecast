@@ -27,7 +27,7 @@ Esfuerzo: S (horas a 1 día, con tests y docs), M (2 a 5 días), L (más de una 
 | MAINT-docs-deps | Actualizar los pins del extra `docs`, salvo `mkdocs-jupyter` | S | Opcional, medido: sin efecto visible |
 | MAINT-test-deps | Limpiar el extra `test` | S | Opcional |
 | MAINT-bench-pandas3 | Pasar los benchmarks de `benchmarks/` a pandas 3, con una medición puente | S | Pendiente: al final de la 0.28.0, antes de publicar |
-| MAINT-review-pandas3 | Revisiones independientes de la migración a pandas 3 y CI completo sobre `0.28.x` | S | En curso: 2 de 4 hechas (2026-11-15); la última, en la PR de la versión a `main` |
+| MAINT-review-pandas3 | Revisiones independientes de la migración a pandas 3 y CI completo sobre `0.28.x` | S | En curso: 3 de 4 hechas (2026-11-15); la última, en la PR de la versión a `main` |
 
 Son pequeños y no dependen entre sí, salvo `tomli` (MAINT-test-deps), que se quita con
 DEP-python310, y `pandas[parquet]` (MAINT-test-deps), cuyo mínimo sube con
@@ -405,7 +405,9 @@ y cómo"; esta copia es la que queda si se borra esa carpeta.
   dejaba sin arreglar (las búsquedas one-step-ahead sin diferenciación daban métricas
   erróneas o una tabla vacía con transformadores in situ) y uno un incumplimiento de la
   guía de tests; los tres están corregidos en la #1504.
-- [ ] Con la 3a y la 3b fusionadas: lanzar a mano sobre `0.28.x` `unit-tests.yml`,
+- [x] Con la 3a y la 3b fusionadas (hecha el 2026-11-15 sobre `658bf68b7`: los cuatro en
+  verde, sin fallos; pandas 3.1.1, `pandas<3`, mínimas con pandas 2.3.0 y scikit-learn
+  1.6.0, Linux, Windows y macOS): lanzar a mano sobre `0.28.x` `unit-tests.yml`,
   `unit-tests-min-deps.yml`, `unit-tests-latest-deps.yml` y `foundation-backends.yml`. En
   las PR a `0.28.x` no corre ningún test unitario en CI, así que es lo único que las
   ejecuta con las versiones mínimas, en Linux y en macOS.
