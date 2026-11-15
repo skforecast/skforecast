@@ -61,6 +61,8 @@ The main changes in this release are:
 
 + Hyperparameter searches with <code>[OneStepAheadFold]</code> and <code>[ForecasterRecursiveMultiSeries]</code> with `encoding='onehot'` and integer series names raised a `FutureWarning` of pandas about downcasting. ([#1497](https://github.com/skforecast/skforecast/pull/1497))
 
++ Transformers that modify their input, such as `StandardScaler(copy=False)` (also inside a `Pipeline` or `ColumnTransformer`) or a `FunctionTransformer` with an in-place function, modified the user's `y`, `series` and `exog`, and `y_true`/`y_pred` in `set_out_sample_residuals`: two `predict` calls with the same `exog` differed, and backtesting with refit and one-step-ahead searches returned wrong metrics. An identity `FunctionTransformer` as `transformer_exog` with `categorical_features` made the second `predict` fail. ([#1504](https://github.com/skforecast/skforecast/pull/1504))
+
 
 
 ## 0.27.0 <small>Nov 11, 2026</small> { id="0.27.0" }

@@ -1,5 +1,6 @@
 # Unit test _calculate_metrics_one_step_ahead
 # ==============================================================================
+import pytest
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_error
@@ -7,6 +8,7 @@ from sklearn.metrics import mean_absolute_percentage_error
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import FunctionTransformer
 from catboost import CatBoostRegressor
 from lightgbm import LGBMRegressor, LGBMClassifier
 from skforecast.metrics import mean_absolute_scaled_error
@@ -575,3 +577,80 @@ def test_calculate_metrics_one_step_ahead_differentiation_missing_values_in_test
         received["y_true"], y_nan.loc[test_index].to_numpy()
     )
     np.testing.assert_array_almost_equal(received["y_pred"], expected_y_pred)
+
+
+def _multiply_in_place(X):
+    """
+    Multiply the input by 2 in place and return it.
+    """
+    X *= 2.
+    return X
+
+
+def _divide_in_place(X):
+    """
+    Divide the input by 2 in place and return it.
+    """
+    X /= 2.
+    return X
+
+
+@pytest.mark.parametrize(
+    "forecaster, expected",
+    [
+        (ForecasterRecursive(estimator=LinearRegression(), lags=5,
+                             transformer_y=StandardScaler(copy=False)),
+         np.array([0.3067642430027995, 1.2448386493736814])),
+        (ForecasterRecursive(estimator=LinearRegression(), lags=5,
+                             transformer_y=FunctionTransformer(
+                                 func=_multiply_in_place, inverse_func=_divide_in_place
+                             )),
+         np.array([0.30645350487367906, 1.2436214547073288])),
+        (ForecasterDirect(estimator=LinearRegression(), lags=5, steps=3,
+                          transformer_y=StandardScaler(copy=False)),
+         np.array([0.32116614360186746, 1.307555716311371])),
+        (ForecasterDirect(estimator=LinearRegression(), lags=5, steps=3,
+                          transformer_y=FunctionTransformer(
+                              func=_multiply_in_place, inverse_func=_divide_in_place
+                          )),
+         np.array([0.32288887857262677, 1.3145210961065794])),
+    ],
+    ids=['ForecasterRecursive, StandardScaler(copy=False)',
+         'ForecasterRecursive, in-place FunctionTransformer',
+         'ForecasterDirect, StandardScaler(copy=False)',
+         'ForecasterDirect, in-place FunctionTransformer']
+)
+def test_calculate_metrics_one_step_ahead_with_in_place_transformer(forecaster, expected):
+    """
+    Test _calculate_metrics_one_step_ahead, without differentiation, when
+    `transformer_y` writes into its input: `y_test` is not modified, so the
+    metrics are the same when it is called again with the same `y_test`, as a
+    search does with each candidate. It also works when `y_test` is a
+    read-only array (ForecasterDirect).
+    """
+    metrics = [mean_absolute_error, mean_absolute_scaled_error]
+    metrics = [add_y_train_argument(metric) for metric in metrics]
+    (
+        X_train, y_train, X_test, y_test, sample_weight, fit_kwargs, test_index
+    ) = forecaster._train_test_split_one_step_ahead(
+        y=y, exog=exog, initial_train_size=10
+    )
+    y_test_copy = y_test.copy()
+
+    for _ in range(2):
+        results, _ = _calculate_metrics_one_step_ahead(
+            forecaster=forecaster,
+            metrics=metrics,
+            X_train=X_train,
+            y_train=y_train,
+            X_test=X_test,
+            y_test=y_test,
+            sample_weight=sample_weight,
+            fit_kwargs=fit_kwargs,
+            y=y,
+            test_index=test_index,
+        )
+        results = np.array([float(result) for result in results])
+
+        np.testing.assert_array_equal(y_test, y_test_copy)
+        np.testing.assert_array_almost_equal(results, expected)

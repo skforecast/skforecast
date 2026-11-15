@@ -27,7 +27,7 @@ Esfuerzo: S (horas a 1 día, con tests y docs), M (2 a 5 días), L (más de una 
 | MAINT-docs-deps | Actualizar los pins del extra `docs`, salvo `mkdocs-jupyter` | S | Opcional, medido: sin efecto visible |
 | MAINT-test-deps | Limpiar el extra `test` | S | Opcional |
 | MAINT-bench-pandas3 | Pasar los benchmarks de `benchmarks/` a pandas 3, con una medición puente | S | Pendiente: al final de la 0.28.0, antes de publicar |
-| MAINT-review-pandas3 | Revisiones independientes de la migración a pandas 3 y CI completo sobre `0.28.x` | S | En curso: 1 de 4 hecha (2026-11-15); la última, en la PR de la versión a `main` |
+| MAINT-review-pandas3 | Revisiones independientes de la migración a pandas 3 y CI completo sobre `0.28.x` | S | En curso: 2 de 4 hechas (2026-11-15); la última, en la PR de la versión a `main` |
 
 Son pequeños y no dependen entre sí, salvo `tomli` (MAINT-test-deps), que se quita con
 DEP-python310, y `pandas[parquet]` (MAINT-test-deps), cuyo mínimo sube con
@@ -400,7 +400,11 @@ y cómo"; esta copia es la que queda si se borra esa carpeta.
   cambiar nada. Hecha el 2026-11-15 (Fable 5.2, nivel `high`): 5 hallazgos, ninguno
   cambia resultados. Uno cambió la PR (la matriz de `create_train_X_y` vuelve a ser
   siempre escribible en pandas 3) y dos van a la 3b.
-- [ ] Antes de fusionar la PR 3b (`fix/inplace-transformers`): lo mismo, con su número.
+- [x] Antes de fusionar la PR 3b (`fix/inplace-transformers`): lo mismo, con su número.
+  Hecha el 2026-11-15 (`/code-review high 1504`): 8 hallazgos. Dos eran errores que la PR
+  dejaba sin arreglar (las búsquedas one-step-ahead sin diferenciación daban métricas
+  erróneas o una tabla vacía con transformadores in situ) y uno un incumplimiento de la
+  guía de tests; los tres están corregidos en la #1504.
 - [ ] Con la 3a y la 3b fusionadas: lanzar a mano sobre `0.28.x` `unit-tests.yml`,
   `unit-tests-min-deps.yml`, `unit-tests-latest-deps.yml` y `foundation-backends.yml`. En
   las PR a `0.28.x` no corre ningún test unitario en CI, así que es lo único que las

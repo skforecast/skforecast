@@ -2579,6 +2579,9 @@ def transform_numpy(
     inverse_transform. ColumnTransformers are not allowed since they do not 
     have inverse_transform method.
 
+    The transformer receives a copy of `array`, so the input is not modified
+    even if the transformer writes into its input.
+
     Parameters
     ----------
     array : numpy ndarray
@@ -2609,7 +2612,14 @@ def transform_numpy(
         raise TypeError(
             f"`array` argument must be a numpy ndarray. Got {type(array)}"
         )
-    
+
+    # NOTE: Some transformers write into their input (scalers with
+    # `copy=False`, a `FunctionTransformer` with an in-place function or a
+    # `Pipeline` that contains them) and others return it as is (identity
+    # `FunctionTransformer`). The copy keeps the caller's array, which can be
+    # the user's data, unmodified.
+    array = array.copy()
+
     original_ndim = array.ndim
     original_shape = array.shape
     reshaped_for_inverse = False
@@ -2712,6 +2722,9 @@ def transform_series(
     inverse_transform. ColumnTransformers are not allowed since they do not 
     have inverse_transform method.
 
+    The transformer receives a copy of `series`, so the input is not modified
+    even if the transformer writes into its input.
+
     Parameters
     ----------
     series : pandas Series
@@ -2745,7 +2758,10 @@ def transform_series(
         return series
 
     series_name = series.name if series.name is not None else 'no_name'
-    data = series.to_frame(name=series_name)
+    # NOTE: The transformer may write into its input or return it as is (see
+    # `transform_numpy`), so it receives a copy. A shallow copy is not enough:
+    # scikit-learn makes the read-only arrays of pandas >= 3 writeable.
+    data = series.to_frame(name=series_name).copy()
 
     # To use the transformer on a series with another name than the one seen
     # in fit, the column is renamed to that name. The transformer is not
@@ -2823,6 +2839,9 @@ def transform_dataframe(
     inverse_transform. ColumnTransformers are not allowed since they do not 
     have inverse_transform method.
 
+    The transformer receives a copy of `df`, so the input is not modified
+    even if the transformer writes into its input.
+
     Parameters
     ----------
     df : pandas DataFrame
@@ -2858,7 +2877,15 @@ def transform_dataframe(
         raise ValueError(
             "`inverse_transform` is not available when using ColumnTransformers."
         )
- 
+
+    # NOTE: The transformer may write into its input or return it as is (see
+    # `transform_numpy`), so it receives a copy. A shallow copy is not enough:
+    # scikit-learn makes the read-only arrays of pandas >= 3 writeable. With a
+    # transformer, the output is never the caller's DataFrame, not even with
+    # an identity one, so the forecasters can assign the encoded categorical
+    # features to it. Without a transformer, they make a shallow copy first.
+    df = df.copy()
+
     if inverse_transform:
         values_transformed = transformer.inverse_transform(df)
     elif fit:

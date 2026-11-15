@@ -10,6 +10,7 @@ from skforecast.recursive import ForecasterStats
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.pipeline import make_pipeline
 
 # Fixtures
 from .fixtures_forecaster_stats import WINDOWS_LEGACY_BLAS
@@ -35,8 +36,11 @@ from .fixtures_forecaster_stats import df_exog_lw_predict_datetime
         {"estimator": Sarimax(order=(1, 0, 1))},
         {"estimator": Sarimax(order=(1, 0, 1)),
          "transformer_y": StandardScaler(), "transformer_exog": StandardScaler()},
+        {"estimator": Sarimax(order=(1, 0, 1)),
+         "transformer_y": StandardScaler(copy=False),
+         "transformer_exog": make_pipeline(StandardScaler(copy=False))},
     ],
-    ids=["base", "transformers"]
+    ids=["base", "transformers", "in_place_transformers"]
 )
 def test_predict_does_not_modify_y_exog(forecaster_kwargs):
     """

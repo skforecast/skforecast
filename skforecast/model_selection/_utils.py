@@ -1374,8 +1374,21 @@ def _calculate_metrics_one_step_ahead(
                              transformer = forecaster.transformer_y
                          )
     elif forecaster.transformer_y is not None:
-        y_true = forecaster.transformer_y.inverse_transform(y_true.reshape(-1, 1))
-        y_pred = forecaster.transformer_y.inverse_transform(y_pred.reshape(-1, 1))
+        # NOTE: `transform_numpy` gives the transformer a copy. `y_test` is
+        # shared by the candidates of a search and can be read-only, and some
+        # transformers write into their input.
+        y_true = transform_numpy(
+                     array             = y_true,
+                     transformer       = forecaster.transformer_y,
+                     fit               = False,
+                     inverse_transform = True
+                 )
+        y_pred = transform_numpy(
+                     array             = y_pred,
+                     transformer       = forecaster.transformer_y,
+                     fit               = False,
+                     inverse_transform = True
+                 )
 
     y_true = y_true.ravel()
     y_pred = y_pred.ravel()
@@ -2818,13 +2831,22 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
                                  )
                              )
         elif forecaster.transformer_series is not None:
+            # NOTE: `transform_numpy` gives the transformer a copy. `y_test`
+            # is shared by the candidates of a search and can be read-only,
+            # and some transformers write into their input.
             transformer = forecaster.transformer_series_[level]
-            y_true = transformer.inverse_transform(
-                y_true.reshape(-1, 1)
-            ).ravel()
-            y_pred = transformer.inverse_transform(
-                y_pred.reshape(-1, 1)
-            ).ravel()
+            y_true = transform_numpy(
+                         array             = y_true,
+                         transformer       = transformer,
+                         fit               = False,
+                         inverse_transform = True
+                     )
+            y_pred = transform_numpy(
+                         array             = y_pred,
+                         transformer       = transformer,
+                         fit               = False,
+                         inverse_transform = True
+                     )
 
         y_train_metric, scale_abs, scale_sq = _get_y_train_and_scales(
                                                   y       = y_level,

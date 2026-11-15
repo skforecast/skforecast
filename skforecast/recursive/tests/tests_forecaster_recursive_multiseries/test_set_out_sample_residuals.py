@@ -749,3 +749,71 @@ def test_set_out_sample_residuals_ResidualsUsageWarning_when_few_residuals_per_b
         "residuals per bin" in str(w.message) for w in record
     )
     assert n_warnings == 1
+
+
+def test_set_out_sample_residuals_does_not_modify_y_true_y_pred_with_in_place_transformer():
+    """
+    Test set_out_sample_residuals does not modify `y_true` and `y_pred` when
+    `transformer_series` writes into its input (`StandardScaler(copy=False)`),
+    with pandas Series and numpy arrays, and the residuals are those of the
+    transformed values.
+    """
+    rng = np.random.default_rng(12345)
+    series_train = pd.DataFrame(
+        rng.normal(loc=0, scale=1, size=(100, 2)), columns=['l1', 'l2']
+    )
+    y_true = {
+        'l1': pd.Series(rng.normal(loc=0, scale=1, size=36), index=range(100, 136)),
+        'l2': rng.normal(loc=0, scale=1, size=36)
+    }
+    y_pred = {
+        'l1': pd.Series(rng.uniform(low=-2.5, high=2, size=36), index=range(100, 136)),
+        'l2': rng.uniform(low=-2.5, high=2, size=36)
+    }
+    y_true_copy = {k: v.copy() for k, v in y_true.items()}
+    y_pred_copy = {k: v.copy() for k, v in y_pred.items()}
+
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = LinearRegression(),
+                     lags               = 5,
+                     transformer_series = StandardScaler(copy=False),
+                     binner_kwargs      = {"n_bins": 3}
+                 )
+    forecaster.fit(series=series_train)
+    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
+
+    expected = {
+        'l1': np.array([0.0488568167046064, -0.9718819358916377, -0.10826967372038687,
+                        -1.521920395446486, -0.107474352376235, -2.1525845840920237,
+                        -0.21084638514737253, 1.932144891230358, 3.2908359911921834,
+                        2.254931263303223, -1.6072382109681267, 3.047708905742998,
+                        0.8005779175252548, -3.111613753060327, -1.0634705413337253,
+                        -2.6885231323722096, 0.4863384231470731, 1.094765139379204,
+                        3.0374156176822993, -1.7888498864220568, 2.2354359800662604,
+                        -2.854697926496883, 0.741005615952183, -0.31584243415637503,
+                        1.101380069263952, 2.0756866186729845, -0.35899110967841863,
+                        -1.68609577037715, -2.5240724435098754, 1.0225157127262279,
+                        -0.3286889095814979, -1.0311613407383449, 1.366792685893551,
+                        -2.008833319400468, 1.5279999913109934, -0.29376491189003356]),
+        'l2': np.array([-2.8258401575294423, 1.1241721436253358, 0.45305066352510676,
+                        2.7701662913810106, 1.1992825172436192, 3.65028020976309,
+                        1.1324591933189363, 3.6722611498548074, 2.2781632813533923,
+                        1.9861006173244526, -1.9865309779406057, -0.1495982929450257,
+                        -1.7905691668985868, 1.6986579161804019, 0.4942396980968764,
+                        0.1882849069377318, -0.712272180418351, 1.7961816927517529,
+                        0.14849129976913855, 1.7557765661598943, -0.36520375480396106,
+                        -0.636358032338383, 3.137169764235993, 0.9458249297300287,
+                        0.1095512169529346, -1.6482884614159494, -0.5474185263398604,
+                        0.051724839804442424, 1.1993095440172288, 0.2609596770687996,
+                        1.9805914767322903, -2.351554519981086, -0.2888107573948412,
+                        2.3020768018109727, -0.4222609500144374, 2.635995608890661])
+    }
+
+    pd.testing.assert_series_equal(y_true['l1'], y_true_copy['l1'])
+    pd.testing.assert_series_equal(y_pred['l1'], y_pred_copy['l1'])
+    np.testing.assert_array_equal(y_true['l2'], y_true_copy['l2'])
+    np.testing.assert_array_equal(y_pred['l2'], y_pred_copy['l2'])
+    for level in ['l1', 'l2']:
+        np.testing.assert_array_almost_equal(
+            forecaster.out_sample_residuals_[level], expected[level]
+        )
