@@ -361,7 +361,8 @@ def fit_classifier():
 def recursive_create_train_X_y_noexog():
     """
     Only lags, with an estimator that does not need a C-contiguous matrix:
-    `X_train` wraps the view of the lags (D13 of the INFORME).
+    `X_train` is created from the read-only view of the lags, which pandas 2
+    wraps and pandas 3 copies (D13 of the INFORME).
     """
     y = _y(200_000)
     f = ForecasterRecursive(estimator=HistGradientBoostingRegressor(), lags=LAGS)

@@ -27,7 +27,7 @@ Esfuerzo: S (horas a 1 día, con tests y docs), M (2 a 5 días), L (más de una 
 | MAINT-docs-deps | Actualizar los pins del extra `docs`, salvo `mkdocs-jupyter` | S | Opcional, medido: sin efecto visible |
 | MAINT-test-deps | Limpiar el extra `test` | S | Opcional |
 | MAINT-bench-pandas3 | Pasar los benchmarks de `benchmarks/` a pandas 3, con una medición puente | S | Pendiente: al final de la 0.28.0, antes de publicar |
-| MAINT-review-pandas3 | Revisiones independientes de la migración a pandas 3 y CI completo sobre `0.28.x` | S | Pendiente: cuatro momentos, el último en la PR de la versión a `main` |
+| MAINT-review-pandas3 | Revisiones independientes de la migración a pandas 3 y CI completo sobre `0.28.x` | S | En curso: 1 de 4 hecha (2026-11-15); la última, en la PR de la versión a `main` |
 
 Son pequeños y no dependen entre sí, salvo `tomli` (MAINT-test-deps), que se quita con
 DEP-python310, y `pandas[parquet]` (MAINT-test-deps), cuyo mínimo sube con
@@ -395,9 +395,11 @@ las hizo quien escribió el código. Estas cuatro no parten de sus conclusiones.
 está en `dev/pandas3_migration/INFORME.md`, sección 10, "Revisiones independientes: cuándo
 y cómo"; esta copia es la que queda si se borra esa carpeta.
 
-- [ ] Antes de fusionar la #1502 (PR 3a, copias evitables): en una sesión nueva de Claude
+- [x] Antes de fusionar la #1502 (PR 3a, copias evitables): en una sesión nueva de Claude
   Code, `/code-review high 1502`. Los hallazgos se comprueban contra el código antes de
-  cambiar nada.
+  cambiar nada. Hecha el 2026-11-15 (Fable 5.2, nivel `high`): 5 hallazgos, ninguno
+  cambia resultados. Uno cambió la PR (la matriz de `create_train_X_y` vuelve a ser
+  siempre escribible en pandas 3) y dos van a la 3b.
 - [ ] Antes de fusionar la PR 3b (`fix/inplace-transformers`): lo mismo, con su número.
 - [ ] Con la 3a y la 3b fusionadas: lanzar a mano sobre `0.28.x` `unit-tests.yml`,
   `unit-tests-min-deps.yml`, `unit-tests-latest-deps.yml` y `foundation-backends.yml`. En

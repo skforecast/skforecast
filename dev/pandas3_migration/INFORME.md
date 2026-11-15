@@ -2804,7 +2804,8 @@ Base `origin/0.28.x` en `046e511cd` (la #1501 fusionada). Sesión local en Windo
 D14 (a) ampliada a `transform_numpy` (si el arnés no ve diferencia con (b), pasar a (b)); como
 rendimiento, solo los constructores y las 9 copias; dos PRs, primero la de rendimiento (3a,
 sin nota de versión: en pandas 2 no cambia nada y pandas 3 no se ha publicado) y después la
-corrección (3b, con nota en Fixed).
+corrección (3b, con nota en Fixed). D13 pasó a (c) el 2026-11-15 ("Revisión independiente
+de la 3a", más abajo).
 
 **PR 3a: `perf/pandas3-copies`**, desde `origin/0.28.x` con `--no-track`. Es la PR
 [#1502](https://github.com/skforecast/skforecast/pull/1502), abierta el 2026-11-14 contra `0.28.x`
@@ -2917,7 +2918,9 @@ depende el cambio, con scripts nuevos (espacio temporal de la sesión):
   misma clase que D13 (a); se deja así (decisión del usuario, 2026-11-14) y se
   lleva a la nota de la PR 7 con una regla que no dependa de enumerar casos: la matriz de
   `create_train_X_y` puede ser de solo lectura y hay que copiarla antes de modificarla
-  in situ.
+  in situ. **Sustituido el 2026-11-15:** con D13 (c), la columna "p3 con la rama" es
+  igual a la de la base (todo escribible) y la 3a no deja ninguna diferencia nueva entre
+  versiones; ver "Revisión independiente de la 3a".
 - Copias superficiales: los 9 sitios se siguieron hasta el último uso de `exog`. Después
   de la asignación solo se leen dtypes y columnas y se llama a `to_numpy()` (o `iloc` y
   `pd.concat` en multiseries), que con algún bloque sustituido siempre devuelve un array
@@ -2949,19 +2952,134 @@ depende el cambio, con scripts nuevos (espacio temporal de la sesión):
   tests de categóricas fallan en p2 y en p3. No se han repetido la suite completa ni el
   arnés: desde su ejecución, el paquete solo ha cambiado en comentarios.
 
+**Revisión independiente de la 3a** (2026-11-15; casilla 1 de "Revisiones independientes").
+El usuario lanzó `/code-review high 1502` en una sesión nueva (Fable 5.2, nivel `high`)
+sobre `3959343ea`. Cinco hallazgos. Los cuatro primeros se reprodujeron en p2 y p3, con la
+rama y con un `git archive` de `origin/0.28.x`, con scripts del espacio temporal de la
+sesión. Ninguno cambia resultados de `fit`, `predict` ni backtesting; solo el 1 y el 2 los
+introducía la 3a, y solo en pandas 3.
+
+1. **La matriz de solo lectura no se comporta igual en pandas 2 y en pandas 3** (real, de
+   la 3a). "D13 (a) deja pandas 3 igual que pandas 2" y el comentario "as in pandas 2" de
+   los constructores eran inexactos. Con solo lags contiguos,
+   `HistGradientBoostingRegressor` y sin NaN:
+
+   | Operación sobre `X_train` | p2 (base y rama) | p3 con `3959343ea` | p3 con la base |
+   |---|---|---|---|
+   | `X.iloc[0, 0] = v` | `ValueError` | `ValueError` | funciona |
+   | `X.loc[:, col] = v` | funciona, con `FutureWarning` | `TypeError` | funciona |
+   | `X.fillna(v, inplace=True)`, sin NaN | funciona | `ValueError` | funciona |
+   | `X.replace(a, b, inplace=True)` | `ValueError` | `ValueError` | funciona |
+   | `X[col] = ...`, `X *= 2`, `X.clip(lower=0, inplace=True)`, `X.fillna(v)` | funciona | funciona | funciona |
+
+   El `FutureWarning` de pandas 2 ("Setting an item of incompatible dtype is deprecated and
+   will raise in a future error of pandas") y el `TypeError` de pandas 3 ("Invalid value
+   '0.0' for dtype 'float64'") son engañosos: el dtype es compatible y la causa es el array
+   de solo lectura. La revisión citaba `fillna(inplace=True)`; el caso de `loc` se encontró
+   al reproducirla. Con una sola columna de window features la matriz es escribible en
+   pandas 2, y en pandas 3 con `3959343ea` fallaban las cuatro primeras filas. skforecast
+   no usa `inplace=True` en ningún sitio (0 apariciones, tests incluidos).
+2. **Solo window features propias que guardan su `DataFrame`** (real, rebuscado). Si
+   `transform_batch` devuelve un trozo de un `DataFrame` que el objeto conserva, `X_train`
+   comparte memoria con él y modificarlo después cambia `X_train`. En pandas 2 ya ocurría
+   (base y rama); en pandas 3 lo introducía `copy=False` (con la base no ocurre). El
+   comentario "`X_train` is never an array of the user" era falso en ese caso.
+3. **Alias de `X_train` e `y_train` en pandas 2** (previo, ya anotado; la 3a no lo cambia).
+   Detalle nuevo: en `ForecasterDirect`, los `y_train` de cada paso también comparten
+   memoria entre sí en pandas 2, con cualquier estimador.
+4. **`transformer_exog` identidad con categóricas** (previo, F26, de la 3b). Con
+   `FunctionTransformer()`, la guarda `if self.transformer_exog is None` se salta la copia
+   y la codificación escribe en la `exog` del usuario, en las dos versiones.
+5. **El bloque de copia y codificación está repetido en 9 sitios** (limpieza, no es un
+   error).
+
+**Decisión del usuario (2026-11-15): D13 pasa a (c)**, una opción que la revisión del plan
+no consideró. La confirmó después de saber que en pandas 2 `X.loc[:, col] = v` ya emite
+un `FutureWarning`, lo que resta peso al hallazgo 1. En los cuatro constructores, `copy = False if X_train.flags.writeable else
+None`. Una matriz escribible es en pandas 3 un array nuevo y no se copia (la mejora de la
+3a). Una de solo lectura es una vista (de la copia interna de `y`, o de la salida de una
+window feature, que en pandas 3 `to_numpy()` devuelve de solo lectura) y conserva la regla
+por defecto de cada pandas: pandas 2 no la copia y pandas 3 sí.
+
+- Resultado: cada versión se comporta como con la base, así que la 3a no cambia ningún
+  comportamiento. En pandas 3 `X_train` es siempre escribible y no comparte memoria con
+  nada (los hallazgos 1 y 2 desaparecen). En pandas 2 todo sigue como estaba: la fila de
+  solo lectura de D13 y los hallazgos 2 y 3, que son previos.
+- Los hallazgos 4 y 5 van a la 3b: una función en `utils` con la copia superficial
+  incondicional, que sustituye los 9 bloques, además de D14 (a). El 3 se deja: desaparece
+  al retirar pandas 2.
+- Coste de (c) frente a (a), medido en p3 con tres árboles (base, `3959343ea` y la
+  variante en un `git archive` parcheado), 200k filas y 24 lags, procesos alternos, mínimo
+  de tiempo y pico de `tracemalloc`. La máquina tenía carga (CPU del 5 al 13 %): los
+  tiempos son orientativos y la memoria es determinista.
+
+  | Caso, pandas 3.1.1 | Base | `3959343ea`, D13 (a) | D13 (c) |
+  |---|---|---|---|
+  | Recursivo, solo lags, HGB (vista) | 13,7 ms, 39,7 MiB | 6,0 ms, 6,4 MiB | 13,8 ms, 39,7 MiB |
+  | Directo, solo lags, HGB (vista) | 18,5 ms, 42,7 MiB | 9,4 ms, 6,7 MiB | 18,6 ms, 42,7 MiB |
+  | Recursivo, una window feature, HGB (vista) | 14,9 ms, 7,6 MiB | 10,7 ms, 7,6 MiB | 12,2 ms, 7,6 MiB |
+  | Recursivo, solo lags, `LinearRegression` | 45,8 ms, 74,8 MiB | 14,7 ms, 42,9 MiB | 15,4 ms, 42,9 MiB |
+  | Recursivo, lags y 4 exógenas, HGB | 75,8 ms, 87,0 MiB | 22,3 ms, 49,8 MiB | 21,7 ms, 49,8 MiB |
+  | Directo, lags y 4 exógenas, HGB | 117,4 ms, 129,7 MiB | 36,3 ms, 79,4 MiB | 35,1 ms, 79,4 MiB |
+
+  Se pierde la mejora de la 3a solo en los casos de vista (unos 8 ms y 33 MiB con 200k ×
+  24) y se conserva en los demás. En p2 no cambia nada: solo lags con HGB, 5,5, 5,8 y 5,6
+  ms y 6,4 MiB en los tres árboles; el constructor de pandas 2 tarda 0,04 ms con `copy`
+  por defecto, `None` o `False`. Con la rama, quien pase de pandas 2 a pandas 3 con solo
+  lags y un estimador fuera de `_prefers_c_contiguous_X` verá ese `create_train_X_y`
+  público con copia (de 5,6 a 13,8 ms y de 6,4 a 39,7 MiB), como ya ocurría con la base.
+- Cambios (commit `3be91fa93` el paquete y los tests, y otro con `dev/`, hechos y
+  enviados el 2026-11-15 a petición del usuario):
+  - Los cuatro constructores y su comentario.
+  - `test_create_train_X_y_output_is_writeable_when_only_one_window_feature` en los cuatro
+    forecasters (7 casos, con `LinearRegression` y `HistGradientBoostingRegressor`; en el
+    clasificador, `LogisticRegression`): escribe una celda de la matriz creada con una sola
+    window feature. No depende de la versión de pandas, así que no añade nada a la lista
+    viva. Con el paquete de `3959343ea` fallan los 7 en p3 y pasan en p2. El caso de solo
+    lags no tiene test propio: en pandas 2 la matriz es de solo lectura y haría falta
+    `PANDAS_GE_3`; lo cubre la misma línea del constructor.
+  - El docstring de los tres tests de memoria compartida ("is created from a view" en
+    lugar de "wraps a view") y el del benchmark `recursive_create_train_X_y_noexog`.
+- Verificación:
+  - Lint sin hallazgos nuevos (4 `E721` previos, 2 en cada fichero de tests del recursivo
+    y del clasificador).
+  - Tests de las cinco carpetas de forecasters: p2 2387 pasan y 1 omitido; p3 2385 pasan
+    y 3 omitidos (los 7 nuevos sobre los de la revisión final).
+  - La salida de los scripts que reproducen los hallazgos 1, 2 y 3 es idéntica con la base
+    y con el árbol de trabajo, en p2 y en p3.
+  - Arnés (`run_ab.py --identity --memory --base origin/0.28.x` con los 8 benchmarks de
+    `create_train_X_y`, `results/pr3_perf_028_review`): identidad estricta 257 de 257 en
+    p2 y en p3, `Result: OK`; p2 frente a p3, como antes (133 iguales, 122 con dtype
+    distinto, 2 valores distintos, los de F26). Memoria: p2 idéntica en los 8; p3 con las
+    mismas razones que la tabla de la 3a (0,57 a 0,84) salvo `noexog`, que pasa de 0,16 a
+    1,00 (39,7 MiB en la base y en la rama). **Los tiempos de esa tanda no valen**: la
+    máquina estaba cargada (CPU mediana 10 %, máximos del 27 y el 41 %; tiempos absolutos
+    el doble que el 2026-11-14) y p2 da razones de 0,84 a 1,17 en un camino que no cambia.
+- No repetido: la suite completa (el cambio es el argumento `copy` de cuatro constructores
+  del método público, que solo usan los tests y `feature_selection.py`) ni los tiempos del
+  arnés con la máquina libre. La fila `recursive_create_train_X_y_noexog` de la tabla de
+  rendimiento de la 3a (0,43 en tiempo y 0,16 en memoria en p3) ya no vale: es 1,00.
+
 **Pendiente:**
 
-1. Revisar y fusionar la PR #1502 (del usuario), después de su revisión independiente
-   (punto 1 de "Revisiones independientes", abajo). Todos los checks (contexto de IA y
-   CodeQL) estaban en verde el 2026-11-15 y solo faltaba la revisión requerida; los tests
-   unitarios no se ejecutan en CI en las PR a ramas de versión.
+1. Actualizar la descripción de la #1502 (tabla de solo lectura, fila `noexog` de
+   rendimiento, tests y verificación) y fusionarla (del usuario). Los cambios de la
+   revisión independiente están en `3be91fa93`. Queda a decisión del usuario repetir la
+   suite completa y los tiempos del arnés con la máquina libre. Los tests unitarios no
+   se ejecutan en CI en las PR a ramas de versión.
 2. La 3b (`fix/inplace-transformers`): desde `origin/0.28.x` cuando la 3a esté fusionada, o
    en otro worktree. Incluye medir D14 (a) frente a
    (b) con `predict_loop_scaler`, `predict_loop_pipeline` y `fit_recursive_transformers`, y la
    identidad: solo pueden cambiar `inplace_transformers` y `categorical_identity_transformer`.
-3. La PR 7 (documentación y contexto de IA), con la nota corregida sobre la matriz de solo
-   lectura (punto 1 de "Corregido" y la tabla de la revisión final).
-4. Errores previos anotados, sin PR: el alias `X_train`/`y_train` de pandas 2 y
+   Añadido por la revisión independiente de la 3a (hallazgos 4 y 5): sustituir los 9
+   bloques de copia y codificación de categóricas por una función en `utils` que haga la
+   copia superficial siempre, sin la guarda `if self.transformer_exog is None`.
+3. La PR 7 (documentación y contexto de IA). Con D13 (c), la nota sobre la matriz de solo
+   lectura solo vale para pandas 2 (solo lags contiguos y un estimador fuera de
+   `_prefers_c_contiguous_X`); en pandas 3 la matriz es siempre escribible.
+4. Errores previos anotados, sin PR, los tres primeros solo de pandas 2: el alias
+   `X_train`/`y_train` (y entre los `y_train` de cada paso de `ForecasterDirect`), la
+   memoria compartida de `X_train` con la salida de una window feature propia, y
    `filter_train_X_y_for_step` sin exógenas.
 5. Mantener al día "Al retirar pandas 2: lista viva" con la 3b y la PR 7.
 6. Las revisiones independientes del apartado siguiente, cada una en su momento.
@@ -2974,7 +3092,9 @@ conclusiones. Marcar cada una al hacerla, con la fecha y el resultado. La copia 
 lista que sobrevive al borrado de `dev/pandas3_migration/` está en
 `dev/roadmap_0.28.0/roadmap.md`, MAINT-review-pandas3.
 
-1. [ ] **Antes de fusionar la #1502 (3a).** En una sesión nueva de Claude Code (no la de
+1. [x] **Antes de fusionar la #1502 (3a).** Hecha el 2026-11-15 (Fable 5.2, nivel `high`):
+   5 hallazgos, ninguno cambia resultados; D13 pasó a (c) y dos hallazgos van a la 3b
+   ("Revisión independiente de la 3a", arriba). En una sesión nueva de Claude Code (no la de
    trabajo), con la rama `perf/pandas3-copies`: `/code-review high 1502`. Con `--comment`
    los hallazgos quedan como comentarios en la PR. Mientras corre, la sesión de trabajo no
    cambia de rama ni toca el árbol (las dos comparten el directorio). Los hallazgos se
@@ -3001,7 +3121,8 @@ lista.
 
 Qué hay que cambiar el día que el mínimo pase a pandas 3 (versión futura, sin fecha).
 Sustituye a la lista que estaba en "PR 4 sobre `0.28.x`" y al párrafo de la sección 7.
-Actualizada el 2026-11-14 con las PR 1 a 6 y la 3a. **Cada PR de la migración que quede
+Actualizada el 2026-11-14 con las PR 1 a 6 y la 3a, y el 2026-11-15 con la revisión
+independiente de la 3a. **Cada PR de la migración que quede
 (3b, 7) añade aquí lo suyo.** Los números de línea son de `perf/pandas3-copies`
 (`252e3de15`). Para localizarlo todo de nuevo: buscar `PANDAS_GE_3`, `_pandas_compat`,
 `STR_DTYPE` y "pandas 2" en `skforecast/`, y `pandas` en `.github/workflows/`,
@@ -3032,7 +3153,7 @@ Actualizada el 2026-11-14 con las PR 1 a 6 y la 3a. **Cada PR de la migración q
 3. `_add_note_pandas_3_file` (`utils.py:3659`) y los dos `try`/`except` de
    `load_forecaster` que la llaman se eliminan, con su test.
 4. Comentarios que citan pandas 2, solo texto: los de los cuatro constructores de la 3a
-   ("as in pandas 2"), `utils.py:85` y `_validation.py:3105`.
+   ("pandas 2 does not copy it, pandas 3 does"), `utils.py:85` y `_validation.py:3105`.
 
 **Paquete, lo que se queda (no es compatibilidad):**
 
@@ -3040,14 +3161,20 @@ Actualizada el 2026-11-14 con las PR 1 a 6 y la 3a. **Cada PR de la migración q
   `create_train_X_y` público (3a) y los de `_forecaster_recursive_multiseries.py:1236 a
   1331`. En pandas 3 es justo lo que evita la copia, y el keyword de los constructores no
   está deprecado. El párrafo de la sección 7 decía lo contrario hasta el 2026-11-14.
+  La condición de los cuatro públicos (`if X_train.flags.writeable else None`, D13 (c))
+  también se queda: en pandas 3 decide entre no copiar un array nuevo y copiar una vista
+  de solo lectura. **Decisión para ese día:** con solo pandas 3, la matriz de solo lags
+  se copia siempre (unos 8 ms y 33 MiB con 200k × 24); recuperar la vista sin copia que
+  hoy tiene pandas 2 exige aceptar la matriz de solo lectura (D13 (a)).
 - `exog.copy(deep=False)` antes de codificar las categóricas (9 sitios, 3a): protege el
   objeto del usuario, no sus arrays.
 - `_infer_freq_from_index` y `_is_utc_anchored_index` (el comportamiento de `tz_convert`
   es el de pandas 3), la comparación de dtypes de texto de las exógenas (`utils.py:4776`;
   `str` y `object` conviven en pandas 3), el orden de offsets por duración (`_split.py:394`,
   `utils.py:4594`), `sorted(..., key=str)` y `pd.Series(dtype=str)`.
-- Desaparecen solos: el alias `X_train`/`y_train` de pandas 2 y la columna de pandas 2 de
-  la tabla de matrices de solo lectura ("Revisión final de la 3a").
+- Desaparecen solos, porque solo ocurren en pandas 2: el alias `X_train`/`y_train`, la
+  matriz de solo lectura con solo lags (D13) y la memoria compartida de `X_train` con la
+  salida de una window feature propia ("Revisión independiente de la 3a").
 
 **Tests:**
 
