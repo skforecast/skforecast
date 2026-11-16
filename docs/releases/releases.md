@@ -20,7 +20,7 @@ The main changes in this release are:
 
 !!! warning "Before upgrading"
 
-    Some environments and code need to be updated (see **Added** and **Changed**):
+    Some environments and code need to be updated (see **Added**, **Changed** and **Fixed**):
 
     + pandas 3 is supported (`pandas>=2.3, <4.0`). `pip install -U skforecast` keeps the installed pandas, but new environments get pandas 3, and its default dtypes (for example, `str` instead of `object` for text) appear in the outputs. Forecasters saved with pandas 3 load only with pandas 3, or with pandas 2.3 if saved with `backend='skops'`. The [pandas 2 and pandas 3](../faq/pandas-2-and-pandas-3.md) page lists the differences.
 
@@ -31,6 +31,8 @@ The main changes in this release are:
     + skforecast now requires Python 3.11, numpy 2.0 and pandas 2.3. Installing it upgrades numpy and pandas if they are older, and code written for numpy 1.x may need the changes of the [numpy 2.0 migration guide](https://numpy.org/doc/stable/numpy_2_0_migration_guide.html). Forecasters saved with numpy 1.x still load.
 
     + <code>[MoiraiAdapter]</code>: `pip install uni2ts` alone downgrades numpy, scipy and pandas. Install it as explained in the [foundation models guide](../user_guides/foundation-forecasting-models.ipynb).
+
+    + <code>[reshape_series_wide_to_long]</code> and the `'long'` outputs of <code>[TimeSeriesSplitter]</code> no longer assume a daily frequency when the index has none: they infer it from the dates. Business-day data no longer gets rows of NaN on weekends, and daily data with missing dates (or fewer than 3) raises a `ValueError`: call `data.asfreq('D')` first.
 
 
 **Added**

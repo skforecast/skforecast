@@ -2245,7 +2245,9 @@ Revisión final antes del commit (2026-11-13), con dos decisiones del usuario:
   descartó: no distingue el diario con huecos del mensual con huecos, que
   seguiría dando filas diarias de NaN sin avisar. Los días laborables pasan
   de `D` con NaN en fines de semana a `B`, igual que con el índice ya en
-  `B`. Pendiente al consolidar la versión: una línea en «Before upgrading».
+  `B`. La línea en «Before upgrading» se añadió el 2026-11-16, tras la PR 7
+  (comprobada en p2 y p3: el diario desordenado sí funciona, porque se
+  ordenan las fechas antes de inferir la frecuencia).
 - **D6, la pista solo con pandas 3**: `_TZ_MISSING_FREQ_HINT` queda vacía con
   pandas 2, donde `tz_convert` conserva la frecuencia y la pista no explica
   el error. Se decide en la constante; los tres puntos de uso no cambian.
