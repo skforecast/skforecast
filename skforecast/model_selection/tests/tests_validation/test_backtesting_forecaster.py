@@ -29,7 +29,7 @@ from skforecast.metrics import (
 )
 from skforecast.model_selection import backtesting_forecaster
 from skforecast.model_selection._split import TimeSeriesFold
-from skforecast.model_selection._validation import _fit_predict_forecaster
+from skforecast.model_selection._validation import _deserialize_forecaster_and_run_fold
 from skforecast.exceptions import MissingValuesWarning
 
 # Fixtures
@@ -751,6 +751,47 @@ def test_backtesting_forecaster_warnings_of_fold_that_fails_in_process_same_as_n
     assert results == expected
 
 
+class RidgeWarnsWhenUnpickled(Ridge):
+    """
+    Ridge that warns when it is unpickled, as the worker processes do with the
+    forecaster serialized once in the main process.
+    """
+
+    def __setstate__(self, state):
+        warnings.warn("Ridge unpickled.", UserWarning)
+        super().__setstate__(state)
+
+
+def test_backtesting_forecaster_unpickling_warnings_not_shown_as_fold_warnings():
+    """
+    Test that the warnings raised when the worker processes unpickle the
+    forecaster are not shown in the main process as warnings of the folds: the
+    warnings are the same as with `n_jobs=1`, where the forecaster is not
+    unpickled.
+    """
+    cv = TimeSeriesFold(steps=5, initial_train_size=30, refit=False, verbose=False)
+
+    def warnings_shown(n_jobs):
+        forecaster = ForecasterRecursive(RidgeWarnsWhenUnpickled(), lags=3)
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always")
+            backtesting_forecaster(
+                forecaster    = forecaster,
+                y             = y,
+                cv            = cv,
+                metric        = "mean_absolute_error",
+                n_jobs        = n_jobs,
+                show_progress = False,
+            )
+
+        return [(w.category, str(w.message), w.filename, w.lineno) for w in record]
+
+    expected = warnings_shown(n_jobs=1)
+    results = warnings_shown(n_jobs=2)
+
+    assert results == expected
+
+
 def expected_scaled_metrics_per_origin(y, backtest_predictions, folds):
     """
     Reference MASE and RMSSE: the error of each prediction is scaled with the
@@ -978,9 +1019,9 @@ def test_backtesting_forecaster_serializes_forecaster_once_only_with_n_jobs_grea
     """
     received = []
 
-    def fit_predict_recording(forecaster, **kwargs):
+    def run_fold_recording(forecaster, **kwargs):
         received.append(forecaster)
-        return _fit_predict_forecaster(forecaster=forecaster, **kwargs)
+        return _deserialize_forecaster_and_run_fold(forecaster=forecaster, **kwargs)
 
     cv = TimeSeriesFold(steps=10, initial_train_size=30, refit=True, verbose=False)
     for n_jobs in [1, 2]:
@@ -990,8 +1031,8 @@ def test_backtesting_forecaster_serializes_forecaster_once_only_with_n_jobs_grea
                 side_effect=lambda **kwargs: Parallel(n_jobs=1)
             ),
             patch(
-                "skforecast.model_selection._validation._fit_predict_forecaster",
-                side_effect=fit_predict_recording
+                "skforecast.model_selection._validation._deserialize_forecaster_and_run_fold",
+                side_effect=run_fold_recording
             )
         ):
             backtesting_forecaster(

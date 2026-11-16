@@ -242,13 +242,65 @@ def _serialize_forecaster_for_workers(
     )
 
 
+def _deserialize_forecaster_and_run_fold(
+    function: Callable,
+    main_pid: int,
+    forecaster: object | np.ndarray,
+    **kwargs
+) -> tuple[Any, list[tuple] | None]:
+    """
+    Run the function of a fold of the backtesting with
+    `_run_recording_worker_warnings`, after deserializing the forecaster if
+    `_serialize_forecaster_for_workers` serialized it, so each fold works on
+    its own copy.
+
+    The forecaster is deserialized before the warnings of the fold start to be
+    recorded, so the warnings raised when it is unpickled (for example,
+    deprecations of the libraries of its estimator) are not shown as warnings
+    of the fold: with `n_jobs=1`, the forecaster is not unpickled. In a worker
+    process, they are printed by the worker, as when joblib unpickled the
+    forecaster with the arguments of each fold.
+
+    Parameters
+    ----------
+    function : Callable
+        Function of the fold, defined at module level.
+    main_pid : int
+        Identifier of the main process (`os.getpid()` before `joblib.Parallel`).
+    forecaster : object, numpy ndarray
+        Forecaster model, or its bytes serialized by
+        `_serialize_forecaster_for_workers`.
+    **kwargs
+        Other arguments of `function`.
+
+    Returns
+    -------
+    result : Any
+        Output of `function`.
+    worker_warnings : list, None
+        Warnings raised in the fold (see `_run_recording_worker_warnings`).
+        `None` if the fold runs in the main process.
+
+    """
+
+    if isinstance(forecaster, np.ndarray):
+        forecaster = pickle.loads(forecaster)
+
+    return _run_recording_worker_warnings(
+               function   = function,
+               main_pid   = main_pid,
+               forecaster = forecaster,
+               **kwargs
+           )
+
+
 def _fit_predict_forecaster(
     fold: list,
     y_train: pd.Series | None,
     last_window_y: pd.Series | None,
     exog_train: pd.Series | pd.DataFrame | None,
     exog_test: pd.Series | pd.DataFrame | None,
-    forecaster: object | np.ndarray,
+    forecaster: object,
     store_in_sample_residuals: bool,
     gap: int,
     interval: float | list[float] | tuple[float, ...] | str | object | None,
@@ -291,10 +343,8 @@ def _fit_predict_forecaster(
     exog_test : pandas Series, pandas DataFrame, or None
         Pre-sliced test exogenous variables. `None` when no exogenous
         variables are used.
-    forecaster : object, numpy ndarray
-        Forecaster model, or the forecaster serialized when the folds run in
-        parallel (see `_serialize_forecaster_for_workers`). In that case, it is
-        deserialized here, so each fold works on its own copy.
+    forecaster : object
+        Forecaster model.
     store_in_sample_residuals : bool
         Whether to store in-sample residuals during `fit()`.
     gap : int
@@ -335,9 +385,6 @@ def _fit_predict_forecaster(
         Predictions for the fold.
     
     """
-
-    if isinstance(forecaster, np.ndarray):
-        forecaster = pickle.loads(forecaster)
 
     test_iloc_start = fold[3][0]
     test_iloc_end   = fold[3][1]
@@ -840,7 +887,7 @@ def _backtesting_forecaster(
 
     try:
         backtest_predictions = first_fold_predictions + Parallel(n_jobs=n_jobs)(
-            delayed(_run_recording_worker_warnings)(
+            delayed(_deserialize_forecaster_and_run_fold)(
                 function      = _fit_predict_forecaster,
                 main_pid      = main_pid,
                 fold          = fold,
@@ -1170,7 +1217,7 @@ def backtesting_forecaster(
 
 def _fit_predict_forecaster_multiseries(
     data_fold: tuple,
-    forecaster: object | np.ndarray,
+    forecaster: object,
     store_in_sample_residuals: bool,
     levels: list[str],
     gap: int,
@@ -1203,10 +1250,8 @@ def _fit_predict_forecaster_multiseries(
         exog_train, exog_test, fold)`.
         The forecaster is fitted only if `series_train` is not `None`. For
         the folds without fit, `series_train` and `exog_train` are `None`.
-    forecaster : object, numpy ndarray
-        Forecaster model, or the forecaster serialized when the folds run in
-        parallel (see `_serialize_forecaster_for_workers`). In that case, it is
-        deserialized here, so each fold works on its own copy.
+    forecaster : object
+        Forecaster model.
     store_in_sample_residuals : bool
         Whether to store in-sample residuals during `fit()`.
     levels : list of str
@@ -1253,9 +1298,6 @@ def _fit_predict_forecaster_multiseries(
     folds without refit), `None` is returned instead of the tuple.
     
     """
-
-    if isinstance(forecaster, np.ndarray):
-        forecaster = pickle.loads(forecaster)
 
     (
         series_train,
@@ -1873,7 +1915,7 @@ def _backtesting_forecaster_multiseries(
     main_pid = os.getpid()
     try:
         results = Parallel(n_jobs=n_jobs)(
-            delayed(_run_recording_worker_warnings)(
+            delayed(_deserialize_forecaster_and_run_fold)(
                 function      = _fit_predict_forecaster_multiseries,
                 main_pid      = main_pid,
                 data_fold     = data_fold,

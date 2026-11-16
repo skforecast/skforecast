@@ -27,7 +27,7 @@ from skforecast.direct import ForecasterDirectMultiVariate
 from skforecast.preprocessing import RollingFeatures, CalendarFeatures
 from skforecast.preprocessing import reshape_series_wide_to_long
 from skforecast.model_selection import TimeSeriesFold, backtesting_forecaster_multiseries
-from skforecast.model_selection._validation import _fit_predict_forecaster_multiseries
+from skforecast.model_selection._validation import _deserialize_forecaster_and_run_fold
 
 # Fixtures
 from ....recursive.tests.tests_forecaster_recursive_multiseries.fixtures_forecaster_recursive_multiseries import expected_df_to_long_format
@@ -7873,9 +7873,9 @@ def test_backtesting_forecaster_multiseries_serializes_forecaster_once_only_with
     """
     received = []
 
-    def fit_predict_recording(forecaster, **kwargs):
+    def run_fold_recording(forecaster, **kwargs):
         received.append(forecaster)
-        return _fit_predict_forecaster_multiseries(forecaster=forecaster, **kwargs)
+        return _deserialize_forecaster_and_run_fold(forecaster=forecaster, **kwargs)
 
     cv = TimeSeriesFold(steps=10, initial_train_size=30, refit=True, verbose=False)
     for n_jobs in [1, 2]:
@@ -7885,8 +7885,8 @@ def test_backtesting_forecaster_multiseries_serializes_forecaster_once_only_with
                 side_effect=lambda **kwargs: Parallel(n_jobs=1)
             ),
             patch(
-                "skforecast.model_selection._validation._fit_predict_forecaster_multiseries",
-                side_effect=fit_predict_recording
+                "skforecast.model_selection._validation._deserialize_forecaster_and_run_fold",
+                side_effect=run_fold_recording
             )
         ):
             backtesting_forecaster_multiseries(
