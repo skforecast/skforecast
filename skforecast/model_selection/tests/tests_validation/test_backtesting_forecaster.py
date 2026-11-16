@@ -641,6 +641,59 @@ def test_backtesting_forecaster_classifier_classes_change_between_folds(n_jobs):
     pd.testing.assert_frame_equal(backtest_predictions, expected_predictions)
 
 
+
+@pytest.mark.parametrize(
+    "n_jobs",
+    [1, 2],
+    ids=lambda n_jobs: f"n_jobs: {n_jobs}",
+)
+def test_backtesting_forecaster_classifier_class_only_in_the_lags_of_a_fold(n_jobs):
+    """
+    Test that, with ForecasterRecursiveClassifier, refit and a fixed training
+    size, a fold whose training set has a class ('b') only in its first
+    `window_size` values (it is about to leave the window) does not fail: the
+    estimator of that fold does not know the class, its probability is 0 and
+    it is not predicted. Fold 1 trains on the values 5 to 24 and 'b' is the
+    value 5. The predictions of fold 1 match a forecaster fitted on that
+    training set, and the output is the same with `n_jobs=1` and `n_jobs=2`.
+    """
+    rng = np.random.default_rng(123)
+    values = rng.choice(['a', 'c'], size=40).astype(object)
+    values[5] = 'b'
+    y_local = pd.Series(values, name='y')
+    forecaster = ForecasterRecursiveClassifier(estimator=LogisticRegression(), lags=3)
+    cv = TimeSeriesFold(
+             steps              = 5,
+             initial_train_size = 20,
+             refit              = True,
+             fixed_train_size   = True,
+             verbose            = False
+         )
+
+    _, backtest_predictions = backtesting_forecaster(
+        forecaster    = forecaster,
+        y             = y_local,
+        cv            = cv,
+        metric        = "accuracy_score",
+        n_jobs        = n_jobs,
+        show_progress = False
+    )
+
+    forecaster_fold_1 = ForecasterRecursiveClassifier(
+                            estimator=LogisticRegression(), lags=3
+                        )
+    forecaster_fold_1.fit(y=y_local.iloc[5:25])
+    expected_fold_1 = forecaster_fold_1.predict_proba(steps=5)
+    predictions_fold_1 = backtest_predictions.loc[
+        backtest_predictions["fold"] == 1, expected_fold_1.columns
+    ]
+
+    assert forecaster_fold_1.classes_ == ['a', 'b', 'c']
+    assert (expected_fold_1["b_proba"] == 0).all()
+    assert not (backtest_predictions.loc[backtest_predictions["fold"] == 1, "pred"] == "b").any()
+    pd.testing.assert_frame_equal(predictions_fold_1, expected_fold_1, check_freq=False)
+
+
 @pytest.mark.parametrize(
     "n_jobs, refit, min_work, expected_n_jobs",
     [('auto', True, 0.0, min(max(1, cpu_count() - 1), 4)),

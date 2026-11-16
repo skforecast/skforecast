@@ -1673,9 +1673,13 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         last_window = np.concatenate((last_window_values, predictions))
 
         if predict_proba:
-            predictions = np.full(
-                shape=(steps, self.n_classes_), fill_value=np.nan, dtype=float
-            )
+            # NOTE: The estimator only knows the classes it saw as target. A class
+            # that is only in the lags (the first `window_size` values of `y`) is
+            # encoded, but its column is missing from `predict_proba`. Each column
+            # of the estimator goes to the column of its code (`classes_` of the
+            # estimator are the codes), and the other classes have probability 0.
+            proba_columns = np.asarray(self.estimator.classes_, dtype=float).astype(int)
+            predictions = np.zeros(shape=(steps, self.n_classes_), dtype=float)
 
         has_lags = self.lags is not None
         has_window_features = self.window_features is not None
@@ -1715,9 +1719,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                 ).astype(int)
 
             if predict_proba:
-                proba = self.estimator.predict_proba(X_predict).ravel()
-                predictions[i, :] = proba
-                pred = self.class_codes_[np.argmax(proba)]
+                predictions[i, proba_columns] = (
+                    self.estimator.predict_proba(X_predict).ravel()
+                )
+                pred = self.class_codes_[np.argmax(predictions[i, :])]
             else:
                 pred = self.estimator.predict(X_predict).ravel().item()
                 predictions[i] = pred
