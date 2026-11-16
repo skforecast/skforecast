@@ -1932,24 +1932,20 @@ def test_backtesting_stats_serializes_forecaster_once_with_n_jobs_above_1():
     assert received_n_jobs_2[0] is received_n_jobs_2[1]
 
 
-@pytest.mark.parametrize(
-    "refit",
-    [True, False],
-    ids=lambda refit: f"refit: {refit}",
-)
-def test_backtesting_stats_threading_backend_same_output_as_n_jobs_1(refit):
+def test_backtesting_stats_threading_backend_same_output_as_n_jobs_1():
     """
     Test that, when the active backend of joblib runs the folds in threads,
     they return the same metrics and predictions as with `n_jobs=1`. Each fold
     receives its own copy of the forecaster, so the folds with refit do not fit
-    the same forecaster at the same time.
+    the same forecaster at the same time. Only with refit: without it,
+    `backtesting_stats` runs with one job (and an `Arima` is always refitted).
     """
     def run_backtesting(n_jobs):
         forecaster = ForecasterStats(estimator=Arima(order=(1, 0, 0)))
         cv = TimeSeriesFold(
                  steps              = 3,
                  initial_train_size = len(y_datetime) - 12,
-                 refit              = refit,
+                 refit              = True,
                  fixed_train_size   = False,
                  verbose            = False
              )

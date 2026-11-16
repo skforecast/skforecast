@@ -257,9 +257,12 @@ def _deserialize_forecaster_and_run_fold(
     The forecaster is deserialized before the warnings of the fold start to be
     recorded, so the warnings raised when it is unpickled (for example,
     deprecations of the libraries of its estimator) are not shown as warnings
-    of the fold: with `n_jobs=1`, the forecaster is not unpickled. In a worker
-    process, they are printed by the worker, as when joblib unpickled the
-    forecaster with the arguments of each fold.
+    of the fold. When joblib runs the folds with one job, the forecaster is not
+    serialized, so it is not unpickled. In a worker process, the warnings of
+    the unpickling are printed by the worker, as when joblib unpickled the
+    forecaster with the arguments of each fold. With the threading backend,
+    they are shown in the main process as they are raised, like the warnings
+    of the fold.
 
     Parameters
     ----------
@@ -2726,9 +2729,10 @@ def _backtesting_stats(
     # be unpickled from them. Copy-on-write memmaps are writable and still
     # shared. Only with `Sarimax`: a `Parallel` with a non-default `mmap_mode`
     # makes loky restart the workers of a previous call with the default one.
-    # The forecaster is now serialized once, so its Kalman filter is unpickled
-    # from bytes. The copy-on-write memmaps are kept for `y` and `exog`, since a
-    # `Sarimax` has not been checked with read-only ones.
+    # The forecaster is sent serialized, so its Kalman filter is unpickled from
+    # bytes. The copy-on-write memmaps are kept for `y` and `exog` as a
+    # precaution: read-only ones gave the same predictions with a `Sarimax` in
+    # one check, not enough to drop them.
     any_sarimax = any(
         est_type == 'skforecast.stats._sarimax.Sarimax'
         for est_type in forecaster.estimator_types

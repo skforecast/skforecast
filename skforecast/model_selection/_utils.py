@@ -927,13 +927,15 @@ def select_n_jobs_backtesting(
 # (2 s, Apple M5 with 9 workers). Other platforms use the value of Windows.
 _MIN_PARALLEL_WORKLOAD_SECONDS = {"win32": 4.0, "linux": 2.0, "darwin": 2.0}
 _MIN_PARALLEL_WORKLOAD_SECONDS_DEFAULT = 4.0
-# NOTE: Without refit, each fold only predicts, but the fixed cost is the same
-# as with refit: starting the workers, sending them the fitted forecaster and
-# loading the libraries of its estimator. So a backtesting without refit needs
-# more work to pay off. Measured on Linux with 16 and 8 CPUs, a backtesting of
-# 100 folds whose predictions take 3.8 to 4.1 seconds in one process was 1.2 to
-# 1.4 times slower in parallel in the first call (`CatBoostRegressor`), and one
-# of 19 seconds was 2.4 times faster (`HistGradientBoostingRegressor`).
+# NOTE: Prediction time, in seconds, below which a single backtesting without
+# refit and with `n_jobs='auto'` runs with one job. Each fold only predicts,
+# and parallelizing has a fixed cost: starting the workers, sending them the
+# fitted forecaster and loading the libraries of its estimator. The value comes
+# from measurements, not from that cost: on Linux with 16 and 8 CPUs, a
+# backtesting of 100 folds whose predictions take 3.8 to 4.1 seconds in one
+# process was 1.2 to 1.4 times slower in parallel in the first call
+# (`CatBoostRegressor`), and one of 19 seconds was 2.4 times faster
+# (`HistGradientBoostingRegressor`).
 _MIN_PARALLEL_PREDICTION_SECONDS = {"win32": 12.0, "linux": 6.0, "darwin": 6.0}
 _MIN_PARALLEL_PREDICTION_SECONDS_DEFAULT = 12.0
 
