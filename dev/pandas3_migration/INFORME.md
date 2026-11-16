@@ -3575,7 +3575,8 @@ reintentos y sin ningún fallo.
 
 ### PR 7 sobre `0.28.x`, el 2026-11-16
 
-Rama `docs/pandas3`, desde `origin/0.28.x` (`14fa5301c`) con `--no-track`. Antes de escribir,
+Rama `docs/pandas3`, desde `origin/0.28.x` (`14fa5301c`) con `--no-track`; PR
+[#1510](https://github.com/skforecast/skforecast/pull/1510), abierta el 2026-11-16. Antes de escribir,
 cada afirmación de la fila 7, del final de "Revisiones independientes" y de los arreglos
 tras la revisión 5 se comprobó contra el código y se ejecutó en p2 (2.3.3) y p3 (3.1.1)
 (scripts del espacio temporal de la sesión, no versionados).
