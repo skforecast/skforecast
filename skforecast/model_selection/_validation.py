@@ -173,7 +173,7 @@ def _restore_out_sample_residuals(
 def _serialize_forecaster_for_workers(
     forecaster: object,
     n_jobs: int
-) -> object | bytes:
+) -> object | np.ndarray:
     """
     Serialize the forecaster once, in the main thread, when the folds of a
     backtesting run in parallel (`n_jobs` other than 1). Each fold deserializes
@@ -186,10 +186,18 @@ def _serialize_forecaster_for_workers(
     second pool of threads in the main process when they are pickled from that
     thread, which slows down their later fits in it (measured on Linux).
 
-    It is serialized with the pickler of loky, as joblib does (`cloudpickle` if
-    it is installed, `pickle` otherwise), so the forecasters that can be sent to
-    the workers are the same as before. If the pickler of loky cannot be
-    imported, `cloudpickle` is used if it is installed, and `pickle` otherwise.
+    It is serialized with the pickler of loky, the one joblib uses for the
+    arguments of the tasks (`cloudpickle` if it is installed, `pickle`
+    otherwise), so the forecasters that can be sent to the workers are the
+    same as before. If the pickler of loky cannot be imported, `cloudpickle` is
+    used if it is installed, and `pickle` otherwise.
+
+    The bytes are returned as a numpy array (`uint8`). joblib writes the arrays
+    of more than 1 MB (`max_nbytes`) once per call to a file that all the
+    workers read (memmap), instead of sending them with every batch of tasks.
+    Large forecasters, for example with a `RandomForestRegressor` or a
+    `KNeighborsRegressor` (which stores its training data), are then not sent
+    to the workers with each batch, nor kept in memory by each worker.
 
     It is also serialized when the active backend of joblib runs the tasks in
     threads (for example, inside `joblib.parallel_config(backend="threading")`):
@@ -205,8 +213,9 @@ def _serialize_forecaster_for_workers(
 
     Returns
     -------
-    forecaster : object, bytes
-        The forecaster serialized, or the forecaster itself if `n_jobs` is 1.
+    forecaster : object, numpy ndarray
+        The bytes of the forecaster serialized, as a numpy array of `uint8`,
+        or the forecaster itself if `n_jobs` is 1.
 
     """
 
@@ -214,14 +223,17 @@ def _serialize_forecaster_for_workers(
         return forecaster
 
     if loky_dumps is not None:
-        return bytes(loky_dumps(forecaster, protocol=pickle.HIGHEST_PROTOCOL))
+        dumps = loky_dumps
+    else:
+        try:
+            import cloudpickle
+            dumps = cloudpickle.dumps
+        except ImportError:
+            dumps = pickle.dumps
 
-    try:
-        import cloudpickle
-    except ImportError:
-        return pickle.dumps(forecaster, protocol=pickle.HIGHEST_PROTOCOL)
-
-    return cloudpickle.dumps(forecaster, protocol=pickle.HIGHEST_PROTOCOL)
+    return np.frombuffer(
+        dumps(forecaster, protocol=pickle.HIGHEST_PROTOCOL), dtype=np.uint8
+    )
 
 
 def _fit_predict_forecaster(
@@ -230,7 +242,7 @@ def _fit_predict_forecaster(
     last_window_y: pd.Series | None,
     exog_train: pd.Series | pd.DataFrame | None,
     exog_test: pd.Series | pd.DataFrame | None,
-    forecaster: object | bytes,
+    forecaster: object | np.ndarray,
     store_in_sample_residuals: bool,
     gap: int,
     interval: float | list[float] | tuple[float, ...] | str | object | None,
@@ -273,7 +285,7 @@ def _fit_predict_forecaster(
     exog_test : pandas Series, pandas DataFrame, or None
         Pre-sliced test exogenous variables. `None` when no exogenous
         variables are used.
-    forecaster : object, bytes
+    forecaster : object, numpy ndarray
         Forecaster model, or the forecaster serialized when the folds run in
         parallel (see `_serialize_forecaster_for_workers`). In that case, it is
         deserialized here, so each fold works on its own copy.
@@ -318,7 +330,7 @@ def _fit_predict_forecaster(
     
     """
 
-    if isinstance(forecaster, bytes):
+    if isinstance(forecaster, np.ndarray):
         forecaster = pickle.loads(forecaster)
 
     test_iloc_start = fold[3][0]
@@ -1152,7 +1164,7 @@ def backtesting_forecaster(
 
 def _fit_predict_forecaster_multiseries(
     data_fold: tuple,
-    forecaster: object | bytes,
+    forecaster: object | np.ndarray,
     store_in_sample_residuals: bool,
     levels: list[str],
     gap: int,
@@ -1185,7 +1197,7 @@ def _fit_predict_forecaster_multiseries(
         exog_train, exog_test, fold)`.
         The forecaster is fitted only if `series_train` is not `None`. For
         the folds without fit, `series_train` and `exog_train` are `None`.
-    forecaster : object, bytes
+    forecaster : object, numpy ndarray
         Forecaster model, or the forecaster serialized when the folds run in
         parallel (see `_serialize_forecaster_for_workers`). In that case, it is
         deserialized here, so each fold works on its own copy.
@@ -1236,7 +1248,7 @@ def _fit_predict_forecaster_multiseries(
     
     """
 
-    if isinstance(forecaster, bytes):
+    if isinstance(forecaster, np.ndarray):
         forecaster = pickle.loads(forecaster)
 
     (

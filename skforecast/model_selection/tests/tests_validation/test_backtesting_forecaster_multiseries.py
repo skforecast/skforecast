@@ -7867,7 +7867,7 @@ def test_backtesting_forecaster_multiseries_folds_in_processes_same_output_as_n_
 def test_backtesting_forecaster_multiseries_serializes_forecaster_once_only_with_n_jobs_greater_than_1():
     """
     Test that, with `n_jobs` greater than 1, the folds receive the forecaster
-    serialized once, as the same bytes object, and that, with `n_jobs=1`, they
+    serialized once, as the same numpy array, and that, with `n_jobs=1`, they
     receive the forecaster itself. `Parallel` is mocked with a sequential one,
     so no workers are started.
     """
@@ -7901,7 +7901,7 @@ def test_backtesting_forecaster_multiseries_serializes_forecaster_once_only_with
     received_n_jobs_1, received_n_jobs_2 = received[:2], received[2:]
     assert len(received_n_jobs_1) == len(received_n_jobs_2) == 2
     assert all(isinstance(f, ForecasterRecursiveMultiSeries) for f in received_n_jobs_1)
-    assert all(isinstance(f, bytes) for f in received_n_jobs_2)
+    assert all(isinstance(f, np.ndarray) for f in received_n_jobs_2)
     assert received_n_jobs_2[0] is received_n_jobs_2[1]
 
 

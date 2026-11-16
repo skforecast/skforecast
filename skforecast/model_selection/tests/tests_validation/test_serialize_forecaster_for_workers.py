@@ -6,12 +6,21 @@ from unittest.mock import patch
 import pytest
 import numpy as np
 import pandas as pd
+from joblib import Parallel, delayed
 from sklearn.linear_model import Ridge
+from sklearn.neighbors import KNeighborsRegressor
 from skforecast.recursive import ForecasterRecursive
 from skforecast.model_selection._validation import _serialize_forecaster_for_workers
 
 # Fixtures
 from ..fixtures_model_selection import y
+
+
+def is_memmap(array):
+    """
+    Whether `array` is a memmap, called in the workers of joblib.
+    """
+    return isinstance(array, np.memmap)
 
 
 def test_serialize_forecaster_for_workers_returns_forecaster_when_n_jobs_is_1():
@@ -31,14 +40,14 @@ def test_serialize_forecaster_for_workers_returns_forecaster_when_n_jobs_is_1():
     ["loky", "cloudpickle", "pickle"],
     ids=lambda pickler: f"pickler: {pickler}",
 )
-def test_serialize_forecaster_for_workers_bytes_load_same_forecaster(pickler):
+def test_serialize_forecaster_for_workers_array_loads_same_forecaster(pickler):
     """
-    Test that, with `n_jobs` greater than 1, the forecaster is returned as
-    bytes that `pickle.loads` turns into a forecaster with the same
-    predictions: with the pickler of loky, and, if it cannot be imported, with
-    `cloudpickle`, or `pickle` if `cloudpickle` is not installed either. Except
-    with `pickle`, the forecaster has a lambda as `weight_func`, which only
-    `cloudpickle` can serialize.
+    Test that, with `n_jobs` greater than 1, the forecaster is returned as a
+    numpy array of bytes (`uint8`) that `pickle.loads` turns into a forecaster
+    with the same predictions: with the pickler of loky, and, if it cannot be
+    imported, with `cloudpickle`, or `pickle` if `cloudpickle` is not installed
+    either. Except with `pickle`, the forecaster has a lambda as `weight_func`,
+    which only `cloudpickle` can serialize.
     """
     weight_func = (
         None if pickler == "pickle" else lambda index: np.where(index < 20, 0.5, 1.0)
@@ -61,7 +70,28 @@ def test_serialize_forecaster_for_workers_bytes_load_same_forecaster(pickler):
         for p in reversed(patches):
             p.stop()
 
-    assert isinstance(result, bytes)
+    assert isinstance(result, np.ndarray)
+    assert result.dtype == np.uint8
     pd.testing.assert_series_equal(
         pickle.loads(result).predict(steps=5), forecaster.predict(steps=5)
     )
+
+
+def test_serialize_forecaster_for_workers_large_forecaster_reaches_workers_as_memmap():
+    """
+    Test that a serialized forecaster of more than 1 MB reaches the worker
+    processes of joblib as a memmap, written once per call to a file that all
+    the workers read, instead of a copy sent with every batch of tasks. The
+    forecaster has a `KNeighborsRegressor`, which stores its training data.
+    """
+    y_large = pd.Series(np.arange(20_000, dtype=float), name="y")
+    forecaster = ForecasterRecursive(estimator=KNeighborsRegressor(), lags=10)
+    forecaster.fit(y=y_large, store_in_sample_residuals=False)
+
+    result = _serialize_forecaster_for_workers(forecaster=forecaster, n_jobs=2)
+    received_as_memmap = Parallel(n_jobs=2)(
+        delayed(is_memmap)(result) for _ in range(2)
+    )
+
+    assert result.nbytes > 1_000_000
+    assert received_as_memmap == [True, True]
