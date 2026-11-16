@@ -4046,7 +4046,7 @@ def _resolve_n_jobs(n_jobs: int) -> int:
 
     """
 
-    if not isinstance(n_jobs, (int, np.integer)):
+    if not isinstance(n_jobs, int):
         raise TypeError(
             f"`n_jobs` must be an integer or `'auto'`. Got {type(n_jobs)}."
         )

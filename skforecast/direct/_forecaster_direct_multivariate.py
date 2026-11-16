@@ -597,10 +597,6 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                               estimator       = self.estimator
                           )
         else:
-            if not isinstance(n_jobs, int):
-                raise TypeError(
-                    f"`n_jobs` must be an integer or `'auto'`. Got {type(n_jobs)}."
-                )
             self.n_jobs = _resolve_n_jobs(n_jobs)
         
         self.__skforecast_tags__ = {

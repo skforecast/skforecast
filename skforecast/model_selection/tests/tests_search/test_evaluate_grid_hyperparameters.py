@@ -1580,6 +1580,43 @@ def test_ValueError_evaluate_grid_hyperparameters_when_n_jobs_is_0():
     mock_backtesting.assert_not_called()
 
 
+def test_TypeError_evaluate_grid_hyperparameters_when_n_jobs_is_numpy_integer():
+    """
+    Test TypeError is raised in _evaluate_grid_hyperparameters when `n_jobs`
+    is a NumPy integer with `TimeSeriesFold`, which backtesting does not
+    accept, before any candidate is evaluated.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(random_state=123), lags=2)
+    cv = TimeSeriesFold(
+             steps              = 3,
+             initial_train_size = len(y) - 12,
+             refit              = False,
+             fixed_train_size   = False
+         )
+
+    err_msg = re.escape(
+        f"`n_jobs` must be an integer or `'auto'`. Got {type(np.int64(2))}."
+    )
+    with (
+        patch("skforecast.model_selection._search.backtesting_forecaster") as mock_backtesting,
+        pytest.raises(TypeError, match=err_msg)
+    ):
+        _evaluate_grid_hyperparameters(
+            forecaster    = forecaster,
+            y             = y,
+            cv            = cv,
+            lags_grid     = [2, 4],
+            param_grid    = [{'alpha': 0.01}, {'alpha': 0.1}],
+            metric        = 'mean_absolute_error',
+            return_best   = False,
+            n_jobs        = np.int64(2),
+            verbose       = False,
+            show_progress = False
+        )
+
+    mock_backtesting.assert_not_called()
+
+
 def test_evaluate_grid_hyperparameters_n_jobs_0_ignored_with_OneStepAheadFold():
     """
     Test that `n_jobs` is not validated with `OneStepAheadFold`, where it is

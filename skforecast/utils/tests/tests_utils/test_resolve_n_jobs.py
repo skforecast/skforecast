@@ -9,12 +9,13 @@ from skforecast.utils import _resolve_n_jobs
 
 @pytest.mark.parametrize(
     "n_jobs",
-    [1.0, '2', None],
+    [1.0, '2', None, np.int64(2), np.int64(-2), np.int64(0)],
     ids=lambda n_jobs: f'n_jobs: {n_jobs!r}'
 )
 def test_resolve_n_jobs_TypeError_when_n_jobs_not_int(n_jobs):
     """
-    Test TypeError is raised when `n_jobs` is not an integer.
+    Test TypeError is raised when `n_jobs` is not a Python int, including NumPy
+    integers, which the input checks of backtesting do not accept either.
     """
     err_msg = re.escape(
         f"`n_jobs` must be an integer or `'auto'`. Got {type(n_jobs)}."
@@ -25,7 +26,7 @@ def test_resolve_n_jobs_TypeError_when_n_jobs_not_int(n_jobs):
 
 @pytest.mark.parametrize(
     "n_jobs",
-    [0, np.int64(0), False],
+    [0, False],
     ids=lambda n_jobs: f'n_jobs: {n_jobs!r}'
 )
 def test_resolve_n_jobs_ValueError_when_n_jobs_is_0(n_jobs):
@@ -45,13 +46,11 @@ def test_resolve_n_jobs_ValueError_when_n_jobs_is_0(n_jobs):
     [(1, 1),
      (3, 3),
      (10, 10),
-     (np.int64(2), 2),
      (True, 1),
      (-1, 4),
      (-2, 3),
      (-4, 1),
-     (-10, 1),
-     (np.int64(-2), 3)],
+     (-10, 1)],
     ids=lambda value: f'{value!r}'
 )
 def test_resolve_n_jobs_output(n_jobs, expected):
