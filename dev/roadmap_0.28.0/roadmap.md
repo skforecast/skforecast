@@ -27,7 +27,7 @@ Esfuerzo: S (horas a 1 día, con tests y docs), M (2 a 5 días), L (más de una 
 | MAINT-docs-deps | Actualizar los pins del extra `docs`, salvo `mkdocs-jupyter` | S | Opcional, medido: sin efecto visible |
 | MAINT-test-deps | Limpiar el extra `test` | S | Opcional |
 | MAINT-bench-pandas3 | Pasar los benchmarks de `benchmarks/` a pandas 3, con una medición puente | S | Pendiente: al final de la 0.28.0, antes de publicar |
-| MAINT-review-pandas3 | Revisiones independientes de la migración a pandas 3 y CI completo sobre `0.28.x` | S | En curso: 4 de 4 hechas (2026-11-16); queda fusionar el arreglo de un hallazgo de la última (#1505) |
+| MAINT-review-pandas3 | Revisiones independientes de la migración a pandas 3 y CI completo sobre `0.28.x` | S | En curso: 5 de 5 hechas (2026-11-16); queda fusionar los arreglos de las dos últimas (#1505) |
 
 Son pequeños y no dependen entre sí, salvo `tomli` (MAINT-test-deps), que se quita con
 DEP-python310, y `pandas[parquet]` (MAINT-test-deps), cuyo mínimo sube con
@@ -421,6 +421,19 @@ y cómo"; esta copia es la que queda si se borra esa carpeta.
   revisado.
   `/code-review ultra <nº de la PR>`. De pago y solo la lanza el usuario. Es la única
   revisión independiente de las PR ya fusionadas (#1495, #1497, #1499, #1500 y #1501).
+- [x] Revisión local de lectura, con ejecución en pandas 2 y pandas 3 (añadida el
+  2026-11-16). Sesión nueva sobre `03ffb8e24`, en dos fases: código que da resultados
+  distintos según la versión de pandas, esté o no en el diff, y después rendimiento,
+  calidad y tests. 11 hallazgos de corrección, ninguno introducido por la migración, y 3
+  de calidad. Arreglados en la #1505: huecos de `exog` sin detectar con pandas 3 e
+  índices en pasos fijos de UTC, `date_column` con zona horaria en
+  `calculate_distance_from_holiday` y un array de solo lectura en el `predict` de
+  `ForecasterDirectMultiVariate` con pandas 3. Para documentar en la PR 7: `Day(n)` en
+  `ForecasterEquivalentDate` con datos horarios con zona, `None` en exógenas de texto,
+  residuos de solo lectura y `last_window` de forecasters guardados con pandas 2. Fuera
+  de la migración: estimadores que escriben en su entrada en `ForecasterDirect` y
+  `ForecasterRecursive` (issue #1506) y alias de frecuencia que dan horas en
+  `calculate_distance_from_holiday` (issue #1507).
 
 ---
 
