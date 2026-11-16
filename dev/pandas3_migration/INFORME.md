@@ -3573,6 +3573,139 @@ reintentos y sin ningún fallo.
   local.
 - Pendiente: la PR 7. Los errores ajenos a la migración están en los issues #1506 a #1509.
 
+### PR 7 sobre `0.28.x`, el 2026-11-16
+
+Rama `docs/pandas3`, desde `origin/0.28.x` (`14fa5301c`) con `--no-track`. Antes de escribir,
+cada afirmación de la fila 7, del final de "Revisiones independientes" y de los arreglos
+tras la revisión 5 se comprobó contra el código y se ejecutó en p2 (2.3.3) y p3 (3.1.1)
+(scripts del espacio temporal de la sesión, no versionados).
+
+**Confirmado:** índices `[us]` en p3 en las salidas (`predict`, `X_train`, `last_window_`),
+`assert_index_equal` falla entre unidades y `==`/`.equals` no; `fit(y [ns], exog [us])`
+lanza el `ValueError` de alineación en p2 y funciona en p3; `tz_convert` pierde `D`, `W` y
+`MS` en p3 y conserva `24h` y `168h`; `24h` en p3 da las mismas predicciones e índice que
+`D` en p2; `pd.DatetimeIndex(idx, freq='D')` lanza en p3 si cruza un cambio de hora;
+`asfreq('D')` en hora local funciona en las dos; dtype `str` en `exog_dtypes_in_`, columnas
+de `X_train` y columna `level`; `None` en texto: categoría propia en p2, `NaN` en p3 (1.5);
+`string[python]` con `pd.NA`: `TypeError` en las dos (`.astype(object).fillna(np.nan)` lo
+evita, sin avisos y con la misma codificación en las dos); `chunk_size='M'`: aviso en p2,
+`ValueError` en p3; `out_sample_residuals_` de solo lectura en p3, también en multiseries
+(1.8); `calculate_distance_from_holiday` con 2 fechas convertidas: días en p2, aviso y
+horas en p3 (1.9), y `24h`/`168h` dan horas en las dos; joblib, pickle y cloudpickle de p3
+no cargan en p2 (`AssertionError` con la nota de `load_forecaster`), los de p2 cargan en
+p3; skops en los dos sentidos; un modelo de p2 con `D` en pasos de UTC cargado en p3:
+`last_window` con `24h` da `TypeError`, con `D` funciona si no cruza un cambio de hora, y
+sin `last_window` predice (1.10); `check_inputs=False` en 200 `predict`: 0,63 en p2 y 0,62
+en p3; `dayofweek` solo en 3 notebooks (ningún `dayofyear`).
+
+**Corregido al comprobarlo:**
+
+- **`Day(n)` en `ForecasterEquivalentDate` cambia resultados entre versiones**, no solo
+  lanza: con datos horarios con zona y el entrenamiento terminado unos días después del
+  cambio de primavera, p2 predice `[336, 337, 338, 339]` (24 h fijas) y p3
+  `[337, 338, 339, 340]` (día de calendario). En otros finales p3 lanza `ValueError`. Es la
+  única excepción a "mismas predicciones" encontrada: va a la nota de versión (highlight y
+  "Before upgrading", con `offset=24 * n` para conservar los resultados).
+- **`pd.DateOffset(days=n)` con datos horarios no falla igual en las dos** (revisión 5,
+  1.1): p2 lanza `NonExistentTimeError` siempre; p3 lanza o predice repitiendo o saltando
+  horas según dónde acaba el entrenamiento. Un entero y `Hour(24 * n)` dan lo mismo en las
+  dos en todos los casos. Con datos diarios en hora local valen el entero y
+  `DateOffset(days=n)`; `Day(n)` solo en p3 (`KeyError` en p2) y `Hour(24 * n)` en ninguna.
+  La recomendación de 3.3 (`pd.DateOffset(days=n)`) queda sustituida por "un entero".
+- **D13: la matriz sin exógenas ya no es de solo lectura.** Con D13 (c) se escribe en ella
+  con pandas en las dos versiones; en p3 `to_numpy()` es de solo lectura para cualquier
+  `DataFrame` (Copy-on-Write), no por skforecast. No se documenta como nota de skforecast;
+  la página lo menciona como comportamiento general de pandas 3.
+- **La lista `trusted` de skops depende de la versión que guardó el fichero**, no solo por
+  `pandas.StringDtype`: p2 escribe `pandas.core.indexes.datetimes.DatetimeIndex` y
+  `pandas.core.frame.DataFrame`, p3 `pandas.DatetimeIndex` y `pandas.DataFrame`. Una lista
+  de una versión no carga ficheros de la otra; hay que obtenerla de cada fichero con
+  `get_untrusted_types`.
+- `dtype: object` en las salidas: la búsqueda da 5 notebooks, no 4 (patrón amplio).
+
+**Decisiones del usuario (2026-11-16):** una página propia con notas cortas que enlazan a
+ella; documentar el cambio de `Day(n)` como comportamiento de pandas 3 (no se cambia el
+código); no reejecutar los notebooks en esta PR (MAINT-docs-pandas3 del roadmap).
+
+**Cambios:**
+
+- Página nueva `docs/faq/pandas-2-and-pandas-3.md` (grupo "Dependencies" de las FAQ en
+  `mkdocs.yml`, `toc_cards.yml` y `page_meta.yml`): texto, resolución, zonas horarias
+  (con `calculate_distance_from_holiday` y el modelo guardado con p2), `ForecasterEquivalentDate`,
+  arrays de solo lectura y persistencia.
+- Notas de una frase con enlace en `input-data`, `save-load-forecaster` (celda nueva),
+  `categorical-features`, `forecasting-baseline` y `calendar-features`; solo Markdown, sin
+  reejecutar.
+- `dayofweek` → `day_of_week` en `probabilistic-forecasting-global-models`,
+  `forecasting-with-deep-learning-rnn-lstm` y `parameters-search-backtesting-vs-one-step-ahead`
+  (mismos valores, salidas guardadas válidas).
+- Skills: `troubleshooting-common-errors` (índice con zona sin frecuencia, unidades
+  mezcladas, joblib de p3 a p2 y lista `trusted`), `forecasting-single-series` (`24h`),
+  `drift-detection` (`'ME'`), `baseline-forecasting` (offsets con zona); `llms-base.txt`
+  (consejo de frecuencia) y regeneración del contexto de IA.
+- Nota de versión: highlight matizado con enlace a la página, dos puntos nuevos en "Before
+  upgrading" (`tz_convert` y `Day(n)`) y entrada de la página en Changed.
+- Fuera, por decisión del usuario (2026-11-16): la nota de `check_inputs=False` en la guía
+  de producción (11.3). El docstring del parámetro, en los 9 forecasters, dice "created for
+  internal use and is not recommended to be changed", así que recomendarlo contradiría la
+  API. Además la ganancia no depende de la versión de pandas (0,63 en p2 y 0,62 en p3), el
+  backtesting y las búsquedas ya llaman a `predict` con `check_inputs=False` tras validar
+  una vez, y saltarse la validación con entradas mal formadas da predicciones erróneas sin
+  error. Hacerlo público es una decisión de API que se aplaza a la PR de rendimiento de la
+  sección 11 (11.3).
+
+**Revisión final de la PR 7 (2026-11-16).** Se volvió a ejecutar cada afirmación de la
+página en p2 y p3 con scripts nuevos. Lo que corrige de lo anterior (también de la lista
+"Confirmado" de este bloque):
+
+- **`.equals` entre resoluciones solo es cierto en p3.** En p2 devuelve `False` (por eso
+  `fit(y [ns], exog [us])` lanza el `ValueError` de alineación); `==` es cierto en las dos
+  y `assert_index_equal` falla en las dos. La página decía que `==` y `.equals` comparaban
+  bien sin distinguir versión.
+- **Conservar la resolución de la entrada es de p3.** En p2, con un índice `[us]` o `[s]`,
+  `X_train` y `last_window_` la conservan pero las predicciones, los intervalos y el
+  backtesting salen en `[ns]` (Recursive, Direct, DirectMultiVariate, MultiSeries, Stats y
+  EquivalentDate). La página lo atribuía a skforecast en general.
+- **`exog_dtypes_out_` no muestra `str`**: la columna de texto ya está codificada
+  (`float64` en las dos). Se quitó de la lista de salidas.
+- **"La única excepción" no lo era.** Un `None` en una columna de texto es categoría propia
+  en p2 y `NaN` en p3: con LightGBM y HistGradientBoosting las predicciones del ejemplo
+  coinciden, pero con un estimador que no admite `NaN` (`Ridge`) p2 ajusta y p3 lanza
+  `ValueError: Input X contains NaN`. La introducción cita ahora dos excepciones, y el
+  highlight y la entrada de Added de la nota de versión remiten a "the cases described in
+  the user guide".
+- **`ForecasterEquivalentDate`, más preciso:** `Day(n)` en p3 también lanza en otoño (hora
+  repetida, "Cannot infer dst time"); `DateOffset(days=n)` en p2 no lanza siempre (si la
+  ventana no contiene la hora del cambio predice desplazado una hora, y en otoño lanza
+  `AmbiguousTimeError`); con datos diarios en hora local `Day(n)` en p2 lanza `ValueError`
+  (no `KeyError`). Caso nuevo: datos diarios en pasos fijos de UTC con `freq='24h'` (el
+  arreglo que la propia página recomienda): valen el entero y `Hour(24 * n)`, `Day(n)` solo
+  en p2 y `DateOffset(days=n)` en ninguna. Tiene su punto en la página y en el skill.
+- **`asfreq('D')` no vale para pasos fijos de UTC**: en las dos versiones pasa a días de
+  calendario y deja en `NaN` los valores posteriores al cambio de hora (48 de 90 en el
+  ejemplo); `asfreq('24h')` pone la frecuencia sin perder nada. `DatetimeIndex` no tiene
+  `asfreq` (la página decía "call `.asfreq('D')` on it" refiriéndose al índice). Para datos
+  mensuales (`MS`) no hay equivalente en horas: índice en UTC.
+- **`out_sample_residuals_` en multiseries**: de solo lectura el array de cada serie;
+  `_unknown_level` es escribible.
+- La nota de `input-data` estaba al final de la celda, bajo "Number of time series"; se
+  movió junto a los tipos de índice admitidos.
+
+Sin cambios tras la revisión: persistencia (los cuatro backends en los dos sentidos y las
+listas `trusted`), `tz_convert`, `24h` igual que `D` en p2, `calculate_distance_from_holiday`,
+`chunk_size='M'` y `dayofweek`.
+
+**Único cambio de código de la PR 7 (a petición del usuario, 2026-11-16):** el error de
+`PopulationDriftDetector` con un `chunk_size` de texto que pandas no reconoce decía
+`Got <class 'str'>` y descartaba el error de pandas. Ahora muestra el valor y reenvía ese
+error (`... Got 'M'. Error from pandas: ... 'M' is no longer supported for offsets. Please
+use 'ME' instead.`), encadenado con `from exc`; no se mantiene una tabla propia de alias.
+En p2 `'M'` sigue funcionando con el `FutureWarning` de pandas. Test actualizado en
+`tests_population_drift/test_init.py` (comprueba el valor y que el mensaje contiene el de
+pandas, sin depender de su texto); 29 tests de `tests_population_drift` en p2 y en p3.
+Entrada en Changed de la nota de versión. No se pasó la suite completa ni los benchmarks:
+el cambio es el texto de un error en la validación de `__init__`.
+
 ### Revisiones independientes: cuándo y cómo
 
 Acordado el 2026-11-15. Todas las revisiones de las PR 1 a 6 y de la 3a las hizo quien
@@ -3741,7 +3874,17 @@ también hace falta (scikit-learn vuelve escribible la vista de solo lectura de 
 `DataFrame`, y los arrays numpy y el transformador identidad no dependen de pandas). Su
 comentario cita "pandas >= 3" solo para explicar por qué no vale una copia superficial.
 
-**Pendiente de añadir:** lo de la PR 7 (las guías que hablen de las dos versiones).
+**Documentación de la PR 7** (2026-11-16):
+
+- `docs/faq/pandas-2-and-pandas-3.md` se reescribe como página de pandas 3 (o se retira,
+  dejando lo que siga valiendo, como `24h` con zonas horarias o la lista `trusted` por
+  fichero, en las guías), y su entrada en `mkdocs.yml`, `toc_cards.yml` y `page_meta.yml`.
+- Las notas que comparan versiones en `input-data`, `save-load-forecaster`,
+  `categorical-features`, `forecasting-baseline` y `calendar-features`, y en las skills
+  `troubleshooting-common-errors` (unidades mezcladas con pandas 2, joblib de pandas 3 a
+  pandas 2), `forecasting-single-series`, `drift-detection` y `baseline-forecasting`.
+- Reejecutar los notebooks cuyas salidas dependen de la versión (MAINT-docs-pandas3), si
+  no se hizo antes.
 
 ### Historial de lo pendiente entre sesiones
 
@@ -3884,10 +4027,24 @@ medir). La
 conversión arrow de los nombres de columna (7 % del bucle) no es evitable
 mientras se validen las columnas de entrada: hay que leerlas.
 
-Lo único que sí entra en la migración es documentación: la PR 7 puede
-mencionar, en la guía de rendimiento, que `check_inputs=False` quita un
-tercio del tiempo de `predict` en bucles con entradas ya validadas (tabla
-de 11.1), en las dos versiones de pandas.
+Lo único que podía entrar en la migración era documentación: mencionar, en
+la guía de rendimiento, que `check_inputs=False` quita un tercio del tiempo
+de `predict` en bucles con entradas ya validadas (tabla de 11.1), en las dos
+versiones de pandas. **Descartado en la PR 7 (decisión del usuario,
+2026-11-16) y aplazado a esta PR de rendimiento.** Medido de nuevo en la
+PR 7 (200 `predict` con `exog` y `last_window`, mínimo de 5): 61,9 a 39,1 ms
+en p2 y 78,5 a 48,4 ms en p3 (0,63 y 0,62). Motivos: el docstring del
+parámetro, en los 9 forecasters, dice que es de uso interno y que no se
+recomienda cambiarlo; saltarse la validación con entradas mal formadas da
+predicciones erróneas sin error, a cambio de unos 0,1 ms por llamada; y el
+backtesting y las búsquedas ya llaman a `predict` con `check_inputs=False`
+tras validar una vez. Si esta PR lo hace público, el docstring de los 9
+forecasters tiene que decir qué validaciones se saltan y que las entradas
+incorrectas dan resultados incorrectos sin error, con tests de ese
+comportamiento; solo entonces una nota en la guía de producción
+(`forecaster-in-production`). Con el camino interno en numpy (11.2) el coste
+de validar puede cambiar, así que la decisión se toma con la medida de esta
+PR.
 
 ### 11.4 Cómo justificarla y validarla
 
