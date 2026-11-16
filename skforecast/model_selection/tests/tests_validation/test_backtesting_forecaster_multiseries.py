@@ -7826,7 +7826,9 @@ def test_backtesting_forecaster_multiseries_warnings_of_folds_in_processes_same_
     [True, False],
     ids=lambda refit: f"refit: {refit}",
 )
-def test_backtesting_forecaster_multiseries_folds_in_processes_same_output_as_n_jobs_1(refit):
+def test_backtesting_forecaster_multiseries_folds_in_processes_same_output_as_n_jobs_1(
+    refit
+):
     """
     Test that the folds that run in worker processes, which receive the
     forecaster serialized once in the main process, return the same metrics
@@ -7864,7 +7866,7 @@ def test_backtesting_forecaster_multiseries_folds_in_processes_same_output_as_n_
     pd.testing.assert_frame_equal(predictions, expected_predictions)
 
 
-def test_backtesting_forecaster_multiseries_serializes_forecaster_once_only_with_n_jobs_greater_than_1():
+def test_backtesting_forecaster_multiseries_serializes_once_with_n_jobs_above_1():
     """
     Test that, with `n_jobs` greater than 1, the folds receive the forecaster
     serialized once, as the same numpy array, and that, with `n_jobs=1`, they
@@ -7885,12 +7887,15 @@ def test_backtesting_forecaster_multiseries_serializes_forecaster_once_only_with
                 side_effect=lambda **kwargs: Parallel(n_jobs=1)
             ),
             patch(
-                "skforecast.model_selection._validation._deserialize_forecaster_and_run_fold",
+                "skforecast.model_selection._validation."
+                "_deserialize_forecaster_and_run_fold",
                 side_effect=run_fold_recording
             )
         ):
             backtesting_forecaster_multiseries(
-                forecaster    = ForecasterRecursiveMultiSeries(estimator=Ridge(), lags=3),
+                forecaster    = ForecasterRecursiveMultiSeries(
+                                    estimator=Ridge(), lags=3
+                                ),
                 series        = series_wide_range,
                 cv            = cv,
                 metric        = "mean_absolute_error",
@@ -7910,7 +7915,9 @@ def test_backtesting_forecaster_multiseries_serializes_forecaster_once_only_with
     [True, False],
     ids=lambda refit: f"refit: {refit}",
 )
-def test_backtesting_forecaster_multiseries_threading_backend_same_output_as_n_jobs_1(refit):
+def test_backtesting_forecaster_multiseries_threading_backend_same_output_as_n_jobs_1(
+    refit
+):
     """
     Test that, when the active backend of joblib runs the folds in threads,
     they return the same metrics and predictions as with `n_jobs=1`. Each fold

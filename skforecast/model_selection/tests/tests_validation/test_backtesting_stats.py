@@ -1849,7 +1849,9 @@ def test_backtesting_stats_Parallel_mmap_mode_c_only_with_Sarimax(
     [(1, 1), (10, 2), (-1, min(cpu_count(), 2))],
     ids=["1", "int above folds", "-1"]
 )
-def test_backtesting_stats_n_jobs_limited_by_the_number_of_folds(n_jobs, expected_n_jobs):
+def test_backtesting_stats_n_jobs_limited_by_the_number_of_folds(
+    n_jobs, expected_n_jobs
+):
     """
     Test that backtesting_stats starts no more workers than there are folds
     (2), also with an integer `n_jobs` (`-1` is all the processors). `Parallel`
@@ -1881,7 +1883,7 @@ def test_backtesting_stats_n_jobs_limited_by_the_number_of_folds(n_jobs, expecte
     assert mock_parallel.call_args.kwargs == {"n_jobs": expected_n_jobs}
 
 
-def test_backtesting_stats_serializes_forecaster_once_only_with_n_jobs_greater_than_1():
+def test_backtesting_stats_serializes_forecaster_once_with_n_jobs_above_1():
     """
     Test that, with `n_jobs` greater than 1, the folds receive the forecaster
     serialized once, as the same numpy array, and that, with `n_jobs=1`, they
@@ -1908,7 +1910,8 @@ def test_backtesting_stats_serializes_forecaster_once_only_with_n_jobs_greater_t
                 side_effect=lambda **kwargs: Parallel(n_jobs=1)
             ),
             patch(
-                "skforecast.model_selection._validation._deserialize_forecaster_and_run_fold",
+                "skforecast.model_selection._validation."
+                "_deserialize_forecaster_and_run_fold",
                 side_effect=run_fold_recording
             )
         ):

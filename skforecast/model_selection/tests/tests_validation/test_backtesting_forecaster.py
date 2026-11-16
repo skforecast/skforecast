@@ -617,7 +617,8 @@ def test_backtesting_forecaster_n_jobs_auto_limited_by_the_workload(
             {sys.platform: 1e6}
         ),
         patch(
-            "skforecast.model_selection._utils._MIN_PARALLEL_PREDICTION_SECONDS_DEFAULT",
+            "skforecast.model_selection._utils."
+            "_MIN_PARALLEL_PREDICTION_SECONDS_DEFAULT",
             1e6
         ),
         patch(
@@ -1010,7 +1011,7 @@ def test_backtesting_forecaster_folds_in_processes_same_output_as_n_jobs_1(refit
     pd.testing.assert_frame_equal(predictions, expected_predictions)
 
 
-def test_backtesting_forecaster_serializes_forecaster_once_only_with_n_jobs_greater_than_1():
+def test_backtesting_forecaster_serializes_forecaster_once_with_n_jobs_above_1():
     """
     Test that, with `n_jobs` greater than 1, the folds receive the forecaster
     serialized once, as the same numpy array, and that, with `n_jobs=1`, they
@@ -1031,7 +1032,8 @@ def test_backtesting_forecaster_serializes_forecaster_once_only_with_n_jobs_grea
                 side_effect=lambda **kwargs: Parallel(n_jobs=1)
             ),
             patch(
-                "skforecast.model_selection._validation._deserialize_forecaster_and_run_fold",
+                "skforecast.model_selection._validation."
+                "_deserialize_forecaster_and_run_fold",
                 side_effect=run_fold_recording
             )
         ):
@@ -1167,7 +1169,7 @@ def test_backtesting_forecaster_n_jobs_auto_no_refit_limited_by_the_prediction_w
                    forecaster    = forecaster,
                    y             = y,
                    cv            = cv,
-                   metric        = 'mean_absolute_error',
+                   metric        = "mean_absolute_error",
                    n_jobs        = n_jobs,
                    show_progress = False
                )
@@ -1179,7 +1181,8 @@ def test_backtesting_forecaster_n_jobs_auto_no_refit_limited_by_the_prediction_w
             {sys.platform: min_work}
         ),
         patch(
-            "skforecast.model_selection._utils._MIN_PARALLEL_PREDICTION_SECONDS_DEFAULT",
+            "skforecast.model_selection._utils."
+            "_MIN_PARALLEL_PREDICTION_SECONDS_DEFAULT",
             min_work
         ),
         patch(
@@ -1187,9 +1190,9 @@ def test_backtesting_forecaster_n_jobs_auto_no_refit_limited_by_the_prediction_w
             side_effect=lambda **kwargs: Parallel(n_jobs=1)
         ) as mock_parallel
     ):
-        metric, predictions = run_backtesting(n_jobs='auto')
+        metric, predictions = run_backtesting(n_jobs="auto")
 
-    assert mock_parallel.call_args.kwargs == {'n_jobs': expected_n_jobs}
+    assert mock_parallel.call_args.kwargs == {"n_jobs": expected_n_jobs}
     pd.testing.assert_frame_equal(metric, expected_metric)
     pd.testing.assert_frame_equal(predictions, expected_predictions)
 

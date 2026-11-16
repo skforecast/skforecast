@@ -3061,8 +3061,7 @@ def grid_search_stats(
         The number of jobs to run in parallel, never more than the number of
         folds. If `-1`, then the number of jobs is set to the number of cores. If
         'auto', `n_jobs` is set using the function
-        skforecast.model_selection._utils.select_n_jobs_backtesting. Ignored for
-        `OneStepAheadFold`.
+        skforecast.model_selection._utils.select_n_jobs_backtesting.
     verbose : bool, default False
         Print number of folds used for cv or backtesting.
     show_progress : bool, default True
@@ -3181,8 +3180,7 @@ def random_search_stats(
         The number of jobs to run in parallel, never more than the number of
         folds. If `-1`, then the number of jobs is set to the number of cores. If
         'auto', `n_jobs` is set using the function
-        skforecast.model_selection._utils.select_n_jobs_backtesting. Ignored for
-        `OneStepAheadFold`.
+        skforecast.model_selection._utils.select_n_jobs_backtesting.
     verbose : bool, default False
         Print number of folds used for cv or backtesting.
     show_progress : bool, default True
@@ -3300,8 +3298,7 @@ def _evaluate_grid_hyperparameters_stats(
         The number of jobs to run in parallel, never more than the number of
         folds. If `-1`, then the number of jobs is set to the number of cores. If
         'auto', `n_jobs` is set using the function
-        skforecast.model_selection._utils.select_n_jobs_backtesting. Ignored for
-        `OneStepAheadFold`.
+        skforecast.model_selection._utils.select_n_jobs_backtesting.
     verbose : bool, default False
         Print number of folds used for cv or backtesting.
     show_progress : bool, default True
