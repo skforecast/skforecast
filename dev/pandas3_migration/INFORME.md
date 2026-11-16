@@ -3359,6 +3359,194 @@ reintentos y sin ningún fallo.
   falló una vez en local con p3, pasa en las 17 celdas.
 - Pendiente: la PR 7 y la revisión independiente 4.
 
+**Revisión independiente 4: `/code-review ultra` de `0.28.x` frente a `main`** (2026-11-16;
+casilla 4 de "Revisiones independientes"). Adelantada a la PR de la versión por decisión del
+usuario. El diff completo de `0.28.x` supera el límite de la revisión (8000 líneas; son unas
+14 500, 9806 de ellas en `dev/`), así que se lanzó sobre una rama temporal local,
+`chore/review-0.28.0-no-dev`: `e1889b82f` más un commit que deja `dev/` como en `main`. Nunca
+se subió y está borrada. Alcance: 117 ficheros, 3728 líneas añadidas y 965 quitadas, todo lo
+que hay fuera de `dev/`. Primera de las 3 ejecuciones gratuitas de la cuenta. 2 hallazgos,
+comprobados uno a uno en la sesión de trabajo antes de cambiar nada.
+
+- Hallazgo 1, cierto. `calculate_distance_from_holiday` (`preprocessing/_calendar.py:864`)
+  infiere la frecuencia con `compat.infer_freq` sobre la hora local, sin pasar por
+  `_infer_freq_from_index`, que la PR 4 creó para inferir en UTC. Con un índice diario creado
+  en UTC, convertido a una zona con cambio de hora y que cruza uno, pandas 3 retira la
+  frecuencia en `tz_convert` y la inferencia en hora local da `None`: la unidad pasa a horas
+  y las distancias salen multiplicadas por 24, con el aviso "Could not determine the
+  frequency of the index". Medido con 13 índices de 60 valores y festivos en las posiciones
+  10 y 45 (`time_to_holiday` de la primera fila; lo correcto es 10 días, 70 en el semanal):
+
+  | Índice | pandas 2.3.3 | pandas 3.1.1 |
+  |---|---|---|
+  | Diario en UTC convertido a `Europe/Madrid` o `America/New_York`, cruza un cambio de hora | 10 | 240, con aviso |
+  | El mismo, sin cruzar un cambio de hora | 10 | 10 |
+  | Semanal en UTC convertido a `Europe/Madrid` | 70 | 1680, sin aviso (infiere `168h`) |
+  | El diario que cruza, sin frecuencia (`pd.DatetimeIndex(list(...))`) | 240, con aviso | 240, con aviso |
+  | Diario en UTC, sin zona o en hora local; mensual; horario | igual en las dos | igual en las dos |
+
+  - El caso semanal no lo dio el revisor: no hay aviso, porque la frecuencia inferida es
+    `168h` y se toma como horaria.
+  - Sin frecuencia en el índice, el fallo ya existe con pandas 2 y en la 0.27.0 publicada
+    (240 con aviso en el diario, 1680 sin aviso en el semanal). pandas 3 lo extiende a los
+    índices que salen de `tz_convert`, que en pandas 2 conservaban la frecuencia.
+  - Con `_infer_freq_from_index` en esa línea (simulado sin tocar el árbol): los 5
+    resultados erróneos de los 26 pasan a ser correctos y sin aviso, y los otros 21 no
+    cambian.
+- Hallazgo 2, cierto e intencionado; no se cambia. `reshape_series_wide_to_long` lanza
+  `ValueError` si el índice no tiene frecuencia y no se puede inferir (fechas diarias con
+  huecos, menos de 3 filas). Es D15 (c), decidida en la PR 4: está en la nota de versión
+  (Fixed, #1497) y la fija
+  `test_reshape_series_wide_to_long_ValueError_when_index_has_no_freq_and_it_cannot_be_inferred`.
+  La alternativa del revisor (volver al `asfreq` diario con un aviso) recupera el caso
+  diario con huecos a cambio de volver a perder filas en silencio con datos horarios
+  irregulares.
+- Error anterior, visto al comprobar el hallazgo 1 y ajeno a la migración: con un índice
+  diario en hora local (`date_range(..., freq='D', tz='Europe/Madrid')`) que cruza el cambio
+  de hora de primavera, la distancia sale un día corta (33 en lugar de 34), porque el día
+  de 23 horas se trunca al convertir a días. Igual en la 0.27.0, en p2 y en p3. También
+  con índices semanales y mensuales en hora local.
+- Límite de la revisión: cubre `0.28.x` hasta `e1889b82f`. El código que entre después en
+  la 0.28.0 no está revisado; la PR de la versión a `main` es el sitio para repetirla si
+  hace falta.
+- Pendiente: la PR 7.
+
+**Arreglos tras la revisión 4** (2026-11-16, rama `fix/holiday-distance-utc-freq` desde
+`e1889b82f`; decisión del usuario: arreglar el hallazgo 1 y el error del día de 23 horas,
+y dejar el hallazgo 2 como está). Los dos en `calculate_distance_from_holiday`
+(`preprocessing/_calendar.py`).
+
+- Hallazgo 1: la frecuencia se infiere con `_infer_freq_from_index` en lugar de
+  `compat.infer_freq`. Efecto añadido: un índice sin frecuencia y con menos de 3 fechas
+  lanzaba el `ValueError` de pandas ("Need at least 3 dates to infer frequency") y ahora
+  da el aviso y las horas que dice el docstring.
+- Día de 23 horas: cuando la unidad son días y el índice tiene zona horaria y no avanza
+  en pasos fijos de UTC (`_is_utc_anchored_index`), los días se cuentan entre las fechas
+  locales (`index.tz_localize(None)`). Con pasos fijos de UTC se mantiene el tiempo
+  transcurrido, que ya es un número entero de días. Contar siempre fechas locales
+  fallaría con un índice en UTC a las 22:30 convertido a `Europe/Madrid`, que cambia de
+  fecha local con el cambio de hora.
+- Contraste con 1260 índices (6 zonas, 7 frecuencias de días o más, 3 horas del día, con
+  y sin cambio de hora, en hora local y en pasos de UTC, con y sin frecuencia) frente a
+  la distancia en días de calendario:
+
+  | | pandas 2.3.3 | pandas 3.1.1 |
+  |---|---|---|
+  | Mal en `0.28.x` | 281 | 392 |
+  | Mal con los arreglos | 12 | 24 |
+  | Correctos en `0.28.x` que cambian de valor o de avisos | 0 | 0 |
+
+  Los que siguen mal son los mismos 12 índices (en p3 cuentan dos veces, con y sin
+  `tz_convert`): días laborables, `MS` y `QS` creados en UTC a las 22:30 y convertidos a
+  una zona donde caen en el día siguiente. La frecuencia no se puede inferir ni en hora
+  local ni en UTC, y dan horas con el aviso, igual que antes.
+- Tests: 13 casos nuevos con valores fijos (pasos de UTC diario y semanal, pasos locales
+  diario, semanal y mensual, con y sin frecuencia, y menos de 3 fechas). Sobre el código
+  de `0.28.x` fallan 10 en p2 y 13 en p3.
+- Tiempo (18 000 filas, mínimo de 15): sin zona horaria, igual (3,3 ms en p2 y 1,4 en
+  p3). Diario en hora local con zona: de 95 a 6 ms en p2 y de 134 a 4 en p3, porque ya
+  no opera con un array de objetos `Timestamp`. Diario en pasos de UTC sin frecuencia:
+  de 96 a 101 ms en p2 y de 131 a 141 en p3 (la inferencia en UTC).
+- Verificación: lint sin hallazgos; `skforecast/preprocessing/tests` 370 pasan en p2 y en
+  p3; `page_meta.py` y los ficheros de contexto de IA sin problemas. No se ha ejecutado
+  la suite completa ni el arnés: la función no la llama ningún otro módulo del paquete.
+- Nota de versión en Fixed. PR #1505, abierta el 2026-11-16 (commit `ab182c1d4`).
+
+**Revisión independiente 5: revisión local de lectura, rama frente a `main`** (2026-11-16;
+casilla 5 de "Revisiones independientes", añadida a petición del usuario porque la 4 fue
+rápida y dejó sin ver dos errores de la función que señalaba). Sesión nueva de Claude Code
+(Fable 5.2, esfuerzo `xhigh`) sobre `03ffb8e24` (`0.28.x` más la #1505), con un prompt
+escrito en la sesión de trabajo. Dos fases: código que da un resultado distinto con
+pandas 2 y con pandas 3, esté o no en el diff, y después rendimiento, calidad y tests.
+Solo lectura; ejecuta solo para confirmar sospechas importantes y no lee esta carpeta
+hasta el final.
+
+Resultado: 11 hallazgos de corrección y 3 de la fase 2 para cambiar antes de publicar.
+Ninguno lo introduce la rama: todos ocurren igual en `origin/main` (`fb923786b`) con la
+misma versión de pandas. Comprobados uno a uno en la sesión de trabajo, en p2 y p3, contra
+la rama y contra `origin/main` exportado (el 1.11 no se repitió: es D15).
+
+| Hallazgo | Comprobación | Destino |
+|---|---|---|
+| 1.1 `ForecasterEquivalentDate(offset=pd.offsets.Day(n))` con índice horario con zona que cruza el cambio de hora de primavera: p2 predice, p3 lanza `ValueError` (hora inexistente) en `fit` | Cierto. `pd.DateOffset(days=n)` falla igual en p2 y en p3; `Hour(24 * n)` y un entero funcionan en las dos | PR 7 (documentar) |
+| 1.2 `_check_exog_alignment` no detecta huecos en `exog` cuando ni `exog` ni los pasos a predecir tienen frecuencia (`None == None`): con p3, índices con zona en pasos fijos de UTC | Cierto, solo p3; también con `Europe/Madrid` | Arreglado en la #1505 |
+| 1.3 Estimador que escribe en su entrada (`make_pipeline(StandardScaler(copy=False), Ridge())`): `ForecasterDirect` predice mal desde el segundo paso; en `ForecasterRecursive` salen mal los residuos in-sample (con `store_in_sample_residuals=True`), no las predicciones | Cierto en p2 y p3, mismos valores que la revisión; también `ForecasterDirectMultiVariate` | Fuera de la migración (error previo): issue #1506 |
+| 1.4 `calculate_distance_from_holiday` con `date_column` con zona: un día menos al cruzar el cambio de primavera | Cierto en p2 y p3 | Arreglado en la #1505, con otro arreglo que el propuesto |
+| 1.5 `None` en una exógena de texto: categoría propia con p2 (`object`), `NaN` con p3 (`str`) | Cierto; con `np.nan` p2 ya daba `NaN` | PR 7 (documentar) |
+| 1.6 `create_train_X_y` solo con lags: `X_train` e `y_train` comparten memoria en p2 | Cierto | Decidido (D13 (c)) |
+| 1.7 `ForecasterDirectMultiVariate.predict` sin `transformer_series` pasa a las window features un array de solo lectura con p3 | Cierto, solo p3 | Arreglado en la #1505 |
+| 1.8 `out_sample_residuals_` es de solo lectura con p3 | Cierto, también pasando arrays de numpy | PR 7 (documentar) |
+| 1.9 Menos de 3 fechas creadas en UTC y convertidas: días con p2 (`tz_convert` conserva la frecuencia), aviso y horas con p3 | Cierto | PR 7 (documentar) |
+| 1.10 Forecaster guardado con p2 sobre datos diarios en pasos de UTC y cargado con p3: con `last_window` de `freq="24h"`, que es lo que recomienda la pista, `TypeError` (espera `Day`) | Cierto; asignando `freq="D"` al índice de `last_window` predice | PR 7 (documentar) |
+| 1.11 `reshape_*` con índice en pasos de UTC | No repetido | Decidido (D15 (c)) |
+| 2.1 Los tests de `calculate_distance_from_holiday` no distinguían la condición `_is_utc_anchored_index` (los 68 pasaban con ella anulada) | Cierto en p2 y p3 | Tests añadidos en la #1505 |
+| 2.2 Los tests de `_infer_freq_from_index` no distinguían la precedencia entre la frecuencia local y la de UTC | Cierto en p2 y p3 | Test añadido en la #1505 |
+| 2.3 El docstring de `compat.astype` decía que en bucles de predicción el escaneo de dtypes cuesta más de lo que ahorra | Cierto: `predict` no llama a `astype`, y en `create_predict_X` el escaneo es más rápido (10 exógenas float, 24 lags y 24 pasos: 1,97 a 0,56 ms en p2 y 2,73 a 0,76 en p3, salidas idénticas) | Docstring corregido en la #1505; el parámetro se queda (son 1 a 3 ms de un método que se llama una vez) |
+
+Correcciones a la revisión, al comprobarla:
+
+- **1.4.** Su arreglo (quitar siempre la zona) rompe un caso que hoy es correcto: fechas
+  en pasos fijos de UTC en otoño dan 1 día donde hay 2. Se usa la misma condición que en
+  el modo índice (`_is_utc_anchored_index`).
+- **1.1.** La sección 3.3 y la fila de la PR 7 proponen recomendar `pd.DateOffset(days=n)`
+  con índices con zona. Vale para datos diarios; con datos horarios falla en p2 y en p3, y
+  con p3 `Day(n)` pasa a comportarse igual. Para datos horarios hay que recomendar un
+  entero o `Hour(24 * n)`.
+- **2.3.** La medida de la sección 4 (`predict` en bucle, 1,18) era del prototipo
+  `train_matrix_combo`, no del helper real.
+
+**Arreglos tras la revisión 5** (2026-11-16, commits `973baa845` a `96faf2fcf` en la rama de la #1505, que el
+usuario prefiere a una PR nueva):
+
+- `calculate_distance_from_holiday` (1.4 y opcional de rendimiento): los dos modos
+  comparten la conversión de fechas con zona. Con unidad en días y fechas que no avanzan
+  en pasos fijos de UTC, se cuentan los días entre las fechas locales; en el resto de
+  casos se pasa a UTC sin zona, que da el mismo tiempo transcurrido sin operar con objetos
+  `Timestamp`. Contraste con 2800 casos por entorno frente a la versión anterior: cambian
+  103, todos del modo `date_column` con fechas locales en zonas con cambio de hora; los 260
+  casos ordenados de `date_column` coinciden con el modo índice, y el modo índice y los
+  pasos de UTC no cambian en ninguno. Índice horario con zona, 50 000 filas: de 310 a 10 ms
+  en p2 y de 436 a 3 ms en p3. Límite: fechas en texto con desplazamientos distintos
+  (`+01:00` y `+02:00`) siguen por la ruta de objetos en p2 y pandas 3 las rechaza.
+- `_check_exog_alignment` (1.2): el atajo exige que `exog` tenga frecuencia. `predict`
+  con `exog` sin frecuencia en pasos de UTC: 1,83 a 1,90 ms en p3; en p2 no cambia.
+- `ForecasterDirectMultiVariate._create_predict_inputs` (1.7): `to_numpy(copy=True)`,
+  como el resto de forecasters.
+- Textos: docstring de `compat.astype`, frase del módulo de compatibilidad (los dos
+  `PANDAS_GE_3` de `utils.py`), comentario de `Day` en `_is_utc_anchored_index` (solo
+  hace falta con pandas 2) y su parámetro `freq`, que admite `None`.
+- Tests nuevos, con valores fijos: 9 casos de `calculate_distance_from_holiday` (4 de
+  otoño en pasos de UTC, 4 de `date_column` con zona y 1 horario con zona), 2 de
+  `check_predict_input`, 1 de `ForecasterDirectMultiVariate.predict` y 1 de
+  `_infer_freq_from_index`. Sobre `03ffb8e24` fallan el de `date_column` local de
+  primavera (p2 y p3) y los de 1.2 y 1.7 (solo p3). Mutantes: anular o forzar
+  `_is_utc_anchored_index` y usar la hora local en lugar de UTC los detectan 5, 7 y 6
+  tests en las dos versiones.
+- No se cambia: la nota de `load_forecaster` en la rama de skops (con pandas 2.3 los
+  skops de pandas 3 cargan y el texto se contradice; tiene test y decisión propia), las
+  anotaciones `pd.DateOffset`, el texto de `compat.concat`, quitar `changed_only` y los
+  opcionales de tests. Los alias `SME`, `SMS`, `BQE`, `BQS`, `BYE`, `BYS` y el signo en
+  `_freq_to_timedelta_unit` dan horas en las dos versiones: issue #1507. `24h` y `168h`
+  también dan horas, que es coherente con la frecuencia; se documenta en la PR 7, porque
+  la pista de pandas 3 recomienda `freq="24h"` para datos diarios en pasos de UTC.
+- Sin comprobar: los adaptadores foundation (fechas en `us`, arrays de solo lectura,
+  covariables de texto con ausentes), `ForecasterStats` con índices con zona o en `us`,
+  y skops con índice diario en pasos de UTC.
+- Categóricas (parte de la revisión que llegó después; 86 casos con LightGBM, XGBoost,
+  CatBoost y HistGradientBoosting en los cinco forecasters): nada nuevo que dependa de la
+  versión, salvo el 1.5. Tres comportamientos iguales en p2 y p3, comprobados y fuera de
+  la migración: un `ColumnTransformer` con salida numpy que deja pasar una columna de
+  texto hace que las exógenas numéricas se codifiquen como categóricas, sin aviso (con
+  `set_output(transform="pandas")` no ocurre; issue #1508); una exógena `string[python]`
+  con `pd.NA` da `TypeError` en el codificador (nota para la guía de categóricas, PR 7);
+  y `reshape_exog_long_to_dict` deja como `object` una columna `bool` en las series a las
+  que inserta fechas, y el forecaster rechaza el dict por dtypes distintos (issue #1509).
+- Verificación: lint sin hallazgos; `page_meta.py` sin problemas; tests afectados
+  (`tests_forecaster_direct_multivariate`, `tests_calendar`, `tests_utils`) 1750 pasan en
+  p2 y 1748 pasan con 2 omitidos en p3; suite completa, p2 8202 pasan, 27 omitidos y 3 fallan y p3 8195 pasan, 34 omitidos y 3 fallan (en las dos, los 3 de `test_fit_tensorflow`, por el entorno; son 13 tests más que antes de estos arreglos). Arnés (`run_ab.py --identity --bench control --memory --base origin/0.28.x`, `results/review5_fixes`): identidad estricta 258 de 258 en p2 y en p3; p2 frente a p3 con la rama, 133 iguales, 125 con dtype distinto y ninguna con valores distintos; memoria 0,99 a 1,02; tiempo en p3 de 0,94 a 1,02 del mínimo de la base. En p2 salió de 0,99 a 1,11, con otros procesos lanzados durante la medida; repetidos `predict_loop`, `backtesting_recursive` y `recursive_create_train_X_y`: 1,02, 1,01 y 0,99. `calculate_distance_from_holiday` con 18 000 filas (mínimo de 15, dos tandas, máquina en uso), `0.28.x` frente a la rama: diario en hora local con zona, 105 a 6,6 ms en p2 y 156 a 3,9 en p3; diario en pasos de UTC sin frecuencia, 133 a 9,4 y 194 a 6,5; horario con zona, 137 a 3,6 y 189 a 1,4; sin zona, igual (3,5 y 1,4 ms).
+- Nota de versión: la entrada de la #1505 menciona `date_column`. El 1.2 y el 1.7 solo
+  ocurren con pandas 3, que ninguna versión publicada admite, y no llevan entrada.
+
 ### Revisiones independientes: cuándo y cómo
 
 Acordado el 2026-11-15. Todas las revisiones de las PR 1 a 6 y de la 3a las hizo quien
@@ -3389,14 +3577,30 @@ lista que sobrevive al borrado de `dev/pandas3_migration/` está en
    mínimas (scikit-learn 1.6), en Linux y en macOS. En este cambio protege más que otra
    lectura del diff: el riesgo son las diferencias de comportamiento entre versiones de
    pandas, que detectan los tests y el arnés.
-4. [ ] **En la PR de la versión, `0.28.x` a `main`.** `/code-review ultra <nº de la PR>`:
+4. [x] **En la PR de la versión, `0.28.x` a `main`.** Hecha el 2026-11-16, antes de abrir
+   esa PR, sobre `e1889b82f` sin `dev/`: 2 hallazgos, uno cierto y arreglado en la #1505
+   (rama `fix/holiday-distance-utc-freq`; `calculate_distance_from_holiday` devuelve horas en
+   lugar de días con pandas 3) y uno intencionado ("Revisión independiente 4", arriba). `/code-review ultra <nº de la PR>`:
    revisión multiagente en la nube, de pago, que solo puede lanzar el usuario. Es la única
    revisión independiente de las PR de la migración ya fusionadas (#1495, #1497, #1499,
    #1500 y #1501) y el único punto donde se ve todo junto. Su diff es toda la 0.28.0, no
    solo pandas.
 
+5. [x] **Revisión local de lectura, con ejecución en las dos versiones.** Hecha el
+   2026-11-16 sobre `03ffb8e24`: 11 hallazgos de corrección, ninguno introducido por la
+   migración, y 3 de calidad. Tres arreglados en la #1505 (huecos de `exog` sin detectar
+   con pandas 3, `date_column` con zona en `calculate_distance_from_holiday` y un array de
+   solo lectura en el `predict` del multivariante), cinco para documentar en la PR 7 y uno
+   fuera de la migración ("Revisión independiente 5", arriba). Añadida a las cuatro
+   acordadas: busca lo que una lectura del diff no ve (código sin cambios que depende de
+   comportamiento que pandas 3 modifica).
+
 La PR 7 (documentación y contexto de IA) no cambia código del paquete y no entra en esta
-lista.
+lista. Tiene que recoger lo que la revisión 5 deja para documentar: `Day(n)` y
+`pd.DateOffset(days=n)` en `ForecasterEquivalentDate` con datos horarios con zona (usar
+un entero o `Hour(24 * n)`), `None` en exógenas de texto, residuos de solo lectura,
+menos de 3 fechas en `calculate_distance_from_holiday` y `last_window` de un forecaster
+guardado con pandas 2 sobre datos diarios en pasos de UTC.
 
 ### Al retirar pandas 2: lista viva
 
@@ -3432,7 +3636,11 @@ independiente de la 3a. **Cada PR de la migración que quede
      version") se reescribe.
 2. `_TZ_MISSING_FREQ_HINT` (`utils.py:85-93`) deja de ser condicional.
 3. `_add_note_pandas_3_file` (`utils.py:3659`) y los dos `try`/`except` de
-   `load_forecaster` que la llaman se eliminan, con su test.
+   `load_forecaster` que la llaman se eliminan, con su test. El de la rama de skops ya
+   sobra con el mínimo en pandas 2.3, que carga los skops de pandas 3, y su texto se
+   contradice ahí (revisión independiente 5); se deja hasta entonces.
+   `not isinstance(freq, pd.offsets.Day)` en `_is_utc_anchored_index` (`utils.py`) solo
+   hace falta con pandas 2, donde `Day` es un `Tick`; lleva un comentario que lo dice.
 4. Comentarios que citan pandas 2, solo texto: los de los cuatro constructores de la 3a
    ("pandas 2 does not copy it, pandas 3 does"), `utils.py:85` y `_validation.py:3105`.
 

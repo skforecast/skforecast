@@ -1482,6 +1482,46 @@ def test_check_predict_input_ValueError_when_exog_index_does_not_follow_freq(
         )
 
 
+def test_check_predict_input_ValueError_when_exog_has_gap_and_index_in_fixed_utc_steps():
+    """
+    Test ValueError is raised when `exog` has a gap and the indexes are
+    timezone-aware and advance in fixed UTC steps (dates created in UTC and
+    converted to a local timezone). With pandas 3, `tz_convert` drops the
+    frequency, so neither the steps predicted nor `exog` have one.
+    """
+    last_window_index = pd.date_range(
+        start='2020-02-10', periods=10, freq='D', tz='UTC'
+    ).tz_convert('Europe/Madrid')
+    last_window = pd.Series(
+        data  = np.arange(10, dtype=float),
+        index = pd.DatetimeIndex(last_window_index, freq='D')
+    )
+    exog_index = pd.date_range(
+        start='2020-02-20', periods=6, freq='D', tz='UTC'
+    ).tz_convert('Europe/Madrid').delete(2)
+    exog = pd.Series(data=np.arange(5, dtype=float), index=exog_index, name='exog1')
+
+    err_msg = re.escape(
+        "`exog` must have consecutive values following the frequency of "
+        "`last_window` for the 5 steps predicted.\n"
+        "    Expected index at position 2 : 2020-02-22 01:00:00+01:00.\n"
+        "    `exog` index at position 2 : 2020-02-23 01:00:00+01:00.\n"
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        check_predict_input(
+            forecaster_name = 'ForecasterRecursive',
+            steps           = 5,
+            is_fitted       = True,
+            exog_in_        = True,
+            index_type_     = pd.DatetimeIndex,
+            index_freq_     = 'D',
+            window_size     = 5,
+            last_window     = last_window,
+            exog            = exog,
+            exog_names_in_  = ['exog1']
+        )
+
+
 def test_check_predict_input_ValueError_when_exog_RangeIndex_has_other_step():
     """
     Test ValueError is raised when `exog` starts one step ahead of
@@ -1535,9 +1575,19 @@ def test_check_predict_input_ValueError_when_exog_RangeIndex_has_other_step():
         (pd.date_range(end='2024-03-31', periods=10, freq='D', tz='Europe/Madrid'),
          pd.DatetimeIndex(['2024-04-01', '2024-04-02', '2024-04-03',
                            '2024-04-04', '2024-04-05'], tz='Europe/Madrid')),
+        (pd.DatetimeIndex(
+             pd.date_range(start='2020-02-10', periods=10, freq='D', tz='UTC')
+             .tz_convert('Europe/Madrid'),
+             freq='D'
+         ),
+         pd.DatetimeIndex(
+             pd.date_range(start='2020-02-20', periods=5, freq='D', tz='UTC')
+             .tz_convert('Europe/Madrid').to_list()
+         )),
     ],
     ids=['extra_rows', 'without_freq', 'gap_after_last_step',
-         'tz_aware_crosses_dst', 'tz_aware_last_window_ends_on_dst_day']
+         'tz_aware_crosses_dst', 'tz_aware_last_window_ends_on_dst_day',
+         'tz_aware_fixed_utc_steps_without_freq']
 )
 def test_check_predict_input_no_error_when_exog_index_follows_last_window_freq(
     last_window_index, exog_index
@@ -1545,8 +1595,9 @@ def test_check_predict_input_no_error_when_exog_index_follows_last_window_freq(
     """
     Test no error or warning is raised when the index of `exog` follows the
     frequency of `last_window` for the steps predicted: with extra rows, without
-    `freq` (e.g. read from a CSV file), with a gap after the last step predicted
-    and timezone-aware across a daylight saving change (Europe/Madrid).
+    `freq` (e.g. read from a CSV file), with a gap after the last step predicted,
+    timezone-aware across a daylight saving change (Europe/Madrid) and
+    timezone-aware in fixed UTC steps without `freq`.
     """
     last_window = pd.Series(data=np.arange(10, dtype=float), index=last_window_index)
     exog = pd.Series(
