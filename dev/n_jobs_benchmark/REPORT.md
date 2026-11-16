@@ -323,13 +323,69 @@ de decidir si se hace.
   multiserie con 4 CPU sobre la rama actual antes de pensar en una regla.
 - **Caché del forecaster en cada worker.** Evitaría deserializarlo en cada
   fold, a cambio de retener memoria en los workers y de necesitar invalidarla
-  entre llamadas. Falta: medir cuánto pesa hoy la deserialización por fold.
+  entre llamadas. Pesa con muchos folds cortos y `n_jobs` entero sin refit
+  (con `'auto'` estos casos van en un proceso): según la revisión final,
+  LightGBM con 2000 folds pasa unos 14 de sus 15 s deserializando (21 ms por
+  fold), y KNN con 480 folds sigue 3 veces más lento que en 0.28.x, que le
+  enviaba los arrays del modelo como memmaps sin copiarlos. Falta: diseñar la
+  invalidación (por llamada) y medirlo.
 - **`cpu_count()` frente a `cpu_count() - 1`** (propuesta 4). Decisión de
   criterio; la alternativa barata es documentar `n_jobs=-1`.
-- **`backtesting_stats` sin la serialización única.** Sigue enviando el
-  forecaster con cada fold; con un backend de hilos y refit, los folds
-  comparten el mismo forecaster, como ocurría antes en los otros
-  backtestings. Falta: aplicarle `_serialize_forecaster_for_workers` teniendo
-  en cuenta el `mmap_mode='c'` de SARIMAX, y medirlo.
+- **`mmap_mode='c'` de `backtesting_stats` con Sarimax.** Se añadió porque el
+  filtro de Kalman de un Sarimax ajustado no se podía deserializar desde los
+  memmaps de solo lectura de joblib. Ahora el forecaster viaja serializado una
+  vez y se deserializa desde bytes, así que quizá ya no haga falta; se ha
+  mantenido para `y` y `exog`. Quitarlo evitaría que loky reinicie los workers
+  al alternar con otro `mmap_mode`. Falta: probar un Sarimax con refit y una
+  serie de más de 1 MB sin él.
+- **Reinicio de los workers de loky por el tope de folds.** loky solo reutiliza
+  sus workers si no cambia el número de hilos que joblib da a cada uno
+  (`cpu_count() // n_jobs`). Con el tope, ese número depende de los folds:
+  dentro de una búsqueda no cambia (de ahí la ganancia de la propuesta 2), pero
+  dos backtestings seguidos con distinto número de folds y el mismo `n_jobs`
+  entero, o un `ForecasterDirect` que ajusta en paralelo con otro `n_jobs`,
+  arrancan workers nuevos en cada llamada (revisión final, 4 CPU: unos 2 s
+  frente a 0,2 s en 0.28.x; con 3 folds, en cambio, la rama ganaba). Falta:
+  medir si compensa aplicar el tope solo cuando no cambia el número de hilos.
+- **Backend de hilos y clases definidas en `__main__`.** Con un backend de
+  hilos, cada fold deserializa el forecaster en el proceso principal, y
+  cloudpickle vuelve a aplicar a la clase original el estado guardado de una
+  clase definida en `__main__` (un estimador propio en un notebook): sus
+  métodos se quedan con una copia de los globales del momento. Un cambio
+  posterior de un global que usen no se ve. Alternativa: con hilos, copiar con
+  `deepcopy` en lugar de serializar, lo que exige saber si el backend activo
+  usa hilos (API privada de joblib).
+- **Avisos de los folds terminados cuando otro fold falla.** Con varios
+  procesos, si un fold lanza un error se pierden los avisos de los folds ya
+  terminados (el error es el mismo). Con `'auto'` sin refit y HGB o CatBoost,
+  donde 0.28.x usaba un proceso, se ven ahora menos avisos que con `n_jobs=1`.
+  Alternativa: `return_as="generator"` y reemitir los avisos antes de relanzar
+  el error.
 - **XGBoost con un hilo al predecir pocas filas** (propuesta 6). Falta medir
   el umbral de filas en Windows.
+
+## Fallos previos encontrados en la revisión final (fuera de la paralelización)
+
+La revisión final de la pull request #1503 (16 de noviembre de 2026) encontró
+tres fallos que ya estaban en 0.28.x y no dependen de la estrategia de
+`n_jobs`. Quedan para pull requests aparte.
+
+- **`ForecasterRecursiveClassifier` con clases que aparecen entre folds.** En
+  `_backtesting_forecaster`, la columna `pred` se calcula con
+  `forecaster.classes_` del proceso principal: con `n_jobs=1`, las del último
+  refit; en paralelo, las del ajuste inicial. Las columnas de probabilidad de
+  una clase que no existía en un fold quedan en NaN, y `argmax` elige esa
+  clase en todo el fold. En el caso de la revisión, la exactitud es 0,40 con
+  `n_jobs=1` y 0,67 con `n_jobs=2`. Arreglo propuesto: calcular `pred` dentro
+  de cada fold, con las clases de ese fold.
+- **`ForecasterRnn` con refit.** keras continúa el entrenamiento en cada
+  `fit`: con `n_jobs=1`, cada fold parte de los pesos del anterior; en
+  paralelo, de los del ajuste inicial (MAE de 3,16 frente a 3,61). Arreglo
+  propuesto: reiniciar los pesos en `ForecasterRnn.fit`, o documentarlo.
+- **`refit=0` y `n_jobs` negativos.** Con `n_jobs` entero, `refit=0` se trata
+  como refit intermitente (avisa y usa un proceso), aunque
+  `select_n_jobs_backtesting` ya lo normaliza a `False`. Los `n_jobs`
+  negativos y `n_jobs=0` se convierten en `cpu_count()`: `-2` da 4 procesos
+  con 4 CPU, donde joblib usaría 3, y `0`, que joblib rechaza, también da 4.
+  Arreglo propuesto: normalizar `refit` y resolver `n_jobs` con
+  `joblib.effective_n_jobs`.
