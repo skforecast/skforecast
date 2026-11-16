@@ -23,6 +23,14 @@ data_long = pd.DataFrame(
     )
 )
 
+data_long_ids_missing = pd.DataFrame(
+    {'value': [1., 2.]},
+    index=pd.MultiIndex.from_arrays(
+        [[None, None], pd.DatetimeIndex(['2020-01-01', '2020-01-02'])],
+        names=['series_id', 'datetime']
+    )
+)
+
 
 def test_split_long_format_ValueError_when_MultiIndex_has_not_two_levels():
     """
@@ -80,18 +88,46 @@ def test_split_long_format_output_when_ids_of_mixed_types_missing_ids_and_missin
 
 
 @pytest.mark.parametrize(
-    "data",
-    [
-        data_long.iloc[:0],
-        data_long.iloc[[4]],
-    ],
-    ids=['no rows', 'only rows with a missing ID']
+    "series_ids",
+    [['b', 'zz'], {'b', 'zz'}],
+    ids=lambda series_ids: f'series_ids: {type(series_ids).__name__}'
 )
-def test_split_long_format_output_when_no_rows_with_an_ID(data):
+def test_split_long_format_output_when_series_ids(series_ids):
+    """
+    Test _split_long_format returns only the requested series IDs that are in
+    the data, as a list or a set, and ignores the requested IDs that are not.
+    """
+    results = _split_long_format(data_long, series_ids=series_ids)
+
+    expected = pd.DataFrame(
+        {'value': [1., 2., 6.], 'other': [10, 20, 60]},
+        index = pd.DatetimeIndex(['2020-01-01', '2020-01-02', '2020-01-03'])
+    )
+
+    assert list(results.keys()) == ['b']
+    pd.testing.assert_frame_equal(results['b'], expected)
+
+
+@pytest.mark.parametrize(
+    "data, series_ids",
+    [
+        (data_long.iloc[:0], None),
+        (data_long.iloc[[4]], None),
+        (data_long, ['zz']),
+        (data_long_ids_missing, ['b']),
+    ],
+    ids=[
+        'no rows', 'only rows with a missing ID', 'no requested ID in the data',
+        'all IDs missing and series_ids'
+    ]
+)
+def test_split_long_format_output_when_no_rows_with_an_ID(data, series_ids):
     """
     Test _split_long_format returns an empty dictionary when the data has no
-    rows, or when all of them have a missing ID.
+    rows, when all of them have a missing ID (also with `series_ids`, when
+    the level of the IDs is empty), or when none of the requested series IDs
+    is in the data.
     """
-    results = _split_long_format(data)
+    results = _split_long_format(data, series_ids=series_ids)
 
     assert results == {}

@@ -2737,16 +2737,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     f"type: {type(exog.index.levels[1])}."
                 )
             
-            # NOTE: The DataFrame of each series is new data, not a view of the
-            # user's `exog` (see `_split_long_format`), so no copy is needed.
+            # NOTE: Only the IDs in `levels` are split. The DataFrame of each
+            # series is new data, not a view of the user's `exog` (see
+            # `_split_long_format`), so no copy is needed.
             if isinstance(exog, pd.Series):
                 exog = exog.to_frame()
-            levels_set = set(levels)
-            exog = {
-                series_id: exog_series
-                for series_id, exog_series in _split_long_format(exog).items()
-                if series_id in levels_set
-            }
+            exog = _split_long_format(exog, series_ids=levels)
 
         if check_inputs:
             check_predict_input(

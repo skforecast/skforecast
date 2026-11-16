@@ -573,3 +573,25 @@ def test_check_preprocess_series_when_series_is_DataFrame_MultiIndex_edge_cases(
         pd.testing.assert_index_equal(series_indexes[k], expected_series_dict[k].index)
         assert not np.shares_memory(series_dict[k].to_numpy(), series['value'].to_numpy())
     pd.testing.assert_frame_equal(series, series_copy)
+
+
+def test_check_preprocess_series_when_series_is_DataFrame_MultiIndex_with_duplicated_first_column():
+    """
+    Test check_preprocess_series with a long-format DataFrame whose first column
+    name is duplicated: only the values of the first column are used.
+    """
+    series = series_long_ids_not_sorted.assign(other=0.)
+    series.columns = ['value', 'value']
+
+    with pytest.warns(IgnoredArgumentWarning):
+        series_dict, _ = check_preprocess_series(series=series)
+
+    expected_series_dict = {
+        'a': pd.Series([4., 5., 6.], index=dates_3, name='a'),
+        'b': pd.Series([1., 2., 3.], index=dates_3, name='b'),
+    }
+
+    assert list(series_dict.keys()) == ['a', 'b']
+    for k in ['a', 'b']:
+        pd.testing.assert_series_equal(series_dict[k], expected_series_dict[k])
+        assert series_dict[k].index.freq == expected_series_dict[k].index.freq

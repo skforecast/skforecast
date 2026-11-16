@@ -4470,7 +4470,8 @@ def _build_predict_function(
 
 
 def _split_long_format(
-    data: pd.Series | pd.DataFrame
+    data: pd.Series | pd.DataFrame,
+    series_ids: list[Any] | set[Any] | None = None
 ) -> dict[Any, pd.Series | pd.DataFrame]:
     """
     Split a long-format pandas Series or DataFrame, whose index is a MultiIndex
@@ -4485,7 +4486,11 @@ def _split_long_format(
     Parameters
     ----------
     data : pandas Series, pandas DataFrame
-        Long-format data with a MultiIndex of two levels.
+        Long-format data with a MultiIndex of two levels. The second level must
+        be a pandas DatetimeIndex: missing dates are filled with `NaT`.
+    series_ids : list, set, default None
+        Series IDs to return; the rows of the other IDs are not copied. If
+        `None`, all the series IDs are returned.
 
     Returns
     -------
@@ -4515,7 +4520,12 @@ def _split_long_format(
     ids_rank, ids_sorted = pd.factorize(index.levels[0], sort=True)
 
     # NOTE: Rows with a missing ID have code -1 and are dropped, as groupby does.
-    positions = np.flatnonzero(index.codes[0] >= 0)
+    # The IDs not requested are dropped here too, before any row is copied.
+    rows_kept = index.codes[0] >= 0
+    if series_ids is not None:
+        ids_kept = index.levels[0].isin(list(series_ids))
+        rows_kept[rows_kept] = ids_kept[index.codes[0][rows_kept]]
+    positions = np.flatnonzero(rows_kept)
     if len(positions) == 0:
         return {}
     ids_codes = ids_rank[index.codes[0][positions]]
@@ -4525,31 +4535,32 @@ def _split_long_format(
 
     starts = np.flatnonzero(np.r_[True, ids_codes[1:] != ids_codes[:-1]])
     ends = np.r_[starts[1:], len(ids_codes)]
-    series_ids = ids_sorted.take(ids_codes[starts])
+    ids_found = ids_sorted.take(ids_codes[starts])
 
     # NOTE: Each dates index is a `take` of the dates level, as in `droplevel`,
     # which keeps the frequency of the level when the positions are consecutive.
-    dates_level = index.levels[1]
+    dates_level = index.levels[1].rename(None)
     dates_codes = index.codes[1][positions]
     missing_dates = bool((dates_codes < 0).any())
     take_kwargs = {"allow_fill": True, "fill_value": pd.NaT} if missing_dates else {}
 
     if isinstance(data, pd.Series):
         values = data.array.take(positions)
-    else:
-        data = data.iloc[positions]
-
-    data_dict = {}
-    for series_id, start, end in zip(series_ids, starts, ends):
-        dates = dates_level.take(dates_codes[start:end], **take_kwargs)
-        dates.name = None
-        if isinstance(data, pd.Series):
-            data_dict[series_id] = pd.Series(
-                values[start:end], index=dates, name=series_id, copy=False
+        data_dict = {
+            series_id: pd.Series(
+                values[start:end],
+                index=dates_level.take(dates_codes[start:end], **take_kwargs),
+                name=series_id,
+                copy=False
             )
-        else:
-            data_series = data.iloc[start:end].copy(deep=False)
-            data_series.index = dates
+            for series_id, start, end in zip(ids_found, starts, ends)
+        }
+    else:
+        data_sorted = data.iloc[positions]
+        data_dict = {}
+        for series_id, start, end in zip(ids_found, starts, ends):
+            data_series = data_sorted.iloc[start:end].copy(deep=False)
+            data_series.index = dates_level.take(dates_codes[start:end], **take_kwargs)
             data_dict[series_id] = data_series
 
     return data_dict
@@ -4622,7 +4633,8 @@ def check_preprocess_series(
                     IgnoredArgumentWarning
                 )
 
-            series_dict = _split_long_format(series[first_col])
+            # NOTE: By position, in case the name of the first column is duplicated.
+            series_dict = _split_long_format(series.iloc[:, 0])
         
         warnings.warn(
             "Passing a DataFrame (either wide or long format) as `series` requires "
@@ -4795,16 +4807,11 @@ def check_preprocess_exog_multiseries(
                     f"pandas DatetimeIndex. Found `exog` index type: "
                     f"{type(exog.index.levels[1])}."
                 )
-            # NOTE: The DataFrame of each series is new data, not a view of the
-            # user's `exog` (see `_split_long_format`), so no copy is needed.
-            exog_long_dict = _split_long_format(exog)
-            exog_dict.update(
-                {
-                    series_id: exog_series
-                    for series_id, exog_series in exog_long_dict.items()
-                    if series_id in series_names_set
-                }
-            )
+            # NOTE: Only the IDs in `series_names_in_` are split. The DataFrame of
+            # each series is new data, not a view of the user's `exog` (see
+            # `_split_long_format`), so no copy is needed.
+            exog_long_dict = _split_long_format(exog, series_ids=series_names_set)
+            exog_dict.update(exog_long_dict)
             series_ids_in_exog = exog_long_dict.keys()
             warnings.warn(
                 "Using a long-format DataFrame as `exog` requires additional transformations, "
