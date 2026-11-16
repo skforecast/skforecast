@@ -2716,11 +2716,19 @@ def _backtesting_stats(
         "suppress_warnings": suppress_warnings
     }
 
+    kwargs_fit_predict_forecaster["forecaster"] = _serialize_forecaster_for_workers(
+        forecaster = forecaster,
+        n_jobs     = n_jobs
+    )
+
     # NOTE: joblib sends the arrays over 1 MB to the workers as read-only
     # memmaps, and the Kalman filter of a fitted `Sarimax` (statsmodels) cannot
     # be unpickled from them. Copy-on-write memmaps are writable and still
     # shared. Only with `Sarimax`: a `Parallel` with a non-default `mmap_mode`
     # makes loky restart the workers of a previous call with the default one.
+    # The forecaster is now serialized once, so its Kalman filter is unpickled
+    # from bytes. The copy-on-write memmaps are kept for `y` and `exog`, since a
+    # `Sarimax` has not been checked with read-only ones.
     any_sarimax = any(
         est_type == 'skforecast.stats._sarimax.Sarimax'
         for est_type in forecaster.estimator_types
@@ -2733,7 +2741,7 @@ def _backtesting_stats(
     main_pid = os.getpid()
     try:
         results = Parallel(n_jobs=n_jobs, **parallel_kwargs)(
-            delayed(_run_recording_worker_warnings)(
+            delayed(_deserialize_forecaster_and_run_fold)(
                 function      = _fit_predict_forecaster_stats,
                 main_pid      = main_pid,
                 fold          = fold,

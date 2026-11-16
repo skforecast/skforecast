@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 import numpy as np
 import pandas as pd
-from joblib import Parallel, cpu_count
+from joblib import Parallel, cpu_count, parallel_config
 from sklearn.linear_model import Ridge
 import skforecast.stats._arima as arima_module
 import skforecast.stats._ets as ets_module
@@ -16,6 +16,7 @@ from skforecast.recursive import ForecasterRecursive
 from skforecast.recursive import ForecasterStats
 from skforecast.model_selection._split import TimeSeriesFold
 from skforecast.model_selection import backtesting_stats
+from skforecast.model_selection._validation import _deserialize_forecaster_and_run_fold
 from skforecast.exceptions import IgnoredArgumentWarning
 
 # Fixtures
@@ -1878,6 +1879,94 @@ def test_backtesting_stats_n_jobs_limited_by_the_number_of_folds(n_jobs, expecte
         )
 
     assert mock_parallel.call_args.kwargs == {"n_jobs": expected_n_jobs}
+
+
+def test_backtesting_stats_serializes_forecaster_once_only_with_n_jobs_greater_than_1():
+    """
+    Test that, with `n_jobs` greater than 1, the folds receive the forecaster
+    serialized once, as the same numpy array, and that, with `n_jobs=1`, they
+    receive the forecaster itself. `Parallel` is mocked with a sequential one,
+    so no workers are started.
+    """
+    received = []
+
+    def run_fold_recording(forecaster, **kwargs):
+        received.append(forecaster)
+        return _deserialize_forecaster_and_run_fold(forecaster=forecaster, **kwargs)
+
+    cv = TimeSeriesFold(
+             steps              = 6,
+             initial_train_size = len(y_datetime) - 12,
+             refit              = True,
+             fixed_train_size   = False,
+             verbose            = False
+         )
+    for n_jobs in [1, 2]:
+        with (
+            patch(
+                "skforecast.model_selection._validation.Parallel",
+                side_effect=lambda **kwargs: Parallel(n_jobs=1)
+            ),
+            patch(
+                "skforecast.model_selection._validation._deserialize_forecaster_and_run_fold",
+                side_effect=run_fold_recording
+            )
+        ):
+            backtesting_stats(
+                forecaster        = ForecasterStats(estimator=Arima(order=(1, 0, 0))),
+                y                 = y_datetime,
+                cv                = cv,
+                metric            = "mean_absolute_error",
+                n_jobs            = n_jobs,
+                show_progress     = False,
+                suppress_warnings = True
+            )
+
+    received_n_jobs_1, received_n_jobs_2 = received[:2], received[2:]
+    assert len(received_n_jobs_1) == len(received_n_jobs_2) == 2
+    assert all(isinstance(f, ForecasterStats) for f in received_n_jobs_1)
+    assert all(isinstance(f, np.ndarray) for f in received_n_jobs_2)
+    assert received_n_jobs_2[0] is received_n_jobs_2[1]
+
+
+@pytest.mark.parametrize(
+    "refit",
+    [True, False],
+    ids=lambda refit: f"refit: {refit}",
+)
+def test_backtesting_stats_threading_backend_same_output_as_n_jobs_1(refit):
+    """
+    Test that, when the active backend of joblib runs the folds in threads,
+    they return the same metrics and predictions as with `n_jobs=1`. Each fold
+    receives its own copy of the forecaster, so the folds with refit do not fit
+    the same forecaster at the same time.
+    """
+    def run_backtesting(n_jobs):
+        forecaster = ForecasterStats(estimator=Arima(order=(1, 0, 0)))
+        cv = TimeSeriesFold(
+                 steps              = 3,
+                 initial_train_size = len(y_datetime) - 12,
+                 refit              = refit,
+                 fixed_train_size   = False,
+                 verbose            = False
+             )
+
+        return backtesting_stats(
+                   forecaster        = forecaster,
+                   y                 = y_datetime,
+                   cv                = cv,
+                   metric            = "mean_absolute_error",
+                   n_jobs            = n_jobs,
+                   show_progress     = False,
+                   suppress_warnings = True
+               )
+
+    expected_metric, expected_predictions = run_backtesting(n_jobs=1)
+    with parallel_config(backend="threading"):
+        metric, predictions = run_backtesting(n_jobs=4)
+
+    pd.testing.assert_frame_equal(metric, expected_metric)
+    pd.testing.assert_frame_equal(predictions, expected_predictions)
 
 
 @pytest.mark.parametrize(
