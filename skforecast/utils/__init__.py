@@ -14,6 +14,7 @@ from .utils import (
     _resolve_n_jobs,
     _restore_estimator_categorical_set_params,
     _series_too_short_multiseries,
+    _split_long_format,
     _warn_nan_training_rows,
     _warn_nan_training_rows_direct
 )
