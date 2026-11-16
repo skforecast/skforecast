@@ -45,6 +45,7 @@ from ..utils import (
     check_preprocess_exog_multiseries,
     align_series_and_exog_multiseries,
     _series_too_short_multiseries,
+    _split_long_format,
     prepare_levels_multiseries,
     preprocess_levels_self_last_window_multiseries,
     get_exog_dtypes,
@@ -2736,12 +2737,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     f"type: {type(exog.index.levels[1])}."
                 )
             
-            exog = exog.copy().to_frame() if isinstance(exog, pd.Series) else exog.copy()
-            exog = {
-                series_id: group.droplevel(0)
-                for series_id, group in exog.groupby(level=0, sort=True, observed=True)
-                if series_id in levels
-            }
+            # NOTE: Only the IDs in `levels` are split. The DataFrame of each
+            # series is new data, not a view of the user's `exog` (see
+            # `_split_long_format`), so no copy is needed.
+            if isinstance(exog, pd.Series):
+                exog = exog.to_frame()
+            exog = _split_long_format(exog, series_ids=levels)
 
         if check_inputs:
             check_predict_input(

@@ -4469,6 +4469,103 @@ def _build_predict_function(
     return predict_fn
 
 
+def _split_long_format(
+    data: pd.Series | pd.DataFrame,
+    series_ids: list[Any] | set[Any] | None = None
+) -> dict[Any, pd.Series | pd.DataFrame]:
+    """
+    Split a long-format pandas Series or DataFrame, whose index is a MultiIndex
+    with the series IDs in the first level and the dates in the second, into
+    one object per series ID indexed by its dates. The result is the same as
+    `data.groupby(level=0, sort=True, observed=True)` followed by
+    `droplevel(0)`, with the dates index unnamed: IDs in ascending order, rows
+    in their original order, rows with a missing ID dropped and the frequency
+    of the dates level kept when the rows of a series are consecutive dates of
+    it. A Series is named after its series ID.
+
+    Parameters
+    ----------
+    data : pandas Series, pandas DataFrame
+        Long-format data with a MultiIndex of two levels. The second level must
+        be a pandas DatetimeIndex: missing dates are filled with `NaT`.
+    series_ids : list, set, default None
+        Series IDs to return; the rows of the other IDs are not copied. If
+        `None`, all the series IDs are returned.
+
+    Returns
+    -------
+    data_dict : dict
+        Dictionary with the data of each series ID.
+
+    Notes
+    -----
+    It works on the integer codes of the MultiIndex, without grouping the IDs
+    (text with pandas 3, slower to group without pyarrow): the rows are sorted
+    once and each series is a slice. The values are a new array, so the
+    objects share no memory with `data`, and a DataFrame of each series is a
+    shallow copy of its slice, so pandas 2 does not flag it as a copy of
+    another DataFrame when columns are assigned to it.
+
+    """
+
+    index = data.index
+    if index.nlevels != 2:
+        raise ValueError(
+            f"Long-format data must have a MultiIndex with two levels: the "
+            f"series IDs and the dates. Got {index.nlevels} levels."
+        )
+
+    # NOTE: `factorize` sorts the IDs as groupby does: IDs of mixed types are
+    # allowed and categorical IDs follow the order of their categories.
+    ids_rank, ids_sorted = pd.factorize(index.levels[0], sort=True)
+
+    # NOTE: Rows with a missing ID have code -1 and are dropped, as groupby does.
+    # The IDs not requested are dropped here too, before any row is copied.
+    rows_kept = index.codes[0] >= 0
+    if series_ids is not None:
+        ids_kept = index.levels[0].isin(list(series_ids))
+        rows_kept[rows_kept] = ids_kept[index.codes[0][rows_kept]]
+    positions = np.flatnonzero(rows_kept)
+    if len(positions) == 0:
+        return {}
+    ids_codes = ids_rank[index.codes[0][positions]]
+    row_sorter = np.argsort(ids_codes, kind="stable")
+    positions = positions[row_sorter]
+    ids_codes = ids_codes[row_sorter]
+
+    starts = np.flatnonzero(np.r_[True, ids_codes[1:] != ids_codes[:-1]])
+    ends = np.r_[starts[1:], len(ids_codes)]
+    ids_found = ids_sorted.take(ids_codes[starts])
+
+    # NOTE: Each dates index is a `take` of the dates level, as in `droplevel`,
+    # which keeps the frequency of the level when the positions are consecutive.
+    dates_level = index.levels[1].rename(None)
+    dates_codes = index.codes[1][positions]
+    missing_dates = bool((dates_codes < 0).any())
+    take_kwargs = {"allow_fill": True, "fill_value": pd.NaT} if missing_dates else {}
+
+    if isinstance(data, pd.Series):
+        values = data.array.take(positions)
+        data_dict = {
+            series_id: pd.Series(
+                values[start:end],
+                index=dates_level.take(dates_codes[start:end], **take_kwargs),
+                name=series_id,
+                copy=False
+            )
+            for series_id, start, end in zip(ids_found, starts, ends)
+        }
+    else:
+        data_sorted = data.iloc[positions]
+        data_dict = {}
+        for series_id, start, end in zip(ids_found, starts, ends):
+            data_series = data_sorted.iloc[start:end].copy(deep=False)
+            data_series.index = dates_level.take(dates_codes[start:end], **take_kwargs)
+            data_dict[series_id] = data_series
+
+    return data_dict
+
+
 def check_preprocess_series(
     series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
 ) -> tuple[dict[str, pd.Series], dict[str, pd.Index]]:
@@ -4536,12 +4633,8 @@ def check_preprocess_series(
                     IgnoredArgumentWarning
                 )
 
-            series = series.copy()
-            series.index = series.index.set_names([series.index.names[0], None])
-            series_dict = {
-                series_id: group[first_col].droplevel(0).rename(series_id)
-                for series_id, group in series.groupby(level=0, sort=True, observed=True)
-            }
+            # NOTE: By position, in case the name of the first column is duplicated.
+            series_dict = _split_long_format(series.iloc[:, 0])
         
         warnings.warn(
             "Passing a DataFrame (either wide or long format) as `series` requires "
@@ -4692,10 +4785,15 @@ def check_preprocess_exog_multiseries(
             f"Series/DataFrames or None. Got {type(exog)}."
         )
 
+    # NOTE: A set, because looking up each series ID in a list takes a time
+    # that grows with the square of the number of series.
+    series_names_set = set(series_names_in_)
+
     if isinstance(exog, (pd.Series, pd.DataFrame)): 
         
         check_exog(exog=exog, allow_nan=True)
-        exog = exog.copy().to_frame() if isinstance(exog, pd.Series) else exog.copy()
+        if isinstance(exog, pd.Series):
+            exog = exog.to_frame()
         if exog.columns.has_duplicates:
             raise ValueError(
                 f"`exog` cannot contain duplicated column names. "
@@ -4709,15 +4807,12 @@ def check_preprocess_exog_multiseries(
                     f"pandas DatetimeIndex. Found `exog` index type: "
                     f"{type(exog.index.levels[1])}."
                 )
-            exog.index = exog.index.set_names([exog.index.names[0], None])
-            exog_dict.update(
-                {
-                    series_id: group.droplevel(0)
-                    for series_id, group in exog.groupby(level=0, sort=True, observed=True)
-                    if series_id in series_names_in_
-                }
-            )
-            series_ids_in_exog = exog.index.remove_unused_levels().levels[0]
+            # NOTE: Only the IDs in `series_names_in_` are split. The DataFrame of
+            # each series is new data, not a view of the user's `exog` (see
+            # `_split_long_format`), so no copy is needed.
+            exog_long_dict = _split_long_format(exog, series_ids=series_names_set)
+            exog_dict.update(exog_long_dict)
+            series_ids_in_exog = exog_long_dict.keys()
             warnings.warn(
                 "Using a long-format DataFrame as `exog` requires additional transformations, "
                 "which can increase computational time. It is recommended to use a dictionary of "
@@ -4733,6 +4828,9 @@ def check_preprocess_exog_multiseries(
                     f"    `series` index type : {series_index_type}.\n"
                     f"    `exog`   index type : {type(exog.index)}."
                 )
+            # NOTE: All series share this object; the copy keeps it apart from
+            # the user's `exog`.
+            exog = exog.copy()
             exog_dict = {series_id: exog for series_id in series_names_in_}
             series_ids_in_exog = series_names_in_
 
@@ -4755,12 +4853,12 @@ def check_preprocess_exog_multiseries(
             {
                 k: v.copy()
                 for k, v in exog.items()
-                if k in series_names_in_ and v is not None
+                if k in series_names_set and v is not None
             }
         )
         series_ids_in_exog = exog.keys()
 
-    series_not_in_exog = set(series_names_in_) - set(series_ids_in_exog)
+    series_not_in_exog = series_names_set - set(series_ids_in_exog)
     if series_not_in_exog:
         warnings.warn(
             f"No `exog` for series {series_not_in_exog}. All values "
