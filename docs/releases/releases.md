@@ -97,6 +97,8 @@ The main changes in this release are:
 
 + <code>[ForecasterRecursiveClassifier]</code> raised `ValueError: could not broadcast input array` in `predict_proba` when a class of `y` only appeared in its first `window_size` values (a value of the lags that is never a target), also in <code>[backtesting_forecaster]</code> with refit and `fixed_train_size=True` when a class was about to leave the training set. That class now has probability 0. ([#1514](https://github.com/skforecast/skforecast/pull/1514))
 
++ <code>[ForecasterRecursiveClassifier]</code> raised `ValueError: Length of values does not match length of index` in `get_feature_importances` with an estimator that has `coef_` (for example `LogisticRegression`, also inside `CalibratedClassifierCV`) when it was binary, or when a class of `y` only appeared in its first `window_size` values. The column `classes` now has one row per class of the estimator, and a single row, the positive class, for a binary classifier. ([#1514](https://github.com/skforecast/skforecast/pull/1514))
+
 
 
 ## 0.27.0 <small>Nov 11, 2026</small> { id="0.27.0" }

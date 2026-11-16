@@ -2148,7 +2148,9 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         Returns
         -------
         feature_importances : pandas DataFrame
-            Feature importances associated with each predictor.
+            Feature importances associated with each predictor. With `coef_`,
+            the column `classes` has one row per class known by the estimator,
+            and a single row, the positive class, for a binary classifier.
         
         """
 
@@ -2188,11 +2190,22 @@ class ForecasterRecursiveClassifier(ForecasterBase):
                     'importance': sub_est.feature_importances_
                 })
             elif hasattr(sub_est, 'coef_'):
+                # NOTE: `coef_` has one row per class of the estimator (its
+                # `classes_` are the codes of the encoder). It can know fewer
+                # classes than the forecaster (a class only in the lags), and a
+                # binary linear classifier has a single row, for its positive
+                # class (the second one).
+                estimator_classes = [
+                    self.classes_[code]
+                    for code in np.asarray(sub_est.classes_, dtype=float).astype(int)
+                ]
+                if sub_est.coef_.shape[0] == 1 and len(estimator_classes) == 2:
+                    estimator_classes = estimator_classes[1:]
                 df_fold = pd.DataFrame(
                     data=sub_est.coef_,
                     columns=self.X_train_features_names_out_
                 )
-                df_fold.insert(0, 'classes', self.classes_)
+                df_fold.insert(0, 'classes', estimator_classes)
             else:
                 continue
 
