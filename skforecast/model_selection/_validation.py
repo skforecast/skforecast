@@ -504,9 +504,10 @@ def _backtesting_forecaster(
         - pred: Predicted values for the corresponding series and time steps.
         With a `ForecasterRecursiveClassifier`, the predicted class, followed
         by one column with the probability of each class (e.g., `a_proba`).
-        Each fold predicts with the classes of its own model: with refit, a
-        class that is not in the training set of a fold has probability 0 in
-        that fold.
+        Each fold predicts with the classes of its own model. There is one
+        probability column per class known by the model of at least one fold;
+        with refit, a class that the model of a fold does not know has
+        probability 0 in that fold.
 
         **New in version 0.27.0**: columns `step` and `y_true`.
 
@@ -949,9 +950,10 @@ def backtesting_forecaster(
         - pred: Predicted values for the corresponding series and time steps.
         With a `ForecasterRecursiveClassifier`, the predicted class, followed
         by one column with the probability of each class (e.g., `a_proba`).
-        Each fold predicts with the classes of its own model: with refit, a
-        class that is not in the training set of a fold has probability 0 in
-        that fold.
+        Each fold predicts with the classes of its own model. There is one
+        probability column per class known by the model of at least one fold;
+        with refit, a class that the model of a fold does not know has
+        probability 0 in that fold.
 
         **New in version 0.27.0**: columns `step` and `y_true`.
 

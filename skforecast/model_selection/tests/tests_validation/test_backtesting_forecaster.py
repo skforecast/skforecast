@@ -576,12 +576,8 @@ def test_backtesting_forecaster_classifier_classes_change_between_folds(n_jobs):
     with the classes of its own model when a class only appears in the training
     set of the later folds (`train`, replaced by `bus` in the first 30 values):
     the folds 0 to 2 do not predict it and give it probability 0, and the
-    output is the same with `n_jobs=1` and `n_jobs=2`. Before, the class was
-    chosen with the classes of the forecaster of the main process: those of the
-    last refit with `n_jobs=1`, which predicted `train` in every step of the
-    folds 0 to 2, and those of the initial fit with `n_jobs=2`, which never
-    predicted it. The expected values match, fold by fold, a forecaster fitted
-    on the training set of the fold.
+    output is the same with `n_jobs=1` and `n_jobs=2`. The expected values
+    match, fold by fold, a forecaster fitted on the training set of the fold.
     """
     y_clf_new_class = y_clf.copy()
     y_clf_new_class.iloc[:30] = y_clf_new_class.iloc[:30].replace("train", "bus")
