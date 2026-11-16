@@ -398,8 +398,10 @@ de decidir si se hace.
 
 La revisión final de la pull request #1503 (16 de noviembre de 2026) encontró
 tres fallos que ya estaban en 0.28.x y no dependen de la estrategia de
-`n_jobs`, y al arreglar el primero apareció un cuarto. Quedan para pull
-requests aparte.
+`n_jobs`, y al arreglar el primero apareció un cuarto. Cada uno va en su
+propia pull request: a 16 de noviembre de 2026 están arreglados todos menos el
+de `ForecasterRnn`, y queda una limitación de XGBoost en el de las clases que
+solo están en los lags.
 
 - **`ForecasterRecursiveClassifier` con clases que aparecen entre folds.** En
   `_backtesting_forecaster`, la columna `pred` se calcula con
@@ -418,11 +420,20 @@ requests aparte.
   array from shape (2,) into shape (3,)`. Lo reproducen un `fit` y un
   `predict_proba`, sin backtesting; en un backtesting con refit puede ocurrir
   cuando una clase está a punto de salir de la ventana de entrenamiento.
-  Encontrado al comprobar la pull request #1511, que no lo arregla. Arreglo
-  propuesto, sin estudiar: colocar las probabilidades del estimador en las
-  columnas de sus clases (`estimator.classes_`) y dar 0 a las que no conoce.
-  Las clases no pueden salir solo de los valores objetivo: el encoder también
-  codifica los lags.
+  Encontrado al comprobar la pull request #1511, que no lo arregla. Arreglado
+  en la pull request #1514: `_recursive_predict` coloca las probabilidades del
+  estimador en las columnas de sus clases (`estimator.classes_` son los
+  códigos del encoder), da 0 a las que no conoce y elige la clase con el
+  argmax de la fila completa. Antes, además, tomaba la posición de la columna
+  como el código de la clase. El encoder no cambia: también codifica los lags.
+  **Pendiente:** `XGBClassifier` exige que las clases del objetivo sean
+  `0, 1, ..., k-1`. Si la clase que solo está en los lags no es el último
+  código, falla en `fit`, antes de llegar a ese código (`ValueError: Invalid
+  classes inferred from unique values of y. Expected: [0 1], got [0 2]`, con
+  xgboost 3.4.1); si es el último, funciona desde #1514. Arreglarlo exige
+  entrenar el estimador con los códigos del objetivo renumerados y deshacerlo
+  al predecir: toca `fit`, las dos ramas de `_recursive_predict`, la búsqueda
+  one-step-ahead y `create_train_X_y`, que es público (esfuerzo M).
 - **`ForecasterRnn` con refit.** keras continúa el entrenamiento en cada
   `fit`: con `n_jobs=1`, cada fold parte de los pesos del anterior; en
   paralelo, de los del ajuste inicial (MAE de 3,16 frente a 3,61). Arreglo
@@ -432,5 +443,9 @@ requests aparte.
   `select_n_jobs_backtesting` ya lo normaliza a `False`. Los `n_jobs`
   negativos y `n_jobs=0` se convierten en `cpu_count()`: `-2` da 4 procesos
   con 4 CPU, donde joblib usaría 3, y `0`, que joblib rechaza, también da 4.
-  Arreglo propuesto: normalizar `refit` y resolver `n_jobs` con
-  `joblib.effective_n_jobs`.
+  Arreglado en la pull request #1513: `refit=0` se trata como `False`, y un
+  `n_jobs` entero se resuelve con la regla de joblib
+  (`max(cpu_count() + 1 + n_jobs, 1)`) en una función privada,
+  `_resolve_n_jobs`. No se usa `joblib.effective_n_jobs`, cuyo resultado
+  depende del backend activo. `n_jobs=0` lanza un `ValueError`, y las búsquedas
+  lo comprueban antes de evaluar ningún candidato.
