@@ -331,6 +331,14 @@ def _fit_predict_forecaster(
                    exog              = exog_test,
                    suppress_warnings = suppress_warnings
                )
+        # NOTE: The predicted class is chosen here, with the classes of the
+        # forecaster of this fold, as the forecaster does in its recursive
+        # predictions (the class with the highest probability). With refit, the
+        # classes can change between folds (a class that appears in, or leaves,
+        # the training set), so the classes of another fold cannot be used.
+        pred.insert(
+            0, "pred", np.asarray(forecaster.classes_)[pred.to_numpy().argmax(axis=1)]
+        )
         preds.append(pred)
 
     if return_predictors:
@@ -496,6 +504,10 @@ def _backtesting_forecaster(
         - pred: Predicted values for the corresponding series and time steps.
         With a `ForecasterRecursiveClassifier`, the predicted class, followed
         by one column with the probability of each class (e.g., `a_proba`).
+        Each fold predicts with the classes of its own model. There is one
+        probability column per class known by the model of at least one fold;
+        with refit, a class that the model of a fold does not know has
+        probability 0 in that fold.
 
         **New in version 0.27.0**: columns `step` and `y_true`.
 
@@ -737,9 +749,15 @@ def _backtesting_forecaster(
         backtest_predictions = backtest_predictions.to_frame()
 
     if not is_regression:
-        proba_cols = [f"{cls}_proba" for cls in forecaster.classes_]
-        idx_max = backtest_predictions[proba_cols].to_numpy().argmax(axis=1)
-        backtest_predictions.insert(0, "pred", np.array(forecaster.classes_)[idx_max])
+        # NOTE: The forecaster of a fold only knows the classes of its training
+        # set, so with refit a class can be missing in the probabilities of some
+        # folds (NaN after the concatenation). The forecaster of those folds
+        # gives it no probability: 0. The classes of a fold are always in `y`.
+        y_proba_cols = {f"{cls}_proba" for cls in y.dropna().unique()}
+        proba_cols = [
+            col for col in backtest_predictions.columns if col in y_proba_cols
+        ]
+        backtest_predictions[proba_cols] = backtest_predictions[proba_cols].fillna(0.0)
 
     # NOTE: The step of each prediction is the position of its date in the test
     # set of its fold, gap included, so it goes from `gap + 1` to `gap + steps`
@@ -932,6 +950,10 @@ def backtesting_forecaster(
         - pred: Predicted values for the corresponding series and time steps.
         With a `ForecasterRecursiveClassifier`, the predicted class, followed
         by one column with the probability of each class (e.g., `a_proba`).
+        Each fold predicts with the classes of its own model. There is one
+        probability column per class known by the model of at least one fold;
+        with refit, a class that the model of a fold does not know has
+        probability 0 in that fold.
 
         **New in version 0.27.0**: columns `step` and `y_true`.
 
