@@ -83,6 +83,15 @@ forecaster = ForecasterEquivalentDate(offset=7)
 forecaster = ForecasterEquivalentDate(offset=pd.offsets.Week(1))
 ```
 
+With a timezone-aware index that crosses a daylight saving time change, use an
+integer `offset` (same results with pandas 2 and 3). On hourly data,
+`pd.offsets.Day(n)` is `n * 24` hours with pandas 2 but a calendar day with
+pandas 3 (different predictions after the change, or a `ValueError` for the
+hour skipped in spring or repeated in autumn), and `pd.DateOffset(days=n)` can
+fail or repeat hours: use `offset=24 * n` or `pd.offsets.Hour(24 * n)`. On
+daily data, `offset=n` works with both versions (`pd.offsets.Day(n)` fails
+with pandas 3 on `freq='24h'` and with pandas 2 on dates in local time).
+
 ## `n_offsets` and `agg_func`
 
 Set `n_offsets > 1` to combine several equivalent dates, aggregated by

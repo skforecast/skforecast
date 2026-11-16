@@ -28,6 +28,7 @@ Esfuerzo: S (horas a 1 día, con tests y docs), M (2 a 5 días), L (más de una 
 | MAINT-test-deps | Limpiar el extra `test` | S | Opcional |
 | MAINT-bench-pandas3 | Pasar los benchmarks de `benchmarks/` a pandas 3, con una medición puente | S | Pendiente: al final de la 0.28.0, antes de publicar |
 | MAINT-review-pandas3 | Revisiones independientes de la migración a pandas 3 y CI completo sobre `0.28.x` | S | Hecha (2026-11-16): las 5 revisiones, sus arreglos fusionados (#1505, merge `12898d190`) y los cuatro workflows en verde sobre ese commit |
+| MAINT-docs-pandas3 | Reejecutar con pandas 3 los notebooks de la documentación cuyas salidas dependen de la versión | S | Pendiente: cuando el entorno de la documentación use pandas 3. 3 notebooks imprimen `datetime64[ns]` y unos 5 `object` (detalle en `dev/pandas3_migration/INFORME.md`, "PR 7 sobre `0.28.x`") |
 
 Son pequeños y no dependen entre sí, salvo `tomli` (MAINT-test-deps), que se quita con
 DEP-python310, y `pandas[parquet]` (MAINT-test-deps), cuyo mínimo sube con
@@ -430,7 +431,8 @@ y cómo"; esta copia es la que queda si se borra esa carpeta.
   `calculate_distance_from_holiday` y un array de solo lectura en el `predict` de
   `ForecasterDirectMultiVariate` con pandas 3. Para documentar en la PR 7: `Day(n)` en
   `ForecasterEquivalentDate` con datos horarios con zona, `None` en exógenas de texto,
-  residuos de solo lectura y `last_window` de forecasters guardados con pandas 2. Fuera
+  residuos de solo lectura y `last_window` de forecasters guardados con pandas 2 (recogidos
+  en la PR 7, rama `docs/pandas3`, 2026-11-16: página `docs/faq/pandas-2-and-pandas-3.md`). Fuera
   de la migración: estimadores que escriben en su entrada en `ForecasterDirect` y
   `ForecasterRecursive` (issue #1506) y alias de frecuencia que dan horas en
   `calculate_distance_from_holiday` (issue #1507).

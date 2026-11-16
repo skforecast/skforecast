@@ -153,6 +153,8 @@ nav:
       - Benchmarking skforecast: faq/skforecast-benchmark.ipynb
       - Parallelization in skforecast: faq/parallelization-skforecast.ipynb
       - Profiling skforecast: faq/profiling-skforecast.ipynb
+    - Dependencies:
+      - pandas 2 and pandas 3: faq/pandas-2-and-pandas-3.md
 
   - Skforecast AI: skforecast-ai/skforecast-ai.md
 

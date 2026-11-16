@@ -16,13 +16,17 @@ All significant changes to this project are documented in this release file.
 
 The main changes in this release are:
 
-+ <span class="badge text-bg-feature">Feature</span> Support for pandas 3: skforecast works with pandas 2.3 and 3 and returns the same predictions and metrics with both. ([#1501](https://github.com/skforecast/skforecast/pull/1501))
++ <span class="badge text-bg-feature">Feature</span> Support for pandas 3: skforecast works with pandas 2.3 and 3 and returns the same predictions and metrics with both, except in the cases described in the user guide. [User guide](../faq/pandas-2-and-pandas-3.md) ([#1501](https://github.com/skforecast/skforecast/pull/1501))
 
 !!! warning "Before upgrading"
 
     Some environments and code need to be updated (see **Added** and **Changed**):
 
-    + pandas 3 is supported (`pandas>=2.3, <4.0`). `pip install -U skforecast` keeps the installed pandas, but new environments get pandas 3, and its default dtypes (for example, `str` instead of `object` for text) appear in the outputs. Forecasters saved with pandas 3 load only with pandas 3, or with pandas 2.3 if saved with `backend='skops'`.
+    + pandas 3 is supported (`pandas>=2.3, <4.0`). `pip install -U skforecast` keeps the installed pandas, but new environments get pandas 3, and its default dtypes (for example, `str` instead of `object` for text) appear in the outputs. Forecasters saved with pandas 3 load only with pandas 3, or with pandas 2.3 if saved with `backend='skops'`. The [pandas 2 and pandas 3](../faq/pandas-2-and-pandas-3.md) page lists the differences.
+
+    + With pandas 3, `tz_convert` drops calendar frequencies such as `'D'`, `'W'` or `'MS'`, so the forecasters raise a `ValueError` with an index created in UTC and converted to a local time zone. Create it with `freq='24h'` (daily) or `freq='168h'` (weekly): with `'24h'`, the results are the same as with `'D'` and pandas 2.
+
+    + <code>[ForecasterEquivalentDate]</code> with `offset=pd.offsets.Day(n)` on hourly timezone-aware data: with pandas 3, `Day` is a calendar day, so the predictions after a daylight saving time change differ from pandas 2. Use `offset=24 * n` to keep the previous results.
 
     + skforecast now requires Python 3.11, numpy 2.0 and pandas 2.3. Installing it upgrades numpy and pandas if they are older, and code written for numpy 1.x may need the changes of the [numpy 2.0 migration guide](https://numpy.org/doc/stable/numpy_2_0_migration_guide.html). Forecasters saved with numpy 1.x still load.
 
@@ -31,7 +35,7 @@ The main changes in this release are:
 
 **Added**
 
-+ Added pandas 3 compatibility (`pandas>=2.3, <4.0`). Predictions and metrics are the same with pandas 2.3 and 3; outputs use the default dtypes of the installed version. The backends of <code>[MoiraiAdapter]</code> and <code>[TabPFNAdapter]</code> (`gluonts`) still require pandas 2: installing them downgrades pandas to 2.3. ([#1501](https://github.com/skforecast/skforecast/pull/1501))
++ Added pandas 3 compatibility (`pandas>=2.3, <4.0`). Predictions and metrics are the same with pandas 2.3 and 3, except in the cases described in the [pandas 2 and pandas 3](../faq/pandas-2-and-pandas-3.md) page; outputs use the default dtypes of the installed version. The backends of <code>[MoiraiAdapter]</code> and <code>[TabPFNAdapter]</code> (`gluonts`) still require pandas 2: installing them downgrades pandas to 2.3. ([#1501](https://github.com/skforecast/skforecast/pull/1501))
 
 
 **Changed**
@@ -46,7 +50,11 @@ The main changes in this release are:
 
 + With pandas 3, the error raised when a timezone-aware index has no frequency explains how to keep it: `tz_convert` now drops calendar frequencies such as `'D'` or `'MS'`, and `freq='24h'` (daily) or `freq='168h'` (weekly) keep the same dates. ([#1497](https://github.com/skforecast/skforecast/pull/1497))
 
++ New page [pandas 2 and pandas 3](../faq/pandas-2-and-pandas-3.md) in the FAQ with the differences that pandas 3 brings to skforecast (text dtype, dates in microseconds, time zones, read-only arrays, saving forecasters) and how to write code that works with both versions. ([#1510](https://github.com/skforecast/skforecast/pull/1510))
+
 + When <code>[load_forecaster]</code> fails with pandas 2, the error notes that a forecaster saved with pandas 3 can only be loaded with pandas 3, or with pandas 2.3 if it was saved with `backend='skops'`. ([#1497](https://github.com/skforecast/skforecast/pull/1497))
+
++ The error raised by <code>[PopulationDriftDetector]</code> when `chunk_size` is not a valid pandas frequency shows the value and the error of pandas, which names the alias to use when the one given was removed (with pandas 3, `'ME'` instead of `'M'`). ([#1510](https://github.com/skforecast/skforecast/pull/1510))
 
 
 **Fixed**

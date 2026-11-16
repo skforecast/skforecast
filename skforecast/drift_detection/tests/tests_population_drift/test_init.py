@@ -23,9 +23,15 @@ def test_init_exception_when_chunk_size_not_valid():
     with pytest.raises(ValueError, match=f"{error_msg} Got {chunk_size}."):
         PopulationDriftDetector(chunk_size=chunk_size, threshold=0.95)
 
+    # The value and the error of pandas, which names the alias to use when the
+    # one given was removed, are part of the message
     chunk_size = "non-valid"
-    with pytest.raises(ValueError, match=f"{error_msg} Got {type(chunk_size)}."):
+    with pytest.raises(
+        ValueError, match=f"{error_msg} Got '{chunk_size}'. Error from pandas: "
+    ) as exc_info:
         PopulationDriftDetector(chunk_size=chunk_size, threshold=0.95)
+    assert isinstance(exc_info.value.__cause__, ValueError)
+    assert str(exc_info.value.__cause__) in str(exc_info.value)
 
 
 def test_init_ValueError_when_threshold_method_not_valid():

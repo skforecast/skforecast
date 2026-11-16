@@ -436,6 +436,12 @@ faq/profiling-skforecast.ipynb:
     Profiling skforecast performance: time spent by fit, create_train_X_y and
     predict of the forecasters to find bottlenecks and use the library efficiently.
 
+faq/pandas-2-and-pandas-3.md:
+  title: pandas 2 and pandas 3 in skforecast
+  description: >-
+    pandas 3 in skforecast: str dtype, dates in microseconds, time zones that
+    lose their frequency, read-only arrays and saving models across versions.
+
 # Examples
 examples/examples_english.md:
   title: Time series forecasting examples in Python

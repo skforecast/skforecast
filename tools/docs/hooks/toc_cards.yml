@@ -50,6 +50,9 @@ faq/table-of-contents.md:
     Model Evaluation: Evaluate forecasts and prediction intervals without overly optimistic results.
     Feature Engineering: Encode cyclical calendar features and change the frequency of a series.
     Performance Optimization: Measure and speed up training, backtesting and hyperparameter search.
+    Dependencies: What changes in skforecast with the supported versions of its dependencies.
+  titles:
+    faq/pandas-2-and-pandas-3.md: "pandas 2 and pandas 3: differences in skforecast"
   extra_links:
     Forecasting Tips:
       - title: "Forecasting time series with trend: differentiation"
