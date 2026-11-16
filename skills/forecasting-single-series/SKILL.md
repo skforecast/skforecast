@@ -31,7 +31,7 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 
 | Rule | Symptom | Recovery |
 |------|---------|----------|
-| Set the index frequency before fitting | `ValueError: ... must be a DatetimeIndex with frequency` | Call `data = data.asfreq('h')` (or the correct alias) on `y` and `exog` |
+| Set the index frequency before fitting | `ValueError: ... must be a DatetimeIndex with frequency` | Call `data = data.asfreq('h')` (or the correct alias) on `y` and `exog`. With pandas 3, daily dates converted from UTC with `tz_convert` lose `'D'`: create them with `freq='24h'` |
 | `exog` passed to `predict()` must cover every future step | `exog` length / index error, or the forecast stops short | Slice exog to the full horizon: one row per step, dates matching the forecast |
 | Fit with `store_in_sample_residuals=True` before `predict_interval(method='bootstrapping')` | `No in-sample residuals stored` / empty residuals | Refit: `forecaster.fit(y=y_train, store_in_sample_residuals=True)` |
 | Split chronologically, never shuffle | Over-optimistic metrics, leakage | Use a time-ordered split (`TimeSeriesFold`); do not random-split |

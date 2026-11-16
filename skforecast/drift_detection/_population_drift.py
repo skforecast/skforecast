@@ -273,8 +273,12 @@ class PopulationDriftDetector:
         if isinstance(chunk_size, str):
             try:
                 chunk_size = pd.tseries.frequencies.to_offset(chunk_size)
-            except ValueError:
-                raise ValueError(f"{error_msg} Got {type(chunk_size)}.")
+            except ValueError as exc:
+                # NOTE: The error of pandas names the alias to use when the one
+                # given was removed (for example, 'M' in pandas 3: use 'ME').
+                raise ValueError(
+                    f"{error_msg} Got '{chunk_size}'. Error from pandas: {exc}"
+                ) from exc
         
         if isinstance(chunk_size, int) and chunk_size <= 0:
             raise ValueError(f"{error_msg} Got {chunk_size}.")

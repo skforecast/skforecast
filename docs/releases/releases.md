@@ -16,24 +16,30 @@ All significant changes to this project are documented in this release file.
 
 The main changes in this release are:
 
-+ <span class="badge text-bg-feature">Feature</span> Support for pandas 3: skforecast works with pandas 2.3 and 3 and returns the same predictions and metrics with both. ([#1501](https://github.com/skforecast/skforecast/pull/1501))
++ <span class="badge text-bg-feature">Feature</span> Support for pandas 3: skforecast works with pandas 2.3 and 3 and returns the same predictions and metrics with both, except in the cases described in the user guide. [User guide](../faq/pandas-2-and-pandas-3.md) ([#1501](https://github.com/skforecast/skforecast/pull/1501))
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Faster parallel backtesting and hyperparameter search: the forecaster is sent to the parallel processes once instead of once per fold (except with statistical models), no more processes are started than there are folds, and `n_jobs='auto'` parallelizes a backtesting without refit when its predictions take long enough. In a new session with 16 CPUs, a grid search of XGBoost with refit is 1.8 times faster, and a backtesting without refit with a `HistGradientBoostingRegressor` 2.4 times faster. [User guide](../faq/parallelization-skforecast.ipynb) ([#1503](https://github.com/skforecast/skforecast/pull/1503))
 
 !!! warning "Before upgrading"
 
-    Some environments and code need to be updated (see **Added** and **Changed**):
+    Some environments and code need to be updated (see **Added**, **Changed** and **Fixed**):
 
-    + pandas 3 is supported (`pandas>=2.3, <4.0`). `pip install -U skforecast` keeps the installed pandas, but new environments get pandas 3, and its default dtypes (for example, `str` instead of `object` for text) appear in the outputs. Forecasters saved with pandas 3 load only with pandas 3, or with pandas 2.3 if saved with `backend='skops'`.
+    + pandas 3 is supported (`pandas>=2.3, <4.0`). `pip install -U skforecast` keeps the installed pandas, but new environments get pandas 3, and its default dtypes (for example, `str` instead of `object` for text) appear in the outputs. Forecasters saved with pandas 3 load only with pandas 3, or with pandas 2.3 if saved with `backend='skops'`. The [pandas 2 and pandas 3](../faq/pandas-2-and-pandas-3.md) page lists the differences.
+
+    + With pandas 3, `tz_convert` drops calendar frequencies such as `'D'`, `'W'` or `'MS'`, so the forecasters raise a `ValueError` with an index created in UTC and converted to a local time zone. Create it with `freq='24h'` (daily) or `freq='168h'` (weekly): with `'24h'`, the results are the same as with `'D'` and pandas 2.
+
+    + <code>[ForecasterEquivalentDate]</code> with `offset=pd.offsets.Day(n)` on hourly timezone-aware data: with pandas 3, `Day` is a calendar day, so the predictions after a daylight saving time change differ from pandas 2. Use `offset=24 * n` to keep the previous results.
 
     + skforecast now requires Python 3.11, numpy 2.0 and pandas 2.3. Installing it upgrades numpy and pandas if they are older, and code written for numpy 1.x may need the changes of the [numpy 2.0 migration guide](https://numpy.org/doc/stable/numpy_2_0_migration_guide.html). Forecasters saved with numpy 1.x still load.
 
     + <code>[MoiraiAdapter]</code>: `pip install uni2ts` alone downgrades numpy, scipy and pandas. Install it as explained in the [foundation models guide](../user_guides/foundation-forecasting-models.ipynb).
 
+    + <code>[reshape_series_wide_to_long]</code> and the `'long'` outputs of <code>[TimeSeriesSplitter]</code> no longer assume a daily frequency when the index has none: they infer it from the dates. Business-day data no longer gets rows of NaN on weekends, and daily data with missing dates (or fewer than 3) raises a `ValueError`: call `data.asfreq('D')` first.
+
 
 **Added**
 
-+ Added pandas 3 compatibility (`pandas>=2.3, <4.0`). Predictions and metrics are the same with pandas 2.3 and 3; outputs use the default dtypes of the installed version. The backends of <code>[MoiraiAdapter]</code> and <code>[TabPFNAdapter]</code> (`gluonts`) still require pandas 2: installing them downgrades pandas to 2.3. ([#1501](https://github.com/skforecast/skforecast/pull/1501))
++ Added pandas 3 compatibility (`pandas>=2.3, <4.0`). Predictions and metrics are the same with pandas 2.3 and 3, except in the cases described in the [pandas 2 and pandas 3](../faq/pandas-2-and-pandas-3.md) page; outputs use the default dtypes of the installed version. The backends of <code>[MoiraiAdapter]</code> and <code>[TabPFNAdapter]</code> (`gluonts`) still require pandas 2: installing them downgrades pandas to 2.3. ([#1501](https://github.com/skforecast/skforecast/pull/1501))
 
 
 **Changed**
@@ -48,6 +54,8 @@ The main changes in this release are:
 
 + With pandas 3, the error raised when a timezone-aware index has no frequency explains how to keep it: `tz_convert` now drops calendar frequencies such as `'D'` or `'MS'`, and `freq='24h'` (daily) or `freq='168h'` (weekly) keep the same dates. ([#1497](https://github.com/skforecast/skforecast/pull/1497))
 
++ New page [pandas 2 and pandas 3](../faq/pandas-2-and-pandas-3.md) in the FAQ with the differences that pandas 3 brings to skforecast (text dtype, dates in microseconds, time zones, read-only arrays, saving forecasters) and how to write code that works with both versions. ([#1510](https://github.com/skforecast/skforecast/pull/1510))
+
 + When <code>[load_forecaster]</code> fails with pandas 2, the error notes that a forecaster saved with pandas 3 can only be loaded with pandas 3, or with pandas 2.3 if it was saved with `backend='skops'`. ([#1497](https://github.com/skforecast/skforecast/pull/1497))
 
 + <code>[backtesting_forecaster]</code>, <code>[backtesting_forecaster_multiseries]</code> and their hyperparameter searches send the forecaster to the parallel processes once instead of once per fold. With 16 CPUs and the workers already started, a grid search of XGBoost with refit takes 31 s instead of 45 s, and a multi-series backtesting of XGBoost with refit 5 s instead of 10 s; on Linux, XGBoost models fitted afterwards in the same session are no longer up to 5 times slower. Results are unchanged. ([#1503](https://github.com/skforecast/skforecast/pull/1503))
@@ -55,6 +63,8 @@ The main changes in this release are:
 + With `n_jobs='auto'`, <code>[backtesting_forecaster]</code> without refit runs the folds in parallel when the estimator is a `HistGradientBoostingRegressor` or a `CatBoostRegressor` and the predictions take long enough (estimated from the first fold, predicted in the main process). In a new session with 16 CPUs, a backtesting of 100 folds with a `HistGradientBoostingRegressor` is 2.4 times faster (8 s instead of 19 s). Results are unchanged. [User guide](../faq/parallelization-skforecast.ipynb) ([#1503](https://github.com/skforecast/skforecast/pull/1503))
 
 + <code>[backtesting_forecaster]</code>, <code>[backtesting_forecaster_multiseries]</code>, <code>[backtesting_stats]</code> and the hyperparameter searches start no more parallel processes than there are folds, also with an integer `n_jobs` (before, only a backtesting with `n_jobs='auto'` did). With 16 CPUs, a grid search of XGBoost with refit and 6 folds per candidate takes 26 s instead of 37 s in a new session (24 s instead of 31 s with the workers already started), and its parallel processes use less than half the memory. Results are unchanged. ([#1503](https://github.com/skforecast/skforecast/pull/1503))
+
++ The error raised by <code>[PopulationDriftDetector]</code> when `chunk_size` is not a valid pandas frequency shows the value and the error of pandas, which names the alias to use when the one given was removed (with pandas 3, `'ME'` instead of `'M'`). ([#1510](https://github.com/skforecast/skforecast/pull/1510))
 
 
 **Fixed**
