@@ -11,6 +11,17 @@ de cada propuesta está en sus apartados "Medido" y en `results/*/README.md`
 (Linux en la EC2 y Windows en `results/win-22cpu/`). El resto de propuestas
 queda para pull requests posteriores.
 
+**Revisión final (16 de noviembre de 2026).** Una revisión independiente
+encontró que la serialización única hacía hasta 10 veces más lentos los
+modelos con arrays grandes (KNN, RandomForest), porque joblib no podía
+compartir los bytes como memmap. Se arregló en la rama con cinco commits: el
+forecaster serializado viaja como array de numpy; no se serializa si joblib
+usa un proceso; se deserializa antes de registrar los avisos del fold; y
+`backtesting_stats` también serializa una vez (con hilos, sus folds
+compartían el forecaster). Medido en `results/local-4vcpu-review/README.md`.
+Lo que queda fuera está en "Siguientes pasos" y en "Fallos previos
+encontrados en la revisión final".
+
 ## Conclusión
 
 `n_jobs='auto'` decide bien: en los casos medidos queda entre un 2 % y un 6 %
@@ -165,6 +176,12 @@ ralentizarse (de 1,64 veces a entre 0,98 y 1,06) y el de LightGBM también (de
   XGBoost deja de ser hasta 5,3 veces más lento. Sin refit, en frío, un proceso
   sigue ganando, así que `'auto'` no cambia. Predicciones idénticas. Detalle en
   `results/ec2-ms-serialization/README.md`.
+- **Medido tras la revisión final (4 vCPU, `n_jobs=3` sin refit):** con los
+  bytes como array de numpy que joblib comparte como memmap, RandomForest de
+  73 MB con 480 folds pasa de 89 a 29 s (0.28.x llenaba `/dev/shm`) y KNN de
+  38 MB con 480 folds de 43,7 a 10,6 s en frío (0.28.x: 5,1). LightGBM con 2000
+  folds, 10,8 s (0.28.x: 116,6). Detalle en
+  `results/local-4vcpu-review/README.md`.
 
 ### 2. No arrancar más procesos que folds, también en las búsquedas y con `n_jobs` entero
 
@@ -305,6 +322,19 @@ medir el umbral de filas en Windows
 Ideas por evaluar, no compromisos. Cada una necesita sus propias medidas antes
 de decidir si se hace.
 
+- **Modelos con arrays grandes sin copiarlos en cada fold.** Tras la revisión
+  final, KNN de 38 MB sin refit y con `n_jobs=3` sigue de 2 a 3 veces más
+  lento que en 0.28.x en caliente (480 folds: 8,6 frente a 3,2 s;
+  `results/local-4vcpu-review/README.md`): cada fold copia el modelo al
+  deserializarlo, y 0.28.x enviaba sus arrays como memmaps de solo lectura que
+  los workers usaban sin copiar. Afecta a los modelos que guardan arrays
+  grandes (KNN, SVR, procesos gaussianos), con `n_jobs` entero y sin refit;
+  con `'auto'` van en un proceso. Alternativa: pickle con protocolo 5 y
+  buffers fuera de banda (`buffer_callback`), de modo que joblib comparta
+  cada array grande como memmap y `pickle.loads(..., buffers=...)` lo use sin
+  copiarlo. Con hilos habría que copiar los buffers, para que cada fold tenga
+  su copia, y los arrays grandes volverían a ser de solo lectura en los
+  workers, como en 0.28.x. Falta: prototipo y medidas.
 - **No contar el arranque si los workers ya están en marcha.** En Windows,
   cerca del umbral sin refit, `'auto'` vuelve a un proceso en las llamadas
   siguientes aunque los 21 workers ya estén arrancados (8,0 s en lugar de 2,5;
