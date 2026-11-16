@@ -67,9 +67,13 @@ The main changes in this release are:
 
 + <code>[expand_index]</code> returned dates one day early with a monthly timezone-aware index without frequency that advances in fixed UTC steps west of UTC (dates at UTC midnight converted to, for example, `'America/New_York'`), and raised a `ValueError` with quarterly or weekly ones. The frequency is now inferred on the UTC dates. ([#1497](https://github.com/skforecast/skforecast/pull/1497))
 
++ Fixed two issues in <code>[calculate_distance_from_holiday]</code> with daily or coarser timezone-aware dates that contain a daylight saving change. The distances were in hours instead of days when the index had no frequency and advanced in fixed UTC steps (UTC dates converted to a local timezone), and one day short across the spring change with dates in local time, in the index or in `date_column`. An index without frequency and fewer than three dates raised a `ValueError` instead of a warning. ([#1505](https://github.com/skforecast/skforecast/pull/1505))
+
 + <code>[ForecasterRecursiveMultiSeries]</code> raised a `TypeError` when a text exogenous variable had different text dtypes in different series, such as `string` and `object`, or, with pandas 3, `str` and `object` (a column with all values missing is `object`). ([#1497](https://github.com/skforecast/skforecast/pull/1497))
 
 + Hyperparameter searches with <code>[OneStepAheadFold]</code> and <code>[ForecasterRecursiveMultiSeries]</code> with `encoding='onehot'` and integer series names raised a `FutureWarning` of pandas about downcasting. ([#1497](https://github.com/skforecast/skforecast/pull/1497))
+
++ Transformers that modify their input, such as `StandardScaler(copy=False)` (also inside a `Pipeline` or `ColumnTransformer`) or a `FunctionTransformer` with an in-place function, modified the user's `y`, `series` and `exog`, and `y_true`/`y_pred` in `set_out_sample_residuals`: two `predict` calls with the same `exog` differed, and backtesting with refit and one-step-ahead searches returned wrong metrics. An identity `FunctionTransformer` as `transformer_exog` with `categorical_features` made the second `predict` fail. ([#1504](https://github.com/skforecast/skforecast/pull/1504))
 
 
 

@@ -1,5 +1,6 @@
 # Unit test calculate_distance_from_holiday
 # ==============================================================================
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
@@ -132,6 +133,169 @@ def test_calculate_distance_from_holiday_no_freq_warns_and_falls_back_to_hours()
         result = calculate_distance_from_holiday(df, holiday_column="is_holiday")
 
     assert list(result.columns) == ["time_to_holiday", "time_since_holiday"]
+
+
+def test_calculate_distance_from_holiday_fewer_than_3_dates_without_freq_warns():
+    """
+    Test that an index without frequency and with fewer than three dates, from
+    which no frequency can be inferred, raises the UserWarning and gives the
+    distances in hours.
+    """
+    idx = pd.DatetimeIndex(["2022-01-01", "2022-01-02"])
+    df = pd.DataFrame({"is_holiday": [False, True]}, index=idx)
+
+    with pytest.warns(UserWarning, match="Could not determine the frequency"):
+        result = calculate_distance_from_holiday(df, holiday_column="is_holiday")
+
+    np.testing.assert_array_equal(
+        result["time_to_holiday"].to_numpy(dtype=float), [24, 0]
+    )
+    np.testing.assert_array_equal(
+        result["time_since_holiday"].to_numpy(dtype=float), [0, 0]
+    )
+
+
+@pytest.mark.parametrize("drop_freq", [True, False], ids=lambda x: f"drop_freq: {x}")
+@pytest.mark.parametrize(
+    "freq, start, tz, expected_to, expected_since",
+    [
+        ("D", "2024-03-28", "Europe/Madrid", [1, 0, 2, 1, 0, 0], [0, 0, 1, 2, 0, 1]),
+        ("D", "2024-03-07", "America/New_York", [1, 0, 2, 1, 0, 0], [0, 0, 1, 2, 0, 1]),
+        ("W", "2024-03-10", "Europe/Madrid", [7, 0, 14, 7, 0, 0], [0, 0, 7, 14, 0, 7]),
+        ("D", "2024-10-25", "Europe/Madrid", [1, 0, 2, 1, 0, 0], [0, 0, 1, 2, 0, 1]),
+        ("W", "2024-10-13", "Europe/Madrid", [7, 0, 14, 7, 0, 0], [0, 0, 7, 14, 0, 7]),
+    ],
+    ids=lambda x: f"{x}" if isinstance(x, str) else ""
+)
+def test_calculate_distance_from_holiday_index_in_fixed_utc_steps_without_freq(
+    freq, start, tz, expected_to, expected_since, drop_freq
+):
+    """
+    Test that the distances are in days, without warnings, when the index is
+    timezone-aware, advances in fixed UTC steps (dates created in UTC and
+    converted to a local timezone) and contains a daylight saving change. The
+    index has no frequency (pandas 3 `tz_convert` drops it, pandas 2 keeps
+    it) and in local time none, or an hourly one, is inferred. Across the
+    change of autumn, the local time of the dates goes back one hour, so
+    counting the days between the local dates would give one day less.
+    """
+    idx = pd.date_range(start, periods=6, freq=freq, tz="UTC").tz_convert(tz)
+    if drop_freq:
+        idx = pd.DatetimeIndex(idx.to_list())
+    df = pd.DataFrame(
+        {"is_holiday": [False, True, False, False, True, False]}, index=idx
+    )
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        result = calculate_distance_from_holiday(df, holiday_column="is_holiday")
+
+    np.testing.assert_array_equal(
+        result["time_to_holiday"].to_numpy(dtype=float), expected_to
+    )
+    np.testing.assert_array_equal(
+        result["time_since_holiday"].to_numpy(dtype=float), expected_since
+    )
+
+
+@pytest.mark.parametrize("drop_freq", [True, False], ids=lambda x: f"drop_freq: {x}")
+@pytest.mark.parametrize(
+    "freq, start, tz, expected_to, expected_since",
+    [
+        ("D", "2024-03-28", "Europe/Madrid", [1, 0, 2, 1, 0, 0], [0, 0, 1, 2, 0, 1]),
+        ("W", "2024-03-10", "Europe/Madrid", [7, 0, 14, 7, 0, 0], [0, 0, 7, 14, 0, 7]),
+        (
+            "MS", "2024-01-01", "America/New_York",
+            [31, 0, 61, 30, 0, 0], [0, 0, 29, 60, 0, 31]
+        ),
+    ],
+    ids=lambda x: f"{x}" if isinstance(x, str) else ""
+)
+def test_calculate_distance_from_holiday_index_in_local_steps_over_daylight_saving(
+    freq, start, tz, expected_to, expected_since, drop_freq
+):
+    """
+    Test that the distances are whole calendar days when the index is
+    timezone-aware, advances in local calendar steps (dates at local midnight)
+    and contains the daylight saving change of spring, whose day has 23 hours:
+    the elapsed time between two dates is one hour short of a whole number of
+    days.
+    """
+    idx = pd.date_range(start, periods=6, freq=freq, tz=tz)
+    if drop_freq:
+        idx = pd.DatetimeIndex(idx.to_list())
+    df = pd.DataFrame(
+        {"is_holiday": [False, True, False, False, True, False]}, index=idx
+    )
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        result = calculate_distance_from_holiday(df, holiday_column="is_holiday")
+
+    np.testing.assert_array_equal(
+        result["time_to_holiday"].to_numpy(dtype=float), expected_to
+    )
+    np.testing.assert_array_equal(
+        result["time_since_holiday"].to_numpy(dtype=float), expected_since
+    )
+
+
+@pytest.mark.parametrize(
+    "steps, start",
+    [("local", "2024-03-28"), ("local", "2024-10-25"),
+     ("utc", "2024-03-28"), ("utc", "2024-10-25")],
+    ids=lambda x: f"{x}"
+)
+def test_calculate_distance_from_holiday_date_column_timezone_aware_over_daylight_saving(
+    steps, start
+):
+    """
+    Test that the distances are whole calendar days when `date_column` is
+    timezone-aware and contains a daylight saving change, with dates in local
+    calendar steps (the day of the change of spring has 23 hours) and with
+    dates in fixed UTC steps (after the change of autumn, their local time is
+    one hour earlier).
+    """
+    if steps == "local":
+        dates = pd.date_range(start, periods=6, freq="D", tz="Europe/Madrid")
+    else:
+        dates = pd.date_range(start, periods=6, freq="D", tz="UTC")
+        dates = dates.tz_convert("Europe/Madrid")
+    df = pd.DataFrame(
+        {"date": dates, "is_holiday": [False, True, False, False, True, False]}
+    )
+
+    result = calculate_distance_from_holiday(
+        df, holiday_column="is_holiday", date_column="date"
+    )
+
+    np.testing.assert_array_equal(
+        result["time_to_holiday"].to_numpy(dtype=float), [1, 0, 2, 1, 0, 0]
+    )
+    np.testing.assert_array_equal(
+        result["time_since_holiday"].to_numpy(dtype=float), [0, 0, 1, 2, 0, 1]
+    )
+
+
+def test_calculate_distance_from_holiday_hourly_timezone_aware_index_over_daylight_saving():
+    """
+    Test that the distances in hours are the elapsed time when the index is
+    hourly, timezone-aware and contains the daylight saving change of spring,
+    where the local time jumps from 01:00 to 03:00.
+    """
+    idx = pd.date_range("2024-03-31", periods=6, freq="h", tz="Europe/Madrid")
+    df = pd.DataFrame(
+        {"is_holiday": [False, True, False, False, True, False]}, index=idx
+    )
+
+    result = calculate_distance_from_holiday(df, holiday_column="is_holiday")
+
+    np.testing.assert_array_equal(
+        result["time_to_holiday"].to_numpy(dtype=float), [1, 0, 2, 1, 0, 0]
+    )
+    np.testing.assert_array_equal(
+        result["time_since_holiday"].to_numpy(dtype=float), [0, 0, 1, 2, 0, 1]
+    )
 
 
 def test_calculate_distance_from_holiday_TypeError_when_invalid_index_type():

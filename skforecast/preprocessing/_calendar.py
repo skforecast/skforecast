@@ -16,7 +16,7 @@ from sklearn.preprocessing import SplineTransformer
 from sklearn.utils.validation import check_is_fitted
 
 from ..exceptions import IgnoredArgumentWarning
-from ..utils import _pandas_compat as compat
+from ..utils.utils import _infer_freq_from_index, _is_utc_anchored_index
 
 
 _FEATURE_KNOWN_CATEGORIES = {
@@ -774,10 +774,16 @@ def calculate_distance_from_holiday(
     - Microsecond: microseconds
     - Nanosecond: nanoseconds
 
-    When the index has no frequency set, `pd.infer_freq` is attempted. If the
-    frequency still cannot be determined (e.g. irregular spacing or fewer than
-    three observations), the unit defaults to hours and a `UserWarning` is
-    issued.
+    When the index has no frequency set, it is inferred from the dates. For a
+    timezone-aware index that advances in fixed UTC steps (dates created in
+    UTC and converted to a local timezone), it is inferred on the UTC dates.
+    If the frequency still cannot be determined (e.g. irregular spacing or
+    fewer than three observations), the unit defaults to hours and a
+    `UserWarning` is issued.
+
+    With timezone-aware dates, in the index or in `date_column`, the
+    distances in days are whole calendar days: a daylight saving change,
+    whose day has 23 or 25 hours, does not alter them.
 
     In `date_column` mode, fractional days (from arbitrary intra-day
     timestamps) are truncated, not rounded e.g. a distance of 0.99
@@ -856,13 +862,11 @@ def calculate_distance_from_holiday(
             raise TypeError(
                 "When `date_column=None`, the index must be a pandas DatetimeIndex."
             )
-        dates = X.index.to_numpy()
-        holiday_dates = X.index[X[holiday_column].astype(bool)].to_numpy()
-
-        freq_str = X.index.freqstr if X.index.freq is not None else None
-        if freq_str is None:
-            inferred = compat.infer_freq(X.index)
-            freq_str = inferred.freqstr if inferred is not None else None
+        index = X.index
+        freq = index.freq
+        if freq is None:
+            freq = _infer_freq_from_index(index)
+        freq_str = freq.freqstr if freq is not None else None
         if freq_str is None:
             warnings.warn(
                 "Could not determine the frequency of the index. "
@@ -874,12 +878,29 @@ def calculate_distance_from_holiday(
             )
             freq_str = 'h'
         unit = _freq_to_timedelta_unit(freq_str)
+        dates = index
     else:
-        dates = pd.to_datetime(X[date_column]).to_numpy()
-        holiday_dates = pd.to_datetime(
-            X.loc[X[holiday_column].astype(bool), date_column]
-        ).to_numpy()
+        dates = pd.to_datetime(X[date_column])
+        freq = None
         unit = 'D'
+
+    if isinstance(dates.dtype, pd.DatetimeTZDtype):
+        dates = pd.DatetimeIndex(dates)
+        if unit == 'D' and not _is_utc_anchored_index(index=dates, freq=freq):
+            # NOTE: With dates in local calendar steps, the day of a daylight
+            # saving change has 23 or 25 hours and the elapsed time is not a
+            # whole number of days (it would be truncated). The days are
+            # counted between the local dates. With fixed UTC steps, the
+            # elapsed time is already a whole number of days.
+            dates = dates.tz_localize(None)
+        else:
+            # NOTE: The elapsed time is the same between the UTC dates. Numpy
+            # has no timezone-aware dtype: without this conversion, `to_numpy`
+            # returns an array of Timestamp objects, which is much slower.
+            dates = dates.tz_convert("UTC").tz_localize(None)
+
+    dates = dates.to_numpy()
+    holiday_dates = dates[X[holiday_column].astype(bool).to_numpy()]
 
     holiday_dates_sorted = np.sort(holiday_dates)
 

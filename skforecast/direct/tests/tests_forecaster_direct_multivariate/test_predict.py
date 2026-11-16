@@ -50,8 +50,12 @@ transformer_exog = ColumnTransformer(
          "window_features": RollingFeatures(stats=['mean'], window_sizes=3),
          "transformer_series": StandardScaler(), "transformer_exog": StandardScaler(),
          "differentiation": 1},
+        {"estimator": LinearRegression(), "level": "l1", "lags": 3, "steps": 2,
+         "transformer_series": StandardScaler(copy=False),
+         "transformer_exog": make_pipeline(StandardScaler(copy=False))},
     ],
-    ids=["base", "window_features", "transformers", "differentiation"]
+    ids=["base", "window_features", "transformers", "differentiation",
+         "in_place_transformers"]
 )
 def test_predict_does_not_modify_series_exog(forecaster_kwargs):
     """
@@ -79,15 +83,23 @@ def test_predict_does_not_modify_series_exog(forecaster_kwargs):
 
 
 @pytest.mark.parametrize(
+    "transformer_exog",
+    [None, FunctionTransformer()],
+    ids=["no_transformer_exog", "identity_transformer_exog"]
+)
+@pytest.mark.parametrize(
     "categorical_features",
     ["auto", ["exog_1", "exog_2", "exog_3"]],
     ids=["auto", "list_with_float_column"]
 )
-def test_predict_does_not_modify_exog_with_categorical_features(categorical_features):
+def test_predict_does_not_modify_exog_with_categorical_features(
+    categorical_features, transformer_exog
+):
     """
     Test forecaster.fit and forecaster.predict do not modify exog and
     exog_predict when the categorical features are encoded without
-    `transformer_exog`. With the list, the float column `exog_1` is also
+    `transformer_exog` or with one that returns its input (identity
+    `FunctionTransformer`). With the list, the float column `exog_1` is also
     encoded, with codes of its same dtype, while `exog_4`, which pandas
     stores in the same array, is not.
     """
@@ -118,6 +130,7 @@ def test_predict_does_not_modify_exog_with_categorical_features(categorical_feat
                      level                = 'l1',
                      steps                = 2,
                      lags                 = 3,
+                     transformer_exog     = transformer_exog,
                      categorical_features = categorical_features
                  )
     forecaster.fit(series=series_local, exog=exog_local)
@@ -1409,3 +1422,52 @@ def test_predict_output_when_last_value_of_other_series_is_NaN_and_differentiati
     predictions = forecaster.predict(steps=2, suppress_warnings=True)
 
     assert not predictions['pred'].isna().any()
+
+
+class WindowFeatureWriteableFlag:
+    """
+    Window feature (mean of the last 3 values) that stores whether the array
+    received by `transform` is writeable.
+    """
+
+    def __init__(self):
+        self.window_sizes = 3
+        self.features_names = ['mean_3']
+        self.writeable = []
+
+    def transform_batch(self, X):
+        return X.rolling(3).mean().shift(1).to_frame('mean_3').iloc[3:]
+
+    def transform(self, X):
+        self.writeable.append(X.flags.writeable)
+        return np.array([X[-3:].mean()])
+
+
+def test_predict_window_features_receive_writeable_array_when_transformer_series_is_None():
+    """
+    Test that, without `transformer_series`, the window features receive a
+    writeable array in predict, as in the rest of forecasters. With pandas 3,
+    the values of a DataFrame column are a read-only view, which compiled
+    functions that require a writeable buffer do not accept.
+    """
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator          = LinearRegression(),
+                     level              = 'l1',
+                     steps              = 2,
+                     lags               = 3,
+                     window_features    = WindowFeatureWriteableFlag(),
+                     transformer_series = None
+                 )
+    forecaster.fit(series=series)
+    predictions = forecaster.predict()
+
+    expected = pd.DataFrame(
+                   data    = {
+                       'level': ['l1', 'l1'],
+                       'pred': [0.6280351308606609, 0.3868732879236068]
+                   },
+                   index   = pd.RangeIndex(start=50, stop=52, step=1)
+               )
+
+    assert forecaster.window_features[0].writeable == [True, True]
+    pd.testing.assert_frame_equal(predictions, expected)

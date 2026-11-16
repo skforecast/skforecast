@@ -22,6 +22,10 @@ def _without_freq(index):
             pd.offsets.Day()
         ),
         (
+            pd.date_range('2025-05-01', periods=4, freq='MS', tz='Europe/Madrid'),
+            pd.offsets.MonthBegin()
+        ),
+        (
             pd.date_range('2025-06-01', periods=8, freq='MS', tz='UTC').tz_convert('America/New_York'),
             pd.offsets.MonthBegin()
         ),
@@ -34,6 +38,7 @@ def _without_freq(index):
         'naive hourly',
         'naive month start',
         'local calendar daily across DST',
+        'local calendar month start east of UTC',
         'UTC anchored month start west of UTC',
         'UTC anchored daily across DST',
     ]

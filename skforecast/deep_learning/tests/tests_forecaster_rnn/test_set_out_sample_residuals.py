@@ -6,6 +6,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
+from sklearn.preprocessing import StandardScaler
 os.environ["KERAS_BACKEND"] = "torch"
 import keras
 from skforecast.deep_learning import create_and_compile_model
@@ -550,3 +551,31 @@ def test_set_out_sample_residuals_ResidualsUsageWarning_when_few_residuals_per_b
         "residuals per bin" in str(w.message) for w in record
     )
     assert n_warnings == 1
+
+
+def test_set_out_sample_residuals_does_not_modify_y_true_y_pred_with_in_place_transformer():
+    """
+    Test fit does not modify `series` and set_out_sample_residuals does not
+    modify `y_true` and `y_pred` when `transformer_series` writes into its
+    input (`StandardScaler(copy=False)`), with pandas Series and numpy arrays.
+    """
+    series_local = series.copy()
+    series_copy = series_local.copy()
+    forecaster = ForecasterRnn(
+        estimator=model_no_exog, levels=["l1", "l2"], lags=3,
+        transformer_series=StandardScaler(copy=False)
+    )
+    forecaster.fit(series=series_local)
+
+    rng = np.random.default_rng(123)
+    y_true = {'l1': pd.Series(rng.random(10)), 'l2': rng.random(10)}
+    y_pred = {'l1': pd.Series(rng.random(10)), 'l2': rng.random(10)}
+    y_true_copy = {k: v.copy() for k, v in y_true.items()}
+    y_pred_copy = {k: v.copy() for k, v in y_pred.items()}
+    forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
+
+    pd.testing.assert_frame_equal(series_local, series_copy)
+    pd.testing.assert_series_equal(y_true['l1'], y_true_copy['l1'])
+    pd.testing.assert_series_equal(y_pred['l1'], y_pred_copy['l1'])
+    np.testing.assert_array_equal(y_true['l2'], y_true_copy['l2'])
+    np.testing.assert_array_equal(y_pred['l2'], y_pred_copy['l2'])

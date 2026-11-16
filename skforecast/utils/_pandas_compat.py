@@ -14,7 +14,8 @@ copy that is measurable in the training matrices, so the helpers keep it there.
 pandas 4 (pandas 3.1 warns unless the option `future.infer_freq_returns_offset`
 is set); `infer_freq` returns an offset in every version.
 
-This is the only module of the package that looks at the pandas version.
+This is the only module of the package that reads the pandas version. The few
+branches outside it use `PANDAS_GE_3`.
 """
 
 from __future__ import annotations
@@ -71,9 +72,8 @@ def astype(
     changed_only : bool, default False
         Only for a DataFrame and a dict of dtypes: cast only the columns whose
         dtype differs from the target, and return `obj` itself when no column
-        changes. It is meant for calls made once per fit; in prediction loops
-        the scan of the dtypes costs more than it saves. Ignored when `obj`
-        has duplicated column names: every column is cast, as pandas does.
+        changes. Ignored when `obj` has duplicated column names: every column
+        is cast, as pandas does.
 
     Returns
     -------

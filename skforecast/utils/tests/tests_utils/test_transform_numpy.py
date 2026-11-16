@@ -5,8 +5,10 @@ import pytest
 import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import FunctionTransformer
 from skforecast.utils import transform_numpy
 
 
@@ -304,3 +306,48 @@ def test_transform_numpy_ValueError_when_force_single_column_with_sparse_output(
             inverse_transform=False,
             force_single_column=True
         )
+
+
+def _multiply_in_place(X):
+    """
+    Multiply the input by 2 in place and return it.
+    """
+    X *= 2.
+    return X
+
+
+def _divide_in_place(X):
+    """
+    Divide the input by 2 in place and return it.
+    """
+    X /= 2.
+    return X
+
+
+@pytest.mark.parametrize(
+    "transformer",
+    [StandardScaler(copy=False),
+     make_pipeline(StandardScaler(copy=False)),
+     FunctionTransformer(func=_multiply_in_place, inverse_func=_divide_in_place),
+     FunctionTransformer()],
+    ids=['StandardScaler(copy=False)', 'Pipeline with StandardScaler(copy=False)',
+         'in-place FunctionTransformer', 'identity FunctionTransformer']
+)
+def test_transform_numpy_does_not_modify_input_array(transformer):
+    """
+    Test transform_numpy does not modify the input array, with fit, transform
+    and inverse_transform, when the transformer writes into its input or
+    returns it as is. The output does not share memory with the input.
+    """
+    input_array = np.arange(10, dtype=float)
+    input_array_copy = input_array.copy()
+
+    for fit, inverse_transform in [(True, False), (False, False), (False, True)]:
+        results = transform_numpy(
+                      array             = input_array,
+                      transformer       = transformer,
+                      fit               = fit,
+                      inverse_transform = inverse_transform
+                  )
+        np.testing.assert_array_equal(input_array, input_array_copy)
+        assert not np.shares_memory(results, input_array)

@@ -343,3 +343,63 @@ def test_transform_dataframe_preserves_categorical_dtypes_with_set_output_pandas
         index=idx,
     )
     pd.testing.assert_frame_equal(results, expected)
+
+
+def _multiply_in_place(X):
+    """
+    Multiply the first column of the input DataFrame by 2 in place and
+    return it.
+    """
+    X.iloc[:, 0] = X.iloc[:, 0] * 2.
+    return X
+
+
+def _divide_in_place(X):
+    """
+    Divide the first column of the input DataFrame by 2 in place and return
+    it.
+    """
+    X.iloc[:, 0] = X.iloc[:, 0] / 2.
+    return X
+
+
+@pytest.mark.parametrize(
+    "transformer",
+    [StandardScaler(copy=False),
+     make_pipeline(StandardScaler(copy=False)),
+     make_column_transformer(
+         (StandardScaler(copy=False), ['col_1']), remainder='passthrough'
+     ),
+     FunctionTransformer(func=_multiply_in_place, inverse_func=_divide_in_place),
+     FunctionTransformer()],
+    ids=['StandardScaler(copy=False)', 'Pipeline with StandardScaler(copy=False)',
+         'ColumnTransformer with StandardScaler(copy=False)',
+         'in-place FunctionTransformer', 'identity FunctionTransformer']
+)
+def test_transform_dataframe_does_not_modify_input_dataframe(transformer):
+    """
+    Test transform_dataframe does not modify the input DataFrame, with fit,
+    transform and inverse_transform (not available with ColumnTransformer),
+    when the transformer writes into its input or returns it as is. The output
+    is a different object that does not share memory with the input.
+    """
+    df_input = pd.DataFrame({
+        'col_1': np.arange(10, dtype=float),
+        'col_2': np.arange(10, 20, dtype=float)
+    })
+    df_input_copy = df_input.copy()
+
+    calls = [(True, False), (False, False)]
+    if not isinstance(transformer, ColumnTransformer):
+        calls.append((False, True))
+
+    for fit, inverse_transform in calls:
+        results = transform_dataframe(
+                      df                = df_input,
+                      transformer       = transformer,
+                      fit               = fit,
+                      inverse_transform = inverse_transform
+                  )
+        pd.testing.assert_frame_equal(df_input, df_input_copy)
+        assert results is not df_input
+        assert not np.shares_memory(results.to_numpy(), df_input.to_numpy())
