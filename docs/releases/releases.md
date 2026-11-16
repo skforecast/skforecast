@@ -64,6 +64,8 @@ The main changes in this release are:
 
 + <code>[backtesting_forecaster]</code>, <code>[backtesting_forecaster_multiseries]</code>, <code>[backtesting_stats]</code> and the hyperparameter searches start no more parallel processes than there are folds, also with an integer `n_jobs` (before, only a backtesting with `n_jobs='auto'` did). With 16 CPUs, a grid search of XGBoost with refit and 6 folds per candidate takes 26 s instead of 37 s in a new session (24 s instead of 31 s with the workers already started), and its parallel processes use less than half the memory. Results are unchanged. ([#1503](https://github.com/skforecast/skforecast/pull/1503))
 
++ Series and exogenous variables in long format (a DataFrame with a MultiIndex) are converted to dictionaries faster, with the same results: 2 to 3 times for the series (about 0.5 s instead of 1.1 to 1.8 s with 5000 series of 1000 values) and 1.3 to 1.8 times for the exogenous variables. It applies to `fit` and `predict` of <code>[ForecasterRecursiveMultiSeries]</code> and to <code>[backtesting_forecaster_multiseries]</code> and the hyperparameter searches of multiple series.
+
 + The error raised by <code>[PopulationDriftDetector]</code> when `chunk_size` is not a valid pandas frequency shows the value and the error of pandas, which names the alias to use when the one given was removed (with pandas 3, `'ME'` instead of `'M'`). ([#1510](https://github.com/skforecast/skforecast/pull/1510))
 
 

@@ -1,6 +1,7 @@
 # Unit test check_preprocess_exog_multiseries
 # ==============================================================================
 import re
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
@@ -707,3 +708,87 @@ def test_output_check_preprocess_exog_multiseries_when_exog_index_is_descending(
     for k in ['l1', 'l2']:
         assert exog_dict[k].index.is_monotonic_increasing
         pd.testing.assert_frame_equal(exog_dict[k], expected_exog_dict[k])
+
+
+exog_long_mixed_dtypes = pd.DataFrame(
+    {
+        'temp': [1., 2., 3., 4., 5., 6., 7., 8., 9.],
+        'n': [10, 11, 12, 13, 14, 15, 16, 17, 18],
+        'cat': pd.Categorical(
+                   ['x', 'y', 'x', 'y', 'y', 'x', 'x', 'x', 'x'], categories=['x', 'y']
+               ),
+        'txt': ['p', 'q', 'p', 'q', 'p', 'q', 'p', 'p', 'p'],
+        'flag': [True, False, True, False, False, True, True, True, True],
+    },
+    index=pd.MultiIndex.from_arrays(
+        [
+            ['b', 'b', 'b', 'a', 'a', 'a', 'zz', 'zz', 'zz'],
+            pd.DatetimeIndex(['2020-01-01', '2020-01-02', '2020-01-03'] * 3)
+        ],
+        names=['series_id', 'datetime']
+    )
+)
+
+
+@pytest.mark.parametrize(
+    "rows_order",
+    [[0, 1, 2, 3, 4, 5, 6, 7, 8], [5, 0, 7, 3, 2, 8, 1, 4, 6]],
+    ids=['rows sorted', 'rows shuffled']
+)
+def test_output_check_preprocess_exog_multiseries_when_exog_MultiIndex_mixed_dtypes(
+    rows_order
+):
+    """
+    Test check_preprocess_exog_multiseries with a long-format DataFrame whose
+    IDs are not sorted, with an ID that is not a series and columns of different
+    dtypes, with the rows sorted or shuffled. Each series gets its rows sorted
+    by date with the dtypes of the input. The DataFrame of each series can be
+    modified without warnings and without changing the other series or the
+    input, which is not modified by the function either.
+    """
+    exog = exog_long_mixed_dtypes.iloc[rows_order]
+    exog_copy = exog.copy()
+
+    with pytest.warns(InputTypeWarning):
+        exog_dict, exog_names_in_ = check_preprocess_exog_multiseries(
+                                        series_names_in_  = ['a', 'b'],
+                                        series_index_type = pd.DatetimeIndex,
+                                        exog              = exog,
+                                        exog_dict         = {'a': None, 'b': None}
+                                    )
+
+    index = pd.DatetimeIndex(['2020-01-01', '2020-01-02', '2020-01-03'])
+    expected_exog_dict = {
+        'a': pd.DataFrame(
+                 {
+                     'temp': [4., 5., 6.],
+                     'n': [13, 14, 15],
+                     'cat': pd.Categorical(['y', 'y', 'x'], categories=['x', 'y']),
+                     'txt': ['q', 'p', 'q'],
+                     'flag': [False, False, True],
+                 },
+                 index = index
+             ),
+        'b': pd.DataFrame(
+                 {
+                     'temp': [1., 2., 3.],
+                     'n': [10, 11, 12],
+                     'cat': pd.Categorical(['x', 'y', 'x'], categories=['x', 'y']),
+                     'txt': ['p', 'q', 'p'],
+                     'flag': [True, False, True],
+                 },
+                 index = index
+             ),
+    }
+
+    assert list(exog_dict.keys()) == ['a', 'b']
+    assert exog_names_in_ == ['temp', 'n', 'cat', 'txt', 'flag']
+    for k in ['a', 'b']:
+        pd.testing.assert_frame_equal(exog_dict[k], expected_exog_dict[k])
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        exog_dict['a']['temp'] = 0.
+        exog_dict['a'].iloc[0, 1] = 99
+    pd.testing.assert_frame_equal(exog_dict['b'], expected_exog_dict['b'])
+    pd.testing.assert_frame_equal(exog, exog_copy)

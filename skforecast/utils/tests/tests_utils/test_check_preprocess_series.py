@@ -489,3 +489,87 @@ def test_check_preprocess_series_when_series_is_dict_with_a_pandas_Series_and_a_
     for k in series_indexes:
         pd.testing.assert_index_equal(series_indexes[k], expected_series_indexes[k])
         assert series_indexes[k].freq == expected_series_indexes[k].freq
+
+
+dates_3 = pd.date_range(start='2020-01-01', periods=3, freq='D')
+series_long_ids_not_sorted = pd.DataFrame(
+    {'value': [1., 2., 3., 4., 5., 6.]},
+    index=pd.MultiIndex.from_product(
+        [['b', 'a'], dates_3], names=['series_id', 'datetime']
+    )
+)
+series_long_levels_not_sorted = pd.concat(
+    {
+        'b': pd.DataFrame({'value': [1., 2., 3.]}, index=dates_3),
+        'a': pd.DataFrame({'value': [4., 5., 6.]}, index=dates_3)
+    },
+    names=['series_id', 'datetime']
+)
+series_long_unused_ids = pd.DataFrame(
+    {'value': [1., 2., 3., 4., 5., 6., 7., 8., 9.]},
+    index=pd.MultiIndex.from_product(
+        [['b', 'a', 'c'], dates_3], names=['series_id', 'datetime']
+    )
+).loc[['b', 'a']]
+series_long_categorical_ids = pd.DataFrame(
+    {'value': [1., 2., 3., 4., 5., 6.]},
+    index=pd.MultiIndex.from_product(
+        [pd.CategoricalIndex(['b', 'a'], categories=['b', 'a', 'z']), dates_3],
+        names=['series_id', 'datetime']
+    )
+)
+series_long_Float64 = series_long_ids_not_sorted.astype({'value': 'Float64'})
+
+
+@pytest.mark.parametrize(
+    "series, expected_keys, expected_dtype",
+    [
+        (series_long_ids_not_sorted, ['a', 'b'], 'float64'),
+        (series_long_levels_not_sorted, ['a', 'b'], 'float64'),
+        (series_long_unused_ids, ['a', 'b'], 'float64'),
+        (series_long_categorical_ids, ['b', 'a'], 'float64'),
+        (series_long_Float64, ['a', 'b'], 'Float64'),
+    ],
+    ids=[
+        'rows not sorted by ID', 'levels not sorted', 'unused ids',
+        'categorical ids', 'Float64 values'
+    ]
+)
+def test_check_preprocess_series_when_series_is_DataFrame_MultiIndex_edge_cases(
+    series, expected_keys, expected_dtype
+):
+    """
+    Test check_preprocess_series with a long-format DataFrame whose IDs are not
+    sorted (in the rows, or in the levels of the MultiIndex as `pd.concat` of a
+    dict leaves them), have unused levels or are categorical (with unused
+    categories), or whose values have an extension dtype. The series are
+    returned in the order of the IDs (the order of the categories when they are
+    categorical), only for the IDs with rows, with the dtype of the values and
+    the frequency of the dates. The output shares no memory with the input,
+    which is not modified.
+    """
+    series_copy = series.copy()
+    with pytest.warns(InputTypeWarning):
+        series_dict, series_indexes = check_preprocess_series(series=series)
+
+    expected_series_dict = {
+        'a': pd.Series(
+                 data  = pd.array([4., 5., 6.], dtype=expected_dtype),
+                 index = pd.date_range(start='2020-01-01', periods=3, freq='D'),
+                 name  = 'a'
+             ),
+        'b': pd.Series(
+                 data  = pd.array([1., 2., 3.], dtype=expected_dtype),
+                 index = pd.date_range(start='2020-01-01', periods=3, freq='D'),
+                 name  = 'b'
+             ),
+    }
+
+    assert list(series_dict.keys()) == expected_keys
+    assert list(series_indexes.keys()) == expected_keys
+    for k in expected_keys:
+        pd.testing.assert_series_equal(series_dict[k], expected_series_dict[k])
+        assert series_dict[k].index.freq == expected_series_dict[k].index.freq
+        pd.testing.assert_index_equal(series_indexes[k], expected_series_dict[k].index)
+        assert not np.shares_memory(series_dict[k].to_numpy(), series['value'].to_numpy())
+    pd.testing.assert_frame_equal(series, series_copy)
