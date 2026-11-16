@@ -4026,6 +4026,41 @@ def select_n_jobs_fit_forecaster(
     return n_jobs
 
 
+def _resolve_n_jobs(n_jobs: int) -> int:
+    """
+    Resolve an integer `n_jobs` to the number of jobs to run in parallel, with
+    the rule of joblib for negative values: `cpu_count() + 1 + n_jobs` jobs
+    (`-1` uses all the CPUs, `-2` all but one), and at least 1. Positive values
+    are returned as they are. `joblib.effective_n_jobs` is not used because its
+    result depends on the active backend of joblib.
+
+    Parameters
+    ----------
+    n_jobs : int
+        Number of jobs requested. It must not be 0.
+
+    Returns
+    -------
+    n_jobs : int
+        Number of jobs to run in parallel, greater than or equal to 1.
+
+    """
+
+    if not isinstance(n_jobs, (int, np.integer)):
+        raise TypeError(
+            f"`n_jobs` must be an integer or `'auto'`. Got {type(n_jobs)}."
+        )
+    if n_jobs == 0:
+        raise ValueError(
+            f"`n_jobs` must be a non-zero integer or 'auto'. Got {n_jobs}."
+        )
+
+    if n_jobs < 0:
+        n_jobs = max(joblib.cpu_count() + 1 + n_jobs, 1)
+
+    return int(n_jobs)
+
+
 def set_cpu_gpu_device(
     estimator: object, 
     device: str | None = 'cpu'

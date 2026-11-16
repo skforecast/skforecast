@@ -8011,3 +8011,88 @@ def test_backtesting_forecaster_multiseries_scaled_metrics_same_with_wide_DataFr
             metric.loc[level, "root_mean_squared_scaled_error"],
             np.sqrt(np.mean(errors ** 2 / scale_sq))
         )
+
+
+@pytest.mark.parametrize(
+    "n_jobs, refit, expected_n_jobs",
+    [(-1, True, 4),
+     (-2, True, 3),
+     (-10, True, 1),
+     (2, 0, 2)],
+    ids=['-1', '-2', '-10', 'refit 0']
+)
+def test_backtesting_forecaster_multiseries_integer_n_jobs_negative_and_refit_0(
+    n_jobs, refit, expected_n_jobs
+):
+    """
+    Test that backtesting_forecaster_multiseries, with 4 CPUs
+    (`joblib.cpu_count` patched) and 4 folds, resolves a negative `n_jobs`
+    with the rule of joblib (`-1` all the CPUs, `-2` all but one, at least 1),
+    and that `refit=0` is handled as `refit=False` (folds in parallel, without
+    the warning of the intermittent refit). `Parallel` is mocked with a
+    sequential one, so no workers are started.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator=Ridge(random_state=123), lags=3
+                 )
+    cv = TimeSeriesFold(
+             steps              = 10,
+             initial_train_size = 10,
+             refit              = refit,
+             fixed_train_size   = False,
+             verbose            = False
+         )
+
+    with (
+        warnings.catch_warnings(),
+        patch("joblib.cpu_count", return_value=4),
+        patch(
+            "skforecast.model_selection._validation.Parallel",
+            side_effect=lambda **kwargs: Parallel(n_jobs=1)
+        ) as mock_parallel
+    ):
+        warnings.simplefilter("error", category=IgnoredArgumentWarning)
+        backtesting_forecaster_multiseries(
+            forecaster    = forecaster,
+            series        = series_wide_range,
+            cv            = cv,
+            metric        = 'mean_absolute_error',
+            n_jobs        = n_jobs,
+            show_progress = False
+        )
+
+    assert mock_parallel.call_args.kwargs == {'n_jobs': expected_n_jobs}
+
+
+@pytest.mark.parametrize(
+    "refit",
+    [True, False, 2],
+    ids=lambda refit: f'refit: {refit}'
+)
+def test_backtesting_forecaster_multiseries_ValueError_when_n_jobs_is_0(refit):
+    """
+    Test ValueError is raised in backtesting_forecaster_multiseries when
+    `n_jobs` is 0, with and without refit, and with intermittent refit (which
+    runs with one job).
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator=Ridge(random_state=123), lags=3
+                 )
+    cv = TimeSeriesFold(
+             steps              = 10,
+             initial_train_size = 10,
+             refit              = refit,
+             fixed_train_size   = False,
+             verbose            = False
+         )
+
+    err_msg = re.escape("`n_jobs` must be a non-zero integer or 'auto'. Got 0.")
+    with pytest.raises(ValueError, match=err_msg):
+        backtesting_forecaster_multiseries(
+            forecaster    = forecaster,
+            series        = series_wide_range,
+            cv            = cv,
+            metric        = 'mean_absolute_error',
+            n_jobs        = 0,
+            show_progress = False
+        )
