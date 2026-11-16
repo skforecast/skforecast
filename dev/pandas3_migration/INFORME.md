@@ -3495,7 +3495,7 @@ Correcciones a la revisión, al comprobarla:
 - **2.3.** La medida de la sección 4 (`predict` en bucle, 1,18) era del prototipo
   `train_matrix_combo`, no del helper real.
 
-**Arreglos tras la revisión 5** (2026-11-16, sin commit, en la rama de la #1505, que el
+**Arreglos tras la revisión 5** (2026-11-16, commits `973baa845` a `96faf2fcf` en la rama de la #1505, que el
 usuario prefiere a una PR nueva):
 
 - `calculate_distance_from_holiday` (1.4 y opcional de rendimiento): los dos modos
