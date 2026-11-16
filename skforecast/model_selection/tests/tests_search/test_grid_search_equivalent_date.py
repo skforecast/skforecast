@@ -3,6 +3,7 @@
 import re
 import os
 import pytest
+from unittest.mock import patch
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
@@ -565,3 +566,30 @@ def test_grid_search_equivalent_date_ValueError_when_metric_name_not_valid():
             param_grid = {'offset': [1, 7]},
             metric     = 'not_a_metric'
         )
+
+
+def test_grid_search_equivalent_date_ValueError_when_n_jobs_is_0():
+    """
+    Test ValueError is raised in grid_search_equivalent_date when `n_jobs` is 0,
+    before any candidate is evaluated (instead of skipping every candidate with
+    the same error).
+    """
+    forecaster = ForecasterEquivalentDate(offset=1, n_offsets=1)
+    cv = TimeSeriesFold(steps=3, initial_train_size=len(y) - 12)
+
+    err_msg = re.escape("`n_jobs` must be a non-zero integer or 'auto'. Got 0.")
+    with (
+        patch("skforecast.model_selection._search.backtesting_forecaster") as mock_backtesting,
+        pytest.raises(ValueError, match=err_msg)
+    ):
+        grid_search_equivalent_date(
+            forecaster    = forecaster,
+            y             = y,
+            cv            = cv,
+            param_grid    = {'offset': [1, 7]},
+            metric        = 'mean_absolute_error',
+            n_jobs        = 0,
+            show_progress = False
+        )
+
+    mock_backtesting.assert_not_called()

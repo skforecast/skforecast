@@ -2384,3 +2384,79 @@ def test_backtesting_stats_scaled_metrics_scaled_by_forecast_origin(refit):
         metric.loc[0, "root_mean_squared_scaled_error"],
         np.sqrt(np.mean(errors ** 2 / scale_sq))
     )
+
+
+@pytest.mark.parametrize(
+    "n_jobs, expected_n_jobs",
+    [(-1, 4), (-2, 3), (-10, 1)],
+    ids=['-1', '-2', '-10']
+)
+def test_backtesting_stats_negative_n_jobs_resolved_with_the_rule_of_joblib(
+    n_jobs, expected_n_jobs
+):
+    """
+    Test that backtesting_stats, with 4 CPUs (`joblib.cpu_count` patched) and
+    4 folds with refit, resolves a negative `n_jobs` with the rule of joblib
+    (`-1` all the CPUs, `-2` all but one, at least 1). `Parallel` is mocked
+    with a sequential one, so no workers are started.
+    """
+    forecaster = ForecasterStats(estimator=Arima(order=(1, 0, 0)))
+    cv = TimeSeriesFold(
+             steps              = 3,
+             initial_train_size = len(y_datetime) - 12,
+             refit              = True,
+             fixed_train_size   = False,
+             verbose            = False
+         )
+
+    with (
+        patch("joblib.cpu_count", return_value=4),
+        patch(
+            "skforecast.model_selection._validation.Parallel",
+            side_effect=lambda **kwargs: Parallel(n_jobs=1)
+        ) as mock_parallel
+    ):
+        backtesting_stats(
+            forecaster        = forecaster,
+            y                 = y_datetime,
+            cv                = cv,
+            metric            = "mean_absolute_error",
+            n_jobs            = n_jobs,
+            show_progress     = False,
+            suppress_warnings = True
+        )
+
+    assert mock_parallel.call_args.kwargs == {"n_jobs": expected_n_jobs}
+
+
+@pytest.mark.parametrize(
+    "refit",
+    [True, False, 2],
+    ids=lambda refit: f'refit: {refit}'
+)
+def test_backtesting_stats_ValueError_when_n_jobs_is_0(refit):
+    """
+    Test ValueError is raised in backtesting_stats when `n_jobs` is 0, with
+    and without refit (where `n_jobs` is set to 1), and with intermittent
+    refit.
+    """
+    forecaster = ForecasterStats(estimator=Arima(order=(1, 0, 0)))
+    cv = TimeSeriesFold(
+             steps              = 3,
+             initial_train_size = len(y_datetime) - 12,
+             refit              = refit,
+             fixed_train_size   = False,
+             verbose            = False
+         )
+
+    err_msg = re.escape("`n_jobs` must be a non-zero integer or 'auto'. Got 0.")
+    with pytest.raises(ValueError, match=err_msg):
+        backtesting_stats(
+            forecaster        = forecaster,
+            y                 = y_datetime,
+            cv                = cv,
+            metric            = "mean_absolute_error",
+            n_jobs            = 0,
+            show_progress     = False,
+            suppress_warnings = True
+        )

@@ -309,9 +309,10 @@ def check_backtesting_input(
     return_predictors : bool, default False
         If `True`, the predictors used to make the predictions are also returned.
     n_jobs : int, 'auto', default `'auto'`
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
-        skforecast.utils.select_n_jobs_fit_forecaster.
+        The number of jobs to run in parallel. If negative, the rule of joblib is
+        used: `cpu_count() + 1 + n_jobs` jobs (`-1` uses all the cores, `-2` all
+        but one), at least 1. It cannot be `0`. If 'auto', `n_jobs` is set using
+        the function skforecast.utils.select_n_jobs_fit_forecaster.
     freeze_params : bool, default True
         Determines whether to freeze the model parameters after the first fit
         for estimators that perform automatic model selection (`Arima` with

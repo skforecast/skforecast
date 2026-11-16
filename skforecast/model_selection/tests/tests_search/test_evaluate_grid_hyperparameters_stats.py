@@ -3,6 +3,7 @@
 import os
 import re
 import pytest
+from unittest.mock import patch
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import Ridge
@@ -564,3 +565,37 @@ def test_evaluate_grid_hyperparameters_stats_output_file_when_metric_list():
     output_file_content = output_file_content.astype({'params': str, 'order': str})
     pd.testing.assert_frame_equal(results, output_file_content)
     os.remove(output_file)
+
+
+def test_ValueError_evaluate_grid_hyperparameters_stats_when_n_jobs_is_0():
+    """
+    Test ValueError is raised in _evaluate_grid_hyperparameters_stats when
+    `n_jobs` is 0, before any candidate is evaluated (instead of skipping every
+    candidate with the same error).
+    """
+    forecaster = ForecasterStats(estimator=Sarimax(order=(1, 0, 0)))
+    cv = TimeSeriesFold(
+             steps              = 3,
+             initial_train_size = len(y_datetime) - 12,
+             refit              = False,
+             fixed_train_size   = False
+         )
+
+    err_msg = re.escape("`n_jobs` must be a non-zero integer or 'auto'. Got 0.")
+    with (
+        patch("skforecast.model_selection._search.backtesting_stats") as mock_backtesting,
+        pytest.raises(ValueError, match=err_msg)
+    ):
+        _evaluate_grid_hyperparameters_stats(
+            forecaster    = forecaster,
+            y             = y_datetime,
+            cv            = cv,
+            param_grid    = [{'order': (1, 0, 0)}, {'order': (2, 0, 0)}],
+            metric        = 'mean_absolute_error',
+            return_best   = False,
+            n_jobs        = 0,
+            verbose       = False,
+            show_progress = False
+        )
+
+    mock_backtesting.assert_not_called()

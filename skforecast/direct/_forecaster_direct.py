@@ -17,7 +17,7 @@ from sklearn.base import clone
 from sklearn.exceptions import NotFittedError
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OrdinalEncoder
-from joblib import Parallel, delayed, cpu_count
+from joblib import Parallel, delayed
 
 from .. import __version__
 from ..base import ForecasterBase
@@ -50,6 +50,7 @@ from ..utils import (
     transform_numpy,
     transform_dataframe,
     select_n_jobs_fit_forecaster,
+    _resolve_n_jobs,
     get_style_repr_html,
     _build_predict_function,
     _check_differentiation_last_values,
@@ -254,9 +255,10 @@ class ForecasterDirect(ForecasterBase):
         `random_state` and `dtype`. Argument `method` is passed internally to the
         function `numpy.percentile`.
     n_jobs : int, 'auto', default `'auto'`
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
-        skforecast.utils.select_n_jobs_fit_forecaster.
+        The number of jobs to run in parallel. If negative, the rule of joblib is
+        used: `cpu_count() + 1 + n_jobs` jobs (`-1` uses all the cores, `-2` all
+        but one), at least 1. It cannot be `0`. If 'auto', `n_jobs` is set using
+        the function skforecast.utils.select_n_jobs_fit_forecaster.
     forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
     
@@ -444,9 +446,10 @@ class ForecasterDirect(ForecasterBase):
         Version of skforecast library used to create the forecaster.
     python_version : str
         Version of python used to create the forecaster.
-    n_jobs : int, 'auto'
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
+    n_jobs : int
+        The number of jobs to run in parallel, resolved from the argument
+        `n_jobs`: a negative value with the rule of joblib
+        (`cpu_count() + 1 + n_jobs`, at least 1) and 'auto' with the function
         skforecast.utils.select_n_jobs_fit_forecaster.
     forecaster_id : str, int
         Name used as an identifier of the forecaster.
@@ -638,11 +641,7 @@ class ForecasterDirect(ForecasterBase):
                               estimator       = self.estimator
                           )
         else:
-            if not isinstance(n_jobs, int):
-                raise TypeError(
-                    f"`n_jobs` must be an integer or `'auto'`. Got {type(n_jobs)}."
-                )
-            self.n_jobs = n_jobs if n_jobs > 0 else cpu_count()
+            self.n_jobs = _resolve_n_jobs(n_jobs)
         
         self.__skforecast_tags__ = {
             "library": "skforecast",

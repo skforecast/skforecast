@@ -3494,3 +3494,48 @@ def test_bayesian_search_forecaster_multiseries_n_jobs_auto_resolved_with_the_ru
         assert call.kwargs['n_jobs'] == expected_n_jobs
     for call in mock_parallel.call_args_list:
         assert call.kwargs == {'n_jobs': min(expected_n_jobs, 4)}
+
+
+def test_ValueError_bayesian_search_forecaster_multiseries_when_n_jobs_is_0():
+    """
+    Test ValueError is raised in bayesian_search_forecaster_multiseries when
+    `n_jobs` is 0 with `TimeSeriesFold`, before any trial is evaluated (instead
+    of failing every trial with the same error).
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator = Ridge(random_state=123),
+                     lags      = 2,
+                     encoding  = 'onehot'
+                 )
+    cv = TimeSeriesFold(
+             steps              = 3,
+             initial_train_size = len(series_dict_range['l1']) - 12,
+             refit              = False,
+             fixed_train_size   = False
+         )
+
+    def search_space(trial):  # pragma: no cover
+        return {'alpha': trial.suggest_float('alpha', 1e-2, 1.0)}
+
+    err_msg = re.escape("`n_jobs` must be a non-zero integer or 'auto'. Got 0.")
+    with (
+        patch(
+            "skforecast.model_selection._search.backtesting_forecaster_multiseries"
+        ) as mock_backtesting,
+        pytest.raises(ValueError, match=err_msg)
+    ):
+        bayesian_search_forecaster_multiseries(
+            forecaster    = forecaster,
+            series        = series_dict_range,
+            search_space  = search_space,
+            cv            = cv,
+            metric        = 'mean_absolute_error',
+            n_trials      = 2,
+            random_state  = 123,
+            return_best   = False,
+            n_jobs        = 0,
+            verbose       = False,
+            show_progress = False
+        )
+
+    mock_backtesting.assert_not_called()

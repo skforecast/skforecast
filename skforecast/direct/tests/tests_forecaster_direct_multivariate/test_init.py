@@ -1,6 +1,7 @@
 # Unit test __init__ ForecasterDirectMultiVariate
 # ==============================================================================
 import re
+from unittest.mock import patch
 import pytest
 import numpy as np
 from sklearn.linear_model import LinearRegression
@@ -246,6 +247,34 @@ def test_init_TypeError_when_n_jobs_not_int_or_auto(n_jobs):
         ForecasterDirectMultiVariate(
             estimator=LinearRegression(), level='l1', steps=2, lags=2, n_jobs=n_jobs
         )
+
+
+def test_init_ValueError_when_n_jobs_is_0():
+    """
+    Test ValueError is raised when `n_jobs` is 0, which joblib does not allow.
+    """
+    err_msg = re.escape("`n_jobs` must be a non-zero integer or 'auto'. Got 0.")
+    with pytest.raises(ValueError, match = err_msg):
+        ForecasterDirectMultiVariate(
+            estimator=LinearRegression(), level='l1', steps=2, lags=2, n_jobs=0
+        )
+
+
+@pytest.mark.parametrize("n_jobs, expected",
+                         [(3, 3), (-1, 4), (-2, 3), (-10, 1)],
+                         ids = ['3', '-1', '-2', '-10'])
+def test_init_n_jobs_correctly_stored(n_jobs, expected):
+    """
+    Test that an integer `n_jobs` is stored as the number of jobs, with 4 CPUs
+    (`joblib.cpu_count` patched): a negative value follows the rule of joblib
+    (`-1` all the CPUs, `-2` all but one, at least 1).
+    """
+    with patch("joblib.cpu_count", return_value=4):
+        forecaster = ForecasterDirectMultiVariate(
+                         estimator=LinearRegression(), level='l1', steps=2, lags=2, n_jobs=n_jobs
+                     )
+
+    assert forecaster.n_jobs == expected
 
 
 @pytest.mark.parametrize("categorical_features", 

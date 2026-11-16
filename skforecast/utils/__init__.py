@@ -11,6 +11,7 @@ from .utils import (
     _get_estimator_categorical_set_params,
     _NonFinitePredictorsError,
     _prefers_c_contiguous_X,
+    _resolve_n_jobs,
     _restore_estimator_categorical_set_params,
     _series_too_short_multiseries,
     _split_long_format,

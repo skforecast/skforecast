@@ -59,6 +59,7 @@ from ..utils import (
     manage_warnings,
     deepcopy_forecaster,
     _get_estimator_categorical_set_params,
+    _resolve_n_jobs,
     _restore_estimator_categorical_set_params
 )
 
@@ -134,8 +135,9 @@ def grid_search_forecaster(
         Refit the `forecaster` using the best found parameters on the whole data.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel, never more than the number of
-        folds. If `-1`, then the number of jobs is set to the number of cores. If
-        'auto', `n_jobs` is set using the function
+        folds. If negative, the rule of joblib is used: `cpu_count() + 1 + n_jobs`
+        jobs (`-1` uses all the cores, `-2` all but one), at least 1. It cannot be
+        `0`. If 'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting. Ignored for
         `OneStepAheadFold`.
     verbose : bool, default False
@@ -273,8 +275,9 @@ def random_search_forecaster(
         Refit the `forecaster` using the best found parameters on the whole data.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel, never more than the number of
-        folds. If `-1`, then the number of jobs is set to the number of cores. If
-        'auto', `n_jobs` is set using the function
+        folds. If negative, the rule of joblib is used: `cpu_count() + 1 + n_jobs`
+        jobs (`-1` uses all the cores, `-2` all but one), at least 1. It cannot be
+        `0`. If 'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting. Ignored for
         `OneStepAheadFold`.
     verbose : bool, default False
@@ -411,8 +414,9 @@ def _evaluate_grid_hyperparameters(
         Refit the `forecaster` using the best found parameters on the whole data.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel, never more than the number of
-        folds. If `-1`, then the number of jobs is set to the number of cores. If
-        'auto', `n_jobs` is set using the function
+        folds. If negative, the rule of joblib is used: `cpu_count() + 1 + n_jobs`
+        jobs (`-1` uses all the cores, `-2` all but one), at least 1. It cannot be
+        `0`. If 'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting. Ignored for
         `OneStepAheadFold`.
     verbose : bool, default False
@@ -464,6 +468,12 @@ def _evaluate_grid_hyperparameters(
             f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
             f"Got {type(cv)}."
         )
+
+    # NOTE: An invalid `n_jobs` would make every candidate fail with the same
+    # error, so it is checked once here instead of skipping each candidate.
+    # With `OneStepAheadFold`, `n_jobs` is ignored.
+    if cv_name == 'TimeSeriesFold' and n_jobs != 'auto':
+        _resolve_n_jobs(n_jobs)
     
     if cv_name == 'OneStepAheadFold':
 
@@ -778,8 +788,9 @@ def bayesian_search_forecaster(
         Refit the `forecaster` using the best found parameters on the whole data.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel, never more than the number of
-        folds. If `-1`, then the number of jobs is set to the number of cores. If
-        'auto', `n_jobs` is set using the function
+        folds. If negative, the rule of joblib is used: `cpu_count() + 1 + n_jobs`
+        jobs (`-1` uses all the cores, `-2` all but one), at least 1. It cannot be
+        `0`. If 'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting. Ignored for
         `OneStepAheadFold`.
     verbose : bool, default False
@@ -840,6 +851,12 @@ def bayesian_search_forecaster(
             f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
             f"Got {type(cv)}."
         )
+
+    # NOTE: An invalid `n_jobs` would make every candidate fail with the same
+    # error, so it is checked once here instead of skipping each candidate.
+    # With `OneStepAheadFold`, `n_jobs` is ignored.
+    if cv_name == 'TimeSeriesFold' and n_jobs != 'auto':
+        _resolve_n_jobs(n_jobs)
 
     if return_best and exog is not None and (len(exog) != len(y)):
         raise ValueError(
@@ -1256,8 +1273,9 @@ def grid_search_forecaster_multiseries(
         Refit the `forecaster` using the best found parameters on the whole data.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel, never more than the number of
-        folds. If `-1`, then the number of jobs is set to the number of cores. If
-        'auto', `n_jobs` is set using the function
+        folds. If negative, the rule of joblib is used: `cpu_count() + 1 + n_jobs`
+        jobs (`-1` uses all the cores, `-2` all but one), at least 1. It cannot be
+        `0`. If 'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting. Ignored for
         `OneStepAheadFold`.
     verbose : bool, default False
@@ -1412,8 +1430,9 @@ def random_search_forecaster_multiseries(
         Refit the `forecaster` using the best found parameters on the whole data.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel, never more than the number of
-        folds. If `-1`, then the number of jobs is set to the number of cores. If
-        'auto', `n_jobs` is set using the function
+        folds. If negative, the rule of joblib is used: `cpu_count() + 1 + n_jobs`
+        jobs (`-1` uses all the cores, `-2` all but one), at least 1. It cannot be
+        `0`. If 'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting. Ignored for
         `OneStepAheadFold`.
     verbose : bool, default False
@@ -1567,8 +1586,9 @@ def _evaluate_grid_hyperparameters_multiseries(
         Refit the `forecaster` using the best found parameters on the whole data.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel, never more than the number of
-        folds. If `-1`, then the number of jobs is set to the number of cores. If
-        'auto', `n_jobs` is set using the function
+        folds. If negative, the rule of joblib is used: `cpu_count() + 1 + n_jobs`
+        jobs (`-1` uses all the cores, `-2` all but one), at least 1. It cannot be
+        `0`. If 'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting. Ignored for
         `OneStepAheadFold`.
     verbose : bool, default False
@@ -1636,6 +1656,12 @@ def _evaluate_grid_hyperparameters_multiseries(
             f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
             f"Got {type(cv)}."
         )
+
+    # NOTE: An invalid `n_jobs` would make every candidate fail with the same
+    # error, so it is checked once here instead of skipping each candidate.
+    # With `OneStepAheadFold`, `n_jobs` is ignored.
+    if cv_name == 'TimeSeriesFold' and n_jobs != 'auto':
+        _resolve_n_jobs(n_jobs)
     
     if cv_name == 'OneStepAheadFold':
 
@@ -2041,8 +2067,9 @@ def bayesian_search_forecaster_multiseries(
         Refit the `forecaster` using the best found parameters on the whole data.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel, never more than the number of
-        folds. If `-1`, then the number of jobs is set to the number of cores. If
-        'auto', `n_jobs` is set using the function
+        folds. If negative, the rule of joblib is used: `cpu_count() + 1 + n_jobs`
+        jobs (`-1` uses all the cores, `-2` all but one), at least 1. It cannot be
+        `0`. If 'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting. Ignored for
         `OneStepAheadFold`.
     verbose : bool, default False
@@ -2104,6 +2131,12 @@ def bayesian_search_forecaster_multiseries(
             f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
             f"Got {type(cv)}."
         )
+
+    # NOTE: An invalid `n_jobs` would make every candidate fail with the same
+    # error, so it is checked once here instead of skipping each candidate.
+    # With `OneStepAheadFold`, `n_jobs` is ignored.
+    if cv_name == 'TimeSeriesFold' and n_jobs != 'auto':
+        _resolve_n_jobs(n_jobs)
 
     forecaster_search = deepcopy_forecaster(forecaster)
     forecaster_name = forecaster_search.__skforecast_tags__['forecaster_name']
@@ -3059,8 +3092,9 @@ def grid_search_stats(
         Refit the `forecaster` using the best found parameters on the whole data.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel, never more than the number of
-        folds. If `-1`, then the number of jobs is set to the number of cores. If
-        'auto', `n_jobs` is set using the function
+        folds. If negative, the rule of joblib is used: `cpu_count() + 1 + n_jobs`
+        jobs (`-1` uses all the cores, `-2` all but one), at least 1. It cannot be
+        `0`. If 'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting.
     verbose : bool, default False
         Print number of folds used for cv or backtesting.
@@ -3178,8 +3212,9 @@ def random_search_stats(
         Refit the `forecaster` using the best found parameters on the whole data.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel, never more than the number of
-        folds. If `-1`, then the number of jobs is set to the number of cores. If
-        'auto', `n_jobs` is set using the function
+        folds. If negative, the rule of joblib is used: `cpu_count() + 1 + n_jobs`
+        jobs (`-1` uses all the cores, `-2` all but one), at least 1. It cannot be
+        `0`. If 'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting.
     verbose : bool, default False
         Print number of folds used for cv or backtesting.
@@ -3296,8 +3331,9 @@ def _evaluate_grid_hyperparameters_stats(
         Refit the `forecaster` using the best found parameters on the whole data.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel, never more than the number of
-        folds. If `-1`, then the number of jobs is set to the number of cores. If
-        'auto', `n_jobs` is set using the function
+        folds. If negative, the rule of joblib is used: `cpu_count() + 1 + n_jobs`
+        jobs (`-1` uses all the cores, `-2` all but one), at least 1. It cannot be
+        `0`. If 'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting.
     verbose : bool, default False
         Print number of folds used for cv or backtesting.
@@ -3349,6 +3385,11 @@ def _evaluate_grid_hyperparameters_stats(
             f"`exog` must have same number of samples as `y`. "
             f"length `exog`: ({len(exog)}), length `y`: ({len(y)})"
         )
+
+    # NOTE: An invalid `n_jobs` would make every candidate fail with the same
+    # error, so it is checked once here instead of skipping each candidate.
+    if n_jobs != 'auto':
+        _resolve_n_jobs(n_jobs)
 
     forecaster_search = deepcopy_forecaster(forecaster)
 
@@ -3548,8 +3589,9 @@ def grid_search_equivalent_date(
         Refit the `forecaster` using the best found configuration on the whole data.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel, never more than the number of
-        folds. If `-1`, then the number of jobs is set to the number of cores. If
-        'auto', `n_jobs` is set using the function
+        folds. If negative, the rule of joblib is used: `cpu_count() + 1 + n_jobs`
+        jobs (`-1` uses all the cores, `-2` all but one), at least 1. It cannot be
+        `0`. If 'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting.
     verbose : bool, default False
         Print number of folds used for cv or backtesting.
@@ -3593,6 +3635,11 @@ def grid_search_equivalent_date(
         raise TypeError(
             f"`cv` must be an instance of `TimeSeriesFold`. Got {type(cv).__name__}."
         )
+
+    # NOTE: An invalid `n_jobs` would make every candidate fail with the same
+    # error, so it is checked once here instead of skipping each candidate.
+    if n_jobs != 'auto':
+        _resolve_n_jobs(n_jobs)
 
     if isinstance(param_grid, dict):
         if 'alias' in param_grid:

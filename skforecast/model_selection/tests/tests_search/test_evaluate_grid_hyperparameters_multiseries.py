@@ -4,6 +4,7 @@ import re
 import os
 import warnings
 import pytest
+from unittest.mock import patch
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import Ridge, ElasticNet
@@ -2429,3 +2430,74 @@ def test_evaluate_grid_hyperparameters_multiseries_refit_without_series_too_shor
         "The forecaster returned is not trained with it (not in "
         "`series_names_in_`).\n\nSeries left out: 'short' (6 observations)."
     ]
+
+
+def test_ValueError_evaluate_grid_hyperparameters_multiseries_when_n_jobs_is_0():
+    """
+    Test ValueError is raised in _evaluate_grid_hyperparameters_multiseries when
+    `n_jobs` is 0 with `TimeSeriesFold`, before any candidate is evaluated
+    (instead of skipping every candidate with the same error).
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator = Ridge(random_state=123),
+                     lags      = 3,
+                     encoding  = 'onehot'
+                 )
+    cv = TimeSeriesFold(
+             steps              = 3,
+             initial_train_size = len(series_dict_range['l1']) - 12,
+             refit              = False,
+             fixed_train_size   = False
+         )
+
+    err_msg = re.escape("`n_jobs` must be a non-zero integer or 'auto'. Got 0.")
+    with (
+        patch(
+            "skforecast.model_selection._search.backtesting_forecaster_multiseries"
+        ) as mock_backtesting,
+        pytest.raises(ValueError, match=err_msg)
+    ):
+        _evaluate_grid_hyperparameters_multiseries(
+            forecaster    = forecaster,
+            series        = series_dict_range,
+            cv            = cv,
+            param_grid    = [{'alpha': 0.01}, {'alpha': 0.1}],
+            metric        = 'mean_absolute_error',
+            levels        = None,
+            lags_grid     = [2, 4],
+            return_best   = False,
+            n_jobs        = 0,
+            verbose       = False,
+            show_progress = False
+        )
+
+    mock_backtesting.assert_not_called()
+
+
+def test_evaluate_grid_hyperparameters_multiseries_n_jobs_0_ignored_with_OneStepAheadFold():
+    """
+    Test that `n_jobs` is not validated with `OneStepAheadFold`, where it is
+    ignored: the search with `n_jobs=0` evaluates every candidate.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator = Ridge(random_state=123),
+                     lags      = 3,
+                     encoding  = 'onehot'
+                 )
+    cv = OneStepAheadFold(initial_train_size=len(series_dict_range['l1']) - 12)
+
+    results = _evaluate_grid_hyperparameters_multiseries(
+                  forecaster    = forecaster,
+                  series        = series_dict_range,
+                  cv            = cv,
+                  param_grid    = [{'alpha': 0.01}, {'alpha': 0.1}],
+                  metric        = 'mean_absolute_error',
+                  levels        = None,
+                  lags_grid     = [2, 4],
+                  return_best   = False,
+                  n_jobs        = 0,
+                  verbose       = False,
+                  show_progress = False
+              )
+
+    assert len(results) == 4

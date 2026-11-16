@@ -14,7 +14,7 @@ import time
 import warnings
 import numpy as np
 import pandas as pd
-from joblib import Parallel, delayed, cpu_count, effective_n_jobs
+from joblib import Parallel, delayed, effective_n_jobs
 try:
     from joblib.externals.loky.backend.reduction import dumps as loky_dumps
 except ImportError:  # pragma: no cover
@@ -52,6 +52,7 @@ from ..utils import (
     estimator_has_native_nan_support,
     _run_recording_worker_warnings,
     _reemit_worker_warnings,
+    _resolve_n_jobs,
     _WORKER_WARNINGS_ATTRIBUTE
 )
 from ..foundation._utils import check_preprocess_series_foundation
@@ -594,8 +595,9 @@ def _backtesting_forecaster(
         If `True`, the predictors used to make the predictions are also returned.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel, never more than the number of
-        folds. If `-1`, then the number of jobs is set to the number of cores. If
-        'auto', `n_jobs` is set using the function
+        folds. If negative, the rule of joblib is used: `cpu_count() + 1 + n_jobs`
+        jobs (`-1` uses all the cores, `-2` all but one), at least 1. It cannot be
+        `0`. If 'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting, and set to 1
         when the workload of the folds, estimated from the time of the initial fit
         (without refit, from the time of the prediction of the first fold), is
@@ -710,7 +712,9 @@ def _backtesting_forecaster(
         'verbose': verbose
     })
 
-    refit = cv.refit
+    # NOTE: `refit=0` means no refit, as `refit=False`, so it is not handled as
+    # an intermittent refit (which runs with one job).
+    refit = False if cv.refit == 0 else cv.refit
     overlapping_folds = cv.overlapping_folds
 
     n_jobs_auto = n_jobs == 'auto'
@@ -719,15 +723,15 @@ def _backtesting_forecaster(
                      forecaster = forecaster,
                      refit      = refit
                  )
-    elif not isinstance(refit, bool) and refit != 1 and n_jobs != 1:
-        warnings.warn(
-            "If `refit` is an integer other than 1 (intermittent refit). `n_jobs` "
-            "is set to 1 to avoid unexpected results during parallelization.",
-            IgnoredArgumentWarning
-        )
-        n_jobs = 1
     else:
-        n_jobs = n_jobs if n_jobs > 0 else cpu_count()
+        n_jobs = _resolve_n_jobs(n_jobs)
+        if not isinstance(refit, bool) and refit != 1 and n_jobs != 1:
+            warnings.warn(
+                "If `refit` is an integer other than 1 (intermittent refit). `n_jobs` "
+                "is set to 1 to avoid unexpected results during parallelization.",
+                IgnoredArgumentWarning
+            )
+            n_jobs = 1
 
     if not isinstance(metric, list):
         metrics = [
@@ -1090,8 +1094,9 @@ def backtesting_forecaster(
         If `True`, the predictors used to make the predictions are also returned.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel, never more than the number of
-        folds. If `-1`, then the number of jobs is set to the number of cores. If
-        'auto', `n_jobs` is set using the function
+        folds. If negative, the rule of joblib is used: `cpu_count() + 1 + n_jobs`
+        jobs (`-1` uses all the cores, `-2` all but one), at least 1. It cannot be
+        `0`. If 'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting, and set to 1
         when the workload of the folds, estimated from the time of the initial fit
         (without refit, from the time of the prediction of the first fold), is
@@ -1550,8 +1555,9 @@ def _backtesting_forecaster_multiseries(
         If `True`, the predictors used to make the predictions are also returned.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel, never more than the number of
-        folds. If `-1`, then the number of jobs is set to the number of cores. If
-        'auto', `n_jobs` is set using the function
+        folds. If negative, the rule of joblib is used: `cpu_count() + 1 + n_jobs`
+        jobs (`-1` uses all the cores, `-2` all but one), at least 1. It cannot be
+        `0`. If 'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting, and set to 1
         when the workload of the folds, estimated from the time of the initial fit, is
         too small to pay the start of the workers (for example, without refit).
@@ -1670,7 +1676,9 @@ def _backtesting_forecaster_multiseries(
         'verbose': verbose
     })
 
-    refit = cv.refit
+    # NOTE: `refit=0` means no refit, as `refit=False`, so it is not handled as
+    # an intermittent refit (which runs with one job).
+    refit = False if cv.refit == 0 else cv.refit
     overlapping_folds = cv.overlapping_folds
 
     n_jobs_auto = n_jobs == 'auto'
@@ -1679,15 +1687,15 @@ def _backtesting_forecaster_multiseries(
                      forecaster = forecaster,
                      refit      = refit
                  )
-    elif not isinstance(refit, bool) and refit != 1 and n_jobs != 1:
-        warnings.warn(
-            "If `refit` is an integer other than 1 (intermittent refit). `n_jobs` "
-            "is set to 1 to avoid unexpected results during parallelization.",
-            IgnoredArgumentWarning
-        )
-        n_jobs = 1
     else:
-        n_jobs = n_jobs if n_jobs > 0 else cpu_count()
+        n_jobs = _resolve_n_jobs(n_jobs)
+        if not isinstance(refit, bool) and refit != 1 and n_jobs != 1:
+            warnings.warn(
+                "If `refit` is an integer other than 1 (intermittent refit). `n_jobs` "
+                "is set to 1 to avoid unexpected results during parallelization.",
+                IgnoredArgumentWarning
+            )
+            n_jobs = 1
 
     levels = _initialize_levels_model_selection_multiseries(
                  forecaster = forecaster,
@@ -2163,8 +2171,9 @@ def backtesting_forecaster_multiseries(
         If `True`, the predictors used to make the predictions are also returned.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel, never more than the number of
-        folds. If `-1`, then the number of jobs is set to the number of cores. If
-        'auto', `n_jobs` is set using the function
+        folds. If negative, the rule of joblib is used: `cpu_count() + 1 + n_jobs`
+        jobs (`-1` uses all the cores, `-2` all but one), at least 1. It cannot be
+        `0`. If 'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting, and set to 1
         when the workload of the folds, estimated from the time of the initial fit, is
         too small to pay the start of the workers (for example, without refit).
@@ -2536,8 +2545,9 @@ def _backtesting_stats(
         selected in each fold.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel, never more than the number of
-        folds. If `-1`, then the number of jobs is set to the number of cores. If
-        'auto', `n_jobs` is set using the function
+        folds. If negative, the rule of joblib is used: `cpu_count() + 1 + n_jobs`
+        jobs (`-1` uses all the cores, `-2` all but one), at least 1. It cannot be
+        `0`. If 'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used 
@@ -2637,6 +2647,9 @@ def _backtesting_stats(
     refit = cv.refit
     overlapping_folds = cv.overlapping_folds
     
+    if n_jobs != 'auto':
+        n_jobs = _resolve_n_jobs(n_jobs)
+
     if not refit:
         if n_jobs != 'auto' and n_jobs != 1:
             warnings.warn(
@@ -2658,8 +2671,6 @@ def _backtesting_stats(
                 IgnoredArgumentWarning
             )
             n_jobs = 1
-        else:
-            n_jobs = n_jobs if n_jobs > 0 else cpu_count()
 
     if not isinstance(metric, list):
         metrics = [
@@ -2969,8 +2980,9 @@ def backtesting_stats(
         selected in each fold.
     n_jobs : int, 'auto', default 'auto'
         The number of jobs to run in parallel, never more than the number of
-        folds. If `-1`, then the number of jobs is set to the number of cores. If
-        'auto', `n_jobs` is set using the function
+        folds. If negative, the rule of joblib is used: `cpu_count() + 1 + n_jobs`
+        jobs (`-1` uses all the cores, `-2` all but one), at least 1. It cannot be
+        `0`. If 'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used 
