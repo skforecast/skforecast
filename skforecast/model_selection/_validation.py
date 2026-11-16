@@ -14,7 +14,7 @@ import time
 import warnings
 import numpy as np
 import pandas as pd
-from joblib import Parallel, delayed, cpu_count
+from joblib import Parallel, delayed, cpu_count, effective_n_jobs
 try:
     from joblib.externals.loky.backend.reduction import dumps as loky_dumps
 except ImportError:  # pragma: no cover
@@ -176,8 +176,9 @@ def _serialize_forecaster_for_workers(
 ) -> object | np.ndarray:
     """
     Serialize the forecaster once, in the main thread, when the folds of a
-    backtesting run in parallel (`n_jobs` other than 1). Each fold deserializes
-    it at its start, so each fold works on its own copy.
+    backtesting run in parallel (joblib runs them with more than one job,
+    `joblib.effective_n_jobs(n_jobs)`). Each fold deserializes it at its
+    start, so each fold works on its own copy.
 
     With several processes, joblib serializes the arguments of every task, so
     the forecaster would be pickled once per fold, in a secondary thread of the
@@ -196,13 +197,18 @@ def _serialize_forecaster_for_workers(
     of more than 1 MB (`max_nbytes`) once per call to a file that all the
     workers read (memmap), instead of sending them with every batch of tasks.
     Large forecasters, for example with a `RandomForestRegressor` or a
-    `KNeighborsRegressor` (which stores its training data), are then not sent
-    to the workers with each batch, nor kept in memory by each worker.
+    `KNeighborsRegressor` (which stores its training data), are then written
+    once instead of being sent with each batch, and the workers share the
+    serialized bytes instead of keeping a copy each.
 
     It is also serialized when the active backend of joblib runs the tasks in
     threads (for example, inside `joblib.parallel_config(backend="threading")`):
     otherwise the folds would share the same forecaster, and the folds with
-    refit would fit it at the same time.
+    refit would fit it at the same time. It is not serialized when joblib runs
+    the tasks one after another in the main process, even if `n_jobs` is
+    greater than 1: with the sequential backend
+    (`joblib.parallel_config(backend="sequential")`) or without multiprocessing
+    (`JOBLIB_MULTIPROCESSING=0`).
 
     Parameters
     ----------
@@ -215,11 +221,11 @@ def _serialize_forecaster_for_workers(
     -------
     forecaster : object, numpy ndarray
         The bytes of the forecaster serialized, as a numpy array of `uint8`,
-        or the forecaster itself if `n_jobs` is 1.
+        or the forecaster itself if joblib runs the folds with one job.
 
     """
 
-    if n_jobs == 1:
+    if effective_n_jobs(n_jobs) == 1:
         return forecaster
 
     if loky_dumps is not None:

@@ -2,6 +2,7 @@
 # ==============================================================================
 import re
 import sys
+import threading
 import warnings
 import pytest
 from unittest.mock import patch
@@ -1042,6 +1043,56 @@ def test_backtesting_forecaster_threading_backend_same_output_as_n_jobs_1(refit)
 
     expected_metric, expected_predictions = run_backtesting(n_jobs=1)
     with parallel_config(backend="threading"):
+        metric, predictions = run_backtesting(n_jobs=4)
+
+    pd.testing.assert_frame_equal(metric, expected_metric)
+    pd.testing.assert_frame_equal(predictions, expected_predictions)
+
+
+class RidgeNotPicklable(Ridge):
+    """
+    Ridge that stores a lock when it is fitted, so a fitted forecaster with it
+    cannot be pickled.
+    """
+
+    def fit(self, X, y, sample_weight=None):
+        self.lock_ = threading.Lock()
+        return super().fit(X, y, sample_weight=sample_weight)
+
+
+@pytest.mark.parametrize(
+    "refit",
+    [True, False],
+    ids=lambda refit: f"refit: {refit}",
+)
+def test_backtesting_forecaster_sequential_backend_does_not_serialize_forecaster(refit):
+    """
+    Test that, when the active backend of joblib runs the folds one after
+    another in the main process (sequential backend), the forecaster is not
+    serialized even if `n_jobs` is greater than 1: a forecaster that cannot be
+    pickled returns the same metrics and predictions as with `n_jobs=1`.
+    """
+    def run_backtesting(n_jobs):
+        forecaster = ForecasterRecursive(estimator=RidgeNotPicklable(), lags=3)
+        cv = TimeSeriesFold(
+                 steps              = 5,
+                 initial_train_size = 30,
+                 refit              = refit,
+                 verbose            = False
+             )
+
+        return backtesting_forecaster(
+                   forecaster    = forecaster,
+                   y             = y,
+                   exog          = exog,
+                   cv            = cv,
+                   metric        = "mean_absolute_error",
+                   n_jobs        = n_jobs,
+                   show_progress = False
+               )
+
+    expected_metric, expected_predictions = run_backtesting(n_jobs=1)
+    with parallel_config(backend="sequential"):
         metric, predictions = run_backtesting(n_jobs=4)
 
     pd.testing.assert_frame_equal(metric, expected_metric)

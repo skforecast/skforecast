@@ -6,7 +6,7 @@ from unittest.mock import patch
 import pytest
 import numpy as np
 import pandas as pd
-from joblib import Parallel, delayed
+from joblib import Parallel, delayed, parallel_config
 from sklearn.linear_model import Ridge
 from sklearn.neighbors import KNeighborsRegressor
 from skforecast.recursive import ForecasterRecursive
@@ -33,6 +33,31 @@ def test_serialize_forecaster_for_workers_returns_forecaster_when_n_jobs_is_1():
     result = _serialize_forecaster_for_workers(forecaster=forecaster, n_jobs=1)
 
     assert result is forecaster
+
+
+@pytest.mark.parametrize(
+    "backend, expected_serialized",
+    [("sequential", False), ("threading", True), ("loky", True)],
+    ids=["sequential", "threading", "loky"],
+)
+def test_serialize_forecaster_for_workers_only_when_joblib_runs_more_than_one_job(
+    backend, expected_serialized
+):
+    """
+    Test that, with `n_jobs=2`, the forecaster is serialized only if the active
+    backend of joblib runs the tasks with more than one job, in threads or in
+    processes. With the sequential backend, the tasks run one after another in
+    the main process, so the forecaster itself is returned.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(), lags=3)
+
+    with parallel_config(backend=backend):
+        result = _serialize_forecaster_for_workers(forecaster=forecaster, n_jobs=2)
+
+    if expected_serialized:
+        assert isinstance(result, np.ndarray)
+    else:
+        assert result is forecaster
 
 
 @pytest.mark.parametrize(
