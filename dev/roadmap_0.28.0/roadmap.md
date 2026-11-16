@@ -377,17 +377,51 @@ migración a pandas 3), y en este orden:
 - [ ] Lanzar `benchmarks.yml` sobre la 0.28.0 con el pin actual (`pandas==2.3.3`): es el
   último punto comparable con la 0.27.0 y aísla los cambios de código.
 - [ ] En una PR propia, cambiar en `benchmarks/requirements_benchmarks.txt` solo
-  `pandas==2.3.3` por la última 3.x (hoy `pandas==3.1.1`), sin tocar los demás pins.
+  `pandas==2.3.3` por la última 3.x (hoy `pandas==3.1.1`), sin tocar los demás pins. En
+  la misma PR, guardar en cada fila de `benchmark.joblib` la versión de `pyarrow`
+  (`'none'` si no está instalado), junto a las demás versiones de
+  `benchmarks/benchmarks/benchmark_runner.py:63-68`. Con pandas 3, el texto (`str`) usa
+  `pyarrow` si está instalado; los requisitos de los benchmarks no lo incluyen, así que
+  hoy miden el caso de un `pip install skforecast` limpio, el más lento con texto. Si
+  otra dependencia lo trajera, los tiempos cambiarían sin que quedara constancia.
 - [ ] Volver a lanzar `benchmarks.yml` sobre la 0.28.0: la diferencia entre las dos tandas
   es el efecto de pandas.
 - [ ] `docs/faq/skforecast-benchmark.ipynb`: las gráficas y el resumen de regresiones
   agrupan solo por `skforecast_version`, así que las dos tandas de la 0.28.0 se
   mezclarían en la mediana. Filtrar por `pandas_version` en esa versión y añadir una nota
   con el cambio de pandas.
+- [ ] Un `benchmark.joblib` escrito con pandas 3 no se abre con pandas 2
+  (`NotImplementedError` al reconstruir la columna `datetime`; de pandas 2 a 3 sí
+  funciona). Tras la primera tanda con el pin nuevo, el fichero de la rama de release y
+  `docs/faq/skforecast-benchmark.ipynb` necesitan pandas 3: comprobar que el entorno que
+  ejecuta ese notebook lo tiene.
 
-Sin comprobar: la suite de `benchmarks/` no se ha ejecutado con pandas 3. Con el resto del
-pin actual debería funcionar (statsmodels 0.14.6 pasa sus tests con pandas 3.1.1 y el
-workflow silencia sus avisos con `PYTHONWARNINGS=ignore`).
+**Estudio previo (2026-11-16).** La suite de `benchmarks/` funciona con pandas 3 (pasada
+completa en local con pandas 2.3.3 y 3.1.1, 75 benchmarks en cada una). En una rama
+desechable (`perf/bench-study-0.28`, sobre `5bc9bcbf3`) se lanzaron tres tandas de
+`benchmarks.yml`: la 0.27.0 de PyPI con pandas 2.3.3 y la 0.28.x con pandas 2.3.3 (5
+repeticiones cada una), y la 0.28.x con pandas 3.1.1 sin `pyarrow` (10 repeticiones). Media
+geométrica de las 75 relaciones, comparando en la misma CPU: código 0.28.x / 0.27.0 =
+1,02; pandas 3 / pandas 2 = 1,03 (backtesting 1,03, `predict` 1,02, `fit` 0,99); 0.28.x con
+pandas 3 / 0.27.0 = 1,05. Las cifras de 1,33 a 3,01 del primer párrafo
+son de antes de la PR 3a. Lo que más cambia: `_create_predict_inputs` de Recursive, Direct
+y Classifier, entre un 8 y un 11 % por la copia de la entrada de `transform_dataframe` y
+`transform_numpy` (#1504); con pandas 3, la entrada multiserie en formato largo, entre un 8
+y un 11 % (conversión de las series a diccionario en `check_preprocess_series`), y
+`check_predict_inputs` multiserie, un 18 %. Cada repetición cae en una CPU distinta:
+diferencias de menos de un 5 % son ruido.
+
+**Tests sin `pyarrow` (2026-11-16).** La CI de tests siempre tiene `pyarrow` (el extra
+`test` incluye `pandas[parquet]`), y un `pip install skforecast` limpio no lo tiene. Suite
+completa en local con pandas 3.1.1 y el texto sin `pyarrow` (`mode.string_storage =
+"python"`): 19 fallos, ninguno de skforecast. 3 son los de `ForecasterRnn` con TensorFlow,
+que también fallan con `pyarrow` y con pandas 2. 14 eran del método: la opción solo se
+ponía en el proceso principal, y los backtestings con `n_jobs` en paralelo pasan al ponerla
+en todos los procesos (`sitecustomize.py`). Los 2 restantes fallan dentro de pandas al
+crear los datos del test (`index.day_name()` con `pyarrow` instalado y el texto forzado a
+`python`), una combinación que no existe en un entorno sin `pyarrow`. No se puede probar
+sin `pyarrow` del todo: varios módulos de tests leen fixtures en parquet. No hace falta una
+celda sin `pyarrow` en `unit-tests.yml`.
 
 ### MAINT-review-pandas3: revisiones independientes de la migración a pandas 3
 
@@ -618,6 +652,7 @@ los pesos base), que hoy solo bloquea el prefijo de `model_id`.
 | BUG-07 | El formato largo con MultiIndex solo funciona si sale de `reshape_series_wide_to_long` | S | | Sección 4 |
 | BUG-classifier-nan-last-window | Clasificador sin soporte de NaN y NaN en la última ventana | S | Prioridad baja | Sección 4 |
 | `RollingFeatures.transform` con NaN | En predicción ignora los NaN y `min_periods`; en entrenamiento (`transform_batch`) los respeta. Hacerlo coherente mejora un 2% en el experimento 5 | S | Elemento nuevo (2026-11-11): estaba solo en la sección 7 del documento de BUG-search-short-series, borrado | Experimento 5 de ese documento, en el historial de git |
+| PERF-long-to-dict | Convertir a diccionario las series y las exógenas en formato largo (DataFrame con MultiIndex) sin `groupby`: `check_preprocess_series` (y `check_preprocess_exog_multiseries`, mismo patrón) copia el DataFrame entero y, por cada serie, hace `group[col].droplevel(0).rename(...)`. Prototipo (2026-11-16, fuera del repositorio): usar los `codes` del MultiIndex, ordenar una vez y cortar los valores por posiciones; da el mismo diccionario (valores, índice, nombre y dtypes). Con 5000 series de 1000 filas, `check_preprocess_series` tarda 2,2 s con pandas 2, 1,8 s con pandas 3 sin `pyarrow` y 1,5 s con él (entre el 50 y el 65 % de `_create_train_X_y`); la conversión del prototipo, unos 0,3 s. Con 600 series: 144 a 193 ms frente a 33 a 43 ms. Se hace una vez por llamada a `fit`, backtesting o búsqueda, no por fold | S | Prioridad: la siguiente PR pequeña de rendimiento. Muchos usuarios pasan el formato largo con cientos o miles de series y modelos grandes (LightGBM, XGBoost); frente a su entrenamiento el ahorro es pequeño, pero es coste fijo de skforecast que crece con el número de series. Medir con pandas 2, pandas 3 sin `pyarrow` y con `pyarrow`; identidad y A/B del arnés con `--base origin/0.28.x`; tests con MultiIndex desordenado y `series_id` no ordenados. Medir también las exógenas antes de incluirlas. Fuera: las funciones `reshape_*` de `preprocessing` (otro camino, `asfreq` por grupo) | Esta fila; estudio de benchmarks en MAINT-bench-pandas3 |
 | ISSUE-1506 | Con un estimador que modifica su entrada en `fit` (por ejemplo, un pipeline con `StandardScaler(copy=False)`), `ForecasterDirect` y `ForecasterDirectMultiVariate` dan predicciones erróneas (los modelos de cada paso comparten la matriz) y `ForecasterRecursive` con lags y window features, residuos in-sample erróneos, sin aviso. `ForecasterRecursiveMultiSeries` ya lo detecta (`_check_in_place_fit`) | S a M | Abierto. Resultado erróneo silencioso, pero requiere una opción del estimador distinta de la por defecto. Hallado en las revisiones de la migración a pandas 3 | [#1506](https://github.com/skforecast/skforecast/issues/1506) |
 | ISSUE-1508 | Con `transformer_exog` que devuelve un array de numpy (salida por defecto de `ColumnTransformer`) y una columna de texto, todas las exógenas pasan a `object` y `categorical_features='auto'` codifica también las numéricas como categóricas, sin aviso. Con `set_output(transform="pandas")` no pasa | S | Abierto. Resultado erróneo silencioso. Hallado en las revisiones de la migración a pandas 3 | [#1508](https://github.com/skforecast/skforecast/issues/1508) |
 | HANDOFF-T2, T3 y T4 | Categóricas nativas dentro de `CalibratedClassifierCV` o `TransformedTargetRegressor` (T2); Pipeline con LightGBM o CatBoost y exog categórica (T3); T4 | S | Pendientes de decisión de Joaquín; no reverificados | `dev/handoff_utils_pendiente.md`; sección 6 |
