@@ -59,6 +59,7 @@ from ..utils import (
     manage_warnings,
     deepcopy_forecaster,
     _get_estimator_categorical_set_params,
+    _resolve_n_jobs,
     _restore_estimator_categorical_set_params
 )
 
@@ -467,6 +468,12 @@ def _evaluate_grid_hyperparameters(
             f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
             f"Got {type(cv)}."
         )
+
+    # NOTE: An invalid `n_jobs` would make every candidate fail with the same
+    # error, so it is checked once here instead of skipping each candidate.
+    # With `OneStepAheadFold`, `n_jobs` is ignored.
+    if cv_name == 'TimeSeriesFold' and n_jobs != 'auto':
+        _resolve_n_jobs(n_jobs)
     
     if cv_name == 'OneStepAheadFold':
 
@@ -844,6 +851,12 @@ def bayesian_search_forecaster(
             f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
             f"Got {type(cv)}."
         )
+
+    # NOTE: An invalid `n_jobs` would make every candidate fail with the same
+    # error, so it is checked once here instead of skipping each candidate.
+    # With `OneStepAheadFold`, `n_jobs` is ignored.
+    if cv_name == 'TimeSeriesFold' and n_jobs != 'auto':
+        _resolve_n_jobs(n_jobs)
 
     if return_best and exog is not None and (len(exog) != len(y)):
         raise ValueError(
@@ -1643,6 +1656,12 @@ def _evaluate_grid_hyperparameters_multiseries(
             f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
             f"Got {type(cv)}."
         )
+
+    # NOTE: An invalid `n_jobs` would make every candidate fail with the same
+    # error, so it is checked once here instead of skipping each candidate.
+    # With `OneStepAheadFold`, `n_jobs` is ignored.
+    if cv_name == 'TimeSeriesFold' and n_jobs != 'auto':
+        _resolve_n_jobs(n_jobs)
     
     if cv_name == 'OneStepAheadFold':
 
@@ -2112,6 +2131,12 @@ def bayesian_search_forecaster_multiseries(
             f"`cv` must be an instance of `TimeSeriesFold` or `OneStepAheadFold`. "
             f"Got {type(cv)}."
         )
+
+    # NOTE: An invalid `n_jobs` would make every candidate fail with the same
+    # error, so it is checked once here instead of skipping each candidate.
+    # With `OneStepAheadFold`, `n_jobs` is ignored.
+    if cv_name == 'TimeSeriesFold' and n_jobs != 'auto':
+        _resolve_n_jobs(n_jobs)
 
     forecaster_search = deepcopy_forecaster(forecaster)
     forecaster_name = forecaster_search.__skforecast_tags__['forecaster_name']
@@ -3361,6 +3386,11 @@ def _evaluate_grid_hyperparameters_stats(
             f"length `exog`: ({len(exog)}), length `y`: ({len(y)})"
         )
 
+    # NOTE: An invalid `n_jobs` would make every candidate fail with the same
+    # error, so it is checked once here instead of skipping each candidate.
+    if n_jobs != 'auto':
+        _resolve_n_jobs(n_jobs)
+
     forecaster_search = deepcopy_forecaster(forecaster)
 
     if not isinstance(metric, list):
@@ -3605,6 +3635,11 @@ def grid_search_equivalent_date(
         raise TypeError(
             f"`cv` must be an instance of `TimeSeriesFold`. Got {type(cv).__name__}."
         )
+
+    # NOTE: An invalid `n_jobs` would make every candidate fail with the same
+    # error, so it is checked once here instead of skipping each candidate.
+    if n_jobs != 'auto':
+        _resolve_n_jobs(n_jobs)
 
     if isinstance(param_grid, dict):
         if 'alias' in param_grid:
