@@ -1422,3 +1422,52 @@ def test_predict_output_when_last_value_of_other_series_is_NaN_and_differentiati
     predictions = forecaster.predict(steps=2, suppress_warnings=True)
 
     assert not predictions['pred'].isna().any()
+
+
+class WindowFeatureWriteableFlag:
+    """
+    Window feature (mean of the last 3 values) that stores whether the array
+    received by `transform` is writeable.
+    """
+
+    def __init__(self):
+        self.window_sizes = 3
+        self.features_names = ['mean_3']
+        self.writeable = []
+
+    def transform_batch(self, X):
+        return X.rolling(3).mean().shift(1).to_frame('mean_3').iloc[3:]
+
+    def transform(self, X):
+        self.writeable.append(X.flags.writeable)
+        return np.array([X[-3:].mean()])
+
+
+def test_predict_window_features_receive_writeable_array_when_transformer_series_is_None():
+    """
+    Test that, without `transformer_series`, the window features receive a
+    writeable array in predict, as in the rest of forecasters. With pandas 3,
+    the values of a DataFrame column are a read-only view, which compiled
+    functions that require a writeable buffer do not accept.
+    """
+    forecaster = ForecasterDirectMultiVariate(
+                     estimator          = LinearRegression(),
+                     level              = 'l1',
+                     steps              = 2,
+                     lags               = 3,
+                     window_features    = WindowFeatureWriteableFlag(),
+                     transformer_series = None
+                 )
+    forecaster.fit(series=series)
+    predictions = forecaster.predict()
+
+    expected = pd.DataFrame(
+                   data    = {
+                       'level': ['l1', 'l1'],
+                       'pred': [0.6280351308606609, 0.3868732879236068]
+                   },
+                   index   = pd.RangeIndex(start=50, stop=52, step=1)
+               )
+
+    assert forecaster.window_features[0].writeable == [True, True]
+    pd.testing.assert_frame_equal(predictions, expected)

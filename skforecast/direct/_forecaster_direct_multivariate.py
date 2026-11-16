@@ -2320,8 +2320,11 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         Xs_col_names = []
         differentiator_level = None
         for series in self.X_train_series_names_in_:
+            # NOTE: With pandas 3, the values of a column are a read-only view.
+            # Without a transformer, they would reach the window features,
+            # which get a writeable array in the rest of forecasters.
             last_window_series = transform_numpy(
-                                     array             = last_window[series].to_numpy(),
+                                     array             = last_window[series].to_numpy(copy=True),
                                      transformer       = self.transformer_series_[series],
                                      fit               = False,
                                      inverse_transform = False
