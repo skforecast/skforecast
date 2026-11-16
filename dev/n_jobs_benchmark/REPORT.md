@@ -398,7 +398,8 @@ de decidir si se hace.
 
 La revisión final de la pull request #1503 (16 de noviembre de 2026) encontró
 tres fallos que ya estaban en 0.28.x y no dependen de la estrategia de
-`n_jobs`. Quedan para pull requests aparte.
+`n_jobs`, y al arreglar el primero apareció un cuarto. Quedan para pull
+requests aparte.
 
 - **`ForecasterRecursiveClassifier` con clases que aparecen entre folds.** En
   `_backtesting_forecaster`, la columna `pred` se calcula con
@@ -406,8 +407,22 @@ tres fallos que ya estaban en 0.28.x y no dependen de la estrategia de
   refit; en paralelo, las del ajuste inicial. Las columnas de probabilidad de
   una clase que no existía en un fold quedan en NaN, y `argmax` elige esa
   clase en todo el fold. En el caso de la revisión, la exactitud es 0,40 con
-  `n_jobs=1` y 0,67 con `n_jobs=2`. Arreglo propuesto: calcular `pred` dentro
-  de cada fold, con las clases de ese fold.
+  `n_jobs=1` y 0,67 con `n_jobs=2`. Arreglado en la pull request #1511: cada
+  fold calcula `pred` con las clases de su modelo, y una clase que su modelo no
+  conoce tiene probabilidad 0. También cubre el caso contrario, una clase que
+  deja el entrenamiento (con `n_jobs` mayor que 1, se predecía en todo el fold).
+- **`ForecasterRecursiveClassifier` con una clase que solo está en los lags.**
+  Si una clase solo aparece en los primeros `window_size` valores del
+  entrenamiento, el encoder la cuenta como clase y el estimador no la ve como
+  objetivo: `predict_proba` falla con `ValueError: could not broadcast input
+  array from shape (2,) into shape (3,)`. Lo reproducen un `fit` y un
+  `predict_proba`, sin backtesting; en un backtesting con refit puede ocurrir
+  cuando una clase está a punto de salir de la ventana de entrenamiento.
+  Encontrado al comprobar la pull request #1511, que no lo arregla. Arreglo
+  propuesto, sin estudiar: colocar las probabilidades del estimador en las
+  columnas de sus clases (`estimator.classes_`) y dar 0 a las que no conoce.
+  Las clases no pueden salir solo de los valores objetivo: el encoder también
+  codifica los lags.
 - **`ForecasterRnn` con refit.** keras continúa el entrenamiento en cada
   `fit`: con `n_jobs=1`, cada fold parte de los pesos del anterior; en
   paralelo, de los del ajuste inicial (MAE de 3,16 frente a 3,61). Arreglo
