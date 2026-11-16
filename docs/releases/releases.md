@@ -95,7 +95,7 @@ The main changes in this release are:
 
 + <code>[backtesting_forecaster]</code> with a <code>[ForecasterRecursiveClassifier]</code> and refit chose the predicted class with the classes of the forecaster of the main process, not with those of the model of each fold. When the classes of the training set changed between folds (a class that appears in it or leaves it), a class unknown to the model of a fold was predicted in every step of that fold if the forecaster of the main process knew it, and never predicted otherwise (the main process kept the classes of the last refit with `n_jobs=1` and those of the initial fit with `n_jobs` greater than 1). Each fold now predicts with the classes of its own model, and a class that its model does not know has probability 0 instead of NaN. The hyperparameter searches, whose metrics use the predicted class, were also affected. ([#1511](https://github.com/skforecast/skforecast/pull/1511))
 
-+ <code>[ForecasterRecursiveClassifier]</code> raised `ValueError: could not broadcast input array` in `predict_proba` when a class of `y` only appeared in its first `window_size` values (a value of the lags that is never a target), also in <code>[backtesting_forecaster]</code> with refit when a class was about to leave the training set. That class now has probability 0.
++ <code>[ForecasterRecursiveClassifier]</code> raised `ValueError: could not broadcast input array` in `predict_proba` when a class of `y` only appeared in its first `window_size` values (a value of the lags that is never a target), also in <code>[backtesting_forecaster]</code> with refit when a class was about to leave the training set. That class now has probability 0. ([#1514](https://github.com/skforecast/skforecast/pull/1514))
 
 
 
