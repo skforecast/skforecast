@@ -411,11 +411,12 @@ def test_grid_search_forecaster_ForecasterRecursiveClassifier_follows_metric_dir
      (HistGradientBoostingRegressor(max_iter=5), True, 'auto', max(1, cpu_count() - 1)),
      (HistGradientBoostingRegressor(max_iter=5), False, 'auto', max(1, cpu_count() - 1)),
      (DecisionTreeRegressor(max_depth=2), False, 'auto', 1),
-     (HistGradientBoostingRegressor(max_iter=5), True, 2, 2)],
+     (HistGradientBoostingRegressor(max_iter=5), True, 2, 2),
+     (HistGradientBoostingRegressor(max_iter=5), True, 10, 10)],
     ids=[
         'auto, Ridge', 'auto, HistGradientBoostingRegressor',
         'auto, HistGradientBoostingRegressor, no refit',
-        'auto, DecisionTreeRegressor, no refit', 'int'
+        'auto, DecisionTreeRegressor, no refit', 'int', 'int above folds'
     ]
 )
 def test_grid_search_forecaster_n_jobs_auto_resolved_with_the_rules_of_each_candidate(
@@ -426,8 +427,9 @@ def test_grid_search_forecaster_n_jobs_auto_resolved_with_the_rules_of_each_cand
     `select_n_jobs_backtesting` for each candidate and passes the integer to
     `backtesting_forecaster`, so the work threshold of a single backtesting does not
     reduce it. Without refit, the rules give one job, except with
-    `HistGradientBoostingRegressor`. `Parallel` is mocked with a
-    sequential one, so no workers are started.
+    `HistGradientBoostingRegressor`. The backtesting starts at most one job
+    per fold (4). `Parallel` is mocked with a sequential one, so no workers
+    are started.
     """
     forecaster = ForecasterRecursive(estimator=estimator, lags=3)
     cv = TimeSeriesFold(
@@ -462,7 +464,7 @@ def test_grid_search_forecaster_n_jobs_auto_resolved_with_the_rules_of_each_cand
     for call in mock_backtesting.call_args_list:
         assert call.kwargs['n_jobs'] == expected_n_jobs
     for call in mock_parallel.call_args_list:
-        assert call.kwargs == {'n_jobs': expected_n_jobs}
+        assert call.kwargs == {'n_jobs': min(expected_n_jobs, 4)}
 
 
 def test_grid_search_forecaster_warnings_of_folds_in_processes_same_as_n_jobs_1():

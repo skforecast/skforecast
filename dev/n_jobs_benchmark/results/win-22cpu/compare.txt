@@ -1,0 +1,34 @@
+before: skforecast 0.27.0 commit 046e511cd
+after: skforecast 0.27.0 commit f35c6117d
+
+Seconds: first call / median of the next calls.
+
+case           est      cfg  | n_jobs b/a |        before |         after |       ratio | fit after b/a | same
+bt_norefit_100 catboost 1    | 1/1        |   3.4 /   3.1 |   3.4 /   3.2 | 1.01 / 1.02 |               | yes
+bt_norefit_100 catboost auto | 1/1        |   3.5 /   3.1 |   3.3 /   3.0 | 0.94 / 0.99 |               | yes
+bt_norefit_100 catboost max  | 21/21      |   6.8 /   2.0 |   6.7 /   2.1 | 0.99 / 1.03 |               | yes
+bt_norefit_100 hgb      1    | 1/1        |  11.6 /   8.6 |  10.0 /   9.7 | 0.87 / 1.13 |               | yes
+bt_norefit_100 hgb      auto | 1/21       |   8.6 /  10.0 |   7.2 /   8.0 | 0.84 / 0.80 |               | yes
+bt_norefit_100 hgb      max  | 21/21      |  10.0 /   6.3 |   7.1 /   2.5 | 0.71 / 0.39 |               | yes
+bt_norefit_40  hgb      1    | 1/1        |   4.4 /   4.0 |   4.5 /   4.1 | 1.02 / 1.02 |               | yes
+bt_norefit_40  hgb      auto | 1/1        |   4.3 /   3.9 |   4.4 /   4.0 | 1.01 / 1.02 |               | yes
+bt_norefit_40  hgb      max  | 21/21      |   7.2 /   3.5 |   6.5 /   1.8 | 0.90 / 0.52 |               | yes
+bt_refit_small xgb      1    | 1/1        |   7.9 /   9.7 |   7.8 /   7.7 | 0.99 / 0.79 |     1.3/  1.2 | yes
+bt_refit_small xgb      auto | 6/6        |   7.7 /   4.7 |   7.3 /   5.0 | 0.95 / 1.05 |     1.3/  1.3 | yes
+bt_refit_small xgb      max  | 21/6       |   9.7 /   8.8 |   8.2 /   4.7 | 0.84 / 0.54 |     1.3/  1.3 | yes
+gs_refit_small xgb      1    | 1/1        |  20.9 /  23.0 |  21.3 /  23.6 | 1.02 / 1.03 |     1.1/  1.2 | yes
+gs_refit_small xgb      auto | 21/6       |  26.9 /  20.1 |  16.3 /  13.7 | 0.60 / 0.68 |     1.1/  1.2 | yes
+gs_refit_small xgb      max  | 21/6       |  27.3 /  19.6 |  16.7 /  13.9 | 0.61 / 0.71 |     1.1/  1.2 | yes
+ms_norefit     xgb      1    | 1/1        |   2.1 /   2.0 |   2.1 /   2.0 | 1.00 / 0.98 |     0.9/  0.9 | yes
+ms_norefit     xgb      max  | 21/21      |   8.0 /   2.9 |   7.0 /   1.9 | 0.87 / 0.65 |     1.0/  0.8 | yes
+ms_refit       xgb      1    | 1/1        |   6.7 /   6.5 |   7.0 /   6.7 | 1.03 / 1.02 |     0.9/  0.9 | yes
+ms_refit       xgb      auto | 8/8        |   6.3 /   3.4 |   6.2 /   3.3 | 0.98 / 0.98 |     0.9/  0.9 | yes
+ms_refit       xgb      max  | 21/8       |   7.3 /   6.2 |   6.2 /   3.3 | 0.84 / 0.53 |     0.8/  0.9 | yes
+
+'auto' against the best of 1 and cpu_count() - 1 (after):
+  bt_norefit_100 catboost  n_jobs=[1]: first 0.97x, next 1.45x of the best
+  bt_norefit_100 hgb       n_jobs=[21]: first 1.01x, next 3.26x of the best
+  bt_norefit_40  hgb       n_jobs=[1]: first 0.97x, next 2.17x of the best
+  bt_refit_small xgb       n_jobs=[6]: first 0.93x, next 1.05x of the best
+  gs_refit_small xgb       n_jobs=[6]: first 0.98x, next 0.98x of the best
+  ms_refit       xgb       n_jobs=[8]: first 0.99x, next 1.01x of the best

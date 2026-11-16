@@ -2,6 +2,7 @@
 # ==============================================================================
 import re
 import sys
+import threading
 import warnings
 import pytest
 from unittest.mock import patch
@@ -28,6 +29,7 @@ from skforecast.metrics import (
 )
 from skforecast.model_selection import backtesting_forecaster
 from skforecast.model_selection._split import TimeSeriesFold
+from skforecast.model_selection._validation import _deserialize_forecaster_and_run_fold
 from skforecast.exceptions import MissingValuesWarning
 
 # Fixtures
@@ -644,8 +646,11 @@ def test_backtesting_forecaster_classifier_classes_change_between_folds(n_jobs):
     [('auto', True, 0.0, min(max(1, cpu_count() - 1), 4)),
      ('auto', True, 1e6, 1),
      ('auto', False, 0.0, 1),
-     (2, True, 1e6, 2)],
-    ids=['auto, enough work', 'auto, too little work', 'auto, no refit', 'int']
+     (2, True, 1e6, 2),
+     (10, True, 1e6, 4),
+     (-1, False, 1e6, min(cpu_count(), 4))],
+    ids=['auto, enough work', 'auto, too little work', 'auto, no refit', 'int',
+         'int above folds', '-1']
 )
 def test_backtesting_forecaster_n_jobs_auto_limited_by_the_workload(
     n_jobs, refit, min_work, expected_n_jobs
@@ -653,10 +658,13 @@ def test_backtesting_forecaster_n_jobs_auto_limited_by_the_workload(
     """
     Test that, with `n_jobs='auto'`, backtesting_forecaster runs the folds with one job
     when the work estimated from the initial fit is below the minimum of the
-    platform (`min_work`, patched) or there is no refit, and otherwise with
-    the jobs of `select_n_jobs_backtesting` limited to the number of folds
-    (4). An integer `n_jobs` is not limited. `Parallel` is mocked with
-    a sequential one, so no workers are started.
+    platform (`min_work`, patched) or, without refit, the work estimated from
+    the prediction of the first fold is below its own minimum (patched to a
+    value that is never reached), and otherwise with the jobs of
+    `select_n_jobs_backtesting` limited to the number of folds (4). An integer
+    `n_jobs` (`-1` is all the processors) is only limited to the number of
+    folds. `Parallel` is mocked with a sequential one, so no workers are
+    started.
     """
     forecaster = ForecasterRecursive(
                      estimator=HistGradientBoostingRegressor(max_iter=5), lags=3
@@ -677,6 +685,15 @@ def test_backtesting_forecaster_n_jobs_auto_limited_by_the_workload(
         patch(
             "skforecast.model_selection._utils._MIN_PARALLEL_WORKLOAD_SECONDS_DEFAULT",
             min_work
+        ),
+        patch.dict(
+            "skforecast.model_selection._utils._MIN_PARALLEL_PREDICTION_SECONDS",
+            {sys.platform: 1e6}
+        ),
+        patch(
+            "skforecast.model_selection._utils."
+            "_MIN_PARALLEL_PREDICTION_SECONDS_DEFAULT",
+            1e6
         ),
         patch(
             "skforecast.model_selection._validation.Parallel",
@@ -806,6 +823,47 @@ def test_backtesting_forecaster_warnings_of_fold_that_fails_in_process_same_as_n
 
     assert expected[0][0][:2] == (UserWarning, "Warning before the error of the fold.")
     assert expected[1:] == (ValueError, "Error of the fold.")
+    assert results == expected
+
+
+class RidgeWarnsWhenUnpickled(Ridge):
+    """
+    Ridge that warns when it is unpickled, as the worker processes do with the
+    forecaster serialized once in the main process.
+    """
+
+    def __setstate__(self, state):
+        warnings.warn("Ridge unpickled.", UserWarning)
+        super().__setstate__(state)
+
+
+def test_backtesting_forecaster_unpickling_warnings_not_shown_as_fold_warnings():
+    """
+    Test that the warnings raised when the worker processes unpickle the
+    forecaster are not shown in the main process as warnings of the folds: the
+    warnings are the same as with `n_jobs=1`, where the forecaster is not
+    unpickled.
+    """
+    cv = TimeSeriesFold(steps=5, initial_train_size=30, refit=False, verbose=False)
+
+    def warnings_shown(n_jobs):
+        forecaster = ForecasterRecursive(RidgeWarnsWhenUnpickled(), lags=3)
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always")
+            backtesting_forecaster(
+                forecaster    = forecaster,
+                y             = y,
+                cv            = cv,
+                metric        = "mean_absolute_error",
+                n_jobs        = n_jobs,
+                show_progress = False,
+            )
+
+        return [(w.category, str(w.message), w.filename, w.lineno) for w in record]
+
+    expected = warnings_shown(n_jobs=1)
+    results = warnings_shown(n_jobs=2)
+
     assert results == expected
 
 
@@ -982,6 +1040,235 @@ def test_backtesting_forecaster_RuntimeWarning_and_NaN_when_scale_is_zero():
     assert np.isnan(metric.loc[0, "mean_absolute_scaled_error"])
     assert np.isnan(metric.loc[0, "root_mean_squared_scaled_error"])
     assert metric.loc[0, "n_evaluated"] == 20
+
+
+@pytest.mark.parametrize(
+    "refit",
+    [True, False],
+    ids=lambda refit: f"refit: {refit}",
+)
+def test_backtesting_forecaster_folds_in_processes_same_output_as_n_jobs_1(refit):
+    """
+    Test that the folds that run in worker processes, which receive the
+    forecaster serialized once in the main process, return the same metrics
+    and predictions (intervals included) as with `n_jobs=1`. The forecaster
+    has a lambda as `weight_func`, which only `cloudpickle` can serialize.
+    """
+    def run_backtesting(n_jobs):
+        forecaster = ForecasterRecursive(
+            estimator   = Ridge(random_state=123),
+            lags        = 3,
+            weight_func = lambda index: np.where(index < 20, 0.5, 1.0)
+        )
+        cv = TimeSeriesFold(
+                 steps              = 5,
+                 initial_train_size = 30,
+                 refit              = refit,
+                 verbose            = False
+             )
+
+        return backtesting_forecaster(
+                   forecaster    = forecaster,
+                   y             = y,
+                   exog          = exog,
+                   cv            = cv,
+                   metric        = "mean_absolute_error",
+                   interval      = [0.1, 0.9],
+                   n_jobs        = n_jobs,
+                   show_progress = False
+               )
+
+    expected_metric, expected_predictions = run_backtesting(n_jobs=1)
+    metric, predictions = run_backtesting(n_jobs=2)
+
+    pd.testing.assert_frame_equal(metric, expected_metric)
+    pd.testing.assert_frame_equal(predictions, expected_predictions)
+
+
+def test_backtesting_forecaster_serializes_forecaster_once_with_n_jobs_above_1():
+    """
+    Test that, with `n_jobs` greater than 1, the folds receive the forecaster
+    serialized once, as the same numpy array, and that, with `n_jobs=1`, they
+    receive the forecaster itself. `Parallel` is mocked with a sequential one,
+    so no workers are started.
+    """
+    received = []
+
+    def run_fold_recording(forecaster, **kwargs):
+        received.append(forecaster)
+        return _deserialize_forecaster_and_run_fold(forecaster=forecaster, **kwargs)
+
+    cv = TimeSeriesFold(steps=10, initial_train_size=30, refit=True, verbose=False)
+    for n_jobs in [1, 2]:
+        with (
+            patch(
+                "skforecast.model_selection._validation.Parallel",
+                side_effect=lambda **kwargs: Parallel(n_jobs=1)
+            ),
+            patch(
+                "skforecast.model_selection._validation."
+                "_deserialize_forecaster_and_run_fold",
+                side_effect=run_fold_recording
+            )
+        ):
+            backtesting_forecaster(
+                forecaster    = ForecasterRecursive(estimator=Ridge(), lags=3),
+                y             = y,
+                cv            = cv,
+                metric        = "mean_absolute_error",
+                n_jobs        = n_jobs,
+                show_progress = False
+            )
+
+    received_n_jobs_1, received_n_jobs_2 = received[:2], received[2:]
+    assert len(received_n_jobs_1) == len(received_n_jobs_2) == 2
+    assert all(isinstance(f, ForecasterRecursive) for f in received_n_jobs_1)
+    assert all(isinstance(f, np.ndarray) for f in received_n_jobs_2)
+    assert received_n_jobs_2[0] is received_n_jobs_2[1]
+
+
+@pytest.mark.parametrize(
+    "refit",
+    [True, False],
+    ids=lambda refit: f"refit: {refit}",
+)
+def test_backtesting_forecaster_threading_backend_same_output_as_n_jobs_1(refit):
+    """
+    Test that, when the active backend of joblib runs the folds in threads,
+    they return the same metrics and predictions as with `n_jobs=1`. Each fold
+    receives its own copy of the forecaster, so the folds with refit do not fit
+    the same forecaster at the same time.
+    """
+    def run_backtesting(n_jobs):
+        forecaster = ForecasterRecursive(estimator=Ridge(random_state=123), lags=3)
+        cv = TimeSeriesFold(
+                 steps              = 5,
+                 initial_train_size = 30,
+                 refit              = refit,
+                 verbose            = False
+             )
+
+        return backtesting_forecaster(
+                   forecaster    = forecaster,
+                   y             = y,
+                   exog          = exog,
+                   cv            = cv,
+                   metric        = "mean_absolute_error",
+                   n_jobs        = n_jobs,
+                   show_progress = False
+               )
+
+    expected_metric, expected_predictions = run_backtesting(n_jobs=1)
+    with parallel_config(backend="threading"):
+        metric, predictions = run_backtesting(n_jobs=4)
+
+    pd.testing.assert_frame_equal(metric, expected_metric)
+    pd.testing.assert_frame_equal(predictions, expected_predictions)
+
+
+class RidgeNotPicklable(Ridge):
+    """
+    Ridge that stores a lock when it is fitted, so a fitted forecaster with it
+    cannot be pickled.
+    """
+
+    def fit(self, X, y, sample_weight=None):
+        self.lock_ = threading.Lock()
+        return super().fit(X, y, sample_weight=sample_weight)
+
+
+@pytest.mark.parametrize(
+    "refit",
+    [True, False],
+    ids=lambda refit: f"refit: {refit}",
+)
+def test_backtesting_forecaster_sequential_backend_does_not_serialize_forecaster(refit):
+    """
+    Test that, when the active backend of joblib runs the folds one after
+    another in the main process (sequential backend), the forecaster is not
+    serialized even if `n_jobs` is greater than 1: a forecaster that cannot be
+    pickled returns the same metrics and predictions as with `n_jobs=1`.
+    """
+    def run_backtesting(n_jobs):
+        forecaster = ForecasterRecursive(estimator=RidgeNotPicklable(), lags=3)
+        cv = TimeSeriesFold(
+                 steps              = 5,
+                 initial_train_size = 30,
+                 refit              = refit,
+                 verbose            = False
+             )
+
+        return backtesting_forecaster(
+                   forecaster    = forecaster,
+                   y             = y,
+                   exog          = exog,
+                   cv            = cv,
+                   metric        = "mean_absolute_error",
+                   n_jobs        = n_jobs,
+                   show_progress = False
+               )
+
+    expected_metric, expected_predictions = run_backtesting(n_jobs=1)
+    with parallel_config(backend="sequential"):
+        metric, predictions = run_backtesting(n_jobs=4)
+
+    pd.testing.assert_frame_equal(metric, expected_metric)
+    pd.testing.assert_frame_equal(predictions, expected_predictions)
+
+
+@pytest.mark.parametrize(
+    "min_work, expected_n_jobs",
+    [(0.0, min(max(1, cpu_count() - 1), 4)),
+     (1e6, 1)],
+    ids=["enough work", "too little work"]
+)
+def test_backtesting_forecaster_n_jobs_auto_no_refit_limited_by_the_prediction_workload(
+    min_work, expected_n_jobs
+):
+    """
+    Test that, with `n_jobs='auto'` and no refit, backtesting_forecaster with a
+    `HistGradientBoostingRegressor` predicts the first fold in the main process,
+    and runs the other 4 folds in parallel only if their estimated work is
+    above the minimum of the platform (`min_work`, patched), with at most one
+    job per fold. The predictions are the same as with `n_jobs=1`. `Parallel`
+    is mocked with a sequential one, so no workers are started.
+    """
+    cv = TimeSeriesFold(steps=4, initial_train_size=30, refit=False, verbose=False)
+
+    def run_backtesting(n_jobs):
+        forecaster = ForecasterRecursive(
+                         estimator=HistGradientBoostingRegressor(max_iter=5), lags=3
+                     )
+        return backtesting_forecaster(
+                   forecaster    = forecaster,
+                   y             = y,
+                   cv            = cv,
+                   metric        = "mean_absolute_error",
+                   n_jobs        = n_jobs,
+                   show_progress = False
+               )
+
+    expected_metric, expected_predictions = run_backtesting(n_jobs=1)
+    with (
+        patch.dict(
+            "skforecast.model_selection._utils._MIN_PARALLEL_PREDICTION_SECONDS",
+            {sys.platform: min_work}
+        ),
+        patch(
+            "skforecast.model_selection._utils."
+            "_MIN_PARALLEL_PREDICTION_SECONDS_DEFAULT",
+            min_work
+        ),
+        patch(
+            "skforecast.model_selection._validation.Parallel",
+            side_effect=lambda **kwargs: Parallel(n_jobs=1)
+        ) as mock_parallel
+    ):
+        metric, predictions = run_backtesting(n_jobs="auto")
+
+    assert mock_parallel.call_args.kwargs == {"n_jobs": expected_n_jobs}
+    pd.testing.assert_frame_equal(metric, expected_metric)
+    pd.testing.assert_frame_equal(predictions, expected_predictions)
 
 
 def test_backtesting_forecaster_refit_with_in_place_transformers():

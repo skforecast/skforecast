@@ -3439,11 +3439,12 @@ def test_bayesian_search_forecaster_multiseries_refit_without_series_too_short()
      (HistGradientBoostingRegressor(max_iter=5), True, 'auto', max(1, cpu_count() - 1)),
      (HistGradientBoostingRegressor(max_iter=5), False, 'auto', max(1, cpu_count() - 1)),
      (DecisionTreeRegressor(max_depth=2), False, 'auto', 1),
-     (HistGradientBoostingRegressor(max_iter=5), True, 2, 2)],
+     (HistGradientBoostingRegressor(max_iter=5), True, 2, 2),
+     (HistGradientBoostingRegressor(max_iter=5), True, 10, 10)],
     ids=[
         'auto, Ridge', 'auto, HistGradientBoostingRegressor',
         'auto, HistGradientBoostingRegressor, no refit',
-        'auto, DecisionTreeRegressor, no refit', 'int'
+        'auto, DecisionTreeRegressor, no refit', 'int', 'int above folds'
     ]
 )
 def test_bayesian_search_forecaster_multiseries_n_jobs_auto_resolved_with_the_rules_of_each_candidate(
@@ -3454,8 +3455,9 @@ def test_bayesian_search_forecaster_multiseries_n_jobs_auto_resolved_with_the_ru
     `select_n_jobs_backtesting` for each candidate and passes the integer to
     `backtesting_forecaster_multiseries`, so the work threshold of a single backtesting does not
     reduce it. Without refit, the rules give one job, except with
-    `HistGradientBoostingRegressor`. `Parallel` is mocked with a
-    sequential one, so no workers are started.
+    `HistGradientBoostingRegressor`. The backtesting starts at most one job
+    per fold (4). `Parallel` is mocked with a sequential one, so no workers
+    are started.
     """
     forecaster = ForecasterRecursiveMultiSeries(estimator=estimator, lags=3)
     cv = TimeSeriesFold(
@@ -3491,4 +3493,4 @@ def test_bayesian_search_forecaster_multiseries_n_jobs_auto_resolved_with_the_ru
     for call in mock_backtesting.call_args_list:
         assert call.kwargs['n_jobs'] == expected_n_jobs
     for call in mock_parallel.call_args_list:
-        assert call.kwargs == {'n_jobs': expected_n_jobs}
+        assert call.kwargs == {'n_jobs': min(expected_n_jobs, 4)}

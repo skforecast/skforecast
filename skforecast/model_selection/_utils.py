@@ -853,7 +853,9 @@ def select_n_jobs_backtesting(
     The hyperparameter searches use these rules for every candidate. A single
     backtesting (`backtesting_forecaster`, `backtesting_forecaster_multiseries`)
     then limits the result by its workload with
-    `skforecast.model_selection._utils.limit_n_jobs_by_workload`.
+    `skforecast.model_selection._utils.limit_n_jobs_by_workload`, or, in a
+    `backtesting_forecaster` without refit, with
+    `skforecast.model_selection._utils.limit_n_jobs_by_prediction_workload`.
 
     Parameters
     ----------
@@ -892,7 +894,9 @@ def select_n_jobs_backtesting(
     # refit were 1.5 to 3 times faster in parallel, at the cost of starting the
     # workers in small searches. LightGBM, XGBoost and RandomForest did not
     # gain. Review this exception if these libraries make their prediction
-    # faster. A single backtesting without refit still uses one job
+    # faster. A single backtesting without refit (`backtesting_forecaster`)
+    # parallelizes only if the predictions take long enough
+    # (`limit_n_jobs_by_prediction_workload`); a multi-series one uses one job
     # (`limit_n_jobs_by_workload`).
     if (
         refit is False
@@ -923,6 +927,17 @@ def select_n_jobs_backtesting(
 # (2 s, Apple M5 with 9 workers). Other platforms use the value of Windows.
 _MIN_PARALLEL_WORKLOAD_SECONDS = {"win32": 4.0, "linux": 2.0, "darwin": 2.0}
 _MIN_PARALLEL_WORKLOAD_SECONDS_DEFAULT = 4.0
+# NOTE: Prediction time, in seconds, below which a single backtesting without
+# refit and with `n_jobs='auto'` runs with one job. Each fold only predicts,
+# and parallelizing has a fixed cost: starting the workers, sending them the
+# fitted forecaster and loading the libraries of its estimator. The value comes
+# from measurements, not from that cost: on Linux with 16 and 8 CPUs, a
+# backtesting of 100 folds whose predictions take 3.8 to 4.1 seconds in one
+# process was 1.2 to 1.4 times slower in parallel in the first call
+# (`CatBoostRegressor`), and one of 19 seconds was 2.4 times faster
+# (`HistGradientBoostingRegressor`).
+_MIN_PARALLEL_PREDICTION_SECONDS = {"win32": 12.0, "linux": 6.0, "darwin": 6.0}
+_MIN_PARALLEL_PREDICTION_SECONDS_DEFAULT = 12.0
 
 
 def limit_n_jobs_by_workload(
@@ -939,7 +954,10 @@ def limit_n_jobs_by_workload(
 
     - If `n_jobs` is 1, there is at most one task or no task fits the
     forecaster (no refit), then `n_jobs = 1`. Predicting the folds of a fitted
-    forecaster takes less time than the workers take to start.
+    forecaster usually takes less time than the workers take to start. A single
+    backtesting without refit (`backtesting_forecaster`) whose estimator
+    predicts slowly is limited with `limit_n_jobs_by_prediction_workload`
+    instead.
     - If the estimated workload, `n_fits * fit_seconds`, is below the minimum
     of the platform (4 seconds on Windows, 2 seconds on Linux and macOS), then
     `n_jobs = 1`. If the time of the initial fit is not known
@@ -976,6 +994,54 @@ def limit_n_jobs_by_workload(
         )
         if n_fits * fit_seconds < min_workload:
             return 1
+
+    return min(n_jobs, n_tasks)
+
+
+def limit_n_jobs_by_prediction_workload(
+    n_jobs: int,
+    n_tasks: int,
+    predict_seconds: float
+) -> int:
+    """
+    Limit the number of jobs selected with `n_jobs='auto'` by the workload of
+    a single backtesting without refit, whose folds only predict. The workload
+    is estimated from the time of the prediction of one fold, made in the main
+    process. Starting the workers and sending them the fitted forecaster takes
+    seconds, so parallelizing only pays off when the predictions take long
+    enough. The result is never greater than `n_jobs`.
+
+    - If `n_jobs` is 1 or there is at most one task, then `n_jobs = 1`.
+    - If the estimated workload, `n_tasks * predict_seconds`, is below the
+    minimum of the platform (12 seconds on Windows, 6 seconds on Linux and
+    macOS), then `n_jobs = 1`.
+    - Otherwise, `n_jobs = min(n_jobs, n_tasks)`: no more workers are started
+    than there are tasks.
+
+    Parameters
+    ----------
+    n_jobs : int
+        Number of jobs selected with `select_n_jobs_backtesting`.
+    n_tasks : int
+        Number of tasks (folds) sent to `joblib.Parallel`.
+    predict_seconds : float
+        Duration of the prediction of one fold, in seconds.
+
+    Returns
+    -------
+    n_jobs : int
+        The number of jobs to run in parallel.
+
+    """
+
+    if n_jobs <= 1 or n_tasks <= 1:
+        return 1
+
+    min_workload = _MIN_PARALLEL_PREDICTION_SECONDS.get(
+        sys.platform, _MIN_PARALLEL_PREDICTION_SECONDS_DEFAULT
+    )
+    if n_tasks * predict_seconds < min_workload:
+        return 1
 
     return min(n_jobs, n_tasks)
 

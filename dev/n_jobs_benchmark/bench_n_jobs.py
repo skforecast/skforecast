@@ -1318,7 +1318,7 @@ def build_plan(levels: list[int], total: int, args) -> list[dict]:
         if args.direct:
             timed(p, r, "direct_fit", DIRECT, ["1", "auto", "max"], cpus)
         # 'auto' end to end, to check the decisions computed from the rules.
-        timed(p, 1, "bt_norefit", ["xgb", "hgb"], ["auto"], cpus)
+        timed(p, 1, "bt_norefit", ["xgb", "hgb", "catboost"], ["auto"], cpus)
         timed(p, 1, "bt_refit", ["lgbm", "xgb", "hgb"], ["auto"], cpus)
         timed(p, 1, "gs_norefit", ["lgbm_1t", "xgb", "hgb", "catboost"], ["auto"], cpus)
         if whole and cpus >= 3:

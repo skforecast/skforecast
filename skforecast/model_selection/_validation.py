@@ -9,11 +9,16 @@ from __future__ import annotations
 from typing import Callable, Any
 from copy import deepcopy
 import os
+import pickle
 import time
 import warnings
 import numpy as np
 import pandas as pd
-from joblib import Parallel, delayed, cpu_count
+from joblib import Parallel, delayed, cpu_count, effective_n_jobs
+try:
+    from joblib.externals.loky.backend.reduction import dumps as loky_dumps
+except ImportError:  # pragma: no cover
+    loky_dumps = None
 from tqdm.auto import tqdm
 from ..metrics import add_y_train_argument, _get_metric
 from ..exceptions import (
@@ -25,6 +30,7 @@ from ..model_selection._utils import (
     _initialize_levels_model_selection_multiseries,
     check_backtesting_input,
     limit_n_jobs_by_workload,
+    limit_n_jobs_by_prediction_workload,
     select_n_jobs_backtesting,
     _extract_data_folds_multiseries,
     _select_fit_folds_multiseries,
@@ -162,6 +168,133 @@ def _restore_out_sample_residuals(
             }
         else:
             forecaster.binner_intervals_ = forecaster.binner.intervals_
+
+
+def _serialize_forecaster_for_workers(
+    forecaster: object,
+    n_jobs: int
+) -> object | np.ndarray:
+    """
+    Serialize the forecaster once, in the main thread, when the folds of a
+    backtesting run in parallel (joblib runs them with more than one job,
+    `joblib.effective_n_jobs(n_jobs)`). Each fold deserializes it at its
+    start, so each fold works on its own copy.
+
+    With several processes, joblib serializes the arguments of every task, so
+    the forecaster would be pickled once per fold, in a secondary thread of the
+    main process. Serializing it once removes that cost per fold. It also
+    prevents estimators that use OpenMP (XGBoost, LightGBM) from starting a
+    second pool of threads in the main process when they are pickled from that
+    thread, which slows down their later fits in it (measured on Linux).
+
+    It is serialized with the pickler of loky, the one joblib uses for the
+    arguments of the tasks (`cloudpickle` if it is installed, `pickle`
+    otherwise), so the forecasters that can be sent to the workers are the
+    same as before. If the pickler of loky cannot be imported, `cloudpickle` is
+    used if it is installed, and `pickle` otherwise.
+
+    The bytes are returned as a numpy array (`uint8`). joblib writes the arrays
+    of more than 1 MB (`max_nbytes`) once per call to a file that all the
+    workers read (memmap), instead of sending them with every batch of tasks.
+    Large forecasters, for example with a `RandomForestRegressor` or a
+    `KNeighborsRegressor` (which stores its training data), are then written
+    once instead of being sent with each batch, and the workers share the
+    serialized bytes instead of keeping a copy each.
+
+    It is also serialized when the active backend of joblib runs the tasks in
+    threads (for example, inside `joblib.parallel_config(backend="threading")`):
+    otherwise the folds would share the same forecaster, and the folds with
+    refit would fit it at the same time. It is not serialized when joblib runs
+    the tasks one after another in the main process, even if `n_jobs` is
+    greater than 1: with the sequential backend
+    (`joblib.parallel_config(backend="sequential")`) or without multiprocessing
+    (`JOBLIB_MULTIPROCESSING=0`).
+
+    Parameters
+    ----------
+    forecaster : object
+        Forecaster model.
+    n_jobs : int
+        Number of jobs of the `joblib.Parallel` that runs the folds.
+
+    Returns
+    -------
+    forecaster : object, numpy ndarray
+        The bytes of the forecaster serialized, as a numpy array of `uint8`,
+        or the forecaster itself if joblib runs the folds with one job.
+
+    """
+
+    if effective_n_jobs(n_jobs) == 1:
+        return forecaster
+
+    if loky_dumps is not None:
+        dumps = loky_dumps
+    else:
+        try:
+            import cloudpickle
+            dumps = cloudpickle.dumps
+        except ImportError:
+            dumps = pickle.dumps
+
+    return np.frombuffer(
+        dumps(forecaster, protocol=pickle.HIGHEST_PROTOCOL), dtype=np.uint8
+    )
+
+
+def _deserialize_forecaster_and_run_fold(
+    function: Callable,
+    main_pid: int,
+    forecaster: object | np.ndarray,
+    **kwargs
+) -> tuple[Any, list[tuple] | None]:
+    """
+    Run the function of a fold of the backtesting with
+    `_run_recording_worker_warnings`, after deserializing the forecaster if
+    `_serialize_forecaster_for_workers` serialized it, so each fold works on
+    its own copy.
+
+    The forecaster is deserialized before the warnings of the fold start to be
+    recorded, so the warnings raised when it is unpickled (for example,
+    deprecations of the libraries of its estimator) are not shown as warnings
+    of the fold. When joblib runs the folds with one job, the forecaster is not
+    serialized, so it is not unpickled. In a worker process, the warnings of
+    the unpickling are printed by the worker, as when joblib unpickled the
+    forecaster with the arguments of each fold. With the threading backend,
+    they are shown in the main process as they are raised, like the warnings
+    of the fold.
+
+    Parameters
+    ----------
+    function : Callable
+        Function of the fold, defined at module level.
+    main_pid : int
+        Identifier of the main process (`os.getpid()` before `joblib.Parallel`).
+    forecaster : object, numpy ndarray
+        Forecaster model, or its bytes serialized by
+        `_serialize_forecaster_for_workers`.
+    **kwargs
+        Other arguments of `function`.
+
+    Returns
+    -------
+    result : Any
+        Output of `function`.
+    worker_warnings : list, None
+        Warnings raised in the fold (see `_run_recording_worker_warnings`).
+        `None` if the fold runs in the main process.
+
+    """
+
+    if isinstance(forecaster, np.ndarray):
+        forecaster = pickle.loads(forecaster)
+
+    return _run_recording_worker_warnings(
+               function   = function,
+               main_pid   = main_pid,
+               forecaster = forecaster,
+               **kwargs
+           )
 
 
 def _fit_predict_forecaster(
@@ -460,12 +593,15 @@ def _backtesting_forecaster(
     return_predictors : bool, default False
         If `True`, the predictors used to make the predictions are also returned.
     n_jobs : int, 'auto', default 'auto'
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
+        The number of jobs to run in parallel, never more than the number of
+        folds. If `-1`, then the number of jobs is set to the number of cores. If
+        'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting, and set to 1
-        when the workload of the folds, estimated from the time of the initial fit, is
-        too small to pay the start of the workers (for example, without refit).
-        See skforecast.model_selection._utils.limit_n_jobs_by_workload.
+        when the workload of the folds, estimated from the time of the initial fit
+        (without refit, from the time of the prediction of the first fold), is
+        too small to pay the start of the workers. See
+        skforecast.model_selection._utils.limit_n_jobs_by_workload and
+        skforecast.model_selection._utils.limit_n_jobs_by_prediction_workload.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used 
         for backtesting.
@@ -685,17 +821,6 @@ def _backtesting_forecaster(
     fold_data_list = _prepare_fold_data(folds, y, exog)
     fold_items = list(zip(folds, fold_data_list))
 
-    if n_jobs_auto:
-        n_jobs = limit_n_jobs_by_workload(
-                     n_jobs      = n_jobs,
-                     n_tasks     = len(fold_items),
-                     n_fits      = sum(fold[5] is True for fold in folds),
-                     fit_seconds = fit_seconds
-                 )
-
-    if show_progress:
-        fold_items = tqdm(fold_items)
-
     kwargs_fit_predict_forecaster = {
         "forecaster": forecaster,
         "store_in_sample_residuals": store_in_sample_residuals,
@@ -717,9 +842,67 @@ def _backtesting_forecaster(
     # there and shown here, after the folds, as with `n_jobs=1`. If a fold raises
     # an error, the warnings raised in it before the error come with the error.
     main_pid = os.getpid()
+
+    # NOTE: Without refit, the folds only predict, so the workload is estimated
+    # by predicting the first fold here, in the main process. It is only done
+    # when `select_n_jobs_backtesting` allows parallel folds without refit
+    # (estimators that predict a few rows slowly). Its prediction is kept, so
+    # nothing is predicted twice.
+    n_fits = sum(fold[5] is True for fold in folds)
+    first_fold_predictions = []
+    if n_jobs_auto:
+        if n_jobs > 1 and n_fits == 0 and len(fold_items) > 1:
+            fold, fold_data = fold_items[0]
+            predict_start = time.perf_counter()
+            first_fold_predictions.append(
+                _run_recording_worker_warnings(
+                    function      = _fit_predict_forecaster,
+                    main_pid      = main_pid,
+                    fold          = fold,
+                    y_train       = fold_data["y_train"],
+                    last_window_y = fold_data["last_window_y"],
+                    exog_train    = fold_data["exog_train"],
+                    exog_test     = fold_data["exog_test"],
+                    **kwargs_fit_predict_forecaster
+                )
+            )
+            predict_seconds = time.perf_counter() - predict_start
+            fold_items = fold_items[1:]
+            n_jobs = limit_n_jobs_by_prediction_workload(
+                         n_jobs          = n_jobs,
+                         n_tasks         = len(fold_items),
+                         predict_seconds = predict_seconds
+                     )
+        else:
+            n_jobs = limit_n_jobs_by_workload(
+                         n_jobs      = n_jobs,
+                         n_tasks     = len(fold_items),
+                         n_fits      = n_fits,
+                         fit_seconds = fit_seconds
+                     )
+
+    # NOTE: No more workers are started than there are folds, also with an
+    # integer `n_jobs` (the value of `'auto'` resolved by the hyperparameter
+    # searches for each candidate included): the extra workers would only
+    # start and wait. With fewer workers, joblib also gives more threads to the
+    # estimator in each one (`cpu_count() // n_jobs`).
+    n_jobs = min(n_jobs, max(1, len(fold_items)))
+
+    if show_progress:
+        fold_items = tqdm(
+            fold_items,
+            initial = len(first_fold_predictions),
+            total   = len(first_fold_predictions) + len(fold_items)
+        )
+
+    kwargs_fit_predict_forecaster["forecaster"] = _serialize_forecaster_for_workers(
+        forecaster = forecaster,
+        n_jobs     = n_jobs
+    )
+
     try:
-        backtest_predictions = Parallel(n_jobs=n_jobs)(
-            delayed(_run_recording_worker_warnings)(
+        backtest_predictions = first_fold_predictions + Parallel(n_jobs=n_jobs)(
+            delayed(_deserialize_forecaster_and_run_fold)(
                 function      = _fit_predict_forecaster,
                 main_pid      = main_pid,
                 fold          = fold,
@@ -906,12 +1089,15 @@ def backtesting_forecaster(
     return_predictors : bool, default False
         If `True`, the predictors used to make the predictions are also returned.
     n_jobs : int, 'auto', default 'auto'
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
+        The number of jobs to run in parallel, never more than the number of
+        folds. If `-1`, then the number of jobs is set to the number of cores. If
+        'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting, and set to 1
-        when the workload of the folds, estimated from the time of the initial fit, is
-        too small to pay the start of the workers (for example, without refit).
-        See skforecast.model_selection._utils.limit_n_jobs_by_workload.
+        when the workload of the folds, estimated from the time of the initial fit
+        (without refit, from the time of the prediction of the first fold), is
+        too small to pay the start of the workers. See
+        skforecast.model_selection._utils.limit_n_jobs_by_workload and
+        skforecast.model_selection._utils.limit_n_jobs_by_prediction_workload.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used 
         for backtesting.
@@ -1363,8 +1549,9 @@ def _backtesting_forecaster_multiseries(
     return_predictors : bool, default False
         If `True`, the predictors used to make the predictions are also returned.
     n_jobs : int, 'auto', default 'auto'
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
+        The number of jobs to run in parallel, never more than the number of
+        folds. If `-1`, then the number of jobs is set to the number of cores. If
+        'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting, and set to 1
         when the workload of the folds, estimated from the time of the initial fit, is
         too small to pay the start of the workers (for example, without refit).
@@ -1714,6 +1901,13 @@ def _backtesting_forecaster_multiseries(
                      fit_seconds = fit_seconds
                  )
 
+    # NOTE: No more workers are started than there are folds, also with an
+    # integer `n_jobs` (the value of `'auto'` resolved by the hyperparameter
+    # searches for each candidate included): the extra workers would only
+    # start and wait. With fewer workers, joblib also gives more threads to the
+    # estimator in each one (`cpu_count() // n_jobs`).
+    n_jobs = min(n_jobs, max(1, len(data_folds_list)))
+
     if show_progress:
         data_folds_list = tqdm(data_folds_list)
 
@@ -1734,13 +1928,19 @@ def _backtesting_forecaster_multiseries(
         "return_predictors": return_predictors,
         "suppress_warnings": suppress_warnings
     }
+
+    kwargs_fit_predict_forecaster["forecaster"] = _serialize_forecaster_for_workers(
+        forecaster = forecaster,
+        n_jobs     = n_jobs
+    )
+
     # NOTE: The warnings of the folds that run in worker processes are recorded
     # there and shown here, after the folds, as with `n_jobs=1`. If a fold raises
     # an error, the warnings raised in it before the error come with the error.
     main_pid = os.getpid()
     try:
         results = Parallel(n_jobs=n_jobs)(
-            delayed(_run_recording_worker_warnings)(
+            delayed(_deserialize_forecaster_and_run_fold)(
                 function      = _fit_predict_forecaster_multiseries,
                 main_pid      = main_pid,
                 data_fold     = data_fold,
@@ -1962,8 +2162,9 @@ def backtesting_forecaster_multiseries(
     return_predictors : bool, default False
         If `True`, the predictors used to make the predictions are also returned.
     n_jobs : int, 'auto', default 'auto'
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
+        The number of jobs to run in parallel, never more than the number of
+        folds. If `-1`, then the number of jobs is set to the number of cores. If
+        'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting, and set to 1
         when the workload of the folds, estimated from the time of the initial fit, is
         too small to pay the start of the workers (for example, without refit).
@@ -2334,8 +2535,9 @@ def _backtesting_stats(
         and adds an `estimator_params` column to the output with the model
         selected in each fold.
     n_jobs : int, 'auto', default 'auto'
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
+        The number of jobs to run in parallel, never more than the number of
+        folds. If `-1`, then the number of jobs is set to the number of cores. If
+        'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used 
@@ -2520,6 +2722,10 @@ def _backtesting_stats(
                 LongTrainingWarning
             )
        
+    # NOTE: No more workers are started than there are folds, as in the other
+    # backtesting functions: the extra workers would only start and wait.
+    n_jobs = min(n_jobs, max(1, len(folds)))
+
     folds_tqdm = tqdm(folds) if show_progress else folds
 
     kwargs_fit_predict_forecaster = {
@@ -2535,11 +2741,20 @@ def _backtesting_stats(
         "suppress_warnings": suppress_warnings
     }
 
+    kwargs_fit_predict_forecaster["forecaster"] = _serialize_forecaster_for_workers(
+        forecaster = forecaster,
+        n_jobs     = n_jobs
+    )
+
     # NOTE: joblib sends the arrays over 1 MB to the workers as read-only
     # memmaps, and the Kalman filter of a fitted `Sarimax` (statsmodels) cannot
     # be unpickled from them. Copy-on-write memmaps are writable and still
     # shared. Only with `Sarimax`: a `Parallel` with a non-default `mmap_mode`
     # makes loky restart the workers of a previous call with the default one.
+    # The forecaster is sent serialized, so its Kalman filter is unpickled from
+    # bytes. The copy-on-write memmaps are kept for `y` and `exog` as a
+    # precaution: read-only ones gave the same predictions with a `Sarimax` in
+    # one check, not enough to drop them.
     any_sarimax = any(
         est_type == 'skforecast.stats._sarimax.Sarimax'
         for est_type in forecaster.estimator_types
@@ -2552,7 +2767,7 @@ def _backtesting_stats(
     main_pid = os.getpid()
     try:
         results = Parallel(n_jobs=n_jobs, **parallel_kwargs)(
-            delayed(_run_recording_worker_warnings)(
+            delayed(_deserialize_forecaster_and_run_fold)(
                 function      = _fit_predict_forecaster_stats,
                 main_pid      = main_pid,
                 fold          = fold,
@@ -2753,8 +2968,9 @@ def backtesting_stats(
         and adds an `estimator_params` column to the output with the model
         selected in each fold.
     n_jobs : int, 'auto', default 'auto'
-        The number of jobs to run in parallel. If `-1`, then the number of jobs is 
-        set to the number of cores. If 'auto', `n_jobs` is set using the function
+        The number of jobs to run in parallel, never more than the number of
+        folds. If `-1`, then the number of jobs is set to the number of cores. If
+        'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting.
     verbose : bool, default False
         Print number of folds and index of training and validation sets used 

@@ -3,6 +3,25 @@
 13 de noviembre de 2026. Sustituye a las conclusiones provisionales de
 `NOTES.md`, que conserva el detalle del prototipo de serialización.
 
+**Estado (15 de noviembre de 2026).** Las propuestas 1 (también en el
+backtesting multiserie), 2 y 3 (versión mínima) están implementadas en la rama
+`perf/n-jobs-auto-strategy`. Las secciones Conclusión, Causa común y
+Propuestas describen el comportamiento anterior a esos cambios; el resultado
+de cada propuesta está en sus apartados "Medido" y en `results/*/README.md`
+(Linux en la EC2 y Windows en `results/win-22cpu/`). El resto de propuestas
+queda para pull requests posteriores.
+
+**Revisión final (16 de noviembre de 2026).** Una revisión independiente
+encontró que la serialización única hacía hasta 10 veces más lentos los
+modelos con arrays grandes (KNN, RandomForest), porque joblib no podía
+compartir los bytes como memmap. Se arregló en la rama con cinco commits: el
+forecaster serializado viaja como array de numpy; no se serializa si joblib
+usa un proceso; se deserializa antes de registrar los avisos del fold; y
+`backtesting_stats` también serializa una vez (con hilos, sus folds
+compartían el forecaster). Medido en `results/local-4vcpu-review/README.md`.
+Lo que queda fuera está en "Siguientes pasos" y en "Fallos previos
+encontrados en la revisión final".
+
 ## Conclusión
 
 `n_jobs='auto'` decide bien: en los casos medidos queda entre un 2 % y un 6 %
@@ -20,6 +39,8 @@ lentos durante el resto de la sesión.
 - Python 3.12.13, skforecast 0.27.0 (commit `6fa488c`), numpy 2.5.4,
   pandas 2.3.3, scikit-learn 1.9.1, joblib 1.6.0, lightgbm 4.7.0,
   xgboost 3.4.1, catboost 1.2.10, numba 0.68.1.
+- Datos en `results/ip-10-2-1-64/` (nombre de la máquina): `results.jsonl`
+  con cada medida y `summary.md` con las tablas.
 - 724 medidas, ninguna fallida. Etapas 1 a 6 completas: los casos principales
   tienen dos repeticiones en los tres tamaños, y los casos extendidos
   (búsqueda con refit, multiserie, variantes de hilos, número de procesos),
@@ -142,6 +163,25 @@ ralentizarse (de 1,64 veces a entre 0,98 y 1,06) y el de LightGBM también (de
   necesita invalidación: mejor dejarla para una segunda fase.
 - **Validación:** este mismo benchmark antes y después, en la máquina de 16
   CPU. Las predicciones deben ser idénticas.
+- **Medido (rama `perf/serialize-forecaster-once`, variante simple):**
+  predicciones idénticas; medidas en paralelo un 21 % más rápidas en caliente
+  con 16 CPU y un 13 % con 8; ajuste posterior de XGBoost de 6,4 a 1,7 s; la
+  búsqueda con refit de XGBoost pasa de 45,1 a 31,0 s en caliente (un proceso:
+  31,5). Detalle en `results/ec2-proposal1/README.md` y, en 4 vCPU, en
+  `results/local-4vcpu-proposal1/README.md`.
+- **Medido en multiserie (rama `perf/n-jobs-auto-strategy`, commit e3eadd9):**
+  el mismo cambio en `_backtesting_forecaster_multiseries`. Con XGBoost y 16
+  CPU, en caliente, el backtesting sin refit en paralelo pasa de 8,9 a 3,2 s y
+  con refit de 10,1 a 5,4 (lo que elige `'auto'`); el ajuste posterior de
+  XGBoost deja de ser hasta 5,3 veces más lento. Sin refit, en frío, un proceso
+  sigue ganando, así que `'auto'` no cambia. Predicciones idénticas. Detalle en
+  `results/ec2-ms-serialization/README.md`.
+- **Medido tras la revisión final (4 vCPU, `n_jobs=3` sin refit):** con los
+  bytes como array de numpy que joblib comparte como memmap, RandomForest de
+  73 MB con 480 folds pasa de 89 a 29 s (0.28.x llenaba `/dev/shm`) y KNN de
+  38 MB con 480 folds de 43,7 a 10,6 s en frío (0.28.x: 5,1). LightGBM con 2000
+  folds, 10,8 s (0.28.x: 116,6). Detalle en
+  `results/local-4vcpu-review/README.md`.
 
 ### 2. No arrancar más procesos que folds, también en las búsquedas y con `n_jobs` entero
 
@@ -159,6 +199,18 @@ ralentizarse (de 1,64 veces a entre 0,98 y 1,06) y el de LightGBM también (de
 - **Riesgo:** bajo. El número de folds es constante dentro de una búsqueda, así
   que no provoca reinicios de los workers. Falta medirlo directamente en una
   búsqueda.
+- **Medido (rama `perf/n-jobs-auto-strategy`, commit 8e9223b, sobre las
+  propuestas 1 y 3):** `n_jobs = min(n_jobs, folds)` en los dos backtestings,
+  así que cubre las búsquedas y el `n_jobs` entero. Con 16 CPU, la búsqueda con
+  refit de 3 candidatos de 6 folds con `n_jobs=15` (lo que resuelve `'auto'`)
+  pasa de 15 procesos a 6 y es
+  del 16 al 30 % más rápida en frío; en caliente, XGBoost pasa de 31,0 a
+  23,6 s (un proceso: 32,8), HistGB de 22,5 a 21,2 y LightGBM de un hilo no
+  cambia. El backtesting con `n_jobs=15` es del 25 al 37 % más rápido en
+  caliente. La memoria de los workers baja a menos de la mitad. Con 8 CPU (7
+  procesos frente a 6), sin diferencias. Los resultados encajan con la
+  hipótesis de los workers sin estrenar y, en caliente, con los hilos extra
+  que joblib da a cada worker. Detalle en `results/ec2-proposal2/README.md`.
 
 ### 3. Sin refit: decidir por carga en lugar de por lista de estimadores
 
@@ -172,6 +224,28 @@ ralentizarse (de 1,64 veces a entre 0,98 y 1,06) y el de LightGBM también (de
 - **Depende de la propuesta 1:** con la serialización actual el umbral saldría
   distinto para cada estimador. Hay que hacerla después y calibrar con este
   benchmark.
+- **Con la propuesta 1 medida:** el backtesting suelto de HistGB sin refit
+  tarda 19,1 s con un proceso (lo que elige `'auto'`) y 8,0 en frío y 4,8 en
+  caliente en paralelo con 16 CPU. XGBoost, LightGBM con un hilo y CatBoost
+  siguen perdiendo en frío y ganan poco en caliente; RandomForest sigue
+  perdiendo. Ver `results/ec2-proposal1/README.md`.
+- **Medido (rama `perf/n-jobs-auto-prediction-workload`, versión mínima):**
+  sin refit, con HistGB o CatBoost, se predice el primer fold en el proceso
+  principal y se paraleliza el resto si la predicción estimada supera 6 s
+  (Linux y macOS) o 12 s (Windows). HistGB con `'auto'` pasa de 19,2 a 8,1 s
+  en frío y de 19,1 a 5,0 en caliente con 16 CPU; CatBoost sigue en un
+  proceso. Detalle en `results/ec2-proposal3/README.md`.
+- **Medido en Windows (22 CPU, `results/win-22cpu/README.md`):** con todos
+  los cambios, la búsqueda de XGBoost con refit y `'auto'` pasa de 26,9 / 20,1
+  s a 16,3 / 13,7 (en frío / en caliente), y el backtesting con refit y
+  `n_jobs` entero tarda la mitad en caliente. Sin refit, el paralelo compensa
+  en frío a partir de unos 7 s de predicción, pero se mantiene el umbral de
+  12 s (una máquina, una repetición, riesgo asimétrico). Cerca del umbral, la
+  decisión cambia entre llamadas: el primer fold de la primera llamada es más
+  lento y empuja la estimación por encima de 12 s (21 procesos), y las
+  siguientes vuelven a uno aunque los workers ya estén arrancados (8,0 s en
+  lugar de 2,5). Mejora futura: no contar el arranque de los workers cuando ya
+  están en marcha. El ajuste posterior de XGBoost no se ralentiza en Windows.
 
 ### 4. Decisión de criterio: `cpu_count()` en lugar de `cpu_count() - 1`
 
@@ -219,16 +293,20 @@ medir el umbral de filas en Windows
   con claridad en 3 de las 12 combinaciones medidas de caso y tamaño de
   máquina.
 - No añadir condiciones nuevas por sistema operativo.
-- No detectar si los procesos ya están arrancados: la ganancia se limita a
-  cargas por debajo del umbral (1,8 frente a 0,5 s) y depende de la API privada
-  de joblib.
+- No detectar si los procesos ya están arrancados en esta fase: la ganancia
+  se limita a cargas por debajo del umbral (1,8 frente a 0,5 s) y depende de
+  la API privada de joblib. La medida de Windows (`results/win-22cpu/`, 8,0
+  frente a 2,5 s cerca del umbral sin refit) la deja como posible mejora
+  futura, sopesando esos dos inconvenientes.
 - La excepción de CatBoost en búsquedas sin refit: pierde poco en frío y gana
   poco en caliente.
 
 ## Límites
 
-- Un solo hardware (AMD, Linux). Windows no se ha medido aquí; el informe
-  original medía en Windows que paralelizar XGBoost ganaba 2 veces.
+- Linux: un solo hardware (AMD). Windows: un portátil de 22 CPU, con una
+  repetición por medida y solo los casos de `bench_windows.py`
+  (`results/win-22cpu/`); el informe original medía en Windows que
+  paralelizar XGBoost ganaba 2 veces.
 - macOS queda fuera. Lo que depende de joblib debería trasladarse; lo que
   depende de OpenMP (XGBoost y LightGBM en paralelo), no necesariamente.
 - Un tamaño de datos (5.112 filas, 500 árboles). Las reglas dependen del
@@ -238,3 +316,121 @@ medir el umbral de filas en Windows
   la máquina real libre para el sistema.
 - No se han medido los intervalos de predicción, los modelos estadísticos ni
   el refit intermitente.
+
+## Siguientes pasos (fuera de esta pull request, sin decidir)
+
+Ideas por evaluar, no compromisos. Cada una necesita sus propias medidas antes
+de decidir si se hace.
+
+- **Modelos con arrays grandes sin copiarlos en cada fold.** Tras la revisión
+  final, KNN de 38 MB sin refit y con `n_jobs=3` sigue de 2 a 3 veces más
+  lento que en 0.28.x en caliente (480 folds: 8,6 frente a 3,2 s;
+  `results/local-4vcpu-review/README.md`): cada fold copia el modelo al
+  deserializarlo, y 0.28.x enviaba sus arrays como memmaps de solo lectura que
+  los workers usaban sin copiar. Afecta a los modelos que guardan arrays
+  grandes (KNN, SVR, procesos gaussianos), con `n_jobs` entero y sin refit;
+  con `'auto'` van en un proceso. Alternativa: pickle con protocolo 5 y
+  buffers fuera de banda (`buffer_callback`), de modo que joblib comparta
+  cada array grande como memmap y `pickle.loads(..., buffers=...)` lo use sin
+  copiarlo. Con hilos habría que copiar los buffers, para que cada fold tenga
+  su copia, y los arrays grandes volverían a ser de solo lectura en los
+  workers, como en 0.28.x. Falta: prototipo y medidas.
+- **No contar el arranque si los workers ya están en marcha.** En Windows,
+  cerca del umbral sin refit, `'auto'` vuelve a un proceso en las llamadas
+  siguientes aunque los 21 workers ya estén arrancados (8,0 s en lugar de 2,5;
+  `results/win-22cpu/README.md`). Inconvenientes: depende del estado interno de
+  loky (API privada) y haría que la decisión dependa de lo ejecutado antes en
+  la sesión. Falta: diseñar cómo detectarlo y medir el beneficio en Linux y
+  Windows.
+- **Umbral de predicción en Windows (12 s).** En el portátil de 22 CPU el
+  paralelo compensa en frío desde unos 7 s, pero con una repetición y mucho
+  ruido. Falta: más máquinas Windows (con menos núcleos, con antivirus) y más
+  repeticiones, con predicciones de unos 6, 8 y 10 s.
+- **XGBoost con refit y pocos CPU.** Antes de los cambios, con 4 CPU, el
+  paralelo perdía con 6 folds (21,7 frente a 17,9 s) y en multiserie (14,9
+  frente a 10,5). Con 16 folds y 4 CPU ya ganaba tras la propuesta 1
+  (`results/local-4vcpu-proposal1/`). Falta: repetir los casos de 6 folds y
+  multiserie con 4 CPU sobre la rama actual antes de pensar en una regla.
+- **Caché del forecaster en cada worker.** Evitaría deserializarlo en cada
+  fold, a cambio de retener memoria en los workers y de necesitar invalidarla
+  entre llamadas. Pesa con muchos folds cortos y `n_jobs` entero sin refit
+  (con `'auto'` estos casos van en un proceso): según la revisión final,
+  LightGBM con 2000 folds pasa unos 14 de sus 15 s deserializando (21 ms por
+  fold), y KNN con 480 folds sigue 3 veces más lento que en 0.28.x, que le
+  enviaba los arrays del modelo como memmaps sin copiarlos. Falta: diseñar la
+  invalidación (por llamada) y medirlo.
+- **`cpu_count()` frente a `cpu_count() - 1`** (propuesta 4). Decisión de
+  criterio; la alternativa barata es documentar `n_jobs=-1`.
+- **`mmap_mode='c'` de `backtesting_stats` con Sarimax.** Se añadió porque el
+  filtro de Kalman de un Sarimax ajustado no se podía deserializar desde los
+  memmaps de solo lectura de joblib. Ahora el forecaster viaja serializado una
+  vez y se deserializa desde bytes, así que quizá ya no haga falta; se ha
+  mantenido para `y` y `exog`. Quitarlo evitaría que loky reinicie los workers
+  al alternar con otro `mmap_mode`. Falta: probar un Sarimax con refit y una
+  serie de más de 1 MB sin él.
+- **Reinicio de los workers de loky por el tope de folds.** loky solo reutiliza
+  sus workers si no cambia el número de hilos que joblib da a cada uno
+  (`cpu_count() // n_jobs`). Con el tope, ese número depende de los folds:
+  dentro de una búsqueda no cambia (de ahí la ganancia de la propuesta 2), pero
+  dos backtestings seguidos con distinto número de folds y el mismo `n_jobs`
+  entero, o un `ForecasterDirect` que ajusta en paralelo con otro `n_jobs`,
+  arrancan workers nuevos en cada llamada (revisión final, 4 CPU: unos 2 s
+  frente a 0,2 s en 0.28.x; con 3 folds, en cambio, la rama ganaba). Falta:
+  medir si compensa aplicar el tope solo cuando no cambia el número de hilos.
+- **Backend de hilos y clases definidas en `__main__`.** Con un backend de
+  hilos, cada fold deserializa el forecaster en el proceso principal, y
+  cloudpickle vuelve a aplicar a la clase original el estado guardado de una
+  clase definida en `__main__` (un estimador propio en un notebook): sus
+  métodos se quedan con una copia de los globales del momento. Un cambio
+  posterior de un global que usen no se ve. Alternativa: con hilos, copiar con
+  `deepcopy` en lugar de serializar, lo que exige saber si el backend activo
+  usa hilos (API privada de joblib).
+- **Avisos de los folds terminados cuando otro fold falla.** Con varios
+  procesos, si un fold lanza un error se pierden los avisos de los folds ya
+  terminados (el error es el mismo). Con `'auto'` sin refit y HGB o CatBoost,
+  donde 0.28.x usaba un proceso, se ven ahora menos avisos que con `n_jobs=1`.
+  Alternativa: `return_as="generator"` y reemitir los avisos antes de relanzar
+  el error.
+- **XGBoost con un hilo al predecir pocas filas** (propuesta 6). Falta medir
+  el umbral de filas en Windows.
+
+## Fallos previos encontrados en la revisión final (fuera de la paralelización)
+
+La revisión final de la pull request #1503 (16 de noviembre de 2026) encontró
+tres fallos que ya estaban en 0.28.x y no dependen de la estrategia de
+`n_jobs`, y al arreglar el primero apareció un cuarto. Quedan para pull
+requests aparte.
+
+- **`ForecasterRecursiveClassifier` con clases que aparecen entre folds.** En
+  `_backtesting_forecaster`, la columna `pred` se calcula con
+  `forecaster.classes_` del proceso principal: con `n_jobs=1`, las del último
+  refit; en paralelo, las del ajuste inicial. Las columnas de probabilidad de
+  una clase que no existía en un fold quedan en NaN, y `argmax` elige esa
+  clase en todo el fold. En el caso de la revisión, la exactitud es 0,40 con
+  `n_jobs=1` y 0,67 con `n_jobs=2`. Arreglado en la pull request #1511: cada
+  fold calcula `pred` con las clases de su modelo, y una clase que su modelo no
+  conoce tiene probabilidad 0. También cubre el caso contrario, una clase que
+  deja el entrenamiento (con `n_jobs` mayor que 1, se predecía en todo el fold).
+- **`ForecasterRecursiveClassifier` con una clase que solo está en los lags.**
+  Si una clase solo aparece en los primeros `window_size` valores del
+  entrenamiento, el encoder la cuenta como clase y el estimador no la ve como
+  objetivo: `predict_proba` falla con `ValueError: could not broadcast input
+  array from shape (2,) into shape (3,)`. Lo reproducen un `fit` y un
+  `predict_proba`, sin backtesting; en un backtesting con refit puede ocurrir
+  cuando una clase está a punto de salir de la ventana de entrenamiento.
+  Encontrado al comprobar la pull request #1511, que no lo arregla. Arreglo
+  propuesto, sin estudiar: colocar las probabilidades del estimador en las
+  columnas de sus clases (`estimator.classes_`) y dar 0 a las que no conoce.
+  Las clases no pueden salir solo de los valores objetivo: el encoder también
+  codifica los lags.
+- **`ForecasterRnn` con refit.** keras continúa el entrenamiento en cada
+  `fit`: con `n_jobs=1`, cada fold parte de los pesos del anterior; en
+  paralelo, de los del ajuste inicial (MAE de 3,16 frente a 3,61). Arreglo
+  propuesto: reiniciar los pesos en `ForecasterRnn.fit`, o documentarlo.
+- **`refit=0` y `n_jobs` negativos.** Con `n_jobs` entero, `refit=0` se trata
+  como refit intermitente (avisa y usa un proceso), aunque
+  `select_n_jobs_backtesting` ya lo normaliza a `False`. Los `n_jobs`
+  negativos y `n_jobs=0` se convierten en `cpu_count()`: `-2` da 4 procesos
+  con 4 CPU, donde joblib usaría 3, y `0`, que joblib rechaza, también da 4.
+  Arreglo propuesto: normalizar `refit` y resolver `n_jobs` con
+  `joblib.effective_n_jobs`.
