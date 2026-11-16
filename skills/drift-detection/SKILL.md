@@ -93,7 +93,7 @@ detector = PopulationDriftDetector(chunk_size=100)
 
 # Time-based chunks
 detector = PopulationDriftDetector(chunk_size='W')   # Weekly
-detector = PopulationDriftDetector(chunk_size='M')   # Monthly
+detector = PopulationDriftDetector(chunk_size='ME')  # Monthly ('M' fails with pandas 3)
 detector = PopulationDriftDetector(chunk_size='D')   # Daily
 
 # No chunking — compare entire datasets

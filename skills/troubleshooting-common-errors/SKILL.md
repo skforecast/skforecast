@@ -79,6 +79,31 @@ data = data.asfreq('MS')      # Monthly start
 data = data.asfreq('QS')      # Quarterly start
 ```
 
+With pandas 3, `tz_convert` drops calendar frequencies (`'D'`, `'W'`, `'MS'`), so an index created in UTC and converted to a local time zone arrives without frequency, and `pd.DatetimeIndex(idx, freq='D')` fails if it crosses a daylight saving time change:
+
+```python
+# ❌ pandas 3: idx.freq is None
+idx = pd.date_range('2021-02-15', periods=90, freq='D', tz='UTC').tz_convert('Europe/Madrid')
+
+# ✅ Same dates, frequency kept with pandas 2 and 3 (results identical to 'D' with pandas 2)
+idx = pd.date_range('2021-02-15', periods=90, freq='24h', tz='UTC').tz_convert('Europe/Madrid')
+# Weekly: freq='168h'. Dates at local midnight: build the index in local time or use .asfreq('D')
+
+# ✅ Existing data with such an index: data.asfreq('D') would turn the values after a
+# daylight saving time change into NaN
+data = data.asfreq('24h')
+```
+
+### "ValueError: ... the index of `exog` must be aligned with the index of `y`" with identical dates
+
+With pandas 2, indexes with different resolutions (`datetime64[ns]` and `datetime64[us]`, the pandas 3 default for parsed dates) are not considered equal. Give both the same resolution:
+
+```python
+exog.index = exog.index.as_unit('ns')
+```
+
+With pandas 3 they are accepted, and outputs keep the resolution of the input: `pd.testing.assert_index_equal` fails between `[us]` and `[ns]` indexes even if the dates are the same.
+
 ### "ValueError: y contains NaN values"
 
 ```python
@@ -294,6 +319,8 @@ forecaster = ForecasterRecursive(
 forecaster.fit(y=y_train)
 joblib.dump(forecaster, 'forecaster_v0.22.pkl')
 ```
+
+Forecasters saved with pandas 3 using `joblib`, `pickle` or `cloudpickle` cannot be loaded with pandas 2 (an empty `AssertionError`, with a note from `load_forecaster`); files saved with pandas 2 load with pandas 3. To share a forecaster between pandas 2.3 and pandas 3, save it with `backend='skops'`, and get the `trusted` list from each file with `skops.io.get_untrusted_types(file=...)`: the type names depend on the pandas version that saved it.
 
 **Best practices:**
 - Always retrain and re-save forecasters after upgrading skforecast.
