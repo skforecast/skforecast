@@ -27,7 +27,7 @@ Esfuerzo: S (horas a 1 día, con tests y docs), M (2 a 5 días), L (más de una 
 | MAINT-docs-deps | Actualizar los pins del extra `docs`, salvo `mkdocs-jupyter` | S | Opcional, medido: sin efecto visible |
 | MAINT-test-deps | Limpiar el extra `test` | S | Opcional |
 | MAINT-bench-pandas3 | Pasar los benchmarks de `benchmarks/` a pandas 3, con una medición puente | S | Pendiente: al final de la 0.28.0, antes de publicar |
-| MAINT-review-pandas3 | Revisiones independientes de la migración a pandas 3 y CI completo sobre `0.28.x` | S | En curso: 5 de 5 hechas (2026-11-16); queda fusionar los arreglos de las dos últimas (#1505) |
+| MAINT-review-pandas3 | Revisiones independientes de la migración a pandas 3 y CI completo sobre `0.28.x` | S | Hecha (2026-11-16): las 5 revisiones, sus arreglos fusionados (#1505, merge `12898d190`) y los cuatro workflows en verde sobre ese commit |
 
 Son pequeños y no dependen entre sí, salvo `tomli` (MAINT-test-deps), que se quita con
 DEP-python310, y `pandas[parquet]` (MAINT-test-deps), cuyo mínimo sube con
@@ -434,6 +434,11 @@ y cómo"; esta copia es la que queda si se borra esa carpeta.
   de la migración: estimadores que escriben en su entrada en `ForecasterDirect` y
   `ForecasterRecursive` (issue #1506) y alias de frecuencia que dan horas en
   `calculate_distance_from_holiday` (issue #1507).
+- [x] CI completa sobre `0.28.x` con la #1505 fusionada (2026-11-16, merge `12898d190`):
+  `unit-tests.yml`, `unit-tests-min-deps.yml`, `unit-tests-latest-deps.yml` y
+  `foundation-backends.yml`, lanzados a mano, los cuatro en verde y sin fallos (pandas
+  3.1.1, `pandas<3`, mínimas con pandas 2.3.0 y scikit-learn 1.6.0, Linux, Windows y
+  macOS). Son 26 tests más por celda que en la ejecución del 2026-11-15.
 
 ---
 

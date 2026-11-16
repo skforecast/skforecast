@@ -3450,7 +3450,8 @@ y dejar el hallazgo 2 como está). Los dos en `calculate_distance_from_holiday`
 - Verificación: lint sin hallazgos; `skforecast/preprocessing/tests` 370 pasan en p2 y en
   p3; `page_meta.py` y los ficheros de contexto de IA sin problemas. No se ha ejecutado
   la suite completa ni el arnés: la función no la llama ningún otro módulo del paquete.
-- Nota de versión en Fixed. PR #1505, abierta el 2026-11-16 (commit `ab182c1d4`).
+- Nota de versión en Fixed. PR #1505, abierta el 2026-11-16 (commit `ab182c1d4`) y
+  fusionada ese día (merge `12898d190`).
 
 **Revisión independiente 5: revisión local de lectura, rama frente a `main`** (2026-11-16;
 casilla 5 de "Revisiones independientes", añadida a petición del usuario porque la 4 fue
@@ -3546,6 +3547,31 @@ usuario prefiere a una PR nueva):
   p2 y 1748 pasan con 2 omitidos en p3; suite completa, p2 8202 pasan, 27 omitidos y 3 fallan y p3 8195 pasan, 34 omitidos y 3 fallan (en las dos, los 3 de `test_fit_tensorflow`, por el entorno; son 13 tests más que antes de estos arreglos). Arnés (`run_ab.py --identity --bench control --memory --base origin/0.28.x`, `results/review5_fixes`): identidad estricta 258 de 258 en p2 y en p3; p2 frente a p3 con la rama, 133 iguales, 125 con dtype distinto y ninguna con valores distintos; memoria 0,99 a 1,02; tiempo en p3 de 0,94 a 1,02 del mínimo de la base. En p2 salió de 0,99 a 1,11, con otros procesos lanzados durante la medida; repetidos `predict_loop`, `backtesting_recursive` y `recursive_create_train_X_y`: 1,02, 1,01 y 0,99. `calculate_distance_from_holiday` con 18 000 filas (mínimo de 15, dos tandas, máquina en uso), `0.28.x` frente a la rama: diario en hora local con zona, 105 a 6,6 ms en p2 y 156 a 3,9 en p3; diario en pasos de UTC sin frecuencia, 133 a 9,4 y 194 a 6,5; horario con zona, 137 a 3,6 y 189 a 1,4; sin zona, igual (3,5 y 1,4 ms).
 - Nota de versión: la entrada de la #1505 menciona `date_column`. El 1.2 y el 1.7 solo
   ocurren con pandas 3, que ninguna versión publicada admite, y no llevan entrada.
+
+**Fusión de la #1505 y CI completa sobre `0.28.x`** (2026-11-16). La #1505 se fusionó a
+las 11:28 UTC (merge `12898d190`), con los arreglos de las revisiones 4 y 5. Los cuatro
+workflows, lanzados a mano sobre ese commit a las 11:29 UTC, terminaron en verde, sin
+reintentos y sin ningún fallo.
+
+| Workflow | Ejecución | Celdas | Resultado |
+|---|---|---|---|
+| `unit-tests.yml` | 43858181568 | Python 3.11 a 3.13 en Linux y Windows, pandas 3.1.1 | 8198 pasan, 34 omitidos |
+| | | Python 3.14 en Linux y Windows, pandas 3.1.1 | 8153 pasan, 79 omitidos |
+| | | Python 3.11 a 3.14 en macOS, pandas 3.1.1 | 7978 pasan, 51 omitidos |
+| | | Python 3.12 en Linux con `pandas<3` (2.3.3) | 8205 pasan, 27 omitidos |
+| `unit-tests-min-deps.yml` | 43858186851 | pandas 2.3.0, numpy 2.0.0, scikit-learn 1.6.0 | 8205 pasan, 27 omitidos |
+| `unit-tests-latest-deps.yml` | 43858191591 | Python 3.12 y 3.13, pandas 3.1.1, numpy 2.5.5 | 8198 pasan, 34 omitidos |
+| | | Python 3.14 | 8153 pasan, 79 omitidos |
+| `foundation-backends.yml` | 43858197146 | 11 backends | todos en verde |
+
+- Frente a la CI de la revisión 3 son 26 tests más en cada celda: los 13 de la primera
+  versión de la #1505 y los 13 de la revisión 5.
+- Es la primera ejecución de los arreglos de la #1505 en Linux y macOS, con las versiones
+  mínimas y con numpy 2.5.5 (en local, 2.5.4). Los valores esperados fijos de los tests
+  nuevos valen en todas las celdas.
+- Los tres fallos locales de `test_fit_tensorflow` no aparecen en la CI: son del entorno
+  local.
+- Pendiente: la PR 7. Los errores ajenos a la migración están en los issues #1506 a #1509.
 
 ### Revisiones independientes: cuándo y cómo
 
