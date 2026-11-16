@@ -641,7 +641,6 @@ def test_backtesting_forecaster_classifier_classes_change_between_folds(n_jobs):
     pd.testing.assert_frame_equal(backtest_predictions, expected_predictions)
 
 
-
 @pytest.mark.parametrize(
     "n_jobs",
     [1, 2],
@@ -690,7 +689,8 @@ def test_backtesting_forecaster_classifier_class_only_in_the_lags_of_a_fold(n_jo
 
     assert forecaster_fold_1.classes_ == ['a', 'b', 'c']
     assert (expected_fold_1["b_proba"] == 0).all()
-    assert not (backtest_predictions.loc[backtest_predictions["fold"] == 1, "pred"] == "b").any()
+    pred_fold_1 = backtest_predictions.loc[backtest_predictions["fold"] == 1, "pred"]
+    assert not (pred_fold_1 == "b").any()
     pd.testing.assert_frame_equal(predictions_fold_1, expected_fold_1, check_freq=False)
 
 
