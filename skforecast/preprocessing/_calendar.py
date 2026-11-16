@@ -781,9 +781,9 @@ def calculate_distance_from_holiday(
     fewer than three observations), the unit defaults to hours and a
     `UserWarning` is issued.
 
-    With a timezone-aware index, the distances in days are whole calendar
-    days: a daylight saving change, whose day has 23 or 25 hours, does not
-    alter them.
+    With timezone-aware dates, in the index or in `date_column`, the
+    distances in days are whole calendar days: a daylight saving change,
+    whose day has 23 or 25 hours, does not alter them.
 
     In `date_column` mode, fractional days (from arbitrary intra-day
     timestamps) are truncated, not rounded e.g. a distance of 0.99
@@ -878,27 +878,29 @@ def calculate_distance_from_holiday(
             )
             freq_str = 'h'
         unit = _freq_to_timedelta_unit(freq_str)
+        dates = index
+    else:
+        dates = pd.to_datetime(X[date_column])
+        freq = None
+        unit = 'D'
 
-        if (
-            unit == 'D'
-            and index.tz is not None
-            and not _is_utc_anchored_index(index=index, freq=freq)
-        ):
+    if isinstance(dates.dtype, pd.DatetimeTZDtype):
+        dates = pd.DatetimeIndex(dates)
+        if unit == 'D' and not _is_utc_anchored_index(index=dates, freq=freq):
             # NOTE: With dates in local calendar steps, the day of a daylight
             # saving change has 23 or 25 hours and the elapsed time is not a
             # whole number of days (it would be truncated). The days are
             # counted between the local dates. With fixed UTC steps, the
             # elapsed time is already a whole number of days.
-            index = index.tz_localize(None)
+            dates = dates.tz_localize(None)
+        else:
+            # NOTE: The elapsed time is the same between the UTC dates. Numpy
+            # has no timezone-aware dtype: without this conversion, `to_numpy`
+            # returns an array of Timestamp objects, which is much slower.
+            dates = dates.tz_convert("UTC").tz_localize(None)
 
-        dates = index.to_numpy()
-        holiday_dates = index[X[holiday_column].astype(bool)].to_numpy()
-    else:
-        dates = pd.to_datetime(X[date_column]).to_numpy()
-        holiday_dates = pd.to_datetime(
-            X.loc[X[holiday_column].astype(bool), date_column]
-        ).to_numpy()
-        unit = 'D'
+    dates = dates.to_numpy()
+    holiday_dates = dates[X[holiday_column].astype(bool).to_numpy()]
 
     holiday_dates_sorted = np.sort(holiday_dates)
 
