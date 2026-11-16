@@ -566,6 +566,84 @@ def test_backtesting_forecaster_y_true_ForecasterRecursiveClassifier():
 
 
 @pytest.mark.parametrize(
+    "n_jobs",
+    [1, 2],
+    ids=lambda n_jobs: f"n_jobs: {n_jobs}",
+)
+def test_backtesting_forecaster_classifier_classes_change_between_folds(n_jobs):
+    """
+    Test that, with ForecasterRecursiveClassifier and refit, each fold predicts
+    with the classes of its own model when a class only appears in the training
+    set of the later folds (`train`, replaced by `bus` in the first 30 values):
+    the folds 0 to 2 do not predict it and give it probability 0, and the
+    output is the same with `n_jobs=1` and `n_jobs=2`. Before, the class was
+    chosen with the classes of the forecaster of the main process: those of the
+    last refit with `n_jobs=1`, which predicted `train` in every step of the
+    folds 0 to 2, and those of the initial fit with `n_jobs=2`, which never
+    predicted it. The expected values match, fold by fold, a forecaster fitted
+    on the training set of the fold.
+    """
+    y_clf_new_class = y_clf.copy()
+    y_clf_new_class.iloc[:30] = y_clf_new_class.iloc[:30].replace("train", "bus")
+    forecaster = ForecasterRecursiveClassifier(estimator=LogisticRegression(), lags=3)
+    cv = TimeSeriesFold(steps=5, initial_train_size=20, refit=True, verbose=False)
+
+    metric, backtest_predictions = backtesting_forecaster(
+        forecaster    = forecaster,
+        y             = y_clf_new_class,
+        cv            = cv,
+        metric        = "accuracy_score",
+        n_jobs        = n_jobs,
+        show_progress = False
+    )
+
+    expected_metric = pd.DataFrame(
+        {"accuracy_score": [0.5666666666666667], "n_evaluated": [30]}
+    )
+    expected_predictions = pd.DataFrame(
+        {
+            "fold": np.repeat(np.arange(6), 5),
+            "step": np.tile(np.arange(1, 6), 6),
+            "y_true": y_clf_new_class.iloc[20:].tolist(),
+            "pred": (
+                ["bus"] * 15
+                + ["train", "bus", "train", "bus", "train"]
+                + ["bus", "train", "bus", "train", "bus"]
+                + ["bus", "train", "bus", "train", "bus"]
+            ),
+            "bus_proba": [
+                0.83240641, 0.83240641, 0.83240641, 0.83240641, 0.83240641,
+                0.71815998, 0.84718801, 0.71815998, 0.7656482, 0.7656482,
+                0.68667775, 0.80441292, 0.68667775, 0.66097045, 0.66097045,
+                0.40458482, 0.87041172, 0.40458482, 0.87041172, 0.40458482,
+                0.90032525, 0.14644845, 0.90032525, 0.14644845, 0.90032525,
+                0.69629959, 0.10095449, 0.75905004, 0.10095449, 0.75905004,
+            ],
+            "car_proba": [
+                0.16759359, 0.16759359, 0.16759359, 0.16759359, 0.16759359,
+                0.28184002, 0.15281199, 0.28184002, 0.2343518, 0.2343518,
+                0.31332225, 0.19558708, 0.31332225, 0.33902955, 0.33902955,
+                0.07373005, 0.0874031, 0.07373005, 0.0874031, 0.07373005,
+                0.07564648, 0.0424643, 0.07564648, 0.0424643, 0.07564648,
+                0.26204265, 0.03652864, 0.19465042, 0.03652864, 0.19465042,
+            ],
+            "train_proba": [
+                0.0, 0.0, 0.0, 0.0, 0.0,
+                0.0, 0.0, 0.0, 0.0, 0.0,
+                0.0, 0.0, 0.0, 0.0, 0.0,
+                0.52168514, 0.04218519, 0.52168514, 0.04218519, 0.52168514,
+                0.02402827, 0.81108725, 0.02402827, 0.81108725, 0.02402827,
+                0.04165776, 0.86251687, 0.04629953, 0.86251687, 0.04629953,
+            ],
+        },
+        index=pd.RangeIndex(start=20, stop=50, step=1),
+    )
+
+    pd.testing.assert_frame_equal(metric, expected_metric)
+    pd.testing.assert_frame_equal(backtest_predictions, expected_predictions)
+
+
+@pytest.mark.parametrize(
     "n_jobs, refit, min_work, expected_n_jobs",
     [('auto', True, 0.0, min(max(1, cpu_count() - 1), 4)),
      ('auto', True, 1e6, 1),
