@@ -931,7 +931,22 @@ def _backtesting_forecaster(
     # of its fold: the observations known when it is made (the `gap` is not).
     origin_ilocs = np.repeat([fold[2][1] for fold in folds], n_predictions_folds)
 
-    backtest_predictions = pd.concat(backtest_predictions)
+    if is_regression and all(
+        type(pred) is pd.Series and pred.dtype.kind == 'f'
+        for pred in backtest_predictions
+    ):
+        # NOTE: Point predictions, one float Series per fold. Joining their
+        # values and their indexes gives the same Series as `pd.concat`, which
+        # is several times slower with many folds (more so with pandas 3).
+        backtest_predictions = pd.Series(
+            data  = np.concatenate([pred.to_numpy() for pred in backtest_predictions]),
+            index = backtest_predictions[0].index.append(
+                        [pred.index for pred in backtest_predictions[1:]]
+                    ),
+            name  = backtest_predictions[0].name
+        )
+    else:
+        backtest_predictions = pd.concat(backtest_predictions)
     if isinstance(backtest_predictions, pd.Series):
         backtest_predictions = backtest_predictions.to_frame()
 
