@@ -235,3 +235,34 @@ def test_fit_warm_start_resets_or_continues_weights_and_optimizer(warm_start):
     else:
         assert same_weights
         assert np.isclose(lr_second_fit, lr_first_fit)
+
+
+def test_fit_estimator_compiled_with_lambda_loss():
+    """
+    Test that a forecaster whose estimator is compiled with a lambda function
+    as loss can be fitted more than once (the compile configuration is
+    deserialized to reset the optimizer).
+    """
+    model_lambda_loss = create_and_compile_model(
+        series=series,
+        levels=levels,
+        lags=lags,
+        steps=steps,
+        recurrent_units=8,
+        dense_units=4,
+        compile_kwargs={
+            "optimizer": Adam(learning_rate=0.01),
+            "loss": lambda y_true, y_pred: ((y_true - y_pred) ** 2).mean(),
+        },
+    )
+    forecaster = ForecasterRnn(
+        estimator=model_lambda_loss,
+        levels=levels,
+        lags=lags,
+        fit_kwargs={"epochs": 1, "verbose": 0},
+    )
+    forecaster.fit(series)
+    forecaster.fit(series)
+
+    assert forecaster.is_fitted is True
+    assert int(forecaster.estimator.optimizer.iterations.numpy()) == 1

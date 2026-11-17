@@ -4,6 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 os.environ["KERAS_BACKEND"] = "torch"
+import keras
 from keras.optimizers import Adam
 from keras.losses import MeanSquaredError
 from skforecast.deep_learning import ForecasterRnn
@@ -52,6 +53,30 @@ def test_set_params_compiles_with_new_params_and_resets_estimator():
     for weights, expected in zip(forecaster.estimator.get_weights(), initial_weights):
         np.testing.assert_array_equal(weights, expected)
 
+    forecaster.fit(series)
+
+    assert forecaster.is_fitted is True
+    assert isinstance(forecaster.estimator.loss, MeanSquaredError)
+    assert np.isclose(float(forecaster.estimator.optimizer.learning_rate.numpy()), 0.001)
+
+
+def test_set_params_when_estimator_is_not_compiled():
+    """
+    Test that set_params compiles an estimator that was not compiled when the
+    forecaster was created, so it can be fitted.
+    """
+    forecaster = ForecasterRnn(
+        estimator=keras.Model.from_config(model.get_config()),
+        levels=levels,
+        lags=lags,
+        fit_kwargs={"epochs": 1, "verbose": 0},
+    )
+
+    assert forecaster._initial_compile_config == {}
+
+    forecaster.set_params(
+        {"optimizer": Adam(learning_rate=0.001), "loss": MeanSquaredError()}
+    )
     forecaster.fit(series)
 
     assert forecaster.is_fitted is True

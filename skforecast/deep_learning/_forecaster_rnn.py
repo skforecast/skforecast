@@ -265,12 +265,6 @@ class ForecasterRnn(ForecasterBase):
     _probabilistic_mode: str, bool
         Private attribute used to indicate whether the forecaster should perform 
         some calculations during backtesting.
-    _initial_weights : list
-        Private attribute with the weights of the estimator when the forecaster
-        was created. Each fit starts from them if `warm_start` is `False`.
-    _initial_compile_config : dict
-        Private attribute with the serialized compile configuration of the
-        estimator, used to reset the optimizer. Updated by `set_params`.
     dropna_from_series : Ignored
         Not used, present here for API consistency by convention.
     encoding : Ignored
@@ -307,8 +301,9 @@ class ForecasterRnn(ForecasterBase):
         # NOTE: The compile configuration is serialized here because the
         # optimizer keeps changing during training (e.g. the learning rate
         # reduced by a callback), and `get_compile_config` serializes it when
-        # called.
-        self._initial_compile_config = self.estimator.get_compile_config()
+        # called. It is `None` or an empty dict if the model is not compiled,
+        # depending on the version of Keras.
+        self._initial_compile_config = self.estimator.get_compile_config() or {}
         self.levels = None
         self.transformer_series = transformer_series
         self.transformer_series_ = None
@@ -2017,8 +2012,11 @@ class ForecasterRnn(ForecasterBase):
 
         self.estimator.set_weights(self._initial_weights)
         if self._initial_compile_config:
+            # NOTE: `safe_mode=False` allows lambda functions (e.g., as loss),
+            # as Keras does when it copies or unpickles a model. The
+            # configuration comes from the estimator of this forecaster.
             compile_config = keras.saving.deserialize_keras_object(
-                self._initial_compile_config
+                self._initial_compile_config, safe_mode=False
             )
             self.estimator.compile(**compile_config)
 
@@ -2042,7 +2040,7 @@ class ForecasterRnn(ForecasterBase):
         """
 
         compile_config = keras.saving.deserialize_keras_object(
-            self._initial_compile_config
+            self._initial_compile_config, safe_mode=False
         )
         compile_config.update(params)
         # NOTE: `_reset_estimator` compiles again from the serialized
