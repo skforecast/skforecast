@@ -1,6 +1,7 @@
 # Unit test fit method with PyTorch backend
 # ==============================================================================
 import os
+import pytest
 import numpy as np
 import pandas as pd
 os.environ["KERAS_BACKEND"] = "torch"
@@ -183,3 +184,54 @@ def test_fit_store_in_sample_residuals_False_stores_None_for_residuals():
     for level in forecaster.levels:
         assert forecaster.in_sample_residuals_[level] is None
         assert forecaster.in_sample_residuals_by_bin_[level] is None
+
+
+@pytest.mark.parametrize(
+    "warm_start",
+    [False, True],
+    ids=lambda warm_start: f"warm_start: {warm_start}",
+)
+def test_fit_warm_start_resets_or_continues_weights_and_optimizer(warm_start):
+    """
+    Test that, if `warm_start` is `False`, each fit starts from the initial
+    weights with the optimizer reset (including a learning rate changed by a
+    callback during training), so two fits with the same seed give the same
+    weights and learning rate. If `warm_start` is `True`, the second fit
+    continues from the first one.
+    """
+    forecaster = ForecasterRnn(
+        estimator=model,
+        levels=levels,
+        lags=lags,
+        fit_kwargs={
+            "epochs": 2,
+            "verbose": 0,
+            "callbacks": [
+                keras.callbacks.LearningRateScheduler(lambda epoch, lr: lr * 0.5)
+            ],
+        },
+        warm_start=warm_start,
+    )
+
+    keras.utils.set_random_seed(123)
+    forecaster.fit(series)
+    weights_first_fit = forecaster.estimator.get_weights()
+    lr_first_fit = float(forecaster.estimator.optimizer.learning_rate.numpy())
+
+    keras.utils.set_random_seed(123)
+    forecaster.fit(series)
+    weights_second_fit = forecaster.estimator.get_weights()
+    lr_second_fit = float(forecaster.estimator.optimizer.learning_rate.numpy())
+
+    same_weights = all(
+        np.allclose(w_1, w_2)
+        for w_1, w_2 in zip(weights_first_fit, weights_second_fit)
+    )
+
+    assert np.isclose(lr_first_fit, 0.01 * 0.5**2)
+    if warm_start:
+        assert not same_weights
+        assert np.isclose(lr_second_fit, 0.01 * 0.5**4)
+    else:
+        assert same_weights
+        assert np.isclose(lr_second_fit, lr_first_fit)

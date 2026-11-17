@@ -66,6 +66,13 @@ def test_ForecasterRnn_init_basic_and_attr_types():
     assert forecaster.series_val is None
     assert forecaster.exog_val is None
     assert isinstance(forecaster.fit_kwargs, dict)
+    assert forecaster.warm_start is False
+    assert len(forecaster._initial_weights) == len(model.get_weights())
+    for weights, initial_weights in zip(
+        model.get_weights(), forecaster._initial_weights
+    ):
+        np.testing.assert_array_equal(weights, initial_weights)
+    assert forecaster._initial_compile_config == model.get_compile_config()
 
 
 def test_ForecasterRnn_init_levels_list_and_lags_list():
