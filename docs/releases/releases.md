@@ -105,7 +105,7 @@ The main changes in this release are:
 
 + <code>[ForecasterRnn]</code> continued training from the weights and the optimizer state of the previous fit in every call to `fit`. The refits of <code>[backtesting_forecaster_multiseries]</code> depended on the previous folds, and a forecaster fitted with the whole series before backtesting gave optimistic metrics, because its model had already seen the test set. Each fit now starts from the initial weights (see `warm_start`). ([#1515](https://github.com/skforecast/skforecast/pull/1515))
 
-+ `set_params` of <code>[ForecasterRnn]</code> always raised `TypeError: Cannot clone object`. It now compiles the model with the given parameters, keeps those not passed (for example, the loss) and resets the weights to the initial ones. ([#1515](https://github.com/skforecast/skforecast/pull/1515))
++ `set_params` of <code>[ForecasterRnn]</code> always raised `TypeError: Cannot clone object`, so the hyperparameter searches (for example <code>[grid_search_forecaster_multiseries]</code>) with a `param_grid` skipped every candidate and returned no results. It now compiles the model with the given parameters, keeps those not passed (for example, the loss) and resets the weights to the initial ones. ([#1515](https://github.com/skforecast/skforecast/pull/1515))
 
 
 
