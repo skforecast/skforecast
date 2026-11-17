@@ -1406,7 +1406,7 @@ def check_predict_input(
     levels_forecaster: str | list[str] | None = None,
     series_names_in_: list[str] | None = None,
     encoding: str | None = None
-) -> None:
+) -> pd.Index | None:
     """
     Check all inputs of predict method. This is a helper function to validate
     that inputs used in predict method match attributes of a forecaster already
@@ -1458,7 +1458,10 @@ def check_predict_input(
 
     Returns
     -------
-    None
+    expected_index : pandas Index, None
+        Index of the steps to predict, from the step after the end of
+        `last_window` to the last step predicted. It is created to check
+        `exog`, so it is `None` if `exog` is `None`.
 
     """
 
@@ -1643,6 +1646,9 @@ def check_predict_input(
             )
 
     # Checks exog
+    # NOTE: The index of the steps to predict is returned so that the forecaster
+    # does not create it again, which is a noticeable part of a `predict` call.
+    expected_index = None
     if exog is not None:
 
         # Check type, nulls and expected type
@@ -1841,6 +1847,8 @@ def check_predict_input(
                     f"Missing columns in `last_window_exog`. Expected "
                     f"{exog_names_in_}. Got {last_window_exog_columns}."
                 )
+
+    return expected_index
 
 
 def check_residuals_input(
