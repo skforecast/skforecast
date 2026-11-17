@@ -1,6 +1,7 @@
 # Unit test _create_predict_inputs ForecasterRecursive
 # ==============================================================================
 import re
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
@@ -14,6 +15,7 @@ from sklearn.compose import make_column_selector
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
 from skforecast.recursive import ForecasterRecursive
+from skforecast.exceptions import MissingValuesWarning, DataTypeWarning
 from skforecast.preprocessing import TimeSeriesDifferentiator, CalendarFeatures
 
 # Fixtures
@@ -485,3 +487,65 @@ def test_create_predict_inputs_when_calendar_and_categorical_features_auto_with_
     pd.testing.assert_index_equal(results[3], expected[3])
     assert results[4] == expected[4]
     assert results[5] is None
+
+
+@pytest.mark.parametrize(
+    "exog_fit_dtype, exog_predict, expected_warnings",
+    [
+        ('float64', pd.DataFrame({'exog_1': [1., 2.], 'exog_2': [3., 4.]}), []),
+        (
+            'float64', pd.DataFrame({'exog_1': [1., np.nan], 'exog_2': [3., 4.]}),
+            [MissingValuesWarning]
+        ),
+        ('int64', pd.DataFrame({'exog_1': [1, 2], 'exog_2': [3, 4]}), []),
+        (
+            'int64', pd.DataFrame({'exog_1': [1., np.nan], 'exog_2': [3., 4.]}),
+            [MissingValuesWarning]
+        ),
+        (
+            'float64', pd.DataFrame({'exog_1': [True, False], 'exog_2': [3., 4.]}),
+            [DataTypeWarning]
+        ),
+    ],
+    ids=[
+        'same dtypes, float without NaN', 'same dtypes, float with NaN',
+        'same dtypes, integer', 'other dtypes, float with NaN', 'other dtypes, bool'
+    ]
+)
+def test_create_predict_inputs_exog_warnings_when_check_inputs_is_False(
+    exog_fit_dtype, exog_predict, expected_warnings
+):
+    """
+    Test the warnings about `exog` that _create_predict_inputs issues by itself,
+    without `check_predict_input` (`check_inputs=False`). With the dtypes seen
+    in training, only missing values are warned (never with integer values or
+    float values without NaN). With other dtypes, the dtypes are checked too.
+    """
+    warn_msgs = {
+        MissingValuesWarning: (
+            "`exog` has missing values. Most machine learning models do not "
+            "allow missing values. Fitting the forecaster may fail."
+        ),
+        DataTypeWarning: (
+            "`exog` may contain only `int`, `float` or `category` dtypes. Most "
+            "machine learning models do not allow other types of values. "
+            "Fitting the forecaster may fail."
+        ),
+    }
+    exog_train = pd.DataFrame(
+        {'exog_1': np.arange(10), 'exog_2': np.arange(10, 20)}
+    ).astype(exog_fit_dtype)
+    exog_predict.index = pd.RangeIndex(start=10, stop=12)
+    y_train = pd.Series(np.arange(10, dtype=float), name='y')
+    forecaster = ForecasterRecursive(estimator=LinearRegression(), lags=3)
+    forecaster.fit(y=y_train, exog=exog_train)
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        forecaster._create_predict_inputs(
+            steps=2, exog=exog_predict, check_inputs=False
+        )
+
+    assert [w.category for w in caught] == expected_warnings
+    for w in caught:
+        assert warn_msgs[w.category] in str(w.message)

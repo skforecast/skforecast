@@ -2166,3 +2166,58 @@ def test_check_predict_input_ValueError_when_last_window_exog_is_Series_without_
             levels           = None,
             series_names_in_ = None
         )
+
+
+@pytest.mark.parametrize(
+    "forecaster_name, steps, max_step, last_window_index, expected",
+    [
+        (
+            'ForecasterRecursive', 3, None,
+            pd.date_range(start='1/1/2018', periods=5, freq=freq),
+            pd.date_range(start='6/30/2018', periods=3, freq=freq)
+        ),
+        (
+            'ForecasterDirect', [1, 3], 3,
+            pd.date_range(start='1/1/2018', periods=5, freq=freq),
+            pd.date_range(start='6/30/2018', periods=3, freq=freq)
+        ),
+        (
+            'ForecasterRecursive', 2, None,
+            pd.RangeIndex(start=0, stop=5, step=1),
+            pd.RangeIndex(start=5, stop=7, step=1)
+        ),
+    ],
+    ids=['DatetimeIndex, steps int', 'DatetimeIndex, steps list', 'RangeIndex']
+)
+def test_check_predict_input_output_when_exog_is_None_or_not(
+    forecaster_name, steps, max_step, last_window_index, expected
+):
+    """
+    Test check_predict_input returns the index of the steps to predict, from
+    the step after the end of `last_window` to the last step (the maximum when
+    `steps` is a list), when `exog` is passed, and None when it is not.
+    """
+    is_datetime = isinstance(last_window_index, pd.DatetimeIndex)
+    kwargs = {
+        'forecaster_name': forecaster_name,
+        'steps': steps,
+        'is_fitted': True,
+        'index_type_': type(last_window_index),
+        'index_freq_': last_window_index.freq if is_datetime else last_window_index.step,
+        'window_size': 5,
+        'last_window': pd.Series(np.arange(5, dtype=float), index=last_window_index),
+        'max_step': max_step
+    }
+    exog = pd.Series(np.arange(len(expected), dtype=float), index=expected, name='exog')
+
+    results = check_predict_input(
+        exog_in_=True, exog=exog, exog_names_in_=['exog'], **kwargs
+    )
+    results_no_exog = check_predict_input(
+        exog_in_=False, exog=None, exog_names_in_=None, **kwargs
+    )
+
+    pd.testing.assert_index_equal(results, expected, exact=True)
+    if is_datetime:
+        assert results.freq == expected.freq
+    assert results_no_exog is None

@@ -1569,8 +1569,11 @@ class ForecasterRecursive(ForecasterBase):
                         date_literal = 'steps'
                     )
 
+        # NOTE: `check_predict_input` returns the index of the predictions when it
+        # creates it to check `exog`, so it is not created again.
+        prediction_index = None
         if check_inputs:
-            check_predict_input(
+            prediction_index = check_predict_input(
                 forecaster_name = type(self).__name__,
                 steps           = steps,
                 is_fitted       = self.is_fitted,
@@ -1594,9 +1597,12 @@ class ForecasterRecursive(ForecasterBase):
                     out_sample_residuals_by_bin_ = self.out_sample_residuals_by_bin_
                 )
 
-        last_window_values = (
-            last_window.iloc[-self.window_size:].to_numpy(copy=True).ravel()
-        )
+        # NOTE: The window stored in `fit` and the one of each backtesting fold
+        # already have `window_size` rows: slicing them only costs time.
+        last_window_values = last_window
+        if len(last_window) > self.window_size:
+            last_window_values = last_window.iloc[-self.window_size:]
+        last_window_values = last_window_values.to_numpy(copy=True).ravel()
         last_window_values = transform_numpy(
                                  array             = last_window_values,
                                  transformer       = self.transformer_y,
@@ -1645,19 +1651,32 @@ class ForecasterRecursive(ForecasterBase):
                 )
             
             # NOTE: Only check dtypes if they are not the same as seen in training
-            if not exog.dtypes.to_dict() == self.exog_dtypes_out_:
+            # (compared as lists, which is faster than creating a dictionary in
+            # each call). With the same dtypes, `check_exog` only warns about
+            # missing values: it is skipped when the values, which are extracted
+            # anyway, cannot have them (integer or boolean array) or are a float
+            # array without NaN.
+            exog_values = exog.to_numpy()
+            if not (
+                exog.dtypes.tolist() == list(self.exog_dtypes_out_.values())
+                and exog.columns.tolist() == list(self.exog_dtypes_out_)
+            ):
                 check_exog_dtypes(exog=exog)
-            else:
+            elif not (
+                exog_values.dtype.kind in 'iub'
+                or (exog_values.dtype.kind == 'f' and not np.isnan(exog_values).any())
+            ):
                 check_exog(exog=exog, allow_nan=False)
-            
-            exog_values = exog.to_numpy()[:steps]
+
+            exog_values = exog_values[:steps]
         else:
             exog_values = None
 
-        prediction_index = expand_index(
-                               index = last_window.index,
-                               steps = steps,
-                           )
+        if prediction_index is None:
+            prediction_index = expand_index(
+                                   index = last_window.index,
+                                   steps = steps,
+                               )
 
         if self.calendar_features is not None:
             calendar_values = self.calendar_features.transform(
