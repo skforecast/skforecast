@@ -303,3 +303,61 @@ def test_output_get_feature_importances_when_window_features():
     )
 
     pd.testing.assert_frame_equal(results, expected)
+
+
+@pytest.mark.parametrize(
+    "calibrated",
+    [False, True],
+    ids=lambda calibrated: f"calibrated: {calibrated}",
+)
+@pytest.mark.parametrize(
+    "first_value, classes, expected_classes",
+    [(None, ['a', 'c'], ['c']),
+     ('b', ['a', 'c'], ['c']),
+     ('b', ['a', 'c', 'd'], ['a', 'c', 'd'])],
+    ids=["binary", "binary estimator, b only in the lags", "b only in the lags"],
+)
+def test_output_get_feature_importances_coef_when_estimator_knows_fewer_classes(
+    calibrated, first_value, classes, expected_classes
+):
+    """
+    Test the column `classes` of get_feature_importances when the estimator has
+    `coef_` and its rows are not one per class of the forecaster: a binary
+    linear classifier has a single row, for its positive class, and a class
+    that only appears in the first `window_size` values of `y` ('b', a value of
+    the lags) is not a class of the estimator. Each row is labeled with the
+    class of the estimator, also in each fold of CalibratedClassifierCV.
+    """
+    rng = np.random.default_rng(123)
+    values = list(rng.choice(classes, size=50))
+    if first_value is not None:
+        values[0] = first_value
+    y_local = pd.Series(values, name='y')
+    estimator = LogisticRegression()
+    if calibrated:
+        estimator = CalibratedClassifierCV(estimator)
+    forecaster = ForecasterRecursiveClassifier(estimator=estimator, lags=3)
+    forecaster.fit(y=y_local)
+
+    results = forecaster.get_feature_importances(sort_importance=False)
+
+    if calibrated:
+        sub_estimators = [
+            clf.estimator for clf in forecaster.estimator.calibrated_classifiers_
+        ]
+    else:
+        sub_estimators = [forecaster.estimator]
+    expected = []
+    for fold, sub_estimator in enumerate(sub_estimators):
+        expected_fold = pd.DataFrame(
+            data    = sub_estimator.coef_,
+            columns = ['lag_1', 'lag_2', 'lag_3']
+        )
+        expected_fold.insert(0, 'classes', expected_classes)
+        if calibrated:
+            expected_fold.insert(0, 'cv_fold', fold)
+        expected.append(expected_fold)
+    expected = pd.concat(expected, axis=0, ignore_index=True)
+
+    assert forecaster.classes_ == sorted(set(values))
+    pd.testing.assert_frame_equal(results, expected)

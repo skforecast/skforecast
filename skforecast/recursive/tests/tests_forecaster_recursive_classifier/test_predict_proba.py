@@ -617,3 +617,56 @@ def test_predict_proba_output_when_last_window_stored_has_NaN_and_dropna_from_se
 
     pd.testing.assert_frame_equal(probabilities, expected)
     np.testing.assert_allclose(probabilities.values.sum(axis=1), 1.0)
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    [
+        LogisticRegression(),
+        HistGradientBoostingClassifier(max_iter=10, random_state=123),
+        LGBMClassifier(n_estimators=10, random_state=123, verbose=-1),
+        CatBoostClassifier(
+            iterations=10, random_seed=123, verbose=False, allow_writing_files=False
+        ),
+    ],
+    ids=lambda est: type(est).__name__
+)
+def test_predict_proba_output_when_a_class_is_only_in_the_lags(estimator):
+    """
+    Test predict_proba when a class ('b') only appears in the first `window_size`
+    values of `y`: it is encoded (it is a value of the lags) but the estimator
+    does not see it as a target, so its `predict_proba` has one column less.
+    The probabilities of the estimator go to the columns of its classes, the
+    class it does not know has probability 0, and `predict` returns the class
+    with the highest probability. 'b' is the class in the middle (code 1), so
+    the position of a column of the estimator is not its code.
+    """
+    rng = np.random.default_rng(123)
+    y_local = pd.Series(
+        data  = ['b'] + list(rng.choice(['a', 'c'], size=49)),
+        index = pd.date_range('2020-01-01', periods=50, freq='D'),
+        name  = 'y'
+    )
+    forecaster = ForecasterRecursiveClassifier(estimator=estimator, lags=3)
+    forecaster.fit(y=y_local)
+    probabilities = forecaster.predict_proba(steps=5)
+    predictions = forecaster.predict(steps=5)
+
+    X_predict = forecaster.create_predict_X(steps=5)
+    if isinstance(estimator, CatBoostClassifier):
+        X_predict = X_predict.astype(int)
+    proba_estimator = forecaster.estimator.predict_proba(X_predict)
+    expected = pd.DataFrame(
+        data    = np.column_stack(
+                      [proba_estimator[:, 0], np.zeros(5), proba_estimator[:, 1]]
+                  ),
+        index   = pd.date_range('2020-02-20', periods=5, freq='D'),
+        columns = ['a_proba', 'b_proba', 'c_proba']
+    )
+
+    assert forecaster.classes_ == ['a', 'b', 'c']
+    pd.testing.assert_frame_equal(probabilities, expected)
+    np.testing.assert_array_equal(
+        predictions.to_numpy(),
+        np.array(['a', 'b', 'c'])[probabilities.to_numpy().argmax(axis=1)]
+    )
