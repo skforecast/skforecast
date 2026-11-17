@@ -43,7 +43,7 @@ The main changes in this release are:
 
 + Added pandas 3 compatibility (`pandas>=2.3, <4.0`). Predictions and metrics are the same with pandas 2.3 and 3, except in the cases described in the [pandas 2 and pandas 3](../faq/pandas-2-and-pandas-3.md) page; outputs use the default dtypes of the installed version. The backends of <code>[MoiraiAdapter]</code> and <code>[TabPFNAdapter]</code> (`gluonts`) still require pandas 2: installing them downgrades pandas to 2.3. ([#1501](https://github.com/skforecast/skforecast/pull/1501))
 
-+ New argument `warm_start` in <code>[ForecasterRnn]</code>. With `True`, each `fit` continues from the weights and the optimizer state of the previous fit, which makes the refits of backtesting faster when combined with an `EarlyStopping` callback (about twice as fast in a test with the same error). The default, `False`, starts each fit from the initial weights.
++ New argument `warm_start` in <code>[ForecasterRnn]</code>. With `True`, each `fit` continues from the weights and the optimizer state of the previous fit, which can make the refits of backtesting faster when combined with an `EarlyStopping` callback. The default, `False`, starts each fit from the initial weights.
 
 
 **Changed**

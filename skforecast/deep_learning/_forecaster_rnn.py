@@ -114,7 +114,10 @@ class ForecasterRnn(ForecasterBase):
         previous fit.
 
         - If `False`, each fit starts from the weights the estimator had when
-        the forecaster was created, with the optimizer reset.
+        the forecaster was created, with the optimizer reset. Changes made
+        directly to `forecaster.estimator` afterwards (e.g., `load_weights` or
+        `compile`) are discarded in the next fit; use `set_params` to change
+        the compile parameters.
         - If `True`, each fit continues from the weights and the optimizer
         state of the previous fit. Refits are faster when combined with an
         `EarlyStopping` callback or fewer epochs. In backtesting, the first fit
