@@ -70,6 +70,8 @@ The main changes in this release are:
 
 + Series and exogenous variables in long format (a DataFrame with a MultiIndex) are converted to dictionaries faster, with the same results: 2 to 3 times for the series (about 0.5 s instead of 1.1 to 1.8 s with 5000 series of 1000 values) and 1.3 to 1.8 times for the exogenous variables. It applies to `fit` and `predict` of <code>[ForecasterRecursiveMultiSeries]</code> and to <code>[backtesting_forecaster_multiseries]</code> and the hyperparameter searches of multiple series. ([#1512](https://github.com/skforecast/skforecast/pull/1512))
 
++ `predict` with exogenous variables is faster when it is called many times, as in a backtesting without refit, with the same results: about 30% in <code>[ForecasterRecursive]</code>, 25% in <code>[ForecasterDirect]</code>, 12 to 16% in <code>[ForecasterRecursiveClassifier]</code> and 4 to 9% in <code>[ForecasterDirectMultiVariate]</code> and <code>[ForecasterRecursiveMultiSeries]</code>. With pandas 3 and a linear model, a <code>[backtesting_forecaster]</code> of 1000 folds of one step takes 0.34 s instead of 0.52 s. <code>[check_predict_input]</code> now returns the index of the steps to predict instead of `None`.
+
 + `n_jobs=0`, which joblib does not allow, raises a `ValueError` in <code>[backtesting_forecaster]</code>, <code>[backtesting_forecaster_multiseries]</code>, <code>[backtesting_stats]</code>, their hyperparameter searches (before evaluating any candidate; with <code>[OneStepAheadFold]</code>, `n_jobs` is ignored), <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code>; before, it used all the CPUs, or one job with a warning where `n_jobs` was ignored (intermittent refit, or <code>[backtesting_stats]</code> without refit). ([#1513](https://github.com/skforecast/skforecast/pull/1513))
 
 + The error raised by <code>[PopulationDriftDetector]</code> when `chunk_size` is not a valid pandas frequency shows the value and the error of pandas, which names the alias to use when the one given was removed (with pandas 3, `'ME'` instead of `'M'`). ([#1510](https://github.com/skforecast/skforecast/pull/1510))
@@ -2372,6 +2374,7 @@ Version 0.4 has undergone a huge code refactoring. Main changes are related to i
 
 <!-- utils -->
 [utils]: ../api/utils.md
+[check_predict_input]: ../api/utils.md#skforecast.utils.utils.check_predict_input
 [expand_index]: ../api/utils.md#skforecast.utils.utils.expand_index
 [save_forecaster]: ../api/utils.md#skforecast.utils.utils.save_forecaster
 [load_forecaster]: ../api/utils.md#skforecast.utils.utils.load_forecaster
