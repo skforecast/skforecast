@@ -34,7 +34,7 @@ The main changes in this release are:
 
     + <code>[MoiraiAdapter]</code>: `pip install uni2ts` alone downgrades numpy, scipy and pandas. Install it as explained in the [foundation models guide](../user_guides/foundation-forecasting-models.ipynb).
 
-    + <code>[ForecasterRnn]</code>: each `fit` starts from the initial weights of the model instead of continuing from the previous fit, so the results of repeated fits and of backtesting with refit change. Use `warm_start=True` to keep chaining the fits.
+    + <code>[ForecasterRnn]</code>: each `fit` starts from the initial weights of the model instead of continuing from the previous fit, so the results of repeated fits and of backtesting with refit change. Use `warm_start=True` to keep chaining the fits. Forecasters saved with previous versions still predict, but must be created again to fit them, backtest them with `initial_train_size` or call `set_params`.
 
     + <code>[reshape_series_wide_to_long]</code> and the `'long'` outputs of <code>[TimeSeriesSplitter]</code> no longer assume a daily frequency when the index has none: they infer it from the dates. Business-day data no longer gets rows of NaN on weekends, and daily data with missing dates (or fewer than 3) raises a `ValueError`: call `data.asfreq('D')` first.
 
