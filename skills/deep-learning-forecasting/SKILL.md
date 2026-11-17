@@ -36,7 +36,7 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 | `ForecasterRnn` supports only `method='conformal'` for intervals | Error when calling `predict_interval(method='bootstrapping')` | Use `method='conformal'` |
 | Pass `exog` to `create_and_compile_model` if exog is used in `fit()` / `predict()` | Architecture mismatch or failure when predicting with exog | Build the model with the same `exog` you train on |
 | Scale inputs with `transformer_series=MinMaxScaler()` | Poor convergence; RNNs are scale-sensitive | Always set a scaler on `transformer_series` |
-| `fit()` does not reset the network weights | Calling `fit()` again (or backtesting a trained forecaster) resumes training from the learned weights | Create a new `ForecasterRnn` from the untrained model (the forecaster stores a copy, so the original `model` object stays untrained) |
+| `fit()` starts from the initial weights unless `warm_start=True` | A second `fit()` trains from the start instead of resuming | Set `warm_start=True` in `ForecasterRnn` to continue from the previous fit |
 | Custom Keras models must use the layer names of `create_and_compile_model` | `ValueError: No such layer: series_input` (or `output_dense_td_layer`) when creating the forecaster | Name the inputs `series_input` / `exog_input`, the output layer `output_dense_td_layer`, and return shape `(steps, n_levels)` |
 
 ## Quick Start
@@ -247,10 +247,10 @@ forecaster.plot_history()  # Training vs validation loss per epoch
 best_epochs = int(np.argmin(forecaster.history_['val_loss'])) + 1
 ```
 
-`ForecasterRnn` stores a copy of the model it receives, and `fit()` does not
-reset the weights: calling it again resumes training from the learned weights.
-To train from scratch, create a new `ForecasterRnn` from the original `model`,
-which is still untrained.
+`ForecasterRnn` stores a copy of the model it receives, and each `fit()` starts
+from the weights that copy had when the forecaster was created, with the
+optimizer reset. Set `warm_start=True` to continue training from the previous
+fit instead.
 
 ## Backtesting
 
@@ -326,11 +326,11 @@ be negative for non-negative series; clip it at zero if needed.
 1. **Not scaling data**: RNNs are sensitive to scale. Always use `transformer_series=MinMaxScaler()`.
 2. **Fixed number of epochs without validation**: Set a maximum (50-100) and let `EarlyStopping` with `series_val` in `fit_kwargs` decide when to stop.
 3. **Wrong input shape**: The `lags` parameter in `ForecasterRnn` and `create_and_compile_model` must match.
-4. **Refit=True in backtesting**: Retraining RNNs at every fold is very slow; use `refit=False` or `refit=5`.
+4. **Refit=True in backtesting**: Retraining RNNs at every fold is very slow; use `refit=False` or `refit=5`. With `warm_start=True` and an `EarlyStopping` callback, each refit continues from the previous one and stops sooner.
 5. **No GPU**: Training is slow on CPU. Use GPU if available.
 6. **Using `predict_interval(method='bootstrapping')`**: ForecasterRnn only supports `method='conformal'`.
 7. **Forgetting `exog` in `create_and_compile_model`**: If you use exog in `fit()`/`predict()`, you must also pass `exog` when building the model so the architecture accounts for the extra input features.
-8. **Calling `fit()` again to retrain from scratch**: `fit()` resumes from the learned weights, and backtesting a trained forecaster continues its training. Create a new `ForecasterRnn` from the untrained model instead.
+8. **Expecting `fit()` to resume training**: Each `fit()` starts from the weights the model had when the forecaster was created, with the optimizer reset. Set `warm_start=True` in `ForecasterRnn` to continue from the previous fit. Backtesting with `initial_train_size` always starts from the initial weights.
 9. **Intervals from in-sample residuals only**: They are usually too narrow. Use `set_out_sample_residuals()` with predictions on a calibration set.
 10. **Non-reproducible results**: Call `keras.utils.set_random_seed()` before creating each model.
 

@@ -166,3 +166,47 @@ def test_backtesting_forecaster_multiseries_ForecasterRnn_with_exog_and_interval
     assert metrics.set_index('levels')['n_evaluated'].to_dict() == {
         '1': 18, '2': 18, 'average': 36, 'weighted_average': 36, 'pooling': 36
     }
+
+
+@pytest.mark.parametrize(
+    "warm_start",
+    [False, True],
+    ids=lambda warm_start: f"warm_start: {warm_start}",
+)
+def test_backtesting_forecaster_multiseries_ForecasterRnn_starts_from_initial_weights(warm_start):
+    """
+    Test that backtesting with `initial_train_size` starts from the initial
+    weights of the estimator, so a forecaster already fitted with the whole
+    series (test set included) gives the same predictions as an unfitted one.
+    """
+    cv = TimeSeriesFold(
+            initial_train_size = len(series) - 15,
+            steps              = 4,
+            refit              = False
+         )
+
+    predictions = []
+    for fit_before_backtesting in [False, True]:
+        forecaster = ForecasterRnn(
+            estimator  = model,
+            levels     = ["1", "2"],
+            lags       = 3,
+            fit_kwargs = {"epochs": 3, "verbose": 0},
+            warm_start = warm_start
+        )
+        if fit_before_backtesting:
+            forecaster.fit(series)
+
+        keras.utils.set_random_seed(123)
+        _, preds = backtesting_forecaster_multiseries(
+                       forecaster    = forecaster,
+                       series        = series,
+                       cv            = cv,
+                       levels        = ["1"],
+                       metric        = "mean_absolute_error",
+                       verbose       = False,
+                       show_progress = False
+                   )
+        predictions.append(preds)
+
+    pd.testing.assert_frame_equal(predictions[0], predictions[1])

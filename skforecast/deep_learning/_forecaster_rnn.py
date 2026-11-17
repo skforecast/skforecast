@@ -17,7 +17,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.exceptions import NotFittedError
-from sklearn.base import clone
 from sklearn.preprocessing import MinMaxScaler
 
 from .. import __version__
@@ -110,6 +109,21 @@ class ForecasterRnn(ForecasterBase):
         `random_state` and `dtype`. Argument `method` is passed internally to the
         function `numpy.percentile`.
         **New in version 0.22.0**
+    warm_start : bool, default False
+        Whether each call to `fit` continues training from the weights of the
+        previous fit.
+
+        - If `False`, each fit starts from the weights the estimator had when
+        the forecaster was created, with the optimizer reset. Changes made
+        directly to `forecaster.estimator` afterwards (e.g., `load_weights` or
+        `compile`) are discarded in the next fit; use `set_params` to change
+        the compile parameters.
+        - If `True`, each fit continues from the weights and the optimizer
+        state of the previous fit. Refits are faster when combined with an
+        `EarlyStopping` callback or fewer epochs. In backtesting, the first fit
+        always starts from the initial weights, and the following refits are
+        chained only when they run sequentially (`n_jobs=1`).
+        **New in version 0.28.0**
     forecaster_id : str, int, default None
         Name used as an identifier of the forecaster.
     
@@ -230,6 +244,10 @@ class ForecasterRnn(ForecasterBase):
     binner_kwargs : dict
         Additional arguments to pass to the `QuantileBinner`.
         **New in version 0.22.0**
+    warm_start : bool
+        Whether each call to `fit` continues training from the weights of the
+        previous fit.
+        **New in version 0.28.0**
     creation_date : str
         Date of creation.
     is_fitted : bool
@@ -276,10 +294,19 @@ class ForecasterRnn(ForecasterBase):
         transformer_exog: object | None = MinMaxScaler(feature_range=(0, 1)),
         fit_kwargs: dict[str, Any] | None = None,
         binner_kwargs: dict[str, Any] | None = None,
+        warm_start: bool = False,
         forecaster_id: str | int | None = None
     ) -> None:
         
         self.estimator = deepcopy(estimator)
+        self.warm_start = warm_start
+        self._initial_weights = self.estimator.get_weights()
+        # NOTE: The compile configuration is serialized here because the
+        # optimizer keeps changing during training (e.g. the learning rate
+        # reduced by a callback), and `get_compile_config` serializes it when
+        # called. It is `None` or an empty dict if the model is not compiled,
+        # depending on the version of Keras.
+        self._initial_compile_config = self.estimator.get_compile_config() or {}
         self.levels = None
         self.transformer_series = transformer_series
         self.transformer_series_ = None
@@ -976,6 +1003,8 @@ class ForecasterRnn(ForecasterBase):
 
         Additional arguments to be passed to the `fit` method of the estimator
         can be added with the `fit_kwargs` argument when initializing the forecaster.
+        If `warm_start` is `False`, training starts from the weights the estimator
+        had when the forecaster was created, with the optimizer reset.
 
         Parameters
         ----------
@@ -1026,6 +1055,9 @@ class ForecasterRnn(ForecasterBase):
         self.is_fitted = False
         self.fit_date = None
         self.keras_backend_ = keras.backend.backend()
+
+        if not self.warm_start:
+            self._reset_estimator()
             
         (
             X_train,
@@ -1968,14 +2000,36 @@ class ForecasterRnn(ForecasterBase):
 
         return fig
 
-    # TODO create testing
+    def _reset_estimator(self) -> None:
+        """
+        Reset the estimator to the weights it had when the forecaster was
+        created and compile it again from the stored compile configuration,
+        so that the optimizer starts with no state (iterations, moments,
+        learning rate changed during training).
+
+        Returns
+        -------
+        None
+
+        """
+
+        self.estimator.set_weights(self._initial_weights)
+        if self._initial_compile_config:
+            # NOTE: `safe_mode=False` allows lambda functions (e.g., as loss),
+            # as Keras does when it copies or unpickles a model. The
+            # configuration comes from the estimator of this forecaster.
+            compile_config = keras.saving.deserialize_keras_object(
+                self._initial_compile_config, safe_mode=False
+            )
+            self.estimator.compile(**compile_config)
+
     def set_params(self, params: dict) -> None:  
         """
-        Set new values to the parameters of the scikit-learn model stored in the
-        forecaster. It is important to note that all models share the same
-        configuration of parameters and hyperparameters. After calling this method, 
-        the forecaster is reset to an unfitted state. The `fit` method must be 
-        called before prediction.
+        Set new values to the parameters of the `compile` method of the Keras
+        model stored in the forecaster (for example `optimizer`, `loss` or
+        `metrics`). Parameters not included in `params` keep their current
+        value. The estimator is reset to its initial weights and the forecaster
+        to an unfitted state. The `fit` method must be called before prediction.
 
         Parameters
         ----------
@@ -1988,9 +2042,16 @@ class ForecasterRnn(ForecasterBase):
 
         """
 
-        self.estimator = clone(self.estimator)
-        self.estimator.reset_states()
-        self.estimator.compile(**params)
+        compile_config = keras.saving.deserialize_keras_object(
+            self._initial_compile_config, safe_mode=False
+        )
+        compile_config.update(params)
+        # NOTE: `_reset_estimator` compiles again from the serialized
+        # configuration, so the model does not keep an optimizer instance of
+        # `params` that may be shared (e.g., by the candidates of a search).
+        self.estimator.compile(**compile_config)
+        self._initial_compile_config = self.estimator.get_compile_config()
+        self._reset_estimator()
         self.is_fitted = False
 
     def set_fit_kwargs(self, fit_kwargs: dict) -> None:

@@ -5471,7 +5471,8 @@ def deepcopy_forecaster(
     Estimators are always replaced with unfitted clones (same
     hyperparameters, `sklearn.base.clone`) to avoid copying expensive 
     fitted state (e.g., tree structures). The Keras model of `ForecasterRnn` 
-    cannot be cloned this way, so it is copied with its weights. Additional
+    cannot be cloned this way, so it is copied and reset to the weights it had
+    when the forecaster was created, with the optimizer reset. Additional
     heavy attributes (residuals and last window) can be optionally
     included via parameters.
 
@@ -5553,6 +5554,12 @@ def deepcopy_forecaster(
 
     # Perform the (now lightweight) deep copy
     forecaster_copy = deepcopy(forecaster, memo)
+
+    # NOTE: The copy is fitted again, so it must not start from weights learned
+    # from data after the training set of the copy (e.g., a forecaster fitted
+    # with the whole series before backtesting with `warm_start=True`).
+    if type(forecaster).__name__ == 'ForecasterRnn':
+        forecaster_copy._reset_estimator()
 
     return forecaster_copy
 

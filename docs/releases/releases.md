@@ -34,12 +34,16 @@ The main changes in this release are:
 
     + <code>[MoiraiAdapter]</code>: `pip install uni2ts` alone downgrades numpy, scipy and pandas. Install it as explained in the [foundation models guide](../user_guides/foundation-forecasting-models.ipynb).
 
+    + <code>[ForecasterRnn]</code>: each `fit` starts from the initial weights of the model instead of continuing from the previous fit, so the results of repeated fits and of backtesting with refit change. Use `warm_start=True` to keep chaining the fits. Forecasters saved with previous versions still predict, but must be created again to fit them, backtest them with `initial_train_size` or call `set_params`. ([#1515](https://github.com/skforecast/skforecast/pull/1515))
+
     + <code>[reshape_series_wide_to_long]</code> and the `'long'` outputs of <code>[TimeSeriesSplitter]</code> no longer assume a daily frequency when the index has none: they infer it from the dates. Business-day data no longer gets rows of NaN on weekends, and daily data with missing dates (or fewer than 3) raises a `ValueError`: call `data.asfreq('D')` first.
 
 
 **Added**
 
 + Added pandas 3 compatibility (`pandas>=2.3, <4.0`). Predictions and metrics are the same with pandas 2.3 and 3, except in the cases described in the [pandas 2 and pandas 3](../faq/pandas-2-and-pandas-3.md) page; outputs use the default dtypes of the installed version. The backends of <code>[MoiraiAdapter]</code> and <code>[TabPFNAdapter]</code> (`gluonts`) still require pandas 2: installing them downgrades pandas to 2.3. ([#1501](https://github.com/skforecast/skforecast/pull/1501))
+
++ New argument `warm_start` in <code>[ForecasterRnn]</code>. With `True`, each `fit` continues from the weights and the optimizer state of the previous fit, which can make the refits of backtesting faster when combined with an `EarlyStopping` callback. The default, `False`, starts each fit from the initial weights. ([#1515](https://github.com/skforecast/skforecast/pull/1515))
 
 
 **Changed**
@@ -98,6 +102,10 @@ The main changes in this release are:
 + <code>[ForecasterRecursiveClassifier]</code> raised `ValueError: could not broadcast input array` in `predict_proba` when a class of `y` only appeared in its first `window_size` values (a value of the lags that is never a target), also in <code>[backtesting_forecaster]</code> with refit and `fixed_train_size=True` when a class was about to leave the training set. That class now has probability 0. ([#1514](https://github.com/skforecast/skforecast/pull/1514))
 
 + <code>[ForecasterRecursiveClassifier]</code> raised `ValueError: Length of values does not match length of index` in `get_feature_importances` with an estimator that has `coef_` (for example `LogisticRegression`, also inside `CalibratedClassifierCV`) when it was binary, or when a class of `y` only appeared in its first `window_size` values. The column `classes` now has one row per class of the estimator, and a single row, the positive class, for a binary classifier. ([#1514](https://github.com/skforecast/skforecast/pull/1514))
+
++ <code>[ForecasterRnn]</code> continued training from the weights and the optimizer state of the previous fit in every call to `fit`. The refits of <code>[backtesting_forecaster_multiseries]</code> depended on the previous folds, and a forecaster fitted with the whole series before backtesting gave optimistic metrics, because its model had already seen the test set. Each fit now starts from the initial weights (see `warm_start`). ([#1515](https://github.com/skforecast/skforecast/pull/1515))
+
++ `set_params` of <code>[ForecasterRnn]</code> always raised `TypeError: Cannot clone object`, so the hyperparameter searches (for example <code>[grid_search_forecaster_multiseries]</code>) with a `param_grid` skipped every candidate and returned no results. It now compiles the model with the given parameters, keeps those not passed (for example, the loss) and resets the weights to the initial ones. ([#1515](https://github.com/skforecast/skforecast/pull/1515))
 
 
 

@@ -178,13 +178,17 @@ ForecasterRnn(
     transformer_exog=MinMaxScaler(feature_range=(0, 1)),    # default: MinMaxScaler
     fit_kwargs=None,                 # dict, kwargs for model.fit()
     binner_kwargs=None,              # dict, kwargs for QuantileBinner (binned residuals)
+    warm_start=False,                # bool, continue from the previous fit
     forecaster_id=None,              # str | int
 )
 ```
 
 The forecaster stores a copy of `estimator` (the original object is not
-trained). `fit()` does not reset the weights: calling it again resumes training
-from the learned weights. To train from scratch, create a new `ForecasterRnn`.
+trained). Each `fit()` starts from the weights of that copy when the forecaster
+was created, with the optimizer reset. With `warm_start=True`, it continues from
+the weights and the optimizer state of the previous fit. `set_params()` compiles
+the model with new `compile` arguments (for example, `optimizer`) and resets the
+weights.
 
 ### fit_kwargs
 
