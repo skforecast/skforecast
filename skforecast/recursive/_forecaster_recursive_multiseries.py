@@ -2744,8 +2744,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 exog = exog.to_frame()
             exog = _split_long_format(exog, series_ids=levels)
 
+        prediction_index = None
         if check_inputs:
-            check_predict_input(
+            prediction_index = check_predict_input(
                 forecaster_name  = type(self).__name__,
                 steps            = steps,
                 is_fitted        = self.is_fitted,
@@ -2774,13 +2775,23 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     encoding                     = self.encoding
                 )
         
+        # NOTE: `check_predict_input` returns the index of the predictions when it
+        # creates it to check `exog`. It is reused only if `last_window` has
+        # `window_size` rows (the window stored in `fit` and the one of each
+        # backtesting fold): it is created from the whole `last_window`, and
+        # here from its last `window_size` rows, which can differ with a
+        # timezone-aware index of daily or lower frequency.
+        if len(last_window) != self.window_size:
+            prediction_index = None
+
         last_window = last_window.iloc[
             -self.window_size :, last_window.columns.get_indexer(levels)
         ].copy()
-        prediction_index = expand_index(
-                               index = last_window.index,
-                               steps = steps
-                           )
+        if prediction_index is None:
+            prediction_index = expand_index(
+                                   index = last_window.index,
+                                   steps = steps
+                               )
 
         # Calendar features depend only on the datetime index, so a single set of
         # values is computed and later shared (broadcast) across all series (levels).

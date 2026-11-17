@@ -2283,8 +2283,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         if last_window is None:
             last_window = self.last_window_
         
+        index_all_steps = None
         if check_inputs:
-            check_predict_input(
+            index_all_steps = check_predict_input(
                 forecaster_name  = type(self).__name__,
                 steps            = steps,
                 is_fitted        = self.is_fitted,
@@ -2310,6 +2311,15 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                     out_sample_residuals_by_bin_ = self.out_sample_residuals_by_bin_,
                     levels                       = [self.level],
                 )
+
+        # NOTE: `check_predict_input` returns the index of all the steps up to
+        # `max(steps)` when it creates it to check `exog`. It is reused only if
+        # `last_window` has `window_size` rows (the window stored in `fit` and
+        # the one of each backtesting fold): it is created from the whole
+        # `last_window`, and here from its last `window_size` rows, which can
+        # differ with a timezone-aware index of daily or lower frequency.
+        if len(last_window) != self.window_size:
+            index_all_steps = None
 
         last_window = last_window.iloc[
             -self.window_size:, last_window.columns.get_indexer(self.X_train_series_names_in_)
@@ -2391,18 +2401,31 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 )
 
             # NOTE: Only check dtypes if they are not the same as seen in training
-            if not exog.dtypes.to_dict() == self.exog_dtypes_out_:
+            # (compared as lists, which is faster than creating a dictionary in
+            # each call). With the same dtypes, `check_exog` only warns about
+            # missing values: it is skipped when the values, which are extracted
+            # anyway, cannot have them (integer or boolean array) or are a float
+            # array without NaN.
+            exog_values = exog.to_numpy()
+            if not (
+                exog.dtypes.tolist() == list(self.exog_dtypes_out_.values())
+                and exog.columns.tolist() == list(self.exog_dtypes_out_)
+            ):
                 check_exog_dtypes(exog=exog)
-            else:
+            elif not (
+                exog_values.dtype.kind in 'iub'
+                or (exog_values.dtype.kind == 'f' and not np.isnan(exog_values).any())
+            ):
                 check_exog(exog=exog, allow_nan=False)
 
-            exog_values = exog.to_numpy()[:max(steps), :]
+            exog_values = exog_values[:max(steps), :]
             Xs_col_names = Xs_col_names + self.X_train_exog_names_out_
 
-        index_all_steps = expand_index(
-                              index = last_window.index,
-                              steps = max(steps)
-                          )
+        if index_all_steps is None:
+            index_all_steps = expand_index(
+                                  index = last_window.index,
+                                  steps = max(steps)
+                              )
         if isinstance(last_window.index, pd.DatetimeIndex) and np.array_equal(
             steps, np.arange(min(steps), max(steps) + 1)
         ):
