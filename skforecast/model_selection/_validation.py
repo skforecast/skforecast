@@ -754,7 +754,7 @@ def _backtesting_forecaster(
     # with out-of-sample residuals, since the binner of the user's forecaster
     # is restored after each `fit()`.
     store_in_sample_residuals = True if use_in_sample_residuals else False
-    if interval is None or not use_in_sample_residuals:
+    if interval is None or need_out_sample_residuals:
         forecaster._probabilistic_mode = False
     elif use_binned_residuals:
         forecaster._probabilistic_mode = 'binned'
@@ -1748,7 +1748,7 @@ def _backtesting_forecaster_multiseries(
     # next fits.
     store_in_sample_residuals = True if use_in_sample_residuals else False
     skip_in_sample_binning = interval is None or (
-        not use_in_sample_residuals and type(forecaster).__name__ != 'ForecasterRnn'
+        need_out_sample_residuals and type(forecaster).__name__ != 'ForecasterRnn'
     )
     if skip_in_sample_binning:
         forecaster._probabilistic_mode = False
