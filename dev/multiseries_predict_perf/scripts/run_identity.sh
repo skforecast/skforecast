@@ -7,7 +7,9 @@
 #   (run `run_identity.sh base base` once before).
 # Environments: p2 p3 p3nopa, or the ones in ENVS. Batteries: ms trims, or the
 # ones in BATTERIES (ms: identity_ms.py; trims: identity_trims.py, the battery
-# of the previous block, which covers the other forecasters).
+# of the previous block, which covers the other forecasters; dtypes:
+# identity_dtypes.py, last windows with columns that are not float, only when
+# given in BATTERIES).
 source "$(dirname "$0")/env.sh"
 LABEL="$1"; select_tree "$2"; COMPARE="$3"
 mkdir -p "$OUT/identity"

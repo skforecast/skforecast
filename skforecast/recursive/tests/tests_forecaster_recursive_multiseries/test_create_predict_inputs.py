@@ -4,6 +4,7 @@ import re
 import pytest
 import numpy as np
 import pandas as pd
+from pandas.errors import InvalidIndexError
 from sklearn.exceptions import NotFittedError
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
@@ -106,6 +107,39 @@ def test_create_predict_inputs_TypeError_when_exog_MultiIndex_no_DatetimeIndex()
         forecaster._create_predict_inputs(steps=5, exog=exog_long_no_index)
 
 
+@pytest.mark.parametrize(
+    "check_inputs", [True, False], ids=lambda ci: f"check_inputs: {ci}"
+)
+@pytest.mark.parametrize(
+    "levels", [None, ['1', '2']], ids=lambda lv: f"levels: {lv}"
+)
+def test_create_predict_inputs_InvalidIndexError_when_last_window_has_duplicated_columns(
+    levels, check_inputs
+):
+    """
+    Test the pandas InvalidIndexError is raised when `last_window` has
+    duplicated column names, also when `levels` is taken from its columns
+    (`levels=None`) and without checking the inputs (as in backtesting).
+    """
+    series = {
+        '1': pd.Series(np.arange(start=0, stop=50, dtype=float)),
+        '2': pd.Series(np.arange(start=50, stop=100, dtype=float))
+    }
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5)
+    forecaster.fit(series=series)
+    last_window = pd.DataFrame(
+        np.arange(15, dtype=float).reshape(5, 3),
+        columns = ['1', '2', '1'],
+        index   = pd.RangeIndex(start=45, stop=50, step=1)
+    )
+
+    err_msg = re.escape("Reindexing only valid with uniquely valued Index objects")
+    with pytest.raises(InvalidIndexError, match = err_msg):
+        forecaster._create_predict_inputs(
+            steps=5, levels=levels, last_window=last_window, check_inputs=check_inputs
+        )
+
+
 def test_output_create_predict_inputs_when_estimator_is_LinearRegression():
     """
     Test output _create_predict_inputs when using LinearRegression as estimator.
@@ -174,7 +208,93 @@ def test_create_predict_inputs_output_when_with_transform_series():
     pd.testing.assert_index_equal(results[4], expected[4])
     assert results[5] == {}
 
-@pytest.mark.parametrize("transformer_series", 
+
+@pytest.mark.parametrize(
+    "levels, n_rows, expected_last_window",
+    [
+        (None, 5, {'1': [1000., 1001., 1002., 1003., 1004.],
+                   '2': [2000., 2001., 2002., 2003., 2004.],
+                   '3': [3000., 3001., 3002., 3003., 3004.]}),
+        (None, 8, {'1': [1003., 1004., 1005., 1006., 1007.],
+                   '2': [2003., 2004., 2005., 2006., 2007.],
+                   '3': [3003., 3004., 3005., 3006., 3007.]}),
+        (['1', '2', '3'], 5, {'1': [1000., 1001., 1002., 1003., 1004.],
+                              '2': [2000., 2001., 2002., 2003., 2004.],
+                              '3': [3000., 3001., 3002., 3003., 3004.]}),
+        (['3', '2', '1'], 8, {'3': [3003., 3004., 3005., 3006., 3007.],
+                              '2': [2003., 2004., 2005., 2006., 2007.],
+                              '1': [1003., 1004., 1005., 1006., 1007.]}),
+        (['3', '1'], 5, {'3': [3000., 3001., 3002., 3003., 3004.],
+                         '1': [1000., 1001., 1002., 1003., 1004.]}),
+        (None, None, {'1': [45., 46., 47., 48., 49.],
+                      '2': [145., 146., 147., 148., 149.],
+                      '3': [245., 246., 247., 248., 249.]}),
+        (['3', '2', '1'], None, {'3': [245., 246., 247., 248., 249.],
+                                 '2': [145., 146., 147., 148., 149.],
+                                 '1': [45., 46., 47., 48., 49.]}),
+    ],
+    ids=["levels_None", "levels_None_more_rows", "levels_columns_order",
+         "levels_other_order_more_rows", "levels_subset",
+         "stored_levels_None", "stored_levels_other_order"]
+)
+def test_create_predict_inputs_output_last_window_selection(
+    levels, n_rows, expected_last_window
+):
+    """
+    Test the last window returned by _create_predict_inputs has the last
+    `window_size` rows of `last_window` and the columns of `levels`, in their
+    order, when `levels` are its columns (in the same order or taken from them)
+    and when they are a subset or in another order. Also with the last window
+    stored in `fit` (`n_rows=None`), whose columns follow the order of the
+    series in `fit`, not the one of `levels`. The returned last window does not
+    share memory with `last_window`, which is not modified.
+    """
+    series = {
+        '1': pd.Series(np.arange(start=0, stop=50, dtype=float)),
+        '2': pd.Series(np.arange(start=100, stop=150, dtype=float)),
+        '3': pd.Series(np.arange(start=200, stop=250, dtype=float))
+    }
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=5, transformer_series=None
+    )
+    forecaster.fit(series=series)
+    last_window = None
+    if n_rows is not None:
+        last_window = pd.DataFrame(
+            {'1': 1000. + np.arange(n_rows),
+             '2': 2000. + np.arange(n_rows),
+             '3': 3000. + np.arange(n_rows)},
+            index = pd.RangeIndex(start=50 - n_rows, stop=50, step=1)
+        )
+        last_window_copy = last_window.copy()
+
+    results = forecaster._create_predict_inputs(
+        steps=3, levels=levels, last_window=last_window
+    )
+
+    expected = (
+        pd.DataFrame(
+            expected_last_window,
+            index = pd.RangeIndex(start=45, stop=50, step=1)
+        ),
+        None,
+        None,
+        list(expected_last_window.keys()),
+        pd.RangeIndex(start=50, stop=53, step=1)
+    )
+
+    pd.testing.assert_frame_equal(results[0], expected[0])
+    assert results[1] == expected[1]
+    assert results[2] == expected[2]
+    assert results[3] == expected[3]
+    pd.testing.assert_index_equal(results[4], expected[4])
+    assert results[5] == {}
+    if last_window is not None:
+        pd.testing.assert_frame_equal(last_window, last_window_copy)
+        assert not np.shares_memory(results[0].to_numpy(), last_window.to_numpy())
+
+
+@pytest.mark.parametrize("transformer_series",
                          [StandardScaler(),
                           {'l1': StandardScaler(), 'l2': StandardScaler(), '_unknown_level': StandardScaler()}], 
                          ids = lambda tr: f'transformer_series: {type(tr)}')
@@ -952,3 +1072,53 @@ def test_create_predict_inputs_when_unknown_level_and_differentiation(differenti
         assert isinstance(results[5][level], TimeSeriesDifferentiator)
     # Unknown level 'id_1005' should get a copy from '_unknown_level', not modify self.differentiator_
     assert 'id_1005' not in forecaster.differentiator_
+
+
+@pytest.mark.parametrize(
+    "extra_rows", [0, 3], ids=lambda n: f"extra_rows: {n}"
+)
+@pytest.mark.parametrize(
+    "levels", [None, ['2', '1']], ids=lambda lv: f"levels: {lv}"
+)
+@pytest.mark.parametrize(
+    "forecaster_kwargs",
+    [
+        {"estimator": LinearRegression(), "lags": 5},
+        {"estimator": LinearRegression(), "lags": 5,
+         "transformer_series": StandardScaler(copy=False)},
+        {"estimator": LinearRegression(), "lags": 5,
+         "transformer_series": StandardScaler(copy=False), "differentiation": 1},
+    ],
+    ids=["base", "in_place_transformer", "in_place_transformer_differentiation"]
+)
+def test_create_predict_inputs_does_not_modify_last_window(
+    forecaster_kwargs, levels, extra_rows
+):
+    """
+    Test _create_predict_inputs does not modify `last_window`, neither the one
+    passed by the user nor the one stored in `fit`, also with in-place
+    transformers. Its values are only read, not copied, when its columns are
+    `levels`.
+    """
+    series = {
+        '1': pd.Series(np.arange(start=0, stop=50, dtype=float)),
+        '2': pd.Series(np.arange(start=100, stop=150, dtype=float))
+    }
+    forecaster = ForecasterRecursiveMultiSeries(**forecaster_kwargs)
+    forecaster.fit(series=series)
+    n_rows = forecaster.window_size + extra_rows
+    last_window = pd.DataFrame(
+        {'1': 1000. + np.arange(n_rows), '2': 2000. + np.arange(n_rows)},
+        index = pd.RangeIndex(start=50 - n_rows, stop=50, step=1)
+    )
+    last_window_copy = last_window.copy()
+    last_window_stored_copy = {
+        k: v.copy() for k, v in forecaster.last_window_.items()
+    }
+
+    forecaster._create_predict_inputs(steps=3, levels=levels, last_window=last_window)
+    forecaster._create_predict_inputs(steps=3, levels=levels)
+
+    pd.testing.assert_frame_equal(last_window, last_window_copy)
+    for k, v in forecaster.last_window_.items():
+        pd.testing.assert_series_equal(v, last_window_stored_copy[k])

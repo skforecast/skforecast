@@ -23,6 +23,13 @@ bash run_identity.sh rama new compare     # la rama, comparada con la base
 
 Dos baterías por entorno: `identity_ms.py` (4591 casos de los forecasters de varias series, 1 a 2 minutos) e `identity_trims.py` (2911 casos del bloque anterior, que cubre el resto de forecasters). El comparador exige valores bit a bit, dtypes con su almacenamiento, atributos de índices y columnas, avisos (categoría, texto y fichero al que apuntan) y errores.
 
+Una tercera batería, `identity_dtypes.py` (312 casos, unos segundos), pasa ventanas con columnas que no son float (`category`, `string`, texto, `object`, `bool`, `boolean` e `Int64` con NA, `int`, `datetime` y mezcladas) por `predict` y por `_create_predict_inputs` sin comprobar las entradas, y anota si la ventana del usuario cambia. No va en las de siempre; se lanza con `BATTERIES`:
+
+```bash
+BATTERIES=dtypes bash run_identity.sh base base
+BATTERIES=dtypes bash run_identity.sh rama new compare
+```
+
 ## Tiempos
 
 ```bash

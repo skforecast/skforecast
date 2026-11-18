@@ -2711,6 +2711,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             X_train_series_names_in_=self.X_train_series_names_in_, levels=levels
         )
 
+        levels_are_columns = False
         if self.is_fitted:
             if last_window is None:
                 levels, last_window = preprocess_levels_self_last_window_multiseries(
@@ -2727,6 +2728,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     )
                 if input_levels_is_None and isinstance(last_window, pd.DataFrame):
                     levels = last_window.columns.to_list()
+                    levels_are_columns = True
 
         if isinstance(exog, (pd.Series, pd.DataFrame)) and isinstance(exog.index, pd.MultiIndex):
             if not isinstance(exog.index.levels[1], pd.DatetimeIndex):
@@ -2784,9 +2786,25 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         if len(last_window) != self.window_size:
             prediction_index = None
 
-        last_window = last_window.iloc[
-            -self.window_size :, last_window.columns.get_indexer(levels)
-        ].copy()
+        # NOTE: `last_window` is only read below (its values are copied into a
+        # new matrix), so it is not copied. When its columns are `levels`, in
+        # the same order and unique (the window stored in `fit`, the one of
+        # each backtesting fold or a window passed without `levels`), only its
+        # last `window_size` rows are selected. The lengths are compared first
+        # to skip converting the columns of a wide window to a list. Duplicated
+        # columns keep the selection by position, which raises the pandas error.
+        if not levels_are_columns:
+            levels_are_columns = (
+                len(levels) == len(last_window.columns)
+                and last_window.columns.tolist() == levels
+            )
+        if levels_are_columns and last_window.columns.is_unique:
+            if len(last_window) != self.window_size:
+                last_window = last_window.iloc[-self.window_size :]
+        else:
+            last_window = last_window.iloc[
+                -self.window_size :, last_window.columns.get_indexer(levels)
+            ]
         if prediction_index is None:
             prediction_index = expand_index(
                                    index = last_window.index,

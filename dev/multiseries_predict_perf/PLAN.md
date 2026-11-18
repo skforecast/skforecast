@@ -78,7 +78,7 @@ Ficheros del paquete: `skforecast/recursive/_forecaster_recursive_multiseries.py
 ### Detalles que la implementación debe respetar
 
 - **Cambio 1**: clave `(train_iloc_start, train_iloc_end)`; se aplica a la rama de diccionario y a la de tabla ancha (la de `ForecasterDirectMultiVariate`). Nota en el código: el conjunto devuelto se comparte entre folds.
-- **Cambio 2**: camino rápido solo si `len(levels)` es el número de columnas, la lista de columnas es igual a `levels` y no hay nombres duplicados (con duplicados se mantiene el camino actual, que lanza el error de siempre). La longitud se compara antes de convertir las columnas.
+- **Cambio 2**: camino rápido solo si `len(levels)` es el número de columnas, la lista de columnas es igual a `levels` y no hay nombres duplicados (con duplicados se mantiene el camino actual, que lanza el error de siempre). La longitud se compara antes de convertir las columnas. Ajustes de la revisión (2026-11-18): duplicados con `columns.is_unique` (no `set`), un indicador evita la comparación cuando `levels` sale de las columnas, y el camino de siempre tampoco copia.
 - **Cambio 3**: la comprobación de NaN no depende del orden: basta el mismo conjunto, sin duplicados, comparando antes las longitudes.
 - **Cambio 4**: primero `index.equals(prediction_index)`, después `columns.tolist() == nombres de entrenamiento`. Nada de memorizar por `id` del índice de columnas: en pandas 3 cada corte de filas crea un índice de columnas nuevo.
 - **Cambio 5**: `np.tile(exog_values.to_numpy(), (n_levels, 1))` solo si la exog no es un diccionario y hay niveles.
