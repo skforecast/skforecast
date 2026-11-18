@@ -3522,6 +3522,101 @@ def test_output_backtesting_forecaster_multiseries_ForecasterDirectMultiVariate_
     pd.testing.assert_frame_equal(expected_predictions, backtest_predictions)
 
 
+@pytest.mark.parametrize(
+    "use_in_sample_residuals, use_binned_residuals, expected_mode",
+    [
+        (True, True, 'binned'),
+        (True, False, 'no_binned'),
+        (False, True, None),
+        (False, False, None),
+    ],
+    ids=[
+        'in_sample_binned', 'in_sample_not_binned',
+        'out_sample_binned', 'out_sample_not_binned'
+    ]
+)
+@pytest.mark.parametrize(
+    "forecaster_class, forecaster_kwargs, levels, n_binnings_per_fit",
+    [
+        (
+            ForecasterRecursiveMultiSeries,
+            {'estimator': LinearRegression(), 'lags': 3, 'encoding': 'ordinal'},
+            ['l1', 'l2'],
+            3
+        ),
+        (
+            ForecasterDirectMultiVariate,
+            {'estimator': LinearRegression(), 'lags': 3, 'level': 'l1', 'steps': 5},
+            ['l1'],
+            1
+        ),
+    ],
+    ids=['ForecasterRecursiveMultiSeries', 'ForecasterDirectMultiVariate']
+)
+def test_backtesting_forecaster_multiseries_refit_bins_in_sample_residuals_only_when_used(
+    forecaster_class, forecaster_kwargs, levels, n_binnings_per_fit,
+    use_in_sample_residuals, use_binned_residuals, expected_mode, monkeypatch
+):
+    """
+    Test that the fits of backtesting_forecaster_multiseries with refit=True and
+    an interval bin the in-sample residuals, which requires predicting over the
+    training data, only when they are used (`use_in_sample_residuals=True`).
+    With out-of-sample residuals, the binners of the user's forecaster are
+    restored after each fit, so that work is skipped. There are 4 folds, so 4
+    fits. ForecasterRecursiveMultiSeries bins the residuals of each series and
+    of '_unknown_level' in each fit.
+    """
+    forecaster = forecaster_class(transformer_series=None, **forecaster_kwargs)
+    forecaster.fit(series=series_wide_dt_intermittent.iloc[:40], suppress_warnings=True)
+
+    rng = np.random.default_rng(42)
+    y_pred_residuals = {level: rng.uniform(-5, 10, size=200) for level in levels}
+    y_true_residuals = {
+        level: y_pred_residuals[level] + rng.uniform(-5, 5, size=200) for level in levels
+    }
+    forecaster.set_out_sample_residuals(
+        y_true=y_true_residuals, y_pred=y_pred_residuals
+    )
+
+    modes = []
+    original_binning = forecaster_class._binning_in_sample_residuals
+
+    def recording_binning(self, *args, **kwargs):
+        modes.append(self._probabilistic_mode)
+        return original_binning(self, *args, **kwargs)
+
+    monkeypatch.setattr(
+        forecaster_class, "_binning_in_sample_residuals", recording_binning
+    )
+
+    cv = TimeSeriesFold(
+            steps              = 5,
+            initial_train_size = 60,
+            refit              = True,
+        )
+    backtesting_forecaster_multiseries(
+        forecaster              = forecaster,
+        series                  = series_wide_dt_intermittent,
+        cv                      = cv,
+        levels                  = levels,
+        metric                  = 'mean_absolute_error',
+        add_aggregated_metric   = False,
+        interval                = [0.05, 0.95],
+        interval_method         = 'conformal',
+        use_in_sample_residuals = use_in_sample_residuals,
+        use_binned_residuals    = use_binned_residuals,
+        n_jobs                  = 1,
+        verbose                 = False,
+        show_progress           = False,
+        suppress_warnings       = True
+    )
+
+    expected_modes = (
+        [expected_mode] * 4 * n_binnings_per_fit if use_in_sample_residuals else []
+    )
+    assert modes == expected_modes
+
+
 def test_output_backtesting_forecaster_multiseries_ForecasterRecursiveMultiSeries_return_predictors_same_predictions_as_predict():
     """
     Test output of backtesting_forecaster_multiseries in ForecasterRecursiveMultiSeries 

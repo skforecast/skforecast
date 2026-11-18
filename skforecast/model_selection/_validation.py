@@ -747,8 +747,12 @@ def _backtesting_forecaster(
             for m in metric
         ]
 
+    # NOTE: `fit()` predicts over the training data to bin the in-sample
+    # residuals. It is skipped when they are not used: without `interval`, and
+    # with out-of-sample residuals, since the binner of the user's forecaster
+    # is restored after each `fit()`.
     store_in_sample_residuals = True if use_in_sample_residuals else False
-    if interval is None:
+    if interval is None or not use_in_sample_residuals:
         forecaster._probabilistic_mode = False
     elif use_binned_residuals:
         forecaster._probabilistic_mode = 'binned'
@@ -1732,8 +1736,18 @@ def _backtesting_forecaster_multiseries(
             for m in metric
         ]
 
+    # NOTE: `fit()` predicts over the training data to bin the in-sample
+    # residuals. It is skipped when they are not used: without `interval`, and
+    # with out-of-sample residuals, since the binners of the user's forecaster
+    # are restored after each `fit()`. ForecasterRnn keeps it with out-of-sample
+    # residuals: the prediction of keras advances the global random generator
+    # of the backend, so skipping it would change the weights learned in the
+    # next fits.
     store_in_sample_residuals = True if use_in_sample_residuals else False
-    if interval is None:
+    skip_in_sample_binning = interval is None or (
+        not use_in_sample_residuals and type(forecaster).__name__ != 'ForecasterRnn'
+    )
+    if skip_in_sample_binning:
         forecaster._probabilistic_mode = False
     elif use_binned_residuals:
         forecaster._probabilistic_mode = 'binned'
