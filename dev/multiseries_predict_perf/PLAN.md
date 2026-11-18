@@ -47,6 +47,47 @@ Las dos primeras líneas concentran además la pérdida que le queda a pandas 3 
 - Añadir a los tiempos cuatro casos adversos (pocos niveles con ventana ancha, exog más larga que `steps` en ancho y en diccionario, exog en diccionario desalineada) para demostrar que nada empeora.
 - Documentar en una nota del código que el conjunto de entrenamiento que devuelve la extracción de folds se comparte entre folds y no debe modificarse.
 
+## Revisión del 2026-11-18: orden y criterio para muchas series
+
+**Motivo.** El bloque A se midió y aceptó con 20 series, donde manda el coste fijo. Medido el prototipo con 600 y 1000 series y con exog mezclada (`int` y `category`, [MEDIDAS.md](MEDIDAS.md) §9):
+- gana a escala en los tres entornos (70 a 82 % con exog ancha, 27 a 48 % con diccionario o formato largo, 56 a 77 % por fold en backtesting);
+- con exog en diccionario la diferencia de pandas 3 crece (con `pyarrow` y 1000 series, de +25 a +57 % frente a pandas 2), por dos conversiones de columnas a lista por serie;
+- con exog mezclada aparece un coste por serie que el perfil con exog float no veía (unos 37 µs más por serie, sobre todo el `isna`).
+
+**Decisiones** (pendientes del visto bueno de Joaquín):
+
+1. **Orden: 4 con B4 → 7 → 6 → 8 → 5 → B2 → B3 → B1 → 11 → 3 → 9 → 10.**
+   - Primero, el coste por serie con exog en diccionario y en backtesting (4, B4, 7, 6).
+   - Después, el formato largo y la exog ancha (8, 5), y el bloque B.
+   - Al final, el coste fijo (11, 3, 9, 10).
+
+   Respeta las dependencias: el 7 va tras el 4; el 6, tras el 1 y el 4. Si el trabajo se corta, lo que pesa con muchas series ya está dentro. Sustituye el orden de los pasos 3 y 5.
+2. **Bloque B intercalado con el A.** Cada candidato se prototipa y se mide al llegar su turno, sobre la rama de ese momento. El que no pase se descarta sin bloquear a los siguientes.
+
+   Cambia la decisión del 2026-11-17, que lo ponía después de verificar el bloque A. La comprobación del bloque A en conjunto (paso 4) pasa a la verificación final.
+3. **Criterio de aceptación:**
+   - Se mantiene el corte: 3 % en dos de tres entornos, con 20 series para el bloque A y con 100 para el B.
+   - En cada cambio que quite coste por serie se añaden @scale (una ronda) y los casos `exogdt=mixed` de @core. Ninguno puede empeorar fuera del ruido, y se informa la ganancia con 600 y 1000 series.
+   - @scale no sirve para sacar un cambio que ya pasa el corte.
+   - El benchmark oficial (600 series), en la verificación final.
+4. **Identidad de cada cambio:** las cuatro baterías en los tres entornos, con `BATTERIES="ms trims dtypes exog"`. `dtypes` cubre ventanas con columnas que no son float y `exog`, exog de 17 tipos de columna.
+5. **Candidatos nuevos o replanteados:**
+   - **B4 (nuevo):** no convertir a lista las columnas de la exog de cada serie, ni en `check_predict_input` (`exog_to_check.columns.to_list()`) ni en la comparación del cambio 4.
+     - Con `pyarrow` cuestan 11,2 y 6,2 µs por serie: el 62 % de lo que pierde pandas 3 con exog mezclada en diccionario.
+     - `columns.equals` contra un índice guardado no es más barato.
+     - Se prototipa al empezar el 4, para que el 4 no añada una conversión. Si no hay una forma idéntica y más barata, el 4 va como estaba.
+   - **B3 (replanteado):**
+     - El diseño anterior (`to_numpy` de cada exog) no sirve con exog mezclada: da un array `object` y es el caso lento.
+     - A prototipar, entre otras opciones: un solo `isna` sobre la exog de todas las series y, si hay NaN, la comprobación serie a serie de hoy, para conservar los avisos y su orden.
+     - Condición: ningún caso de pandas 2 empeora, incluidos la exog float y la de pocas series.
+   - **B1 y B2:** sin cambios.
+6. **Alcance:**
+   - **El 10 se queda, al final:** es el primero que cae si el trabajo se corta. Es coste fijo (4 a 6 % con 20 series), no se nota con 1000 series, y su riesgo con los tipos de columna lo cubre la batería `dtypes`.
+   - **Fuera, el codificador de categorías:** con exog categórica, `categorical_encoder.transform` cuesta de 1,1 a 1,6 ms más por llamada, pero no por serie, y ya se evaluó un codificador propio que no se fusionó.
+   - **Fuera, el `pd.concat` con `category`:** sigue descartado.
+
+Sin cambios: un commit por cambio, con la ficha y la revisión de cada uno antes del siguiente ("Ciclo de cada cambio").
+
 ## Decisiones (con mi recomendación)
 
 1. **Cambio 6 (exog compartida por varias series): incluirlo.** Es el más invasivo (tres funciones), pero da el salto de 3,3 a 2,3 ms por fold en backtesting con exog ancha.
@@ -121,9 +162,9 @@ Descartado de entrada: sustituir el `pd.concat` de la exog por serie (10 a 15 %)
    - El diff del prototipo como referencia (`proto_patch/`).
 
    La carpeta se borra al fusionar la PR, cuando su contenido útil esté en la fila del roadmap; queda en el historial de git.
-3. **Bloque A, un cambio cada vez**, en el orden de la tabla (1 a 11, que es el de ganancia medida y respeta las dependencias: el 7 necesita el 4, y el 6 necesita el 1 y el 4). Para cada cambio sigo el ciclo de la sección "Ciclo de cada cambio" y no empiezo el siguiente hasta que el anterior tenga tu visto bueno y su commit.
+3. **Bloque A, un cambio cada vez** (orden y bloque B revisados el 2026-11-18, ver "Revisión del 2026-11-18"), en el orden de la tabla (1 a 11, que es el de ganancia medida y respeta las dependencias: el 7 necesita el 4, y el 6 necesita el 1 y el 4). Para cada cambio sigo el ciclo de la sección "Ciclo de cada cambio" y no empiezo el siguiente hasta que el anterior tenga tu visto bueno y su commit.
 4. **Cierre del bloque A**: identidad en los tres entornos y tiempos con el conjunto corto sobre el conjunto de los once commits, para comprobar que la suma reproduce el prototipo.
-5. **Bloque B**: B2, B1 y B3 en ese orden (de menor a mayor riesgo). Primero prototipo y medidas de cada uno en una copia del árbol; te las presento y decides si entra. Los que entren siguen el mismo ciclo, un commit cada uno.
+5. **Bloque B** (intercalado con el A desde la revisión del 2026-11-18): B2, B1 y B3 en ese orden (de menor a mayor riesgo). Primero prototipo y medidas de cada uno en una copia del árbol; te las presento y decides si entra. Los que entren siguen el mismo ciclo, un commit cada uno.
 6. **Tests**: van en el commit del cambio que cubren, no al final (leer antes `.claude/rules/` de tests; valores esperados fijos, API pública):
    - `utils/tests/tests_utils/test_check_predict_input.py`: ventana con las columnas en otro orden y NaN; exog compartida con NaN avisa una vez por serie; exog compartida limpia no avisa.
    - `recursive/tests/tests_forecaster_recursive_multiseries/test_predict.py` y `test_create_predict_inputs.py`: niveles en otro orden que las columnas, columnas duplicadas (mismo error), exog en diccionario alineada y desalineada, exog ancha con más filas que `steps`, objeto compartido entre series.

@@ -67,8 +67,12 @@ def series_names(n_series):
     return [f"series_{i:04d}" for i in range(n_series)]
 
 
-def make_wide(n_series, n_rows, seed=123):
-    """Series as a wide DataFrame and one exog DataFrame shared by all series."""
+def make_wide(n_series, n_rows, seed=123, exog_dtypes="float"):
+    """
+    Series as a wide DataFrame and one exog DataFrame shared by all series.
+    `exog_dtypes="mixed"`: the second exog column is an `int` (an hour) and the
+    third a `category` of integers (a day of the week), as calendar features.
+    """
     rng = np.random.default_rng(seed)
     idx = pd.date_range("2020-01-01", periods=n_rows, freq="h")
     series = pd.DataFrame(
@@ -79,6 +83,11 @@ def make_wide(n_series, n_rows, seed=123):
         rng.normal(size=(n_rows, N_EXOG)), index=idx,
         columns=[f"exog_{i}" for i in range(N_EXOG)],
     )
+    if exog_dtypes == "mixed":
+        exog["exog_1"] = idx.hour.to_numpy().astype("int64")
+        exog["exog_2"] = pd.Categorical(idx.dayofweek.to_numpy().astype("int64"))
+    elif exog_dtypes != "float":
+        raise ValueError(exog_dtypes)
     return series, exog
 
 

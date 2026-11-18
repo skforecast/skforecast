@@ -128,3 +128,39 @@ Son los candidatos del bloque B. El benchmark oficial (`benchmarks/benchmarks/be
 - No repetir el `isna` de la exog ancha cuando no se transforma: 2,7 / 3,1 / 2,8 %, por debajo del corte.
 - Construir de otra forma la columna `level` de la salida: 3 a 8 µs con 20 series (menos del 1 %); con nombres de series de tipos mezclados el dtype cambia.
 - Memorizar la conversión de columnas por objeto: en pandas 3 un corte de filas de un DataFrame crea un índice de columnas nuevo, así que nunca acierta.
+
+## 9. Prototipo con 600 y 1000 series y con exog de varios tipos (2026-11-18)
+
+`@scale` (una ronda) y los casos `exogdt=mixed` (exog con una columna float, una `int` y una `category` de enteros; 20 y 100 series en dos rondas), base → prototipo. µs por llamada en `predict`, ms por fold en backtesting; p2 / p3 sin pa / p3 con pa. Entre paréntesis, lo que tarda pandas 3 sin y con `pyarrow` frente a pandas 2 en el mismo árbol.
+
+| Caso | Base | Prototipo |
+|---|---|---|
+| `predict` 1000 series, exog ancha | 10230 / 8077 / 8900 (−21 / −13 %) | 1905 / 2064 / 2438 (+8 / +28 %) |
+| `predict` 1000 series, exog diccionario, un objeto por serie | 72104 / 77825 / 90041 (+8 / +25 %) | 39330 / 46830 / 61823 (+19 / +57 %) |
+| `predict` 600 series, exog diccionario, un objeto por serie | 43366 / 44458 / 50546 (+3 / +17 %) | 22852 / 28143 / 36790 (+23 / +61 %) |
+| `predict` 1000 series, formato largo | 118889 / 152489 / 174943 (+28 / +47 %) | 70467 / 79993 / 103624 (+14 / +47 %) |
+| `predict` 1000 series, exog ancha mezclada | 15871 / 12414 / 14679 | 2852 / 3071 / 3740 |
+| `predict` 1000 series, exog diccionario mezclada | 130769 / 125819 / 143141 | 75957 / 87392 / 98388 (+15 / +30 %) |
+| `predict` 1000 series, formato largo mezclado | 180388 / 226894 / 282820 (+26 / +57 %) | 117956 / 140941 / 160106 (+19 / +36 %) |
+| Backtesting 600 series, sin exog | 170 / 166 / 173 | 59 / 59 / 63 |
+| Backtesting 600 series, exog ancha | 260 / 282 / 308 | 68 / 66 / 70 |
+| Backtesting 600 series, exog diccionario | 260 / 287 / 286 | 105 / 115 / 127 |
+| Backtesting 600 series, exog diccionario mezclada | 328 / 353 / 372 | 146 / 152 / 161 |
+
+- El prototipo gana a escala en los tres entornos: 70 a 82 % con exog ancha, 27 a 48 % con diccionario o formato largo, 56 a 77 % por fold en backtesting. Con exog mezclada gana algo menos (30 a 43 % en diccionario y largo).
+- La exog mezclada cuesta mucho más que la float con muchas series: con 1000 series en diccionario, 72 → 131 ms en la base y 39 → 76 ms en el prototipo (unos 37 µs más por serie). Ese coste no estaba en el perfil (solo con float).
+- Con exog en diccionario, el prototipo gana menos en pandas 3 que en pandas 2 también en valor absoluto (1000 series: 32,8 ms en p2, 31,0 sin pa, 28,2 con pa), así que la diferencia relativa crece. Con `pyarrow` encaja con el `columns.tolist()` por serie del cambio 4 (unos 4,5 µs por serie con tres columnas; `columns.equals` contra un índice guardado no es más barato: 0,17 / 0,82 / 4,49 µs frente a 2,49 / 3,40 / 4,92). Sin confirmar con el perfil.
+- Identidad del prototipo con la batería de exog (`identity_exog.py`): 424 / 396 / 424 casos, 0 diferencias, ninguna exog del usuario modificada.
+
+Perfil por líneas del prototipo, `predict` con 100 series y exog en diccionario (un objeto por serie), exog mezclada frente a float (µs por llamada de más en el perfil, que infla los tiempos; p2 / p3 sin pa / p3 con pa; `EXOG_DTYPES=mixed bash run_prof.sh ...`):
+
+| Línea | De más con exog mezclada | Tipo de coste |
+|---|---|---|
+| `isna` de la exog de cada serie (`check_predict_input`) | 2769 / 2331 / 2446 (15 → 43 µs por serie en p2) | por serie |
+| `pd.concat` de la exog de todas las series | 840 / 677 / 644 | por serie |
+| `categorical_encoder.transform` y la selección y asignación de sus columnas | 1154 / 1124 / 1567 | por llamada (crece con las filas) |
+| comparar la primera fecha de cada exog | 161 / 46 / 0 | por serie |
+
+En formato largo se suma `data_sorted.iloc[start:end]` del corte de cada serie (+632 / +824 / +823). Con la exog mezclada, el `isna` por serie es el mayor coste que queda: `DataFrame.isna` trabaja bloque a bloque (float, `int`, `category`) y `to_numpy` de una tabla de varios dtypes da un array `object`.
+
+Dónde pierde pandas 3 con `pyarrow` en ese caso (prototipo, exog mezclada, +2612 µs frente a p2 en el perfil): `exog_to_check.columns.to_list()` de `check_predict_input` (0,7 → 11,2 µs por serie, el 40 %), el `columns.tolist()` que añade el cambio 4 (0,5 → 6,2 µs por serie, el 22 %), el `isna` (+518) y la primera fecha (+270). Sin `pyarrow`, pandas 3 empata con pandas 2 (+26).

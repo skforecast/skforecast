@@ -25,20 +25,24 @@ Dos baterías por entorno: `identity_ms.py` (4591 casos de los forecasters de va
 
 Una tercera batería, `identity_dtypes.py` (312 casos, unos segundos), pasa ventanas con columnas que no son float (`category`, `string`, texto, `object`, `bool`, `boolean` e `Int64` con NA, `int`, `datetime` y mezcladas) por `predict` y por `_create_predict_inputs` sin comprobar las entradas, y anota si la ventana del usuario cambia. No va en las de siempre; se lanza con `BATTERIES`:
 
+Una cuarta, `identity_exog.py` (424 casos, 396 sin `pyarrow`, unos segundos), hace lo mismo con la exog: `int`, `Int64`, `Float64` y `boolean` con y sin NA, dtypes de `pyarrow`, `bool`, `category` de enteros y de texto, texto, `object`, `datetime`, varias columnas de tipos distintos y un diccionario cuyas series dan las filas a predecir con dtypes distintos. Pasa cada una por `predict` (ancha, diccionario con un objeto compartido o uno por serie, con más filas que `steps`, con las columnas en otro orden, sin la exog de alguna serie y formato largo; ventana dada y guardada) y por backtesting, con Ridge y LightGBM, y anota si la exog del usuario cambia. Con NA en las filas a predecir todos los casos fallan en la base (pandas no convierte su NA a float): cubren los errores.
+
 ```bash
-BATTERIES=dtypes bash run_identity.sh base base
-BATTERIES=dtypes bash run_identity.sh rama new compare
+BATTERIES="dtypes exog" bash run_identity.sh base base
+BATTERIES="dtypes exog" bash run_identity.sh rama new compare
 ```
 
 ## Tiempos
 
 ```bash
-bash run_bench.sh <etiqueta> 2 "base new" @core      # 24 casos, 20 y 100 series
+bash run_bench.sh <etiqueta> 2 "base new" @core      # 34 casos, 20 y 100 series
 bash run_bench.sh <etiqueta> 2 "base new" @adverse   # 12 casos que no deben empeorar
 bash run_bench.sh <etiqueta> 1 "base new" @scale     # 600 y 1000 series
 python agg_ms.py "$MS_WORK/out/<etiqueta>" --gain    # base frente a rama
 python agg_ms.py "$MS_WORK/out/<etiqueta>"           # tres entornos, coste fijo y por serie
 ```
+
+Los casos con `exogdt=mixed` usan una exog con una columna float, una `int` y una `category` de enteros (variables de calendario), en lugar de tres float; están en `@core` (20 y 100 series) y en `@scale` (600 y 1000).
 
 En lugar de un conjunto se puede pasar una expresión regular de nombres de casos (`python bench_ms.py --list` los enumera). `bench_mv.py` mide `ForecasterDirectMultiVariate`.
 

@@ -7,6 +7,8 @@ pandas runs at full speed.
 
 Usage: python lineprof.py <out.json> <operation> <n_series> <exog_kind> [fmt] [steps]
   operation: predict | predict_stored | backtesting | fit | create_train_X_y
+Env: EXOG_DTYPES=mixed for an exog with an `int` and a `category` column (see
+`make_wide`) in predict, backtesting, fit and create_train_X_y.
 """
 import common  # noqa: F401  (first: blocks pyarrow, pins the process)
 
@@ -27,6 +29,7 @@ TOOL = mon.PROFILER_ID
 E = mon.events
 ROOT = skforecast.__path__[0]
 
+EXOG_DTYPES = os.environ.get("EXOG_DTYPES", "float")
 hits = {}    # (file, line) -> times executed
 own = {}     # (file, line) -> seconds, skforecast callees excluded
 incl = {}    # (file, line) -> seconds, everything included
@@ -127,7 +130,7 @@ def build(operation, n_series, exog_kind, fmt, steps):
     T = 400
     if operation in ("predict", "predict_stored"):
         n_calls = 100 if n_series <= 100 else 10
-        series, exog = make_wide(n_series, T + n_calls + steps)
+        series, exog = make_wide(n_series, T + n_calls + steps, exog_dtypes=EXOG_DTYPES)
         names = list(series.columns)
         f = make_forecaster()
         f.fit(series=series.iloc[:T], exog=None if exog_kind == "none" else exog.iloc[:T])
@@ -172,7 +175,7 @@ def build(operation, n_series, exog_kind, fmt, steps):
         return fn, n_calls
     if operation == "backtesting":
         n_folds = 50 if n_series <= 100 else 10
-        series, exog = make_wide(n_series, T + n_folds * steps)
+        series, exog = make_wide(n_series, T + n_folds * steps, exog_dtypes=EXOG_DTYPES)
         series, exog = to_format(series, None if exog_kind == "none" else exog, fmt)
         cv = TimeSeriesFold(steps=steps, initial_train_size=T, refit=False)
         kw = dict(
@@ -182,7 +185,7 @@ def build(operation, n_series, exog_kind, fmt, steps):
         )
         return (lambda: backtesting_forecaster_multiseries(**kw)), n_folds
     if operation in ("fit", "create_train_X_y"):
-        series, exog = make_wide(n_series, 500)
+        series, exog = make_wide(n_series, 500, exog_dtypes=EXOG_DTYPES)
         series, exog = to_format(series, None if exog_kind == "none" else exog, fmt)
         f = make_forecaster()
         if operation == "fit":

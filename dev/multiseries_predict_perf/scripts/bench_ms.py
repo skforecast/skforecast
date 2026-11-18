@@ -32,16 +32,20 @@ def reps_of(n_series):
 # predict
 # ----------------------------------------------------------------------------
 def predict_case(n_series, exog_kind, steps=1, est="linear", lw="given",
-                 encoding="ordinal", n_levels=None, extra_rows=0, shift=0):
+                 encoding="ordinal", n_levels=None, extra_rows=0, shift=0,
+                 exog_dtypes="float"):
     """
     `n_levels`: predict only the first `n_levels` series (the window keeps all
     the columns). `extra_rows`: exog with more rows than steps. `shift`: exog
     that starts `shift` steps late (it has to be aligned by date).
+    `exog_dtypes`: see `make_wide`.
     """
     n_calls = {3: 200, 20: 200, 100: 100}.get(n_series, 20)
     if est == "lgbm":
         n_calls = min(n_calls, 50)
-    series, exog = make_wide(n_series, T + n_calls + steps + extra_rows + shift)
+    series, exog = make_wide(
+        n_series, T + n_calls + steps + extra_rows + shift, exog_dtypes=exog_dtypes
+    )
     names = list(series.columns)
     levels = None if n_levels is None else names[:n_levels]
     f = make_forecaster(est, encoding)
@@ -83,11 +87,12 @@ def _fit_timed(self, *args, **kwargs):
         _fit_seconds.append(time.perf_counter() - t0)
 
 
-def backtesting_case(n_series, fmt, with_exog, steps=1, est="linear", refit=False):
+def backtesting_case(n_series, fmt, with_exog, steps=1, est="linear", refit=False,
+                     exog_dtypes="float"):
     n_folds = {1: 100, 24: 10}[steps] if n_series <= 100 else {1: 20, 24: 5}[steps]
     if refit:
         n_folds = 20
-    series, exog = make_wide(n_series, T + n_folds * steps)
+    series, exog = make_wide(n_series, T + n_folds * steps, exog_dtypes=exog_dtypes)
     series, exog = to_format(series, exog if with_exog else None, fmt)
     cv = TimeSeriesFold(steps=steps, initial_train_size=T, refit=refit)
     kw = dict(
@@ -221,6 +226,18 @@ for fmt, ex in (("wide", "none"), ("wide", "wide"), ("dict", "dict")):
         lambda fmt=fmt, ex=ex: backtesting_case(600, fmt, ex != "none")
     )
 
+# Exog with an `int` and a `category` column (calendar features), not only float.
+for n in (20, 100, 600, 1000):
+    for ek in ("wide", "dictown", "long"):
+        CASES[f"predict|n={n}|exog={ek}|steps=1|exogdt=mixed"] = (
+            lambda n=n, ek=ek: predict_case(n, ek, exog_dtypes="mixed")
+        )
+for n in (20, 100, 600):
+    for fmt in ("wide", "dict"):
+        CASES[f"backtesting|n={n}|fmt={fmt}|exog={fmt}|steps=1|exogdt=mixed"] = (
+            lambda n=n, fmt=fmt: backtesting_case(n, fmt, True, exog_dtypes="mixed")
+        )
+
 # Sets of cases: `@core` for every change, `@adverse` to show that nothing gets
 # slower, `@scale` (one round) for many series.
 SETS = {
@@ -239,6 +256,12 @@ SETS = {
         "fit|n=100|fmt=wide|exog=wide", "fit|n=100|fmt=long|exog=long",
         "create_train_X_y|n=100|fmt=wide|exog=wide",
         "create_train_X_y|n=100|fmt=long|exog=long",
+    ] + [
+        f"predict|n={n}|exog={ek}|steps=1|exogdt=mixed"
+        for n in (20, 100) for ek in ("wide", "dictown", "long")
+    ] + [
+        f"backtesting|n={n}|fmt={fmt}|exog={fmt}|steps=1|exogdt=mixed"
+        for n in (20, 100) for fmt in ("wide", "dict")
     ],
     "adverse": [
         "predict|n=100|exog=none|steps=1|levels=5", "predict|n=1000|exog=none|steps=1|levels=5",
@@ -256,6 +279,12 @@ SETS = {
     ] + [
         f"backtesting|n=600|fmt={fmt}|exog={ex}|steps=1"
         for fmt, ex in (("wide", "none"), ("wide", "wide"), ("dict", "dict"))
+    ] + [
+        f"predict|n={n}|exog={ek}|steps=1|exogdt=mixed"
+        for n in (600, 1000) for ek in ("wide", "dictown", "long")
+    ] + [
+        f"backtesting|n=600|fmt={fmt}|exog={fmt}|steps=1|exogdt=mixed"
+        for fmt in ("wide", "dict")
     ],
 }
 for _names in SETS.values():

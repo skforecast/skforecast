@@ -5,6 +5,7 @@
 # Usage: run_prof.sh <tag> <tree: base|new> <operation> <n_series> <exog_kind> [fmt] [steps]
 #   operation: predict | predict_stored | backtesting | fit | create_train_X_y |
 #              predict_mv | predict_mv_stored
+# With EXOG_DTYPES=mixed the exog has an `int` and a `category` column.
 # With PIN=1 the process is pinned (for the timed profiles); without it only
 # the number of times every line runs is reliable.
 # Then: python linediff.py $MS_WORK/out/<tag> <case>      (pandas 2 vs pandas 3)
