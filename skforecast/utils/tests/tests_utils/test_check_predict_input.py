@@ -1072,6 +1072,59 @@ def test_check_predict_input_MissingExogWarning_when_exog_is_DataFrame_without_c
         )
 
 
+@pytest.mark.parametrize(
+    "columns, exog_names_in_, missing",
+    [
+        (pd.Index(['col1', 'col2']), ['col1', 'col3'], "{'col3'}"),
+        (pd.Index(['col1', 'col2'], dtype=object), ['col1', 'col3'], "{'col3'}"),
+        (pd.Index(['col1', 'col2'], dtype='string'), ['col1', 'col3'], "{'col3'}"),
+        (pd.CategoricalIndex(['col1', 'col2']), ['col1', 'col3'], "{'col3'}"),
+        (pd.Index([1, 2]), [1, 3], "{3}"),
+        (pd.Index([1.0, 2.0]), [1, 2], None),
+    ],
+    ids=['default', 'object', 'string', 'category', 'int', 'float_equal_to_int']
+)
+def test_check_predict_input_MissingExogWarning_when_exog_dict_DataFrame_columns_of_any_index_type(
+    columns, exog_names_in_, missing
+):
+    """
+    Check the columns of each DataFrame of a dict `exog` against `exog_names_in_`
+    when Forecaster multi series, for columns of any Index type (they are
+    compared as a set without converting them to a list).
+    """
+    exog = pd.DataFrame(
+        np.arange(10).reshape(5, 2), columns=columns,
+        index=pd.date_range(start='11/30/2018', periods=5, freq=freq)
+    )
+    kwargs = dict(
+        forecaster_name  = 'ForecasterRecursiveMultiSeries',
+        steps            = 2,
+        is_fitted        = True,
+        exog_in_         = True,
+        index_type_      = pd.DatetimeIndex,
+        index_freq_      = freq,
+        window_size      = 5,
+        last_window      = pd.DataFrame(np.arange(10), columns=['l1'], index=pd.date_range(start='1/1/2018', periods=10, freq=freq)),
+        last_window_exog = None,
+        exog             = {'l1': exog},
+        exog_names_in_   = exog_names_in_,
+        max_step         = None,
+        levels           = ['l1'],
+        series_names_in_ = ['l1', 'l2']
+    )
+
+    if missing is None:
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', category=MissingExogWarning)
+            check_predict_input(**kwargs)
+    else:
+        warn_msg = re.escape(
+            f"{missing} not present in `exog` for series 'l1'. All values will be NaN."
+        )
+        with pytest.warns(MissingExogWarning, match = warn_msg):
+            check_predict_input(**kwargs)
+
+
 def test_check_predict_input_ValueError_when_exog_is_DataFrame_without_columns_in_exog_names_in_():
     """
     Raise ValueError when there are missing columns in `exog`.

@@ -88,6 +88,20 @@ Las dos primeras líneas concentran además la pérdida que le queda a pandas 3 
 
 Sin cambios: un commit por cambio, con la ficha y la revisión de cada uno antes del siguiente ("Ciclo de cada cambio").
 
+## Revisión del 2026-11-18 (tarde): alcance recortado, pandas 3 primero y cambio 4
+
+Aprobada por Joaquín el 2026-11-18. Sustituye al orden y a los candidatos de la revisión anterior.
+
+1. **Criterio: decide pandas 3.** Es lo que van a usar casi todos los usuarios. Un cambio entra si gana al menos un 3 % en pandas 3 (con o sin `pyarrow`). Pandas 2 puede perder algo frente al commit anterior si pandas 3 gana claramente (B4: hasta un 4 %, en el borde del ruido), pero nunca frente a la base. Las cifras se dan primero en pandas 3.
+2. **Alcance.** Se queda lo que escala con el número de series y lo que gana claramente con 20:
+   - **Se implementan, en este orden:** 4 con B4 → 6 → 8 → 5 → 3.
+   - **El 7 se decide después del 4:** es coste fijo y el 4 necesita ahora las columnas de `empty_exog`, así que su ganancia baja. Entra solo si queda en unas líneas y pasa el corte.
+   - **Descartados:** 9, 10 y 11 (del 3 al 6 % con 20 series, coste fijo que no se nota con muchas series; el 10, además, arriesga con los tipos de columna de la ventana) y B2 (coste pequeño).
+   - **Aparcados para otra PR o PERF-predict-numpy:** B3 (el `isna` de la exog mezclada es el mayor coste por serie que queda, pero hay que rediseñarlo para conservar los avisos y su orden) y B1 (sin prototipar, en la línea del rediseño sobre arrays).
+3. **Cambio 4: `identical`, no `equals` ni listas.** `NDFrame.reindex` devuelve una copia del objeto del usuario, con sus etiquetas, solo si índice y columnas son `identical` a los de destino (valores, tipo, dtype, `name` y, en fechas, `freq`). Si solo son `equals`, pone las etiquetas de destino. La comparación del plan (`index.equals` y `columns.tolist() ==`) no es idéntica: lanza `TypeError` con nombres `pd.NA` y deja pasar etiquetas solo iguales (`numpy.str_` frente a `str`, la misma hora en dos zonas), que scikit-learn trata distinto (otros avisos y, con `ColumnTransformer`, otras predicciones). Tampoco lo es `equals` con las etiquetas de entrenamiento puestas tras el `concat`. Medidas en [MEDIDAS.md](MEDIDAS.md) §10.
+4. **B4 entra con el 4.** En `check_predict_input` se itera el índice de columnas en vez de convertirlo a lista (solo cuando la exog se alinea por índice, donde las columnas solo se usan como conjunto). En la comparación del cambio 4 ya no hay conversión. `columns.equals` contra un índice guardado, `to_numpy` y la comparación elemento a elemento no ganan en ningún entorno.
+5. **Nueva batería de identidad `labels`** (`scripts/identity_labels.py`), con nombres de columna que no son texto o que solo son iguales entre `fit` y `predict`. Las baterías de cada cambio son desde ahora `ms trims dtypes exog labels`.
+
 ## Decisiones (con mi recomendación)
 
 1. **Cambio 6 (exog compartida por varias series): incluirlo.** Es el más invasivo (tres funciones), pero da el salto de 3,3 a 2,3 ms por fold en backtesting con exog ancha.
@@ -121,7 +135,7 @@ Ficheros del paquete: `skforecast/recursive/_forecaster_recursive_multiseries.py
 - **Cambio 1**: clave `(train_iloc_start, train_iloc_end)`; se aplica a la rama de diccionario y a la de tabla ancha (la de `ForecasterDirectMultiVariate`). Nota en el código: el conjunto devuelto se comparte entre folds.
 - **Cambio 2**: camino rápido solo si `len(levels)` es el número de columnas, la lista de columnas es igual a `levels` y no hay nombres duplicados (con duplicados se mantiene el camino actual, que lanza el error de siempre). La longitud se compara antes de convertir las columnas. Ajustes de la revisión (2026-11-18): duplicados con `columns.is_unique` (no `set`), un indicador evita la comparación cuando `levels` sale de las columnas, y el camino de siempre tampoco copia.
 - **Cambio 3**: la comprobación de NaN no depende del orden: basta el mismo conjunto, sin duplicados, comparando antes las longitudes.
-- **Cambio 4**: primero `index.equals(prediction_index)`, después `columns.tolist() == nombres de entrenamiento`. Nada de memorizar por `id` del índice de columnas: en pandas 3 cada corte de filas crea un índice de columnas nuevo.
+- **Cambio 4** (corregido el 2026-11-18): `exog_values.index.identical(prediction_index)` y después `exog_values.columns.identical(empty_exog.columns)`, el mismo predicado y en el mismo orden que el atajo de `NDFrame.reindex`. Ni `equals` ni `columns.tolist() ==`: no son idénticos (ver la revisión de la tarde del 2026-11-18). Nada de memorizar por `id` del índice de columnas: en pandas 3 cada corte de filas crea un índice de columnas nuevo.
 - **Cambio 5**: `np.tile(exog_values.to_numpy(), (n_levels, 1))` solo si la exog no es un diccionario y hay niveles.
 - **Cambio 6**: `_check_exog_alignment` pasa a devolver si ha avisado; en `check_predict_input` solo se salta un objeto ya comprobado sin avisos ni errores.
 - **Cambio 8**: `data_sorted.index = pd.RangeIndex(len(positions))` tras el `iloc[positions]`; el índice de cada serie se asigna después, como ahora.

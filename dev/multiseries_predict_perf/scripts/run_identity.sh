@@ -9,8 +9,10 @@
 # ones in BATTERIES (ms: identity_ms.py; trims: identity_trims.py, the battery
 # of the previous block, which covers the other forecasters; dtypes:
 # identity_dtypes.py, last windows with columns that are not float; exog:
-# identity_exog.py, exog with columns that are not float; the last two only
-# when given in BATTERIES).
+# identity_exog.py, exog with columns that are not float; labels:
+# identity_labels.py, dict exog with column names that are not text or that
+# are only equal in fit and predict; the last three only when given in
+# BATTERIES).
 source "$(dirname "$0")/env.sh"
 LABEL="$1"; select_tree "$2"; COMPARE="$3"
 mkdir -p "$OUT/identity"

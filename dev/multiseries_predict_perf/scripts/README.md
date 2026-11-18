@@ -27,22 +27,28 @@ Una tercera batería, `identity_dtypes.py` (312 casos, unos segundos), pasa vent
 
 Una cuarta, `identity_exog.py` (424 casos, 396 sin `pyarrow`, unos segundos), hace lo mismo con la exog: `int`, `Int64`, `Float64` y `boolean` con y sin NA, dtypes de `pyarrow`, `bool`, `category` de enteros y de texto, texto, `object`, `datetime`, varias columnas de tipos distintos y un diccionario cuyas series dan las filas a predecir con dtypes distintos. Pasa cada una por `predict` (ancha, diccionario con un objeto compartido o uno por serie, con más filas que `steps`, con las columnas en otro orden, sin la exog de alguna serie y formato largo; ventana dada y guardada) y por backtesting, con Ridge y LightGBM, y anota si la exog del usuario cambia. Con NA en las filas a predecir todos los casos fallan en la base (pandas no convierte su NA a float): cubren los errores.
 
+Una quinta, `identity_labels.py` (unos 3500 casos, varios minutos), pasa una exog en diccionario con nombres de columna que no son texto (enteros, float, NaN, `None`, booleanos mezclados, `numpy.str_`, fechas con zona, tuplas en un `MultiIndex`), en índices de columnas de varios tipos (`object`, `category`, `string` con y sin `pyarrow`, `str` con `pyarrow`), con los mismos nombres en `fit` y `predict` o solo iguales (1 y 1.0, `True` y 1, `numpy.str_` y `str`, la misma hora en dos zonas), y exog con el índice con nombre o sin frecuencia. Cubre el cambio 4 (`reindex_like` solo conserva las etiquetas del usuario cuando los dos ejes son `identical`). Ordena los nombres de los conjuntos que imprimen algunos avisos, porque con nombres NaN su orden depende de las direcciones de memoria.
+
+Desde el cambio 4, cada cambio pasa las cinco:
+
 ```bash
-BATTERIES="dtypes exog" bash run_identity.sh base base
-BATTERIES="dtypes exog" bash run_identity.sh rama new compare
+BATTERIES="dtypes exog labels" bash run_identity.sh base base      # una vez
+BATTERIES="ms trims dtypes exog labels" bash run_identity.sh rama new compare
 ```
 
 ## Tiempos
 
 ```bash
 bash run_bench.sh <etiqueta> 2 "base new" @core      # 34 casos, 20 y 100 series
-bash run_bench.sh <etiqueta> 2 "base new" @adverse   # 12 casos que no deben empeorar
+bash run_bench.sh <etiqueta> 2 "base new" @adverse   # 14 casos que no deben empeorar
 bash run_bench.sh <etiqueta> 1 "base new" @scale     # 600 y 1000 series
 python agg_ms.py "$MS_WORK/out/<etiqueta>" --gain    # base frente a rama
 python agg_ms.py "$MS_WORK/out/<etiqueta>"           # tres entornos, coste fijo y por serie
 ```
 
 Los casos con `exogdt=mixed` usan una exog con una columna float, una `int` y una `category` de enteros (variables de calendario), en lugar de tres float; están en `@core` (20 y 100 series) y en `@scale` (600 y 1000).
+
+El árbol `base` es el de la PR (`cb03fbe96`). Para aislar la ganancia de un cambio, se compara con el árbol del commit anterior: `git archive <commit> skforecast | tar -x -C "$MS_WORK/base_<commit>"` y `MS_BASE_TREE="$MS_WORK/base_<commit>"` al lanzar `run_bench.sh`.
 
 En lugar de un conjunto se puede pasar una expresión regular de nombres de casos (`python bench_ms.py --list` los enumera). `bench_mv.py` mide `ForecasterDirectMultiVariate`.
 

@@ -32,20 +32,24 @@ def reps_of(n_series):
 # predict
 # ----------------------------------------------------------------------------
 def predict_case(n_series, exog_kind, steps=1, est="linear", lw="given",
-                 encoding="ordinal", n_levels=None, extra_rows=0, shift=0,
-                 exog_dtypes="float"):
+                 encoding="ordinal", n_levels=None, extra_rows=0, early=0,
+                 index_name=None, exog_dtypes="float"):
     """
     `n_levels`: predict only the first `n_levels` series (the window keeps all
-    the columns). `extra_rows`: exog with more rows than steps. `shift`: exog
-    that starts `shift` steps late (it has to be aligned by date).
-    `exog_dtypes`: see `make_wide`.
+    the columns). `extra_rows`: exog with more rows than steps. `early`: exog
+    that starts `early` steps before the first predicted date and still has
+    all the predicted dates (it has to be aligned by date). `index_name`: name
+    of the exog index (the index of the predictions has none, so the exog is
+    aligned). `exog_dtypes`: see `make_wide`.
     """
     n_calls = {3: 200, 20: 200, 100: 100}.get(n_series, 20)
     if est == "lgbm":
         n_calls = min(n_calls, 50)
     series, exog = make_wide(
-        n_series, T + n_calls + steps + extra_rows + shift, exog_dtypes=exog_dtypes
+        n_series, T + n_calls + steps + extra_rows, exog_dtypes=exog_dtypes
     )
+    if index_name is not None:
+        exog = exog.rename_axis(index_name)
     names = list(series.columns)
     levels = None if n_levels is None else names[:n_levels]
     f = make_forecaster(est, encoding)
@@ -54,7 +58,7 @@ def predict_case(n_series, exog_kind, steps=1, est="linear", lw="given",
         inputs = [
             (series.iloc[T + i - LAGS: T + i],
              exog_for_predict(
-                 exog.iloc[T + i + shift: T + i + shift + steps + extra_rows], names, exog_kind
+                 exog.iloc[T + i - early: T + i + steps + extra_rows], names, exog_kind
              ))
             for i in range(n_calls)
         ]
@@ -218,8 +222,11 @@ for n in (20, 100):
     CASES[f"predict|n={n}|exog=dictown|steps=1|extra=10"] = (
         lambda n=n: predict_case(n, "dictown", extra_rows=10)
     )
-    CASES[f"predict|n={n}|exog=dictown|steps=1|shift=1"] = (
-        lambda n=n: predict_case(n, "dictown", shift=1)
+    CASES[f"predict|n={n}|exog=dictown|steps=1|early=1"] = (
+        lambda n=n: predict_case(n, "dictown", early=1)
+    )
+    CASES[f"predict|n={n}|exog=dictown|steps=1|named"] = (
+        lambda n=n: predict_case(n, "dictown", index_name="date")
     )
 for fmt, ex in (("wide", "none"), ("wide", "wide"), ("dict", "dict")):
     CASES[f"backtesting|n=600|fmt={fmt}|exog={ex}|steps=1"] = (
@@ -268,7 +275,10 @@ SETS = {
     ] + [
         f"predict|n={n}|exog={ek}|steps=1|{tag}"
         for n in (20, 100)
-        for ek, tag in (("wide", "extra=10"), ("dictown", "extra=10"), ("dictown", "shift=1"))
+        for ek, tag in (
+            ("wide", "extra=10"), ("dictown", "extra=10"), ("dictown", "early=1"),
+            ("dictown", "named"),
+        )
     ] + [
         f"backtesting|n={n}|fmt={fmt}|exog={ex}|steps=1|refit"
         for n in (20, 100) for fmt, ex in (("wide", "none"), ("dict", "dict"))

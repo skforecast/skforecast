@@ -1720,7 +1720,15 @@ def check_predict_input(
 
             # Check name/columns are in exog_names_in_
             if isinstance(exog_to_check, pd.DataFrame):
-                exog_columns = exog_to_check.columns.to_list()
+                # NOTE: When `exog` is aligned by index, its columns are only
+                # compared with `exog_names_in_` as a set, so the Index is used
+                # as is: converting it to a list is slower with the text
+                # columns of pandas >= 3 backed by `pyarrow`. The rest of
+                # forecasters keep the list, which the error message shows.
+                if align_by_index:
+                    exog_columns = exog_to_check.columns
+                else:
+                    exog_columns = exog_to_check.columns.to_list()
             else:
                 if exog_to_check.name is None:
                     raise ValueError(

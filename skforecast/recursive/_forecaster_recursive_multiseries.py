@@ -2946,7 +2946,29 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     if isinstance(exog_values, pd.Series):
                         exog_values = exog_values.to_frame()
 
-                    exog_values = exog_values.reindex_like(empty_exog)
+                    # NOTE: `exog_values` is only aligned when needed. If its
+                    # index is the index of the predictions and its columns are
+                    # the ones seen in training, `reindex_like` would just return
+                    # a copy, which is not needed because `exog_values` is only
+                    # read below (`pd.concat` creates a new DataFrame).
+                    # The check is `identical` (same values, dtype, name and,
+                    # for dates, frequency), the one pandas uses to return the
+                    # copy. With `equals`, labels that are equal but of another
+                    # type (for example `numpy.str_` and `str`) would be kept,
+                    # while `reindex_like` replaces them with the training ones,
+                    # and transformers and encoders treat them differently.
+                    # The names of the indexes are compared first, since the
+                    # index of the predictions has none: an `exog` with a named
+                    # index (for example read from a file) goes straight to
+                    # `reindex_like` without comparing its dates. Sending more
+                    # cases to `reindex_like` never changes the result, it is
+                    # the usual path.
+                    if not (
+                        exog_values.index.name is prediction_index.name
+                        and exog_values.index.identical(prediction_index)
+                        and exog_values.columns.identical(empty_exog.columns)
+                    ):
+                        exog_values = exog_values.reindex_like(empty_exog)
                 else:
                     exog_values = empty_exog.copy()
             

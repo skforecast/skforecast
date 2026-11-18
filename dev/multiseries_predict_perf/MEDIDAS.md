@@ -164,3 +164,43 @@ Perfil por líneas del prototipo, `predict` con 100 series y exog en diccionario
 En formato largo se suma `data_sorted.iloc[start:end]` del corte de cada serie (+632 / +824 / +823). Con la exog mezclada, el `isna` por serie es el mayor coste que queda: `DataFrame.isna` trabaja bloque a bloque (float, `int`, `category`) y `to_numpy` de una tabla de varios dtypes da un array `object`.
 
 Dónde pierde pandas 3 con `pyarrow` en ese caso (prototipo, exog mezclada, +2612 µs frente a p2 en el perfil): `exog_to_check.columns.to_list()` de `check_predict_input` (0,7 → 11,2 µs por serie, el 40 %), el `columns.tolist()` que añade el cambio 4 (0,5 → 6,2 µs por serie, el 22 %), el `isna` (+518) y la primera fecha (+270). Sin `pyarrow`, pandas 3 empata con pandas 2 (+26).
+
+## 10. Cambio 4 y B4: variantes (2026-11-18)
+
+Medido en una copia del árbol de la rama (`e31e3e843`) con las variantes conmutables por variable de entorno; p3 con pa / p3 sin pa / p2.
+
+**Coste por serie** (µs, exog de tres columnas mezcladas y 10 filas, mínimo de 7 × 20000):
+
+| Operación | p3 con pa | p3 sin pa | p2 |
+|---|---|---|---|
+| `reindex_like` de hoy | 29,4 | 30,0 | 35,0 |
+| `index.identical` + `columns.identical` (cambio 4) | 8,8 | 9,5 | 10,1 |
+| `index.equals` + `columns.tolist() ==` (plan, no idéntico) | 6,2 | 2,1 | 2,9 |
+| `columns.to_list()` | 4,6 | 0,9 | 0,2 |
+| `list(columns)` (iterar) | 4,3 | 1,2 | 0,7 |
+| `columns.equals` contra un índice guardado | 2,9 | 3,4 | 2,5 |
+
+**Identidad de las variantes.** Sonda de 6920 casos (hoy la batería `labels`): nombres de columna que no son texto, en índices de varios tipos, iguales o solo iguales entre `fit` y `predict`, con y sin variables categóricas, `StandardScaler` y `ColumnTransformer`. Diferencias frente a la base (p2 / p3 con pa / p3 sin pa):
+
+| Variante | Diferencias | Qué cambia |
+|---|---|---|
+| Plan: `index.equals` + `columns.tolist() ==` | 120 / 116 / 64 | `TypeError` en vez de `ValueError` con nombres `pd.NA`; con `numpy.str_` y zonas horarias, otros avisos de scikit-learn y otras predicciones con `ColumnTransformer` |
+| `index.equals` + `columns.equals` | 36 / 104 / 60 | lo mismo sin el `TypeError` |
+| `equals` y etiquetas de entrenamiento tras el `concat` | 56 / 0 / 16 | con `identical`, pandas conserva las etiquetas del usuario |
+| `identical` (cambio 4) | 0 / 0 / 0 | |
+| Iterar las columnas en `check_predict_input` (B4) | ninguna nueva | |
+
+Las cuatro baterías de siempre (`ms trims dtypes exog`) dan 0 diferencias con `identical` en los tres entornos.
+
+**Tiempos en situación real** (`bench_ms.py`, 2 rondas, núcleo 12; ganancia frente al código de la rama):
+
+| Caso | `identical` | `identical` + B4 | Plan (no idéntico) |
+|---|---|---|---|
+| `predict` 20 series, exog en diccionario | 12,8 / 17,1 / 21,5 | 11,0 / 17,7 / 20,5 | 13,2 / 23,6 / 28,2 |
+| `predict` 100 series | 18,5 / 22,3 / 26,9 | 21,0 / 23,6 / 26,4 | 22,4 / 34,3 / 39,3 |
+| `predict` 100 series, exog mezclada | 13,5 / 18,5 / 26,5 | 19,5 / 18,6 / 23,5 | 19,1 / 24,2 / 28,1 |
+| `predict` 1000 series | 26,4 / 31,4 / 32,7 | 29,4 / 31,8 / 30,4 | 30,4 / 41,9 / 44,6 |
+| `predict` 1000 series, exog mezclada | 28,5 / 27,8 / 39,1 | 31,0 / 28,2 / 38,8 | 33,0 / 34,2 / 44,7 |
+| Backtesting 100 series, exog en diccionario (por fold) | 11,1 / 13,9 / 9,9 | 12,6 / 14,4 / 8,4 | 13,1 / 17,6 / 14,8 |
+
+B4 sobre el cambio 4 gana del 3 al 7 % en pandas 3 con `pyarrow` con 100 o más series, es neutro sin `pyarrow` y pierde hasta un 4 % en pandas 2.
