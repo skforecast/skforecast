@@ -84,8 +84,8 @@ El atajo funciona igual con exógenas de texto, porque no depende de ellas.
 
    Operar con el escalar `mean_[0]` sobre un array 1D da el mismo resultado IEEE que el array de forma `(1,)` de scikit-learn: comprobado bit a bit.
 4. **Conservar la copia de la entrada.** La #1504 (`fix/inplace-transformers`) garantiza que `transform_numpy` no modifica el array del llamante. El atajo hace una sola copia; scikit-learn hacía dos.
-5. **Valores infinitos (decisión de Joaquín).** scikit-learn acepta NaN pero lanza `ValueError` con `inf`, tanto en `transform` como en `inverse_transform` (`check_array` con `ensure_all_finite="allow-nan"` en scikit-learn 1.9.1). El atajo, tal cual, no lo lanza.
-   - **Recomendado:** después de calcular, si la suma del resultado no es finita y la entrada tiene algún `inf`, volver al camino actual, que lanza el mismo error:
+5. **Valores infinitos (decidido el 2026-11-18: opción recomendada).** scikit-learn acepta NaN pero lanza `ValueError` con `inf`, tanto en `transform` como en `inverse_transform` (`check_array` con `ensure_all_finite="allow-nan"` en scikit-learn 1.9.1). El atajo, tal cual, no lo lanza.
+   - **Decisión:** después de calcular, si la suma del resultado no es finita y la entrada tiene algún `inf`, volver al camino actual, que lanza el mismo error:
 
      ```python
      if not math.isfinite(out.sum()) and np.isinf(array).any():
@@ -94,7 +94,7 @@ El atajo funciona igual con exógenas de texto, porque no depende de ellas.
 
    - **Por qué así:** es el mismo truco que ya usa el atajo de los modelos lineales en `_build_predict_function` (`skforecast/utils/utils.py`, línea 4280): solo inspecciona el array cuando la suma no es finita. Mira la entrada (`array`) y no el resultado, porque scikit-learn valida la entrada. Si la entrada es finita y el cálculo desborda a `inf`, scikit-learn devuelve ese mismo `inf`, y el atajo también.
    - **Coste medido** (arrays de 48 y 168 valores): de 0,6 µs sin NaN a 1,5 µs con NaN, porque con NaN la suma nunca es finita y se paga `np.isinf` en cada llamada. Es despreciable frente a los ~100 µs de validación que se ahorran. La versión anterior del plan, `np.isfinite(out[~np.isnan(out)]).all()`, costaba ~2 µs en todos los casos.
-   - **Alternativa:** aceptar la diferencia y documentarla.
+   - **Alternativa descartada:** aceptar la diferencia y documentarla.
 6. **Fuera del alcance de T1:** `MinMaxScaler`, `RobustScaler` y los `Pipeline`. Se añaden después de la validación V3.
 
 **Tests.** Fichero nuevo `skforecast/utils/tests/tests_utils/test_transform_numpy_known_scalers.py`, o casos añadidos al de `transform_numpy`. Cada caso compara con `np.testing.assert_array_equal` frente a llamar directamente al método de scikit-learn:
