@@ -21,8 +21,9 @@ Candidates compared with the reference:
   the one the plan was measured with, which checked neither
   `feature_names_in_` nor `mean_`. After the review it was aligned with the
   revised design, so it is now equivalent to `proposed_isinf_first`. The
-  outputs in `results/review_t1_*` are those of the review: check out commit
-  9d02780 to reproduce its PROTO figures.
+  outputs of the review (`results/review_t1_*`, removed from the tree once T1
+  was implemented; they are in commit 156b92d) are those of commit 9d02780:
+  check it out to reproduce its PROTO figures.
 - `proposed`: the conditions that REVIEW_T1.md proposes, with the inf check
   that was decided before the review (sum of the result).
 - `proposed_isinf_first`: the same conditions, looking for inf in the input

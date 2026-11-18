@@ -12,6 +12,8 @@
 > 4. adoptar los criterios de aceptación propuestos (hallazgo 2).
 >
 > `PLAN.md` ya incorpora esas decisiones y el resto de hallazgos, y `prototypes.fast_transform_numpy` se alineó con el diseño revisado. Este documento y las salidas de `results/review_t1_*` describen el plan y el prototipo tal como estaban en el commit `9d02780`. Al ejecutar hoy los scripts, «PLAN» sigue siendo el plan anterior a la revisión y PROTO coincide con PROPOSED-B (0 diferencias con el camino actual).
+>
+> **Salidas de la revisión.** Los ficheros `results/review_t1_*` que cita este documento se retiraron de la rama al implementar T1. Están en el commit `156b92d` (`git show 156b92d:dev/preprocessing_speedups/results/<fichero>`).
 
 ## Veredicto
 
