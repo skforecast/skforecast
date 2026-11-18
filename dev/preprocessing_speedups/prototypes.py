@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import contextlib
 import importlib
+import math
 
 import numpy as np
 import pandas as pd
@@ -123,9 +124,8 @@ def fast_transform_numpy(
     """
     Shortcut for a fitted `StandardScaler` with one feature, no fitting and a
     float64 array. Anything else goes to the current `transform_numpy`.
-    Differences with scikit-learn that the implementation must decide (see
-    the handoff): `inf` values (scikit-learn raises), float32 arrays
-    (scikit-learn keeps float32) and subclasses of StandardScaler.
+    An `inf` in the input also goes to the current `transform_numpy`, which
+    raises the same error as scikit-learn (point 5 of T1 in the handoff).
     """
     if (
         not fit
@@ -147,6 +147,15 @@ def fast_transform_numpy(
                 out -= transformer.mean_[0]
             if transformer.with_std:
                 out /= transformer.scale_[0]
+        # NOTE: Same check as the fast path of linear models in
+        # `_build_predict_function`: the input is only inspected when the sum
+        # of the result is not finite (NaN, which scikit-learn accepts, or inf).
+        if not math.isfinite(out.sum()) and np.isinf(array).any():
+            return _ORIG_TRANSFORM_NUMPY(
+                array=array, transformer=transformer, fit=fit,
+                inverse_transform=inverse_transform,
+                force_single_column=force_single_column,
+            )
         return out
     return _ORIG_TRANSFORM_NUMPY(
         array=array, transformer=transformer, fit=fit,
