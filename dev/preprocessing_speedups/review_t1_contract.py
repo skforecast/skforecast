@@ -2,12 +2,14 @@
 Review of T1, points 2 to 4: contract of `StandardScaler.transform` and
 `inverse_transform`, and behavior of the shortcut in the edge cases.
 
-Three candidates (`review_t1_common.py`) are compared with the current
-`transform_numpy`, by bytes (`tobytes`, stricter than `assert_array_equal`,
+The candidates (`review_t1_common.py`) are compared with the `transform_numpy`
+of before T1, by bytes (`tobytes`, stricter than `assert_array_equal`,
 which does not tell -0.0 from 0.0), dtype, shape, exception (type and message)
 and warnings:
 
-- PLAN: T1 exactly as written in PLAN.md.
+- PACKAGE: the function that is now in the package (the implementation of
+  T1 once it exists; until then, the reference itself).
+- PLAN: T1 exactly as PLAN.md was written before the review.
 - PROTO: `prototypes.fast_transform_numpy`.
 - PROPOSED: the conditions proposed in REVIEW_T1.md, with the decided inf check.
 - PROPOSED-B: the same conditions, looking for inf in the input before computing.
@@ -29,6 +31,7 @@ import sklearn
 from prototypes import fast_transform_numpy
 from review_t1_common import (
     ORIG_TRANSFORM_NUMPY,
+    PACKAGE_TRANSFORM_NUMPY,
     env_line,
     plan_literal,
     proposed,
@@ -37,7 +40,8 @@ from review_t1_common import (
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-CANDIDATES = {"PLAN": plan_literal, "PROTO": fast_transform_numpy, "PROPOSED": proposed,
+CANDIDATES = {"PACKAGE": PACKAGE_TRANSFORM_NUMPY, "PLAN": plan_literal,
+              "PROTO": fast_transform_numpy, "PROPOSED": proposed,
               "PROPOSED-B": proposed_isinf_first}
 
 
@@ -397,7 +401,7 @@ def main():
     for label, tr in [("fit=True, new scaler", StandardScaler()), ("fit=True, fitted scaler", fitted(train))]:
         compare(label, x, tr, verbose=True, fit=True, inverse_transform=False)
     compare("transformer=None returns the same object", x, None, verbose=True)
-    assert plan_literal(x, None) is x and proposed(x, None) is x and fast_transform_numpy(x, None) is x
+    assert all(func(x, None) is x for func in CANDIDATES.values())
 
     # ------------------------------------------------------------------ 6
     print(f"\n===== Summary: {N_CHECKED} comparisons")

@@ -159,7 +159,7 @@ En los forecasters:
 
 Además: los tests de los módulos de los forecasters afectados y `review_t1_forecasters.py` (equivalencia por bytes de los seis forecasters; para T1 sustituye a `check_equivalence.py`).
 
-**Aceptación:**
+**Aceptación.** En los scripts `review_t1_*`, la fila `PACKAGE` compara la función del paquete con la anterior a T1 y cuenta las llamadas que toman el atajo, así que sirven tal cual para aceptar la implementación:
 
 - identidad byte a byte en todos los tests y en `review_t1_forecasters.py`, con pandas 2.3 y 3 y con scikit-learn 1.6 (entorno de versiones mínimas). El prototipo ya la cumple con scikit-learn 1.6.0, 1.7.2, 1.8.0 y 1.9.1 (V2);
 - el atajo se aplica en el 100 % de las llamadas elegibles de los flujos de referencia, medido con un contador: 600 de 600 en `predict` de 168 pasos de `ForecasterRecursiveMultiSeries` en M, y 2.000 de 2.000 en un backtesting de 1.000 folds de `ForecasterRecursive`;
@@ -377,7 +377,7 @@ y lo mismo con `y_pred`.
 | `bench.py` | Actual frente a T2 (`P1`), T1 (`P2`) y ambos, en la construcción de `X_train`, `fit`, `predict` (24 y 168), conformal y backtesting (refit `False` y `True`). Mediana, dispersión y primera llamada. `--text-cats` para V1 |
 | `results/` | JSON de las mediciones de referencia de este documento y salidas de la revisión de T1 (`review_t1_*`) |
 | `REVIEW_T1.md` | Revisión crítica de T1: hallazgos por gravedad, inventario de llamadas, contrato de `StandardScaler` y lo que no se pudo comprobar |
-| `review_t1_common.py` | Variantes que compara la revisión (el plan anterior al pie de la letra, el prototipo y las condiciones revisadas), trazador y contador de llamadas |
+| `review_t1_common.py` | Referencia y variantes que comparan los scripts, trazador y contador de llamadas. La referencia (`current` en las salidas) es `transform_numpy` tal como estaba antes de T1, leído con git del commit `c9172e1`. La variante `PACKAGE` es la función que hay ahora en el paquete: antes de implementar T1 coincide con la referencia, y después es la implementación que hay que aceptar |
 | `review_t1_inventory.py` | Inventario en ejecución de las llamadas a `transform_numpy` en cada forecaster |
 | `review_t1_contract.py` | Contrato de `StandardScaler`, identidad por bytes y casos límite. Se ejecuta en cada entorno de scikit-learn |
 | `review_t1_forecasters.py` | Equivalencia por bytes de extremo a extremo en los seis forecasters (para T1 sustituye a `check_equivalence.py`) |

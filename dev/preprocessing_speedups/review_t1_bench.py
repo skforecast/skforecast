@@ -9,7 +9,9 @@ python dev/preprocessing_speedups/review_t1_bench.py backtesting --size M --est 
 python dev/preprocessing_speedups/review_t1_bench.py others
 
 Run it with nothing else running on the machine. The candidates are those of
-`review_t1_common.py`: PLAN (T1 as written), PROTO (the prototype) and PROPOSED.
+`review_t1_common.py`: PACKAGE (the function now in the package, compared with
+the one of before T1), PLAN (T1 as written before the review), PROTO (the
+prototype) and PROPOSED.
 """
 
 from __future__ import annotations
@@ -27,15 +29,14 @@ import sklearn
 from prototypes import fast_transform_numpy
 from review_t1_common import (
     ORIG_TRANSFORM_NUMPY,
+    PACKAGE_TRANSFORM_NUMPY,
     Counted,
     env_line,
     patched,
-    plan_applies,
     plan_literal,
     proposed,
     proposed_applies,
     proposed_isinf_first,
-    prototype_conditions,
 )
 from sklearn.linear_model import Ridge
 from sklearn.preprocessing import StandardScaler
@@ -84,6 +85,7 @@ def micro():
     }
     funcs = {
         "current": ORIG_TRANSFORM_NUMPY,
+        "PACKAGE": PACKAGE_TRANSFORM_NUMPY,
         "PLAN": plan_literal,
         "PROTO": fast_transform_numpy,
         "PROPOSED": proposed,
@@ -188,8 +190,12 @@ def report(res, workflows, variants, width=26):
                   f"x{q50:.2f} [{q25:.2f}, {q75:.2f}] | min {mn * 1e3:.2f} ms")
 
 
-VARIANTS = {"current": ORIG_TRANSFORM_NUMPY, "PLAN": plan_literal,
-            "PROTO": fast_transform_numpy, "PROPOSED": proposed}
+# "current" is the function of before T1 and PACKAGE the one in the package
+# now (see `review_t1_common.py`): once T1 is implemented, the row of PACKAGE
+# is the one that the acceptance criteria of PLAN.md refer to.
+VARIANTS = {"current": ORIG_TRANSFORM_NUMPY, "PACKAGE": PACKAGE_TRANSFORM_NUMPY,
+            "PLAN": plan_literal, "PROTO": fast_transform_numpy, "PROPOSED": proposed}
+COUNTED = {k: v for k, v in VARIANTS.items() if k != "current"}
 
 
 def macro(size, est, rounds):
@@ -212,7 +218,8 @@ def macro(size, est, rounds):
     print("\n-- Time inside transform_numpy (upper bound of what any shortcut can save)")
     for w, fn in workflows.items():
         fn()
-        for label, func in (("current", ORIG_TRANSFORM_NUMPY), ("PROPOSED", proposed)):
+        for label, func in (("current", ORIG_TRANSFORM_NUMPY),
+                            ("PACKAGE", PACKAGE_TRANSFORM_NUMPY), ("PROPOSED", proposed)):
             best = None
             for _ in range(3):
                 timed = Timed(func)
@@ -227,11 +234,9 @@ def macro(size, est, rounds):
                   f"{best[1] * 1e3:7.2f} ms ({best[1] / best[0]:5.1%}) in {best[2]} calls "
                   f"({best[1] / best[2] * 1e6:.1f} us per call)")
 
-    print("\n-- Calls in which each shortcut applies (predict_168)")
-    for label, func, applies in (("PLAN", plan_literal, plan_applies),
-                                 ("PROTO", fast_transform_numpy, prototype_conditions),
-                                 ("PROPOSED", proposed, proposed_applies)):
-        counted = Counted(func, applies)
+    print("\n-- Calls that take the shortcut (predict_168)")
+    for label, func in COUNTED.items():
+        counted = Counted(func)
         with patched(counted):
             workflows["predict_168"]()
         print(f"{label:9s} {counted.hits} of {counted.calls} calls")
@@ -339,13 +344,11 @@ def others(rounds):
     except Exception as exc:
         print(f"[skip] ForecasterStats: {exc}")
 
-    print("\n-- Calls in which each shortcut applies")
+    print("\n-- Calls that take the shortcut")
     for w, fn in workflows.items():
         row = []
-        for label, func, applies in (("PLAN", plan_literal, plan_applies),
-                                     ("PROTO", fast_transform_numpy, prototype_conditions),
-                                     ("PROPOSED", proposed, proposed_applies)):
-            counted = Counted(func, applies)
+        for label, func in COUNTED.items():
+            counted = Counted(func)
             with patched(counted):
                 fn()
             row.append(f"{label} {counted.hits}/{counted.calls}")

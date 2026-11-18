@@ -131,14 +131,12 @@ def check(folders):
     from prototypes import fast_transform_numpy
     from review_t1_common import (
         ORIG_TRANSFORM_NUMPY,
+        PACKAGE_TRANSFORM_NUMPY,
         Counted,
         env_line,
         patched,
-        plan_applies,
         plan_literal,
         proposed,
-        proposed_applies,
-        prototype_conditions,
     )
     from sklearn.preprocessing import StandardScaler
 
@@ -146,9 +144,10 @@ def check(folders):
 
     print("loading with:", env_line())
     candidates = {
-        "PLAN": (plan_literal, plan_applies),
-        "PROTO": (fast_transform_numpy, prototype_conditions),
-        "PROPOSED": (proposed, proposed_applies),
+        "PACKAGE": PACKAGE_TRANSFORM_NUMPY,
+        "PLAN": plan_literal,
+        "PROTO": fast_transform_numpy,
+        "PROPOSED": proposed,
     }
     for folder in map(Path, folders):
         meta = json.loads((folder / "meta.json").read_text())
@@ -180,8 +179,8 @@ def check(folders):
                 np.array(saved_preds[k]).tobytes() == ref[k].tobytes() for k in ref
             )
             cells = []
-            for label, (func, applies) in candidates.items():
-                counted = Counted(func, applies)
+            for label, func in candidates.items():
+                counted = Counted(func)
                 with patched(counted):
                     got = predictions(f)
                 equal = all(got[k].tobytes() == ref[k].tobytes() for k in ref)

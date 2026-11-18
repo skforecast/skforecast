@@ -2,8 +2,10 @@
 Review of T1: end-to-end equivalence in every forecaster that calls
 `transform_numpy`, beyond the cases of `check_equivalence.py`.
 
-Each configuration is built and run from scratch with the current
-`transform_numpy` and with each candidate (`review_t1_common.py`). The outputs
+Each configuration is built and run from scratch with the `transform_numpy`
+of before T1 and with each candidate (`review_t1_common.py`). PACKAGE is the
+function that is now in the package: once T1 is implemented, its row is the
+acceptance check (identical outputs, and the shortcut in every eligible call). The outputs
 of every workflow (predictions, intervals, quantiles, out-of-sample residuals,
 backtesting, one-step-ahead search and errors) are compared by bytes, and the
 calls in which the shortcut applies are counted.
@@ -22,16 +24,14 @@ import pandas as pd
 from prototypes import fast_transform_numpy
 from review_t1_common import (
     ORIG_TRANSFORM_NUMPY,
+    PACKAGE_TRANSFORM_NUMPY,
     Counted,
     env_line,
     import_modules,
     patched,
-    plan_applies,
     plan_literal,
     proposed,
-    proposed_applies,
     proposed_isinf_first,
-    prototype_conditions,
 )
 from sklearn.linear_model import Ridge
 from sklearn.preprocessing import StandardScaler
@@ -51,10 +51,11 @@ warnings.filterwarnings("ignore")
 os.environ.setdefault("KERAS_BACKEND", "torch")
 
 CANDIDATES = {
-    "PLAN": (plan_literal, plan_applies),
-    "PROTO": (fast_transform_numpy, prototype_conditions),
-    "PROPOSED": (proposed, proposed_applies),
-    "PROPOSED-B": (proposed_isinf_first, proposed_applies),
+    "PACKAGE": PACKAGE_TRANSFORM_NUMPY,
+    "PLAN": plan_literal,
+    "PROTO": fast_transform_numpy,
+    "PROPOSED": proposed,
+    "PROPOSED-B": proposed_isinf_first,
 }
 
 rng = np.random.default_rng(0)
@@ -111,8 +112,8 @@ def run(title, build, workflows):
           + (f", {len(errors)} of them raise with the current path" if errors else "") + ")")
     for k, v in errors.items():
         print(f"   current, {k}: {v}")
-    for name, (func, applies) in CANDIDATES.items():
-        counted = Counted(func, applies)
+    for name, func in CANDIDATES.items():
+        counted = Counted(func)
         got = collect(build, workflows, counted)
         diff = [k for k in ref if got.get(k) != ref[k]]
         print(f"   {name:10s} {'identical' if not diff else 'DIFFERENT in ' + ', '.join(diff):28s} "

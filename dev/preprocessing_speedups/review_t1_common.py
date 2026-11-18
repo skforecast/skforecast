@@ -3,7 +3,17 @@ Helpers shared by the review scripts of T1 (`REVIEW_T1.md`). They do not
 modify production code: `transform_numpy` is replaced at runtime in the modules
 that import it by name.
 
-Candidates compared with the current `transform_numpy`:
+The reference ("current" in the outputs) is `transform_numpy` as it was
+before T1: the function is read with git from commit `c9172e1` (`0.28.x`, the
+base of the review; set `REVIEW_T1_REFERENCE` to use another one). So the
+scripts keep comparing against the behavior before T1 once the shortcut is
+implemented in the package.
+
+Candidates compared with the reference:
+
+- `PACKAGE_TRANSFORM_NUMPY` (PACKAGE): the function that is now in
+  `skforecast/utils/utils.py`. Before T1 is implemented it is the reference
+  itself; afterwards it is the implementation to accept.
 
 - `plan_literal`: T1 exactly as PLAN.md was written before the review
   (commit 9d02780).
@@ -21,14 +31,22 @@ Candidates compared with the current `transform_numpy`:
 
 from __future__ import annotations
 
+import __future__
+
+import ast
 import contextlib
 import importlib
 import math
+import os
+import subprocess
 import sys
+import warnings
 from collections import Counter, defaultdict
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
+from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 
 HERE = Path(__file__).parent
@@ -36,7 +54,46 @@ sys.path.insert(0, str(HERE))
 
 import skforecast.utils.utils as _utils  # noqa: E402
 
-ORIG_TRANSFORM_NUMPY = _utils.transform_numpy
+# The function that is in the package now
+PACKAGE_TRANSFORM_NUMPY = _utils.transform_numpy
+REFERENCE_COMMIT = os.environ.get("REVIEW_T1_REFERENCE", "c9172e1")
+
+
+def _load_reference(commit=REFERENCE_COMMIT):
+    """
+    `transform_numpy` as it is in `commit`, compiled from the source that git
+    stores. The function only needs numpy, pandas, warnings and
+    `ColumnTransformer`. Returns None if git cannot read the commit.
+    """
+    try:
+        source = subprocess.run(
+            ["git", "-C", str(HERE), "show", f"{commit}:skforecast/utils/utils.py"],
+            capture_output=True, text=True, check=True,
+        ).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    node = next(
+        n for n in ast.parse(source).body
+        if isinstance(n, ast.FunctionDef) and n.name == "transform_numpy"
+    )
+    namespace = {"np": np, "pd": pd, "warnings": warnings,
+                 "ColumnTransformer": ColumnTransformer}
+    code = compile(
+        ast.Module(body=[node], type_ignores=[]), f"<utils.py at {commit}>", "exec",
+        flags=__future__.annotations.compiler_flag, dont_inherit=True,
+    )
+    exec(code, namespace)
+    return namespace["transform_numpy"]
+
+
+_reference = _load_reference()
+# Reference of every comparison, and fallback of the candidates
+ORIG_TRANSFORM_NUMPY = _reference if _reference is not None else PACKAGE_TRANSFORM_NUMPY
+REFERENCE = (
+    f"transform_numpy of commit {REFERENCE_COMMIT}" if _reference is not None
+    else "transform_numpy of the package (git could not read the reference commit: "
+         "the comparisons of PACKAGE are trivial)"
+)
 
 # Every module of the package that imports `transform_numpy` by name
 # (`grep -n "transform_numpy" skforecast/ --include=*.py`, tests excluded).
@@ -225,33 +282,60 @@ def plan_applies(array, transformer, fit, inverse_transform):
 
 
 class Counted:
-    """Wrap a candidate and count the calls in which its shortcut applies."""
+    """
+    Wrap a `transform_numpy` and count the calls that take the shortcut: those
+    with a `StandardScaler` in which no `transform` nor `inverse_transform` of
+    the scaler runs. It does not need to know the conditions, so it also
+    works with the implementation in the package. `calls` counts the calls
+    with a transformer, of any type and with any value of `fit`.
+    """
 
-    def __init__(self, func, applies):
-        self.func, self.applies = func, applies
+    _METHODS = ("transform", "inverse_transform")
+
+    def __init__(self, func):
+        self.func = func
         self.calls = self.hits = 0
 
     def __call__(self, array, transformer, fit=False, inverse_transform=False,
                  force_single_column=False):
-        if transformer is not None:
-            self.calls += 1
-            self.hits += bool(self.applies(array, transformer, fit, inverse_transform))
-        return self.func(array=array, transformer=transformer, fit=fit,
-                         inverse_transform=inverse_transform,
-                         force_single_column=force_single_column)
+        if transformer is None:
+            return self.func(array=array, transformer=transformer, fit=fit,
+                             inverse_transform=inverse_transform,
+                             force_single_column=force_single_column)
+        self.calls += 1
+        used = []
+        originals = {name: getattr(StandardScaler, name) for name in self._METHODS}
+
+        def spy(name):
+            def method(scaler, *args, **kwargs):
+                used.append(name)
+                return originals[name](scaler, *args, **kwargs)
+            return method
+
+        for name in originals:
+            setattr(StandardScaler, name, spy(name))
+        try:
+            return self.func(array=array, transformer=transformer, fit=fit,
+                             inverse_transform=inverse_transform,
+                             force_single_column=force_single_column)
+        finally:
+            for name, method in originals.items():
+                setattr(StandardScaler, name, method)
+            self.hits += type(transformer) is StandardScaler and not used
 
 
 @contextlib.contextmanager
 def patched(func, modules=None):
     """Replace `transform_numpy` by `func` in every module that imports it."""
     mods = import_modules() if modules is None else modules
+    originals = [m.transform_numpy for m in mods]
     for m in mods:
         m.transform_numpy = func
     try:
         yield
     finally:
-        for m in mods:
-            m.transform_numpy = ORIG_TRANSFORM_NUMPY
+        for m, original in zip(mods, originals):
+            m.transform_numpy = original
 
 
 class Tracer:
@@ -304,7 +388,6 @@ class Tracer:
 
 def env_line():
     import numba
-    import pandas as pd
     import sklearn
 
     import skforecast
@@ -312,5 +395,6 @@ def env_line():
     return (
         f"Python {sys.version.split()[0]}, numpy {np.__version__}, pandas {pd.__version__}, "
         f"scikit-learn {sklearn.__version__}, numba {numba.__version__}, "
-        f"skforecast {skforecast.__version__}"
+        f"skforecast {skforecast.__version__}\n"
+        f"Reference (\"current\"): {REFERENCE}"
     )

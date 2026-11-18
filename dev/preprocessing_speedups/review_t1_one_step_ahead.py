@@ -15,7 +15,7 @@ import time
 import warnings
 
 from data import SIZES, env_report, make_data, make_forecaster
-from review_t1_common import ORIG_TRANSFORM_NUMPY, patched
+from review_t1_common import PACKAGE_TRANSFORM_NUMPY, patched
 from sklearn.preprocessing import StandardScaler
 
 from skforecast.model_selection import OneStepAheadFold, grid_search_forecaster_multiseries
@@ -48,7 +48,7 @@ def main():
 
     # Calls made through `transform_numpy` are counted apart from the calls
     # to the method of the class made from outside it.
-    in_numpy = Timer(ORIG_TRANSFORM_NUMPY)
+    in_numpy = Timer(PACKAGE_TRANSFORM_NUMPY)
     original = StandardScaler.inverse_transform
     direct = Timer(original)
     inside = [False]

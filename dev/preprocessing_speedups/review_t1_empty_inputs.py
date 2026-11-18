@@ -13,7 +13,12 @@ import pandas as pd
 from sklearn.linear_model import Ridge
 from sklearn.preprocessing import StandardScaler
 from prototypes import fast_transform_numpy
-from review_t1_common import ORIG_TRANSFORM_NUMPY, patched, proposed
+from review_t1_common import (
+    ORIG_TRANSFORM_NUMPY,
+    PACKAGE_TRANSFORM_NUMPY,
+    patched,
+    proposed,
+)
 
 from skforecast.recursive import ForecasterRecursive, ForecasterRecursiveMultiSeries
 
@@ -35,7 +40,8 @@ def flows():
     yield "ForecasterRecursiveMultiSeries.predict(last_window empty)", lambda: m.predict(steps=3, last_window=series.iloc[:0])
 for label, fn in flows():
     row = []
-    for name, func in (("current", ORIG_TRANSFORM_NUMPY), ("PROTO", fast_transform_numpy), ("PROPOSED", proposed)):
+    for name, func in (("current", ORIG_TRANSFORM_NUMPY), ("PACKAGE", PACKAGE_TRANSFORM_NUMPY),
+                       ("PROTO", fast_transform_numpy), ("PROPOSED", proposed)):
         with patched(func):
             try:
                 fn()
