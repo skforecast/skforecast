@@ -405,6 +405,18 @@ def _raise_scikit_learn_method_called(self, *args, **kwargs):
     raise ScikitLearnMethodCalled("A method of StandardScaler was called.")
 
 
+def _fitted_scaler_with_attributes(**attributes):
+    """
+    StandardScaler fitted with `y_fit` whose fitted attributes are replaced by
+    the given ones, as a user can do by hand.
+    """
+    transformer = StandardScaler().fit(y_fit.reshape(-1, 1))
+    for name, value in attributes.items():
+        setattr(transformer, name, value)
+
+    return transformer
+
+
 def _scikit_learn_output(transformer, array, inverse_transform):
     """
     Output of the scikit-learn method applied to the values of `array` as a
@@ -655,7 +667,8 @@ def test_transform_numpy_fast_path_output_equal_to_scikit_learn(
      (StandardScaler(), y_fit.reshape(-1, 1), y_fit.astype(np.float32), False, True),
      (StandardScaler(), y_fit.reshape(-1, 1), np.arange(10), False, False),
      (StandardScaler(), y_fit.reshape(-1, 1), np.ma.masked_array(y_fit), False, False),
-     (StandardScaler(), y_fit.reshape(-1, 1), np.asmatrix(y_fit.reshape(2, 5)), False, True),
+     (StandardScaler(), y_fit.reshape(-1, 1), np.asmatrix(y_fit.reshape(2, 5)),
+      False, True),
      (StandardScaler(), y_fit.reshape(-1, 1), np.array([]), False, False),
      (StandardScaler(), y_fit.reshape(-1, 1), np.array([]), False, True),
      (StandardScaler(), y_fit.reshape(-1, 1), y_fit.reshape(-1, 1), False, False),
@@ -666,11 +679,18 @@ def test_transform_numpy_fast_path_output_equal_to_scikit_learn(
      (StandardScaler(), y_fit.reshape(-1, 1), y_fit, True, False),
      (StandardScaler(), None, y_fit, False, False),
      (StandardScaler(with_mean=False, with_std=False).fit(y_fit.reshape(-1, 1))
-      .set_params(with_mean=True), None, y_fit, False, False)],
+      .set_params(with_mean=True), None, y_fit, False, False),
+     (_fitted_scaler_with_attributes(mean_=0.317), None, y_fit, False, False),
+     (_fitted_scaler_with_attributes(scale_=np.array([1.2], dtype=np.float32)),
+      None, y_fit, False, True),
+     (_fitted_scaler_with_attributes(mean_=np.array(0.317)),
+      None, y_fit, False, True)],
     ids=["subclass", "Pipeline", "float32 transform", "float32 inverse", "int64",
-         "MaskedArray transform", "matrix inverse", "empty 1D transform", "empty 1D inverse", "2D transform", "0D transform",
-         "3D inverse", "fitted with 2 columns", "inf", "fit=True", "not fitted",
-         "with_mean=True but mean_ is None"]
+         "MaskedArray transform", "matrix inverse", "empty 1D transform",
+         "empty 1D inverse", "2D transform", "0D transform", "3D inverse",
+         "fitted with 2 columns", "inf", "fit=True", "not fitted",
+         "with_mean=True but mean_ is None", "mean_ is a float",
+         "scale_ is float32", "mean_ is 0D"]
 )
 def test_transform_numpy_fast_path_not_taken(
     transformer, X_fit, array, fit, inverse_transform, monkeypatch
