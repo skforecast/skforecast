@@ -98,6 +98,33 @@ def test_set_out_sample_residuals_ValueError_when_y_true_and_y_pred_have_differe
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
 
+@pytest.mark.parametrize(
+    "y_true, y_pred",
+    [(np.array([]), np.array([])),
+     (pd.Series([], dtype=float), pd.Series([], dtype=float))],
+    ids=["numpy ndarray", "pandas Series"]
+)
+def test_set_out_sample_residuals_ValueError_when_y_true_and_y_pred_are_empty_and_transformer_y(
+    y_true, y_pred
+):
+    """
+    Test ValueError is raised by the StandardScaler of `transformer_y` when
+    `y_true` and `y_pred` are empty, so no empty residuals are stored.
+    """
+    forecaster = ForecasterRecursive(
+                     estimator     = LinearRegression(),
+                     lags          = 3,
+                     transformer_y = StandardScaler()
+                 )
+    forecaster.fit(y)
+
+    err_msg = re.escape(
+        "Found array with 0 sample(s) (shape=(0, 1)) while a minimum of 1 is required"
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
+
+
 def test_set_out_sample_residuals_when_residuals_length_is_less_than_10000_and_no_append():
     """
     Test residuals stored when new residuals length is less than 10_000 and 

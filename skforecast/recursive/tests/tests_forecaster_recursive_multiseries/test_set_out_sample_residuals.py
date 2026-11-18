@@ -172,6 +172,28 @@ def test_set_out_sample_residuals_ValueError_when_inputs_does_not_match_series_s
         forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
 
 
+def test_set_out_sample_residuals_ValueError_when_y_true_and_y_pred_are_empty_and_transformer_series():
+    """
+    Test ValueError is raised by the StandardScaler of `transformer_series` when
+    the arrays of `y_true` and `y_pred` are empty, so no empty residuals are
+    stored.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = LinearRegression(),
+                     lags               = 3,
+                     transformer_series = StandardScaler()
+                 )
+    forecaster.fit(series=series)
+    y_true = {'l1': np.array([])}
+    y_pred = {'l1': np.array([])}
+
+    err_msg = re.escape(
+        "Found array with 0 sample(s) (shape=(0, 1)) while a minimum of 1 is required"
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster.set_out_sample_residuals(y_true=y_true, y_pred=y_pred)
+
+
 def test_set_out_sample_residuals_UnknownLevelWarning_when_residuals_levels_but_encoding_None():
     """
     Test UnknownLevelWarning is raised when residuals contains levels but encoding is None.

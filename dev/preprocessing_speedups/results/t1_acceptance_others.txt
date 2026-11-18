@@ -1,0 +1,32 @@
+Python 3.12.3, numpy 2.5.5, pandas 3.1.1, scikit-learn 1.9.1, numba 0.68.1, skforecast 0.28.0
+Reference ("current"): transform_numpy of commit c9172e1
+
+-- Calls that take the shortcut
+[skip] skforecast.deep_learning._forecaster_rnn cannot be imported (optional dependency missing)
+Recursive predict(24)                      PACKAGE 2/2
+Recursive backtesting 1000 folds           PACKAGE 2000/2000
+Direct predict(5)                          PACKAGE 2/2
+Direct backtesting 200 folds               PACKAGE 400/400
+DirectMultiVariate backtesting 200 folds   PACKAGE 800/803
+Stats predict(24)                          PACKAGE 1/1
+
+-- End to end, variants interleaved, 15 rounds
+cell: median ms | ratio of medians | paired ratio per round: median [q25, q75] | min ms
+Recursive predict(24)
+   current        1.04 ms | x1.00 | x1.00 [1.00, 1.00] | min 0.88 ms
+   PACKAGE        0.64 ms | x1.62 | x1.62 [1.59, 1.71] | min 0.56 ms
+Recursive backtesting 1000 folds
+   current      423.86 ms | x1.00 | x1.00 [1.00, 1.00] | min 291.90 ms
+   PACKAGE      191.85 ms | x2.21 | x2.21 [2.03, 2.37] | min 137.75 ms
+Direct predict(5)
+   current        1.01 ms | x1.00 | x1.00 [1.00, 1.00] | min 0.85 ms
+   PACKAGE        0.59 ms | x1.71 | x1.75 [1.65, 1.93] | min 0.54 ms
+Direct backtesting 200 folds
+   current       98.11 ms | x1.00 | x1.00 [1.00, 1.00] | min 74.51 ms
+   PACKAGE       52.64 ms | x1.86 | x1.93 [1.85, 2.09] | min 39.87 ms
+DirectMultiVariate backtesting 200 folds
+   current      762.50 ms | x1.00 | x1.00 [1.00, 1.00] | min 617.64 ms
+   PACKAGE      597.53 ms | x1.28 | x1.25 [1.19, 1.36] | min 496.57 ms
+Stats predict(24)
+   current        0.93 ms | x1.00 | x1.00 [1.00, 1.00] | min 0.85 ms
+   PACKAGE        0.69 ms | x1.34 | x1.37 [1.31, 1.40] | min 0.64 ms

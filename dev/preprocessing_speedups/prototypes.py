@@ -10,14 +10,14 @@ P1  FastOrdinalEncoder: encodes pandas `category` columns with their integer
     to object arrays and maps them with Python dictionaries.
 P2  fast_transform_numpy: `transform_numpy` without scikit-learn's input
     validation for a fitted `StandardScaler` (same arithmetic and order of
-    operations as `StandardScaler.transform` / `inverse_transform`).
+    operations as `StandardScaler.transform` / `inverse_transform`). It
+    follows the design of T1 as revised in PLAN.md after REVIEW_T1.md.
 """
 
 from __future__ import annotations
 
 import contextlib
 import importlib
-import math
 
 import numpy as np
 import pandas as pd
@@ -108,14 +108,47 @@ def use_fast_encoder(forecaster):
 
 _ORIG_TRANSFORM_NUMPY = _utils.transform_numpy
 
-# Modules that import `transform_numpy` by name.
+# Modules that import `transform_numpy` by name. `use_fast_scaler` skips those
+# that need an optional dependency that is not installed (keras).
 _MODULES = [
     "skforecast.recursive._forecaster_recursive_multiseries",
     "skforecast.recursive._forecaster_recursive",
+    "skforecast.recursive._forecaster_stats",
     "skforecast.direct._forecaster_direct",
     "skforecast.direct._forecaster_direct_multivariate",
+    "skforecast.deep_learning._forecaster_rnn",
     "skforecast.model_selection._utils",
 ]
+
+
+def _is_float64_vector(value):
+    return type(value) is np.ndarray and value.dtype == np.float64 and value.shape == (1,)
+
+
+def scaler_shortcut_applies(array, transformer, fit=False, inverse_transform=False):
+    """
+    Conditions of the shortcut (point 2 of T1 in PLAN.md). A scaler fitted
+    with feature names also qualifies: `transform_numpy` always receives an
+    array, and scikit-learn only warns about the names.
+    """
+    if not (
+        not fit
+        and type(transformer) is StandardScaler
+        and type(array) is np.ndarray
+        and array.dtype == np.float64
+        and array.size > 0
+        and (array.ndim == 1 or (inverse_transform and array.ndim == 2))
+    ):
+        return False
+    # NOTE: In a fitted scaler `mean_` and `scale_` always exist, and they are
+    # None when their parameter is False, so their type is checked, not their
+    # presence.
+    state = vars(transformer)
+    return (
+        state.get("n_features_in_") == 1
+        and (not transformer.with_mean or _is_float64_vector(state.get("mean_")))
+        and (not transformer.with_std or _is_float64_vector(state.get("scale_")))
+    )
 
 
 def fast_transform_numpy(
@@ -123,18 +156,15 @@ def fast_transform_numpy(
 ):
     """
     Shortcut for a fitted `StandardScaler` with one feature, no fitting and a
-    float64 array. Anything else goes to the current `transform_numpy`.
-    An `inf` in the input also goes to the current `transform_numpy`, which
-    raises the same error as scikit-learn (point 5 of T1 in PLAN.md).
+    float64 array (`scaler_shortcut_applies`). Anything else goes to the
+    current `transform_numpy`. So does an input with an `inf`, which is
+    looked for before computing: the current path raises the same error as
+    scikit-learn (point 5 of T1 in PLAN.md).
     """
     if (
-        not fit
-        and type(transformer) is StandardScaler
-        and isinstance(array, np.ndarray)
-        and array.dtype == np.float64
-        and getattr(transformer, "n_features_in_", None) == 1
-        and hasattr(transformer, "scale_")
-        and (inverse_transform or array.ndim == 1)
+        transformer is not None
+        and scaler_shortcut_applies(array, transformer, fit, inverse_transform)
+        and not np.isinf(array).any()
     ):
         out = array.copy()
         if inverse_transform:
@@ -147,15 +177,6 @@ def fast_transform_numpy(
                 out -= transformer.mean_[0]
             if transformer.with_std:
                 out /= transformer.scale_[0]
-        # NOTE: Same check as the fast path of linear models in
-        # `_build_predict_function`: the input is only inspected when the sum
-        # of the result is not finite (NaN, which scikit-learn accepts, or inf).
-        if not math.isfinite(out.sum()) and np.isinf(array).any():
-            return _ORIG_TRANSFORM_NUMPY(
-                array=array, transformer=transformer, fit=fit,
-                inverse_transform=inverse_transform,
-                force_single_column=force_single_column,
-            )
         return out
     return _ORIG_TRANSFORM_NUMPY(
         array=array, transformer=transformer, fit=fit,
@@ -166,7 +187,12 @@ def fast_transform_numpy(
 @contextlib.contextmanager
 def use_fast_scaler():
     """Patch `transform_numpy` in the modules that use it while active."""
-    mods = [importlib.import_module(m) for m in _MODULES]
+    mods = []
+    for name in _MODULES:
+        try:
+            mods.append(importlib.import_module(name))
+        except ImportError:  # optional dependency not installed
+            pass
     for m in mods:
         m.transform_numpy = fast_transform_numpy
     try:
