@@ -5,6 +5,14 @@
 **Base:** rama `perf/transform-numpy-known-scalers` en `2d396cf`. `git diff c694e19 HEAD -- skforecast/` está vacío, así que los números de línea del plan siguen siendo válidos.
 **Alcance:** no se ha tocado `skforecast/` ni `PLAN.md`. Todo lo ejecutado está en `dev/preprocessing_speedups/review_t1_*.py` y sus salidas en `results/review_t1_*`.
 
+> **Estado posterior (2026-11-18).** Joaquín revisó los hallazgos y decidió:
+> 1. quitar la condición de `feature_names_in_` (hallazgo 1);
+> 2. buscar `inf` en la entrada antes de calcular (hallazgo 8);
+> 3. sacar la validación one-step-ahead multiserie a una tarea propia, T4 (hallazgo 7);
+> 4. adoptar los criterios de aceptación propuestos (hallazgo 2).
+>
+> `PLAN.md` ya incorpora esas decisiones y el resto de hallazgos, y `prototypes.fast_transform_numpy` se alineó con el diseño revisado. Este documento y las salidas de `results/review_t1_*` describen el plan y el prototipo tal como estaban en el commit `9d02780`. Al ejecutar hoy los scripts, «PLAN» sigue siendo el plan anterior a la revisión y PROTO coincide con PROPOSED-B (0 diferencias con el camino actual).
+
 ## Veredicto
 
 **T1 es viable y su aritmética es correcta, pero el plan no debe implementarse tal como está escrito.** Hay que corregir tres cosas antes de empezar:

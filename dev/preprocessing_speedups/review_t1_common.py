@@ -3,13 +3,20 @@ Helpers shared by the review scripts of T1 (`REVIEW_T1.md`). They do not
 modify production code: `transform_numpy` is replaced at runtime in the modules
 that import it by name.
 
-Three candidates are compared with the current `transform_numpy`:
+Candidates compared with the current `transform_numpy`:
 
-- `plan_literal`: T1 exactly as written in PLAN.md.
-- `prototypes.fast_transform_numpy`: the prototype the plan was measured with.
-  It is not the same as the plan: it does not check `feature_names_in_` nor
-  `mean_`, and it checks that `array` is a numpy ndarray.
-- `proposed`: the conditions that REVIEW_T1.md proposes.
+- `plan_literal`: T1 exactly as PLAN.md was written before the review
+  (commit 9d02780).
+- `prototypes.fast_transform_numpy`: the prototype. During the review it was
+  the one the plan was measured with, which checked neither
+  `feature_names_in_` nor `mean_`. After the review it was aligned with the
+  revised design, so it is now equivalent to `proposed_isinf_first`. The
+  outputs in `results/review_t1_*` are those of the review: check out commit
+  9d02780 to reproduce its PROTO figures.
+- `proposed`: the conditions that REVIEW_T1.md proposes, with the inf check
+  that was decided before the review (sum of the result).
+- `proposed_isinf_first`: the same conditions, looking for inf in the input
+  before computing. It is the design adopted in PLAN.md.
 """
 
 from __future__ import annotations
@@ -33,7 +40,6 @@ ORIG_TRANSFORM_NUMPY = _utils.transform_numpy
 
 # Every module of the package that imports `transform_numpy` by name
 # (`grep -n "transform_numpy" skforecast/ --include=*.py`, tests excluded).
-# `prototypes._MODULES` lacks the last two.
 ALL_MODULES = [
     "skforecast.recursive._forecaster_recursive_multiseries",
     "skforecast.recursive._forecaster_recursive",
@@ -79,26 +85,21 @@ def plan_conditions(array, transformer, fit, inverse_transform):
 
 
 def prototype_conditions(array, transformer, fit, inverse_transform):
-    """Conditions of `prototypes.fast_transform_numpy` (as written)."""
-    return (
-        not fit
-        and type(transformer) is StandardScaler
-        and isinstance(array, np.ndarray)
-        and array.dtype == np.float64
-        and getattr(transformer, "n_features_in_", None) == 1
-        and hasattr(transformer, "scale_")
-        and (inverse_transform or array.ndim == 1)
-    )
+    """Conditions of `prototypes.fast_transform_numpy` (aligned after the review)."""
+    from prototypes import scaler_shortcut_applies
+
+    return scaler_shortcut_applies(array, transformer, fit, inverse_transform)
 
 
 def plan_literal(
     array, transformer, fit=False, inverse_transform=False, force_single_column=False
 ):
     """
-    T1 exactly as written in PLAN.md: the fast path is tried right after
-    `if transformer is None` (point 1), with the conditions of point 2 in their
-    order and nothing else (no check of the type of `array`), the arithmetic of
-    point 3, the copy of point 4 and the inf check of point 5.
+    T1 exactly as PLAN.md was written before the review (commit 9d02780): the
+    fast path is tried right after `if transformer is None` (point 1), with
+    the conditions of point 2 in their order and nothing else (no check of the
+    type of `array`), the arithmetic of point 3, the copy of point 4 and the
+    inf check of point 5.
     """
     if transformer is None:
         return array
