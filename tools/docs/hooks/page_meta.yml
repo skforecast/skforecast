@@ -189,6 +189,12 @@ user_guides/exogenous-variables.ipynb:
     Exogenous variables in time series forecasting with Python: add external
     predictors to skforecast models, including their lags and window features.
 
+user_guides/forecasted-exogenous-variables.ipynb:
+  title: Forecasted exogenous variables
+  description: >-
+    Forecasted exogenous variables in Python: use forecasts of weather, prices or
+    plans as features without look-ahead bias or data leakage in backtesting.
+
 user_guides/calendar-features.ipynb:
   title: Calendar features for forecasting
   description: >-

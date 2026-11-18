@@ -67,6 +67,7 @@ nav:
       - Autocorrelation and lag selection: user_guides/autocorrelation-and-lag-selection.ipynb
       - Window and custom features: user_guides/window-features-and-custom-features.ipynb
       - Exogenous variables: user_guides/exogenous-variables.ipynb
+      - Forecasted exogenous variables: user_guides/forecasted-exogenous-variables.ipynb
       - Calendar features: user_guides/calendar-features.ipynb
       - Categorical features: user_guides/categorical-features.ipynb
       - Data transformation: user_guides/sklearn-transformers-and-pipeline.ipynb
