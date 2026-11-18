@@ -1,6 +1,6 @@
 """
 Prototypes of the two preprocessing speedups of
-`dev/handoff_preprocessing_speedups.md`, applied at runtime (monkeypatching)
+`dev/preprocessing_speedups/PLAN.md`, applied at runtime (monkeypatching)
 so that production code is not modified. They are references for the
 implementation, not the implementation itself.
 
@@ -125,7 +125,7 @@ def fast_transform_numpy(
     Shortcut for a fitted `StandardScaler` with one feature, no fitting and a
     float64 array. Anything else goes to the current `transform_numpy`.
     An `inf` in the input also goes to the current `transform_numpy`, which
-    raises the same error as scikit-learn (point 5 of T1 in the handoff).
+    raises the same error as scikit-learn (point 5 of T1 in PLAN.md).
     """
     if (
         not fit

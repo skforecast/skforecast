@@ -1,4 +1,4 @@
-# Handoff: optimizaciones del preprocesado (codificación de categóricas, atajo de escaladores y predicción in-sample en `fit`)
+# Plan: optimizaciones del preprocesado (codificación de categóricas, atajo de escaladores y predicción in-sample en `fit`)
 
 **Fecha:** 2026-11-18.
 **Origen:** el estudio de viabilidad de polars en `ForecasterRecursiveMultiSeries` (descartado; ver la sección 1).
@@ -336,9 +336,9 @@ Filas propuestas para `dev/roadmap_0.28.0/roadmap.md` (o la hoja de ruta de la v
 
 | ID | Qué | Esfuerzo | Estado | Referencia |
 |---|---|---|---|---|
-| PERF-transform-numpy-scalers | Atajo en `transform_numpy` para un `StandardScaler` ajustado (misma aritmética, sin la validación de scikit-learn): `predict` multiserie de 168 pasos en M ×1,77 con Ridge y ×1,16 con LightGBM (junto con PERF-categorical-codes, ×2,1 y ×1,8 con 1.000 series) | S | Candidata, prototipo idéntico bit a bit | `dev/handoff_preprocessing_speedups.md` (T1) |
-| PERF-categorical-codes | Codificar las exógenas `category` con sus códigos en lugar de `OrdinalEncoder` (mismo `categories_` y misma salida): construcción de `X_train` ×1,8 a ×1,9 con pandas 3, ×1,45 con pandas 2.3; −0,46 veces `X_train` de memoria transitoria | S a M | Candidata, prototipo idéntico bit a bit | `dev/handoff_preprocessing_speedups.md` (T2) |
-| STUDY-fit-insample-binning | `fit` predice sobre todo `X_train` para los bins de residuos aunque no se pidan intervalos (13 a 17 % del `fit` con árboles y 1.000 series) | S (estudio) | Pendiente de decisión | `dev/handoff_preprocessing_speedups.md` (T3) |
+| PERF-transform-numpy-scalers | Atajo en `transform_numpy` para un `StandardScaler` ajustado (misma aritmética, sin la validación de scikit-learn): `predict` multiserie de 168 pasos en M ×1,77 con Ridge y ×1,16 con LightGBM (junto con PERF-categorical-codes, ×2,1 y ×1,8 con 1.000 series) | S | Candidata, prototipo idéntico bit a bit | `dev/preprocessing_speedups/PLAN.md` (T1) |
+| PERF-categorical-codes | Codificar las exógenas `category` con sus códigos en lugar de `OrdinalEncoder` (mismo `categories_` y misma salida): construcción de `X_train` ×1,8 a ×1,9 con pandas 3, ×1,45 con pandas 2.3; −0,46 veces `X_train` de memoria transitoria | S a M | Candidata, prototipo idéntico bit a bit | `dev/preprocessing_speedups/PLAN.md` (T2) |
+| STUDY-fit-insample-binning | `fit` predice sobre todo `X_train` para los bins de residuos aunque no se pidan intervalos (13 a 17 % del `fit` con árboles y 1.000 series) | S (estudio) | Pendiente de decisión | `dev/preprocessing_speedups/PLAN.md` (T3) |
 
 ---
 

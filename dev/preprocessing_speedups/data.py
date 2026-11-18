@@ -1,6 +1,6 @@
 """
 Synthetic data and forecaster used to validate the preprocessing speedups of
-`dev/handoff_preprocessing_speedups.md`. Same data as the performance study
+`dev/preprocessing_speedups/PLAN.md`. Same data as the performance study
 of November 2026 (sizes S, M, L).
 """
 
