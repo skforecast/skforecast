@@ -1,0 +1,10 @@
+Python 3.12.3 (Linux-6.18.44-fc-v595-x86_64-with-glibc2.39)
+numpy 2.5.5, pandas 3.1.1, scikit-learn 1.9.1, numba 0.68.1, skforecast 0.28.0
+lightgbm 4.7.0
+pyarrow 26.0.1
+CPU Intel(R) Xeon(R) Processor @ 2.10GHz, 4 logical cores
+
+backtesting_forecaster_multiseries, size M, ridge (same call as bench.py)
+[skip] skforecast.deep_learning._forecaster_rnn cannot be imported (optional dependency missing)
+refit=False total   6.54 s | calls the shortcut can replace: 4200 calls, 0.377 s (5.8% of the total, upper bound of the gain x1.061) | other calls (fit=True, None): 300 calls, 0.201 s
+refit=True  total  22.31 s | calls the shortcut can replace: 4200 calls, 0.540 s (2.4% of the total, upper bound of the gain x1.025) | other calls (fit=True, None): 2100 calls, 1.437 s

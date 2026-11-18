@@ -1,0 +1,107 @@
+loading with: Python 3.12.3, numpy 2.5.5, pandas 3.1.1, scikit-learn 1.9.1, numba 0.68.1, skforecast 0.28.0
+
+##### saved_current: saved with skforecast 0.28.0, scikit-learn 1.9.1, numpy 2.5.5, pandas 3.1.1, Python 3.12.3
+[skip] skforecast.deep_learning._forecaster_rnn cannot be imported (optional dependency missing)
+recursive.joblib           PLAN: identical, shortcut in 0/8 calls | PROTO: identical, shortcut in 8/8 calls | PROPOSED: identical, shortcut in 8/8 calls | equal to the predictions of the saving version: True
+                             transformer_y: exact type=True, names=True, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+recursive.pkl              PLAN: identical, shortcut in 0/8 calls | PROTO: identical, shortcut in 8/8 calls | PROPOSED: identical, shortcut in 8/8 calls | equal to the predictions of the saving version: True
+                             transformer_y: exact type=True, names=True, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+recursive.skops            PLAN: identical, shortcut in 0/8 calls | PROTO: identical, shortcut in 8/8 calls | PROPOSED: identical, shortcut in 8/8 calls | equal to the predictions of the saving version: True
+                             transformer_y: exact type=True, names=True, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+direct.joblib              PLAN: identical, shortcut in 0/8 calls | PROTO: identical, shortcut in 8/8 calls | PROPOSED: identical, shortcut in 8/8 calls | equal to the predictions of the saving version: True
+                             transformer_y: exact type=True, names=True, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+direct.pkl                 PLAN: identical, shortcut in 0/8 calls | PROTO: identical, shortcut in 8/8 calls | PROPOSED: identical, shortcut in 8/8 calls | equal to the predictions of the saving version: True
+                             transformer_y: exact type=True, names=True, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+direct.skops               PLAN: identical, shortcut in 0/8 calls | PROTO: identical, shortcut in 8/8 calls | PROPOSED: identical, shortcut in 8/8 calls | equal to the predictions of the saving version: True
+                             transformer_y: exact type=True, names=True, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+multiseries.joblib         PLAN: identical, shortcut in 24/24 calls | PROTO: identical, shortcut in 24/24 calls | PROPOSED: identical, shortcut in 24/24 calls | equal to the predictions of the saving version: True
+                             s0, s1, s2, _unknown_level: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+multiseries.pkl            PLAN: identical, shortcut in 24/24 calls | PROTO: identical, shortcut in 24/24 calls | PROPOSED: identical, shortcut in 24/24 calls | equal to the predictions of the saving version: True
+                             s0, s1, s2, _unknown_level: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+multiseries.skops          PLAN: identical, shortcut in 24/24 calls | PROTO: identical, shortcut in 24/24 calls | PROPOSED: identical, shortcut in 24/24 calls | equal to the predictions of the saving version: True
+                             s0, s1, s2, _unknown_level: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+multiseries_dict.joblib    PLAN: identical, shortcut in 16/16 calls | PROTO: identical, shortcut in 16/16 calls | PROPOSED: identical, shortcut in 16/16 calls | equal to the predictions of the saving version: True
+                             s0, _unknown_level: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+                             s1: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=None
+multiseries_dict.pkl       PLAN: identical, shortcut in 16/16 calls | PROTO: identical, shortcut in 16/16 calls | PROPOSED: identical, shortcut in 16/16 calls | equal to the predictions of the saving version: True
+                             s0, _unknown_level: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+                             s1: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=None
+multiseries_dict.skops     PLAN: identical, shortcut in 16/16 calls | PROTO: identical, shortcut in 16/16 calls | PROPOSED: identical, shortcut in 16/16 calls | equal to the predictions of the saving version: True
+                             s0, _unknown_level: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+                             s1: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=None
+multivariate.joblib        PLAN: identical, shortcut in 16/16 calls | PROTO: identical, shortcut in 16/16 calls | PROPOSED: identical, shortcut in 16/16 calls | equal to the predictions of the saving version: True
+                             s0, s1, s2: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+multivariate.pkl           PLAN: identical, shortcut in 16/16 calls | PROTO: identical, shortcut in 16/16 calls | PROPOSED: identical, shortcut in 16/16 calls | equal to the predictions of the saving version: True
+                             s0, s1, s2: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+multivariate.skops         PLAN: identical, shortcut in 16/16 calls | PROTO: identical, shortcut in 16/16 calls | PROPOSED: identical, shortcut in 16/16 calls | equal to the predictions of the saving version: True
+                             s0, s1, s2: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+
+##### saved_0270: saved with skforecast 0.27.0, scikit-learn 1.9.1, numpy 2.5.5, pandas 2.3.3, Python 3.12.3
+recursive.joblib           PLAN: identical, shortcut in 0/8 calls | PROTO: identical, shortcut in 8/8 calls | PROPOSED: identical, shortcut in 8/8 calls | equal to the predictions of the saving version: True
+                             transformer_y: exact type=True, names=True, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+recursive.pkl              PLAN: identical, shortcut in 0/8 calls | PROTO: identical, shortcut in 8/8 calls | PROPOSED: identical, shortcut in 8/8 calls | equal to the predictions of the saving version: True
+                             transformer_y: exact type=True, names=True, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+recursive.skops            PLAN: identical, shortcut in 0/8 calls | PROTO: identical, shortcut in 8/8 calls | PROPOSED: identical, shortcut in 8/8 calls | equal to the predictions of the saving version: True
+                             transformer_y: exact type=True, names=True, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+direct.joblib              PLAN: identical, shortcut in 0/8 calls | PROTO: identical, shortcut in 8/8 calls | PROPOSED: identical, shortcut in 8/8 calls | equal to the predictions of the saving version: True
+                             transformer_y: exact type=True, names=True, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+direct.pkl                 PLAN: identical, shortcut in 0/8 calls | PROTO: identical, shortcut in 8/8 calls | PROPOSED: identical, shortcut in 8/8 calls | equal to the predictions of the saving version: True
+                             transformer_y: exact type=True, names=True, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+direct.skops               PLAN: identical, shortcut in 0/8 calls | PROTO: identical, shortcut in 8/8 calls | PROPOSED: identical, shortcut in 8/8 calls | equal to the predictions of the saving version: True
+                             transformer_y: exact type=True, names=True, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+multiseries.joblib         PLAN: identical, shortcut in 24/24 calls | PROTO: identical, shortcut in 24/24 calls | PROPOSED: identical, shortcut in 24/24 calls | equal to the predictions of the saving version: True
+                             s0, s1, s2, _unknown_level: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+multiseries.pkl            PLAN: identical, shortcut in 24/24 calls | PROTO: identical, shortcut in 24/24 calls | PROPOSED: identical, shortcut in 24/24 calls | equal to the predictions of the saving version: True
+                             s0, s1, s2, _unknown_level: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+multiseries.skops          PLAN: identical, shortcut in 24/24 calls | PROTO: identical, shortcut in 24/24 calls | PROPOSED: identical, shortcut in 24/24 calls | equal to the predictions of the saving version: True
+                             s0, s1, s2, _unknown_level: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+multiseries_dict.joblib    PLAN: identical, shortcut in 16/16 calls | PROTO: identical, shortcut in 16/16 calls | PROPOSED: identical, shortcut in 16/16 calls | equal to the predictions of the saving version: True
+                             s0, _unknown_level: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+                             s1: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=None
+multiseries_dict.pkl       PLAN: identical, shortcut in 16/16 calls | PROTO: identical, shortcut in 16/16 calls | PROPOSED: identical, shortcut in 16/16 calls | equal to the predictions of the saving version: True
+                             s0, _unknown_level: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+                             s1: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=None
+multiseries_dict.skops     PLAN: identical, shortcut in 16/16 calls | PROTO: identical, shortcut in 16/16 calls | PROPOSED: identical, shortcut in 16/16 calls | equal to the predictions of the saving version: True
+                             s0, _unknown_level: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+                             s1: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=None
+multivariate.joblib        PLAN: identical, shortcut in 16/16 calls | PROTO: identical, shortcut in 16/16 calls | PROPOSED: identical, shortcut in 16/16 calls | equal to the predictions of the saving version: True
+                             s0, s1, s2: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+multivariate.pkl           PLAN: identical, shortcut in 16/16 calls | PROTO: identical, shortcut in 16/16 calls | PROPOSED: identical, shortcut in 16/16 calls | equal to the predictions of the saving version: True
+                             s0, s1, s2: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+multivariate.skops         PLAN: identical, shortcut in 16/16 calls | PROTO: identical, shortcut in 16/16 calls | PROPOSED: identical, shortcut in 16/16 calls | equal to the predictions of the saving version: True
+                             s0, s1, s2: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+
+##### saved_min: saved with skforecast 0.28.0, scikit-learn 1.6.0, numpy 2.0.0, pandas 2.3.0, Python 3.11.18
+recursive.joblib           PLAN: identical, shortcut in 0/8 calls | PROTO: identical, shortcut in 8/8 calls | PROPOSED: identical, shortcut in 8/8 calls | equal to the predictions of the saving version: True
+                             transformer_y: exact type=True, names=True, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+recursive.pkl              PLAN: identical, shortcut in 0/8 calls | PROTO: identical, shortcut in 8/8 calls | PROPOSED: identical, shortcut in 8/8 calls | equal to the predictions of the saving version: True
+                             transformer_y: exact type=True, names=True, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+recursive.skops            PLAN: identical, shortcut in 0/8 calls | PROTO: identical, shortcut in 8/8 calls | PROPOSED: identical, shortcut in 8/8 calls | equal to the predictions of the saving version: True
+                             transformer_y: exact type=True, names=True, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+direct.joblib              PLAN: identical, shortcut in 0/8 calls | PROTO: identical, shortcut in 8/8 calls | PROPOSED: identical, shortcut in 8/8 calls | equal to the predictions of the saving version: True
+                             transformer_y: exact type=True, names=True, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+direct.pkl                 PLAN: identical, shortcut in 0/8 calls | PROTO: identical, shortcut in 8/8 calls | PROPOSED: identical, shortcut in 8/8 calls | equal to the predictions of the saving version: True
+                             transformer_y: exact type=True, names=True, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+direct.skops               PLAN: identical, shortcut in 0/8 calls | PROTO: identical, shortcut in 8/8 calls | PROPOSED: identical, shortcut in 8/8 calls | equal to the predictions of the saving version: True
+                             transformer_y: exact type=True, names=True, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+multiseries.joblib         PLAN: identical, shortcut in 24/24 calls | PROTO: identical, shortcut in 24/24 calls | PROPOSED: identical, shortcut in 24/24 calls | equal to the predictions of the saving version: True
+                             s0, s1, s2, _unknown_level: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+multiseries.pkl            PLAN: identical, shortcut in 24/24 calls | PROTO: identical, shortcut in 24/24 calls | PROPOSED: identical, shortcut in 24/24 calls | equal to the predictions of the saving version: True
+                             s0, s1, s2, _unknown_level: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+multiseries.skops          PLAN: identical, shortcut in 24/24 calls | PROTO: identical, shortcut in 24/24 calls | PROPOSED: identical, shortcut in 24/24 calls | equal to the predictions of the saving version: True
+                             s0, s1, s2, _unknown_level: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+multiseries_dict.joblib    PLAN: identical, shortcut in 16/16 calls | PROTO: identical, shortcut in 16/16 calls | PROPOSED: identical, shortcut in 16/16 calls | equal to the predictions of the saving version: True
+                             s0, _unknown_level: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+                             s1: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=None
+multiseries_dict.pkl       PLAN: identical, shortcut in 16/16 calls | PROTO: identical, shortcut in 16/16 calls | PROPOSED: identical, shortcut in 16/16 calls | equal to the predictions of the saving version: True
+                             s0, _unknown_level: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+                             s1: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=None
+multiseries_dict.skops     PLAN: identical, shortcut in 16/16 calls | PROTO: identical, shortcut in 16/16 calls | PROPOSED: identical, shortcut in 16/16 calls | equal to the predictions of the saving version: True
+                             s0, _unknown_level: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+                             s1: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=None
+multivariate.joblib        PLAN: identical, shortcut in 16/16 calls | PROTO: identical, shortcut in 16/16 calls | PROPOSED: identical, shortcut in 16/16 calls | equal to the predictions of the saving version: True
+                             s0, s1, s2: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+multivariate.pkl           PLAN: identical, shortcut in 16/16 calls | PROTO: identical, shortcut in 16/16 calls | PROPOSED: identical, shortcut in 16/16 calls | equal to the predictions of the saving version: True
+                             s0, s1, s2: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))
+multivariate.skops         PLAN: identical, shortcut in 16/16 calls | PROTO: identical, shortcut in 16/16 calls | PROPOSED: identical, shortcut in 16/16 calls | equal to the predictions of the saving version: True
+                             s0, s1, s2: exact type=True, names=False, n_features_in_=1, mean_=('ndarray', 'float64', (1,)), scale_=('ndarray', 'float64', (1,))

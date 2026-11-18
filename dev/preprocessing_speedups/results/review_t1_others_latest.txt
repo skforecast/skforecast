@@ -1,0 +1,43 @@
+Python 3.12.3, numpy 2.5.5, pandas 3.1.1, scikit-learn 1.9.1, numba 0.68.1, skforecast 0.28.0
+
+-- Calls in which each shortcut applies
+[skip] skforecast.deep_learning._forecaster_rnn cannot be imported (optional dependency missing)
+Recursive predict(24)                      PLAN 0/2, PROTO 2/2, PROPOSED 2/2
+Recursive backtesting 1000 folds           PLAN 0/2000, PROTO 2000/2000, PROPOSED 2000/2000
+Direct predict(5)                          PLAN 0/2, PROTO 2/2, PROPOSED 2/2
+Direct backtesting 200 folds               PLAN 0/400, PROTO 400/400, PROPOSED 400/400
+DirectMultiVariate backtesting 200 folds   PLAN 800/803, PROTO 800/803, PROPOSED 800/803
+Stats predict(24)                          PLAN 0/1, PROTO 1/1, PROPOSED 1/1
+
+-- End to end, variants interleaved, 15 rounds
+cell: median ms | ratio of medians | paired ratio per round: median [q25, q75] | min ms
+Recursive predict(24)
+   current        1.06 ms | x1.00 | x1.00 [1.00, 1.00] | min 0.93 ms
+   PLAN           1.05 ms | x1.00 | x1.00 [0.98, 1.03] | min 0.97 ms
+   PROTO          0.66 ms | x1.60 | x1.61 [1.54, 1.67] | min 0.58 ms
+   PROPOSED       0.66 ms | x1.60 | x1.63 [1.45, 1.73] | min 0.60 ms
+Recursive backtesting 1000 folds
+   current      396.15 ms | x1.00 | x1.00 [1.00, 1.00] | min 292.74 ms
+   PLAN         397.99 ms | x1.00 | x0.91 [0.82, 1.07] | min 342.61 ms
+   PROTO        175.36 ms | x2.26 | x2.23 [1.66, 2.37] | min 135.19 ms
+   PROPOSED     180.40 ms | x2.20 | x2.18 [1.88, 2.84] | min 140.83 ms
+Direct predict(5)
+   current        1.07 ms | x1.00 | x1.00 [1.00, 1.00] | min 0.95 ms
+   PLAN           1.06 ms | x1.01 | x1.00 [0.99, 1.08] | min 0.94 ms
+   PROTO          0.62 ms | x1.74 | x1.74 [1.59, 2.12] | min 0.53 ms
+   PROPOSED       0.63 ms | x1.71 | x1.73 [1.60, 2.16] | min 0.56 ms
+Direct backtesting 200 folds
+   current       95.45 ms | x1.00 | x1.00 [1.00, 1.00] | min 74.62 ms
+   PLAN          92.90 ms | x1.03 | x1.01 [0.99, 1.07] | min 75.05 ms
+   PROTO         48.47 ms | x1.97 | x1.93 [1.85, 2.01] | min 39.70 ms
+   PROPOSED      50.54 ms | x1.89 | x1.87 [1.83, 1.94] | min 41.31 ms
+DirectMultiVariate backtesting 200 folds
+   current      732.11 ms | x1.00 | x1.00 [1.00, 1.00] | min 562.32 ms
+   PLAN         592.45 ms | x1.24 | x1.21 [1.12, 1.32] | min 459.32 ms
+   PROTO        573.44 ms | x1.28 | x1.23 [1.10, 1.35] | min 455.55 ms
+   PROPOSED     571.49 ms | x1.28 | x1.22 [1.18, 1.27] | min 462.46 ms
+Stats predict(24)
+   current        1.02 ms | x1.00 | x1.00 [1.00, 1.00] | min 0.90 ms
+   PLAN           1.02 ms | x1.00 | x1.02 [0.99, 1.05] | min 0.85 ms
+   PROTO          0.77 ms | x1.33 | x1.30 [1.27, 1.39] | min 0.66 ms
+   PROPOSED       0.75 ms | x1.35 | x1.36 [1.27, 1.39] | min 0.71 ms

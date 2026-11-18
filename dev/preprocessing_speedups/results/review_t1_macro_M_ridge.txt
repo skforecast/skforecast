@@ -1,0 +1,46 @@
+Python 3.12.3 (Linux-6.18.44-fc-v595-x86_64-with-glibc2.39)
+numpy 2.5.5, pandas 3.1.1, scikit-learn 1.9.1, numba 0.68.1, skforecast 0.28.0
+lightgbm 4.7.0
+pyarrow 26.0.1
+CPU Intel(R) Xeon(R) Processor @ 2.10GHz, 4 logical cores
+
+ForecasterRecursiveMultiSeries, size M (300 series), ridge
+
+-- Time inside transform_numpy (upper bound of what any shortcut can save)
+[skip] skforecast.deep_learning._forecaster_rnn cannot be imported (optional dependency missing)
+predict_168                current   total    153.2 ms, inside transform_numpy   44.16 ms (28.8%) in 600 calls (73.6 us per call)
+predict_168                PROPOSED  total    186.3 ms, inside transform_numpy    7.37 ms ( 4.0%) in 600 calls (12.3 us per call)
+predict_24                 current   total    183.2 ms, inside transform_numpy   57.54 ms (31.4%) in 600 calls (95.9 us per call)
+predict_24                 PROPOSED  total    119.7 ms, inside transform_numpy    4.75 ms ( 4.0%) in 600 calls (7.9 us per call)
+interval_conformal_24      current   total    285.0 ms, inside transform_numpy   58.09 ms (20.4%) in 600 calls (96.8 us per call)
+interval_conformal_24      PROPOSED  total    232.6 ms, inside transform_numpy    4.95 ms ( 2.1%) in 600 calls (8.2 us per call)
+interval_bootstrapping_24  current   total    698.1 ms, inside transform_numpy  132.67 ms (19.0%) in 1200 calls (110.6 us per call)
+interval_bootstrapping_24  PROPOSED  total    545.5 ms, inside transform_numpy   10.98 ms ( 2.0%) in 1200 calls (9.1 us per call)
+
+-- Calls in which each shortcut applies (predict_168)
+PLAN      600 of 600 calls
+PROTO     600 of 600 calls
+PROPOSED  600 of 600 calls
+
+-- End to end, variants interleaved, 25 rounds
+cell: median ms | ratio of medians | paired ratio per round: median [q25, q75] | min ms
+predict_168
+   current      192.19 ms | x1.00 | x1.00 [1.00, 1.00] | min 152.91 ms
+   PLAN         128.70 ms | x1.49 | x1.44 [1.35, 1.65] | min 101.59 ms
+   PROTO        129.72 ms | x1.48 | x1.44 [1.32, 1.76] | min 116.08 ms
+   PROPOSED     131.58 ms | x1.46 | x1.46 [1.29, 1.78] | min 117.08 ms
+predict_24
+   current      226.45 ms | x1.00 | x1.00 [1.00, 1.00] | min 169.11 ms
+   PLAN         123.56 ms | x1.83 | x1.54 [1.47, 1.93] | min 108.04 ms
+   PROTO        123.53 ms | x1.83 | x1.69 [1.46, 2.10] | min 102.07 ms
+   PROPOSED     129.61 ms | x1.75 | x1.62 [1.40, 1.98] | min 98.57 ms
+interval_conformal_24
+   current      307.60 ms | x1.00 | x1.00 [1.00, 1.00] | min 235.74 ms
+   PLAN         250.21 ms | x1.23 | x1.22 [1.11, 1.34] | min 207.37 ms
+   PROTO        250.69 ms | x1.23 | x1.33 [1.05, 1.56] | min 176.99 ms
+   PROPOSED     264.64 ms | x1.16 | x1.27 [1.10, 1.37] | min 187.06 ms
+interval_bootstrapping_24
+   current      838.00 ms | x1.00 | x1.00 [1.00, 1.00] | min 629.54 ms
+   PLAN         557.08 ms | x1.50 | x1.45 [1.28, 1.59] | min 467.88 ms
+   PROTO        549.14 ms | x1.53 | x1.47 [1.31, 1.51] | min 448.61 ms
+   PROPOSED     649.36 ms | x1.29 | x1.28 [1.12, 1.43] | min 470.07 ms

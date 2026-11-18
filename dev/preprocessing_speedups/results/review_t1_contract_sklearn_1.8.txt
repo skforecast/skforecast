@@ -1,0 +1,873 @@
+Python 3.12.3, numpy 2.5.5, pandas 3.1.1, scikit-learn 1.8.0, numba 0.68.1, skforecast 0.28.0
+
+===== 1. Fitted state of StandardScaler (attributes, dtype, zero variance)
+/root/.venvs/skforecast-sk1.8/lib/python3.12/site-packages/sklearn/utils/extmath.py:1207: RuntimeWarning: invalid value encountered in divide
+  updated_mean = (last_sum + new_sum) / updated_sample_count
+/root/.venvs/skforecast-sk1.8/lib/python3.12/site-packages/sklearn/utils/extmath.py:1212: RuntimeWarning: invalid value encountered in divide
+  T = new_sum / new_sample_count
+/root/.venvs/skforecast-sk1.8/lib/python3.12/site-packages/sklearn/utils/extmath.py:1236: RuntimeWarning: invalid value encountered in divide
+  new_unnormalized_variance -= correction**2 / new_sample_count
+/root/.venvs/skforecast-sk1.8/lib/python3.12/site-packages/sklearn/utils/extmath.py:1230: RuntimeWarning: overflow encountered in square
+  temp **= 2
+/root/.venvs/skforecast-sk1.8/lib/python3.12/site-packages/sklearn/utils/extmath.py:1236: RuntimeWarning: overflow encountered in square
+  new_unnormalized_variance -= correction**2 / new_sample_count
+/root/.venvs/skforecast-sk1.8/lib/python3.12/site-packages/sklearn/utils/extmath.py:1236: RuntimeWarning: invalid value encountered in subtract
+  new_unnormalized_variance -= correction**2 / new_sample_count
+/root/.venvs/skforecast-sk1.8/lib/python3.12/site-packages/sklearn/preprocessing/_data.py:95: RuntimeWarning: overflow encountered in square
+  upper_bound = n_samples * eps * var + (n_samples * mean * eps) ** 2
+default                                  mean_=('float64', (1,), 86.4636322864001) scale_=('float64', (1,), 17.675981513079396) attrs=['mean_', 'n_features_in_', 'n_samples_seen_', 'scale_', 'var_']
+with_mean=False                          mean_=('float64', (1,), 86.4636322864001) scale_=('float64', (1,), 17.675981513079396) attrs=['mean_', 'n_features_in_', 'n_samples_seen_', 'scale_', 'var_']
+with_std=False                           mean_=('float64', (1,), 86.4636322864001) scale_=None attrs=['mean_', 'n_features_in_', 'n_samples_seen_', 'scale_', 'var_']
+with_mean=False, with_std=False          mean_=None scale_=None attrs=['mean_', 'n_features_in_', 'n_samples_seen_', 'scale_', 'var_']
+fitted with a DataFrame                  mean_=('float64', (1,), 86.4636322864001) scale_=('float64', (1,), 17.675981513079396) attrs=['feature_names_in_', 'mean_', 'n_features_in_', 'n_samples_seen_', 'scale_', 'var_']
+copy=False                               mean_=('float64', (1,), 86.4636322864001) scale_=('float64', (1,), 17.675981513079396) attrs=['mean_', 'n_features_in_', 'n_samples_seen_', 'scale_', 'var_']
+constant series                          mean_=('float64', (1,), 7.5) scale_=('float64', (1,), 1.0) attrs=['mean_', 'n_features_in_', 'n_samples_seen_', 'scale_', 'var_']
+almost constant series                   mean_=('float64', (1,), 1000000.0) scale_=('float64', (1,), 1.0) attrs=['mean_', 'n_features_in_', 'n_samples_seen_', 'scale_', 'var_']
+one observation                          mean_=('float64', (1,), 4.2) scale_=('float64', (1,), 1.0) attrs=['mean_', 'n_features_in_', 'n_samples_seen_', 'scale_', 'var_']
+series with NaN                          mean_=('float64', (1,), 86.53099380262479) scale_=('float64', (1,), 17.60603972941723) attrs=['mean_', 'n_features_in_', 'n_samples_seen_', 'scale_', 'var_']
+all NaN                                  mean_=('float64', (1,), nan) scale_=('float64', (1,), nan) attrs=['mean_', 'n_features_in_', 'n_samples_seen_', 'scale_', 'var_']
+float32 series                           mean_=('float64', (1,), 86.46363218688965) scale_=('float64', (1,), 17.675981375580044) attrs=['mean_', 'n_features_in_', 'n_samples_seen_', 'scale_', 'var_']
+int64 series                             mean_=('float64', (1,), 49.5) scale_=('float64', (1,), 28.86607004772212) attrs=['mean_', 'n_features_in_', 'n_samples_seen_', 'scale_', 'var_']
+values of 1e200 (variance overflows)     mean_=('float64', (1,), 8.64636322864001e+201) scale_=('float64', (1,), nan) attrs=['mean_', 'n_features_in_', 'n_samples_seen_', 'scale_', 'var_']
+values of 1e-200 (variance underflows)   mean_=('float64', (1,), 8.64636322864001e-199) scale_=('float64', (1,), 1.0) attrs=['mean_', 'n_features_in_', 'n_samples_seen_', 'scale_', 'var_']
+set_output(transform='pandas')           mean_=('float64', (1,), 86.4636322864001) scale_=('float64', (1,), 17.675981513079396) attrs=['mean_', 'n_features_in_', 'n_samples_seen_', 'scale_', 'var_']
+partial_fit twice                        mean_=('float64', (1,), 86.4636322864001) scale_=('float64', (1,), 17.675981513079396) attrs=['mean_', 'n_features_in_', 'n_samples_seen_', 'scale_', 'var_']
+state digest (default fit): d33e56e7a142
+
+===== 2. Bitwise identity on float64 (every candidate against the current path)
+
+[set_output(transform='pandas') | normal n=1 | inverse=False]
+   current : ndarray float64 (1,) sha=953a54b0 flags(C,F,W)=(1, 1, 0)
+   PLAN      : DIFFERENT (result) -> ndarray float64 (1,) sha=953a54b0 flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> ndarray float64 (1,) sha=953a54b0 flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : DIFFERENT (result) -> ndarray float64 (1,) sha=953a54b0 flags(C,F,W)=(1, 1, 1)
+   PROPOSED-B: DIFFERENT (result) -> ndarray float64 (1,) sha=953a54b0 flags(C,F,W)=(1, 1, 1)
+
+[set_output(transform='pandas') | normal n=2 | inverse=False]
+   current : ndarray float64 (2,) sha=68700732 flags(C,F,W)=(1, 1, 0)
+   PLAN      : DIFFERENT (result) -> ndarray float64 (2,) sha=68700732 flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> ndarray float64 (2,) sha=68700732 flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : DIFFERENT (result) -> ndarray float64 (2,) sha=68700732 flags(C,F,W)=(1, 1, 1)
+   PROPOSED-B: DIFFERENT (result) -> ndarray float64 (2,) sha=68700732 flags(C,F,W)=(1, 1, 1)
+
+[set_output(transform='pandas') | normal n=3 | inverse=False]
+   current : ndarray float64 (3,) sha=0e8796f4 flags(C,F,W)=(1, 1, 0)
+   PLAN      : DIFFERENT (result) -> ndarray float64 (3,) sha=0e8796f4 flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> ndarray float64 (3,) sha=0e8796f4 flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : DIFFERENT (result) -> ndarray float64 (3,) sha=0e8796f4 flags(C,F,W)=(1, 1, 1)
+   PROPOSED-B: DIFFERENT (result) -> ndarray float64 (3,) sha=0e8796f4 flags(C,F,W)=(1, 1, 1)
+
+[set_output(transform='pandas') | normal n=7 | inverse=False]
+   current : ndarray float64 (7,) sha=d39fdc09 flags(C,F,W)=(1, 1, 0)
+   PLAN      : DIFFERENT (result) -> ndarray float64 (7,) sha=d39fdc09 flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> ndarray float64 (7,) sha=d39fdc09 flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : DIFFERENT (result) -> ndarray float64 (7,) sha=d39fdc09 flags(C,F,W)=(1, 1, 1)
+   PROPOSED-B: DIFFERENT (result) -> ndarray float64 (7,) sha=d39fdc09 flags(C,F,W)=(1, 1, 1)
+
+[set_output(transform='pandas') | normal n=8 | inverse=False]
+   current : ndarray float64 (8,) sha=436735ce flags(C,F,W)=(1, 1, 0)
+   PLAN      : DIFFERENT (result) -> ndarray float64 (8,) sha=436735ce flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> ndarray float64 (8,) sha=436735ce flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : DIFFERENT (result) -> ndarray float64 (8,) sha=436735ce flags(C,F,W)=(1, 1, 1)
+   PROPOSED-B: DIFFERENT (result) -> ndarray float64 (8,) sha=436735ce flags(C,F,W)=(1, 1, 1)
+
+[set_output(transform='pandas') | normal n=15 | inverse=False]
+   current : ndarray float64 (15,) sha=2be51625 flags(C,F,W)=(1, 1, 0)
+   PLAN      : DIFFERENT (result) -> ndarray float64 (15,) sha=2be51625 flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> ndarray float64 (15,) sha=2be51625 flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : DIFFERENT (result) -> ndarray float64 (15,) sha=2be51625 flags(C,F,W)=(1, 1, 1)
+   PROPOSED-B: DIFFERENT (result) -> ndarray float64 (15,) sha=2be51625 flags(C,F,W)=(1, 1, 1)
+
+[set_output(transform='pandas') | normal n=16 | inverse=False]
+   current : ndarray float64 (16,) sha=0ce2f64e flags(C,F,W)=(1, 1, 0)
+   PLAN      : DIFFERENT (result) -> ndarray float64 (16,) sha=0ce2f64e flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> ndarray float64 (16,) sha=0ce2f64e flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : DIFFERENT (result) -> ndarray float64 (16,) sha=0ce2f64e flags(C,F,W)=(1, 1, 1)
+   PROPOSED-B: DIFFERENT (result) -> ndarray float64 (16,) sha=0ce2f64e flags(C,F,W)=(1, 1, 1)
+
+[set_output(transform='pandas') | normal n=17 | inverse=False]
+   current : ndarray float64 (17,) sha=f6bf2362 flags(C,F,W)=(1, 1, 0)
+   PLAN      : DIFFERENT (result) -> ndarray float64 (17,) sha=f6bf2362 flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> ndarray float64 (17,) sha=f6bf2362 flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : DIFFERENT (result) -> ndarray float64 (17,) sha=f6bf2362 flags(C,F,W)=(1, 1, 1)
+   PROPOSED-B: DIFFERENT (result) -> ndarray float64 (17,) sha=f6bf2362 flags(C,F,W)=(1, 1, 1)
+
+[set_output(transform='pandas') | normal n=48 | inverse=False]
+   current : ndarray float64 (48,) sha=1d6ae459 flags(C,F,W)=(1, 1, 0)
+   PLAN      : DIFFERENT (result) -> ndarray float64 (48,) sha=1d6ae459 flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> ndarray float64 (48,) sha=1d6ae459 flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : DIFFERENT (result) -> ndarray float64 (48,) sha=1d6ae459 flags(C,F,W)=(1, 1, 1)
+   PROPOSED-B: DIFFERENT (result) -> ndarray float64 (48,) sha=1d6ae459 flags(C,F,W)=(1, 1, 1)
+
+[set_output(transform='pandas') | normal n=168 | inverse=False]
+   current : ndarray float64 (168,) sha=da661036 flags(C,F,W)=(1, 1, 0)
+   PLAN      : DIFFERENT (result) -> ndarray float64 (168,) sha=da661036 flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> ndarray float64 (168,) sha=da661036 flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : DIFFERENT (result) -> ndarray float64 (168,) sha=da661036 flags(C,F,W)=(1, 1, 1)
+   PROPOSED-B: DIFFERENT (result) -> ndarray float64 (168,) sha=da661036 flags(C,F,W)=(1, 1, 1)
+
+[set_output(transform='pandas') | normal n=1000 | inverse=False]
+   current : ndarray float64 (1000,) sha=c64d4463 flags(C,F,W)=(1, 1, 0)
+   PLAN      : DIFFERENT (result) -> ndarray float64 (1000,) sha=c64d4463 flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> ndarray float64 (1000,) sha=c64d4463 flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : DIFFERENT (result) -> ndarray float64 (1000,) sha=c64d4463 flags(C,F,W)=(1, 1, 1)
+   PROPOSED-B: DIFFERENT (result) -> ndarray float64 (1000,) sha=c64d4463 flags(C,F,W)=(1, 1, 1)
+
+[set_output(transform='pandas') | special values | inverse=False]
+   current : ndarray float64 (16,) sha=e69bfda2 flags(C,F,W)=(1, 1, 0)
+   PLAN      : DIFFERENT (result) -> ndarray float64 (16,) sha=e69bfda2 flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> ndarray float64 (16,) sha=e69bfda2 flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : DIFFERENT (result) -> ndarray float64 (16,) sha=e69bfda2 flags(C,F,W)=(1, 1, 1)
+   PROPOSED-B: DIFFERENT (result) -> ndarray float64 (16,) sha=e69bfda2 flags(C,F,W)=(1, 1, 1)
+
+[set_output(transform='pandas') | with NaN | inverse=False]
+   current : ndarray float64 (168,) sha=6cbee7a9 flags(C,F,W)=(1, 1, 0)
+   PLAN      : DIFFERENT (result) -> ndarray float64 (168,) sha=6cbee7a9 flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> ndarray float64 (168,) sha=6cbee7a9 flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : DIFFERENT (result) -> ndarray float64 (168,) sha=6cbee7a9 flags(C,F,W)=(1, 1, 1)
+   PROPOSED-B: DIFFERENT (result) -> ndarray float64 (168,) sha=6cbee7a9 flags(C,F,W)=(1, 1, 1)
+
+[set_output(transform='pandas') | all NaN | inverse=False]
+   current : ndarray float64 (48,) sha=c2de59a6 flags(C,F,W)=(1, 1, 0)
+   PLAN      : DIFFERENT (result) -> ndarray float64 (48,) sha=c2de59a6 flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> ndarray float64 (48,) sha=c2de59a6 flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : DIFFERENT (result) -> ndarray float64 (48,) sha=c2de59a6 flags(C,F,W)=(1, 1, 1)
+   PROPOSED-B: DIFFERENT (result) -> ndarray float64 (48,) sha=c2de59a6 flags(C,F,W)=(1, 1, 1)
+
+[set_output(transform='pandas') | column of a C matrix (not contiguous) | inverse=False]
+   current : ndarray float64 (168,) sha=8defe07d flags(C,F,W)=(1, 1, 0)
+   PLAN      : DIFFERENT (result) -> ndarray float64 (168,) sha=8defe07d flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> ndarray float64 (168,) sha=8defe07d flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : DIFFERENT (result) -> ndarray float64 (168,) sha=8defe07d flags(C,F,W)=(1, 1, 1)
+   PROPOSED-B: DIFFERENT (result) -> ndarray float64 (168,) sha=8defe07d flags(C,F,W)=(1, 1, 1)
+
+[set_output(transform='pandas') | reversed (negative stride) | inverse=False]
+   current : ndarray float64 (168,) sha=0b3e62bc flags(C,F,W)=(1, 1, 0)
+   PLAN      : DIFFERENT (result) -> ndarray float64 (168,) sha=0b3e62bc flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> ndarray float64 (168,) sha=0b3e62bc flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : DIFFERENT (result) -> ndarray float64 (168,) sha=0b3e62bc flags(C,F,W)=(1, 1, 1)
+   PROPOSED-B: DIFFERENT (result) -> ndarray float64 (168,) sha=0b3e62bc flags(C,F,W)=(1, 1, 1)
+
+[set_output(transform='pandas') | read-only | inverse=False]
+   current : ndarray float64 (100,) sha=085364eb flags(C,F,W)=(1, 1, 0)
+   PLAN      : DIFFERENT (result) -> ndarray float64 (100,) sha=085364eb flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> ndarray float64 (100,) sha=085364eb flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : DIFFERENT (result) -> ndarray float64 (100,) sha=085364eb flags(C,F,W)=(1, 1, 1)
+   PROPOSED-B: DIFFERENT (result) -> ndarray float64 (100,) sha=085364eb flags(C,F,W)=(1, 1, 1)
+
+[set_output(transform='pandas') | read-only view of pandas | inverse=False]
+   current : ndarray float64 (100,) sha=4ec5d876 flags(C,F,W)=(1, 1, 0)
+   PLAN      : DIFFERENT (result) -> ndarray float64 (100,) sha=4ec5d876 flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> ndarray float64 (100,) sha=4ec5d876 flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : DIFFERENT (result) -> ndarray float64 (100,) sha=4ec5d876 flags(C,F,W)=(1, 1, 1)
+   PROPOSED-B: DIFFERENT (result) -> ndarray float64 (100,) sha=4ec5d876 flags(C,F,W)=(1, 1, 1)
+
+1176 cases x 4 candidates, 72 differences with the current path.
+digest of the outputs of the current path, by scaler (to compare between environments):
+   default                                       state=d33e56e7a1 outputs=eb0b0be845
+   with_mean=False                               state=d33e56e7a1 outputs=c7aa7272e8
+   with_std=False                                state=0a4bd7a01e outputs=12d75601e8
+   with_mean=False, with_std=False               state=e3b0c44298 outputs=e539bf17ca
+   fitted with a DataFrame                       state=d33e56e7a1 outputs=eb0b0be845
+   copy=False                                    state=d33e56e7a1 outputs=eb0b0be845
+   constant series                               state=62bbb850b9 outputs=84a03fb969
+   almost constant series                        state=1618f15ecb outputs=ffb5671e5f
+   one observation                               state=162195cc06 outputs=633bddc9a2
+   series with NaN                               state=407cb82bc8 outputs=73e25d2a66
+   all NaN                                       state=38b0da9c77 outputs=8734e456f6
+   float32 series                                state=cab723777e outputs=1d9aaf8f17
+   int64 series                                  state=220a9b0390 outputs=4b94f4d9b0
+   values of 1e200 (variance overflows)          state=d82c527a4a outputs=8734e456f6
+   values of 1e-200 (variance underflows)        state=8aa89680c1 outputs=b957842056
+   set_output(transform='pandas')                state=d33e56e7a1 outputs=eb0b0be845
+   partial_fit twice                             state=d33e56e7a1 outputs=eb0b0be845
+   hand-set with_mean=True, with_std=True        state=9edbec45b1 outputs=7fea27bc1e
+   hand-set with_mean=True, with_std=False       state=8b5319c77d outputs=a616c9e544
+   hand-set with_mean=False, with_std=True       state=9edbec45b1 outputs=0f83d04861
+   hand-set with_mean=False, with_std=False      state=e3b0c44298 outputs=e539bf17ca
+digest of the outputs, scalers fitted in this environment : d209eecf75487d35
+digest of the outputs, scalers with hand-set attributes   : d39360efbc7ecf54
+
+===== 3. float32 (outside the shortcut): what scikit-learn returns
+dtype of transform / inverse: float32 float32
+digest float32 transform: 4c424d9a20d1 | inverse: 7cd65cdcbc26
+transform equals 'compute in float64 and round' : False (103 of 1000 values differ)
+transform equals 'cast mean_/scale_ to float32'  : True (0 of 1000 values differ)
+
+[float32 1D | inverse=False]
+   current : ndarray float32 (48,) sha=bc5e451e flags(C,F,W)=(1, 1, 1)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[float32 1D | inverse=True]
+   current : ndarray float32 (48,) sha=a808a14c flags(C,F,W)=(1, 1, 1)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[float32 2D | inverse=False]
+   current : ValueError: X has 4 features, but StandardScaler is expecting 1 features as input.
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[float32 2D | inverse=True]
+   current : ndarray float32 (24, 4) sha=a149234f flags(C,F,W)=(1, 0, 1)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+===== 4. Infinite values: same ValueError as today
+
+[+inf | 1D | inverse=False]
+   current : ValueError: Input X contains infinity or a value too large for dtype('float64').
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[+inf | 1D | inverse=True]
+   current : ValueError: Input contains infinity or a value too large for dtype('float64').
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[-inf | 1D | inverse=False]
+   current : ValueError: Input X contains infinity or a value too large for dtype('float64').
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[-inf | 1D | inverse=True]
+   current : ValueError: Input contains infinity or a value too large for dtype('float64').
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[+inf and -inf | 1D | inverse=False]
+   current : ValueError: Input X contains infinity or a value too large for dtype('float64'). | warnings: (('RuntimeWarning', 'invalid value encountered in reduce'),)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[+inf and -inf | 1D | inverse=True]
+   current : ValueError: Input contains infinity or a value too large for dtype('float64'). | warnings: (('RuntimeWarning', 'invalid value encountered in reduce'),)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[inf and NaN | 1D | inverse=False]
+   current : ValueError: Input X contains infinity or a value too large for dtype('float64').
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[inf and NaN | 1D | inverse=True]
+   current : ValueError: Input contains infinity or a value too large for dtype('float64').
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[inf in the last position | 1D | inverse=False]
+   current : ValueError: Input X contains infinity or a value too large for dtype('float64').
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[inf in the last position | 1D | inverse=True]
+   current : ValueError: Input contains infinity or a value too large for dtype('float64').
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[+inf | 2D | inverse=True]
+   current : ValueError: Input contains infinity or a value too large for dtype('float64').
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[+inf | scaler with_mean=False, with_std=False | inverse=False]
+   current : ValueError: Input X contains infinity or a value too large for dtype('float64').
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[+inf | scaler with_mean=False, with_std=False | inverse=True]
+   current : ValueError: Input contains infinity or a value too large for dtype('float64').
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[+inf | scaler scale_=nan (values of 1e200) | inverse=False]
+   current : ValueError: Input X contains infinity or a value too large for dtype('float64').
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[+inf | scaler scale_=nan (values of 1e200) | inverse=True]
+   current : ValueError: Input contains infinity or a value too large for dtype('float64').
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[+inf | scaler fitted with a DataFrame | inverse=False]
+   current : ValueError: Input X contains infinity or a value too large for dtype('float64').
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[+inf | scaler fitted with a DataFrame | inverse=True]
+   current : ValueError: Input contains infinity or a value too large for dtype('float64').
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[+inf with sklearn assume_finite=True | inverse=False]
+   current : ndarray float64 (48,) sha=1b94466a flags(C,F,W)=(1, 1, 1)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[+inf with sklearn assume_finite=True | inverse=True]
+   current : ndarray float64 (48,) sha=7a00b565 flags(C,F,W)=(1, 1, 1)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+direct scikit-learn, inverse=False: ValueError: Input X contains infinity or a value too large for dtype('float64').
+direct scikit-learn, inverse=True: ValueError: Input contains infinity or a value too large for dtype('float64').
+
+-- Finite values whose sum overflows (scikit-learn ignores the overflow of its sum)
+
+[finite 1.5e308 x 48 | inverse=False]
+   current : ndarray float64 (48,) sha=ff848a73 flags(C,F,W)=(1, 1, 1)
+   PLAN      : DIFFERENT (warnings) -> ndarray float64 (48,) sha=ff848a73 flags(C,F,W)=(1, 1, 1) | warnings: (('RuntimeWarning', 'overflow encountered in reduce'),)
+   PROTO     : DIFFERENT (warnings) -> ndarray float64 (48,) sha=ff848a73 flags(C,F,W)=(1, 1, 1) | warnings: (('RuntimeWarning', 'overflow encountered in reduce'),)
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[finite 1.5e308 x 48 | inverse=True]
+   current : ndarray float64 (48,) sha=ff848a73 flags(C,F,W)=(1, 1, 1)
+   PLAN      : DIFFERENT (warnings) -> ndarray float64 (48,) sha=ff848a73 flags(C,F,W)=(1, 1, 1) | warnings: (('RuntimeWarning', 'overflow encountered in reduce'),)
+   PROTO     : DIFFERENT (warnings) -> ndarray float64 (48,) sha=ff848a73 flags(C,F,W)=(1, 1, 1) | warnings: (('RuntimeWarning', 'overflow encountered in reduce'),)
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[finite, the result overflows to inf | inverse=True]
+   current : ndarray float64 (8,) sha=ccdb76a2 flags(C,F,W)=(1, 1, 1) | warnings: (('RuntimeWarning', 'overflow encountered in multiply'),)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+===== 5. Cases that must follow the current path (or fail as today)
+
+[scaler fitted with feature names (ForecasterRecursive, Direct, Stats, Rnn) | inverse=False]
+   current : ndarray float64 (24,) sha=2dfc7c21 flags(C,F,W)=(1, 1, 1)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[scaler fitted with feature names (ForecasterRecursive, Direct, Stats, Rnn) | inverse=True]
+   current : ndarray float64 (24,) sha=1c129aa1 flags(C,F,W)=(1, 1, 1)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[unfitted StandardScaler | inverse=False]
+   current : NotFittedError: This StandardScaler instance is not fitted yet. Call 'fit' with appropriate arguments before using this estima
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[unfitted StandardScaler | inverse=True]
+   current : NotFittedError: This StandardScaler instance is not fitted yet. Call 'fit' with appropriate arguments before using this estima
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[unfitted StandardScaler(with_mean=False, with_std=False) | inverse=False]
+   current : NotFittedError: This StandardScaler instance is not fitted yet. Call 'fit' with appropriate arguments before using this estima
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[unfitted StandardScaler(with_mean=False, with_std=False) | inverse=True]
+   current : NotFittedError: This StandardScaler instance is not fitted yet. Call 'fit' with appropriate arguments before using this estima
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[subclass of StandardScaler | inverse=False]
+   current : ndarray float64 (24,) sha=9331e62b flags(C,F,W)=(1, 1, 1)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[subclass of StandardScaler | inverse=True]
+   current : ndarray float64 (24,) sha=55892590 flags(C,F,W)=(1, 1, 1)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[Pipeline([StandardScaler]) | inverse=False]
+   current : ndarray float64 (24,) sha=2dfc7c21 flags(C,F,W)=(1, 1, 1)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[Pipeline([StandardScaler]) | inverse=True]
+   current : ndarray float64 (24,) sha=1c129aa1 flags(C,F,W)=(1, 1, 1)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[set_output(transform='pandas') | inverse=False]
+   current : ndarray float64 (24,) sha=2dfc7c21 flags(C,F,W)=(1, 1, 0)
+   PLAN      : DIFFERENT (result) -> ndarray float64 (24,) sha=2dfc7c21 flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> ndarray float64 (24,) sha=2dfc7c21 flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : DIFFERENT (result) -> ndarray float64 (24,) sha=2dfc7c21 flags(C,F,W)=(1, 1, 1)
+   PROPOSED-B: DIFFERENT (result) -> ndarray float64 (24,) sha=2dfc7c21 flags(C,F,W)=(1, 1, 1)
+
+[set_output(transform='pandas') | inverse=True]
+   current : ndarray float64 (24,) sha=1c129aa1 flags(C,F,W)=(1, 1, 1)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[scaler with 2 features, 1D array | inverse=False]
+   current : ValueError: X has 1 features, but StandardScaler is expecting 2 features as input.
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[scaler with 2 features, 1D array | inverse=True]
+   current : ValueError: non-broadcastable output operand with shape (24,1) doesn't match the broadcast shape (24,2)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[with_std changed to True after fit (scale_ is None) | inverse=False]
+   current : AttributeError: 'NoneType' object has no attribute 'astype'
+   PLAN      : DIFFERENT (result) -> TypeError: 'NoneType' object is not subscriptable
+   PROTO     : DIFFERENT (result) -> TypeError: 'NoneType' object is not subscriptable
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[with_std changed to True after fit (scale_ is None) | inverse=True]
+   current : AttributeError: 'NoneType' object has no attribute 'astype'
+   PLAN      : DIFFERENT (result) -> TypeError: 'NoneType' object is not subscriptable
+   PROTO     : DIFFERENT (result) -> TypeError: 'NoneType' object is not subscriptable
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[empty 1D array | inverse=False]
+   current : ValueError: Found array with 0 sample(s) (shape=(0, 1)) while a minimum of 1 is required by StandardScaler.
+   PLAN      : DIFFERENT (result) -> ndarray float64 (0,) sha=e3b0c442 flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> ndarray float64 (0,) sha=e3b0c442 flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[empty 1D array | inverse=True]
+   current : ValueError: Found array with 0 sample(s) (shape=(0, 1)) while a minimum of 1 is required.
+   PLAN      : DIFFERENT (result) -> ndarray float64 (0,) sha=e3b0c442 flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> ndarray float64 (0,) sha=e3b0c442 flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[pandas Series float64 as `array` | inverse=False]
+   current : TypeError: `array` argument must be a numpy ndarray. Got <class 'pandas.Series'>
+   PLAN      : DIFFERENT (result) -> Series  (24,) sha=ded4a7b9 flags(C,F,W)=()
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[pandas Series float64 as `array` | inverse=True]
+   current : TypeError: `array` argument must be a numpy ndarray. Got <class 'pandas.Series'>
+   PLAN      : DIFFERENT (result) -> Series  (24,) sha=375d8278 flags(C,F,W)=()
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[list as `array` | inverse=False]
+   current : TypeError: `array` argument must be a numpy ndarray. Got <class 'list'>
+   PLAN      : DIFFERENT (result) -> AttributeError: 'list' object has no attribute 'dtype'
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[list as `array` | inverse=True]
+   current : TypeError: `array` argument must be a numpy ndarray. Got <class 'list'>
+   PLAN      : DIFFERENT (result) -> AttributeError: 'list' object has no attribute 'dtype'
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[masked array | inverse=False]
+   current : ndarray float64 (24,) sha=237a18b1 flags(C,F,W)=(1, 1, 1)
+   PLAN      : DIFFERENT (result) -> MaskedArray float64 (24,) sha=237a18b1 flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> MaskedArray float64 (24,) sha=237a18b1 flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[masked array | inverse=True]
+   current : ndarray float64 (24,) sha=c11bedcd flags(C,F,W)=(1, 1, 1)
+   PLAN      : DIFFERENT (result) -> MaskedArray float64 (24,) sha=c11bedcd flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> MaskedArray float64 (24,) sha=c11bedcd flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[ndarray subclass | inverse=False]
+   current : ndarray float64 (24,) sha=2dfc7c21 flags(C,F,W)=(1, 1, 1)
+   PLAN      : DIFFERENT (result) -> Tagged float64 (24,) sha=2dfc7c21 flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> Tagged float64 (24,) sha=2dfc7c21 flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[ndarray subclass | inverse=True]
+   current : ndarray float64 (24,) sha=1c129aa1 flags(C,F,W)=(1, 1, 1)
+   PLAN      : DIFFERENT (result) -> Tagged float64 (24,) sha=1c129aa1 flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> Tagged float64 (24,) sha=1c129aa1 flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[0-d array | inverse=False]
+   current : ValueError: Expected 2D array, got scalar array instead: array=3.5. Reshape your data either using array.reshape(-1, 1) if
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[0-d array | inverse=True]
+   current : IndexError: tuple index out of range
+   PLAN      : DIFFERENT (result) -> ndarray float64 () sha=86248f00 flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> ndarray float64 () sha=86248f00 flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[int64 array | inverse=False]
+   current : ndarray float64 (24,) sha=b03515ca flags(C,F,W)=(1, 1, 1)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[int64 array | inverse=True]
+   current : ndarray float64 (24,) sha=08885b35 flags(C,F,W)=(1, 1, 1)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[float16 array | inverse=False]
+   current : ndarray float16 (24,) sha=c04a626b flags(C,F,W)=(1, 1, 1)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[float16 array | inverse=True]
+   current : ndarray float16 (24,) sha=ee835d4e flags(C,F,W)=(1, 1, 1)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[bool array | inverse=False]
+   current : ndarray float64 (24,) sha=ab572630 flags(C,F,W)=(1, 1, 1)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[bool array | inverse=True]
+   current : ndarray float64 (24,) sha=3881ea9f flags(C,F,W)=(1, 1, 1)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[object array of floats | inverse=False]
+   current : ndarray float64 (24,) sha=2dfc7c21 flags(C,F,W)=(1, 1, 1)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[object array of floats | inverse=True]
+   current : ndarray float64 (24,) sha=1c129aa1 flags(C,F,W)=(1, 1, 1)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[big-endian float64 | inverse=False]
+   current : ndarray float64 (24,) sha=2dfc7c21 flags(C,F,W)=(1, 1, 1)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[big-endian float64 | inverse=True]
+   current : ndarray float64 (24,) sha=1c129aa1 flags(C,F,W)=(1, 1, 1)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[complex array | inverse=False]
+   current : ValueError: Complex data not supported [[54.04970809+0.j]  [58.83243917+0.j]  [53.81896888+0.j]  [47.04205218+0.j]  [48.14
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[complex array | inverse=True]
+   current : ValueError: Complex data not supported [[54.04970809+0.j]  [58.83243917+0.j]  [53.81896888+0.j]  [47.04205218+0.j]  [48.14
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[empty 2D (0, 3) | inverse=True]
+   current : ValueError: Found array with 0 sample(s) (shape=(0, 1)) while a minimum of 1 is required.
+   PLAN      : DIFFERENT (result) -> ndarray float64 (0, 3) sha=e3b0c442 flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> ndarray float64 (0, 3) sha=e3b0c442 flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[empty 2D (3, 0) | inverse=True]
+   current : ValueError: Found array with 0 feature(s) (shape=(3, 0)) while a minimum of 1 is required.
+   PLAN      : DIFFERENT (result) -> ndarray float64 (3, 0) sha=e3b0c442 flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> ndarray float64 (3, 0) sha=e3b0c442 flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[3D (4, 3, 2) | inverse=True]
+   current : ndarray float64 (4, 3, 2) sha=b4ca3337 flags(C,F,W)=(1, 0, 1)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[3D (4, 1, 2) | inverse=True]
+   current : ValueError: Found array with dim 3, while dim <= 2 is required.
+   PLAN      : DIFFERENT (result) -> ndarray float64 (4, 1, 2) sha=b77555b2 flags(C,F,W)=(1, 0, 1)
+   PROTO     : DIFFERENT (result) -> ndarray float64 (4, 1, 2) sha=b77555b2 flags(C,F,W)=(1, 0, 1)
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[np.matrix (6, 4) | inverse=True]
+   current : TypeError: np.matrix is not supported. Please convert to a numpy array with np.asarray. For more information see: https:/
+   PLAN      : DIFFERENT (result) -> matrix float64 (6, 4) sha=0c8bf862 flags(C,F,W)=(1, 0, 1)
+   PROTO     : DIFFERENT (result) -> matrix float64 (6, 4) sha=0c8bf862 flags(C,F,W)=(1, 0, 1)
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[scaler with 2 features, (10, 2) | inverse=True]
+   current : ValueError: non-broadcastable output operand with shape (20,1) doesn't match the broadcast shape (20,2)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[scaler with 2 features, (10, 3) | inverse=True]
+   current : ValueError: non-broadcastable output operand with shape (30,1) doesn't match the broadcast shape (30,2)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[sklearn transform_output='pandas' | inverse=False]
+   current : ndarray float64 (24,) sha=2dfc7c21 flags(C,F,W)=(1, 1, 0)
+   PLAN      : DIFFERENT (result) -> ndarray float64 (24,) sha=2dfc7c21 flags(C,F,W)=(1, 1, 1)
+   PROTO     : DIFFERENT (result) -> ndarray float64 (24,) sha=2dfc7c21 flags(C,F,W)=(1, 1, 1)
+   PROPOSED  : DIFFERENT (result) -> ndarray float64 (24,) sha=2dfc7c21 flags(C,F,W)=(1, 1, 1)
+   PROPOSED-B: DIFFERENT (result) -> ndarray float64 (24,) sha=2dfc7c21 flags(C,F,W)=(1, 1, 1)
+
+[sklearn transform_output='pandas' | inverse=True]
+   current : ndarray float64 (24,) sha=1c129aa1 flags(C,F,W)=(1, 1, 1)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[fit=True, new scaler]
+   current : ndarray float64 (24,) sha=9ef83dec flags(C,F,W)=(1, 1, 1)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[fit=True, fitted scaler]
+   current : ndarray float64 (24,) sha=9ef83dec flags(C,F,W)=(1, 1, 1)
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+[transformer=None returns the same object]
+   current : ndarray float64 (24,) sha=b2c5a046 flags(C,F,W)=(1, 1, 1) | shares memory with the input
+   PLAN      : same
+   PROTO     : same
+   PROPOSED  : same
+   PROPOSED-B: same
+
+===== Summary: 5016 comparisons
+
+PLAN: 39 differences with the current `transform_numpy`
+   - set_output(transform='pandas') | normal n=1 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=2 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=3 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=7 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=8 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=15 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=16 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=17 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=48 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=168 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=1000 | inverse=False (result)
+   - set_output(transform='pandas') | special values | inverse=False (result)
+   - set_output(transform='pandas') | with NaN | inverse=False (result)
+   - set_output(transform='pandas') | all NaN | inverse=False (result)
+   - set_output(transform='pandas') | column of a C matrix (not contiguous) | inverse=False (result)
+   - set_output(transform='pandas') | reversed (negative stride) | inverse=False (result)
+   - set_output(transform='pandas') | read-only | inverse=False (result)
+   - set_output(transform='pandas') | read-only view of pandas | inverse=False (result)
+   - finite 1.5e308 x 48 | inverse=False (warnings)
+   - finite 1.5e308 x 48 | inverse=True (warnings)
+   - set_output(transform='pandas') | inverse=False (result)
+   - with_std changed to True after fit (scale_ is None) | inverse=False (result)
+   - with_std changed to True after fit (scale_ is None) | inverse=True (result)
+   - empty 1D array | inverse=False (result)
+   - empty 1D array | inverse=True (result)
+   - pandas Series float64 as `array` | inverse=False (result)
+   - pandas Series float64 as `array` | inverse=True (result)
+   - list as `array` | inverse=False (result)
+   - list as `array` | inverse=True (result)
+   - masked array | inverse=False (result)
+   - masked array | inverse=True (result)
+   - ndarray subclass | inverse=False (result)
+   - ndarray subclass | inverse=True (result)
+   - 0-d array | inverse=True (result)
+   - empty 2D (0, 3) | inverse=True (result)
+   - empty 2D (3, 0) | inverse=True (result)
+   - 3D (4, 1, 2) | inverse=True (result)
+   - np.matrix (6, 4) | inverse=True (result)
+   - sklearn transform_output='pandas' | inverse=False (result)
+
+PROTO: 35 differences with the current `transform_numpy`
+   - set_output(transform='pandas') | normal n=1 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=2 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=3 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=7 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=8 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=15 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=16 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=17 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=48 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=168 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=1000 | inverse=False (result)
+   - set_output(transform='pandas') | special values | inverse=False (result)
+   - set_output(transform='pandas') | with NaN | inverse=False (result)
+   - set_output(transform='pandas') | all NaN | inverse=False (result)
+   - set_output(transform='pandas') | column of a C matrix (not contiguous) | inverse=False (result)
+   - set_output(transform='pandas') | reversed (negative stride) | inverse=False (result)
+   - set_output(transform='pandas') | read-only | inverse=False (result)
+   - set_output(transform='pandas') | read-only view of pandas | inverse=False (result)
+   - finite 1.5e308 x 48 | inverse=False (warnings)
+   - finite 1.5e308 x 48 | inverse=True (warnings)
+   - set_output(transform='pandas') | inverse=False (result)
+   - with_std changed to True after fit (scale_ is None) | inverse=False (result)
+   - with_std changed to True after fit (scale_ is None) | inverse=True (result)
+   - empty 1D array | inverse=False (result)
+   - empty 1D array | inverse=True (result)
+   - masked array | inverse=False (result)
+   - masked array | inverse=True (result)
+   - ndarray subclass | inverse=False (result)
+   - ndarray subclass | inverse=True (result)
+   - 0-d array | inverse=True (result)
+   - empty 2D (0, 3) | inverse=True (result)
+   - empty 2D (3, 0) | inverse=True (result)
+   - 3D (4, 1, 2) | inverse=True (result)
+   - np.matrix (6, 4) | inverse=True (result)
+   - sklearn transform_output='pandas' | inverse=False (result)
+
+PROPOSED: 20 differences with the current `transform_numpy`
+   - set_output(transform='pandas') | normal n=1 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=2 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=3 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=7 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=8 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=15 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=16 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=17 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=48 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=168 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=1000 | inverse=False (result)
+   - set_output(transform='pandas') | special values | inverse=False (result)
+   - set_output(transform='pandas') | with NaN | inverse=False (result)
+   - set_output(transform='pandas') | all NaN | inverse=False (result)
+   - set_output(transform='pandas') | column of a C matrix (not contiguous) | inverse=False (result)
+   - set_output(transform='pandas') | reversed (negative stride) | inverse=False (result)
+   - set_output(transform='pandas') | read-only | inverse=False (result)
+   - set_output(transform='pandas') | read-only view of pandas | inverse=False (result)
+   - set_output(transform='pandas') | inverse=False (result)
+   - sklearn transform_output='pandas' | inverse=False (result)
+
+PROPOSED-B: 20 differences with the current `transform_numpy`
+   - set_output(transform='pandas') | normal n=1 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=2 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=3 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=7 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=8 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=15 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=16 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=17 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=48 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=168 | inverse=False (result)
+   - set_output(transform='pandas') | normal n=1000 | inverse=False (result)
+   - set_output(transform='pandas') | special values | inverse=False (result)
+   - set_output(transform='pandas') | with NaN | inverse=False (result)
+   - set_output(transform='pandas') | all NaN | inverse=False (result)
+   - set_output(transform='pandas') | column of a C matrix (not contiguous) | inverse=False (result)
+   - set_output(transform='pandas') | reversed (negative stride) | inverse=False (result)
+   - set_output(transform='pandas') | read-only | inverse=False (result)
+   - set_output(transform='pandas') | read-only view of pandas | inverse=False (result)
+   - set_output(transform='pandas') | inverse=False (result)
+   - sklearn transform_output='pandas' | inverse=False (result)

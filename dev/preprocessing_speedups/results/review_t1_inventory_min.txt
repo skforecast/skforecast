@@ -1,0 +1,126 @@
+Python 3.11.18, numpy 2.0.0, pandas 2.3.0, scikit-learn 1.6.0, numba 0.60.0, skforecast 0.28.0
+
+##### ForecasterRecursive, transformer_y=StandardScaler()
+_forecaster_recursive.py:1606                    x6     fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=True feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_forecaster_recursive.py:1606                    x9     fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_forecaster_recursive.py:2153                    x3     fit=False inverse=True ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=True feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_forecaster_recursive.py:2153                    x9     fit=False inverse=True ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_forecaster_recursive.py:2300                    x2     fit=False inverse=True ndim=2 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=True feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_forecaster_recursive.py:2435                    x1     fit=False inverse=True ndim=2 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=True feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_forecaster_recursive.py:3124                    x1     fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=True feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_forecaster_recursive.py:3130                    x1     fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=True feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_utils.py:1447                                   x2     fit=False inverse=True ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_utils.py:1453                                   x2     fit=False inverse=True ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+  transformer_y: type=StandardScaler, n_features_in_=1, feature_names_in_=['y'], mean_.dtype=float64, same object as the user's=True
+
+##### ForecasterRecursive, differentiation=1
+_forecaster_recursive.py:1606                    x6     fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=True feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_forecaster_recursive.py:1606                    x9     fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_forecaster_recursive.py:2153                    x3     fit=False inverse=True ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=True feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_forecaster_recursive.py:2153                    x9     fit=False inverse=True ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_forecaster_recursive.py:2300                    x2     fit=False inverse=True ndim=2 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=True feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_forecaster_recursive.py:2435                    x1     fit=False inverse=True ndim=2 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=True feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_forecaster_recursive.py:3124                    x1     fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=True feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_forecaster_recursive.py:3130                    x1     fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=True feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_utils.py:1329                                   x2     fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_utils.py:1339                                   x2     fit=False inverse=True ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+
+##### ForecasterDirect, transformer_y=StandardScaler()
+_forecaster_direct.py:2163                       x6     fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=True feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_forecaster_direct.py:2163                       x9     fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_forecaster_direct.py:2530                       x3     fit=False inverse=True ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=True feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_forecaster_direct.py:2530                       x9     fit=False inverse=True ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_forecaster_direct.py:2677                       x2     fit=False inverse=True ndim=2 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=True feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_forecaster_direct.py:2813                       x1     fit=False inverse=True ndim=2 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=True feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_forecaster_direct.py:3566                       x1     fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=True feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_forecaster_direct.py:3572                       x1     fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=True feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_utils.py:1447                                   x2     fit=False inverse=True ndim=1 dtype=float64 c_contig=True writeable=False transformer=StandardScaler user_object=False feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_utils.py:1453                                   x2     fit=False inverse=True ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+  transformer_y: type=StandardScaler, n_features_in_=1, feature_names_in_=['y'], mean_.dtype=float64, same object as the user's=True
+
+##### ForecasterRecursiveMultiSeries, transformer_series=StandardScaler()
+_forecaster_recursive_multiseries.py:997         x9     fit=True inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=None PLAN=no (fit=False; fitted (scale_/mean_); n_features_in_==1) PROTOTYPE=no
+_forecaster_recursive_multiseries.py:997         x3     fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_forecaster_recursive_multiseries.py:2894        x45    fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_forecaster_recursive_multiseries.py:3649        x36    fit=False inverse=True ndim=1 dtype=float64 c_contig=False writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_forecaster_recursive_multiseries.py:3832        x6     fit=False inverse=True ndim=2 dtype=float64 c_contig=False writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_forecaster_recursive_multiseries.py:4002        x3     fit=False inverse=True ndim=2 dtype=float64 c_contig=False writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_forecaster_recursive_multiseries.py:4872        x3     fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_forecaster_recursive_multiseries.py:4878        x3     fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+  transformer_series_['s0']: type=StandardScaler, n_features_in_=1, feature_names_in_=None, mean_.dtype=float64, same object as the user's=False
+  transformer_series_['s1']: type=StandardScaler, n_features_in_=1, feature_names_in_=None, mean_.dtype=float64, same object as the user's=False
+  transformer_series_['s2']: type=StandardScaler, n_features_in_=1, feature_names_in_=None, mean_.dtype=float64, same object as the user's=False
+  transformer_series_['_unknown_level']: type=StandardScaler, n_features_in_=1, feature_names_in_=None, mean_.dtype=float64, same object as the user's=False
+
+##### ForecasterRecursiveMultiSeries, transformer_series=dict (s2 without transformer)
+_forecaster_recursive_multiseries.py:997         x6     fit=True inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=None PLAN=no (fit=False; fitted (scale_/mean_); n_features_in_==1) PROTOTYPE=no
+_forecaster_recursive_multiseries.py:997         x4     transformer=None
+_forecaster_recursive_multiseries.py:997         x2     fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_forecaster_recursive_multiseries.py:2894        x30    fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_forecaster_recursive_multiseries.py:2894        x15    transformer=None
+_forecaster_recursive_multiseries.py:3649        x24    fit=False inverse=True ndim=1 dtype=float64 c_contig=False writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_forecaster_recursive_multiseries.py:3649        x12    transformer=None
+_forecaster_recursive_multiseries.py:3832        x4     fit=False inverse=True ndim=2 dtype=float64 c_contig=False writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_forecaster_recursive_multiseries.py:4002        x2     fit=False inverse=True ndim=2 dtype=float64 c_contig=False writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_forecaster_recursive_multiseries.py:4872        x2     fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_forecaster_recursive_multiseries.py:4872        x1     transformer=None
+_forecaster_recursive_multiseries.py:4878        x2     fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_forecaster_recursive_multiseries.py:4878        x1     transformer=None
+  transformer_series_['s0']: type=StandardScaler, n_features_in_=1, feature_names_in_=None, mean_.dtype=float64, same object as the user's=False
+  transformer_series_['s1']: type=StandardScaler, n_features_in_=1, feature_names_in_=None, mean_.dtype=float64, same object as the user's=False
+  transformer_series_['s2']: type=NoneType, n_features_in_=None, feature_names_in_=None, mean_.dtype=None
+  transformer_series_['_unknown_level']: type=StandardScaler, n_features_in_=1, feature_names_in_=None, mean_.dtype=float64, same object as the user's=False
+
+##### ForecasterRecursiveMultiSeries, encoding=None, differentiation=1
+_forecaster_recursive_multiseries.py:997         x12    fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_forecaster_recursive_multiseries.py:2894        x46    fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_forecaster_recursive_multiseries.py:3649        x36    fit=False inverse=True ndim=1 dtype=float64 c_contig=False writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_forecaster_recursive_multiseries.py:3649        x1     fit=False inverse=True ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_forecaster_recursive_multiseries.py:3832        x6     fit=False inverse=True ndim=2 dtype=float64 c_contig=False writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_forecaster_recursive_multiseries.py:4002        x3     fit=False inverse=True ndim=2 dtype=float64 c_contig=False writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_forecaster_recursive_multiseries.py:4872        x3     fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_forecaster_recursive_multiseries.py:4878        x3     fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+  transformer_series_['_unknown_level']: type=StandardScaler, n_features_in_=1, feature_names_in_=None, mean_.dtype=float64, same object as the user's=False
+
+##### ForecasterDirectMultiVariate, transformer_series=StandardScaler()
+_forecaster_direct_multivariate.py:1249          x9     fit=True inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=None PLAN=no (fit=False; fitted (scale_/mean_); n_features_in_==1) PROTOTYPE=no
+_forecaster_direct_multivariate.py:1249          x3     fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_forecaster_direct_multivariate.py:2335          x45    fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_forecaster_direct_multivariate.py:2711          x12    fit=False inverse=True ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_forecaster_direct_multivariate.py:2861          x2     fit=False inverse=True ndim=2 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_forecaster_direct_multivariate.py:2999          x1     fit=False inverse=True ndim=2 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_forecaster_direct_multivariate.py:3817          x1     fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_forecaster_direct_multivariate.py:3823          x1     fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_utils.py:2905                                   x2     fit=False inverse=True ndim=1 dtype=float64 c_contig=True writeable=False transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+_utils.py:2911                                   x2     fit=False inverse=True ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=False n_features_in_=1 PLAN=yes PROTOTYPE=yes
+  transformer_series_['s0']: type=StandardScaler, n_features_in_=1, feature_names_in_=None, mean_.dtype=float64, same object as the user's=False
+  transformer_series_['s1']: type=StandardScaler, n_features_in_=1, feature_names_in_=None, mean_.dtype=float64, same object as the user's=False
+  transformer_series_['s2']: type=StandardScaler, n_features_in_=1, feature_names_in_=None, mean_.dtype=float64, same object as the user's=False
+
+##### ForecasterStats (Arima), transformer_y=StandardScaler()
+_forecaster_stats.py:938                         x1     fit=False inverse=True ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=True feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_forecaster_stats.py:1153                        x1     fit=False inverse=True ndim=2 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=True feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+  transformer_y: type=StandardScaler, n_features_in_=1, feature_names_in_=['y'], mean_.dtype=float64, same object as the user's=True
+
+##### ForecasterStats (Sarimax), predict with last_window
+_forecaster_stats.py:938                         x1     fit=False inverse=True ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=True feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+
+##### ForecasterStats (Arima + Ets), transformer_y=StandardScaler()
+_forecaster_stats.py:938                         x1     fit=False inverse=True ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=True feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_forecaster_stats.py:1153                        x1     fit=False inverse=True ndim=2 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=True feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+keras version: 3.3.0
+Using backend: torch
+torch version: 2.4.0+cpu
+
+Using 'torch' backend with device: cpu
+  ForecasterRnn: dtype of estimator.predict: float32, dtype of pred: float32
+
+##### ForecasterRnn, transformer_series=StandardScaler()
+_forecaster_rnn.py:1393                          x9     fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_forecaster_rnn.py:1637                          x4     fit=False inverse=True ndim=1 dtype=float32 c_contig=False writeable=True transformer=StandardScaler user_object=False feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_; float64) PROTOTYPE=no
+_forecaster_rnn.py:1790                          x2     fit=False inverse=True ndim=2 dtype=float64 c_contig=False writeable=True transformer=StandardScaler user_object=False feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_forecaster_rnn.py:2352                          x2     fit=False inverse=False ndim=1 dtype=float64 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_) PROTOTYPE=yes
+_forecaster_rnn.py:2358                          x2     fit=False inverse=False ndim=1 dtype=float32 c_contig=True writeable=True transformer=StandardScaler user_object=False feature_names_in_=True n_features_in_=1 PLAN=no (no feature_names_in_; float64) PROTOTYPE=no
+  transformer_series_['s0']: type=StandardScaler, n_features_in_=1, feature_names_in_=['s0'], mean_.dtype=float64, same object as the user's=False
+  transformer_series_['s1']: type=StandardScaler, n_features_in_=1, feature_names_in_=['s1'], mean_.dtype=float64, same object as the user's=False
+  transformer_series_['s2']: type=StandardScaler, n_features_in_=1, feature_names_in_=['s2'], mean_.dtype=float64, same object as the user's=False

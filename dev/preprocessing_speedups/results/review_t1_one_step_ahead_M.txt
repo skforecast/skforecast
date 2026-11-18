@@ -1,0 +1,10 @@
+Python 3.12.3 (Linux-6.18.44-fc-v595-x86_64-with-glibc2.39)
+numpy 2.5.5, pandas 3.1.1, scikit-learn 1.9.1, numba 0.68.1, skforecast 0.28.0
+lightgbm 4.7.0
+pyarrow 26.0.1
+CPU Intel(R) Xeon(R) Processor @ 2.10GHz, 4 logical cores
+[skip] skforecast.deep_learning._forecaster_rnn cannot be imported (optional dependency missing)
+
+grid_search_forecaster_multiseries, OneStepAheadFold, size M (300 series), Ridge, 3 candidates: 9.70 s
+calls to transform_numpy: 600 (0.305 s)
+direct calls to StandardScaler.inverse_transform: 1800, 1.056 s (10.9% of the search, 587 us per call)

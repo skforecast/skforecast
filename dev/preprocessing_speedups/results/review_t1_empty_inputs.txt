@@ -1,0 +1,19 @@
+[skip] skforecast.deep_learning._forecaster_rnn cannot be imported (optional dependency missing)
+ForecasterRecursive.set_out_sample_residuals(empty arrays)
+    current: ValueError: Found array with 0 sample(s) (shape=(0, 1)) while a minimum of 1 is required by StandardScaler.
+    PROTO: no error
+    PROPOSED: ValueError: Found array with 0 sample(s) (shape=(0, 1)) while a minimum of 1 is required by StandardScaler.
+ForecasterRecursive.set_out_sample_residuals(empty Series)
+    current: ValueError: Found array with 0 sample(s) (shape=(0, 1)) while a minimum of 1 is required by StandardScaler.
+    PROTO: no error
+    PROPOSED: ValueError: Found array with 0 sample(s) (shape=(0, 1)) while a minimum of 1 is required by StandardScaler.
+ForecasterRecursiveMultiSeries.set_out_sample_residuals(empty arrays)
+    current: ValueError: Found array with 0 sample(s) (shape=(0, 1)) while a minimum of 1 is required by StandardScaler.
+    PROTO: no error
+          out_sample_residuals_ after the call: {'s0': (0,), 's1': None, '_unknown_level': (0,)}
+          predict_interval(use_in_sample_residuals=False): IndexError: index -1 is out of bounds for axis 0 with size 0
+    PROPOSED: ValueError: Found array with 0 sample(s) (shape=(0, 1)) while a minimum of 1 is required by StandardScaler.
+ForecasterRecursiveMultiSeries.predict(last_window empty)
+    current: ValueError: `last_window` must have as many values as needed to generate the predictors. For this forecaste
+    PROTO: ValueError: `last_window` must have as many values as needed to generate the predictors. For this forecaste
+    PROPOSED: ValueError: `last_window` must have as many values as needed to generate the predictors. For this forecaste

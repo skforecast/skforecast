@@ -1,0 +1,99 @@
+Python 3.12.3, numpy 2.5.5, pandas 3.1.1, scikit-learn 1.9.1, numba 0.68.1, skforecast 0.28.0
+[skip] skforecast.deep_learning._forecaster_rnn cannot be imported (optional dependency missing)
+
+##### ForecasterRecursive (10 workflows, 1 of them raise with the current path)
+   current, inf_last_window: ValueError: Input X contains infinity or a value too large for dtype('float64').
+   PLAN       identical                    shortcut in    0 of   55 calls with a transformer
+   PROTO      identical                    shortcut in   55 of   55 calls with a transformer
+   PROPOSED   identical                    shortcut in   55 of   55 calls with a transformer
+   PROPOSED-B identical                    shortcut in   55 of   55 calls with a transformer
+
+##### ForecasterRecursive, differentiation=1 (10 workflows, 1 of them raise with the current path)
+   current, inf_last_window: ValueError: Input X contains infinity or a value too large for dtype('float64').
+   PLAN       identical                    shortcut in    0 of   55 calls with a transformer
+   PROTO      identical                    shortcut in   55 of   55 calls with a transformer
+   PROPOSED   identical                    shortcut in   55 of   55 calls with a transformer
+   PROPOSED-B identical                    shortcut in   55 of   55 calls with a transformer
+
+##### ForecasterRecursive, StandardScaler(with_std=False, copy=False) (10 workflows, 1 of them raise with the current path)
+   current, inf_last_window: ValueError: Input X contains infinity or a value too large for dtype('float64').
+   PLAN       identical                    shortcut in    0 of   55 calls with a transformer
+   PROTO      identical                    shortcut in   55 of   55 calls with a transformer
+   PROPOSED   identical                    shortcut in   55 of   55 calls with a transformer
+   PROPOSED-B identical                    shortcut in   55 of   55 calls with a transformer
+
+##### ForecasterDirect (10 workflows, 1 of them raise with the current path)
+   current, inf_last_window: ValueError: Input X contains infinity or a value too large for dtype('float64').
+   PLAN       identical                    shortcut in    0 of   55 calls with a transformer
+   PROTO      identical                    shortcut in   55 of   55 calls with a transformer
+   PROPOSED   identical                    shortcut in   55 of   55 calls with a transformer
+   PROPOSED-B identical                    shortcut in   55 of   55 calls with a transformer
+
+##### ForecasterDirect, differentiation=1 (10 workflows, 1 of them raise with the current path)
+   current, inf_last_window: ValueError: Input X contains infinity or a value too large for dtype('float64').
+   PLAN       identical                    shortcut in    0 of   55 calls with a transformer
+   PROTO      identical                    shortcut in   55 of   55 calls with a transformer
+   PROPOSED   identical                    shortcut in   55 of   55 calls with a transformer
+   PROPOSED-B identical                    shortcut in   55 of   55 calls with a transformer
+
+##### ForecasterRecursiveMultiSeries (11 workflows, 1 of them raise with the current path)
+   current, inf_last_window: ValueError: Input X contains infinity or a value too large for dtype('float64').
+   PLAN       identical                    shortcut in  208 of  244 calls with a transformer
+   PROTO      identical                    shortcut in  208 of  244 calls with a transformer
+   PROPOSED   identical                    shortcut in  208 of  244 calls with a transformer
+   PROPOSED-B identical                    shortcut in  208 of  244 calls with a transformer
+
+##### ForecasterRecursiveMultiSeries, series of different length (NaN at the start) (11 workflows, 1 of them raise with the current path)
+   current, inf_last_window: ValueError: Input X contains infinity or a value too large for dtype('float64').
+   PLAN       identical                    shortcut in  208 of  244 calls with a transformer
+   PROTO      identical                    shortcut in  208 of  244 calls with a transformer
+   PROPOSED   identical                    shortcut in  208 of  244 calls with a transformer
+   PROPOSED-B identical                    shortcut in  208 of  244 calls with a transformer
+
+##### ForecasterRecursiveMultiSeries, dict of transformers (one series without), onehot (11 workflows, 1 of them raise with the current path)
+   current, inf_last_window: ValueError: Input X contains infinity or a value too large for dtype('float64').
+   PLAN       identical                    shortcut in  141 of  165 calls with a transformer
+   PROTO      identical                    shortcut in  141 of  165 calls with a transformer
+   PROPOSED   identical                    shortcut in  141 of  165 calls with a transformer
+   PROPOSED-B identical                    shortcut in  141 of  165 calls with a transformer
+
+##### ForecasterRecursiveMultiSeries, encoding=None, differentiation=1 (11 workflows, 1 of them raise with the current path)
+   current, inf_last_window: ValueError: Input X contains infinity or a value too large for dtype('float64').
+   PLAN       identical                    shortcut in  246 of  246 calls with a transformer
+   PROTO      identical                    shortcut in  246 of  246 calls with a transformer
+   PROPOSED   identical                    shortcut in  246 of  246 calls with a transformer
+   PROPOSED-B identical                    shortcut in  246 of  246 calls with a transformer
+
+##### ForecasterDirectMultiVariate (11 workflows, 1 of them raise with the current path)
+   current, inf_last_window: ValueError: Input X contains infinity or a value too large for dtype('float64').
+   PLAN       identical                    shortcut in  142 of  178 calls with a transformer
+   PROTO      identical                    shortcut in  142 of  178 calls with a transformer
+   PROPOSED   identical                    shortcut in  142 of  178 calls with a transformer
+   PROPOSED-B identical                    shortcut in  142 of  178 calls with a transformer
+
+##### ForecasterDirectMultiVariate, differentiation=1 (11 workflows, 1 of them raise with the current path)
+   current, inf_last_window: ValueError: Input X contains infinity or a value too large for dtype('float64').
+   PLAN       identical                    shortcut in  142 of  178 calls with a transformer
+   PROTO      identical                    shortcut in  142 of  178 calls with a transformer
+   PROPOSED   identical                    shortcut in  142 of  178 calls with a transformer
+   PROPOSED-B identical                    shortcut in  142 of  178 calls with a transformer
+
+##### ForecasterStats (Arima) (3 workflows)
+   PLAN       identical                    shortcut in    0 of    2 calls with a transformer
+   PROTO      identical                    shortcut in    2 of    2 calls with a transformer
+   PROPOSED   identical                    shortcut in    2 of    2 calls with a transformer
+   PROPOSED-B identical                    shortcut in    2 of    2 calls with a transformer
+
+##### ForecasterStats (Sarimax), with last_window (4 workflows)
+   PLAN       identical                    shortcut in    0 of    3 calls with a transformer
+   PROTO      identical                    shortcut in    3 of    3 calls with a transformer
+   PROPOSED   identical                    shortcut in    3 of    3 calls with a transformer
+   PROPOSED-B identical                    shortcut in    3 of    3 calls with a transformer
+
+##### ForecasterStats (Arima + Ets) (3 workflows)
+   PLAN       identical                    shortcut in    0 of    2 calls with a transformer
+   PROTO      identical                    shortcut in    2 of    2 calls with a transformer
+   PROPOSED   identical                    shortcut in    2 of    2 calls with a transformer
+   PROPOSED-B identical                    shortcut in    2 of    2 calls with a transformer
+
+[skip] ForecasterRnn: keras is not installed in this environment
