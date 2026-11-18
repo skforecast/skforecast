@@ -91,7 +91,7 @@ El atajo funciona igual con exógenas de texto, porque no depende de ellas.
 
 **Diseño.** Prototipo de referencia: `fast_transform_numpy` en `dev/preprocessing_speedups/prototypes.py`, alineado con este diseño.
 
-1. **Ruta rápida:** una función privada, por ejemplo `_transform_numpy_known_scaler(array, transformer, inverse_transform)`. Devuelve el array transformado si el atajo aplica y `None` si no. `transform_numpy` la llama, solo con `fit=False`, **después de la comprobación de tipo de `array`** (líneas 2623 a 2626) y antes de copiarlo (línea 2633). Con `None`, sigue por el camino actual.
+1. **Ruta rápida:** una función privada, `_transform_numpy_fast_path(array, transformer, inverse_transform)`. El nombre dice para qué está (es la ruta rápida de `transform_numpy`) y sigue valiendo cuando se añadan otros escaladores o un `Pipeline`. Devuelve el array transformado si el atajo aplica y `None` si no. `transform_numpy` la llama, solo con `fit=False`, **después de la comprobación de tipo de `array`** (líneas 2623 a 2626) y antes de copiarlo (línea 2633). Con `None`, sigue por el camino actual.
 2. **El atajo aplica solo si se cumple todo lo siguiente** (cualquier otro caso va por scikit-learn):
    - `fit=False`;
    - `type(transformer) is StandardScaler`: el tipo exacto, para que las subclases sigan el camino actual;

@@ -9,7 +9,8 @@
 | `9d02780` | Revisión crítica de T1 (`REVIEW_T1.md`, scripts `review_t1_*.py`, salidas en `results/`) | Sí |
 | `7c67783` | `PLAN.md` actualizado con las decisiones de la revisión, tarea T4 nueva, prototipo alineado | **No, solo local** |
 | `b5ed70b` | Los scripts de revisión comparan contra el `transform_numpy` anterior a T1 y añaden la variante `PACKAGE` | **No, solo local** |
-| (el siguiente) | Este handoff | **No, solo local** |
+| `6832b05` | Este handoff | **No, solo local** |
+| (el siguiente) | Nombre de la función de la ruta rápida: `_transform_numpy_fast_path` | **No, solo local** |
 
 El árbol de trabajo está limpio. No se ha tocado `skforecast/` ni hay tests nuevos en el paquete.
 
@@ -63,7 +64,7 @@ Todo está en `dev/preprocessing_speedups/`, sin tests del paquete ni nota de ve
 1. **Leer** la sección T1 de `PLAN.md` (problema, diseño en 7 puntos, tests, aceptación). `REVIEW_T1.md` solo si hace falta el detalle de un hallazgo.
 2. **Implementar** en `skforecast/utils/utils.py`:
    - importar `StandardScaler` de `sklearn.preprocessing` (hoy no se importa; los imports de scikit-learn están en las líneas 31 a 35);
-   - función privada `_transform_numpy_known_scaler(array, transformer, inverse_transform)`, con las condiciones del punto 2 y la aritmética del punto 3 del plan. Referencia: `prototypes.scaler_shortcut_applies` y `prototypes.fast_transform_numpy`;
+   - función privada `_transform_numpy_fast_path(array, transformer, inverse_transform)` (nombre decidido por Joaquín), con las condiciones del punto 2 y la aritmética del punto 3 del plan. Referencia: `prototypes.scaler_shortcut_applies` y `prototypes.fast_transform_numpy`;
    - llamarla desde `transform_numpy` solo con `fit=False`, después de la comprobación de tipo de `array` (líneas 2623 a 2626) y antes de la copia (línea 2633);
    - actualizar el docstring de `transform_numpy` (leer antes `.github/instructions/docstrings.instructions.md`).
 3. **Tests** en `skforecast/utils/tests/tests_utils/test_transform_numpy.py`, según la lista del plan (leer antes `.github/instructions/testing.instructions.md`). El imprescindible es el del camino tomado: sin él, todos los demás pasan aunque el atajo no se use nunca. Además, los tres tests en forecasters (`inf` en `last_window`, `set_out_sample_residuals` con arrays vacíos, guardar y cargar).
