@@ -73,6 +73,30 @@ def test_predict_ValueError_when_exog_index_does_not_follow_freq():
         forecaster.predict(steps=5, exog=exog_pred)
 
 
+def test_predict_ValueError_when_last_window_has_infinite_values_and_transformer_y():
+    """
+    Test ValueError is raised by the StandardScaler of `transformer_y` when
+    `last_window` has infinite values (`transform_numpy` leaves them to
+    scikit-learn).
+    """
+    y = pd.Series(np.arange(50, dtype=float), name='y')
+    last_window = pd.Series(
+        [45., 46., np.inf, 48., 49.], index=pd.RangeIndex(start=45, stop=50), name='y'
+    )
+    forecaster = ForecasterRecursive(
+                     estimator     = LinearRegression(),
+                     lags          = 5,
+                     transformer_y = StandardScaler()
+                 )
+    forecaster.fit(y=y)
+
+    err_msg = re.escape(
+        "Input X contains infinity or a value too large for dtype('float64')."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster.predict(steps=3, last_window=last_window)
+
+
 def test_predict_output_when_estimator_is_LinearRegression():
     """
     Test predict output when using LinearRegression as estimator.
