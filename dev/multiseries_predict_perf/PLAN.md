@@ -111,7 +111,7 @@ Descartado de entrada: sustituir el `pd.concat` de la exog por serie (10 a 15 %)
 
 1. **Preparación** (sin tocar el paquete):
    - Confirmar que el paquete de `origin/0.28.x` sigue igual que `cb03fbe96` (`git diff --stat cb03fbe96 origin/0.28.x -- skforecast`); si ha cambiado, exportar de nuevo el árbol base.
-   - Conjuntos de casos de tiempos en `scripts/bench_ms.py` (hecho): `@core` (24 casos con 20 y 100 series: `predict` sin exog, ancha, diccionario compartido y con un objeto por serie, largo, ventana guardada; backtesting sin exog, con exog ancha y en diccionario; LightGBM 24 pasos; `fit` y `create_train_X_y` en ancho y largo), `@adverse` (8 casos en los que un camino rápido no se aplica) y `@scale` (11 casos con 600 y 1000 series, una sola ronda).
+   - Conjuntos de casos de tiempos en `scripts/bench_ms.py` (hecho): `@core` (24 casos con 20 y 100 series: `predict` sin exog, ancha, diccionario compartido y con un objeto por serie, largo, ventana guardada; backtesting sin exog, con exog ancha y en diccionario; LightGBM 24 pasos; `fit` y `create_train_X_y` en ancho y largo), `@adverse` (12 casos en los que un camino rápido no se aplica; los 4 de backtesting con refit se añadieron con el cambio 1) y `@scale` (11 casos con 600 y 1000 series, una sola ronda).
 2. **Rama** `perf/multiseries-predict-backtesting` desde `origin/0.28.x` con `--no-track` (creada el 2026-11-17).
    **Primer commit de la rama (solo `dev/`)**: carpeta `dev/multiseries_predict_perf/` con:
    - `PLAN.md`: este plan.

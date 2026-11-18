@@ -27,7 +27,7 @@ Dos baterías por entorno: `identity_ms.py` (4591 casos de los forecasters de va
 
 ```bash
 bash run_bench.sh <etiqueta> 2 "base new" @core      # 24 casos, 20 y 100 series
-bash run_bench.sh <etiqueta> 2 "base new" @adverse   # 8 casos que no deben empeorar
+bash run_bench.sh <etiqueta> 2 "base new" @adverse   # 12 casos que no deben empeorar
 bash run_bench.sh <etiqueta> 1 "base new" @scale     # 600 y 1000 series
 python agg_ms.py "$MS_WORK/out/<etiqueta>" --gain    # base frente a rama
 python agg_ms.py "$MS_WORK/out/<etiqueta>"           # tres entornos, coste fijo y por serie
@@ -43,5 +43,7 @@ PIN=1 bash run_prof.sh perfil_rama new predict 20 wide
 python linediff.py "$MS_WORK/out/perfil_rama" predict_20_wide            # pandas 2 frente a pandas 3
 python protodiff.py "$MS_WORK/out/perfil_base" "$MS_WORK/out/perfil_rama" predict_20_wide
 ```
+
+`repro_skip_folds.py` reproduce el fallo de `TimeSeriesFold` con `refit=int` y `skip_folds` (ver "Hallazgos sin tocar" en `SEGUIMIENTO.md`); no forma parte de las medidas.
 
 `lineprof.py` instrumenta solo el código de skforecast (`sys.monitoring`) y da, por línea, las veces que se ejecuta y su tiempo, con las llamadas a pandas, numpy y scikit-learn que hace y sin las funciones de skforecast a las que llama. El perfil infla los tiempos alrededor de un 16 %; sirve para repartir el coste entre líneas, no como medida absoluta. `counts.py` lista las líneas cuyo número de ejecuciones crece con el número de series y `str_spy.py` las que crean o convierten arrays de texto en pandas 3.

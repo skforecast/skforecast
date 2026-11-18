@@ -1,6 +1,7 @@
 """
-Timing of ForecasterRecursiveMultiSeries: predict, backtesting without refit,
-fit and create_train_X_y, by number of series, exog and input format.
+Timing of ForecasterRecursiveMultiSeries: predict, backtesting (without refit,
+and with refit in @adverse), fit and create_train_X_y, by number of series,
+exog and input format.
 
 Usage: python bench_ms.py <out.json> [@core | @adverse | @scale | regex of case names]
        python bench_ms.py --list
@@ -68,7 +69,7 @@ def predict_case(n_series, exog_kind, steps=1, est="linear", lw="given",
 
 
 # ----------------------------------------------------------------------------
-# backtesting without refit
+# backtesting (without refit, or with refit in every fold)
 # ----------------------------------------------------------------------------
 _fit_seconds = []
 _fit_orig = ForecasterRecursiveMultiSeries.fit
@@ -82,11 +83,13 @@ def _fit_timed(self, *args, **kwargs):
         _fit_seconds.append(time.perf_counter() - t0)
 
 
-def backtesting_case(n_series, fmt, with_exog, steps=1, est="linear"):
+def backtesting_case(n_series, fmt, with_exog, steps=1, est="linear", refit=False):
     n_folds = {1: 100, 24: 10}[steps] if n_series <= 100 else {1: 20, 24: 5}[steps]
+    if refit:
+        n_folds = 20
     series, exog = make_wide(n_series, T + n_folds * steps)
     series, exog = to_format(series, exog if with_exog else None, fmt)
-    cv = TimeSeriesFold(steps=steps, initial_train_size=T, refit=False)
+    cv = TimeSeriesFold(steps=steps, initial_train_size=T, refit=refit)
     kw = dict(
         forecaster=make_forecaster(est), series=series, exog=exog, cv=cv,
         metric="mean_absolute_error", n_jobs=1, verbose=False, show_progress=False,
@@ -102,8 +105,8 @@ def backtesting_case(n_series, fmt, with_exog, steps=1, est="linear"):
             total = time.perf_counter() - t0
         finally:
             ForecasterRecursiveMultiSeries.fit = _fit_orig
-        assert len(_fit_seconds) == 1
-        return total, _fit_seconds[0]
+        assert len(_fit_seconds) == (n_folds if refit else 1)
+        return total, sum(_fit_seconds)
 
     run()
     runs = [run() for _ in range(reps_of(n_series))]
@@ -170,6 +173,14 @@ for n in (3, 20, 100, 1000):
             CASES[f"backtesting|n={n}|fmt={fmt}|exog={ex}|steps=1"] = (
                 lambda n=n, fmt=fmt, we=we: backtesting_case(n, fmt, we)
             )
+# Backtesting with refit (20 folds): the training set of every fold is new.
+for n in (20, 100):
+    for fmt, ex in (("wide", "none"), ("dict", "dict")):
+        CASES[f"backtesting|n={n}|fmt={fmt}|exog={ex}|steps=1|refit"] = (
+            lambda n=n, fmt=fmt, we=ex != "none": backtesting_case(
+                n, fmt, we, refit=True
+            )
+        )
 for n in (20, 100):
     for fmt in ("wide", "dict"):
         for we in (False, True):
@@ -235,6 +246,9 @@ SETS = {
         f"predict|n={n}|exog={ek}|steps=1|{tag}"
         for n in (20, 100)
         for ek, tag in (("wide", "extra=10"), ("dictown", "extra=10"), ("dictown", "shift=1"))
+    ] + [
+        f"backtesting|n={n}|fmt={fmt}|exog={ex}|steps=1|refit"
+        for n in (20, 100) for fmt, ex in (("wide", "none"), ("dict", "dict"))
     ],
     "scale": [
         f"predict|n={n}|exog={ek}|steps=1"

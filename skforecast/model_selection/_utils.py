@@ -1605,7 +1605,10 @@ def _extract_data_folds_multiseries(
     Yield
     -----
     series_train : pandas DataFrame, dict
-        Time series corresponding to the training set of the fold.
+        Time series corresponding to the training set of the fold. Consecutive
+        folds with the same training set limits (for example, folds without
+        refit) share the same `series_train` object, and also `exog_train`
+        when `exog` is a dict, so they must not be modified.
     series_last_window: pandas DataFrame
         Time series corresponding to the last window of the fold.
     levels_last_window: list
@@ -1622,6 +1625,15 @@ def _extract_data_folds_multiseries(
     is_series_dict = isinstance(series, dict)
     is_exog_dict = isinstance(exog, dict)
 
+    # NOTE: The training set of a fold depends only on its limits. Folds without
+    # refit keep the limits of the previous fold, so the training set (series,
+    # and exog when it is a dict) is extracted only when the limits change and
+    # the same objects are yielded again. A wide exog is sliced in every fold,
+    # since it is a single slice. The limits are compared instead of the refit
+    # flag, so the result does not depend on how the folds were created (for
+    # example, when some folds are skipped).
+    previous_train_limits = None
+
     for fold in folds:
         train_iloc_start       = fold[1][0]
         train_iloc_end         = fold[1][1]
@@ -1629,6 +1641,10 @@ def _extract_data_folds_multiseries(
         last_window_iloc_end   = fold[2][1]
         test_iloc_start        = fold[3][0]
         test_iloc_end          = fold[3][1]
+
+        train_limits = (train_iloc_start, train_iloc_end)
+        extract_train = train_limits != previous_train_limits
+        previous_train_limits = train_limits
 
         if is_series_dict or is_exog_dict:
             # Subtract 1 to the iloc indexes to get the loc indexes
@@ -1640,41 +1656,49 @@ def _extract_data_folds_multiseries(
             test_loc_end          = span_index[test_iloc_end - 1]
 
         if not is_series_dict:
-            series_train = series.iloc[train_iloc_start:train_iloc_end, ]
+            if extract_train:
+                series_train = series.iloc[train_iloc_start:train_iloc_end, ]
 
-            series_to_drop = []
-            for col in series_train.columns:
-                if series_train[col].isna().to_numpy().all():
-                    series_to_drop.append(col)
-                else:
-                    first_valid_index = series_train[col].first_valid_index()
-                    last_valid_index = series_train[col].last_valid_index()
-                    if (
-                        len(series_train[col].loc[first_valid_index:last_valid_index])
-                        <= window_size
-                    ):
+                series_to_drop = []
+                for col in series_train.columns:
+                    if series_train[col].isna().to_numpy().all():
                         series_to_drop.append(col)
+                    else:
+                        first_valid_index = series_train[col].first_valid_index()
+                        last_valid_index = series_train[col].last_valid_index()
+                        if (
+                            len(
+                                series_train[col].loc[first_valid_index:last_valid_index]
+                            )
+                            <= window_size
+                        ):
+                            series_to_drop.append(col)
+
+                series_train = series_train.drop(columns=series_to_drop)
 
             series_last_window = series.iloc[
                 last_window_iloc_start:last_window_iloc_end,
             ]
-            
-            series_train = series_train.drop(columns=series_to_drop)
             if not externally_fitted:
                 series_last_window = series_last_window.drop(columns=series_to_drop)
         else:
-            series_train = {}
+            if extract_train:
+                series_train = {}
+                for k, v in series.items():
+                    v_train = v.loc[train_loc_start:train_loc_end]
+                    if not v_train.isna().to_numpy().all():
+                        first_valid_index = v_train.first_valid_index()
+                        last_valid_index  = v_train.last_valid_index()
+                        if (
+                            first_valid_index is not None
+                            and last_valid_index is not None
+                        ):
+                            v_train = v_train.loc[first_valid_index : last_valid_index]
+                            if len(v_train) > window_size:
+                                series_train[k] = v_train
+
             series_last_window = {}
             for k, v in series.items():
-                v_train = v.loc[train_loc_start:train_loc_end]
-                if not v_train.isna().to_numpy().all():
-                    first_valid_index = v_train.first_valid_index()
-                    last_valid_index  = v_train.last_valid_index()
-                    if first_valid_index is not None and last_valid_index is not None:
-                        v_train = v_train.loc[first_valid_index : last_valid_index]
-                        if len(v_train) > window_size:
-                            series_train[k] = v_train
-                
                 v_last_window = v.loc[last_window_loc_start:last_window_loc_end]
                 if ((externally_fitted or k in series_train) and len(v_last_window) >= window_size):
                     series_last_window[k] = v_last_window
@@ -1691,20 +1715,24 @@ def _extract_data_folds_multiseries(
                 exog_train = exog.iloc[train_iloc_start:train_iloc_end, ]
                 exog_test = exog.iloc[test_iloc_start:test_iloc_end, ]
             else:
-                exog_train = {}
+                if extract_train:
+                    exog_train = {}
+                    for k, v in exog.items():
+                        if v is None:
+                            exog_train[k] = None
+                        else:
+                            v_train = v.loc[train_loc_start:train_loc_end]
+                            if len(v_train) > 0:
+                                exog_train[k] = v_train
+
                 exog_test = {}
                 for k, v in exog.items():
                     if v is None:
-                        exog_train[k] = None
                         exog_test[k] = None
-                    else:
-                        v_train = v.loc[train_loc_start:train_loc_end]
-                        if len(v_train) > 0:
-                            exog_train[k] = v_train
-                        if externally_fitted or k in exog_train:
-                            v_test = v.loc[test_loc_start:test_loc_end]
-                            if not v_test.empty:
-                                exog_test[k] = v_test
+                    elif externally_fitted or k in exog_train:
+                        v_test = v.loc[test_loc_start:test_loc_end]
+                        if not v_test.empty:
+                            exog_test[k] = v_test
         else:
             exog_train = None
             exog_test = None

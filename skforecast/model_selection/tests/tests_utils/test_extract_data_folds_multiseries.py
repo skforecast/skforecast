@@ -943,3 +943,187 @@ def test_extract_data_folds_multiseries_series_with_window_size_values_left_out_
         assert data_fold[3] is None
         assert data_fold[4] is None
         assert data_fold[5] == folds[i]
+
+
+@pytest.mark.parametrize("series_type",
+                         ['DataFrame', 'dict'],
+                         ids=lambda series_type: f'series_type: {series_type}')
+def test_extract_data_folds_multiseries_training_set_reused_only_when_limits_do_not_change(series_type):
+    """
+    Test _extract_data_folds_multiseries reuses the training set (series and
+    exog) of the previous fold only when the limits of the training set do not
+    change, regardless of the refit flag. Folds 0 and 1 have the same limits,
+    fold 2 has no refit but different limits. 'l2' starts at position 28: it
+    has 2 values in the training set of folds 0 and 1 (left out of the fold)
+    and 7 in fold 2.
+    """
+    l2 = np.arange(50, 100, dtype=float)
+    l2[:28] = np.nan
+    series = pd.DataFrame({'l1': np.arange(50, dtype=float), 'l2': l2})
+    exog = exog_wide_range[['exog_1']]
+    if series_type == 'dict':
+        series = {
+            'l1': series['l1'],
+            'l2': series['l2'].iloc[28:]
+        }
+        exog = {
+            'l1': exog,
+            'l2': exog.iloc[28:]
+        }
+
+    # Train, last_window, test, fit_forecaster
+    folds = [
+        [0, [0, 30], [25, 30], [30, 35], True],
+        [1, [0, 30], [30, 35], [35, 40], False],
+        [2, [0, 35], [35, 40], [40, 45], False]
+    ]
+    span_index = pd.RangeIndex(start=0, stop=50, step=1)
+    window_size = 5
+
+    data_folds = list(
+        _extract_data_folds_multiseries(
+            series             = series,
+            folds              = folds,
+            span_index         = span_index,
+            window_size        = window_size,
+            exog               = exog,
+            dropna_last_window = False,
+            externally_fitted  = False
+        )
+    )
+
+    expected_last_windows = [
+        pd.DataFrame(
+            data  = {'l1': np.arange(25, 30, dtype=float)},
+            index = pd.RangeIndex(start=25, stop=30, step=1)
+        ),
+        pd.DataFrame(
+            data  = {'l1': np.arange(30, 35, dtype=float)},
+            index = pd.RangeIndex(start=30, stop=35, step=1)
+        ),
+        pd.DataFrame(
+            data  = {'l1': np.arange(35, 40, dtype=float),
+                     'l2': np.arange(85, 90, dtype=float)},
+            index = pd.RangeIndex(start=35, stop=40, step=1)
+        )
+    ]
+    expected_levels = [['l1'], ['l1'], ['l1', 'l2']]
+    expected_exog_test = [
+        pd.DataFrame(
+            data  = {'exog_1': np.arange(1030, 1035, dtype=float)},
+            index = pd.RangeIndex(start=30, stop=35, step=1)
+        ),
+        pd.DataFrame(
+            data  = {'exog_1': np.arange(1035, 1040, dtype=float)},
+            index = pd.RangeIndex(start=35, stop=40, step=1)
+        ),
+        pd.DataFrame(
+            data  = {'exog_1': np.arange(1040, 1045, dtype=float)},
+            index = pd.RangeIndex(start=40, stop=45, step=1)
+        )
+    ]
+    if series_type == 'DataFrame':
+        l2_train_fold_2 = np.arange(50, 85, dtype=float)
+        l2_train_fold_2[:28] = np.nan
+        expected_series_train = [
+            pd.DataFrame(
+                data  = {'l1': np.arange(30, dtype=float)},
+                index = pd.RangeIndex(start=0, stop=30, step=1)
+            ),
+            pd.DataFrame(
+                data  = {'l1': np.arange(35, dtype=float), 'l2': l2_train_fold_2},
+                index = pd.RangeIndex(start=0, stop=35, step=1)
+            )
+        ]
+        expected_exog_train = [
+            pd.DataFrame(
+                data  = {'exog_1': np.arange(1000, 1030, dtype=float)},
+                index = pd.RangeIndex(start=0, stop=30, step=1)
+            ),
+            pd.DataFrame(
+                data  = {'exog_1': np.arange(1000, 1035, dtype=float)},
+                index = pd.RangeIndex(start=0, stop=35, step=1)
+            )
+        ]
+    else:
+        expected_series_train = [
+            {
+                'l1': pd.Series(
+                          data  = np.arange(30, dtype=float),
+                          index = pd.RangeIndex(start=0, stop=30, step=1),
+                          name  = 'l1'
+                      )
+            },
+            {
+                'l1': pd.Series(
+                          data  = np.arange(35, dtype=float),
+                          index = pd.RangeIndex(start=0, stop=35, step=1),
+                          name  = 'l1'
+                      ),
+                'l2': pd.Series(
+                          data  = np.arange(78, 85, dtype=float),
+                          index = pd.RangeIndex(start=28, stop=35, step=1),
+                          name  = 'l2'
+                      )
+            }
+        ]
+        expected_exog_train = [
+            {
+                'l1': pd.DataFrame(
+                          data  = {'exog_1': np.arange(1000, 1030, dtype=float)},
+                          index = pd.RangeIndex(start=0, stop=30, step=1)
+                      ),
+                'l2': pd.DataFrame(
+                          data  = {'exog_1': np.arange(1028, 1030, dtype=float)},
+                          index = pd.RangeIndex(start=28, stop=30, step=1)
+                      )
+            },
+            {
+                'l1': pd.DataFrame(
+                          data  = {'exog_1': np.arange(1000, 1035, dtype=float)},
+                          index = pd.RangeIndex(start=0, stop=35, step=1)
+                      ),
+                'l2': pd.DataFrame(
+                          data  = {'exog_1': np.arange(1028, 1035, dtype=float)},
+                          index = pd.RangeIndex(start=28, stop=35, step=1)
+                      )
+            }
+        ]
+        expected_exog_test = [
+            {'l1': exog_test, 'l2': exog_test} for exog_test in expected_exog_test
+        ]
+
+    # Folds 0 and 1 share the training set, fold 2 has its own
+    expected_train_set_by_fold = [0, 0, 1]
+
+    for i, data_fold in enumerate(data_folds):
+        j = expected_train_set_by_fold[i]
+        if series_type == 'DataFrame':
+            pd.testing.assert_frame_equal(data_fold[0], expected_series_train[j])
+            pd.testing.assert_frame_equal(data_fold[3], expected_exog_train[j])
+            pd.testing.assert_frame_equal(data_fold[4], expected_exog_test[i])
+        else:
+            assert data_fold[0].keys() == expected_series_train[j].keys()
+            for k in data_fold[0]:
+                pd.testing.assert_series_equal(
+                    data_fold[0][k], expected_series_train[j][k]
+                )
+            assert data_fold[3].keys() == expected_exog_train[j].keys()
+            for k in data_fold[3]:
+                pd.testing.assert_frame_equal(
+                    data_fold[3][k], expected_exog_train[j][k]
+                )
+            assert data_fold[4].keys() == expected_exog_test[i].keys()
+            for k in data_fold[4]:
+                pd.testing.assert_frame_equal(
+                    data_fold[4][k], expected_exog_test[i][k]
+                )
+        pd.testing.assert_frame_equal(data_fold[1], expected_last_windows[i])
+        assert data_fold[2] == expected_levels[i]
+        assert data_fold[5] == folds[i]
+
+    assert data_folds[1][0] is data_folds[0][0]
+    assert data_folds[2][0] is not data_folds[1][0]
+    if series_type == 'dict':
+        assert data_folds[1][3] is data_folds[0][3]
+        assert data_folds[2][3] is not data_folds[1][3]
