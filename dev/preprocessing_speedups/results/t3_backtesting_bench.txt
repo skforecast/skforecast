@@ -1,0 +1,26 @@
+# T3, backtesting with intervals, out-of-sample residuals and refit (n_jobs=1):
+# origin/0.28.x (base, commit 3c0711b) against perf/backtesting-skip-fit-binning (branch).
+# python dev/preprocessing_speedups/t3_backtesting_bench.py, 3 rounds alternating base and branch (2026-11-18).
+Python 3.12.3 (Linux-6.18.44-fc-v595-x86_64-with-glibc2.39)
+numpy 2.5.5, pandas 3.1.1, scikit-learn 1.9.1, numba 0.68.1, skforecast 0.28.0
+lightgbm 4.7.0
+pyarrow 26.0.1
+CPU Intel(R) Xeon(R) Processor @ 2.10GHz, 4 logical cores
+
+identical predictions and intervals in the 6 scenarios (exact)
+                                                                    scenario base (s) branch (s) change (median)    change per round
+                 ForecasterRecursive, LightGBM, 60,000 obs., 10 fits, binned     7.81       6.69         -14.3 %   +3 %, -9 %, -25 %
+             ForecasterRecursive, LightGBM, 60,000 obs., 10 fits, not binned     7.01       6.48          -7.6 %   +1 %, -7 %, -20 %
+                     ForecasterRecursive, HGBR, 60,000 obs., 10 fits, binned    15.69      15.08          -3.8 %    +5 %, -7 %, -4 %
+ForecasterDirect, LightGBM (50 trees), 10,000 obs., 24 steps, 5 fits, binned    16.37      15.07          -8.0 %   -1 %, -10 %, -6 %
+        ForecasterRecursiveMultiSeries, LightGBM, 100 series, 7 fits, binned    24.19      22.25          -8.0 %   -21 %, -6 %, -9 %
+            ForecasterRecursiveMultiSeries, HGBR, 100 series, 7 fits, binned    28.58      25.66         -10.2 % -14 %, -10 %, -11 %
+rounds: 3
+
+Raw times per run (s), in the order of the scenarios above:
+base   [7.81, 7.01, 15.57, 17.9, 28.05, 31.79]
+branch [8.05, 7.12, 16.36, 17.77, 22.25, 27.24]
+base   [7.36, 6.93, 16.17, 16.37, 24.19, 28.58]
+branch [6.69, 6.48, 15.08, 14.73, 22.71, 25.66]
+base   [8.11, 7.99, 15.69, 16.05, 23.61, 28.06]
+branch [6.07, 6.38, 15.02, 15.07, 21.55, 24.96]

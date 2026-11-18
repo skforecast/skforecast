@@ -315,11 +315,23 @@ La misma lógica está en `ForecasterRecursive` (línea 1394), `ForecasterDirect
 
 **Entregable:** una fila en la hoja de ruta (sección 5) con la decisión y, si procede, la tarea de implementación con sus propios tests y nota de versión.
 
+**Resultado del estudio (2026-11-18).** Scripts `t3_cost_edges.py`, `t3_intervals.py` y `t3_backtesting_bench.py`; salidas en `results/t3_cost_edges.txt`, `results/t3_intervals.txt` y `results/t3_backtesting_bench.txt`. Python 3.12.3, numpy 2.5.5, pandas 3.1.1, scikit-learn 1.9.1, LightGBM 4.7.0, contenedor Linux de 4 núcleos (ruidoso: diferencias de menos del 5 % no son significativas). El coste en `fit` no se midió con XGBoost, `ForecasterDirect` ni el tamaño L.
+
+- **Qué deja `fit` por defecto.** Con `store_in_sample_residuals=False` solo se guardan los bordes de los bins: `predict_interval` con residuos dentro de muestra lanza un error que pide guardarlos. Los bordes solo los usa `set_out_sample_residuals` (13 ficheros de `docs/` y `skills/`); `set_in_sample_residuals` los vuelve a calcular. `QuantileBinner` ya toma una muestra de 200.000 valores (`subsample`), pero después de predecir todo `X_train`.
+- **Coste** (parte del `fit` por defecto que es esa predicción): con una serie, del 5 % (20.000 observaciones, 25 ms) al 11 a 25 % (1.000.000, de 1,1 a 3,4 s); en multiserie, del 7 al 8 % en S y del 13 al 18 % en M. Con Ridge, del 2 al 3 % (medición anterior).
+- **Bordes aprendidos con una muestra de filas (O3).** Con una serie y 10.000 filas, los bins tienen entre el 9,6 y el 10,4 % de las filas (ideal: 10 %), y el `fit` baja un 14 % (LightGBM) y un 25 % (HGBR) con 1.000.000 de observaciones y un 9 a 16 % con 200.000. En multiserie hay un binner por serie y cada una tiene de 1.000 a 5.000 filas: con un tope de 1.000 filas por serie, los bins tienen entre el 8,9 y el 11,2 % (peor serie: 7,2 %) y el `fit` baja un 8 % (LightGBM) y un 12 % (HGBR) en M; en S no se gana nada. Con una fracción global del 10 %, las series cortas se quedan con unas 100 filas y algún bin baja al 3 %.
+- **Efecto en los intervalos** (`t3_intervals.py`: 100 series con más ruido en el pico diario, conformal al 80 %, LightGBM). Con residuos fuera de muestra (del `fit` solo se usan los bordes), la cobertura y la anchura no cambian ni con 250 filas por serie: 79,14 a 79,28 % frente a 79,15 %, anchura 2,59 a 2,60 frente a 2,60, y la cobertura por tercios de la predicción tampoco. Sin bins, la cobertura por tercios pasa a 97 % y 57 %, así que la prueba distingue bins buenos de malos. Con residuos dentro de muestra la cobertura baja (76,55 % con todas las filas, 76,1 % con 1.000 por serie, 74,6 % con 250) porque hay menos residuos por bin: la muestra sirve para los bordes, no para los residuos.
+- **Hallazgo aparte, sin cambio de resultados.** El backtesting con intervalos y `use_in_sample_residuals=False` predecía sobre `X_train` en cada reajuste y lo descartaba, porque después restaura el binner del forecaster del usuario (`_restore_out_sample_residuals`). Implementado en la rama `perf/backtesting-skip-fit-binning`: el backtesting pone `_probabilistic_mode = False` también en ese caso, salvo con `ForecasterRnn`: `predict` de keras avanza el generador aleatorio global del backend (comprobado con torch), así que omitirlo cambiaba los pesos de los reajustes siguientes y las predicciones (`t3_rnn_identity.py` en el entorno de versiones mínimas, con keras 3.3.0). `t3_backtesting_bench.py` (6 escenarios con LightGBM y HGBR, reajuste en cada fold, `n_jobs=1`, 3 rondas alternando base y rama; salida en `results/t3_backtesting_bench.txt`): predicciones e intervalos idénticos por igualdad exacta, y el backtesting entre un 4 y un 14 % más rápido (mediana; las rondas van de +5 % a −25 %, el contenedor es ruidoso).
+
+**Decisión pendiente (Joaquín): muestreo de filas para los bordes.** Propuesta: un tope de 10.000 filas en los forecasters de una serie y de 1.000 por serie en multiserie, aplicado antes de predecir. Con `store_in_sample_residuals=True` se seguiría prediciendo todo `X_train`, pero los bordes saldrían de la misma muestra, para que los dos `fit` den los mismos bins. Cambian los bordes, y con ellos los intervalos por bins con residuos fuera de muestra, en los niveles con más filas que el tope; por debajo queda todo igual. Ahorro esperado: en torno al 10 % del `fit` con árboles y datos grandes, nada con Ridge ni con series cortas.
+
 ---
 
 ### T4. Validación one-step-ahead multiserie: la inversa del escalador, por `transform_numpy`
 
 **Origen.** Hallazgo 7 de [`REVIEW_T1.md`](REVIEW_T1.md). Decidido el 2026-11-18: tarea y PR propios, fuera de T1.
+
+**Estado: aplazada (Joaquín, 2026-11-18).** Solo gana una búsqueda con `OneStepAheadFold` de un `ForecasterRecursiveMultiSeries` con `transformer_series` y sin `differentiation`, y un forecaster multiserie con `transformer_series` es poco habitual.
 
 **Problema.** En `_predict_and_calculate_metrics_one_step_ahead_multiseries` (`skforecast/model_selection/_utils.py`, línea 2707), la rama de `ForecasterRecursiveMultiSeries` deshace la transformación llamando directamente a `transformer.inverse_transform` con un `DataFrame` de una columna, dos veces por serie y candidato (líneas 3046 y 3049). El resto del paquete lo hace con `transform_numpy` y un array, incluida la rama de `ForecasterDirectMultiVariate` de la misma función (líneas 2905 y 2911) y la rama con diferenciación (`_revert_differentiation_one_step_ahead`, línea 1281).
 
@@ -397,6 +409,10 @@ y lo mismo con `y_pred`.
 | `review_t1_empty_inputs.py` | Arrays vacíos por la API pública |
 | `review_t1_bench.py` | Coste por llamada (`micro`), extremo a extremo con variantes intercaladas y razón pareada (`macro`), parte del backtesting que cubre el atajo (`backtesting`) y resto de forecasters (`others`) |
 | `review_t1_one_step_ahead.py` | Llamadas directas a `inverse_transform` en la búsqueda one-step-ahead multiserie (T4) |
+| `t3_cost_edges.py` | T3: parte del `fit` que es la predicción sobre `X_train` y bordes de los bins aprendidos con una muestra de filas (reparto de los bins y filas que cambian de bin); `--part multi` o `--part single` |
+| `t3_intervals.py` | T3: cobertura y anchura de los intervalos conformal con los bins aprendidos con una muestra, con residuos fuera y dentro de muestra |
+| `t3_rnn_identity.py` | T3: predicciones de `ForecasterRnn` en el backtesting con intervalos, residuos fuera de muestra y reajuste, para comparar base y rama |
+| `t3_backtesting_bench.py` | T3: tiempo y predicciones del backtesting con intervalos, residuos fuera de muestra y reajuste, en la base (`PYTHONPATH` a un worktree de `origin/0.28.x`) y en la rama |
 
 Comandos (desde la raíz del repositorio):
 
@@ -460,9 +476,9 @@ Cómo leerla:
 ## 5. Orden, PRs y hoja de ruta
 
 1. **T1** (rama `perf/transform-numpy-known-scalers`, desde `origin/0.28.x`): el cambio más pequeño y localizado. Implementada, en el PR [#1519](https://github.com/skforecast/skforecast/pull/1519). Pendiente: V7.
-2. **T4** (rama `perf/one-step-ahead-inverse-numpy`): dos llamadas en `model_selection/_utils.py`. No depende de T1 y puede ir antes o después. Validaciones V7 y V13.
+2. **T4** (rama `perf/one-step-ahead-inverse-numpy`): dos llamadas en `model_selection/_utils.py`. No depende de T1 y puede ir antes o después. Validaciones V7 y V13. Aplazada el 2026-11-18 (ver T4).
 3. **T2** (rama `perf/categorical-codes-encoding`): V2 (codificador), V4, V5, V6, V8 y V9.
-4. **T3** (estudio, sin rama de código hasta la decisión).
+4. **T3** (estudio): hecho el 2026-11-18. La parte sin cambio de resultados (el backtesting con residuos fuera de muestra deja de predecir sobre `X_train` en cada reajuste) va en la rama `perf/backtesting-skip-fit-binning`; el muestreo de filas para los bordes, pendiente de decisión (ver T3).
 
 Cada PR va contra `0.28.x` (o la rama de la versión en desarrollo), con su nota en `docs/releases/releases.md`, el lint y los tests de los módulos tocados antes del commit. Ninguno cambia la API pública. Si T3 la cambia, hay que actualizar también la referencia de la API (`tools/ai/llms-base.txt`) y la documentación de usuario (`skills/`), y regenerar los ficheros derivados.
 
@@ -471,9 +487,10 @@ Filas propuestas para `dev/roadmap_0.28.0/roadmap.md` (o la hoja de ruta de la v
 | ID | Qué | Esfuerzo | Estado | Referencia |
 |---|---|---|---|---|
 | PERF-transform-numpy-scalers | Atajo en `transform_numpy` para un `StandardScaler` ajustado (misma aritmética, sin la validación de scikit-learn): `predict` multiserie de 168 pasos con 300 series entre ×1,4 y ×1,5 con Ridge y entre ×1,2 y ×1,3 con LightGBM; backtesting de una serie con 1.000 folds ×2,2; sin ganancia apreciable en el backtesting multiserie | S | Implementada el 2026-11-18 en `perf/transform-numpy-known-scalers`, PR [#1519](https://github.com/skforecast/skforecast/pull/1519); aceptación superada (PLAN.md, T1) | `dev/preprocessing_speedups/PLAN.md` (T1) y `REVIEW_T1.md` |
-| PERF-one-step-ahead-inverse | En la validación one-step-ahead de `ForecasterRecursiveMultiSeries`, deshacer la transformación con `transform_numpy` en lugar de llamar a `inverse_transform` con un DataFrame por serie y candidato (10,9 % de una búsqueda con 300 series y 3 candidatos) | S | Candidata, identidad por comprobar | `dev/preprocessing_speedups/PLAN.md` (T4) |
+| PERF-one-step-ahead-inverse | En la validación one-step-ahead de `ForecasterRecursiveMultiSeries`, deshacer la transformación con `transform_numpy` en lugar de llamar a `inverse_transform` con un DataFrame por serie y candidato (10,9 % de una búsqueda con 300 series y 3 candidatos) | S | Aplazada el 2026-11-18: un forecaster multiserie con `transformer_series` es poco habitual | `dev/preprocessing_speedups/PLAN.md` (T4) |
 | PERF-categorical-codes | Codificar las exógenas `category` con sus códigos en lugar de `OrdinalEncoder` (mismo `categories_` y misma salida): construcción de `X_train` ×1,8 a ×1,9 con pandas 3, ×1,45 con pandas 2.3; −0,46 veces `X_train` de memoria transitoria | S a M | Candidata, prototipo idéntico bit a bit | `dev/preprocessing_speedups/PLAN.md` (T2) |
-| STUDY-fit-insample-binning | `fit` predice sobre todo `X_train` para los bins de residuos aunque no se pidan intervalos (13 a 17 % del `fit` con árboles y 1.000 series) | S (estudio) | Pendiente de decisión | `dev/preprocessing_speedups/PLAN.md` (T3) |
+| STUDY-fit-insample-binning | `fit` predice sobre todo `X_train` para los bins de residuos aunque no se pidan intervalos (13 a 17 % del `fit` con árboles y 1.000 series). Propuesta: aprender los bordes con un tope de filas (10.000 en una serie, 1.000 por serie en multiserie), sin efecto medible en los intervalos con residuos fuera de muestra | S (estudio) | Estudio hecho el 2026-11-18; muestreo pendiente de decisión | `dev/preprocessing_speedups/PLAN.md` (T3) |
+| PERF-backtesting-skip-fit-binning | El backtesting con intervalos y `use_in_sample_residuals=False` no predice sobre `X_train` en cada reajuste: el resultado se descartaba, porque se restaura el binner del forecaster del usuario. Mismos resultados; entre un 4 y un 14 % menos con LightGBM y HGBR y reajuste en cada fold | S | Implementada el 2026-11-18 en `perf/backtesting-skip-fit-binning` | `dev/preprocessing_speedups/PLAN.md` (T3) |
 
 ---
 
