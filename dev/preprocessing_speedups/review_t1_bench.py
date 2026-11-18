@@ -365,7 +365,14 @@ def main():
     ap.add_argument("--size", default="M")
     ap.add_argument("--est", default="ridge")
     ap.add_argument("--rounds", type=int, default=7)
+    ap.add_argument("--variants", default=None,
+                    help="variants timed besides current, comma separated (e.g. PACKAGE)")
     args = ap.parse_args()
+    if args.variants:
+        global VARIANTS, COUNTED
+        keep = ["current", *args.variants.split(",")]
+        VARIANTS = {k: v for k, v in VARIANTS.items() if k in keep}
+        COUNTED = {k: v for k, v in VARIANTS.items() if k != "current"}
     if args.mode == "micro":
         print(env_line())
         micro()

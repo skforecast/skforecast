@@ -54,12 +54,16 @@ Todo está en `dev/preprocessing_speedups/`, sin tests del paquete ni nota de ve
 
 ## 4. Pendiente
 
+**Actualización del 2026-11-18:** T1 está implementada, en un commit local posterior a este handoff. Los resultados de la aceptación están en la sección T1 de `PLAN.md` y la nota de versión, en `docs/releases/releases.md` (sin enlace al PR, que aún no existe). Lo que sigue en esta sección describe cómo se hizo.
+
 **Para Joaquín:**
 
 1. Decidir cuándo hacer push de los commits locales.
-2. Borrar este handoff antes de fusionar el PR.
+2. Decidir si se ejecuta la suite `benchmarks/` (V7) antes del PR.
+3. Al abrir el PR, añadir su enlace a la nota de versión.
+4. Borrar este handoff antes de fusionar el PR.
 
-**Para la siguiente sesión, en orden:**
+**Para la siguiente sesión, en orden (hecho):**
 
 1. **Leer** la sección T1 de `PLAN.md` (problema, diseño en 7 puntos, tests, aceptación). `REVIEW_T1.md` solo si hace falta el detalle de un hallazgo.
 2. **Implementar** en `skforecast/utils/utils.py`:

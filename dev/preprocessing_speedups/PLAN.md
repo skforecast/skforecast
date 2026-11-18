@@ -55,7 +55,17 @@ Lo que sí compensa son dos cambios pequeños, sin dependencias nuevas y con res
 
 ### T1. Atajo en `transform_numpy` para un `StandardScaler` ajustado
 
-**Estado: revisada el 2026-11-18.** La revisión crítica está en [`REVIEW_T1.md`](REVIEW_T1.md) (hallazgos, evidencia y cifras). Decisiones de Joaquín tras revisarla, ya incorporadas a esta sección:
+**Estado: implementada el 2026-11-18** (`_transform_numpy_fast_path` en `skforecast/utils/utils.py`), pendiente de PR. Aceptación (salidas en `results/t1_acceptance_*.txt`; Python 3.12.3, numpy 2.5.5, pandas 3.1.1, scikit-learn 1.9.1, LightGBM 4.7.0; mínimos: Python 3.11.18, numpy 2.0.0, pandas 2.3.0, scikit-learn 1.6.0):
+
+- identidad byte a byte: `review_t1_contract.py` sin diferencias de valores (en el entorno principal, solo el flag de solo lectura del punto 7); `review_t1_forecasters.py` idéntico en 14 configuraciones (15 en mínimos, con `ForecasterRnn`); los 45 forecasters guardados de `review_t1_saved.py` (0.27.0, mínimos y actuales); `check_equivalence.py` en los dos entornos;
+- atajo en el 100 % de las llamadas elegibles: 600 de 600 en `predict` de 168 pasos en M y 2.000 de 2.000 en el backtesting de 1.000 folds de `ForecasterRecursive`;
+- coste por llamada (1D de 48 o 168 valores): de 58 a 92 µs a entre 2,4 y 3,3 µs; inversa 2D `(168, 250)`: de 123 a 31 µs;
+- extremo a extremo, razón pareada (mediana y cuartiles): `predict` de 168 pasos en M ×1,50 [1,46; 1,72] con Ridge (25 rondas; mejor de 3: 162 ms → 114 ms, ×1,42) y ×1,25 [1,17; 1,32] con LightGBM (15 rondas). Una serie (15 rondas): `ForecasterRecursive.predict(24)` ×1,62, backtesting de 1.000 folds ×2,21, `ForecasterDirect` backtesting de 200 folds ×1,93, `ForecasterDirectMultiVariate` ×1,25, `ForecasterStats.predict(24)` ×1,37;
+- sin regresión fuera del atajo: la función cuesta de 0,05 a 0,15 µs cuando no aplica (1,5 µs con `inf`), en llamadas de 60 a 250 µs. La suite `benchmarks/` (V7) no se ha ejecutado: sus resultados guardados son de otra máquina y con otras versiones fijadas.
+
+Tests: 54 en `test_transform_numpy.py` (14 mutaciones de la ruta rápida comprobadas: cada una hace fallar algún test) y 5 en forecasters (`inf` en `last_window` y arrays vacíos en `set_out_sample_residuals`). Guardar y cargar ya lo cubren `test_save_and_load_forecaster_round_trip` y `..._skops`.
+
+**Revisada el 2026-11-18.** La revisión crítica está en [`REVIEW_T1.md`](REVIEW_T1.md) (hallazgos, evidencia y cifras). Decisiones de Joaquín tras revisarla, ya incorporadas a esta sección:
 
 1. El atajo se aplica también a los escaladores ajustados con nombres de columna (`feature_names_in_`).
 2. Los valores infinitos se buscan en la entrada, antes de calcular. Sustituye a la comprobación con la suma del resultado.
@@ -458,7 +468,7 @@ Filas propuestas para `dev/roadmap_0.28.0/roadmap.md` (o la hoja de ruta de la v
 
 | ID | Qué | Esfuerzo | Estado | Referencia |
 |---|---|---|---|---|
-| PERF-transform-numpy-scalers | Atajo en `transform_numpy` para un `StandardScaler` ajustado (misma aritmética, sin la validación de scikit-learn): `predict` multiserie de 168 pasos con 300 series entre ×1,4 y ×1,5 con Ridge y entre ×1,2 y ×1,3 con LightGBM; backtesting de una serie con 1.000 folds ×2,2; sin ganancia apreciable en el backtesting multiserie | S | Candidata, revisada; prototipo idéntico byte a byte con scikit-learn 1.6 a 1.9 | `dev/preprocessing_speedups/PLAN.md` (T1) y `REVIEW_T1.md` |
+| PERF-transform-numpy-scalers | Atajo en `transform_numpy` para un `StandardScaler` ajustado (misma aritmética, sin la validación de scikit-learn): `predict` multiserie de 168 pasos con 300 series entre ×1,4 y ×1,5 con Ridge y entre ×1,2 y ×1,3 con LightGBM; backtesting de una serie con 1.000 folds ×2,2; sin ganancia apreciable en el backtesting multiserie | S | Implementada el 2026-11-18 en `perf/transform-numpy-known-scalers`, pendiente de PR; aceptación superada (PLAN.md, T1) | `dev/preprocessing_speedups/PLAN.md` (T1) y `REVIEW_T1.md` |
 | PERF-one-step-ahead-inverse | En la validación one-step-ahead de `ForecasterRecursiveMultiSeries`, deshacer la transformación con `transform_numpy` en lugar de llamar a `inverse_transform` con un DataFrame por serie y candidato (10,9 % de una búsqueda con 300 series y 3 candidatos) | S | Candidata, identidad por comprobar | `dev/preprocessing_speedups/PLAN.md` (T4) |
 | PERF-categorical-codes | Codificar las exógenas `category` con sus códigos en lugar de `OrdinalEncoder` (mismo `categories_` y misma salida): construcción de `X_train` ×1,8 a ×1,9 con pandas 3, ×1,45 con pandas 2.3; −0,46 veces `X_train` de memoria transitoria | S a M | Candidata, prototipo idéntico bit a bit | `dev/preprocessing_speedups/PLAN.md` (T2) |
 | STUDY-fit-insample-binning | `fit` predice sobre todo `X_train` para los bins de residuos aunque no se pidan intervalos (13 a 17 % del `fit` con árboles y 1.000 series) | S (estudio) | Pendiente de decisión | `dev/preprocessing_speedups/PLAN.md` (T3) |
