@@ -55,7 +55,7 @@ Lo que sí compensa son dos cambios pequeños, sin dependencias nuevas y con res
 
 ### T1. Atajo en `transform_numpy` para un `StandardScaler` ajustado
 
-**Estado: implementada el 2026-11-18** (`_transform_numpy_fast_path` en `skforecast/utils/utils.py`), pendiente de PR. Aceptación (salidas en `results/t1_acceptance_*.txt`; Python 3.12.3, numpy 2.5.5, pandas 3.1.1, scikit-learn 1.9.1, LightGBM 4.7.0; mínimos: Python 3.11.18, numpy 2.0.0, pandas 2.3.0, scikit-learn 1.6.0):
+**Estado: implementada el 2026-11-18** (`_transform_numpy_fast_path` en `skforecast/utils/utils.py`), en el PR [#1519](https://github.com/skforecast/skforecast/pull/1519). Aceptación (salidas en `results/t1_acceptance_*.txt`; Python 3.12.3, numpy 2.5.5, pandas 3.1.1, scikit-learn 1.9.1, LightGBM 4.7.0; mínimos: Python 3.11.18, numpy 2.0.0, pandas 2.3.0, scikit-learn 1.6.0):
 
 - identidad byte a byte: `review_t1_contract.py` sin diferencias de valores (en el entorno principal, solo el flag de solo lectura del punto 7); `review_t1_forecasters.py` idéntico en 14 configuraciones (15 en mínimos, con `ForecasterRnn`); los 45 forecasters guardados de `review_t1_saved.py` (0.27.0, mínimos y actuales); `check_equivalence.py` en los dos entornos;
 - atajo en el 100 % de las llamadas elegibles: 600 de 600 en `predict` de 168 pasos en M y 2.000 de 2.000 en el backtesting de 1.000 folds de `ForecasterRecursive`;
@@ -387,7 +387,7 @@ y lo mismo con `y_pred`.
 | `prototypes.py` | `FastOrdinalEncoder` (T2) y `fast_transform_numpy` (T1, alineado con el diseño revisado), aplicados en tiempo de ejecución sin tocar `skforecast/` |
 | `check_equivalence.py` | Identidad bit a bit de los dos prototipos: base (Ridge y LightGBM, ordinal y onehot), NaN en categóricas, categoría no vista, categorías reordenadas, categorías ordenadas y enteras, exógenas que faltan, columna de texto (camino actual), backtesting con refit y `ForecasterRecursive` |
 | `bench.py` | Actual frente a T2 (`P1`), T1 (`P2`) y ambos, en la construcción de `X_train`, `fit`, `predict` (24 y 168), conformal y backtesting (refit `False` y `True`). Mediana, dispersión y primera llamada. `--text-cats` para V1 |
-| `results/` | JSON de las mediciones de referencia de este documento y salidas de la aceptación de T1 (`t1_acceptance_*`). Las salidas en bruto de la revisión de T1 (`review_t1_*`) se retiraron al implementar T1: están en el commit `156b92d` de la rama de T1 y se regeneran con los scripts |
+| `results/` | JSON de las mediciones de referencia de este documento y salidas de la aceptación de T1 (`t1_acceptance_*`). Las salidas en bruto de la revisión de T1 (`review_t1_*`) se retiraron al implementar T1: están en el commit `156b92d` del PR [#1519](https://github.com/skforecast/skforecast/pull/1519) y se regeneran con los scripts |
 | `REVIEW_T1.md` | Revisión crítica de T1: hallazgos por gravedad, inventario de llamadas, contrato de `StandardScaler` y lo que no se pudo comprobar |
 | `review_t1_common.py` | Referencia y variantes que comparan los scripts, trazador y contador de llamadas. La referencia (`current` en las salidas) es `transform_numpy` tal como estaba antes de T1, leído con git del commit `c9172e1`. La variante `PACKAGE` es la función que hay ahora en el paquete: antes de implementar T1 coincide con la referencia, y después es la implementación que hay que aceptar |
 | `review_t1_inventory.py` | Inventario en ejecución de las llamadas a `transform_numpy` en cada forecaster |
@@ -459,7 +459,7 @@ Cómo leerla:
 
 ## 5. Orden, PRs y hoja de ruta
 
-1. **T1** (rama `perf/transform-numpy-known-scalers`, desde `origin/0.28.x`): el cambio más pequeño y localizado. Revisada (`REVIEW_T1.md`), con V2 y V4 hechas para el escalador. Pendiente: V7.
+1. **T1** (rama `perf/transform-numpy-known-scalers`, desde `origin/0.28.x`): el cambio más pequeño y localizado. Implementada, en el PR [#1519](https://github.com/skforecast/skforecast/pull/1519). Pendiente: V7.
 2. **T4** (rama `perf/one-step-ahead-inverse-numpy`): dos llamadas en `model_selection/_utils.py`. No depende de T1 y puede ir antes o después. Validaciones V7 y V13.
 3. **T2** (rama `perf/categorical-codes-encoding`): V2 (codificador), V4, V5, V6, V8 y V9.
 4. **T3** (estudio, sin rama de código hasta la decisión).
@@ -470,7 +470,7 @@ Filas propuestas para `dev/roadmap_0.28.0/roadmap.md` (o la hoja de ruta de la v
 
 | ID | Qué | Esfuerzo | Estado | Referencia |
 |---|---|---|---|---|
-| PERF-transform-numpy-scalers | Atajo en `transform_numpy` para un `StandardScaler` ajustado (misma aritmética, sin la validación de scikit-learn): `predict` multiserie de 168 pasos con 300 series entre ×1,4 y ×1,5 con Ridge y entre ×1,2 y ×1,3 con LightGBM; backtesting de una serie con 1.000 folds ×2,2; sin ganancia apreciable en el backtesting multiserie | S | Implementada el 2026-11-18 en `perf/transform-numpy-known-scalers`, pendiente de PR; aceptación superada (PLAN.md, T1) | `dev/preprocessing_speedups/PLAN.md` (T1) y `REVIEW_T1.md` |
+| PERF-transform-numpy-scalers | Atajo en `transform_numpy` para un `StandardScaler` ajustado (misma aritmética, sin la validación de scikit-learn): `predict` multiserie de 168 pasos con 300 series entre ×1,4 y ×1,5 con Ridge y entre ×1,2 y ×1,3 con LightGBM; backtesting de una serie con 1.000 folds ×2,2; sin ganancia apreciable en el backtesting multiserie | S | Implementada el 2026-11-18 en `perf/transform-numpy-known-scalers`, PR [#1519](https://github.com/skforecast/skforecast/pull/1519); aceptación superada (PLAN.md, T1) | `dev/preprocessing_speedups/PLAN.md` (T1) y `REVIEW_T1.md` |
 | PERF-one-step-ahead-inverse | En la validación one-step-ahead de `ForecasterRecursiveMultiSeries`, deshacer la transformación con `transform_numpy` en lugar de llamar a `inverse_transform` con un DataFrame por serie y candidato (10,9 % de una búsqueda con 300 series y 3 candidatos) | S | Candidata, identidad por comprobar | `dev/preprocessing_speedups/PLAN.md` (T4) |
 | PERF-categorical-codes | Codificar las exógenas `category` con sus códigos en lugar de `OrdinalEncoder` (mismo `categories_` y misma salida): construcción de `X_train` ×1,8 a ×1,9 con pandas 3, ×1,45 con pandas 2.3; −0,46 veces `X_train` de memoria transitoria | S a M | Candidata, prototipo idéntico bit a bit | `dev/preprocessing_speedups/PLAN.md` (T2) |
 | STUDY-fit-insample-binning | `fit` predice sobre todo `X_train` para los bins de residuos aunque no se pidan intervalos (13 a 17 % del `fit` con árboles y 1.000 series) | S (estudio) | Pendiente de decisión | `dev/preprocessing_speedups/PLAN.md` (T3) |
