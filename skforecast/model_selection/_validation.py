@@ -128,11 +128,13 @@ def _restore_out_sample_residuals(
 ) -> None:
     """
     Restore the out-of-sample residuals set by the user, and the binner that
-    binned them, after a `fit()` call. `fit()` resets the residuals to `None`
-    and refits the binner on the in-sample predictions of the new training
-    set. Without restoring the binner, the residuals stored for each bin would
-    be selected with a binner whose bins are different from the ones that
-    created them.
+    binned them, after a `fit()` call. `fit()` resets the residuals to `None`.
+    The binner is refitted on the in-sample predictions of the new training
+    set or, when the in-sample residuals are not binned (`_probabilistic_mode`
+    is `False`), emptied by the forecasters with a binner per level. Without
+    restoring the binner, the residuals stored for each bin would be selected
+    with a binner whose bins are different from the ones that created them, or
+    with no binner.
 
     Parameters
     ----------
@@ -774,10 +776,11 @@ def _backtesting_forecaster(
     gap = cv.gap
 
     # Save out-of-sample residuals, and the binner that binned them, before any
-    # fit() call. Since fit() resets the residuals to None and refits the binner,
-    # they must be preserved and restored after each fit so that probabilistic
-    # predictions with use_in_sample_residuals=False keep working and the
-    # residuals of each bin are selected with the binner that created them.
+    # fit() call. Since fit() resets the residuals to None and may refit or empty
+    # the binner, they must be preserved and restored after each fit so that
+    # probabilistic predictions with use_in_sample_residuals=False keep working
+    # and the residuals of each bin are selected with the binner that created
+    # them.
     # Both residual attributes are restored regardless of `use_binned_residuals`
     # because some forecasters access both of them when predicting.
     out_sample_residuals_ = None
@@ -1788,10 +1791,11 @@ def _backtesting_forecaster_multiseries(
         )
     
     # Save out-of-sample residuals, and the binner that binned them, before any
-    # fit() call. Since fit() resets the residuals to None and refits the binner,
-    # they must be preserved and restored after each fit so that probabilistic
-    # predictions with use_in_sample_residuals=False keep working and the
-    # residuals of each bin are selected with the binner that created them.
+    # fit() call. Since fit() resets the residuals to None and may refit or empty
+    # the binner, they must be preserved and restored after each fit so that
+    # probabilistic predictions with use_in_sample_residuals=False keep working
+    # and the residuals of each bin are selected with the binner that created
+    # them.
     # Both residual attributes are restored regardless of `use_binned_residuals`
     # because some forecasters access both of them when predicting.
     out_sample_residuals_ = None

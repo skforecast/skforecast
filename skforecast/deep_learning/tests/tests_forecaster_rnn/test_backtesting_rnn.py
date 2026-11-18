@@ -214,7 +214,7 @@ def test_backtesting_forecaster_multiseries_ForecasterRnn_starts_from_initial_we
 
 @pytest.mark.parametrize(
     "use_binned_residuals, expected_mode",
-    [(True, 'binned'), (False, 'no_binned')],
+    [(True, "binned"), (False, "no_binned")],
     ids=["use_binned_residuals_True", "use_binned_residuals_False"]
 )
 def test_backtesting_forecaster_multiseries_ForecasterRnn_out_sample_residuals_keeps_in_sample_binning(
