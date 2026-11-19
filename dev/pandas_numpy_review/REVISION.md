@@ -264,7 +264,7 @@ Aparte (bug existente en todos los forecasters, visto por el subagente, no verif
 
 ### 3.2 P2 (exog a float) y D-NP3
 
-Scripts `review_scripts/p2_*.py` (subagente; el prototipo sustituye `DataFrame.to_numpy` solo en la llamada sin argumentos sobre `exog` dentro de `_create_train_X_y` y `_create_predict_inputs`). Salidas en `review_scripts/results/p2_*.txt`. He comprobado yo la ganancia y el bug de HistGradientBoosting.
+Scripts `review_scripts/p2_*.py` (subagente; el prototipo sustituye `DataFrame.to_numpy` solo en la llamada sin argumentos sobre `exog` dentro de `_create_train_X_y` y `_create_predict_inputs`). Las salidas se regeneran con `run3.sh`. He comprobado yo la ganancia y el bug de HistGradientBoosting.
 
 **De acuerdo con cambios.** La ganancia se reproduce (`fit` de `ForecasterRecursive` con Ridge, 100 000 filas, una columna `bool` entre tres float: 232 / 217 / 251 ms frente a 37 / 36 / 40 con la columna pasada a float; [results/time_small.txt](review_scripts/results/time_small.txt)) y las predicciones son idénticas donde hoy funciona (Recursive, Direct y DMV con Ridge, LightGBM, HistGradientBoosting, XGBoost y CatBoost). Pero "resultado idéntico" y "riesgo bajo" no se sostienen tal como está escrita la condición ("todas las columnas numéricas o `bool`"):
 
@@ -376,18 +376,32 @@ Sobre D-NP4: `transformer_exog=None` es más restrictivo de lo necesario (un `St
 10. **Condiciones de medida del informe:** `OMP_NUM_THREADS=1`, datos sintéticos con series iguales y completas, y medidas hechas con subagentes a la vez. Las cifras de §5.1 se reproducen, pero el reparto modelo frente a resto cambia con varios hilos.
 11. **I8 con `bool`:** que una serie no tenga exog cambia que una columna `bool` se trate como categórica. Es un cambio de modelo que depende de los datos y merece fila propia.
 
-## 8. Orden recomendado
+## 8. Orden recomendado, por importancia e impacto
 
-| Cuándo | Qué | Por qué, y qué cambia respecto al informe |
-|---|---|---|
-| 0.28.x | **P1 con D-NP2 decidida explícitamente**: (a') con aviso y nota de versión, o (c) redefinida (9.4). Incluir `:4695`, `_utils.py:3038`, el cast de CatBoost y el índice de `ordinal_category` | El informe lo da como S a M y sin cambio de modelo; con `None` sí lo hay, con cualquier opción. Antes de fusionar: tests de paridad one-step-ahead frente a backtesting |
-| 0.28.x | **P2 con condición estricta** (dtypes explícitos; solo si hoy sale `object`), más multiserie `:3037`, más tests de dtypes | Corrige además el fallo de HistGradientBoosting en `predict`. Decidir D-NP3 (b) y los enteros grandes |
-| 0.28.x | P7, P17 (solo DMV), P8 (con su condición), P16 (con `copy=True` y selección previa de columnas) | Como el informe, con las condiciones de la sección 4 |
-| 0.28.x o 0.29.0 | **BTPLAN M1 con PERF-03 (métricas) y F2 (series de entrenamiento por posición)** | **Antes** de P3, no absorbidos por ella: dan ganancia sin segundo camino, y sin M1 la mitad de lo que deja P3 son métricas. Corrección posterior: F1 (ventana) y F3 (exog de test) sí quedan absorbidas por P3 en multiserie, así que solo compensan antes si P3 se retrasa; siguen sirviendo al backtesting foundation y a la validación one-step-ahead |
-| 0.29.0 | P9, P10 (claves `int`, orden estable), P12 (solo la búsqueda en array), P11 **solo la reutilización de entradas**; el cambio a `np.quantile`, únicamente si se acepta que no es idéntico en pandas 2.3 | El informe los da como "baratos, solo numpy"; tres de los cuatro necesitan cambios |
-| 0.29.0 | **P3 en dos pasos:** (1) partir `predict` en validar, preparar y núcleo numpy, sin cambio de comportamiento; (2) camino rápido del backtesting sobre ese núcleo, con el contenedor disponible para las búsquedas y preparación acotada | El informe lo plantea como un contenedor dentro del backtesting. Aceptación: salidas y avisos idénticos (la batería de `proto_bt_once_cases.py` es un punto de partida) y tiempo de la llamada completa |
-| 0.29.0 | P5, P6 (formulación exacta sin caché), P13 | Como el informe |
-| Por decidir | P4 (tras definir el tratamiento de NaN en `categories_`), P14 (tras I3 y con lista blanca), P15, I8 (`bool` con series sin exog), I5 (unificar a `.equals` es un cambio en pandas 2.3) | |
+Orden final tras las dos rondas (la sección 9 explica los cambios que introdujo la segunda). Va de lo que más aporta a lo que menos; dentro de cada grupo, también. El mismo orden está en `dev/ROADMAP.md`, sección 11.
+
+| # | Qué | Impacto | Esfuerzo | Condiciones, y qué cambia respecto al informe |
+|---|---|---|---|---|
+| | **Grupo 1: corregir lo que hoy da resultados malos o falla** | | | |
+| 1 | **P2**, exog a float | Arregla un fallo de HistGradientBoosting en `predict` con la configuración por defecto (categórica más `bool`), y da de 5 a 6 veces en el `fit` con una columna `bool` | S | Condición estricta (dtypes explícitos; solo si hoy sale `object`), añadir el `predict` de multiserie (`:3037`), escribir tests de dtypes, decidir D-NP3 y los enteros grandes |
+| 2 | **P1**, numpy al estimador en el `fit` de multiserie | Predicciones erróneas silenciosas (MAE 3,9 frente a 31,1), solo con `categorical_features=None` o una lista incompleta | M | Decidir antes D-NP2: (a') con aviso y nota de versión, o (c) redefinida (9.4). Requisito: CAT-T2. Incluir `:4695`, `_utils.py:3038`, el cast de CatBoost y el índice de `ordinal_category`. Tests de paridad entre one-step-ahead y backtesting. El informe lo daba como S a M y sin cambio de modelo |
+| 3 | **I8**, `bool` que pasa a categórica si una serie no tiene exog | Cambio silencioso de modelo que depende de los datos | S | No estaba como propuesta en el informe |
+| 4 | Nivel predicho por un modelo que no lo vio (refit intermitente con `skip_folds`, 9.1) | Predicciones de una serie como nivel desconocido | S | Falta la reproducción mínima y decidir si es intencionado. No está en el informe |
+| | **Grupo 2: rendimiento con ganancia grande y medida** | | | |
+| 5 | **Métricas en numpy** (BTPLAN M1 con PERF-03) | 0,5 a 0,7 s menos por backtesting de 600 series, con y sin refit, y por cada candidato de una búsqueda. La mejor relación entre ganancia y esfuerzo | S | Antes de P3 o a la vez: después de P3 son el 40 % de lo que queda. La fórmula directa no siempre es idéntica bit a bit |
+| 6 | **P3**, camino rápido del backtesting multiserie sin refit, en dos pasos: (1) partir `predict` en validar, preparar y núcleo numpy, sin cambio de comportamiento; (2) camino rápido sobre ese núcleo | La mayor ganancia absoluta: de 8 a 9 veces con Ridge y de 3 a 4 con LightGBM (50 folds, con las métricas ya hechas); 3 veces en una búsqueda. Poco con pocos folds o modelos caros; nada con refit en cada fold | L | Alcance de D-NP4. Preparación acotada a las filas de test y reutilizable entre los candidatos de una búsqueda. Aceptación: salidas y avisos idénticos (la batería de `proto_bt_once_cases.py` es un punto de partida) y tiempo de la llamada completa. El informe lo plantea como un contenedor dentro del backtesting |
+| 7 | Reutilizar las matrices de entrenamiento entre los candidatos de una búsqueda | Estimado: otras 2 veces sobre lo anterior en búsquedas con modelos baratos | Por estimar | Sin prototipo. No está en el informe |
+| | **Grupo 3: baratas y seguras** | | | |
+| 8 | **P6**, `_is_utc_anchored_index` | -70 % en el backtesting de una serie con índice diario y zona horaria | S | Con la formulación exacta, no con caché (una caché cambia resultados) |
+| 9 | **P16 y P17**, ventana del DMV | El informe mide un 40 % del `predict` del DMV (sin verificar) | S | `copy=True` y selección de columnas antes de convertir. P17 solo afecta al DMV |
+| 10 | **P7, P8, P9**, `fit` de multiserie | Unos milisegundos por `fit` con cientos de series | S | P8 solo acierta si todas las series tienen el índice de la exog; P9 comparando por columna |
+| 11 | **P10, P12** y la reutilización de entradas de **P11** | Décimas de milisegundo por llamada | S | P10 con claves `int` y orden estable; P12 solo la búsqueda en array; de P11, no el cambio a `np.quantile` |
+| 12 | BTPLAN F2, series de entrenamiento por posición | Con refit en cada fold, 3,2 a 3,5 s de 20 a 25 s (600 series, Ridge) | M | Es lo que ayuda a quien reajusta |
+| | **Grupo 4: poco valor, no ahora** | | | |
+| 13 | **P4**, categóricas por códigos | Pierde su ganancia en multiserie cuando exista P3; le quedan el `predict` de una serie con categóricas y el `fit` | M | Antes hay que definir el tratamiento de NaN en `categories_` |
+| 14 | **P5**, validar una vez en los forecasters de una serie | 5 a 7 ms por backtesting | M | Lo que pesa de P5 es P6 |
+| 15 | BTPLAN F1 y F3, ventana y exog de test por posición | Absorbidas por P3 en multiserie | | Solo si P3 se retrasa; siguen sirviendo al backtesting foundation y a one-step-ahead |
+| 16 | **P13, P14, P15**, el cambio a `np.quantile` de P11 y unificar a `.equals` (I5) | Pequeño o sin verificar | | P14 tras decidir D-NP6 y con lista blanca; I5 es un cambio de comportamiento en pandas 2.3 |
 
 ## 9. Segunda ronda: lo que quedaba por revisar
 
@@ -516,6 +530,8 @@ He vuelto a ejecutar en los tres entornos los scripts de P6, P8, P9, P10, P12, P
 - **Corrijo el riesgo de memoria de la primera ronda:** en este tamaño el prototipo usa algo menos de memoria que el código actual. El aviso de los 14 GB sigue siendo una cuenta para tramos de test muy largos, no algo observado.
 
 ### 9.8 Qué cambia en el orden recomendado
+
+La tabla de la sección 8 ya recoge estos cambios; aquí queda el porqué de cada uno.
 
 - **P3:** mantenerla, pero con el alcance dicho en claro: mejora el backtesting y las búsquedas **sin refit**. Criterio de aceptación en tiempo de la llamada completa.
 - **Métricas en numpy (BTPLAN M1 y PERF-03):** confirmado que van antes o con P3.

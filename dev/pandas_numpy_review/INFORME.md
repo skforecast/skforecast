@@ -273,14 +273,14 @@ Estado: **nueva**, **existe** (fila del roadmap o plan), **amplía** (cambia el 
 
 **¿Qué se simplifica al retirar pandas 2 (MAINT-drop-pandas2)?** El módulo `_pandas_compat.py` y los tests condicionados, pero **ninguna propuesta depende de ello**, y los caminos en numpy reducen la sensibilidad a la versión de pandas. No hay razón para esperar a retirar pandas 2.
 
-**Orden recomendado:**
+**Orden recomendado** (el del estudio; el orden revisado, por importancia e impacto, está en la sección 8 de [REVISION.md](REVISION.md) y en `dev/ROADMAP.md`):
 
-| Cuándo | Propuestas | Por qué |
+| Orden | Propuestas | Por qué |
 |---|---|---|
-| 0.28.x (ya) | P1 (bug), P2 (rendimiento y bug), P7, P8, P16, P17 | Corrección y cambios pequeños, aislados y bit a bit iguales (salvo los casos de error de P2, a decidir) |
-| 0.28.x si da tiempo, si no 0.29.0 | P4 (PERF-categorical-codes, ya planificado), P9, P10, P11, P12 | Baratos, solo numpy |
-| 0.29.0 | P3 (después de fusionar MSPERF y BTPLAN, que tocan las mismas funciones), P5, P6, P13 | El cambio grande; el diseño de P3 decide parte de P5 |
-| Posterior o por decidir | P14 (tras decidir I3), P15 | No son de pandas frente a numpy, o necesitan una decisión antes |
+| 1 | P1 (bug), P2 (rendimiento y bug), P7, P8, P16, P17 | Corrección y cambios pequeños, aislados y bit a bit iguales (salvo los casos de error de P2, a decidir) |
+| 2 | P4 (PERF-categorical-codes, ya planificado), P9, P10, P11, P12 | Baratos, solo numpy |
+| 3 | P3 (después de fusionar MSPERF y BTPLAN, que tocan las mismas funciones), P5, P6, P13 | El cambio grande; el diseño de P3 decide parte de P5 |
+| Por decidir | P14 (tras decidir I3), P15 | No son de pandas frente a numpy, o necesitan una decisión antes |
 
 ## 7. Decisiones pendientes (con mi recomendación)
 
@@ -304,18 +304,18 @@ Estado: **nueva**, **existe** (fila del roadmap o plan), **amplía** (cambia el 
 
 ## 9. Filas propuestas para `dev/ROADMAP.md`
 
-No se ha editado el roadmap. Filas nuevas (formato de la sección 4 y 5):
+Filas tal como las propuso el estudio. Después se llevaron a `dev/ROADMAP.md`, corregidas por la revisión y sin versión asignada:
 
-| ID | Qué | Versión | Esfuerzo | Estado | Detalle |
-|---|---|---|---|---|---|
-| BUG-ms-fit-dataframe-categorical | Multiserie: el estimador recibe un DataFrame en `fit` y numpy en `predict`; con LightGBM, `categorical_features=None` y una exog `category` de enteros que no son `0..n-1`, `predict` es erróneo. Dar numpy al estimador en `fit` (P1) | 0.28.0 | S a M | Reproducido el 2026-11-19 (p2 y p3). Decisión D-NP2 | `dev/pandas_numpy_review/` §4.2, P1 |
-| PERF-exog-float-matrix | Exog `bool`, nullable o numérica de `pyarrow` da `X_train` `object` en Recursive, Direct, DMV, Classifier y Rnn: `to_numpy(dtype=float, na_value=np.nan)` tras codificar (P2). Corrige además el `TypeError` de numpy en `fit` con NA en una columna nullable (I10) | 0.28.0 | S | Medido: `fit` 2,6 a 8 veces más rápido con Ridge, 3 veces menos memoria; error reproducido el 2026-11-19 (p2 y p3). Decisión D-NP3 | §5.2 P2, §3 I10 |
-| PERF-dmv-last-window | DMV: ventana de `predict` con un único `to_numpy` y sin selección duplicada de columnas (P16); `drop` vacío por fold (P17) | 0.28.0 | S | Medido: ~40 % del `predict` del DMV | §2.2, §5.2 P16, P17 |
-| PERF-ms-fit-small | `training_range_` sin lista (P7), exog ancha cortada una vez en `fit` (P8), dtypes de la exog en diccionario sin DataFrame (P9) | 0.28.0 | S | Medido salvo P9 | §5.2 |
-| PERF-residuals-numpy | Binning out-of-sample en numpy en todos los forecasters (P10); `np.quantile` y entradas reutilizadas en los intervalos por bootstrapping (P11); factores conformal cacheados (P12) | 0.29.0 | S | Medido por micro-benchmark | §5.2 |
-| PERF-ms-osa-metrics | One-step-ahead multiserie por candidato sin `groupby` por nivel (P13) | 0.29.0 | S a M | Con PERF-03 | §5.2 P13 |
-| BUG-equivalent-date-nan | `ForecasterEquivalentDate`: `offset` entero propaga NaN y `DateOffset` los salta. Decidir (D-NP6) y vectorizar (P14) | por decidir | S a M | Reproducido el 2026-11-19 | §3 I3 |
-| PERF-classifier-fast-predict | Clasificador: camino rápido de predicción por paso, `check_inputs`, `.equals` en vez de `(a == b).all()` (P15, I4, I5) | por decidir | M | Lectura de código y perfil | §3 I4, I5 |
+| ID | Qué | Esfuerzo | Estado | Detalle |
+|---|---|---|---|---|
+| BUG-ms-fit-dataframe-categorical | Multiserie: el estimador recibe un DataFrame en `fit` y numpy en `predict`; con LightGBM, `categorical_features=None` y una exog `category` de enteros que no son `0..n-1`, `predict` es erróneo. Dar numpy al estimador en `fit` (P1) | S a M | Reproducido el 2026-11-19 (p2 y p3). Decisión D-NP2 | `dev/pandas_numpy_review/` §4.2, P1 |
+| PERF-exog-float-matrix | Exog `bool`, nullable o numérica de `pyarrow` da `X_train` `object` en Recursive, Direct, DMV, Classifier y Rnn: `to_numpy(dtype=float, na_value=np.nan)` tras codificar (P2). Corrige además el `TypeError` de numpy en `fit` con NA en una columna nullable (I10) | S | Medido: `fit` 2,6 a 8 veces más rápido con Ridge, 3 veces menos memoria; error reproducido el 2026-11-19 (p2 y p3). Decisión D-NP3 | §5.2 P2, §3 I10 |
+| PERF-dmv-last-window | DMV: ventana de `predict` con un único `to_numpy` y sin selección duplicada de columnas (P16); `drop` vacío por fold (P17) | S | Medido: ~40 % del `predict` del DMV | §2.2, §5.2 P16, P17 |
+| PERF-ms-fit-small | `training_range_` sin lista (P7), exog ancha cortada una vez en `fit` (P8), dtypes de la exog en diccionario sin DataFrame (P9) | S | Medido salvo P9 | §5.2 |
+| PERF-residuals-numpy | Binning out-of-sample en numpy en todos los forecasters (P10); `np.quantile` y entradas reutilizadas en los intervalos por bootstrapping (P11); factores conformal cacheados (P12) | S | Medido por micro-benchmark | §5.2 |
+| PERF-ms-osa-metrics | One-step-ahead multiserie por candidato sin `groupby` por nivel (P13) | S a M | Con PERF-03 | §5.2 P13 |
+| BUG-equivalent-date-nan | `ForecasterEquivalentDate`: `offset` entero propaga NaN y `DateOffset` los salta. Decidir (D-NP6) y vectorizar (P14) | S a M | Reproducido el 2026-11-19 | §3 I3 |
+| PERF-classifier-fast-predict | Clasificador: camino rápido de predicción por paso, `check_inputs`, `.equals` en vez de `(a == b).all()` (P15, I4, I5) | M | Lectura de código y perfil | §3 I4, I5 |
 
 Filas existentes que cambian:
 

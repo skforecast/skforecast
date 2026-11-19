@@ -23,7 +23,7 @@ bash run3.sh script.py [args]     # pandas 2.3, pandas 3 sin pyarrow, pandas 3 c
 | `time_small.py` | Coste por fold univariante, P2, P7, P17 | 4, 6.1 |
 | `spot_checks.py` | Comprobaciones propias de dos hallazgos de los subagentes | 3.2, 4 |
 | `p1_*.py` | P1 y D-NP2 (subagente; `p1_common.py` tiene el prototipo del arreglo) | 3.1 |
-| `p1c_*.py` | Revisión adversarial de la opción (c) de D-NP2 (subagente; `p1c_common.py` tiene el prototipo `option_c` y el conjunto de 30 series). Salidas en `results/p1c_*.txt` | 3.1 |
+| `p1c_*.py` | Revisión adversarial de la opción (c) de D-NP2 (subagente; `p1c_common.py` tiene el prototipo `option_c` y el conjunto de 30 series). | 3.1 |
 | `p2_*.py` | P2 y D-NP3 (subagente; `p2_proto.py` tiene el prototipo) | 3.2 |
 | `misc_*.py` | I3 a I11 y P4 a P17 (subagente) | 4, 5 |
-| `results/` | Salidas de las medidas de tiempo y de los scripts `p2_*` | |
+| `results/` | Salidas de las medidas de tiempo que cita la revisión. Las salidas de los scripts de corrección (`p1_*`, `p1c_*`, `p2_*`, `misc_*`) no se guardan: se regeneran con `run3.sh` | |

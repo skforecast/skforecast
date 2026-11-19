@@ -1,7 +1,0 @@
-largest category value         3: fit ok, peak RSS 188 MB
-largest category value     10000: fit ok, peak RSS 197 MB
-largest category value    100000: fit ok, peak RSS 280 MB
-largest category value   1000000: fit ok, peak RSS 1105 MB
-largest category value   3000000: fit ok, peak RSS 2945 MB
-largest category value        -1: XGBoostError: [18:05:28] /__w/xgboost/xgboost/src/common/categorical.h:71: Invalid categorical value detected. Categorical value should be non-negative, less than total number of categories in training data and les
-[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]

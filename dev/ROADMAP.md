@@ -292,10 +292,12 @@ entrenamiento ya son numpy), sino de dejar de repetir trabajo de pandas en cada 
 cada serie: es grande en el backtesting y las búsquedas de multiserie sin refit (de 3 a 9
 veces la llamada completa) y pequeña o nula con refit, con pocos folds, con modelos caros y en
 los forecasters de una serie. Las cifras son de datos sintéticos (600 series, 50 folds):
-falta probar el prototipo con casos reales.
+falta probar el prototipo con casos reales. El mismo orden, con el impacto y las condiciones de
+cada elemento, está en NPREV §8.
 
 1. **Corrección:** PERF-exog-float-matrix (S, configuración por defecto),
-   BUG-ms-fit-dataframe-categorical (M, con CAT-T2 y D-NP2), BUG-ms-exog-none-bool.
+   BUG-ms-fit-dataframe-categorical (M, con CAT-T2 y D-NP2), BUG-ms-exog-none-bool,
+   BUG-backtesting-refit-skipfolds.
 2. **Ganancia grande y medida:** PERF-03 con M1 (S; la mejor relación entre ganancia y
    esfuerzo, y sirve con y sin refit), PERF-backtesting-ms-fast-path (L; la mayor ganancia
    absoluta), PERF-search-shared-train-matrices (estimada, sin prototipo).
