@@ -21,6 +21,8 @@ bash run3.sh script.py [args]     # pandas 2.3, pandas 3 sin pyarrow, pandas 3 c
 | `time_p5.py` | P5 sobre el backtesting univariante completo | 9.5 |
 | `real_data.py` | Casos reales de tres artículos de cienciadedatos.net (py44, py59, py39): datos, preprocesado, forecasters y folds. `python real_data.py download DIR` (con `pyarrow`) baja los datos una vez; después, `REAL_DATA_DIR=DIR` | 10 |
 | `time_real_cases.py` | Prueba del prototipo con esos casos: llamada completa hoy frente a `proto_bt_blocks.py`, con el tiempo del modelo separado; en el caso de una serie, P5 | 10 |
+| `time_real_search.py` | Variante de py59: la búsqueda con `TimeSeriesFold` en lugar de `OneStepAheadFold`, hoy frente al prototipo con la preparación compartida | 10 |
+| `check_real_mae.py` | Fidelidad de `real_data.py` a los artículos: métricas del código actual junto a las que publica cada artículo | 10.1 |
 | `proto_bt_batched.py` | Alternativa descartada: todos los folds en una pasada | 6.2 |
 | `time_small.py` | Coste por fold univariante, P2, P7, P17 | 4, 6.1 |
 | `spot_checks.py` | Comprobaciones propias de dos hallazgos de los subagentes | 3.2, 4 |
@@ -28,4 +30,4 @@ bash run3.sh script.py [args]     # pandas 2.3, pandas 3 sin pyarrow, pandas 3 c
 | `p1c_*.py` | Revisión adversarial de la opción (c) de D-NP2 (subagente; `p1c_common.py` tiene el prototipo `option_c` y el conjunto de 30 series). | 3.1 |
 | `p2_*.py` | P2 y D-NP3 (subagente; `p2_proto.py` tiene el prototipo) | 3.2 |
 | `misc_*.py` | I3 a I11 y P4 a P17 (subagente) | 4, 5 |
-| `results/` | Salidas de las medidas de tiempo que cita la revisión. Las salidas de los scripts de corrección (`p1_*`, `p1c_*`, `p2_*`, `misc_*`) no se guardan: se regeneran con `run3.sh` | |
+| `results/` | Salidas de las medidas de tiempo que cita la revisión. En las de casos reales (`real_*.txt`), `_1thread` es LightGBM con `LGBM_N_JOBS=1` (salidas exactas) y `_n300`, la muestra de 300 edificios (`REAL_N_SERIES=300`); sin sufijo, LightGBM con los hilos por defecto de los artículos. Las salidas de los scripts de corrección (`p1_*`, `p1c_*`, `p2_*`, `misc_*`) no se guardan: se regeneran con `run3.sh` | |

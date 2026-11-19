@@ -120,7 +120,7 @@ if case["kind"] == "ms":
     diff = np.nanmax(np.abs(cur[3][0][num].to_numpy(float) - fast[3][0][num].to_numpy(float)))
     preds = cur[3][1]
     print(f"{case_name}: {n_series} series, {preds.index.nunique()} predicted dates, "
-          f"{len(preds)} predictions, estimator {est_cls.__name__}, refit={cv.refit}, reps={REPS}")
+          f"{len(preds)} predictions, estimator {est_cls.__name__} (n_jobs={make().estimator.get_params().get('n_jobs')}), refit={cv.refit}, reps={REPS}")
     line("today", cur)
     line("prototype", new, cur)
     line("prototype + numpy metrics", fast, cur)
@@ -151,7 +151,7 @@ else:
         same = "DIFFERENT " + str(e).splitlines()[0][:70]
     n_folds = len(cur[3][1]) / cv.steps
     print(f"{case_name}: single series, {len(y)} rows, {exog.shape[1]} exog, "
-          f"about {n_folds:.0f} folds of {cv.steps} steps, estimator {est_cls.__name__}, reps={REPS}")
+          f"about {n_folds:.0f} folds of {cv.steps} steps, estimator {est_cls.__name__} (n_jobs={make().estimator.get_params().get('n_jobs')}), reps={REPS}")
     line("today", cur)
     line("P5 (check_inputs=False)", p5, cur)
     print(f"  predictions {same}")

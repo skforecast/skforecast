@@ -1,0 +1,24 @@
+=== p2 ===
+bdg2: 1578 series, 61 predicted dates, 96258 predictions, estimator LGBMRegressor, refit=False, reps=1
+  today                                67.75 s | fit   58.64 s | estimator.predict   3.28 s | rest   5.83 s ( 8.6 %)
+  prototype                            62.91 s | fit   56.74 s | estimator.predict   3.46 s | rest   2.70 s ( 4.3 %)  x1.08 whole call, x  2.2 rest
+  prototype + numpy metrics            61.18 s | fit   56.17 s | estimator.predict   3.43 s | rest   1.58 s ( 2.6 %)  x1.11 whole call, x  3.7 rest
+  outputs: metrics DIFFERENT DataFrame.iloc[:, 1] (column name="mean_absolute_error") are different, predictions DIFFERENT DataFrame.iloc[:, 4] (column name="pred") are different; warnings same list: True (0 today); numpy metrics max abs diff 0.234
+  prototype stages (s, last run): preprocess 0.27, matrix 0.08, exog_align 0.50, extract_train 0.48, fit 56.74, prepare_model 0.05, folds 3.51, output 0.01, metrics 1.18, rest 0.03, n_folds 9.00, n_fits 1.00
+  [python 3.12.3, pandas 2.3.3, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 (sin pyarrow) ===
+bdg2: 1578 series, 61 predicted dates, 96258 predictions, estimator LGBMRegressor, refit=False, reps=1
+  today                                66.39 s | fit   56.57 s | estimator.predict   3.31 s | rest   6.51 s ( 9.8 %)
+  prototype                            64.30 s | fit   58.15 s | estimator.predict   3.59 s | rest   2.56 s ( 4.0 %)  x1.03 whole call, x  2.5 rest
+  prototype + numpy metrics            66.19 s | fit   60.70 s | estimator.predict   3.57 s | rest   1.92 s ( 2.9 %)  x1.00 whole call, x  3.4 rest
+  outputs: metrics DIFFERENT DataFrame.iloc[:, 1] (column name="mean_absolute_error") are different, predictions DIFFERENT DataFrame.iloc[:, 4] (column name="pred") are different; warnings same list: True (0 today); numpy metrics max abs diff 0.388
+  prototype stages (s, last run): preprocess 0.40, matrix 0.07, exog_align 0.55, extract_train 0.50, fit 58.15, prepare_model 0.04, folds 3.63, output 0.01, metrics 0.85, rest 0.03, n_folds 9.00, n_fits 1.00
+  [python 3.12.3, pandas 3.1.1, pyarrow no, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 pa ===
+bdg2: 1578 series, 61 predicted dates, 96258 predictions, estimator LGBMRegressor, refit=False, reps=1
+  today                                68.34 s | fit   56.92 s | estimator.predict   3.57 s | rest   7.85 s (11.5 %)
+  prototype                            67.82 s | fit   61.41 s | estimator.predict   3.21 s | rest   3.20 s ( 4.7 %)  x1.01 whole call, x  2.4 rest
+  prototype + numpy metrics            62.44 s | fit   56.36 s | estimator.predict   3.62 s | rest   2.45 s ( 3.9 %)  x1.09 whole call, x  3.2 rest
+  outputs: metrics identical, predictions DIFFERENT DataFrame.iloc[:, 4] (column name="pred") are different; warnings same list: True (0 today); numpy metrics max abs diff 1.42e-14
+  prototype stages (s, last run): preprocess 0.38, matrix 0.08, exog_align 0.63, extract_train 0.66, fit 61.41, prepare_model 0.07, folds 3.26, output 0.01, metrics 1.25, rest 0.03, n_folds 9.00, n_fits 1.00
+  [python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]

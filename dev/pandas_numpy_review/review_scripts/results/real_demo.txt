@@ -1,0 +1,24 @@
+=== p2 ===
+demo: 5 series, 153 predicted dates, 494 predictions, estimator HistGradientBoostingRegressor, refit=False, reps=5
+  today                                 0.27 s | fit    0.09 s | estimator.predict   0.10 s | rest   0.09 s (32.9 %)
+  prototype                             0.18 s | fit    0.07 s | estimator.predict   0.08 s | rest   0.02 s (14.2 %)  x1.54 whole call, x  3.6 rest
+  prototype + numpy metrics             0.18 s | fit    0.08 s | estimator.predict   0.08 s | rest   0.02 s (11.3 %)  x1.51 whole call, x  4.4 rest
+  outputs: metrics identical, predictions identical; warnings same list: True (0 today); numpy metrics max abs diff 0
+  prototype stages (s, last run): preprocess 0.00, matrix 0.00, exog_align 0.00, extract_train 0.00, fit 0.11, prepare_model 0.00, folds 0.11, output 0.00, metrics 0.01, rest 0.00, n_folds 22.00, n_fits 1.00
+  [python 3.12.3, pandas 2.3.3, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 (sin pyarrow) ===
+demo: 5 series, 153 predicted dates, 494 predictions, estimator HistGradientBoostingRegressor, refit=False, reps=5
+  today                                 0.22 s | fit    0.07 s | estimator.predict   0.08 s | rest   0.07 s (32.3 %)
+  prototype                             0.17 s | fit    0.07 s | estimator.predict   0.08 s | rest   0.02 s (14.7 %)  x1.32 whole call, x  2.9 rest
+  prototype + numpy metrics             0.16 s | fit    0.07 s | estimator.predict   0.07 s | rest   0.02 s (12.5 %)  x1.41 whole call, x  3.7 rest
+  outputs: metrics identical, predictions identical; warnings same list: True (0 today); numpy metrics max abs diff 0
+  prototype stages (s, last run): preprocess 0.00, matrix 0.00, exog_align 0.00, extract_train 0.00, fit 0.08, prepare_model 0.00, folds 0.14, output 0.01, metrics 0.01, rest 0.00, n_folds 22.00, n_fits 1.00
+  [python 3.12.3, pandas 3.1.1, pyarrow no, numpy 2.5.5, scikit-learn 1.9.1, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 pa ===
+demo: 5 series, 153 predicted dates, 494 predictions, estimator HistGradientBoostingRegressor, refit=False, reps=5
+  today                                 0.33 s | fit    0.09 s | estimator.predict   0.11 s | rest   0.12 s (37.3 %)
+  prototype                             0.19 s | fit    0.08 s | estimator.predict   0.08 s | rest   0.03 s (15.3 %)  x1.71 whole call, x  4.2 rest
+  prototype + numpy metrics             0.18 s | fit    0.08 s | estimator.predict   0.08 s | rest   0.02 s (13.3 %)  x1.80 whole call, x  5.1 rest
+  outputs: metrics identical, predictions identical; warnings same list: True (0 today); numpy metrics max abs diff 0
+  prototype stages (s, last run): preprocess 0.00, matrix 0.00, exog_align 0.00, extract_train 0.00, fit 0.09, prepare_model 0.00, folds 0.11, output 0.01, metrics 0.01, rest 0.00, n_folds 22.00, n_fits 1.00
+  [python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]

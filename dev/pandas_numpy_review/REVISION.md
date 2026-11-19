@@ -1,6 +1,6 @@
 # Revisión independiente del estudio "pandas frente a numpy"
 
-Fecha: 2026-11-19 (segunda ronda añadida el mismo día, sección 9). Revisa [INFORME.md](INFORME.md) (`fddf0de`). Árbol medido: `perf/multiseries-predict-backtesting` en `ab62227`, el mismo del informe. No se ha modificado nada de `skforecast/`. Scripts en [review_scripts/](review_scripts/) (ver su [README](review_scripts/README.md)).
+Fecha: 2026-11-19 (segunda ronda y prueba con casos reales añadidas el mismo día, secciones 9 y 10). Revisa [INFORME.md](INFORME.md) (`fddf0de`). Árbol medido: `perf/multiseries-predict-backtesting` en `ab62227`, el mismo del informe. No se ha modificado nada de `skforecast/`. Scripts en [review_scripts/](review_scripts/) (ver su [README](review_scripts/README.md)).
 
 **Entornos.** Python 3.12.3, numpy 2.5.5, scikit-learn 1.9.1, numba 0.68.1, LightGBM 4.7.0, XGBoost 3.4.1, CatBoost 1.2.10, 4 núcleos. **p2** = pandas 2.3.3 (con `pyarrow` 26.0.1 instalado); **p3** = pandas 3.1.1 con la importación de `pyarrow` bloqueada; **p3 pa** = pandas 3.1.1 con `pyarrow` 26.0.1. Las cifras van siempre en el orden p2 / p3 / p3 pa. Los tiempos se midieron uno a uno, sin nada más en marcha y con `OMP_NUM_THREADS=1` (salvo donde se dice); las comprobaciones de corrección las hicieron tres subagentes en paralelo y sin medir tiempos. Lo que afirmo de sus informes lo he vuelto a ejecutar yo cuando contradice al informe (se indica); lo demás se marca como "subagente".
 
@@ -15,6 +15,7 @@ Las filas, decisiones y el orden por valor que salen de esta revisión están en
 5. **De las propuestas pequeñas, seis necesitan cambios para ser idénticas:** P4 (NaN visto en `fit`), P6 (una caché cambia resultados), P11 (no es bit a bit en pandas 2.3), P14 (solo hasta 7 offsets), P16 (vista de solo lectura en pandas 3) y P12 (caché sin punto de invalidación). I5 no se reproduce como se describe y la parte de multiserie de P17 es falsa.
 6. **Orden:** de acuerdo con multiserie antes que univariantes (D-NP1), pero las métricas en numpy (BTPLAN M1 y PERF-03) tienen que ir **antes o con** P3, no después: tras P3 son el 40 % de lo que queda. Y el contenedor debe vivir por encima del backtesting (lo usan las búsquedas, que hoy repiten todo por candidato) y apoyarse en un único núcleo numpy compartido con `predict`.
 7. **Segunda ronda (sección 9): P3 solo rinde sin refit.** Con refit en cada fold el prototipo gana 1,05 a 1,2 veces, porque domina el `fit` (y dentro de él, con Ridge, la creación de las matrices de entrenamiento: 62 a 74 %). En una búsqueda de 20 candidatos gana 1,8 veces por sí solo, 2,2 a 2,4 con la preparación compartida y 3,0 a 3,4 con las métricas en numpy; lo que queda es otra vez el `fit`, que reconstruye las mismas matrices en cada candidato. Con 3000 series la ganancia y la memoria se mantienen. Los porcentajes de P5 se reproducen.
+8. **Casos reales (sección 10): el prototipo da salidas idénticas, pero la ganancia depende de los folds.** En los backtestings de tres artículos de cienciadedatos.net (de 5 a 1578 series, de 9 a 31 folds) la llamada completa gana de x1,0 a x1,8, porque el `fit` domina; con una evaluación de 61 folds (1578 edificios, `steps=1`) gana x2,8 a x3,3. El camino rápido pasa a ser una mejora para evaluaciones de muchos folds, su primer paso (partir `predict`) se justifica por calidad del código, y entra antes medir la búsqueda con `OneStepAheadFold`, que es lo que usan esos artículos.
 
 ## 1. Nota de la fase 1 (a ciegas)
 
@@ -378,7 +379,7 @@ Sobre D-NP4: `transformer_exog=None` es más restrictivo de lo necesario (un `St
 
 ## 8. Orden recomendado, por importancia e impacto
 
-Orden final tras las dos rondas (la sección 9 explica los cambios que introdujo la segunda). Va de lo que más aporta a lo que menos; dentro de cada grupo, también. Es el orden a fecha de esta revisión (2026-11-19) y no se actualiza: el que se mantiene vivo es el de `dev/ROADMAP.md`, sección 11, y si difieren vale el del roadmap.
+Orden final tras las dos rondas y la prueba con casos reales (la sección 9 explica los cambios que introdujo la segunda ronda y la 10, los de los casos reales). Va de lo que más aporta a lo que menos; dentro de cada grupo, también. Es el orden a fecha de esta revisión (2026-11-19) y no se actualiza: el que se mantiene vivo es el de `dev/ROADMAP.md`, sección 11, y si difieren vale el del roadmap.
 
 Criterios: corrección antes que velocidad; las decisiones se abren pronto (D-NP2, D-NP3, D-NP4, D-BUG02, el significado de saltar un fold con refit y si las métricas en numpy pueden diferir en el último bit), porque cuestan días de calendario y no esfuerzo; un experimento barato que puede cambiar un plan caro va antes que ese plan; dos cambios sobre el mismo código van seguidos, primero el que fija el comportamiento; impacto es ganancia por cuántos usuarios la notan, y lo medido va antes que lo estimado; y un segundo camino de código es un coste permanente, así que entra con condiciones.
 
@@ -388,23 +389,22 @@ Criterios: corrección antes que velocidad; las decisiones se abren pronto (D-NP
 | 1 | **P2**, exog a float, seguida de **I8** (`bool` que pasa a categórica si una serie no tiene exog) | P2 arregla un fallo de HistGradientBoosting en `predict` con la configuración por defecto (categórica más `bool`) y da de 5 a 6 veces en el `fit` con una columna `bool`; I8 es un cambio silencioso de modelo que depende de los datos | S y S | Las dos tratan los dtypes de la exog al pasar a numpy y comparten la matriz de tests de dtypes (`bool`, nullable, `pyarrow`) que hoy no existe y que también necesita P1. P2 con condición estricta (dtypes explícitos; solo si hoy sale `object`), con el `predict` de multiserie (`:3037`), D-NP3 y los enteros grandes. I8 no estaba como propuesta en el informe |
 | 2 | **P1**, numpy al estimador en el `fit` de multiserie | Predicciones erróneas silenciosas (MAE 3,9 frente a 31,1), solo con `categorical_features=None` o una lista incompleta | M | Decidir antes D-NP2: (a') con aviso y nota de versión, o (c) redefinida (9.4). Requisito: CAT-T2. Incluir `:4695`, `_utils.py:3038`, el cast de CatBoost y el índice de `ordinal_category`. Tests de paridad entre one-step-ahead y backtesting. El informe lo daba como S a M y sin cambio de modelo |
 | 3 | Nivel predicho por un modelo que no lo vio (refit intermitente con `skip_folds`, 9.1) | Predicciones de una serie como nivel desconocido, en una configuración rara | S | Falta la reproducción mínima y decidir si es intencionado. No está en el informe |
-| | **Grupo 2: ganancia grande, backtesting y búsquedas de multiserie sin refit** | | | |
-| 4 | Probar `proto_bt_blocks.py` con dos o tres casos reales (guías de usuario, `benchmarks/`) | Decide si se invierte una L: las cifras de esta revisión son de datos sintéticos | XS | Si la llamada completa no baja al menos a la mitad en casos reales sin refit, replantear el alcance de P3 |
+| | **Grupo 2: rendimiento y calidad del código de multiserie (reordenado tras la prueba con casos reales, sección 10)** | | | |
+| 4 | Medir la búsqueda con `OneStepAheadFold` del artículo py59 (1578 edificios): qué parte es modelo y qué parte no | Es el flujo que recomienda la documentación y donde se va el tiempo de esos usuarios; el camino rápido no lo toca. Decide el peso de 5, 8 y PERF-ms-osa-metrics | XS | La prueba con casos reales que ocupaba este puesto está hecha (sección 10) |
 | 5 | **Métricas en numpy, primera parte** (PERF-03: métricas por nombre en numpy) | Vale por sí sola: búsquedas one-step-ahead 2,6 veces más rápidas con 1000 series; y es la pieza que usa P3 | S | La fórmula directa no siempre es idéntica bit a bit (4e-16 en un caso): decidir si se acepta |
-| 6 | **P3, paso 1**: partir `predict` en validar, preparar y núcleo numpy, sin cambio de comportamiento | Ninguna ganancia por sí solo; deja un único núcleo para `predict` y para P3 | M | Después de 1 y 2, para que el núcleo herede un tratamiento de dtypes ya correcto |
-| 7 | **P3, paso 2**: camino rápido sobre ese núcleo, con **BTPLAN M1** dentro | La mayor ganancia absoluta: de 8 a 9 veces con Ridge y de 3 a 4 con LightGBM (50 folds, con las métricas); 3 veces en una búsqueda. Poco con pocos folds o modelos caros; nada con refit en cada fold. M1 sola es un 5 % de la llamada de hoy; con P3, las métricas son del 30 al 40 % de lo que queda | L | Alcance de D-NP4. Preparación acotada a las filas de test y reutilizable entre los candidatos de una búsqueda. Por ser un segundo camino: un solo núcleo, vuelta al camino actual en lo que D-NP4 deja fuera, y la batería de `proto_bt_once_cases.py` convertida en tests. Si D-BUG02 está decidida, BUG-02 antes de M1. Aceptación por tiempo de la llamada completa. El informe lo plantea como un contenedor dentro del backtesting |
+| 6 | **Refactor del núcleo de `predict`** (antes, paso 1 de P3): validar, preparar y núcleo numpy, sin cambio de comportamiento | Calidad, no tiempo: `_create_predict_inputs` tiene unas 420 líneas, mezcla validación, alineación de la exog y matrices, y la usan cuatro métodos; `_recursive_predict` pide un DataFrame del que solo usa los valores; los atajos de MSPERF (comparaciones `identical`, cachés por `id`) viven dentro porque hoy se valida y alinea en cada llamada | M | Después de 1 y 2, para que el núcleo herede una conversión de la exog ya común y correcta. Esbozar antes las firmas de las tres etapas para comprobar que simplifica y no solo reparte. Red de seguridad: las baterías de identidad de MSPERF |
+| 7 | **P3, camino rápido** sobre ese núcleo, con **BTPLAN M1** dentro | Solo con evaluaciones de muchos folds y modelos de coste bajo o medio: en los flujos de los artículos (9 a 31 folds) de x1,0 a x1,8 en la llamada completa; con 61 folds (evaluación diaria) de x2,8 a x3,3. Empeora la calidad: un segundo camino que debe reproducir los avisos de `predict` (unas 500 líneas en `proto_bt_blocks.py`, sin contar las funciones de avisos que toma de `proto_bt_once.py`) | L | Cuando haya ese perfil de uso o demanda. Condiciones: un solo núcleo, vuelta al camino actual en lo que D-NP4 deja fuera, y la batería de `proto_bt_once_cases.py` y los casos reales convertidos en tests. Si D-BUG02 está decidida, BUG-02 antes de M1 |
 | 8 | Reutilizar las matrices de entrenamiento entre los candidatos de una búsqueda | Estimado: otras 2 veces sobre lo anterior en búsquedas con modelos baratos | Por estimar | Prototipo antes de decidir. No está en el informe |
 | | **Grupo 3: baratas e independientes, en cualquier hueco** | | | |
 | 9 | **P6**, `_is_utc_anchored_index` | -70 % en el backtesting de una serie con índice diario y zona horaria: la única ganancia grande para los forecasters de una serie | S | Con la formulación exacta, no con caché (una caché cambia resultados) |
-| 10 | BTPLAN F2, series de entrenamiento por posición | Con refit en cada fold, 3,2 a 3,5 s de 20 a 25 s (600 series, Ridge): es lo que ayuda a quien reajusta, que D-NP4 deja fuera de P3 | M | Después de 7, que toca la misma función |
+| 10 | BTPLAN F1, F2 y F3: ventana, series de entrenamiento y exog de test por posición | Mejoran el camino actual sin un segundo camino: F2, con refit en cada fold, 3,2 a 3,5 s de 20 a 25 s (600 series, Ridge); las tres, −0,5 s de 4,2 s sin refit (500 series, LightGBM, 10 folds, BTSPEED) | M | Con P3 aplazado (sección 10), F1 y F3 recuperan su valor. Si P3 se hace más tarde, quedan absorbidas |
 | 11 | **P7, P8, P9**, `fit` de multiserie | Unos milisegundos por `fit` con cientos de series | S | P8 solo acierta si todas las series tienen el índice de la exog; P9 comparando por columna |
 | 12 | **P10, P12** y la reutilización de entradas de **P11** | Décimas de milisegundo por llamada | S | P10 con claves `int` y orden estable; P12 solo la búsqueda en array; de P11, no el cambio a `np.quantile` |
 | 13 | **P16 y P17**, ventana del DMV | El informe mide un 40 % del `predict` del DMV (sin verificar) | S | Medir antes. `copy=True` y selección de columnas antes de convertir. P17 solo afecta al DMV |
 | | **Grupo 4: poco valor, no ahora** | | | |
 | 14 | **P4**, categóricas por códigos | Pierde su ganancia en multiserie cuando exista P3; le quedan el `predict` de una serie con categóricas y el `fit` | M | Antes hay que definir el tratamiento de NaN en `categories_` |
-| 15 | **P5**, validar una vez en los forecasters de una serie | 5 a 7 ms por backtesting | M | Lo que pesa de P5 es P6 |
-| 16 | BTPLAN F1 y F3, ventana y exog de test por posición | Absorbidas por P3 en multiserie | | Solo si P3 se retrasa; siguen sirviendo al backtesting foundation y a one-step-ahead |
-| 17 | **P13, P14, P15**, el cambio a `np.quantile` de P11 y unificar a `.equals` (I5) | Pequeño o sin verificar | | P14 tras decidir D-NP6 y con lista blanca; I5 es un cambio de comportamiento en pandas 2.3 |
+| 15 | **P5**, validar una vez en los forecasters de una serie | 5 a 7 ms por backtesting; con datos reales (py39), de 3 a 9 % de la llamada | M | Lo que pesa de P5 es P6 |
+| 16 | **P13, P14, P15**, el cambio a `np.quantile` de P11 y unificar a `.equals` (I5) | Pequeño o sin verificar | | P14 tras decidir D-NP6 y con lista blanca; I5 es un cambio de comportamiento en pandas 2.3 |
 
 ## 9. Segunda ronda: lo que quedaba por revisar
 
@@ -544,6 +544,68 @@ La tabla de la sección 8 ya recoge estos cambios; aquí queda el porqué de cad
 - **P5 y P6:** verificadas; P6 es la parte que más cambia y hay que hacerla con la formulación exacta, no con caché.
 - **Para el roadmap:** la rareza de 9.1 (nivel predicho por un modelo que no lo vio, con refit intermitente y `skip_folds`).
 
+## 10. Prueba con casos reales
+
+Hecha el 2026-11-19 para cumplir la condición que el orden de la sección 8 ponía al camino rápido: probar el prototipo con casos reales antes de invertir una L. Los casos son los backtestings de tres artículos de cienciadedatos.net, reconstruidos con sus datos, su preprocesado, sus forecasters y sus folds ([review_scripts/real_data.py](review_scripts/real_data.py)):
+
+- **py44** (multiserie): `store` (50 artículos de una tienda, tabla ancha, HistGradientBoosting, sin exog, 31 folds de 7 pasos) y `demo` (5 series de distinta longitud con exog en diccionario y columnas quitadas, 22 folds).
+- **py59** (modelos escalables): `bdg2_daily`, 1578 edificios, 22 exógenas (dos categóricas de texto y una `category`), 9 folds de 7 pasos. Con el LightGBM por defecto y lags 14 (el forecaster antes de la búsqueda) y con el del artículo tras la búsqueda (600 árboles, lags 1 a 62).
+- **py39** (una serie): `bike_sharing` horario con exógenas y LightGBM, unos 80 folds de 36 pasos. Usa `bike_sharing_extended_features`, la versión ya calculada de las variables del artículo, que no es idéntica.
+
+Y tres variantes que no están en los artículos, sobre los mismos edificios: `steps=1` (evaluación diaria, 61 folds) con los dos modelos, y la búsqueda con `TimeSeriesFold` (9 folds de validación, 4 candidatos de LightGBM) en lugar de `OneStepAheadFold`. Scripts: [time_real_cases.py](review_scripts/time_real_cases.py), [time_real_search.py](review_scripts/time_real_search.py) y [check_real_mae.py](review_scripts/check_real_mae.py); salidas en `review_scripts/results/real_*.txt`. Mismo árbol (`ab62227`), mismos entornos y `OMP_NUM_THREADS=1`.
+
+### 10.1 Fidelidad a los artículos
+
+Con el código actual y pandas 2.3.3, como en los artículos ([results/real_check_mae.txt](review_scripts/results/real_check_mae.txt)):
+
+| Caso | Valor del artículo | Aquí |
+|---|---|---|
+| `store`, item_1 / item_2 / item_3 | 5,5126 / 9,2185 / 7,3106 | iguales (diferencia de 1e-7 o menos) |
+| `demo`, id_1000 / id_1001 / id_1003 / id_1004 | 150,89 / 863,16 / 265,13 / 921,15 | iguales (diferencia de 1e-7 o menos) |
+| edificios, media | 307 | 307,25 |
+| edificios, por edificio | 1225,57 / 238,25 / 32,17 | de +0,25 a +8,2 % (efecto de los hilos de LightGBM, 10.2) |
+| `bike` | 49,44 | 50,97 (+3,1 %: otras variables) |
+
+### 10.2 Salidas idénticas, y los hilos de LightGBM
+
+Con LightGBM en un hilo (`LGBM_N_JOBS=1`), **el prototipo devuelve las mismas métricas, las mismas predicciones y los mismos avisos que el código actual en todos los casos y variantes, en los tres entornos**.
+
+Las primeras tandas, con el `n_jobs=None` de los artículos, daban diferencias. Su causa no es el prototipo: en LightGBM 4.7.0, `n_jobs=None` entrena con todos los núcleos físicos e ignora `OMP_NUM_THREADS`, y el orden de las sumas cambia entre ejecuciones. Dos ejecuciones del código actual, en el mismo proceso y con los mismos datos en memoria, ya difieren (13 de 96 258 predicciones, en 2e-13, con el modelo por defecto); con 600 árboles y submuestreo la diferencia crece hasta 0,2 a 0,4 en el MAE de algunos edificios, y hasta un 8 % frente al artículo. Afecta a cualquier usuario que repita un notebook con LightGBM (fila DOC-lightgbm-reproducibility del roadmap).
+
+### 10.3 Tiempos
+
+Llamada completa, prototipo con métricas en numpy frente a hoy; rango sobre p2 / p3 / p3 pa. "Resto" es lo que no es modelo (ni `fit` del forecaster ni la función de predicción del estimador). LightGBM en un hilo salvo donde se indica.
+
+| Caso | Series | Folds | Hoy | Resto hoy | Resto con el prototipo | Llamada completa |
+|---|---|---|---|---|---|---|
+| `demo` | 5 | 22 | 0,22 a 0,33 s | 0,07 a 0,12 s | 0,02 s | x1,4 a 1,8 |
+| `store` | 50 | 31 | 1,15 a 1,21 s | 0,19 a 0,21 s | 0,03 s | x1,15 a 1,28 |
+| edificios, por defecto, varios hilos | 1578 | 9 | 11,8 a 14,2 s | 5,7 a 7,3 s | 1,7 a 2,1 s | x1,53 a 1,63 |
+| edificios, por defecto | 1578 | 9 | 17,4 a 20,5 s | 5,3 a 7,5 s | 1,7 a 2,0 s | x1,23 a 1,29 |
+| edificios, artículo (600 árboles) | 1578 | 9 | 172 a 179 s | 5,7 a 7,2 s | 1,4 a 2,1 s | x0,99 a 1,03 |
+| **edificios, por defecto, `steps=1`** | **1578** | **61** | **40,4 a 50,5 s** | **27,3 a 35,4 s** | **1,5 a 2,6 s** | **x2,83 a 3,25** |
+| edificios, artículo, `steps=1` | 300 | 61 | 52,0 a 54,2 s | 5,1 a 6,3 s | 0,27 a 0,45 s | x1,10 a 1,15 |
+| búsqueda `TimeSeriesFold`, 4 candidatos | 300 | 9 | 18,8 a 20,2 s | 4,7 a 5,6 s | 0,9 a 1,1 s (preparación compartida) | x1,30 a 1,41 |
+| `bike`, una serie, P5 | 1 | 80 | 0,87 a 1,03 s | 0,27 a 0,31 s | 0,23 a 0,26 s | x1,03 a 1,09 |
+
+Las dos variantes caras usan una muestra fija de 300 edificios (`REAL_N_SERIES=300`). La muestra es prudente: con el modelo por defecto y `steps=1` da x2,35 a 3,00 frente a x2,83 a 3,25 con los 1578, y con 9 folds, x1,26 a 1,43 frente a x1,23 a 1,29.
+
+### 10.4 Lectura
+
+1. **El prototipo hace lo que promete en todos los casos**: el resto baja de 3 a 20 veces y, después, un backtesting cuesta casi lo que cuesta el modelo.
+2. **Lo que decide la llamada completa es cuánto pesa hoy ese resto frente al `fit`**, y eso depende de folds por series frente al coste del modelo. En los flujos de los artículos (9 a 31 folds) el ahorro va de décimas de segundo a unos 5 s, y la llamada gana de x1,0 a x1,8. Con una evaluación de muchos folds (61, diaria) ahorra unos 30 s y gana x3. Con un modelo caro no gana nunca.
+3. **La condición de la sección 8 no se cumple en los flujos de los artículos y sí en las evaluaciones de muchos folds.** Los datos sintéticos (600 series, 50 folds, Ridge o LightGBM de 50 árboles) eran el caso favorable.
+4. **La parte cara de py44 y py59 es la búsqueda, y la hacen con `OneStepAheadFold`, que el camino rápido no toca.** Con una búsqueda por backtesting la ganancia es moderada (x1,3 a 1,4 con 9 folds de validación).
+5. **P5 se confirma como poco valor** con datos reales (3 a 9 %).
+6. **Sin medir:** qué parte del `fit` es LightGBM y qué parte la creación de las matrices de entrenamiento de skforecast, y el reparto de la búsqueda con `OneStepAheadFold` (fila 4 de la sección 8).
+
+### 10.5 Qué cambia
+
+- **El camino rápido deja de ser la pieza central del rendimiento**: es una L para evaluaciones de muchos folds con modelos baratos o medios, que se hace cuando haya ese perfil de uso o demanda. Además empeora la calidad del código (un segundo camino que reproduce los avisos de `predict`), así que solo lo justifica la velocidad.
+- **Su paso 1 se separa y se justifica por calidad**: partir `predict` en validar, preparar y núcleo numpy ordena una función de unas 420 líneas que usan cuatro métodos, estrecha la entrada de `_recursive_predict` y da un sitio a los atajos que hoy se acumulan dentro. Va después de los arreglos de la exog, que son la mayor ganancia de calidad: una sola conversión a numpy en `fit` y en `predict` elimina la clase de errores de P1, P2 e I8.
+- **Entra antes una medida barata**: la búsqueda con `OneStepAheadFold` de py59, que decide el peso de PERF-03 (primera parte), PERF-ms-osa-metrics y PERF-search-shared-train-matrices.
+- **Hallazgo para la documentación**: la reproducibilidad con LightGBM (10.2).
+
 ## Anexo: qué no se ha verificado
 
 - `ForecasterRnn` y los adaptadores foundation (sin torch ni keras): solo lectura de código.
@@ -551,6 +613,7 @@ La tabla de la sección 8 ya recoge estos cambios; aquí queda el porqué de cad
 - Las ganancias de tiempo de P6, P8, P9, P10, P12, P13, P15 y P16 (solo corrección o lectura).
 - P10 en multiserie y `ForecasterEquivalentDate`; P11 con filas parcialmente NaN.
 - Los prototipos de P3 no cubren intervalos, `return_predictors`, `n_jobs > 1`, forecaster ya ajustado ni diferenciación en diccionario; con refit intermitente y `skip_folds` no emiten el `UnknownLevelWarning` del código actual (9.1). No se han probado con transformadores que no sean elemento a elemento ni con más de 3000 series.
+- Casos reales (sección 10): sin refit, con un solo `fit` por backtesting; la búsqueda con `OneStepAheadFold` y el reparto del `fit` entre LightGBM y skforecast no se han medido.
 - La suite completa de tests no se ha lanzado. El subagente de P2 ejecutó cuatro carpetas de tests con su prototipo activo, en pandas 3 y pandas 2.3.
 
 ## Anexo: cómo reproducir
@@ -580,4 +643,15 @@ bash run3.sh p1c_01_estimators.py                          # y el resto de p1c_*
 bash run3.sh p1_osa.py; bash run3.sh p1_dnp2.py; bash run3.sh p1_fix_grid.py lgbm xgb hgb catboost ridge
 bash run3.sh p2_01_dtype_matrix.py                   # y el resto de p2_*.py
 bash run3.sh misc_p11_p12_intervals.py               # y el resto de misc_*.py
+
+# Casos reales (sección 10)
+uv pip install --python ~/.venvs/skforecast-p2/bin/python --no-deps feature_engine   # y en el entorno de pandas 3
+python real_data.py download DIR                     # una vez, con pyarrow
+export REAL_DATA_DIR=DIR
+bash run3.sh time_real_cases.py demo 5               # y store 5, bike 5, bdg2_small 2, bdg2 1
+LGBM_N_JOBS=1 bash run3.sh time_real_cases.py bdg2_small 2              # salidas exactas: un hilo
+LGBM_N_JOBS=1 bash run3.sh time_real_cases.py bdg2_small_steps1 2
+REAL_N_SERIES=300 LGBM_N_JOBS=1 bash run3.sh time_real_cases.py bdg2_steps1 1
+REAL_N_SERIES=300 bash run3.sh time_real_search.py
+python check_real_mae.py                             # con pandas 2.3, como los artículos
 ```

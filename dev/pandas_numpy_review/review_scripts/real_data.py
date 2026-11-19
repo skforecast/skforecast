@@ -13,6 +13,8 @@ folds (skforecast 0.27.0 in the articles).
   parameters of the article's search (600 trees, lags 1 to 62).
 - `bdg2_small`: the same data with the forecaster as created before the search
   (LightGBM by default, lags 14).
+- `bdg2_steps1`, `bdg2_small_steps1`: variants that are not in the article,
+  the same backtesting with one step per fold (a daily evaluation, 61 folds).
 - `bike`: py39 (XGBoost, LightGBM and CatBoost), single series, hourly, with
   exog (`bike_sharing_extended_features`, the precomputed version of the
   article's features), LightGBM with categorical `weather`.
@@ -20,6 +22,12 @@ folds (skforecast 0.27.0 in the articles).
 Usage:
     python real_data.py download DIR    # once, with pyarrow (bdg2 is parquet)
 Then set REAL_DATA_DIR=DIR for `time_real_cases.py`.
+
+LightGBM with `n_jobs=None` (the articles) trains with all the physical cores
+and ignores `OMP_NUM_THREADS`: its results then change in the last bits from
+one run to the next (also two runs of the current code). `LGBM_N_JOBS=1` fixes
+the threads, to compare outputs exactly. `REAL_N_SERIES=N` keeps a fixed random
+sample of N buildings in the `bdg2` cases.
 """
 import json
 import os
@@ -29,6 +37,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+LGBM_N_JOBS = (
+    {"n_jobs": int(os.environ["LGBM_N_JOBS"])} if os.environ.get("LGBM_N_JOBS") else {}
+)
 RAW = "https://raw.githubusercontent.com/skforecast/skforecast-datasets/main/data/"
 FILES = {
     "store_sales.csv": RAW + "store_sales.csv",
@@ -138,6 +149,13 @@ def _bdg2_data():
 
     dtypes = json.loads((_dir() / "bdg2_daily_dtypes.json").read_text())
     data = pd.read_csv(_dir() / "bdg2_daily.csv")
+    n_series = os.environ.get("REAL_N_SERIES")
+    if n_series:
+        # NOTE: A fixed random sample of buildings, for the variants that are
+        # too slow with the 1578 of the article.
+        ids = np.sort(data["building_id"].unique())
+        keep = np.random.default_rng(123).choice(ids, size=int(n_series), replace=False)
+        data = data[data["building_id"].isin(keep)].copy()
     for col, dtype in dtypes.items():
         if dtype == "category":
             data[col] = data[col].astype("category")
@@ -195,7 +213,7 @@ def _bdg2_data():
     return series_dict, exog_dict
 
 
-def case_bdg2(small=False):
+def case_bdg2(small=False, steps=7):
     from lightgbm import LGBMRegressor
 
     from skforecast.model_selection import TimeSeriesFold
@@ -213,14 +231,14 @@ def case_bdg2(small=False):
     def forecaster():
         params = {} if small else best_params
         return ForecasterRecursiveMultiSeries(
-            estimator=LGBMRegressor(random_state=8520, verbose=-1, **params),
+            estimator=LGBMRegressor(random_state=8520, verbose=-1, **params, **LGBM_N_JOBS),
             lags=14 if small else 62,
             window_features=RollingFeatures(stats=["mean", "min", "max"], window_sizes=7),
             categorical_features="auto",
             encoding="ordinal",
         )
 
-    cv = TimeSeriesFold(initial_train_size="2017-10-31", steps=7, refit=False, verbose=False)
+    cv = TimeSeriesFold(initial_train_size="2017-10-31", steps=steps, refit=False, verbose=False)
     return dict(
         kind="ms", forecaster=forecaster, series=series_dict, exog=exog_dict, cv=cv,
         kwargs=dict(metric="mean_absolute_error", suppress_warnings=True),
@@ -250,7 +268,7 @@ def case_bike():
 
     def forecaster():
         return ForecasterRecursive(
-            estimator=LGBMRegressor(random_state=15926, verbose=-1),
+            estimator=LGBMRegressor(random_state=15926, verbose=-1, **LGBM_N_JOBS),
             lags=72,
             window_features=RollingFeatures(stats=["mean"], window_sizes=24 * 3),
             categorical_features="auto",
@@ -269,6 +287,9 @@ CASES = {
     "bdg2": case_bdg2,
     "bdg2_small": lambda: case_bdg2(small=True),
     "bike": case_bike,
+    # Variant: daily evaluation (one step per fold, 61 folds).
+    "bdg2_steps1": lambda: case_bdg2(steps=1),
+    "bdg2_small_steps1": lambda: case_bdg2(small=True, steps=1),
 }
 
 if __name__ == "__main__" and len(sys.argv) == 3 and sys.argv[1] == "download":
