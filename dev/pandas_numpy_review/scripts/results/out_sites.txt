@@ -1,0 +1,164 @@
+
+##### ForecasterDirect Ridge num3
+--- call sites into ('pandas', 'sklearn.transformer(OrdinalEncoder/scaler)'): profiled total 0.00 ms/call
+      0.088 ms  3092.7%  direct/_forecaster_direct.py:2044 _create_predict_inputs -> dtypes
+      0.069 ms  2408.1%  utils/utils.py:2537 expand_index -> date_range
+      0.053 ms  1856.9%  utils/utils.py:1397 check_predict_input -> isna
+      0.049 ms  1714.7%  direct/_forecaster_direct.py:2044 _create_predict_inputs -> tolist
+      0.049 ms  1704.2%  direct/_forecaster_direct.py:2456 predict -> __init__
+      0.037 ms  1277.4%  utils/utils.py:2537 expand_index -> __getitem__
+      0.027 ms  938.1%  utils/utils.py:1397 check_predict_input -> tolist
+      0.026 ms  923.8%  utils/utils.py:1397 check_predict_input -> __getitem__
+      0.023 ms  811.4%  direct/_forecaster_direct.py:2044 _create_predict_inputs -> __getitem__
+      0.018 ms  617.8%  utils/utils.py:1296 _check_exog_alignment -> __getitem__
+      0.015 ms  533.0%  utils/utils.py:1397 check_predict_input -> to_numpy
+      0.013 ms  439.4%  direct/_forecaster_direct.py:2044 _create_predict_inputs -> to_numpy
+      0.003 ms  117.6%  utils/utils.py:1397 check_predict_input -> shape
+      0.001 ms   42.9%  utils/utils.py:2279 _is_utc_anchored_index -> tz
+      0.001 ms   23.3%  utils/utils.py:1296 _check_exog_alignment -> freq
+--- call sites into ('pandas',): profiled total 0.04 ms/call
+      0.635 ms  1774.3%  direct/_forecaster_direct.py:2828 predict_interval -> quantile
+      0.512 ms  1429.9%  direct/_forecaster_direct.py:2828 predict_interval -> concat
+      0.217 ms  605.0%  direct/_forecaster_direct.py:2545 predict_bootstrapping -> __init__
+      0.176 ms  492.4%  direct/_forecaster_direct.py:2044 _create_predict_inputs -> dtypes
+      0.167 ms  467.5%  direct/_forecaster_direct.py:2828 predict_interval -> transpose
+      0.165 ms  462.1%  utils/utils.py:2537 expand_index -> date_range
+      0.143 ms  400.1%  direct/_forecaster_direct.py:2828 predict_interval -> __setattr__
+      0.103 ms  288.8%  direct/_forecaster_direct.py:2044 _create_predict_inputs -> tolist
+      0.087 ms  243.1%  utils/utils.py:2537 expand_index -> __getitem__
+      0.059 ms  165.1%  utils/utils.py:1397 check_predict_input -> isna
+--- call sites into ('pandas',): profiled total 117.71 ms/call
+      4.713 ms    4.0%  direct/_forecaster_direct.py:2044 _create_predict_inputs -> dtypes
+      3.532 ms    3.0%  utils/utils.py:2537 expand_index -> date_range
+      3.511 ms    3.0%  model_selection/_validation.py:61 _prepare_fold_data -> __getitem__
+      2.893 ms    2.5%  utils/utils.py:1397 check_predict_input -> isna
+      2.502 ms    2.1%  direct/_forecaster_direct.py:2456 predict -> __init__
+      2.402 ms    2.0%  direct/_forecaster_direct.py:2044 _create_predict_inputs -> tolist
+      2.070 ms    1.8%  utils/utils.py:2537 expand_index -> __getitem__
+      1.445 ms    1.2%  utils/utils.py:1397 check_predict_input -> tolist
+      1.402 ms    1.2%  utils/utils.py:1397 check_predict_input -> __getitem__
+      1.235 ms    1.0%  direct/_forecaster_direct.py:2044 _create_predict_inputs -> __getitem__
+      0.914 ms    0.8%  utils/utils.py:1296 _check_exog_alignment -> __getitem__
+      0.841 ms    0.7%  utils/utils.py:1397 check_predict_input -> to_numpy
+      0.815 ms    0.7%  model_selection/_validation.py:499 _backtesting_forecaster -> insert
+      0.787 ms    0.7%  direct/_forecaster_direct.py:933 _create_train_X_y -> __getitem__
+      0.725 ms    0.6%  model_selection/_validation.py:499 _backtesting_forecaster -> __getitem__
+
+##### DMV Ridge 10 series num3
+--- call sites into ('pandas', 'sklearn.transformer(OrdinalEncoder/scaler)'): profiled total 0.01 ms/call
+      0.863 ms  7931.4%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> __getitem__
+      0.548 ms  5035.1%  utils/utils.py:1397 check_predict_input -> __getitem__
+      0.326 ms  2993.2%  direct/_forecaster_direct_multivariate.py:2633 predict -> __init__
+      0.218 ms  2000.0%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> get_indexer
+      0.119 ms  1095.0%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> dtypes
+      0.089 ms  820.9%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> to_numpy
+      0.087 ms  795.0%  utils/utils.py:2537 expand_index -> date_range
+      0.073 ms  673.0%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> tolist
+      0.069 ms  636.7%  utils/utils.py:1397 check_predict_input -> tolist
+      0.061 ms  556.2%  utils/utils.py:1397 check_predict_input -> isna
+      0.052 ms  479.9%  utils/utils.py:2537 expand_index -> __getitem__
+      0.042 ms  387.3%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> copy
+      0.032 ms  293.7%  utils/utils.py:1397 check_predict_input -> to_numpy
+      0.019 ms  171.7%  utils/utils.py:1296 _check_exog_alignment -> __getitem__
+      0.002 ms   16.8%  utils/utils.py:2279 _is_utc_anchored_index -> tz
+--- call sites into ('pandas',): profiled total 389.99 ms/call
+     49.166 ms   12.6%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> __getitem__
+     33.701 ms    8.6%  utils/utils.py:1397 check_predict_input -> __getitem__
+     26.176 ms    6.7%  model_selection/_utils.py:1559 _extract_data_folds_multiseries -> __getitem__
+     18.647 ms    4.8%  direct/_forecaster_direct_multivariate.py:2633 predict -> __init__
+     16.371 ms    4.2%  model_selection/_utils.py:1559 _extract_data_folds_multiseries -> drop
+     11.125 ms    2.9%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> get_indexer
+      5.452 ms    1.4%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> dtypes
+      4.497 ms    1.2%  utils/utils.py:2537 expand_index -> date_range
+      3.556 ms    0.9%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> to_numpy
+      3.394 ms    0.9%  utils/utils.py:1397 check_predict_input -> isna
+      3.356 ms    0.9%  model_selection/_validation.py:1463 _backtesting_forecaster_multiseries -> concat
+      3.219 ms    0.8%  utils/utils.py:1397 check_predict_input -> tolist
+      3.103 ms    0.8%  utils/utils.py:2537 expand_index -> __getitem__
+      3.038 ms    0.8%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> tolist
+      2.254 ms    0.6%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> copy
+      2.125 ms    0.5%  direct/_forecaster_direct_multivariate.py:971 _create_train_X_y -> __getitem__
+      1.660 ms    0.4%  model_selection/_validation.py:1463 _backtesting_forecaster_multiseries -> set_index
+      1.408 ms    0.4%  direct/_forecaster_direct_multivariate.py:1965 fit -> __getitem__
+
+##### ForecasterDirect Ridge cat1
+--- call sites into ('pandas', 'sklearn.transformer(OrdinalEncoder/scaler)'): profiled total 0.01 ms/call
+      1.270 ms  11507.2%  direct/_forecaster_direct.py:2044 _create_predict_inputs -> wrapped
+      0.574 ms  5202.3%  direct/_forecaster_direct.py:2044 _create_predict_inputs -> __getitem__
+      0.261 ms  2360.5%  direct/_forecaster_direct.py:2044 _create_predict_inputs -> __setitem__
+      0.094 ms  847.8%  direct/_forecaster_direct.py:2044 _create_predict_inputs -> dtypes
+      0.087 ms  790.0%  utils/utils.py:2537 expand_index -> date_range
+      0.068 ms  614.2%  utils/utils.py:1397 check_predict_input -> isna
+      0.061 ms  553.1%  direct/_forecaster_direct.py:2456 predict -> __init__
+      0.059 ms  537.4%  direct/_forecaster_direct.py:2044 _create_predict_inputs -> copy
+      0.054 ms  486.7%  direct/_forecaster_direct.py:2044 _create_predict_inputs -> tolist
+      0.053 ms  482.5%  utils/utils.py:2537 expand_index -> __getitem__
+      0.031 ms  282.6%  utils/utils.py:1397 check_predict_input -> __getitem__
+      0.031 ms  276.3%  utils/utils.py:1397 check_predict_input -> tolist
+      0.019 ms  175.3%  utils/utils.py:1296 _check_exog_alignment -> __getitem__
+      0.019 ms  171.5%  direct/_forecaster_direct.py:2044 _create_predict_inputs -> to_numpy
+      0.019 ms  171.3%  utils/utils.py:1397 check_predict_input -> to_numpy
+--- call sites into ('pandas',): profiled total 0.08 ms/call
+      1.156 ms  1398.1%  direct/_forecaster_direct.py:2044 _create_predict_inputs -> __getitem__
+      0.684 ms  827.2%  direct/_forecaster_direct.py:2828 predict_interval -> quantile
+      0.555 ms  670.7%  direct/_forecaster_direct.py:2828 predict_interval -> concat
+      0.516 ms  623.4%  direct/_forecaster_direct.py:2044 _create_predict_inputs -> __setitem__
+      0.224 ms  270.2%  direct/_forecaster_direct.py:2545 predict_bootstrapping -> __init__
+      0.187 ms  226.5%  direct/_forecaster_direct.py:2044 _create_predict_inputs -> dtypes
+      0.179 ms  216.0%  direct/_forecaster_direct.py:2828 predict_interval -> transpose
+      0.177 ms  214.1%  utils/utils.py:2537 expand_index -> date_range
+      0.166 ms  201.3%  direct/_forecaster_direct.py:2828 predict_interval -> __setattr__
+      0.115 ms  138.8%  direct/_forecaster_direct.py:2044 _create_predict_inputs -> tolist
+--- call sites into ('pandas',): profiled total 228.06 ms/call
+     28.606 ms   12.5%  direct/_forecaster_direct.py:2044 _create_predict_inputs -> __getitem__
+     16.647 ms    7.3%  direct/_forecaster_direct.py:2044 _create_predict_inputs -> __setitem__
+      4.715 ms    2.1%  direct/_forecaster_direct.py:2044 _create_predict_inputs -> dtypes
+      4.160 ms    1.8%  utils/utils.py:2537 expand_index -> date_range
+      3.910 ms    1.7%  model_selection/_validation.py:61 _prepare_fold_data -> __getitem__
+      3.542 ms    1.6%  utils/utils.py:1397 check_predict_input -> isna
+      2.691 ms    1.2%  direct/_forecaster_direct.py:2044 _create_predict_inputs -> tolist
+      2.673 ms    1.2%  direct/_forecaster_direct.py:2456 predict -> __init__
+      2.482 ms    1.1%  utils/utils.py:2537 expand_index -> __getitem__
+      2.402 ms    1.1%  model_selection/_validation.py:499 _backtesting_forecaster -> insert
+      2.268 ms    1.0%  direct/_forecaster_direct.py:2044 _create_predict_inputs -> copy
+      1.528 ms    0.7%  utils/utils.py:1397 check_predict_input -> __getitem__
+      1.461 ms    0.6%  utils/utils.py:1397 check_predict_input -> tolist
+      1.285 ms    0.6%  direct/_forecaster_direct.py:933 _create_train_X_y -> __getitem__
+      0.980 ms    0.4%  utils/utils.py:1397 check_predict_input -> to_numpy
+
+##### DMV Ridge 10 series cat1
+--- call sites into ('pandas', 'sklearn.transformer(OrdinalEncoder/scaler)'): profiled total 0.02 ms/call
+      1.490 ms  7805.6%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> __getitem__
+      1.385 ms  7257.1%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> wrapped
+      0.575 ms  3010.6%  utils/utils.py:1397 check_predict_input -> __getitem__
+      0.340 ms  1780.7%  direct/_forecaster_direct_multivariate.py:2633 predict -> __init__
+      0.277 ms  1453.6%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> __setitem__
+      0.237 ms  1242.9%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> get_indexer
+      0.100 ms  523.0%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> dtypes
+      0.091 ms  477.5%  utils/utils.py:2537 expand_index -> date_range
+      0.091 ms  477.4%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> copy
+      0.074 ms  386.9%  utils/utils.py:1397 check_predict_input -> isna
+      0.073 ms  385.1%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> to_numpy
+      0.069 ms  363.4%  utils/utils.py:1397 check_predict_input -> tolist
+      0.069 ms  359.2%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> tolist
+      0.053 ms  279.8%  utils/utils.py:2537 expand_index -> __getitem__
+      0.023 ms  118.4%  utils/utils.py:1397 check_predict_input -> to_numpy
+--- call sites into ('pandas',): profiled total 465.05 ms/call
+     69.466 ms   14.9%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> __getitem__
+     32.095 ms    6.9%  utils/utils.py:1397 check_predict_input -> __getitem__
+     27.599 ms    5.9%  model_selection/_utils.py:1559 _extract_data_folds_multiseries -> __getitem__
+     17.288 ms    3.7%  model_selection/_utils.py:1559 _extract_data_folds_multiseries -> drop
+     15.126 ms    3.3%  direct/_forecaster_direct_multivariate.py:2633 predict -> __init__
+     12.662 ms    2.7%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> __setitem__
+     10.953 ms    2.4%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> get_indexer
+      4.591 ms    1.0%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> dtypes
+      4.256 ms    0.9%  utils/utils.py:2537 expand_index -> date_range
+      4.173 ms    0.9%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> copy
+      3.799 ms    0.8%  utils/utils.py:1397 check_predict_input -> isna
+      3.468 ms    0.7%  model_selection/_validation.py:1463 _backtesting_forecaster_multiseries -> concat
+      3.467 ms    0.7%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> to_numpy
+      3.264 ms    0.7%  utils/utils.py:1397 check_predict_input -> tolist
+      3.096 ms    0.7%  direct/_forecaster_direct_multivariate.py:2203 _create_predict_inputs -> tolist
+      2.685 ms    0.6%  utils/utils.py:2537 expand_index -> __getitem__
+      2.666 ms    0.6%  direct/_forecaster_direct_multivariate.py:971 _create_train_X_y -> __getitem__
+      1.519 ms    0.3%  model_selection/_validation.py:1463 _backtesting_forecaster_multiseries -> set_index

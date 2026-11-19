@@ -1,0 +1,87 @@
+
+===== DMV 20 series ridge exog=none (transformer_series=StandardScaler default)
+wall fit 355.7 ms | predict 1.502 ms
+--- fit: profiled total 450.44 ms/call (attributed 450.65)
+   estimator(sklearn)             386.251 ms   85.7%
+   sklearn.transformer(OrdinalEncoder/scaler)    27.879 ms    6.2%
+   sklearn.clone                   18.600 ms    4.1%
+   skforecast(self)                 8.251 ms    1.8%
+   pandas                           4.891 ms    1.1%
+   numpy                            3.320 ms    0.7%
+--- predict: profiled total 3.27 ms/call (attributed 3.27)
+   pandas                           2.600 ms   79.6%
+   skforecast(self)                 0.443 ms   13.6%
+   numpy                            0.126 ms    3.9%
+   builtin                          0.076 ms    2.3%
+   other:warnings.py                0.021 ms    0.6%
+wall predict_interval(boot) 2.313 ms | bootstrapping 1.905 | quantiles 3.607
+wall backtesting refit=False 50 folds 308.7 ms; initial fit 201.1 ms; per fold excl fit 2.151 ms
+--- backtesting refit=False (incl initial fit): profiled total 474.27 ms/call (attributed 474.65)
+   estimator(sklearn)             199.327 ms   42.0%
+   pandas                         192.604 ms   40.6%
+   skforecast(self)                29.678 ms    6.3%
+   sklearn.transformer(OrdinalEncoder/scaler)    19.388 ms    4.1%
+   sklearn.clone                   16.021 ms    3.4%
+   numpy                            6.211 ms    1.3%
+   builtin                          4.986 ms    1.1%
+   other:copy.py                    4.383 ms    0.9%
+--- initial fit to subtract: profiled total 253.82 ms/call (attributed 253.89)
+   estimator(sklearn)             210.083 ms   82.8%
+   sklearn.transformer(OrdinalEncoder/scaler)    20.453 ms    8.1%
+   sklearn.clone                   12.334 ms    4.9%
+   pandas                           3.906 ms    1.5%
+   skforecast(self)                 3.806 ms    1.5%
+   numpy                            2.050 ms    0.8%
+  micro (predict pieces):
+   predict total                                                        1505.0 us
+   check_predict_input                                                   212.5 us
+   lw.iloc[-ws:, get_indexer(cols)].copy()                               232.9 us
+   per-series lw[col].to_numpy(copy=True) x nser                         212.7 us
+   alt: lw.to_numpy(dtype=float, copy=True) once + column views          233.9 us
+   transform_numpy (StandardScaler fast path) x nser                      61.9 us
+   expand_index                                                           37.5 us
+   output DataFrame {level, pred}                                        103.1 us
+
+===== DMV 20 series ridge exog=cat1 (transformer_series=StandardScaler default)
+wall fit 429.6 ms | predict 2.835 ms
+--- fit: profiled total 472.51 ms/call (attributed 472.70)
+   estimator(sklearn)             391.946 ms   82.9%
+   skforecast(self)                35.711 ms    7.6%
+   sklearn.transformer(OrdinalEncoder/scaler)    23.468 ms    5.0%
+   sklearn.clone                   11.537 ms    2.4%
+   pandas                           5.857 ms    1.2%
+   numpy                            2.776 ms    0.6%
+--- predict: profiled total 5.98 ms/call (attributed 5.99)
+   pandas                           3.879 ms   64.9%
+   sklearn.transformer(OrdinalEncoder/scaler)     1.303 ms   21.8%
+   skforecast(self)                 0.557 ms    9.3%
+   numpy                            0.137 ms    2.3%
+   builtin                          0.091 ms    1.5%
+wall predict_interval(boot) 3.589 ms | bootstrapping 3.253 | quantiles 5.327
+wall backtesting refit=False 50 folds 399.9 ms; initial fit 215.1 ms; per fold excl fit 3.696 ms
+--- backtesting refit=False (incl initial fit): profiled total 749.41 ms/call (attributed 750.11)
+   pandas                         339.462 ms   45.3%
+   estimator(sklearn)             219.577 ms   29.3%
+   sklearn.transformer(OrdinalEncoder/scaler)   103.438 ms   13.8%
+   skforecast(self)                49.528 ms    6.6%
+   sklearn.clone                   16.080 ms    2.1%
+   numpy                            8.299 ms    1.1%
+   builtin                          6.707 ms    0.9%
+   other:copy.py                    4.681 ms    0.6%
+--- initial fit to subtract: profiled total 291.56 ms/call (attributed 291.67)
+   estimator(sklearn)             236.885 ms   81.2%
+   sklearn.transformer(OrdinalEncoder/scaler)    21.342 ms    7.3%
+   sklearn.clone                   12.727 ms    4.4%
+   skforecast(self)                11.720 ms    4.0%
+   pandas                           5.303 ms    1.8%
+   numpy                            2.148 ms    0.7%
+  micro (predict pieces):
+   predict total                                                        2906.2 us
+   check_predict_input                                                   414.8 us
+   lw.iloc[-ws:, get_indexer(cols)].copy()                               238.1 us
+   per-series lw[col].to_numpy(copy=True) x nser                         210.7 us
+   alt: lw.to_numpy(dtype=float, copy=True) once + column views          238.4 us
+   transform_numpy (StandardScaler fast path) x nser                      61.3 us
+   expand_index                                                           34.2 us
+   output DataFrame {level, pred}                                         98.5 us
+   exog copy + OrdinalEncoder.transform + assign                         972.4 us

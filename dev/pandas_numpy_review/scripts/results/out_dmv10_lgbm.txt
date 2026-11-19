@@ -1,0 +1,12 @@
+
+===== DMV 10 series lgbm exog=num3 (transformer_series=StandardScaler default)
+wall fit 22841.5 ms | predict 2.355 ms
+--- predict: profiled total 4.83 ms/call (attributed 4.83)
+   pandas                           2.572 ms   53.2%
+   estimator(lgbm)                  1.597 ms   33.0%
+   skforecast(self)                 0.441 ms    9.1%
+   numpy                            0.089 ms    1.8%
+   builtin                          0.059 ms    1.2%
+   other:<frozen _collections_abc>     0.053 ms    1.1%
+wall predict_interval(boot) 3.130 ms | bootstrapping 3.040 | quantiles 4.576
+wall backtesting refit=False 50 folds 14964.8 ms; initial fit 15105.7 ms; per fold excl fit -2.818 ms
