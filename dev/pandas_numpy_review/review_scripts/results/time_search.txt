@@ -21,3 +21,7 @@ prototype, preparation shared, numpy metrics                   24.04 s ( 3.2x; f
 [python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
 n_series=600 exog=mixed est=lgbm candidates=10 folds=10 steps=24
 CURRENT grid search:   81.87 s (8187 ms per candidate)
+prototype per candidate, nothing shared, metrics of today      65.19 s ( 1.3x; fits 51.64 s, rest 13.55 s; max metric diff 0)
+prototype, preparation shared, metrics of today                61.12 s ( 1.3x; fits 51.74 s, rest  9.38 s; max metric diff 0)
+prototype, preparation shared, numpy metrics                   54.61 s ( 1.5x; fits 50.16 s, rest  4.45 s; max metric diff 0)
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
