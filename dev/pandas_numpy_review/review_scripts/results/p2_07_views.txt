@@ -1,0 +1,59 @@
+=== p2 ===
+frame                        | to_numpy()        | to_numpy(dtype=float) | to_numpy(dtype=float, na_value=nan)
+float64, one block           | float64  VIEW rw  | float64  VIEW rw      | float64  VIEW rw
+float64, two blocks          | float64  copy rw  | float64  copy rw      | float64  copy rw
+float64 Series.to_frame()    | float64  VIEW rw  | float64  VIEW rw      | float64  VIEW rw
+float32, one block           | float32  VIEW rw  | float64  copy rw      | float64  copy rw
+int64, one block             | int64    VIEW rw  | float64  copy rw      | float64  copy rw
+bool, one block              | bool     VIEW rw  | float64  copy rw      | float64  copy rw
+float64 + int64              | float64  copy rw  | float64  copy rw      | float64  copy rw
+float64 + bool               | object   copy rw  | float64  copy rw      | float64  copy rw
+int64 + bool                 | object   copy rw  | float64  copy rw      | float64  copy rw
+Int64 only                   | int64    VIEW rw  | float64  copy rw      | float64  copy rw
+Int64 only, with NA          | float64  copy rw  | float64  copy rw      | float64  copy rw
+Int64 + Float64              | object   copy rw  | float64  copy rw      | float64  copy rw
+Float64 only, with NA        | float64  copy rw  | float64  copy rw      | float64  copy rw
+float64 + Int64              | object   copy rw  | float64  copy rw      | float64  copy rw
+boolean only                 | bool     VIEW rw  | float64  copy rw      | float64  copy rw
+double[pyarrow] only         | float64  copy ro  | float64  copy ro      | float64  copy rw
+float64 + double[pyarrow]    | object   copy rw  | float64  copy rw      | float64  copy rw
+[python 3.12.3, pandas 2.3.3, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 (sin pyarrow) ===
+pyarrow frames: SKIPPED ImportError
+frame                        | to_numpy()        | to_numpy(dtype=float) | to_numpy(dtype=float, na_value=nan)
+float64, one block           | float64  VIEW ro  | float64  VIEW ro      | float64  VIEW ro
+float64, two blocks          | float64  copy rw  | float64  copy rw      | float64  copy rw
+float64 Series.to_frame()    | float64  VIEW ro  | float64  VIEW ro      | float64  VIEW ro
+float32, one block           | float32  VIEW ro  | float64  copy ro      | float64  copy ro
+int64, one block             | int64    VIEW ro  | float64  copy ro      | float64  copy rw
+bool, one block              | bool     VIEW ro  | float64  copy ro      | float64  copy rw
+float64 + int64              | float64  copy rw  | float64  copy rw      | float64  copy rw
+float64 + bool               | object   copy rw  | float64  copy rw      | float64  copy rw
+int64 + bool                 | object   copy rw  | float64  copy rw      | float64  copy rw
+Int64 only                   | int64    VIEW ro  | float64  copy ro      | float64  copy rw
+Int64 only, with NA          | float64  copy ro  | float64  copy ro      | float64  copy rw
+Int64 + Float64              | object   copy rw  | float64  copy rw      | float64  copy rw
+Float64 only, with NA        | float64  copy ro  | float64  copy ro      | float64  copy rw
+float64 + Int64              | object   copy rw  | float64  copy rw      | float64  copy rw
+boolean only                 | bool     VIEW ro  | float64  copy ro      | float64  copy rw
+[python 3.12.3, pandas 3.1.1, pyarrow no, numpy 2.5.5, scikit-learn 1.9.1, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 pa ===
+frame                        | to_numpy()        | to_numpy(dtype=float) | to_numpy(dtype=float, na_value=nan)
+float64, one block           | float64  VIEW ro  | float64  VIEW ro      | float64  VIEW ro
+float64, two blocks          | float64  copy rw  | float64  copy rw      | float64  copy rw
+float64 Series.to_frame()    | float64  VIEW ro  | float64  VIEW ro      | float64  VIEW ro
+float32, one block           | float32  VIEW ro  | float64  copy ro      | float64  copy ro
+int64, one block             | int64    VIEW ro  | float64  copy ro      | float64  copy rw
+bool, one block              | bool     VIEW ro  | float64  copy ro      | float64  copy rw
+float64 + int64              | float64  copy rw  | float64  copy rw      | float64  copy rw
+float64 + bool               | object   copy rw  | float64  copy rw      | float64  copy rw
+int64 + bool                 | object   copy rw  | float64  copy rw      | float64  copy rw
+Int64 only                   | int64    VIEW ro  | float64  copy ro      | float64  copy rw
+Int64 only, with NA          | float64  copy ro  | float64  copy ro      | float64  copy rw
+Int64 + Float64              | object   copy rw  | float64  copy rw      | float64  copy rw
+Float64 only, with NA        | float64  copy ro  | float64  copy ro      | float64  copy rw
+float64 + Int64              | object   copy rw  | float64  copy rw      | float64  copy rw
+boolean only                 | bool     VIEW ro  | float64  copy ro      | float64  copy rw
+double[pyarrow] only         | float64  copy ro  | float64  copy ro      | float64  copy rw
+float64 + double[pyarrow]    | object   copy rw  | float64  copy rw      | float64  copy rw
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]

@@ -1,0 +1,76 @@
+=== p2 ===
+frame                          to_numpy() today  condition strict  to_numpy(dtype=float, na_value=nan)
+float64 only                   float64           True      False   ok  <- condition converts a frame that is not object today
+int64 only                     int64             True      False   ok  <- condition converts a frame that is not object today
+bool only                      bool              True      False   ok  <- condition converts a frame that is not object today
+float64 + int64                float64           True      False   ok  <- condition converts a frame that is not object today
+float64 + float32              float64           True      False   ok  <- condition converts a frame that is not object today
+float64 + bool                 object            True      True    ok 
+Int64 only                     int64             True      False   ok  <- condition converts a frame that is not object today
+Int64 + Float64                object            True      True    ok 
+float64 + Int64                object            True      True    ok 
+float64 + boolean              object            True      True    ok 
+float64 + complex128           complex128        True      False   ok ['ComplexWarning'] <- condition converts a frame that is not object today <- condition accepts a lossy conversion
+float64 + Sparse[float64]      float64           True      False   ok  <- condition converts a frame that is not object today
+float64 + Sparse[bool]         float64           True      False   ok  <- condition converts a frame that is not object today
+float64 + category(int)        float64           False     False   ok 
+float64 + str                  object            False     False   ok 
+float64 + object numbers       object            False     False   ok 
+float64 + datetime64           object            False     False   ok 
+float64 + timedelta64          object            False     False   ok 
+float64 + int64[pyarrow]       object            True      True    ok 
+float64 + double[pyarrow]      object            True      True    ok 
+float64 + bool[pyarrow]        object            True      True    ok 
+float64 + decimal128[pyarrow]  object            True      False   ok 
+float64 + timestamp[pyarrow]   object            False     False   ok 
+float64 + string[pyarrow]      object            False     False   ok 
+[python 3.12.3, pandas 2.3.3, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 (sin pyarrow) ===
+pyarrow cases: SKIPPED ModuleNotFoundError
+frame                          to_numpy() today  condition strict  to_numpy(dtype=float, na_value=nan)
+float64 only                   float64           True      False   ok  <- condition converts a frame that is not object today
+int64 only                     int64             True      False   ok  <- condition converts a frame that is not object today
+bool only                      bool              True      False   ok  <- condition converts a frame that is not object today
+float64 + int64                float64           True      False   ok  <- condition converts a frame that is not object today
+float64 + float32              float64           True      False   ok  <- condition converts a frame that is not object today
+float64 + bool                 object            True      True    ok 
+Int64 only                     int64             True      False   ok  <- condition converts a frame that is not object today
+Int64 + Float64                object            True      True    ok 
+float64 + Int64                object            True      True    ok 
+float64 + boolean              object            True      True    ok 
+float64 + complex128           complex128        True      False   ok ['ComplexWarning'] <- condition converts a frame that is not object today <- condition accepts a lossy conversion
+float64 + Sparse[float64]      float64           True      False   ok  <- condition converts a frame that is not object today
+float64 + Sparse[bool]         object            True      False   ok 
+float64 + category(int)        float64           False     False   ok 
+float64 + str                  object            False     False   ok 
+float64 + object numbers       object            False     False   ok 
+float64 + datetime64           object            False     False   ok 
+float64 + timedelta64          object            False     False   ok 
+[python 3.12.3, pandas 3.1.1, pyarrow no, numpy 2.5.5, scikit-learn 1.9.1, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 pa ===
+frame                          to_numpy() today  condition strict  to_numpy(dtype=float, na_value=nan)
+float64 only                   float64           True      False   ok  <- condition converts a frame that is not object today
+int64 only                     int64             True      False   ok  <- condition converts a frame that is not object today
+bool only                      bool              True      False   ok  <- condition converts a frame that is not object today
+float64 + int64                float64           True      False   ok  <- condition converts a frame that is not object today
+float64 + float32              float64           True      False   ok  <- condition converts a frame that is not object today
+float64 + bool                 object            True      True    ok 
+Int64 only                     int64             True      False   ok  <- condition converts a frame that is not object today
+Int64 + Float64                object            True      True    ok 
+float64 + Int64                object            True      True    ok 
+float64 + boolean              object            True      True    ok 
+float64 + complex128           complex128        True      False   ok ['ComplexWarning'] <- condition converts a frame that is not object today <- condition accepts a lossy conversion
+float64 + Sparse[float64]      float64           True      False   ok  <- condition converts a frame that is not object today
+float64 + Sparse[bool]         object            True      False   ok 
+float64 + category(int)        float64           False     False   ok 
+float64 + str                  object            False     False   ok 
+float64 + object numbers       object            False     False   ok 
+float64 + datetime64           object            False     False   ok 
+float64 + timedelta64          object            False     False   ok 
+float64 + int64[pyarrow]       object            True      True    ok 
+float64 + double[pyarrow]      object            True      True    ok 
+float64 + bool[pyarrow]        object            True      True    ok 
+float64 + decimal128[pyarrow]  object            True      False   ok 
+float64 + timestamp[pyarrow]   object            False     False   IndexError: boolean index did not match indexed array along 
+float64 + string[pyarrow]      object            False     False   ok 
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]

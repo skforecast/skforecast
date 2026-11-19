@@ -1,0 +1,902 @@
+=== p2 ===
+
+### bool alone  dtypes={'x': 'bool'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### bool + float  dtypes={'a': 'float64', 'x': 'bool'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['bool'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### boolean  dtypes={'a': 'float64', 'x': 'boolean'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['bool'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### boolean NA fit  dtypes={'a': 'float64', 'x': 'boolean'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'bool'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN. | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'bool'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'bool'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=27,feature_idx=4]="<NA>": Cannot convert obj <NA> -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['bool'] | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### boolean NA pred  dtypes={'a': 'float64', 'x': 'boolean'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['bool'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['bool'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### Int64  dtypes={'a': 'float64', 'x': 'Int64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### Int64 alone  dtypes={'x': 'Int64'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### Int64 NA fit  dtypes={'a': 'float64', 'x': 'Int64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN. | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=27,feature_idx=4]="<NA>": Cannot convert obj <NA> -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### Int64 NA pred  dtypes={'a': 'float64', 'x': 'Int64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### Int8  dtypes={'a': 'float64', 'x': 'Int8'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### Int8 alone  dtypes={'x': 'Int8'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### Int8 NA fit  dtypes={'a': 'float64', 'x': 'Int8'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN. | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=27,feature_idx=4]="<NA>": Cannot convert obj <NA> -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### Int8 NA pred  dtypes={'a': 'float64', 'x': 'Int8'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### UInt64  dtypes={'a': 'float64', 'x': 'UInt64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### UInt64 alone  dtypes={'x': 'UInt64'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### UInt64 NA fit  dtypes={'a': 'float64', 'x': 'UInt64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN. | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=27,feature_idx=4]="<NA>": Cannot convert obj <NA> -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### UInt64 NA pred  dtypes={'a': 'float64', 'x': 'UInt64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### Float64  dtypes={'a': 'float64', 'x': 'Float64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### Float64 alone  dtypes={'x': 'Float64'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### Float64 NA fit  dtypes={'a': 'float64', 'x': 'Float64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'float'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN. | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'float'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'float'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=27,feature_idx=4]="<NA>": Cannot convert obj <NA> -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### Float64 NA pred  dtypes={'a': 'float64', 'x': 'Float64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### Float32  dtypes={'a': 'float64', 'x': 'Float32'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### Float32 alone  dtypes={'x': 'Float32'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### Float32 NA fit  dtypes={'a': 'float64', 'x': 'Float32'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'float'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN. | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'float'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'float'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=27,feature_idx=4]="<NA>": Cannot convert obj <NA> -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### Float32 NA pred  dtypes={'a': 'float64', 'x': 'Float32'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### float64 NaN fit (reference)  dtypes={'a': 'float64', 'x': 'float64'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[float64] -> ndarray[float64]  | fit ValueError: Input X contains NaN. -> = | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost; Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### float64 NaN pred (reference)  dtypes={'a': 'float64', 'x': 'float64'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac -> = | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### int64[pyarrow]  dtypes={'a': 'float64', 'x': 'int64[pyarrow]'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### int64[pyarrow] null fit  dtypes={'a': 'float64', 'x': 'int64[pyarrow]'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN. | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=27,feature_idx=4]="<NA>": Cannot convert obj <NA> -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### int64[pyarrow] null pred  dtypes={'a': 'float64', 'x': 'int64[pyarrow]'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### double[pyarrow]  dtypes={'a': 'float64', 'x': 'double[pyarrow]'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### double[pyarrow] null fit  dtypes={'a': 'float64', 'x': 'double[pyarrow]'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'float'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN. | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'float'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'float'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=27,feature_idx=4]="<NA>": Cannot convert obj <NA> -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### double[pyarrow] null pred  dtypes={'a': 'float64', 'x': 'double[pyarrow]'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### bool[pyarrow]  dtypes={'a': 'float64', 'x': 'bool[pyarrow]'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['bool'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### bool[pyarrow] null fit  dtypes={'a': 'float64', 'x': 'bool[pyarrow]'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'bool'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN. | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'bool'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'bool'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=27,feature_idx=4]="<NA>": Cannot convert obj <NA> -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['bool'] | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### decimal128[pyarrow]  dtypes={'a': 'float64', 'x': 'decimal128(10, 2)[pyarrow]'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['Decimal'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### timestamp[pyarrow]  dtypes={'a': 'float64', 'x': 'timestamp[ns][pyarrow]'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ValueError: Input X contains NaN in the predictors ['x'] at step 1 (2020-03-01 00:00:00). Ridge does not ac -> = | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### duration[pyarrow]  dtypes={'a': 'float64', 'x': 'duration[ns][pyarrow]'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### string[pyarrow] numeric-looking  dtypes={'a': 'float64', 'x': 'string'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### str/object numeric-looking  dtypes={'a': 'float64', 'x': 'object'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### datetime64  dtypes={'a': 'float64', 'x': 'datetime64[ns]'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ValueError: Input X contains NaN in the predictors ['x'] at step 1 (2020-03-01 00:00:00). Ridge does not ac -> = | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### timedelta64  dtypes={'a': 'float64', 'x': 'timedelta64[ns]'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### complex128  dtypes={'a': 'float64', 'x': 'complex128'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB]
+      X ndarray[complex128] -> ndarray[float64]  | fit ValueError: Complex data not supported -> ok | predict - -> ok | eq None | warn fit [] -> ['ComplexWarning'], predict [] -> ['ComplexWarning']
+  [Rec/Dir/DMV: XGB]
+      X ndarray[complex128] -> ndarray[float64]  | fit XGBoostError: [16:49:34] /__w/xgboost/xgboost/src/c_api/../data/array_interface.h:509: Complex floating point -> ok | predict - -> ok | eq None | warn fit [] -> ['ComplexWarning'], predict [] -> ['ComplexWarning']
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[complex128] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit ['ComplexWarning'] -> =, predict ['ComplexWarning'] -> =
+
+### Int64 alone NA fit  dtypes={'x': 'Int64'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[float64] -> ndarray[float64]  | fit ValueError: Input X contains NaN. -> = | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost; Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### Int64 alone NA pred  dtypes={'x': 'Int64'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac -> = | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### string[pyarrow] numeric-looking, cat=None  dtypes={'a': 'float64', 'x': 'string'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[object] ['str'] | fit ok -> = | predict ok -> = | eq True | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+
+### str/object numeric-looking, cat=None  dtypes={'a': 'float64', 'x': 'object'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[object] ['str'] | fit ok -> = | predict ok -> = | eq True | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+
+### datetime64, cat=None  dtypes={'a': 'float64', 'x': 'datetime64[ns]'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[object] ['Timestamp'] | fit TypeError: float() argument must be a string or a real number, not 'Timestamp' -> = | predict - -> = | eq None | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['Timestamp'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=0,feature_idx=4]="2020-01-04 00:00:00": Cannot co -> = | predict - -> = | eq None | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+
+### timedelta64, cat=None  dtypes={'a': 'float64', 'x': 'timedelta64[ns]'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[object] ['Timedelta'] | fit TypeError: float() argument must be a string or a real number, not 'Timedelta' -> = | predict - -> = | eq None | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['Timedelta'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=0,feature_idx=4]="3 days 00:00:00": Cannot conver -> = | predict - -> = | eq None | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+
+### timestamp[pyarrow], cat=None  dtypes={'a': 'float64', 'x': 'timestamp[ns][pyarrow]'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[object] ['Timestamp'] | fit TypeError: float() argument must be a string or a real number, not 'Timestamp' -> = | predict - -> = | eq None | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['Timestamp'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=0,feature_idx=4]="2020-01-04 00:00:00": Cannot co -> = | predict - -> = | eq None | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+
+### duration[pyarrow], cat=None  dtypes={'a': 'float64', 'x': 'duration[ns][pyarrow]'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[object] ['Timedelta'] | fit TypeError: float() argument must be a string or a real number, not 'Timedelta' -> = | predict - -> = | eq None | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['Timedelta'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=0,feature_idx=4]="3 days 00:00:00": Cannot conver -> = | predict - -> = | eq None | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+
+### str words, cat=None  dtypes={'a': 'float64', 'x': 'object'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[object] ['str'] | fit ValueError: could not convert string to float: 'd' -> = | predict - -> = | eq None | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['str'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=0,feature_idx=4]="d": Cannot convert 'd' to float -> = | predict - -> = | eq None | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+
+### object column of numbers, cat=None  dtypes={'a': 'float64', 'x': 'object'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[object] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+[python 3.12.3, pandas 2.3.3, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, xgboost 3.4.1, catboost 1.2.10, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 (sin pyarrow) ===
+
+### bool alone  dtypes={'x': 'bool'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### bool + float  dtypes={'a': 'float64', 'x': 'bool'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['bool'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### boolean  dtypes={'a': 'float64', 'x': 'boolean'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['bool'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### boolean NA fit  dtypes={'a': 'float64', 'x': 'boolean'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'bool'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN. | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'bool'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'bool'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=27,feature_idx=4]="<NA>": Cannot convert obj <NA> -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['bool'] | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### boolean NA pred  dtypes={'a': 'float64', 'x': 'boolean'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['bool'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['bool'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### Int64  dtypes={'a': 'float64', 'x': 'Int64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### Int64 alone  dtypes={'x': 'Int64'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### Int64 NA fit  dtypes={'a': 'float64', 'x': 'Int64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN. | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=27,feature_idx=4]="<NA>": Cannot convert obj <NA> -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### Int64 NA pred  dtypes={'a': 'float64', 'x': 'Int64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### Int8  dtypes={'a': 'float64', 'x': 'Int8'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### Int8 alone  dtypes={'x': 'Int8'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### Int8 NA fit  dtypes={'a': 'float64', 'x': 'Int8'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN. | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=27,feature_idx=4]="<NA>": Cannot convert obj <NA> -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### Int8 NA pred  dtypes={'a': 'float64', 'x': 'Int8'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### UInt64  dtypes={'a': 'float64', 'x': 'UInt64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### UInt64 alone  dtypes={'x': 'UInt64'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### UInt64 NA fit  dtypes={'a': 'float64', 'x': 'UInt64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN. | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=27,feature_idx=4]="<NA>": Cannot convert obj <NA> -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### UInt64 NA pred  dtypes={'a': 'float64', 'x': 'UInt64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### Float64  dtypes={'a': 'float64', 'x': 'Float64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### Float64 alone  dtypes={'x': 'Float64'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### Float64 NA fit  dtypes={'a': 'float64', 'x': 'Float64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'float'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN. | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'float'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'float'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=27,feature_idx=4]="<NA>": Cannot convert obj <NA> -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### Float64 NA pred  dtypes={'a': 'float64', 'x': 'Float64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### Float32  dtypes={'a': 'float64', 'x': 'Float32'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### Float32 alone  dtypes={'x': 'Float32'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### Float32 NA fit  dtypes={'a': 'float64', 'x': 'Float32'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'float'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN. | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'float'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'float'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=27,feature_idx=4]="<NA>": Cannot convert obj <NA> -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### Float32 NA pred  dtypes={'a': 'float64', 'x': 'Float32'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### float64 NaN fit (reference)  dtypes={'a': 'float64', 'x': 'float64'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[float64] -> ndarray[float64]  | fit ValueError: Input X contains NaN. -> = | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost; Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### float64 NaN pred (reference)  dtypes={'a': 'float64', 'x': 'float64'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac -> = | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### int64[pyarrow]: SKIPPED (ImportError: pyarrow>=16.0.0 is required for ArrowDtype)
+
+### int64[pyarrow] null fit: SKIPPED (ImportError: pyarrow>=16.0.0 is required for ArrowDtype)
+
+### int64[pyarrow] null pred: SKIPPED (ImportError: pyarrow>=16.0.0 is required for ArrowDtype)
+
+### double[pyarrow]: SKIPPED (ImportError: pyarrow>=16.0.0 is required for ArrowDtype)
+
+### double[pyarrow] null fit: SKIPPED (ImportError: pyarrow>=16.0.0 is required for ArrowDtype)
+
+### double[pyarrow] null pred: SKIPPED (ImportError: pyarrow>=16.0.0 is required for ArrowDtype)
+
+### bool[pyarrow]: SKIPPED (ImportError: pyarrow>=16.0.0 is required for ArrowDtype)
+
+### bool[pyarrow] null fit: SKIPPED (ImportError: pyarrow>=16.0.0 is required for ArrowDtype)
+
+### decimal128[pyarrow]: SKIPPED (ModuleNotFoundError: No module named 'pyarrow')
+
+### timestamp[pyarrow]: SKIPPED (ModuleNotFoundError: No module named 'pyarrow')
+
+### duration[pyarrow]: SKIPPED (ModuleNotFoundError: No module named 'pyarrow')
+
+### string[pyarrow] numeric-looking: SKIPPED (ImportError: pyarrow>=16.0.0 is required for PyArrow backed StringArray.)
+
+### str/object numeric-looking  dtypes={'a': 'float64', 'x': 'str'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### datetime64  dtypes={'a': 'float64', 'x': 'datetime64[us]'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ValueError: Input X contains NaN in the predictors ['x'] at step 1 (2020-03-01 00:00:00). Ridge does not ac -> = | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### timedelta64  dtypes={'a': 'float64', 'x': 'timedelta64[us]'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### complex128  dtypes={'a': 'float64', 'x': 'complex128'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB]
+      X ndarray[complex128] -> ndarray[float64]  | fit ValueError: Complex data not supported -> ok | predict - -> ok | eq None | warn fit [] -> ['ComplexWarning'], predict [] -> ['ComplexWarning']
+  [Rec/Dir/DMV: XGB]
+      X ndarray[complex128] -> ndarray[float64]  | fit XGBoostError: [16:49:47] /__w/xgboost/xgboost/src/c_api/../data/array_interface.h:509: Complex floating point -> ok | predict - -> ok | eq None | warn fit [] -> ['ComplexWarning'], predict [] -> ['ComplexWarning']
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[complex128] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit ['ComplexWarning'] -> =, predict ['ComplexWarning'] -> =
+
+### Int64 alone NA fit  dtypes={'x': 'Int64'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[float64] -> ndarray[float64]  | fit ValueError: Input X contains NaN. -> = | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost; Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### Int64 alone NA pred  dtypes={'x': 'Int64'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac -> = | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### string[pyarrow] numeric-looking, cat=None: SKIPPED (ImportError: pyarrow>=16.0.0 is required for PyArrow backed StringArray.)
+
+### str/object numeric-looking, cat=None  dtypes={'a': 'float64', 'x': 'str'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[object] ['str'] | fit ok -> = | predict ok -> = | eq True | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+
+### datetime64, cat=None  dtypes={'a': 'float64', 'x': 'datetime64[us]'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[object] ['Timestamp'] | fit TypeError: float() argument must be a string or a real number, not 'Timestamp' -> = | predict - -> = | eq None | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['Timestamp'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=0,feature_idx=4]="2020-01-04 00:00:00": Cannot co -> = | predict - -> = | eq None | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+
+### timedelta64, cat=None  dtypes={'a': 'float64', 'x': 'timedelta64[us]'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[object] ['Timedelta'] | fit TypeError: float() argument must be a string or a real number, not 'Timedelta' -> = | predict - -> = | eq None | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['Timedelta'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=0,feature_idx=4]="3 days 00:00:00": Cannot conver -> = | predict - -> = | eq None | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+
+### timestamp[pyarrow], cat=None: SKIPPED (ModuleNotFoundError: No module named 'pyarrow')
+
+### duration[pyarrow], cat=None: SKIPPED (ModuleNotFoundError: No module named 'pyarrow')
+
+### str words, cat=None  dtypes={'a': 'float64', 'x': 'str'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[object] ['str'] | fit ValueError: could not convert string to float: 'd' -> = | predict - -> = | eq None | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['str'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=0,feature_idx=4]="d": Cannot convert 'd' to float -> = | predict - -> = | eq None | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+
+### object column of numbers, cat=None  dtypes={'a': 'float64', 'x': 'object'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[object] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+[python 3.12.3, pandas 3.1.1, pyarrow no, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, xgboost 3.4.1, catboost 1.2.10, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 pa ===
+
+### bool alone  dtypes={'x': 'bool'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### bool + float  dtypes={'a': 'float64', 'x': 'bool'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['bool'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### boolean  dtypes={'a': 'float64', 'x': 'boolean'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['bool'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### boolean NA fit  dtypes={'a': 'float64', 'x': 'boolean'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'bool'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN. | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'bool'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'bool'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=27,feature_idx=4]="<NA>": Cannot convert obj <NA> -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['bool'] | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### boolean NA pred  dtypes={'a': 'float64', 'x': 'boolean'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['bool'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['bool'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### Int64  dtypes={'a': 'float64', 'x': 'Int64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### Int64 alone  dtypes={'x': 'Int64'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### Int64 NA fit  dtypes={'a': 'float64', 'x': 'Int64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN. | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=27,feature_idx=4]="<NA>": Cannot convert obj <NA> -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### Int64 NA pred  dtypes={'a': 'float64', 'x': 'Int64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### Int8  dtypes={'a': 'float64', 'x': 'Int8'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### Int8 alone  dtypes={'x': 'Int8'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### Int8 NA fit  dtypes={'a': 'float64', 'x': 'Int8'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN. | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=27,feature_idx=4]="<NA>": Cannot convert obj <NA> -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### Int8 NA pred  dtypes={'a': 'float64', 'x': 'Int8'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### UInt64  dtypes={'a': 'float64', 'x': 'UInt64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### UInt64 alone  dtypes={'x': 'UInt64'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### UInt64 NA fit  dtypes={'a': 'float64', 'x': 'UInt64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN. | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=27,feature_idx=4]="<NA>": Cannot convert obj <NA> -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### UInt64 NA pred  dtypes={'a': 'float64', 'x': 'UInt64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### Float64  dtypes={'a': 'float64', 'x': 'Float64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### Float64 alone  dtypes={'x': 'Float64'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### Float64 NA fit  dtypes={'a': 'float64', 'x': 'Float64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'float'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN. | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'float'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'float'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=27,feature_idx=4]="<NA>": Cannot convert obj <NA> -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### Float64 NA pred  dtypes={'a': 'float64', 'x': 'Float64'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### Float32  dtypes={'a': 'float64', 'x': 'Float32'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### Float32 alone  dtypes={'x': 'Float32'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### Float32 NA fit  dtypes={'a': 'float64', 'x': 'Float32'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'float'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN. | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'float'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'float'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=27,feature_idx=4]="<NA>": Cannot convert obj <NA> -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### Float32 NA pred  dtypes={'a': 'float64', 'x': 'Float32'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### float64 NaN fit (reference)  dtypes={'a': 'float64', 'x': 'float64'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[float64] -> ndarray[float64]  | fit ValueError: Input X contains NaN. -> = | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost; Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### float64 NaN pred (reference)  dtypes={'a': 'float64', 'x': 'float64'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac -> = | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### int64[pyarrow]  dtypes={'a': 'float64', 'x': 'int64[pyarrow]'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### int64[pyarrow] null fit  dtypes={'a': 'float64', 'x': 'int64[pyarrow]'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN. | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'int'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=27,feature_idx=4]="<NA>": Cannot convert obj <NA> -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### int64[pyarrow] null pred  dtypes={'a': 'float64', 'x': 'int64[pyarrow]'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['int'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### double[pyarrow]  dtypes={'a': 'float64', 'x': 'double[pyarrow]'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### double[pyarrow] null fit  dtypes={'a': 'float64', 'x': 'double[pyarrow]'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'float'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN. | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'float'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'float'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=27,feature_idx=4]="<NA>": Cannot convert obj <NA> -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### double[pyarrow] null pred  dtypes={'a': 'float64', 'x': 'double[pyarrow]'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['float'] | fit ok -> = | predict TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### bool[pyarrow]  dtypes={'a': 'float64', 'x': 'bool[pyarrow]'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['bool'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### bool[pyarrow] null fit  dtypes={'a': 'float64', 'x': 'bool[pyarrow]'} condition=True strict=True
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'bool'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ValueError: Input X contains NaN. | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'bool'] | fit TypeError: float() argument must be a string or a real number, not 'NAType' -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[float64] ['NAType', 'bool'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=27,feature_idx=4]="<NA>": Cannot convert obj <NA> -> ok | predict - -> ok | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['bool'] | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### decimal128[pyarrow]  dtypes={'a': 'float64', 'x': 'decimal128(10, 2)[pyarrow]'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[float64] ['Decimal'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### timestamp[pyarrow]  dtypes={'a': 'float64', 'x': 'timestamp[ns][pyarrow]'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ValueError: Input X contains NaN in the predictors ['x'] at step 1 (2020-03-01 00:00:00). Ridge does not ac -> = | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### duration[pyarrow]  dtypes={'a': 'float64', 'x': 'duration[ns][pyarrow]'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### string[pyarrow] numeric-looking  dtypes={'a': 'float64', 'x': 'string'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### str/object numeric-looking  dtypes={'a': 'float64', 'x': 'str'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### datetime64  dtypes={'a': 'float64', 'x': 'datetime64[us]'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ValueError: Input X contains NaN in the predictors ['x'] at step 1 (2020-03-01 00:00:00). Ridge does not ac -> = | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### timedelta64  dtypes={'a': 'float64', 'x': 'timedelta64[us]'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict [] -> =
+
+### complex128  dtypes={'a': 'float64', 'x': 'complex128'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB]
+      X ndarray[complex128] -> ndarray[float64]  | fit ValueError: Complex data not supported -> ok | predict - -> ok | eq None | warn fit [] -> ['ComplexWarning'], predict [] -> ['ComplexWarning']
+  [Rec/Dir/DMV: XGB]
+      X ndarray[complex128] -> ndarray[float64]  | fit XGBoostError: [16:50:04] /__w/xgboost/xgboost/src/c_api/../data/array_interface.h:509: Complex floating point -> ok | predict - -> ok | eq None | warn fit [] -> ['ComplexWarning'], predict [] -> ['ComplexWarning']
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[complex128] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit ['ComplexWarning'] -> =, predict ['ComplexWarning'] -> =
+
+### Int64 alone NA fit  dtypes={'x': 'Int64'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[float64] -> ndarray[float64]  | fit ValueError: Input X contains NaN. -> = | predict - -> = | eq None | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost; Rec dropna: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit ['MissingValuesWarning'] -> =, predict [] -> =
+
+### Int64 alone NA pred  dtypes={'x': 'Int64'} condition=True strict=False
+  [Rec/Dir/DMV: Ridge]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ValueError: Input X contains NaN in the predictors ['x'] at step 2 (2020-03-02 00:00:00). Ridge does not ac -> = | eq None | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+  [Rec/Dir/DMV: LGBM,HGB,XGB,CatBoost]
+      X ndarray[float64] -> ndarray[float64]  | fit ok -> = | predict ok -> = | eq True | warn fit [] -> =, predict ['MissingValuesWarning'] -> =
+
+### string[pyarrow] numeric-looking, cat=None  dtypes={'a': 'float64', 'x': 'string'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[object] ['str'] | fit ok -> = | predict ok -> = | eq True | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+
+### str/object numeric-looking, cat=None  dtypes={'a': 'float64', 'x': 'str'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[object] ['str'] | fit ok -> = | predict ok -> = | eq True | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+
+### datetime64, cat=None  dtypes={'a': 'float64', 'x': 'datetime64[us]'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[object] ['Timestamp'] | fit TypeError: float() argument must be a string or a real number, not 'Timestamp' -> = | predict - -> = | eq None | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['Timestamp'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=0,feature_idx=4]="2020-01-04 00:00:00": Cannot co -> = | predict - -> = | eq None | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+
+### timedelta64, cat=None  dtypes={'a': 'float64', 'x': 'timedelta64[us]'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[object] ['Timedelta'] | fit TypeError: float() argument must be a string or a real number, not 'Timedelta' -> = | predict - -> = | eq None | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['Timedelta'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=0,feature_idx=4]="3 days 00:00:00": Cannot conver -> = | predict - -> = | eq None | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+
+### timestamp[pyarrow], cat=None  dtypes={'a': 'float64', 'x': 'timestamp[ns][pyarrow]'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[object] ['Timestamp'] | fit TypeError: float() argument must be a string or a real number, not 'Timestamp' -> = | predict - -> = | eq None | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['Timestamp'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=0,feature_idx=4]="2020-01-04 00:00:00": Cannot co -> = | predict - -> = | eq None | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+
+### duration[pyarrow], cat=None  dtypes={'a': 'float64', 'x': 'duration[ns][pyarrow]'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[object] ['Timedelta'] | fit TypeError: float() argument must be a string or a real number, not 'Timedelta' -> = | predict - -> = | eq None | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['Timedelta'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=0,feature_idx=4]="3 days 00:00:00": Cannot conver -> = | predict - -> = | eq None | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+
+### str words, cat=None  dtypes={'a': 'float64', 'x': 'str'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB]
+      X ndarray[object] -> ndarray[object] ['str'] | fit ValueError: could not convert string to float: 'd' -> = | predict - -> = | eq None | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+  [Rec/Dir/DMV: CatBoost]
+      X ndarray[object] -> ndarray[object] ['str'] | fit CatBoostError: Bad value for num_feature[non_default_doc_idx=0,feature_idx=4]="d": Cannot convert 'd' to float -> = | predict - -> = | eq None | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+
+### object column of numbers, cat=None  dtypes={'a': 'float64', 'x': 'object'} condition=False strict=False
+  [Rec/Dir/DMV: Ridge,LGBM,HGB,XGB,CatBoost]
+      X ndarray[object] -> ndarray[object] ['int'] | fit ok -> = | predict ok -> = | eq True | warn fit ['DataTypeWarning'] -> =, predict [] -> =
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, xgboost 3.4.1, catboost 1.2.10, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
