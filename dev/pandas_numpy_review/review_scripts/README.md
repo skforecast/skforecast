@@ -19,6 +19,8 @@ bash run3.sh script.py [args]     # pandas 2.3, pandas 3 sin pyarrow, pandas 3 c
 | `time_search.py` | Búsqueda de hiperparámetros: hoy frente al prototipo por candidato | 9.2 |
 | `time_fit_parts.py` | De qué está hecho un `fit` dentro del backtesting | 9.1, 9.2 |
 | `time_p5.py` | P5 sobre el backtesting univariante completo | 9.5 |
+| `real_data.py` | Casos reales de tres artículos de cienciadedatos.net (py44, py59, py39): datos, preprocesado, forecasters y folds. `python real_data.py download DIR` (con `pyarrow`) baja los datos una vez; después, `REAL_DATA_DIR=DIR` | 10 |
+| `time_real_cases.py` | Prueba del prototipo con esos casos: llamada completa hoy frente a `proto_bt_blocks.py`, con el tiempo del modelo separado; en el caso de una serie, P5 | 10 |
 | `proto_bt_batched.py` | Alternativa descartada: todos los folds en una pasada | 6.2 |
 | `time_small.py` | Coste por fold univariante, P2, P7, P17 | 4, 6.1 |
 | `spot_checks.py` | Comprobaciones propias de dos hallazgos de los subagentes | 3.2, 4 |
