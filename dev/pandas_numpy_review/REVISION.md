@@ -378,7 +378,7 @@ Sobre D-NP4: `transformer_exog=None` es más restrictivo de lo necesario (un `St
 
 ## 8. Orden recomendado, por importancia e impacto
 
-Orden final tras las dos rondas (la sección 9 explica los cambios que introdujo la segunda). Va de lo que más aporta a lo que menos; dentro de cada grupo, también. El mismo orden está en `dev/ROADMAP.md`, sección 11.
+Orden final tras las dos rondas (la sección 9 explica los cambios que introdujo la segunda). Va de lo que más aporta a lo que menos; dentro de cada grupo, también. Es el orden a fecha de esta revisión (2026-11-19) y no se actualiza: el que se mantiene vivo es el de `dev/ROADMAP.md`, sección 11, y si difieren vale el del roadmap.
 
 | # | Qué | Impacto | Esfuerzo | Condiciones, y qué cambia respecto al informe |
 |---|---|---|---|---|
