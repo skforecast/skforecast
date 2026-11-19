@@ -7,6 +7,7 @@ Equivalence of `proto_bt_once.backtesting_once` with
 Usage: python proto_bt_once_cases.py [-v]
 """
 import _env  # noqa: F401  (first: it can block pyarrow)
+import os
 import sys
 import warnings
 
@@ -16,12 +17,16 @@ from lightgbm import LGBMRegressor
 from sklearn.linear_model import Ridge
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
+from proto_bt_blocks import backtesting_blocks
 from proto_bt_once import backtesting_once
 from skforecast.model_selection import TimeSeriesFold, backtesting_forecaster_multiseries
 from skforecast.preprocessing import CalendarFeatures, RollingFeatures
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 
 VERBOSE = "-v" in sys.argv
+# REFIT=0 (default), 1 (every fold) or an integer; PROTO=once (default) or blocks.
+REFIT = int(os.environ.get("REFIT", "0"))
+PROTO = os.environ.get("PROTO", "blocks" if REFIT else "once")
 N_ROWS, N_SERIES, LAGS, STEPS = 320, 8, 12, 10
 
 
@@ -33,7 +38,9 @@ def make_series(kind="dict", freq="h", tz=None, ragged=False, nans=False, seed=0
         idx = pd.date_range("2021-01-01", periods=N_ROWS, freq=freq, tz=tz)
     values = np.cumsum(rng.normal(size=(N_ROWS, N_SERIES)), axis=0) + 50
     names = [f"s{j}" for j in range(N_SERIES)]
-    if nans:
+    # NOTE: With refit the NaNs of the test sets end up in a training set, and
+    # Ridge cannot be fitted: the "late" variant has no NaN then.
+    if nans and not (nans == "late" and REFIT):
         if nans != "late":
             values[150:153, 1] = np.nan      # in the training set
         values[245:247, 2] = np.nan          # in a last window and in a test set
@@ -85,7 +92,7 @@ def make_exog(series, kind="float", holes=False, seed=1):
 
 
 def run_both(forecaster, series, exog, cv_kwargs, metric="mean_absolute_error", levels=None):
-    cv = TimeSeriesFold(steps=STEPS, initial_train_size=220, refit=False, verbose=False, **cv_kwargs)
+    cv = TimeSeriesFold(steps=STEPS, initial_train_size=220, refit=REFIT if REFIT > 1 else bool(REFIT), verbose=False, **cv_kwargs)
     out = []
     for fn in ("current", "once"):
         with warnings.catch_warnings(record=True) as rec:
@@ -97,7 +104,7 @@ def run_both(forecaster, series, exog, cv_kwargs, metric="mean_absolute_error", 
                         metric=metric, levels=levels, n_jobs=1, show_progress=False,
                     )
                 else:
-                    res = backtesting_once(
+                    res = (backtesting_once if PROTO == "once" else backtesting_blocks)(
                         forecaster=forecaster, series=series, exog=exog, cv=cv,
                         metric=metric, levels=levels,
                     )
@@ -176,4 +183,4 @@ compare("metrics MAE + MASE + RMSSE", F(Ridge(), lags=LAGS), s_rag_late, metric=
 compare("transformer_exog=StandardScaler, exog float", F(Ridge(), lags=LAGS, transformer_exog=StandardScaler()), s_dict, make_exog(s_dict))
 compare("RangeIndex, ragged", F(Ridge(), lags=LAGS), make_series(freq=None, ragged=True, nans="late"))
 compare("daily index with timezone", F(Ridge(), lags=LAGS), make_series(freq="D", tz="Europe/Madrid", ragged=True))
-print(_env.versions())
+print(f"REFIT={REFIT} PROTO={PROTO}", _env.versions())
