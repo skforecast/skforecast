@@ -1,5 +1,11 @@
 # Planes de implementación: alineación de los adaptadores foundation con sus backends
 
+> **Estado a 2026-11-19** (el seguimiento está en [`dev/ROADMAP.md`](../ROADMAP.md), filas FOUND-plan-02 a FOUND-plan-10):
+>
+> - **01 (T0) hecho** en #1478 (fusionada en `0.27.x` el 2026-11-11; cierra #1385), con D1, D2 y D3 en la opción (a). D5 (T0-P8) quedó pospuesta: fila FOUND-t0-options del roadmap. `01_t0.md` y casi toda `evidence/t0/` se borraron el 2026-11-19: se leen con `git show 91a8d2f13:dev/foundation_adapters_review/<ruta>`. De `evidence/t0/` quedan los 7 ficheros que cita 02 (ids ONNX y D-REG).
+> - **10, parte de guías, hecho** en #1480 (2026-11-11). La parte de CI (3.5 a 3.7) sigue pendiente, y las comprobaciones 3.2 y 3.3 hay que repetirlas cuando se fusionen 02 a 09.
+> - **02 a 09 sin empezar.** Ramas desde `origin/0.28.x` y PR contra `0.28.x` (no `0.27.x` como dicen los planes); nota de versión en la sección 0.28.0. Correcciones conocidas: desde #1479 `FoundationModel` quita las columnas solo de pasado antes de llamar al adaptador (afecta a TSI-P2 de 03 y a NORI-P9 de 09, cuyo `_known_future_columns` ya no existe); el helper de `stacklevel` de 02 §3.5 ya existe como `skforecast/utils/_warnings.py:_find_stack_level`; skforecast exige Python >=3.11; TSI-P1 son 11 adaptadores (con `TiRex2Adapter`); los `requirements-freeze.txt` se borraron en `a1a837b4a` (se leen con `git show a1a837b4a^:<ruta>`).
+
 Índice de los planes de implementación que salen de la revisión del 2026-11-06 de los adaptadores de `skforecast.foundation`. Cada plan corresponde a un pull request futuro y es autocontenido: para implementarlo basta con abrir ese fichero y la evidencia que enlaza.
 
 Cómo recrear los entornos de la revisión y volver a ejecutar sus comprobaciones está en [evidence/README.md](evidence/README.md). Ese fichero no se copia aquí.

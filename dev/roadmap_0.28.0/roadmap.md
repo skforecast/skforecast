@@ -1,5 +1,10 @@
 # Roadmap de skforecast 0.28.0
 
+> **Sustituido el 2026-11-19 por [`dev/ROADMAP.md`](../ROADMAP.md)**, que lleva el estado de
+> todo lo pendiente. Este documento queda congelado como fuente del informe de la migración
+> a pandas 3 (fila DOC-pandas3-report) y se borra después. `dev/roadmap_0.27.0/` ya está
+> borrado: se lee con `git show 402be62d6:dev/roadmap_0.27.0/<ruta>`.
+
 Fecha: 2026-11-11. Base: rama `0.27.x` (0.27.0 en desarrollo). Las rutas son relativas a la
 raíz del repositorio.
 

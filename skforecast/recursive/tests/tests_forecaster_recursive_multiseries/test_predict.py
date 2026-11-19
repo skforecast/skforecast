@@ -165,6 +165,31 @@ def test_predict_NotFittedError_when_fitted_is_False():
         forecaster.predict(steps=5)
 
 
+def test_predict_ValueError_when_last_window_has_infinite_values_and_transformer_series():
+    """
+    Test ValueError is raised by the StandardScaler of `transformer_series` when
+    `last_window` has infinite values in one series (`transform_numpy` leaves
+    them to scikit-learn).
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = LinearRegression(),
+                     lags               = 5,
+                     transformer_series = StandardScaler()
+                 )
+    forecaster.fit(series=series_2)
+    last_window = pd.DataFrame(
+        {'1': [45., 46., 47., 48., 49.],
+         '2': [95., -np.inf, 97., 98., 99.]},
+        index = pd.RangeIndex(start=45, stop=50)
+    )
+
+    err_msg = re.escape(
+        "Input X contains infinity or a value too large for dtype('float64')."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster.predict(steps=3, last_window=last_window)
+
+
 def test_predict_IgnoredArgumentWarning_when_not_available_self_last_window_for_some_levels():
     """
     Test IgnoredArgumentWarning is raised when last_window is not available for 

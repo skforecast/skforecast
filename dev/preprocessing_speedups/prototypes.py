@@ -1,0 +1,202 @@
+"""
+Prototypes of the two preprocessing speedups of
+`dev/preprocessing_speedups/PLAN.md`, applied at runtime (monkeypatching)
+so that production code is not modified. They are references for the
+implementation, not the implementation itself.
+
+P1  FastOrdinalEncoder: encodes pandas `category` columns with their integer
+    codes and a lookup table against `categories_`. Same output as the
+    forecaster's `OrdinalEncoder` (bit-identical), which converts the columns
+    to object arrays and maps them with Python dictionaries.
+P2  fast_transform_numpy: `transform_numpy` without scikit-learn's input
+    validation for a fitted `StandardScaler` (same arithmetic and order of
+    operations as `StandardScaler.transform` / `inverse_transform`). It
+    follows the design of T1 as revised in PLAN.md after REVIEW_T1.md.
+"""
+
+from __future__ import annotations
+
+import contextlib
+import importlib
+
+import numpy as np
+import pandas as pd
+from sklearn.preprocessing import OrdinalEncoder, StandardScaler
+
+import skforecast.utils.utils as _utils
+
+# --------------------------------------------------------------------- P1
+
+
+class FastOrdinalEncoder:
+    """
+    Drop-in for the `categorical_encoder` of the forecasters. The fitted
+    state lives in a scikit-learn `OrdinalEncoder` (`self.sk`), fitted on
+    the categories present only, so `categories_` is the same as fitting it
+    on the whole data. Columns that are not `category` fall back to
+    scikit-learn.
+    """
+
+    def __init__(self):
+        self.sk = OrdinalEncoder(
+            dtype=float,
+            handle_unknown="use_encoded_value",
+            unknown_value=np.nan,
+            encoded_missing_value=np.nan,
+        ).set_output(transform="pandas")
+
+    @property
+    def categories_(self):
+        return self.sk.categories_
+
+    @staticmethod
+    def _all_categorical(X):
+        return all(isinstance(d, pd.CategoricalDtype) for d in X.dtypes)
+
+    def fit(self, X: pd.DataFrame):
+        if not self._all_categorical(X):
+            self.sk.fit(X)
+            return self
+        # NOTE: One row per category present (and one missing value, if any)
+        # is taken from each column, so scikit-learn receives the same dtype
+        # as with the whole data and `categories_` is identical, values and
+        # dtype (e.g. int64 for integer categories). Columns are padded with
+        # their first row: repeated values do not change `categories_`.
+        positions = {}
+        for col in X.columns:
+            _, first_rows = np.unique(X[col].cat.codes.to_numpy(), return_index=True)
+            positions[col] = first_rows
+        n = max(len(p) for p in positions.values())
+        small = pd.DataFrame(
+            {
+                col: X[col].iloc[np.r_[p, np.full(n - len(p), p[0])]].reset_index(drop=True)
+                for col, p in positions.items()
+            }
+        )
+        self.sk.fit(small)
+        return self
+
+    def _lookup(self, j, dtype):
+        """Position in `categories_[j]` of each category of `dtype`, NaN if unseen."""
+        pos = pd.Index(self.sk.categories_[j]).get_indexer(dtype.categories)
+        lookup = pos.astype(float)
+        lookup[pos < 0] = np.nan
+        # Code -1 (missing value) indexes the last element: NaN.
+        return np.append(lookup, np.nan)
+
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        if not self._all_categorical(X):
+            return self.sk.transform(X)
+        out = {
+            col: self._lookup(j, X[col].dtype)[X[col].cat.codes.to_numpy()]
+            for j, col in enumerate(X.columns)
+        }
+        return pd.DataFrame(out, index=X.index)
+
+    def fit_transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        return self.fit(X).transform(X)
+
+
+@contextlib.contextmanager
+def use_fast_encoder(forecaster):
+    """Replace the forecaster's encoder (kept after the block: predict needs it)."""
+    forecaster.categorical_encoder = FastOrdinalEncoder()
+    yield forecaster
+
+
+# --------------------------------------------------------------------- P2
+
+_ORIG_TRANSFORM_NUMPY = _utils.transform_numpy
+
+# Modules that import `transform_numpy` by name. `use_fast_scaler` skips those
+# that need an optional dependency that is not installed (keras).
+_MODULES = [
+    "skforecast.recursive._forecaster_recursive_multiseries",
+    "skforecast.recursive._forecaster_recursive",
+    "skforecast.recursive._forecaster_stats",
+    "skforecast.direct._forecaster_direct",
+    "skforecast.direct._forecaster_direct_multivariate",
+    "skforecast.deep_learning._forecaster_rnn",
+    "skforecast.model_selection._utils",
+]
+
+
+def _is_float64_vector(value):
+    return type(value) is np.ndarray and value.dtype == np.float64 and value.shape == (1,)
+
+
+def scaler_shortcut_applies(array, transformer, fit=False, inverse_transform=False):
+    """
+    Conditions of the shortcut (point 2 of T1 in PLAN.md). A scaler fitted
+    with feature names also qualifies: `transform_numpy` always receives an
+    array, and scikit-learn only warns about the names.
+    """
+    if not (
+        not fit
+        and type(transformer) is StandardScaler
+        and type(array) is np.ndarray
+        and array.dtype == np.float64
+        and array.size > 0
+        and (array.ndim == 1 or (inverse_transform and array.ndim == 2))
+    ):
+        return False
+    # NOTE: In a fitted scaler `mean_` and `scale_` always exist, and they are
+    # None when their parameter is False, so their type is checked, not their
+    # presence.
+    state = vars(transformer)
+    return (
+        state.get("n_features_in_") == 1
+        and (not transformer.with_mean or _is_float64_vector(state.get("mean_")))
+        and (not transformer.with_std or _is_float64_vector(state.get("scale_")))
+    )
+
+
+def fast_transform_numpy(
+    array, transformer, fit=False, inverse_transform=False, force_single_column=False
+):
+    """
+    Shortcut for a fitted `StandardScaler` with one feature, no fitting and a
+    float64 array (`scaler_shortcut_applies`). Anything else goes to the
+    current `transform_numpy`. So does an input with an `inf`, which is
+    looked for before computing: the current path raises the same error as
+    scikit-learn (point 5 of T1 in PLAN.md).
+    """
+    if (
+        transformer is not None
+        and scaler_shortcut_applies(array, transformer, fit, inverse_transform)
+        and not np.isinf(array).any()
+    ):
+        out = array.copy()
+        if inverse_transform:
+            if transformer.with_std:
+                out *= transformer.scale_[0]
+            if transformer.with_mean:
+                out += transformer.mean_[0]
+        else:
+            if transformer.with_mean:
+                out -= transformer.mean_[0]
+            if transformer.with_std:
+                out /= transformer.scale_[0]
+        return out
+    return _ORIG_TRANSFORM_NUMPY(
+        array=array, transformer=transformer, fit=fit,
+        inverse_transform=inverse_transform, force_single_column=force_single_column,
+    )
+
+
+@contextlib.contextmanager
+def use_fast_scaler():
+    """Patch `transform_numpy` in the modules that use it while active."""
+    mods = []
+    for name in _MODULES:
+        try:
+            mods.append(importlib.import_module(name))
+        except ImportError:  # optional dependency not installed
+            pass
+    for m in mods:
+        m.transform_numpy = fast_transform_numpy
+    try:
+        yield
+    finally:
+        for m in mods:
+            m.transform_numpy = _ORIG_TRANSFORM_NUMPY

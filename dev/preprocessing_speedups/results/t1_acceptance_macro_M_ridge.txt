@@ -1,0 +1,40 @@
+Python 3.12.3 (Linux-6.18.44-fc-v595-x86_64-with-glibc2.39)
+numpy 2.5.5, pandas 3.1.1, scikit-learn 1.9.1, numba 0.68.1, skforecast 0.28.0
+lightgbm 4.7.0
+pyarrow 26.0.1
+CPU Intel(R) Xeon(R) Processor @ 2.10GHz, 4 logical cores
+
+ForecasterRecursiveMultiSeries, size M (300 series), ridge
+
+-- Time inside transform_numpy (upper bound of what any shortcut can save)
+[skip] skforecast.deep_learning._forecaster_rnn cannot be imported (optional dependency missing)
+predict_168                current   total    161.8 ms, inside transform_numpy   48.82 ms (30.2%) in 600 calls (81.4 us per call)
+predict_168                PACKAGE   total    113.9 ms, inside transform_numpy    4.14 ms ( 3.6%) in 600 calls (6.9 us per call)
+predict_168                PROPOSED  total    134.2 ms, inside transform_numpy    4.71 ms ( 3.5%) in 600 calls (7.8 us per call)
+predict_24                 current   total    163.0 ms, inside transform_numpy   51.15 ms (31.4%) in 600 calls (85.2 us per call)
+predict_24                 PACKAGE   total    116.8 ms, inside transform_numpy    4.03 ms ( 3.5%) in 600 calls (6.7 us per call)
+predict_24                 PROPOSED  total    120.5 ms, inside transform_numpy    5.03 ms ( 4.2%) in 600 calls (8.4 us per call)
+interval_conformal_24      current   total    264.6 ms, inside transform_numpy   53.70 ms (20.3%) in 600 calls (89.5 us per call)
+interval_conformal_24      PACKAGE   total    222.5 ms, inside transform_numpy    4.62 ms ( 2.1%) in 600 calls (7.7 us per call)
+interval_conformal_24      PROPOSED  total    215.1 ms, inside transform_numpy    4.80 ms ( 2.2%) in 600 calls (8.0 us per call)
+interval_bootstrapping_24  current   total    524.1 ms, inside transform_numpy   89.77 ms (17.1%) in 1200 calls (74.8 us per call)
+interval_bootstrapping_24  PACKAGE   total    510.1 ms, inside transform_numpy   10.44 ms ( 2.0%) in 1200 calls (8.7 us per call)
+interval_bootstrapping_24  PROPOSED  total    498.5 ms, inside transform_numpy   10.61 ms ( 2.1%) in 1200 calls (8.8 us per call)
+
+-- Calls that take the shortcut (predict_168)
+PACKAGE   600 of 600 calls
+
+-- End to end, variants interleaved, 25 rounds
+cell: median ms | ratio of medians | paired ratio per round: median [q25, q75] | min ms
+predict_168
+   current      195.30 ms | x1.00 | x1.00 [1.00, 1.00] | min 164.71 ms
+   PACKAGE      126.86 ms | x1.54 | x1.50 [1.46, 1.72] | min 108.42 ms
+predict_24
+   current      226.21 ms | x1.00 | x1.00 [1.00, 1.00] | min 152.25 ms
+   PACKAGE      143.82 ms | x1.57 | x1.50 [1.45, 1.81] | min 106.93 ms
+interval_conformal_24
+   current      324.22 ms | x1.00 | x1.00 [1.00, 1.00] | min 254.08 ms
+   PACKAGE      254.52 ms | x1.27 | x1.24 [1.13, 1.34] | min 221.45 ms
+interval_bootstrapping_24
+   current      859.09 ms | x1.00 | x1.00 [1.00, 1.00] | min 691.31 ms
+   PACKAGE      587.14 ms | x1.46 | x1.43 [1.35, 1.58] | min 449.63 ms

@@ -33,6 +33,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.exceptions import NotFittedError
 from sklearn.linear_model._base import LinearModel
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 from threadpoolctl import ThreadpoolController
 from .. import __version__
 # Under its private name: `from .utils import *` would export a public alias.
@@ -2607,6 +2608,94 @@ def expand_index(
     return new_index
 
 
+def _transform_numpy_fast_path(
+    array: np.ndarray,
+    transformer: object,
+    inverse_transform: bool
+) -> np.ndarray | None:
+    """
+    Apply a fitted `StandardScaler` to a float64 array without the input
+    validation of scikit-learn, with the same result. Return `None` when the
+    fast path does not apply, so that `transform_numpy` calls the methods of
+    the transformer.
+
+    Parameters
+    ----------
+    array : numpy ndarray
+        Array to be transformed. It is not modified.
+    transformer : object
+        Transformer already fitted.
+    inverse_transform : bool
+        Transform back the data to the original representation.
+
+    Returns
+    -------
+    array_transformed : numpy ndarray, None
+        Transformed array, a new array that does not share memory with
+        `array`. `None` if the fast path does not apply.
+
+    Notes
+    -----
+    The fast path applies when all of the following hold:
+
+    - `transformer` is a `StandardScaler` (exact type, not a subclass) fitted
+    with one feature, and `mean_` and `scale_`, when used, are float64 arrays
+    of shape `(1,)`.
+    - `array` is a non-empty float64 numpy ndarray (exact type), 1D, or 2D
+    when `inverse_transform=True`. The 2D inverse is computed element by
+    element, as `transform_numpy` does with a single column.
+    - `array` has no infinite values: scikit-learn raises a `ValueError` for
+    them, so they follow its path.
+
+    The operations are those of scikit-learn, in the same order, so the result
+    is identical bit for bit. Feature names are not checked: the input is
+    always an array, for which scikit-learn only emits a warning that
+    `transform_numpy` silences. With `set_output(transform="pandas")` and
+    pandas 3, scikit-learn returns a read-only array; the fast path returns a
+    writeable one with the same values.
+
+    """
+
+    if (
+        type(transformer) is not StandardScaler
+        or type(array) is not np.ndarray
+        or array.dtype != np.float64
+        or array.size == 0
+        or not (array.ndim == 1 or (inverse_transform and array.ndim == 2))
+        or getattr(transformer, "n_features_in_", None) != 1
+    ):
+        return None
+
+    with_mean = transformer.with_mean
+    with_std = transformer.with_std
+    mean = getattr(transformer, "mean_", None)
+    scale = getattr(transformer, "scale_", None)
+    for is_used, value in ((with_mean, mean), (with_std, scale)):
+        if is_used and (
+            type(value) is not np.ndarray
+            or value.dtype != np.float64
+            or value.shape != (1,)
+        ):
+            return None
+
+    if np.isinf(array).any():
+        return None
+
+    array_transformed = array.copy()
+    if inverse_transform:
+        if with_std:
+            array_transformed *= scale[0]
+        if with_mean:
+            array_transformed += mean[0]
+    else:
+        if with_mean:
+            array_transformed -= mean[0]
+        if with_std:
+            array_transformed /= scale[0]
+
+    return array_transformed
+
+
 def transform_numpy(
     array: np.ndarray,
     transformer: object | None,
@@ -2623,6 +2712,10 @@ def transform_numpy(
 
     The transformer receives a copy of `array`, so the input is not modified
     even if the transformer writes into its input.
+
+    With `fit=False`, a fitted scikit-learn `StandardScaler` with one feature is
+    applied to a float64 array without the input validation of scikit-learn,
+    which takes most of the time of each call. The result is the same.
 
     Parameters
     ----------
@@ -2654,6 +2747,15 @@ def transform_numpy(
         raise TypeError(
             f"`array` argument must be a numpy ndarray. Got {type(array)}"
         )
+
+    if not fit:
+        array_transformed = _transform_numpy_fast_path(
+                                array             = array,
+                                transformer       = transformer,
+                                inverse_transform = inverse_transform
+                            )
+        if array_transformed is not None:
+            return array_transformed
 
     # NOTE: Some transformers write into their input (scalers with
     # `copy=False`, a `FunctionTransformer` with an in-place function or a
