@@ -2274,3 +2274,77 @@ def test_check_predict_input_output_when_exog_is_None_or_not(
     if is_datetime:
         assert results.freq == expected.freq
     assert results_no_exog is None
+
+
+@pytest.mark.parametrize(
+    'exog_kind, n_warnings_per_series',
+    [
+        ('clean', 0),
+        ('missing_values', 1),
+        ('shorter_than_steps', 1),
+        ('misses_dates', 1),
+        ('missing_column', 1),
+        ('series_name_not_seen', 2),
+    ],
+    ids=lambda x: f'{x}'
+)
+def test_check_predict_input_MultiSeries_warnings_when_exog_dict_shares_one_object(
+    exog_kind, n_warnings_per_series
+):
+    """
+    Test that, in ForecasterRecursiveMultiSeries, a dict `exog` whose series
+    share the same object issues the same warnings, in the same order, as a
+    dict with a copy of the object for each series: each warning is issued once
+    per series and names its series.
+    """
+    levels = ['l1', 'l2', 'l3']
+    last_window = pd.DataFrame(
+        data  = np.arange(30, dtype=float).reshape(10, 3),
+        index = pd.date_range(start='2020-02-10', periods=10, freq='D'),
+        columns = levels
+    )
+    exog_index = pd.date_range(start='2020-02-20', periods=5, freq='D')
+    exog = pd.DataFrame(
+        data  = {'exog1': np.arange(5, dtype=float),
+                 'exog2': np.arange(5, 10, dtype=float)},
+        index = exog_index
+    )
+    if exog_kind == 'missing_values':
+        exog.iloc[2, 0] = np.nan
+    elif exog_kind == 'shorter_than_steps':
+        exog = exog.iloc[:3]
+    elif exog_kind == 'misses_dates':
+        exog.index = pd.DatetimeIndex(['2020-02-20', '2020-02-22', '2020-02-24',
+                                       '2020-02-26', '2020-02-28'])
+    elif exog_kind == 'missing_column':
+        exog = exog[['exog1']]
+    elif exog_kind == 'series_name_not_seen':
+        exog = exog['exog1'].rename('other')
+
+    def warnings_of(exog_dict):
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter('always')
+            check_predict_input(
+                forecaster_name  = 'ForecasterRecursiveMultiSeries',
+                steps            = 5,
+                is_fitted        = True,
+                exog_in_         = True,
+                index_type_      = pd.DatetimeIndex,
+                index_freq_      = 'D',
+                window_size      = 5,
+                last_window      = last_window,
+                exog             = exog_dict,
+                exog_names_in_   = ['exog1', 'exog2'],
+                levels           = levels,
+                series_names_in_ = levels
+            )
+        return [(w.category, str(w.message)) for w in record]
+
+    warnings_shared = warnings_of({k: exog for k in levels})
+    warnings_own = warnings_of({k: exog.copy() for k in levels})
+
+    assert warnings_shared == warnings_own
+    assert len(warnings_shared) == n_warnings_per_series * len(levels)
+    for i, (_, message) in enumerate(warnings_shared):
+        level = levels[i // n_warnings_per_series]
+        assert f"`exog` for series '{level}'" in message

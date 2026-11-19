@@ -1297,7 +1297,7 @@ def _check_exog_alignment(
     exog_index: pd.Index,
     expected_index: pd.Index,
     align_by_index: bool
-) -> None:
+) -> bool:
     """
     Check that `exog` has a value for each of the steps predicted.
 
@@ -1328,7 +1328,8 @@ def _check_exog_alignment(
 
     Returns
     -------
-    None
+    has_warned : bool
+        `True` if a `MissingValuesWarning` was issued, `False` otherwise.
 
     """
 
@@ -1339,9 +1340,9 @@ def _check_exog_alignment(
     if len(exog_index) > 0 and exog_index[0] == expected_index[0]:
         if isinstance(expected_index, pd.RangeIndex):
             if exog_index.step == expected_index.step:
-                return
+                return False
         elif exog_index.freq is not None and exog_index.freq == expected_index.freq:
-            return
+            return False
 
     last_step = len(expected_index)
     # NOTE: If `exog` has fewer values than steps, a warning or an error has
@@ -1371,6 +1372,7 @@ def _check_exog_alignment(
                 f"Prediction method may fail.",
                 MissingValuesWarning
             )
+            return True
         else:
             raise ValueError(
                 f"{exog_name} must have consecutive values following the "
@@ -1387,6 +1389,8 @@ def _check_exog_alignment(
                 f"is the window used to predict (by default, the last window "
                 f"stored in the forecaster)."
             )
+
+    return False
 
 
 def check_predict_input(
@@ -1686,7 +1690,17 @@ def check_predict_input(
         # by index and column, so missing values are filled with NaN and only a
         # warning is issued. The rest of forecasters use `exog` by position.
         align_by_index = forecaster_name in ['ForecasterRecursiveMultiSeries']
+        # NOTE: The same object can be the `exog` of several series, for
+        # example when a wide `exog` is shared by all series in backtesting.
+        # The checks only depend on the object, so one that passed them without
+        # warnings is not checked again. One that issued warnings is checked
+        # for each series, so each warning names its series as before.
+        exog_ids_checked = set()
         for exog_name, exog_to_check in exogs_to_check:
+
+            if id(exog_to_check) in exog_ids_checked:
+                continue
+            exog_has_warned = False
 
             if not isinstance(exog_to_check, (pd.Series, pd.DataFrame)):
                 raise TypeError(
@@ -1696,6 +1710,7 @@ def check_predict_input(
             # NOTE: `exog` can be long and of any dtype, `DataFrame.isna` checks
             # each column in its own dtype without converting it to object.
             if exog_to_check.isna().to_numpy().any():
+                exog_has_warned = True
                 warnings.warn(
                     f"{exog_name} has missing values. Most of machine learning models "
                     f"do not allow missing values. Prediction method may fail.", 
@@ -1705,6 +1720,7 @@ def check_predict_input(
             # Check exog has many values as distance to max step predicted
             if len(exog_to_check) < last_step:
                 if align_by_index:
+                    exog_has_warned = True
                     warnings.warn(
                         f"{exog_name} doesn't have as many values as steps "
                         f"predicted, {last_step}. Missing values are filled "
@@ -1737,6 +1753,7 @@ def check_predict_input(
 
                 if exog_to_check.name not in exog_names_in_:
                     if align_by_index:
+                        exog_has_warned = True
                         warnings.warn(
                             f"'{exog_to_check.name}' was not observed during training. "
                             f"{exog_name} is ignored. Exogenous variables must be one "
@@ -1753,6 +1770,7 @@ def check_predict_input(
             col_missing = set(exog_names_in_).difference(exog_columns)
             if col_missing:
                 if align_by_index:
+                    exog_has_warned = True
                     warnings.warn(
                         f"{col_missing} not present in {exog_name}. All "
                         f"values will be NaN.",
@@ -1784,12 +1802,16 @@ def check_predict_input(
                     f"    Expected index : {expected_index[0]}."
                 )
 
-            _check_exog_alignment(
+            if _check_exog_alignment(
                 exog_name      = exog_name,
                 exog_index     = exog_index,
                 expected_index = expected_index,
                 align_by_index = align_by_index
-            )
+            ):
+                exog_has_warned = True
+
+            if not exog_has_warned:
+                exog_ids_checked.add(id(exog_to_check))
 
     # Checks ForecasterStats
     if forecaster_name == 'ForecasterStats':

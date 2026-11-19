@@ -2907,6 +2907,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         differentiators = {}
         exog_values_all_levels = []
+        exog_aligned_by_id = {}
         for idx_level, level in enumerate(levels):
             last_window_level = last_window_values[:, idx_level]
             last_window_level = transform_numpy(
@@ -2941,8 +2942,17 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             if isinstance(exog, dict):
                 # Fill the empty dataframe with the exog values of each level
                 # and transform them if necessary
+                # NOTE: The same object can be the `exog` of several levels (for
+                # example a wide `exog` shared by all series in backtesting).
+                # It is aligned only once and its levels reuse the result,
+                # which is only read below.
                 exog_values = exog.get(level, None)
-                if exog_values is not None:
+                if exog_values is None:
+                    exog_values = empty_exog.copy()
+                elif id(exog_values) in exog_aligned_by_id:
+                    exog_values = exog_aligned_by_id[id(exog_values)]
+                else:
+                    exog_id = id(exog_values)
                     if isinstance(exog_values, pd.Series):
                         exog_values = exog_values.to_frame()
 
@@ -2969,9 +2979,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         and exog_values.columns.identical(empty_exog.columns)
                     ):
                         exog_values = exog_values.reindex_like(empty_exog)
-                else:
-                    exog_values = empty_exog.copy()
-            
+                    exog_aligned_by_id[exog_id] = exog_values
+
             exog_values_all_levels.append(exog_values)
 
         last_window = pd.DataFrame(

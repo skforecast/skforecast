@@ -1127,3 +1127,61 @@ def test_extract_data_folds_multiseries_training_set_reused_only_when_limits_do_
     if series_type == 'dict':
         assert data_folds[1][3] is data_folds[0][3]
         assert data_folds[2][3] is not data_folds[1][3]
+
+
+def test_extract_data_folds_multiseries_exog_test_shared_only_by_series_with_same_exog():
+    """
+    Test _extract_data_folds_multiseries slices once an `exog` object shared by
+    several series: in each fold, 'l1' and 'l2' (same object) get the same
+    `exog_test` object, while 'l3' (its own object with equal values) gets
+    its own one. The values are the test set of the fold for all of them.
+    """
+    series = {
+        'l1': series_wide_range['l1'],
+        'l2': series_wide_range['l2'],
+        'l3': series_wide_range['l3']
+    }
+    exog_shared = exog_wide_range[['exog_1']]
+    exog = {
+        'l1': exog_shared,
+        'l2': exog_shared,
+        'l3': exog_shared.copy()
+    }
+
+    # Train, last_window, test, fit_forecaster
+    folds = [
+        [0, [0, 30], [25, 30], [30, 35], True],
+        [1, [0, 30], [30, 35], [35, 40], False]
+    ]
+    span_index = pd.RangeIndex(start=0, stop=50, step=1)
+
+    data_folds = list(
+        _extract_data_folds_multiseries(
+            series             = series,
+            folds              = folds,
+            span_index         = span_index,
+            window_size        = 5,
+            exog               = exog,
+            dropna_last_window = False,
+            externally_fitted  = False
+        )
+    )
+
+    expected_exog_test = [
+        pd.DataFrame(
+            data  = {'exog_1': np.arange(1030, 1035, dtype=float)},
+            index = pd.RangeIndex(start=30, stop=35, step=1)
+        ),
+        pd.DataFrame(
+            data  = {'exog_1': np.arange(1035, 1040, dtype=float)},
+            index = pd.RangeIndex(start=35, stop=40, step=1)
+        )
+    ]
+
+    for i, data_fold in enumerate(data_folds):
+        exog_test = data_fold[4]
+        assert list(exog_test.keys()) == ['l1', 'l2', 'l3']
+        for k in exog_test:
+            pd.testing.assert_frame_equal(exog_test[k], expected_exog_test[i])
+        assert exog_test['l2'] is exog_test['l1']
+        assert exog_test['l3'] is not exog_test['l1']

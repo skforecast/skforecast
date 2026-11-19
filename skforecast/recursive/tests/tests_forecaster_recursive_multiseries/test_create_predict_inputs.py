@@ -2,6 +2,7 @@
 # ==============================================================================
 import re
 import pytest
+import warnings
 import numpy as np
 import pandas as pd
 from pandas.errors import InvalidIndexError
@@ -1244,3 +1245,65 @@ def test_create_predict_inputs_does_not_modify_exog_dict_when_aligned(levels):
     np.testing.assert_array_equal(results[1][1], expected_exog_1)
     for k in exog:
         pd.testing.assert_frame_equal(exog[k], exog_copy[k])
+
+
+@pytest.mark.parametrize(
+    "kind",
+    ['aligned', 'named_index', 'index_without_freq', 'extra_rows',
+     'reordered_columns', 'object_columns', 'series'],
+    ids=lambda kind: f'exog: {kind}'
+)
+def test_create_predict_inputs_output_when_exog_dict_shares_one_object(kind):
+    """
+    Test _create_predict_inputs gives the same output when several series share
+    the same exog object as when each series has its own copy, whether the
+    object is already aligned with the predictions or it is aligned with
+    `reindex_like`. Series '1' and '3' share the object and series '2' has its
+    own one, so the shared result is reused in between. The shared object is
+    not modified.
+    """
+    idx = pd.date_range(start='2020-01-01', periods=50, freq='D')
+    series = {
+        '1': pd.Series(np.arange(50, dtype=float), index=idx),
+        '2': pd.Series(100. + np.arange(50, dtype=float), index=idx),
+        '3': pd.Series(200. + np.arange(50, dtype=float), index=idx),
+    }
+    exog_train = {
+        k: pd.DataFrame(
+               {'exog_1': np.arange(50, dtype=float),
+                'exog_2': np.arange(50, dtype=float) ** 2},
+               index=idx
+           )
+        for k in series
+    }
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=LinearRegression(), lags=3, transformer_series=None
+    )
+    forecaster.fit(series=series, exog=exog_train, suppress_warnings=True)
+
+    exog_kind = _exog_dict_create_predict_inputs(
+        'aligned' if kind == 'series' else kind
+    )
+    exog_shared = exog_kind['1']
+    if kind == 'series':
+        exog_shared = exog_shared['exog_1']
+    exog_shared_copy = exog_shared.copy()
+    exog_2 = exog_kind['2']
+    exog = {'1': exog_shared, '2': exog_2, '3': exog_shared}
+    exog_own = {'1': exog_shared.copy(), '2': exog_2, '3': exog_shared.copy()}
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        results = forecaster._create_predict_inputs(steps=3, exog=exog)
+        expected = forecaster._create_predict_inputs(steps=3, exog=exog_own)
+
+    pd.testing.assert_frame_equal(results[0], expected[0])
+    assert results[1].keys() == expected[1].keys()
+    for k in expected[1]:
+        np.testing.assert_array_equal(results[1][k], expected[1][k])
+    assert results[3] == ['1', '2', '3']
+    pd.testing.assert_index_equal(results[4], expected[4])
+    if kind == 'series':
+        pd.testing.assert_series_equal(exog_shared, exog_shared_copy)
+    else:
+        pd.testing.assert_frame_equal(exog_shared, exog_shared_copy)

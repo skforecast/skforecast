@@ -1616,7 +1616,9 @@ def _extract_data_folds_multiseries(
     exog_train: pandas Series, pandas DataFrame, dict, None
         Exogenous variable corresponding to the training set of the fold.
     exog_test: pandas Series, pandas DataFrame, dict, None
-        Exogenous variable corresponding to the test set of the fold.
+        Exogenous variable corresponding to the test set of the fold. When
+        `exog` is a dict, the series whose `exog` is the same object share the
+        same `exog_test` object, so it must not be modified.
     fold: list
         List containing the indexes of that fold.
 
@@ -1725,12 +1727,19 @@ def _extract_data_folds_multiseries(
                             if len(v_train) > 0:
                                 exog_train[k] = v_train
 
+                # NOTE: A wide `exog` is the same object for all series, so
+                # each object is sliced only once and the series that share it
+                # also share its slice.
                 exog_test = {}
+                exog_test_by_id = {}
                 for k, v in exog.items():
                     if v is None:
                         exog_test[k] = None
                     elif externally_fitted or k in exog_train:
-                        v_test = v.loc[test_loc_start:test_loc_end]
+                        v_test = exog_test_by_id.get(id(v))
+                        if v_test is None:
+                            v_test = v.loc[test_loc_start:test_loc_end]
+                            exog_test_by_id[id(v)] = v_test
                         if not v_test.empty:
                             exog_test[k] = v_test
         else:

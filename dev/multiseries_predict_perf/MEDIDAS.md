@@ -204,3 +204,29 @@ Las cuatro baterías de siempre (`ms trims dtypes exog`) dan 0 diferencias con `
 | Backtesting 100 series, exog en diccionario (por fold) | 11,1 / 13,9 / 9,9 | 12,6 / 14,4 / 8,4 | 13,1 / 17,6 / 14,8 |
 
 B4 sobre el cambio 4 gana del 3 al 7 % en pandas 3 con `pyarrow` con 100 o más series, es neutro sin `pyarrow` y pierde hasta un 4 % en pandas 2.
+
+## 11. Cambio 6 y coste de `empty_exog` (2026-11-19)
+
+Prototipo sobre una copia de `f4537f1b5`, medido frente a esa misma copia sin el cambio (`MS_BASE_TREE`), solo con los casos por los que pasa el cambio (`C6` y `C6_SCALE`). Mínimo de 2 rondas (1 con 600 y 1000 series), núcleo 12; ganancia en p2 / p3 sin pa / p3 con pa.
+
+| Caso | 20 series | 100 series | 600 / 1000 series |
+|---|---|---|---|
+| `predict`, diccionario que repite un objeto | 34,9 / 41,3 / 42,7 | 61,3 / 68,8 / 70,8 | 69,7 / 77,4 / 79,4 (600); 68,2 / 76,4 / 79,0 (1000) |
+| Ídem, 24 pasos | 31,7 / 37,9 / 38,8 | 58,2 / 66,3 / 67,2 | |
+| Backtesting por fold, exog ancha, 1 paso | 30,3 / 33,5 / 33,6 | 43,2 / 47,5 / 48,9 | 35,3 / 43,4 / 43,1 (600) |
+| Ídem, exog mezclada | 33,5 / 33,7 / 34,2 | 51,1 / 53,3 / 54,2 | 46,6 / 50,3 / 51,3 (600) |
+| Ídem, 24 pasos | 19,4 / 19,5 / 21,1 | 25,1 / 28,5 / 27,9 | |
+| Ídem, LightGBM, 24 pasos | 13,2 / 15,6 / 15,9 | | |
+
+Casos con un objeto por serie (diccionario, formato largo, backtesting con diccionario, adversos `extra`, `early` y `named`, refit): de −3,4 a +2,8 % en p2, de −3,0 a +3,8 % sin pa y de −2,1 a +1,1 % con pa; con 600 y 1000 series, de −2,5 a +5,1 %. La primera ronda salió con la máquina ocupada (de −9,5 a +9,6 %). Repetidos en p2 con el orden de los árboles invertido, de −1,7 a +0,2 %, y el −5,6 % de backtesting con 600 series y exog mezclada, 0,0 %.
+
+Identidad frente a la base (`cb03fbe96`), cinco baterías: 0 diferencias en los tres entornos (ms 4591 / 4510 / 4510 casos, trims 2911, dtypes 312, exog 424 / 396 / 424, labels 7866 / 3110 / 8106).
+
+**Coste de crear `empty_exog`** (cambio 7; µs por llamada, `timeit` aislado, núcleo 12; en situación real, unas 1,6 veces más):
+
+| Exog | p2 | p3 sin pa | p3 con pa |
+|---|---|---|---|
+| 3 columnas float | 218 a 224 | 231 a 237 | 262 a 265 |
+| 3 columnas mezcladas | 315 a 321 | 338 a 340 | 373 a 379 |
+
+Desglose con exog mezclada (p2 / p3 sin pa / p3 con pa): los tres `pd.Series` vacíos, 70 µs; `DataFrame(dict)` sin índice, 191 / 232 / 265; con el índice de las predicciones (hoy), 298 / 326 / 383; solo las columnas, `DataFrame({c: []}).columns`, 46 / 56 / 76. Tras el cambio 6 es en torno al 20 % de un `predict` con exog compartida y 20 series (1,2 a 1,4 ms) y del 7 al 8 % de un fold de backtesting con exog ancha.
