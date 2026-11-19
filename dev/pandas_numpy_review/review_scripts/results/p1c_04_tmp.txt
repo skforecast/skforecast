@@ -1,0 +1,83 @@
+
+# encoding='ordinal_category', categorical_features=None
+- 6 series, no exog
+    LightGBM today      : categorical ['_level_skforecast'] | predict vs as fitted: identical
+    LightGBM (c) codes  : categorical ['_level_skforecast'] | model: identical, trees identical | predict vs today as fitted: identical
+    LightGBM (c) values : categorical ['_level_skforecast'] | model: identical, trees identical | predict vs today as fitted: identical
+    XGBoost  today      : categorical ['_level_skforecast'] | predict vs as fitted: identical
+    XGBoost  (c) codes  : categorical ['_level_skforecast'] | model: identical | predict vs today as fitted: identical
+    XGBoost  (c) values : categorical ['_level_skforecast'] | model: identical | predict vs today as fitted: identical
+    HGB      today      : categorical ['_level_skforecast'] | predict vs as fitted: identical
+    HGB      (c) codes  : categorical ['_level_skforecast'] | model: identical | predict vs today as fitted: identical
+    HGB      (c) values : categorical ['_level_skforecast'] | model: identical | predict vs today as fitted: identical
+    CatBoost today      : fit -> CatBoostError: features data: pandas.DataFrame column '_level_skforecast' has dtype 'category' but is not in  
+    CatBoost (c) codes  : categorical ['_level_skforecast']
+    CatBoost (c) values : categorical ['_level_skforecast'] | predictions vs (c) codes: identical
+- 6 series, numeric exog x
+    LightGBM today      : categorical ['_level_skforecast'] | predict vs as fitted: identical
+    LightGBM (c) codes  : categorical ['_level_skforecast'] | model: identical, trees identical | predict vs today as fitted: identical
+    LightGBM (c) values : categorical ['_level_skforecast'] | model: identical, trees identical | predict vs today as fitted: identical
+    XGBoost  today      : categorical ['_level_skforecast'] | predict vs as fitted: identical
+    XGBoost  (c) codes  : categorical ['_level_skforecast'] | model: identical | predict vs today as fitted: identical
+    XGBoost  (c) values : categorical ['_level_skforecast'] | model: identical | predict vs today as fitted: identical
+    HGB      today      : categorical ['_level_skforecast'] | predict vs as fitted: identical
+    HGB      (c) codes  : categorical ['_level_skforecast'] | model: identical | predict vs today as fitted: identical
+    HGB      (c) values : categorical ['_level_skforecast'] | model: identical | predict vs today as fitted: identical
+    CatBoost today      : fit -> CatBoostError: features data: pandas.DataFrame column '_level_skforecast' has dtype 'category' but is not in  
+    CatBoost (c) codes  : categorical ['_level_skforecast']
+    CatBoost (c) values : categorical ['_level_skforecast'] | predictions vs (c) codes: identical
+- 6 series, x and category c (10..80)
+    LightGBM today      : categorical ['_level_skforecast', 'c'] | predict vs as fitted: CHANGES (max 76.7)
+    LightGBM (c) codes  : categorical ['_level_skforecast', 'c'] | model: identical, trees identical | predict vs today as fitted: identical
+    LightGBM (c) values : categorical ['_level_skforecast', 'c'] | model: identical, trees identical | predict vs today as fitted: identical
+    XGBoost  today      : categorical ['_level_skforecast', 'c'] | predict vs as fitted: CHANGES (max 102)
+    XGBoost  (c) codes  : categorical ['_level_skforecast', 'c'] | model: identical | predict vs today as fitted: identical
+    XGBoost  (c) values : categorical ['_level_skforecast', 'c'] | model: identical | predict vs today as fitted: identical
+    HGB      today      : categorical ['_level_skforecast', 'c'] | predict vs as fitted: identical
+    HGB      (c) codes  : categorical ['_level_skforecast', 'c'] | model: identical | predict vs today as fitted: identical
+    HGB      (c) values : categorical ['_level_skforecast', 'c'] | model: identical | predict vs today as fitted: identical
+    CatBoost today      : fit -> CatBoostError: features data: pandas.DataFrame column '_level_skforecast' has dtype 'category' but is not in  
+    CatBoost (c) codes  : categorical ['_level_skforecast', 'c']
+    CatBoost (c) values : categorical ['_level_skforecast', 'c'] | predictions vs (c) codes: identical
+- 30 series, x, c40, c3
+    LightGBM today      : categorical ['_level_skforecast', 'c3', 'c40'] | predict vs as fitted: CHANGES (max 44.3)
+    LightGBM (c) codes  : categorical ['_level_skforecast', 'c3', 'c40'] | model: identical, trees identical | predict vs today as fitted: identical
+    LightGBM (c) values : categorical ['_level_skforecast', 'c3', 'c40'] | model: identical, trees identical | predict vs today as fitted: identical
+    XGBoost  today      : categorical ['_level_skforecast', 'c3', 'c40'] | predict vs as fitted: CHANGES (max 79.6)
+    XGBoost  (c) codes  : categorical ['_level_skforecast', 'c3', 'c40'] | model: identical | predict vs today as fitted: identical
+    XGBoost  (c) values : categorical ['_level_skforecast', 'c3', 'c40'] | model: identical | predict vs today as fitted: identical
+    HGB      today      : categorical ['_level_skforecast', 'c40', 'c3'] | predict vs as fitted: identical
+    HGB      (c) codes  : categorical ['_level_skforecast', 'c40', 'c3'] | model: identical | predict vs today as fitted: identical
+    HGB      (c) values : categorical ['_level_skforecast', 'c40', 'c3'] | model: identical | predict vs today as fitted: identical
+    CatBoost today      : fit -> CatBoostError: features data: pandas.DataFrame column '_level_skforecast' has dtype 'category' but is not in  
+    CatBoost (c) codes  : categorical ['_level_skforecast', 'c40', 'c3']
+    CatBoost (c) values : categorical ['_level_skforecast', 'c40', 'c3'] | predictions vs (c) codes: identical
+
+# encoding='ordinal', categorical_features=None
+- 6 series, x and category c (10..80)
+    LightGBM today      : categorical ['c'] | predict vs as fitted: CHANGES (max 67.6)
+    LightGBM (c) codes  : categorical ['c'] | model: identical, trees identical | predict vs today as fitted: identical
+    LightGBM (c) values : categorical ['c'] | model: identical, trees identical | predict vs today as fitted: identical
+    XGBoost  today      : categorical ['c'] | predict vs as fitted: CHANGES (max 108)
+    XGBoost  (c) codes  : categorical ['c'] | model: identical | predict vs today as fitted: identical
+    XGBoost  (c) values : categorical ['c'] | model: identical | predict vs today as fitted: identical
+    HGB      today      : categorical ['c'] | predict vs as fitted: identical
+    HGB      (c) codes  : categorical ['c'] | model: identical | predict vs today as fitted: identical
+    HGB      (c) values : categorical ['c'] | model: identical | predict vs today as fitted: identical
+    CatBoost today      : fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features lis
+    CatBoost (c) codes  : categorical ['c']
+    CatBoost (c) values : categorical ['c'] | predictions vs (c) codes: identical
+- 30 series, x, c40, c3
+    LightGBM today      : categorical ['c3', 'c40'] | predict vs as fitted: CHANGES (max 55.2)
+    LightGBM (c) codes  : categorical ['c3', 'c40'] | model: identical, trees identical | predict vs today as fitted: identical
+    LightGBM (c) values : categorical ['c3', 'c40'] | model: identical, trees identical | predict vs today as fitted: identical
+    XGBoost  today      : categorical ['c3', 'c40'] | predict vs as fitted: CHANGES (max 92.9)
+    XGBoost  (c) codes  : categorical ['c3', 'c40'] | model: identical | predict vs today as fitted: identical
+    XGBoost  (c) values : categorical ['c3', 'c40'] | model: CHANGES (max 7.19) | predict vs today as fitted: CHANGES (max 5.89)
+    HGB      today      : categorical ['c40', 'c3'] | predict vs as fitted: identical
+    HGB      (c) codes  : categorical ['c40', 'c3'] | model: identical | predict vs today as fitted: identical
+    HGB      (c) values : categorical ['c40', 'c3'] | model: identical | predict vs today as fitted: identical
+    CatBoost today      : fit -> CatBoostError: features data: pandas.DataFrame column 'c40' has dtype 'category' but is not in  cat_features l
+    CatBoost (c) codes  : categorical ['c40', 'c3']
+    CatBoost (c) values : categorical ['c40', 'c3'] | predictions vs (c) codes: identical
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, xgboost 3.4.1, catboost 1.2.10, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]

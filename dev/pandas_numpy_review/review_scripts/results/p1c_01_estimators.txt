@@ -1,0 +1,1056 @@
+=== p2 ===
+
+# lgbm
+- 0..7
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: identical
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: identical
+- 10..80
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 55.5)
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 55.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 55.3)
+- perm(0..7) declared [5,2,7,0,3,6,1,4]
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 45.7)
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: identical
+- 10..90, 50 only in the new rows
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 43.1)
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 43.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 43.2)
+- negative -3..4
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 45.7)
+    V values      : fit ok | vs today in: CHANGES (max 18.1), out: CHANGES (max 18.7) | trees: DIFFERENT (split features)
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.3)
+- large 0..6 and 100000
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 45.3)
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.1)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.1)
+- huge 0..6 and 3e9
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 45.3)
+    V values      : fit ok | vs today in: CHANGES (max 1.16), out: CHANGES (max 1.02) | trees: DIFFERENT (split features)
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.1)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.1)
+- floats .25 .5 .75 1.5 2.5 2.75 3.5 4.5
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 45.7)
+    V values      : fit ok | vs today in: CHANGES (max 19.8), out: CHANGES (max 23.8) | trees: DIFFERENT (split features)
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.3)
+- 10..80 with 10% NaN
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 38.4)
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 36.1)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 36.1)
+- 10..80 ordered=True
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 44.9)
+    V values      : fit ok | vs today in: CHANGES (max 1.71), out: CHANGES (max 1.55) | trees: DIFFERENT (split features)
+    C pandas codes: fit ok | vs today in: CHANGES (max 1.71), out: CHANGES (max 1.55) | trees: DIFFERENT (split features) | values->: CHANGES (max 55.3)
+    S sorted codes: fit ok | vs today in: CHANGES (max 1.71), out: CHANGES (max 1.55) | trees: DIFFERENT (split features) | values->: CHANGES (max 55.3)
+- 40 categories 100,107,... shuffled
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 61.2)
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 60.1)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 60.1)
+- 40 categories, 300 training rows
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: identical
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: identical
+- 300 categories 1000..1299
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 90.3)
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 87.1)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 87.1)
+
+# xgb
+- 0..7
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: identical
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: identical
+- 10..80
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 57.6)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 57.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 57.2)
+- perm(0..7) declared [5,2,7,0,3,6,1,4]
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 46.7)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 46.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: identical
+- 10..90, 50 only in the new rows
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 62.2)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 61.9)
+    S sorted codes: fit ok | vs today in: identical, out: CHANGES (max 30.4) | values->: CHANGES (max 61.9)
+- negative -3..4
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 46.7)
+    V values      : fit -> XGBoostError: [17:39:33] /__w/xgboost/xgboost/src/common/categorical.h:71: Invalid categorical value detected.  Categorical value should be non-negative, less than 
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 46.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 46.2)
+- large 0..6 and 100000
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 12.9)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 12.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 12.3)
+- huge 0..6 and 3e9
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 12.9)
+    V values      : fit -> XGBoostError: [17:39:39] /__w/xgboost/xgboost/src/common/categorical.h:71: Invalid categorical value detected.  Categorical value should be non-negative, less than 
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 12.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 12.3)
+- floats .25 .5 .75 1.5 2.5 2.75 3.5 4.5
+    today (DataFrame): fit -> XGBoostError: [17:39:39] /__w/xgboost/xgboost/src/data/columnar.h:144: Category index from DataFrame has floating point dtype, consider using strings or integers in
+    V values      : fit -> XGBoostError: [17:39:39] /__w/xgboost/xgboost/src/common/categorical.h:77: Check failed: max_cat + 1 >= n_categories (5.5 vs. 8) : Maximum cateogry should not be le
+    C pandas codes: fit ok | values->: CHANGES (max 46.2)
+    S sorted codes: fit ok | values->: CHANGES (max 46.2)
+    no model today; against C: S in identical, out identical
+- 10..80 with 10% NaN
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 62.6)
+    V values      : fit ok | vs today in: CHANGES (max 7.95), out: CHANGES (max 9.5)
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 58.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 58.2)
+- 10..80 ordered=True
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 57.6)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 57.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 57.2)
+- 40 categories 100,107,... shuffled
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 119)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 117)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 117)
+- 40 categories, 300 training rows
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 121)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 120)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 120)
+- 300 categories 1000..1299
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 188)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 185)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 185)
+
+# xgb_cat
+- 0..7
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: identical
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: identical
+- 10..80
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 57.6)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 57.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 57.2)
+- perm(0..7) declared [5,2,7,0,3,6,1,4]
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 46.7)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 46.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: identical
+- 10..90, 50 only in the new rows
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 62.2)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 61.9)
+    S sorted codes: fit ok | vs today in: identical, out: CHANGES (max 30.4) | values->: CHANGES (max 61.9)
+- negative -3..4
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 46.7)
+    V values      : fit -> XGBoostError: [17:39:40] /__w/xgboost/xgboost/src/common/categorical.h:71: Invalid categorical value detected.  Categorical value should be non-negative, less than 
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 46.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 46.2)
+- large 0..6 and 100000
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 12.9)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 12.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 12.3)
+- huge 0..6 and 3e9
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 12.9)
+    V values      : fit -> XGBoostError: [17:39:46] /__w/xgboost/xgboost/src/common/categorical.h:71: Invalid categorical value detected.  Categorical value should be non-negative, less than 
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 12.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 12.3)
+- floats .25 .5 .75 1.5 2.5 2.75 3.5 4.5
+    today (DataFrame): fit -> XGBoostError: [17:39:46] /__w/xgboost/xgboost/src/data/columnar.h:144: Category index from DataFrame has floating point dtype, consider using strings or integers in
+    V values      : fit -> XGBoostError: [17:39:46] /__w/xgboost/xgboost/src/common/categorical.h:77: Check failed: max_cat + 1 >= n_categories (5.5 vs. 8) : Maximum cateogry should not be le
+    C pandas codes: fit ok | values->: CHANGES (max 46.2)
+    S sorted codes: fit ok | values->: CHANGES (max 46.2)
+    no model today; against C: S in identical, out identical
+- 10..80 with 10% NaN
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 62.6)
+    V values      : fit ok | vs today in: CHANGES (max 7.95), out: CHANGES (max 9.5)
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 58.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 58.2)
+- 10..80 ordered=True
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 57.6)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 57.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 57.2)
+- 40 categories 100,107,... shuffled
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 119)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 117)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 117)
+- 40 categories, 300 training rows
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 121)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 120)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 120)
+- 300 categories 1000..1299
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 188)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 185)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 185)
+
+# hgb
+- 0..7
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: identical
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: identical
+- 10..80
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 37.1)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 37.1)
+- perm(0..7) declared [5,2,7,0,3,6,1,4]
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 45.6)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: identical
+- 10..90, 50 only in the new rows
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 34.8)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 34.8)
+- negative -3..4
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 45.6)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 45.6)
+- large 0..6 and 100000
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 26)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 26)
+- huge 0..6 and 3e9
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 26)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 26)
+- floats .25 .5 .75 1.5 2.5 2.75 3.5 4.5
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 37.1)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 37.1)
+- 10..80 with 10% NaN
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 40.7)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 40.7)
+- 10..80 ordered=True
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 37.1)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 37.1)
+- 40 categories 100,107,... shuffled
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 60.8)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 60.8)
+- 40 categories, 300 training rows
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 47.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 47.3)
+- 300 categories 1000..1299
+    today (DataFrame): fit -> ValueError: Categorical feature 'c' is expected to have a cardinality <= 255 but actually has a cardinality of 300.
+    V values      : fit -> ValueError: Categorical feature at index 0 is expected to have a cardinality <= 255 but actually has a cardinality of 300.
+    C pandas codes: fit -> ValueError: Categorical feature at index 0 is expected to have a cardinality <= 255 but actually has a cardinality of 300.
+    S sorted codes: fit -> ValueError: Categorical feature at index 0 is expected to have a cardinality <= 255 but actually has a cardinality of 300.
+
+# catboost
+- 0..7
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: identical
+    S sorted codes: fit ok | values->: identical
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- 10..80
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 31.5)
+    S sorted codes: fit ok | values->: CHANGES (max 31.5)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- perm(0..7) declared [5,2,7,0,3,6,1,4]
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 53.1)
+    S sorted codes: fit ok | values->: identical
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- 10..90, 50 only in the new rows
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 40)
+    S sorted codes: fit ok | values->: CHANGES (max 40)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- negative -3..4
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 53.1)
+    S sorted codes: fit ok | values->: CHANGES (max 53.1)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- large 0..6 and 100000
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 31.2)
+    S sorted codes: fit ok | values->: CHANGES (max 31.2)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- huge 0..6 and 3e9
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 31.2)
+    S sorted codes: fit ok | values->: CHANGES (max 31.2)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- floats .25 .5 .75 1.5 2.5 2.75 3.5 4.5
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 53.1)
+    S sorted codes: fit ok | values->: CHANGES (max 53.1)
+    no model today; against C: V in CHANGES (max 20.6), out CHANGES (max 25.9), S in identical, out identical
+- 10..80 with 10% NaN
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 39.1)
+    S sorted codes: fit ok | values->: CHANGES (max 39.1)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- 10..80 ordered=True
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 31.5)
+    S sorted codes: fit ok | values->: CHANGES (max 31.5)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- 40 categories 100,107,... shuffled
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 50.2)
+    S sorted codes: fit ok | values->: CHANGES (max 50.2)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- 40 categories, 300 training rows
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 85.7)
+    S sorted codes: fit ok | values->: CHANGES (max 85.7)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- 300 categories 1000..1299
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 51.4)
+    S sorted codes: fit ok | values->: CHANGES (max 51.4)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+[python 3.12.3, pandas 2.3.3, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, xgboost 3.4.1, catboost 1.2.10, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 (sin pyarrow) ===
+
+# lgbm
+- 0..7
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: identical
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: identical
+- 10..80
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 55.5)
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 55.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 55.3)
+- perm(0..7) declared [5,2,7,0,3,6,1,4]
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 45.7)
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: identical
+- 10..90, 50 only in the new rows
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 43.1)
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 43.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 43.2)
+- negative -3..4
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 45.7)
+    V values      : fit ok | vs today in: CHANGES (max 18.1), out: CHANGES (max 18.7) | trees: DIFFERENT (split features)
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.3)
+- large 0..6 and 100000
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 45.3)
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.1)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.1)
+- huge 0..6 and 3e9
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 45.3)
+    V values      : fit ok | vs today in: CHANGES (max 1.16), out: CHANGES (max 1.02) | trees: DIFFERENT (split features)
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.1)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.1)
+- floats .25 .5 .75 1.5 2.5 2.75 3.5 4.5
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 45.7)
+    V values      : fit ok | vs today in: CHANGES (max 19.8), out: CHANGES (max 23.8) | trees: DIFFERENT (split features)
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.3)
+- 10..80 with 10% NaN
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 38.4)
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 36.1)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 36.1)
+- 10..80 ordered=True
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 44.9)
+    V values      : fit ok | vs today in: CHANGES (max 1.71), out: CHANGES (max 1.55) | trees: DIFFERENT (split features)
+    C pandas codes: fit ok | vs today in: CHANGES (max 1.71), out: CHANGES (max 1.55) | trees: DIFFERENT (split features) | values->: CHANGES (max 55.3)
+    S sorted codes: fit ok | vs today in: CHANGES (max 1.71), out: CHANGES (max 1.55) | trees: DIFFERENT (split features) | values->: CHANGES (max 55.3)
+- 40 categories 100,107,... shuffled
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 61.2)
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 60.1)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 60.1)
+- 40 categories, 300 training rows
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: identical
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: identical
+- 300 categories 1000..1299
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 90.3)
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 87.1)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 87.1)
+
+# xgb
+- 0..7
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: identical
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: identical
+- 10..80
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 57.6)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 57.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 57.2)
+- perm(0..7) declared [5,2,7,0,3,6,1,4]
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 46.7)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 46.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: identical
+- 10..90, 50 only in the new rows
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 62.2)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 61.9)
+    S sorted codes: fit ok | vs today in: identical, out: CHANGES (max 30.4) | values->: CHANGES (max 61.9)
+- negative -3..4
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 46.7)
+    V values      : fit -> XGBoostError: [17:39:56] /__w/xgboost/xgboost/src/common/categorical.h:71: Invalid categorical value detected.  Categorical value should be non-negative, less than 
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 46.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 46.2)
+- large 0..6 and 100000
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 12.9)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 12.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 12.3)
+- huge 0..6 and 3e9
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 12.9)
+    V values      : fit -> XGBoostError: [17:40:03] /__w/xgboost/xgboost/src/common/categorical.h:71: Invalid categorical value detected.  Categorical value should be non-negative, less than 
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 12.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 12.3)
+- floats .25 .5 .75 1.5 2.5 2.75 3.5 4.5
+    today (DataFrame): fit -> XGBoostError: [17:40:03] /__w/xgboost/xgboost/src/data/columnar.h:144: Category index from DataFrame has floating point dtype, consider using strings or integers in
+    V values      : fit -> XGBoostError: [17:40:03] /__w/xgboost/xgboost/src/common/categorical.h:77: Check failed: max_cat + 1 >= n_categories (5.5 vs. 8) : Maximum cateogry should not be le
+    C pandas codes: fit ok | values->: CHANGES (max 46.2)
+    S sorted codes: fit ok | values->: CHANGES (max 46.2)
+    no model today; against C: S in identical, out identical
+- 10..80 with 10% NaN
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 62.6)
+    V values      : fit ok | vs today in: CHANGES (max 7.95), out: CHANGES (max 9.5)
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 58.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 58.2)
+- 10..80 ordered=True
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 57.6)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 57.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 57.2)
+- 40 categories 100,107,... shuffled
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 119)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 117)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 117)
+- 40 categories, 300 training rows
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 121)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 120)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 120)
+- 300 categories 1000..1299
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 188)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 185)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 185)
+
+# xgb_cat
+- 0..7
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: identical
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: identical
+- 10..80
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 57.6)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 57.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 57.2)
+- perm(0..7) declared [5,2,7,0,3,6,1,4]
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 46.7)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 46.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: identical
+- 10..90, 50 only in the new rows
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 62.2)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 61.9)
+    S sorted codes: fit ok | vs today in: identical, out: CHANGES (max 30.4) | values->: CHANGES (max 61.9)
+- negative -3..4
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 46.7)
+    V values      : fit -> XGBoostError: [17:40:04] /__w/xgboost/xgboost/src/common/categorical.h:71: Invalid categorical value detected.  Categorical value should be non-negative, less than 
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 46.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 46.2)
+- large 0..6 and 100000
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 12.9)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 12.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 12.3)
+- huge 0..6 and 3e9
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 12.9)
+    V values      : fit -> XGBoostError: [17:40:10] /__w/xgboost/xgboost/src/common/categorical.h:71: Invalid categorical value detected.  Categorical value should be non-negative, less than 
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 12.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 12.3)
+- floats .25 .5 .75 1.5 2.5 2.75 3.5 4.5
+    today (DataFrame): fit -> XGBoostError: [17:40:10] /__w/xgboost/xgboost/src/data/columnar.h:144: Category index from DataFrame has floating point dtype, consider using strings or integers in
+    V values      : fit -> XGBoostError: [17:40:10] /__w/xgboost/xgboost/src/common/categorical.h:77: Check failed: max_cat + 1 >= n_categories (5.5 vs. 8) : Maximum cateogry should not be le
+    C pandas codes: fit ok | values->: CHANGES (max 46.2)
+    S sorted codes: fit ok | values->: CHANGES (max 46.2)
+    no model today; against C: S in identical, out identical
+- 10..80 with 10% NaN
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 62.6)
+    V values      : fit ok | vs today in: CHANGES (max 7.95), out: CHANGES (max 9.5)
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 58.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 58.2)
+- 10..80 ordered=True
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 57.6)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 57.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 57.2)
+- 40 categories 100,107,... shuffled
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 119)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 117)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 117)
+- 40 categories, 300 training rows
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 121)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 120)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 120)
+- 300 categories 1000..1299
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 188)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 185)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 185)
+
+# hgb
+- 0..7
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: identical
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: identical
+- 10..80
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 37.1)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 37.1)
+- perm(0..7) declared [5,2,7,0,3,6,1,4]
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 45.6)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: identical
+- 10..90, 50 only in the new rows
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 34.8)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 34.8)
+- negative -3..4
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 45.6)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 45.6)
+- large 0..6 and 100000
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 26)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 26)
+- huge 0..6 and 3e9
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 26)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 26)
+- floats .25 .5 .75 1.5 2.5 2.75 3.5 4.5
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 37.1)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 37.1)
+- 10..80 with 10% NaN
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 40.7)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 40.7)
+- 10..80 ordered=True
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 37.1)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 37.1)
+- 40 categories 100,107,... shuffled
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 60.8)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 60.8)
+- 40 categories, 300 training rows
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 47.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 47.3)
+- 300 categories 1000..1299
+    today (DataFrame): fit -> ValueError: Categorical feature 'c' is expected to have a cardinality <= 255 but actually has a cardinality of 300.
+    V values      : fit -> ValueError: Categorical feature at index 0 is expected to have a cardinality <= 255 but actually has a cardinality of 300.
+    C pandas codes: fit -> ValueError: Categorical feature at index 0 is expected to have a cardinality <= 255 but actually has a cardinality of 300.
+    S sorted codes: fit -> ValueError: Categorical feature at index 0 is expected to have a cardinality <= 255 but actually has a cardinality of 300.
+
+# catboost
+- 0..7
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: identical
+    S sorted codes: fit ok | values->: identical
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- 10..80
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 31.5)
+    S sorted codes: fit ok | values->: CHANGES (max 31.5)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- perm(0..7) declared [5,2,7,0,3,6,1,4]
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 53.1)
+    S sorted codes: fit ok | values->: identical
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- 10..90, 50 only in the new rows
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 40)
+    S sorted codes: fit ok | values->: CHANGES (max 40)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- negative -3..4
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 53.1)
+    S sorted codes: fit ok | values->: CHANGES (max 53.1)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- large 0..6 and 100000
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 31.2)
+    S sorted codes: fit ok | values->: CHANGES (max 31.2)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- huge 0..6 and 3e9
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 31.2)
+    S sorted codes: fit ok | values->: CHANGES (max 31.2)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- floats .25 .5 .75 1.5 2.5 2.75 3.5 4.5
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 53.1)
+    S sorted codes: fit ok | values->: CHANGES (max 53.1)
+    no model today; against C: V in CHANGES (max 20.6), out CHANGES (max 25.9), S in identical, out identical
+- 10..80 with 10% NaN
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 39.1)
+    S sorted codes: fit ok | values->: CHANGES (max 39.1)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- 10..80 ordered=True
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 31.5)
+    S sorted codes: fit ok | values->: CHANGES (max 31.5)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- 40 categories 100,107,... shuffled
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 50.2)
+    S sorted codes: fit ok | values->: CHANGES (max 50.2)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- 40 categories, 300 training rows
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 85.7)
+    S sorted codes: fit ok | values->: CHANGES (max 85.7)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- 300 categories 1000..1299
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 51.4)
+    S sorted codes: fit ok | values->: CHANGES (max 51.4)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+[python 3.12.3, pandas 3.1.1, pyarrow no, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, xgboost 3.4.1, catboost 1.2.10, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 pa ===
+
+# lgbm
+- 0..7
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: identical
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: identical
+- 10..80
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 55.5)
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 55.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 55.3)
+- perm(0..7) declared [5,2,7,0,3,6,1,4]
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 45.7)
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: identical
+- 10..90, 50 only in the new rows
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 43.1)
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 43.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 43.2)
+- negative -3..4
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 45.7)
+    V values      : fit ok | vs today in: CHANGES (max 18.1), out: CHANGES (max 18.7) | trees: DIFFERENT (split features)
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.3)
+- large 0..6 and 100000
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 45.3)
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.1)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.1)
+- huge 0..6 and 3e9
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 45.3)
+    V values      : fit ok | vs today in: CHANGES (max 1.16), out: CHANGES (max 1.02) | trees: DIFFERENT (split features)
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.1)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.1)
+- floats .25 .5 .75 1.5 2.5 2.75 3.5 4.5
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 45.7)
+    V values      : fit ok | vs today in: CHANGES (max 19.8), out: CHANGES (max 23.8) | trees: DIFFERENT (split features)
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 45.3)
+- 10..80 with 10% NaN
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 38.4)
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 36.1)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 36.1)
+- 10..80 ordered=True
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 44.9)
+    V values      : fit ok | vs today in: CHANGES (max 1.71), out: CHANGES (max 1.55) | trees: DIFFERENT (split features)
+    C pandas codes: fit ok | vs today in: CHANGES (max 1.71), out: CHANGES (max 1.55) | trees: DIFFERENT (split features) | values->: CHANGES (max 55.3)
+    S sorted codes: fit ok | vs today in: CHANGES (max 1.71), out: CHANGES (max 1.55) | trees: DIFFERENT (split features) | values->: CHANGES (max 55.3)
+- 40 categories 100,107,... shuffled
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 61.2)
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 60.1)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 60.1)
+- 40 categories, 300 training rows
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: identical
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: identical
+- 300 categories 1000..1299
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 90.3)
+    V values      : fit ok | vs today in: identical, out: identical | trees: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 87.1)
+    S sorted codes: fit ok | vs today in: identical, out: identical | trees: identical | values->: CHANGES (max 87.1)
+
+# xgb
+- 0..7
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: identical
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: identical
+- 10..80
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 57.6)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 57.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 57.2)
+- perm(0..7) declared [5,2,7,0,3,6,1,4]
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 46.7)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 46.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: identical
+- 10..90, 50 only in the new rows
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 62.2)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 61.9)
+    S sorted codes: fit ok | vs today in: identical, out: CHANGES (max 30.4) | values->: CHANGES (max 61.9)
+- negative -3..4
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 46.7)
+    V values      : fit -> XGBoostError: [17:40:20] /__w/xgboost/xgboost/src/common/categorical.h:71: Invalid categorical value detected.  Categorical value should be non-negative, less than 
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 46.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 46.2)
+- large 0..6 and 100000
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 12.9)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 12.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 12.3)
+- huge 0..6 and 3e9
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 12.9)
+    V values      : fit -> XGBoostError: [17:40:27] /__w/xgboost/xgboost/src/common/categorical.h:71: Invalid categorical value detected.  Categorical value should be non-negative, less than 
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 12.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 12.3)
+- floats .25 .5 .75 1.5 2.5 2.75 3.5 4.5
+    today (DataFrame): fit -> XGBoostError: [17:40:27] /__w/xgboost/xgboost/src/data/columnar.h:144: Category index from DataFrame has floating point dtype, consider using strings or integers in
+    V values      : fit -> XGBoostError: [17:40:27] /__w/xgboost/xgboost/src/common/categorical.h:77: Check failed: max_cat + 1 >= n_categories (5.5 vs. 8) : Maximum cateogry should not be le
+    C pandas codes: fit ok | values->: CHANGES (max 46.2)
+    S sorted codes: fit ok | values->: CHANGES (max 46.2)
+    no model today; against C: S in identical, out identical
+- 10..80 with 10% NaN
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 62.6)
+    V values      : fit ok | vs today in: CHANGES (max 7.95), out: CHANGES (max 9.5)
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 58.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 58.2)
+- 10..80 ordered=True
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 57.6)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 57.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 57.2)
+- 40 categories 100,107,... shuffled
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 119)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 117)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 117)
+- 40 categories, 300 training rows
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 121)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 120)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 120)
+- 300 categories 1000..1299
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 188)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 185)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 185)
+
+# xgb_cat
+- 0..7
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: identical
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: identical
+- 10..80
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 57.6)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 57.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 57.2)
+- perm(0..7) declared [5,2,7,0,3,6,1,4]
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 46.7)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 46.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: identical
+- 10..90, 50 only in the new rows
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 62.2)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 61.9)
+    S sorted codes: fit ok | vs today in: identical, out: CHANGES (max 30.4) | values->: CHANGES (max 61.9)
+- negative -3..4
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 46.7)
+    V values      : fit -> XGBoostError: [17:40:28] /__w/xgboost/xgboost/src/common/categorical.h:71: Invalid categorical value detected.  Categorical value should be non-negative, less than 
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 46.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 46.2)
+- large 0..6 and 100000
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 12.9)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 12.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 12.3)
+- huge 0..6 and 3e9
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 12.9)
+    V values      : fit -> XGBoostError: [17:40:34] /__w/xgboost/xgboost/src/common/categorical.h:71: Invalid categorical value detected.  Categorical value should be non-negative, less than 
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 12.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 12.3)
+- floats .25 .5 .75 1.5 2.5 2.75 3.5 4.5
+    today (DataFrame): fit -> XGBoostError: [17:40:34] /__w/xgboost/xgboost/src/data/columnar.h:144: Category index from DataFrame has floating point dtype, consider using strings or integers in
+    V values      : fit -> XGBoostError: [17:40:34] /__w/xgboost/xgboost/src/common/categorical.h:77: Check failed: max_cat + 1 >= n_categories (5.5 vs. 8) : Maximum cateogry should not be le
+    C pandas codes: fit ok | values->: CHANGES (max 46.2)
+    S sorted codes: fit ok | values->: CHANGES (max 46.2)
+    no model today; against C: S in identical, out identical
+- 10..80 with 10% NaN
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 62.6)
+    V values      : fit ok | vs today in: CHANGES (max 7.95), out: CHANGES (max 9.5)
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 58.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 58.2)
+- 10..80 ordered=True
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 57.6)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 57.2)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 57.2)
+- 40 categories 100,107,... shuffled
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 119)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 117)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 117)
+- 40 categories, 300 training rows
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 121)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 120)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 120)
+- 300 categories 1000..1299
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: CHANGES (max 188)
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 185)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 185)
+
+# hgb
+- 0..7
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: identical
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: identical
+- 10..80
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 37.1)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 37.1)
+- perm(0..7) declared [5,2,7,0,3,6,1,4]
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 45.6)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: identical
+- 10..90, 50 only in the new rows
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 34.8)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 34.8)
+- negative -3..4
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 45.6)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 45.6)
+- large 0..6 and 100000
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 26)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 26)
+- huge 0..6 and 3e9
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 26)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 26)
+- floats .25 .5 .75 1.5 2.5 2.75 3.5 4.5
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 37.1)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 37.1)
+- 10..80 with 10% NaN
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 40.7)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 40.7)
+- 10..80 ordered=True
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 37.1)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 37.1)
+- 40 categories 100,107,... shuffled
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 60.8)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 60.8)
+- 40 categories, 300 training rows
+    today (DataFrame): fit ok; numpy predict on VALUES against predict on the DataFrame: identical
+    V values      : fit ok | vs today in: identical, out: identical
+    C pandas codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 47.3)
+    S sorted codes: fit ok | vs today in: identical, out: identical | values->: CHANGES (max 47.3)
+- 300 categories 1000..1299
+    today (DataFrame): fit -> ValueError: Categorical feature 'c' is expected to have a cardinality <= 255 but actually has a cardinality of 300.
+    V values      : fit -> ValueError: Categorical feature at index 0 is expected to have a cardinality <= 255 but actually has a cardinality of 300.
+    C pandas codes: fit -> ValueError: Categorical feature at index 0 is expected to have a cardinality <= 255 but actually has a cardinality of 300.
+    S sorted codes: fit -> ValueError: Categorical feature at index 0 is expected to have a cardinality <= 255 but actually has a cardinality of 300.
+
+# catboost
+- 0..7
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: identical
+    S sorted codes: fit ok | values->: identical
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- 10..80
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 31.5)
+    S sorted codes: fit ok | values->: CHANGES (max 31.5)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- perm(0..7) declared [5,2,7,0,3,6,1,4]
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 53.1)
+    S sorted codes: fit ok | values->: identical
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- 10..90, 50 only in the new rows
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 40)
+    S sorted codes: fit ok | values->: CHANGES (max 40)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- negative -3..4
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 53.1)
+    S sorted codes: fit ok | values->: CHANGES (max 53.1)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- large 0..6 and 100000
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 31.2)
+    S sorted codes: fit ok | values->: CHANGES (max 31.2)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- huge 0..6 and 3e9
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 31.2)
+    S sorted codes: fit ok | values->: CHANGES (max 31.2)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- floats .25 .5 .75 1.5 2.5 2.75 3.5 4.5
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 53.1)
+    S sorted codes: fit ok | values->: CHANGES (max 53.1)
+    no model today; against C: V in CHANGES (max 20.6), out CHANGES (max 25.9), S in identical, out identical
+- 10..80 with 10% NaN
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 39.1)
+    S sorted codes: fit ok | values->: CHANGES (max 39.1)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- 10..80 ordered=True
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 31.5)
+    S sorted codes: fit ok | values->: CHANGES (max 31.5)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- 40 categories 100,107,... shuffled
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 50.2)
+    S sorted codes: fit ok | values->: CHANGES (max 50.2)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- 40 categories, 300 training rows
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 85.7)
+    S sorted codes: fit ok | values->: CHANGES (max 85.7)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+- 300 categories 1000..1299
+    today (DataFrame): fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    V values      : fit ok
+    C pandas codes: fit ok | values->: CHANGES (max 51.4)
+    S sorted codes: fit ok | values->: CHANGES (max 51.4)
+    no model today; against C: V in identical, out identical, S in identical, out identical
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, xgboost 3.4.1, catboost 1.2.10, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]

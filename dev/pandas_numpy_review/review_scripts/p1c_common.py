@@ -166,52 +166,87 @@ def same_structure(a, b):
     return "identical" if d == 0 else f"DIFFERENT (max abs diff {d:.3g})"
 
 
-def make_big(n=400, n_series=30, ordinal_share=0.5, seed=0, unseen_from=None, declare_unseen=True):
+def make_big(n=400, n_series=30, ordinal_share=0.5, seed=0, unseen_from=None):
     """
     30 series over `n` days. Value of series j at t:
-        level_j + 0.5 * y[t-1] part + effect40[c40] + effect3[c3] + 3 * x + noise(sd 1)
-    - c40: 40 categories with values 100, 107, ..., 373 (not 0..n-1), declared in
-      a shuffled order. Effect = ordinal_share * (ordinal ramp, 60 from first to
-      last value) + (1 - ordinal_share) * N(0, 20) per category. It changes every
-      day and is different for every series.
+        level_j + effect41[c40] + effect3[c3] + 3 * x + noise(sd 1)
+    - c40: categories with values 100, 107, ..., 380 (41 values, not 0..n-1),
+      declared in a shuffled order. Effect = ordinal_share * (ramp from -30 to
+      30 along the values) + (1 - ordinal_share) * N(0, 20) per category. It
+      changes every day and is different for every series (exog is a dict).
     - c3: categories 10, 20, 30 declared as [30, 10, 20], effect -15, 0, 15.
     - x: numeric, shared.
-    - `unseen_from`: from that row on, 20% of the rows of c40 take a new
-      category (value 380, effect +40), which never appears before. With
-      `declare_unseen=False` it is not in the dtype of the rows before.
-    Returns series (dict), exog (dict of DataFrames), and the expected value
-    without noise (dict) to measure the error against the signal.
+    - The category of value 240 (in the middle of the ramp) is the "unseen"
+      one: it has no rows unless `unseen_from` is given; from that row on, 20%
+      of the rows take it. It is always declared in the dtype.
+    Returns series (dict), exog (dict of DataFrames) and the boolean mask of
+    the rows with the unseen category (dict).
     """
     rng = np.random.default_rng(seed)
     idx = pd.date_range("2020", periods=n, freq="D")
-    vals40 = 100 + 7 * np.arange(40)
-    ramp = np.linspace(-30, 30, 40)
-    eff40 = ordinal_share * ramp + (1 - ordinal_share) * rng.normal(0, 20, 40)
+    vals = 100 + 7 * np.arange(41)
+    eff = ordinal_share * np.linspace(-30, 30, 41) + (1 - ordinal_share) * rng.normal(0, 20, 41)
+    seen = np.delete(np.arange(41), 20)
     vals3, eff3 = np.array([10, 20, 30]), np.array([-15.0, 0.0, 15.0])
-    decl40 = list(rng.permutation(vals40))
-    if unseen_from is not None:
-        vals40 = np.append(vals40, 380)
-        eff40 = np.append(eff40, 40.0)
-        if declare_unseen:
-            decl40 = decl40[:20] + [380] + decl40[20:]
+    decl = [int(v) for v in rng.permutation(vals)]
     x = rng.normal(size=n)
     levels = rng.normal(0, 30, n_series)
-    series, exog, signal = {}, {}, {}
+    series, exog, unseen = {}, {}, {}
     for j in range(n_series):
-        p40 = rng.integers(0, 40, n)
+        p40 = seen[rng.integers(0, 40, n)]
         if unseen_from is not None:
-            late = np.arange(n) >= unseen_from
-            p40 = np.where(late & (rng.random(n) < 0.2), 40, p40)
+            p40 = np.where((np.arange(n) >= unseen_from) & (rng.random(n) < 0.2), 20, p40)
         p3 = rng.integers(0, 3, n)
-        sig = levels[j] + eff40[p40] + eff3[p3] + 3.0 * x
         name = f"s{j:02d}"
-        series[name] = pd.Series(sig + rng.normal(size=n), index=idx, name=name)
-        signal[name] = pd.Series(sig, index=idx)
-        c40 = pd.Categorical(vals40[p40], categories=decl40 if (unseen_from is None or declare_unseen) else None)
-        exog[name] = pd.DataFrame(
-            {"x": x, "c40": c40, "c3": pd.Categorical(vals3[p3], categories=[30, 10, 20])}, index=idx
+        series[name] = pd.Series(
+            levels[j] + eff[p40] + eff3[p3] + 3.0 * x + rng.normal(size=n), index=idx, name=name
         )
-    return series, exog, signal
+        exog[name] = pd.DataFrame(
+            {"x": x, "c40": pd.Categorical(vals[p40], categories=decl),
+             "c3": pd.Categorical(vals3[p3], categories=[30, 10, 20])}, index=idx
+        )
+        unseen[name] = pd.Series(p40 == 20, index=idx)
+    return series, exog, unseen
+
+
+def head(d, n):
+    """First `n` rows of a DataFrame or of every element of a dict."""
+    if isinstance(d, (pd.DataFrame, pd.Series)):
+        return d.iloc[:n]
+    return {k: v.iloc[:n] for k, v in d.items()}
+
+
+def backtest(f, series, exog, n_train):
+    """Predictions of a 1-step backtesting without refit, indexed by (date, level)."""
+    from skforecast.model_selection import TimeSeriesFold, backtesting_forecaster_multiseries
+    cv = TimeSeriesFold(steps=1, initial_train_size=n_train, refit=False)
+    _, p = backtesting_forecaster_multiseries(
+        forecaster=f, series=series, exog=exog, cv=cv, metric="mean_absolute_error",
+        n_jobs=1, verbose=False, show_progress=False)
+    return p.set_index("level", append=True)[["y_true", "pred"]].sort_index()
+
+
+def test_rows(f, series, exog, n_train):
+    """
+    Rows of the training matrix (true lags, `category` columns as the estimator
+    gets them today) of the dates after the first `n_train`, with the
+    (date, level) index of `backtest`. The forecaster must be fitted (the
+    encoders are not fitted again).
+    """
+    X, _ = f.create_train_X_y(series=series, exog=exog)
+    X = X[f.X_train_features_names_out_] if f.encoding is not None else X
+    dates = next(iter(series.values())).index
+    inv = {v: k for k, v in f.encoding_mapping_.items()}
+    level = X["_level_skforecast"].astype(float).map(inv) if "_level_skforecast" in X else None
+    keep = X.index >= dates[n_train]
+    X = X[keep]
+    key = pd.MultiIndex.from_arrays([X.index, level[keep]], names=[None, "level"])
+    return X, key
+
+
+def fmt(d):
+    """Text for a max abs difference."""
+    return "identical" if d == 0 else ("same (<1e-6)" if d < 1e-6 else f"CHANGES (max {d:.3g})")
 
 
 def attempt(fn):

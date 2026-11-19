@@ -1,0 +1,2 @@
+# A. 'auto' (default): today against the prototype of (c), 30 series, c40, c3, x
+  LightGBM encoding=ordinal: identical | encoding=ordinal_category: identical
