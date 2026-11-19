@@ -22,6 +22,7 @@ bash run3.sh script.py [args]     # pandas 2.3, pandas 3 sin pyarrow, pandas 3 c
 | `real_data.py` | Casos reales de tres artículos de cienciadedatos.net (py44, py59, py39): datos, preprocesado, forecasters y folds. `python real_data.py download DIR` (con `pyarrow`) baja los datos una vez; después, `REAL_DATA_DIR=DIR` | 10 |
 | `time_real_cases.py` | Prueba del prototipo con esos casos: llamada completa hoy frente a `proto_bt_blocks.py`, con el tiempo del modelo separado; en el caso de una serie, P5 | 10 |
 | `time_real_search.py` | Variante de py59: la búsqueda con `TimeSeriesFold` en lugar de `OneStepAheadFold`, hoy frente al prototipo con la preparación compartida | 10 |
+| `time_real_osa_search.py` | La búsqueda de py59 con `OneStepAheadFold` tal como la hace el artículo: reparto entre modelo, matrices, métricas y ajuste final (STUDY-osa-search-cost) | 10.6 |
 | `check_real_mae.py` | Fidelidad de `real_data.py` a los artículos: métricas del código actual junto a las que publica cada artículo | 10.1 |
 | `proto_bt_batched.py` | Alternativa descartada: todos los folds en una pasada | 6.2 |
 | `time_small.py` | Coste por fold univariante, P2, P7, P17 | 4, 6.1 |
