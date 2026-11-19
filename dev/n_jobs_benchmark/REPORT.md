@@ -1,5 +1,15 @@
 # Estrategia de `n_jobs='auto'`: informe final
 
+> **Estado a 2026-11-19.** Las propuestas 1 a 3 están fusionadas en `0.28.x` (#1503), y
+> los fallos previos, en #1511, #1513, #1514 y #1515 (salvo `XGBClassifier` con una clase
+> solo en los lags). Lo pendiente (siguientes pasos, propuestas 4 a 6, umbral en macOS)
+> está en [`dev/ROADMAP.md`](../ROADMAP.md), filas PERF-n_jobs-next, NJOBS-cpu-count,
+> DOC-njobs-faq y BUG-xgbclassifier-lag-only-class. El 2026-11-19 se borraron `NOTES.md`,
+> `prototype_serialization/` y los datos en bruto de `results/` (`results.jsonl` y
+> `machine.json`): se leen con `git show 3c0711b8a:dev/n_jobs_benchmark/<ruta>`. Se
+> conservan los `README.md`, `summary.md` y scripts de comparación de `results/` y los
+> scripts de medida (los de comparación necesitan recuperar antes su `results.jsonl`).
+
 13 de noviembre de 2026. Sustituye a las conclusiones provisionales de
 `NOTES.md`, que conserva el detalle del prototipo de serialización.
 
