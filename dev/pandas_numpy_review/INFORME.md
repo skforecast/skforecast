@@ -6,6 +6,8 @@ Entornos (todas las medidas, salvo que se diga otra cosa): Python 3.12.3, numpy 
 
 Scripts y resultados en [scripts/](scripts/) (ver [scripts/README.md](scripts/README.md)).
 
+**Revisado en [REVISION.md](REVISION.md)** (revisión independiente, dos rondas). Donde difieran vale la revisión: en particular la ganancia alcanzable de §5.1 y de P3, el alcance del bug P1 y la decisión D-NP2, las condiciones de P2, y las propuestas P4, P6, P11, P14 y P16. Las filas de §9 se han llevado a `dev/ROADMAP.md` ya corregidas.
+
 ## Resumen
 
 **Veredicto.** La filosofía "pandas en los bordes, numpy dentro" es correcta y, donde se aplica, funciona: el bucle recursivo de `predict` es numpy puro en todos los forecasters y el estimador recibe arrays (salvo en el `fit` de multiserie). Lo que falla es **dónde está el borde**. Hoy es cada llamada pública, y el backtesting y las búsquedas llaman a los métodos públicos en cada fold. En multiserie, además, cada fold crea objetos de pandas **por serie**. Por eso el coste de pandas escala con folds × series y el modelo es una parte pequeña del tiempo:

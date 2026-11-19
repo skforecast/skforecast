@@ -4,6 +4,8 @@ Fecha: 2026-11-19 (segunda ronda añadida el mismo día, sección 9). Revisa [IN
 
 **Entornos.** Python 3.12.3, numpy 2.5.5, scikit-learn 1.9.1, numba 0.68.1, LightGBM 4.7.0, XGBoost 3.4.1, CatBoost 1.2.10, 4 núcleos. **p2** = pandas 2.3.3 (con `pyarrow` 26.0.1 instalado); **p3** = pandas 3.1.1 con la importación de `pyarrow` bloqueada; **p3 pa** = pandas 3.1.1 con `pyarrow` 26.0.1. Las cifras van siempre en el orden p2 / p3 / p3 pa. Los tiempos se midieron uno a uno, sin nada más en marcha y con `OMP_NUM_THREADS=1` (salvo donde se dice); las comprobaciones de corrección las hicieron tres subagentes en paralelo y sin medir tiempos. Lo que afirmo de sus informes lo he vuelto a ejecutar yo cuando contradice al informe (se indica); lo demás se marca como "subagente".
 
+Las filas, decisiones y el orden por valor que salen de esta revisión están en [../ROADMAP.md](../ROADMAP.md) (abreviatura NPREV).
+
 ## Resumen
 
 1. **El techo de §5.1 es correcto como techo del bucle, pero el titular está sobrevendido.** Se reproduce (Ridge, 600 series, exog mixta: 179 / 200 / 225 ms por fold hoy, 0,57 / 0,57 / 0,64 en el techo). Lo que no dice el informe es cuánto pesa lo que el techo deja fuera. He escrito un prototipo que valida y prepara una vez y devuelve **las mismas métricas, las mismas predicciones y los mismos avisos en el mismo orden** que el código actual (25 casos, tres entornos). Con él, el mismo backtesting pasa de 10,1 / 11,1 / 12,0 s a 1,9 / 1,9 / 2,2 s: **5 a 6 veces la llamada completa (7 a 8 sin el fit), no 40 a 400**. Con LightGBM, 2,8 a 3,3 veces. Con 5 folds en vez de 50, 1,3 a 1,5 veces con Ridge y 1,0 con LightGBM. El bucle de folds queda en 1,2 a 1,6 ms por fold; lo que domina después son costes fijos que el informe despacha en una frase: las métricas (0,56 a 0,60 s) y la preparación (0,47 a 0,62 s).
@@ -258,7 +260,7 @@ Lo que el arreglo tiene que resolver y la fila P1 no menciona:
 
 **Recomendación (corregida en la segunda ronda, ver 9.4).** En la primera ronda recomendé (c) "limitada a las columnas `category` y a la columna de nivel". Un segundo subagente, encargado de romperla, demostró que esa formulación no basta: hay que codificar a los códigos de pandas en `fit` y en `predict`, solo para LightGBM, XGBoost y CatBoost sin envolver, y ni así conserva el modelo en todos los casos. También corrige mi frase "(a) es una degradación silenciosa": es un cambio silencioso de modelo cuyo signo depende del estimador y de los datos. Lo que sigue en pie es que (a), presentada como arreglo sin cambio de modelo, no es aceptable.
 
-Aparte (bug existente en todos los forecasters, visto por el subagente, no verificado por mí): un `Pipeline` cuyo último paso es LightGBM, con `'auto'` y una exog categórica, falla en `fit` porque `configure_estimator_categorical_features` pone `categorical_feature` sin el prefijo del paso (`utils.py:672-682`).
+Aparte (bug existente en todos los forecasters, visto por el subagente, no verificado por mí; ya está en el roadmap como CAT-T3): un `Pipeline` cuyo último paso es LightGBM, con `'auto'` y una exog categórica, falla en `fit` porque `configure_estimator_categorical_features` pone `categorical_feature` sin el prefijo del paso (`utils.py:672-682`).
 
 ### 3.2 P2 (exog a float) y D-NP3
 
@@ -346,7 +348,7 @@ El contenedor es la idea correcta. Tres cambios sobre cómo lo plantea el inform
 Alternativas que he considerado y descartado, con medida:
 
 - **Predecir todos los folds en una sola pasada recursiva** (sin refit todos usan el mismo modelo: apilar los folds como filas y llamar al estimador `steps` veces en vez de `n_folds × steps`). [review_scripts/proto_bt_batched.py](review_scripts/proto_bt_batched.py), 600 series, exog mixta, p3 pa: con Ridge es **más lento** (0,41 → 0,69 ms por fold, por caché); con LightGBM, igual (15,6 → 17,9 ms con un hilo; 7,5 → 7,8 con cuatro). Predicciones idénticas. No compensa: el techo del informe es un techo.
-- **Solo los pasos baratos de BTPLAN (F1 a F3 y M1) sin camino nuevo:** la extracción es el 40 a 45 % del tiempo y `check_predict_input` el 19 a 28 %; F1 a F3 atacan lo primero. Es menos ganancia (BTPLAN mide -20 % con LightGBM) pero sin segundo camino. No es alternativa a P3, es su primer paso.
+- **Solo los pasos baratos de BTPLAN (F1 a F3 y M1) sin camino nuevo:** la extracción es el 40 a 45 % del tiempo y `check_predict_input` el 19 a 28 %; F1 a F3 atacan lo primero. Es menos ganancia (BTPLAN mide -20 % con LightGBM) pero sin segundo camino. De ellos, M1 y F2 valen también con P3; F1 y F3 dejan de notarse en multiserie cuando P3 exista.
 
 ### 6.3 ¿Está bien estimado el esfuerzo de P3?
 
@@ -381,7 +383,7 @@ Sobre D-NP4: `transformer_exog=None` es más restrictivo de lo necesario (un `St
 | 0.28.x | **P1 con D-NP2 decidida explícitamente**: (a') con aviso y nota de versión, o (c) redefinida (9.4). Incluir `:4695`, `_utils.py:3038`, el cast de CatBoost y el índice de `ordinal_category` | El informe lo da como S a M y sin cambio de modelo; con `None` sí lo hay, con cualquier opción. Antes de fusionar: tests de paridad one-step-ahead frente a backtesting |
 | 0.28.x | **P2 con condición estricta** (dtypes explícitos; solo si hoy sale `object`), más multiserie `:3037`, más tests de dtypes | Corrige además el fallo de HistGradientBoosting en `predict`. Decidir D-NP3 (b) y los enteros grandes |
 | 0.28.x | P7, P17 (solo DMV), P8 (con su condición), P16 (con `copy=True` y selección previa de columnas) | Como el informe, con las condiciones de la sección 4 |
-| 0.28.x o 0.29.0 | **BTPLAN M1 con PERF-03 (métricas) y F1 a F3 (extracción por posición)** | **Antes** de P3, no absorbidos por ella: dan ganancia sin segundo camino, y sin M1 la mitad de lo que deja P3 son métricas |
+| 0.28.x o 0.29.0 | **BTPLAN M1 con PERF-03 (métricas) y F2 (series de entrenamiento por posición)** | **Antes** de P3, no absorbidos por ella: dan ganancia sin segundo camino, y sin M1 la mitad de lo que deja P3 son métricas. Corrección posterior: F1 (ventana) y F3 (exog de test) sí quedan absorbidas por P3 en multiserie, así que solo compensan antes si P3 se retrasa; siguen sirviendo al backtesting foundation y a la validación one-step-ahead |
 | 0.29.0 | P9, P10 (claves `int`, orden estable), P12 (solo la búsqueda en array), P11 **solo la reutilización de entradas**; el cambio a `np.quantile`, únicamente si se acepta que no es idéntico en pandas 2.3 | El informe los da como "baratos, solo numpy"; tres de los cuatro necesitan cambios |
 | 0.29.0 | **P3 en dos pasos:** (1) partir `predict` en validar, preparar y núcleo numpy, sin cambio de comportamiento; (2) camino rápido del backtesting sobre ese núcleo, con el contenedor disponible para las búsquedas y preparación acotada | El informe lo plantea como un contenedor dentro del backtesting. Aceptación: salidas y avisos idénticos (la batería de `proto_bt_once_cases.py` es un punto de partida) y tiempo de la llamada completa |
 | 0.29.0 | P5, P6 (formulación exacta sin caché), P13 | Como el informe |
@@ -477,7 +479,7 @@ El tratamiento categórico gana en LightGBM y HistGradientBoosting salvo con efe
 
 **Recomendación corregida.** **(a')**: valores como numérica, que es lo que ya recibe `predict` y lo que hacen los demás forecasters, respetando la configuración que el usuario ponga por índice en el estimador o en `fit_kwargs`; publicada como cambio de comportamiento, con nota de versión y un aviso cuando una columna `category` se encuentra con `categorical_features=None` ("se trata como numérica; usa `'auto'` o configura el estimador"). Motivos: es simple, coherente con el resto de forecasters y con el docstring, y el valor por defecto es `'auto'`, así que afecta a pocos usuarios. Su coste es el que ya señalé: cambia el modelo de quien hoy acierta (HistGradientBoosting, y LightGBM o XGBoost con categorías `0..n-1` ordenadas). (c) redefinida es la alternativa si se prioriza no cambiar esos modelos, a cambio de una tabla de reglas por estimador y de los tres casos de arriba en los que tampoco lo consigue. Retiro la recomendación de (c) tal como la formulé en la primera ronda. Lo que no cambia: (a) con códigos presentada como "sin cambio para nadie" es incorrecta.
 
-Hallazgo aparte del subagente (código existente, `'auto'`): si no se detecta ninguna columna categórica, `feature_types` y `categorical_features` del usuario se restablecen sin aviso (`utils.py:654-662`). No verificado por mí.
+Hallazgo aparte del subagente (código existente, `'auto'`; ya está en el roadmap como CAT-T4): si no se detecta ninguna columna categórica, `feature_types` y `categorical_features` del usuario se restablecen sin aviso (`utils.py:654-662`). No verificado por mí.
 
 ### 9.5 P5 sobre el backtesting univariante completo
 
