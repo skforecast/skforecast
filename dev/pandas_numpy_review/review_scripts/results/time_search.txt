@@ -1,0 +1,23 @@
+=== p2 ===
+n_series=600 exog=mixed est=ridge candidates=20 folds=10 steps=24
+CURRENT grid search:   65.56 s (3278 ms per candidate)
+prototype per candidate, nothing shared, metrics of today      36.77 s ( 1.8x; fits 16.36 s, rest 20.41 s; max metric diff 0)
+prototype, preparation shared, metrics of today                29.40 s ( 2.2x; fits 17.09 s, rest 12.32 s; max metric diff 0)
+prototype, preparation shared, numpy metrics                   21.54 s ( 3.0x; fits 16.51 s, rest  5.03 s; max metric diff 0)
+[python 3.12.3, pandas 2.3.3, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 (sin pyarrow) ===
+n_series=600 exog=mixed est=ridge candidates=20 folds=10 steps=24
+CURRENT grid search:   73.30 s (3665 ms per candidate)
+prototype per candidate, nothing shared, metrics of today      39.83 s ( 1.8x; fits 18.89 s, rest 20.94 s; max metric diff 0)
+prototype, preparation shared, metrics of today                29.98 s ( 2.4x; fits 17.99 s, rest 11.99 s; max metric diff 0)
+prototype, preparation shared, numpy metrics                   21.60 s ( 3.4x; fits 15.80 s, rest  5.80 s; max metric diff 0)
+[python 3.12.3, pandas 3.1.1, pyarrow no, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 pa ===
+n_series=600 exog=mixed est=ridge candidates=20 folds=10 steps=24
+CURRENT grid search:   76.59 s (3829 ms per candidate)
+prototype per candidate, nothing shared, metrics of today      43.08 s ( 1.8x; fits 20.28 s, rest 22.80 s; max metric diff 0)
+prototype, preparation shared, metrics of today                34.45 s ( 2.2x; fits 19.67 s, rest 14.77 s; max metric diff 0)
+prototype, preparation shared, numpy metrics                   24.04 s ( 3.2x; fits 17.81 s, rest  6.23 s; max metric diff 0)
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+n_series=600 exog=mixed est=lgbm candidates=10 folds=10 steps=24
+CURRENT grid search:   81.87 s (8187 ms per candidate)

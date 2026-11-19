@@ -1,0 +1,207 @@
+=== p2 ===
+# A. 'auto' (default): today against the prototype of (c), 30 series, c40, c3, x
+  LightGBM encoding=ordinal: identical | encoding=ordinal_category: identical
+  XGBoost  encoding=ordinal: identical | encoding=ordinal_category: identical
+  HGB      encoding=ordinal: identical | encoding=ordinal_category: identical
+  CatBoost encoding=ordinal: identical | encoding=ordinal_category: identical
+
+# B. categorical_features=None in each forecaster today (LightGBM, one series, c = 10..80)
+  ForecasterRecursive             fit_kwargs=None                          : estimator gets ndarray[float64]       categorical splits   0 | MAE of predict against the effect 0.5 (8 step)
+  ForecasterRecursive             fit_kwargs={'categorical_feature': [2]}  : estimator gets ndarray[float64]       categorical splits  40 | MAE of predict against the effect 4.7 (8 step)
+  ForecasterDirect                fit_kwargs=None                          : estimator gets ndarray[float64]       categorical splits   0 | MAE of predict against the effect 0.4 (1 step)
+  ForecasterDirect                fit_kwargs={'categorical_feature': [2]}  : estimator gets ndarray[float64]       categorical splits  40 | MAE of predict against the effect 1.7 (1 step)
+  ForecasterDirectMultiVariate    fit_kwargs=None                          : estimator gets ndarray[float64]       categorical splits   0 | MAE of predict against the effect 0.4 (1 step)
+  ForecasterDirectMultiVariate    fit_kwargs={'categorical_feature': [3]}  : estimator gets ndarray[float64]       categorical splits  40 | MAE of predict against the effect 0.7 (1 step)
+  ForecasterRecursiveMultiSeries  fit_kwargs=None                          : estimator gets DataFrame c:category   categorical splits  40 | MAE of predict against the effect 30.2 (8 step)
+  ForecasterRecursiveMultiSeries  fit_kwargs={'categorical_feature': [3]}  : estimator gets DataFrame c:category   categorical splits  40 | MAE of predict against the effect 30.2 (8 step)
+
+# C. Estimators that are not a bare native one, MultiSeries, categorical_features=None, 6 series, c = 10..80
+  LGBMRegressor                     cf=None today: categorical splits 130 | predict vs as fitted: CHANGES (max 67.1)
+                                         (c) codes: model vs today identical
+                                         values, no index (a'): model vs today CHANGES (max 26.5)
+  LGBMRegressor                     cf=auto today: categorical splits 130 | predict vs as fitted: identical
+  subclass of LGBMRegressor         cf=None today: categorical splits 130 | predict vs as fitted: CHANGES (max 67.1)
+                                         (c) codes: model vs today CHANGES (max 26.5)
+                                         values, no index (a'): model vs today CHANGES (max 26.5)
+  subclass of LGBMRegressor         cf=auto today: categorical splits   0 | predict vs as fitted: identical
+  TransformedTargetRegressor(LGBM)  cf=None today: categorical splits 130 | predict vs as fitted: CHANGES (max 67.1)
+                                         (c) codes: model vs today CHANGES (max 26.5)
+                                         values, no index (a'): model vs today CHANGES (max 26.5)
+  TransformedTargetRegressor(LGBM)  cf=auto today: categorical splits   0 | predict vs as fitted: identical
+  Pipeline('passthrough', LGBM)     cf=None today: categorical splits 130 | predict vs as fitted: CHANGES (max 67.1)
+                                         (c) codes: fit -> ValueError: Pipeline.fit does not accept the categorical_feature parameter. You can pass parameters to specifi
+                                         values, no index (a'): model vs today CHANGES (max 26.5)
+  Pipeline('passthrough', LGBM)     cf=auto today: fit -> ValueError: Pipeline.fit does not accept the categorical_feature parameter. You can pass parameters to specific steps of
+  Ridge                             cf=None today: predict vs as fitted: same (<1e-6)
+                                         (c) codes: model vs today CHANGES (max 0.000764)
+                                         values, no index (a'): model vs today same (<1e-6)
+  Ridge                             cf=auto today: predict vs as fitted: same (<1e-6)
+
+# D. Ordered category (c = 10..80, ordered=True), MultiSeries, categorical_features=None
+  LightGBM categorical splits today 0 | today predict vs as fitted: CHANGES (max 70.5) | (c) codes + index: model vs today CHANGES (max 26.5) | codes as numeric, no index: model vs today identical
+  XGBoost  today predict vs as fitted: CHANGES (max 124) | (c) codes + index: model vs today identical | codes as numeric, no index: model vs today CHANGES (max 7.12)
+  HGB      today predict vs as fitted: identical | (c) codes + index: model vs today identical | codes as numeric, no index: model vs today CHANGES (max 20.7)
+
+# E. estimator.predict(create_predict_X(...)), MultiSeries, c = 10..80, steps=1
+  LightGBM cf=None today     : create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: CHANGES (max 62.4) | estimator.predict(numpy) vs predict: identical
+  LightGBM cf=None (c) codes : create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: identical | estimator.predict(numpy) vs predict: CHANGES (max 62.4)
+  LightGBM cf=None (c) values: create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: CHANGES (max 62.4) | estimator.predict(numpy) vs predict: identical
+  LightGBM cf=auto today     : create_predict_X c = 3.0 (float64) | estimator.predict(DataFrame) vs predict: identical | estimator.predict(numpy) vs predict: identical
+  XGBoost  cf=None today     : create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: CHANGES (max 0.51) | estimator.predict(numpy) vs predict: identical
+  XGBoost  cf=None (c) codes : create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: identical | estimator.predict(numpy) vs predict: CHANGES (max 0.51)
+  XGBoost  cf=None (c) values: create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: CHANGES (max 100) | estimator.predict(numpy) vs predict: identical
+  XGBoost  cf=auto today     : create_predict_X c = 3.0 (float64) | estimator.predict(DataFrame) vs predict: identical | estimator.predict(numpy) vs predict: identical
+  HGB      cf=None today     : create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: identical | estimator.predict(numpy) vs predict: identical
+  HGB      cf=None (c) codes : create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: CHANGES (max 48) | estimator.predict(numpy) vs predict: CHANGES (max 48)
+  HGB      cf=None (c) values: create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: identical | estimator.predict(numpy) vs predict: identical
+  HGB      cf=auto today     : create_predict_X c = 3.0 (float64) | estimator.predict(DataFrame) vs predict: identical | estimator.predict(numpy) vs predict: identical
+
+# F. Exog as a dict, the category dtype of `c` is different in each series (None, LightGBM)
+  same dtype              : X_train c dtype category | fit ok
+  other order in b        : X_train c dtype category | fit ok
+  one more category in b  : X_train c dtype TypeError: Exog/s: ['c'] have different dtypes in different series. If any of these variables are categorical, note that this error can also occur when their int | fit -> TypeError: Exog/s: ['c'] have different dtypes in different series. If any of these variables are categorical, note that
+
+# G. 'auto', exog without categorical columns (c as int64): estimator configuration of the user after fit
+  XGBoost(feature_types=[q,q,q,c], enable_categorical=True)  cf=auto: after fit {'feature_types': None, 'enable_categorical': False}, warnings about it 0
+  XGBoost(feature_types=[q,q,q,c], enable_categorical=True)  cf=None: after fit {'feature_types': ['q', 'q', 'q', 'c'], 'enable_categorical': True}, warnings about it 0
+  HGB(categorical_features=[3])                              cf=auto: after fit {'categorical_features': 'from_dtype'}, warnings about it 0
+  HGB(categorical_features=[3])                              cf=None: after fit {'categorical_features': [3]}, warnings about it 0
+[python 3.12.3, pandas 2.3.3, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, xgboost 3.4.1, catboost 1.2.10, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 (sin pyarrow) ===
+# A. 'auto' (default): today against the prototype of (c), 30 series, c40, c3, x
+  LightGBM encoding=ordinal: identical | encoding=ordinal_category: identical
+  XGBoost  encoding=ordinal: identical | encoding=ordinal_category: identical
+  HGB      encoding=ordinal: identical | encoding=ordinal_category: identical
+  CatBoost encoding=ordinal: identical | encoding=ordinal_category: identical
+
+# B. categorical_features=None in each forecaster today (LightGBM, one series, c = 10..80)
+  ForecasterRecursive             fit_kwargs=None                          : estimator gets ndarray[float64]       categorical splits   0 | MAE of predict against the effect 0.5 (8 step)
+  ForecasterRecursive             fit_kwargs={'categorical_feature': [2]}  : estimator gets ndarray[float64]       categorical splits  40 | MAE of predict against the effect 4.7 (8 step)
+  ForecasterDirect                fit_kwargs=None                          : estimator gets ndarray[float64]       categorical splits   0 | MAE of predict against the effect 0.4 (1 step)
+  ForecasterDirect                fit_kwargs={'categorical_feature': [2]}  : estimator gets ndarray[float64]       categorical splits  40 | MAE of predict against the effect 1.7 (1 step)
+  ForecasterDirectMultiVariate    fit_kwargs=None                          : estimator gets ndarray[float64]       categorical splits   0 | MAE of predict against the effect 0.4 (1 step)
+  ForecasterDirectMultiVariate    fit_kwargs={'categorical_feature': [3]}  : estimator gets ndarray[float64]       categorical splits  40 | MAE of predict against the effect 0.7 (1 step)
+  ForecasterRecursiveMultiSeries  fit_kwargs=None                          : estimator gets DataFrame c:category   categorical splits  40 | MAE of predict against the effect 30.2 (8 step)
+  ForecasterRecursiveMultiSeries  fit_kwargs={'categorical_feature': [3]}  : estimator gets DataFrame c:category   categorical splits  40 | MAE of predict against the effect 30.2 (8 step)
+
+# C. Estimators that are not a bare native one, MultiSeries, categorical_features=None, 6 series, c = 10..80
+  LGBMRegressor                     cf=None today: categorical splits 130 | predict vs as fitted: CHANGES (max 67.1)
+                                         (c) codes: model vs today identical
+                                         values, no index (a'): model vs today CHANGES (max 26.5)
+  LGBMRegressor                     cf=auto today: categorical splits 130 | predict vs as fitted: identical
+  subclass of LGBMRegressor         cf=None today: categorical splits 130 | predict vs as fitted: CHANGES (max 67.1)
+                                         (c) codes: model vs today CHANGES (max 26.5)
+                                         values, no index (a'): model vs today CHANGES (max 26.5)
+  subclass of LGBMRegressor         cf=auto today: categorical splits   0 | predict vs as fitted: identical
+  TransformedTargetRegressor(LGBM)  cf=None today: categorical splits 130 | predict vs as fitted: CHANGES (max 67.1)
+                                         (c) codes: model vs today CHANGES (max 26.5)
+                                         values, no index (a'): model vs today CHANGES (max 26.5)
+  TransformedTargetRegressor(LGBM)  cf=auto today: categorical splits   0 | predict vs as fitted: identical
+  Pipeline('passthrough', LGBM)     cf=None today: categorical splits 130 | predict vs as fitted: CHANGES (max 67.1)
+                                         (c) codes: fit -> ValueError: Pipeline.fit does not accept the categorical_feature parameter. You can pass parameters to specifi
+                                         values, no index (a'): model vs today CHANGES (max 26.5)
+  Pipeline('passthrough', LGBM)     cf=auto today: fit -> ValueError: Pipeline.fit does not accept the categorical_feature parameter. You can pass parameters to specific steps of
+  Ridge                             cf=None today: predict vs as fitted: same (<1e-6)
+                                         (c) codes: model vs today CHANGES (max 0.000764)
+                                         values, no index (a'): model vs today same (<1e-6)
+  Ridge                             cf=auto today: predict vs as fitted: same (<1e-6)
+
+# D. Ordered category (c = 10..80, ordered=True), MultiSeries, categorical_features=None
+  LightGBM categorical splits today 0 | today predict vs as fitted: CHANGES (max 70.5) | (c) codes + index: model vs today CHANGES (max 26.5) | codes as numeric, no index: model vs today identical
+  XGBoost  today predict vs as fitted: CHANGES (max 124) | (c) codes + index: model vs today identical | codes as numeric, no index: model vs today CHANGES (max 7.12)
+  HGB      today predict vs as fitted: identical | (c) codes + index: model vs today identical | codes as numeric, no index: model vs today CHANGES (max 20.7)
+
+# E. estimator.predict(create_predict_X(...)), MultiSeries, c = 10..80, steps=1
+  LightGBM cf=None today     : create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: CHANGES (max 62.4) | estimator.predict(numpy) vs predict: identical
+  LightGBM cf=None (c) codes : create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: identical | estimator.predict(numpy) vs predict: CHANGES (max 62.4)
+  LightGBM cf=None (c) values: create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: CHANGES (max 62.4) | estimator.predict(numpy) vs predict: identical
+  LightGBM cf=auto today     : create_predict_X c = 3.0 (float64) | estimator.predict(DataFrame) vs predict: identical | estimator.predict(numpy) vs predict: identical
+  XGBoost  cf=None today     : create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: CHANGES (max 0.51) | estimator.predict(numpy) vs predict: identical
+  XGBoost  cf=None (c) codes : create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: identical | estimator.predict(numpy) vs predict: CHANGES (max 0.51)
+  XGBoost  cf=None (c) values: create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: CHANGES (max 100) | estimator.predict(numpy) vs predict: identical
+  XGBoost  cf=auto today     : create_predict_X c = 3.0 (float64) | estimator.predict(DataFrame) vs predict: identical | estimator.predict(numpy) vs predict: identical
+  HGB      cf=None today     : create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: identical | estimator.predict(numpy) vs predict: identical
+  HGB      cf=None (c) codes : create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: CHANGES (max 48) | estimator.predict(numpy) vs predict: CHANGES (max 48)
+  HGB      cf=None (c) values: create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: identical | estimator.predict(numpy) vs predict: identical
+  HGB      cf=auto today     : create_predict_X c = 3.0 (float64) | estimator.predict(DataFrame) vs predict: identical | estimator.predict(numpy) vs predict: identical
+
+# F. Exog as a dict, the category dtype of `c` is different in each series (None, LightGBM)
+  same dtype              : X_train c dtype category | fit ok
+  other order in b        : X_train c dtype category | fit ok
+  one more category in b  : X_train c dtype TypeError: Exog/s: ['c'] have different dtypes in different series. If any of these variables are categorical, note that this error can also occur when their int | fit -> TypeError: Exog/s: ['c'] have different dtypes in different series. If any of these variables are categorical, note that
+
+# G. 'auto', exog without categorical columns (c as int64): estimator configuration of the user after fit
+  XGBoost(feature_types=[q,q,q,c], enable_categorical=True)  cf=auto: after fit {'feature_types': None, 'enable_categorical': False}, warnings about it 0
+  XGBoost(feature_types=[q,q,q,c], enable_categorical=True)  cf=None: after fit {'feature_types': ['q', 'q', 'q', 'c'], 'enable_categorical': True}, warnings about it 0
+  HGB(categorical_features=[3])                              cf=auto: after fit {'categorical_features': 'from_dtype'}, warnings about it 0
+  HGB(categorical_features=[3])                              cf=None: after fit {'categorical_features': [3]}, warnings about it 0
+[python 3.12.3, pandas 3.1.1, pyarrow no, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, xgboost 3.4.1, catboost 1.2.10, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 pa ===
+# A. 'auto' (default): today against the prototype of (c), 30 series, c40, c3, x
+  LightGBM encoding=ordinal: identical | encoding=ordinal_category: identical
+  XGBoost  encoding=ordinal: identical | encoding=ordinal_category: identical
+  HGB      encoding=ordinal: identical | encoding=ordinal_category: identical
+  CatBoost encoding=ordinal: identical | encoding=ordinal_category: identical
+
+# B. categorical_features=None in each forecaster today (LightGBM, one series, c = 10..80)
+  ForecasterRecursive             fit_kwargs=None                          : estimator gets ndarray[float64]       categorical splits   0 | MAE of predict against the effect 0.5 (8 step)
+  ForecasterRecursive             fit_kwargs={'categorical_feature': [2]}  : estimator gets ndarray[float64]       categorical splits  40 | MAE of predict against the effect 4.7 (8 step)
+  ForecasterDirect                fit_kwargs=None                          : estimator gets ndarray[float64]       categorical splits   0 | MAE of predict against the effect 0.4 (1 step)
+  ForecasterDirect                fit_kwargs={'categorical_feature': [2]}  : estimator gets ndarray[float64]       categorical splits  40 | MAE of predict against the effect 1.7 (1 step)
+  ForecasterDirectMultiVariate    fit_kwargs=None                          : estimator gets ndarray[float64]       categorical splits   0 | MAE of predict against the effect 0.4 (1 step)
+  ForecasterDirectMultiVariate    fit_kwargs={'categorical_feature': [3]}  : estimator gets ndarray[float64]       categorical splits  40 | MAE of predict against the effect 0.7 (1 step)
+  ForecasterRecursiveMultiSeries  fit_kwargs=None                          : estimator gets DataFrame c:category   categorical splits  40 | MAE of predict against the effect 30.2 (8 step)
+  ForecasterRecursiveMultiSeries  fit_kwargs={'categorical_feature': [3]}  : estimator gets DataFrame c:category   categorical splits  40 | MAE of predict against the effect 30.2 (8 step)
+
+# C. Estimators that are not a bare native one, MultiSeries, categorical_features=None, 6 series, c = 10..80
+  LGBMRegressor                     cf=None today: categorical splits 130 | predict vs as fitted: CHANGES (max 67.1)
+                                         (c) codes: model vs today identical
+                                         values, no index (a'): model vs today CHANGES (max 26.5)
+  LGBMRegressor                     cf=auto today: categorical splits 130 | predict vs as fitted: identical
+  subclass of LGBMRegressor         cf=None today: categorical splits 130 | predict vs as fitted: CHANGES (max 67.1)
+                                         (c) codes: model vs today CHANGES (max 26.5)
+                                         values, no index (a'): model vs today CHANGES (max 26.5)
+  subclass of LGBMRegressor         cf=auto today: categorical splits   0 | predict vs as fitted: identical
+  TransformedTargetRegressor(LGBM)  cf=None today: categorical splits 130 | predict vs as fitted: CHANGES (max 67.1)
+                                         (c) codes: model vs today CHANGES (max 26.5)
+                                         values, no index (a'): model vs today CHANGES (max 26.5)
+  TransformedTargetRegressor(LGBM)  cf=auto today: categorical splits   0 | predict vs as fitted: identical
+  Pipeline('passthrough', LGBM)     cf=None today: categorical splits 130 | predict vs as fitted: CHANGES (max 67.1)
+                                         (c) codes: fit -> ValueError: Pipeline.fit does not accept the categorical_feature parameter. You can pass parameters to specifi
+                                         values, no index (a'): model vs today CHANGES (max 26.5)
+  Pipeline('passthrough', LGBM)     cf=auto today: fit -> ValueError: Pipeline.fit does not accept the categorical_feature parameter. You can pass parameters to specific steps of
+  Ridge                             cf=None today: predict vs as fitted: same (<1e-6)
+                                         (c) codes: model vs today CHANGES (max 0.000764)
+                                         values, no index (a'): model vs today same (<1e-6)
+  Ridge                             cf=auto today: predict vs as fitted: same (<1e-6)
+
+# D. Ordered category (c = 10..80, ordered=True), MultiSeries, categorical_features=None
+  LightGBM categorical splits today 0 | today predict vs as fitted: CHANGES (max 70.5) | (c) codes + index: model vs today CHANGES (max 26.5) | codes as numeric, no index: model vs today identical
+  XGBoost  today predict vs as fitted: CHANGES (max 124) | (c) codes + index: model vs today identical | codes as numeric, no index: model vs today CHANGES (max 7.12)
+  HGB      today predict vs as fitted: identical | (c) codes + index: model vs today identical | codes as numeric, no index: model vs today CHANGES (max 20.7)
+
+# E. estimator.predict(create_predict_X(...)), MultiSeries, c = 10..80, steps=1
+  LightGBM cf=None today     : create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: CHANGES (max 62.4) | estimator.predict(numpy) vs predict: identical
+  LightGBM cf=None (c) codes : create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: identical | estimator.predict(numpy) vs predict: CHANGES (max 62.4)
+  LightGBM cf=None (c) values: create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: CHANGES (max 62.4) | estimator.predict(numpy) vs predict: identical
+  LightGBM cf=auto today     : create_predict_X c = 3.0 (float64) | estimator.predict(DataFrame) vs predict: identical | estimator.predict(numpy) vs predict: identical
+  XGBoost  cf=None today     : create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: CHANGES (max 0.51) | estimator.predict(numpy) vs predict: identical
+  XGBoost  cf=None (c) codes : create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: identical | estimator.predict(numpy) vs predict: CHANGES (max 0.51)
+  XGBoost  cf=None (c) values: create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: CHANGES (max 100) | estimator.predict(numpy) vs predict: identical
+  XGBoost  cf=auto today     : create_predict_X c = 3.0 (float64) | estimator.predict(DataFrame) vs predict: identical | estimator.predict(numpy) vs predict: identical
+  HGB      cf=None today     : create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: identical | estimator.predict(numpy) vs predict: identical
+  HGB      cf=None (c) codes : create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: CHANGES (max 48) | estimator.predict(numpy) vs predict: CHANGES (max 48)
+  HGB      cf=None (c) values: create_predict_X c = 40 (category) | estimator.predict(DataFrame) vs predict: identical | estimator.predict(numpy) vs predict: identical
+  HGB      cf=auto today     : create_predict_X c = 3.0 (float64) | estimator.predict(DataFrame) vs predict: identical | estimator.predict(numpy) vs predict: identical
+
+# F. Exog as a dict, the category dtype of `c` is different in each series (None, LightGBM)
+  same dtype              : X_train c dtype category | fit ok
+  other order in b        : X_train c dtype category | fit ok
+  one more category in b  : X_train c dtype TypeError: Exog/s: ['c'] have different dtypes in different series. If any of these variables are categorical, note that this error can also occur when their int | fit -> TypeError: Exog/s: ['c'] have different dtypes in different series. If any of these variables are categorical, note that
+
+# G. 'auto', exog without categorical columns (c as int64): estimator configuration of the user after fit
+  XGBoost(feature_types=[q,q,q,c], enable_categorical=True)  cf=auto: after fit {'feature_types': None, 'enable_categorical': False}, warnings about it 0
+  XGBoost(feature_types=[q,q,q,c], enable_categorical=True)  cf=None: after fit {'feature_types': ['q', 'q', 'q', 'c'], 'enable_categorical': True}, warnings about it 0
+  HGB(categorical_features=[3])                              cf=auto: after fit {'categorical_features': 'from_dtype'}, warnings about it 0
+  HGB(categorical_features=[3])                              cf=None: after fit {'categorical_features': [3]}, warnings about it 0
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, xgboost 3.4.1, catboost 1.2.10, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]

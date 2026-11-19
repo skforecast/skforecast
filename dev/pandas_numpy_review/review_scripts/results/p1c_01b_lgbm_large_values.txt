@@ -1,0 +1,15 @@
+=== p2 ===
+largest category value         7: model text   0.11 MB, peak RSS of the process 185 MB
+largest category value    100000: model text   0.59 MB, peak RSS of the process 188 MB
+largest category value   5000000: model text  12.61 MB, peak RSS of the process 263 MB
+[python 3.12.3, pandas 2.3.3, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 (sin pyarrow) ===
+largest category value         7: model text   0.11 MB, peak RSS of the process 151 MB
+largest category value    100000: model text   0.59 MB, peak RSS of the process 155 MB
+largest category value   5000000: model text  12.61 MB, peak RSS of the process 229 MB
+[python 3.12.3, pandas 3.1.1, pyarrow no, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 pa ===
+largest category value         7: model text   0.11 MB, peak RSS of the process 183 MB
+largest category value    100000: model text   0.59 MB, peak RSS of the process 187 MB
+largest category value   5000000: model text  12.61 MB, peak RSS of the process 261 MB
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]

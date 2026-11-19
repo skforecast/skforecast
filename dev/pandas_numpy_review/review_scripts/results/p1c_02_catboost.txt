@@ -1,0 +1,441 @@
+=== p2 ===
+# A. Today
+- categories 0..7
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit ok, cat_features of the model [3], MAE  4.04 | predict vs as fitted: identical (MAE as fitted  4.04)
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: list indices must be integers or slices, not str
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE  4.04 | predict vs as fitted: identical (MAE as fitted  4.04)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE  7.87 | predict vs as fitted: identical (MAE as fitted  7.87)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit ok, cat_features of the model [1, 3], MAE  7.87 | predict vs as fitted: identical (MAE as fitted  7.87)
+- categories 10..80
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit ok, cat_features of the model [3], MAE 29.63 | predict vs as fitted: CHANGES (max 73.8) (MAE as fitted  4.04)
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: list indices must be integers or slices, not str
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE  4.04 | predict vs as fitted: identical (MAE as fitted  4.04)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE  7.87 | predict vs as fitted: identical (MAE as fitted  7.87)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit ok, cat_features of the model [1, 3], MAE 31.23 | predict vs as fitted: CHANGES (max 88.2) (MAE as fitted  7.87)
+- categories perm(0..7)
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit ok, cat_features of the model [3], MAE 45.46 | predict vs as fitted: CHANGES (max 91.5) (MAE as fitted  4.04)
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: list indices must be integers or slices, not str
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE  4.04 | predict vs as fitted: identical (MAE as fitted  4.04)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE  7.87 | predict vs as fitted: identical (MAE as fitted  7.87)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit ok, cat_features of the model [1, 3], MAE 46.29 | predict vs as fitted: CHANGES (max 93.9) (MAE as fitted  7.87)
+- categories -4..3
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit ok, cat_features of the model [3], MAE 42.88 | predict vs as fitted: CHANGES (max 73.8) (MAE as fitted  4.04)
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: list indices must be integers or slices, not str
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE  4.04 | predict vs as fitted: identical (MAE as fitted  4.04)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE  7.87 | predict vs as fitted: identical (MAE as fitted  7.87)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit ok, cat_features of the model [1, 3], MAE 42.46 | predict vs as fitted: CHANGES (max 88.2) (MAE as fitted  7.87)
+- categories 10..80, 10% NaN
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit ok, cat_features of the model [3], MAE 31.52 | predict vs as fitted: CHANGES (max 75.2) (MAE as fitted  8.60)
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: list indices must be integers or slices, not str
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE  8.60 | predict vs as fitted: identical (MAE as fitted  8.60)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE 12.86 | predict vs as fitted: identical (MAE as fitted 12.86)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit ok, cat_features of the model [1, 3], MAE 33.92 | predict vs as fitted: CHANGES (max 82.8) (MAE as fitted 12.86)
+- categories 10..80, 99 only in test
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit ok, cat_features of the model [3], MAE 30.18 | predict vs as fitted: CHANGES (max 82.2) (MAE as fitted 14.80)
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: list indices must be integers or slices, not str
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE 14.80 | predict vs as fitted: identical (MAE as fitted 14.80)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE 19.32 | predict vs as fitted: identical (MAE as fitted 19.32)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit ok, cat_features of the model [1, 3], MAE 32.77 | predict vs as fitted: CHANGES (max 84.7) (MAE as fitted 19.32)
+- categories 10..80, NaN and 99 in test
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit ok, cat_features of the model [3], MAE 31.03 | predict vs as fitted: CHANGES (max 71.7) (MAE as fitted 16.09)
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: list indices must be integers or slices, not str
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE 16.44 | predict vs as fitted: identical (MAE as fitted 16.44)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE 18.94 | predict vs as fitted: identical (MAE as fitted 18.94)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit ok, cat_features of the model [1, 3], MAE 32.50 | predict vs as fitted: CHANGES (max 92.9) (MAE as fitted 18.52)
+- categories -4..3, NaN
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit ok, cat_features of the model [3], MAE 39.27 | predict vs as fitted: CHANGES (max 75.2) (MAE as fitted  8.60)
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: list indices must be integers or slices, not str
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE  8.60 | predict vs as fitted: identical (MAE as fitted  8.60)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE 12.86 | predict vs as fitted: identical (MAE as fitted 12.86)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit ok, cat_features of the model [1, 3], MAE 41.76 | predict vs as fitted: CHANGES (max 69.2) (MAE as fitted 12.86)
+- categories strings
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more info about how to include categorical features https://skfor
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit -> TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more info about how to include categorical features https://skfor
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more info about how to include categorical features https://skfor
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE  4.04 | predict vs as fitted: identical (MAE as fitted  4.04)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE  7.87 | predict vs as fitted: identical (MAE as fitted  7.87)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit -> TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more info about how to include categorical features https://skfor
+
+# B. Prototype of (c), categorical_features=None
+- categories 0..7
+    encoding=ordinal          (c) codes : fit ok, cat_features [3], MAE  4.04 | predict vs as fitted: identical
+    encoding=ordinal          (c) values: fit ok, cat_features [3], MAE  4.04 | predict vs as fitted: identical
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE  4.04
+      against (c) codes: values identical, sorted identical
+    encoding=ordinal_category (c) codes : fit ok, cat_features [1, 3], MAE  7.87 | predict vs as fitted: identical
+    encoding=ordinal_category (c) values: fit ok, cat_features [1, 3], MAE  7.87 | predict vs as fitted: identical
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE  7.87
+      against (c) codes: values identical, sorted identical
+- categories 10..80
+    encoding=ordinal          (c) codes : fit ok, cat_features [3], MAE  4.04 | predict vs as fitted: identical
+    encoding=ordinal          (c) values: fit ok, cat_features [3], MAE  4.04 | predict vs as fitted: identical
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE  4.04
+      against (c) codes: values identical, sorted identical
+    encoding=ordinal_category (c) codes : fit ok, cat_features [1, 3], MAE  7.87 | predict vs as fitted: identical
+    encoding=ordinal_category (c) values: fit ok, cat_features [1, 3], MAE  7.87 | predict vs as fitted: identical
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE  7.87
+      against (c) codes: values identical, sorted identical
+- categories perm(0..7)
+    encoding=ordinal          (c) codes : fit ok, cat_features [3], MAE  4.04 | predict vs as fitted: identical
+    encoding=ordinal          (c) values: fit ok, cat_features [3], MAE  4.04 | predict vs as fitted: identical
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE  4.04
+      against (c) codes: values identical, sorted identical
+    encoding=ordinal_category (c) codes : fit ok, cat_features [1, 3], MAE  7.87 | predict vs as fitted: identical
+    encoding=ordinal_category (c) values: fit ok, cat_features [1, 3], MAE  7.87 | predict vs as fitted: identical
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE  7.87
+      against (c) codes: values identical, sorted identical
+- categories -4..3
+    encoding=ordinal          (c) codes : fit ok, cat_features [3], MAE  4.04 | predict vs as fitted: identical
+    encoding=ordinal          (c) values: fit ok, cat_features [3], MAE  4.04 | predict vs as fitted: identical
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE  4.04
+      against (c) codes: values identical, sorted identical
+    encoding=ordinal_category (c) codes : fit ok, cat_features [1, 3], MAE  7.87 | predict vs as fitted: identical
+    encoding=ordinal_category (c) values: fit ok, cat_features [1, 3], MAE  7.87 | predict vs as fitted: identical
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE  7.87
+      against (c) codes: values identical, sorted identical
+- categories 10..80, 10% NaN
+    encoding=ordinal          (c) codes : fit ok, cat_features [3], MAE  8.60 | predict vs as fitted: identical
+    encoding=ordinal          (c) values: fit ok, cat_features [3], MAE  8.60 | predict vs as fitted: identical
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE  8.60
+      against (c) codes: values identical, sorted identical
+    encoding=ordinal_category (c) codes : fit ok, cat_features [1, 3], MAE 12.86 | predict vs as fitted: identical
+    encoding=ordinal_category (c) values: fit ok, cat_features [1, 3], MAE 12.86 | predict vs as fitted: identical
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE 12.86
+      against (c) codes: values identical, sorted identical
+- categories 10..80, 99 only in test
+    encoding=ordinal          (c) codes : fit ok, cat_features [3], MAE 14.80 | predict vs as fitted: identical
+    encoding=ordinal          (c) values: fit ok, cat_features [3], MAE 14.80 | predict vs as fitted: identical
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE 14.80
+      against (c) codes: values identical, sorted identical
+    encoding=ordinal_category (c) codes : fit ok, cat_features [1, 3], MAE 19.32 | predict vs as fitted: identical
+    encoding=ordinal_category (c) values: fit ok, cat_features [1, 3], MAE 19.32 | predict vs as fitted: identical
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE 19.32
+      against (c) codes: values identical, sorted identical
+- categories 10..80, NaN and 99 in test
+    encoding=ordinal          (c) codes : fit ok, cat_features [3], MAE 16.09 | predict vs as fitted: identical
+    encoding=ordinal          (c) values: fit ok, cat_features [3], MAE 16.09 | predict vs as fitted: identical
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE 16.44
+      against (c) codes: values identical, sorted CHANGES (max 43.3)
+    encoding=ordinal_category (c) codes : fit ok, cat_features [1, 3], MAE 18.52 | predict vs as fitted: identical
+    encoding=ordinal_category (c) values: fit ok, cat_features [1, 3], MAE 18.52 | predict vs as fitted: identical
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE 18.94
+      against (c) codes: values identical, sorted CHANGES (max 54.3)
+- categories -4..3, NaN
+    encoding=ordinal          (c) codes : fit ok, cat_features [3], MAE  8.60 | predict vs as fitted: identical
+    encoding=ordinal          (c) values: fit ok, cat_features [3], MAE 10.49 | predict vs as fitted: identical
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE  8.60
+      against (c) codes: values CHANGES (max 60.6), sorted identical
+    encoding=ordinal_category (c) codes : fit ok, cat_features [1, 3], MAE 12.86 | predict vs as fitted: identical
+    encoding=ordinal_category (c) values: fit ok, cat_features [1, 3], MAE 15.03 | predict vs as fitted: identical
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE 12.86
+      against (c) codes: values CHANGES (max 52.6), sorted identical
+- categories strings
+    encoding=ordinal          (c) codes : -> TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more info about how to include categorical features https://skfor
+    encoding=ordinal          (c) values: -> TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more info about how to include categorical features https://skfor
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE  4.04
+    encoding=ordinal_category (c) codes : -> TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more info about how to include categorical features https://skfor
+    encoding=ordinal_category (c) values: -> TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more info about how to include categorical features https://skfor
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE  7.87
+[python 3.12.3, pandas 2.3.3, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, catboost 1.2.10, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 (sin pyarrow) ===
+# A. Today
+- categories 0..7
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit ok, cat_features of the model [3], MAE  4.04 | predict vs as fitted: identical (MAE as fitted  4.04)
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: list indices must be integers or slices, not str
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE  4.04 | predict vs as fitted: identical (MAE as fitted  4.04)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE  7.87 | predict vs as fitted: identical (MAE as fitted  7.87)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit ok, cat_features of the model [1, 3], MAE  7.87 | predict vs as fitted: identical (MAE as fitted  7.87)
+- categories 10..80
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit ok, cat_features of the model [3], MAE 29.63 | predict vs as fitted: CHANGES (max 73.8) (MAE as fitted  4.04)
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: list indices must be integers or slices, not str
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE  4.04 | predict vs as fitted: identical (MAE as fitted  4.04)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE  7.87 | predict vs as fitted: identical (MAE as fitted  7.87)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit ok, cat_features of the model [1, 3], MAE 31.23 | predict vs as fitted: CHANGES (max 88.2) (MAE as fitted  7.87)
+- categories perm(0..7)
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit ok, cat_features of the model [3], MAE 45.46 | predict vs as fitted: CHANGES (max 91.5) (MAE as fitted  4.04)
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: list indices must be integers or slices, not str
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE  4.04 | predict vs as fitted: identical (MAE as fitted  4.04)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE  7.87 | predict vs as fitted: identical (MAE as fitted  7.87)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit ok, cat_features of the model [1, 3], MAE 46.29 | predict vs as fitted: CHANGES (max 93.9) (MAE as fitted  7.87)
+- categories -4..3
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit ok, cat_features of the model [3], MAE 42.88 | predict vs as fitted: CHANGES (max 73.8) (MAE as fitted  4.04)
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: list indices must be integers or slices, not str
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE  4.04 | predict vs as fitted: identical (MAE as fitted  4.04)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE  7.87 | predict vs as fitted: identical (MAE as fitted  7.87)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit ok, cat_features of the model [1, 3], MAE 42.46 | predict vs as fitted: CHANGES (max 88.2) (MAE as fitted  7.87)
+- categories 10..80, 10% NaN
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit ok, cat_features of the model [3], MAE 31.52 | predict vs as fitted: CHANGES (max 75.2) (MAE as fitted  8.60)
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: list indices must be integers or slices, not str
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE  8.60 | predict vs as fitted: identical (MAE as fitted  8.60)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE 12.86 | predict vs as fitted: identical (MAE as fitted 12.86)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit ok, cat_features of the model [1, 3], MAE 33.92 | predict vs as fitted: CHANGES (max 82.8) (MAE as fitted 12.86)
+- categories 10..80, 99 only in test
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit ok, cat_features of the model [3], MAE 30.18 | predict vs as fitted: CHANGES (max 82.2) (MAE as fitted 14.80)
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: list indices must be integers or slices, not str
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE 14.80 | predict vs as fitted: identical (MAE as fitted 14.80)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE 19.32 | predict vs as fitted: identical (MAE as fitted 19.32)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit ok, cat_features of the model [1, 3], MAE 32.77 | predict vs as fitted: CHANGES (max 84.7) (MAE as fitted 19.32)
+- categories 10..80, NaN and 99 in test
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit ok, cat_features of the model [3], MAE 31.03 | predict vs as fitted: CHANGES (max 71.7) (MAE as fitted 16.09)
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: list indices must be integers or slices, not str
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE 16.44 | predict vs as fitted: identical (MAE as fitted 16.44)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE 18.94 | predict vs as fitted: identical (MAE as fitted 18.94)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit ok, cat_features of the model [1, 3], MAE 32.50 | predict vs as fitted: CHANGES (max 92.9) (MAE as fitted 18.52)
+- categories -4..3, NaN
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit ok, cat_features of the model [3], MAE 39.27 | predict vs as fitted: CHANGES (max 75.2) (MAE as fitted  8.60)
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: list indices must be integers or slices, not str
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE  8.60 | predict vs as fitted: identical (MAE as fitted  8.60)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE 12.86 | predict vs as fitted: identical (MAE as fitted 12.86)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit ok, cat_features of the model [1, 3], MAE 41.76 | predict vs as fitted: CHANGES (max 69.2) (MAE as fitted 12.86)
+- categories strings
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more info about how to include categorical features https://skfor
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit -> TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more info about how to include categorical features https://skfor
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more info about how to include categorical features https://skfor
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE  4.04 | predict vs as fitted: identical (MAE as fitted  4.04)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE  7.87 | predict vs as fitted: identical (MAE as fitted  7.87)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit -> TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more info about how to include categorical features https://skfor
+
+# B. Prototype of (c), categorical_features=None
+- categories 0..7
+    encoding=ordinal          (c) codes : fit ok, cat_features [3], MAE  4.04 | predict vs as fitted: identical
+    encoding=ordinal          (c) values: fit ok, cat_features [3], MAE  4.04 | predict vs as fitted: identical
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE  4.04
+      against (c) codes: values identical, sorted identical
+    encoding=ordinal_category (c) codes : fit ok, cat_features [1, 3], MAE  7.87 | predict vs as fitted: identical
+    encoding=ordinal_category (c) values: fit ok, cat_features [1, 3], MAE  7.87 | predict vs as fitted: identical
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE  7.87
+      against (c) codes: values identical, sorted identical
+- categories 10..80
+    encoding=ordinal          (c) codes : fit ok, cat_features [3], MAE  4.04 | predict vs as fitted: identical
+    encoding=ordinal          (c) values: fit ok, cat_features [3], MAE  4.04 | predict vs as fitted: identical
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE  4.04
+      against (c) codes: values identical, sorted identical
+    encoding=ordinal_category (c) codes : fit ok, cat_features [1, 3], MAE  7.87 | predict vs as fitted: identical
+    encoding=ordinal_category (c) values: fit ok, cat_features [1, 3], MAE  7.87 | predict vs as fitted: identical
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE  7.87
+      against (c) codes: values identical, sorted identical
+- categories perm(0..7)
+    encoding=ordinal          (c) codes : fit ok, cat_features [3], MAE  4.04 | predict vs as fitted: identical
+    encoding=ordinal          (c) values: fit ok, cat_features [3], MAE  4.04 | predict vs as fitted: identical
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE  4.04
+      against (c) codes: values identical, sorted identical
+    encoding=ordinal_category (c) codes : fit ok, cat_features [1, 3], MAE  7.87 | predict vs as fitted: identical
+    encoding=ordinal_category (c) values: fit ok, cat_features [1, 3], MAE  7.87 | predict vs as fitted: identical
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE  7.87
+      against (c) codes: values identical, sorted identical
+- categories -4..3
+    encoding=ordinal          (c) codes : fit ok, cat_features [3], MAE  4.04 | predict vs as fitted: identical
+    encoding=ordinal          (c) values: fit ok, cat_features [3], MAE  4.04 | predict vs as fitted: identical
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE  4.04
+      against (c) codes: values identical, sorted identical
+    encoding=ordinal_category (c) codes : fit ok, cat_features [1, 3], MAE  7.87 | predict vs as fitted: identical
+    encoding=ordinal_category (c) values: fit ok, cat_features [1, 3], MAE  7.87 | predict vs as fitted: identical
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE  7.87
+      against (c) codes: values identical, sorted identical
+- categories 10..80, 10% NaN
+    encoding=ordinal          (c) codes : fit ok, cat_features [3], MAE  8.60 | predict vs as fitted: identical
+    encoding=ordinal          (c) values: fit ok, cat_features [3], MAE  8.60 | predict vs as fitted: identical
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE  8.60
+      against (c) codes: values identical, sorted identical
+    encoding=ordinal_category (c) codes : fit ok, cat_features [1, 3], MAE 12.86 | predict vs as fitted: identical
+    encoding=ordinal_category (c) values: fit ok, cat_features [1, 3], MAE 12.86 | predict vs as fitted: identical
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE 12.86
+      against (c) codes: values identical, sorted identical
+- categories 10..80, 99 only in test
+    encoding=ordinal          (c) codes : fit ok, cat_features [3], MAE 14.80 | predict vs as fitted: identical
+    encoding=ordinal          (c) values: fit ok, cat_features [3], MAE 14.80 | predict vs as fitted: identical
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE 14.80
+      against (c) codes: values identical, sorted identical
+    encoding=ordinal_category (c) codes : fit ok, cat_features [1, 3], MAE 19.32 | predict vs as fitted: identical
+    encoding=ordinal_category (c) values: fit ok, cat_features [1, 3], MAE 19.32 | predict vs as fitted: identical
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE 19.32
+      against (c) codes: values identical, sorted identical
+- categories 10..80, NaN and 99 in test
+    encoding=ordinal          (c) codes : fit ok, cat_features [3], MAE 16.09 | predict vs as fitted: identical
+    encoding=ordinal          (c) values: fit ok, cat_features [3], MAE 16.09 | predict vs as fitted: identical
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE 16.44
+      against (c) codes: values identical, sorted CHANGES (max 43.3)
+    encoding=ordinal_category (c) codes : fit ok, cat_features [1, 3], MAE 18.52 | predict vs as fitted: identical
+    encoding=ordinal_category (c) values: fit ok, cat_features [1, 3], MAE 18.52 | predict vs as fitted: identical
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE 18.94
+      against (c) codes: values identical, sorted CHANGES (max 54.3)
+- categories -4..3, NaN
+    encoding=ordinal          (c) codes : fit ok, cat_features [3], MAE  8.60 | predict vs as fitted: identical
+    encoding=ordinal          (c) values: fit ok, cat_features [3], MAE 10.49 | predict vs as fitted: identical
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE  8.60
+      against (c) codes: values CHANGES (max 60.6), sorted identical
+    encoding=ordinal_category (c) codes : fit ok, cat_features [1, 3], MAE 12.86 | predict vs as fitted: identical
+    encoding=ordinal_category (c) values: fit ok, cat_features [1, 3], MAE 15.03 | predict vs as fitted: identical
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE 12.86
+      against (c) codes: values CHANGES (max 52.6), sorted identical
+- categories strings
+    encoding=ordinal          (c) codes : -> TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more info about how to include categorical features https://skfor
+    encoding=ordinal          (c) values: -> TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more info about how to include categorical features https://skfor
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE  4.04
+    encoding=ordinal_category (c) codes : -> TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more info about how to include categorical features https://skfor
+    encoding=ordinal_category (c) values: -> TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more info about how to include categorical features https://skfor
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE  7.87
+[python 3.12.3, pandas 3.1.1, pyarrow no, numpy 2.5.5, scikit-learn 1.9.1, catboost 1.2.10, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 pa ===
+# A. Today
+- categories 0..7
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit ok, cat_features of the model [3], MAE  4.04 | predict vs as fitted: identical (MAE as fitted  4.04)
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: list indices must be integers or slices, not str
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE  4.04 | predict vs as fitted: identical (MAE as fitted  4.04)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE  7.87 | predict vs as fitted: identical (MAE as fitted  7.87)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit ok, cat_features of the model [1, 3], MAE  7.87 | predict vs as fitted: identical (MAE as fitted  7.87)
+- categories 10..80
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit ok, cat_features of the model [3], MAE 29.63 | predict vs as fitted: CHANGES (max 73.8) (MAE as fitted  4.04)
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: list indices must be integers or slices, not str
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE  4.04 | predict vs as fitted: identical (MAE as fitted  4.04)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE  7.87 | predict vs as fitted: identical (MAE as fitted  7.87)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit ok, cat_features of the model [1, 3], MAE 31.23 | predict vs as fitted: CHANGES (max 88.2) (MAE as fitted  7.87)
+- categories perm(0..7)
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit ok, cat_features of the model [3], MAE 45.46 | predict vs as fitted: CHANGES (max 91.5) (MAE as fitted  4.04)
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: list indices must be integers or slices, not str
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE  4.04 | predict vs as fitted: identical (MAE as fitted  4.04)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE  7.87 | predict vs as fitted: identical (MAE as fitted  7.87)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit ok, cat_features of the model [1, 3], MAE 46.29 | predict vs as fitted: CHANGES (max 93.9) (MAE as fitted  7.87)
+- categories -4..3
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit ok, cat_features of the model [3], MAE 42.88 | predict vs as fitted: CHANGES (max 73.8) (MAE as fitted  4.04)
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: list indices must be integers or slices, not str
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE  4.04 | predict vs as fitted: identical (MAE as fitted  4.04)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE  7.87 | predict vs as fitted: identical (MAE as fitted  7.87)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit ok, cat_features of the model [1, 3], MAE 42.46 | predict vs as fitted: CHANGES (max 88.2) (MAE as fitted  7.87)
+- categories 10..80, 10% NaN
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit ok, cat_features of the model [3], MAE 31.52 | predict vs as fitted: CHANGES (max 75.2) (MAE as fitted  8.60)
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: list indices must be integers or slices, not str
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE  8.60 | predict vs as fitted: identical (MAE as fitted  8.60)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE 12.86 | predict vs as fitted: identical (MAE as fitted 12.86)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit ok, cat_features of the model [1, 3], MAE 33.92 | predict vs as fitted: CHANGES (max 82.8) (MAE as fitted 12.86)
+- categories 10..80, 99 only in test
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit ok, cat_features of the model [3], MAE 30.18 | predict vs as fitted: CHANGES (max 82.2) (MAE as fitted 14.80)
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: list indices must be integers or slices, not str
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE 14.80 | predict vs as fitted: identical (MAE as fitted 14.80)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE 19.32 | predict vs as fitted: identical (MAE as fitted 19.32)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit ok, cat_features of the model [1, 3], MAE 32.77 | predict vs as fitted: CHANGES (max 84.7) (MAE as fitted 19.32)
+- categories 10..80, NaN and 99 in test
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit ok, cat_features of the model [3], MAE 31.03 | predict vs as fitted: CHANGES (max 71.7) (MAE as fitted 16.09)
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: list indices must be integers or slices, not str
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE 16.44 | predict vs as fitted: identical (MAE as fitted 16.44)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE 18.94 | predict vs as fitted: identical (MAE as fitted 18.94)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit ok, cat_features of the model [1, 3], MAE 32.50 | predict vs as fitted: CHANGES (max 92.9) (MAE as fitted 18.52)
+- categories -4..3, NaN
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> CatBoostError: features data: pandas.DataFrame column 'c' has dtype 'category' but is not in  cat_features list
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit ok, cat_features of the model [3], MAE 39.27 | predict vs as fitted: CHANGES (max 75.2) (MAE as fitted  8.60)
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: list indices must be integers or slices, not str
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE  8.60 | predict vs as fitted: identical (MAE as fitted  8.60)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE 12.86 | predict vs as fitted: identical (MAE as fitted 12.86)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit ok, cat_features of the model [1, 3], MAE 41.76 | predict vs as fitted: CHANGES (max 69.2) (MAE as fitted 12.86)
+- categories strings
+    cf=None encoding=ordinal          fit_kwargs=None                        : fit -> TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more info about how to include categorical features https://skfor
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': [3]}       : fit -> TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more info about how to include categorical features https://skfor
+    cf=None encoding=ordinal          fit_kwargs={'cat_features': ['c']}     : fit -> TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more info about how to include categorical features https://skfor
+    cf=auto encoding=ordinal          fit_kwargs=None                        : fit ok, cat_features of the model [3], MAE  4.04 | predict vs as fitted: identical (MAE as fitted  4.04)
+    cf=auto encoding=ordinal_category fit_kwargs=None                        : fit ok, cat_features of the model [1, 3], MAE  7.87 | predict vs as fitted: identical (MAE as fitted  7.87)
+    cf=None encoding=ordinal_category fit_kwargs={'cat_features': [1, 3]}    : fit -> TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more info about how to include categorical features https://skfor
+
+# B. Prototype of (c), categorical_features=None
+- categories 0..7
+    encoding=ordinal          (c) codes : fit ok, cat_features [3], MAE  4.04 | predict vs as fitted: identical
+    encoding=ordinal          (c) values: fit ok, cat_features [3], MAE  4.04 | predict vs as fitted: identical
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE  4.04
+      against (c) codes: values identical, sorted identical
+    encoding=ordinal_category (c) codes : fit ok, cat_features [1, 3], MAE  7.87 | predict vs as fitted: identical
+    encoding=ordinal_category (c) values: fit ok, cat_features [1, 3], MAE  7.87 | predict vs as fitted: identical
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE  7.87
+      against (c) codes: values identical, sorted identical
+- categories 10..80
+    encoding=ordinal          (c) codes : fit ok, cat_features [3], MAE  4.04 | predict vs as fitted: identical
+    encoding=ordinal          (c) values: fit ok, cat_features [3], MAE  4.04 | predict vs as fitted: identical
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE  4.04
+      against (c) codes: values identical, sorted identical
+    encoding=ordinal_category (c) codes : fit ok, cat_features [1, 3], MAE  7.87 | predict vs as fitted: identical
+    encoding=ordinal_category (c) values: fit ok, cat_features [1, 3], MAE  7.87 | predict vs as fitted: identical
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE  7.87
+      against (c) codes: values identical, sorted identical
+- categories perm(0..7)
+    encoding=ordinal          (c) codes : fit ok, cat_features [3], MAE  4.04 | predict vs as fitted: identical
+    encoding=ordinal          (c) values: fit ok, cat_features [3], MAE  4.04 | predict vs as fitted: identical
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE  4.04
+      against (c) codes: values identical, sorted identical
+    encoding=ordinal_category (c) codes : fit ok, cat_features [1, 3], MAE  7.87 | predict vs as fitted: identical
+    encoding=ordinal_category (c) values: fit ok, cat_features [1, 3], MAE  7.87 | predict vs as fitted: identical
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE  7.87
+      against (c) codes: values identical, sorted identical
+- categories -4..3
+    encoding=ordinal          (c) codes : fit ok, cat_features [3], MAE  4.04 | predict vs as fitted: identical
+    encoding=ordinal          (c) values: fit ok, cat_features [3], MAE  4.04 | predict vs as fitted: identical
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE  4.04
+      against (c) codes: values identical, sorted identical
+    encoding=ordinal_category (c) codes : fit ok, cat_features [1, 3], MAE  7.87 | predict vs as fitted: identical
+    encoding=ordinal_category (c) values: fit ok, cat_features [1, 3], MAE  7.87 | predict vs as fitted: identical
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE  7.87
+      against (c) codes: values identical, sorted identical
+- categories 10..80, 10% NaN
+    encoding=ordinal          (c) codes : fit ok, cat_features [3], MAE  8.60 | predict vs as fitted: identical
+    encoding=ordinal          (c) values: fit ok, cat_features [3], MAE  8.60 | predict vs as fitted: identical
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE  8.60
+      against (c) codes: values identical, sorted identical
+    encoding=ordinal_category (c) codes : fit ok, cat_features [1, 3], MAE 12.86 | predict vs as fitted: identical
+    encoding=ordinal_category (c) values: fit ok, cat_features [1, 3], MAE 12.86 | predict vs as fitted: identical
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE 12.86
+      against (c) codes: values identical, sorted identical
+- categories 10..80, 99 only in test
+    encoding=ordinal          (c) codes : fit ok, cat_features [3], MAE 14.80 | predict vs as fitted: identical
+    encoding=ordinal          (c) values: fit ok, cat_features [3], MAE 14.80 | predict vs as fitted: identical
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE 14.80
+      against (c) codes: values identical, sorted identical
+    encoding=ordinal_category (c) codes : fit ok, cat_features [1, 3], MAE 19.32 | predict vs as fitted: identical
+    encoding=ordinal_category (c) values: fit ok, cat_features [1, 3], MAE 19.32 | predict vs as fitted: identical
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE 19.32
+      against (c) codes: values identical, sorted identical
+- categories 10..80, NaN and 99 in test
+    encoding=ordinal          (c) codes : fit ok, cat_features [3], MAE 16.09 | predict vs as fitted: identical
+    encoding=ordinal          (c) values: fit ok, cat_features [3], MAE 16.09 | predict vs as fitted: identical
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE 16.44
+      against (c) codes: values identical, sorted CHANGES (max 43.3)
+    encoding=ordinal_category (c) codes : fit ok, cat_features [1, 3], MAE 18.52 | predict vs as fitted: identical
+    encoding=ordinal_category (c) values: fit ok, cat_features [1, 3], MAE 18.52 | predict vs as fitted: identical
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE 18.94
+      against (c) codes: values identical, sorted CHANGES (max 54.3)
+- categories -4..3, NaN
+    encoding=ordinal          (c) codes : fit ok, cat_features [3], MAE  8.60 | predict vs as fitted: identical
+    encoding=ordinal          (c) values: fit ok, cat_features [3], MAE 10.49 | predict vs as fitted: identical
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE  8.60
+      against (c) codes: values CHANGES (max 60.6), sorted identical
+    encoding=ordinal_category (c) codes : fit ok, cat_features [1, 3], MAE 12.86 | predict vs as fitted: identical
+    encoding=ordinal_category (c) values: fit ok, cat_features [1, 3], MAE 15.03 | predict vs as fitted: identical
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE 12.86
+      against (c) codes: values CHANGES (max 52.6), sorted identical
+- categories strings
+    encoding=ordinal          (c) codes : -> TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more info about how to include categorical features https://skfor
+    encoding=ordinal          (c) values: -> TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more info about how to include categorical features https://skfor
+    encoding=ordinal          (c) sorted: fit ok, cat_features [3], MAE  4.04
+    encoding=ordinal_category (c) codes : -> TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more info about how to include categorical features https://skfor
+    encoding=ordinal_category (c) values: -> TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more info about how to include categorical features https://skfor
+    encoding=ordinal_category (c) sorted: fit ok, cat_features [1, 3], MAE  7.87
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, catboost 1.2.10, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]

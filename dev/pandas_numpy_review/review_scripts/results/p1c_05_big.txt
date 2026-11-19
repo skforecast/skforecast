@@ -1,0 +1,456 @@
+=== p2 ===
+
+# lgbm
+
+## lgbm: 300 training rows x 30 series, test 100, ordinal share 0.5   (MAE: all / seen / unseen category)
+  today      : MAE  14.06 / 14.40 / 11.02 | predict vs as fitted: CHANGES (max 52.5)
+  as fitted  : MAE   3.35 /  3.36 /  3.24
+  (c) codes  : MAE   3.35 /  3.36 /  3.24 | model: identical, trees identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) values : MAE   3.35 /  3.36 /  3.24 | model: identical, trees identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) sorted : MAE   3.35 /  3.36 /  3.24 | model: identical, trees identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (a)        : MAE   4.01 /  3.31 / 10.19 | model: CHANGES (max 11.4), trees DIFFERENT (split features) | predict vs as fitted: CHANGES (max 19.4) (seen rows CHANGES (max 16.6), unseen rows CHANGES (max 19.4))
+  (a')       : MAE   4.01 /  3.31 / 10.19 | model: CHANGES (max 11.4), trees DIFFERENT (split features) | predict vs as fitted: CHANGES (max 19.4) (seen rows CHANGES (max 16.6), unseen rows CHANGES (max 19.4))
+
+## lgbm: 300 training rows x 30 series, test 100, ordinal share 0.0   (MAE: all / seen / unseen category)
+  today      : MAE  16.15 / 16.72 / 11.12 | predict vs as fitted: CHANGES (max 67.3)
+  as fitted  : MAE   3.67 /  3.69 /  3.51
+  (c) codes  : MAE   3.67 /  3.69 /  3.51
+  (c) values : MAE   3.67 /  3.69 /  3.51
+  (c) sorted : MAE   3.67 /  3.69 /  3.51
+  (a)        : MAE   5.95 /  3.99 / 23.30
+  (a')       : MAE   5.95 /  3.99 / 23.30
+
+## lgbm: 300 training rows x 30 series, test 100, ordinal share 1.0   (MAE: all / seen / unseen category)
+  today      : MAE  17.47 / 18.20 / 11.05 | predict vs as fitted: CHANGES (max 66)
+  as fitted  : MAE   3.60 /  3.57 /  3.94
+  (c) codes  : MAE   3.60 /  3.57 /  3.94
+  (c) values : MAE   3.60 /  3.57 /  3.94
+  (c) sorted : MAE   3.60 /  3.57 /  3.94
+  (a)        : MAE   3.39 /  3.36 /  3.65
+  (a')       : MAE   3.39 /  3.36 /  3.65
+
+## lgbm: 100 training rows x 30 series, test 100, ordinal share 0.5   (MAE: all / seen / unseen category)
+  today      : MAE  14.74 / 15.11 / 11.54 | predict vs as fitted: CHANGES (max 53.2)
+  as fitted  : MAE   4.90 /  4.96 /  4.43
+  (c) codes  : MAE   4.90 /  4.96 /  4.43 | model: identical, trees identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) values : MAE   4.90 /  4.96 /  4.43 | model: identical, trees identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) sorted : MAE   4.90 /  4.96 /  4.43 | model: identical, trees identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (a)        : MAE   5.35 /  4.88 /  9.54 | model: CHANGES (max 9.33), trees DIFFERENT (split features) | predict vs as fitted: CHANGES (max 21.8) (seen rows CHANGES (max 14.4), unseen rows CHANGES (max 21.8))
+  (a')       : MAE   5.35 /  4.88 /  9.54 | model: CHANGES (max 9.33), trees DIFFERENT (split features) | predict vs as fitted: CHANGES (max 21.8) (seen rows CHANGES (max 14.4), unseen rows CHANGES (max 21.8))
+
+# xgb
+
+## xgb: 300 training rows x 30 series, test 100, ordinal share 0.5   (MAE: all / seen / unseen category)
+  today      : MAE  36.14 / 36.07 / 36.75 | predict vs as fitted: CHANGES (max 89.8)
+  as fitted  : MAE   5.09 /  4.11 / 13.75
+  (c) codes  : MAE   5.09 /  4.11 / 13.75 | model: identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) values : MAE   5.09 /  4.11 / 13.75 | model: identical | predict vs as fitted: CHANGES (max 0.535) (seen rows CHANGES (max 0.535), unseen rows CHANGES (max 0.535))
+  (c) sorted : MAE   7.37 /  4.11 / 36.24 | model: identical | predict vs as fitted: CHANGES (max 72.1) (seen rows CHANGES (max 0.584), unseen rows CHANGES (max 72.1))
+  (a)        : MAE   4.15 /  3.43 / 10.53 | model: CHANGES (max 10.9) | predict vs as fitted: CHANGES (max 41.3) (seen rows CHANGES (max 28.4), unseen rows CHANGES (max 41.3))
+  (a')       : MAE   4.15 /  3.43 / 10.53 | model: CHANGES (max 10.9) | predict vs as fitted: CHANGES (max 41.3) (seen rows CHANGES (max 28.4), unseen rows CHANGES (max 41.3))
+
+## xgb: 300 training rows x 30 series, test 100, ordinal share 0.0   (MAE: all / seen / unseen category)
+  today      : MAE  39.67 / 39.57 / 40.55 | predict vs as fitted: CHANGES (max 110)
+  as fitted  : MAE   5.44 /  4.60 / 12.82
+  (c) codes  : MAE   5.44 /  4.60 / 12.82
+  (c) values : MAE   5.44 /  4.60 / 12.82
+  (c) sorted : MAE   8.24 /  4.60 / 40.39
+  (a)        : MAE   5.89 /  4.02 / 22.41
+  (a')       : MAE   5.89 /  4.02 / 22.41
+
+## xgb: 300 training rows x 30 series, test 100, ordinal share 1.0   (MAE: all / seen / unseen category)
+  today      : MAE  37.94 / 38.04 / 37.03 | predict vs as fitted: CHANGES (max 99.2)
+  as fitted  : MAE   5.16 /  4.39 / 11.91
+  (c) codes  : MAE   5.16 /  4.39 / 11.91
+  (c) values : MAE   5.16 /  4.39 / 11.91
+  (c) sorted : MAE   7.75 /  4.39 / 37.39
+  (a)        : MAE   3.65 /  3.61 /  4.02
+  (a')       : MAE   3.65 /  3.61 /  4.02
+
+## xgb: 100 training rows x 30 series, test 100, ordinal share 0.5   (MAE: all / seen / unseen category)
+  today      : MAE  35.59 / 35.63 / 35.29 | predict vs as fitted: CHANGES (max 85.9)
+  as fitted  : MAE   7.75 /  6.80 / 16.02
+  (c) codes  : MAE   7.75 /  6.80 / 16.02 | model: identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) values : MAE   7.75 /  6.80 / 16.02 | model: identical | predict vs as fitted: CHANGES (max 0.202) (seen rows CHANGES (max 0.202), unseen rows identical)
+  (c) sorted : MAE   9.57 /  6.80 / 33.76 | model: identical | predict vs as fitted: CHANGES (max 67.3) (seen rows CHANGES (max 0.202), unseen rows CHANGES (max 67.3))
+  (a)        : MAE   5.77 /  5.33 /  9.67 | model: CHANGES (max 4.14) | predict vs as fitted: CHANGES (max 41.4) (seen rows CHANGES (max 36.5), unseen rows CHANGES (max 41.4))
+  (a')       : MAE   5.77 /  5.33 /  9.67 | model: CHANGES (max 4.14) | predict vs as fitted: CHANGES (max 41.4) (seen rows CHANGES (max 36.5), unseen rows CHANGES (max 41.4))
+
+# hgb
+
+## hgb: 300 training rows x 30 series, test 100, ordinal share 0.5   (MAE: all / seen / unseen category)
+  today      : MAE   3.38 /  3.41 /  3.13 | predict vs as fitted: identical
+  as fitted  : MAE   3.38 /  3.41 /  3.13
+  (c) codes  : MAE   3.38 /  3.41 /  3.13 | model: identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) values : MAE   3.38 /  3.41 /  3.13 | model: identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) sorted : MAE   3.38 /  3.41 /  3.13 | model: identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (a)        : MAE   4.17 /  3.46 / 10.40 | model: CHANGES (max 10.2) | predict vs as fitted: CHANGES (max 18.4) (seen rows CHANGES (max 14.8), unseen rows CHANGES (max 18.4))
+  (a')       : MAE   4.17 /  3.46 / 10.40 | model: CHANGES (max 10.2) | predict vs as fitted: CHANGES (max 18.4) (seen rows CHANGES (max 14.8), unseen rows CHANGES (max 18.4))
+
+## hgb: 300 training rows x 30 series, test 100, ordinal share 0.0   (MAE: all / seen / unseen category)
+  today      : MAE   3.67 /  3.67 /  3.63 | predict vs as fitted: identical
+  as fitted  : MAE   3.67 /  3.67 /  3.63
+  (c) codes  : MAE   3.67 /  3.67 /  3.63
+  (c) values : MAE   3.67 /  3.67 /  3.63
+  (c) sorted : MAE   3.67 /  3.67 /  3.63
+  (a)        : MAE   5.87 /  3.88 / 23.46
+  (a')       : MAE   5.87 /  3.88 / 23.46
+
+## hgb: 300 training rows x 30 series, test 100, ordinal share 1.0   (MAE: all / seen / unseen category)
+  today      : MAE   3.79 /  3.60 /  5.46 | predict vs as fitted: identical
+  as fitted  : MAE   3.79 /  3.60 /  5.46
+  (c) codes  : MAE   3.79 /  3.60 /  5.46
+  (c) values : MAE   3.79 /  3.60 /  5.46
+  (c) sorted : MAE   3.79 /  3.60 /  5.46
+  (a)        : MAE   3.29 /  3.28 /  3.39
+  (a')       : MAE   3.29 /  3.28 /  3.39
+
+## hgb: 100 training rows x 30 series, test 100, ordinal share 0.5   (MAE: all / seen / unseen category)
+  today      : MAE   4.95 /  5.04 /  4.19 | predict vs as fitted: identical
+  as fitted  : MAE   4.95 /  5.04 /  4.19
+  (c) codes  : MAE   4.95 /  5.04 /  4.19 | model: identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) values : MAE   4.95 /  5.04 /  4.19 | model: identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) sorted : MAE   4.95 /  5.04 /  4.19 | model: identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (a)        : MAE   5.25 /  4.79 /  9.34 | model: CHANGES (max 8.32) | predict vs as fitted: CHANGES (max 21.2) (seen rows CHANGES (max 16.5), unseen rows CHANGES (max 21.2))
+  (a')       : MAE   5.25 /  4.79 /  9.34 | model: CHANGES (max 8.32) | predict vs as fitted: CHANGES (max 21.2) (seen rows CHANGES (max 16.5), unseen rows CHANGES (max 21.2))
+
+# catboost
+
+## catboost: 300 training rows x 30 series, test 100, ordinal share 0.5   (MAE: all / seen / unseen category)
+  today      : fit -> CatBoostError: features data: pandas.DataFrame column 'c40' has dtype 'category' but is not in  cat_features list
+  (c) codes  : MAE   4.15 /  3.48 /  9.99
+  (c) values : MAE   4.15 /  3.48 /  9.99
+  (c) sorted : MAE   4.15 /  3.48 /  9.99
+  (a)        : MAE   3.48 /  2.61 / 11.16
+  (a')       : MAE   3.48 /  2.61 / 11.16
+  no model today; backtesting predictions against (c) codes: (c) values identical, (c) sorted identical
+
+## catboost: 300 training rows x 30 series, test 100, ordinal share 0.0   (MAE: all / seen / unseen category)
+  today      : fit -> CatBoostError: features data: pandas.DataFrame column 'c40' has dtype 'category' but is not in  cat_features list
+  (c) codes  : MAE   4.57 /  3.83 / 11.09
+  (c) values : MAE   4.57 /  3.83 / 11.09
+  (c) sorted : MAE   4.57 /  3.83 / 11.09
+  (a)        : MAE   5.07 /  2.97 / 23.60
+  (a')       : MAE   5.07 /  2.97 / 23.60
+
+## catboost: 300 training rows x 30 series, test 100, ordinal share 1.0   (MAE: all / seen / unseen category)
+  today      : fit -> CatBoostError: features data: pandas.DataFrame column 'c40' has dtype 'category' but is not in  cat_features list
+  (c) codes  : MAE   3.87 /  3.53 /  6.84
+  (c) values : MAE   3.87 /  3.53 /  6.84
+  (c) sorted : MAE   3.87 /  3.53 /  6.84
+  (a)        : MAE   2.44 /  2.47 /  2.20
+  (a')       : MAE   2.44 /  2.47 /  2.20
+
+## catboost: 100 training rows x 30 series, test 100, ordinal share 0.5   (MAE: all / seen / unseen category)
+  today      : fit -> CatBoostError: features data: pandas.DataFrame column 'c40' has dtype 'category' but is not in  cat_features list
+  (c) codes  : MAE   5.53 /  5.43 /  6.44
+  (c) values : MAE   5.53 /  5.43 /  6.44
+  (c) sorted : MAE   5.53 /  5.43 /  6.44
+  (a)        : MAE   4.83 /  4.22 / 10.18
+  (a')       : MAE   4.83 /  4.22 / 10.18
+  no model today; backtesting predictions against (c) codes: (c) values identical, (c) sorted identical
+[python 3.12.3, pandas 2.3.3, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, xgboost 3.4.1, catboost 1.2.10, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 (sin pyarrow) ===
+
+# lgbm
+
+## lgbm: 300 training rows x 30 series, test 100, ordinal share 0.5   (MAE: all / seen / unseen category)
+  today      : MAE  14.06 / 14.40 / 11.02 | predict vs as fitted: CHANGES (max 52.5)
+  as fitted  : MAE   3.35 /  3.36 /  3.24
+  (c) codes  : MAE   3.35 /  3.36 /  3.24 | model: identical, trees identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) values : MAE   3.35 /  3.36 /  3.24 | model: identical, trees identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) sorted : MAE   3.35 /  3.36 /  3.24 | model: identical, trees identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (a)        : MAE   4.01 /  3.31 / 10.19 | model: CHANGES (max 11.4), trees DIFFERENT (split features) | predict vs as fitted: CHANGES (max 19.4) (seen rows CHANGES (max 16.6), unseen rows CHANGES (max 19.4))
+  (a')       : MAE   4.01 /  3.31 / 10.19 | model: CHANGES (max 11.4), trees DIFFERENT (split features) | predict vs as fitted: CHANGES (max 19.4) (seen rows CHANGES (max 16.6), unseen rows CHANGES (max 19.4))
+
+## lgbm: 300 training rows x 30 series, test 100, ordinal share 0.0   (MAE: all / seen / unseen category)
+  today      : MAE  16.15 / 16.72 / 11.12 | predict vs as fitted: CHANGES (max 67.3)
+  as fitted  : MAE   3.67 /  3.69 /  3.51
+  (c) codes  : MAE   3.67 /  3.69 /  3.51
+  (c) values : MAE   3.67 /  3.69 /  3.51
+  (c) sorted : MAE   3.67 /  3.69 /  3.51
+  (a)        : MAE   5.95 /  3.99 / 23.30
+  (a')       : MAE   5.95 /  3.99 / 23.30
+
+## lgbm: 300 training rows x 30 series, test 100, ordinal share 1.0   (MAE: all / seen / unseen category)
+  today      : MAE  17.47 / 18.20 / 11.05 | predict vs as fitted: CHANGES (max 66)
+  as fitted  : MAE   3.60 /  3.57 /  3.94
+  (c) codes  : MAE   3.60 /  3.57 /  3.94
+  (c) values : MAE   3.60 /  3.57 /  3.94
+  (c) sorted : MAE   3.60 /  3.57 /  3.94
+  (a)        : MAE   3.39 /  3.36 /  3.65
+  (a')       : MAE   3.39 /  3.36 /  3.65
+
+## lgbm: 100 training rows x 30 series, test 100, ordinal share 0.5   (MAE: all / seen / unseen category)
+  today      : MAE  14.74 / 15.11 / 11.54 | predict vs as fitted: CHANGES (max 53.2)
+  as fitted  : MAE   4.90 /  4.96 /  4.43
+  (c) codes  : MAE   4.90 /  4.96 /  4.43 | model: identical, trees identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) values : MAE   4.90 /  4.96 /  4.43 | model: identical, trees identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) sorted : MAE   4.90 /  4.96 /  4.43 | model: identical, trees identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (a)        : MAE   5.35 /  4.88 /  9.54 | model: CHANGES (max 9.33), trees DIFFERENT (split features) | predict vs as fitted: CHANGES (max 21.8) (seen rows CHANGES (max 14.4), unseen rows CHANGES (max 21.8))
+  (a')       : MAE   5.35 /  4.88 /  9.54 | model: CHANGES (max 9.33), trees DIFFERENT (split features) | predict vs as fitted: CHANGES (max 21.8) (seen rows CHANGES (max 14.4), unseen rows CHANGES (max 21.8))
+
+# xgb
+
+## xgb: 300 training rows x 30 series, test 100, ordinal share 0.5   (MAE: all / seen / unseen category)
+  today      : MAE  36.14 / 36.07 / 36.75 | predict vs as fitted: CHANGES (max 89.8)
+  as fitted  : MAE   5.09 /  4.11 / 13.75
+  (c) codes  : MAE   5.09 /  4.11 / 13.75 | model: identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) values : MAE   5.09 /  4.11 / 13.75 | model: identical | predict vs as fitted: CHANGES (max 0.535) (seen rows CHANGES (max 0.535), unseen rows CHANGES (max 0.535))
+  (c) sorted : MAE   7.37 /  4.11 / 36.24 | model: identical | predict vs as fitted: CHANGES (max 72.1) (seen rows CHANGES (max 0.584), unseen rows CHANGES (max 72.1))
+  (a)        : MAE   4.15 /  3.43 / 10.53 | model: CHANGES (max 10.9) | predict vs as fitted: CHANGES (max 41.3) (seen rows CHANGES (max 28.4), unseen rows CHANGES (max 41.3))
+  (a')       : MAE   4.15 /  3.43 / 10.53 | model: CHANGES (max 10.9) | predict vs as fitted: CHANGES (max 41.3) (seen rows CHANGES (max 28.4), unseen rows CHANGES (max 41.3))
+
+## xgb: 300 training rows x 30 series, test 100, ordinal share 0.0   (MAE: all / seen / unseen category)
+  today      : MAE  39.67 / 39.57 / 40.55 | predict vs as fitted: CHANGES (max 110)
+  as fitted  : MAE   5.44 /  4.60 / 12.82
+  (c) codes  : MAE   5.44 /  4.60 / 12.82
+  (c) values : MAE   5.44 /  4.60 / 12.82
+  (c) sorted : MAE   8.24 /  4.60 / 40.39
+  (a)        : MAE   5.89 /  4.02 / 22.41
+  (a')       : MAE   5.89 /  4.02 / 22.41
+
+## xgb: 300 training rows x 30 series, test 100, ordinal share 1.0   (MAE: all / seen / unseen category)
+  today      : MAE  37.94 / 38.04 / 37.03 | predict vs as fitted: CHANGES (max 99.2)
+  as fitted  : MAE   5.16 /  4.39 / 11.91
+  (c) codes  : MAE   5.16 /  4.39 / 11.91
+  (c) values : MAE   5.16 /  4.39 / 11.91
+  (c) sorted : MAE   7.75 /  4.39 / 37.39
+  (a)        : MAE   3.65 /  3.61 /  4.02
+  (a')       : MAE   3.65 /  3.61 /  4.02
+
+## xgb: 100 training rows x 30 series, test 100, ordinal share 0.5   (MAE: all / seen / unseen category)
+  today      : MAE  35.59 / 35.63 / 35.29 | predict vs as fitted: CHANGES (max 85.9)
+  as fitted  : MAE   7.75 /  6.80 / 16.02
+  (c) codes  : MAE   7.75 /  6.80 / 16.02 | model: identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) values : MAE   7.75 /  6.80 / 16.02 | model: identical | predict vs as fitted: CHANGES (max 0.202) (seen rows CHANGES (max 0.202), unseen rows identical)
+  (c) sorted : MAE   9.57 /  6.80 / 33.76 | model: identical | predict vs as fitted: CHANGES (max 67.3) (seen rows CHANGES (max 0.202), unseen rows CHANGES (max 67.3))
+  (a)        : MAE   5.77 /  5.33 /  9.67 | model: CHANGES (max 4.14) | predict vs as fitted: CHANGES (max 41.4) (seen rows CHANGES (max 36.5), unseen rows CHANGES (max 41.4))
+  (a')       : MAE   5.77 /  5.33 /  9.67 | model: CHANGES (max 4.14) | predict vs as fitted: CHANGES (max 41.4) (seen rows CHANGES (max 36.5), unseen rows CHANGES (max 41.4))
+
+# hgb
+
+## hgb: 300 training rows x 30 series, test 100, ordinal share 0.5   (MAE: all / seen / unseen category)
+  today      : MAE   3.38 /  3.41 /  3.13 | predict vs as fitted: identical
+  as fitted  : MAE   3.38 /  3.41 /  3.13
+  (c) codes  : MAE   3.38 /  3.41 /  3.13 | model: identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) values : MAE   3.38 /  3.41 /  3.13 | model: identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) sorted : MAE   3.38 /  3.41 /  3.13 | model: identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (a)        : MAE   4.17 /  3.46 / 10.40 | model: CHANGES (max 10.2) | predict vs as fitted: CHANGES (max 18.4) (seen rows CHANGES (max 14.8), unseen rows CHANGES (max 18.4))
+  (a')       : MAE   4.17 /  3.46 / 10.40 | model: CHANGES (max 10.2) | predict vs as fitted: CHANGES (max 18.4) (seen rows CHANGES (max 14.8), unseen rows CHANGES (max 18.4))
+
+## hgb: 300 training rows x 30 series, test 100, ordinal share 0.0   (MAE: all / seen / unseen category)
+  today      : MAE   3.67 /  3.67 /  3.63 | predict vs as fitted: identical
+  as fitted  : MAE   3.67 /  3.67 /  3.63
+  (c) codes  : MAE   3.67 /  3.67 /  3.63
+  (c) values : MAE   3.67 /  3.67 /  3.63
+  (c) sorted : MAE   3.67 /  3.67 /  3.63
+  (a)        : MAE   5.87 /  3.88 / 23.46
+  (a')       : MAE   5.87 /  3.88 / 23.46
+
+## hgb: 300 training rows x 30 series, test 100, ordinal share 1.0   (MAE: all / seen / unseen category)
+  today      : MAE   3.79 /  3.60 /  5.46 | predict vs as fitted: identical
+  as fitted  : MAE   3.79 /  3.60 /  5.46
+  (c) codes  : MAE   3.79 /  3.60 /  5.46
+  (c) values : MAE   3.79 /  3.60 /  5.46
+  (c) sorted : MAE   3.79 /  3.60 /  5.46
+  (a)        : MAE   3.29 /  3.28 /  3.39
+  (a')       : MAE   3.29 /  3.28 /  3.39
+
+## hgb: 100 training rows x 30 series, test 100, ordinal share 0.5   (MAE: all / seen / unseen category)
+  today      : MAE   4.95 /  5.04 /  4.19 | predict vs as fitted: identical
+  as fitted  : MAE   4.95 /  5.04 /  4.19
+  (c) codes  : MAE   4.95 /  5.04 /  4.19 | model: identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) values : MAE   4.95 /  5.04 /  4.19 | model: identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) sorted : MAE   4.95 /  5.04 /  4.19 | model: identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (a)        : MAE   5.25 /  4.79 /  9.34 | model: CHANGES (max 8.32) | predict vs as fitted: CHANGES (max 21.2) (seen rows CHANGES (max 16.5), unseen rows CHANGES (max 21.2))
+  (a')       : MAE   5.25 /  4.79 /  9.34 | model: CHANGES (max 8.32) | predict vs as fitted: CHANGES (max 21.2) (seen rows CHANGES (max 16.5), unseen rows CHANGES (max 21.2))
+
+# catboost
+
+## catboost: 300 training rows x 30 series, test 100, ordinal share 0.5   (MAE: all / seen / unseen category)
+  today      : fit -> CatBoostError: features data: pandas.DataFrame column 'c40' has dtype 'category' but is not in  cat_features list
+  (c) codes  : MAE   4.15 /  3.48 /  9.99
+  (c) values : MAE   4.15 /  3.48 /  9.99
+  (c) sorted : MAE   4.15 /  3.48 /  9.99
+  (a)        : MAE   3.48 /  2.61 / 11.16
+  (a')       : MAE   3.48 /  2.61 / 11.16
+  no model today; backtesting predictions against (c) codes: (c) values identical, (c) sorted identical
+
+## catboost: 300 training rows x 30 series, test 100, ordinal share 0.0   (MAE: all / seen / unseen category)
+  today      : fit -> CatBoostError: features data: pandas.DataFrame column 'c40' has dtype 'category' but is not in  cat_features list
+  (c) codes  : MAE   4.57 /  3.83 / 11.09
+  (c) values : MAE   4.57 /  3.83 / 11.09
+  (c) sorted : MAE   4.57 /  3.83 / 11.09
+  (a)        : MAE   5.07 /  2.97 / 23.60
+  (a')       : MAE   5.07 /  2.97 / 23.60
+
+## catboost: 300 training rows x 30 series, test 100, ordinal share 1.0   (MAE: all / seen / unseen category)
+  today      : fit -> CatBoostError: features data: pandas.DataFrame column 'c40' has dtype 'category' but is not in  cat_features list
+  (c) codes  : MAE   3.87 /  3.53 /  6.84
+  (c) values : MAE   3.87 /  3.53 /  6.84
+  (c) sorted : MAE   3.87 /  3.53 /  6.84
+  (a)        : MAE   2.44 /  2.47 /  2.20
+  (a')       : MAE   2.44 /  2.47 /  2.20
+
+## catboost: 100 training rows x 30 series, test 100, ordinal share 0.5   (MAE: all / seen / unseen category)
+  today      : fit -> CatBoostError: features data: pandas.DataFrame column 'c40' has dtype 'category' but is not in  cat_features list
+  (c) codes  : MAE   5.53 /  5.43 /  6.44
+  (c) values : MAE   5.53 /  5.43 /  6.44
+  (c) sorted : MAE   5.53 /  5.43 /  6.44
+  (a)        : MAE   4.83 /  4.22 / 10.18
+  (a')       : MAE   4.83 /  4.22 / 10.18
+  no model today; backtesting predictions against (c) codes: (c) values identical, (c) sorted identical
+[python 3.12.3, pandas 3.1.1, pyarrow no, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, xgboost 3.4.1, catboost 1.2.10, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 pa ===
+
+# lgbm
+
+## lgbm: 300 training rows x 30 series, test 100, ordinal share 0.5   (MAE: all / seen / unseen category)
+  today      : MAE  14.06 / 14.40 / 11.02 | predict vs as fitted: CHANGES (max 52.5)
+  as fitted  : MAE   3.35 /  3.36 /  3.24
+  (c) codes  : MAE   3.35 /  3.36 /  3.24 | model: identical, trees identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) values : MAE   3.35 /  3.36 /  3.24 | model: identical, trees identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) sorted : MAE   3.35 /  3.36 /  3.24 | model: identical, trees identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (a)        : MAE   4.01 /  3.31 / 10.19 | model: CHANGES (max 11.4), trees DIFFERENT (split features) | predict vs as fitted: CHANGES (max 19.4) (seen rows CHANGES (max 16.6), unseen rows CHANGES (max 19.4))
+  (a')       : MAE   4.01 /  3.31 / 10.19 | model: CHANGES (max 11.4), trees DIFFERENT (split features) | predict vs as fitted: CHANGES (max 19.4) (seen rows CHANGES (max 16.6), unseen rows CHANGES (max 19.4))
+
+## lgbm: 300 training rows x 30 series, test 100, ordinal share 0.0   (MAE: all / seen / unseen category)
+  today      : MAE  16.15 / 16.72 / 11.12 | predict vs as fitted: CHANGES (max 67.3)
+  as fitted  : MAE   3.67 /  3.69 /  3.51
+  (c) codes  : MAE   3.67 /  3.69 /  3.51
+  (c) values : MAE   3.67 /  3.69 /  3.51
+  (c) sorted : MAE   3.67 /  3.69 /  3.51
+  (a)        : MAE   5.95 /  3.99 / 23.30
+  (a')       : MAE   5.95 /  3.99 / 23.30
+
+## lgbm: 300 training rows x 30 series, test 100, ordinal share 1.0   (MAE: all / seen / unseen category)
+  today      : MAE  17.47 / 18.20 / 11.05 | predict vs as fitted: CHANGES (max 66)
+  as fitted  : MAE   3.60 /  3.57 /  3.94
+  (c) codes  : MAE   3.60 /  3.57 /  3.94
+  (c) values : MAE   3.60 /  3.57 /  3.94
+  (c) sorted : MAE   3.60 /  3.57 /  3.94
+  (a)        : MAE   3.39 /  3.36 /  3.65
+  (a')       : MAE   3.39 /  3.36 /  3.65
+
+## lgbm: 100 training rows x 30 series, test 100, ordinal share 0.5   (MAE: all / seen / unseen category)
+  today      : MAE  14.74 / 15.11 / 11.54 | predict vs as fitted: CHANGES (max 53.2)
+  as fitted  : MAE   4.90 /  4.96 /  4.43
+  (c) codes  : MAE   4.90 /  4.96 /  4.43 | model: identical, trees identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) values : MAE   4.90 /  4.96 /  4.43 | model: identical, trees identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) sorted : MAE   4.90 /  4.96 /  4.43 | model: identical, trees identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (a)        : MAE   5.35 /  4.88 /  9.54 | model: CHANGES (max 9.33), trees DIFFERENT (split features) | predict vs as fitted: CHANGES (max 21.8) (seen rows CHANGES (max 14.4), unseen rows CHANGES (max 21.8))
+  (a')       : MAE   5.35 /  4.88 /  9.54 | model: CHANGES (max 9.33), trees DIFFERENT (split features) | predict vs as fitted: CHANGES (max 21.8) (seen rows CHANGES (max 14.4), unseen rows CHANGES (max 21.8))
+
+# xgb
+
+## xgb: 300 training rows x 30 series, test 100, ordinal share 0.5   (MAE: all / seen / unseen category)
+  today      : MAE  36.14 / 36.07 / 36.75 | predict vs as fitted: CHANGES (max 89.8)
+  as fitted  : MAE   5.09 /  4.11 / 13.75
+  (c) codes  : MAE   5.09 /  4.11 / 13.75 | model: identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) values : MAE   5.09 /  4.11 / 13.75 | model: identical | predict vs as fitted: CHANGES (max 0.535) (seen rows CHANGES (max 0.535), unseen rows CHANGES (max 0.535))
+  (c) sorted : MAE   7.37 /  4.11 / 36.24 | model: identical | predict vs as fitted: CHANGES (max 72.1) (seen rows CHANGES (max 0.584), unseen rows CHANGES (max 72.1))
+  (a)        : MAE   4.15 /  3.43 / 10.53 | model: CHANGES (max 10.9) | predict vs as fitted: CHANGES (max 41.3) (seen rows CHANGES (max 28.4), unseen rows CHANGES (max 41.3))
+  (a')       : MAE   4.15 /  3.43 / 10.53 | model: CHANGES (max 10.9) | predict vs as fitted: CHANGES (max 41.3) (seen rows CHANGES (max 28.4), unseen rows CHANGES (max 41.3))
+
+## xgb: 300 training rows x 30 series, test 100, ordinal share 0.0   (MAE: all / seen / unseen category)
+  today      : MAE  39.67 / 39.57 / 40.55 | predict vs as fitted: CHANGES (max 110)
+  as fitted  : MAE   5.44 /  4.60 / 12.82
+  (c) codes  : MAE   5.44 /  4.60 / 12.82
+  (c) values : MAE   5.44 /  4.60 / 12.82
+  (c) sorted : MAE   8.24 /  4.60 / 40.39
+  (a)        : MAE   5.89 /  4.02 / 22.41
+  (a')       : MAE   5.89 /  4.02 / 22.41
+
+## xgb: 300 training rows x 30 series, test 100, ordinal share 1.0   (MAE: all / seen / unseen category)
+  today      : MAE  37.94 / 38.04 / 37.03 | predict vs as fitted: CHANGES (max 99.2)
+  as fitted  : MAE   5.16 /  4.39 / 11.91
+  (c) codes  : MAE   5.16 /  4.39 / 11.91
+  (c) values : MAE   5.16 /  4.39 / 11.91
+  (c) sorted : MAE   7.75 /  4.39 / 37.39
+  (a)        : MAE   3.65 /  3.61 /  4.02
+  (a')       : MAE   3.65 /  3.61 /  4.02
+
+## xgb: 100 training rows x 30 series, test 100, ordinal share 0.5   (MAE: all / seen / unseen category)
+  today      : MAE  35.59 / 35.63 / 35.29 | predict vs as fitted: CHANGES (max 85.9)
+  as fitted  : MAE   7.75 /  6.80 / 16.02
+  (c) codes  : MAE   7.75 /  6.80 / 16.02 | model: identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) values : MAE   7.75 /  6.80 / 16.02 | model: identical | predict vs as fitted: CHANGES (max 0.202) (seen rows CHANGES (max 0.202), unseen rows identical)
+  (c) sorted : MAE   9.57 /  6.80 / 33.76 | model: identical | predict vs as fitted: CHANGES (max 67.3) (seen rows CHANGES (max 0.202), unseen rows CHANGES (max 67.3))
+  (a)        : MAE   5.77 /  5.33 /  9.67 | model: CHANGES (max 4.14) | predict vs as fitted: CHANGES (max 41.4) (seen rows CHANGES (max 36.5), unseen rows CHANGES (max 41.4))
+  (a')       : MAE   5.77 /  5.33 /  9.67 | model: CHANGES (max 4.14) | predict vs as fitted: CHANGES (max 41.4) (seen rows CHANGES (max 36.5), unseen rows CHANGES (max 41.4))
+
+# hgb
+
+## hgb: 300 training rows x 30 series, test 100, ordinal share 0.5   (MAE: all / seen / unseen category)
+  today      : MAE   3.38 /  3.41 /  3.13 | predict vs as fitted: identical
+  as fitted  : MAE   3.38 /  3.41 /  3.13
+  (c) codes  : MAE   3.38 /  3.41 /  3.13 | model: identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) values : MAE   3.38 /  3.41 /  3.13 | model: identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) sorted : MAE   3.38 /  3.41 /  3.13 | model: identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (a)        : MAE   4.17 /  3.46 / 10.40 | model: CHANGES (max 10.2) | predict vs as fitted: CHANGES (max 18.4) (seen rows CHANGES (max 14.8), unseen rows CHANGES (max 18.4))
+  (a')       : MAE   4.17 /  3.46 / 10.40 | model: CHANGES (max 10.2) | predict vs as fitted: CHANGES (max 18.4) (seen rows CHANGES (max 14.8), unseen rows CHANGES (max 18.4))
+
+## hgb: 300 training rows x 30 series, test 100, ordinal share 0.0   (MAE: all / seen / unseen category)
+  today      : MAE   3.67 /  3.67 /  3.63 | predict vs as fitted: identical
+  as fitted  : MAE   3.67 /  3.67 /  3.63
+  (c) codes  : MAE   3.67 /  3.67 /  3.63
+  (c) values : MAE   3.67 /  3.67 /  3.63
+  (c) sorted : MAE   3.67 /  3.67 /  3.63
+  (a)        : MAE   5.87 /  3.88 / 23.46
+  (a')       : MAE   5.87 /  3.88 / 23.46
+
+## hgb: 300 training rows x 30 series, test 100, ordinal share 1.0   (MAE: all / seen / unseen category)
+  today      : MAE   3.79 /  3.60 /  5.46 | predict vs as fitted: identical
+  as fitted  : MAE   3.79 /  3.60 /  5.46
+  (c) codes  : MAE   3.79 /  3.60 /  5.46
+  (c) values : MAE   3.79 /  3.60 /  5.46
+  (c) sorted : MAE   3.79 /  3.60 /  5.46
+  (a)        : MAE   3.29 /  3.28 /  3.39
+  (a')       : MAE   3.29 /  3.28 /  3.39
+
+## hgb: 100 training rows x 30 series, test 100, ordinal share 0.5   (MAE: all / seen / unseen category)
+  today      : MAE   4.95 /  5.04 /  4.19 | predict vs as fitted: identical
+  as fitted  : MAE   4.95 /  5.04 /  4.19
+  (c) codes  : MAE   4.95 /  5.04 /  4.19 | model: identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) values : MAE   4.95 /  5.04 /  4.19 | model: identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (c) sorted : MAE   4.95 /  5.04 /  4.19 | model: identical | predict vs as fitted: identical (seen rows identical, unseen rows identical)
+  (a)        : MAE   5.25 /  4.79 /  9.34 | model: CHANGES (max 8.32) | predict vs as fitted: CHANGES (max 21.2) (seen rows CHANGES (max 16.5), unseen rows CHANGES (max 21.2))
+  (a')       : MAE   5.25 /  4.79 /  9.34 | model: CHANGES (max 8.32) | predict vs as fitted: CHANGES (max 21.2) (seen rows CHANGES (max 16.5), unseen rows CHANGES (max 21.2))
+
+# catboost
+
+## catboost: 300 training rows x 30 series, test 100, ordinal share 0.5   (MAE: all / seen / unseen category)
+  today      : fit -> CatBoostError: features data: pandas.DataFrame column 'c40' has dtype 'category' but is not in  cat_features list
+  (c) codes  : MAE   4.15 /  3.48 /  9.99
+  (c) values : MAE   4.15 /  3.48 /  9.99
+  (c) sorted : MAE   4.15 /  3.48 /  9.99
+  (a)        : MAE   3.48 /  2.61 / 11.16
+  (a')       : MAE   3.48 /  2.61 / 11.16
+  no model today; backtesting predictions against (c) codes: (c) values identical, (c) sorted identical
+
+## catboost: 300 training rows x 30 series, test 100, ordinal share 0.0   (MAE: all / seen / unseen category)
+  today      : fit -> CatBoostError: features data: pandas.DataFrame column 'c40' has dtype 'category' but is not in  cat_features list
+  (c) codes  : MAE   4.57 /  3.83 / 11.09
+  (c) values : MAE   4.57 /  3.83 / 11.09
+  (c) sorted : MAE   4.57 /  3.83 / 11.09
+  (a)        : MAE   5.07 /  2.97 / 23.60
+  (a')       : MAE   5.07 /  2.97 / 23.60
+
+## catboost: 300 training rows x 30 series, test 100, ordinal share 1.0   (MAE: all / seen / unseen category)
+  today      : fit -> CatBoostError: features data: pandas.DataFrame column 'c40' has dtype 'category' but is not in  cat_features list
+  (c) codes  : MAE   3.87 /  3.53 /  6.84
+  (c) values : MAE   3.87 /  3.53 /  6.84
+  (c) sorted : MAE   3.87 /  3.53 /  6.84
+  (a)        : MAE   2.44 /  2.47 /  2.20
+  (a')       : MAE   2.44 /  2.47 /  2.20
+
+## catboost: 100 training rows x 30 series, test 100, ordinal share 0.5   (MAE: all / seen / unseen category)
+  today      : fit -> CatBoostError: features data: pandas.DataFrame column 'c40' has dtype 'category' but is not in  cat_features list
+  (c) codes  : MAE   5.53 /  5.43 /  6.44
+  (c) values : MAE   5.53 /  5.43 /  6.44
+  (c) sorted : MAE   5.53 /  5.43 /  6.44
+  (a)        : MAE   4.83 /  4.22 / 10.18
+  (a')       : MAE   4.83 /  4.22 / 10.18
+  no model today; backtesting predictions against (c) codes: (c) values identical, (c) sorted identical
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, xgboost 3.4.1, catboost 1.2.10, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]

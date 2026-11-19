@@ -159,25 +159,29 @@ for name, mk in {"LightGBM": lgbm, "XGBoost": xgb, "HGB": hgb}.items():
     print(f"  {name:8} {extra}today predict vs as fitted: {fmt(np.abs(bt - ref).max())} | (c) codes + index: model vs today"
           f" {fmt(np.abs(ins1 - ins0).max())} | codes as numeric, no index: model vs today {fmt(np.abs(ins2 - ins0).max())}")
 
-print("\n# E. estimator.predict(create_predict_X(...)), MultiSeries, LightGBM, c = 10..80, steps=1")
+print("\n# E. estimator.predict(create_predict_X(...)), MultiSeries, c = 10..80, steps=1")
 exog_next = exog.iloc[200:201]
-for cf in (None, "auto"):
-    new = lambda: ForecasterRecursiveMultiSeries(lgbm(), lags=1, categorical_features=cf)
-    for label, ctx in (("today", None), ("(c) codes", lambda: option_c("codes"))):
-        if ctx is None:
-            f = new(); f.fit(series=s_tr, exog=e_tr)
-            Xp = f.create_predict_X(1, exog=exog_next)
-            p = f.predict(1, exog=exog_next)["pred"].to_numpy()
-        else:
-            with ctx():
+for name, mk in {"LightGBM": lgbm, "XGBoost": xgb, "HGB": hgb}.items():
+    for cf in (None, "auto"):
+        new = lambda: ForecasterRecursiveMultiSeries(mk(), lags=1, categorical_features=cf)
+        for label, ctx in (("today", None), ("(c) codes", lambda: option_c("codes")),
+                           ("(c) values", lambda: option_c("values"))):
+            if ctx is None:
                 f = new(); f.fit(series=s_tr, exog=e_tr)
                 Xp = f.create_predict_X(1, exog=exog_next)
                 p = f.predict(1, exog=exog_next)["pred"].to_numpy()
-        e = attempt(lambda: f.estimator.predict(Xp[f.X_train_features_names_out_]))
-        e2 = attempt(lambda: f.estimator.predict(Xp[f.X_train_features_names_out_].to_numpy(dtype=float)))
-        print(f"  cf={cf!s:4} {label:9}: create_predict_X c = {Xp['c'].iloc[0]} ({Xp['c'].dtype}) |"
-              f" estimator.predict(DataFrame) vs predict: {e if isinstance(e, str) else fmt(np.abs(e - p).max())}"
-              f" | estimator.predict(numpy) vs predict: {e2 if isinstance(e2, str) else fmt(np.abs(e2 - p).max())}")
+            elif cf is None:
+                with ctx():
+                    f = new(); f.fit(series=s_tr, exog=e_tr)
+                    Xp = f.create_predict_X(1, exog=exog_next)
+                    p = f.predict(1, exog=exog_next)["pred"].to_numpy()
+            else:
+                continue
+            e = attempt(lambda: f.estimator.predict(Xp[f.X_train_features_names_out_]))
+            e2 = attempt(lambda: f.estimator.predict(Xp[f.X_train_features_names_out_].to_numpy(dtype=float)))
+            print(f"  {name:8} cf={cf!s:4} {label:10}: create_predict_X c = {Xp['c'].iloc[0]} ({Xp['c'].dtype}) |"
+                  f" estimator.predict(DataFrame) vs predict: {e[:60] if isinstance(e, str) else fmt(np.abs(e - p).max())}"
+                  f" | estimator.predict(numpy) vs predict: {e2[:60] if isinstance(e2, str) else fmt(np.abs(e2 - p).max())}")
 
 print("\n# F. Exog as a dict, the category dtype of `c` is different in each series (None, LightGBM)")
 ex_a = exog.copy()
@@ -203,5 +207,5 @@ for name, mk, params in (("XGBoost(feature_types=[q,q,q,c], enable_categorical=T
             warnings.simplefilter("always")
             f.fit(series=series, exog=exog_i)
         print(f"  {name:58} cf={cf!s:4}: after fit {({p: f.estimator.get_params()[p] for p in params})},"
-              f" warnings {len([x for x in w if 'categor' in str(x.message) or 'feature_types' in str(x.message)])}")
+              f" warnings about it {len([x for x in w if 'overridden' in str(x.message) or 'been set' in str(x.message)])}")
 print(_env.versions())

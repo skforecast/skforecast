@@ -21,7 +21,12 @@ difference of the backtesting predictions (1 step, no refit) with "as fitted";
 MAE of the backtesting against y_true (noise sd = 1), all rows / rows with a
 seen category / rows with the unseen category.
 
-Usage: python p1c_05_big.py [lgbm|xgb|hgb|catboost ...]
+With `--seeds`, only the accuracy of (c) against (a') over 5 seeds of the
+data, without the unseen category: MAE of the 1-step predictions of the test
+rows, computed with the estimator on the matrix of the test rows (which the
+main run shows to be what backtesting gives for these two options).
+
+Usage: python p1c_05_big.py [--seeds] [lgbm|xgb|hgb|catboost ...]
 """
 import _env
 import sys
@@ -145,8 +150,36 @@ def run(name, mk, n, n_train, share, detail):
             f"{k.strip()} {fmt(np.abs(v['pred'] - base).max())}" for k, v in rows.items() if "(c)" in k and "codes" not in k))
 
 
+def accuracy(mk, n, n_train, share, seed):
+    """MAE of the test rows: (c) codes and (a') values as numeric."""
+    series, exog, _ = make_big(n=n, ordinal_share=share, seed=seed)
+    s_tr, e_tr = head(series, n_train), head(exog, n_train)
+    out = []
+    for ctx, variant in ((lambda: option_c("codes"), "codes"), (numpy_fit, "values")):
+        with ctx():
+            f = ForecasterRecursiveMultiSeries(mk(), lags=3, categorical_features=None)
+            f.fit(series=s_tr, exog=e_tr)
+        Xte, key = test_rows(f, series, exog, n_train)
+        y = pd.concat(series).swaplevel().reindex(key).to_numpy()
+        out.append(np.abs(_build_predict_function(f.estimator)(to_matrix(Xte, variant)[0]) - y).mean())
+    return out
+
+
 F = factories()
-for name in (sys.argv[1:] or list(F)):
+args = [a for a in sys.argv[1:] if a != "--seeds"]
+if "--seeds" in sys.argv:
+    print("# MAE of the test rows, (c) codes / (a') values as numeric, seeds 0..4 (no unseen category)")
+    for n, n_train in ((400, 300), (200, 100)):
+        for name in (args or list(F)):
+            for share in (0.0, 0.5, 1.0):
+                res = np.array([accuracy(F[name], n, n_train, share, seed) for seed in range(5)])
+                wins = int((res[:, 0] < res[:, 1]).sum())
+                print(f"  {n_train} training rows, {name:8} ordinal share {share}: (c) {res[:, 0].mean():5.2f}"
+                      f" | (a') {res[:, 1].mean():5.2f} | (c) better in {wins} of 5 seeds"
+                      f" | per seed (c) - (a'): {np.round(res[:, 0] - res[:, 1], 2).tolist()}")
+    print(_env.versions())
+    sys.exit()
+for name in (args or list(F)):
     print(f"\n# {name}")
     run(name, F[name], 400, 300, 0.5, True)
     run(name, F[name], 400, 300, 0.0, False)
