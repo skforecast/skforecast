@@ -130,7 +130,7 @@ Los documentos borrados se leen con `git show <commit>:<ruta>`.
 |---|---|---|---|---|---|
 | FE-05 | Comparar varios forecasters de cualquier familia en un solo backtesting, sobre los mismos puntos y con la misma escala | 0.28.0 | M | Diseño analizado y prototipado; decisión pendiente D-FE05. Requisito: BUG-06 | R27 §3 ("FE-05: análisis de diseño"); R27-repro/FE-05-prototype.py |
 | BUG-02 | Con `fold_stride < steps` las métricas solo miden los primeros horizontes y las búsquedas eligen por el error a 1 paso | 0.28.0 | S | Decisión pendiente D-BUG02 | R27 §4; R27-repro/BUG-02.py |
-| PERF-03 | Métricas pedidas por nombre en numpy (búsqueda `OneStepAheadFold` con 1000 series: 2,6 veces más rápida con Ridge); incluir RMSE. Segunda parte (M1): en el backtesting multiserie, pasar a las métricas cortes de arrays por nivel en lugar de un grupo de pandas (1000 series y MAE: el bucle por nivel baja de unos 715 a 203 ms con la misma función de scikit-learn, y a 7 ms con la primera parte) | 0.28.0 | S | No empezado (`_get_metric`). M1: plan escrito y prototipado en memoria, idéntico con las nueve métricas de regresión. M1 medido otra vez el 2026-11-19 (600 series, 50 folds): de 480 a 680 ms a 36 a 40 ms por backtesting, y por cada candidato de una búsqueda. Tras PERF-backtesting-ms-fast-path las métricas son el 40 % de lo que queda: hacerlo antes o a la vez. La fórmula directa no siempre es idéntica bit a bit (4e-16 en un caso) | R27 §4; R27-repro/PERF-03.py; BTSPEED §2; NPREV §9.3 |
+| PERF-03 | Métricas pedidas por nombre en numpy (búsqueda `OneStepAheadFold` con 1000 series: 2,6 veces más rápida con Ridge); incluir RMSE. Segunda parte (M1): en el backtesting multiserie, pasar a las métricas cortes de arrays por nivel en lugar de un grupo de pandas (1000 series y MAE: el bucle por nivel baja de unos 715 a 203 ms con la misma función de scikit-learn, y a 7 ms con la primera parte) | 0.28.0 | S | No empezado (`_get_metric`). M1: plan escrito y prototipado en memoria, idéntico con las nueve métricas de regresión. M1 medido otra vez el 2026-11-19 (600 series, 50 folds): de 480 a 680 ms a 36 a 40 ms por backtesting, y por cada candidato de una búsqueda. La primera parte vale por sí sola (búsquedas one-step-ahead) y va antes del camino rápido; M1 sola es un 5 % de la llamada y su peso aparece con PERF-backtesting-ms-fast-path (las métricas pasan a ser del 30 al 40 % de lo que queda): va dentro de su paso 2. La fórmula directa no siempre es idéntica bit a bit (4e-16 en un caso) | R27 §4; R27-repro/PERF-03.py; BTSPEED §2; NPREV §9.3 |
 | BUG-01 | `backtesting` con `initial_train_size=None` sobre un forecaster ajustado evalúa in-sample sin aviso (métricas 2,5 veces optimistas) | 0.28.0 | S | Reproducido. Solo aviso silenciable (uso documentado) | R27 §4; R27-repro/BUG-01.py |
 | BUG-11 | `backtesting_forecaster` con `ForecasterEquivalentDate` e `interval` da `AttributeError` (`predict_quantiles`) con el método por defecto | 0.28.0 | S | Reproducido | R27 §4; R27-repro/BUG-11.py |
 | FE-04 | `ForecasterEquivalentDate` en `backtesting_forecaster_multiseries`, con los mismos folds que el modelo global | 0.28.0 | M | No empezado | R27 §3; R27-verify/FE-04-risk.md, FE-04-value.md |
@@ -139,7 +139,7 @@ Los documentos borrados se leen con `git show <commit>:<ruta>`.
 | PERF-backtesting-grouped-warnings | Un solo aviso "(in 6 of 7 folds)" en lugar del mismo aviso por fold con `refit=True`, con cualquier `n_jobs`, como ya hacen las búsquedas | 0.28.0 | M | No empezado. Cambia lo que se ve con `n_jobs=1`. Decidir el orden con PERF-backtesting-ms-fast-path: ese camino tiene los avisos de cada fold en máscaras, así que agruparlos allí es trivial | TRANSP §15.5 (alternativa E) |
 | PERF-predict-numpy | Bloque B: que el backtesting valide solo el primer fold cuando los datos lo garantizan (`y` y `exog` sin NaN, mismo índice, sin zona horaria con frecuencia diaria o mayor), limitado a `ForecasterRecursive` y `ForecasterDirect`, con test de equivalencia. El resto de la propuesta (multiserie) está en PERF-backtesting-ms-fast-path | 0.28.0 | M a L | Bloque A hecho (#1516). Bloque B pendiente. Medido sobre el backtesting completo el 2026-11-19 (50 folds, Ridge, exog float): −19 a −21 % sin validar por fold y −25 a −33 % con el índice por posición, es decir, 5 a 7 ms por backtesting; lo que pesa es el índice diario con zona horaria (PERF-expand-index-utc). La condición "cuando los datos lo garantizan" no hace falta: los avisos por fold se reproducen desde máscaras calculadas una vez. La parte de multiserie pasa a PERF-backtesting-ms-fast-path | Anexo B; P3 §11; R28 fila del mismo ID; NPREV §2.2 y §9.5 |
 | PERF-backtesting-folds-positions | Extracción de folds del backtesting multiserie por posición: última ventana montada desde los valores de las series y series de entrenamiento con un solo `iloc` (500 series y LightGBM, 10 folds: −0,5 s de 4,2 s sin refit y −1,3 s de 25,6 s con refit, con un prototipo que incluye la exog por posición) | por decidir | M | Plan escrito y prototipado en memoria, sin implementar. Después de fusionar PERF-multiseries-names-pyarrow, que toca la misma función. Con PERF-backtesting-ms-fast-path, F1 (ventana) y F3 (exog de test) quedan absorbidas en el backtesting multiserie: solo hacerlas antes si ese camino se retrasa (siguen sirviendo al backtesting foundation y a la validación one-step-ahead). F2 (series de entrenamiento) mantiene su valor: con refit en cada fold son 3,2 a 3,5 s de 20 a 25 s (600 series, Ridge) | BTSPEED §3; NPREV §9.1 |
-| PERF-backtesting-ms-fast-path | Backtesting y búsquedas de `ForecasterRecursiveMultiSeries` sin refit que validan y preparan una vez (matriz de series, exog codificada solo en las filas de test, máscaras para los avisos) y recorren los folds en numpy. En dos pasos: (1) partir `predict` en validar, preparar y un núcleo numpy compartido, sin cambio de comportamiento; (2) camino rápido sobre ese núcleo, con la preparación reutilizable entre los candidatos de una búsqueda. 600 series, exog mixta, 50 folds, llamada completa, con salidas y avisos idénticos: Ridge de 10 a 12 s a 1,7 a 2,0 s (1,3 s con PERF-03); LightGBM de 12 a 14 s a 3,7 a 4,2 s; búsqueda de 20 candidatos con Ridge de 66 a 77 s a 22 a 24 s. Con pocos folds o modelos caros gana poco (LightGBM, 5 folds: nada) y con refit en cada fold no aporta (1,05 a 1,2 veces) | por decidir | L | Prototipado en memoria (`proto_bt_once.py`, `proto_bt_blocks.py`): 24 de 25 casos idénticos y uno con el mismo error, con y sin refit, en pandas 2.3 y pandas 3 sin y con `pyarrow`. Después de PERF-multiseries-names-pyarrow y con PERF-03 (M1). Decisión D-NP4. Aceptación por tiempo de la llamada completa, no por fold. Pendiente de probar con datos reales (guías de usuario, `benchmarks/`) | NPREV §2, §6 y §9 |
+| PERF-backtesting-ms-fast-path | Backtesting y búsquedas de `ForecasterRecursiveMultiSeries` sin refit que validan y preparan una vez (matriz de series, exog codificada solo en las filas de test, máscaras para los avisos) y recorren los folds en numpy. En dos pasos: (1) partir `predict` en validar, preparar y un núcleo numpy compartido, sin cambio de comportamiento; (2) camino rápido sobre ese núcleo, con la preparación reutilizable entre los candidatos de una búsqueda. 600 series, exog mixta, 50 folds, llamada completa, con salidas y avisos idénticos: Ridge de 10 a 12 s a 1,7 a 2,0 s (1,3 s con PERF-03); LightGBM de 12 a 14 s a 3,7 a 4,2 s; búsqueda de 20 candidatos con Ridge de 66 a 77 s a 22 a 24 s. Con pocos folds o modelos caros gana poco (LightGBM, 5 folds: nada) y con refit en cada fold no aporta (1,05 a 1,2 veces) | por decidir | L | Prototipado en memoria (`proto_bt_once.py`, `proto_bt_blocks.py`): 24 de 25 casos idénticos y uno con el mismo error, con y sin refit, en pandas 2.3 y pandas 3 sin y con `pyarrow`. Después de PERF-multiseries-names-pyarrow, de PERF-exog-float-matrix y de la primera parte de PERF-03, con M1 dentro del paso 2. Decisión D-NP4. Condiciones, por ser un segundo camino que hay que mantener: un solo núcleo numpy (el de `predict`), vuelta al camino actual en todo lo que D-NP4 deja fuera, y la batería de equivalencia de `proto_bt_once_cases.py` convertida en tests. Aceptación por tiempo de la llamada completa, no por fold. Pendiente de probar con datos reales (guías de usuario, `benchmarks/`), antes de empezar: si la llamada completa no baja al menos a la mitad en casos reales sin refit, replantear el alcance | NPREV §2, §6 y §9 |
 | PERF-search-shared-train-matrices | Búsquedas sobre los parámetros del estimador: reutilizar las matrices de entrenamiento entre los candidatos que comparten `lags` y datos. Con Ridge, `_create_train_X_y` es del 62 al 74 % de cada `fit` (600 series) y, tras PERF-backtesting-ms-fast-path y PERF-03, los `fit` son el 75 % de la búsqueda | por decidir | por estimar | Estimado a partir de las piezas (la búsqueda de 20 candidatos bajaría de 22 a 24 s a unos 10 s), sin prototipo | NPREV §9.2 |
 | BUG-backtesting-refit-skipfolds | Backtesting multiserie con refit intermitente y `skip_folds`: `_extract_data_folds_multiseries` vuelve a extraer el entrenamiento cuando cambian sus límites aunque ese fold no se ajuste, y una serie puede predecirse con un modelo que no la vio (`UnknownLevelWarning`) | por decidir | S | Visto el 2026-11-19 en un caso (`refit=3`, `skip_folds=2`). Falta la reproducción mínima y decidir si es intencionado | NPREV §9.1 |
 | PERF-expand-index-utc | `_is_utc_anchored_index` se ejecuta en cada `expand_index` (0,4 ms con índice diario con zona horaria): −70 % en el backtesting de una serie sin refit con ese índice (Ridge, 50 folds: de 52 a 65 ms a 15 a 20 ms). Hacerlo con la formulación exacta (aritmética entera, sin `normalize` ni `unique`); una caché por serie cambia resultados, porque el valor depende de la ventana | por decidir | S | Medido el 2026-11-19. La formulación exacta coincide con la actual en todas las ventanas probadas; su tiempo no está medido | NPREV §4 (P6) y §9.5 |
@@ -277,7 +277,7 @@ erróneos silenciosos delante:
    FOUND-adapter-arg, ISSUE-1506, ISSUE-1508, BUG-ms-fit-dataframe-categorical (con CAT-T2)
    y PERF-exog-float-matrix (arregla un fallo de `predict` con la configuración por defecto).
 3. Planes 02 y 03 de foundation, y BUG-06 (requisito de FE-05).
-4. FE-05, después BUG-02 y PERF-03.
+4. FE-05, después BUG-02. PERF-03, en el orden de rendimiento de abajo.
 5. QW-01 y BUG-01 (avisos).
 6. QW-11 y FE-06.
 7. Dependencias (sección 2): independientes, en cualquier momento.
@@ -295,14 +295,47 @@ los forecasters de una serie. Las cifras son de datos sintéticos (600 series, 5
 falta probar el prototipo con casos reales. El mismo orden, con el impacto y las condiciones de
 cada elemento, está en NPREV §8.
 
-1. **Corrección:** PERF-exog-float-matrix (S, configuración por defecto),
-   BUG-ms-fit-dataframe-categorical (M, con CAT-T2 y D-NP2), BUG-ms-exog-none-bool,
-   BUG-backtesting-refit-skipfolds.
-2. **Ganancia grande y medida:** PERF-03 con M1 (S; la mejor relación entre ganancia y
-   esfuerzo, y sirve con y sin refit), PERF-backtesting-ms-fast-path (L; la mayor ganancia
-   absoluta), PERF-search-shared-train-matrices (estimada, sin prototipo).
-3. **Baratas y seguras:** PERF-expand-index-utc, PERF-dmv-last-window, PERF-ms-fit-small,
-   PERF-residuals-numpy, y la parte F2 de PERF-backtesting-folds-positions (ayuda con refit).
+Criterios: corrección antes que velocidad; las decisiones se abren pronto (cuestan días de
+calendario, no esfuerzo); un experimento barato que puede cambiar un plan caro va antes que
+ese plan; dos cambios sobre el mismo código, seguidos y primero el que fija el comportamiento;
+impacto = ganancia por cuántos usuarios la notan, y medido antes que estimado; y un segundo
+camino de código es un coste permanente, así que entra con condiciones.
+
+0. **Decisiones, ya (sin código):** D-NP2, D-NP3, D-NP4, D-BUG02, qué significa saltar un
+   fold con refit (BUG-backtesting-refit-skipfolds) y si las métricas en numpy pueden diferir
+   en el último bit de las de scikit-learn (PERF-03: 4e-16 en un caso).
+1. **Corrección.**
+   1. PERF-exog-float-matrix y BUG-ms-exog-none-bool, seguidas: las dos tratan los dtypes de
+      la exog al pasar a numpy, y comparten la matriz de tests de dtypes (`bool`, nullable,
+      `pyarrow`) que hoy no existe y que también necesita el siguiente. La primera arregla un
+      fallo de `predict` con la configuración por defecto.
+   2. BUG-ms-fit-dataframe-categorical (M, con CAT-T2 y D-NP2): predicciones erróneas sin
+      aviso, pero solo con `categorical_features=None` o una lista incompleta.
+   3. BUG-backtesting-refit-skipfolds: configuración rara (refit intermitente con
+      `skip_folds`).
+2. **Ganancia grande: backtesting y búsquedas de multiserie sin refit.**
+   1. Probar el prototipo (`proto_bt_blocks.py`) con dos o tres casos reales (guías de
+      usuario, `benchmarks/`). Es barato y decide si se sigue: si la llamada completa no baja
+      al menos a la mitad en casos reales sin refit, replantear el alcance antes de invertir
+      una L.
+   2. PERF-03, primera parte (métricas por nombre en numpy, S): vale por sí sola (búsquedas
+      one-step-ahead 2,6 veces más rápidas con 1000 series) y es la pieza que usa el camino
+      rápido.
+   3. PERF-backtesting-ms-fast-path, paso 1: partir `predict` en validar, preparar y un núcleo
+      numpy, sin cambio de comportamiento. Después de 1.1 y 1.2, para que el núcleo herede un
+      tratamiento de dtypes ya correcto.
+   4. PERF-backtesting-ms-fast-path, paso 2, con M1 (segunda parte de PERF-03) dentro. Sola,
+      M1 quita unos 0,6 s de 10 a 12 (un 5 %); con el camino rápido las métricas son del
+      30 al 40 % de lo que queda. Si D-BUG02 está decidida, BUG-02 antes de M1 (tocan el mismo
+      cálculo de métricas).
+   5. PERF-search-shared-train-matrices: prototipo primero; tras 2.4 los `fit` son el 75 % de
+      una búsqueda.
+3. **Baratas e independientes, en cualquier hueco, por este orden:** PERF-expand-index-utc
+   (−70 % en el backtesting de una serie con índice diario y zona horaria: la única ganancia
+   grande para los forecasters de una serie), la parte F2 de PERF-backtesting-folds-positions
+   (la que ayuda con refit, que D-NP4 deja fuera del camino rápido; después de 2.4, que toca
+   la misma función), PERF-ms-fit-small, PERF-residuals-numpy y PERF-dmv-last-window (medir
+   antes: su ganancia no está verificada).
 4. **Poco valor, no ahora:** PERF-categorical-codes, PERF-scalers-extension y las partes F1 y
    F3 de PERF-backtesting-folds-positions (el camino rápido se lleva su ganancia en el caso
    principal); el bloque B de PERF-predict-numpy (5 a 7 ms por backtesting);
