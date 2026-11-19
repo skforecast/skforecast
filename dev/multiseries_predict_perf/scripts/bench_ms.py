@@ -14,6 +14,8 @@ import re
 import sys
 import time
 
+import pandas as pd
+
 from common import (
     LAGS, TimeSeriesFold, backtesting_forecaster_multiseries, env_info,
     exog_for_predict, make_forecaster, make_wide, to_format,
@@ -33,7 +35,7 @@ def reps_of(n_series):
 # ----------------------------------------------------------------------------
 def predict_case(n_series, exog_kind, steps=1, est="linear", lw="given",
                  encoding="ordinal", n_levels=None, extra_rows=0, early=0,
-                 index_name=None, exog_dtypes="float", missing=0):
+                 index_name=None, exog_dtypes="float", missing=0, nofreq=False):
     """
     `n_levels`: predict only the first `n_levels` series (the window keeps all
     the columns). `extra_rows`: exog with more rows than steps. `early`: exog
@@ -41,7 +43,8 @@ def predict_case(n_series, exog_kind, steps=1, est="linear", lw="given",
     all the predicted dates (it has to be aligned by date). `index_name`: name
     of the exog index (the index of the predictions has none, so the exog is
     aligned). `exog_dtypes`: see `make_wide`. `missing`: the last `missing`
-    series have no exog in the dict (their exog features are NaN).
+    series have no exog in the dict (their exog features are NaN). `nofreq`:
+    exog index without `freq` (as read from a file), same dates.
     """
     n_calls = {3: 200, 20: 200, 100: 100}.get(n_series, 20)
     if est == "lgbm":
@@ -51,6 +54,9 @@ def predict_case(n_series, exog_kind, steps=1, est="linear", lw="given",
     )
     if index_name is not None:
         exog = exog.rename_axis(index_name)
+    if nofreq:
+        exog = exog.set_axis(pd.DatetimeIndex(exog.index, freq=None))
+        assert exog.index.freq is None
     names = list(series.columns)
     levels = None if n_levels is None else names[:n_levels]
     f = make_forecaster(est, encoding)
@@ -98,11 +104,16 @@ def _fit_timed(self, *args, **kwargs):
 
 
 def backtesting_case(n_series, fmt, with_exog, steps=1, est="linear", refit=False,
-                     exog_dtypes="float"):
+                     exog_dtypes="float", index_name=None, nofreq=False):
     n_folds = {1: 100, 24: 10}[steps] if n_series <= 100 else {1: 20, 24: 5}[steps]
     if refit:
         n_folds = 20
     series, exog = make_wide(n_series, T + n_folds * steps, exog_dtypes=exog_dtypes)
+    if index_name is not None:
+        exog = exog.rename_axis(index_name)
+    if nofreq:
+        exog = exog.set_axis(pd.DatetimeIndex(exog.index, freq=None))
+        assert exog.index.freq is None
     series, exog = to_format(series, exog if with_exog else None, fmt)
     cv = TimeSeriesFold(steps=steps, initial_train_size=T, refit=refit)
     kw = dict(
@@ -244,6 +255,24 @@ for n in (20, 100):
     CASES[f"predict|n={n}|exog=dictown|steps=1|missing=1|lgbm"] = (
         lambda n=n: predict_case(n, "dictown", est="lgbm", missing=1)
     )
+
+# Change 4b: exog with the dates of the predictions but an index that is not
+# `identical` (named, or without `freq`), and the adverse case with other dates
+# and a named index (it now compares the dates before `reindex`).
+for n in (20, 100):
+    CASES[f"predict|n={n}|exog=dictown|steps=1|nofreq"] = (
+        lambda n=n: predict_case(n, "dictown", nofreq=True)
+    )
+    CASES[f"predict|n={n}|exog=dictown|steps=1|early=1|named"] = (
+        lambda n=n: predict_case(n, "dictown", early=1, index_name="date")
+    )
+    for fmt in ("wide", "dict"):
+        CASES[f"backtesting|n={n}|fmt={fmt}|exog={fmt}|steps=1|named"] = (
+            lambda n=n, fmt=fmt: backtesting_case(n, fmt, True, index_name="date")
+        )
+        CASES[f"backtesting|n={n}|fmt={fmt}|exog={fmt}|steps=1|nofreq"] = (
+            lambda n=n, fmt=fmt: backtesting_case(n, fmt, True, nofreq=True)
+        )
 
 # Exog with an `int` and a `category` column (calendar features), not only float.
 for n in (20, 100, 600, 1000):

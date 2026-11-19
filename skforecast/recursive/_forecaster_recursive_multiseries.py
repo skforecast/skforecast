@@ -2985,19 +2985,34 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     # and transformers and encoders treat them differently.
                     # The names of the indexes are compared first, since the
                     # index of the predictions has none: an `exog` with a named
-                    # index (for example read from a file) goes straight to
-                    # `reindex` without comparing its dates. Sending more
-                    # cases to `reindex` never changes the result, it is
-                    # the usual path.
+                    # index (for example read from a file) skips the
+                    # comparison of its dates here.
+                    # If the dates are the same (`equals`, the check
+                    # `reindex` makes on each axis) but the index is not
+                    # `identical` (a name, no frequency) and the columns are,
+                    # `reindex` returns the data of `exog_values` with the
+                    # index and columns of the target. The same is done
+                    # without `reindex`. The columns are also replaced:
+                    # `identical` columns can have other labels (`None` and
+                    # NaN in pandas 2). Sending more cases to `reindex` never
+                    # changes the result, it is the usual path.
                     if not (
                         exog_values.index.name is prediction_index.name
                         and exog_values.index.identical(prediction_index)
                         and exog_values.columns.identical(exog_columns)
                     ):
-                        exog_values = exog_values.reindex(
-                                          index   = prediction_index,
-                                          columns = exog_columns
-                                      )
+                        if (
+                            exog_values.index.equals(prediction_index)
+                            and exog_values.columns.identical(exog_columns)
+                        ):
+                            exog_values = exog_values.copy(deep=False)
+                            exog_values.index = prediction_index
+                            exog_values.columns = exog_columns
+                        else:
+                            exog_values = exog_values.reindex(
+                                              index   = prediction_index,
+                                              columns = exog_columns
+                                          )
                     exog_aligned_by_id[exog_id] = exog_values
 
             exog_values_all_levels.append(exog_values)

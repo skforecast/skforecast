@@ -276,3 +276,29 @@ Con 600 y 1000 series (3 rondas, una en cada orden de los árboles), de −5 a +
 | Implementada (plantilla como hoy si falta alguna exog) | −1,2 / +0,4 / 0,0 | +0,3 / +0,4 / +3,3 |
 
 La primera tanda, frente a `d3d6e7ca3`, se descartó: la máquina estaba ocupada por otros tests (el control se movía de −13 a +20 % y la dispersión de la base llegaba a 1,35).
+
+## 13. Cambio 4b: exog con las fechas de las predicciones y el índice con nombre o sin `freq` (2026-11-19)
+
+Prototipo sobre una copia de `1587f1069` (el paquete de `ab62227dc` es idéntico), medido frente a esa misma copia sin el cambio (`MS_BASE_TREE`), solo con los casos por los que pasa el cambio, los adversos y un control (`C4B`, `C4B_ADV` y `C4B_AFF` en `$MS_WORK/cambio4b_regex.sh`). Núcleo 12, 2 rondas; ganancia en p3 con pa / p3 sin pa / p2 (pandas 3 primero, criterio del 2026-11-19).
+
+**Qué hace `reindex`** (pandas 2.3.3 y 3.1.1): si los dos ejes no son `identical`, `_reindex_multi` o `_reindex_axes` llaman a `Index.reindex(destino)` en cada eje, que con `self.equals(destino)` (receptor: el índice del usuario) da `indexer = None`; `reindex_indexer` copia entonces los bloques del usuario (copia profunda en p2, superficial en p3) con el objeto de destino como eje. El camino nuevo hace lo mismo con una copia superficial.
+
+**Sonda de etiquetas** (`scripts/probe_labels4b.py`): 0 diferencias frente al código del cambio 4 y frente a `reindex` (valores, dtypes, índice y columnas `identical` y del mismo tipo, `freq`, `attrs`, `flags`, errores; el objeto del usuario no cambia) en 210 880 / 218 008 / 132 600 casos (p2 / p3 con pa / p3 sin pa), de los que 7348 / 16 100 / 9460 van por el camino nuevo. La primera versión del prototipo dejaba las columnas del usuario y dio 176 diferencias en p2: con nombres `['a', None, 'c']`, las columnas del usuario son `identical` a las de entrenamiento `['a', nan, 'c']` (pandas 2 trata `None` y NaN como iguales y las dos son `object`), y `reindex` pone las de destino. Poner también las columnas del entrenamiento cuesta 1 µs (11,0 frente a 9,7 µs en p3; `reindex`, 30 µs).
+
+**Identidad** frente a la base (`cb03fbe96`), cinco baterías: 0 diferencias en los tres entornos (ms 4591 / 4510 / 4510 casos, trims 2911, dtypes 312, exog 424 / 424 / 396, labels 7866 / 8106 / 3110). Casos límite por la API pública (`scripts/edges4b.py`, 7472 por entorno: Series, columnas que faltan, sobran o en otro orden, categóricas, `transformer_exog`, niveles sin exog, un nivel, objeto compartido, índice con zona, en `us` y `RangeIndex`, `predict_interval`, backtesting): 0 diferencias en los tres entornos, 460 casos sin error por el camino nuevo.
+
+**Tiempos** (versión implementada, orden de los árboles invertido; mediana de la dispersión entre rondas, 1,011):
+
+| Caso | 20 series | 100 series |
+|---|---|---|
+| `predict`, exog en diccionario con el índice con nombre | 11,0 / 15,1 / 18,1 | 15,6 / 19,4 / 26,7 |
+| Ídem, sin `freq` | 9,1 / 11,7 / 14,2 | 13,1 / 15,6 / 18,6 |
+| Backtesting por fold, exog en diccionario con nombre | 5,9 / 7,6 / 9,3 | 13,7 / 13,5 / 10,8 |
+| Ídem, sin `freq` | 5,9 / 6,7 / 7,9 | 9,1 / 9,7 / 10,1 |
+| Control (`predict` con exog ancha) | −0,1 / −1,3 / −1,0 | |
+
+Primera tanda, con la primera versión (sin poner las columnas): los mismos casos de 7 a 21 % en pandas 3; backtesting con exog ancha, con nombre o sin `freq`, de 0 a 4,5 % (el objeto compartido se alinea una vez por fold); adversos con 20 series de −0,7 a +0,3 % en pandas 3.
+
+**Adversos con 100 series** (`extra=10`, `early=1`, `early=1|named`: otras fechas, ahora con un `equals` antes del `reindex`, de 1,0 a 1,4 µs por serie en `timeit`): la primera tanda dio de −2,2 a +1,0 % en p3 con pa, de −3,0 a +2,1 % sin pa y de −4,4 a −1,3 % en p2; repetidos con el orden de los árboles invertido, de −1,1 a −0,7 / −0,7 a −0,4 / −1,6 a −1,1. Una guarda `len(exog_values) == len(prediction_index)` antes del `equals` (también idéntica en la sonda) daba de −1,4 a −1,3 / −0,8 a +0,5 / −0,5 a +0,2: no mejora en pandas 3 con pa y el resto queda dentro del ruido, no se implementa.
+
+**Revisión final** (`timeit` del bloque de alineación de un nivel, antes y después, núcleo 12, mínimo de 9 tandas alternas; exog de 3 filas y 3 columnas): con nombre, de 30,6 a 17,8 µs en pandas 3 y de 32,2 a 14,6 en pandas 2; sin `freq`, de 36,8 a 21,6 y de 38,9 a 19,3; el atajo del cambio 4 no cambia (6,9 y 10,2 µs). Un adverso que no estaba en las tandas, las mismas fechas con otras columnas (falta una; va a `reindex` después del `equals` y de comparar las columnas): de +0,6 a +2,4 µs sobre 104 a 112 µs en pandas 3 y de +3,6 a +4,1 sobre 79 a 94 en pandas 2, del orden del de otras fechas (de +1,4 a +2,2 sobre 74, y de +2,8 a +3,6 sobre 75). En los dos caminos los ejes del resultado son los objetos de destino (`index is prediction_index`, `columns is exog_columns`); la única diferencia con `reindex` es que en pandas 2 el resultado comparte los datos con la exog del usuario en vez de copiarlos (en pandas 3 ya los compartía), como el atajo del cambio 4, y después solo se lee.

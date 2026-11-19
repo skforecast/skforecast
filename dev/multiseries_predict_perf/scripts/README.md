@@ -31,6 +31,8 @@ Una quinta, `identity_labels.py` (unos 3500 casos, varios minutos), pasa una exo
 
 `probe_labels7.py` (unos minutos por entorno, no importa skforecast) es la sonda de etiquetas del cambio 7: comprueba, con nombres de columna y tipos de índice como los de `identity_labels.py`, qué construcciones baratas de las columnas de la exog son `identical` a las de la plantilla vacía que se creaba antes, y que `reindex(index=..., columns=...)` da lo mismo que `reindex_like` con ella, errores incluidos. La batería `labels` no distingue esas construcciones (solo cambia el camino, no las salidas), así que la prueba es esta sonda. Se lanza suelta en cada entorno: `[NO_PYARROW=1] python probe_labels7.py`.
 
+`probe_labels4b.py` (de 10 a 15 minutos por entorno; los tres pueden ir a la vez, no son tiempos; no importa skforecast) es la sonda del cambio 4b: compara, errores incluidos, la exog de un nivel que devuelve el camino nuevo (índice `equals` al de las predicciones y columnas `identical`: copia superficial con el índice de las predicciones y las columnas del entrenamiento) con la del código del cambio 4 y con un `reindex`, con nombres y tipos de columnas como los de `probe_labels7.py` e índices del usuario con nombre, sin `freq`, con otra `freq` igual, `object`, otra unidad, zona horaria o tipo, más largos, más cortos o desplazados; también que el objeto del usuario no cambia. Como en el 7, ni la batería `labels` ni los tests ven una diferencia de etiquetas (no llega a las predicciones): fue esta sonda la que encontró que hay que poner también las columnas del entrenamiento (`None` y NaN son `identical` en pandas 2). `edges4b.py` pasa los casos límite del 4b por la API pública (`predict`, `predict_interval` y backtesting) en el árbol de `PYTHONPATH`; `edges4b_compare.py` compara dos árboles.
+
 Desde el cambio 4, cada cambio pasa las cinco:
 
 ```bash
@@ -51,6 +53,8 @@ python agg_ms.py "$MS_WORK/out/<etiqueta>"           # tres entornos, coste fijo
 Los casos con `exogdt=mixed` usan una exog con una columna float, una `int` y una `category` de enteros (variables de calendario), en lugar de tres float; están en `@core` (20 y 100 series) y en `@scale` (600 y 1000).
 
 Los casos `missing=1|lgbm` (20 y 100 series, fuera de los conjuntos) pasan un diccionario sin la exog de la última serie, cuyos predictores de exog quedan NaN (por eso LightGBM): es el adverso del cambio 7, el único caso en el que se crea la plantilla vacía de exog.
+
+Los casos del cambio 4b (20 y 100 series, fuera de los conjuntos): `predict` con exog en diccionario sin `freq` (`nofreq`), backtesting con exog ancha o en diccionario con el índice con nombre (`named`) o sin `freq`, y el adverso `early=1|named` (otras fechas con nombre, que ahora compara las fechas antes del `reindex`). Expresiones regulares de las tandas del 4b en `$MS_WORK/cambio4b_regex.sh` (fuera del repositorio).
 
 El árbol `base` es el de la PR (`cb03fbe96`). Para aislar la ganancia de un cambio, se compara con el árbol del commit anterior: `git archive <commit> skforecast | tar -x -C "$MS_WORK/base_<commit>"` y `MS_BASE_TREE="$MS_WORK/base_<commit>"` al lanzar `run_bench.sh`.
 

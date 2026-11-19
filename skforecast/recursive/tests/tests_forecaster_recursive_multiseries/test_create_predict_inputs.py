@@ -1130,7 +1130,8 @@ def _exog_dict_create_predict_inputs(kind):
     """
     Exog of series '1' and '2' for the 3 steps after the training data, as
     `kind`: aligned with the predictions (`identical` index and columns) or in
-    a form that `_create_predict_inputs` aligns (`reindex`).
+    a form that `_create_predict_inputs` aligns (with `reindex` or, if only
+    the name or the frequency of the index differ, with a shallow copy).
     """
     idx = pd.date_range(start='2020-02-20', periods=6, freq='D')
     exog = {
@@ -1149,6 +1150,11 @@ def _exog_dict_create_predict_inputs(kind):
         exog = {k: v.rename_axis('date') for k, v in exog.items()}
     if kind == 'index_without_freq':
         exog = {k: v.set_axis(pd.DatetimeIndex(list(v.index))) for k, v in exog.items()}
+    if kind == 'named_index_without_freq':
+        exog = {
+            k: v.set_axis(pd.DatetimeIndex(list(v.index), name='date'))
+            for k, v in exog.items()
+        }
     if kind == 'reordered_columns':
         exog = {k: v[['exog_2', 'exog_1']] for k, v in exog.items()}
     if kind == 'object_columns':
@@ -1160,8 +1166,8 @@ def _exog_dict_create_predict_inputs(kind):
 
 @pytest.mark.parametrize(
     "kind",
-    ['aligned', 'named_index', 'index_without_freq', 'extra_rows',
-     'reordered_columns', 'object_columns'],
+    ['aligned', 'named_index', 'index_without_freq', 'named_index_without_freq',
+     'extra_rows', 'reordered_columns', 'object_columns'],
     ids=lambda kind: f'exog: {kind}'
 )
 def test_create_predict_inputs_output_when_exog_dict_aligned_or_not(kind):
@@ -1169,9 +1175,10 @@ def test_create_predict_inputs_output_when_exog_dict_aligned_or_not(kind):
     Test _create_predict_inputs gives the same exog values when the exog of
     each series is already aligned with the predictions (its index and columns
     are identical to the ones of the predictions and the training, so it is not
-    reindexed) and when it is aligned with `reindex` (named index, index
-    without frequency, more rows than steps, columns in another order or of
-    another dtype).
+    reindexed), when only its index is not identical (named, without
+    frequency or both, so it takes the index of the predictions without
+    `reindex`) and when it is aligned with `reindex` (more rows than steps,
+    columns in another order or of another dtype).
     """
     idx = pd.date_range(start='2020-01-01', periods=50, freq='D')
     series = {
@@ -1210,12 +1217,21 @@ def test_create_predict_inputs_output_when_exog_dict_aligned_or_not(kind):
 @pytest.mark.parametrize(
     "levels", [['1'], None], ids=lambda lv: f"levels: {lv}"
 )
-def test_create_predict_inputs_does_not_modify_exog_dict_when_aligned(levels):
+@pytest.mark.parametrize(
+    "index_kind", ['aligned', 'named', 'without_freq'],
+    ids=lambda kind: f"exog index: {kind}"
+)
+def test_create_predict_inputs_does_not_modify_exog_dict_when_same_dates(
+    levels, index_kind
+):
     """
     Test _create_predict_inputs does not modify the exog of each series when it
-    is already aligned with the predictions, so it is used without a copy, also
-    when the categorical features are encoded without `transformer_exog` and
-    with a single level (`pd.concat` of one DataFrame shares its data).
+    has the dates of the predictions: already aligned, so it is used without a
+    copy, or with a named index or an index without frequency, so a shallow
+    copy takes the index of the predictions (the index of the user's exog keeps
+    its name and frequency). Also when the categorical features are encoded
+    without `transformer_exog` and with a single level (`pd.concat` of one
+    DataFrame shares its data).
     """
     idx = pd.date_range(start='2020-01-01', periods=53, freq='D')
     series = {
@@ -1236,6 +1252,10 @@ def test_create_predict_inputs_does_not_modify_exog_dict_when_aligned(levels):
         suppress_warnings=True
     )
     exog = {k: exog_full.iloc[50:].copy() for k in series}
+    if index_kind == 'named':
+        exog = {k: v.rename_axis('date') for k, v in exog.items()}
+    if index_kind == 'without_freq':
+        exog = {k: v.set_axis(pd.DatetimeIndex(list(v.index))) for k, v in exog.items()}
     exog_copy = {k: v.copy() for k, v in exog.items()}
 
     results = forecaster._create_predict_inputs(steps=3, levels=levels, exog=exog)
@@ -1258,10 +1278,10 @@ def test_create_predict_inputs_output_when_exog_dict_shares_one_object(kind):
     """
     Test _create_predict_inputs gives the same output when several series share
     the same exog object as when each series has its own copy, whether the
-    object is already aligned with the predictions or it is aligned with
-    `reindex`. Series '1' and '3' share the object and series '2' has its
-    own one, so the shared result is reused in between. The shared object is
-    not modified.
+    object is already aligned with the predictions or it has to be aligned.
+    Series '1' and '3' share the object and series '2' has its own one, so
+    the shared result is reused in between. The shared object is not
+    modified.
     """
     idx = pd.date_range(start='2020-01-01', periods=50, freq='D')
     series = {
