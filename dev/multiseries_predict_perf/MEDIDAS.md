@@ -230,3 +230,49 @@ Identidad frente a la base (`cb03fbe96`), cinco baterías: 0 diferencias en los 
 | 3 columnas mezcladas | 315 a 321 | 338 a 340 | 373 a 379 |
 
 Desglose con exog mezclada (p2 / p3 sin pa / p3 con pa): los tres `pd.Series` vacíos, 70 µs; `DataFrame(dict)` sin índice, 191 / 232 / 265; con el índice de las predicciones (hoy), 298 / 326 / 383; solo las columnas, `DataFrame({c: []}).columns`, 46 / 56 / 76. Tras el cambio 6 es en torno al 20 % de un `predict` con exog compartida y 20 series (1,2 a 1,4 ms) y del 7 al 8 % de un fold de backtesting con exog ancha.
+
+## 12. Cambio 7: plantilla vacía de exog solo si hace falta (2026-11-19)
+
+Prototipo sobre una copia de `2525c976d` (el fichero del cambio es idéntico en `d3d6e7ca3`), medido frente a esa misma copia sin el cambio (`MS_BASE_TREE`), solo con los casos por los que pasa el cambio y el adverso nuevo (`C7` y `C7_SCALE`). Núcleo 12; ganancia en p2 / p3 sin pa / p3 con pa.
+
+**Sonda de etiquetas** (`scripts/probe_labels7.py`). Columnas candidatas frente a `empty_exog.columns` de hoy, con 22 listas de nombres (texto, enteros consecutivos o no, con paso, descendentes, uno solo, `numpy` enteros y `numpy.str_`, float, NaN, booleanos, `None`, fechas con y sin zona, tuplas) en índices de columnas de varios tipos (`object`, `category`, `string` con y sin `pyarrow`, `str` con `pyarrow`, `RangeIndex`) y tres índices de predicción; y `X.reindex(index=..., columns=candidata)` frente a `X.reindex_like(empty_exog)` con tablas del usuario de todos esos tipos, con el índice de las predicciones, con nombre, sin `freq` y con una fila más (unos 96 000 casos por candidata entre los tres entornos, errores incluidos).
+
+| Candidata | Diferencias (p2 / p3 sin pa / p3 con pa) | µs, 3 columnas float (p2 / p3 sin pa / p3 con pa) |
+|---|---|---|
+| Hoy: `DataFrame` de `Series` vacías con el índice de las predicciones | | 236 / 245 / 249 (mezcladas: 326 / 338 / 362) |
+| `pd.Index(list(claves))` | 0 / 126 / 126 (`Index[int64]` en vez de `RangeIndex` con enteros consecutivos) | 14 / 21 / 28 |
+| `pd.DataFrame({col: [] ...}, copy=False).columns` (implementada) | 0 / 0 / 0 | 41 / 53 / 72 |
+
+`empty_exog.index is prediction_index` en todos los casos. Control: con `pd.Index(list(claves))`, la batería `labels` da 0 diferencias en los tres entornos; la diferencia no llega a las salidas (solo cambia el camino: unas columnas `RangeIndex` del usuario dejarían de tomar el atajo del 4).
+
+**Identidad** frente a la base (`cb03fbe96`), cinco baterías: 0 diferencias en los tres entornos (ms 4591 / 4510 / 4510 casos, trims 2911, dtypes 312, exog 424 / 396 / 424, labels 7866 / 3110 / 8106), para la variante perezosa y para la implementada.
+
+**Tiempos de la implementada** (2 rondas; mediana de la dispersión entre rondas, 1,019):
+
+| Caso | 3 series | 20 series | 100 series |
+|---|---|---|---|
+| `predict`, diccionario que repite un objeto | 22 / 21 / 17 | 20 / 19 / 14 | 11 / 13 / 8 |
+| Ídem, 24 pasos | | 21 / 17 / 14 | 10 / 10 / 6 |
+| `predict`, un objeto por serie | 21 / 21 / 16 | 12 / 12 / 7 | 4 / 5 / 0 |
+| Ídem, exog mezclada | | 10 / 6 / 7 | 3 / 1 / 2 |
+| Adversos del 4 (`extra=10`, `early=1`, `named`) | | 7 a 10 / 4 a 9 / 7 a 11 | 1 a 5 / −1 a 1 / 4 a 5 |
+| Formato largo | 16 / 16 / 9 | 8 / 9 / 3 | 3 / 5 / 0 |
+| Ídem, exog mezclada | | 6 / 4 / 4 | 1 / 3 / 1 |
+| Backtesting por fold, exog ancha, 1 paso | | 10 / 10 / 6 | 3 / 4 / 1 |
+| Ídem, mezclada | | 8 / 7 / 8 | 5 / 1 / 4 |
+| Backtesting, exog en diccionario, 1 paso | | 3 / 7 / 4 | 4 / 2 / 1 |
+| Backtesting, 24 pasos (ancha / diccionario) | | 3 / 5 / 5 y 4 / 4 / 3 | 0 / 2 / 0 y 2 / 2 / 1 |
+| Backtesting, LightGBM 24 pasos | | 1 / 5 / 3 | |
+| Backtesting con refit | | 5 / 3 / 3 | 2 / 3 / 0 |
+| Control sin el cambio (`predict` con exog ancha) | | 1 / 2 / −1 | |
+
+Con 600 y 1000 series (3 rondas, una en cada orden de los árboles), de −5 a +4 % sin patrón: el ahorro, unos 0,3 ms, queda por debajo del ruido de llamadas de 7 a 210 ms.
+
+**Adverso `missing=1|lgbm`** (una serie sin exog en el diccionario; 3 rondas con el orden de los árboles invertido):
+
+| Variante | 20 series | 100 series |
+|---|---|---|
+| Plantilla perezosa dentro del bucle (columnas y plantilla) | −3,7 / −3,7 / −3,6 (6 rondas, de −1,5 a −5,6) | −1,9 / +0,9 / −2,0 |
+| Implementada (plantilla como hoy si falta alguna exog) | −1,2 / +0,4 / 0,0 | +0,3 / +0,4 / +3,3 |
+
+La primera tanda, frente a `d3d6e7ca3`, se descartó: la máquina estaba ocupada por otros tests (el control se movía de −13 a +20 % y la dispersión de la base llegaba a 1,35).

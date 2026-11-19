@@ -29,6 +29,8 @@ Una cuarta, `identity_exog.py` (424 casos, 396 sin `pyarrow`, unos segundos), ha
 
 Una quinta, `identity_labels.py` (unos 3500 casos, varios minutos), pasa una exog en diccionario con nombres de columna que no son texto (enteros, float, NaN, `None`, booleanos mezclados, `numpy.str_`, fechas con zona, tuplas en un `MultiIndex`), en índices de columnas de varios tipos (`object`, `category`, `string` con y sin `pyarrow`, `str` con `pyarrow`), con los mismos nombres en `fit` y `predict` o solo iguales (1 y 1.0, `True` y 1, `numpy.str_` y `str`, la misma hora en dos zonas), y exog con el índice con nombre o sin frecuencia. Cubre el cambio 4 (`reindex_like` solo conserva las etiquetas del usuario cuando los dos ejes son `identical`). Ordena los nombres de los conjuntos que imprimen algunos avisos, porque con nombres NaN su orden depende de las direcciones de memoria.
 
+`probe_labels7.py` (unos minutos por entorno, no importa skforecast) es la sonda de etiquetas del cambio 7: comprueba, con nombres de columna y tipos de índice como los de `identity_labels.py`, qué construcciones baratas de las columnas de la exog son `identical` a las de la plantilla vacía que se creaba antes, y que `reindex(index=..., columns=...)` da lo mismo que `reindex_like` con ella, errores incluidos. La batería `labels` no distingue esas construcciones (solo cambia el camino, no las salidas), así que la prueba es esta sonda. Se lanza suelta en cada entorno: `[NO_PYARROW=1] python probe_labels7.py`.
+
 Desde el cambio 4, cada cambio pasa las cinco:
 
 ```bash
@@ -47,6 +49,8 @@ python agg_ms.py "$MS_WORK/out/<etiqueta>"           # tres entornos, coste fijo
 ```
 
 Los casos con `exogdt=mixed` usan una exog con una columna float, una `int` y una `category` de enteros (variables de calendario), en lugar de tres float; están en `@core` (20 y 100 series) y en `@scale` (600 y 1000).
+
+Los casos `missing=1|lgbm` (20 y 100 series, fuera de los conjuntos) pasan un diccionario sin la exog de la última serie, cuyos predictores de exog quedan NaN (por eso LightGBM): es el adverso del cambio 7, el único caso en el que se crea la plantilla vacía de exog.
 
 El árbol `base` es el de la PR (`cb03fbe96`). Para aislar la ganancia de un cambio, se compara con el árbol del commit anterior: `git archive <commit> skforecast | tar -x -C "$MS_WORK/base_<commit>"` y `MS_BASE_TREE="$MS_WORK/base_<commit>"` al lanzar `run_bench.sh`.
 

@@ -2822,14 +2822,30 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         if exog is not None:
             if isinstance(exog, dict):
-                # Empty dataframe to be filled with the exog values of each level
-                empty_exog = pd.DataFrame(
-                    data={
-                        col: pd.Series(dtype=dtype)
-                        for col, dtype in self.exog_dtypes_in_.items()
-                    },
-                    index=prediction_index,
-                )
+                # NOTE: The exog of each level is aligned with the index of the
+                # predictions and the columns seen in training. The empty
+                # DataFrame with the training dtypes, which fills the levels
+                # without exog, is only created if one of them has none.
+                # Otherwise only its columns are created, as a DataFrame built
+                # from a dict creates them (pandas 3 turns consecutive integer
+                # names into a `RangeIndex`), but without data, which is much
+                # cheaper. Both iterate `exog_dtypes_in_.items()`, so a
+                # forecaster trained without exog raises the same error.
+                empty_exog = None
+                if any(exog.get(level) is None for level in levels):
+                    empty_exog = pd.DataFrame(
+                        data={
+                            col: pd.Series(dtype=dtype)
+                            for col, dtype in self.exog_dtypes_in_.items()
+                        },
+                        index=prediction_index,
+                    )
+                    exog_columns = empty_exog.columns
+                else:
+                    exog_columns = pd.DataFrame(
+                        data={col: [] for col, _ in self.exog_dtypes_in_.items()},
+                        copy=False
+                    ).columns
             else:
                 exog = input_to_frame(data=exog, input_name='exog')
                 # NOTE: As with a dict, `exog` is aligned with the predictions by
@@ -2940,8 +2956,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             last_window_matrix[:, idx_level] = last_window_level
 
             if isinstance(exog, dict):
-                # Fill the empty dataframe with the exog values of each level
-                # and transform them if necessary
+                # Exog values of each level, aligned with the predictions. They
+                # are transformed below, all levels at once.
                 # NOTE: The same object can be the `exog` of several levels (for
                 # example a wide `exog` shared by all series in backtesting).
                 # It is aligned only once and its levels reuse the result,
@@ -2958,27 +2974,30 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
                     # NOTE: `exog_values` is only aligned when needed. If its
                     # index is the index of the predictions and its columns are
-                    # the ones seen in training, `reindex_like` would just return
+                    # the ones seen in training, `reindex` would just return
                     # a copy, which is not needed because `exog_values` is only
                     # read below (`pd.concat` creates a new DataFrame).
                     # The check is `identical` (same values, dtype, name and,
                     # for dates, frequency), the one pandas uses to return the
                     # copy. With `equals`, labels that are equal but of another
                     # type (for example `numpy.str_` and `str`) would be kept,
-                    # while `reindex_like` replaces them with the training ones,
+                    # while `reindex` replaces them with the training ones,
                     # and transformers and encoders treat them differently.
                     # The names of the indexes are compared first, since the
                     # index of the predictions has none: an `exog` with a named
                     # index (for example read from a file) goes straight to
-                    # `reindex_like` without comparing its dates. Sending more
-                    # cases to `reindex_like` never changes the result, it is
+                    # `reindex` without comparing its dates. Sending more
+                    # cases to `reindex` never changes the result, it is
                     # the usual path.
                     if not (
                         exog_values.index.name is prediction_index.name
                         and exog_values.index.identical(prediction_index)
-                        and exog_values.columns.identical(empty_exog.columns)
+                        and exog_values.columns.identical(exog_columns)
                     ):
-                        exog_values = exog_values.reindex_like(empty_exog)
+                        exog_values = exog_values.reindex(
+                                          index   = prediction_index,
+                                          columns = exog_columns
+                                      )
                     exog_aligned_by_id[exog_id] = exog_values
 
             exog_values_all_levels.append(exog_values)

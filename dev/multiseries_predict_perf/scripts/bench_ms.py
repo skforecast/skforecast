@@ -33,14 +33,15 @@ def reps_of(n_series):
 # ----------------------------------------------------------------------------
 def predict_case(n_series, exog_kind, steps=1, est="linear", lw="given",
                  encoding="ordinal", n_levels=None, extra_rows=0, early=0,
-                 index_name=None, exog_dtypes="float"):
+                 index_name=None, exog_dtypes="float", missing=0):
     """
     `n_levels`: predict only the first `n_levels` series (the window keeps all
     the columns). `extra_rows`: exog with more rows than steps. `early`: exog
     that starts `early` steps before the first predicted date and still has
     all the predicted dates (it has to be aligned by date). `index_name`: name
     of the exog index (the index of the predictions has none, so the exog is
-    aligned). `exog_dtypes`: see `make_wide`.
+    aligned). `exog_dtypes`: see `make_wide`. `missing`: the last `missing`
+    series have no exog in the dict (their exog features are NaN).
     """
     n_calls = {3: 200, 20: 200, 100: 100}.get(n_series, 20)
     if est == "lgbm":
@@ -62,6 +63,11 @@ def predict_case(n_series, exog_kind, steps=1, est="linear", lw="given",
              ))
             for i in range(n_calls)
         ]
+        if missing:
+            inputs = [
+                (lw_, {k: v for k, v in ex_.items() if k not in names[-missing:]})
+                for lw_, ex_ in inputs
+            ]
     else:  # window stored in fit: every call predicts the same steps
         ex = exog_for_predict(exog.iloc[T: T + steps], names, exog_kind)
         inputs = [(None, ex)] * n_calls
@@ -231,6 +237,12 @@ for n in (20, 100):
 for fmt, ex in (("wide", "none"), ("wide", "wide"), ("dict", "dict")):
     CASES[f"backtesting|n=600|fmt={fmt}|exog={ex}|steps=1"] = (
         lambda fmt=fmt, ex=ex: backtesting_case(600, fmt, ex != "none")
+    )
+
+# Change 7: dict exog without the exog of one series (NaN features, so LightGBM).
+for n in (20, 100):
+    CASES[f"predict|n={n}|exog=dictown|steps=1|missing=1|lgbm"] = (
+        lambda n=n: predict_case(n, "dictown", est="lgbm", missing=1)
     )
 
 # Exog with an `int` and a `category` column (calendar features), not only float.
