@@ -302,3 +302,30 @@ Primera tanda, con la primera versión (sin poner las columnas): los mismos caso
 **Adversos con 100 series** (`extra=10`, `early=1`, `early=1|named`: otras fechas, ahora con un `equals` antes del `reindex`, de 1,0 a 1,4 µs por serie en `timeit`): la primera tanda dio de −2,2 a +1,0 % en p3 con pa, de −3,0 a +2,1 % sin pa y de −4,4 a −1,3 % en p2; repetidos con el orden de los árboles invertido, de −1,1 a −0,7 / −0,7 a −0,4 / −1,6 a −1,1. Una guarda `len(exog_values) == len(prediction_index)` antes del `equals` (también idéntica en la sonda) daba de −1,4 a −1,3 / −0,8 a +0,5 / −0,5 a +0,2: no mejora en pandas 3 con pa y el resto queda dentro del ruido, no se implementa.
 
 **Revisión final** (`timeit` del bloque de alineación de un nivel, antes y después, núcleo 12, mínimo de 9 tandas alternas; exog de 3 filas y 3 columnas): con nombre, de 30,6 a 17,8 µs en pandas 3 y de 32,2 a 14,6 en pandas 2; sin `freq`, de 36,8 a 21,6 y de 38,9 a 19,3; el atajo del cambio 4 no cambia (6,9 y 10,2 µs). Un adverso que no estaba en las tandas, las mismas fechas con otras columnas (falta una; va a `reindex` después del `equals` y de comparar las columnas): de +0,6 a +2,4 µs sobre 104 a 112 µs en pandas 3 y de +3,6 a +4,1 sobre 79 a 94 en pandas 2, del orden del de otras fechas (de +1,4 a +2,2 sobre 74, y de +2,8 a +3,6 sobre 75). En los dos caminos los ejes del resultado son los objetos de destino (`index is prediction_index`, `columns is exog_columns`); la única diferencia con `reindex` es que en pandas 2 el resultado comparte los datos con la exog del usuario en vez de copiarlos (en pandas 3 ya los compartía), como el atajo del cambio 4, y después solo se lee.
+
+## 14. Cambio 8: cortar cada serie de un formato largo sin el MultiIndex (2026-11-19)
+
+Prototipo sobre una copia de `1be8a4d90`, medido frente a esa misma copia sin el cambio (`MS_BASE_TREE`). Protocolo ligero: solo pandas 3.1.1 con `pyarrow` (numpy 2.5.4), los casos afectados (exog en formato largo con 20 y 100 series) y dos controles (`predict` con exog ancha y `create_train_X_y` con series largas sin exog, que van por la rama Series y no cambian); expresión regular `C8` en `$MS_WORK/cambio8_regex.sh` (fuera del repositorio). Núcleo 12, máquina libre (carga del 6 %), 2 rondas en cada orden de los árboles.
+
+**Orden de los árboles.** Con la base primero, el control con exog ancha ganaba un 2,9 % en las dos rondas (la base, de 3 a 5 % más lenta); con el orden invertido, −0,3 %. Se da la media de los dos órdenes.
+
+| Caso (p3 con pa) | Base primero | Prototipo primero | Media |
+|---|---|---|---|
+| `predict`, exog larga, 20 series (4350 → 3441 µs) | 20,9 | 18,5 | 19,7 |
+| Ídem, 100 series (15 642 → 10 827 µs) | 30,8 | 24,9 | 27,9 |
+| `predict`, exog larga mezclada, 20 series (6510 → 5699 µs) | 12,4 | 12,0 | 12,2 |
+| Ídem, 100 series (21 986 → 17 820 µs) | 18,9 | 19,4 | 19,2 |
+| `create_train_X_y`, exog larga, 20 series (7,8 → 6,9 ms) | 12,2 | 8,4 | 10,3 |
+| Ídem, 100 series (31,3 → 26,5 ms) | 15,5 | 13,9 | 14,7 |
+| `fit`, exog larga, 20 series | 3,5 | 0,2 | 1,9 |
+| Ídem, 100 series | 5,5 | 5,0 | 5,3 |
+| Backtesting por fold, exog larga, 20 series | 1,3 | −2,7 | −0,7 |
+| Ídem, 100 series | 1,2 | −1,6 | −0,2 |
+| Control: `predict` con exog ancha, 20 series | 2,9 | −0,3 | 1,3 |
+| Control: `create_train_X_y`, series largas sin exog, 20 series | 1,4 | −3,2 | −0,9 |
+
+En backtesting la exog larga se corta una vez, al convertirla en diccionario, no en cada fold: su fila es ruido. En `fit` pesa más el modelo. El prototipo antiguo (§6) daba 8 / 19 / 16 % en `predict` con exog larga y de 3 a 15 % en `create_train_X_y`; sobre el árbol actual la ganancia en pandas 3 es del mismo orden o algo mayor.
+
+**Identidad** frente a la base (`cb03fbe96`), cinco baterías: 0 diferencias en los tres entornos (ms 4591 / 4510 / 4510 casos, trims 2911, dtypes 312, exog 424 / 424 / 396, labels 7866 / 8106 / 3110; p2 / p3 con pa / p3 sin pa). Casos límite del formato largo (57 variantes, 483 llamadas por entorno: corte directo, también con `series_ids`; `create_train_X_y`, `fit`, `predict`, `predict_interval` y backtesting), frente a `1be8a4d90`: 0 diferencias en los tres entornos, y los datos del usuario no cambian.
+
+Pendiente de la verificación final de la rama: los tiempos en pandas 2 y en pandas 3 sin `pyarrow`.

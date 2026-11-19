@@ -4676,10 +4676,12 @@ def _split_long_format(
     -----
     It works on the integer codes of the MultiIndex, without grouping the IDs
     (text with pandas 3, slower to group without pyarrow): the rows are sorted
-    once and each series is a slice. The values are a new array, so the
-    objects share no memory with `data`, and a DataFrame of each series is a
-    shallow copy of its slice, so pandas 2 does not flag it as a copy of
-    another DataFrame when columns are assigned to it.
+    once and each series is a slice. Modifying the objects does not change
+    `data`: their values are a new array, except for a DataFrame with
+    copy-on-write (pandas 3) whose rows are already sorted by ID and are all
+    kept, which shares its values with `data` until they are modified. A
+    DataFrame of each series is a shallow copy of its slice, so pandas 2 does
+    not flag it as a copy of another DataFrame when columns are assigned to it.
 
     """
 
@@ -4732,6 +4734,10 @@ def _split_long_format(
         }
     else:
         data_sorted = data.iloc[positions]
+        # NOTE: Each series is sliced from a frame with a plain index; slicing
+        # the MultiIndex for every series is slower. The dates index of each
+        # series is set below.
+        data_sorted.index = pd.RangeIndex(len(positions))
         data_dict = {}
         for series_id, start, end in zip(ids_found, starts, ends):
             data_series = data_sorted.iloc[start:end].copy(deep=False)
@@ -4982,8 +4988,8 @@ def check_preprocess_exog_multiseries(
                     f"pandas DatetimeIndex. Found `exog` index type: "
                     f"{type(exog.index.levels[1])}."
                 )
-            # NOTE: Only the IDs in `series_names_in_` are split. The DataFrame of
-            # each series is new data, not a view of the user's `exog` (see
+            # NOTE: Only the IDs in `series_names_in_` are split. Modifying the
+            # DataFrame of a series does not change the user's `exog` (see
             # `_split_long_format`), so no copy is needed.
             exog_long_dict = _split_long_format(exog, series_ids=series_names_set)
             exog_dict.update(exog_long_dict)
