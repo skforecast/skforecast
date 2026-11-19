@@ -118,7 +118,6 @@ Los documentos borrados se leen con `git show <commit>:<ruta>`.
 | PERF-01 | `backtesting_foundation` llama al modelo una vez por fold aunque es zero-shot (3,4 veces más rápido con una serie, nada con 50) | 0.28.0 | M | No empezado | R27 §4; R27-repro/PERF-01.py |
 | FOUND-suppress-warnings | `suppress_warnings` en `ForecasterFoundation.predict*` (hueco de consistencia con ML) | posterior | S | No empezado | R27 §5 |
 | FOUND-skops | Guardar `ForecasterFoundation` con skops | posterior | S | Posible cuando el backend quede fuera del estado (QW-05) | R27 §5 |
-| FOUND-ttm (antes PLAN-TTM) | Adaptador TinyTimeMixer (IBM Granite TTM). Si se retoma: plan nuevo solo con la fase 1 (r3 zero-shot, cuantiles nativos) sobre `_AdapterBase`, exog vía FOUND-adapter-arg; las fases 2 y 3 del plan antiguo chocan con el anexo A (descarta `finetuned_checkpoint` y deja fuera el fine-tuning). Hay código candidato con 903 líneas de tests en `stash@{1}` (base 0.24.0), que ya incluye 3 correcciones que el plan no tiene: cuantiles en layout (B,Q,T,C), cuantiles solo con `multi_quantile_head`, parámetros lista guardados por referencia (clone) | por decidir | M | Decisión pendiente D-TTM | Plan antiguo: `3c0711b8a:dev/PLAN_TinyTimeMixerAdapter.md`; código: `stash@{1}` |
 | FOUND-timeh2o | Adaptador TimeH2O (h2ofm, `h2oai/timeh2o-v1`). Especificación completa con esqueleto ejecutable (#1453). Antes de implementar, revisión ligera: base `0.28.x`, Python 3.11, la exog solo pasada ya la filtra `FoundationModel`, Timestral se fusionó con su propio `_warn_if_constant_known_covariates` (D15), recontar adaptadores, requisitos de §11 en `a1a837b4a^` | por decidir | M | Decisión pendiente D-TIMEH2O (D1, licencia no comercial, bloquea el resto) | `dev/timeh2o_adapter/research_timeh2o_adapter.md` (§0 "Estado y cómo retomar") |
 
 ## 4. Backtesting, búsquedas, métricas y paralelización
@@ -240,7 +239,6 @@ Las de producto, con la propuesta que se hizo. Cerrar antes de implementar el el
 | D-ARIMA | DEP-arima-dictstyle | Retirar el `FutureWarning` o fijar la versión en que se cumple |
 | D-1131 | ISSUE-1131 | Alcance de lo que no cubren FE-02 y #1476 |
 | D-NJOBS | NJOBS-cpu-count | `cpu_count()` frente a `cpu_count() - 1` |
-| D-TTM | FOUND-ttm | Retomar solo la fase 1, aparcar o descartar. Qué hacer con `stash@{1}` |
 | D-TIMEH2O | FOUND-timeh2o | D1 (licencia no comercial y no productiva) y D2 a D15 de la especificación (campo "Decisión" vacío) |
 | D-FAR | FOUND-plan-02 a 09 | Unas 27 decisiones de la sección 4 de `foundation_adapters_review/README.md` (D1 a D3 ya se tomaron en #1478, opción a) |
 | D-PREDICT-PUBLIC | PERF-predict-numpy | Si `check_inputs=False` pasa a ser público (con él, 200 `predict` tardan 0,63 veces lo que validando) |
@@ -275,6 +273,13 @@ erróneos silenciosos delante:
   sustituye FOUND-adapter-arg (2026-11-11).
 - **Fine-tuning desde skforecast** y TimesFM 2.5 afinado con transformers: fuera de alcance
   (2026-11-11).
+- **Adaptador TinyTimeMixer** (IBM Granite TTM, antes PLAN-TTM): descartado el 2026-11-19.
+  El plan y el código candidato eran de la 0.24.0, anteriores a `_AdapterBase`, y se
+  borraron; si se retoma, empezar de cero. Tres lecciones de aquel código: el `forward`
+  devuelve los cuantiles en layout (B, Q, T, C); los cuantiles nativos solo existen con
+  `multi_quantile_head` en la configuración del checkpoint; y los parámetros de tipo lista
+  se guardan por referencia en `__init__` (sin `list()` ni `sorted()`) para que `clone`
+  los reconozca.
 - **Camino rápido numérico de `predict`** (PERF-predict-numpy): pierde un `TypeError`
   (2026-11-17).
 - Otros descartes de la 0.27.0 (TODOs internos, modelos locales de stats en multiserie,
