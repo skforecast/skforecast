@@ -735,7 +735,7 @@ Antes de añadir la traducción de nombres fallaban además 6 tests (`..._native
 
 - El orden se mantiene: después de PERF-exog-float-matrix y BUG-ms-exog-none-bool (conversión común de la exog y batería de dtypes), antes de MAINT-ms-predict-core. El esfuerzo sigue siendo M.
 - Requisitos: CAT-T2 y, nuevo, CAT-T3 (D-T3 decidida el 2026-11-20: con un `Pipeline` no se configuran las categóricas nativas). CAT-T4 va después del arreglo (D-T4 decidida el mismo día: aviso en `__init__`), porque su aviso recomienda `categorical_features=None`.
-- La PR #1520 (STUDY-fit-insample-binning, abierta) toca las mismas líneas de `fit`: este arreglo va después.
+- Corregido el 2026-11-20: la PR #1520 (STUDY-fit-insample-binning, abierta) solo cambia `model_selection/_validation.py` y no interfiere con este arreglo. Lo que sí cambia la predicción in-sample de `fit` es su segunda parte, el tope de filas, que no está en la PR: si se hace, uno detrás del otro. La rama `perf/multiseries-predict-backtesting` cambia `_create_predict_inputs`, no `fit`: conviene fusionarla antes de PERF-exog-float-matrix y de BUG-ms-exog-rangeindex.
 - No toca `predict`, así que los prototipos del camino rápido (secciones 2, 9 y 10) siguen valiendo, y deja las matrices de entrenamiento en numpy, que es lo que necesita PERF-search-shared-train-matrices.
 - La opción (c) pasa a descartada.
 
