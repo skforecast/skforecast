@@ -328,7 +328,19 @@ En backtesting la exog larga se corta una vez, al convertirla en diccionario, no
 
 **Identidad** frente a la base (`cb03fbe96`), cinco baterías: 0 diferencias en los tres entornos (ms 4591 / 4510 / 4510 casos, trims 2911, dtypes 312, exog 424 / 424 / 396, labels 7866 / 8106 / 3110; p2 / p3 con pa / p3 sin pa). Casos límite del formato largo (57 variantes, 483 llamadas por entorno: corte directo, también con `series_ids`; `create_train_X_y`, `fit`, `predict`, `predict_interval` y backtesting), frente a `1be8a4d90`: 0 diferencias en los tres entornos, y los datos del usuario no cambian.
 
-Pendiente de la verificación final de la rama: los tiempos en pandas 2 y en pandas 3 sin `pyarrow`.
+**pandas 2 y pandas 3 sin `pyarrow`** (verificación final, 2026-11-20; `1be8a4d90` frente a `aae5b99be`, el mismo protocolo, media de los dos órdenes; entre paréntesis, base primero / cambio primero cuando difieren más de 2 puntos):
+
+| Caso | p2 | p3 sin pa |
+|---|---|---|
+| `predict`, exog larga, 20 / 100 series | 9,6 / 15,0 | 22,8 / 31,5 |
+| Ídem, mezclada | 7,0 / 10,8 | 16,3 / 23,3 |
+| `create_train_X_y`, exog larga, 20 / 100 series | 4,2 / 7,0 | 11,9 / 13,5 |
+| `fit`, exog larga, 20 / 100 series | 2,0 / 4,0 | 5,4 / 5,4 |
+| Backtesting por fold, exog larga, 20 / 100 series | −0,6 / 2,7 | −0,3 / 0,6 |
+| Control: `predict` con exog ancha, 20 series | 0,3 | −0,5 |
+| Control: `create_train_X_y`, series largas sin exog, 20 series | 0,0 (1,7 / −1,7) | −1,2 |
+
+En pandas 2 la ganancia es menor: la base ya es más rápida allí (`predict` con exog larga y 100 series, 9161 µs frente a 12 961 en p3 sin pa y 15 642 en p3 con pa), y el corte por el `MultiIndex` que quita el cambio es lo que más le costaba a pandas 3.
 
 ## 15. Cambio 5: repetir la exog ancha con numpy (2026-11-20)
 
@@ -357,7 +369,23 @@ El prototipo antiguo (§6) daba 18 / 13 / 11 % en `predict` con exog ancha y 20 
 
 **Identidad** frente a la base (`cb03fbe96`), cinco baterías: 0 diferencias en los tres entornos (ms 4591 / 4510 / 4510 casos, trims 2911, dtypes 312, exog 424 / 424 / 396, labels 7866 / 8106 / 3110; p2 / p3 con pa / p3 sin pa). Casos límite de la exog ancha (frente a `aae5b99be`, 16 030 / 16 030 / 15 038 llamadas): 0 diferencias, también en el diccionario de arrays de `_create_predict_inputs`; la exog del usuario no cambia.
 
-Pendiente de la verificación final de la rama: los tiempos en pandas 2 y en pandas 3 sin `pyarrow`.
+**pandas 2 y pandas 3 sin `pyarrow`** (verificación final, 2026-11-20; `aae5b99be` frente a `c787017a9`, el mismo protocolo, media de los dos órdenes, que no difieren en más de 2 puntos):
+
+| Caso (20 / 100 series) | p2 | p3 sin pa |
+|---|---|---|
+| `predict`, exog ancha | 25,3 / 47,9 | 18,4 / 37,6 |
+| Sin codificación | 25,8 / 49,0 | 19,2 / 38,8 |
+| `onehot` | 26,0 / 48,7 | 18,7 / 38,9 |
+| Exog mezclada | 19,8 / 42,4 | 14,2 / 34,0 |
+| Más filas que `steps` (`extra=10`) | 25,3 / 48,1 | 19,2 / 39,0 |
+| LightGBM | 22,6 / 39,8 | 16,8 / 30,1 |
+| Ventana guardada | 19,7 / 29,9 | 13,7 / 22,8 |
+| 24 pasos | 21,7 / 41,7 | 15,8 / 32,1 |
+| 24 pasos con LightGBM | 7,6 / 9,9 | 4,9 / 6,7 |
+| Control: `predict` sin exog, 20 series | 0,3 | 0,0 |
+| Control: backtesting por fold, exog ancha, 20 series | 0,5 | 1,2 |
+
+En pandas 2 la ganancia es mayor que en pandas 3: con 100 series la base tarda más allí (1623 frente a 1541 µs) y la rama menos (845 frente a 963 µs), así que el `pd.concat` que se quita le costaba más (probablemente porque pandas 2 consolida los bloques al concatenar; no se ha perfilado).
 
 ## 16. Cambio 3: no seleccionar las columnas de la ventana en `check_predict_input` (2026-11-20)
 
@@ -393,4 +421,168 @@ Los tiempos se midieron con una versión que además exigía nombres sin duplica
 
 **Identidad** frente a la base (`cb03fbe96`), cinco baterías: 0 diferencias en los tres entornos (ms 4591 / 4510 / 4510 casos, trims 2911, dtypes 312, exog 424 / 424 / 396, labels 7866 / 8106 / 3110; p2 / p3 con pa / p3 sin pa). Casos límite por la API pública (`scripts/edges3.py`, frente a `c787017a9`, 4980 / 4959 / 4959 llamadas de los tres forecasters): 0 diferencias; la ventana del usuario no cambia.
 
-Pendiente de la verificación final de la rama: los tiempos en pandas 2 y en pandas 3 sin `pyarrow`.
+**pandas 2 y pandas 3 sin `pyarrow`** (verificación final, 2026-11-20; `c787017a9` frente a `47bccb4f0`, el mismo protocolo, media de los dos órdenes; entre paréntesis, base primero / cambio primero cuando difieren más de 2 puntos):
+
+| Caso (20 / 100 series) | p2 | p3 sin pa |
+|---|---|---|
+| `predict` sin exog | 36,3 / 29,1 | 35,1 / 29,1 |
+| Ídem, ventana guardada | 23,3 / 12,6 | 23,7 / 10,8 |
+| `predict`, exog ancha | 23,6 / 21,6 | 22,8 / 19,8 |
+| Ídem, ventana guardada | 18,0 / 8,7 | 17,7 / 8,9 |
+| `predict`, exog en diccionario (un objeto por serie) | 10,8 / 2,4 | 11,5 / 3,9 |
+| Backtesting por fold, sin exog | 8,6 / 2,5 | 8,5 / 3,2 |
+| Backtesting por fold, exog en diccionario | 2,8 / −0,1 | 4,9 / 0,5 |
+| Adverso: 5 niveles, ventana ancha | 0,0 / 0,3 | −0,5 / −0,5 |
+| Control: `create_train_X_y`, 20 series | −3,0 (−0,2 / −5,8) | 0,8 |
+| `ForecasterDirectMultiVariate`, `predict` sin exog | 15,0 / 4,9 | 15,5 / 6,7 |
+| Ídem, ventana guardada | 14,6 / 5,0 | 15,1 / 7,9 |
+| Ídem, exog ancha | 14,1 / 4,3 | 13,4 / 9,4 (12,9 / 5,9 con 100) |
+| Ídem, exog ancha y ventana guardada | 15,0 / 7,2 | 14,0 / 7,2 |
+| Ídem, backtesting por fold, exog ancha | 10,8 / 6,3 | 9,6 / 5,8 |
+
+El control de p2 (2,5 ms, no llama a `check_predict_input`) se movió en un solo orden; los casos afectados coinciden en los dos. La ganancia es la misma en los tres entornos: la selección de columnas que se evita cuesta lo mismo con y sin `pyarrow`.
+
+## 17. Verificación final de la rama (2026-11-20)
+
+Rama en `cbd725279` (cambios 1 a 8, 4b y 3, y el arreglo de estilo de la revisión de código) frente a `origin/0.28.x` en `92c421ea1` (fusionado en la rama en `790033216`; el paquete de `0.28.x` no cambió desde `cb03fbe96`, y los resultados base de las baterías regenerados con él son idénticos a los anteriores).
+
+| Entorno | Python | numpy | pandas | scikit-learn | `pyarrow` | lightgbm |
+|---|---|---|---|---|---|---|
+| p2 | 3.13.18 | 2.5.5 | 2.3.3 (texto `object`) | 1.9.1 | 26.0.1 (instalado; pandas 2 no lo usa para el texto) | 4.7.0 |
+| p3 con pa | 3.13.18 | 2.5.4 | 3.1.1 (texto `pyarrow`) | 1.9.1 | 26.0.0 | 4.7.0 |
+| p3 sin pa | 3.13.18 | 2.5.4 | 3.1.1 (texto `python`) | 1.9.1 | importación bloqueada | 4.7.0 |
+
+Windows 11, núcleo 12, prioridad alta, BLAS con un hilo. Antes de cada tanda se comprobó que el portátil estaba enchufado y sin llamadas de Zoom (`wait_free` en `$MS_WORK/final_timings.sh`): ninguna tuvo que esperar. Las tandas de tiempos no coincidieron con las de identidad ni con la suite.
+
+### Corrección
+
+- **Identidad**, cinco baterías frente a la base: 0 diferencias en las 15 ejecuciones (ms 4591 / 4510 / 4510 casos, trims 2911, dtypes 312, exog 424 / 424 / 396, labels 7866 / 8106 / 3110; p2 / p3 con pa / p3 sin pa).
+- **Arnés** (`dev/pandas3_migration/harness/run_ab.py --base origin/0.28.x --identity --bench control --memory`): identidad estricta, 258 / 258 salidas en p2 y en p3; memoria (pico de `tracemalloc`) igual en los 11 casos (razón de 0,97 a 1,00).
+- **Suite completa**: p2, 8499 superados, 3 fallos, 27 omitidos; p3, 8492 superados, 3 fallos, 34 omitidos. Los 3 fallos son los conocidos de `test_fit_tensorflow` (`test_fit_without_validation_data`, `test_fit_with_validation_data`, `test_fit_with_exog_and_validation_data`).
+- **verify**: en verde sobre el código de `cbd725279` (lint, tests afectados y comprobaciones); se repite antes del último commit.
+- **Revisión de código** (`/code-review high` del diff de `skforecast/`): sin errores introducidos por la rama. Dos hallazgos previos y fuera de alcance (se mantiene la identidad, ver `SEGUIMIENTO.md`) y dos de estilo, corregidos en `cbd725279` (AST idéntico).
+
+### Tiempos, `ForecasterRecursiveMultiSeries` (`bench_ms.py`)
+
+Mejora en % (tiempo de la base menos el de la rama, sobre el de la base), mínimo de 2 rondas (1 en `@scale`) y media de los dos órdenes de los árboles. Ningún caso empeora en los dos órdenes. Entre órdenes, los casos afectados difieren hasta 4 puntos en `@core` y `@adverse` y hasta 7 en `@scale` (1 ronda). `predict` en µs por llamada (1 paso); backtesting en ms por fold, sin el `fit` inicial y sin refit.
+
+| Caso (20 / 100 series) | p2 | p3 sin pa | p3 con pa |
+|---|---|---|---|
+| `predict` sin exog | 55,4 / 47,7 | 55,8 / 48,9 | 52,5 / 46,3 |
+| `predict`, exog ancha | 53,2 / 63,4 | 49,3 / 56,8 | 45,5 / 54,5 |
+| Ídem, mezclada (float, `int`, `category`) | 33,5 / 51,5 | 30,7 / 44,1 | 27,6 / 40,2 |
+| Ídem, ventana guardada | 43,3 / 41,1 | 39,1 / 37,5 | 36,8 / 34,8 |
+| `predict`, exog en diccionario compartido | 68,3 / 77,8 | 71,0 / 82,1 | 69,0 / 82,1 |
+| `predict`, exog en diccionario, un objeto por serie | 39,8 / 30,6 | 40,3 / 31,8 | 36,5 / 27,7 |
+| Ídem, mezclada | 28,4 / 26,2 | 28,6 / 25,0 | 24,5 / 20,8 |
+| `predict`, exog larga | 35,4 / 33,6 | 43,3 / 44,1 | 38,5 / 39,4 |
+| Ídem, mezclada | 27,7 / 29,2 | 32,1 / 33,6 | 26,9 / 29,1 |
+| `predict`, exog ancha, 24 pasos, LightGBM (20 series) | 17,7 | 17,1 | 15,6 |
+| Backtesting por fold, sin exog | 67,0 / 73,0 | 66,6 / 73,4 | 63,7 / 71,6 |
+| Backtesting por fold, exog ancha | 71,6 / 78,7 | 72,7 / 80,7 | 70,5 / 79,4 |
+| Ídem, mezclada | 68,2 / 79,5 | 68,4 / 81,1 | 65,0 / 78,7 |
+| Backtesting por fold, series y exog en diccionario | 56,7 / 62,3 | 56,3 / 61,1 | 53,3 / 58,8 |
+| Ídem, exog mezclada | 49,5 / 54,8 | 48,8 / 55,6 | 44,5 / 54,2 |
+| Backtesting por fold, exog ancha, 24 pasos, LightGBM (20 series) | 44,5 | 46,7 | 44,4 |
+| `create_train_X_y`, formato largo (100 series) | 6,8 | 13,3 | 13,0 |
+| `fit`, formato largo (100 series) | 1,7 | 5,9 | 5,9 |
+| Control: `create_train_X_y`, formato ancho (100 series) | −1,1 | −1,0 | 0,4 |
+| Control: `fit`, formato ancho (100 series) | −1,1 | −1,1 | −0,6 |
+
+Tiempos absolutos de algunos casos con 100 series (base → rama): `predict` sin exog, 821 → 429 µs en p2 y 1141 → 612 en p3 con pa; con exog ancha, 1865 → 683 y 2139 → 972; con exog larga, 11 514 → 7648 y 17 946 → 10 866; backtesting por fold con exog ancha, 38,0 → 8,1 ms y 42,1 → 8,7.
+
+**Adversos** (`@adverse`):
+
+| Caso (20 / 100 series) | p2 | p3 sin pa | p3 con pa |
+|---|---|---|---|
+| `predict`, diccionario, exog que empieza antes (`early=1`) | 13,4 / 2,3 | 15,4 / 4,4 | 14,6 / 4,1 |
+| Ídem, más filas que `steps` (`extra=10`) | 16,1 / 2,8 | 18,0 / 5,1 | 18,1 / 5,7 |
+| Ídem, índice con nombre | 39,9 / 33,7 | 36,3 / 28,6 | 34,4 / 25,0 |
+| `predict`, exog ancha, `extra=10` | 52,7 / 63,3 | 49,0 / 56,0 | 46,3 / 53,3 |
+| `predict` con 5 niveles de 100 / 1000 series | 1,3 / 2,6 | 1,6 / 2,0 | 0,6 / 0,6 |
+| Backtesting con refit, sin exog | 6,1 / 2,9 | 7,7 / 4,9 | 8,3 / 4,0 |
+| Backtesting con refit, diccionario | 10,8 / 7,9 | 11,9 / 8,6 | 12,2 / 8,2 |
+
+El peor dato de un solo orden es −1,3 % (`predict` con 5 niveles de 1000 series, p3 con pa, rama primero; +2,6 con la base primero).
+
+**Escala** (`@scale`, 1 ronda en cada orden):
+
+| Caso (600 / 1000 series) | p2 | p3 sin pa | p3 con pa |
+|---|---|---|---|
+| `predict` sin exog | 29,0 / 23,3 | 28,1 / 22,4 | 30,3 / 25,3 |
+| `predict`, exog ancha | 76,4 / 77,6 | 69,6 / 71,3 | 66,4 / 69,2 |
+| Ídem, mezclada | 76,1 / 80,2 | 69,0 / 74,2 | 65,3 / 70,9 |
+| `predict`, diccionario, un objeto por serie | 29,8 / 30,4 | 29,7 / 33,3 | 23,7 / 31,0 |
+| Ídem, mezclada | 32,5 / 38,2 | 30,3 / 32,9 | 29,9 / 29,0 |
+| `predict`, exog larga | 35,8 / 34,4 | 42,5 / 43,3 | 40,3 / 39,6 |
+| Ídem, mezclada | 30,9 / 30,3 | 33,4 / 36,8 | 32,4 / 33,7 |
+| Backtesting por fold (600 series): sin exog / exog ancha / mezclada | 64,7 / 74,1 / 77,9 | 63,5 / 75,6 / 78,9 | 63,3 / 76,0 / 78,9 |
+| Ídem: diccionario / mezclada | 57,3 / 53,4 | 58,0 / 56,1 | 55,9 / 55,8 |
+
+Con 1000 series y exog ancha, `predict` pasa de 9,4 a 2,1 ms en p2 y de 8,4 a 2,6 en p3 con pa; el backtesting por fold con 600 series y exog ancha, de 254 a 66 ms y de 283 a 68.
+
+### Tiempos, `ForecasterDirectMultiVariate` (`bench_mv.py`)
+
+Lo tocan el cambio 3 (`check_predict_input`) y el backtesting (`_extract_data_folds_multiseries`).
+
+| Caso (3 / 20 / 100 series) | p2 | p3 sin pa | p3 con pa |
+|---|---|---|---|
+| `predict` sin exog | 22,2 / 13,7 / 5,7 | 22,6 / 16,4 / 8,3 | 22,8 / 16,1 / 7,5 |
+| Ídem, ventana guardada | 21,6 / 14,7 / 5,7 | 22,1 / 16,6 / 7,6 | 20,9 / 15,6 / 7,3 |
+| `predict`, exog ancha | 19,8 / 14,6 / 6,2 | 19,0 / 14,9 / 8,0 | 19,0 / 13,3 / 6,9 |
+| Ídem, ventana guardada | 19,2 / 14,3 / 6,1 | 19,0 / 14,7 / 8,4 | 19,4 / 14,4 / 6,9 |
+| Backtesting por fold, exog ancha | 47,0 / 72,2 / 83,5 | 46,1 / 73,4 / 86,2 | 44,5 / 70,9 / 84,7 |
+
+Los dos órdenes difieren menos de 2 puntos en todos los casos.
+
+### Protocolo ligero de los cambios 8, 5 y 3 en p2 y p3 sin `pyarrow`
+
+En §14, §15 y §16. Ningún caso afectado empeora y los controles quedan entre −1,2 y +1,2 %, salvo el de §16 en p2 (−3,0 de media, −5,8 en un solo orden; un caso de 2,5 ms que no ejecuta el código cambiado).
+
+### Benchmark oficial (`benchmarks/benchmarks/bench_forecaster_recursive_multiseries.py`, 600 series)
+
+`BenchmarkRunner` del repositorio (mediana de 5 a 30 repeticiones tras el calentamiento), lanzado por `$MS_WORK/official_ms_run.py` con el árbol en `TREE`, núcleo 12. Regla adaptativa (`$MS_WORK/official_check.py`): una ejecución por árbol (base, rama) y, si una función de la rama sale más de un 5 % más lenta o un control se mueve más de un 4 %, otras dos (rama, base); se toma el mínimo de las medianas de cada árbol. La regla saltó en los dos entornos, así que hay 4 ejecuciones en cada uno: en p2 por tres controles (`fit` y `create_train_X_y` con series en diccionario, de −4,1 a +7,4 %); en p3 por `predict_bootstrapping`, un `fit` (+5,2 %) y un control de `fit` (−6,8 %).
+
+| Función (mejora en %) | p2 | p3 con pa |
+|---|---|---|
+| `_create_predict_inputs`, exog larga | 33,8 | 24,3 |
+| `_create_predict_inputs`, exog ancha | 29,9 | 28,8 |
+| `_create_predict_inputs`, exog en diccionario | 20,7 | 18,2 |
+| `predict`, exog larga | 30,7 | 21,7 |
+| `predict`, exog en diccionario | 20,6 | 13,2 |
+| `predict_interval` conformal, exog en diccionario | 14,9 | 9,6 |
+| Backtesting, series en diccionario, sin exog | 44,1 | 48,3 |
+| Ídem, conformal | 37,7 | 36,9 |
+| Backtesting, series y exog en diccionario | 41,3 | 41,2 |
+| Ídem, conformal | 34,6 | 27,8 |
+| `check_predict_input` | −1,4 | −1,9 |
+| `predict_bootstrapping`, exog en diccionario | −17,9 (ruido, ver abajo) | −18,8 (ídem) |
+| `create_train_X_y` (series largas o en diccionario, 7 funciones) | de −2,4 a +0,4 | de −1,0 a +4,5 |
+| `fit` (6 funciones) | de −3,3 a +1,1 | de −5,2 a +4,7 |
+| Controles `_create_lags` / `create_train_X_y` de una serie | 1,7 / −2,0 | −0,2 / 1,9 |
+
+`check_predict_input` del benchmark recibe un diccionario con 600 exog: su coste es la comprobación de la exog (unos 42 ms). Lo que ahorra el cambio 3 en la ventana es del orden de 0,2 ms, así que no se nota, y el −1,4 / −1,9 está por debajo del umbral.
+
+**`predict_bootstrapping` (repetido).** En las 4 ejecuciones la rama salía entre un 18 y un 19 % más lenta. Medido aparte (`$MS_WORK/boot_iso.py`: la misma configuración, `LinearRegression`, 100 pasos, `n_boot=250`; 3 llamadas de calentamiento y mínimo de 10 por proceso), cada proceso cae en un modo rápido o en uno lento con el mismo código (de 3,6 a 4,5 s). Con 6 procesos por árbol y entorno, alternos (A B B A):
+
+| Media de los mínimos (s) | base | rama |
+|---|---|---|
+| p2 | 4,265 (de 4,19 a 4,44) | 4,169 (de 3,63 a 4,46) |
+| p3 con pa | 4,281 (de 3,75 a 4,52) | 4,288 (de 3,85 a 4,52) |
+
+No hay diferencia entre árboles: el benchmark oficial comparó un proceso de la base en el modo rápido con dos de la rama en el lento. La rama solo cambia `_create_predict_inputs`, que `predict_bootstrapping` llama una vez y que es más rápido.
+
+### Arnés, tiempos de control
+
+Son los 11 casos de control del arnés, que vigilan el resto de la librería (`create_train_X_y` y `fit` de `ForecasterRecursive`, `ForecasterDirect`, `ForecasterDirectMultiVariate` y el clasificador, el bucle de `predict`, un backtesting y el bloque de `create_train_X_y` del multiserie). p3: razones de los mínimos de 0,977 a 1,013 y de las medianas de 0,974 a 1,017. p2 (repetido): en la primera tanda las medianas de la rama salían de 1,20 a 1,42 veces las de la base (y `classifier_create_train_X_y`, 1,18 en el mínimo) porque agregué resultados mientras medía (el arnés no fija el núcleo); en la repetición, mínimos de 0,971 a 1,048 y medianas de 0,77 a 1,00, ahora a favor de la rama. Las medianas de p2 del arnés son ruidosas en los dos sentidos; los mínimos no muestran regresión.
+
+### Lo que se repitió
+
+- Tiempos de p2 del arnés: la primera tanda coincidió con una agregación mía.
+- Benchmark oficial: la regla adaptativa saltó en los dos entornos (de 2 a 4 ejecuciones en cada uno).
+- `predict_bootstrapping` del benchmark oficial: 24 procesos aislados.
+- No se repitió la primera ronda de p2 de `fin_core_bf`, que arrancó con la máquina al 35 % de carga (justo después de los tests): se toma el mínimo de 2 rondas y los dos órdenes coinciden.
+
+### Conclusión
+
+Ninguna diferencia de resultados en las baterías ni en el arnés, la suite con los mismos 3 fallos de siempre y ninguna regresión de tiempo ni de memoria fuera del ruido. Con 1 paso, `predict` mejora entre un 21 y un 82 % con 20 y 100 series según el formato de la exog (de un 22 a un 80 % con 600 y 1000 series), y el backtesting sin refit, entre un 44 y un 86 % por fold, en los tres entornos. La mejora en % es algo menor en pandas 3 con `pyarrow`, pero en todos los casos de `@core` y `@scale` el tiempo de la rama en pandas 3 con `pyarrow` queda por debajo del de la base en pandas 2 (no en los adversos que apenas mejoran: exog que empieza antes, más filas que `steps`, 5 niveles).
