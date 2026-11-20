@@ -624,12 +624,17 @@ def test_check_predict_input_MissingValuesWarning_when_last_window_has_missing_v
      ('ForecasterRecursiveMultiSeries', 
       pd.DataFrame({'l1': [pd.NA, 2, 3, 4, 5, 6], 'l2': [1, 2, 3, 4, 5, pd.NA]}, dtype='Float64'), 
       ['l1'], ['l1', 'l2']),
-     ('ForecasterDirectMultiVariate', 
-      pd.DataFrame({'l1': [None, 2, 3, 4, 5, 6], 'l2': [1, 2, 3, 4, 5, None]}, dtype='double[pyarrow]'), 
-      None, ['l1'])], 
-    ids = ['ForecasterRecursive', 'ForecasterRecursiveMultiSeries', 'ForecasterDirectMultiVariate', 
-           'ForecasterRnn', 'ForecasterRecursive-Float64', 'ForecasterRecursiveMultiSeries-Float64', 
-           'ForecasterDirectMultiVariate-pyarrow'])
+     ('ForecasterDirectMultiVariate',
+      pd.DataFrame({'l1': [None, 2, 3, 4, 5, 6], 'l2': [1, 2, 3, 4, 5, None]}, dtype='double[pyarrow]'),
+      None, ['l1']),
+     ('ForecasterRecursiveMultiSeries',
+      pd.DataFrame({'l1': [1, 2, 3, 4, 5, 6], 'l2': [1, 2, 3, 4, 5, np.nan]}), ['l1', 'l1'], ['l1', 'l2']),
+     ('ForecasterRecursiveMultiSeries',
+      pd.DataFrame({'l1': [1, 2, 3, 4, 5, 6], 'l2': [np.nan, 2, 3, 4, 5, 6]}), ['l2', 'l1'], ['l1', 'l2'])],
+    ids = ['ForecasterRecursive', 'ForecasterRecursiveMultiSeries', 'ForecasterDirectMultiVariate',
+           'ForecasterRnn', 'ForecasterRecursive-Float64', 'ForecasterRecursiveMultiSeries-Float64',
+           'ForecasterDirectMultiVariate-pyarrow', 'ForecasterRecursiveMultiSeries-duplicated-level',
+           'ForecasterRecursiveMultiSeries-all-levels-other-order'])
 def test_check_predict_input_no_MissingValuesWarning_when_missing_values_not_used_to_predict(
     forecaster_name, last_window, levels, series_names_in_
 ):
@@ -670,12 +675,22 @@ def test_check_predict_input_no_MissingValuesWarning_when_missing_values_not_use
      ('ForecasterRecursiveMultiSeries', 
       pd.DataFrame({'l1': [1, 2, 3, 4, 5, 6], 'l2': [1, pd.NA, 3, 4, 5, 6]}, dtype='Float64'), 
       ['l2'], ['l1', 'l2']),
-     ('ForecasterDirectMultiVariate', 
-      pd.DataFrame({'l1': [1, 2, 3, 4, 5, 6], 'l2': [1, None, 3, 4, 5, 6]}, dtype='double[pyarrow]'), 
-      None, ['l1', 'l2'])], 
-    ids = ['ForecasterStats', 'ForecasterRecursiveMultiSeries', 'ForecasterDirectMultiVariate', 
-           'ForecasterRnn', 'ForecasterStats-Float64', 'ForecasterRecursiveMultiSeries-Float64', 
-           'ForecasterDirectMultiVariate-pyarrow'])
+     ('ForecasterDirectMultiVariate',
+      pd.DataFrame({'l1': [1, 2, 3, 4, 5, 6], 'l2': [1, None, 3, 4, 5, 6]}, dtype='double[pyarrow]'),
+      None, ['l1', 'l2']),
+     ('ForecasterRecursiveMultiSeries',
+      pd.DataFrame({'l1': [1, 2, 3, 4, 5, np.nan], 'l2': [1, 2, 3, 4, 5, 6]}), ['l2', 'l1'], ['l1', 'l2']),
+     ('ForecasterRecursiveMultiSeries',
+      pd.DataFrame({0: [1, 2, 3, 4, 5, 6], 1: [1, 2, 3, 4, 5, np.nan]}), [1, 0], [0, 1]),
+     ('ForecasterDirectMultiVariate',
+      pd.DataFrame({'l1': [1, 2, 3, 4, 5, np.nan], 'l2': [1, 2, 3, 4, 5, 6]}), None, ['l2', 'l1']),
+     ('ForecasterRnn',
+      pd.DataFrame({'l1': [1, 2, 3, 4, 5, 6], 'l2': [1, 2, 3, 4, 5, np.nan]}), ['l1'], ['l2', 'l1'])],
+    ids = ['ForecasterStats', 'ForecasterRecursiveMultiSeries', 'ForecasterDirectMultiVariate',
+           'ForecasterRnn', 'ForecasterStats-Float64', 'ForecasterRecursiveMultiSeries-Float64',
+           'ForecasterDirectMultiVariate-pyarrow', 'ForecasterRecursiveMultiSeries-other-order',
+           'ForecasterRecursiveMultiSeries-int-names', 'ForecasterDirectMultiVariate-other-order',
+           'ForecasterRnn-other-order'])
 def test_check_predict_input_MissingValuesWarning_when_missing_values_used_to_predict(
     forecaster_name, last_window, levels, series_names_in_
 ):
@@ -704,7 +719,51 @@ def test_check_predict_input_MissingValuesWarning_when_missing_values_used_to_pr
         )
 
 
-@pytest.mark.parametrize("values", 
+@pytest.mark.parametrize("forecaster_name, last_window, levels, series_names_in_, error, err_msg",
+    [('ForecasterRecursiveMultiSeries',
+      pd.DataFrame({0: [1, 2, 3, 4, 5, 6], 1: [1, 2, 3, 4, 5, 6]}), [False, True], [0, 1],
+      ValueError, 'Item wrong length'),
+     ('ForecasterRecursiveMultiSeries',
+      pd.DataFrame({True: [1, 2, 3, 4, 5, 6], False: [1, 2, 3, 4, 5, 6]}), [1, 0], [True, False],
+      KeyError, 'None of'),
+     ('ForecasterRecursiveMultiSeries',
+      pd.DataFrame({'a': [1, 2, 3, 4, 5, 6], 'b': [1, 2, 3, 4, 5, 6]}), 'ab', ['a', 'b'],
+      KeyError, 'ab'),
+     ('ForecasterDirectMultiVariate',
+      pd.DataFrame({0: [1, 2, 3, 4, 5, 6], 1: [1, 2, 3, 4, 5, 6]}), None, [False, True],
+      ValueError, 'Item wrong length'),
+     ('ForecasterRnn',
+      pd.DataFrame({0: [1, 2, 3, 4, 5, 6], 1: [1, 2, 3, 4, 5, 6]}), [0], [False, True],
+      ValueError, 'Item wrong length')],
+    ids = ['MultiSeries-bool-levels', 'MultiSeries-bool-columns', 'MultiSeries-str-levels',
+           'DirectMultiVariate-bool-names', 'Rnn-bool-names'])
+def test_check_predict_input_pandas_error_when_last_window_columns_selected_by_pandas_rules(
+    forecaster_name, last_window, levels, series_names_in_, error, err_msg
+):
+    """
+    Test that the columns of `last_window` to check for missing values are
+    still selected (and the pandas error raised) when the names are equal for
+    Python but pandas does not match them as column names: a list of booleans
+    selects rows, integers do not match boolean columns, and a string is a
+    single column name.
+    """
+    with pytest.raises(error, match = err_msg):
+        check_predict_input(
+            forecaster_name   = forecaster_name,
+            steps             = 2,
+            is_fitted         = True,
+            exog_in_          = False,
+            index_type_       = pd.RangeIndex,
+            index_freq_       = 1,
+            window_size       = 5,
+            last_window       = last_window,
+            levels            = levels,
+            levels_forecaster = levels,
+            series_names_in_  = series_names_in_
+        )
+
+
+@pytest.mark.parametrize("values",
     [pd.Series([1., np.nan, 3., 4., 5.]),
      pd.Series([1., pd.NA, 3., 4., 5.], dtype='Float64'),
      pd.Series([1., None, 3., 4., 5.], dtype='double[pyarrow]'),
@@ -1070,6 +1129,59 @@ def test_check_predict_input_MissingExogWarning_when_exog_is_DataFrame_without_c
             levels           = ['l1'],
             series_names_in_ = ['l1', 'l2']
         )
+
+
+@pytest.mark.parametrize(
+    "columns, exog_names_in_, missing",
+    [
+        (pd.Index(['col1', 'col2']), ['col1', 'col3'], "{'col3'}"),
+        (pd.Index(['col1', 'col2'], dtype=object), ['col1', 'col3'], "{'col3'}"),
+        (pd.Index(['col1', 'col2'], dtype='string'), ['col1', 'col3'], "{'col3'}"),
+        (pd.CategoricalIndex(['col1', 'col2']), ['col1', 'col3'], "{'col3'}"),
+        (pd.Index([1, 2]), [1, 3], "{3}"),
+        (pd.Index([1.0, 2.0]), [1, 2], None),
+    ],
+    ids=['default', 'object', 'string', 'category', 'int', 'float_equal_to_int']
+)
+def test_check_predict_input_MissingExogWarning_when_exog_dict_DataFrame_columns_of_any_index_type(
+    columns, exog_names_in_, missing
+):
+    """
+    Check the columns of each DataFrame of a dict `exog` against `exog_names_in_`
+    when Forecaster multi series, for columns of any Index type (they are
+    compared as a set without converting them to a list).
+    """
+    exog = pd.DataFrame(
+        np.arange(10).reshape(5, 2), columns=columns,
+        index=pd.date_range(start='11/30/2018', periods=5, freq=freq)
+    )
+    kwargs = dict(
+        forecaster_name  = 'ForecasterRecursiveMultiSeries',
+        steps            = 2,
+        is_fitted        = True,
+        exog_in_         = True,
+        index_type_      = pd.DatetimeIndex,
+        index_freq_      = freq,
+        window_size      = 5,
+        last_window      = pd.DataFrame(np.arange(10), columns=['l1'], index=pd.date_range(start='1/1/2018', periods=10, freq=freq)),
+        last_window_exog = None,
+        exog             = {'l1': exog},
+        exog_names_in_   = exog_names_in_,
+        max_step         = None,
+        levels           = ['l1'],
+        series_names_in_ = ['l1', 'l2']
+    )
+
+    if missing is None:
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', category=MissingExogWarning)
+            check_predict_input(**kwargs)
+    else:
+        warn_msg = re.escape(
+            f"{missing} not present in `exog` for series 'l1'. All values will be NaN."
+        )
+        with pytest.warns(MissingExogWarning, match = warn_msg):
+            check_predict_input(**kwargs)
 
 
 def test_check_predict_input_ValueError_when_exog_is_DataFrame_without_columns_in_exog_names_in_():
@@ -2221,3 +2333,77 @@ def test_check_predict_input_output_when_exog_is_None_or_not(
     if is_datetime:
         assert results.freq == expected.freq
     assert results_no_exog is None
+
+
+@pytest.mark.parametrize(
+    'exog_kind, n_warnings_per_series',
+    [
+        ('clean', 0),
+        ('missing_values', 1),
+        ('shorter_than_steps', 1),
+        ('misses_dates', 1),
+        ('missing_column', 1),
+        ('series_name_not_seen', 2),
+    ],
+    ids=lambda x: f'{x}'
+)
+def test_check_predict_input_MultiSeries_warnings_when_exog_dict_shares_one_object(
+    exog_kind, n_warnings_per_series
+):
+    """
+    Test that, in ForecasterRecursiveMultiSeries, a dict `exog` whose series
+    share the same object issues the same warnings, in the same order, as a
+    dict with a copy of the object for each series: each warning is issued once
+    per series and names its series.
+    """
+    levels = ['l1', 'l2', 'l3']
+    last_window = pd.DataFrame(
+        data  = np.arange(30, dtype=float).reshape(10, 3),
+        index = pd.date_range(start='2020-02-10', periods=10, freq='D'),
+        columns = levels
+    )
+    exog_index = pd.date_range(start='2020-02-20', periods=5, freq='D')
+    exog = pd.DataFrame(
+        data  = {'exog1': np.arange(5, dtype=float),
+                 'exog2': np.arange(5, 10, dtype=float)},
+        index = exog_index
+    )
+    if exog_kind == 'missing_values':
+        exog.iloc[2, 0] = np.nan
+    elif exog_kind == 'shorter_than_steps':
+        exog = exog.iloc[:3]
+    elif exog_kind == 'misses_dates':
+        exog.index = pd.DatetimeIndex(['2020-02-20', '2020-02-22', '2020-02-24',
+                                       '2020-02-26', '2020-02-28'])
+    elif exog_kind == 'missing_column':
+        exog = exog[['exog1']]
+    elif exog_kind == 'series_name_not_seen':
+        exog = exog['exog1'].rename('other')
+
+    def warnings_of(exog_dict):
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter('always')
+            check_predict_input(
+                forecaster_name  = 'ForecasterRecursiveMultiSeries',
+                steps            = 5,
+                is_fitted        = True,
+                exog_in_         = True,
+                index_type_      = pd.DatetimeIndex,
+                index_freq_      = 'D',
+                window_size      = 5,
+                last_window      = last_window,
+                exog             = exog_dict,
+                exog_names_in_   = ['exog1', 'exog2'],
+                levels           = levels,
+                series_names_in_ = levels
+            )
+        return [(w.category, str(w.message)) for w in record]
+
+    warnings_shared = warnings_of({k: exog for k in levels})
+    warnings_own = warnings_of({k: exog.copy() for k in levels})
+
+    assert warnings_shared == warnings_own
+    assert len(warnings_shared) == n_warnings_per_series * len(levels)
+    for i, (_, message) in enumerate(warnings_shared):
+        level = levels[i // n_warnings_per_series]
+        assert f"`exog` for series '{level}'" in message

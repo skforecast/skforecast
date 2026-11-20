@@ -238,6 +238,27 @@ def test_predict_ValueError_when_not_available_self_last_window_for_levels(store
         forecaster.predict(steps=5, levels=['2'], last_window=None)
 
 
+@pytest.mark.parametrize("method",
+                         ['predict', 'create_predict_X'],
+                         ids=lambda method: f"method: {method}")
+def test_predict_ValueError_when_levels_is_empty_list_with_last_window_and_exog_wide(method):
+    """
+    Test ValueError is raised when `levels` is an empty list, `last_window`
+    is given and `exog` is a wide DataFrame, instead of returning an empty
+    DataFrame. The values of a wide `exog` are repeated for each level only
+    when there are levels, without them the error is raised by `pd.concat`.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5)
+    forecaster.fit(series=series_dict_range, exog=exog_wide_range[['exog_1']])
+    last_window = pd.DataFrame(series_dict_range).iloc[-5:]
+
+    with pytest.raises(ValueError, match="No objects to concatenate"):
+        getattr(forecaster, method)(
+            steps=5, levels=[], last_window=last_window,
+            exog=exog_pred_wide_range[['exog_1']]
+        )
+
+
 def test_predict_IgnoredArgumentWarning_when_levels_is_list_and_different_last_index_in_self_last_window_DatetimeIndex():
     """
     Test IgnoredArgumentWarning is raised when levels is a list and have 

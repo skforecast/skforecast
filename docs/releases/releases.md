@@ -20,6 +20,8 @@ The main changes in this release are:
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Faster parallel backtesting and hyperparameter search: the forecaster is serialized once instead of once per fold, no more processes are started than there are folds, and `n_jobs='auto'` parallelizes a backtesting without refit when its predictions take long enough. In a new session with 16 CPUs, a grid search of XGBoost with refit is 1.8 times faster, and a backtesting without refit with a `HistGradientBoostingRegressor` 2.4 times faster. [User guide](../faq/parallelization-skforecast.ipynb) ([#1503](https://github.com/skforecast/skforecast/pull/1503))
 
++ <span class="badge text-bg-enhancement">Enhancement</span> Performance improvements in `predict` and backtesting of <code>[ForecasterRecursiveMultiSeries]</code>, with the same results. ([#1530](https://github.com/skforecast/skforecast/pull/1530))
+
 !!! warning "Before upgrading"
 
     Some environments and code need to be updated (see **Added**, **Changed** and **Fixed**):
@@ -73,6 +75,8 @@ The main changes in this release are:
 + `predict` with exogenous variables is faster when it is called many times, as in a backtesting without refit, with the same results: about 30% in <code>[ForecasterRecursive]</code>, 25% in <code>[ForecasterDirect]</code>, 12 to 16% in <code>[ForecasterRecursiveClassifier]</code> and 4 to 9% in <code>[ForecasterDirectMultiVariate]</code> and <code>[ForecasterRecursiveMultiSeries]</code>. With pandas 3 and a linear model, a <code>[backtesting_forecaster]</code> of 1000 folds of one step takes 0.34 s instead of 0.52 s. <code>[check_predict_input]</code> now returns the index of the steps to predict instead of `None`. ([#1516](https://github.com/skforecast/skforecast/pull/1516))
 
 + Forecasters predict faster when `transformer_y` or `transformer_series` is a `StandardScaler` (the default of <code>[ForecasterDirectMultiVariate]</code>), which is now applied without the input validation of scikit-learn. Results are unchanged. With a linear model, `predict` of <code>[ForecasterRecursiveMultiSeries]</code> with 300 series takes 114 ms instead of 162 ms, and a <code>[backtesting_forecaster]</code> of 1000 folds of one step is 2.2 times faster. ([#1519](https://github.com/skforecast/skforecast/pull/1519))
+
++ Performance improvements in `predict`, the prediction intervals and <code>[backtesting_forecaster_multiseries]</code> with <code>[ForecasterRecursiveMultiSeries]</code>, mostly with exogenous variables, and in `predict` of <code>[ForecasterDirectMultiVariate]</code>. Results are unchanged. ([#1530](https://github.com/skforecast/skforecast/pull/1530))
 
 + `n_jobs=0`, which joblib does not allow, raises a `ValueError` in <code>[backtesting_forecaster]</code>, <code>[backtesting_forecaster_multiseries]</code>, <code>[backtesting_stats]</code>, their hyperparameter searches (before evaluating any candidate; with <code>[OneStepAheadFold]</code>, `n_jobs` is ignored), <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code>; before, it used all the CPUs, or one job with a warning where `n_jobs` was ignored (intermittent refit, or <code>[backtesting_stats]</code> without refit). ([#1513](https://github.com/skforecast/skforecast/pull/1513))
 

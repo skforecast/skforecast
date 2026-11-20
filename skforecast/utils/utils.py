@@ -1298,7 +1298,7 @@ def _check_exog_alignment(
     exog_index: pd.Index,
     expected_index: pd.Index,
     align_by_index: bool
-) -> None:
+) -> bool:
     """
     Check that `exog` has a value for each of the steps predicted.
 
@@ -1329,7 +1329,8 @@ def _check_exog_alignment(
 
     Returns
     -------
-    None
+    has_warned : bool
+        `True` if a `MissingValuesWarning` was issued, `False` otherwise.
 
     """
 
@@ -1340,9 +1341,9 @@ def _check_exog_alignment(
     if len(exog_index) > 0 and exog_index[0] == expected_index[0]:
         if isinstance(expected_index, pd.RangeIndex):
             if exog_index.step == expected_index.step:
-                return
+                return False
         elif exog_index.freq is not None and exog_index.freq == expected_index.freq:
-            return
+            return False
 
     last_step = len(expected_index)
     # NOTE: If `exog` has fewer values than steps, a warning or an error has
@@ -1372,6 +1373,7 @@ def _check_exog_alignment(
                 f"Prediction method may fail.",
                 MissingValuesWarning
             )
+            return True
         else:
             raise ValueError(
                 f"{exog_name} must have consecutive values following the "
@@ -1388,6 +1390,8 @@ def _check_exog_alignment(
                 f"is the window used to predict (by default, the last window "
                 f"stored in the forecaster)."
             )
+
+    return False
 
 
 def check_predict_input(
@@ -1609,10 +1613,33 @@ def check_predict_input(
     last_window_to_check = last_window
     if forecaster_name != 'ForecasterStats' and len(last_window) > window_size:
         last_window_to_check = last_window_to_check.iloc[-window_size:]
-    if forecaster_name == 'ForecasterRecursiveMultiSeries':
-        last_window_to_check = last_window_to_check[levels]
-    elif forecaster_name in ['ForecasterDirectMultiVariate', 'ForecasterRnn']:
-        last_window_to_check = last_window_to_check[series_names_in_]
+    if forecaster_name in [
+        "ForecasterRecursiveMultiSeries",
+        "ForecasterDirectMultiVariate",
+        "ForecasterRnn"
+    ]:
+        names_to_check = (
+            levels if forecaster_name == 'ForecasterRecursiveMultiSeries'
+            else series_names_in_
+        )
+        # NOTE: The check of missing values does not depend on the order of
+        # the columns, so they are not selected when the names to check are
+        # the columns of `last_window`. Duplicated names do not matter: the
+        # selection takes every column with a selected name, so with the same
+        # set of names it also checks all the columns. Only for names of type
+        # `str` or `int`, in both lists: with other types, Python and pandas
+        # can match names differently (a list of booleans selects rows, `None`
+        # in an object index raises in pandas 3), and the selection keeps
+        # raising its error. The lengths are compared first.
+        check_all_columns = (
+            isinstance(names_to_check, list)
+            and len(names_to_check) == len(last_window_cols)
+            and set(map(type, names_to_check)) <= {str, int}
+            and set(map(type, last_window_cols)) <= {str, int}
+            and set(names_to_check) == set(last_window_cols)
+        )
+        if not check_all_columns:
+            last_window_to_check = last_window_to_check[names_to_check]
     # NOTE: `pd.isna` on the numpy values is faster than `DataFrame.isna` for
     # the few rows of the window. The rows are selected before `to_numpy`
     # because it copies the data and, with extension dtypes (nullable,
@@ -1687,7 +1714,17 @@ def check_predict_input(
         # by index and column, so missing values are filled with NaN and only a
         # warning is issued. The rest of forecasters use `exog` by position.
         align_by_index = forecaster_name in ['ForecasterRecursiveMultiSeries']
+        # NOTE: The same object can be the `exog` of several series, for
+        # example when a wide `exog` is shared by all series in backtesting.
+        # The checks only depend on the object, so one that passed them without
+        # warnings is not checked again. One that issued warnings is checked
+        # for each series, so each warning names its series as before.
+        exog_ids_checked = set()
         for exog_name, exog_to_check in exogs_to_check:
+
+            if id(exog_to_check) in exog_ids_checked:
+                continue
+            exog_has_warned = False
 
             if not isinstance(exog_to_check, (pd.Series, pd.DataFrame)):
                 raise TypeError(
@@ -1697,6 +1734,7 @@ def check_predict_input(
             # NOTE: `exog` can be long and of any dtype, `DataFrame.isna` checks
             # each column in its own dtype without converting it to object.
             if exog_to_check.isna().to_numpy().any():
+                exog_has_warned = True
                 warnings.warn(
                     f"{exog_name} has missing values. Most of machine learning models "
                     f"do not allow missing values. Prediction method may fail.", 
@@ -1706,6 +1744,7 @@ def check_predict_input(
             # Check exog has many values as distance to max step predicted
             if len(exog_to_check) < last_step:
                 if align_by_index:
+                    exog_has_warned = True
                     warnings.warn(
                         f"{exog_name} doesn't have as many values as steps "
                         f"predicted, {last_step}. Missing values are filled "
@@ -1721,7 +1760,15 @@ def check_predict_input(
 
             # Check name/columns are in exog_names_in_
             if isinstance(exog_to_check, pd.DataFrame):
-                exog_columns = exog_to_check.columns.to_list()
+                # NOTE: When `exog` is aligned by index, its columns are only
+                # compared with `exog_names_in_` as a set, so the Index is used
+                # as is: converting it to a list is slower with the text
+                # columns of pandas >= 3 backed by `pyarrow`. The rest of
+                # forecasters keep the list, which the error message shows.
+                if align_by_index:
+                    exog_columns = exog_to_check.columns
+                else:
+                    exog_columns = exog_to_check.columns.to_list()
             else:
                 if exog_to_check.name is None:
                     raise ValueError(
@@ -1730,6 +1777,7 @@ def check_predict_input(
 
                 if exog_to_check.name not in exog_names_in_:
                     if align_by_index:
+                        exog_has_warned = True
                         warnings.warn(
                             f"'{exog_to_check.name}' was not observed during training. "
                             f"{exog_name} is ignored. Exogenous variables must be one "
@@ -1746,6 +1794,7 @@ def check_predict_input(
             col_missing = set(exog_names_in_).difference(exog_columns)
             if col_missing:
                 if align_by_index:
+                    exog_has_warned = True
                     warnings.warn(
                         f"{col_missing} not present in {exog_name}. All "
                         f"values will be NaN.",
@@ -1777,12 +1826,16 @@ def check_predict_input(
                     f"    Expected index : {expected_index[0]}."
                 )
 
-            _check_exog_alignment(
+            if _check_exog_alignment(
                 exog_name      = exog_name,
                 exog_index     = exog_index,
                 expected_index = expected_index,
                 align_by_index = align_by_index
-            )
+            ):
+                exog_has_warned = True
+
+            if not exog_has_warned:
+                exog_ids_checked.add(id(exog_to_check))
 
     # Checks ForecasterStats
     if forecaster_name == 'ForecasterStats':
@@ -4646,10 +4699,12 @@ def _split_long_format(
     -----
     It works on the integer codes of the MultiIndex, without grouping the IDs
     (text with pandas 3, slower to group without pyarrow): the rows are sorted
-    once and each series is a slice. The values are a new array, so the
-    objects share no memory with `data`, and a DataFrame of each series is a
-    shallow copy of its slice, so pandas 2 does not flag it as a copy of
-    another DataFrame when columns are assigned to it.
+    once and each series is a slice. Modifying the objects does not change
+    `data`: their values are a new array, except for a DataFrame with
+    copy-on-write (pandas 3) whose rows are already sorted by ID and are all
+    kept, which shares its values with `data` until they are modified. A
+    DataFrame of each series is a shallow copy of its slice, so pandas 2 does
+    not flag it as a copy of another DataFrame when columns are assigned to it.
 
     """
 
@@ -4702,6 +4757,10 @@ def _split_long_format(
         }
     else:
         data_sorted = data.iloc[positions]
+        # NOTE: Each series is sliced from a frame with a plain index; slicing
+        # the MultiIndex for every series is slower. The dates index of each
+        # series is set below.
+        data_sorted.index = pd.RangeIndex(len(positions))
         data_dict = {}
         for series_id, start, end in zip(ids_found, starts, ends):
             data_series = data_sorted.iloc[start:end].copy(deep=False)
@@ -4952,8 +5011,8 @@ def check_preprocess_exog_multiseries(
                     f"pandas DatetimeIndex. Found `exog` index type: "
                     f"{type(exog.index.levels[1])}."
                 )
-            # NOTE: Only the IDs in `series_names_in_` are split. The DataFrame of
-            # each series is new data, not a view of the user's `exog` (see
+            # NOTE: Only the IDs in `series_names_in_` are split. Modifying the
+            # DataFrame of a series does not change the user's `exog` (see
             # `_split_long_format`), so no copy is needed.
             exog_long_dict = _split_long_format(exog, series_ids=series_names_set)
             exog_dict.update(exog_long_dict)

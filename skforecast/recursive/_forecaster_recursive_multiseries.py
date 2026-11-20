@@ -2711,6 +2711,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             X_train_series_names_in_=self.X_train_series_names_in_, levels=levels
         )
 
+        levels_are_columns = False
         if self.is_fitted:
             if last_window is None:
                 levels, last_window = preprocess_levels_self_last_window_multiseries(
@@ -2727,6 +2728,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     )
                 if input_levels_is_None and isinstance(last_window, pd.DataFrame):
                     levels = last_window.columns.to_list()
+                    levels_are_columns = True
 
         if isinstance(exog, (pd.Series, pd.DataFrame)) and isinstance(exog.index, pd.MultiIndex):
             if not isinstance(exog.index.levels[1], pd.DatetimeIndex):
@@ -2737,8 +2739,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     f"type: {type(exog.index.levels[1])}."
                 )
             
-            # NOTE: Only the IDs in `levels` are split. The DataFrame of each
-            # series is new data, not a view of the user's `exog` (see
+            # NOTE: Only the IDs in `levels` are split. Modifying the DataFrame
+            # of a series does not change the user's `exog` (see
             # `_split_long_format`), so no copy is needed.
             if isinstance(exog, pd.Series):
                 exog = exog.to_frame()
@@ -2784,9 +2786,25 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         if len(last_window) != self.window_size:
             prediction_index = None
 
-        last_window = last_window.iloc[
-            -self.window_size :, last_window.columns.get_indexer(levels)
-        ].copy()
+        # NOTE: `last_window` is only read below (its values are copied into a
+        # new matrix), so it is not copied. When its columns are `levels`, in
+        # the same order and unique (the window stored in `fit`, the one of
+        # each backtesting fold or a window passed without `levels`), only its
+        # last `window_size` rows are selected. The lengths are compared first
+        # to skip converting the columns of a wide window to a list. Duplicated
+        # columns keep the selection by position, which raises the pandas error.
+        if not levels_are_columns:
+            levels_are_columns = (
+                len(levels) == len(last_window.columns)
+                and last_window.columns.tolist() == levels
+            )
+        if levels_are_columns and last_window.columns.is_unique:
+            if len(last_window) != self.window_size:
+                last_window = last_window.iloc[-self.window_size :]
+        else:
+            last_window = last_window.iloc[
+                -self.window_size :, last_window.columns.get_indexer(levels)
+            ]
         if prediction_index is None:
             prediction_index = expand_index(
                                    index = last_window.index,
@@ -2804,14 +2822,30 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         if exog is not None:
             if isinstance(exog, dict):
-                # Empty dataframe to be filled with the exog values of each level
-                empty_exog = pd.DataFrame(
-                    data={
-                        col: pd.Series(dtype=dtype)
-                        for col, dtype in self.exog_dtypes_in_.items()
-                    },
-                    index=prediction_index,
-                )
+                # NOTE: The exog of each level is aligned with the index of the
+                # predictions and the columns seen in training. The empty
+                # DataFrame with the training dtypes, which fills the levels
+                # without exog, is only created if one of them has none.
+                # Otherwise only its columns are created, as a DataFrame built
+                # from a dict creates them (pandas 3 turns consecutive integer
+                # names into a `RangeIndex`), but without data, which is much
+                # cheaper. Both iterate `exog_dtypes_in_.items()`, so a
+                # forecaster trained without exog raises the same error.
+                empty_exog = None
+                if any(exog.get(level) is None for level in levels):
+                    empty_exog = pd.DataFrame(
+                        data={
+                            col: pd.Series(dtype=dtype)
+                            for col, dtype in self.exog_dtypes_in_.items()
+                        },
+                        index=prediction_index,
+                    )
+                    exog_columns = empty_exog.columns
+                else:
+                    exog_columns = pd.DataFrame(
+                        data={col: [] for col, _ in self.exog_dtypes_in_.items()},
+                        copy=False
+                    ).columns
             else:
                 exog = input_to_frame(data=exog, input_name='exog')
                 # NOTE: As with a dict, `exog` is aligned with the predictions by
@@ -2889,6 +2923,7 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         differentiators = {}
         exog_values_all_levels = []
+        exog_aligned_by_id = {}
         for idx_level, level in enumerate(levels):
             last_window_level = last_window_values[:, idx_level]
             last_window_level = transform_numpy(
@@ -2921,17 +2956,65 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             last_window_matrix[:, idx_level] = last_window_level
 
             if isinstance(exog, dict):
-                # Fill the empty dataframe with the exog values of each level
-                # and transform them if necessary
+                # Exog values of each level, aligned with the predictions. They
+                # are transformed below, all levels at once.
+                # NOTE: The same object can be the `exog` of several levels (for
+                # example a wide `exog` shared by all series in backtesting).
+                # It is aligned only once and its levels reuse the result,
+                # which is only read below.
                 exog_values = exog.get(level, None)
-                if exog_values is not None:
+                if exog_values is None:
+                    exog_values = empty_exog.copy()
+                elif id(exog_values) in exog_aligned_by_id:
+                    exog_values = exog_aligned_by_id[id(exog_values)]
+                else:
+                    exog_id = id(exog_values)
                     if isinstance(exog_values, pd.Series):
                         exog_values = exog_values.to_frame()
 
-                    exog_values = exog_values.reindex_like(empty_exog)
-                else:
-                    exog_values = empty_exog.copy()
-            
+                    # NOTE: `exog_values` is only aligned when needed. If its
+                    # index is the index of the predictions and its columns are
+                    # the ones seen in training, `reindex` would just return
+                    # a copy, which is not needed because `exog_values` is only
+                    # read below (`pd.concat` creates a new DataFrame).
+                    # The check is `identical` (same values, dtype, name and,
+                    # for dates, frequency), the one pandas uses to return the
+                    # copy. With `equals`, labels that are equal but of another
+                    # type (for example `numpy.str_` and `str`) would be kept,
+                    # while `reindex` replaces them with the training ones,
+                    # and transformers and encoders treat them differently.
+                    # The names of the indexes are compared first, since the
+                    # index of the predictions has none: an `exog` with a named
+                    # index (for example read from a file) skips the
+                    # comparison of its dates here.
+                    # If the dates are the same (`equals`, the check
+                    # `reindex` makes on each axis) but the index is not
+                    # `identical` (a name, no frequency) and the columns are,
+                    # `reindex` returns the data of `exog_values` with the
+                    # index and columns of the target. The same is done
+                    # without `reindex`. The columns are also replaced:
+                    # `identical` columns can have other labels (`None` and
+                    # NaN in pandas 2). Sending more cases to `reindex` never
+                    # changes the result, it is the usual path.
+                    if not (
+                        exog_values.index.name is prediction_index.name
+                        and exog_values.index.identical(prediction_index)
+                        and exog_values.columns.identical(exog_columns)
+                    ):
+                        if (
+                            exog_values.index.equals(prediction_index)
+                            and exog_values.columns.identical(exog_columns)
+                        ):
+                            exog_values = exog_values.copy(deep=False)
+                            exog_values.index = prediction_index
+                            exog_values.columns = exog_columns
+                        else:
+                            exog_values = exog_values.reindex(
+                                              index   = prediction_index,
+                                              columns = exog_columns
+                                          )
+                    exog_aligned_by_id[exog_id] = exog_values
+
             exog_values_all_levels.append(exog_values)
 
         last_window = pd.DataFrame(
@@ -2943,7 +3026,17 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         if exog is not None:
             # Exog is transformed into a dict where each key is a step and each value
             # is a numpy array where each column is an exog and each row a series
-            exog_values_all_levels = pd.concat(exog_values_all_levels)
+            # NOTE: A wide `exog` is the same DataFrame for all levels, so its
+            # values are repeated with numpy instead of concatenating it once per
+            # level. The array is the same: `pd.concat` keeps the dtypes of the
+            # copies and `to_numpy` combines them in the same way. Without
+            # levels, `pd.concat` is kept, it raises the usual error.
+            if not isinstance(exog, dict) and levels:
+                exog_values_all_levels = np.tile(
+                    exog_values.to_numpy(), (len(levels), 1)
+                )
+            else:
+                exog_values_all_levels = pd.concat(exog_values_all_levels)
             if isinstance(exog, dict):
                 exog_values_all_levels = transform_dataframe(
                                              df                = exog_values_all_levels,
@@ -2966,7 +3059,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         exog=exog_values_all_levels, call_check_exog=False
                     )
             
-            exog_values_all_levels = exog_values_all_levels.to_numpy()
+            if isinstance(exog_values_all_levels, pd.DataFrame):
+                exog_values_all_levels = exog_values_all_levels.to_numpy()
             exog_values_dict = {
                 i + 1: exog_values_all_levels[i::steps, :] 
                 for i in range(steps)

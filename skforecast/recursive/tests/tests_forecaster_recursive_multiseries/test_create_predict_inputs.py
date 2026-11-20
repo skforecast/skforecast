@@ -2,8 +2,10 @@
 # ==============================================================================
 import re
 import pytest
+import warnings
 import numpy as np
 import pandas as pd
+from pandas.errors import InvalidIndexError
 from sklearn.exceptions import NotFittedError
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
@@ -15,6 +17,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import HistGradientBoostingRegressor
 from lightgbm import LGBMRegressor
 
+from ....exceptions import MissingExogWarning
 from ....preprocessing import TimeSeriesDifferentiator, CalendarFeatures
 from ....recursive import ForecasterRecursiveMultiSeries
 
@@ -106,6 +109,39 @@ def test_create_predict_inputs_TypeError_when_exog_MultiIndex_no_DatetimeIndex()
         forecaster._create_predict_inputs(steps=5, exog=exog_long_no_index)
 
 
+@pytest.mark.parametrize(
+    "check_inputs", [True, False], ids=lambda ci: f"check_inputs: {ci}"
+)
+@pytest.mark.parametrize(
+    "levels", [None, ['1', '2']], ids=lambda lv: f"levels: {lv}"
+)
+def test_create_predict_inputs_InvalidIndexError_when_last_window_has_duplicated_columns(
+    levels, check_inputs
+):
+    """
+    Test the pandas InvalidIndexError is raised when `last_window` has
+    duplicated column names, also when `levels` is taken from its columns
+    (`levels=None`) and without checking the inputs (as in backtesting).
+    """
+    series = {
+        '1': pd.Series(np.arange(start=0, stop=50, dtype=float)),
+        '2': pd.Series(np.arange(start=50, stop=100, dtype=float))
+    }
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5)
+    forecaster.fit(series=series)
+    last_window = pd.DataFrame(
+        np.arange(15, dtype=float).reshape(5, 3),
+        columns = ['1', '2', '1'],
+        index   = pd.RangeIndex(start=45, stop=50, step=1)
+    )
+
+    err_msg = re.escape("Reindexing only valid with uniquely valued Index objects")
+    with pytest.raises(InvalidIndexError, match = err_msg):
+        forecaster._create_predict_inputs(
+            steps=5, levels=levels, last_window=last_window, check_inputs=check_inputs
+        )
+
+
 def test_output_create_predict_inputs_when_estimator_is_LinearRegression():
     """
     Test output _create_predict_inputs when using LinearRegression as estimator.
@@ -174,7 +210,93 @@ def test_create_predict_inputs_output_when_with_transform_series():
     pd.testing.assert_index_equal(results[4], expected[4])
     assert results[5] == {}
 
-@pytest.mark.parametrize("transformer_series", 
+
+@pytest.mark.parametrize(
+    "levels, n_rows, expected_last_window",
+    [
+        (None, 5, {'1': [1000., 1001., 1002., 1003., 1004.],
+                   '2': [2000., 2001., 2002., 2003., 2004.],
+                   '3': [3000., 3001., 3002., 3003., 3004.]}),
+        (None, 8, {'1': [1003., 1004., 1005., 1006., 1007.],
+                   '2': [2003., 2004., 2005., 2006., 2007.],
+                   '3': [3003., 3004., 3005., 3006., 3007.]}),
+        (['1', '2', '3'], 5, {'1': [1000., 1001., 1002., 1003., 1004.],
+                              '2': [2000., 2001., 2002., 2003., 2004.],
+                              '3': [3000., 3001., 3002., 3003., 3004.]}),
+        (['3', '2', '1'], 8, {'3': [3003., 3004., 3005., 3006., 3007.],
+                              '2': [2003., 2004., 2005., 2006., 2007.],
+                              '1': [1003., 1004., 1005., 1006., 1007.]}),
+        (['3', '1'], 5, {'3': [3000., 3001., 3002., 3003., 3004.],
+                         '1': [1000., 1001., 1002., 1003., 1004.]}),
+        (None, None, {'1': [45., 46., 47., 48., 49.],
+                      '2': [145., 146., 147., 148., 149.],
+                      '3': [245., 246., 247., 248., 249.]}),
+        (['3', '2', '1'], None, {'3': [245., 246., 247., 248., 249.],
+                                 '2': [145., 146., 147., 148., 149.],
+                                 '1': [45., 46., 47., 48., 49.]}),
+    ],
+    ids=["levels_None", "levels_None_more_rows", "levels_columns_order",
+         "levels_other_order_more_rows", "levels_subset",
+         "stored_levels_None", "stored_levels_other_order"]
+)
+def test_create_predict_inputs_output_last_window_selection(
+    levels, n_rows, expected_last_window
+):
+    """
+    Test the last window returned by _create_predict_inputs has the last
+    `window_size` rows of `last_window` and the columns of `levels`, in their
+    order, when `levels` are its columns (in the same order or taken from them)
+    and when they are a subset or in another order. Also with the last window
+    stored in `fit` (`n_rows=None`), whose columns follow the order of the
+    series in `fit`, not the one of `levels`. The returned last window does not
+    share memory with `last_window`, which is not modified.
+    """
+    series = {
+        '1': pd.Series(np.arange(start=0, stop=50, dtype=float)),
+        '2': pd.Series(np.arange(start=100, stop=150, dtype=float)),
+        '3': pd.Series(np.arange(start=200, stop=250, dtype=float))
+    }
+    forecaster = ForecasterRecursiveMultiSeries(
+        LinearRegression(), lags=5, transformer_series=None
+    )
+    forecaster.fit(series=series)
+    last_window = None
+    if n_rows is not None:
+        last_window = pd.DataFrame(
+            {'1': 1000. + np.arange(n_rows),
+             '2': 2000. + np.arange(n_rows),
+             '3': 3000. + np.arange(n_rows)},
+            index = pd.RangeIndex(start=50 - n_rows, stop=50, step=1)
+        )
+        last_window_copy = last_window.copy()
+
+    results = forecaster._create_predict_inputs(
+        steps=3, levels=levels, last_window=last_window
+    )
+
+    expected = (
+        pd.DataFrame(
+            expected_last_window,
+            index = pd.RangeIndex(start=45, stop=50, step=1)
+        ),
+        None,
+        None,
+        list(expected_last_window.keys()),
+        pd.RangeIndex(start=50, stop=53, step=1)
+    )
+
+    pd.testing.assert_frame_equal(results[0], expected[0])
+    assert results[1] == expected[1]
+    assert results[2] == expected[2]
+    assert results[3] == expected[3]
+    pd.testing.assert_index_equal(results[4], expected[4])
+    assert results[5] == {}
+    if last_window is not None:
+        pd.testing.assert_frame_equal(last_window, last_window_copy)
+        assert not np.shares_memory(results[0].to_numpy(), last_window.to_numpy())
+
+
+@pytest.mark.parametrize("transformer_series",
                          [StandardScaler(),
                           {'l1': StandardScaler(), 'l2': StandardScaler(), '_unknown_level': StandardScaler()}], 
                          ids = lambda tr: f'transformer_series: {type(tr)}')
@@ -952,3 +1074,384 @@ def test_create_predict_inputs_when_unknown_level_and_differentiation(differenti
         assert isinstance(results[5][level], TimeSeriesDifferentiator)
     # Unknown level 'id_1005' should get a copy from '_unknown_level', not modify self.differentiator_
     assert 'id_1005' not in forecaster.differentiator_
+
+
+@pytest.mark.parametrize(
+    "extra_rows", [0, 3], ids=lambda n: f"extra_rows: {n}"
+)
+@pytest.mark.parametrize(
+    "levels", [None, ['2', '1']], ids=lambda lv: f"levels: {lv}"
+)
+@pytest.mark.parametrize(
+    "forecaster_kwargs",
+    [
+        {"estimator": LinearRegression(), "lags": 5},
+        {"estimator": LinearRegression(), "lags": 5,
+         "transformer_series": StandardScaler(copy=False)},
+        {"estimator": LinearRegression(), "lags": 5,
+         "transformer_series": StandardScaler(copy=False), "differentiation": 1},
+    ],
+    ids=["base", "in_place_transformer", "in_place_transformer_differentiation"]
+)
+def test_create_predict_inputs_does_not_modify_last_window(
+    forecaster_kwargs, levels, extra_rows
+):
+    """
+    Test _create_predict_inputs does not modify `last_window`, neither the one
+    passed by the user nor the one stored in `fit`, also with in-place
+    transformers. Its values are only read, not copied, when its columns are
+    `levels`.
+    """
+    series = {
+        '1': pd.Series(np.arange(start=0, stop=50, dtype=float)),
+        '2': pd.Series(np.arange(start=100, stop=150, dtype=float))
+    }
+    forecaster = ForecasterRecursiveMultiSeries(**forecaster_kwargs)
+    forecaster.fit(series=series)
+    n_rows = forecaster.window_size + extra_rows
+    last_window = pd.DataFrame(
+        {'1': 1000. + np.arange(n_rows), '2': 2000. + np.arange(n_rows)},
+        index = pd.RangeIndex(start=50 - n_rows, stop=50, step=1)
+    )
+    last_window_copy = last_window.copy()
+    last_window_stored_copy = {
+        k: v.copy() for k, v in forecaster.last_window_.items()
+    }
+
+    forecaster._create_predict_inputs(steps=3, levels=levels, last_window=last_window)
+    forecaster._create_predict_inputs(steps=3, levels=levels)
+
+    pd.testing.assert_frame_equal(last_window, last_window_copy)
+    for k, v in forecaster.last_window_.items():
+        pd.testing.assert_series_equal(v, last_window_stored_copy[k])
+
+
+def _exog_dict_create_predict_inputs(kind):
+    """
+    Exog of series '1' and '2' for the 3 steps after the training data, as
+    `kind`: aligned with the predictions (`identical` index and columns) or in
+    a form that `_create_predict_inputs` aligns (with `reindex` or, if only
+    the name or the frequency of the index differ, with a shallow copy).
+    """
+    idx = pd.date_range(start='2020-02-20', periods=6, freq='D')
+    exog = {
+        '1': pd.DataFrame(
+                 {'exog_1': 100. + np.arange(6), 'exog_2': 200. + np.arange(6)},
+                 index=idx
+             ),
+        '2': pd.DataFrame(
+                 {'exog_1': 300. + np.arange(6), 'exog_2': 400. + np.arange(6)},
+                 index=idx
+             ),
+    }
+    if kind != 'extra_rows':
+        exog = {k: v.iloc[:3] for k, v in exog.items()}
+    if kind == 'named_index':
+        exog = {k: v.rename_axis('date') for k, v in exog.items()}
+    if kind == 'index_without_freq':
+        exog = {k: v.set_axis(pd.DatetimeIndex(list(v.index))) for k, v in exog.items()}
+    if kind == 'named_index_without_freq':
+        exog = {
+            k: v.set_axis(pd.DatetimeIndex(list(v.index), name='date'))
+            for k, v in exog.items()
+        }
+    if kind == 'reordered_columns':
+        exog = {k: v[['exog_2', 'exog_1']] for k, v in exog.items()}
+    if kind == 'object_columns':
+        exog = {k: v.set_axis(pd.Index(list(v.columns), dtype=object), axis=1)
+                for k, v in exog.items()}
+
+    return exog
+
+
+@pytest.mark.parametrize(
+    "kind",
+    ['aligned', 'named_index', 'index_without_freq', 'named_index_without_freq',
+     'extra_rows', 'reordered_columns', 'object_columns'],
+    ids=lambda kind: f'exog: {kind}'
+)
+def test_create_predict_inputs_output_when_exog_dict_aligned_or_not(kind):
+    """
+    Test _create_predict_inputs gives the same exog values when the exog of
+    each series is already aligned with the predictions (its index and columns
+    are identical to the ones of the predictions and the training, so it is not
+    reindexed), when only its index is not identical (named, without
+    frequency or both, so it takes the index of the predictions without
+    `reindex`) and when it is aligned with `reindex` (more rows than steps,
+    columns in another order or of another dtype).
+    """
+    idx = pd.date_range(start='2020-01-01', periods=50, freq='D')
+    series = {
+        '1': pd.Series(np.arange(50, dtype=float), index=idx),
+        '2': pd.Series(100. + np.arange(50, dtype=float), index=idx),
+    }
+    exog_train = {
+        k: pd.DataFrame(
+               {'exog_1': np.arange(50, dtype=float),
+                'exog_2': np.arange(50, dtype=float) ** 2},
+               index=idx
+           )
+        for k in series
+    }
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=LinearRegression(), lags=3, transformer_series=None
+    )
+    forecaster.fit(series=series, exog=exog_train, suppress_warnings=True)
+    exog = _exog_dict_create_predict_inputs(kind)
+    results = forecaster._create_predict_inputs(steps=3, exog=exog)
+
+    expected_exog = {
+        1: np.array([[100., 200.], [300., 400.]]),
+        2: np.array([[101., 201.], [301., 401.]]),
+        3: np.array([[102., 202.], [302., 402.]]),
+    }
+    expected_index = pd.date_range(start='2020-02-20', periods=3, freq='D')
+
+    assert results[1].keys() == expected_exog.keys()
+    for k in expected_exog:
+        np.testing.assert_array_equal(results[1][k], expected_exog[k])
+    assert results[3] == ['1', '2']
+    pd.testing.assert_index_equal(results[4], expected_index)
+
+
+@pytest.mark.parametrize(
+    "levels", [['1'], None], ids=lambda lv: f"levels: {lv}"
+)
+@pytest.mark.parametrize(
+    "index_kind", ['aligned', 'named', 'without_freq'],
+    ids=lambda kind: f"exog index: {kind}"
+)
+def test_create_predict_inputs_does_not_modify_exog_dict_when_same_dates(
+    levels, index_kind
+):
+    """
+    Test _create_predict_inputs does not modify the exog of each series when it
+    has the dates of the predictions: already aligned, so it is used without a
+    copy, or with a named index or an index without frequency, so a shallow
+    copy takes the index of the predictions (the index of the user's exog keeps
+    its name and frequency). Also when the categorical features are encoded
+    without `transformer_exog` and with a single level (`pd.concat` of one
+    DataFrame shares its data).
+    """
+    idx = pd.date_range(start='2020-01-01', periods=53, freq='D')
+    series = {
+        '1': pd.Series(np.arange(50, dtype=float), index=idx[:50]),
+        '2': pd.Series(100. + np.arange(50, dtype=float), index=idx[:50]),
+    }
+    exog_full = pd.DataFrame(
+        {'exog_1': np.arange(53, dtype=float),
+         'exog_2': pd.Categorical(np.arange(53) % 3)},
+        index=idx
+    )
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=LinearRegression(), lags=3, transformer_series=None,
+        transformer_exog=None, categorical_features='auto'
+    )
+    forecaster.fit(
+        series=series, exog={k: exog_full.iloc[:50] for k in series},
+        suppress_warnings=True
+    )
+    exog = {k: exog_full.iloc[50:].copy() for k in series}
+    if index_kind == 'named':
+        exog = {k: v.rename_axis('date') for k, v in exog.items()}
+    if index_kind == 'without_freq':
+        exog = {k: v.set_axis(pd.DatetimeIndex(list(v.index))) for k, v in exog.items()}
+    exog_copy = {k: v.copy() for k, v in exog.items()}
+
+    results = forecaster._create_predict_inputs(steps=3, levels=levels, exog=exog)
+
+    expected_exog_1 = np.array([[50., 2.], [50., 2.]])
+    if levels == ['1']:
+        expected_exog_1 = expected_exog_1[:1]
+    np.testing.assert_array_equal(results[1][1], expected_exog_1)
+    for k in exog:
+        pd.testing.assert_frame_equal(exog[k], exog_copy[k])
+
+
+@pytest.mark.parametrize(
+    "kind",
+    ['aligned', 'named_index', 'index_without_freq', 'extra_rows',
+     'reordered_columns', 'object_columns', 'series'],
+    ids=lambda kind: f'exog: {kind}'
+)
+def test_create_predict_inputs_output_when_exog_dict_shares_one_object(kind):
+    """
+    Test _create_predict_inputs gives the same output when several series share
+    the same exog object as when each series has its own copy, whether the
+    object is already aligned with the predictions or it has to be aligned.
+    Series '1' and '3' share the object and series '2' has its own one, so
+    the shared result is reused in between. The shared object is not
+    modified.
+    """
+    idx = pd.date_range(start='2020-01-01', periods=50, freq='D')
+    series = {
+        '1': pd.Series(np.arange(50, dtype=float), index=idx),
+        '2': pd.Series(100. + np.arange(50, dtype=float), index=idx),
+        '3': pd.Series(200. + np.arange(50, dtype=float), index=idx),
+    }
+    exog_train = {
+        k: pd.DataFrame(
+               {'exog_1': np.arange(50, dtype=float),
+                'exog_2': np.arange(50, dtype=float) ** 2},
+               index=idx
+           )
+        for k in series
+    }
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=LinearRegression(), lags=3, transformer_series=None
+    )
+    forecaster.fit(series=series, exog=exog_train, suppress_warnings=True)
+
+    exog_kind = _exog_dict_create_predict_inputs(
+        'aligned' if kind == 'series' else kind
+    )
+    exog_shared = exog_kind['1']
+    if kind == 'series':
+        exog_shared = exog_shared['exog_1']
+    exog_shared_copy = exog_shared.copy()
+    exog_2 = exog_kind['2']
+    exog = {'1': exog_shared, '2': exog_2, '3': exog_shared}
+    exog_own = {'1': exog_shared.copy(), '2': exog_2, '3': exog_shared.copy()}
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        results = forecaster._create_predict_inputs(steps=3, exog=exog)
+        expected = forecaster._create_predict_inputs(steps=3, exog=exog_own)
+
+    pd.testing.assert_frame_equal(results[0], expected[0])
+    assert results[1].keys() == expected[1].keys()
+    for k in expected[1]:
+        np.testing.assert_array_equal(results[1][k], expected[1][k])
+    assert results[3] == ['1', '2', '3']
+    pd.testing.assert_index_equal(results[4], expected[4])
+    if kind == 'series':
+        pd.testing.assert_series_equal(exog_shared, exog_shared_copy)
+    else:
+        pd.testing.assert_frame_equal(exog_shared, exog_shared_copy)
+
+
+@pytest.mark.parametrize(
+    "columns, kind",
+    [(pd.RangeIndex(2), 'aligned'),
+     (pd.RangeIndex(2), 'reordered_columns'),
+     (pd.Index([0, 1]), 'aligned'),
+     (pd.Index([1, 3]), 'aligned'),
+     (pd.Index([1, 3]), 'reordered_columns')],
+    ids=lambda x: f'{x}'
+)
+def test_create_predict_inputs_output_when_exog_dict_integer_column_names(
+    columns, kind
+):
+    """
+    Test _create_predict_inputs gives the same exog values when the columns of
+    the exog are integers, consecutive (a RangeIndex when pandas 3 builds a
+    DataFrame from a dict) or not, given as a RangeIndex or as an Index, in
+    the training order or in another one.
+    """
+    idx = pd.date_range(start='2020-01-01', periods=50, freq='D')
+    series = {
+        '1': pd.Series(np.arange(50, dtype=float), index=idx),
+        '2': pd.Series(100. + np.arange(50, dtype=float), index=idx),
+    }
+    exog_train = {
+        k: pd.DataFrame(
+               np.column_stack([np.arange(50.), np.arange(50.) ** 2]),
+               index=idx, columns=columns
+           )
+        for k in series
+    }
+    # NOTE: LinearRegression does not accept the integer names of the exog
+    # next to the text names of the lags.
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=LGBMRegressor(n_estimators=2, verbose=-1, random_state=123),
+        lags=3, transformer_series=None
+    )
+    forecaster.fit(series=series, exog=exog_train, suppress_warnings=True)
+    exog = {
+        k: v.set_axis(columns, axis=1)
+        for k, v in _exog_dict_create_predict_inputs('aligned').items()
+    }
+    if kind == 'reordered_columns':
+        exog = {k: v[columns[::-1]] for k, v in exog.items()}
+    results = forecaster._create_predict_inputs(steps=3, exog=exog)
+
+    expected_exog = {
+        1: np.array([[100., 200.], [300., 400.]]),
+        2: np.array([[101., 201.], [301., 401.]]),
+        3: np.array([[102., 202.], [302., 402.]]),
+    }
+    expected_index = pd.date_range(start='2020-02-20', periods=3, freq='D')
+
+    assert results[1].keys() == expected_exog.keys()
+    for k in expected_exog:
+        np.testing.assert_array_equal(results[1][k], expected_exog[k])
+    assert results[3] == ['1', '2']
+    pd.testing.assert_index_equal(results[4], expected_index)
+
+
+@pytest.mark.parametrize(
+    "missing_level", ['1', '3'], ids=lambda lv: f"missing level: {lv}"
+)
+def test_create_predict_inputs_output_when_exog_dict_misses_a_level(missing_level):
+    """
+    Test _create_predict_inputs fills with NaN the exog of a level that is not
+    in the exog dict, whether the level is the first or the last one to
+    predict, keeps the exog values of the others and warns about the missing
+    level. One of the exog is categorical.
+    """
+    idx = pd.date_range(start='2020-01-01', periods=50, freq='D')
+    series = {
+        '1': pd.Series(np.arange(50, dtype=float), index=idx),
+        '2': pd.Series(100. + np.arange(50, dtype=float), index=idx),
+        '3': pd.Series(200. + np.arange(50, dtype=float), index=idx),
+    }
+    exog_train = {
+        k: pd.DataFrame(
+               {'exog_1': np.arange(50, dtype=float),
+                'exog_2': pd.Categorical(np.arange(50) % 3)},
+               index=idx
+           )
+        for k in series
+    }
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=LinearRegression(), lags=3, transformer_series=None,
+        categorical_features='auto'
+    )
+    forecaster.fit(series=series, exog=exog_train, suppress_warnings=True)
+    idx_pred = pd.date_range(start='2020-02-20', periods=3, freq='D')
+    exog = {
+        k: pd.DataFrame(
+               {'exog_1': 10. * (i + 1) + np.arange(3),
+                'exog_2': pd.Categorical([0, 1, 2], categories=[0, 1, 2])},
+               index=idx_pred
+           )
+        for i, k in enumerate(series)
+        if k != missing_level
+    }
+
+    warn_msg = re.escape(
+        f"`exog` does not contain keys for levels {{'{missing_level}'}}. "
+        f"Missing levels are filled with NaN. Most of machine learning "
+        f"models do not allow missing values. Prediction method may fail."
+    )
+    with pytest.warns(MissingExogWarning, match=warn_msg):
+        results = forecaster._create_predict_inputs(steps=3, exog=exog)
+
+    if missing_level == '1':
+        expected_exog = {
+            1: np.array([[np.nan, np.nan], [20., 0.], [30., 0.]]),
+            2: np.array([[np.nan, np.nan], [21., 1.], [31., 1.]]),
+            3: np.array([[np.nan, np.nan], [22., 2.], [32., 2.]]),
+        }
+    else:
+        expected_exog = {
+            1: np.array([[10., 0.], [20., 0.], [np.nan, np.nan]]),
+            2: np.array([[11., 1.], [21., 1.], [np.nan, np.nan]]),
+            3: np.array([[12., 2.], [22., 2.], [np.nan, np.nan]]),
+        }
+
+    assert results[1].keys() == expected_exog.keys()
+    for k in expected_exog:
+        np.testing.assert_array_equal(results[1][k], expected_exog[k])
+    assert results[3] == ['1', '2', '3']
+    pd.testing.assert_index_equal(results[4], idx_pred)
