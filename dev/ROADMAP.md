@@ -41,7 +41,7 @@ Los documentos borrados se leen con `git show <commit>:<ruta>`.
 | FAR | `dev/foundation_adapters_review/` |
 | NJOBS | `dev/n_jobs_benchmark/REPORT.md` |
 | PREP | `dev/preprocessing_speedups/PLAN.md` |
-| MSPERF | `dev/multiseries_predict_perf/` (rama local `perf/multiseries-predict-backtesting`) |
+| MSPERF | `30195692f:dev/multiseries_predict_perf/` (borrado; `SEGUIMIENTO.md`, `PLAN.md`, `MEDIDAS.md` con el informe final en §17, y `scripts/`) |
 | BTSPEED §N | `dev/backtesting_multiseries_speedups/PLAN.md`, sección N |
 | NPREV §N | `dev/pandas_numpy_review/REVISION.md`, sección N (revisión independiente, con dos rondas, de `INFORME.md`, en la misma carpeta; donde difieran vale la revisión) |
 
@@ -55,7 +55,6 @@ Los documentos borrados se leen con `git show <commit>:<ruta>`.
 | `timeh2o_adapter/` | Especificación del adaptador TimeH2O y sus experimentos (`experiments/skeleton/` hace falta para implementarlo) | Se implemente o se descarte FOUND-timeh2o |
 | `n_jobs_benchmark/` | Informe y scripts de medida de `n_jobs` (#1503) | Se cierre PERF-n_jobs-next |
 | `preprocessing_speedups/` | Plan y kit de validación de los atajos de preprocesado (en curso) | Se cierren PERF-categorical-codes, STUDY-fit-insample-binning y PERF-one-step-ahead-inverse |
-| `multiseries_predict_perf/` (rama local) | Plan, medidas y scripts de PERF-multiseries-names-pyarrow (en curso) | Tras el informe de pandas 3 (DOC-pandas3-report) |
 | `backtesting_multiseries_speedups/` | Plan de PERF-backtesting-folds-positions y de la segunda parte de PERF-03, con las medidas y los prototipos de la revisión del 2026-11-19 | Se cierren PERF-backtesting-folds-positions y PERF-03 |
 | `pandas_numpy_review/` | Estudio del uso de pandas frente a numpy dentro de los forecasters (`INFORME.md`), su revisión independiente (`REVISION.md`), y los prototipos, scripts y medidas de los dos (2026-11-19); la sección 11 de la revisión prueba la opción (a') de D-NP2 con un parche (2026-11-20) | Se cierren BUG-ms-fit-dataframe-categorical, PERF-exog-float-matrix y MAINT-ms-predict-core, y se decida PERF-backtesting-ms-fast-path (el prototipo y su batería son su especificación) |
 | `pandas3_migration/` | Estudio, decisiones y arnés de la migración a pandas 3 | Tras DOC-pandas3-report; antes, mover la lista "Al retirar pandas 2" a MAINT-drop-pandas2. El arnés lo usan también PERF-predict-numpy y otros: decidir entonces si pasa a `benchmarks/` o `tools/` |
@@ -67,10 +66,10 @@ Los documentos borrados se leen con `git show <commit>:<ruta>`.
 
 | ID | Qué | Versión | Esfuerzo | Estado | Detalle |
 |---|---|---|---|---|---|
-| PERF-multiseries-names-pyarrow | `predict` de `ForecasterRecursiveMultiSeries` sin construir objetos de pandas desde listas de nombres en cada llamada (con `pyarrow`, cada conversión cuesta 15 a 35 µs) | 0.28.0 | S | En curso: rama local `perf/multiseries-predict-backtesting`. Fusionar lo hecho (lo usan `predict`, los intervalos y `return_predictors`); lo que quede pensado para el coste por fold del backtesting pierde valor con PERF-backtesting-ms-fast-path (NPREV §2.3) | MSPERF (`PLAN.md`, `SEGUIMIENTO.md`); R28 fila del mismo ID |
+| PERF-multiseries-names-pyarrow | `predict` de `ForecasterRecursiveMultiSeries` sin construir objetos de pandas desde listas de nombres en cada llamada (con `pyarrow`, cada conversión cuesta 15 a 35 µs) | 0.28.0 | S | Hecho en la rama `perf/multiseries-predict-backtesting`, PR a `0.28.x` pendiente de abrir. Mismos resultados (0 diferencias en las baterías de identidad y el arnés, p2 y p3); `predict` con 1 paso, del 21 al 82 % más rápido con 20 y 100 series; backtesting sin refit, del 44 al 86 % por fold; `ForecasterDirectMultiVariate`, del 5 al 23 % en `predict`. Lo que quedó fuera (9, 10, 11, B2 descartados; B1, B3 aparcados) pierde valor con PERF-backtesting-ms-fast-path (NPREV §2.3). Hallazgos sin tocar, en MSPERF `SEGUIMIENTO.md`: `levels=[]` con ventana y exog lanza un error de pandas, `predict` con exog float y nullable con NA lanza `TypeError` (cerca de PERF-exog-float-matrix), errores sin analizar de la batería de recortes | MSPERF (`SEGUIMIENTO.md`, `MEDIDAS.md` §17); R28 fila del mismo ID |
 | DOC-pandas3-report | Informe detallado de todos los cambios de la migración a pandas 3 y su porqué. Fuentes: P3 (decisiones D1 a D15, ojo: §1, §7, §8 y §11.3 no recogen lo que se fusionó al final), R28 §1 y §2, cuerpos de las PRs, `docs/releases/releases.md` 0.28.0, `docs/faq/pandas-2-and-pandas-3.md` y los resultados locales del arnés (`harness/results/`, no versionados; la tabla p3/p2 de `pr6_028/cross_env/cross_env_summary.md` solo está ahí) | 0.28.0 | M | Pendiente: después de PERF-multiseries-names-pyarrow. Decidir antes el público (interno en `dev/` o publicado) | PRs: #1443, #1444, #1445, #1448 (0.27.x); #1495, #1496, #1497, #1498, #1499, #1500, #1501, #1502, #1504, #1505, #1510 (0.28.x); relacionadas #1512, #1516 |
 | MAINT-pandas3-final-crossenv | Comparación final p3 frente a p2 del arnés sobre la 0.28.x definitiva (la última es de antes de #1502) | 0.28.0 | S | Pendiente, para DOC-pandas3-report | P3 §10; `dev/pandas3_migration/harness/` |
-| MAINT-bench-pandas3 | Pasar `benchmarks/` a pandas 3 con una medición puente: tanda con `pandas==2.3.3`, PR que cambia solo ese pin y guarda la versión de `pyarrow`, segunda tanda, filtrar por `pandas_version` en `docs/faq/skforecast-benchmark.ipynb` y comprobar que su entorno tiene pandas 3 (un `benchmark.joblib` escrito con pandas 3 no se abre con pandas 2) | 0.28.0 | S | Pendiente: al final de la 0.28.0, con todo el código fusionado | R28 "MAINT-bench-pandas3" (pasos y estudio previo del 2026-11-16) |
+| MAINT-bench-pandas3 | Pasar `benchmarks/` a pandas 3 con una medición puente: tanda con `pandas==2.3.3`, PR que cambia solo ese pin y guarda la versión de `pyarrow`, segunda tanda (sin `pyarrow`, como el entorno de la CI), una tercera con `pyarrow` instalado (donde pandas 3 perdía más frente a pandas 2 y donde más gana PERF-multiseries-names-pyarrow: es la cifra que verán muchos usuarios), filtrar por `pandas_version` en `docs/faq/skforecast-benchmark.ipynb` y comprobar que su entorno tiene pandas 3 (un `benchmark.joblib` escrito con pandas 3 no se abre con pandas 2) | 0.28.0 | S | Pendiente: al final de la 0.28.0, con todo el código fusionado | R28 "MAINT-bench-pandas3" (pasos y estudio previo del 2026-11-16) |
 | MAINT-docs-pandas3 | Reejecutar con pandas 3 los 5 notebooks cuyas salidas cambian: `[ns]` a `[us]` en `faq/cyclical-features-time-series`, `user_guides/forecasting-statistical-models` y `user_guides/forecasting-with-deep-learning-rnn-lstm`; `object` a `str` en `user_guides/categorical-features` y `user_guides/autoregressive-classification-forecasting` | 0.28.0 | S | Pendiente: cuando el entorno de la documentación use pandas 3 | R28 tabla de la sección 1 |
 | REL-conda-forge-028 | Feedstock de conda-forge al publicar: Python >=3.11, numpy >=2.0, pandas >=2.3,<4.0, scipy >=1.13, numba >=0.60, statsmodels >=0.14.6, matplotlib >=3.8.4 | 0.28.0 | XS | Pendiente: al publicar | R28 "DEP-python310" y "DEP-numpy2-pandas23" |
 | REL-skforecast-ai-python311 | Abrir un issue en `skforecast/skforecast-ai` para subir su mínimo a Python 3.11 y, después, actualizar `docs/skforecast-ai/skforecast-ai.md` (líneas 3 y 30 dicen 3.10) | 0.28.0 | XS | Pendiente | R28 "DEP-python310" |
@@ -270,7 +269,7 @@ Cerradas el 2026-11-20, cada una en la fila de su elemento: D-NP2 = (a') (BUG-ms
 Con las prioridades de la 0.27.0 (machine learning y foundation primero) y los resultados
 erróneos silenciosos delante:
 
-1. Lo que está en curso: PERF-multiseries-names-pyarrow, después DOC-pandas3-report;
+1. Lo que está en curso: la PR de PERF-multiseries-names-pyarrow, después DOC-pandas3-report;
    STUDY-fit-insample-binning (#1520), SEARCH-initial-trials (#1492), #1476.
 2. Resultados erróneos silenciosos: BUG-ms-exog-rangeindex (con QW-06 y QW-14), BUG-04 y
    FOUND-adapter-arg, ISSUE-1506, ISSUE-1508, BUG-ms-fit-dataframe-categorical (con CAT-T2 y
@@ -309,7 +308,7 @@ camino de código es un coste permanente, así que entra con condiciones.
    en el último bit de las de scikit-learn (PERF-03: 4e-16 en un caso).
 1. **Corrección.**
    1. Antes de empezar, fusionar la rama `perf/multiseries-predict-backtesting`
-      (PERF-multiseries-names-pyarrow, sin PR): cambia `_create_predict_inputs` de multiserie,
+      (PERF-multiseries-names-pyarrow, PR pendiente de abrir): cambia `_create_predict_inputs` de multiserie,
       donde están la conversión de la exog de `predict` (PERF-exog-float-matrix) y su
       alineación (BUG-ms-exog-rangeindex).
       PERF-exog-float-matrix y BUG-ms-exog-none-bool, seguidas: las dos tratan los dtypes de
