@@ -1670,7 +1670,9 @@ def _extract_data_folds_multiseries(
                         last_valid_index = series_train[col].last_valid_index()
                         if (
                             len(
-                                series_train[col].loc[first_valid_index:last_valid_index]
+                                series_train[col].loc[
+                                    first_valid_index:last_valid_index
+                                ]
                             )
                             <= window_size
                         ):

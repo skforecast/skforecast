@@ -1614,9 +1614,9 @@ def check_predict_input(
     if forecaster_name != 'ForecasterStats' and len(last_window) > window_size:
         last_window_to_check = last_window_to_check.iloc[-window_size:]
     if forecaster_name in [
-        'ForecasterRecursiveMultiSeries',
-        'ForecasterDirectMultiVariate',
-        'ForecasterRnn'
+        "ForecasterRecursiveMultiSeries",
+        "ForecasterDirectMultiVariate",
+        "ForecasterRnn"
     ]:
         names_to_check = (
             levels if forecaster_name == 'ForecasterRecursiveMultiSeries'
