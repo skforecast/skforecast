@@ -1,0 +1,78 @@
+{
+    "$schema": "https://fundingjson.org/schema/v1.1.0.json",
+    "version": "v1.1.0",
+
+    "entity": {
+        "type": "group",
+        "role": "owner",
+        "name": "skforecast",
+        "email": "javier.escobar.ortiz@gmail.com",
+        "phone": "",
+        "description": "skforecast is the open source project that develops and maintains the skforecast Python library for time series forecasting. Joaquín Amat Rodrigo and Javier Escobar Ortiz created it in 2021 and lead it as its core developers: they set the roadmap, review every contribution and publish the releases, with contributions from the community under a contributor license agreement. The library is released under the BSD-3-Clause license.\n\nThe Sovereign Tech Fund, a program of the Sovereign Tech Agency that invests in open digital infrastructure, awarded the project a 12-month service agreement for the maintenance of the library, from June 2026 to mid-2027. The funding requested here would keep that maintenance going after it ends.\n\nFunds are received by Javier Escobar Ortiz on behalf of the project and pay the time that the core developers spend on it: compatibility with every new release of Python, NumPy, pandas and scikit-learn, security and bug fixes, testing and benchmarking infrastructure, documentation and answering users. All funded work is released as open source under the same license, for everyone.",
+        "webpageUrl": {
+            "url": "https://skforecast.org"
+        }
+    },
+
+    "projects": [
+        {
+            "guid": "skforecast",
+            "name": "skforecast",
+            "description": "skforecast is a Python library for time series forecasting built on the scikit-learn API. It turns any scikit-learn compatible regressor (LightGBM, XGBoost, CatBoost and many more), statistical models (ARIMA, SARIMAX, ETS) and pre-trained foundation models (Chronos-2, TimesFM, Moirai-2 and others) into forecasters that share one API, for one series or thousands of related series. Typical uses are forecasting energy demand, sales, web traffic or intermittent demand.\n\nA reliable forecast needs much more than a model: lag and window features, exogenous variables, backtesting that does not leak future data into the past, hyperparameter search, prediction intervals and drift detection in production. skforecast provides them as tested and documented building blocks, so data scientists in industry and research do not have to reimplement them, and their subtle errors, in every project.\n\nWhat sets it apart: it extends the scikit-learn ecosystem instead of replacing it, so teams keep the models, transformers and tools they already use, and it evaluates machine learning, statistical and foundation models with the same backtesting, so they can be compared fairly on the same data. Its free documentation and tutorials, in English, Spanish and Chinese, bring forecasting to people who prefer to learn in their own language.\n\nskforecast is downloaded about 95,000 times a month from PyPI, around 4 million times in total, and more than 70 scientific publications use it. A forecasting pipeline built on it cannot be moved to another library without rewriting it, so its users depend on it staying compatible with every new release of its dependencies. That continuous maintenance is what this funding pays for.",
+            "webpageUrl": {
+                "url": "https://skforecast.org"
+            },
+            "repositoryUrl": {
+                "url": "https://github.com/skforecast/skforecast",
+                "wellKnown": "https://github.com/skforecast/skforecast/blob/main/.well-known/funding-manifest-urls"
+            },
+            "licenses": ["spdx:BSD-3-Clause"],
+            "tags": [
+                "artificial-intelligence",
+                "data-science",
+                "machine-learning",
+                "scientific-computing",
+                "time-series",
+                "forecasting",
+                "statistics",
+                "scikit-learn",
+                "python"
+            ]
+        }
+    ],
+
+    "funding": {
+        "channels": [
+            {
+                "guid": "opencollective",
+                "type": "payment-provider",
+                "address": "https://opencollective.com/skforecast",
+                "description": "Open Collective: corporate sponsorship tiers and individual support."
+            },
+            {
+                "guid": "bank",
+                "type": "bank",
+                "address": "IBAN: ES6300812717310023277146",
+                "description": "BIC: BSABESBBXXX. Please include \"skforecast\" in the purpose."
+            },
+            {
+                "guid": "github",
+                "type": "other",
+                "address": "https://github.com/sponsors/JavierEscobarOrtiz",
+                "description": "Github Sponsor"
+            }
+        ],
+        "plans": [
+            {
+                "guid": "developer-time",
+                "status": "active",
+                "name": "Part-time Developer Support",
+                "description": "One year of part-time work by the core developers on the maintenance of skforecast: compatibility with new releases of Python, NumPy, pandas and scikit-learn, security and bug fixes, testing and benchmarking infrastructure, documentation and user support.",
+                "amount": 25000,
+                "currency": "EUR",
+                "frequency": "yearly",
+                "channels": ["bank"]
+            }
+        ]
+    }
+}
