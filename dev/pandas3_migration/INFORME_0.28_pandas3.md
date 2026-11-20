@@ -55,7 +55,6 @@ en bucle, sobre todo con `pyarrow` instalado (sección 7).
 
 Queda abierto (secciones 8 y 9):
 
-- relanzar la CI completa, que no corre desde el 2026-11-16;
 - confirmar con un A/B dos pérdidas de pandas 3 que vio un informe externo y que el arnés no
   mide: las búsquedas de hiperparámetros y la matriz multiserie con exógenas de texto;
 - decidir si hace falta una revisión independiente del código fusionado después;
@@ -420,10 +419,16 @@ latest-deps los convierte en error.
 Suite completa con #1530: 8499 pasan en p2 y 8492 en p3, con los mismos 3 fallos locales
 de TensorFlow, que pasan en CI.
 
-**CI.** Como en las PRs a `0.28.x` no corren tests, los cuatro workflows se lanzaron a mano.
-La última vez fue sobre #1505 (`12898d190`, 2026-11-16) y los cuatro pasaron: Python 3.11 a
-3.14 en los tres sistemas con pandas 3.1.1, la celda `pandas<3`, las versiones mínimas y 11
-backends foundation (P3 §10).
+**CI.** Como en las PRs a `0.28.x` no corren tests, los cuatro workflows se lanzaron a mano,
+dos veces:
+
+- Sobre #1505 (`12898d190`, 2026-11-16), los cuatro en verde: Python 3.11 a 3.14 en los tres
+  sistemas con pandas 3.1.1, la celda `pandas<3`, las versiones mínimas y 11 backends
+  foundation (P3 §10).
+- Sobre `36cf2ce0c` (2026-11-20), que incluye todo lo fusionado hasta #1530, de nuevo los
+  cuatro en verde: las 13 celdas de `unit-tests.yml` (run 44817427164); mínimos, 8502 tests
+  (run 44817431658); latest-deps con el filtro de `Pandas4Warning`, 8495 en Python 3.12 y
+  3.13 y 8450 en 3.14 (run 44817438553); y los backends foundation (run 44817445411).
 
 **Revisiones independientes** (R28): hasta el 2026-11-15 todas las revisiones las hizo quien
 escribió el código, así que se añadieron cuatro en sesiones nuevas, que no partían de sus
@@ -498,11 +503,6 @@ no valide cada fold (5 a 7 ms por backtesting de 50 folds, medido el 2026-11-19)
 
 Salen del ROADMAP, sobre todo de su sección 1:
 
-- **CI completa.** No se ha relanzado desde `12898d190` (comprobado con `gh run list`). Lo
-  fusionado después (#1503, #1510 a #1516, #1519 y #1530) no ha corrido con versiones
-  mínimas, ni en Linux ni en macOS, ni con la celda `pandas<3`. La PR de la versión a `main`
-  lanza `unit-tests.yml` y el job de mínimos (y `foundation-backends.yml` si cambia
-  `skforecast/foundation/`), pero no latest-deps, y un fallo ahí se ve tarde.
 - **REVIEW-post-1516.** El código fusionado en `0.28.x` después del 2026-11-16 (#1511 a
   #1519 y lo posterior, incluido #1530) no tiene una revisión independiente de conjunto;
   #1516, #1519 y #1530 tuvieron la suya. Falta decidir si se hace antes de la PR de la
@@ -586,13 +586,11 @@ Todo lo anterior tiene dueño y momento salvo esto, que es decisión de los mant
 
 1. **REVIEW-post-1516**: si hace falta una revisión independiente del código fusionado
    después del 2026-11-16 antes de la PR de la versión, y de qué alcance.
-2. **CI antes de la PR de la versión**: relanzar los cuatro workflows sobre `0.28.x` ahora,
-   o esperar a la PR a `main` (que no lanza latest-deps).
-3. **MAINT-test-deps**: si el extra `test` lleva `pandas[parquet]>=2.3, <4.0`.
-4. **BUG-pandas2-shared-memory**: si se arreglan o se esperan a retirar pandas 2.
-5. **MAINT-save-versions**: si se implementa y en qué versión.
-6. **MAINT-drop-pandas2**: con qué criterio se retira pandas 2 cuando `gluonts` lo permita.
-7. **PERF-ms-train-pandas3**: si entra en la 0.28.0, después de medirlo en las tres
+2. **MAINT-test-deps**: si el extra `test` lleva `pandas[parquet]>=2.3, <4.0`.
+3. **BUG-pandas2-shared-memory**: si se arreglan o se esperan a retirar pandas 2.
+4. **MAINT-save-versions**: si se implementa y en qué versión.
+5. **MAINT-drop-pandas2**: con qué criterio se retira pandas 2 cuando `gluonts` lo permita.
+6. **PERF-ms-train-pandas3**: si entra en la 0.28.0, después de medirlo en las tres
    configuraciones (pandas 2, y pandas 3 con y sin `pyarrow`).
 
 ---
@@ -962,8 +960,8 @@ de todos los que salieron en la migración.
 ### #1505: festivos con zona horaria y dos problemas de pandas 3 en `predict`
 
 Fusionada el 2026-11-16 (`12898d190`). Arreglos de las dos revisiones de toda la rama. Sobre
-su commit de fusión se lanzaron los cuatro workflows, en verde (R28); no se han vuelto a
-lanzar desde entonces (`gh run list`, sección 8.1).
+su commit de fusión se lanzaron los cuatro workflows, en verde (R28); se relanzaron el
+2026-11-20 sobre `36cf2ce0c`, también en verde (sección 6).
 
 - **Qué cambió.**
   1. `calculate_distance_from_holiday` con un índice en pasos fijos de UTC daba horas en lugar
