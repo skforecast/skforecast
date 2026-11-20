@@ -1,0 +1,21 @@
+=== p2 ===
+Ridge, hourly, exog float                    today   17.9 ms (0.31 per fold) | A   14.6 ms (-19 %, identical) | B   13.4 ms (-25 %, identical) | fit 2.5 ms
+Ridge, hourly, no exog                       today   11.9 ms (0.20 per fold) | A   11.2 ms (-6 %, identical) | B   10.0 ms (-16 %, identical) | fit 2.0 ms
+LightGBM(50), hourly, exog float             today  124.8 ms (0.90 per fold) | A  119.8 ms (-4 %, identical) | B  122.4 ms (-2 %, identical) | fit 79.7 ms
+Ridge, daily with timezone, exog float       today   51.7 ms (0.99 per fold) | A   49.0 ms (-5 %, identical) | B   15.3 ms (-70 %, identical) | fit 2.3 ms
+LightGBM(50), daily with timezone, exog float today  170.8 ms (1.60 per fold) | A  175.2 ms (+3 %, identical) | B  120.2 ms (-30 %, identical) | fit 90.6 ms
+[python 3.12.3, pandas 2.3.3, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 (sin pyarrow) ===
+Ridge, hourly, exog float                    today   19.4 ms (0.34 per fold) | A   15.3 ms (-21 %, identical) | B   13.4 ms (-31 %, identical) | fit 2.3 ms
+Ridge, hourly, no exog                       today   11.3 ms (0.19 per fold) | A   10.9 ms (-4 %, identical) | B    9.6 ms (-15 %, identical) | fit 2.0 ms
+LightGBM(50), hourly, exog float             today  129.0 ms (0.95 per fold) | A  132.6 ms (+3 %, identical) | B  136.5 ms (+6 %, identical) | fit 81.7 ms
+Ridge, daily with timezone, exog float       today   63.8 ms (1.23 per fold) | A   52.3 ms (-18 %, identical) | B   19.4 ms (-70 %, identical) | fit 2.4 ms
+LightGBM(50), daily with timezone, exog float today  177.6 ms (1.81 per fold) | A  163.6 ms (-8 %, identical) | B  123.6 ms (-30 %, identical) | fit 87.0 ms
+[python 3.12.3, pandas 3.1.1, pyarrow no, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 pa ===
+Ridge, hourly, exog float                    today   22.7 ms (0.40 per fold) | A   18.1 ms (-21 %, identical) | B   15.3 ms (-33 %, identical) | fit 2.5 ms
+Ridge, hourly, no exog                       today   12.5 ms (0.21 per fold) | A   11.8 ms (-5 %, identical) | B   11.3 ms (-10 %, identical) | fit 2.1 ms
+LightGBM(50), hourly, exog float             today  147.4 ms (1.07 per fold) | A  129.6 ms (-12 %, identical) | B  130.2 ms (-12 %, identical) | fit 93.9 ms
+Ridge, daily with timezone, exog float       today   65.3 ms (1.25 per fold) | A   53.8 ms (-18 %, identical) | B   19.7 ms (-70 %, identical) | fit 2.6 ms
+LightGBM(50), daily with timezone, exog float today  191.9 ms (2.03 per fold) | A  177.4 ms (-8 %, identical) | B  139.3 ms (-27 %, identical) | fit 90.4 ms
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]

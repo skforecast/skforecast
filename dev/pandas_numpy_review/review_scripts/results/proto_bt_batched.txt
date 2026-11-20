@@ -1,0 +1,17 @@
+n_series=600 exog=mixed est=ridge folds=50 steps=24
+  threads=1: fold by fold   0.408 ms per fold | one pass   0.689 ms per fold (0.6x) | identical=True max abs diff=0
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+n_series=600 exog=none est=ridge folds=50 steps=24
+  threads=1: fold by fold   0.296 ms per fold | one pass   0.500 ms per fold (0.6x) | identical=True max abs diff=0
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+n_series=600 exog=mixed est=lgbm folds=50 steps=24
+  threads=1: fold by fold  15.643 ms per fold | one pass  17.944 ms per fold (0.9x) | identical=True max abs diff=0
+  threads=4: fold by fold   7.545 ms per fold | one pass   7.796 ms per fold (1.0x) | identical=True max abs diff=0
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+n_series=600 exog=mixed est=lgbm folds=50 steps=24
+  threads=1: fold by fold  14.485 ms per fold | one pass  15.448 ms per fold (0.9x) | identical=True max abs diff=0
+  threads=4: fold by fold   7.579 ms per fold | one pass   7.160 ms per fold (1.1x) | identical=True max abs diff=0
+[python 3.12.3, pandas 2.3.3, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+n_series=600 exog=mixed est=ridge folds=50 steps=24
+  threads=1: fold by fold   0.474 ms per fold | one pass   0.810 ms per fold (0.6x) | identical=True max abs diff=0
+[python 3.12.3, pandas 3.1.1, pyarrow no, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]

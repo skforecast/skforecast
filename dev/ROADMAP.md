@@ -43,6 +43,7 @@ Los documentos borrados se leen con `git show <commit>:<ruta>`.
 | PREP | `dev/preprocessing_speedups/PLAN.md` |
 | MSPERF | `dev/multiseries_predict_perf/` (rama local `perf/multiseries-predict-backtesting`) |
 | BTSPEED §N | `dev/backtesting_multiseries_speedups/PLAN.md`, sección N |
+| NPREV §N | `dev/pandas_numpy_review/REVISION.md`, sección N (revisión independiente, con dos rondas, de `INFORME.md`, en la misma carpeta; donde difieran vale la revisión) |
 
 ### Carpetas de `dev/`
 
@@ -56,6 +57,7 @@ Los documentos borrados se leen con `git show <commit>:<ruta>`.
 | `preprocessing_speedups/` | Plan y kit de validación de los atajos de preprocesado (en curso) | Se cierren PERF-categorical-codes, STUDY-fit-insample-binning y PERF-one-step-ahead-inverse |
 | `multiseries_predict_perf/` (rama local) | Plan, medidas y scripts de PERF-multiseries-names-pyarrow (en curso) | Tras el informe de pandas 3 (DOC-pandas3-report) |
 | `backtesting_multiseries_speedups/` | Plan de PERF-backtesting-folds-positions y de la segunda parte de PERF-03, con las medidas y los prototipos de la revisión del 2026-11-19 | Se cierren PERF-backtesting-folds-positions y PERF-03 |
+| `pandas_numpy_review/` | Estudio del uso de pandas frente a numpy dentro de los forecasters (`INFORME.md`), su revisión independiente (`REVISION.md`), y los prototipos, scripts y medidas de los dos (2026-11-19) | Se cierren BUG-ms-fit-dataframe-categorical, PERF-exog-float-matrix y MAINT-ms-predict-core, y se decida PERF-backtesting-ms-fast-path (el prototipo y su batería son su especificación) |
 | `pandas3_migration/` | Estudio, decisiones y arnés de la migración a pandas 3 | Tras DOC-pandas3-report; antes, mover la lista "Al retirar pandas 2" a MAINT-drop-pandas2. El arnés lo usan también PERF-predict-numpy y otros: decidir entonces si pasa a `benchmarks/` o `tools/` |
 | `roadmap_0.28.0/` | Roadmap anterior, con el detalle de dependencias y pandas 3 | Tras DOC-pandas3-report, con BUG-04 ya resumido en el anexo A de este documento |
 
@@ -65,7 +67,7 @@ Los documentos borrados se leen con `git show <commit>:<ruta>`.
 
 | ID | Qué | Versión | Esfuerzo | Estado | Detalle |
 |---|---|---|---|---|---|
-| PERF-multiseries-names-pyarrow | `predict` de `ForecasterRecursiveMultiSeries` sin construir objetos de pandas desde listas de nombres en cada llamada (con `pyarrow`, cada conversión cuesta 15 a 35 µs) | 0.28.0 | S | En curso: rama local `perf/multiseries-predict-backtesting` | MSPERF (`PLAN.md`, `SEGUIMIENTO.md`); R28 fila del mismo ID |
+| PERF-multiseries-names-pyarrow | `predict` de `ForecasterRecursiveMultiSeries` sin construir objetos de pandas desde listas de nombres en cada llamada (con `pyarrow`, cada conversión cuesta 15 a 35 µs) | 0.28.0 | S | En curso: rama local `perf/multiseries-predict-backtesting`. Fusionar lo hecho (lo usan `predict`, los intervalos y `return_predictors`); lo que quede pensado para el coste por fold del backtesting pierde valor con PERF-backtesting-ms-fast-path (NPREV §2.3) | MSPERF (`PLAN.md`, `SEGUIMIENTO.md`); R28 fila del mismo ID |
 | DOC-pandas3-report | Informe detallado de todos los cambios de la migración a pandas 3 y su porqué. Fuentes: P3 (decisiones D1 a D15, ojo: §1, §7, §8 y §11.3 no recogen lo que se fusionó al final), R28 §1 y §2, cuerpos de las PRs, `docs/releases/releases.md` 0.28.0, `docs/faq/pandas-2-and-pandas-3.md` y los resultados locales del arnés (`harness/results/`, no versionados; la tabla p3/p2 de `pr6_028/cross_env/cross_env_summary.md` solo está ahí) | 0.28.0 | M | Pendiente: después de PERF-multiseries-names-pyarrow. Decidir antes el público (interno en `dev/` o publicado) | PRs: #1443, #1444, #1445, #1448 (0.27.x); #1495, #1496, #1497, #1498, #1499, #1500, #1501, #1502, #1504, #1505, #1510 (0.28.x); relacionadas #1512, #1516 |
 | MAINT-pandas3-final-crossenv | Comparación final p3 frente a p2 del arnés sobre la 0.28.x definitiva (la última es de antes de #1502) | 0.28.0 | S | Pendiente, para DOC-pandas3-report | P3 §10; `dev/pandas3_migration/harness/` |
 | MAINT-bench-pandas3 | Pasar `benchmarks/` a pandas 3 con una medición puente: tanda con `pandas==2.3.3`, PR que cambia solo ese pin y guarda la versión de `pyarrow`, segunda tanda, filtrar por `pandas_version` en `docs/faq/skforecast-benchmark.ipynb` y comprobar que su entorno tiene pandas 3 (un `benchmark.joblib` escrito con pandas 3 no se abre con pandas 2) | 0.28.0 | S | Pendiente: al final de la 0.28.0, con todo el código fusionado | R28 "MAINT-bench-pandas3" (pasos y estudio previo del 2026-11-16) |
@@ -128,16 +130,22 @@ Los documentos borrados se leen con `git show <commit>:<ruta>`.
 |---|---|---|---|---|---|
 | FE-05 | Comparar varios forecasters de cualquier familia en un solo backtesting, sobre los mismos puntos y con la misma escala | 0.28.0 | M | Diseño analizado y prototipado; decisión pendiente D-FE05. Requisito: BUG-06 | R27 §3 ("FE-05: análisis de diseño"); R27-repro/FE-05-prototype.py |
 | BUG-02 | Con `fold_stride < steps` las métricas solo miden los primeros horizontes y las búsquedas eligen por el error a 1 paso | 0.28.0 | S | Decisión pendiente D-BUG02 | R27 §4; R27-repro/BUG-02.py |
-| PERF-03 | Métricas pedidas por nombre en numpy (búsqueda `OneStepAheadFold` con 1000 series: 2,6 veces más rápida con Ridge); incluir RMSE. Segunda parte (M1): en el backtesting multiserie, pasar a las métricas cortes de arrays por nivel en lugar de un grupo de pandas (1000 series y MAE: el bucle por nivel baja de unos 715 a 203 ms con la misma función de scikit-learn, y a 7 ms con la primera parte) | 0.28.0 | S | No empezado (`_get_metric`). M1: plan escrito y prototipado en memoria, idéntico con las nueve métricas de regresión | R27 §4; R27-repro/PERF-03.py; BTSPEED §2 |
+| PERF-03 | Métricas pedidas por nombre en numpy (búsqueda `OneStepAheadFold` con 1000 series: 2,6 veces más rápida con Ridge); incluir RMSE. Segunda parte (M1): en el backtesting multiserie, pasar a las métricas cortes de arrays por nivel en lugar de un grupo de pandas (1000 series y MAE: el bucle por nivel baja de unos 715 a 203 ms con la misma función de scikit-learn, y a 7 ms con la primera parte) | 0.28.0 | S | No empezado (`_get_metric`). M1: plan escrito y prototipado en memoria, idéntico con las nueve métricas de regresión. M1 medido otra vez el 2026-11-19 (600 series, 50 folds): de 480 a 680 ms a 36 a 40 ms por backtesting, y por cada candidato de una búsqueda. La primera parte vale por sí sola (búsquedas one-step-ahead) y va antes del camino rápido; M1 sola es un 5 % de la llamada y su peso aparece con PERF-backtesting-ms-fast-path (las métricas pasan a ser del 30 al 40 % de lo que queda): va dentro de su paso 2. La fórmula directa no siempre es idéntica bit a bit (4e-16 en un caso) Con LightGBM y datos reales (búsqueda de py59), las métricas son parte de un 3 % de la búsqueda: el 2,6 veces es con Ridge (NPREV §10.6). | R27 §4; R27-repro/PERF-03.py; BTSPEED §2; NPREV §9.3 |
 | BUG-01 | `backtesting` con `initial_train_size=None` sobre un forecaster ajustado evalúa in-sample sin aviso (métricas 2,5 veces optimistas) | 0.28.0 | S | Reproducido. Solo aviso silenciable (uso documentado) | R27 §4; R27-repro/BUG-01.py |
 | BUG-11 | `backtesting_forecaster` con `ForecasterEquivalentDate` e `interval` da `AttributeError` (`predict_quantiles`) con el método por defecto | 0.28.0 | S | Reproducido | R27 §4; R27-repro/BUG-11.py |
 | FE-04 | `ForecasterEquivalentDate` en `backtesting_forecaster_multiseries`, con los mismos folds que el modelo global | 0.28.0 | M | No empezado | R27 §3; R27-verify/FE-04-risk.md, FE-04-value.md |
 | BUG-refit-directmultivariate-short | Búsquedas de `ForecasterDirectMultiVariate` con series cortas y refit | 0.28.0 | S a M | No empezado, no reproducido | R27 §4; TRANSP §14.1 |
 | BUG-09b | Resto de BUG-09 en `backtesting_stats` (Sarimax, `refit=False`, `fold_stride`); la parte a se hizo en #1419 | 0.28.0 | S | Reproducido. Nicho | R27 §4; R27-repro/BUG-09.py |
-| PERF-backtesting-grouped-warnings | Un solo aviso "(in 6 of 7 folds)" en lugar del mismo aviso por fold con `refit=True`, con cualquier `n_jobs`, como ya hacen las búsquedas | 0.28.0 | M | No empezado. Cambia lo que se ve con `n_jobs=1` | TRANSP §15.5 (alternativa E) |
-| PERF-predict-numpy | Bloque B: que el backtesting valide solo el primer fold cuando los datos lo garantizan (`y` y `exog` sin NaN, mismo índice, sin zona horaria con frecuencia diaria o mayor), limitado a `ForecasterRecursive` y `ForecasterDirect`, con test de equivalencia. Resto de la propuesta sin diseñar; decidir si `check_inputs=False` pasa a ser público | 0.28.0 | M a L | Bloque A hecho (#1516). Bloque B pendiente | Anexo B; P3 §11; R28 fila del mismo ID |
-| PERF-backtesting-folds-positions | Extracción de folds del backtesting multiserie por posición: última ventana montada desde los valores de las series y series de entrenamiento con un solo `iloc` (500 series y LightGBM, 10 folds: −0,5 s de 4,2 s sin refit y −1,3 s de 25,6 s con refit, con un prototipo que incluye la exog por posición) | por decidir | M | Plan escrito y prototipado en memoria, sin implementar. Después de fusionar PERF-multiseries-names-pyarrow, que toca la misma función | BTSPEED §3 |
-| STUDY-fit-insample-binning | Predicción sobre `X_train` en `fit` para los residuos in-sample: parte sin cambio de resultados (PERF-backtesting-skip-fit-binning) y tope de filas para los bordes de los bins | 0.28.0 | S a M | En curso: #1520 abierta. Decisión de Joaquín sobre el tope (10.000 filas una serie, 1.000 por serie en multiserie) | PREP (T3) |
+| PERF-backtesting-grouped-warnings | Un solo aviso "(in 6 of 7 folds)" en lugar del mismo aviso por fold con `refit=True`, con cualquier `n_jobs`, como ya hacen las búsquedas | 0.28.0 | M | No empezado. Cambia lo que se ve con `n_jobs=1`. Decidir el orden con PERF-backtesting-ms-fast-path: ese camino tiene los avisos de cada fold en máscaras, así que agruparlos allí es trivial | TRANSP §15.5 (alternativa E) |
+| PERF-predict-numpy | Bloque B: que el backtesting valide solo el primer fold cuando los datos lo garantizan (`y` y `exog` sin NaN, mismo índice, sin zona horaria con frecuencia diaria o mayor), limitado a `ForecasterRecursive` y `ForecasterDirect`, con test de equivalencia. El resto de la propuesta (multiserie) está en PERF-backtesting-ms-fast-path | 0.28.0 | M a L | Bloque A hecho (#1516). Bloque B pendiente. Medido sobre el backtesting completo el 2026-11-19 (50 folds, Ridge, exog float): −19 a −21 % sin validar por fold y −25 a −33 % con el índice por posición, es decir, 5 a 7 ms por backtesting; lo que pesa es el índice diario con zona horaria (PERF-expand-index-utc). La condición "cuando los datos lo garantizan" no hace falta: los avisos por fold se reproducen desde máscaras calculadas una vez. La parte de multiserie pasa a PERF-backtesting-ms-fast-path | Anexo B; P3 §11; R28 fila del mismo ID; NPREV §2.2 y §9.5 |
+| PERF-backtesting-folds-positions | Extracción de folds del backtesting multiserie por posición: última ventana montada desde los valores de las series y series de entrenamiento con un solo `iloc` (500 series y LightGBM, 10 folds: −0,5 s de 4,2 s sin refit y −1,3 s de 25,6 s con refit, con un prototipo que incluye la exog por posición) | por decidir | M | Plan escrito y prototipado en memoria, sin implementar. Después de fusionar PERF-multiseries-names-pyarrow, que toca la misma función. Con PERF-backtesting-ms-fast-path, F1 (ventana) y F3 (exog de test) quedan absorbidas en el backtesting multiserie: solo hacerlas antes si ese camino se retrasa (siguen sirviendo al backtesting foundation y a la validación one-step-ahead). F2 (series de entrenamiento) mantiene su valor: con refit en cada fold son 3,2 a 3,5 s de 20 a 25 s (600 series, Ridge). 2026-11-19: con el camino rápido aplazado (NPREV §10), F1 y F3 recuperan su valor: mejoran el camino actual sin un segundo camino | BTSPEED §3; NPREV §9.1 |
+| PERF-backtesting-ms-fast-path | Backtesting y búsquedas de `ForecasterRecursiveMultiSeries` sin refit que validan y preparan una vez (matriz de series, exog codificada solo en las filas de test, máscaras para los avisos) y recorren los folds en numpy, sobre el núcleo de MAINT-ms-predict-core, con la preparación reutilizable entre los candidatos de una búsqueda. Datos sintéticos (600 series, exog mixta, 50 folds), llamada completa: Ridge de 10 a 12 s a 1,7 a 2,0 s (1,3 s con PERF-03); LightGBM de 12 a 14 s a 3,7 a 4,2 s; búsqueda de 20 candidatos con Ridge de 66 a 77 s a 22 a 24 s. **Casos reales (tres artículos de cienciadedatos.net): x1,0 a x1,8 con sus 9 a 31 folds, porque el `fit` domina; x2,8 a x3,3 con 61 folds (1578 edificios, `steps=1`)**; con refit en cada fold, 1,05 a 1,2 veces | por decidir | L | Prototipado en memoria (`proto_bt_once.py`, `proto_bt_blocks.py`): 24 de 25 casos idénticos y uno con el mismo error, con y sin refit, y salidas idénticas en todos los casos reales con LightGBM en un hilo, en pandas 2.3 y pandas 3 sin y con `pyarrow`. **Aplazado (2026-11-19, casos reales):** es una mejora para evaluaciones de muchos folds con modelos baratos o medios, no para los flujos de la documentación, y empeora la calidad del código (un segundo camino que reproduce los avisos de `predict`). Hacerlo cuando haya ese perfil de uso o demanda, después de MAINT-ms-predict-core y de la primera parte de PERF-03, con M1 dentro. Decisión D-NP4. Condiciones: un solo núcleo numpy, vuelta al camino actual en todo lo que D-NP4 deja fuera, y la batería de `proto_bt_once_cases.py` y los casos reales convertidos en tests. Aceptación por tiempo de la llamada completa | NPREV §2, §6, §9 y §10 |
+| PERF-search-shared-train-matrices | Búsquedas sobre los parámetros del estimador: reutilizar las matrices de entrenamiento entre los candidatos que comparten `lags` y datos. Con Ridge, `_create_train_X_y` es del 62 al 74 % de cada `fit` (600 series) y, tras PERF-backtesting-ms-fast-path y PERF-03, los `fit` son el 75 % de la búsqueda | por decidir | por estimar | Estimado a partir de las piezas (la búsqueda de 20 candidatos bajaría de 22 a 24 s a unos 10 s), sin prototipo Con `OneStepAheadFold` ya existe: la búsqueda cachea la división por `lags` (2 llamadas para 10 trials en py59, NPREV §10.6). Queda para búsquedas con backtesting y modelos baratos: con LightGBM, el resto del `fit` final de py59 es 3,7 s frente a 52 s del estimador. | NPREV §9.2 |
+| BUG-backtesting-refit-skipfolds | Backtesting multiserie con refit intermitente y `skip_folds`: `_extract_data_folds_multiseries` vuelve a extraer el entrenamiento cuando cambian sus límites aunque ese fold no se ajuste, y una serie puede predecirse con un modelo que no la vio (`UnknownLevelWarning`) | por decidir | S | Visto el 2026-11-19 en un caso (`refit=3`, `skip_folds=2`). Falta la reproducción mínima y decidir si es intencionado | NPREV §9.1 |
+| PERF-expand-index-utc | `_is_utc_anchored_index` se ejecuta en cada `expand_index` (0,4 ms con índice diario con zona horaria): −70 % en el backtesting de una serie sin refit con ese índice (Ridge, 50 folds: de 52 a 65 ms a 15 a 20 ms). Hacerlo con la formulación exacta (aritmética entera, sin `normalize` ni `unique`); una caché por serie cambia resultados, porque el valor depende de la ventana | por decidir | S | Medido el 2026-11-19. La formulación exacta coincide con la actual en todas las ventanas probadas; su tiempo no está medido | NPREV §4 (P6) y §9.5 |
+| PERF-residuals-numpy | Binning de los residuos out-of-sample en numpy (ordenación estable y claves `int` ascendentes: el `rng` se consume en ese orden); búsqueda en array de los factores conformal en lugar de `np.vectorize` (sin caché: no hay punto de invalidación); en los intervalos por bootstrapping, reutilizar las entradas y la predicción puntual. No cambiar `DataFrame.quantile` por `np.quantile`: no es idéntico en pandas 2.3 | por decidir | S | Corrección comprobada con prototipos en los tres entornos; las ganancias del estudio, sin verificar | NPREV §4 (P10, P11, P12) |
+| PERF-ms-osa-metrics | Validación one-step-ahead multiserie por candidato sin `groupby` por nivel: cortes por nivel calculados una vez y arrays. No es "como el DMV": hay que conservar la inversa por nivel, los niveles ausentes y las Series que reciben las métricas propias | por decidir | S a M | Lectura de código; la ganancia del estudio (21 a 29 ms de 75 a 100 por candidato con 100 series), sin verificar. Junto con PERF-one-step-ahead-inverse Medido el 2026-11-19 con la búsqueda de py59 (NPREV §10.6): agrupar por nivel, deshacer la transformación y métricas son 0,9 s por trial con 1578 series, el 3 % de la búsqueda con LightGBM. Solo vale con modelos baratos. | NPREV §4 (P13) |
+| STUDY-fit-insample-binning | Predicción sobre `X_train` en `fit` para los residuos in-sample: parte sin cambio de resultados (PERF-backtesting-skip-fit-binning) y tope de filas para los bordes de los bins | 0.28.0 | S a M | En curso: #1520 abierta. Decisión de Joaquín sobre el tope (10.000 filas una serie, 1.000 por serie en multiserie) Dato de py59 (NPREV §10.6): en el ajuste final de la búsqueda (`return_best`), la predicción in-sample cuesta de 7 a 9 s (2,5 a 4,6 % de la búsqueda). | PREP (T3) |
 | SEARCH-initial-trials | `initial_trials` en las búsquedas bayesianas | 0.28.0 | S | En curso: #1492 abierta | #1492 |
 | PERF-n_jobs-next | Siguientes pasos de `n_jobs` tras #1503: (1) arrays grandes sin copia (pickle 5 con `buffer_callback`; KNN, SVR y GP son 2 a 3 veces más lentos con `n_jobs` entero y sin refit); (2) no contar el arranque con los workers vivos; (3) umbral de 12 s de Windows con más máquinas; (4) XGBoost con refit y 4 CPU; (5) caché del forecaster por worker (LightGBM con 2000 folds: 14 de 15 s deserializando); (6) ¿sobra `mmap_mode='c'` en `backtesting_stats`?; (7) reinicio de loky por el tope de folds; (8) backend de hilos y clases de `__main__`; (9) avisos perdidos cuando falla un fold (`return_as="generator"`); (10) umbral en macOS sin medir; (11) propuesta 3 completa (más estimadores que HGB y CatBoost, multiserie sin refit); (12) XGBoost con un hilo al predecir pocas filas (`extra/bench_xgb_predict_threads.py`) | posterior | M a L (por partes) | No empezados | NJOBS "Siguientes pasos", "Límites", propuestas 3 y 6 |
 | NJOBS-cpu-count | `n_jobs=-1` usa `cpu_count() - 1`: mantenerlo y documentar el margen, o pasar a `cpu_count()` | por decidir | XS | Decisión pendiente D-NJOBS | NJOBS propuesta 4 |
@@ -165,15 +173,23 @@ Los documentos borrados se leen con `git show <commit>:<ruta>`.
 | PERF-reshape-long-to-dict | Usar `_split_long_format` (#1512) en la rama MultiIndex de `reshape_series_long_to_dict` y `reshape_exog_long_to_dict` | 0.28.0 | S | Candidata: medir antes con pandas 2, pandas 3 sin y con `pyarrow` | R28 fila del mismo ID |
 | ISSUE-1506 | Con un estimador que modifica su entrada en `fit` (`StandardScaler(copy=False)`), `ForecasterDirect` y `ForecasterDirectMultiVariate` predicen mal y `ForecasterRecursive` da residuos in-sample erróneos, sin aviso. MultiSeries ya lo detecta (`_check_in_place_fit`) | 0.28.0 | S a M | Abierto | [#1506](https://github.com/skforecast/skforecast/issues/1506) |
 | ISSUE-1508 | `transformer_exog` que devuelve numpy con una columna de texto: todas las exógenas pasan a `object` y `categorical_features='auto'` codifica también las numéricas, sin aviso | 0.28.0 | S | Abierto | [#1508](https://github.com/skforecast/skforecast/issues/1508) |
-| CAT-T2 (antes HANDOFF-T2) | Las categóricas nativas no llegan al estimador dentro de `CalibratedClassifierCV` ni de `TransformedTargetRegressor` (`configure_estimator_categorical_features` solo desenvuelve `Pipeline`). Incluir `estimator_has_native_nan_support` con TTR | 0.28.0 | S | Reproducido el 2026-11-19 | UTILS §4 T2; revisión §5.7 |
-| CAT-T3 (antes HANDOFF-T3) | `Pipeline` con LightGBM o CatBoost y exog categórica: `fit` falla (`Pipeline.fit does not accept the categorical_feature parameter`) | 0.28.0 | S | Reproducido. Decisión pendiente D-T3 | UTILS §4 T3 |
-| CAT-T4 (antes HANDOFF-T4) | `categorical_features='auto'` sin categóricas resetea la configuración del usuario y da un aviso falso en cada refit; la guía `categorical-features.ipynb` dice "will have no effect" | 0.28.0 | S | Reproducido. Decisión pendiente D-T4 | UTILS §4 T4 |
+| BUG-ms-fit-dataframe-categorical | `ForecasterRecursiveMultiSeries` da un DataFrame al estimador en `fit` y numpy en `predict`. Con `categorical_features=None` (o una lista que omite una columna) y una exog `category` de enteros, LightGBM y XGBoost entrenan con los códigos y predicen con los valores: predicciones erróneas sin aviso, que la validación one-step-ahead no ve (MAE 3,9 frente a 31,1 en backtesting). También CatBoost con `cat_features` en `fit_kwargs`. Con el valor por defecto `'auto'` es correcto, y HistGradientBoosting no está afectado. Arreglo: numpy al estimador en `fit`, en la predicción in-sample, en `set_in_sample_residuals` y en la validación one-step-ahead; cast a entero para CatBoost; índice de `_level_skforecast` siempre con `ordinal_category` | por decidir | M | Reproducido el 2026-11-19 (pandas 2.3 y 3, también en `0.28.x`). Decisión pendiente D-NP2: cualquier opción cambia el modelo de alguien. Requisito: CAT-T2. El estimador pierde `feature_names_in_`, y `fit_kwargs` con `categorical_feature` por nombre deja de funcionar | NPREV §3.1 y §9.4 |
+| PERF-exog-float-matrix | Exog `bool`, nullable o numérica de `pyarrow` mezclada con otros dtypes: `exog.to_numpy()` da un array `object` en Recursive, Direct, DMV, Classifier y en el `predict` de multiserie. `fit` de 5 a 6 veces más lento con Ridge (100.000 filas) y, con HistGradientBoosting, `categorical_features='auto'`, una categórica y una `bool`, `predict` falla (`TypeError: ufunc 'isnan' not supported`). Convertir a float solo cuando hoy saldría `object` y con dtypes explícitos (ni `complex` ni `decimal`) | por decidir | S | Medido, y fallo reproducido, el 2026-11-19 en los tres entornos; con el prototipo pasan las cuatro carpetas de tests de esos forecasters. No hay tests de estos dtypes: escribirlos. Decisión D-NP3, y decidir los enteros mayores que 2^53, que hoy salen exactos de `create_train_X_y` | NPREV §3.2 |
+| BUG-ms-exog-none-bool | Multiserie: si una serie no tiene exog, las columnas `int` pasan a `float64` y una `bool` a `object`; con `categorical_features='auto'` la `bool` se codifica entonces como categórica (con todas las series presentes, no), y con `None` LightGBM falla en `fit` | por decidir | S | Reproducido el 2026-11-19. Relacionado con ISSUE-1509 | NPREV §5 (I8) y §9.6 |
+| PERF-dmv-last-window | `ForecasterDirectMultiVariate.predict`: ventana con un único `to_numpy` tras seleccionar las columnas y con copia explícita (en pandas 3 sale una vista de solo lectura del `last_window` del usuario); no llamar a `drop(columns=[])` en cada fold (solo lo alcanza el DMV) | por decidir | S | Valores idénticos comprobados; la ganancia del estudio (40 % del `predict`), sin verificar | NPREV §4 (P16, P17) |
+| PERF-ms-fit-small | `fit` multiserie: `training_range_` con `v[np.array([0, -1])]` (de 40 a 55 µs a 8 a 10 µs por serie, índice idéntico); exog ancha cortada una vez (solo acierta si todas las series tienen el índice de la exog); dtypes de la exog en diccionario comparados por columna, sin construir un DataFrame | por decidir | S | La primera, medida; las otras dos, comprobadas en corrección | NPREV §4 (P7, P8, P9) |
+| BUG-equivalent-date-nan | `ForecasterEquivalentDate` con NaN en `y`: con `offset` entero el NaN se propaga; con `DateOffset` depende de la función (`np.mean` y `np.max` lo saltan, `np.median` no, una función propia da otro valor), y los residuos in-sample y `predict` del mismo forecaster no coinciden. Decidir antes de vectorizar; `agg_func(axis=...)` solo es idéntico hasta 7 offsets | por decidir | S a M | Reproducido el 2026-11-19. Decisión pendiente D-NP6 | NPREV §4 (P14) y §5 (I3) |
+| PERF-classifier-fast-predict | `ForecasterRecursiveClassifier`: `predict_proba` del estimador en cada paso sin camino rápido, y `predict` sin `check_inputs`. Cada rama de clasificador es código nuevo. Unificar `(a == b).all()` a `.equals` cambia un caso en pandas 2.3 (`datetime64[s]` frente a `[ns]`) | por decidir | M | Lectura de código; ganancia sin medir | NPREV §4 (P15) y §5 (I4, I5) |
+| MAINT-ms-predict-core | Partir el `predict` de `ForecasterRecursiveMultiSeries` en validar, preparar y un núcleo numpy, sin cambio de comportamiento (antes, paso 1 de PERF-backtesting-ms-fast-path). Por calidad, no por tiempo: `_create_predict_inputs` tiene unas 420 líneas, mezcla la validación, la alineación de la exog y las matrices, y la usan cuatro métodos; `_recursive_predict` pide un DataFrame del que solo usa los valores; los atajos de MSPERF (comparaciones `identical`, cachés por `id`) viven dentro porque hoy se valida y alinea en cada llamada | por decidir | M | Lectura de código, sin prototipo. Después de PERF-exog-float-matrix y BUG-ms-fit-dataframe-categorical, para que el núcleo herede una conversión de la exog común y correcta. Esbozar antes las firmas de las tres etapas para comprobar que simplifica y no solo reparte la complejidad. Red de seguridad: las baterías de identidad de MSPERF | NPREV §8 y §10.5 |
+| CAT-T2 (antes HANDOFF-T2) | Las categóricas nativas no llegan al estimador dentro de `CalibratedClassifierCV` ni de `TransformedTargetRegressor` (`configure_estimator_categorical_features` solo desenvuelve `Pipeline`). Incluir `estimator_has_native_nan_support` con TTR | 0.28.0 | S | Reproducido el 2026-11-19. Requisito de BUG-ms-fit-dataframe-categorical: hoy, en multiserie, un LightGBM envuelto recibe las categóricas por dtype gracias al DataFrame, y con numpy en `fit` las pierde | UTILS §4 T2; revisión §5.7 |
+| CAT-T3 (antes HANDOFF-T3) | `Pipeline` con LightGBM o CatBoost y exog categórica: `fit` falla (`Pipeline.fit does not accept the categorical_feature parameter`) | 0.28.0 | S | Reproducido. Decisión pendiente D-T3. Visto otra vez en NPREV §3.1 | UTILS §4 T3 |
+| CAT-T4 (antes HANDOFF-T4) | `categorical_features='auto'` sin categóricas resetea la configuración del usuario y da un aviso falso en cada refit; la guía `categorical-features.ipynb` dice "will have no effect" | 0.28.0 | S | Reproducido. Decisión pendiente D-T4. Visto otra vez en NPREV §9.4 | UTILS §4 T4 |
 | BUG-ms-missing-categorical-exog (antes N-03) | Multiserie: si falta una columna categórica en la exog de `predict` (ancha o dict), `TypeError: ufunc 'isnan' not supported` del `OrdinalEncoder`; con una numérica el error es claro | por decidir | S | Reproducido el 2026-11-19 (N-03) | Revisión de utils §5.5 (`2377adb24`) |
 | BUG-xgbclassifier-lag-only-class | `XGBClassifier` falla en `fit` si una clase solo está en los lags y no es el último código (#1514 arregló el resto del caso) | por decidir | M | Sin issue. Arreglo: renumerar el objetivo | NJOBS "Fallos previos", punto 2 |
 | BUG-pandas2-shared-memory | Tres bugs previos que solo pasan con pandas 2: alias entre `X_train` e `y_train` (también los `y_train` de cada paso de `ForecasterDirect`); `X_train` comparte memoria con la salida de una window feature propia; `filter_train_X_y_for_step` sin exógenas cambia el índice del `X_train` del usuario | por decidir | S | Sin issue | P3 §10 "PR 3a", Pendiente, punto 4 |
-| PERF-categorical-codes | Codificar las exógenas `category` por sus códigos en lugar de `OrdinalEncoder` (x1,8 a x1,9 con pandas 3 y `pyarrow`) | 0.28.0 | M | No empezado | PREP (T2) |
+| PERF-categorical-codes | Codificar las exógenas `category` por sus códigos en lugar de `OrdinalEncoder` (x1,8 a x1,9 con pandas 3 y `pyarrow`) | 0.28.0 | M | No empezado. Revisado el 2026-11-19: `get_indexer` difiere del `OrdinalEncoder` cuando `fit` vio un valor faltante (`categories_` acaba en NaN; incluye una columna de texto con `None` en pandas 3) y usar `.cat.codes` directamente es incorrecto con otro orden de categorías. En multiserie, una vez por tabla y no serie a serie. Pierde valor con PERF-backtesting-ms-fast-path (el codificador deja de ejecutarse en cada fold): le quedan el `predict` de una serie con categóricas y el `fit` | PREP (T2); NPREV §4 (P4) |
 | PERF-one-step-ahead-inverse | Inversa del escalador con `transform_numpy` en la validación one-step-ahead multiserie | posterior | S | Aplazada en #1520 (`transformer_series` en multiserie es poco habitual) | PREP (T4) |
-| PERF-scalers-extension | Atajo de `transform_numpy` para `MinMaxScaler` y `RobustScaler` (V3) | por decidir | S | Ampliación de #1519 | PREP (T1, V3) |
+| PERF-scalers-extension | Atajo de `transform_numpy` para `MinMaxScaler` y `RobustScaler` (V3) | por decidir | S | Ampliación de #1519. Pierde valor en el backtesting multiserie con PERF-backtesting-ms-fast-path (el escalador se aplica una vez por serie, no por fold) | PREP (T1, V3) |
 | TODO-multivariate-gap | Formato largo con varios niveles y `gap>0` en multivariante (`_validation.py`, buscar el TODO) | posterior | S | Sin verificar: comprobar antes si es un caso real | R27 §5 |
 | REVIEW-dmv-categorical | Revisar `ForecasterDirectMultiVariate` (lags dict, intervalos, NaN al inicio, `differentiation`) y las exógenas categóricas, que el análisis de la 0.27.0 no cubrió | posterior | M | | R27 §0 "Huecos del análisis", §7 "Cobertura" |
 
@@ -207,6 +223,7 @@ Los documentos borrados se leen con `git show <commit>:<ruta>`.
 | DOC-rnn-exog-example | El ejemplo con exógenas de `forecasting-with-deep-learning-rnn-lstm.ipynb` no es reproducible entre versiones de keras y torch (`EarlyStopping` corta en la época 12 en lugar de la 37; MAE de 47,75 a 76,46). Hacerlo robusto y reejecutar | 0.28.0 | S | Prioridad baja | R28 fila del mismo ID |
 | DOC-warning-panel-paths | Los paneles de avisos publican en la documentación la ruta absoluta de la máquina que ejecutó los notebooks (unas 20 guías). Que el ejecutor de notebooks muestre la ruta relativa al repositorio | 0.28.0 | S | No empezado | R28 fila del mismo ID |
 | DOC-crps-guide-arviz | `faq/probabilistic-forecasting-crps-score` falla al importar (`arviz-plots` 1.0.0 usa `matplotlib.style.core`, ausente en matplotlib 3.11). Esperar a `arviz-plots` o calcular el CRPS sin `pymc_marketing` | 0.28.0 | S | Las salidas guardadas siguen limpias | R28 fila del mismo ID |
+| DOC-lightgbm-reproducibility | Con `n_jobs=None` (su valor por defecto), LightGBM 4.7 entrena con todos los núcleos físicos, ignora `OMP_NUM_THREADS` y sus resultados cambian de una ejecución a otra: dos backtestings idénticos del código actual difieren; con 600 árboles y submuestreo el MAE de algunas series cambia hasta 0,4 entre dos ejecuciones, y hasta un 8 % frente a los valores publicados en el artículo. Nota en la documentación (FAQ de reproducibilidad o guías con LightGBM): fijar `n_jobs` (comprobado con `n_jobs=1`) o `deterministic=True` (documentado por LightGBM, sin comprobar aquí). En los tests, 211 creaciones de `LGBMRegressor` no fijan `n_jobs`; con sus datos pequeños no se han visto fallos, pero es lo primero que mirar ante uno intermitente | por decidir | XS | Visto el 2026-11-19 con el artículo py59 | NPREV §10.2 |
 | ISSUE-1131 | Exógenas as-of. FE-02 cubre la parte foundation; #1476 (guía de exógenas pronosticadas, Refs #1131) está abierta | 0.28.0 | L | Decisión pendiente D-1131 (alcance del resto) | [#1131](https://github.com/skforecast/skforecast/issues/1131); #1476 |
 | MAINT-save-versions | Guardar en `save_forecaster` las versiones de pandas, numpy, scikit-learn y Python y avisar en `load_forecaster` solo si cambia una versión mayor | por decidir | S | Propuesta. Sin atributos nuevos obligatorios | P3 §12 |
 | UTILS-save-path (antes HANDOFF-SAVE-PATH) | `save_forecaster` devuelve la ruta final del fichero (hoy `None`) | por decidir | XS | Propuesta | UTILS §5; revisión de utils §5.3 |
@@ -244,7 +261,11 @@ Las de producto, con la propuesta que se hizo. Cerrar antes de implementar el el
 | D-NJOBS | NJOBS-cpu-count | `cpu_count()` frente a `cpu_count() - 1` |
 | D-TIMEH2O | FOUND-timeh2o | D1 (licencia no comercial y no productiva) y D2 a D15 de la especificación (campo "Decisión" vacío) |
 | D-FAR | FOUND-plan-02 a 09 | Unas 27 decisiones de la sección 4 de `foundation_adapters_review/README.md` (D1 a D3 ya se tomaron en #1478, opción a) |
-| D-PREDICT-PUBLIC | PERF-predict-numpy | Si `check_inputs=False` pasa a ser público (con él, 200 `predict` tardan 0,63 veces lo que validando) |
+| D-PREDICT-PUBLIC | PERF-predict-numpy | Si `check_inputs=False` pasa a ser público (con él, 200 `predict` tardan 0,63 veces lo que validando). Propuesta (2026-11-19): no; los caminos rápidos del backtesting son internos y `check_inputs` sigue privado |
+| D-NP2 | BUG-ms-fit-dataframe-categorical | Qué significa `categorical_features=None` con una columna `category` en multiserie. (a') valores como numérica, como los demás forecasters y como dice el docstring, con aviso y nota de versión: cambia el modelo de quien hoy acierta (HistGradientBoosting; LightGBM y XGBoost con categorías `0..n-1` ordenadas). (c) códigos de pandas en `fit` y en `predict` más el índice, solo para LightGBM, XGBoost y CatBoost sin envolver: conserva el modelo salvo con categoría ordenada, estimadores envueltos y configuración puesta por el usuario. Propuesta: (a') |
+| D-NP3 | PERF-exog-float-matrix | Valores NA de columnas nullable: convertirlos a NaN y que decida el estimador (hoy, con dtypes mezclados, `TypeError` de numpy; un solo dtype nullable ya da NaN). Propuesta: sí |
+| D-NP4 | PERF-backtesting-ms-fast-path | Alcance de la primera versión. Propuesta: sin refit, `interval=None`, sin `return_predictors`, `n_jobs=1`, y `transformer_exog=None` o una lista blanca de transformadores fila a fila; el resto, por el camino actual |
+| D-NP6 | BUG-equivalent-date-nan | NaN en `y`: propagarlo en los dos caminos (`offset` entero y `DateOffset`) o saltarlo en los dos |
 | D-ORDEN | Todo | Orden de la sección 11 |
 
 ## 11. Orden propuesto (por confirmar)
@@ -255,14 +276,66 @@ erróneos silenciosos delante:
 1. Lo que está en curso: PERF-multiseries-names-pyarrow, después DOC-pandas3-report;
    STUDY-fit-insample-binning (#1520), SEARCH-initial-trials (#1492), #1476.
 2. Resultados erróneos silenciosos: BUG-ms-exog-rangeindex (con QW-06 y QW-14), BUG-04 y
-   FOUND-adapter-arg, ISSUE-1506, ISSUE-1508.
+   FOUND-adapter-arg, ISSUE-1506, ISSUE-1508, BUG-ms-fit-dataframe-categorical (con CAT-T2)
+   y PERF-exog-float-matrix (arregla un fallo de `predict` con la configuración por defecto).
 3. Planes 02 y 03 de foundation, y BUG-06 (requisito de FE-05).
-4. FE-05, después BUG-02 y PERF-03.
+4. FE-05, después BUG-02. PERF-03, en el orden de rendimiento de abajo.
 5. QW-01 y BUG-01 (avisos).
 6. QW-11 y FE-06.
 7. Dependencias (sección 2): independientes, en cualquier momento.
 8. Publicación (sección 1): MAINT-bench-pandas3, MAINT-docs-pandas3, REL-conda-forge-028.
 9. El resto.
+
+### Rendimiento y numpy interno: orden por lo que aporta
+
+Resultado de `dev/pandas_numpy_review/` (2026-11-19), sin versión asignada. La ganancia grande
+no viene de "usar numpy por dentro" en general (la recursión de `predict` y las matrices de
+entrenamiento ya son numpy), sino de dejar de repetir trabajo de pandas en cada fold y en
+cada serie. Con datos sintéticos (600 series, 50 folds) la llamada completa ganaba de 3 a 9
+veces; con los backtestings reales de tres artículos de cienciadedatos.net (de 9 a 31 folds)
+gana de x1,0 a x1,8, porque el `fit` domina, y x3 solo con muchos folds (61). Pequeña o nula
+con refit, con modelos caros y en los forecasters de una serie, y en la búsqueda con
+`OneStepAheadFold` del artículo el 91 al 98 % del tiempo es LightGBM (NPREV §10). La mayor ganancia
+de calidad no es el camino rápido, sino una sola conversión de la exog a numpy en `fit` y en
+`predict` (los arreglos del paso 1) y partir `predict` en etapas (MAINT-ms-predict-core). El
+mismo orden, con el impacto y las condiciones de cada elemento, está en NPREV §8.
+
+Criterios: corrección antes que velocidad; las decisiones se abren pronto (cuestan días de
+calendario, no esfuerzo); un experimento barato que puede cambiar un plan caro va antes que
+ese plan; dos cambios sobre el mismo código, seguidos y primero el que fija el comportamiento;
+impacto = ganancia por cuántos usuarios la notan, y medido antes que estimado; y un segundo
+camino de código es un coste permanente, así que entra con condiciones.
+
+0. **Decisiones, ya (sin código):** D-NP2, D-NP3, D-BUG02, qué significa saltar un
+   fold con refit (BUG-backtesting-refit-skipfolds) y si las métricas en numpy pueden diferir
+   en el último bit de las de scikit-learn (PERF-03: 4e-16 en un caso).
+1. **Corrección.**
+   1. PERF-exog-float-matrix y BUG-ms-exog-none-bool, seguidas: las dos tratan los dtypes de
+      la exog al pasar a numpy, y comparten la matriz de tests de dtypes (`bool`, nullable,
+      `pyarrow`) que hoy no existe y que también necesita el siguiente. La primera arregla un
+      fallo de `predict` con la configuración por defecto.
+   2. BUG-ms-fit-dataframe-categorical (M, con CAT-T2 y D-NP2): predicciones erróneas sin
+      aviso, pero solo con `categorical_features=None` o una lista incompleta.
+   3. BUG-backtesting-refit-skipfolds: configuración rara (refit intermitente con
+      `skip_folds`).
+2. **Calidad del código de multiserie:** MAINT-ms-predict-core (M), partir `predict` en
+   validar, preparar y núcleo numpy. Después de 1.1 y 1.2, para que el núcleo herede una
+   conversión de la exog común y correcta.
+3. **Baratas e independientes, en cualquier hueco, por este orden:** PERF-expand-index-utc
+   (−70 % en el backtesting de una serie con índice diario y zona horaria: la única ganancia
+   grande para los forecasters de una serie), PERF-backtesting-folds-positions completa (F1, F2
+   y F3: mejoran el camino actual sin un segundo camino; F2 es la que ayuda con refit),
+   PERF-ms-fit-small, PERF-residuals-numpy, PERF-dmv-last-window (medir antes: su ganancia no
+   está verificada), DOC-lightgbm-reproducibility y la primera parte de PERF-03.
+4. **Rendimiento solo con muchos folds o modelos baratos, cuando haya demanda:**
+   PERF-backtesting-ms-fast-path (L, con M1 dentro y después de 2; si D-BUG02 está decidida,
+   BUG-02 antes de M1), PERF-search-shared-train-matrices (búsquedas con backtesting) y
+   PERF-ms-osa-metrics. Con LightGBM y pocos folds, que es el uso de los artículos, todo
+   esto junto es menos del 10 % (NPREV §10.6).
+5. **Poco valor, no ahora:** PERF-categorical-codes, PERF-scalers-extension, el bloque B de
+   PERF-predict-numpy (5 a 7 ms por backtesting; con datos reales, de 3 a 9 % en una serie),
+   PERF-classifier-fast-predict y la vectorización de BUG-equivalent-date-nan (ganancia
+   pequeña o sin verificar).
 
 ## 12. Descartado (para no repetir trabajo)
 
@@ -285,6 +358,13 @@ erróneos silenciosos delante:
   los reconozca.
 - **Camino rápido numérico de `predict`** (PERF-predict-numpy): pierde un `TypeError`
   (2026-11-17).
+- **De `dev/pandas_numpy_review/`** (2026-11-19, NPREV): predecir todos los folds de un
+  backtesting sin refit en una sola pasada recursiva (medido: más lento con Ridge, igual con
+  LightGBM); bloques numpy separados por dtype (con la exog codificada a float no hacen
+  falta); una caché de `_is_utc_anchored_index` (cambia resultados); `np.quantile` en lugar
+  de `DataFrame.quantile` como cambio idéntico (no lo es en pandas 2.3); `RollingFeatures` en
+  numba (no es idéntico bit a bit); y, para D-NP2, tanto la opción (a) presentada como
+  arreglo sin cambio de modelo como "pasar solo el índice" de la columna.
 - Otros descartes de la 0.27.0 (TODOs internos, modelos locales de stats en multiserie,
   `cudf.pandas`, deep learning, categorías nuevas en `predict`, fricciones de foundation,
   ensembles, reconciliación jerárquica, diferenciación estacional, ventanas expanding): R27 §7.
@@ -302,6 +382,8 @@ Se vacía al publicar la 0.28.0. Todo fusionado en `0.28.x`.
   #1511, #1513, #1514; BUG-rnn-set-params y refit de `ForecasterRnn`: #1515.
 - Atajo de `StandardScaler` en `transform_numpy` (PERF-transform-numpy-scalers): #1518 (plan),
   #1519.
+- STUDY-osa-search-cost: #1524. La búsqueda de py59 con `OneStepAheadFold` es del 91 al 98 %
+  LightGBM; lo que no es modelo daría como mucho x1,10 (NPREV §10.6).
 
 ---
 
@@ -417,8 +499,11 @@ fila de R28.
   anclado a una hora UTC mostrado en una zona con cambio de hora, la validación y la
   predicción crean fechas distintas al cruzar un cambio de hora (2026-11-17: no se abre issue
   por ahora).
-- **Resto de la propuesta, sin diseñar.** Antes de escribir código: qué se valida una vez y
-  qué en cada fold (NaN de `exog` en el `gap`), `transformer_exog` y el codificador una vez o
-  por fold, el índice de las predicciones, el bucle con `n_jobs > 1` y qué caminos entran
-  (intervalos, `ForecasterDirect`, `return_predictors`). Aceptación: identidad bit a bit y
-  pandas 2 sin empeorar en ningún benchmark.
+- **Resto de la propuesta: diseñado y prototipado para multiserie el 2026-11-19** (NPREV §2,
+  §6 y §9; fila PERF-backtesting-ms-fast-path). Respuestas a las preguntas que quedaban:
+  todo se valida una vez y los avisos de cada fold (también los NaN de `exog` en el `gap`) se
+  emiten desde máscaras, con el mismo texto y en el mismo orden; `transformer_exog` y el
+  codificador se aplican una vez a las filas de test (por tramo entre refits); el índice de
+  las predicciones sale por posición del índice común; `n_jobs > 1`, los intervalos y
+  `return_predictors` quedan fuera de la primera versión (D-NP4). Aceptación: salidas y
+  avisos idénticos, y tiempo de la llamada completa.

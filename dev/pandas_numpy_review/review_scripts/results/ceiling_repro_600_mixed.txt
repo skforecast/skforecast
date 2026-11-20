@@ -1,0 +1,36 @@
+pandas=2.3.3 pyarrow=True n_series=600 exog=mixed est=ridge folds=50 steps=24
+  initial fit                582.7 ms
+  backtesting (current)     9542.3 ms  -> sin fit    8959.6 ms,  179.19 ms/fold
+  ceiling numpy loop          28.6 ms  (   0.57 ms/fold) + pre-encode once 1181.0 ms
+  model only (predict_fn)      5.1 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=False n_series=600 exog=mixed est=ridge folds=50 steps=24
+  initial fit                590.9 ms
+  backtesting (current)    10576.6 ms  -> sin fit    9985.7 ms,  199.71 ms/fold
+  ceiling numpy loop          28.7 ms  (   0.57 ms/fold) + pre-encode once 1014.5 ms
+  model only (predict_fn)      5.3 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=True n_series=600 exog=mixed est=ridge folds=50 steps=24
+  initial fit                775.8 ms
+  backtesting (current)    12011.1 ms  -> sin fit   11235.3 ms,  224.71 ms/fold
+  ceiling numpy loop          32.2 ms  (   0.64 ms/fold) + pre-encode once 1507.0 ms
+  model only (predict_fn)      5.8 ms
+  identical predictions: True
+pandas=2.3.3 pyarrow=True n_series=600 exog=mixed est=lgbm folds=50 steps=24
+  initial fit               2200.3 ms
+  backtesting (current)    11932.2 ms  -> sin fit    9731.9 ms,  194.64 ms/fold
+  ceiling numpy loop         806.9 ms  (  16.14 ms/fold) + pre-encode once 1262.4 ms
+  model only (predict_fn)    848.0 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=False n_series=600 exog=mixed est=lgbm folds=50 steps=24
+  initial fit               2304.4 ms
+  backtesting (current)    12937.0 ms  -> sin fit   10632.6 ms,  212.65 ms/fold
+  ceiling numpy loop         785.6 ms  (  15.71 ms/fold) + pre-encode once 1115.1 ms
+  model only (predict_fn)    654.3 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=True n_series=600 exog=mixed est=lgbm folds=50 steps=24
+  initial fit               2325.4 ms
+  backtesting (current)    14687.0 ms  -> sin fit   12361.6 ms,  247.23 ms/fold
+  ceiling numpy loop         883.7 ms  (  17.67 ms/fold) + pre-encode once 1455.6 ms
+  model only (predict_fn)    858.1 ms
+  identical predictions: True

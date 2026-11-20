@@ -1,0 +1,216 @@
+pandas=2.3.3 pyarrow=True n_series=100 exog=none est=ridge folds=50 steps=24
+  initial fit                 56.4 ms
+  backtesting (current)      543.3 ms  -> sin fit     486.9 ms,    9.74 ms/fold
+  ceiling numpy loop           9.3 ms  (   0.19 ms/fold) + pre-encode once 0.0 ms
+  model only (predict_fn)      2.7 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=False n_series=100 exog=none est=ridge folds=50 steps=24
+  initial fit                 54.7 ms
+  backtesting (current)      532.4 ms  -> sin fit     477.8 ms,    9.56 ms/fold
+  ceiling numpy loop           9.8 ms  (   0.20 ms/fold) + pre-encode once 0.0 ms
+  model only (predict_fn)      2.3 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=True n_series=100 exog=none est=ridge folds=50 steps=24
+  initial fit                 54.2 ms
+  backtesting (current)      557.3 ms  -> sin fit     503.1 ms,   10.06 ms/fold
+  ceiling numpy loop          11.1 ms  (   0.22 ms/fold) + pre-encode once 0.0 ms
+  model only (predict_fn)      2.5 ms
+  identical predictions: True
+pandas=2.3.3 pyarrow=True n_series=100 exog=float est=ridge folds=50 steps=24
+  initial fit                 72.4 ms
+  backtesting (current)     1104.6 ms  -> sin fit    1032.3 ms,   20.65 ms/fold
+  ceiling numpy loop          11.3 ms  (   0.23 ms/fold) + pre-encode once 18.2 ms
+  model only (predict_fn)      2.4 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=False n_series=100 exog=float est=ridge folds=50 steps=24
+  initial fit                 68.9 ms
+  backtesting (current)     1147.9 ms  -> sin fit    1078.9 ms,   21.58 ms/fold
+  ceiling numpy loop          11.4 ms  (   0.23 ms/fold) + pre-encode once 20.8 ms
+  model only (predict_fn)      2.3 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=True n_series=100 exog=float est=ridge folds=50 steps=24
+  initial fit                 71.1 ms
+  backtesting (current)     1271.2 ms  -> sin fit    1200.1 ms,   24.00 ms/fold
+  ceiling numpy loop          11.7 ms  (   0.23 ms/fold) + pre-encode once 21.7 ms
+  model only (predict_fn)      2.5 ms
+  identical predictions: True
+pandas=2.3.3 pyarrow=True n_series=100 exog=mixed est=ridge folds=50 steps=24
+  initial fit                 90.9 ms
+  backtesting (current)     1572.6 ms  -> sin fit    1481.7 ms,   29.63 ms/fold
+  ceiling numpy loop          11.3 ms  (   0.23 ms/fold) + pre-encode once 216.5 ms
+  model only (predict_fn)      2.9 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=False n_series=100 exog=mixed est=ridge folds=50 steps=24
+  initial fit                 98.2 ms
+  backtesting (current)     1972.5 ms  -> sin fit    1874.3 ms,   37.49 ms/fold
+  ceiling numpy loop          11.0 ms  (   0.22 ms/fold) + pre-encode once 184.6 ms
+  model only (predict_fn)      2.3 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=True n_series=100 exog=mixed est=ridge folds=50 steps=24
+  initial fit                167.8 ms
+  backtesting (current)     1945.1 ms  -> sin fit    1777.3 ms,   35.55 ms/fold
+  ceiling numpy loop          12.0 ms  (   0.24 ms/fold) + pre-encode once 227.7 ms
+  model only (predict_fn)      2.3 ms
+  identical predictions: True
+pandas=2.3.3 pyarrow=True n_series=600 exog=none est=ridge folds=50 steps=24
+  initial fit                310.0 ms
+  backtesting (current)     3133.3 ms  -> sin fit    2823.3 ms,   56.47 ms/fold
+  ceiling numpy loop          23.6 ms  (   0.47 ms/fold) + pre-encode once 0.0 ms
+  model only (predict_fn)      5.6 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=False n_series=600 exog=none est=ridge folds=50 steps=24
+  initial fit                260.4 ms
+  backtesting (current)     3218.4 ms  -> sin fit    2958.0 ms,   59.16 ms/fold
+  ceiling numpy loop          22.2 ms  (   0.44 ms/fold) + pre-encode once 0.0 ms
+  model only (predict_fn)      5.0 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=True n_series=600 exog=none est=ridge folds=50 steps=24
+  initial fit                262.5 ms
+  backtesting (current)     3363.6 ms  -> sin fit    3101.0 ms,   62.02 ms/fold
+  ceiling numpy loop          23.4 ms  (   0.47 ms/fold) + pre-encode once 0.0 ms
+  model only (predict_fn)      5.5 ms
+  identical predictions: True
+pandas=2.3.3 pyarrow=True n_series=600 exog=float est=ridge folds=50 steps=24
+  initial fit                378.4 ms
+  backtesting (current)     6170.1 ms  -> sin fit    5791.8 ms,  115.84 ms/fold
+  ceiling numpy loop          25.4 ms  (   0.51 ms/fold) + pre-encode once 103.8 ms
+  model only (predict_fn)      5.3 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=False n_series=600 exog=float est=ridge folds=50 steps=24
+  initial fit                353.5 ms
+  backtesting (current)     7141.5 ms  -> sin fit    6788.0 ms,  135.76 ms/fold
+  ceiling numpy loop          24.9 ms  (   0.50 ms/fold) + pre-encode once 116.8 ms
+  model only (predict_fn)      5.1 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=True n_series=600 exog=float est=ridge folds=50 steps=24
+  initial fit                363.3 ms
+  backtesting (current)     7425.8 ms  -> sin fit    7062.5 ms,  141.25 ms/fold
+  ceiling numpy loop          26.5 ms  (   0.53 ms/fold) + pre-encode once 134.4 ms
+  model only (predict_fn)      5.6 ms
+  identical predictions: True
+pandas=2.3.3 pyarrow=True n_series=600 exog=mixed est=ridge folds=50 steps=24
+  initial fit                500.2 ms
+  backtesting (current)    10129.9 ms  -> sin fit    9629.7 ms,  192.59 ms/fold
+  ceiling numpy loop          27.8 ms  (   0.56 ms/fold) + pre-encode once 1172.5 ms
+  model only (predict_fn)      4.5 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=False n_series=600 exog=mixed est=ridge folds=50 steps=24
+  initial fit                600.0 ms
+  backtesting (current)    11135.0 ms  -> sin fit   10535.0 ms,  210.70 ms/fold
+  ceiling numpy loop          26.6 ms  (   0.53 ms/fold) + pre-encode once 1161.1 ms
+  model only (predict_fn)      6.0 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=True n_series=600 exog=mixed est=ridge folds=50 steps=24
+  initial fit                744.4 ms
+  backtesting (current)    13164.3 ms  -> sin fit   12419.9 ms,  248.40 ms/fold
+  ceiling numpy loop          30.4 ms  (   0.61 ms/fold) + pre-encode once 1374.8 ms
+  model only (predict_fn)      7.3 ms
+  identical predictions: True
+pandas=2.3.3 pyarrow=True n_series=100 exog=none est=lgbm folds=50 steps=24
+  initial fit                349.8 ms
+  backtesting (current)      970.3 ms  -> sin fit     620.4 ms,   12.41 ms/fold
+  ceiling numpy loop         213.6 ms  (   4.27 ms/fold) + pre-encode once 0.0 ms
+  model only (predict_fn)    128.3 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=False n_series=100 exog=none est=lgbm folds=50 steps=24
+  initial fit                321.0 ms
+  backtesting (current)     1019.4 ms  -> sin fit     698.3 ms,   13.97 ms/fold
+  ceiling numpy loop         214.9 ms  (   4.30 ms/fold) + pre-encode once 0.0 ms
+  model only (predict_fn)    124.8 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=True n_series=100 exog=none est=lgbm folds=50 steps=24
+  initial fit                345.0 ms
+  backtesting (current)     1040.7 ms  -> sin fit     695.7 ms,   13.91 ms/fold
+  ceiling numpy loop         231.2 ms  (   4.62 ms/fold) + pre-encode once 0.0 ms
+  model only (predict_fn)    158.8 ms
+  identical predictions: True
+pandas=2.3.3 pyarrow=True n_series=100 exog=float est=lgbm folds=50 steps=24
+  initial fit                376.7 ms
+  backtesting (current)     1582.6 ms  -> sin fit    1205.9 ms,   24.12 ms/fold
+  ceiling numpy loop         231.0 ms  (   4.62 ms/fold) + pre-encode once 17.3 ms
+  model only (predict_fn)    121.9 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=False n_series=100 exog=float est=lgbm folds=50 steps=24
+  initial fit                360.3 ms
+  backtesting (current)     1653.4 ms  -> sin fit    1293.0 ms,   25.86 ms/fold
+  ceiling numpy loop         234.5 ms  (   4.69 ms/fold) + pre-encode once 18.3 ms
+  model only (predict_fn)    122.8 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=True n_series=100 exog=float est=lgbm folds=50 steps=24
+  initial fit                376.1 ms
+  backtesting (current)     1766.6 ms  -> sin fit    1390.5 ms,   27.81 ms/fold
+  ceiling numpy loop         235.6 ms  (   4.71 ms/fold) + pre-encode once 21.5 ms
+  model only (predict_fn)    120.7 ms
+  identical predictions: True
+pandas=2.3.3 pyarrow=True n_series=100 exog=mixed est=lgbm folds=50 steps=24
+  initial fit                426.9 ms
+  backtesting (current)     2157.7 ms  -> sin fit    1730.8 ms,   34.62 ms/fold
+  ceiling numpy loop         209.8 ms  (   4.20 ms/fold) + pre-encode once 174.8 ms
+  model only (predict_fn)    122.6 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=False n_series=100 exog=mixed est=lgbm folds=50 steps=24
+  initial fit                399.1 ms
+  backtesting (current)     2365.0 ms  -> sin fit    1965.9 ms,   39.32 ms/fold
+  ceiling numpy loop         230.1 ms  (   4.60 ms/fold) + pre-encode once 277.2 ms
+  model only (predict_fn)    155.0 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=True n_series=100 exog=mixed est=lgbm folds=50 steps=24
+  initial fit                412.0 ms
+  backtesting (current)     2419.3 ms  -> sin fit    2007.3 ms,   40.15 ms/fold
+  ceiling numpy loop         210.5 ms  (   4.21 ms/fold) + pre-encode once 220.2 ms
+  model only (predict_fn)    132.8 ms
+  identical predictions: True
+pandas=2.3.3 pyarrow=True n_series=600 exog=none est=lgbm folds=50 steps=24
+  initial fit               1870.3 ms
+  backtesting (current)     5400.2 ms  -> sin fit    3529.9 ms,   70.60 ms/fold
+  ceiling numpy loop        1040.9 ms  (  20.82 ms/fold) + pre-encode once 0.0 ms
+  model only (predict_fn)    672.2 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=False n_series=600 exog=none est=lgbm folds=50 steps=24
+  initial fit               1896.7 ms
+  backtesting (current)     5704.2 ms  -> sin fit    3807.5 ms,   76.15 ms/fold
+  ceiling numpy loop        1116.3 ms  (  22.33 ms/fold) + pre-encode once 0.0 ms
+  model only (predict_fn)    819.7 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=True n_series=600 exog=none est=lgbm folds=50 steps=24
+  initial fit               1801.3 ms
+  backtesting (current)     5691.4 ms  -> sin fit    3890.1 ms,   77.80 ms/fold
+  ceiling numpy loop        1096.4 ms  (  21.93 ms/fold) + pre-encode once 0.0 ms
+  model only (predict_fn)    823.7 ms
+  identical predictions: True
+pandas=2.3.3 pyarrow=True n_series=600 exog=float est=lgbm folds=50 steps=24
+  initial fit               1978.3 ms
+  backtesting (current)     8883.1 ms  -> sin fit    6904.8 ms,  138.10 ms/fold
+  ceiling numpy loop        1094.5 ms  (  21.89 ms/fold) + pre-encode once 105.7 ms
+  model only (predict_fn)    727.0 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=False n_series=600 exog=float est=lgbm folds=50 steps=24
+  initial fit               1914.4 ms
+  backtesting (current)     9230.6 ms  -> sin fit    7316.2 ms,  146.32 ms/fold
+  ceiling numpy loop        1132.5 ms  (  22.65 ms/fold) + pre-encode once 107.6 ms
+  model only (predict_fn)    712.4 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=True n_series=600 exog=float est=lgbm folds=50 steps=24
+  initial fit               1999.7 ms
+  backtesting (current)    10540.1 ms  -> sin fit    8540.4 ms,  170.81 ms/fold
+  ceiling numpy loop        1169.7 ms  (  23.39 ms/fold) + pre-encode once 131.2 ms
+  model only (predict_fn)    820.7 ms
+  identical predictions: True
+pandas=2.3.3 pyarrow=True n_series=600 exog=mixed est=lgbm folds=50 steps=24
+  initial fit               2255.4 ms
+  backtesting (current)    13128.8 ms  -> sin fit   10873.3 ms,  217.47 ms/fold
+  ceiling numpy loop         918.8 ms  (  18.38 ms/fold) + pre-encode once 1141.5 ms
+  model only (predict_fn)    830.0 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=False n_series=600 exog=mixed est=lgbm folds=50 steps=24
+  initial fit               2291.3 ms
+  backtesting (current)    14113.9 ms  -> sin fit   11822.6 ms,  236.45 ms/fold
+  ceiling numpy loop         886.7 ms  (  17.73 ms/fold) + pre-encode once 1071.3 ms
+  model only (predict_fn)    890.8 ms
+  identical predictions: True
+pandas=3.1.1 pyarrow=True n_series=600 exog=mixed est=lgbm folds=50 steps=24
+  initial fit               2179.0 ms
+  backtesting (current)    14956.5 ms  -> sin fit   12777.5 ms,  255.55 ms/fold
+  ceiling numpy loop         895.2 ms  (  17.90 ms/fold) + pre-encode once 1451.1 ms
+  model only (predict_fn)    838.4 ms
+  identical predictions: True

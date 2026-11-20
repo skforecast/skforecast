@@ -1,0 +1,24 @@
+=== p2 ===
+bdg2: 1578 series, 61 predicted dates, 96258 predictions, estimator LGBMRegressor (n_jobs=1), refit=False, reps=1
+  today                               172.06 s | fit  163.13 s | estimator.predict   3.21 s | rest   5.72 s ( 3.3 %)
+  prototype                           172.60 s | fit  166.88 s | estimator.predict   3.14 s | rest   2.58 s ( 1.5 %)  x1.00 whole call, x  2.2 rest
+  prototype + numpy metrics           170.86 s | fit  166.39 s | estimator.predict   3.09 s | rest   1.37 s ( 0.8 %)  x1.01 whole call, x  4.2 rest
+  outputs: metrics identical, predictions identical; warnings same list: True (0 today); numpy metrics max abs diff 0
+  prototype stages (s, last run): preprocess 0.26, matrix 0.08, exog_align 0.47, extract_train 0.53, fit 166.88, prepare_model 0.07, folds 3.18, output 0.01, metrics 1.05, rest 0.03, n_folds 9.00, n_fits 1.00
+  [python 3.12.3, pandas 2.3.3, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 (sin pyarrow) ===
+bdg2: 1578 series, 61 predicted dates, 96258 predictions, estimator LGBMRegressor (n_jobs=1), refit=False, reps=1
+  today                               172.17 s | fit  162.22 s | estimator.predict   3.21 s | rest   6.73 s ( 3.9 %)
+  prototype                           170.43 s | fit  164.38 s | estimator.predict   3.52 s | rest   2.53 s ( 1.5 %)  x1.01 whole call, x  2.7 rest
+  prototype + numpy metrics           173.72 s | fit  168.25 s | estimator.predict   3.43 s | rest   2.04 s ( 1.2 %)  x0.99 whole call, x  3.3 rest
+  outputs: metrics identical, predictions identical; warnings same list: True (0 today); numpy metrics max abs diff 0
+  prototype stages (s, last run): preprocess 0.39, matrix 0.08, exog_align 0.51, extract_train 0.62, fit 164.38, prepare_model 0.04, folds 3.57, output 0.01, metrics 0.74, rest 0.03, n_folds 9.00, n_fits 1.00
+  [python 3.12.3, pandas 3.1.1, pyarrow no, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 pa ===
+bdg2: 1578 series, 61 predicted dates, 96258 predictions, estimator LGBMRegressor (n_jobs=1), refit=False, reps=1
+  today                               179.34 s | fit  168.91 s | estimator.predict   3.27 s | rest   7.16 s ( 4.0 %)
+  prototype                           176.64 s | fit  169.63 s | estimator.predict   3.73 s | rest   3.29 s ( 1.9 %)  x1.02 whole call, x  2.2 rest
+  prototype + numpy metrics           174.00 s | fit  168.42 s | estimator.predict   3.52 s | rest   2.06 s ( 1.2 %)  x1.03 whole call, x  3.5 rest
+  outputs: metrics identical, predictions identical; warnings same list: True (0 today); numpy metrics max abs diff 0
+  prototype stages (s, last run): preprocess 0.38, matrix 0.08, exog_align 0.76, extract_train 0.60, fit 169.63, prepare_model 0.08, folds 3.78, output 0.01, metrics 1.24, rest 0.04, n_folds 9.00, n_fits 1.00
+  [python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]

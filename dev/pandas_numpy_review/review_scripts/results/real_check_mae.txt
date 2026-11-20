@@ -1,0 +1,13 @@
+store  item_1                   article       5.5126   here       5.5126   diff -2.582e-07 (-0.00 %)
+store  item_2                   article       9.2185   here       9.2185   diff +3.767e-08 (+0.00 %)
+store  item_3                   article       7.3106   here       7.3106   diff -2.366e-07 (-0.00 %)
+demo   id_1000                  article     150.8947   here     150.8947   diff +8.047e-08 (+0.00 %)
+demo   id_1001                  article     863.1584   here     863.1584   diff -2.188e-07 (-0.00 %)
+demo   id_1003                  article     265.1344   here     265.1344   diff -3.647e-07 (-0.00 %)
+demo   id_1004                  article     921.1483   here     921.1483   diff +4.17e-07 (+0.00 %)
+bdg2   Bear_assembly_Angel      article    1225.5684   here    1251.3097   diff +25.74 (+2.10 %)
+bdg2   Bear_assembly_Beatrice   article     238.2542   here     238.8462   diff +0.5921 (+0.25 %)
+bdg2   Bear_assembly_Diana      article      32.1736   here      34.8020   diff +2.628 (+8.17 %)
+bdg2   average                  article     307.0000   here     307.2489   diff +0.2489 (+0.08 %)
+bike                            article      49.4430   here      50.9679   diff +1.525 (+3.08 %)
+[python 3.12.3, pandas 2.3.3, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]

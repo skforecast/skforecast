@@ -1,0 +1,15 @@
+=== p2 ===
+bdg2 search: 300 series, 4 candidates, 9 folds of 7 steps, LightGBM (n_jobs=1)
+  today        18.75 s (4.7 s per candidate; fits 14.01 s, rest 4.74 s)
+  prototype    14.10 s (x1.33; fits 13.13 s, rest 0.97 s); max diff of the metric 0
+  [python 3.12.3, pandas 2.3.3, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 (sin pyarrow) ===
+bdg2 search: 300 series, 4 candidates, 9 folds of 7 steps, LightGBM (n_jobs=1)
+  today        19.03 s (4.8 s per candidate; fits 13.77 s, rest 5.26 s)
+  prototype    14.61 s (x1.30; fits 13.52 s, rest 1.09 s); max diff of the metric 0
+  [python 3.12.3, pandas 3.1.1, pyarrow no, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 pa ===
+bdg2 search: 300 series, 4 candidates, 9 folds of 7 steps, LightGBM (n_jobs=1)
+  today        20.15 s (5.0 s per candidate; fits 14.59 s, rest 5.55 s)
+  prototype    14.25 s (x1.41; fits 13.32 s, rest 0.93 s); max diff of the metric 0
+  [python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]

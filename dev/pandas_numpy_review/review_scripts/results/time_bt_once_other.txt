@@ -1,0 +1,222 @@
+=== p2 ===
+n_series=600 exog=mixed est=ridge folds=5 steps=24
+CURRENT total: best of 3    3074.8 ms; instrumented run    2705.2 ms
+   fit (first fold)                                       1187.4 ms   
+   copy of the forecaster                                    0.3 ms     0.0 % of the time without fit
+   extract folds (per fold and series)                     649.9 ms    42.8 % of the time without fit
+   metrics                                                 314.5 ms    20.7 % of the time without fit
+   preprocess (once, per series)                            80.8 ms     5.3 % of the time without fit
+   warn levels not predicted                                 0.2 ms     0.0 % of the time without fit
+   y_true                                                   29.3 ms     1.9 % of the time without fit
+   predict: check_predict_input                            206.1 ms    13.6 % of the time without fit
+   predict: rest of _create_predict_inputs                 179.8 ms    11.8 % of the time without fit
+   predict: _recursive_predict                               2.7 ms     0.2 % of the time without fit
+   predict: inverse transform + output DataFrame             6.9 ms     0.5 % of the time without fit
+   rest (cv.split, concat, MultiIndex, y_true NaN, ...)     47.2 ms     3.1 % of the time without fit
+   -> without fit: 1517.8 ms = 303.57 ms per fold
+   -> truly per fold (extract + predict): 209.09 ms per fold; once per backtesting: 472.4 ms
+VALIDATE ONCE (identical metrics and predictions): total 2115.9 ms
+   preprocess                                               97.1 ms
+   prologue                                                276.5 ms
+   fit                                                    1123.0 ms
+   prepare                                                 250.8 ms
+   folds                                                     5.6 ms
+   output                                                    8.1 ms
+   metrics                                                 354.8 ms
+   -> without fit: 992.9 ms = 198.58 ms per fold (folds only: 1.12 ms per fold)
+SPEED-UP without fit: 1.5x (instrumented run of the current code); whole call 1.5x
+[python 3.12.3, pandas 2.3.3, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 (sin pyarrow) ===
+n_series=600 exog=mixed est=ridge folds=5 steps=24
+CURRENT total: best of 3    3028.4 ms; instrumented run    3421.6 ms
+   fit (first fold)                                       1616.6 ms   
+   copy of the forecaster                                    0.3 ms     0.0 % of the time without fit
+   extract folds (per fold and series)                     656.4 ms    36.4 % of the time without fit
+   metrics                                                 443.9 ms    24.6 % of the time without fit
+   preprocess (once, per series)                           165.4 ms     9.2 % of the time without fit
+   warn levels not predicted                                 0.3 ms     0.0 % of the time without fit
+   y_true                                                   27.0 ms     1.5 % of the time without fit
+   predict: check_predict_input                            244.0 ms    13.5 % of the time without fit
+   predict: rest of _create_predict_inputs                 191.8 ms    10.6 % of the time without fit
+   predict: _recursive_predict                               2.6 ms     0.1 % of the time without fit
+   predict: inverse transform + output DataFrame             6.6 ms     0.4 % of the time without fit
+   rest (cv.split, concat, MultiIndex, y_true NaN, ...)     66.8 ms     3.7 % of the time without fit
+   -> without fit: 1805.0 ms = 361.00 ms per fold
+   -> truly per fold (extract + predict): 220.28 ms per fold; once per backtesting: 703.6 ms
+VALIDATE ONCE (identical metrics and predictions): total 2197.5 ms
+   preprocess                                               99.8 ms
+   prologue                                                288.7 ms
+   fit                                                    1110.9 ms
+   prepare                                                 369.3 ms
+   folds                                                     5.5 ms
+   output                                                    3.7 ms
+   metrics                                                 319.6 ms
+   -> without fit: 1086.6 ms = 217.33 ms per fold (folds only: 1.11 ms per fold)
+SPEED-UP without fit: 1.7x (instrumented run of the current code); whole call 1.4x
+[python 3.12.3, pandas 3.1.1, pyarrow no, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 pa ===
+n_series=600 exog=mixed est=ridge folds=5 steps=24
+CURRENT total: best of 3    3308.5 ms; instrumented run    3071.5 ms
+   fit (first fold)                                       1246.7 ms   
+   copy of the forecaster                                    0.3 ms     0.0 % of the time without fit
+   extract folds (per fold and series)                     620.9 ms    34.0 % of the time without fit
+   metrics                                                 409.3 ms    22.4 % of the time without fit
+   preprocess (once, per series)                            77.2 ms     4.2 % of the time without fit
+   warn levels not predicted                                 0.2 ms     0.0 % of the time without fit
+   y_true                                                   32.7 ms     1.8 % of the time without fit
+   predict: check_predict_input                            426.7 ms    23.4 % of the time without fit
+   predict: rest of _create_predict_inputs                 204.4 ms    11.2 % of the time without fit
+   predict: _recursive_predict                               2.5 ms     0.1 % of the time without fit
+   predict: inverse transform + output DataFrame            10.0 ms     0.5 % of the time without fit
+   rest (cv.split, concat, MultiIndex, y_true NaN, ...)     40.8 ms     2.2 % of the time without fit
+   -> without fit: 1824.8 ms = 364.97 ms per fold
+   -> truly per fold (extract + predict): 252.88 ms per fold; once per backtesting: 560.4 ms
+VALIDATE ONCE (identical metrics and predictions): total 2585.5 ms
+   preprocess                                               78.6 ms
+   prologue                                                221.6 ms
+   fit                                                    1342.8 ms
+   prepare                                                 483.0 ms
+   folds                                                     5.9 ms
+   output                                                    4.0 ms
+   metrics                                                 449.7 ms
+   -> without fit: 1242.8 ms = 248.55 ms per fold (folds only: 1.18 ms per fold)
+SPEED-UP without fit: 1.5x (instrumented run of the current code); whole call 1.3x
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p2 ===
+n_series=600 exog=mixed est=lgbm folds=5 steps=24
+CURRENT total: best of 3    8277.0 ms; instrumented run    9299.8 ms
+   fit (first fold)                                       7363.2 ms   
+   copy of the forecaster                                    0.4 ms     0.0 % of the time without fit
+   extract folds (per fold and series)                     571.4 ms    29.5 % of the time without fit
+   metrics                                                 494.2 ms    25.5 % of the time without fit
+   preprocess (once, per series)                            80.8 ms     4.2 % of the time without fit
+   warn levels not predicted                                 0.3 ms     0.0 % of the time without fit
+   y_true                                                   40.7 ms     2.1 % of the time without fit
+   predict: check_predict_input                            287.3 ms    14.8 % of the time without fit
+   predict: rest of _create_predict_inputs                 274.7 ms    14.2 % of the time without fit
+   predict: _recursive_predict                             115.0 ms     5.9 % of the time without fit
+   predict: inverse transform + output DataFrame            10.9 ms     0.6 % of the time without fit
+   rest (cv.split, concat, MultiIndex, y_true NaN, ...)     60.9 ms     3.1 % of the time without fit
+   -> without fit: 1936.6 ms = 387.32 ms per fold
+   -> truly per fold (extract + predict): 251.85 ms per fold; once per backtesting: 677.3 ms
+VALIDATE ONCE (identical metrics and predictions): total 8300.3 ms
+   preprocess                                              181.3 ms
+   prologue                                                293.3 ms
+   fit                                                    7069.1 ms
+   prepare                                                 376.3 ms
+   folds                                                    75.9 ms
+   output                                                    5.3 ms
+   metrics                                                 299.1 ms
+   -> without fit: 1231.2 ms = 246.24 ms per fold (folds only: 15.18 ms per fold)
+SPEED-UP without fit: 1.6x (instrumented run of the current code); whole call 1.0x
+[python 3.12.3, pandas 2.3.3, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 (sin pyarrow) ===
+n_series=600 exog=mixed est=lgbm folds=5 steps=24
+CURRENT total: best of 3    8808.4 ms; instrumented run    8885.8 ms
+   fit (first fold)                                       7072.1 ms   
+   copy of the forecaster                                    0.5 ms     0.0 % of the time without fit
+   extract folds (per fold and series)                     645.1 ms    35.6 % of the time without fit
+   metrics                                                 420.7 ms    23.2 % of the time without fit
+   preprocess (once, per series)                           179.1 ms     9.9 % of the time without fit
+   warn levels not predicted                                 0.2 ms     0.0 % of the time without fit
+   y_true                                                   29.2 ms     1.6 % of the time without fit
+   predict: check_predict_input                            231.8 ms    12.8 % of the time without fit
+   predict: rest of _create_predict_inputs                 169.5 ms     9.3 % of the time without fit
+   predict: _recursive_predict                              77.6 ms     4.3 % of the time without fit
+   predict: inverse transform + output DataFrame             6.4 ms     0.4 % of the time without fit
+   rest (cv.split, concat, MultiIndex, y_true NaN, ...)     53.7 ms     3.0 % of the time without fit
+   -> without fit: 1813.7 ms = 362.75 ms per fold
+   -> truly per fold (extract + predict): 226.07 ms per fold; once per backtesting: 683.4 ms
+VALIDATE ONCE (identical metrics and predictions): total 8126.9 ms
+   preprocess                                              120.0 ms
+   prologue                                                297.1 ms
+   fit                                                    6981.6 ms
+   prepare                                                 310.4 ms
+   folds                                                    85.2 ms
+   output                                                    4.3 ms
+   metrics                                                 328.3 ms
+   -> without fit: 1145.3 ms = 229.06 ms per fold (folds only: 17.04 ms per fold)
+SPEED-UP without fit: 1.6x (instrumented run of the current code); whole call 1.1x
+[python 3.12.3, pandas 3.1.1, pyarrow no, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 pa ===
+n_series=600 exog=mixed est=lgbm folds=5 steps=24
+CURRENT total: best of 3    8919.5 ms; instrumented run    9325.1 ms
+   fit (first fold)                                       7255.2 ms   
+   copy of the forecaster                                    0.5 ms     0.0 % of the time without fit
+   extract folds (per fold and series)                     643.3 ms    31.1 % of the time without fit
+   metrics                                                 475.9 ms    23.0 % of the time without fit
+   preprocess (once, per series)                            79.4 ms     3.8 % of the time without fit
+   warn levels not predicted                                 0.3 ms     0.0 % of the time without fit
+   y_true                                                   36.0 ms     1.7 % of the time without fit
+   predict: check_predict_input                            289.8 ms    14.0 % of the time without fit
+   predict: rest of _create_predict_inputs                 394.1 ms    19.0 % of the time without fit
+   predict: _recursive_predict                              92.6 ms     4.5 % of the time without fit
+   predict: inverse transform + output DataFrame            12.8 ms     0.6 % of the time without fit
+   rest (cv.split, concat, MultiIndex, y_true NaN, ...)     45.3 ms     2.2 % of the time without fit
+   -> without fit: 2069.9 ms = 413.99 ms per fold
+   -> truly per fold (extract + predict): 286.53 ms per fold; once per backtesting: 637.3 ms
+VALIDATE ONCE (identical metrics and predictions): total 8504.5 ms
+   preprocess                                               85.2 ms
+   prologue                                                358.1 ms
+   fit                                                    7198.9 ms
+   prepare                                                 372.7 ms
+   folds                                                    82.4 ms
+   output                                                    4.5 ms
+   metrics                                                 402.7 ms
+   -> without fit: 1305.7 ms = 261.13 ms per fold (folds only: 16.49 ms per fold)
+SPEED-UP without fit: 1.6x (instrumented run of the current code); whole call 1.0x
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+n_series=100 exog=mixed est=ridge folds=50 steps=24
+CURRENT total: best of 3    2023.1 ms; instrumented run    1942.0 ms
+   fit (first fold)                                         65.2 ms   
+   copy of the forecaster                                    0.3 ms     0.0 % of the time without fit
+   extract folds (per fold and series)                     865.8 ms    46.1 % of the time without fit
+   metrics                                                 108.7 ms     5.8 % of the time without fit
+   preprocess (once, per series)                            14.1 ms     0.8 % of the time without fit
+   warn levels not predicted                                 0.5 ms     0.0 % of the time without fit
+   y_true                                                    8.7 ms     0.5 % of the time without fit
+   predict: check_predict_input                            426.1 ms    22.7 % of the time without fit
+   predict: rest of _create_predict_inputs                 374.5 ms    20.0 % of the time without fit
+   predict: _recursive_predict                               9.5 ms     0.5 % of the time without fit
+   predict: inverse transform + output DataFrame            28.0 ms     1.5 % of the time without fit
+   rest (cv.split, concat, MultiIndex, y_true NaN, ...)     40.8 ms     2.2 % of the time without fit
+   -> without fit: 1876.8 ms = 37.54 ms per fold
+   -> truly per fold (extract + predict): 34.08 ms per fold; once per backtesting: 173.1 ms
+VALIDATE ONCE (identical metrics and predictions): total 333.0 ms
+   preprocess                                               12.7 ms
+   prologue                                                 30.1 ms
+   fit                                                      63.6 ms
+   prepare                                                  95.3 ms
+   folds                                                    14.2 ms
+   output                                                    7.0 ms
+   metrics                                                 110.1 ms
+   -> without fit: 269.4 ms = 5.39 ms per fold (folds only: 0.28 ms per fold)
+SPEED-UP without fit: 7.0x (instrumented run of the current code); whole call 6.1x
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+n_series=600 exog=none est=ridge folds=50 steps=24
+CURRENT total: best of 3    3337.4 ms; instrumented run    3381.2 ms
+   fit (first fold)                                        177.4 ms   
+   copy of the forecaster                                    0.5 ms     0.0 % of the time without fit
+   extract folds (per fold and series)                    2164.2 ms    67.5 % of the time without fit
+   metrics                                                 665.2 ms    20.8 % of the time without fit
+   preprocess (once, per series)                            29.6 ms     0.9 % of the time without fit
+   warn levels not predicted                                 1.5 ms     0.0 % of the time without fit
+   y_true                                                   53.3 ms     1.7 % of the time without fit
+   predict: check_predict_input                             43.5 ms     1.4 % of the time without fit
+   predict: rest of _create_predict_inputs                  38.2 ms     1.2 % of the time without fit
+   predict: _recursive_predict                              19.5 ms     0.6 % of the time without fit
+   predict: inverse transform + output DataFrame            98.8 ms     3.1 % of the time without fit
+   rest (cv.split, concat, MultiIndex, y_true NaN, ...)     89.6 ms     2.8 % of the time without fit
+   -> without fit: 3203.8 ms = 64.08 ms per fold
+   -> truly per fold (extract + predict): 47.28 ms per fold; once per backtesting: 839.7 ms
+VALIDATE ONCE (identical metrics and predictions): total 1116.2 ms
+   preprocess                                               17.7 ms
+   prologue                                                199.7 ms
+   fit                                                     157.9 ms
+   prepare                                                  29.3 ms
+   folds                                                    24.2 ms
+   output                                                   45.9 ms
+   metrics                                                 641.4 ms
+   -> without fit: 958.3 ms = 19.17 ms per fold (folds only: 0.48 ms per fold)
+SPEED-UP without fit: 3.3x (instrumented run of the current code); whole call 3.0x
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
