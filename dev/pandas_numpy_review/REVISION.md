@@ -628,7 +628,7 @@ La búsqueda de py59 tal como la hace el artículo: `bayesian_search_forecaster_
 
 ## 11. D-NP2: la opción (a'), revisada con un prototipo
 
-Fecha: 2026-11-20. Árbol: `0.28.x` en `a049e5c`. Qué se pregunta: si (a'), la opción que recomienda 9.4, es la más adecuada, si tiene errores, si cuesta rendimiento, qué riesgos deja y si encaja con el roadmap. Para contestarlo he escrito el arreglo como un parche real ([review_scripts/dnp2_proto.patch](review_scripts/dnp2_proto.patch), aplicado en un worktree aparte; no se ha modificado `skforecast/`) y lo he comparado con el código actual. Scripts `review_scripts/dnp2_*.py`, salidas en `review_scripts/results/dnp2_*.txt`. Todo lo de esta sección lo he ejecutado yo, sin subagentes, en los tres entornos salvo donde se dice.
+Fecha: 2026-11-20. Árbol: `0.28.x` en `a049e5c`. Qué se pregunta: si (a'), la opción que recomienda 9.4, es la más adecuada, si tiene errores, si cuesta rendimiento, qué riesgos deja y si encaja con el roadmap. Para contestarlo he escrito el arreglo como un parche real ([review_scripts/dnp2_proto.patch](review_scripts/dnp2_proto.patch), aplicado en un worktree aparte; no se ha modificado `skforecast/`) y lo he comparado con el código actual. Scripts `review_scripts/dnp2_*.py`, salidas en `review_scripts/results/dnp2_*.txt`. Todo lo de esta sección lo he ejecutado yo, sin subagentes, en los tres entornos y con el mismo resultado en los tres, salvo donde se dice (los tests, en p3 pa y p2).
 
 **Veredicto.** (a') es la opción adecuada y la revisión la refuerza: el modelo que hoy se ajusta con `None` es idéntico al de `'auto'`, así que quien hoy acierta lo recupera cambiando un argumento, y eso deja a (c) sin su única ventaja. Pero tal como estaba escrita le faltaban cinco precisiones (11.4) y, copiada de los forecasters de una serie, la conversión de CatBoost cuesta memoria (11.6). **Decisión de Joaquín (2026-11-20): D-NP2 = (a').**
 
@@ -663,8 +663,8 @@ MAE one-step-ahead y de backtesting (6 series, 8 categorías con efecto no monó
 Comprobaciones aparte (`dnp2_extra.py`, [results/dnp2_extra_today.txt](review_scripts/results/dnp2_extra_today.txt) y [results/dnp2_extra_proto.txt](review_scripts/results/dnp2_extra_proto.txt)):
 
 - **La receta antigua** (`OrdinalEncoder` y `astype('category')` en `transformer_exog`, con `None`): hoy 2,98 (LightGBM), 2,40 (XGBoost) y 3,21 (HistGradientBoosting); con `'auto'`, exactamente lo mismo; con el prototipo y `None`, 4,23, 3,62 y 4,53.
-- **Configuración del usuario por índice con `None`** (la vía que documenta `tools/ai/llms-base.txt`): hoy también tiene el bug (LightGBM 2,98 en one-step-ahead y 34,73 en backtesting; XGBoost con `feature_types` 2,42 y 42,21; CatBoost con `cat_features` 4,93 y 31,57). Con el prototipo coinciden (2,98, 2,42 y 4,93).
-- **Otros dtypes de la exog** (`dnp2_dtypes.py`, 14 dtypes por 4 estimadores, `'auto'` y `None`): fuera de la `category` con `None`, idéntico a hoy, y LightGBM con columnas `pyarrow` deja de fallar en `fit` ([results/dnp2_dtypes.txt](review_scripts/results/dnp2_dtypes.txt)).
+- **Configuración del usuario por índice con `None`** (la vía que documenta `tools/ai/llms-base.txt`): hoy también tiene el bug (LightGBM 2,98 en one-step-ahead y 34,73 en backtesting; XGBoost con `feature_types` 2,42 y 42,21; CatBoost con `cat_features` 4,93 y 31,57). Con el prototipo coinciden (2,98, 2,42 y 4,93). Por nombre, LightGBM tiene hoy el mismo bug e HistGradientBoosting acierta (3,21); con el prototipo, que traduce los nombres, dan lo mismo que por índice.
+- **Otros dtypes de la exog** (`dnp2_dtypes.py`, 14 dtypes por 4 estimadores, `'auto'` y `None`, 112 casos): fuera de la `category` con `None` (8 casos), idéntico a hoy, y LightGBM con columnas `pyarrow` deja de fallar en `fit` (6 casos) ([results/dnp2_dtypes.txt](review_scripts/results/dnp2_dtypes.txt)).
 - **Trece estimadores con un solo bloque float** (lineales, árboles, KNN, SVR, MLP, `Pipeline`, `TransformedTargetRegressor`) y tres codificaciones: predicciones idénticas en 39 de 39.
 - **Forecasters ajustados con el código actual y guardados:** `predict` idéntico, y `set_in_sample_residuals` reproduce los residuos del `fit` salvo en el que tiene el bug (`None` con 10..80), donde difieren hasta 75: esos hay que reajustarlos.
 
@@ -692,9 +692,9 @@ Comprobaciones aparte (`dnp2_extra.py`, [results/dnp2_extra_today.txt](review_sc
 |---|---|---|
 | `tests_forecaster_recursive_multiseries` (775 tests) | 11 fallos | 5 fallos |
 | `model_selection/tests`, `-k "multiseries or one_step_ahead"` (546) | 6 fallos | 0 fallos |
-| `utils/tests`, `-k "in_place or copy_rows or catboost or categorical"` (98) | 0 fallos | sin ejecutar |
+| `utils/tests`, `-k "in_place or copy_rows or catboost or categorical"` (98) | 0 fallos | 0 fallos |
 
-Todos los fallos son de dos tipos, y los dos son comportamiento que el arreglo cambia a propósito:
+Lista en [results/dnp2_tests.txt](review_scripts/results/dnp2_tests.txt). Todos los fallos son de dos tipos, y los dos son comportamiento que el arreglo cambia a propósito:
 
 - **2 tests de la receta antigua** (`test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor`, sus dos parámetros): `OrdinalEncoder` más `category` con `None`. Pasan a `'auto'`.
 - **Los de modificación in situ** (`..._ValueError_when_estimator_modifies_X_train_in_place`): 9 y 6 en pandas 3, donde la vista de solo lectura hace que scikit-learn copie y ya no haya nada que detectar; 3 en pandas 2.3 (el estimador de prueba que añade una columna a un DataFrame). Es el punto 5 de 11.4.
@@ -711,14 +711,14 @@ Antes de añadir la traducción de nombres fallaban además 6 tests (`..._native
 | Un bloque float, LightGBM | 2,71 → 2,78 / 2,93 → 2,90 / 2,70 → 2,79 | sin cambio |
 | Un bloque float, XGBoost | 2,87 → 2,94 / 3,08 → 2,98 / 2,97 → 3,12 | sin cambio |
 | Un bloque float, HistGradientBoosting | 1,98 → 1,96 / 1,95 → 1,90 / 1,94 → 2,11 | sin cambio |
-| Un bloque float, Ridge | 0,32 → 0,41 / 0,42 → 0,40 / 0,39 → 0,40 | 344 → 344 / 311 → 374 / 348 → 411 |
+| Un bloque float, Ridge (mejor de 10) | 0,32 → 0,32 / 0,34 → 0,35 / 0,34 → 0,36 | 344 → 343 / 311 → 374 / 348 → 411 |
 | `ordinal_category`, LightGBM | 3,23 → 3,10 / 3,22 → 3,20 / 3,52 → 3,26 | sin cambio |
 | 10 exog enteras, LightGBM | 2,91 → 2,73 / 2,69 → 2,78 / 2,71 → 2,77 | sin cambio |
 | `None` con dos `category`, LightGBM | 2,79 → 2,76 / 2,97 → 2,88 / 2,87 → 2,91 | sin cambio |
 | `'auto'` con dos columnas de texto, CatBoost, array `object` | 5,92 → 7,22 / 6,58 → 7,28 / 6,16 → 7,10 | 502 → 762 / 459 → 729 / 508 → 767 |
 | El mismo, manteniendo el DataFrame | 5,92 → 5,89 / 6,58 → 5,74 / 6,16 → 6,39 | 502 → 495 / 459 → 459 / 508 → 510 |
 
-- **Sin coste** con LightGBM, XGBoost e HistGradientBoosting: de x0,93 a x1,09, dentro del ruido de estas medidas, y la misma memoria. Los ajustes de Ridge duran de 0,3 a 0,5 s y con 3 repeticiones varían entre x0,78 y x1,28 sin dirección. Con un solo bloque la conversión es una vista, y con dtypes mezclados la copia sustituye a la que hoy hace el estimador.
+- **Sin coste** con LightGBM, XGBoost e HistGradientBoosting: de x0,93 a x1,09, dentro del ruido de estas medidas, y la misma memoria. Con Ridge, cuyos ajustes duran de 0,3 a 0,4 s, 3 repeticiones no bastan (de x0,78 a x1,28, sin dirección); con 10, de x0,88 a x1,06 en los tres casos y los tres entornos (`results/dnp2_perf_ridge_*.txt`). Con un solo bloque la conversión es una vista, y con dtypes mezclados la copia sustituye a la que hoy hace el estimador.
 - **Ridge, un bloque, pandas 3:** 63 MB más de pico, por la vista de solo lectura (punto 5 de 11.4).
 - **CatBoost con categóricas, que incluye el `'auto'` por defecto:** el cast de los forecasters de una serie convierte toda la matriz a `object`: de un 11 a un 22 % más de `fit` y unos 260 MB más de pico (más de un 50 %). Manteniendo el DataFrame cuesta lo mismo que hoy y los modelos son idénticos (rejilla de CatBoost, `DNP2_CATBOOST_DF=1`: 64 de 72 iguales, y los 8 restantes solo cambian el texto del error con una `category` de texto).
 - `HistGradientBoostingRegressor` con `ordinal_category` y 600 series falla hoy y con el prototipo (más de 255 categorías): no es de este cambio.

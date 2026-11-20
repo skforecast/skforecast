@@ -2,26 +2,26 @@
 
 int 10,20,30 | categorical_features=None
   Recursive   : fit ok [ndarray float64; numeric splits]; predict ok
-  Direct      : fit ok [ndarray float64; numeric splits]; predict ok
-  DirectMV    : fit ok [ndarray float64; numeric splits]; predict ok
+  Direct      : fit ok [None; numeric splits]; predict ok
+  DirectMV    : fit ok [None; numeric splits]; predict ok
   MultiSeries : fit ok [DataFrame category,float64; categorical splits]; predict ok; warnings ['InputTypeWarning']
 
 int 10,20,30 | categorical_features=list omitting c
   Recursive   : fit ok [ndarray float64; categorical splits]; predict ok
-  Direct      : fit ok [ndarray float64; categorical splits]; predict ok
-  DirectMV    : fit ok [ndarray float64; categorical splits]; predict ok
+  Direct      : fit ok [None; categorical splits]; predict ok
+  DirectMV    : fit ok [None; categorical splits]; predict ok
   MultiSeries : fit ok [DataFrame category,float64; categorical splits]; predict ok; warnings ['InputTypeWarning']
 
 int 0,1,2 | categorical_features=None
   Recursive   : fit ok [ndarray float64; numeric splits]; predict ok
-  Direct      : fit ok [ndarray float64; numeric splits]; predict ok
-  DirectMV    : fit ok [ndarray float64; numeric splits]; predict ok
+  Direct      : fit ok [None; numeric splits]; predict ok
+  DirectMV    : fit ok [None; numeric splits]; predict ok
   MultiSeries : fit ok [DataFrame category,float64; categorical splits]; predict ok; warnings ['InputTypeWarning']
 
 int 0,1,2 | categorical_features=list omitting c
   Recursive   : fit ok [ndarray float64; categorical splits]; predict ok
-  Direct      : fit ok [ndarray float64; categorical splits]; predict ok
-  DirectMV    : fit ok [ndarray float64; categorical splits]; predict ok
+  Direct      : fit ok [None; categorical splits]; predict ok
+  DirectMV    : fit ok [None; categorical splits]; predict ok
   MultiSeries : fit ok [DataFrame category,float64; categorical splits]; predict ok; warnings ['InputTypeWarning']
 
 float 1.5,2.5,3.5 | categorical_features=None
@@ -32,8 +32,8 @@ float 1.5,2.5,3.5 | categorical_features=None
 
 float 1.5,2.5,3.5 | categorical_features=list omitting c
   Recursive   : fit ok [ndarray float64; categorical splits]; predict ok
-  Direct      : fit ok [ndarray float64; categorical splits]; predict ok
-  DirectMV    : fit ok [ndarray float64; categorical splits]; predict ok
+  Direct      : fit ok [None; categorical splits]; predict ok
+  DirectMV    : fit ok [None; categorical splits]; predict ok
   MultiSeries : fit ok [DataFrame category,float64; categorical splits]; predict ok; warnings ['InputTypeWarning']
 
 text | categorical_features=None
@@ -44,7 +44,7 @@ text | categorical_features=None
 
 text | categorical_features=list omitting c
   Recursive   : fit ValueError: could not convert string to float: 's'
-  Direct      : fit ValueError: could not convert string to float: 's'
+  Direct      : fit ValueError: could not convert string to float: 'w'
   DirectMV    : fit ValueError: could not convert string to float: 's'
   MultiSeries : fit ok [DataFrame category,float64; categorical splits]; predict ValueError: could not convert string to float: 'n'; warnings ['InputTypeWarning']
 [python 3.12.3, pandas 2.3.3, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/skforecast/skforecast]
@@ -52,26 +52,26 @@ text | categorical_features=list omitting c
 
 int 10,20,30 | categorical_features=None
   Recursive   : fit ok [ndarray float64; numeric splits]; predict ok
-  Direct      : fit ok [ndarray float64; numeric splits]; predict ok
-  DirectMV    : fit ok [ndarray float64; numeric splits]; predict ok
+  Direct      : fit ok [None; numeric splits]; predict ok
+  DirectMV    : fit ok [None; numeric splits]; predict ok
   MultiSeries : fit ok [DataFrame category,float64; categorical splits]; predict ok; warnings ['InputTypeWarning']
 
 int 10,20,30 | categorical_features=list omitting c
   Recursive   : fit ok [ndarray float64; categorical splits]; predict ok
-  Direct      : fit ok [ndarray float64; categorical splits]; predict ok
-  DirectMV    : fit ok [ndarray float64; categorical splits]; predict ok
+  Direct      : fit ok [None; categorical splits]; predict ok
+  DirectMV    : fit ok [None; categorical splits]; predict ok
   MultiSeries : fit ok [DataFrame category,float64; categorical splits]; predict ok; warnings ['InputTypeWarning']
 
 int 0,1,2 | categorical_features=None
   Recursive   : fit ok [ndarray float64; numeric splits]; predict ok
-  Direct      : fit ok [ndarray float64; numeric splits]; predict ok
-  DirectMV    : fit ok [ndarray float64; numeric splits]; predict ok
+  Direct      : fit ok [None; numeric splits]; predict ok
+  DirectMV    : fit ok [None; numeric splits]; predict ok
   MultiSeries : fit ok [DataFrame category,float64; categorical splits]; predict ok; warnings ['InputTypeWarning']
 
 int 0,1,2 | categorical_features=list omitting c
   Recursive   : fit ok [ndarray float64; categorical splits]; predict ok
-  Direct      : fit ok [ndarray float64; categorical splits]; predict ok
-  DirectMV    : fit ok [ndarray float64; categorical splits]; predict ok
+  Direct      : fit ok [None; categorical splits]; predict ok
+  DirectMV    : fit ok [None; categorical splits]; predict ok
   MultiSeries : fit ok [DataFrame category,float64; categorical splits]; predict ok; warnings ['InputTypeWarning']
 
 float 1.5,2.5,3.5 | categorical_features=None
@@ -82,8 +82,8 @@ float 1.5,2.5,3.5 | categorical_features=None
 
 float 1.5,2.5,3.5 | categorical_features=list omitting c
   Recursive   : fit ok [ndarray float64; categorical splits]; predict ok
-  Direct      : fit ok [ndarray float64; categorical splits]; predict ok
-  DirectMV    : fit ok [ndarray float64; categorical splits]; predict ok
+  Direct      : fit ok [None; categorical splits]; predict ok
+  DirectMV    : fit ok [None; categorical splits]; predict ok
   MultiSeries : fit ok [DataFrame category,float64; categorical splits]; predict ok; warnings ['InputTypeWarning']
 
 text | categorical_features=None
@@ -102,21 +102,49 @@ text | categorical_features=list omitting c
 
 int 10,20,30 | categorical_features=None
   Recursive   : fit ok [ndarray float64; numeric splits]; predict ok
-  Direct      : fit ok [ndarray float64; numeric splits]; predict ok
-  DirectMV    : fit ok [ndarray float64; numeric splits]; predict ok
+  Direct      : fit ok [None; numeric splits]; predict ok
+  DirectMV    : fit ok [None; numeric splits]; predict ok
   MultiSeries : fit ok [DataFrame category,float64; categorical splits]; predict ok; warnings ['InputTypeWarning']
 
 int 10,20,30 | categorical_features=list omitting c
   Recursive   : fit ok [ndarray float64; categorical splits]; predict ok
-  Direct      : fit ok [ndarray float64; categorical splits]; predict ok
-  DirectMV    : fit ok [ndarray float64; categorical splits]; predict ok
+  Direct      : fit ok [None; categorical splits]; predict ok
+  DirectMV    : fit ok [None; categorical splits]; predict ok
   MultiSeries : fit ok [DataFrame category,float64; categorical splits]; predict ok; warnings ['InputTypeWarning']
 
 int 0,1,2 | categorical_features=None
   Recursive   : fit ok [ndarray float64; numeric splits]; predict ok
-  Direct      : fit ok [ndarray float64; numeric splits]; predict ok
-  DirectMV    : fit ok [ndarray float64; numeric splits]; predict ok
+  Direct      : fit ok [None; numeric splits]; predict ok
+  DirectMV    : fit ok [None; numeric splits]; predict ok
   MultiSeries : fit ok [DataFrame category,float64; categorical splits]; predict ok; warnings ['InputTypeWarning']
 
 int 0,1,2 | categorical_features=list omitting c
   Recursive   : fit ok [ndarray float64; categorical splits]; predict ok
+  Direct      : fit ok [None; categorical splits]; predict ok
+  DirectMV    : fit ok [None; categorical splits]; predict ok
+  MultiSeries : fit ok [DataFrame category,float64; categorical splits]; predict ok; warnings ['InputTypeWarning']
+
+float 1.5,2.5,3.5 | categorical_features=None
+  Recursive   : fit TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more 
+  Direct      : fit TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more 
+  DirectMV    : fit TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more 
+  MultiSeries : fit TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more ; warnings ['InputTypeWarning']
+
+float 1.5,2.5,3.5 | categorical_features=list omitting c
+  Recursive   : fit ok [ndarray float64; categorical splits]; predict ok
+  Direct      : fit ok [None; categorical splits]; predict ok
+  DirectMV    : fit ok [None; categorical splits]; predict ok
+  MultiSeries : fit ok [DataFrame category,float64; categorical splits]; predict ok; warnings ['InputTypeWarning']
+
+text | categorical_features=None
+  Recursive   : fit TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more 
+  Direct      : fit TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more 
+  DirectMV    : fit TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more 
+  MultiSeries : fit TypeError: Categorical dtypes in exog must contain only integer values. See skforecast docs for more ; warnings ['InputTypeWarning']
+
+text | categorical_features=list omitting c
+  Recursive   : fit ValueError: could not convert string to float: 's'
+  Direct      : fit ValueError: could not convert string to float: 's'
+  DirectMV    : fit ValueError: could not convert string to float: 'w'
+  MultiSeries : fit ok [DataFrame category,float64; categorical splits]; predict ValueError: could not convert string to float: 'n'; warnings ['InputTypeWarning']
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/skforecast/skforecast]

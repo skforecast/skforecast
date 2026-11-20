@@ -4,6 +4,7 @@
 # Usage: TODAY=<0.28.x checkout> PROTO=<0.28.x + dnp2_proto.patch> \
 #        REAL_DATA_DIR=<dir of real_data.py> bash dnp2_run_perf.sh ENV OUT [SPECS]
 # ENV: p2, p3 (pandas 3 without pyarrow) or p3pa. SPECS: "case:estimator ...".
+# REPS (default 3): fits that are timed, after a warm-up one.
 # DNP2_CATBOOST_DF=1 measures the prototype variant that keeps a DataFrame
 # for CatBoost with categorical features.
 D=$(cd "$(dirname "$0")" && pwd)
