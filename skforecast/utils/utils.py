@@ -1613,10 +1613,33 @@ def check_predict_input(
     last_window_to_check = last_window
     if forecaster_name != 'ForecasterStats' and len(last_window) > window_size:
         last_window_to_check = last_window_to_check.iloc[-window_size:]
-    if forecaster_name == 'ForecasterRecursiveMultiSeries':
-        last_window_to_check = last_window_to_check[levels]
-    elif forecaster_name in ['ForecasterDirectMultiVariate', 'ForecasterRnn']:
-        last_window_to_check = last_window_to_check[series_names_in_]
+    if forecaster_name in [
+        'ForecasterRecursiveMultiSeries',
+        'ForecasterDirectMultiVariate',
+        'ForecasterRnn'
+    ]:
+        names_to_check = (
+            levels if forecaster_name == 'ForecasterRecursiveMultiSeries'
+            else series_names_in_
+        )
+        # NOTE: The check of missing values does not depend on the order of
+        # the columns, so they are not selected when the names to check are
+        # the columns of `last_window`. Duplicated names do not matter: the
+        # selection takes every column with a selected name, so with the same
+        # set of names it also checks all the columns. Only for names of type
+        # `str` or `int`, in both lists: with other types, Python and pandas
+        # can match names differently (a list of booleans selects rows, `None`
+        # in an object index raises in pandas 3), and the selection keeps
+        # raising its error. The lengths are compared first.
+        check_all_columns = (
+            isinstance(names_to_check, list)
+            and len(names_to_check) == len(last_window_cols)
+            and set(map(type, names_to_check)) <= {str, int}
+            and set(map(type, last_window_cols)) <= {str, int}
+            and set(names_to_check) == set(last_window_cols)
+        )
+        if not check_all_columns:
+            last_window_to_check = last_window_to_check[names_to_check]
     # NOTE: `pd.isna` on the numpy values is faster than `DataFrame.isna` for
     # the few rows of the window. The rows are selected before `to_numpy`
     # because it copies the data and, with extension dtypes (nullable,

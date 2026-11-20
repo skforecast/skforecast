@@ -358,3 +358,39 @@ El prototipo antiguo (§6) daba 18 / 13 / 11 % en `predict` con exog ancha y 20 
 **Identidad** frente a la base (`cb03fbe96`), cinco baterías: 0 diferencias en los tres entornos (ms 4591 / 4510 / 4510 casos, trims 2911, dtypes 312, exog 424 / 424 / 396, labels 7866 / 8106 / 3110; p2 / p3 con pa / p3 sin pa). Casos límite de la exog ancha (frente a `aae5b99be`, 16 030 / 16 030 / 15 038 llamadas): 0 diferencias, también en el diccionario de arrays de `_create_predict_inputs`; la exog del usuario no cambia.
 
 Pendiente de la verificación final de la rama: los tiempos en pandas 2 y en pandas 3 sin `pyarrow`.
+
+## 16. Cambio 3: no seleccionar las columnas de la ventana en `check_predict_input` (2026-11-20)
+
+Prototipo sobre una copia de `c787017a9`, medido frente a esa misma copia sin el cambio (`MS_BASE_TREE`). Protocolo ligero: solo pandas 3.1.1 con `pyarrow` (numpy 2.5.4, Python 3.13.18), núcleo 12, 2 rondas en cada orden de los árboles. Casos: `predict` sin exog, con exog ancha y en diccionario (un objeto por serie), con ventana dada y guardada; backtesting por fold sin exog y con exog en diccionario; el adverso `levels=5` (5 niveles con una ventana de 20 o 100 columnas, que no toma el camino rápido; el de 20 series es nuevo en `bench_ms.py`) y un control que no llama a `check_predict_input` (`create_train_X_y`); expresiones regulares `C3` y `C3MV` en `$MS_WORK/cambio3_regex.sh` (fuera del repositorio). `ForecasterDirectMultiVariate` con `bench_mv.py`, en el mismo protocolo.
+
+**Coste aislado** (`timeit`, núcleo 12, mínimo de 7 tandas): la selección y la comprobación cuestan 187 / 207 µs en p3 con pa y 134 / 149 µs en p2 (20 / 100 series); la comprobación de la ventana entera, 3 µs; la condición implementada, de 1,8 a 7 µs. `check_predict_input` completa, multiserie sin exog: 229 → 21 µs con 20 series y 265 → 37 µs con 100.
+
+**Tanda repetida.** En la primera, el control se movía de −9,8 a +5,3 % entre los dos órdenes; los casos afectados daban lo mismo que en la repetición, cuyo control quedó en +1,8 / +1,0 %. Se dan las cifras de la repetición. El adverso perdía hasta −3,6 % cuando la base se medía primero (en las dos tandas) y nada con el orden invertido; medida aparte, `check_predict_input` con esas entradas tarda lo mismo en los dos árboles (de 329 a 354 µs, diferencias de 0 a 8 µs sin signo estable, 3 rondas alternas): es el orden de los árboles, el camino lento solo añade un `isinstance` y una comparación de longitudes.
+
+| Caso (p3 con pa, multiserie) | Base primero | Prototipo primero | Media |
+|---|---|---|---|
+| `predict` sin exog, 20 / 100 series (676 → 443 y 856 → 600 µs) | 34,5 / 29,9 | 35,3 / 29,0 | 34,9 / 29,5 |
+| Ídem, ventana guardada | 21,0 / 14,0 | 23,0 / 14,1 | 22,0 / 14,1 |
+| `predict`, exog ancha | 18,1 / 16,5 | 21,5 / 20,2 | 19,8 / 18,4 |
+| Ídem, ventana guardada | 15,8 / 10,6 | 17,3 / 10,9 | 16,6 / 10,8 |
+| `predict`, exog en diccionario (un objeto por serie) | 9,5 / 3,0 | 12,5 / 3,5 | 11,0 / 3,3 |
+| Backtesting por fold, sin exog | 7,8 / 3,0 | 10,0 / 3,6 | 8,9 / 3,3 |
+| Backtesting por fold, exog en diccionario | 3,3 / −0,9 | 5,9 / 3,8 | 4,6 / 1,5 |
+| Adverso: 5 niveles, ventana ancha, 20 / 100 series | −3,6 / −1,6 | 0,0 / 0,6 | −1,8 / −0,5 |
+| Control: `create_train_X_y`, 20 series | 1,8 | 1,0 | 1,4 |
+
+| Caso (p3 con pa, `ForecasterDirectMultiVariate`) | Base primero | Prototipo primero | Media |
+|---|---|---|---|
+| `predict` sin exog, 20 / 100 series (1312 → 1084 y 2924 → 2645 µs) | 17,4 / 9,6 | 17,8 / 6,8 | 17,6 / 8,2 |
+| Ídem, ventana guardada | 17,5 / 8,2 | 16,3 / 6,5 | 16,9 / 7,4 |
+| `predict`, exog ancha | 14,7 / 6,7 | 14,5 / 4,9 | 14,6 / 5,8 |
+| Ídem, ventana guardada | 14,3 / 8,3 | 13,0 / 6,3 | 13,7 / 7,3 |
+| Backtesting por fold, exog ancha | 11,7 / 5,1 | 8,2 / 4,6 | 10,0 / 4,9 |
+
+Los tiempos se midieron con una versión que además exigía nombres sin duplicados; quitar esa guarda (no hace falta, ver `SEGUIMIENTO.md`) no añade trabajo, y no se repitieron. El plan (§6, tabla del bloque A) daba 21 / 19 / 19 % en `predict` sin exog con 20 series; sobre el árbol actual, con el coste fijo ya recortado por los cambios 2, 4 a 8 y 4b, la selección pesa más y la ganancia es mayor.
+
+**Sonda de etiquetas** (`scripts/probe_labels3.py`; 27 388 / 27 388 / 25 392 combinaciones en p2 / p3 con pa / p3 sin pa que pasan las comprobaciones anteriores de `check_predict_input`): la condición implementada, 0 diferencias; con la guarda de duplicados del plan, también 0, pero toma la ventana entera en menos casos (900 frente a 2276 en p2); el conjunto del plan sin guarda de tipos, 323 / 611 / 611 diferencias (booleanos y enteros; `None` y `pd.NA` en pandas 3); la lista ordenada del cambio 2, 400 / 376 / 376 (además, `list ==` lanza `TypeError` con `pd.NA`).
+
+**Identidad** frente a la base (`cb03fbe96`), cinco baterías: 0 diferencias en los tres entornos (ms 4591 / 4510 / 4510 casos, trims 2911, dtypes 312, exog 424 / 424 / 396, labels 7866 / 8106 / 3110; p2 / p3 con pa / p3 sin pa). Casos límite por la API pública (`scripts/edges3.py`, frente a `c787017a9`, 4980 / 4959 / 4959 llamadas de los tres forecasters): 0 diferencias; la ventana del usuario no cambia.
+
+Pendiente de la verificación final de la rama: los tiempos en pandas 2 y en pandas 3 sin `pyarrow`.

@@ -624,12 +624,17 @@ def test_check_predict_input_MissingValuesWarning_when_last_window_has_missing_v
      ('ForecasterRecursiveMultiSeries', 
       pd.DataFrame({'l1': [pd.NA, 2, 3, 4, 5, 6], 'l2': [1, 2, 3, 4, 5, pd.NA]}, dtype='Float64'), 
       ['l1'], ['l1', 'l2']),
-     ('ForecasterDirectMultiVariate', 
-      pd.DataFrame({'l1': [None, 2, 3, 4, 5, 6], 'l2': [1, 2, 3, 4, 5, None]}, dtype='double[pyarrow]'), 
-      None, ['l1'])], 
-    ids = ['ForecasterRecursive', 'ForecasterRecursiveMultiSeries', 'ForecasterDirectMultiVariate', 
-           'ForecasterRnn', 'ForecasterRecursive-Float64', 'ForecasterRecursiveMultiSeries-Float64', 
-           'ForecasterDirectMultiVariate-pyarrow'])
+     ('ForecasterDirectMultiVariate',
+      pd.DataFrame({'l1': [None, 2, 3, 4, 5, 6], 'l2': [1, 2, 3, 4, 5, None]}, dtype='double[pyarrow]'),
+      None, ['l1']),
+     ('ForecasterRecursiveMultiSeries',
+      pd.DataFrame({'l1': [1, 2, 3, 4, 5, 6], 'l2': [1, 2, 3, 4, 5, np.nan]}), ['l1', 'l1'], ['l1', 'l2']),
+     ('ForecasterRecursiveMultiSeries',
+      pd.DataFrame({'l1': [1, 2, 3, 4, 5, 6], 'l2': [np.nan, 2, 3, 4, 5, 6]}), ['l2', 'l1'], ['l1', 'l2'])],
+    ids = ['ForecasterRecursive', 'ForecasterRecursiveMultiSeries', 'ForecasterDirectMultiVariate',
+           'ForecasterRnn', 'ForecasterRecursive-Float64', 'ForecasterRecursiveMultiSeries-Float64',
+           'ForecasterDirectMultiVariate-pyarrow', 'ForecasterRecursiveMultiSeries-duplicated-level',
+           'ForecasterRecursiveMultiSeries-all-levels-other-order'])
 def test_check_predict_input_no_MissingValuesWarning_when_missing_values_not_used_to_predict(
     forecaster_name, last_window, levels, series_names_in_
 ):
@@ -670,12 +675,22 @@ def test_check_predict_input_no_MissingValuesWarning_when_missing_values_not_use
      ('ForecasterRecursiveMultiSeries', 
       pd.DataFrame({'l1': [1, 2, 3, 4, 5, 6], 'l2': [1, pd.NA, 3, 4, 5, 6]}, dtype='Float64'), 
       ['l2'], ['l1', 'l2']),
-     ('ForecasterDirectMultiVariate', 
-      pd.DataFrame({'l1': [1, 2, 3, 4, 5, 6], 'l2': [1, None, 3, 4, 5, 6]}, dtype='double[pyarrow]'), 
-      None, ['l1', 'l2'])], 
-    ids = ['ForecasterStats', 'ForecasterRecursiveMultiSeries', 'ForecasterDirectMultiVariate', 
-           'ForecasterRnn', 'ForecasterStats-Float64', 'ForecasterRecursiveMultiSeries-Float64', 
-           'ForecasterDirectMultiVariate-pyarrow'])
+     ('ForecasterDirectMultiVariate',
+      pd.DataFrame({'l1': [1, 2, 3, 4, 5, 6], 'l2': [1, None, 3, 4, 5, 6]}, dtype='double[pyarrow]'),
+      None, ['l1', 'l2']),
+     ('ForecasterRecursiveMultiSeries',
+      pd.DataFrame({'l1': [1, 2, 3, 4, 5, np.nan], 'l2': [1, 2, 3, 4, 5, 6]}), ['l2', 'l1'], ['l1', 'l2']),
+     ('ForecasterRecursiveMultiSeries',
+      pd.DataFrame({0: [1, 2, 3, 4, 5, 6], 1: [1, 2, 3, 4, 5, np.nan]}), [1, 0], [0, 1]),
+     ('ForecasterDirectMultiVariate',
+      pd.DataFrame({'l1': [1, 2, 3, 4, 5, np.nan], 'l2': [1, 2, 3, 4, 5, 6]}), None, ['l2', 'l1']),
+     ('ForecasterRnn',
+      pd.DataFrame({'l1': [1, 2, 3, 4, 5, 6], 'l2': [1, 2, 3, 4, 5, np.nan]}), ['l1'], ['l2', 'l1'])],
+    ids = ['ForecasterStats', 'ForecasterRecursiveMultiSeries', 'ForecasterDirectMultiVariate',
+           'ForecasterRnn', 'ForecasterStats-Float64', 'ForecasterRecursiveMultiSeries-Float64',
+           'ForecasterDirectMultiVariate-pyarrow', 'ForecasterRecursiveMultiSeries-other-order',
+           'ForecasterRecursiveMultiSeries-int-names', 'ForecasterDirectMultiVariate-other-order',
+           'ForecasterRnn-other-order'])
 def test_check_predict_input_MissingValuesWarning_when_missing_values_used_to_predict(
     forecaster_name, last_window, levels, series_names_in_
 ):
@@ -704,7 +719,51 @@ def test_check_predict_input_MissingValuesWarning_when_missing_values_used_to_pr
         )
 
 
-@pytest.mark.parametrize("values", 
+@pytest.mark.parametrize("forecaster_name, last_window, levels, series_names_in_, error, err_msg",
+    [('ForecasterRecursiveMultiSeries',
+      pd.DataFrame({0: [1, 2, 3, 4, 5, 6], 1: [1, 2, 3, 4, 5, 6]}), [False, True], [0, 1],
+      ValueError, 'Item wrong length'),
+     ('ForecasterRecursiveMultiSeries',
+      pd.DataFrame({True: [1, 2, 3, 4, 5, 6], False: [1, 2, 3, 4, 5, 6]}), [1, 0], [True, False],
+      KeyError, 'None of'),
+     ('ForecasterRecursiveMultiSeries',
+      pd.DataFrame({'a': [1, 2, 3, 4, 5, 6], 'b': [1, 2, 3, 4, 5, 6]}), 'ab', ['a', 'b'],
+      KeyError, 'ab'),
+     ('ForecasterDirectMultiVariate',
+      pd.DataFrame({0: [1, 2, 3, 4, 5, 6], 1: [1, 2, 3, 4, 5, 6]}), None, [False, True],
+      ValueError, 'Item wrong length'),
+     ('ForecasterRnn',
+      pd.DataFrame({0: [1, 2, 3, 4, 5, 6], 1: [1, 2, 3, 4, 5, 6]}), [0], [False, True],
+      ValueError, 'Item wrong length')],
+    ids = ['MultiSeries-bool-levels', 'MultiSeries-bool-columns', 'MultiSeries-str-levels',
+           'DirectMultiVariate-bool-names', 'Rnn-bool-names'])
+def test_check_predict_input_pandas_error_when_last_window_columns_selected_by_pandas_rules(
+    forecaster_name, last_window, levels, series_names_in_, error, err_msg
+):
+    """
+    Test that the columns of `last_window` to check for missing values are
+    still selected (and the pandas error raised) when the names are equal for
+    Python but pandas does not match them as column names: a list of booleans
+    selects rows, integers do not match boolean columns, and a string is a
+    single column name.
+    """
+    with pytest.raises(error, match = err_msg):
+        check_predict_input(
+            forecaster_name   = forecaster_name,
+            steps             = 2,
+            is_fitted         = True,
+            exog_in_          = False,
+            index_type_       = pd.RangeIndex,
+            index_freq_       = 1,
+            window_size       = 5,
+            last_window       = last_window,
+            levels            = levels,
+            levels_forecaster = levels,
+            series_names_in_  = series_names_in_
+        )
+
+
+@pytest.mark.parametrize("values",
     [pd.Series([1., np.nan, 3., 4., 5.]),
      pd.Series([1., pd.NA, 3., 4., 5.], dtype='Float64'),
      pd.Series([1., None, 3., 4., 5.], dtype='double[pyarrow]'),

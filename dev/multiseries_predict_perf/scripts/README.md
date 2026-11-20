@@ -33,6 +33,8 @@ Una quinta, `identity_labels.py` (unos 3500 casos, varios minutos), pasa una exo
 
 `probe_labels4b.py` (de 10 a 15 minutos por entorno; los tres pueden ir a la vez, no son tiempos; no importa skforecast) es la sonda del cambio 4b: compara, errores incluidos, la exog de un nivel que devuelve el camino nuevo (índice `equals` al de las predicciones y columnas `identical`: copia superficial con el índice de las predicciones y las columnas del entrenamiento) con la del código del cambio 4 y con un `reindex`, con nombres y tipos de columnas como los de `probe_labels7.py` e índices del usuario con nombre, sin `freq`, con otra `freq` igual, `object`, otra unidad, zona horaria o tipo, más largos, más cortos o desplazados; también que el objeto del usuario no cambia. Como en el 7, ni la batería `labels` ni los tests ven una diferencia de etiquetas (no llega a las predicciones): fue esta sonda la que encontró que hay que poner también las columnas del entrenamiento (`None` y NaN son `identical` en pandas 2). `edges4b.py` pasa los casos límite del 4b por la API pública (`predict`, `predict_interval` y backtesting) en el árbol de `PYTHONPATH`; `edges4b_compare.py` compara dos árboles.
 
+`probe_labels3.py` (unos minutos por entorno; no importa skforecast) es la sonda del cambio 3: con columnas de la ventana y nombres a comprobar de muchos tipos (texto en índices `object`, `category`, `string` y `str`, enteros, float, booleanos, mezclados, `None`, NaN, `pd.NA`, NaT, fechas con y sin zona, tuplas, `numpy.str_`, columnas duplicadas) y listas de nombres en otro orden, con sustitutos iguales para Python, duplicados, subconjuntos o booleanos, compara el resultado de seleccionar las columnas (`df[names]`, errores incluidos) con el de comprobar la ventana entera cuando cada condición candidata lo permite. Fue la que mostró que el conjunto del plan no basta (booleanos frente a enteros, `None` y `pd.NA` en pandas 3) y que la guarda de duplicados sobra. `edges3.py` pasa los casos límite del 3 por la API pública del multiserie (`predict`, `predict_interval`, backtesting), de `ForecasterDirectMultiVariate` y de `ForecasterRnn` (necesita keras) en el árbol de `PYTHONPATH`, y compara dos árboles con `--compare`; hay que fijar `PYTHONHASHSEED`.
+
 Desde el cambio 4, cada cambio pasa las cinco:
 
 ```bash
@@ -51,6 +53,8 @@ python agg_ms.py "$MS_WORK/out/<etiqueta>"           # tres entornos, coste fijo
 ```
 
 Los casos con `exogdt=mixed` usan una exog con una columna float, una `int` y una `category` de enteros (variables de calendario), en lugar de tres float; están en `@core` (20 y 100 series) y en `@scale` (600 y 1000).
+
+El adverso `levels=5` (predecir 5 niveles con una ventana de todas las series, que no toma los caminos rápidos de los cambios 2 y 3) está con 20, 100 y 1000 series; el de 20 se añadió con el cambio 3 y no está en `@adverse`.
 
 Los casos `missing=1|lgbm` (20 y 100 series, fuera de los conjuntos) pasan un diccionario sin la exog de la última serie, cuyos predictores de exog quedan NaN (por eso LightGBM): es el adverso del cambio 7, el único caso en el que se crea la plantilla vacía de exog.
 

@@ -228,7 +228,7 @@ for n in (20, 100, 1000):
 
 # Cases where a fast path does not apply and only its check is paid: they must
 # not get slower.
-for n in (100, 1000):
+for n in (20, 100, 1000):
     CASES[f"predict|n={n}|exog=none|steps=1|levels=5"] = (
         lambda n=n: predict_case(n, "none", n_levels=5)
     )
