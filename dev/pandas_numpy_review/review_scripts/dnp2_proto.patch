@@ -1,0 +1,371 @@
+diff --git a/skforecast/model_selection/_utils.py b/skforecast/model_selection/_utils.py
+index ad8d5ea..2827ed5 100644
+--- a/skforecast/model_selection/_utils.py
++++ b/skforecast/model_selection/_utils.py
+@@ -47,6 +47,8 @@ from ..utils import (
+     cast_catboost_categorical_columns_dataframe,
+     _copy_rows_to_check,
+     _check_in_place_fit,
++    cast_catboost_categorical_columns,
++    train_matrix_to_numpy,
+     align_series_and_exog_multiseries,
+     _series_too_short_multiseries,
+     estimator_has_native_nan_support,
+@@ -2971,14 +2973,14 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
+     # and reused by every candidate of the search. The cast below only copies
+     # them for CatBoost, so it is checked that the estimator does not modify
+     # X_train in place, which would change the metrics of the next candidates.
+-    feature_names = X_train.columns.to_list()
+-    X_train = cast_catboost_categorical_columns_dataframe(
+-        X=X_train, fit_kwargs=fit_kwargs,
+-        estimator=forecaster.estimator, feature_names=feature_names,
++    X_test_index = X_test.index
++    X_train = cast_catboost_categorical_columns(
++        X=train_matrix_to_numpy(X_train), fit_kwargs=fit_kwargs,
++        estimator=forecaster.estimator,
+     )
+-    X_test = cast_catboost_categorical_columns_dataframe(
+-        X=X_test, fit_kwargs=fit_kwargs,
+-        estimator=forecaster.estimator, feature_names=feature_names,
++    X_test = cast_catboost_categorical_columns(
++        X=train_matrix_to_numpy(X_test), fit_kwargs=fit_kwargs,
++        estimator=forecaster.estimator,
+     )
+ 
+     X_train_rows = _copy_rows_to_check(X_train)
+@@ -3178,7 +3180,7 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
+             .pivot(columns="_level_skforecast", values="y_pred")
+             .rename_axis(columns=None, index=None)
+         )
+-        if isinstance(X_test.index, pd.DatetimeIndex):
++        if isinstance(X_test_index, pd.DatetimeIndex):
+             predictions = predictions.reindex(
+                 _date_range_from_index(
+                     index = predictions.index,
+@@ -3190,7 +3192,7 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
+         else:
+             predictions = predictions.reindex(
+                 pd.RangeIndex(
+-                    start=min(X_test.index), stop=max(X_test.index) + 1, step=freq
++                    start=min(X_test_index), stop=max(X_test_index) + 1, step=freq
+                 )
+             )
+     else:
+diff --git a/skforecast/recursive/_forecaster_recursive_multiseries.py b/skforecast/recursive/_forecaster_recursive_multiseries.py
+index 344ae88..847ef02 100644
+--- a/skforecast/recursive/_forecaster_recursive_multiseries.py
++++ b/skforecast/recursive/_forecaster_recursive_multiseries.py
+@@ -25,6 +25,7 @@ from ..base import ForecasterBase
+ from ..exceptions import (
+     DataTransformationWarning,
+     IgnoredArgumentWarning,
++    DataTypeWarning,
+     MissingExogWarning,
+     MissingValuesWarning,
+     ResidualsUsageWarning,
+@@ -56,6 +57,11 @@ from ..utils import (
+     check_interval,
+     configure_estimator_categorical_features,
+     cast_catboost_categorical_columns_dataframe,
++    cast_catboost_categorical_columns,
++    add_estimator_categorical_index,
++    train_matrix_to_numpy,
++    train_matrix_for_catboost,
++    resolve_categorical_feature_names,
+     _get_catboost_cat_feature_indices,
+     _copy_rows_to_check,
+     _check_in_place_fit,
+@@ -1643,6 +1649,22 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
+                 if self.categorical_features is None:
+                     check_exog_dtypes(X_train_exog, call_check_exog=False)
+ 
++                # PROTOTYPE (D-NP2)
++                not_handled = [
++                    col for col, dtype in X_train_exog.dtypes.items()
++                    if isinstance(dtype, pd.CategoricalDtype)
++                    and col not in (categorical_features_names_in_ or [])
++                ]
++                if not_handled:
++                    warnings.warn(
++                        f"Columns {not_handled} of `exog` have a `category` dtype "
++                        f"but are not included in `categorical_features`. Their "
++                        f"values are passed to the estimator as numeric. To treat "
++                        f"them as categorical, include them in "
++                        f"`categorical_features` or use `'auto'`.",
++                        DataTypeWarning
++                    )
++
+                 X_train_exog_names_out_ = X_train_exog.columns.to_list()
+                 exog_dtypes_out_ = get_exog_dtypes(exog=X_train_exog)
+ 
+@@ -2054,7 +2076,17 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
+                          )
+         else:
+             fit_kwargs = {**self.fit_kwargs}
++            if self.encoding == 'ordinal_category':
++                fit_kwargs = add_estimator_categorical_index(
++                    estimator  = self.estimator,
++                    cat_index  = X_train_features_names_out_.index('_level_skforecast'),
++                    n_features = len(X_train_features_names_out_),
++                    fit_kwargs = fit_kwargs
++                )
+ 
++        fit_kwargs = resolve_categorical_feature_names(
++            self.estimator, X_train_features_names_out_, fit_kwargs
++        )
+         self.encoding_mapping_ = encoding_mapping_
+ 
+         return (
+@@ -2462,13 +2494,29 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
+                          )
+         else:
+             fit_kwargs = {**self.fit_kwargs}
++            if self.encoding == 'ordinal_category':
++                fit_kwargs = add_estimator_categorical_index(
++                    estimator  = self.estimator,
++                    cat_index  = X_train_features_names_out_.index('_level_skforecast'),
++                    n_features = len(X_train_features_names_out_),
++                    fit_kwargs = fit_kwargs
++                )
+ 
+-        X_train_estimator = cast_catboost_categorical_columns_dataframe(
+-            X              = X_train_estimator,
+-            fit_kwargs     = fit_kwargs,
+-            estimator      = self.estimator,
+-            feature_names  = X_train_features_names_out_,
++        fit_kwargs = resolve_categorical_feature_names(
++            self.estimator, X_train_features_names_out_, fit_kwargs
++        )
++        X_catboost = train_matrix_for_catboost(
++            X_train_estimator, fit_kwargs, self.estimator, X_train_features_names_out_
+         )
++        if X_catboost is not None:
++            X_train_estimator = X_catboost
++        else:
++            X_train_estimator = train_matrix_to_numpy(X_train_estimator)
++            X_train_estimator = cast_catboost_categorical_columns(
++                X          = X_train_estimator,
++                fit_kwargs = fit_kwargs,
++                estimator  = self.estimator,
++            )
+ 
+         # NOTE: The in-sample residuals are calculated after training with the
+         # same matrix the estimator receives, which is not copied, so it is
+@@ -4616,12 +4664,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
+         # NOTE: Same cast as in `fit`, with the categorical features of the
+         # fitted estimator.
+         cat_indices = _get_catboost_cat_feature_indices(self.estimator)
++        X_train_estimator = train_matrix_to_numpy(X_train_estimator)
+         if len(cat_indices) > 0:
+-            X_train_estimator = cast_catboost_categorical_columns_dataframe(
+-                X             = X_train_estimator,
+-                fit_kwargs    = {'cat_features': cat_indices},
+-                estimator     = self.estimator,
+-                feature_names = X_train_features_names_out_,
++            X_train_estimator = cast_catboost_categorical_columns(
++                X          = X_train_estimator,
++                fit_kwargs = {'cat_features': cat_indices},
++                estimator  = self.estimator,
+             )
+ 
+         y_pred = self.estimator.predict(X_train_estimator)
+diff --git a/skforecast/utils/__init__.py b/skforecast/utils/__init__.py
+index 2a916ac..435b5e8 100644
+--- a/skforecast/utils/__init__.py
++++ b/skforecast/utils/__init__.py
+@@ -4,6 +4,10 @@ from .utils import (
+     _build_predict_function,
+     _check_differentiation_last_values,
+     _check_in_place_fit,
++    add_estimator_categorical_index,
++    train_matrix_to_numpy,
++    train_matrix_for_catboost,
++    resolve_categorical_feature_names,
+     _copy_rows_to_check,
+     _date_range_from_index,
+     _filter_nan_train_X_y,
+diff --git a/skforecast/utils/utils.py b/skforecast/utils/utils.py
+index bb59df1..4ca7639 100644
+--- a/skforecast/utils/utils.py
++++ b/skforecast/utils/utils.py
+@@ -731,6 +731,141 @@ def configure_estimator_categorical_features(
+     return fit_kwargs
+ 
+ 
++def add_estimator_categorical_index(
++    estimator: object,
++    cat_index: int,
++    n_features: int,
++    fit_kwargs: dict[str, Any]
++) -> dict[str, object]:
++    """
++    PROTOTYPE (D-NP2). Add the column `cat_index` to the categorical features
++    the user has configured on the estimator (by index), without removing
++    them. Used for the level column of `encoding='ordinal_category'` when
++    `categorical_features` is `None`.
++    """
++
++    target = estimator[-1] if isinstance(estimator, Pipeline) else estimator
++    name = type(target).__name__
++    module = type(target).__module__.split('.')[0]
++
++    if module == 'lightgbm':
++        prev = fit_kwargs.get('categorical_feature', 'auto')
++        prev = [] if isinstance(prev, str) else list(prev)
++        fit_kwargs['categorical_feature'] = sorted(set(prev) | {cat_index})
++    elif module == 'catboost':
++        if target.get_params().get('cat_features') is not None:
++            prev = list(target.get_params()['cat_features'])
++            target.set_params(cat_features=sorted(set(prev) | {cat_index}))
++        else:
++            prev = list(fit_kwargs.get('cat_features', []))
++            fit_kwargs['cat_features'] = sorted(set(prev) | {cat_index})
++    elif module == 'xgboost':
++        prev = target.get_params().get('feature_types')
++        feature_types = list(prev) if prev is not None else ['q'] * n_features
++        feature_types[cat_index] = 'c'
++        target.set_params(feature_types=feature_types, enable_categorical=True)
++    elif module == 'sklearn' and name in (
++        'HistGradientBoostingRegressor', 'HistGradientBoostingClassifier'
++    ):
++        prev = target.get_params().get('categorical_features')
++        if prev is None or isinstance(prev, str):
++            prev = []
++        prev = np.asarray(prev)
++        if prev.dtype == bool:
++            prev = np.flatnonzero(prev)
++        target.set_params(
++            categorical_features=sorted(set(prev.tolist()) | {cat_index})
++        )
++
++    return fit_kwargs
++
++
++def resolve_categorical_feature_names(
++    estimator: object,
++    feature_names: list[str],
++    fit_kwargs: dict[str, Any]
++) -> dict[str, object]:
++    """
++    PROTOTYPE (D-NP2). Translate to positions the categorical features the
++    user has set by column name on the estimator or in `fit_kwargs`, since the
++    estimator receives a numpy array.
++    """
++
++    target = estimator[-1] if isinstance(estimator, Pipeline) else estimator
++    name = type(target).__name__
++    module = type(target).__module__.split('.')[0]
++
++    def to_index(values):
++        return [feature_names.index(v) if isinstance(v, str) else v for v in values]
++
++    key = {'lightgbm': 'categorical_feature', 'catboost': 'cat_features'}.get(module)
++    if key is not None:
++        values = fit_kwargs.get(key)
++        if isinstance(values, (list, tuple)) and any(isinstance(v, str) for v in values):
++            fit_kwargs[key] = to_index(values)
++    elif module == 'sklearn' and name in (
++        'HistGradientBoostingRegressor', 'HistGradientBoostingClassifier'
++    ):
++        values = target.get_params().get('categorical_features')
++        if isinstance(values, (list, tuple)) and any(isinstance(v, str) for v in values):
++            target.set_params(categorical_features=to_index(values))
++
++    return fit_kwargs
++
++
++def train_matrix_for_catboost(
++    X: pd.DataFrame,
++    fit_kwargs: dict[str, Any],
++    estimator: object,
++    feature_names: list[str]
++) -> pd.DataFrame | None:
++    """
++    PROTOTYPE (D-NP2), variant for CatBoost with categorical features: keep
++    the DataFrame (an `object` array of the whole matrix is avoided), with the
++    values, not the codes, of the `category` columns. Returns None when it
++    does not apply.
++    """
++
++    target = estimator[-1] if isinstance(estimator, Pipeline) else estimator
++    if (
++        os.environ.get('DNP2_CATBOOST_DF') != '1'
++        or 'cat_features' not in fit_kwargs
++        or type(target).__module__.split('.')[0] != 'catboost'
++    ):
++        return None
++    cat_cols = [
++        col for col, dtype in X.dtypes.items() if isinstance(dtype, pd.CategoricalDtype)
++    ]
++    if cat_cols:
++        X = X.copy(deep=False)
++        for col in cat_cols:
++            X[col] = X[col].astype(float)
++    return cast_catboost_categorical_columns_dataframe(
++        X=X, fit_kwargs=fit_kwargs, estimator=estimator, feature_names=feature_names
++    )
++
++
++def train_matrix_to_numpy(X: pd.DataFrame) -> np.ndarray:
++    """
++    PROTOTYPE (D-NP2). Training matrix of the multi-series forecaster as the
++    float array the estimator receives.
++    """
++
++    try:
++        return X.to_numpy(dtype=float)
++    except (ValueError, TypeError) as e:
++        not_numeric = [
++            col for col, dtype in X.dtypes.items()
++            if isinstance(dtype, pd.CategoricalDtype)
++            and not pd.api.types.is_numeric_dtype(dtype.categories.dtype)
++        ]
++        raise TypeError(
++            f"Columns {not_numeric} have a `category` dtype with non-numeric "
++            f"values and are not included in `categorical_features`. Include "
++            f"them, or use `categorical_features='auto'`."
++        ) from e
++
++
+ def cast_catboost_categorical_columns(
+     X: np.ndarray,
+     fit_kwargs: dict[str, Any],
+@@ -866,6 +1001,8 @@ def _copy_rows_to_check(
+     """
+ 
+     rows_to_check = np.linspace(0, len(X) - 1, num=min(len(X), 100), dtype=int)
++    if isinstance(X, np.ndarray):
++        return X[rows_to_check].copy()
+     X_rows = X.iloc[rows_to_check].copy()
+ 
+     return X_rows
+@@ -903,11 +1040,24 @@ def _check_in_place_fit(
+ 
+     # Same positions as in `_copy_rows_to_check`.
+     rows_to_check = np.linspace(0, len(X) - 1, num=len(X_rows), dtype=int)
+-    X_rows_after = X.iloc[rows_to_check]
+-    if (
+-        X_rows_after.shape != X_rows.shape
+-        or not X_rows_after.mask(X_rows.isna().to_numpy()).equals(X_rows)
+-    ):
++    if isinstance(X, np.ndarray):
++        X_rows_after = X[rows_to_check]
++        modified = X_rows_after.shape != X_rows.shape
++        if not modified:
++            if X_rows.dtype == object:
++                modified = not pd.DataFrame(X_rows_after).mask(
++                    pd.isna(X_rows)
++                ).equals(pd.DataFrame(X_rows))
++            else:
++                not_nan = ~np.isnan(X_rows)
++                modified = not np.array_equal(X_rows_after[not_nan], X_rows[not_nan])
++    else:
++        X_rows_after = X.iloc[rows_to_check]
++        modified = (
++            X_rows_after.shape != X_rows.shape
++            or not X_rows_after.mask(X_rows.isna().to_numpy()).equals(X_rows)
++        )
++    if modified:
+         raise ValueError(
+             "The estimator has modified the training matrix in place during "
+             "`fit`. The matrix is used again after training, to calculate the "
