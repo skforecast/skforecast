@@ -210,3 +210,72 @@ def test_backtesting_forecaster_multiseries_ForecasterRnn_starts_from_initial_we
         predictions.append(preds)
 
     pd.testing.assert_frame_equal(predictions[0], predictions[1])
+
+
+@pytest.mark.parametrize(
+    "use_binned_residuals, expected_mode",
+    [(True, "binned"), (False, "no_binned")],
+    ids=["use_binned_residuals_True", "use_binned_residuals_False"]
+)
+def test_backtesting_forecaster_multiseries_ForecasterRnn_out_sample_residuals_keeps_in_sample_binning(
+    use_binned_residuals, expected_mode, monkeypatch
+):
+    """
+    Test that the fits of backtesting_forecaster_multiseries with ForecasterRnn,
+    refit=True and out-of-sample residuals still predict over the training data
+    to bin the in-sample residuals, unlike the other forecasters. The prediction
+    of keras advances the global random generator of the backend, so skipping
+    it would change the weights learned in the next fits. There are 3 folds, so
+    3 fits, and the residuals of each of the 2 levels are binned in each fit.
+    """
+    levels = ["1", "2"]
+    forecaster = ForecasterRnn(
+        estimator  = model,
+        levels     = levels,
+        lags       = 3,
+        fit_kwargs = {"epochs": 1, "verbose": 0}
+    )
+    forecaster.fit(series=series.iloc[:38])
+
+    rng = np.random.default_rng(42)
+    y_pred_residuals = {level: rng.uniform(0, 50, size=100) for level in levels}
+    y_true_residuals = {
+        level: y_pred_residuals[level] + rng.normal(0, 1, size=100) for level in levels
+    }
+    forecaster.set_out_sample_residuals(
+        y_true=y_true_residuals, y_pred=y_pred_residuals
+    )
+
+    modes = []
+    original_binning = ForecasterRnn._binning_in_sample_residuals
+
+    def recording_binning(self, *args, **kwargs):
+        modes.append(self._probabilistic_mode)
+        return original_binning(self, *args, **kwargs)
+
+    monkeypatch.setattr(
+        ForecasterRnn, "_binning_in_sample_residuals", recording_binning
+    )
+
+    cv = TimeSeriesFold(
+            initial_train_size = 38,
+            steps              = forecaster.max_step,
+            refit              = True
+         )
+    backtesting_forecaster_multiseries(
+        forecaster              = forecaster,
+        series                  = series,
+        cv                      = cv,
+        levels                  = levels,
+        metric                  = "mean_absolute_error",
+        interval                = [0.05, 0.95],
+        interval_method         = "conformal",
+        use_in_sample_residuals = False,
+        use_binned_residuals    = use_binned_residuals,
+        n_jobs                  = 1,
+        verbose                 = False,
+        show_progress           = False,
+        suppress_warnings       = True
+    )
+
+    assert modes == [expected_mode] * 6
