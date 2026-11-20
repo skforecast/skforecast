@@ -23,8 +23,7 @@
                 "url": "https://skforecast.org"
             },
             "repositoryUrl": {
-                "url": "https://github.com/skforecast/skforecast",
-                "wellKnown": "https://github.com/skforecast/skforecast/blob/main/.well-known/funding-manifest-urls"
+                "url": "https://github.com/skforecast/skforecast"
             },
             "licenses": ["spdx:BSD-3-Clause"],
             "tags": [
