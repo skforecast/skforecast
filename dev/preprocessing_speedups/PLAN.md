@@ -466,7 +466,7 @@ Cómo leerla:
 
 Cada PR va contra `0.28.x` (o la rama de la versión en desarrollo), con su nota en `docs/releases/releases.md`, el lint y los tests de los módulos tocados antes del commit. Ninguno cambia la API pública. Si T3 la cambia, hay que actualizar también la referencia de la API (`tools/ai/llms-base.txt`) y la documentación de usuario (`skills/`), y regenerar los ficheros derivados.
 
-Filas propuestas para `dev/roadmap_0.28.0/roadmap.md` (o la hoja de ruta de la versión siguiente), en el formato de la sección de rendimiento:
+Filas propuestas para `dev/ROADMAP.md`, en el formato de la sección de rendimiento:
 
 | ID | Qué | Esfuerzo | Estado | Referencia |
 |---|---|---|---|---|

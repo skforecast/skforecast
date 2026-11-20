@@ -1,8 +1,8 @@
 # Roadmap de skforecast
 
 Roadmap único y vivo: todo lo pendiente, con la versión objetivo de cada elemento. Sustituye
-a los roadmaps por versión (`dev/roadmap_0.27.0/`, borrado, y `dev/roadmap_0.28.0/`,
-congelado hasta escribir el informe de la migración a pandas 3). Creado el 2026-11-19 a
+a los roadmaps por versión (`dev/roadmap_0.27.0/` y `dev/roadmap_0.28.0/`, borrados). Creado
+el 2026-11-19 a
 partir del inventario de `dev/` sobre `origin/0.28.x` (`3c0711b8a`): el estado de cada
 elemento se comprobó entonces con `gh`, `git log` y el código, y los bugs marcados como
 "reproducido" se ejecutaron contra ese commit.
@@ -36,7 +36,7 @@ Los documentos borrados se leen con `git show <commit>:<ruta>`.
 | TRANSP §N | `d24e5b852:dev/roadmap_0.27.0/BUG-search-short-series-transparency.md`, sección N (borrado) |
 | SHORT | `d24e5b852:dev/roadmap_0.27.0/BUG-search-short-series.md` (borrado) |
 | UTILS §N | `35a8d976d:dev/handoff_utils_pendiente.md`, sección N (borrado); revisión completa en `2377adb24:dev/informe_utils_review.md` |
-| R28 | `dev/roadmap_0.28.0/roadmap.md` (congelado: fuente del informe de pandas 3) |
+| R28 | `bdc9ae521:dev/roadmap_0.28.0/roadmap.md` (borrado) |
 | P3 §N | `dev/pandas3_migration/INFORME.md`, sección N (congelado) |
 | FAR | `dev/foundation_adapters_review/` |
 | NJOBS | `dev/n_jobs_benchmark/REPORT.md` |
@@ -57,8 +57,7 @@ Los documentos borrados se leen con `git show <commit>:<ruta>`.
 | `preprocessing_speedups/` | Plan y kit de validación de los atajos de preprocesado (en curso) | Se cierren PERF-categorical-codes, STUDY-fit-insample-binning y PERF-one-step-ahead-inverse |
 | `backtesting_multiseries_speedups/` | Plan de PERF-backtesting-folds-positions y de la segunda parte de PERF-03, con las medidas y los prototipos de la revisión del 2026-11-19 | Se cierren PERF-backtesting-folds-positions y PERF-03 |
 | `pandas_numpy_review/` | Estudio del uso de pandas frente a numpy dentro de los forecasters (`INFORME.md`), su revisión independiente (`REVISION.md`), y los prototipos, scripts y medidas de los dos (2026-11-19); la sección 11 de la revisión prueba la opción (a') de D-NP2 con un parche (2026-11-20) | Se cierren BUG-ms-fit-dataframe-categorical, PERF-exog-float-matrix y MAINT-ms-predict-core, y se decida PERF-backtesting-ms-fast-path (el prototipo y su batería son su especificación) |
-| `pandas3_migration/` | Estudio, decisiones y arnés de la migración a pandas 3 | Tras DOC-pandas3-report; antes, mover la lista "Al retirar pandas 2" a MAINT-drop-pandas2. El arnés lo usan también PERF-predict-numpy y otros: decidir entonces si pasa a `benchmarks/` o `tools/` |
-| `roadmap_0.28.0/` | Roadmap anterior, con el detalle de dependencias y pandas 3 | Tras DOC-pandas3-report, con BUG-04 ya resumido en el anexo A de este documento |
+| `pandas3_migration/` | Estudio, decisiones y arnés de la migración a pandas 3, y su informe final (`INFORME_0.28_pandas3.md`, DOC-pandas3-report) | Se cierre MAINT-pandas3-final-crossenv (el A/B de las búsquedas puede usar el arnés); antes, mover la lista "Al retirar pandas 2" a MAINT-drop-pandas2. El arnés lo usan también PERF-predict-numpy y otros: decidir entonces si pasa a `benchmarks/` o `tools/`. Después, el informe se cita por commit |
 
 ---
 
@@ -66,8 +65,7 @@ Los documentos borrados se leen con `git show <commit>:<ruta>`.
 
 | ID | Qué | Versión | Esfuerzo | Estado | Detalle |
 |---|---|---|---|---|---|
-| DOC-pandas3-report | Informe detallado de todos los cambios de la migración a pandas 3 y su porqué. Fuentes: P3 (decisiones D1 a D15, ojo: §1, §7, §8 y §11.3 no recogen lo que se fusionó al final), R28 §1 y §2, cuerpos de las PRs, `docs/releases/releases.md` 0.28.0, `docs/faq/pandas-2-and-pandas-3.md` y los resultados locales del arnés (`harness/results/`, no versionados; la tabla p3/p2 de `pr6_028/cross_env/cross_env_summary.md` solo está ahí) | 0.28.0 | M | Pendiente: después de PERF-multiseries-names-pyarrow. Decidir antes el público (interno en `dev/` o publicado) | PRs: #1443, #1444, #1445, #1448 (0.27.x); #1495, #1496, #1497, #1498, #1499, #1500, #1501, #1502, #1504, #1505, #1510 (0.28.x); relacionadas #1512, #1516 |
-| MAINT-pandas3-final-crossenv | Comparación final p3 frente a p2 del arnés sobre la 0.28.x definitiva (la última es de antes de #1502) | 0.28.0 | S | Pendiente, para DOC-pandas3-report. Mirar las búsquedas: un informe externo (2026-11-20, pandas 3.1.1 con `pyarrow`, una sola ronda) vio del 10 al 20 % más de tiempo con pandas 3 en las de cinco artículos (py42, py44, py48, py56 y py66, con LightGBM, XGBoost y HistGradientBoosting), sin confirmar: con la variabilidad de LightGBM hace falta un A/B | P3 §10; `dev/pandas3_migration/harness/` |
+| MAINT-pandas3-final-crossenv | Comparación final p3 frente a p2 sobre la 0.28.x definitiva: el arnés y las búsquedas | 0.28.0 | S | Arnés hecho el 2026-11-20 sobre `bdc9ae521` (31 benchmarks, p2 y p3 con y sin `pyarrow`; tabla en el apéndice A de `pandas3_migration/INFORME_0.28_pandas3.md`, los resultados en bruto no se versionan): `predict` en bucle 1,20 a 1,43 con `pyarrow`, el resto entre 0,79 y 1,20 salvo la matriz de solo lags (D13). Pendientes las búsquedas, que el arnés no mide: un informe externo (2026-11-20, pandas 3.1.1 con `pyarrow`, una sola ronda) vio del 10 al 20 % más de tiempo con pandas 3 en las de cinco artículos (py42, py44, py48, py56 y py66, con LightGBM, XGBoost y HistGradientBoosting), sin confirmar: con la variabilidad de LightGBM hace falta un A/B | P3 §10; `dev/pandas3_migration/harness/` |
 | MAINT-bench-pandas3 | Pasar `benchmarks/` a pandas 3 con una medición puente: tanda con `pandas==2.3.3`, PR que cambia solo ese pin y guarda la versión de `pyarrow`, segunda tanda (sin `pyarrow`, como el entorno de la CI), una tercera con `pyarrow` instalado (donde pandas 3 perdía más frente a pandas 2 y donde más gana PERF-multiseries-names-pyarrow: es la cifra que verán muchos usuarios), filtrar por `pandas_version` en `docs/faq/skforecast-benchmark.ipynb` y comprobar que su entorno tiene pandas 3 (un `benchmark.joblib` escrito con pandas 3 no se abre con pandas 2) | 0.28.0 | S | Pendiente: al final de la 0.28.0, con todo el código fusionado | R28 "MAINT-bench-pandas3" (pasos y estudio previo del 2026-11-16) |
 | MAINT-docs-pandas3 | Reejecutar con pandas 3 los 5 notebooks cuyas salidas cambian: `[ns]` a `[us]` en `faq/cyclical-features-time-series`, `user_guides/forecasting-statistical-models` y `user_guides/forecasting-with-deep-learning-rnn-lstm`; `object` a `str` en `user_guides/categorical-features` y `user_guides/autoregressive-classification-forecasting` | 0.28.0 | S | Pendiente: cuando el entorno de la documentación use pandas 3 | R28 tabla de la sección 1 |
 | REL-conda-forge-028 | Feedstock de conda-forge al publicar: Python >=3.11, numpy >=2.0, pandas >=2.3,<4.0, scipy >=1.13, numba >=0.60, statsmodels >=0.14.6, matplotlib >=3.8.4 | 0.28.0 | XS | Pendiente: al publicar | R28 "DEP-python310" y "DEP-numpy2-pandas23" |
@@ -270,7 +268,7 @@ Cerradas el 2026-11-20, cada una en la fila de su elemento: D-NP2 = (a') (BUG-ms
 Con las prioridades de la 0.27.0 (machine learning y foundation primero) y los resultados
 erróneos silenciosos delante:
 
-1. Lo que está en curso: DOC-pandas3-report;
+1. Lo que está en curso:
    STUDY-fit-insample-binning (#1520), SEARCH-initial-trials (#1492), #1476.
 2. Resultados erróneos silenciosos: BUG-ms-exog-rangeindex (con QW-06 y QW-14), BUG-04 y
    FOUND-adapter-arg, ISSUE-1506, ISSUE-1508, BUG-ms-fit-dataframe-categorical (con CAT-T2 y
@@ -390,6 +388,8 @@ Se vacía al publicar la 0.28.0. Todo fusionado en `0.28.x`.
 - Migración a pandas 3: #1495, #1496 (Python 3.10 retirado), #1497, #1498, #1499, #1500
   (numpy 2.0 y pandas 2.3 como mínimos), #1501 (`pandas<4.0`), #1502, #1504, #1505, #1510.
   Revisiones independientes y CI completa sobre `12898d190` (R28 "MAINT-review-pandas3").
+- DOC-pandas3-report: informe de la migración para revisarla sin leer las PRs, con un anexo
+  por PR (`dev/pandas3_migration/INFORME_0.28_pandas3.md`, 2026-11-20).
 - PERF-long-to-dict: #1512.
 - PERF-predict-numpy, bloque A: #1516.
 - PERF-multiseries-names-pyarrow: #1530 (`predict` y backtesting de multiserie, del 21 al 86 %,
@@ -408,7 +408,7 @@ Se vacía al publicar la 0.28.0. Todo fusionado en `0.28.x`.
 
 ## Anexo A: BUG-04 y modelos afinados
 
-Copiado de la sección 3.1 de R28 (2026-11-11), que se borrará con `dev/roadmap_0.28.0/`.
+Copiado de la sección 3.1 de R28 (2026-11-11).
 
 **Decisión.** El arreglo de BUG-04 no entró en la 0.27.0: el tema (usar y cargar modelos
 foundation afinados) resultó más grande que el bug. Se planifica entero en la 0.28.0. El plan
