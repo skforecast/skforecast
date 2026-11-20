@@ -1,0 +1,5 @@
+# Netlify does not publish files or folders whose name starts with a dot, so
+# the FLOSS/fund verification file is kept in /well-known/ and served at its
+# standard path with a rewrite (status 200, the URL does not change). The .txt
+# extension makes Netlify serve it as text/plain.
+/.well-known/funding-manifest-urls  /well-known/funding-manifest-urls.txt  200
