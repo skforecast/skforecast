@@ -38,7 +38,7 @@ EST = {
     "lgbm": lambda: LGBMRegressor(verbose=-1, n_estimators=40, min_child_samples=5, random_state=1, n_jobs=1),
     "xgb": lambda: XGBRegressor(n_estimators=40, random_state=1, n_jobs=1),
     "hgb": lambda: HistGradientBoostingRegressor(max_iter=40, random_state=1),
-    "catboost": lambda: CatBoostRegressor(iterations=40, verbose=0, random_state=1, thread_count=1),
+    "catboost": lambda: CatBoostRegressor(iterations=40, verbose=0, random_state=1, thread_count=1, allow_writing_files=False),
     "ridge": lambda: Ridge(),
 }
 CATS = {"10..80": [10, 20, 30, 40, 50, 60, 70, 80], "0..7": list(range(8)),

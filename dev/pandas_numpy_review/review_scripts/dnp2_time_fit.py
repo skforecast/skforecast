@@ -35,7 +35,7 @@ def estimator():
         return HistGradientBoostingRegressor(max_iter=50, random_state=1)
     if est_name == "catboost":
         from catboost import CatBoostRegressor
-        return CatBoostRegressor(iterations=50, verbose=0, random_state=1, thread_count=1)
+        return CatBoostRegressor(iterations=50, verbose=0, random_state=1, thread_count=1, allow_writing_files=False)
     from sklearn.linear_model import Ridge
     return Ridge()
 
