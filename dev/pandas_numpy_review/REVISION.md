@@ -1,6 +1,6 @@
 # Revisión independiente del estudio "pandas frente a numpy"
 
-Fecha: 2026-11-19 (segunda ronda y prueba con casos reales añadidas el mismo día, secciones 9 y 10). Revisa [INFORME.md](INFORME.md) (`fddf0de`). Árbol medido: `perf/multiseries-predict-backtesting` en `ab62227`, el mismo del informe. No se ha modificado nada de `skforecast/`. Scripts en [review_scripts/](review_scripts/) (ver su [README](review_scripts/README.md)).
+Fecha: 2026-11-19 (segunda ronda y prueba con casos reales añadidas el mismo día, secciones 9 y 10); revisión de D-NP2 con un prototipo, el 2026-11-20, sección 11). Revisa [INFORME.md](INFORME.md) (`fddf0de`). Árbol medido: `perf/multiseries-predict-backtesting` en `ab62227`, el mismo del informe. No se ha modificado nada de `skforecast/`. Scripts en [review_scripts/](review_scripts/) (ver su [README](review_scripts/README.md)).
 
 **Entornos.** Python 3.12.3, numpy 2.5.5, scikit-learn 1.9.1, numba 0.68.1, LightGBM 4.7.0, XGBoost 3.4.1, CatBoost 1.2.10, 4 núcleos. **p2** = pandas 2.3.3 (con `pyarrow` 26.0.1 instalado); **p3** = pandas 3.1.1 con la importación de `pyarrow` bloqueada; **p3 pa** = pandas 3.1.1 con `pyarrow` 26.0.1. Las cifras van siempre en el orden p2 / p3 / p3 pa. Los tiempos se midieron uno a uno, sin nada más en marcha y con `OMP_NUM_THREADS=1` (salvo donde se dice); las comprobaciones de corrección las hicieron tres subagentes en paralelo y sin medir tiempos. Lo que afirmo de sus informes lo he vuelto a ejecutar yo cuando contradice al informe (se indica); lo demás se marca como "subagente".
 
@@ -10,7 +10,7 @@ Las filas, decisiones y el orden por valor que salen de esta revisión están en
 
 1. **El techo de §5.1 es correcto como techo del bucle, pero el titular está sobrevendido.** Se reproduce (Ridge, 600 series, exog mixta: 179 / 200 / 225 ms por fold hoy, 0,57 / 0,57 / 0,64 en el techo). Lo que no dice el informe es cuánto pesa lo que el techo deja fuera. He escrito un prototipo que valida y prepara una vez y devuelve **las mismas métricas, las mismas predicciones y los mismos avisos en el mismo orden** que el código actual (25 casos, tres entornos). Con él, el mismo backtesting pasa de 10,1 / 11,1 / 12,0 s a 1,9 / 1,9 / 2,2 s: **5 a 6 veces la llamada completa (7 a 8 sin el fit), no 40 a 400**. Con LightGBM, 2,8 a 3,3 veces. Con 5 folds en vez de 50, 1,3 a 1,5 veces con Ridge y 1,0 con LightGBM. El bucle de folds queda en 1,2 a 1,6 ms por fold; lo que domina después son costes fijos que el informe despacha en una frase: las métricas (0,56 a 0,60 s) y la preparación (0,47 a 0,62 s).
 2. **La buena noticia que el informe no da:** los avisos por fold y su orden, que el informe cuenta como obstáculo real (§4.3), se reproducen exactamente desde máscaras calculadas una vez. La validación no impide el camino rápido.
-3. **P1 es un bug real y más amplio de lo descrito, y la opción (a) de D-NP2 no es un arreglo neutro.** También afecta a XGBoost, a CatBoost (por `fit_kwargs`) y a categorías `0..n-1` declaradas en otro orden; HistGradientBoosting **no** está afectado (el informe dice que sí); la validación one-step-ahead lo oculta (MAE 3,9 frente a 31,1 en backtesting). El arreglo "numpy en `fit`" no es "mismo modelo": con `categorical_features=None` cambia el modelo de quien hoy acierta. **Corrección de la segunda ronda:** la opción (c) que recomendé en la primera ("pasar el índice") tampoco basta tal como la formulé; la decisión es un compromiso real y mi recomendación pasa a ser (a') anunciada como cambio de comportamiento (sección 9.4).
+3. **P1 es un bug real y más amplio de lo descrito, y la opción (a) de D-NP2 no es un arreglo neutro.** También afecta a XGBoost, a CatBoost (por `fit_kwargs`) y a categorías `0..n-1` declaradas en otro orden; HistGradientBoosting **no** está afectado (el informe dice que sí); la validación one-step-ahead lo oculta (MAE 3,9 frente a 31,1 en backtesting). El arreglo "numpy en `fit`" no es "mismo modelo": con `categorical_features=None` cambia el modelo de quien hoy acierta. **Corrección de la segunda ronda:** la opción (c) que recomendé en la primera ("pasar el índice") tampoco basta tal como la formulé; la decisión es un compromiso real y mi recomendación pasa a ser (a') anunciada como cambio de comportamiento (sección 9.4). **Tercera revisión (sección 11, 2026-11-20):** (a') probada con un parche real; el modelo que hoy se ajusta con `None` es idéntico al de `'auto'`, el `fit` no cuesta más salvo con CatBoost si se copia el cast de los forecasters de una serie, y "3,9 frente a 31,1" compara con un backtesting de un paso sin refit. D-NP2 queda cerrada con (a').
 4. **P2 es correcta en su objetivo, con riesgo mayor que "bajo".** La condición tal como está escrita acepta `complex128`, redondea enteros grandes que hoy salen exactos de `create_train_X_y`, añade copias donde hoy hay vistas y olvida el `predict` de multiserie. Además arregla un bug que el informe no vio (HistGradientBoosting con categórica y `bool` falla en `predict`).
 5. **De las propuestas pequeñas, seis necesitan cambios para ser idénticas:** P4 (NaN visto en `fit`), P6 (una caché cambia resultados), P11 (no es bit a bit en pandas 2.3), P14 (solo hasta 7 offsets), P16 (vista de solo lectura en pandas 3) y P12 (caché sin punto de invalidación). I5 no se reproduce como se describe y la parte de multiserie de P17 es falsa.
 6. **Orden:** de acuerdo con multiserie antes que univariantes (D-NP1), pero las métricas en numpy (BTPLAN M1 y PERF-03) tienen que ir **antes o con** P3, no después: tras P3 son el 40 % de lo que queda. Y el contenedor debe vivir por encima del backtesting (lo usan las búsquedas, que hoy repiten todo por candidato) y apoyarse en un único núcleo numpy compartido con `predict`.
@@ -284,7 +284,7 @@ Dos cosas a favor que el informe no cuenta:
 - **P2 arregla un bug existente.** `HistGradientBoostingRegressor` con `categorical_features='auto'` (el valor por defecto), una columna categórica y una `bool` o nullable ajusta y falla en `predict` con `TypeError: ufunc 'isnan' not supported` (comprobado por mí en los tres entornos, [review_scripts/spot_checks.py](review_scripts/spot_checks.py)). Con `ForecasterRecursiveClassifier` y `HistGradientBoostingClassifier` basta una `bool` mezclada con float. Un forecaster guardado antes del cambio sigue fallando hasta reajustarlo.
 - No rompe tests: con el prototipo activo pasan las carpetas de tests de Recursive, Classifier, Direct y DMV (1675 en pandas 3, 1677 en pandas 2.3). También significa que **no hay ningún test** que cubra estos dtypes: hay que escribirlos.
 
-**I10 y D-NP3 (NA a NaN): de acuerdo con (b), con los hechos corregidos.** Un solo dtype nullable ya da hoy float64 con NaN (el `TypeError` exige mezcla de dtypes); en `predict` el `TypeError` lo lanza skforecast (`_forecaster_recursive.py:1789`); con `dropna_from_series=True` hoy ya funciona; y multiserie con LightGBM y una columna `pyarrow` **falla en `fit`** (`pandas dtypes must be int, float or bool`), en contra de "multiserie con LightGBM entrena". Con (b), Ridge pasa de `TypeError` a `ValueError: Input X contains NaN`, que es lo que ya ocurre con un NaN float.
+**I10 y D-NP3 (NA a NaN): de acuerdo con (b), con los hechos corregidos.** Decidida el 2026-11-20: (b), y los enteros mayores que 2^53 de la tabla de arriba se convierten también a float (se redondean; documentarlo). Un solo dtype nullable ya da hoy float64 con NaN (el `TypeError` exige mezcla de dtypes); en `predict` el `TypeError` lo lanza skforecast (`_forecaster_recursive.py:1789`); con `dropna_from_series=True` hoy ya funciona; y multiserie con LightGBM y una columna `pyarrow` **falla en `fit`** (`pandas dtypes must be int, float or bool`), en contra de "multiserie con LightGBM entrena". Con (b), Ridge pasa de `TypeError` a `ValueError: Input X contains NaN`, que es lo que ya ocurre con un NaN float.
 
 `ForecasterRnn` no se pudo ejecutar (sin torch). Por lectura, no tiene codificación de categóricas ni `check_exog_dtypes`: la premisa "tras codificar" no existe allí y hay que decidirlo aparte.
 
@@ -369,7 +369,7 @@ Sobre D-NP4: `transformer_exog=None` es más restrictivo de lo necesario (un `St
 2. **Regresión por preparar de más** con pocos folds o historia larga (6.2, punto 3). La memoria no es un problema en los tamaños medidos (9.7).
 3. **Dos caminos de predicción** que pueden divergir, y las búsquedas, que no se benefician si el contenedor vive dentro del backtesting (6.2).
 4. **Cualquier arreglo de P1 con `None` cambia algo**: (a) y (a') cambian el modelo de quien hoy usa `category` de enteros `0..n-1` ordenados y de todo usuario de HistGradientBoosting con una `category`; (c) lo conserva solo en parte y es bastante más compleja (3.1 y 9.4). Tiene que ir con nota de versión y aviso.
-5. **Métricas de búsqueda no reproducibles hoy:** one-step-ahead y backtesting difieren por el bug P1 (3,9 frente a 31,1). Cualquier arreglo cambia una de las dos; hay que decirlo en la nota de versión.
+5. **Métricas de búsqueda no reproducibles hoy:** una validación one-step-ahead y un backtesting de un paso sin refit, que deben coincidir, difieren por el bug P1 (3,9 frente a 31,1). Cualquier arreglo cambia una de las dos; hay que decirlo en la nota de versión.
 6. **Efectos del arreglo de P1 fuera de las predicciones:** se pierde `feature_names_in_` y los nombres de LightGBM, `fit_kwargs` con `categorical_feature` por nombre deja de funcionar, CatBoost necesita el cast a entero, y `ordinal_category` necesita su índice siempre.
 7. **P2:** `complex128` aceptado, enteros grandes redondeados en `create_train_X_y`, copias nuevas, y forecasters con HistGradientBoosting guardados que siguen fallando hasta reajustar.
 8. **Propuestas "bit a bit iguales" que no lo son:** P11 en pandas 2.3, P14 desde 8 offsets, P4 con NaN visto en `fit` (incluido el dtype `str` de pandas 3), P6 con caché, P16 con vista de solo lectura en pandas 3.
@@ -386,8 +386,8 @@ Criterios: corrección antes que velocidad; las decisiones se abren pronto (D-NP
 | # | Qué | Impacto | Esfuerzo | Condiciones, y qué cambia respecto al informe |
 |---|---|---|---|---|
 | | **Grupo 1: corregir lo que hoy da resultados malos o falla** | | | |
-| 1 | **P2**, exog a float, seguida de **I8** (`bool` que pasa a categórica si una serie no tiene exog) | P2 arregla un fallo de HistGradientBoosting en `predict` con la configuración por defecto (categórica más `bool`) y da de 5 a 6 veces en el `fit` con una columna `bool`; I8 es un cambio silencioso de modelo que depende de los datos | S y S | Las dos tratan los dtypes de la exog al pasar a numpy y comparten la matriz de tests de dtypes (`bool`, nullable, `pyarrow`) que hoy no existe y que también necesita P1. P2 con condición estricta (dtypes explícitos; solo si hoy sale `object`), con el `predict` de multiserie (`:3037`), D-NP3 y los enteros grandes. I8 no estaba como propuesta en el informe |
-| 2 | **P1**, numpy al estimador en el `fit` de multiserie | Predicciones erróneas silenciosas (MAE 3,9 frente a 31,1), solo con `categorical_features=None` o una lista incompleta | M | Decidir antes D-NP2: (a') con aviso y nota de versión, o (c) redefinida (9.4). Requisito: CAT-T2. Incluir `:4695`, `_utils.py:3038`, el cast de CatBoost y el índice de `ordinal_category`. Tests de paridad entre one-step-ahead y backtesting. El informe lo daba como S a M y sin cambio de modelo |
+| 1 | **P2**, exog a float, seguida de **I8** (`bool` que pasa a categórica si una serie no tiene exog) | P2 arregla un fallo de HistGradientBoosting en `predict` con la configuración por defecto (categórica más `bool`) y da de 5 a 6 veces en el `fit` con una columna `bool`; I8 es un cambio silencioso de modelo que depende de los datos | S y S | Las dos tratan los dtypes de la exog al pasar a numpy y comparten la matriz de tests de dtypes (`bool`, nullable, `pyarrow`) que hoy no existe y que también necesita P1. P2 con condición estricta (dtypes explícitos; solo si hoy sale `object`), con el `predict` de multiserie (`:3037`). D-NP3 y los enteros grandes, decididos el 2026-11-20: todo a float. I8 no estaba como propuesta en el informe |
+| 2 | **P1**, numpy al estimador en el `fit` de multiserie | Predicciones erróneas silenciosas (MAE one-step-ahead 3,9 frente a 31,1 en un backtesting de un paso sin refit), solo con `categorical_features=None` o una lista incompleta | M | D-NP2 decidida: (a') con aviso y nota de versión (sección 11, con lo que el arreglo debe incluir en 11.4). Requisitos: CAT-T2 y CAT-T3. Incluir `:4695`, `_utils.py:3038`, el cast de CatBoost y el índice de `ordinal_category`. Tests de paridad entre one-step-ahead y backtesting. El informe lo daba como S a M y sin cambio de modelo |
 | 3 | Nivel predicho por un modelo que no lo vio (refit intermitente con `skip_folds`, 9.1) | Predicciones de una serie como nivel desconocido, en una configuración rara | S | Falta la reproducción mínima y decidir si es intencionado. No está en el informe |
 | | **Grupo 2: calidad del código de multiserie** | | | |
 | 4 | **Refactor del núcleo de `predict`** (antes, paso 1 de P3): validar, preparar y núcleo numpy, sin cambio de comportamiento | Calidad, no tiempo: `_create_predict_inputs` tiene unas 420 líneas, mezcla validación, alineación de la exog y matrices, y la usan cuatro métodos; `_recursive_predict` pide un DataFrame del que solo usa los valores; los atajos de MSPERF (comparaciones `identical`, cachés por `id`) viven dentro porque hoy se valida y alinea en cada llamada | M | Después de 1 y 2, para que el núcleo herede una conversión de la exog ya común y correcta. Esbozar antes las firmas de las tres etapas para comprobar que simplifica y no solo reparte. Red de seguridad: las baterías de identidad de MSPERF |
@@ -626,10 +626,128 @@ La búsqueda de py59 tal como la hace el artículo: `bayesian_search_forecaster_
 4. **El ajuste final predice sobre todo el entrenamiento para los residuos in-sample**: de 7 a 9 s (2,5 a 4,6 % de la búsqueda). Es lo que estudia STUDY-fit-insample-binning (#1520).
 5. **Conclusión sobre "pandas frente a numpy"**: lo que más aporta es, por este orden, la corrección (P1, P2 e I8, con una sola conversión de la exog a numpy), la calidad del código (MAINT-ms-predict-core) y, solo con muchos folds o modelos baratos, el rendimiento. En el uso típico (LightGBM, pocos folds, búsqueda con `OneStepAheadFold`) la mejora de tiempo sería menor del 10 %.
 
+## 11. D-NP2: la opción (a'), revisada con un prototipo
+
+Fecha: 2026-11-20. Árbol: `0.28.x` en `a049e5c`. Qué se pregunta: si (a'), la opción que recomienda 9.4, es la más adecuada, si tiene errores, si cuesta rendimiento, qué riesgos deja y si encaja con el roadmap. Para contestarlo he escrito el arreglo como un parche real ([review_scripts/dnp2_proto.patch](review_scripts/dnp2_proto.patch), aplicado en un worktree aparte; no se ha modificado `skforecast/`) y lo he comparado con el código actual. Scripts `review_scripts/dnp2_*.py`, salidas en `review_scripts/results/dnp2_*.txt`. Todo lo de esta sección lo he ejecutado yo, sin subagentes, en los tres entornos y con el mismo resultado en los tres, salvo donde se dice (los tests, en p3 pa y p2).
+
+**Veredicto.** (a') es la opción adecuada y la revisión la refuerza: el modelo que hoy se ajusta con `None` es idéntico al de `'auto'`, así que quien hoy acierta lo recupera cambiando un argumento, y eso deja a (c) sin su única ventaja. Pero tal como estaba escrita le faltaban cinco precisiones (11.4) y, copiada de los forecasters de una serie, la conversión de CatBoost cuesta memoria (11.6). **Decisión de Joaquín (2026-11-20): D-NP2 = (a').**
+
+### 11.1 Qué hace el prototipo
+
+- El estimador recibe `X_train.to_numpy(dtype=float)` en `fit`, en la predicción in-sample, en `set_in_sample_residuals` y en la validación one-step-ahead. `predict` no se toca.
+- Aviso `DataTypeWarning` cuando una columna `category` queda fuera de `categorical_features`, y `TypeError` claro si además no es numérica.
+- Con `encoding='ordinal_category'` y `None`, el índice de `_level_skforecast` se añade a la configuración del usuario.
+- Las categóricas configuradas por nombre (`categorical_feature` y `cat_features` en `fit_kwargs`, `categorical_features` de HistGradientBoosting) se traducen a índices.
+- CatBoost: el cast a `object` de los forecasters de una serie o, con `DNP2_CATBOOST_DF=1`, el DataFrame de hoy con los valores en lugar de los códigos.
+
+### 11.2 Corrección
+
+Rejilla de 336 configuraciones por entorno (`dnp2_grid.py`): 5 estimadores, 4 codificaciones, `categorical_features` `'auto'`, `None` o una lista que omite la `category`, 4 disposiciones de sus categorías (10..80, 0..7, 0..7 en otro orden, texto), y series como DataFrame o como diccionario con longitudes distintas y NaN. Se comparan el ajuste, las predicciones, los residuos in-sample (también con `set_in_sample_residuals`), los intervalos por bootstrapping, y el MAE de una validación one-step-ahead y de un backtesting de un paso sin refit, que deben coincidir. Resultado igual en los tres entornos ([results/dnp2_grid.txt](review_scripts/results/dnp2_grid.txt)):
+
+| Comprobación | Resultado |
+|---|---|
+| `'auto'`: prototipo frente al código actual | Idéntico en 112 de 112 |
+| One-step-ahead distinto del backtesting equivalente | Hoy, en 48 de 232 casos que se ejecutan; con el prototipo, en 0 de 264 |
+| Modelo que hoy se ajusta con `None` (MAE one-step-ahead) frente al de `'auto'` | Idéntico en 36 de 36 (LightGBM, XGBoost y HistGradientBoosting, las cuatro codificaciones, las tres disposiciones numéricas) |
+| `None` con CatBoost | Hoy falla en `fit`; con el prototipo ajusta, como numérica |
+| Lista incompleta y categorías `0..n-1` ordenadas | Mismo modelo que hoy también con LightGBM y XGBoost: con una lista explícita ya tratan la `category` como numérica sobre sus códigos |
+
+MAE one-step-ahead y de backtesting (6 series, 8 categorías con efecto no monótono, `encoding='ordinal'`, p3 pa):
+
+| Estimador, `None` | Hoy, 10..80 | Hoy, 0..7 | Prototipo | `'auto'` (hoy y prototipo) |
+|---|---|---|---|---|
+| LightGBM | 2,72 y 32,06 | 2,72 y 2,72 | 3,96 y 3,96 | 2,72 y 2,72 |
+| XGBoost | 2,20 y 42,01 | 2,20 y 2,20 | 3,04 y 3,04 | 2,20 y 2,20 |
+| HistGradientBoosting | 3,06 y 3,06 | 3,06 y 3,06 | 4,40 y 4,40 | 3,06 y 3,06 |
+
+Comprobaciones aparte (`dnp2_extra.py`, [results/dnp2_extra_today.txt](review_scripts/results/dnp2_extra_today.txt) y [results/dnp2_extra_proto.txt](review_scripts/results/dnp2_extra_proto.txt)):
+
+- **La receta antigua** (`OrdinalEncoder` y `astype('category')` en `transformer_exog`, con `None`): hoy 2,98 (LightGBM), 2,40 (XGBoost) y 3,21 (HistGradientBoosting); con `'auto'`, exactamente lo mismo; con el prototipo y `None`, 4,23, 3,62 y 4,53.
+- **Configuración del usuario por índice con `None`** (la vía que documenta `tools/ai/llms-base.txt`): hoy también tiene el bug (LightGBM 2,98 en one-step-ahead y 34,73 en backtesting; XGBoost con `feature_types` 2,42 y 42,21; CatBoost con `cat_features` 4,93 y 31,57). Con el prototipo coinciden (2,98, 2,42 y 4,93). Por nombre, LightGBM tiene hoy el mismo bug e HistGradientBoosting acierta (3,21); con el prototipo, que traduce los nombres, dan lo mismo que por índice.
+- **Otros dtypes de la exog** (`dnp2_dtypes.py`, 14 dtypes por 4 estimadores, `'auto'` y `None`, 112 casos): fuera de la `category` con `None` (8 casos), idéntico a hoy, y LightGBM con columnas `pyarrow` deja de fallar en `fit` (6 casos) ([results/dnp2_dtypes.txt](review_scripts/results/dnp2_dtypes.txt)).
+- **Trece estimadores con un solo bloque float** (lineales, árboles, KNN, SVR, MLP, `Pipeline`, `TransformedTargetRegressor`) y tres codificaciones: predicciones idénticas en 39 de 39.
+- **Forecasters ajustados con el código actual y guardados:** `predict` idéntico, y `set_in_sample_residuals` reproduce los residuos del `fit` salvo en el que tiene el bug (`None` con 10..80), donde difieren hasta 75: esos hay que reajustarlos.
+
+### 11.3 Correcciones a 3.1, 9.4 y a la fila del roadmap
+
+- **Texto y decimales.** "Con texto, `fit` funciona y `predict` falla" solo es cierto con una lista incompleta. Con `None`, una `category` de texto o de decimales da en `fit`, en todos los forecasters, `TypeError: Categorical dtypes in exog must contain only integer values` (`check_exog_dtypes`). Con una lista incompleta, los decimales tienen el mismo error silencioso que los enteros ([results/dnp2_today_matrix.txt](review_scripts/results/dnp2_today_matrix.txt)).
+- **XGBoost.** Con xgboost 3.4.1 trata la `category` como categórica con sus parámetros por defecto, sin `enable_categorical=True` (`dnp2_xgb_default.py`). El bug no exige configurarlo.
+- **"El modelo de quien hoy acierta cambia"** (3.1, 9.4 y el punto 4 de la sección 7) es cierto, pero ese modelo se recupera exactamente con `'auto'`. Vale para HistGradientBoosting, del que 3.1 dice "acertaba y empeora".
+- **"3,9 frente a 31,1"** (resumen, sección 7 y sección 8) compara la validación one-step-ahead con un backtesting de un paso y sin refit, que es el único con el que debe coincidir. Con más pasos por fold las dos métricas miden cosas distintas aunque no haya bug.
+- **La configuración por nombre** no es una pérdida asumible sin más: la fijan 6 tests de multiserie (11.5).
+
+### 11.4 Lo que el arreglo tiene que incluir, además de lo de 3.1
+
+1. **Traducir nombres a índices.** `fit_kwargs={'categorical_feature': ['c']}` (LightGBM), `cat_features` por nombre (CatBoost) y `HistGradientBoostingRegressor(categorical_features=['c'])` funcionan hoy en multiserie porque el estimador recibe un DataFrame. Con numpy dan error en `fit`. El prototipo los traduce y los tests correspondientes pasan sin cambiar valores.
+2. **`ordinal_category` con `None`: sumar, no sustituir.** `configure_estimator_categorical_features` sobrescribe la configuración del usuario, que con `None` es justo la vía prevista. Hay que añadir el índice del nivel a lo que haya (comprobado con los cuatro estimadores: LightGBM, HistGradientBoosting y CatBoost quedan con las columnas 3 y 5 como categóricas, y XGBoost con `'c'` en las dos).
+3. **`Pipeline`.** Ese índice se pasa por `fit_kwargs` y un `Pipeline` no lo acepta (CAT-T3): `Pipeline(StandardScaler(), LGBMRegressor())` con `ordinal_category` y `None`, que hoy ajusta, falla. CAT-T3 tiene que ir antes, igual que CAT-T2.
+4. **CatBoost.** Mantener el DataFrame, con valores en lugar de códigos (11.6).
+5. **No pasar una vista de pandas.** `X_train.to_numpy()` es, con un solo bloque, una vista: de solo lectura en pandas 3 y escribible en pandas 2.3. Consecuencias: scikit-learn copia la matriz cuando la necesita escribible (Ridge, 63 MB más de pico en p3 y p3 pa, ninguno en p2), `LinearRegression(copy_X=False)` deja de modificarla en pandas 3 y la sigue modificando en pandas 2.3, y un estimador propio que escriba en ella recibe `assignment destination is read-only`. `_create_train_X_y` ya construye ese bloque en numpy: lo limpio es dárselo al estimador directamente, igual en los dos pandas, y mantener `_check_in_place_fit`.
+6. **El aviso, en todos los forecasters.** Los de una serie ya tratan como numérica una `category` con `None`, sin avisar. El aviso debería salir de `check_exog_dtypes`, solo en `fit`, y cubrir también la lista incompleta, que hoy no pasa por esa función: en los forecasters de una serie una `category` de texto fuera de la lista da `ValueError: could not convert string to float: 's'`.
+7. **Convertir una vez en la validación one-step-ahead.** El prototipo convierte en cada candidato; lo correcto es hacerlo en `_train_test_split_one_step_ahead`, que las búsquedas ya cachean.
+
+### 11.5 Tests con el prototipo
+
+| Carpeta | p3 pa | p2 |
+|---|---|---|
+| `tests_forecaster_recursive_multiseries` (775 tests) | 11 fallos | 5 fallos |
+| `model_selection/tests`, `-k "multiseries or one_step_ahead"` (546) | 6 fallos | 0 fallos |
+| `utils/tests`, `-k "in_place or copy_rows or catboost or categorical"` (98) | 0 fallos | 0 fallos |
+
+Lista en [results/dnp2_tests.txt](review_scripts/results/dnp2_tests.txt). Todos los fallos son de dos tipos, y los dos son comportamiento que el arreglo cambia a propósito:
+
+- **2 tests de la receta antigua** (`test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor`, sus dos parámetros): `OrdinalEncoder` más `category` con `None`. Pasan a `'auto'`.
+- **Los de modificación in situ** (`..._ValueError_when_estimator_modifies_X_train_in_place`): 9 y 6 en pandas 3, donde la vista de solo lectura hace que scikit-learn copie y ya no haya nada que detectar; 3 en pandas 2.3 (el estimador de prueba que añade una columna a un DataFrame). Es el punto 5 de 11.4.
+
+Antes de añadir la traducción de nombres fallaban además 6 tests (`..._native_implementation_LGBMRegressor` y `..._HistGradientBoostingRegressor`, en `test_predict.py` y `test_create_predict_X.py`).
+
+### 11.6 Rendimiento
+
+`fit` de `ForecasterRecursiveMultiSeries` con residuos in-sample, mejor de 3 tras uno de calentamiento, cada variante en su proceso y a solas, `OMP_NUM_THREADS=1` y un hilo en cada modelo (`dnp2_time_fit.py`, [results/dnp2_perf_p2.txt](review_scripts/results/dnp2_perf_p2.txt), las de p3 y p3 pa, y `dnp2_perf_catboost_df.txt`). Sintético: 600 series por 500 días, 20 exog, 295.800 filas por 28 columnas. Real: los 1578 edificios de py59, 1.035.168 filas por 40 columnas. Hoy → prototipo, p2 / p3 / p3 pa:
+
+| Caso | `fit` (s) | Pico de memoria (MB) |
+|---|---|---|
+| Real, LightGBM | 12,85 → 12,16 / 13,05 → 13,01 / 12,81 → 13,08 | 1554 → 1527 / 1445 → 1409 / 1493 → 1525 |
+| Un bloque float, LightGBM | 2,71 → 2,78 / 2,93 → 2,90 / 2,70 → 2,79 | sin cambio |
+| Un bloque float, XGBoost | 2,87 → 2,94 / 3,08 → 2,98 / 2,97 → 3,12 | sin cambio |
+| Un bloque float, HistGradientBoosting | 1,98 → 1,96 / 1,95 → 1,90 / 1,94 → 2,11 | sin cambio |
+| Un bloque float, Ridge (mejor de 10) | 0,32 → 0,32 / 0,34 → 0,35 / 0,34 → 0,36 | 344 → 343 / 311 → 374 / 348 → 411 |
+| `ordinal_category`, LightGBM | 3,23 → 3,10 / 3,22 → 3,20 / 3,52 → 3,26 | sin cambio |
+| 10 exog enteras, LightGBM | 2,91 → 2,73 / 2,69 → 2,78 / 2,71 → 2,77 | sin cambio |
+| `None` con dos `category`, LightGBM | 2,79 → 2,76 / 2,97 → 2,88 / 2,87 → 2,91 | sin cambio |
+| `'auto'` con dos columnas de texto, CatBoost, array `object` | 5,92 → 7,22 / 6,58 → 7,28 / 6,16 → 7,10 | 502 → 762 / 459 → 729 / 508 → 767 |
+| El mismo, manteniendo el DataFrame | 5,92 → 5,89 / 6,58 → 5,74 / 6,16 → 6,39 | 502 → 495 / 459 → 459 / 508 → 510 |
+
+- **Sin coste** con LightGBM, XGBoost e HistGradientBoosting: de x0,93 a x1,09, dentro del ruido de estas medidas, y la misma memoria. Con Ridge, cuyos ajustes duran de 0,3 a 0,4 s, 3 repeticiones no bastan (de x0,78 a x1,28, sin dirección); con 10, de x0,88 a x1,06 en los tres casos y los tres entornos (`results/dnp2_perf_ridge_*.txt`). Con un solo bloque la conversión es una vista, y con dtypes mezclados la copia sustituye a la que hoy hace el estimador.
+- **Ridge, un bloque, pandas 3:** 63 MB más de pico, por la vista de solo lectura (punto 5 de 11.4).
+- **CatBoost con categóricas, que incluye el `'auto'` por defecto:** el cast de los forecasters de una serie convierte toda la matriz a `object`: de un 11 a un 22 % más de `fit` y unos 260 MB más de pico (más de un 50 %). Manteniendo el DataFrame cuesta lo mismo que hoy y los modelos son idénticos (rejilla de CatBoost, `DNP2_CATBOOST_DF=1`: 64 de 72 iguales, y los 8 restantes solo cambian el texto del error con una `category` de texto).
+- `HistGradientBoostingRegressor` con `ordinal_category` y 600 series falla hoy y con el prototipo (más de 255 categorías): no es de este cambio.
+
+### 11.7 Riesgos que quedan
+
+- **Cambio de modelo anunciado.** `None` con una `category` de enteros pasa a numérica: receta antigua con `None`, y HistGradientBoosting o LightGBM por dtype. Va con aviso en `fit` y con nota en "Before upgrading"; se recupera con `'auto'`.
+- **Nombres en el estimador.** Se pierden `feature_names_in_` y los nombres propios (LightGBM `Column_0`, CatBoost `'0'`, XGBoost ninguno). `get_feature_importances` no cambia. `forecaster.estimator.predict(create_predict_X(...))`, que enseña `training-and-prediction-matrices.ipynb`, da los mismos valores y, con estimadores de scikit-learn, el aviso `X has feature names`, como ya pasa en los forecasters de una serie.
+- **Estimadores envueltos.** Un LightGBM dentro de `TransformedTargetRegressor` con `ordinal_category` pierde el nivel categórico (MAE 1,78 → 4,23) si CAT-T2 no va antes.
+- **Forecasters guardados con el bug:** siguen prediciendo mal hasta reajustarlos.
+- **Ruido del aviso** para quien configura el estimador por índice a propósito: se filtra con `DataTypeWarning`, o se puede no emitir cuando el estimador ya tiene categóricas configuradas.
+
+### 11.8 Encaje con el roadmap
+
+- El orden se mantiene: después de PERF-exog-float-matrix y BUG-ms-exog-none-bool (conversión común de la exog y batería de dtypes), antes de MAINT-ms-predict-core. El esfuerzo sigue siendo M.
+- Requisitos: CAT-T2 y, nuevo, CAT-T3 (D-T3 decidida el 2026-11-20: con un `Pipeline` no se configuran las categóricas nativas). CAT-T4 va después del arreglo (D-T4 decidida el mismo día: aviso en `__init__`), porque su aviso recomienda `categorical_features=None`.
+- Corregido el 2026-11-20: la PR #1520 (STUDY-fit-insample-binning, abierta) solo cambia `model_selection/_validation.py` y no interfiere con este arreglo. Lo que sí cambia la predicción in-sample de `fit` es su segunda parte, el tope de filas, que no está en la PR: si se hace, uno detrás del otro. La rama `perf/multiseries-predict-backtesting` cambia `_create_predict_inputs`, no `fit`: conviene fusionarla antes de PERF-exog-float-matrix y de BUG-ms-exog-rangeindex.
+- No toca `predict`, así que los prototipos del camino rápido (secciones 2, 9 y 10) siguen valiendo, y deja las matrices de entrenamiento en numpy, que es lo que necesita PERF-search-shared-train-matrices.
+- La opción (c) pasa a descartada.
+
+### 11.9 Aviso provisional (opcional, sin implementar)
+
+Si el arreglo se retrasa, el aviso solo protege mientras tanto: en el `fit` de multiserie, `DataTypeWarning` cuando una `category` queda fuera de `categorical_features`, que diga que las predicciones pueden ser erróneas con LightGBM, XGBoost o CatBoost y recomiende `'auto'`. No cambia ningún resultado y el consejo es el mismo que dará el arreglo. Fila QW-ms-category-warning del roadmap.
+
 ## Anexo: qué no se ha verificado
 
 - `ForecasterRnn` y los adaptadores foundation (sin torch ni keras): solo lectura de código.
 - SHAP sobre el estimador tras el arreglo de P1 (no instalado); versiones de XGBoost en las que `enable_categorical` es `False` por defecto.
+- Sección 11: el parche es un prototipo, no la implementación: no tiene tests propios, convierte en cada candidato de la validación one-step-ahead y pasa la vista de pandas (11.4). No se han probado `ForecasterRecursiveClassifier` ni los demás forecasters (no cambian), versiones de LightGBM, XGBoost y CatBoost distintas de las instaladas, ni el tiempo de una búsqueda completa con el prototipo.
 - Las ganancias de tiempo de P6, P8, P9, P10, P12, P13, P15 y P16 (solo corrección o lectura).
 - P10 en multiserie y `ForecasterEquivalentDate`; P11 con filas parcialmente NaN.
 - Los prototipos de P3 no cubren intervalos, `return_predictors`, `n_jobs > 1`, forecaster ya ajustado ni diferenciación en diccionario; con refit intermitente y `skip_folds` no emiten el `UnknownLevelWarning` del código actual (9.1). No se han probado con transformadores que no sean elemento a elemento ni con más de 3000 series.
@@ -676,4 +794,20 @@ REAL_N_SERIES=300 bash run3.sh time_real_search.py
 python check_real_mae.py                             # con pandas 2.3, como los artículos
 REAL_N_SERIES=300 LGBM_N_JOBS=1 bash run3.sh time_real_osa_search.py   # 10.6
 python time_real_osa_search.py                       # 10.6, configuración del artículo
+
+# D-NP2 con el prototipo (sección 11)
+git worktree add --detach /home/user/sk_0.28 a049e5c       # código actual
+git worktree add --detach /home/user/sk_dnp2 a049e5c       # prototipo
+git -C /home/user/sk_dnp2 apply "$PWD/dnp2_proto.patch"
+export TODAY=/home/user/sk_0.28 PROTO=/home/user/sk_dnp2
+SK_TREE=$TODAY bash run3.sh dnp2_today_matrix.py           # 11.3
+SK_TREE=$TODAY bash run3.sh dnp2_xgb_default.py
+for t in $TODAY $PROTO; do SK_TREE=$t bash run3.sh dnp2_grid.py OUT; done      # 11.2, unos 4 minutos por árbol y entorno
+python dnp2_cmp.py grid OUT
+for t in $TODAY $PROTO; do SK_TREE=$t bash run3.sh dnp2_dtypes.py OUT; done
+python dnp2_cmp.py dtypes OUT
+for t in $TODAY $PROTO; do SK_TREE=$t bash run3.sh dnp2_extra.py OUT; done     # primero el código actual
+bash dnp2_run_perf.sh p2 perf_p2.txt                        # 11.6, a solas; también p3 y p3pa
+DNP2_CATBOOST_DF=1 bash dnp2_run_perf.sh p2 perf_catboost_df_p2.txt "text2:catboost"
+cd $PROTO && python -m pytest skforecast/recursive/tests/tests_forecaster_recursive_multiseries -q   # 11.5
 ```
