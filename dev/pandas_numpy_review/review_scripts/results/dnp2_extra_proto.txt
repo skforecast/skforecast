@@ -1,0 +1,171 @@
+=== p2 ===
+##### tree: proto
+
+== 1. Legacy recipe: OrdinalEncoder(int) + astype('category') in transformer_exog
+  lgbm  legacy + categorical_features=None :  osa   4.23 | bt   4.23
+  lgbm  legacy + categorical_features=auto :  osa   2.98 | bt   2.98
+  xgb   legacy + categorical_features=None :  osa   3.62 | bt   3.62
+  xgb   legacy + categorical_features=auto :  osa   2.40 | bt   2.40
+  hgb   legacy + categorical_features=None :  osa   4.53 | bt   4.53
+  hgb   legacy + categorical_features=auto :  osa   3.21 | bt   3.21
+
+== 2. Categorical features set by the user on the estimator, categorical_features=None
+  lgbm by index        osa   2.98 | bt   2.98
+  lgbm by name         osa   2.98 | bt   2.98
+  hgb by index         osa   3.21 | bt   3.21
+  hgb by name          osa   3.21 | bt   3.21
+  xgb feature_types    osa   2.42 | bt   2.42
+  catboost by index    osa   4.93 | bt   4.93
+  catboost by name     osa   4.93 | bt   4.93
+  single series (ForecasterRecursive), for reference:
+    lgbm by index      fit ok
+    lgbm by name       TypeError: Wrong type(str) or unknown name(c) in categorical_feature
+    hgb by name        ValueError: categorical_features should be passed as an array of integers or as a boolean mask when th
+
+== 3. encoding='ordinal_category' + None + user configuration: what the estimator ends with
+  lgbm, nothing set      columns with categorical splits: [3] | osa   1.78 | bt   1.78
+  lgbm, user index       columns with categorical splits: [3, 5] | osa   3.68 | bt   3.68
+  hgb, user index        is_categorical_=[3, 5] | osa   1.47 | bt   1.47
+  xgb, user types        feature_types=['q', 'q', 'q', 'c', 'q', 'c'] | osa   1.28 | bt   1.28
+  catboost, user index   cat features=[3, 5] | osa   7.57 | bt   7.57
+
+== 4. Wrapped estimators
+  TTR(lgbm), 'auto', ordinal, text               osa   4.23 | bt   4.23
+  TTR(lgbm), 'auto', ordinal_category, text      osa   4.23 | bt   4.23
+  TTR(lgbm), None, ordinal, category 0..7        osa   4.23 | bt   4.23
+  Pipeline(scaler, lgbm), 'auto', text           osa IndexError: index 0 is out of bounds for axis 0 with size 0 | bt ValueError: Pipeline.fit does not accept the categorical_feature parameter. You ca
+  Pipeline(scaler, lgbm), None, ordinal_category osa IndexError: index 0 is out of bounds for axis 0 with size 0 | bt ValueError: Pipeline.fit does not accept the categorical_feature parameter. You ca
+  Pipeline(scaler, ridge), 'auto', text          osa  31.62 | bt  31.62
+
+== 5. Names the fitted estimator keeps
+  lgbm      feature_names_in_=None...; own names=['Column_0', 'Column_1', 'Column_2']; get_feature_importances=['x', 'lag_3', 'lag_1']; estimator.predict(create_predict_X) ok []
+  xgb       feature_names_in_=None...; own names=None; get_feature_importances=['_level_skforecast', 'lag_3', 'lag_1']; estimator.predict(create_predict_X) ok []
+  hgb       feature_names_in_=None...; own names=None; get_feature_importances=None; estimator.predict(create_predict_X) ok ['X has feature names, but HistGradientBoostingRegre']
+  ridge     feature_names_in_=None...; own names=None; get_feature_importances=['x', '_level_skforecast', 'lag_3']; estimator.predict(create_predict_X) ok ['X has feature names, but Ridge was fitted without ']
+  catboost  feature_names_in_=None...; own names=['0', '1', '2']; get_feature_importances=['lag_3', '_level_skforecast', 'x']; estimator.predict(create_predict_X) ok []
+
+== 6. More estimators, one float block (encoding ordinal / None / onehot), predictions saved
+  errors: {}
+
+== 7. Forecasters fitted with the current code and saved (only written by 'today', read by both)
+  lgbm auto text               predict sum -226.328518; set_in_sample_residuals -> max |diff| with the residuals stored at fit: 0
+  xgb auto ordinal_category    predict sum -239.692455; set_in_sample_residuals -> max |diff| with the residuals stored at fit: 0
+  hgb auto text                predict sum -280.500022; set_in_sample_residuals -> max |diff| with the residuals stored at fit: 0
+  catboost auto text           predict sum -195.244404; set_in_sample_residuals -> max |diff| with the residuals stored at fit: 0
+  lgbm None 0..7               predict sum -226.328518; set_in_sample_residuals -> max |diff| with the residuals stored at fit: 0
+  lgbm None 10..80             predict sum 205.080531; set_in_sample_residuals -> max |diff| with the residuals stored at fit: 75.3
+[python 3.12.3, pandas 2.3.3, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, xgboost 3.4.1, catboost 1.2.10, skforecast 0.28.0 @ /home/user/sk_dnp2/skforecast]
+=== p3 (sin pyarrow) ===
+##### tree: proto
+
+== 1. Legacy recipe: OrdinalEncoder(int) + astype('category') in transformer_exog
+  lgbm  legacy + categorical_features=None :  osa   4.23 | bt   4.23
+  lgbm  legacy + categorical_features=auto :  osa   2.98 | bt   2.98
+  xgb   legacy + categorical_features=None :  osa   3.62 | bt   3.62
+  xgb   legacy + categorical_features=auto :  osa   2.40 | bt   2.40
+  hgb   legacy + categorical_features=None :  osa   4.53 | bt   4.53
+  hgb   legacy + categorical_features=auto :  osa   3.21 | bt   3.21
+
+== 2. Categorical features set by the user on the estimator, categorical_features=None
+  lgbm by index        osa   2.98 | bt   2.98
+  lgbm by name         osa   2.98 | bt   2.98
+  hgb by index         osa   3.21 | bt   3.21
+  hgb by name          osa   3.21 | bt   3.21
+  xgb feature_types    osa   2.42 | bt   2.42
+  catboost by index    osa   4.93 | bt   4.93
+  catboost by name     osa   4.93 | bt   4.93
+  single series (ForecasterRecursive), for reference:
+    lgbm by index      fit ok
+    lgbm by name       TypeError: Wrong type(str) or unknown name(c) in categorical_feature
+    hgb by name        ValueError: categorical_features should be passed as an array of integers or as a boolean mask when th
+
+== 3. encoding='ordinal_category' + None + user configuration: what the estimator ends with
+  lgbm, nothing set      columns with categorical splits: [3] | osa   1.78 | bt   1.78
+  lgbm, user index       columns with categorical splits: [3, 5] | osa   3.68 | bt   3.68
+  hgb, user index        is_categorical_=[3, 5] | osa   1.47 | bt   1.47
+  xgb, user types        feature_types=['q', 'q', 'q', 'c', 'q', 'c'] | osa   1.28 | bt   1.28
+  catboost, user index   cat features=[3, 5] | osa   7.57 | bt   7.57
+
+== 4. Wrapped estimators
+  TTR(lgbm), 'auto', ordinal, text               osa   4.23 | bt   4.23
+  TTR(lgbm), 'auto', ordinal_category, text      osa   4.23 | bt   4.23
+  TTR(lgbm), None, ordinal, category 0..7        osa   4.23 | bt   4.23
+  Pipeline(scaler, lgbm), 'auto', text           osa IndexError: index 0 is out of bounds for axis 0 with size 0 | bt ValueError: Pipeline.fit does not accept the categorical_feature parameter. You ca
+  Pipeline(scaler, lgbm), None, ordinal_category osa IndexError: index 0 is out of bounds for axis 0 with size 0 | bt ValueError: Pipeline.fit does not accept the categorical_feature parameter. You ca
+  Pipeline(scaler, ridge), 'auto', text          osa  31.62 | bt  31.62
+
+== 5. Names the fitted estimator keeps
+  lgbm      feature_names_in_=None...; own names=['Column_0', 'Column_1', 'Column_2']; get_feature_importances=['x', 'lag_3', 'lag_1']; estimator.predict(create_predict_X) ok []
+  xgb       feature_names_in_=None...; own names=None; get_feature_importances=['_level_skforecast', 'lag_3', 'lag_1']; estimator.predict(create_predict_X) ok []
+  hgb       feature_names_in_=None...; own names=None; get_feature_importances=None; estimator.predict(create_predict_X) ok ['X has feature names, but HistGradientBoostingRegre']
+  ridge     feature_names_in_=None...; own names=None; get_feature_importances=['x', '_level_skforecast', 'lag_3']; estimator.predict(create_predict_X) ok ['X has feature names, but Ridge was fitted without ']
+  catboost  feature_names_in_=None...; own names=['0', '1', '2']; get_feature_importances=['lag_3', '_level_skforecast', 'x']; estimator.predict(create_predict_X) ok []
+
+== 6. More estimators, one float block (encoding ordinal / None / onehot), predictions saved
+  errors: {}
+
+== 7. Forecasters fitted with the current code and saved (only written by 'today', read by both)
+  lgbm auto text               predict sum -226.328518; set_in_sample_residuals -> max |diff| with the residuals stored at fit: 0
+  xgb auto ordinal_category    predict sum -239.692455; set_in_sample_residuals -> max |diff| with the residuals stored at fit: 0
+  hgb auto text                predict sum -280.500022; set_in_sample_residuals -> max |diff| with the residuals stored at fit: 0
+  catboost auto text           predict sum -195.244404; set_in_sample_residuals -> max |diff| with the residuals stored at fit: 0
+  lgbm None 0..7               predict sum -226.328518; set_in_sample_residuals -> max |diff| with the residuals stored at fit: 0
+  lgbm None 10..80             predict sum 205.080531; set_in_sample_residuals -> max |diff| with the residuals stored at fit: 75.3
+[python 3.12.3, pandas 3.1.1, pyarrow no, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, xgboost 3.4.1, catboost 1.2.10, skforecast 0.28.0 @ /home/user/sk_dnp2/skforecast]
+=== p3 pa ===
+##### tree: proto
+
+== 1. Legacy recipe: OrdinalEncoder(int) + astype('category') in transformer_exog
+  lgbm  legacy + categorical_features=None :  osa   4.23 | bt   4.23
+  lgbm  legacy + categorical_features=auto :  osa   2.98 | bt   2.98
+  xgb   legacy + categorical_features=None :  osa   3.62 | bt   3.62
+  xgb   legacy + categorical_features=auto :  osa   2.40 | bt   2.40
+  hgb   legacy + categorical_features=None :  osa   4.53 | bt   4.53
+  hgb   legacy + categorical_features=auto :  osa   3.21 | bt   3.21
+
+== 2. Categorical features set by the user on the estimator, categorical_features=None
+  lgbm by index        osa   2.98 | bt   2.98
+  lgbm by name         osa   2.98 | bt   2.98
+  hgb by index         osa   3.21 | bt   3.21
+  hgb by name          osa   3.21 | bt   3.21
+  xgb feature_types    osa   2.42 | bt   2.42
+  catboost by index    osa   4.93 | bt   4.93
+  catboost by name     osa   4.93 | bt   4.93
+  single series (ForecasterRecursive), for reference:
+    lgbm by index      fit ok
+    lgbm by name       TypeError: Wrong type(str) or unknown name(c) in categorical_feature
+    hgb by name        ValueError: categorical_features should be passed as an array of integers or as a boolean mask when th
+
+== 3. encoding='ordinal_category' + None + user configuration: what the estimator ends with
+  lgbm, nothing set      columns with categorical splits: [3] | osa   1.78 | bt   1.78
+  lgbm, user index       columns with categorical splits: [3, 5] | osa   3.68 | bt   3.68
+  hgb, user index        is_categorical_=[3, 5] | osa   1.47 | bt   1.47
+  xgb, user types        feature_types=['q', 'q', 'q', 'c', 'q', 'c'] | osa   1.28 | bt   1.28
+  catboost, user index   cat features=[3, 5] | osa   7.57 | bt   7.57
+
+== 4. Wrapped estimators
+  TTR(lgbm), 'auto', ordinal, text               osa   4.23 | bt   4.23
+  TTR(lgbm), 'auto', ordinal_category, text      osa   4.23 | bt   4.23
+  TTR(lgbm), None, ordinal, category 0..7        osa   4.23 | bt   4.23
+  Pipeline(scaler, lgbm), 'auto', text           osa IndexError: index 0 is out of bounds for axis 0 with size 0 | bt ValueError: Pipeline.fit does not accept the categorical_feature parameter. You ca
+  Pipeline(scaler, lgbm), None, ordinal_category osa IndexError: index 0 is out of bounds for axis 0 with size 0 | bt ValueError: Pipeline.fit does not accept the categorical_feature parameter. You ca
+  Pipeline(scaler, ridge), 'auto', text          osa  31.62 | bt  31.62
+
+== 5. Names the fitted estimator keeps
+  lgbm      feature_names_in_=None...; own names=['Column_0', 'Column_1', 'Column_2']; get_feature_importances=['x', 'lag_3', 'lag_1']; estimator.predict(create_predict_X) ok []
+  xgb       feature_names_in_=None...; own names=None; get_feature_importances=['_level_skforecast', 'lag_3', 'lag_1']; estimator.predict(create_predict_X) ok []
+  hgb       feature_names_in_=None...; own names=None; get_feature_importances=None; estimator.predict(create_predict_X) ok ['X has feature names, but HistGradientBoostingRegre']
+  ridge     feature_names_in_=None...; own names=None; get_feature_importances=['x', '_level_skforecast', 'lag_3']; estimator.predict(create_predict_X) ok ['X has feature names, but Ridge was fitted without ']
+  catboost  feature_names_in_=None...; own names=['0', '1', '2']; get_feature_importances=['lag_3', '_level_skforecast', 'x']; estimator.predict(create_predict_X) ok []
+
+== 6. More estimators, one float block (encoding ordinal / None / onehot), predictions saved
+  errors: {}
+
+== 7. Forecasters fitted with the current code and saved (only written by 'today', read by both)
+  lgbm auto text               predict sum -226.328518; set_in_sample_residuals -> max |diff| with the residuals stored at fit: 0
+  xgb auto ordinal_category    predict sum -239.692455; set_in_sample_residuals -> max |diff| with the residuals stored at fit: 0
+  hgb auto text                predict sum -280.500022; set_in_sample_residuals -> max |diff| with the residuals stored at fit: 0
+  catboost auto text           predict sum -195.244404; set_in_sample_residuals -> max |diff| with the residuals stored at fit: 0
+  lgbm None 0..7               predict sum -226.328518; set_in_sample_residuals -> max |diff| with the residuals stored at fit: 0
+  lgbm None 10..80             predict sum 205.080531; set_in_sample_residuals -> max |diff| with the residuals stored at fit: 75.3
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, xgboost 3.4.1, catboost 1.2.10, skforecast 0.28.0 @ /home/user/sk_dnp2/skforecast]

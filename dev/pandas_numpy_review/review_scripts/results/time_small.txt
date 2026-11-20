@@ -1,0 +1,39 @@
+=== p2 ===
+D-NP1: single-series backtesting, 50 folds of 24 steps, no refit, exog of 3 float columns
+  Ridge         whole call    20.6 ms, fit    2.2 ms -> 0.37 ms per fold
+  LightGBM(50)  whole call   133.5 ms, fit   98.1 ms -> 0.71 ms per fold
+P2: fit of ForecasterRecursive(Ridge), 100000 rows, 3 float columns, with and without one bool column
+  float only                                  40.1 ms
+  float + bool                               231.9 ms
+  float + bool cast to float by the user      37.3 ms
+P7: v[[0, -1]] against v[np.array([0, -1])] on a DatetimeIndex
+  list 54.7 us, array 7.6 us, identical=True
+P17: DataFrame.drop(columns=[]) on a window of 24 rows x 10 columns
+  66.9 us per call
+[python 3.12.3, pandas 2.3.3, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 (sin pyarrow) ===
+D-NP1: single-series backtesting, 50 folds of 24 steps, no refit, exog of 3 float columns
+  Ridge         whole call    22.8 ms, fit    2.1 ms -> 0.41 ms per fold
+  LightGBM(50)  whole call   143.6 ms, fit   89.7 ms -> 1.08 ms per fold
+P2: fit of ForecasterRecursive(Ridge), 100000 rows, 3 float columns, with and without one bool column
+  float only                                  34.9 ms
+  float + bool                               216.5 ms
+  float + bool cast to float by the user      35.5 ms
+P7: v[[0, -1]] against v[np.array([0, -1])] on a DatetimeIndex
+  list 43.3 us, array 8.8 us, identical=True
+P17: DataFrame.drop(columns=[]) on a window of 24 rows x 10 columns
+  60.8 us per call
+[python 3.12.3, pandas 3.1.1, pyarrow no, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 pa ===
+D-NP1: single-series backtesting, 50 folds of 24 steps, no refit, exog of 3 float columns
+  Ridge         whole call    25.0 ms, fit    2.3 ms -> 0.45 ms per fold
+  LightGBM(50)  whole call   158.9 ms, fit   91.9 ms -> 1.34 ms per fold
+P2: fit of ForecasterRecursive(Ridge), 100000 rows, 3 float columns, with and without one bool column
+  float only                                  55.5 ms
+  float + bool                               251.1 ms
+  float + bool cast to float by the user      40.1 ms
+P7: v[[0, -1]] against v[np.array([0, -1])] on a DatetimeIndex
+  list 39.6 us, array 9.7 us, identical=True
+P17: DataFrame.drop(columns=[]) on a window of 24 rows x 10 columns
+  75.4 us per call
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]

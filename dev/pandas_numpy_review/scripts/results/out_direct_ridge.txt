@@ -1,0 +1,125 @@
+
+===== ForecasterDirect ridge exog=none
+wall fit 28.1 ms | predict 0.205 ms
+--- fit: profiled total 72.89 ms/call (attributed 73.02)
+   estimator(sklearn)              54.757 ms   75.1%
+   sklearn.clone                   10.856 ms   14.9%
+   numpy                            2.488 ms    3.4%
+   skforecast(self)                 2.098 ms    2.9%
+   pandas                           1.972 ms    2.7%
+   other:warnings.py                0.455 ms    0.6%
+--- predict: profiled total 0.78 ms/call (attributed 0.78)
+   pandas                           0.339 ms   43.4%
+   skforecast(self)                 0.266 ms   34.1%
+   numpy                            0.084 ms   10.7%
+   builtin                          0.067 ms    8.6%
+   other:warnings.py                0.024 ms    3.1%
+wall predict_interval(boot) 1.710 ms | quantiles 1.263 | bootstrapping 0.575 | set_in_sample_residuals 6.2
+--- predict_interval(bootstrapping): profiled total 3.04 ms/call (attributed 3.04)
+   pandas                           2.116 ms   69.6%
+   skforecast(self)                 0.549 ms   18.0%
+   numpy                            0.252 ms    8.3%
+   builtin                          0.083 ms    2.7%
+   other:warnings.py                0.036 ms    1.2%
+wall backtesting refit=False 50 folds 34.6 ms; initial fit(800) 23.5 ms; per fold excl. fit 0.222 ms
+--- backtesting refit=False (incl. initial fit): profiled total 88.37 ms/call (attributed 88.35)
+   estimator(sklearn)              38.088 ms   43.1%
+   pandas                          18.292 ms   20.7%
+   sklearn.clone                   14.983 ms   17.0%
+   skforecast(self)                10.512 ms   11.9%
+   builtin                          2.594 ms    2.9%
+   numpy                            1.435 ms    1.6%
+   other:copy.py                    0.902 ms    1.0%
+   other:warnings.py                0.731 ms    0.8%
+   other:functools.py               0.631 ms    0.7%
+--- fit(800) to subtract: profiled total 58.51 ms/call (attributed 58.51)
+   estimator(sklearn)              42.874 ms   73.3%
+   sklearn.clone                   10.595 ms   18.1%
+   pandas                           1.784 ms    3.0%
+   skforecast(self)                 1.407 ms    2.4%
+   numpy                            1.141 ms    2.0%
+   other:warnings.py                0.334 ms    0.6%
+
+===== ForecasterDirect ridge exog=num3
+wall fit 30.4 ms | predict 0.371 ms
+--- fit: profiled total 63.63 ms/call (attributed 63.72)
+   estimator(sklearn)              46.703 ms   73.4%
+   sklearn.clone                    9.774 ms   15.4%
+   skforecast(self)                 2.514 ms    4.0%
+   pandas                           2.208 ms    3.5%
+   numpy                            1.797 ms    2.8%
+   other:warnings.py                0.371 ms    0.6%
+--- predict: profiled total 0.85 ms/call (attributed 0.85)
+   pandas                           0.496 ms   58.2%
+   skforecast(self)                 0.228 ms   26.7%
+   numpy                            0.060 ms    7.1%
+   builtin                          0.052 ms    6.1%
+   other:warnings.py                0.015 ms    1.8%
+wall predict_interval(boot) 2.327 ms | quantiles 1.415 | bootstrapping 0.858 | set_in_sample_residuals 7.2
+--- predict_interval(bootstrapping): profiled total 3.59 ms/call (attributed 3.58)
+   pandas                           2.536 ms   70.7%
+   skforecast(self)                 0.658 ms   18.3%
+   numpy                            0.256 ms    7.1%
+   builtin                          0.095 ms    2.7%
+   other:warnings.py                0.036 ms    1.0%
+wall backtesting refit=False 50 folds 47.0 ms; initial fit(800) 26.1 ms; per fold excl. fit 0.419 ms
+--- backtesting refit=False (incl. initial fit): profiled total 107.58 ms/call (attributed 107.46)
+   estimator(sklearn)              36.882 ms   34.3%
+   pandas                          34.506 ms   32.1%
+   skforecast(self)                14.486 ms   13.5%
+   sklearn.clone                   14.170 ms   13.2%
+   builtin                          3.013 ms    2.8%
+   numpy                            1.767 ms    1.6%
+   other:copy.py                    1.096 ms    1.0%
+   other:warnings.py                0.785 ms    0.7%
+   other:functools.py               0.612 ms    0.6%
+--- fit(800) to subtract: profiled total 56.82 ms/call (attributed 56.78)
+   estimator(sklearn)              41.249 ms   72.6%
+   sklearn.clone                    9.713 ms   17.1%
+   pandas                           2.099 ms    3.7%
+   skforecast(self)                 1.883 ms    3.3%
+   numpy                            1.081 ms    1.9%
+   other:warnings.py                0.372 ms    0.7%
+
+===== ForecasterDirect ridge exog=cat1
+wall fit 32.2 ms | predict 1.582 ms
+--- fit: profiled total 69.99 ms/call (attributed 70.11)
+   estimator(sklearn)              47.650 ms   68.1%
+   sklearn.clone                   10.473 ms   15.0%
+   pandas                           3.447 ms    4.9%
+   sklearn.transformer(OrdinalEncoder/scaler)     3.114 ms    4.4%
+   skforecast(self)                 2.655 ms    3.8%
+   numpy                            2.000 ms    2.9%
+   other:warnings.py                0.379 ms    0.5%
+--- predict: profiled total 3.12 ms/call (attributed 3.13)
+   pandas                           1.400 ms   44.9%
+   sklearn.transformer(OrdinalEncoder/scaler)     1.322 ms   42.4%
+   skforecast(self)                 0.269 ms    8.6%
+   numpy                            0.065 ms    2.1%
+   builtin                          0.053 ms    1.7%
+   other:warnings.py                0.016 ms    0.5%
+wall predict_interval(boot) 4.274 ms | quantiles 2.550 | bootstrapping 2.017 | set_in_sample_residuals 8.5
+--- predict_interval(bootstrapping): profiled total 8.69 ms/call (attributed 8.70)
+   pandas                           4.717 ms   54.3%
+   sklearn.transformer(OrdinalEncoder/scaler)     2.747 ms   31.6%
+   skforecast(self)                 0.790 ms    9.1%
+   numpy                            0.299 ms    3.4%
+   builtin                          0.106 ms    1.2%
+wall backtesting refit=False 50 folds 125.9 ms; initial fit(800) 27.4 ms; per fold excl. fit 1.970 ms
+--- backtesting refit=False (incl. initial fit): profiled total 223.98 ms/call (attributed 224.20)
+   pandas                          81.248 ms   36.3%
+   sklearn.transformer(OrdinalEncoder/scaler)    66.301 ms   29.6%
+   estimator(sklearn)              37.061 ms   16.5%
+   skforecast(self)                16.925 ms    7.6%
+   sklearn.clone                   14.672 ms    6.6%
+   builtin                          3.278 ms    1.5%
+   numpy                            1.973 ms    0.9%
+   other:copy.py                    1.168 ms    0.5%
+--- fit(800) to subtract: profiled total 62.11 ms/call (attributed 62.12)
+   estimator(sklearn)              42.866 ms   69.0%
+   sklearn.clone                    9.870 ms   15.9%
+   pandas                           3.103 ms    5.0%
+   sklearn.transformer(OrdinalEncoder/scaler)     2.572 ms    4.1%
+   skforecast(self)                 1.887 ms    3.0%
+   numpy                            1.065 ms    1.7%
+   other:warnings.py                0.381 ms    0.6%

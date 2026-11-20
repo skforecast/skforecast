@@ -1,0 +1,7 @@
+float            ridge    today  fit    0.34 s (estimator.fit    0.06, in-sample predict   0.01, rest   0.27); peak     348 MB; estimator gets DataFrame float64 (295800, 28)
+float            ridge    proto  fit    0.36 s (estimator.fit    0.08, in-sample predict   0.01, rest   0.27); peak     411 MB; estimator gets ndarray float64 F read-only (295800, 28)
+int10            ridge    today  fit    0.41 s (estimator.fit    0.09, in-sample predict   0.03, rest   0.28); peak     441 MB; estimator gets DataFrame float64,int64 (295800, 28)
+int10            ridge    proto  fit    0.37 s (estimator.fit    0.06, in-sample predict   0.01, rest   0.30); peak     441 MB; estimator gets ndarray float64 F (295800, 28)
+none_cat2        ridge    today  fit    0.41 s (estimator.fit    0.09, in-sample predict   0.03, rest   0.28); peak     417 MB; estimator gets DataFrame category,float64 (295800, 28)
+none_cat2        ridge    proto  fit    0.38 s (estimator.fit    0.06, in-sample predict   0.01, rest   0.31); peak     416 MB; estimator gets ndarray float64 F (295800, 28)
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, xgboost 3.4.1, catboost 1.2.10, skforecast 0.28.0 @ /home/user/skforecast/skforecast]

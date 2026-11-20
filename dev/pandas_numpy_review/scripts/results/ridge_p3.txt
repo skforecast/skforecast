@@ -1,0 +1,138 @@
+## N=20 exog=none est=ridge  fit total min of 5: 16.4 ms  (all: [32.7, 16.4, 22.8, 58.5, 36.0])
+   fit [total]                                       16.42 ms  100.0 %
+   estimator.fit                                      4.96 ms   30.2 %
+   _create_train_X_y [total]                          4.90 ms   29.8 %
+   _binning_in_sample_residuals                       2.95 ms   18.0 %
+   _assemble_train_X_y [total]                        2.06 ms   12.6 %
+   estimator.predict (in-sample res.)                 1.13 ms    6.9 %
+   check_preprocess_series                            0.83 ms    5.0 %
+   _filter_nan_train_X_y                              0.74 ms    4.5 %
+   single_series (per series)                         0.62 ms    3.8 %
+   _check_in_place_fit                                0.55 ms    3.4 %
+   _get_level_row_slices                              0.24 ms    1.5 %
+   align_series_and_exog_multiseries                  0.24 ms    1.5 %
+   _copy_rows_to_check                                0.18 ms    1.1 %
+   configure_estimator_categorical_features           0.01 ms    0.0 %
+   initialize_transformer_series                      0.01 ms    0.0 %
+   X_train shape (19520, 25) n_blocks 1 dtypes {dtype('float64'): np.int64(25)}
+   X_train flags F False C True
+   categorical_features_names_in_ None
+   est.fit(DataFrame) 4.4 ms vs fit(numpy) 4.0 ms; predict(DataFrame) 0.9 vs predict(numpy) 0.4 ms
+   identical predictions DF vs numpy: True
+## N=20 exog=wide est=ridge  fit total min of 5: 17.3 ms  (all: [36.5, 18.2, 18.0, 17.3, 18.6])
+   fit [total]                                       17.31 ms  100.0 %
+   _create_train_X_y [total]                          6.81 ms   39.4 %
+   estimator.fit                                      4.06 ms   23.4 %
+   _binning_in_sample_residuals                       3.11 ms   17.9 %
+   _assemble_train_X_y [total]                        2.10 ms   12.1 %
+   estimator.predict (in-sample res.)                 1.08 ms    6.2 %
+   single_series (per series)                         0.66 ms    3.8 %
+   _filter_nan_train_X_y                              0.64 ms    3.7 %
+   check_preprocess_series                            0.57 ms    3.3 %
+   _check_in_place_fit                                0.46 ms    2.6 %
+   compat.concat                                      0.34 ms    2.0 %
+   align_series_and_exog_multiseries                  0.24 ms    1.4 %
+   _get_level_row_slices                              0.23 ms    1.3 %
+   _copy_rows_to_check                                0.16 ms    0.9 %
+   get_exog_dtypes                                    0.14 ms    0.8 %
+   check_preprocess_exog_multiseries                  0.09 ms    0.5 %
+   configure_estimator_categorical_features           0.01 ms    0.0 %
+   X_train shape (19520, 28) n_blocks 1 dtypes {dtype('float64'): np.int64(28)}
+   X_train flags F False C True
+   categorical_features_names_in_ []
+   est.fit(DataFrame) 4.0 ms vs fit(numpy) 3.9 ms; predict(DataFrame) 1.0 vs predict(numpy) 0.4 ms
+   identical predictions DF vs numpy: True
+## N=20 exog=dictcat est=ridge  fit total min of 5: 26.6 ms  (all: [48.1, 26.7, 28.0, 26.6, 26.8])
+   fit [total]                                       26.61 ms  100.0 %
+   _create_train_X_y [total]                         15.57 ms   58.5 %
+   categorical_encoder.fit_transform                  5.24 ms   19.7 %
+   estimator.fit                                      4.54 ms   17.1 %
+   _binning_in_sample_residuals                       3.06 ms   11.5 %
+   check_preprocess_exog_multiseries                  2.34 ms    8.8 %
+   _assemble_train_X_y [total]                        2.18 ms    8.2 %
+   estimator.predict (in-sample res.)                 1.06 ms    4.0 %
+   single_series (per series)                         0.76 ms    2.9 %
+   compat.concat                                      0.72 ms    2.7 %
+   check_preprocess_series                            0.70 ms    2.6 %
+   _filter_nan_train_X_y                              0.62 ms    2.3 %
+   _check_in_place_fit                                0.53 ms    2.0 %
+   align_series_and_exog_multiseries                  0.28 ms    1.0 %
+   _get_level_row_slices                              0.24 ms    0.9 %
+   get_exog_dtypes                                    0.17 ms    0.6 %
+   _copy_rows_to_check                                0.17 ms    0.6 %
+   configure_estimator_categorical_features           0.01 ms    0.0 %
+   X_train shape (19520, 28) n_blocks 1 dtypes {dtype('float64'): np.int64(28)}
+   X_train flags F False C True
+   categorical_features_names_in_ ['c1']
+   est.fit(DataFrame) 4.1 ms vs fit(numpy) 3.9 ms; predict(DataFrame) 1.2 vs predict(numpy) 0.5 ms
+   identical predictions DF vs numpy: True
+## N=100 exog=none est=ridge  fit total min of 5: 53.9 ms  (all: [80.7, 53.9, 56.3, 64.7, 85.7])
+   fit [total]                                       53.85 ms  100.0 %
+   _create_train_X_y [total]                         16.52 ms   30.7 %
+   _binning_in_sample_residuals                      14.28 ms   26.5 %
+   estimator.fit                                     14.06 ms   26.1 %
+   _assemble_train_X_y [total]                        6.15 ms   11.4 %
+   check_preprocess_series                            3.81 ms    7.1 %
+   single_series (per series)                         2.51 ms    4.7 %
+   estimator.predict (in-sample res.)                 2.46 ms    4.6 %
+   _filter_nan_train_X_y                              2.14 ms    4.0 %
+   align_series_and_exog_multiseries                  0.84 ms    1.6 %
+   _check_in_place_fit                                0.61 ms    1.1 %
+   _get_level_row_slices                              0.51 ms    0.9 %
+   _copy_rows_to_check                                0.19 ms    0.4 %
+   initialize_transformer_series                      0.01 ms    0.0 %
+   configure_estimator_categorical_features           0.01 ms    0.0 %
+   X_train shape (97600, 25) n_blocks 1 dtypes {dtype('float64'): np.int64(25)}
+   X_train flags F False C True
+   categorical_features_names_in_ None
+   est.fit(DataFrame) 11.3 ms vs fit(numpy) 13.2 ms; predict(DataFrame) 2.0 vs predict(numpy) 1.4 ms
+   identical predictions DF vs numpy: True
+## N=100 exog=wide est=ridge  fit total min of 5: 65.9 ms  (all: [83.6, 68.6, 65.9, 104.4, 70.9])
+   fit [total]                                       65.88 ms  100.0 %
+   _create_train_X_y [total]                         26.13 ms   39.7 %
+   _binning_in_sample_residuals                      15.06 ms   22.9 %
+   estimator.fit                                     14.93 ms   22.7 %
+   _assemble_train_X_y [total]                        8.31 ms   12.6 %
+   single_series (per series)                         3.01 ms    4.6 %
+   estimator.predict (in-sample res.)                 2.99 ms    4.5 %
+   check_preprocess_series                            2.78 ms    4.2 %
+   _filter_nan_train_X_y                              2.22 ms    3.4 %
+   compat.concat                                      1.55 ms    2.4 %
+   align_series_and_exog_multiseries                  0.88 ms    1.3 %
+   _check_in_place_fit                                0.51 ms    0.8 %
+   _get_level_row_slices                              0.49 ms    0.8 %
+   _copy_rows_to_check                                0.21 ms    0.3 %
+   check_preprocess_exog_multiseries                  0.18 ms    0.3 %
+   get_exog_dtypes                                    0.17 ms    0.3 %
+   initialize_transformer_series                      0.01 ms    0.0 %
+   configure_estimator_categorical_features           0.01 ms    0.0 %
+   X_train shape (97600, 28) n_blocks 1 dtypes {dtype('float64'): np.int64(28)}
+   X_train flags F False C True
+   categorical_features_names_in_ []
+   est.fit(DataFrame) 13.4 ms vs fit(numpy) 16.2 ms; predict(DataFrame) 2.3 vs predict(numpy) 1.7 ms
+   identical predictions DF vs numpy: True
+## N=100 exog=dictcat est=ridge  fit total min of 5: 98.9 ms  (all: [175.7, 110.2, 144.3, 98.9, 99.2])
+   fit [total]                                       98.91 ms  100.0 %
+   _create_train_X_y [total]                         61.54 ms   62.2 %
+   categorical_encoder.fit_transform                 22.53 ms   22.8 %
+   estimator.fit                                     15.36 ms   15.5 %
+   _binning_in_sample_residuals                      13.13 ms   13.3 %
+   check_preprocess_exog_multiseries                  8.91 ms    9.0 %
+   _assemble_train_X_y [total]                        8.62 ms    8.7 %
+   compat.concat                                      3.51 ms    3.6 %
+   check_preprocess_series                            3.31 ms    3.3 %
+   single_series (per series)                         3.14 ms    3.2 %
+   estimator.predict (in-sample res.)                 2.48 ms    2.5 %
+   _filter_nan_train_X_y                              2.35 ms    2.4 %
+   align_series_and_exog_multiseries                  0.94 ms    0.9 %
+   _check_in_place_fit                                0.54 ms    0.5 %
+   _get_level_row_slices                              0.41 ms    0.4 %
+   _copy_rows_to_check                                0.23 ms    0.2 %
+   get_exog_dtypes                                    0.19 ms    0.2 %
+   initialize_transformer_series                      0.01 ms    0.0 %
+   configure_estimator_categorical_features           0.01 ms    0.0 %
+   X_train shape (97600, 28) n_blocks 1 dtypes {dtype('float64'): np.int64(28)}
+   X_train flags F False C True
+   categorical_features_names_in_ ['c1']
+   est.fit(DataFrame) 12.0 ms vs fit(numpy) 14.7 ms; predict(DataFrame) 2.2 vs predict(numpy) 1.7 ms
+   identical predictions DF vs numpy: True

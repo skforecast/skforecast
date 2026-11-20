@@ -1,0 +1,11 @@
+=== p2 ===
+n_series=600 exog=mixed est=ridge: fit 737 ms = create_train_X_y 494 ms (67 %), estimator.fit 206 ms (28 %), rest 37 ms (5 %)
+[python 3.12.3, pandas 2.3.3, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 (sin pyarrow) ===
+n_series=600 exog=mixed est=ridge: fit 792 ms = create_train_X_y 493 ms (62 %), estimator.fit 268 ms (34 %), rest 31 ms (4 %)
+[python 3.12.3, pandas 3.1.1, pyarrow no, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 pa ===
+n_series=600 exog=mixed est=ridge: fit 894 ms = create_train_X_y 660 ms (74 %), estimator.fit 205 ms (23 %), rest 29 ms (3 %)
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+n_series=600 exog=mixed est=lgbm: fit 5515 ms = create_train_X_y 729 ms (13 %), estimator.fit 4756 ms (86 %), rest 30 ms (1 %)
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]

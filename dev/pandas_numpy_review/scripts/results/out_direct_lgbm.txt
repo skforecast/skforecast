@@ -1,0 +1,72 @@
+
+===== ForecasterDirect lgbm exog=none
+wall fit 1762.3 ms | predict 1.027 ms
+--- fit: profiled total 1709.76 ms/call (attributed 1710.17)
+   estimator(lgbm)               1666.504 ms   97.5%
+   sklearn.clone                   35.328 ms    2.1%
+--- predict: profiled total 2.26 ms/call (attributed 2.26)
+   estimator(lgbm)                  1.606 ms   71.1%
+   pandas                           0.298 ms   13.2%
+   skforecast(self)                 0.213 ms    9.4%
+   other:<frozen _collections_abc>     0.055 ms    2.4%
+   builtin                          0.035 ms    1.5%
+   numpy                            0.031 ms    1.4%
+   other:warnings.py                0.021 ms    0.9%
+wall predict_interval(boot) 3.453 ms | quantiles 2.129 | bootstrapping 1.458 | set_in_sample_residuals 140.7
+--- predict_interval(bootstrapping): profiled total 6.55 ms/call (attributed 6.54)
+   estimator(lgbm)                  3.145 ms   48.0%
+   pandas                           2.323 ms   35.5%
+   skforecast(self)                 0.650 ms    9.9%
+   numpy                            0.215 ms    3.3%
+   other:<frozen _collections_abc>     0.105 ms    1.6%
+   builtin                          0.063 ms    1.0%
+   other:warnings.py                0.041 ms    0.6%
+wall backtesting refit=False 50 folds 1109.2 ms; initial fit(800) 1176.8 ms; per fold excl. fit -1.352 ms
+
+===== ForecasterDirect lgbm exog=num3
+wall fit 2082.9 ms | predict 1.264 ms
+--- fit: profiled total 2123.41 ms/call (attributed 2123.84)
+   estimator(lgbm)               2071.800 ms   97.6%
+   sklearn.clone                   41.177 ms    1.9%
+--- predict: profiled total 2.76 ms/call (attributed 2.76)
+   estimator(lgbm)                  1.676 ms   60.7%
+   pandas                           0.632 ms   22.9%
+   skforecast(self)                 0.291 ms   10.6%
+   other:<frozen _collections_abc>     0.054 ms    2.0%
+   builtin                          0.043 ms    1.6%
+   numpy                            0.041 ms    1.5%
+   other:warnings.py                0.020 ms    0.7%
+wall predict_interval(boot) 3.723 ms | quantiles 2.310 | bootstrapping 1.684 | set_in_sample_residuals 145.3
+--- predict_interval(bootstrapping): profiled total 7.08 ms/call (attributed 7.08)
+   estimator(lgbm)                  3.117 ms   44.0%
+   pandas                           2.772 ms   39.1%
+   skforecast(self)                 0.740 ms   10.4%
+   numpy                            0.232 ms    3.3%
+   other:<frozen _collections_abc>     0.106 ms    1.5%
+   builtin                          0.073 ms    1.0%
+   other:warnings.py                0.041 ms    0.6%
+wall backtesting refit=False 50 folds 1516.6 ms; initial fit(800) 1378.4 ms; per fold excl. fit 2.764 ms
+
+===== ForecasterDirect lgbm exog=cat1
+wall fit 1733.9 ms | predict 2.659 ms
+--- fit: profiled total 1829.49 ms/call (attributed 1829.93)
+   estimator(lgbm)               1779.228 ms   97.3%
+   sklearn.clone                   35.996 ms    2.0%
+--- predict: profiled total 5.62 ms/call (attributed 5.62)
+   estimator(lgbm)                  1.890 ms   33.6%
+   pandas                           1.730 ms   30.8%
+   sklearn.transformer(OrdinalEncoder/scaler)     1.479 ms   26.3%
+   skforecast(self)                 0.349 ms    6.2%
+   other:<frozen _collections_abc>     0.059 ms    1.1%
+   builtin                          0.049 ms    0.9%
+   numpy                            0.046 ms    0.8%
+wall predict_interval(boot) 6.037 ms | quantiles 3.387 | bootstrapping 2.820 | set_in_sample_residuals 134.6
+--- predict_interval(bootstrapping): profiled total 11.52 ms/call (attributed 11.53)
+   pandas                           4.504 ms   39.1%
+   estimator(lgbm)                  3.240 ms   28.1%
+   sklearn.transformer(OrdinalEncoder/scaler)     2.541 ms   22.1%
+   skforecast(self)                 0.801 ms    7.0%
+   numpy                            0.223 ms    1.9%
+   other:<frozen _collections_abc>     0.106 ms    0.9%
+   builtin                          0.073 ms    0.6%
+wall backtesting refit=False 50 folds 1214.1 ms; initial fit(800) 1138.6 ms; per fold excl. fit 1.511 ms

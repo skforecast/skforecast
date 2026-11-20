@@ -1,0 +1,163 @@
+n_series=600 rows=1500 exog=mixed est=lgbm folds=10 steps=24 refit=True
+CURRENT:   68711.9 ms (best of 1); memory over the data +740 MB (peak 990 MB)
+   preprocess                            79.0 ms
+   extract folds                       2939.9 ms
+   fit                                62118.8 ms
+     of which _recursive_predict        175.0 ms
+   predict                             1285.5 ms
+   metrics                              466.5 ms
+   total (instrumented)               67013.5 ms
+PROTOTYPE (metrics of today):   65750.5 ms -> 1.05x the whole call; metrics identical, predictions identical; memory +678 MB (peak 928 MB)
+   preprocess                           136.5 ms
+   matrix                                33.7 ms
+   exog_align                           271.0 ms
+   extract_train                       1756.1 ms
+   fit                                62644.5 ms
+   prepare_model                        107.8 ms
+   folds                                187.8 ms
+   output                                 7.2 ms
+   metrics                              577.6 ms
+   rest                                  28.2 ms
+PROTOTYPE (numpy metrics):   63957.2 ms -> 1.07x the whole call; metrics identical, predictions identical; memory +675 MB (peak 925 MB)
+   preprocess                           135.1 ms
+   matrix                                28.5 ms
+   exog_align                           240.3 ms
+   extract_train                       1796.8 ms
+   fit                                61410.8 ms
+   prepare_model                        111.9 ms
+   folds                                189.3 ms
+   output                                 7.4 ms
+   metrics                               11.1 ms
+   rest                                  25.9 ms
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p2 ===
+n_series=600 rows=1500 exog=mixed est=lgbm folds=50 steps=24 refit=False
+CURRENT:   12091.0 ms (best of 2); memory over the data +523 MB (peak 795 MB)
+   preprocess                           113.5 ms
+   extract folds                       4594.2 ms
+   fit                                 1810.3 ms
+     of which _recursive_predict        896.4 ms
+   predict                             5250.0 ms
+   metrics                              520.5 ms
+   total (instrumented)               12624.1 ms
+PROTOTYPE (metrics of today):    3667.1 ms -> 3.30x the whole call; metrics identical, predictions identical; memory +385 MB (peak 658 MB)
+   preprocess                            78.9 ms
+   matrix                                28.2 ms
+   exog_align                           275.3 ms
+   extract_train                        124.8 ms
+   fit                                 1674.4 ms
+   prepare_model                        168.4 ms
+   folds                                767.9 ms
+   output                                48.5 ms
+   metrics                              483.5 ms
+   rest                                  17.2 ms
+PROTOTYPE (numpy metrics):    3827.4 ms -> 3.16x the whole call; metrics identical, predictions identical; memory +309 MB (peak 607 MB)
+   preprocess                           106.7 ms
+   matrix                                29.2 ms
+   exog_align                           271.9 ms
+   extract_train                        200.4 ms
+   fit                                 1985.0 ms
+   prepare_model                        195.2 ms
+   folds                                917.9 ms
+   output                                63.4 ms
+   metrics                               38.1 ms
+   rest                                  19.5 ms
+[python 3.12.3, pandas 2.3.3, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 (sin pyarrow) ===
+n_series=600 rows=1500 exog=mixed est=lgbm folds=50 steps=24 refit=False
+CURRENT:   13708.9 ms (best of 2); memory over the data +497 MB (peak 743 MB)
+   preprocess                            88.3 ms
+   extract folds                       5511.9 ms
+   fit                                 1701.0 ms
+     of which _recursive_predict        852.4 ms
+   predict                             5440.4 ms
+   metrics                              517.2 ms
+   total (instrumented)               13567.6 ms
+PROTOTYPE (metrics of today):    4027.3 ms -> 3.40x the whole call; metrics identical, predictions identical; memory +311 MB (peak 557 MB)
+   preprocess                            83.7 ms
+   matrix                                49.1 ms
+   exog_align                           317.6 ms
+   extract_train                        143.8 ms
+   fit                                 1720.6 ms
+   prepare_model                        142.4 ms
+   folds                                866.4 ms
+   output                                35.7 ms
+   metrics                              647.7 ms
+   rest                                  20.3 ms
+PROTOTYPE (numpy metrics):    3444.4 ms -> 3.98x the whole call; metrics identical, predictions identical; memory +282 MB (peak 547 MB)
+   preprocess                            82.5 ms
+   matrix                                30.0 ms
+   exog_align                           286.8 ms
+   extract_train                        132.4 ms
+   fit                                 1854.4 ms
+   prepare_model                        150.0 ms
+   folds                                819.9 ms
+   output                                36.9 ms
+   metrics                               36.2 ms
+   rest                                  15.2 ms
+[python 3.12.3, pandas 3.1.1, pyarrow no, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+=== p3 pa ===
+n_series=600 rows=1500 exog=mixed est=lgbm folds=50 steps=24 refit=False
+CURRENT:   14386.8 ms (best of 2); memory over the data +490 MB (peak 740 MB)
+   preprocess                            83.1 ms
+   extract folds                       5357.7 ms
+   fit                                 2391.9 ms
+     of which _recursive_predict        867.6 ms
+   predict                             6394.1 ms
+   metrics                              646.6 ms
+   total (instrumented)               15137.4 ms
+PROTOTYPE (metrics of today):    4177.8 ms -> 3.44x the whole call; metrics identical, predictions identical; memory +343 MB (peak 617 MB)
+   preprocess                           133.0 ms
+   matrix                                31.5 ms
+   exog_align                           285.6 ms
+   extract_train                        209.4 ms
+   fit                                 1752.7 ms
+   prepare_model                        233.8 ms
+   folds                                777.2 ms
+   output                                38.5 ms
+   metrics                              701.2 ms
+   rest                                  14.9 ms
+PROTOTYPE (numpy metrics):    3597.9 ms -> 4.00x the whole call; metrics identical, predictions identical; memory +194 MB (peak 581 MB)
+   preprocess                            78.6 ms
+   matrix                                33.2 ms
+   exog_align                           330.2 ms
+   extract_train                        160.4 ms
+   fit                                 1837.8 ms
+   prepare_model                        236.0 ms
+   folds                                842.2 ms
+   output                                32.0 ms
+   metrics                               31.5 ms
+   rest                                  15.9 ms
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
+n_series=600 rows=1500 exog=mixed est=ridge folds=50 steps=24 refit=5
+CURRENT:   21387.9 ms (best of 1); memory over the data +998 MB (peak 1248 MB)
+   preprocess                            81.4 ms
+   extract folds                       6995.7 ms
+   fit                                 8411.3 ms
+     of which _recursive_predict         27.5 ms
+   predict                             4833.2 ms
+   metrics                              744.6 ms
+   total (instrumented)               21415.8 ms
+PROTOTYPE (metrics of today):   10564.7 ms -> 2.02x the whole call; metrics identical, predictions identical; memory +777 MB (peak 1050 MB)
+   preprocess                           137.3 ms
+   matrix                                33.8 ms
+   exog_align                           272.3 ms
+   extract_train                       1638.8 ms
+   fit                                 7408.2 ms
+   prepare_model                        298.6 ms
+   folds                                 58.3 ms
+   output                                36.4 ms
+   metrics                              656.5 ms
+   rest                                  24.6 ms
+PROTOTYPE (numpy metrics):   10212.0 ms -> 2.09x the whole call; metrics max abs diff 4.4e-16, predictions identical; memory +654 MB (peak 1040 MB)
+   preprocess                           126.7 ms
+   matrix                                31.0 ms
+   exog_align                           276.7 ms
+   extract_train                       1656.5 ms
+   fit                                 7670.0 ms
+   prepare_model                        293.0 ms
+   folds                                 55.8 ms
+   output                                36.1 ms
+   metrics                               41.1 ms
+   rest                                  25.2 ms
+[python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]

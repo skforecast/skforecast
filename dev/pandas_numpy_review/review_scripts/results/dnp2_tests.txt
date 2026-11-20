@@ -1,0 +1,36 @@
+=== p3pa: python 3.12.3 pandas 3.1.1
+--- skforecast/recursive/tests/tests_forecaster_recursive_multiseries
+FAILED skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_predict_X.py::test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor[categorical_features: auto]
+FAILED skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_predict_X.py::test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor[categorical_features: ['exog_2', 'exog_3']]
+FAILED skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_fit.py::test_fit_ValueError_when_estimator_modifies_X_train_in_place[encoding: ordinal-LinearRegression(copy_X=False)]
+FAILED skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_fit.py::test_fit_ValueError_when_estimator_modifies_X_train_in_place[encoding: ordinal-pipeline StandardScaler(copy=False)]
+FAILED skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_fit.py::test_fit_ValueError_when_estimator_modifies_X_train_in_place[encoding: ordinal-estimator adds a column]
+FAILED skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_fit.py::test_fit_ValueError_when_estimator_modifies_X_train_in_place[encoding: onehot-LinearRegression(copy_X=False)]
+FAILED skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_fit.py::test_fit_ValueError_when_estimator_modifies_X_train_in_place[encoding: onehot-pipeline StandardScaler(copy=False)]
+FAILED skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_fit.py::test_fit_ValueError_when_estimator_modifies_X_train_in_place[encoding: onehot-estimator adds a column]
+FAILED skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_fit.py::test_fit_ValueError_when_estimator_modifies_X_train_in_place[encoding: None-LinearRegression(copy_X=False)]
+FAILED skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_fit.py::test_fit_ValueError_when_estimator_modifies_X_train_in_place[encoding: None-pipeline StandardScaler(copy=False)]
+FAILED skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_fit.py::test_fit_ValueError_when_estimator_modifies_X_train_in_place[encoding: None-estimator adds a column]
+11 failed, 764 passed in 12.88s
+--- skforecast/model_selection/tests -k 'multiseries or one_step_ahead'
+FAILED skforecast/model_selection/tests/tests_utils/test_predict_and_calculate_metrics_one_step_ahead_multiseries.py::test_predict_and_calculate_metrics_one_step_ahead_multiseries_ValueError_when_estimator_modifies_X_train_in_place[LinearRegression(copy_X=False)-encoding: ordinal]
+FAILED skforecast/model_selection/tests/tests_utils/test_predict_and_calculate_metrics_one_step_ahead_multiseries.py::test_predict_and_calculate_metrics_one_step_ahead_multiseries_ValueError_when_estimator_modifies_X_train_in_place[LinearRegression(copy_X=False)-encoding: onehot]
+FAILED skforecast/model_selection/tests/tests_utils/test_predict_and_calculate_metrics_one_step_ahead_multiseries.py::test_predict_and_calculate_metrics_one_step_ahead_multiseries_ValueError_when_estimator_modifies_X_train_in_place[LinearRegression(copy_X=False)-encoding: None]
+FAILED skforecast/model_selection/tests/tests_utils/test_predict_and_calculate_metrics_one_step_ahead_multiseries.py::test_predict_and_calculate_metrics_one_step_ahead_multiseries_ValueError_when_estimator_modifies_X_train_in_place[pipeline StandardScaler(copy=False)-encoding: ordinal]
+FAILED skforecast/model_selection/tests/tests_utils/test_predict_and_calculate_metrics_one_step_ahead_multiseries.py::test_predict_and_calculate_metrics_one_step_ahead_multiseries_ValueError_when_estimator_modifies_X_train_in_place[pipeline StandardScaler(copy=False)-encoding: onehot]
+FAILED skforecast/model_selection/tests/tests_utils/test_predict_and_calculate_metrics_one_step_ahead_multiseries.py::test_predict_and_calculate_metrics_one_step_ahead_multiseries_ValueError_when_estimator_modifies_X_train_in_place[pipeline StandardScaler(copy=False)-encoding: None]
+6 failed, 539 passed, 1 skipped, 855 deselected in 157.29s (0:02:37)
+--- skforecast/utils/tests -k 'in_place or copy_rows or catboost or categorical'
+98 passed, 1056 deselected in 4.51s
+=== p2: python 3.12.3 pandas 2.3.3
+--- skforecast/recursive/tests/tests_forecaster_recursive_multiseries
+FAILED skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_predict_X.py::test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor[categorical_features: auto]
+FAILED skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_create_predict_X.py::test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor[categorical_features: ['exog_2', 'exog_3']]
+FAILED skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_fit.py::test_fit_ValueError_when_estimator_modifies_X_train_in_place[encoding: ordinal-estimator adds a column]
+FAILED skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_fit.py::test_fit_ValueError_when_estimator_modifies_X_train_in_place[encoding: onehot-estimator adds a column]
+FAILED skforecast/recursive/tests/tests_forecaster_recursive_multiseries/test_fit.py::test_fit_ValueError_when_estimator_modifies_X_train_in_place[encoding: None-estimator adds a column]
+5 failed, 770 passed in 11.18s
+--- skforecast/model_selection/tests -k 'multiseries or one_step_ahead'
+546 passed, 855 deselected in 129.18s (0:02:09)
+--- skforecast/utils/tests -k 'in_place or copy_rows or catboost or categorical'
+98 passed, 1056 deselected in 16.46s

@@ -1,0 +1,12 @@
+bdg2 OneStepAheadFold search: 1578 series, 10 trials, LightGBM (n_jobs=None); best lags 62, MAE 234.39
+  total                                  279.89 s
+  split (2 calls, skforecast matrices)                 11.62 s (  4.2 %)
+  trials: estimator.fit (10 trials)                   192.91 s ( 68.9 %)
+  trials: estimator.predict                             3.68 s (  1.3 %)
+  trials: rest (group by level, inverse, metrics)       8.56 s (  3.1 %)
+  final fit: estimator.fit                             51.71 s ( 18.5 %)
+  final fit: estimator.predict (in-sample residuals)    7.03 s (  2.5 %)
+  final fit: rest (create_train_X_y...)                 3.71 s (  1.3 %)
+  other (optuna, results table)                         0.66 s (  0.2 %)
+  -> model (estimator fit + predict): 255.33 s (91.2 %); not model: 24.56 s (8.8 %)
+  [python 3.12.3, pandas 3.1.1, pyarrow 26.0.1, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0, skforecast 0.28.0 @ /home/user/sk_perf/skforecast]
