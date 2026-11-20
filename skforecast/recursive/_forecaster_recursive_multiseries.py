@@ -3026,7 +3026,17 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         if exog is not None:
             # Exog is transformed into a dict where each key is a step and each value
             # is a numpy array where each column is an exog and each row a series
-            exog_values_all_levels = pd.concat(exog_values_all_levels)
+            # NOTE: A wide `exog` is the same DataFrame for all levels, so its
+            # values are repeated with numpy instead of concatenating it once per
+            # level. The array is the same: `pd.concat` keeps the dtypes of the
+            # copies and `to_numpy` combines them in the same way. Without
+            # levels, `pd.concat` is kept, it raises the usual error.
+            if not isinstance(exog, dict) and levels:
+                exog_values_all_levels = np.tile(
+                    exog_values.to_numpy(), (len(levels), 1)
+                )
+            else:
+                exog_values_all_levels = pd.concat(exog_values_all_levels)
             if isinstance(exog, dict):
                 exog_values_all_levels = transform_dataframe(
                                              df                = exog_values_all_levels,
@@ -3049,7 +3059,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                         exog=exog_values_all_levels, call_check_exog=False
                     )
             
-            exog_values_all_levels = exog_values_all_levels.to_numpy()
+            if isinstance(exog_values_all_levels, pd.DataFrame):
+                exog_values_all_levels = exog_values_all_levels.to_numpy()
             exog_values_dict = {
                 i + 1: exog_values_all_levels[i::steps, :] 
                 for i in range(steps)

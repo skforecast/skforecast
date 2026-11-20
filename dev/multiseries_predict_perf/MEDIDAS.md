@@ -329,3 +329,32 @@ En backtesting la exog larga se corta una vez, al convertirla en diccionario, no
 **Identidad** frente a la base (`cb03fbe96`), cinco baterías: 0 diferencias en los tres entornos (ms 4591 / 4510 / 4510 casos, trims 2911, dtypes 312, exog 424 / 424 / 396, labels 7866 / 8106 / 3110; p2 / p3 con pa / p3 sin pa). Casos límite del formato largo (57 variantes, 483 llamadas por entorno: corte directo, también con `series_ids`; `create_train_X_y`, `fit`, `predict`, `predict_interval` y backtesting), frente a `1be8a4d90`: 0 diferencias en los tres entornos, y los datos del usuario no cambian.
 
 Pendiente de la verificación final de la rama: los tiempos en pandas 2 y en pandas 3 sin `pyarrow`.
+
+## 15. Cambio 5: repetir la exog ancha con numpy (2026-11-20)
+
+Prototipo sobre una copia de `aae5b99be`, medido frente a esa misma copia sin el cambio (`MS_BASE_TREE`). Protocolo ligero: solo pandas 3.1.1 con `pyarrow` (numpy 2.5.4, Python 3.13.18), los casos afectados (`predict` con exog ancha, 20 y 100 series, todas sus variantes) y dos controles (`predict` sin exog y backtesting con exog ancha, que va por la rama de diccionario y no cambia); expresión regular `C5` en `$MS_WORK/cambio5_regex.sh` (fuera del repositorio). Núcleo 12, 2 rondas en cada orden de los árboles.
+
+**Tanda descartada.** La primera se lanzó durante una llamada de Zoom (carga del 36 al 63 %): los controles se movían de −6,8 a +8,3 %. Repetida con la carga entre el 4 y el 12 %; los dos órdenes coinciden.
+
+**Coste aislado** (`timeit`, mínimo de 7 tandas, sin fijar el proceso; solo para dimensionar): `pd.concat` de la misma tabla una vez por nivel más `to_numpy`, 151 µs con 20 series y exog float, 414 µs con exog mezclada (float, `int`, `category`) y 560 / 1280 µs con 100 series; `np.tile`, de 4 a 25 µs.
+
+| Caso (p3 con pa) | Base primero | Prototipo primero | Media |
+|---|---|---|---|
+| `predict`, exog ancha, 20 series (1248 → 1038 µs) | 17,2 | 16,5 | 16,9 |
+| Ídem, 100 series (1825 → 1206 µs) | 34,2 | 33,7 | 34,0 |
+| Sin codificación (`encoding=None`), 20 / 100 series | 16,4 / 36,8 | 15,1 / 34,1 | 15,8 / 35,5 |
+| `onehot`, 20 / 100 series | 18,6 / 34,2 | 16,4 / 34,9 | 17,5 / 34,6 |
+| Exog mezclada, 20 / 100 series | 12,5 / 30,0 | 12,5 / 29,8 | 12,5 / 29,9 |
+| Más filas que `steps` (`extra=10`), 20 / 100 series | 17,9 / 33,9 | 16,9 / 34,9 | 17,4 / 34,4 |
+| LightGBM, 20 / 100 series | 12,7 / 30,2 | 15,5 / 29,8 | 14,1 / 30,0 |
+| Ventana guardada, 20 / 100 series | 14,5 / 22,6 | 11,1 / 19,9 | 12,8 / 21,3 |
+| 24 pasos, 20 / 100 series | 14,3 / 28,6 | 12,8 / 29,0 | 13,6 / 28,8 |
+| 24 pasos con LightGBM, 20 / 100 series | 5,5 / 8,0 | 7,8 / 7,8 | 6,7 / 7,9 |
+| Control: `predict` sin exog, 20 series | −0,6 | −0,7 | −0,7 |
+| Control: backtesting por fold, exog ancha, 20 series | 0,0 | −0,9 | −0,5 |
+
+El prototipo antiguo (§6) daba 18 / 13 / 11 % en `predict` con exog ancha y 20 series; sobre el árbol actual, con el coste fijo ya recortado por los cambios anteriores, el `concat` pesa más y la ganancia en pandas 3 con `pyarrow` es mayor.
+
+**Identidad** frente a la base (`cb03fbe96`), cinco baterías: 0 diferencias en los tres entornos (ms 4591 / 4510 / 4510 casos, trims 2911, dtypes 312, exog 424 / 424 / 396, labels 7866 / 8106 / 3110; p2 / p3 con pa / p3 sin pa). Casos límite de la exog ancha (frente a `aae5b99be`, 16 030 / 16 030 / 15 038 llamadas): 0 diferencias, también en el diccionario de arrays de `_create_predict_inputs`; la exog del usuario no cambia.
+
+Pendiente de la verificación final de la rama: los tiempos en pandas 2 y en pandas 3 sin `pyarrow`.
