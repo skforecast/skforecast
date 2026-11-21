@@ -177,7 +177,7 @@ def run_benchmark_ForecasterRecursiveMultiSeries(output_dir, run_id=None):
     # _create_lags
     # ==========================================================================
     def ForecasterRecursiveMultiSeries__create_lags(forecaster, y, train_index):
-        forecaster._create_lags(y=y, X_as_pandas=True, train_index=train_index)
+        forecaster._create_lags(y=y, X_as_pandas=False, train_index=train_index)
 
     # _create_train_X_y and create_train_X_y_single_series
     # ==========================================================================
