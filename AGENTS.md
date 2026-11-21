@@ -127,7 +127,7 @@ skforecast/
 ├── direct/                  # ForecasterDirect, ForecasterDirectMultiVariate
 ├── deep_learning/           # ForecasterRnn, create_and_compile_model
 ├── foundation/              # FoundationModel, ForecasterFoundation, get_model_info, list_adapters
-│                            # (zero-shot: Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL, Timestral, TiRex-2)
+│                            # (zero-shot: Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL, Timestral, TiRex-2, ci-proto)
 ├── stats/                   # Arima, Sarimax, Ets, Arar, acf, pacf, calculate_lag_autocorrelation
 ├── preprocessing/           # TimeSeriesDifferentiator, RollingFeatures, CalendarFeatures,
 │                            # QuantileBinner, ConformalIntervalCalibrator, reshape_* functions
@@ -148,7 +148,7 @@ skforecast/
 - **Forecasters inheriting from `ForecasterBase`**: ForecasterRecursive, ForecasterRecursiveMultiSeries, ForecasterRecursiveClassifier, ForecasterDirect, ForecasterDirectMultiVariate, ForecasterRnn
 - **Standalone forecasters (no inheritance)**: ForecasterStats, ForecasterEquivalentDate, ForecasterFoundation
 - Statistical models in `stats/` are wrapped by `ForecasterStats` (in `recursive/`)
-- `ForecasterFoundation` (in `foundation/`) wraps a `FoundationModel`, which delegates to an adapter class (`ChronosAdapter`, `TimesFM25Adapter`, `TimesFM3Adapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`, `NoriAdapter`, `TSICLAdapter`, `TimestralAdapter`, `TiRex2Adapter`) resolved from the HuggingFace `model_id`
+- `ForecasterFoundation` (in `foundation/`) wraps a `FoundationModel`, which delegates to an adapter class (`ChronosAdapter`, `TimesFM25Adapter`, `TimesFM3Adapter`, `MoiraiAdapter`, `TabICLAdapter`, `TabPFNAdapter`, `T0Adapter`, `NoriAdapter`, `TSICLAdapter`, `TimestralAdapter`, `TiRex2Adapter`, `CIprotoAdapter`) resolved from the HuggingFace `model_id`
 - `model_selection/` functions work with all forecaster types
 - `preprocessing/` classes can be passed to forecasters via `transformer_y`, `transformer_exog`, `window_features`
 
@@ -162,7 +162,7 @@ skforecast/
 | ForecasterDirectMultiVariate | Multivariate forecasting (multiple series as features) |
 | ForecasterRnn | Deep learning (RNN/LSTM) forecasting |
 | ForecasterStats | Statistical models (ARIMA, SARIMAX, ETS, ARAR) |
-| ForecasterFoundation | Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL, Timestral, TiRex-2) |
+| ForecasterFoundation | Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL, Timestral, TiRex-2, ci-proto) |
 | ForecasterRecursiveClassifier | Classification-based forecasting |
 | ForecasterEquivalentDate | Baseline forecaster using equivalent past dates |
 
@@ -546,7 +546,7 @@ forecaster = ForecasterStats(estimator=Ets(m=12, model='AAA'))
 
 ## Foundation Models (Zero-Shot)
 
-Pre-trained time series foundation models that forecast without task-specific training. Each model requires its own backend library installed separately (`chronos-forecasting`, `timesfm`, `uni2ts` (declares numpy 1.26 and scipy 1.11 but works with numpy 2: `pip install uni2ts "pandas>=2.3"`, then `pip install "numpy>=2" "scipy>=1.13"`), `tabicl`, `tabpfn-time-series`, `tfc-t0[torch]` (>= 0.6), `synthefy-nori`, `tsicl`, `tirex-2` (Python >= 3.11), `timestral`, installed from git with `pip install "timestral @ git+https://github.com/mistralai/timestral.git"`). Models are downloaded from HuggingFace on first use.
+Pre-trained time series foundation models that forecast without task-specific training. Each model requires its own backend library installed separately (`chronos-forecasting`, `timesfm`, `uni2ts` (declares numpy 1.26 and scipy 1.11 but works with numpy 2: `pip install uni2ts "pandas>=2.3"`, then `pip install "numpy>=2" "scipy>=1.13"`), `tabicl`, `tabpfn-time-series`, `tfc-t0[torch]` (>= 0.6), `synthefy-nori`, `tsicl`, `tirex-2` (Python >= 3.11), `continuousintelligence>=0.2.0`, `timestral`, installed from git with `pip install "timestral @ git+https://github.com/mistralai/timestral.git"`). Models are downloaded from HuggingFace on first use.
 
 `FoundationModel` is the low-level interface; `ForecasterFoundation` wraps it to integrate with the rest of the skforecast ecosystem (backtesting, model selection, uniform `predict` / `predict_interval` / `predict_quantiles` API).
 
@@ -587,6 +587,7 @@ Supported adapters (selected automatically from `model_id`). Query them programm
 | TSICLAdapter (EDF Lab) | `taharnbl/TS-ICL` | Yes (past & future covariates) | 4096 | Subset of `[0.01, 0.02, ..., 0.99]` |
 | TimestralAdapter (Mistral AI) | `mistralai/Timestral` | Yes (past, known-future and categorical covariates) | 4096 | Subset of `[0.01, 0.05, 0.1, ..., 0.95, 0.99]` (21 levels) |
 | TiRex2Adapter (NX-AI) | `NX-AI/TiRex-2` | Yes (past & known-future covariates) | 2048 | `[0.1, 0.2, ..., 0.9]` |
+| CIprotoAdapter (Continuous Intelligence) | `ContinuousIntelligence/ci-proto` | Yes (past, known-future and categorical covariates) | None (all available history) | `[0.1, 0.2, ..., 0.9]` |
 
 ```python
 from skforecast.foundation import get_model_info, list_adapters
@@ -613,13 +614,13 @@ list_adapters(as_frame=True)
 ```
 
 Key points:
-- `fit()` only stores the last `context_length` observations and metadata. It does **not** train the model.
+- `fit()` stores the last `context_length` observations and metadata, or all available history when `context_length=None`. It does **not** train the model.
 - The index must have a frequency (`data.asfreq(...)`), same requirement as other skforecast forecasters.
 - `predict(..., context=...)` lets you override the stored context (used internally by backtesting).
 - Use `backtesting_foundation` (not `backtesting_forecaster`) to evaluate a `ForecasterFoundation`. It deep-copies `cv` and forces `refit=True`, `fixed_train_size=False`, so the context window expands with each fold up to `context_length`; no weights are ever trained.
 - Use `bayesian_search_foundation` (not `bayesian_search_forecaster`) to tune inference-time parameters such as `context_length`. Only `TimeSeriesFold` is supported.
 - Loading a model whose weights are released under a license that restricts commercial use (TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL, Timestral) raises a `LicenseWarning` naming the license and a link to the model card; review the link, since terms vary (e.g. TabPFN-TS permits commercial use under an enterprise license; Timestral grants no rights to companies above USD 20 million of monthly revenue). Absence of the warning does not guarantee a model's license is unrestricted. Suppress it like any other skforecast warning (`suppress_warnings=True` or `warnings.simplefilter`).
-- At predict time, the columns of the future `exog` are validated per series against the historical exog (the one passed to `fit`, or `context_exog`). A future column with no historical values raises a `ValueError`. A historical column with no future values is a past-only covariate: used as such when `forecaster.supports_past_only_covariates` is `True` (Chronos-2, TS-ICL, TimesFM 3.0, Timestral, TiRex-2), ignored with an `IgnoredArgumentWarning` otherwise (TabICL, TabPFN-TS, TFC-T0, Nori): the forecast is then the same as without that column.
+- At predict time, the columns of the future `exog` are validated per series against the historical exog (the one passed to `fit`, or `context_exog`). A future column with no historical values raises a `ValueError`. A historical column with no future values is a past-only covariate: used as such when `forecaster.supports_past_only_covariates` is `True` (Chronos-2, TS-ICL, TimesFM 3.0, Timestral, TiRex-2, ci-proto), ignored with an `IgnoredArgumentWarning` otherwise (TabICL, TabPFN-TS, TFC-T0, Nori): the forecast is then the same as without that column.
 - Multi-series input may be heterogeneous: series can have different lengths, a different subset of exog columns each, and NaN values. Each series is forecast with its own exog columns only. When the backend needs identical covariate columns in a batch (`forecaster.supports_heterogeneous_covariates` is `False`: Chronos-2, TS-ICL, TabICL, TimesFM 3.0, TFC-T0, Timestral), the series are grouped by their exog columns and the backend is called once per group, so the forecast of a series never depends on the exog of the others. `forecaster.supports_nan_in_series` tells whether the backend accepts NaN in the context.
 - Timestral: with a known covariate that is constant over the context and changes over the horizon (a price, or a 0/1 indicator that is 0 over the whole context), the upper quantiles can become very large (mistralai/timestral#7); a `FeatureOutOfRangeWarning` names the affected series and columns, and setting their historical values to NaN avoids it.
 - TiRex-2: each checkpoint forecasts at most `future_len` steps ahead (320 for `NX-AI/TiRex-2`, 928 for the gifteval checkpoints), so a longer `steps` raises a `ValueError` (the backend would silently return a shorter forecast). All the series go to the backend in the same call whatever their exog, in calls of at most 64 series.

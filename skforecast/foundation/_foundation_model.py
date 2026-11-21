@@ -41,7 +41,7 @@ class FoundationModel:
 
     Currently supports Amazon Chronos-2, Google TimesFM 2.5 and 3.0, Salesforce
     Moirai-2, TabICLv2, TabPFN-TS, TFC-T0, Synthefy Nori, EDF Lab TS-ICL,
-    Mistral AI Timestral and NX-AI TiRex-2.
+    Mistral AI Timestral, NX-AI TiRex-2 and Continuous Intelligence ci-proto.
     For full skforecast ecosystem integration (backtesting, model selection, etc.)
     use `ForecasterFoundation` instead.
 
@@ -102,6 +102,10 @@ class FoundationModel:
 
         - `'NX-AI/TiRex-2'`
 
+        Continuous Intelligence ci-proto (supports `exog`):
+
+        - `'ContinuousIntelligence/ci-proto'`
+
         See References for links to model documentation and model cards.
     **kwargs :
         Additional keyword arguments forwarded to the underlying adapter.
@@ -151,6 +155,12 @@ class FoundationModel:
         - **NX-AI TiRex-2** (`TiRex2Adapter`): `context_length` (int, default
           2048), `device` (str, default `'auto'`), `predict_kwargs` (dict,
           default None).
+        - **Continuous Intelligence ci-proto** (`CIprotoAdapter`):
+          `context_length` (int or None, default None, retains all history),
+          `device` (str, default `'auto'`, CUDA or CPU), `revision` (str,
+          default None). The backend automatically selects the short-context
+          or long-context variant; the model supports up to 2 million
+          context observations.
 
     Attributes
     ----------
@@ -169,9 +179,9 @@ class FoundationModel:
         exog variables from the training data, stored during `fit`. `None` if
         the adapter does not support exogenous variables or no exog was
         provided. Mirrors `adapter.context_exog_`.
-    context_length : int
-        Maximum number of historical observations used as context. Mirrors
-        `adapter.context_length`.
+    context_length : int, None
+        Maximum number of historical observations used as context. `None`
+        retains all available history. Mirrors `adapter.context_length`.
     allow_exog : bool
         Whether the underlying adapter supports exogenous variables.
     supports_past_only_covariates : bool
@@ -236,7 +246,7 @@ class FoundationModel:
     - `device_map` (plus `torch_dtype`), HuggingFace `from_pretrained`
       style: Chronos, T0.
     - `device` string, resolved internally to a concrete accelerator:
-      Moirai, TS-ICL, TimesFM 3.0, Timestral, TiRex-2.
+      Moirai, TS-ICL, TimesFM 3.0, Timestral, TiRex-2, ci-proto.
     - Through the backend configuration dict: TabICL (`tabicl_config`),
       TabPFN (`tabpfn_model_config`), Nori (`nori_config`).
     - No device parameter: TimesFM 2.5, which relies on its backend's own
@@ -372,14 +382,15 @@ class FoundationModel:
         return self.adapter.context_exog_
 
     @property
-    def context_length(self) -> int:
+    def context_length(self) -> int | None:
         """
         Maximum number of historical observations used as context.
 
         Returns
         -------
-        context_length : int
-            Maximum context length. Mirrors `adapter.context_length`.
+        context_length : int, None
+            Maximum context length. `None` retains all available history.
+            Mirrors `adapter.context_length`.
         """
         return self.adapter.context_length
 
@@ -407,7 +418,7 @@ class FoundationModel:
         supports_past_only_covariates : bool
             `True` if a column present in the historical exog but absent
             from the future `exog` is used as a past-only covariate
-            (Chronos-2, TS-ICL, TimesFM 3.0, Timestral, TiRex-2). `False`
+            (Chronos-2, TS-ICL, TimesFM 3.0, Timestral, TiRex-2, ci-proto). `False`
             if the adapter only uses covariates that also have future values,
             in which case such columns are ignored and an
             `IgnoredArgumentWarning` is issued at predict time (TabICL,
@@ -425,7 +436,7 @@ class FoundationModel:
         -------
         supports_heterogeneous_covariates : bool
             `True` if the backend accepts, in one call, series whose exog
-            columns differ (TabPFN-TS, Nori, TiRex-2, and the adapters that
+            columns differ (TabPFN-TS, Nori, TiRex-2, ci-proto, and the adapters that
             ignore exog). `False` if every series in a call must have the
             same columns (Chronos-2, TS-ICL, TabICL, TimesFM 3.0, TFC-T0,
             Timestral); in that case `predict` groups the series by their
@@ -564,14 +575,15 @@ class FoundationModel:
         -------
         context : dict
             Per-series dict of pandas Series, trimmed to the last
-            `context_length` observations.
+            `context_length` observations, or all history when it is `None`.
         series_indexes : dict
             Index of each series before trimming.
         series_names_in_ : list
             Names of the series.
         context_exog : dict or None
             Per-series dict of exogenous DataFrames trimmed to the last
-            `context_length` observations. `None` if `exog` is `None`.
+            `context_length` observations, or all history when it is `None`.
+            `None` if `exog` is `None`.
         exog_names_in_ : list or None
             Names of the exogenous variables. `None` if `exog` is `None`.
 
@@ -601,14 +613,17 @@ class FoundationModel:
                                          trim_series_nan  = False,
                                      )
 
+        context_start = (
+            -self.context_length if self.context_length is not None else None
+        )
         context = {
-            series_name: series_values.iloc[-self.context_length :]
+            series_name: series_values.iloc[context_start :]
             for series_name, series_values in series_dict.items()
         }
         if exog is not None:
             context_exog = {
                 series_name: (
-                    series_exog.iloc[-self.context_length :]
+                    series_exog.iloc[context_start :]
                     if series_exog is not None
                     else None
                 )

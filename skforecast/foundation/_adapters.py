@@ -6557,6 +6557,265 @@ class TiRex2Adapter(_AdapterBase):
         )
 
 
+class CIprotoAdapter(_AdapterBase):
+    """
+    Adapter for Continuous Intelligence ci-proto.
+
+    Parameters
+    ----------
+    model_id : str
+        Hugging Face model ID starting with `"ContinuousIntelligence/ci-proto"`.
+    model : object, default None
+        Pre-loaded `continuousintelligence.Forecaster`, intended for testing.
+        Otherwise the model is loaded on the first prediction.
+    context_length : int, None, default None
+        Optional limit on retained historical observations. By default all
+        available history is passed to ci-proto, which automatically selects
+        its short-context or long-context variant. The published model supports
+        context windows of up to 2 million observations.
+    device : str, default 'auto'
+        `"auto"` selects CUDA when available and CPU otherwise. Explicit values
+        are `"cpu"` and `"cuda"`, the devices supported by the backend.
+    revision : str, default None
+        Hugging Face revision passed to `continuousintelligence.load_model`.
+        Use a full commit SHA for reproducible weights and calibration.
+
+    Notes
+    -----
+    The optional `continuousintelligence>=0.2.0` backend supplies the released
+    preprocessing, calibration and long-horizon forecasting. Point forecasts
+    use its median; quantiles are selected from the loaded model's own grid.
+
+    Each target is forecast independently with its own history and covariates.
+
+    Dated series retain their own history and future dates as epoch nanoseconds,
+    used by the backend for calendar features. RangeIndex inputs do not receive
+    artificial dates. Categorical covariates are encoded per series using
+    consistent history/future codes; missing labels remain NaN.
+
+    References
+    ----------
+    .. [1] https://github.com/continuousintelligence/ci
+    .. [2] https://huggingface.co/ContinuousIntelligence/ci-proto
+
+    """
+
+    SUPPORTED_QUANTILES: list[float] = [
+        0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9
+    ]
+    allow_exog: bool = True
+    supports_past_only_covariates: bool = True
+    supports_categorical_covariates: bool = True
+    supports_heterogeneous_covariates: bool = True
+    requires_equal_length_context: bool = False
+    max_series_per_call: int | None = None
+    supports_nan_in_series: bool = True
+    requires_hf_auth: bool = False
+    requires_provider_auth: bool = False
+    weights_repo_id: str | None = None
+    weights_in_hf_cache: bool = True
+    backend_package: str = "continuousintelligence>=0.2.0"
+    default_model_id: str = "ContinuousIntelligence/ci-proto"
+    _MODEL_ID_PREFIX: str = "ContinuousIntelligence/ci-proto"
+
+    def __init__(
+        self,
+        model_id: str,
+        *,
+        model: Any | None = None,
+        context_length: int | None = None,
+        device: str = "auto",
+        revision: str | None = None,
+    ) -> None:
+        """Initialise the adapter without importing or loading the backend."""
+        _validate_model_id_prefix(model_id, self._MODEL_ID_PREFIX, type(self).__name__)
+        if context_length is not None:
+            _validate_positive_int("context_length", context_length)
+        self._validate_device(device)
+        self.model_id = model_id
+        self._model = model
+        self.context_length = context_length
+        self.device = device
+        self.revision = revision
+        self.context_ = None
+        self.context_exog_ = None
+        self.is_fitted = False
+
+    @staticmethod
+    def _validate_device(device: str) -> None:
+        """Validate the device names accepted by the ci-proto loader."""
+        if device not in ("auto", "cpu", "cuda"):
+            raise ValueError(
+                "CIprotoAdapter `device` must be 'auto', 'cpu' or 'cuda'. "
+                f"Got {device!r}."
+            )
+
+    def get_params(self) -> dict:
+        """Return constructor parameters, excluding the injected backend."""
+        return {
+            "model_id": self.model_id,
+            "context_length": self.context_length,
+            "device": self.device,
+            "revision": self.revision,
+        }
+
+    def set_params(self, **params) -> CIprotoAdapter:
+        """Set parameters and reload when the checkpoint or device changes."""
+        def validate(candidate_params: dict) -> dict:
+            if "model_id" in candidate_params:
+                _validate_model_id_prefix(
+                    candidate_params["model_id"],
+                    self._MODEL_ID_PREFIX,
+                    type(self).__name__,
+                )
+            if candidate_params.get("context_length") is not None:
+                _validate_positive_int(
+                    "context_length", candidate_params["context_length"]
+                )
+            if "device" in candidate_params:
+                self._validate_device(candidate_params["device"])
+            return candidate_params
+
+        return _apply_set_params(
+            self,
+            params,
+            validate=validate,
+            resets=(
+                (
+                    {"model_id", "device", "revision"},
+                    lambda: setattr(self, "_model", None),
+                ),
+            ),
+        )
+
+    @staticmethod
+    def _encode_covariate(values: pd.Series) -> tuple[np.ndarray, bool]:
+        """Convert numeric values or categorical labels, retaining missing data."""
+        if pd.api.types.is_complex_dtype(values.dtype):
+            raise ValueError("CIprotoAdapter covariates must contain real values.")
+        categorical = isinstance(values.dtype, pd.CategoricalDtype) or not (
+            pd.api.types.is_numeric_dtype(values.dtype)
+            or pd.api.types.is_bool_dtype(values.dtype)
+        )
+        if categorical:
+            codes, _ = pd.factorize(values, use_na_sentinel=True)
+            array = np.where(codes < 0, np.nan, codes).astype(np.float32)
+        else:
+            array = values.to_numpy(dtype=np.float32, na_value=np.nan)
+        return array, categorical
+
+    def _build_inputs(
+        self,
+        steps: int,
+        context: pd.Series,
+        context_exog: pd.DataFrame | pd.Series | None,
+        exog: pd.DataFrame | pd.Series | None,
+    ) -> dict[str, Any]:
+        """Translate one independent series without padding it to other histories."""
+        import torch
+
+        past_cols, future_cols = get_exog_signature(context_exog, exog)
+        ctx = (
+            context_exog.to_frame()
+            if isinstance(context_exog, pd.Series) else context_exog
+        )
+        fut = exog.to_frame() if isinstance(exog, pd.Series) else exog
+        past, future = [], []
+        categorical_past, categorical_future = [], []
+        for col_idx, col in enumerate(past_cols):
+            values, categorical = self._encode_covariate(ctx[col])
+            past.append(values)
+            if categorical:
+                categorical_past.append(col_idx)
+        for col_idx, col in enumerate(future_cols):
+            combined = pd.concat([ctx[col], fut[col]], ignore_index=True)
+            if any(
+                isinstance(frame[col].dtype, pd.CategoricalDtype)
+                for frame in (ctx, fut)
+            ):
+                combined = combined.astype("category")
+            values, categorical = self._encode_covariate(combined)
+            future.append(values)
+            if categorical:
+                categorical_future.append(col_idx)
+
+        dated = isinstance(context.index, pd.DatetimeIndex)
+        dates = (
+            context.index.append(expand_index(context.index, steps))
+            if dated else None
+        )
+        return {
+            "history": torch.from_numpy(
+                context.to_numpy(dtype=np.float32, na_value=np.nan)[None, :]
+            ),
+            "past_covariates": torch.from_numpy(np.stack(past)) if past else None,
+            "future_covariates": (
+                torch.from_numpy(np.stack(future)) if future else None
+            ),
+            "categorical_past": tuple(categorical_past),
+            "categorical_future": tuple(categorical_future),
+            "timestamps": (
+                torch.from_numpy(dates.as_unit("ns").asi8) if dated else None
+            ),
+            "freq": context.index.freqstr if dated else None,
+        }
+
+    def predict(
+        self,
+        steps: int,
+        context: dict[str, pd.Series],
+        context_exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        exog: dict[str, pd.DataFrame | pd.Series | None] | None,
+        quantiles: list[float] | tuple[float, ...] | None,
+    ) -> dict[str, np.ndarray]:
+        """Forecast independent targets and return `(steps, n_quantiles)` per series."""
+        requested = _validate_supported_quantiles(
+            quantiles, self.SUPPORTED_QUANTILES, "ci-proto"
+        )
+        self._load_model()
+        grid = _tensor_to_numpy(self._model.quantiles)
+        if grid.ndim != 1:
+            raise ValueError("ci-proto must expose a one-dimensional quantile grid.")
+        indices = _match_quantile_indices(
+            grid.tolist(), requested if requested is not None else [0.5]
+        )
+        predictions = {}
+        expected_shape = (1, len(grid), steps)
+        for name, series in context.items():
+            inputs = self._build_inputs(
+                steps,
+                series,
+                (context_exog or {}).get(name),
+                (exog or {}).get(name),
+            )
+            forecasts = _tensor_to_numpy(
+                self._model.forecast(horizon=steps, **inputs)
+            )
+            if forecasts.shape != expected_shape:
+                raise ValueError(
+                    "ci-proto returned an unexpected forecast shape for "
+                    f"{name!r}: {forecasts.shape!r}. Expected {expected_shape}."
+                )
+            predictions[name] = forecasts[0, indices, :].T
+
+        return predictions
+
+    def _load_model(self) -> None:
+        """Lazily load the weights and calibration from the same Hub revision."""
+        if self._model is not None:
+            return
+        try:
+            from continuousintelligence import load_model
+        except ImportError as exc:
+            raise ImportError(
+                f"{self.backend_package} is required for {type(self).__name__}. "
+                f'Install it with `pip install "{self.backend_package}"`.'
+            ) from exc
+        self._model = load_model(
+            self.model_id, device=self.device, revision=self.revision
+        )
+
+
 _ADAPTER_REGISTRY: dict[str, type] = {
     # Only Chronos-2 checkpoints: Chronos and Chronos-Bolt pipelines take a
     # different input format and do not accept `cross_learning`.
@@ -6565,6 +6824,7 @@ _ADAPTER_REGISTRY: dict[str, type] = {
     "google/timesfm-2.5": TimesFM25Adapter,
     "google/timesfm-3.0": TimesFM3Adapter,
     "NX-AI/TiRex-2":      TiRex2Adapter,
+    "ContinuousIntelligence/ci-proto": CIprotoAdapter,
     # Only Moirai-2 checkpoints: the configs of Moirai 1.x and Moirai-MoE lack
     # arguments required by `Moirai2Module` (`patch_size`, `d_ff`).
     "Salesforce/moirai-2": MoiraiAdapter,

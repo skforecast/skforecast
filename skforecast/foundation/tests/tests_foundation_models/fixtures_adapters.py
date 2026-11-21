@@ -819,9 +819,9 @@ class FakeTensor(np.ndarray):
 
 class FakeTorch:
     """
-    Minimal `torch` stand-in with the two attributes the adapter uses:
-    `float32` and `as_tensor`. The tensors it builds are numpy arrays viewed as
-    `FakeTensor`, so their values and shapes can be asserted directly.
+    Minimal `torch` stand-in with the dtype and tensor conversions used by the
+    adapters. The tensors it builds are numpy arrays viewed as `FakeTensor`,
+    so their values and shapes can be asserted directly.
     """
 
     float32 = np.float32
@@ -829,6 +829,10 @@ class FakeTorch:
     @staticmethod
     def as_tensor(value, dtype=None):
         return np.asarray(value, dtype=dtype).view(FakeTensor)
+
+    @staticmethod
+    def from_numpy(value):
+        return value.view(FakeTensor)
 
 
 class FakeTimeseriesType:

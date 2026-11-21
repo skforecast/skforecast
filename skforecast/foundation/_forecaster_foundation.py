@@ -67,10 +67,10 @@ class ForecasterFoundation:
         Alias for `context_`.
     last_window_exog_ : dict
         Alias for `context_exog_`.
-    context_length : int
-        Maximum number of historical observations used as context. Delegates
-        to `estimator.context_length`.
-    window_size : int
+    context_length : int, None
+        Maximum number of historical observations used as context, or `None`
+        for all available history. Delegates to `estimator.context_length`.
+    window_size : int, None
         Desired number of historical observations used as context by the
         model. Always equals `context_length`.
     allow_exog : bool
@@ -204,14 +204,15 @@ class ForecasterFoundation:
         }
 
     @property
-    def context_length(self) -> int:
+    def context_length(self) -> int | None:
         """
         Maximum number of historical observations used as context.
 
         Returns
         -------
-        context_length : int
-            Maximum context length. Delegates to `estimator.context_length`.
+        context_length : int, None
+            Maximum context length, or `None` for all available history.
+            Delegates to `estimator.context_length`.
         """
         return self.estimator.context_length
 
@@ -228,15 +229,16 @@ class ForecasterFoundation:
         return self.estimator.model_id
 
     @property
-    def window_size(self) -> int:
+    def window_size(self) -> int | None:
         """
         Desired number of historical observations used as context by the
         model. Always equals `context_length`.
 
         Returns
         -------
-        window_size : int
-            Context window size. Delegates to `estimator.context_length`.
+        window_size : int, None
+            Context window size, or `None` for all available history.
+            Delegates to `estimator.context_length`.
         """
         return self.estimator.context_length
 
