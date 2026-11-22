@@ -614,6 +614,11 @@ def test_calculate_distance_from_holiday_warns_and_fills_nan_in_series():
         ("2SME-15", "D"), ("BQE", "D"), ("BQE-DEC", "D"), ("BQS", "D"),
         ("BQS-JAN", "D"), ("BYE", "D"), ("BYE-DEC", "D"), ("BYS", "D"),
         ("BYS-JAN", "D"),
+        # Week of month and 52-53 week fiscal year and quarter
+        ("WOM-1MON", "D"), ("WOM-3FRI", "D"), ("RE-N-DEC-MON", "D"),
+        ("REQ-N-DEC-MON-1", "D"),
+        # Business hours stay in hours
+        ("bh", "h"), ("cbh", "h"),
         # Sub-daily
         ("h", "h"), ("H", "h"),
         ("min", "m"), ("T", "m"),
@@ -643,16 +648,20 @@ def test_freq_to_timedelta_unit(freq_str, expected_unit):
         ("BQS", [181, 91, 0, 0], [0, 0, 0, 92]),
         ("BYE", [728, 364, 0, 0], [0, 0, 0, 368]),
         ("BYS", [731, 364, 0, 0], [0, 0, 0, 364]),
+        ("WOM-1MON", [56, 28, 0, 0], [0, 0, 0, 35]),
+        ("RE-N-DEC-MON", [728, 364, 0, 0], [0, 0, 0, 364]),
+        ("REQ-N-DEC-MON-1", [182, 91, 0, 0], [0, 0, 0, 91]),
     ],
     ids=lambda x: f"{x}" if isinstance(x, str) else ""
 )
-def test_calculate_distance_from_holiday_output_in_days_when_semi_month_business_quarter_or_year_freq(
+def test_calculate_distance_from_holiday_output_in_days_when_calendar_offset_freq(
     freq, expected_to, expected_since
 ):
     """
     Test that the distances are in days, not hours, when the frequency of the
-    index is semi-month (`SME`, `SMS`), business quarter (`BQE`, `BQS`) or
-    business year (`BYE`, `BYS`).
+    index is a calendar offset coarser than daily: semi-month (`SME`, `SMS`),
+    business quarter (`BQE`, `BQS`), business year (`BYE`, `BYS`), week of
+    month (`WOM`) or 52-53 week fiscal year and quarter (`RE`, `REQ`).
     """
     idx = pd.date_range("2021-01-01", periods=4, freq=freq)
     df = pd.DataFrame({"is_holiday": [False, False, True, False]}, index=idx)
