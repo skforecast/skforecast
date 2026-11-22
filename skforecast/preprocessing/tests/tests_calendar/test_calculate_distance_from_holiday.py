@@ -609,6 +609,11 @@ def test_calculate_distance_from_holiday_warns_and_fills_nan_in_series():
         ("D", "D"), ("B", "D"), ("W", "D"), ("W-MON", "D"), ("W-FRI", "D"),
         ("ME", "D"), ("MS", "D"), ("BME", "D"), ("QE", "D"), ("QS", "D"),
         ("YE", "D"), ("YS", "D"),
+        # Semi-month, business quarter and business year (with pandas suffixes)
+        ("SME", "D"), ("SME-15", "D"), ("SMS", "D"), ("SMS-15", "D"),
+        ("2SME-15", "D"), ("BQE", "D"), ("BQE-DEC", "D"), ("BQS", "D"),
+        ("BQS-JAN", "D"), ("BYE", "D"), ("BYE-DEC", "D"), ("BYS", "D"),
+        ("BYS-JAN", "D"),
         # Sub-daily
         ("h", "h"), ("H", "h"),
         ("min", "m"), ("T", "m"),
@@ -627,6 +632,39 @@ def test_freq_to_timedelta_unit(freq_str, expected_unit):
     weekday suffixes, and unknown freq fallback to hours.
     """
     assert _freq_to_timedelta_unit(freq_str) == expected_unit
+
+
+@pytest.mark.parametrize(
+    "freq, expected_to, expected_since",
+    [
+        ("SME", [31, 15, 0, 0], [0, 0, 0, 13]),
+        ("SMS", [31, 17, 0, 0], [0, 0, 0, 14]),
+        ("BQE", [183, 92, 0, 0], [0, 0, 0, 92]),
+        ("BQS", [181, 91, 0, 0], [0, 0, 0, 92]),
+        ("BYE", [728, 364, 0, 0], [0, 0, 0, 368]),
+        ("BYS", [731, 364, 0, 0], [0, 0, 0, 364]),
+    ],
+    ids=lambda x: f"{x}" if isinstance(x, str) else ""
+)
+def test_calculate_distance_from_holiday_output_in_days_when_semi_month_business_quarter_or_year_freq(
+    freq, expected_to, expected_since
+):
+    """
+    Test that the distances are in days, not hours, when the frequency of the
+    index is semi-month (`SME`, `SMS`), business quarter (`BQE`, `BQS`) or
+    business year (`BYE`, `BYS`).
+    """
+    idx = pd.date_range("2021-01-01", periods=4, freq=freq)
+    df = pd.DataFrame({"is_holiday": [False, False, True, False]}, index=idx)
+
+    result = calculate_distance_from_holiday(df, holiday_column="is_holiday")
+
+    np.testing.assert_array_equal(
+        result["time_to_holiday"].to_numpy(dtype=float), expected_to
+    )
+    np.testing.assert_array_equal(
+        result["time_since_holiday"].to_numpy(dtype=float), expected_since
+    )
 
 
 @pytest.mark.parametrize("freq", ["min", "s", "ms", "us", "ns"])

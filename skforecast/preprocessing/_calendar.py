@@ -692,8 +692,10 @@ def _freq_to_timedelta_unit(freq_str: str) -> str:
     normalized = re.sub(r"^\d+", "", normalized)
 
     _coarse = {
-        "YE", "YS", "Y", "A", "AS", "QE", "QS", "Q",
+        "YE", "YS", "Y", "A", "AS", "BYE", "BYS",
+        "QE", "QS", "Q", "BQE", "BQS",
         "ME", "MS", "M", "BM", "BMS", "BME", "CBM", "CBMS", "CBME",
+        "SME", "SMS",
         "W", "D", "B", "C",
     }
     if normalized in _coarse:
