@@ -81,11 +81,11 @@ With pandas 3, the arrays of `out_sample_residuals_` stored by `set_out_sample_r
 
 ## Saving and loading forecasters
 
-+ A forecaster saved with pandas 2 loads with pandas 3, with any backend.
++ A forecaster saved with pandas 2 loads with pandas 3. With `joblib`, `pickle` or `cloudpickle`, the pandas 3 environment needs `pytz` (`pip install pytz`) when the dates of the forecaster have a time zone that pandas 2 stores as a `pytz` object: named time zones such as `'Europe/Madrid'`, and dates with a time zone read from Arrow or Parquet. pandas 3 does not install `pytz`, and without it the file raises a `ModuleNotFoundError`, to which `load_forecaster` adds a note explaining it. With `pytz` installed, the forecaster loads and gives the same predictions. Saving it again with these backends keeps the requirement: to remove it, train the forecaster again with pandas 3, or save it with `backend='skops'` (not available for `ForecasterStats`, `ForecasterFoundation` or `ForecasterRnn`) and check that the new file loads before uninstalling `pytz`.
 
 + A forecaster saved with pandas 3 with `joblib`, `pickle` or `cloudpickle` cannot be loaded with pandas 2: pandas fails to rebuild some of its objects, and `load_forecaster` adds a note to the error explaining it.
 
-+ `backend='skops'` works in both directions between pandas 2.3 and pandas 3. The list of types to trust depends on the pandas version that saved the file (for example, `pandas.core.indexes.datetimes.DatetimeIndex` in pandas 2 and `pandas.DatetimeIndex` in pandas 3, and `pandas.StringDtype` with text exogenous variables), so a list written for one version does not load files of the other. Get it from each file:
++ `backend='skops'` works in both directions between pandas 2.3 and pandas 3, and does not need `pytz`: it stores the time zone by its name. The list of types to trust depends on the pandas version that saved the file (for example, `pandas.core.indexes.datetimes.DatetimeIndex` in pandas 2 and `pandas.DatetimeIndex` in pandas 3, and `pandas.StringDtype` with text exogenous variables), so a list written for one version does not load files of the other. Get it from each file:
 
 ```python
 from skops.io import get_untrusted_types

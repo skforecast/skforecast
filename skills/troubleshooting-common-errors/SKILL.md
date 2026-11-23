@@ -320,7 +320,7 @@ forecaster.fit(y=y_train)
 joblib.dump(forecaster, 'forecaster_v0.22.pkl')
 ```
 
-Forecasters saved with pandas 3 using `joblib`, `pickle` or `cloudpickle` cannot be loaded with pandas 2 (an empty `AssertionError`, with a note from `load_forecaster`); files saved with pandas 2 load with pandas 3. To share a forecaster between pandas 2.3 and pandas 3, save it with `backend='skops'`, and get the `trusted` list from each file with `skops.io.get_untrusted_types(file=...)`: the type names depend on the pandas version that saved it.
+Forecasters saved with pandas 3 using `joblib`, `pickle` or `cloudpickle` cannot be loaded with pandas 2 (an empty `AssertionError`, with a note from `load_forecaster`); files saved with pandas 2 load with pandas 3, but with those backends pandas 2 stores some time zones as `pytz` objects (named zones such as `'Europe/Madrid'`, and dates with a time zone read from Arrow or Parquet), and the pandas 3 environment needs `pip install pytz` (otherwise `ModuleNotFoundError: No module named 'pytz'`, with a note from `load_forecaster`). To share a forecaster between pandas 2.3 and pandas 3, save it with `backend='skops'`, and get the `trusted` list from each file with `skops.io.get_untrusted_types(file=...)`: the type names depend on the pandas version that saved it.
 
 **Best practices:**
 - Always retrain and re-save forecasters after upgrading skforecast.
