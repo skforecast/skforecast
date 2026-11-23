@@ -1,9 +1,9 @@
 """
-BUG-splitter-long-phase: the 'long' outputs of `TimeSeriesSplitter` lose the
+BUG-splitter-long-phase: the 'long' outputs of `TimeSeriesSplitter` lost the
 values of a series with the same frequency as the others but a different phase
-(`_wide_with_freq` in `skforecast/experimental/_splitter.py` calls `asfreq`
+(`_wide_with_freq` in `skforecast/experimental/_splitter.py` called `asfreq`
 from the minimum date of the union of the indexes). The 'dict' and 'wide'
-outputs are right.
+outputs were right.
 
 Usage: python splitter_long_phase.py
 To compare: PYTHONPATH=<worktree of origin/0.27.x> python splitter_long_phase.py
@@ -14,6 +14,11 @@ Result (2026-11-21, pandas 2.3):
     D + 6h       0        0
     3h + 1h      0        0        (0.27.x also lost 'a': 1 of 7)
     MS + 14D     7        7
+
+Fixed in #1534 (branch `fix/splitter-long-phase`, 2026-11-22): 7 in the four
+cases, with pandas 2.3.3 and 3.1.1. `_long_from_dict` replaces
+`_wide_with_freq`: when the dates of the series are not all in the same grid,
+each series keeps its own dates, as in the 'dict' output.
 """
 import warnings
 

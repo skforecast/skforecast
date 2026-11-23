@@ -129,6 +129,18 @@ valores no NaN.
 
 Script: `repro/splitter_long_phase.py`.
 
+**Nota posterior (2026-11-23):** arreglado en #1534 (rama `fix/splitter-long-phase`), con la
+primera opción detrás del camino que había. `_long_from_dict` sustituye a `_wide_with_freq`:
+genera las fechas de la rejilla común y, si no contiene todas las del split (o no se puede
+construir por un cambio de hora), apila cada serie con sus propias fechas, como en `'dict'`;
+si las contiene, la salida es la de antes. En la rama, `b` tiene 7 valores en los cuatro
+casos, con pandas 2.3.3 y 3.1.1. El arreglo cubre también las uniones a las que pandas da una
+frecuencia que las fechas no siguen (`BusinessHour`, `MS` con horas distintas), que este
+informe no recogía. Al hacerlo aparecieron cuatro fallos previos, iguales en 0.27.0, con fila
+propia en el roadmap y script en `repro/`: BUG-wide-to-long-inferred-freq,
+BUG-utc-midnight-anchored-freq, BUG-splitter-positional-cuts y
+BUG-splitter-pandas2-dst-union (este, solo con pandas 2).
+
 ## 4. PERF-njobs-auto-first-fold
 
 Con `n_jobs='auto'`, el backtesting sin refit de `HistGradientBoostingRegressor` o

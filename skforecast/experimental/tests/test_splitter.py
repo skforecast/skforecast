@@ -2,6 +2,7 @@
 # ==============================================================================
 import sys
 import pytest
+import numpy as np
 import pandas as pd
 
 from .._splitter import TimeSeriesSplitter
@@ -87,6 +88,257 @@ def multiple_dfs():
         {'s3': range(80)}, index=pd.date_range('2023-01-01', periods=80, freq='D')
     )
     return df1, df2, df3
+
+
+def expected_long(series, return_multi_index, tz=None):
+    """
+    Build the expected long DataFrame from the dates and the values of each
+    series: {series_id: (dates, values)}. With `tz`, the dates are written with
+    their UTC offset.
+    """
+    series_ids = [k for k, (dates, _) in series.items() for _ in dates]
+    dates = [date for dates, _ in series.values() for date in dates]
+    values = [value for _, values in series.values() for value in values]
+    if tz is None:
+        dates = pd.DatetimeIndex(dates)
+    else:
+        dates = pd.to_datetime(dates, utc=True).tz_convert(tz)
+    expected = pd.DataFrame(
+        {'value': values},
+        index=pd.MultiIndex.from_arrays(
+            [series_ids, dates], names=['series_id', 'datetime']
+        ),
+    )
+
+    return expected if return_multi_index else expected.reset_index()
+
+
+# Expected long outputs of `split_by_size` with two series with the same
+# frequency and number of values: `a` starts on 2023-01-01 and `b` on `start_b`.
+# When the dates of both are in the same grid, they are filled with NaN up to
+# the span of the split (with 'MS', `date_range` moves the start of `b`,
+# 2023-01-15, to the next month start). Otherwise, each keeps its own dates.
+nan = np.nan
+long_cases = {
+    '7D + 3D': {
+        'freq': '7D',
+        'start_b': '2023-01-04',
+        'periods': 10,
+        'train_size': 7,
+        'train': {
+            'a': (
+                ['2023-01-01', '2023-01-08', '2023-01-15', '2023-01-22',
+                 '2023-01-29', '2023-02-05', '2023-02-12'],
+                [0., 1., 2., 3., 4., 5., 6.],
+            ),
+            'b': (
+                ['2023-01-04', '2023-01-11', '2023-01-18', '2023-01-25',
+                 '2023-02-01', '2023-02-08', '2023-02-15'],
+                [100., 101., 102., 103., 104., 105., 106.],
+            ),
+        },
+        'test': {
+            'a': (['2023-02-19', '2023-02-26', '2023-03-05'], [7., 8., 9.]),
+            'b': (['2023-02-22', '2023-03-01', '2023-03-08'], [107., 108., 109.]),
+        },
+    },
+    'D + 6h': {
+        'freq': 'D',
+        'start_b': '2023-01-01 06:00',
+        'periods': 10,
+        'train_size': 7,
+        'train': {
+            'a': (
+                ['2023-01-01', '2023-01-02', '2023-01-03', '2023-01-04',
+                 '2023-01-05', '2023-01-06', '2023-01-07'],
+                [0., 1., 2., 3., 4., 5., 6.],
+            ),
+            'b': (
+                ['2023-01-01 06:00', '2023-01-02 06:00', '2023-01-03 06:00',
+                 '2023-01-04 06:00', '2023-01-05 06:00', '2023-01-06 06:00',
+                 '2023-01-07 06:00'],
+                [100., 101., 102., 103., 104., 105., 106.],
+            ),
+        },
+        'test': {
+            'a': (['2023-01-08', '2023-01-09', '2023-01-10'], [7., 8., 9.]),
+            'b': (
+                ['2023-01-08 06:00', '2023-01-09 06:00', '2023-01-10 06:00'],
+                [107., 108., 109.],
+            ),
+        },
+    },
+    '3h + 1h': {
+        'freq': '3h',
+        'start_b': '2023-01-01 01:00',
+        'periods': 10,
+        'train_size': 7,
+        'train': {
+            'a': (
+                ['2023-01-01 00:00', '2023-01-01 03:00', '2023-01-01 06:00',
+                 '2023-01-01 09:00', '2023-01-01 12:00', '2023-01-01 15:00',
+                 '2023-01-01 18:00'],
+                [0., 1., 2., 3., 4., 5., 6.],
+            ),
+            'b': (
+                ['2023-01-01 01:00', '2023-01-01 04:00', '2023-01-01 07:00',
+                 '2023-01-01 10:00', '2023-01-01 13:00', '2023-01-01 16:00',
+                 '2023-01-01 19:00'],
+                [100., 101., 102., 103., 104., 105., 106.],
+            ),
+        },
+        'test': {
+            'a': (
+                ['2023-01-01 21:00', '2023-01-02 00:00', '2023-01-02 03:00'],
+                [7., 8., 9.],
+            ),
+            'b': (
+                ['2023-01-01 22:00', '2023-01-02 01:00', '2023-01-02 04:00'],
+                [107., 108., 109.],
+            ),
+        },
+    },
+    'MS + 14D': {
+        'freq': 'MS',
+        'start_b': '2023-01-15',
+        'periods': 10,
+        'train_size': 7,
+        'train': {
+            'a': (
+                ['2023-01-01', '2023-02-01', '2023-03-01', '2023-04-01',
+                 '2023-05-01', '2023-06-01', '2023-07-01', '2023-08-01'],
+                [0., 1., 2., 3., 4., 5., 6., nan],
+            ),
+            'b': (
+                ['2023-01-01', '2023-02-01', '2023-03-01', '2023-04-01',
+                 '2023-05-01', '2023-06-01', '2023-07-01', '2023-08-01'],
+                [nan, 100., 101., 102., 103., 104., 105., 106.],
+            ),
+        },
+        'test': {
+            'a': (
+                ['2023-08-01', '2023-09-01', '2023-10-01', '2023-11-01'],
+                [7., 8., 9., nan],
+            ),
+            'b': (
+                ['2023-08-01', '2023-09-01', '2023-10-01', '2023-11-01'],
+                [nan, 107., 108., 109.],
+            ),
+        },
+    },
+    # Same grid, spans separated by a gap: the union of the dates has no
+    # frequency.
+    'D, gap between spans': {
+        'freq': 'D',
+        'start_b': '2023-01-08',
+        'periods': 6,
+        'train_size': 4,
+        'train': {
+            'a': (
+                ['2023-01-01', '2023-01-02', '2023-01-03', '2023-01-04',
+                 '2023-01-05', '2023-01-06', '2023-01-07', '2023-01-08',
+                 '2023-01-09', '2023-01-10', '2023-01-11'],
+                [0., 1., 2., 3., nan, nan, nan, nan, nan, nan, nan],
+            ),
+            'b': (
+                ['2023-01-01', '2023-01-02', '2023-01-03', '2023-01-04',
+                 '2023-01-05', '2023-01-06', '2023-01-07', '2023-01-08',
+                 '2023-01-09', '2023-01-10', '2023-01-11'],
+                [nan, nan, nan, nan, nan, nan, nan, 100., 101., 102., 103.],
+            ),
+        },
+        'test': {
+            'a': (
+                ['2023-01-05', '2023-01-06', '2023-01-07', '2023-01-08',
+                 '2023-01-09', '2023-01-10', '2023-01-11', '2023-01-12',
+                 '2023-01-13'],
+                [4., 5., nan, nan, nan, nan, nan, nan, nan],
+            ),
+            'b': (
+                ['2023-01-05', '2023-01-06', '2023-01-07', '2023-01-08',
+                 '2023-01-09', '2023-01-10', '2023-01-11', '2023-01-12',
+                 '2023-01-13'],
+                [nan, nan, nan, nan, nan, nan, nan, 104., 105.],
+            ),
+        },
+    },
+    # Same grid, one date per series in the test split: with two dates, pandas
+    # 2 gives their union a frequency of 3 days.
+    'D, one date per series': {
+        'freq': 'D',
+        'start_b': '2023-01-04',
+        'periods': 5,
+        'train_size': 4,
+        'train': {
+            'a': (
+                ['2023-01-01', '2023-01-02', '2023-01-03', '2023-01-04',
+                 '2023-01-05', '2023-01-06', '2023-01-07'],
+                [0., 1., 2., 3., nan, nan, nan],
+            ),
+            'b': (
+                ['2023-01-01', '2023-01-02', '2023-01-03', '2023-01-04',
+                 '2023-01-05', '2023-01-06', '2023-01-07'],
+                [nan, nan, nan, 100., 101., 102., 103.],
+            ),
+        },
+        'test': {
+            'a': (
+                ['2023-01-05', '2023-01-06', '2023-01-07', '2023-01-08'],
+                [4., nan, nan, nan],
+            ),
+            'b': (
+                ['2023-01-05', '2023-01-06', '2023-01-07', '2023-01-08'],
+                [nan, nan, nan, 104.],
+            ),
+        },
+    },
+    # Shifted dates whose union is regular: pandas gives it a frequency of 12
+    # hours.
+    'D + 12h': {
+        'freq': 'D',
+        'start_b': '2023-01-01 12:00',
+        'periods': 6,
+        'train_size': 4,
+        'train': {
+            'a': (
+                ['2023-01-01', '2023-01-02', '2023-01-03', '2023-01-04'],
+                [0., 1., 2., 3.],
+            ),
+            'b': (
+                ['2023-01-01 12:00', '2023-01-02 12:00', '2023-01-03 12:00',
+                 '2023-01-04 12:00'],
+                [100., 101., 102., 103.],
+            ),
+        },
+        'test': {
+            'a': (['2023-01-05', '2023-01-06'], [4., 5.]),
+            'b': (['2023-01-05 12:00', '2023-01-06 12:00'], [104., 105.]),
+        },
+    },
+    # Shifted dates whose union gets the frequency of the series: pandas gives
+    # a monthly frequency to month starts at 00:00 followed by others at 06:00.
+    'MS + 6h': {
+        'freq': 'MS',
+        'start_b': '2023-05-01 06:00',
+        'periods': 6,
+        'train_size': 4,
+        'train': {
+            'a': (
+                ['2023-01-01', '2023-02-01', '2023-03-01', '2023-04-01'],
+                [0., 1., 2., 3.],
+            ),
+            'b': (
+                ['2023-05-01 06:00', '2023-06-01 06:00', '2023-07-01 06:00',
+                 '2023-08-01 06:00'],
+                [100., 101., 102., 103.],
+            ),
+        },
+        'test': {
+            'a': (['2023-05-01', '2023-06-01'], [4., 5.]),
+            'b': (['2023-09-01 06:00', '2023-10-01 06:00'], [104., 105.]),
+        },
+    },
+}
 
 
 class TestInit:
@@ -889,6 +1141,259 @@ class TestSplitBySize:
 
         assert len(train) == 70
         assert len(test) == 30
+
+    @pytest.mark.parametrize('output_format', ['long', 'long_multi_index'])
+    @pytest.mark.parametrize(
+        'case', list(long_cases), ids=lambda case: f'case: {case}'
+    )
+    def test_split_by_size_long_output_series_with_shifted_dates(
+        self, case, output_format
+    ):
+        """
+        Test the long outputs keep all the values of series with the same
+        frequency and shifted dates: each series has its own dates. Series
+        whose dates are in the same grid are filled with NaN up to the span of
+        the split, in the frequency of the series.
+        """
+        expected = long_cases[case]
+        freq = expected['freq']
+        periods = expected['periods']
+        series = {
+            'a': pd.Series(
+                np.arange(periods, dtype=float),
+                index=pd.date_range('2023-01-01', periods=periods, freq=freq),
+            ),
+            'b': pd.Series(
+                np.arange(100, 100 + periods, dtype=float),
+                index=pd.date_range(expected['start_b'], periods=periods, freq=freq),
+            ),
+        }
+        splitter = TimeSeriesSplitter(series)
+        return_multi_index = output_format == 'long_multi_index'
+
+        train, test = splitter.split_by_size(
+            train_size=expected['train_size'], output_format=output_format
+        )
+
+        pd.testing.assert_frame_equal(
+            train, expected_long(expected['train'], return_multi_index)
+        )
+        pd.testing.assert_frame_equal(
+            test, expected_long(expected['test'], return_multi_index)
+        )
+
+    @pytest.mark.parametrize('output_format', ['long', 'long_multi_index'])
+    def test_split_by_size_long_output_hourly_series_with_timezone_and_gap(
+        self, output_format
+    ):
+        """
+        Test the long outputs keep all the values of hourly series with a
+        timezone whose spans, of 9 hours, are separated by a gap: pandas gives
+        the union of their dates a business hour frequency, and with it only
+        the value at 09:00 was kept.
+        """
+        index = pd.date_range('2023-10-02', periods=35, freq='h', tz='Europe/Madrid')
+        series = {
+            'a': pd.Series(np.arange(10, dtype=float), index=index[:10]),
+            'b': pd.Series(np.arange(100, 110, dtype=float), index=index[25:]),
+        }
+        splitter = TimeSeriesSplitter(series)
+
+        train, _ = splitter.split_by_size(train_size=9, output_format=output_format)
+
+        expected = pd.DataFrame(
+            {
+                'value': np.concatenate(
+                    [
+                        np.arange(9, dtype=float), np.full(25, np.nan),
+                        np.full(25, np.nan), np.arange(100, 109, dtype=float),
+                    ]
+                )
+            },
+            index=pd.MultiIndex.from_product(
+                [['a', 'b'], index[:34]], names=['series_id', 'datetime']
+            ),
+        )
+        if output_format == 'long':
+            expected = expected.reset_index()
+
+        pd.testing.assert_frame_equal(train, expected)
+
+    @pytest.mark.parametrize('output_format', ['long', 'long_multi_index'])
+    def test_split_by_size_long_output_series_with_shifted_dates_and_timezone(
+        self, output_format
+    ):
+        """
+        Test the long outputs keep the dates and the values of daily series
+        with a timezone and shifted dates when they contain a daylight saving
+        change (2023-10-29 in Europe/Madrid).
+        """
+        series = {
+            'a': pd.Series(
+                np.arange(6, dtype=float),
+                index=pd.date_range(
+                    '2023-10-27', periods=6, freq='D', tz='Europe/Madrid'
+                ),
+            ),
+            'b': pd.Series(
+                np.arange(100, 106, dtype=float),
+                index=pd.date_range(
+                    '2023-10-27 06:00', periods=6, freq='D', tz='Europe/Madrid'
+                ),
+            ),
+        }
+        splitter = TimeSeriesSplitter(series)
+        return_multi_index = output_format == 'long_multi_index'
+
+        train, test = splitter.split_by_size(
+            train_size=4, output_format=output_format
+        )
+
+        expected_train = expected_long(
+            {
+                'a': (
+                    ['2023-10-27 00:00+02:00', '2023-10-28 00:00+02:00',
+                     '2023-10-29 00:00+02:00', '2023-10-30 00:00+01:00'],
+                    [0., 1., 2., 3.],
+                ),
+                'b': (
+                    ['2023-10-27 06:00+02:00', '2023-10-28 06:00+02:00',
+                     '2023-10-29 06:00+01:00', '2023-10-30 06:00+01:00'],
+                    [100., 101., 102., 103.],
+                ),
+            },
+            return_multi_index,
+            tz='Europe/Madrid',
+        )
+        expected_test = expected_long(
+            {
+                'a': (['2023-10-31 00:00+01:00', '2023-11-01 00:00+01:00'], [4., 5.]),
+                'b': (
+                    ['2023-10-31 06:00+01:00', '2023-11-01 06:00+01:00'],
+                    [104., 105.],
+                ),
+            },
+            return_multi_index,
+            tz='Europe/Madrid',
+        )
+
+        pd.testing.assert_frame_equal(train, expected_train)
+        pd.testing.assert_frame_equal(test, expected_test)
+
+    @pytest.mark.parametrize('output_format', ['long', 'long_multi_index'])
+    def test_split_by_size_long_output_when_shared_grid_cannot_be_built(
+        self, output_format
+    ):
+        """
+        Test the long outputs have each series with its own dates when pandas
+        cannot build the shared grid of the split: the daily grid that starts
+        at 02:30 needs 2023-03-26 02:30, which does not exist in Europe/Madrid
+        (daylight saving change).
+        """
+        series = {
+            'b': pd.Series(
+                np.arange(100, 105, dtype=float),
+                index=pd.date_range(
+                    '2023-03-20 02:30', periods=5, freq='D', tz='Europe/Madrid'
+                ),
+            ),
+            'a': pd.Series(
+                np.arange(5, dtype=float),
+                index=pd.date_range(
+                    '2023-03-24', periods=5, freq='D', tz='Europe/Madrid'
+                ),
+            ),
+        }
+        splitter = TimeSeriesSplitter(series)
+        return_multi_index = output_format == 'long_multi_index'
+
+        train, test = splitter.split_by_size(
+            train_size=4, output_format=output_format
+        )
+
+        expected_train = expected_long(
+            {
+                'b': (
+                    ['2023-03-20 02:30+01:00', '2023-03-21 02:30+01:00',
+                     '2023-03-22 02:30+01:00', '2023-03-23 02:30+01:00'],
+                    [100., 101., 102., 103.],
+                ),
+                'a': (
+                    ['2023-03-24 00:00+01:00', '2023-03-25 00:00+01:00',
+                     '2023-03-26 00:00+01:00', '2023-03-27 00:00+02:00'],
+                    [0., 1., 2., 3.],
+                ),
+            },
+            return_multi_index,
+            tz='Europe/Madrid',
+        )
+        expected_test = expected_long(
+            {
+                'b': (['2023-03-24 02:30+01:00'], [104.]),
+                'a': (['2023-03-28 00:00+02:00'], [4.]),
+            },
+            return_multi_index,
+            tz='Europe/Madrid',
+        )
+
+        pd.testing.assert_frame_equal(train, expected_train)
+        pd.testing.assert_frame_equal(test, expected_test)
+
+    @pytest.mark.parametrize('output_format', ['long', 'long_multi_index'])
+    def test_split_by_size_long_output_series_in_the_same_grid_and_shifted(
+        self, output_format
+    ):
+        """
+        Test the long outputs of a split with series in the same dates grid
+        (`a` and `c`) and a series with shifted dates (`b`): each series has
+        its own dates, in the order of the input and without NaN, the integer
+        values are not converted to float and a series with no values in a
+        split has no rows.
+        """
+        series = {
+            'b': pd.Series(
+                [2**53 + 1, 101, 102, 103, 104],
+                index=pd.date_range('2023-01-04', periods=5, freq='7D'),
+            ),
+            'a': pd.Series(
+                [0, 1, 2, 3], index=pd.date_range('2023-01-01', periods=4, freq='7D')
+            ),
+            'c': pd.Series(
+                [200, 201, 202, 203, 204],
+                index=pd.date_range('2023-01-15', periods=5, freq='7D'),
+            ),
+        }
+        splitter = TimeSeriesSplitter(series)
+        return_multi_index = output_format == 'long_multi_index'
+
+        train, test = splitter.split_by_size(
+            train_size=4, output_format=output_format
+        )
+
+        expected_train = expected_long(
+            {
+                'b': (
+                    ['2023-01-04', '2023-01-11', '2023-01-18', '2023-01-25'],
+                    [2**53 + 1, 101, 102, 103],
+                ),
+                'a': (
+                    ['2023-01-01', '2023-01-08', '2023-01-15', '2023-01-22'],
+                    [0, 1, 2, 3],
+                ),
+                'c': (
+                    ['2023-01-15', '2023-01-22', '2023-01-29', '2023-02-05'],
+                    [200, 201, 202, 203],
+                ),
+            },
+            return_multi_index,
+        )
+        expected_test = expected_long(
+            {'b': (['2023-02-01'], [104]), 'c': (['2023-02-12'], [204])},
+            return_multi_index,
+        )
+
+        pd.testing.assert_frame_equal(train, expected_train)
+        pd.testing.assert_frame_equal(test, expected_test)
 
 
 class TestPrintSplitInfo:
