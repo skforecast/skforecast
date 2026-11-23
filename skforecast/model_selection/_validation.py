@@ -675,7 +675,7 @@ def _backtesting_forecaster(
         `0`. If 'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting, and set to 1
         when the workload of the folds, estimated from the time of the initial fit
-        (without refit, from the time of the prediction of the first fold), is
+        (without refit, from the fastest prediction of the first two folds), is
         too small to pay the start of the workers. See
         skforecast.model_selection._utils.limit_n_jobs_by_workload and
         skforecast.model_selection._utils.limit_n_jobs_by_prediction_workload.
@@ -923,34 +923,39 @@ def _backtesting_forecaster(
     main_pid = os.getpid()
 
     # NOTE: Without refit, the folds only predict, so the workload is estimated
-    # by predicting the first fold here, in the main process. It is only done
-    # when `select_n_jobs_backtesting` allows parallel folds without refit
-    # (estimators that predict a few rows slowly). Its prediction is kept, so
-    # nothing is predicted twice.
+    # by predicting the first two folds here, in the main process, and taking
+    # the fastest. The first prediction of a process pays costs that the next
+    # ones do not (creating the controller of the thread pools, compiling the
+    # numba functions of the window features), so its time alone overestimates
+    # the workload many times. It is only done when `select_n_jobs_backtesting`
+    # allows parallel folds without refit (estimators that predict a few rows
+    # slowly) and there are at least 4 folds, so that two are left to share.
+    # Their predictions are kept, so nothing is predicted twice.
     n_fits = sum(fold[5] is True for fold in folds)
-    first_fold_predictions = []
+    first_folds_predictions = []
     if n_jobs_auto:
-        if n_jobs > 1 and n_fits == 0 and len(fold_items) > 1:
-            fold, fold_data = fold_items[0]
-            predict_start = time.perf_counter()
-            first_fold_predictions.append(
-                _run_recording_worker_warnings(
-                    function      = _fit_predict_forecaster,
-                    main_pid      = main_pid,
-                    fold          = fold,
-                    y_train       = fold_data["y_train"],
-                    last_window_y = fold_data["last_window_y"],
-                    exog_train    = fold_data["exog_train"],
-                    exog_test     = fold_data["exog_test"],
-                    **kwargs_fit_predict_forecaster
+        if n_jobs > 1 and n_fits == 0 and len(fold_items) > 3:
+            first_folds_seconds = []
+            for fold, fold_data in fold_items[:2]:
+                predict_start = time.perf_counter()
+                first_folds_predictions.append(
+                    _run_recording_worker_warnings(
+                        function      = _fit_predict_forecaster,
+                        main_pid      = main_pid,
+                        fold          = fold,
+                        y_train       = fold_data["y_train"],
+                        last_window_y = fold_data["last_window_y"],
+                        exog_train    = fold_data["exog_train"],
+                        exog_test     = fold_data["exog_test"],
+                        **kwargs_fit_predict_forecaster
+                    )
                 )
-            )
-            predict_seconds = time.perf_counter() - predict_start
-            fold_items = fold_items[1:]
+                first_folds_seconds.append(time.perf_counter() - predict_start)
+            fold_items = fold_items[2:]
             n_jobs = limit_n_jobs_by_prediction_workload(
                          n_jobs          = n_jobs,
                          n_tasks         = len(fold_items),
-                         predict_seconds = predict_seconds
+                         predict_seconds = min(first_folds_seconds)
                      )
         else:
             n_jobs = limit_n_jobs_by_workload(
@@ -970,8 +975,8 @@ def _backtesting_forecaster(
     if show_progress:
         fold_items = tqdm(
             fold_items,
-            initial = len(first_fold_predictions),
-            total   = len(first_fold_predictions) + len(fold_items)
+            initial = len(first_folds_predictions),
+            total   = len(first_folds_predictions) + len(fold_items)
         )
 
     kwargs_fit_predict_forecaster["forecaster"] = _serialize_forecaster_for_workers(
@@ -980,7 +985,7 @@ def _backtesting_forecaster(
     )
 
     try:
-        backtest_predictions = first_fold_predictions + Parallel(n_jobs=n_jobs)(
+        backtest_predictions = first_folds_predictions + Parallel(n_jobs=n_jobs)(
             delayed(_deserialize_forecaster_and_run_fold)(
                 function      = _fit_predict_forecaster,
                 main_pid      = main_pid,
@@ -1190,7 +1195,7 @@ def backtesting_forecaster(
         `0`. If 'auto', `n_jobs` is set using the function
         skforecast.model_selection._utils.select_n_jobs_backtesting, and set to 1
         when the workload of the folds, estimated from the time of the initial fit
-        (without refit, from the time of the prediction of the first fold), is
+        (without refit, from the fastest prediction of the first two folds), is
         too small to pay the start of the workers. See
         skforecast.model_selection._utils.limit_n_jobs_by_workload and
         skforecast.model_selection._utils.limit_n_jobs_by_prediction_workload.

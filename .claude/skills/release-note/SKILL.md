@@ -59,7 +59,7 @@ Format: a bullet starting with `+ `, one blank line between bullets, placed in i
 - **Changed**: the new behavior, the old one when it helps to recognise the change, and the consequence for users ("Results are unchanged", "The selected features for a given `random_state` may differ from previous versions"). If the user has to do something, say what.
 - **Fixed**: the symptom the user saw and under which conditions (which forecasters, arguments, estimators). `Fixed an issue in <code>[X]</code> where ...`, or the wrong behavior stated directly (`<code>[X]</code> raised ... when ...`). Add the new behavior only when it is not simply "it works now".
 - **Deprecations and removals**: name the version and the replacement. "Deprecated since 0.23.0, `interval` must now be ... Passing ... raises a `ValueError` instead."
-- **Performance**: one or two measured numbers with their scenario ("2.3 times faster with 500 series"). Not the full benchmark table and not what was optimized internally.
+- **Performance**: one magnitude of the gain ("2 to 3 times faster", "about 30% less time"), with the condition that tells the user when it applies (the estimator, `refit=True`...) if there is one. Only when the entry is about speed: an entry that describes a change of behavior does not need a number. Not the scenario of the measurement (hardware, number of CPUs, size of the data, absolute timings), not the benchmark table and not what was optimized internally.
 - **Serialized models**: if the change breaks forecasters saved with previous versions, add after the highlights the admonition used in 0.22.0 and 0.23.0 (`!!! warning "Serialized models incompatibility"`), or tell the user if one already exists.
 
 Leave out:
@@ -174,7 +174,7 @@ Changed:
 Performance (under Changed):
 
 ```markdown
-+ Forecasters with an `ExtraTreesRegressor` or an `ExtraTreeRegressor` predict about 15 times faster (33 ms instead of 508 ms for 100 steps with 100 trees), with the same predictions. ([#1363](https://github.com/skforecast/skforecast/pull/1363))
++ Forecasters with an `ExtraTreesRegressor` or an `ExtraTreeRegressor` predict about 15 times faster, with the same predictions. ([#1363](https://github.com/skforecast/skforecast/pull/1363))
 ```
 
 Fixed, one issue:

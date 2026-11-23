@@ -32,6 +32,7 @@ from skforecast.metrics import (
 from skforecast.model_selection import backtesting_forecaster
 from skforecast.model_selection._split import TimeSeriesFold
 from skforecast.model_selection._validation import _deserialize_forecaster_and_run_fold
+from skforecast.model_selection._validation import _fit_predict_forecaster
 from skforecast.exceptions import IgnoredArgumentWarning, MissingValuesWarning
 
 # Fixtures
@@ -715,8 +716,8 @@ def test_backtesting_forecaster_n_jobs_auto_limited_by_the_workload(
     Test that, with `n_jobs='auto'`, backtesting_forecaster runs the folds with one job
     when the work estimated from the initial fit is below the minimum of the
     platform (`min_work`, patched) or, without refit, the work estimated from
-    the prediction of the first fold is below its own minimum (patched to a
-    value that is never reached), and otherwise with the jobs of
+    the prediction of the first two folds is below its own minimum (patched to
+    a value that is never reached), and otherwise with the jobs of
     `select_n_jobs_backtesting` limited to the number of folds (4). An integer
     `n_jobs` (`-1` is all the processors) is only limited to the number of
     folds. `Parallel` is mocked with a sequential one, so no workers are
@@ -1274,7 +1275,7 @@ def test_backtesting_forecaster_sequential_backend_does_not_serialize_forecaster
 
 @pytest.mark.parametrize(
     "min_work, expected_n_jobs",
-    [(0.0, min(max(1, cpu_count() - 1), 4)),
+    [(0.0, min(max(1, cpu_count() - 1), 3)),
      (1e6, 1)],
     ids=["enough work", "too little work"]
 )
@@ -1283,11 +1284,11 @@ def test_backtesting_forecaster_n_jobs_auto_no_refit_limited_by_the_prediction_w
 ):
     """
     Test that, with `n_jobs='auto'` and no refit, backtesting_forecaster with a
-    `HistGradientBoostingRegressor` predicts the first fold in the main process,
-    and runs the other 4 folds in parallel only if their estimated work is
-    above the minimum of the platform (`min_work`, patched), with at most one
-    job per fold. The predictions are the same as with `n_jobs=1`. `Parallel`
-    is mocked with a sequential one, so no workers are started.
+    `HistGradientBoostingRegressor` predicts the first two folds in the main
+    process, and runs the other 3 folds in parallel only if their estimated
+    work is above the minimum of the platform (`min_work`, patched), with at
+    most one job per fold. The predictions are the same as with `n_jobs=1`.
+    `Parallel` is mocked with a sequential one, so no workers are started.
     """
     cv = TimeSeriesFold(steps=4, initial_train_size=30, refit=False, verbose=False)
 
@@ -1325,6 +1326,158 @@ def test_backtesting_forecaster_n_jobs_auto_no_refit_limited_by_the_prediction_w
     assert mock_parallel.call_args.kwargs == {"n_jobs": expected_n_jobs}
     pd.testing.assert_frame_equal(metric, expected_metric)
     pd.testing.assert_frame_equal(predictions, expected_predictions)
+
+
+class ClockMovedByTheFolds:
+    """
+    Replacement of the `time` module in `_validation`, whose only use there is
+    `perf_counter`. The time does not pass on its own: it is moved by the test,
+    so the time measured for each fold does not depend on the machine.
+    """
+
+    def __init__(self):
+        self.now = 0.0
+
+    def perf_counter(self):
+        return self.now
+
+    def advance(self, seconds):
+        self.now += seconds
+
+
+@pytest.mark.parametrize(
+    "steps, slow_folds, expected_n_jobs",
+    [(4, {0: 0.5}, 1),
+     (4, {1: 0.5}, 1),
+     (4, {0: 0.5, 1: 0.5}, 3),
+     (7, {0: 2.0, 1: 2.0, 2: 2.0}, 1),
+     (5, {0: 2.0, 1: 2.0, 2: 2.0, 3: 2.0}, 2)],
+    ids=["5 folds, slow first fold", "5 folds, slow second fold",
+         "5 folds, slow first two folds", "3 slow folds", "4 slow folds"]
+)
+def test_backtesting_forecaster_n_jobs_auto_no_refit_uses_fastest_of_first_two_folds(
+    steps, slow_folds, expected_n_jobs
+):
+    """
+    Test that, with `n_jobs='auto'` and no refit, backtesting_forecaster
+    estimates the work of the folds with the fastest of the first two, so a
+    slow first prediction (the first one of a process pays costs that the next
+    ones do not) does not start the workers, and neither does a second fold
+    that is slow by chance. The folds take the seconds of `slow_folds`, or 0.01
+    seconds, in a clock moved by the test, and the minimum work to run in
+    parallel is patched to 1 second:
+
+    - 5 folds, slow first fold: 3 folds left * 0.01 seconds, one job.
+    - 5 folds, slow second fold: 3 folds left * 0.01 seconds, one job.
+    - 5 folds, slow first two folds: 3 folds left * 0.5 seconds, 3 jobs.
+    - 3 slow folds: with fewer than 4 folds none is timed, one job.
+    - 4 slow folds: 2 folds left * 2 seconds, 2 jobs.
+
+    `select_n_jobs_backtesting` is patched to 4 jobs, so the result does not
+    depend on the processors of the machine, and `Parallel` is mocked with a
+    sequential one, so no workers are started. The predictions are the same as
+    with `n_jobs=1`.
+    """
+    cv = TimeSeriesFold(steps=steps, initial_train_size=30, refit=False, verbose=False)
+
+    def run_backtesting(n_jobs):
+        forecaster = ForecasterRecursive(
+                         estimator=HistGradientBoostingRegressor(max_iter=5), lags=3
+                     )
+        return backtesting_forecaster(
+                   forecaster    = forecaster,
+                   y             = y,
+                   cv            = cv,
+                   metric        = "mean_absolute_error",
+                   n_jobs        = n_jobs,
+                   show_progress = False
+               )
+
+    clock = ClockMovedByTheFolds()
+
+    def fit_predict_moving_the_clock(**kwargs):
+        clock.advance(slow_folds.get(kwargs["fold"][0], 0.01))
+        return _fit_predict_forecaster(**kwargs)
+
+    expected_metric, expected_predictions = run_backtesting(n_jobs=1)
+    with (
+        patch("skforecast.model_selection._validation.time", clock),
+        patch(
+            "skforecast.model_selection._validation.select_n_jobs_backtesting",
+            return_value=4
+        ),
+        patch(
+            "skforecast.model_selection._validation._fit_predict_forecaster",
+            side_effect=fit_predict_moving_the_clock
+        ),
+        patch.dict(
+            "skforecast.model_selection._utils._MIN_PARALLEL_PREDICTION_SECONDS",
+            {sys.platform: 1.0}
+        ),
+        patch(
+            "skforecast.model_selection._utils."
+            "_MIN_PARALLEL_PREDICTION_SECONDS_DEFAULT",
+            1.0
+        ),
+        patch(
+            "skforecast.model_selection._validation.Parallel",
+            side_effect=lambda **kwargs: Parallel(n_jobs=1)
+        ) as mock_parallel
+    ):
+        metric, predictions = run_backtesting(n_jobs="auto")
+
+    assert mock_parallel.call_args.kwargs == {"n_jobs": expected_n_jobs}
+    pd.testing.assert_frame_equal(metric, expected_metric)
+    pd.testing.assert_frame_equal(predictions, expected_predictions)
+
+
+def test_backtesting_forecaster_n_jobs_auto_no_refit_warnings_same_as_n_jobs_1():
+    """
+    Test that, with `n_jobs='auto'` and no refit, the warnings raised in the
+    two folds predicted in the main process (the second one warns) and in the
+    folds that run in worker processes (the fourth one warns) are shown once
+    each, with the same text, location and order as with `n_jobs=1`.
+    `select_n_jobs_backtesting` is patched to 2 jobs and the minimum work to
+    run in parallel to 0 seconds, so the folds left always run in workers.
+    Only the warnings of the folds (`MissingValuesWarning`) are compared, not
+    those that joblib may raise when it starts the workers.
+    """
+    def warnings_shown(n_jobs):
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always")
+            _backtesting_exog_with_nan(n_jobs=n_jobs)
+
+        return [
+            (str(w.message), w.filename, w.lineno)
+            for w in record
+            if w.category is MissingValuesWarning
+        ]
+
+    expected = warnings_shown(n_jobs=1)
+    with (
+        patch(
+            "skforecast.model_selection._validation.select_n_jobs_backtesting",
+            return_value=2
+        ),
+        patch.dict(
+            "skforecast.model_selection._utils._MIN_PARALLEL_PREDICTION_SECONDS",
+            {sys.platform: 0.0}
+        ),
+        patch(
+            "skforecast.model_selection._utils."
+            "_MIN_PARALLEL_PREDICTION_SECONDS_DEFAULT",
+            0.0
+        ),
+        patch(
+            "skforecast.model_selection._validation.Parallel",
+            side_effect=Parallel
+        ) as mock_parallel
+    ):
+        results = warnings_shown(n_jobs="auto")
+
+    assert mock_parallel.call_args.kwargs == {"n_jobs": 2}
+    assert len(expected) == 4
+    assert results == expected
 
 
 def test_backtesting_forecaster_refit_with_in_place_transformers():

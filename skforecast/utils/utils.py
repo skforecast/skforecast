@@ -4457,8 +4457,9 @@ _HGB_MAX_ROWS_ONE_THREAD = 100
 def _get_threadpool_controller() -> ThreadpoolController:
     """
     Return the `ThreadpoolController` of the process, created on the first
-    call. Creating it inspects the loaded libraries (about 1 ms), while
-    limiting the threads with it takes about 0.01 ms.
+    call. Creating it inspects the libraries loaded in the process, which takes
+    from about 1 ms to tens of milliseconds (45 ms measured on Windows with 277
+    libraries loaded), while limiting the threads with it takes about 0.01 ms.
 
     Returns
     -------
