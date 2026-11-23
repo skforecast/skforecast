@@ -10,11 +10,17 @@ To compare: PYTHONPATH=<worktree of origin/0.27.x> python njobs_temp_folder.py
 """
 import os
 
-os.environ["JOBLIB_TEMP_FOLDER"] = "/dev/null/not-writable"
+from _common import OUT, attempt, versions
+
+# NOTE: A path below a regular file cannot be created in any operating system.
+# `/dev/null/not-writable` is a valid path on Windows, where joblib creates it
+# (`C:\dev\null\not-writable`) and the error is not reproduced.
+not_a_folder = OUT / "not_a_folder"
+not_a_folder.write_text("")
+os.environ["JOBLIB_TEMP_FOLDER"] = str(not_a_folder / "not-writable")
 
 import numpy as np
 import pandas as pd
-from _common import attempt, versions
 from sklearn.ensemble import RandomForestRegressor
 
 from skforecast.model_selection import TimeSeriesFold, backtesting_forecaster
