@@ -2,6 +2,7 @@
 # ==============================================================================
 import os
 import re
+import sys
 import functools
 import importlib.util
 import zoneinfo
@@ -1339,3 +1340,44 @@ def test_load_forecaster_adds_note_when_file_cannot_be_rebuilt_with_pandas_2(
     else:
         assert len(notes) == 1
         assert notes[0].startswith(f"If '{file_name}' was saved with pandas 3, it cannot be loaded")
+
+
+@pytest.mark.parametrize(
+    'extension',
+    ['.joblib', '.pkl', '.cloudpickle'],
+    ids=lambda x: f'extension: {x}'
+)
+@pytest.mark.parametrize(
+    'module, expected_note',
+    [('pytz', True), ('module_that_does_not_exist', False)],
+    ids=lambda x: f'{x}'
+)
+def test_load_forecaster_adds_note_when_pytz_is_not_installed(
+    extension, module, expected_note, tmp_path, monkeypatch
+):
+    """
+    Test that the `ModuleNotFoundError` raised when the file needs `pytz`
+    and it is not installed (pandas 2 stores some time zones as `pytz`
+    objects, and pandas 3 does not install `pytz`) keeps its type and gets a
+    note with the reason, and that no note is added when the missing module
+    is another one. The file is a minimal pickle that asks for an object of
+    the module, so the test does not need `pytz` to be installed.
+    """
+    file_name = tmp_path / f'forecaster{extension}'
+    file_name.write_bytes(f'c{module}\n_p\n.'.encode())
+    monkeypatch.setitem(sys.modules, 'pytz', None)
+
+    with pytest.raises(ModuleNotFoundError) as exc_info:
+        load_forecaster(str(file_name), verbose=False)
+
+    assert exc_info.value.name == module
+    notes = getattr(exc_info.value, '__notes__', [])
+    if expected_note:
+        assert notes == [
+            f"'{file_name}' needs `pytz`, which is not installed. pandas 2 "
+            f"stores some time zones as `pytz` objects (for example, "
+            f"'Europe/Madrid'), and pandas 3 does not install `pytz`. Install "
+            f"it to load the file: pip install pytz"
+        ]
+    else:
+        assert notes == []

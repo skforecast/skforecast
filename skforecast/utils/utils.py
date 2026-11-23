@@ -3859,6 +3859,40 @@ def _add_note_pandas_3_file(
         )
 
 
+def _add_note_pytz_not_installed(
+    exc: ModuleNotFoundError,
+    file_name: str
+) -> None:
+    """
+    Add a note to the error raised while loading a forecaster when the file
+    needs `pytz` and it is not installed. pandas 2 stores some time zones as
+    `pytz` objects (named time zones such as 'Europe/Madrid', and dates with
+    a time zone read from Arrow or Parquet), and pandas 3 does not install
+    `pytz`, so a file saved with pandas 2 with joblib, pickle or cloudpickle
+    may not load in an environment with pandas 3.
+
+    Parameters
+    ----------
+    exc : ModuleNotFoundError
+        Error raised while loading the file.
+    file_name : str
+        Name of the file.
+
+    Returns
+    -------
+    None
+
+    """
+
+    if exc.name == 'pytz':
+        exc.add_note(
+            f"'{file_name}' needs `pytz`, which is not installed. pandas 2 "
+            f"stores some time zones as `pytz` objects (for example, "
+            f"'Europe/Madrid'), and pandas 3 does not install `pytz`. Install "
+            f"it to load the file: pip install pytz"
+        )
+
+
 @manage_warnings
 def load_forecaster(
     file_name: str,
@@ -3957,6 +3991,9 @@ def load_forecaster(
                     forecaster = pickle.load(file)
         except (AssertionError, NotImplementedError, TypeError) as exc:
             _add_note_pandas_3_file(exc=exc, file_name=file_name)
+            raise
+        except ModuleNotFoundError as exc:
+            _add_note_pytz_not_installed(exc=exc, file_name=file_name)
             raise
     elif backend == 'skops':
         try:
