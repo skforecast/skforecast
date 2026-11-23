@@ -956,9 +956,9 @@ def limit_n_jobs_by_workload(
     - If `n_jobs` is 1, there is at most one task or no task fits the
     forecaster (no refit), then `n_jobs = 1`. Predicting the folds of a fitted
     forecaster usually takes less time than the workers take to start. A single
-    backtesting without refit (`backtesting_forecaster`) whose estimator
-    predicts slowly is limited with `limit_n_jobs_by_prediction_workload`
-    instead.
+    backtesting without refit (`backtesting_forecaster`) of at least 4 folds
+    whose estimator predicts slowly is limited with
+    `limit_n_jobs_by_prediction_workload` instead.
     - If the estimated workload, `n_fits * fit_seconds`, is below the minimum
     of the platform (4 seconds on Windows, 2 seconds on Linux and macOS), then
     `n_jobs = 1`. If the time of the initial fit is not known
@@ -1008,9 +1008,11 @@ def limit_n_jobs_by_prediction_workload(
     Limit the number of jobs selected with `n_jobs='auto'` by the workload of
     a single backtesting without refit, whose folds only predict. The workload
     is estimated from the time of the prediction of one fold, made in the main
-    process. Starting the workers and sending them the fitted forecaster takes
-    seconds, so parallelizing only pays off when the predictions take long
-    enough. The result is never greater than `n_jobs`.
+    process: the fastest of the first two, because the first prediction of a
+    process is slower than the next ones. Starting the workers and sending
+    them the fitted forecaster takes seconds, so parallelizing only pays off
+    when the predictions take long enough. The result is never greater than
+    `n_jobs`.
 
     - If `n_jobs` is 1 or there is at most one task, then `n_jobs = 1`.
     - If the estimated workload, `n_tasks * predict_seconds`, is below the
@@ -1026,7 +1028,8 @@ def limit_n_jobs_by_prediction_workload(
     n_tasks : int
         Number of tasks (folds) sent to `joblib.Parallel`.
     predict_seconds : float
-        Duration of the prediction of one fold, in seconds.
+        Duration of the prediction of one fold, in seconds (the fastest of the
+        first two folds).
 
     Returns
     -------
