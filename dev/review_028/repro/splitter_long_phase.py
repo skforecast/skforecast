@@ -15,7 +15,7 @@ Result (2026-11-21, pandas 2.3):
     3h + 1h      0        0        (0.27.x also lost 'a': 1 of 7)
     MS + 14D     7        7
 
-Fixed on the branch `fix/splitter-long-phase` (2026-11-22): 7 in the four
+Fixed in #1534 (branch `fix/splitter-long-phase`, 2026-11-22): 7 in the four
 cases, with pandas 2.3.3 and 3.1.1. `_long_from_dict` replaces
 `_wide_with_freq`: when the dates of the series are not all in the same grid,
 each series keeps its own dates, as in the 'dict' output.

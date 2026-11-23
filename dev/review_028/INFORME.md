@@ -129,7 +129,7 @@ valores no NaN.
 
 Script: `repro/splitter_long_phase.py`.
 
-**Nota posterior (2026-11-23):** arreglado en la rama `fix/splitter-long-phase`, con la
+**Nota posterior (2026-11-23):** arreglado en #1534 (rama `fix/splitter-long-phase`), con la
 primera opción detrás del camino que había. `_long_from_dict` sustituye a `_wide_with_freq`:
 genera las fechas de la rejilla común y, si no contiene todas las del split (o no se puede
 construir por un cambio de hora), apila cada serie con sus propias fechas, como en `'dict'`;
