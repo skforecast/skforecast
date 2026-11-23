@@ -14,6 +14,11 @@ Usage: OMP_NUM_THREADS=1 python njobs_auto_first_fold.py
 Result (2026-11-21, 4 CPUs): first call, first fold 12.5 ms, median of the
 other folds 0.91 ms, estimate 12.48 s, n_jobs [3]; second call in the same
 process, first fold 1.5 ms, estimate 1.45 s, n_jobs [1].
+
+Fixed in the branch `fix/njobs-auto-first-fold` (2026-11-23): the workload is
+estimated with the fastest of the first two folds, so both calls give
+n_jobs [1]. The script still prints the estimate that the first fold alone
+would give (41 to 49 s on Windows with 22 CPUs, first fold 41 to 49 ms).
 """
 import time
 from unittest.mock import patch
