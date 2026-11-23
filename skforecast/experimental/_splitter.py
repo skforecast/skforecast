@@ -529,24 +529,31 @@ class TimeSeriesSplitter:
         return [split_data[name] for name in split_names]
 
     @staticmethod
-    def _wide_with_freq(split_dict: dict[str, pd.Series]) -> pd.DataFrame:
+    def _long_from_dict(
+        split_dict: dict[str, pd.Series],
+        return_multi_index: bool,
+    ) -> pd.DataFrame:
         """
-        Build the wide DataFrame of a split with the frequency of its series.
+        Build the long DataFrame of a split.
 
         Parameters
         ----------
         split_dict : dict[str, pd.Series]
             Series of a split, all with the same frequency.
+        return_multi_index : bool
+            If True, the DataFrame has a MultiIndex with the series IDs and the
+            dates. If False, they are the columns 'series_id' and 'datetime'.
 
         Returns
         -------
         pd.DataFrame
-            Wide DataFrame. With a DatetimeIndex, it has the frequency of the
-            series, and the dates between their spans are added with NaN.
+            Long DataFrame. If the dates of all the series are in the same
+            grid, each series has the dates between the first and the last date
+            of the split, with NaN in those it does not have. Otherwise (series
+            with the same frequency and shifted dates, or a grid that cannot be
+            built), each series has its own dates.
         """
         wide = pd.DataFrame.from_dict(split_dict)
-        # NOTE: The union of the indexes of series with different spans has no
-        # frequency, and it may have gaps, so it is set from the series.
         freq = next(
             (
                 s.index.freq
@@ -555,10 +562,40 @@ class TimeSeriesSplitter:
             ),
             None
         )
-        if freq is not None and wide.index.freq is None:
-            wide = _asfreq_from_index(wide, freq)
+        if freq is not None:
+            # NOTE: The grid is built with the frequency of the series, from
+            # the first to the last date of the split, even if the union of the
+            # indexes has a frequency: pandas infers it, and it may not be the
+            # one of the series, or the dates may not follow it (monthly series
+            # at 00:00 and at 06:00 give a monthly union).
+            # The grid does not contain the dates of a series with the same
+            # frequency and shifted dates (e.g. daily series at 00:00 and at
+            # 06:00), whose values would be lost. With a time zone, it may also
+            # be impossible to build: pandas raises an error (its type depends
+            # on the pandas version) if one of its dates does not exist or is
+            # ambiguous because of a daylight saving change. In both cases the
+            # series are stacked as they are, without a shared grid: their
+            # indexes are already complete.
+            try:
+                # Without columns, only the dates of the grid are generated.
+                grid = _asfreq_from_index(wide.iloc[:, :0], freq).index
+                same_grid = wide.index.isin(grid).all()
+            except Exception:
+                if wide.index.tz is None:
+                    raise
+                same_grid = False
+            if not same_grid:
+                long = pd.concat(
+                    {k: s.to_frame('value') for k, s in split_dict.items()},
+                    names=['series_id', 'datetime']
+                )
+                return long if return_multi_index else long.reset_index()
+            if wide.index.freq != freq:
+                wide = wide.reindex(grid)
 
-        return wide
+        return reshape_series_wide_to_long(
+            wide, return_multi_index=return_multi_index
+        )
 
     def _convert_output(
         self,
@@ -591,8 +628,8 @@ class TimeSeriesSplitter:
 
             case 'long' | 'long_multi_index':
                 return tuple(
-                    reshape_series_wide_to_long(
-                        self._wide_with_freq(split_dict),
+                    self._long_from_dict(
+                        split_dict,
                         return_multi_index=(output_format == 'long_multi_index'),
                     )
                     for split_dict in split_dicts
@@ -636,7 +673,12 @@ class TimeSeriesSplitter:
             Test set end date (inclusive).
             Defaults to last date in each group.
         output_format : {'wide', 'long', 'long_multi_index', 'dict'}, default 'wide'
-            Output format for the splits.
+            Output format for the splits. With 'long' and 'long_multi_index',
+            the series are filled with NaN between the first and the last
+            date of the split. If the series have the same frequency and
+            shifted dates (e.g. daily series at 00:00 and at 06:00), each
+            series keeps its own dates and none is filled: use 'dict' to
+            pass them as `series` to a forecaster.
         verbose : bool, default False
             If True, print detailed split information for each group.
 
@@ -732,7 +774,12 @@ class TimeSeriesSplitter:
             Test set size. Same as train_size.
             If None, remainder is used as test set.
         output_format : {'wide', 'long', 'long_multi_index', 'dict'}, default 'wide'
-            Output format for the splits.
+            Output format for the splits. With 'long' and 'long_multi_index',
+            the series are filled with NaN between the first and the last
+            date of the split. If the series have the same frequency and
+            shifted dates (e.g. daily series at 00:00 and at 06:00), each
+            series keeps its own dates and none is filled: use 'dict' to
+            pass them as `series` to a forecaster.
         verbose : bool, default False
             If True, print detailed split information for each group.
 
