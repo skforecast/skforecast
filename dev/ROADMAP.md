@@ -75,7 +75,7 @@ Los documentos borrados se leen con `git show <commit>:<ruta>`.
 | `preprocessing_speedups/` | Plan y kit de validación de los atajos de preprocesado (en curso) | Se cierren PERF-categorical-codes, STUDY-fit-insample-binning y PERF-one-step-ahead-inverse |
 | `backtesting_multiseries_speedups/` | Plan de PERF-backtesting-folds-positions y de la segunda parte de PERF-03, con las medidas y los prototipos de la revisión del 2026-11-19 | Se cierren PERF-backtesting-folds-positions y PERF-03 |
 | `pandas_numpy_review/` | Estudio del uso de pandas frente a numpy dentro de los forecasters (`INFORME.md`), su revisión independiente (`REVISION.md`), y los prototipos, scripts y medidas de los dos (2026-11-19); la sección 11 de la revisión prueba la opción (a') de D-NP2 con un parche (2026-11-20) | Se cierren BUG-ms-fit-dataframe-categorical, PERF-exog-float-matrix y MAINT-ms-predict-core, y se decida PERF-backtesting-ms-fast-path (el prototipo y su batería son su especificación) |
-| `review_028/` | Informe de la revisión de la 0.28.x frente a la 0.27.x (2026-11-21) y los scripts mínimos de sus hallazgos | Se cierren BUG-load-pytz, BUG-skops-tz-dst, PERF-njobs-auto-first-fold, BUG-rnn-old-pickle, DOC-028-review, BUG-wide-to-long-inferred-freq, BUG-utc-midnight-anchored-freq, BUG-splitter-positional-cuts y BUG-splitter-pandas2-dst-union |
+| `review_028/` | Informe de la revisión de la 0.28.x frente a la 0.27.x (2026-11-21) y los scripts mínimos de sus hallazgos | Se cierren BUG-skops-tz-dst, PERF-njobs-auto-first-fold, BUG-rnn-old-pickle, DOC-028-review, BUG-wide-to-long-inferred-freq, BUG-utc-midnight-anchored-freq, BUG-splitter-positional-cuts y BUG-splitter-pandas2-dst-union |
 | `pandas3_migration/` | Estudio, decisiones y arnés de la migración a pandas 3, y su informe final (`INFORME_0.28_pandas3.md`, DOC-pandas3-report) | Se cierre MAINT-pandas3-final-crossenv (el A/B de las búsquedas puede usar el arnés); antes, mover la lista "Al retirar pandas 2" a MAINT-drop-pandas2. El arnés lo usan también PERF-predict-numpy y otros: decidir entonces si pasa a `benchmarks/` o `tools/`. Después, el informe se cita por commit |
 
 ---
@@ -250,7 +250,6 @@ publicada (P1.1 de la sección 11) y hay que pasar `/release-note consolidate`.
 
 | ID | Qué | Prioridad | Requiere | Esfuerzo | Estado | Detalle |
 |---|---|---|---|---|---|---|
-| BUG-load-pytz | Un forecaster guardado con pandas 2 (joblib, pickle o cloudpickle) con una zona horaria con nombre (`'Europe/Madrid'`) no carga en pandas 3 sin `pytz`: `ModuleNotFoundError`, sin nota de `load_forecaster`. Nota que diga instalar `pytz` (volver a guardar con skops no vale para todos los forecasters ni zonas: queda solo en la FAQ, como opción a comprobar), y corregir la FAQ de pandas 2 y 3 (líneas 84 y 88), `save-load-forecaster.ipynb` y `skills/troubleshooting-common-errors` (dicen que carga con cualquier backend) | P1 | | XS | En curso, rama `fix/load-pytz-note`, [#1536](https://github.com/skforecast/skforecast/pull/1536) (2026-11-23). Reproducido el 2026-11-21. Sin zona horaria, con `'UTC'` o con skops carga. P3 verificó skops, no joblib | REV28 §1; `repro/load_pytz.py` |
 | DOC-028-review | Correcciones de la revisión: "Before upgrading" (`pip install -U` lleva a pandas 3 a quien tiene pandas < 2.3, y `uv pip install -U` y `--upgrade-strategy eager` lo hacen también con pandas 2.3: la frase "keeps the installed pandas" de la línea 29 solo vale para `pip install -U` con pandas 2.3; comprobado el 2026-11-23 con `pip install --dry-run` y el wheel de `20db7cd`, y la alternativa `pip install -U skforecast "pandas<3"` deja pandas 2.3.3; faltan `n_jobs=0`, `calculate_distance_from_holiday` y el `ValueError` de `ForecasterEquivalentDate` con `Day(n)`), FAQ de pandas 2 y 3, skills, contexto IA y docstrings (20 puntos). Incluye un cambio de código: el mensaje de error de `reshape_series_wide_to_long` cuando no puede inferir la frecuencia sugiere `data.asfreq('D')`, que con días laborables vuelve a meter los fines de semana como NaN (los días laborables con un festivo dan ese `ValueError` desde #1497); sugerir también `asfreq('B')`, recogerlo en "Before upgrading" y añadir los tests de `B` y de menos de 3 fechas (REV28 §7.6 y §9) | P1 | | S | Pendiente. Regenerar el contexto IA al terminar | REV28 §7; `repro/doc_checks.py` |
 | BUG-utc-midnight-anchored-freq | Un índice con zona horaria, frecuencia anclada (`W`, `MS`) y fechas a una hora local que es medianoche UTC (las 19:00 de `America/New_York` en invierno, las 20:00 en verano), sin cambio de hora dentro, se toma por un índice en pasos UTC (`_is_utc_anchored_index`) y `_date_range_from_index` genera las fechas en UTC con una frecuencia cuyo ancla es del calendario local (los domingos locales son lunes en UTC). `reshape_series_wide_to_long` y `reshape_series_long_to_dict` conservan 0 de 6 valores, y las predicciones de `ForecasterRecursive` salen con otras fechas (sábados en lugar de domingos, último día del mes en lugar del primero), sin aviso. Las salidas largas de `TimeSeriesSplitter` ya no dependen de ello (BUG-splitter-long-phase) | P2 | | S | Reproducido el 2026-11-23: igual en 0.27.0 y 0.28.x, pandas 2.3.3 y 3.1.1. Con `D` y con `MS` a las 19:00 en verano sale bien. Posible arreglo: usar los pasos UTC solo si la fecha inicial en UTC cumple la frecuencia (`freq.is_on_offset`). Código compartido: ejecutar los tests de los llamadores | `review_028/repro/utc_midnight_anchored_freq.py` |
 | BUG-splitter-positional-cuts | `TimeSeriesSplitter` corta todas las series de un grupo por las posiciones de la primera: con un diccionario de series con tramos distintos, `split_by_date(end_train='2023-01-07')` deja en train fechas hasta el 11 de enero de una serie que empieza el día 5, y `split_by_size(train_size=7)` con series de 10 y 14 valores deja 4 valores de la larga fuera de todos los splits, sin aviso. El docstring pide "identical indexes" en un diccionario, pero nada lo comprueba | P2 | | S | Reproducido el 2026-11-23: igual en 0.27.0 y 0.28.x, pandas 2.3.3 y 3.1.1. Las mismas series en un DataFrame largo con MultiIndex se rechazan (`ValueError`, sin frecuencia). Decidir: error si los índices no son idénticos, o cortar cada serie por fecha. Del mismo módulo, errores visibles e iguales en 0.27.0: las salidas largas con `RangeIndex` y `split_by_date` con un split vacío dan `TypeError` (`data index must be a pandas DatetimeIndex`), y `split_by_size` con un split vacío devuelve un `'long_multi_index'` con solo el nivel `series_id` | `review_028/repro/splitter_positional_cuts.py` |
@@ -328,8 +327,8 @@ Cómo se elige lo siguiente:
 ### P1, en este orden
 
 1. **Regresiones y fallos nuevos de la 0.28.x frente a la 0.27.0** (bloquean la publicación):
-   BUG-load-pytz (XS) y PERF-njobs-auto-first-fold (medir antes el efecto en tiempo real;
-   si no va más lenta que en la 0.27, baja a P3). Al final,
+   PERF-njobs-auto-first-fold (medir antes el efecto en tiempo real; si no va más lenta
+   que en la 0.27, baja a P3). Al final,
    DOC-028-review: corrige las notas de la versión, que deben recoger también estos arreglos
    (cadena C9).
 2. BUG-ms-exog-rangeindex (cadena C1).
@@ -397,8 +396,8 @@ orden de la subsección "Rendimiento y numpy interno".
 - **C9. Notas, mensajes y contexto IA:** DOC-028-review después de los arreglos de P1.1;
   QW-07 (b) y DOC-skills-percentiles-stale juntos. El contexto IA se regenera una vez por PR,
   al final.
-- **C10. Guardar y cargar:** BUG-load-pytz y BUG-skops-tz-dst tocan la misma FAQ y
-  `save-load-forecaster.ipynb`: seguidas. MAINT-save-versions, UTILS-save-path y
+- **C10. Guardar y cargar:** BUG-skops-tz-dst (después de #1536, que toca la misma FAQ y
+  `save-load-forecaster.ipynb`). MAINT-save-versions, UTILS-save-path y
   FE-load-pytz-zoneinfo, sobre el mismo código, si se hacen.
 - **C11. Búsquedas:** BUG-05 con SEARCH-validate-cv-once; FE-04 antes de
   SEARCH-equivalent-date-ms.
@@ -503,6 +502,14 @@ Se vacía al publicar la 0.28.0. Todo fusionado en `0.28.x`.
   Comprobado en Windows con Python 3.13 y 3.14 y joblib 1.3.0 y 1.6.0; Linux y macOS, sin
   comprobar. Lo que queda, sin validar, en PERF-njobs-small-forecaster-bytes,
   FE-njobs-temp-folder-retry y BUG-direct-fit-temp-folder.
+- BUG-load-pytz: #1536 (un forecaster guardado con pandas 2 con joblib, pickle o
+  cloudpickle y una zona horaria de `pytz` no carga en pandas 3 sin `pytz`: el
+  `ModuleNotFoundError` lleva una nota que dice instalarlo, y la FAQ, la guía y el skill
+  ya no dicen que carga con cualquier backend). Con `pytz` carga y predice igual; volver a
+  guardar con skops queda en la FAQ como opción a comprobar. Comprobado ocultando `pytz`,
+  con joblib 1.3.0 y 1.6.0; un entorno sin `pytz`, `ForecasterRnn`, `ForecasterFoundation`,
+  Linux y macOS, sin comprobar. Lo que queda, en FE-load-pytz-zoneinfo y en la fila
+  BUG-skops-tz-dst.
 - PERF-predict-numpy, bloque A: #1516.
 - PERF-multiseries-names-pyarrow: #1530 (`predict` y backtesting de multiserie, del 21 al 86 %,
   mismos resultados; informe en MSPERF `MEDIDAS.md` §17). Hallazgos previos sin tocar, en MSPERF
