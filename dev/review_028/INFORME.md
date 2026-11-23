@@ -200,6 +200,13 @@ menos un mensaje claro.
 Script: `repro/njobs_temp_folder.py` (`JOBLIB_TEMP_FOLDER` apuntando a una ruta no
 escribible).
 
+**Nota posterior (2026-11-23):** arreglado en #1535 (rama `fix/njobs-temp-folder`), con la
+segunda opción: el error explica la causa y tres remedios (`JOBLIB_TEMP_FOLDER`,
+`joblib.parallel_config(max_nbytes=None)` o `n_jobs=1`), sin reintento. El script no
+reproducía en Windows (`/dev/null/not-writable` es allí una ruta válida y joblib la creaba);
+ahora usa una ruta que cuelga de un fichero. La 0.27 ya fallaba igual cuando algún array de
+los argumentos pasaba de 1 MB (los datos, o un KNN ajustado).
+
 ## 7. DOC-028-review: correcciones de documentación
 
 Script de los puntos 2, 4 y 5: `repro/doc_checks.py`. Al terminar, regenerar el contexto IA

@@ -75,7 +75,7 @@ Los documentos borrados se leen con `git show <commit>:<ruta>`.
 | `preprocessing_speedups/` | Plan y kit de validación de los atajos de preprocesado (en curso) | Se cierren PERF-categorical-codes, STUDY-fit-insample-binning y PERF-one-step-ahead-inverse |
 | `backtesting_multiseries_speedups/` | Plan de PERF-backtesting-folds-positions y de la segunda parte de PERF-03, con las medidas y los prototipos de la revisión del 2026-11-19 | Se cierren PERF-backtesting-folds-positions y PERF-03 |
 | `pandas_numpy_review/` | Estudio del uso de pandas frente a numpy dentro de los forecasters (`INFORME.md`), su revisión independiente (`REVISION.md`), y los prototipos, scripts y medidas de los dos (2026-11-19); la sección 11 de la revisión prueba la opción (a') de D-NP2 con un parche (2026-11-20) | Se cierren BUG-ms-fit-dataframe-categorical, PERF-exog-float-matrix y MAINT-ms-predict-core, y se decida PERF-backtesting-ms-fast-path (el prototipo y su batería son su especificación) |
-| `review_028/` | Informe de la revisión de la 0.28.x frente a la 0.27.x (2026-11-21) y los scripts mínimos de sus hallazgos | Se cierren BUG-load-pytz, BUG-skops-tz-dst, PERF-njobs-auto-first-fold, BUG-rnn-old-pickle, BUG-njobs-temp-folder, DOC-028-review, BUG-wide-to-long-inferred-freq, BUG-utc-midnight-anchored-freq, BUG-splitter-positional-cuts y BUG-splitter-pandas2-dst-union |
+| `review_028/` | Informe de la revisión de la 0.28.x frente a la 0.27.x (2026-11-21) y los scripts mínimos de sus hallazgos | Se cierren BUG-load-pytz, BUG-skops-tz-dst, PERF-njobs-auto-first-fold, BUG-rnn-old-pickle, DOC-028-review, BUG-wide-to-long-inferred-freq, BUG-utc-midnight-anchored-freq, BUG-splitter-positional-cuts y BUG-splitter-pandas2-dst-union |
 | `pandas3_migration/` | Estudio, decisiones y arnés de la migración a pandas 3, y su informe final (`INFORME_0.28_pandas3.md`, DOC-pandas3-report) | Se cierre MAINT-pandas3-final-crossenv (el A/B de las búsquedas puede usar el arnés); antes, mover la lista "Al retirar pandas 2" a MAINT-drop-pandas2. El arnés lo usan también PERF-predict-numpy y otros: decidir entonces si pasa a `benchmarks/` o `tools/`. Después, el informe se cita por commit |
 
 ---
@@ -148,7 +148,6 @@ publicada (P1.1 de la sección 11) y hay que pasar `/release-note consolidate`.
 
 | ID | Qué | Prioridad | Requiere | Esfuerzo | Estado | Detalle |
 |---|---|---|---|---|---|---|
-| BUG-njobs-temp-folder | Desde #1503, un forecaster de más de 1 MB va siempre a los workers por la carpeta temporal de joblib; si no se puede escribir, el backtesting falla con un `PicklingError` que no dice la causa (la 0.27 funcionaba). Repetir con `max_nbytes=None` o dar un mensaje claro | P1 | | XS | Reproducido el 2026-11-21 | REV28 §6; `repro/njobs_temp_folder.py` |
 | PERF-njobs-auto-first-fold | `n_jobs='auto'` sin refit (HGB, CatBoost) decide con el tiempo del fold 0, y el primer `predict` de una sesión tarda unas 10 veces más que los siguientes (12,5 frente a 0,9 ms): con unos 600 folds o más (1200 en Windows) la primera llamada siempre paraleliza, y puede ir más lenta que en 0.27. Estimar con un fold caliente (predecir los folds 0 y 1 y usar el segundo) | P1 | | XS a S | Decisión medida el 2026-11-21 (1000 folds: `n_jobs` 3 en la primera llamada y 1 en la segunda); el efecto en tiempo real, sin medir. NJOBS lo veía solo cerca del umbral | REV28 §4; `repro/njobs_auto_first_fold.py`; NJOBS propuesta 3 |
 | BUG-02 | Con `fold_stride < steps` las métricas solo miden los primeros horizontes y las búsquedas eligen por el error a 1 paso | P2 | D-BUG02 | S | Decisión pendiente D-BUG02 | R27 §4; R27-repro/BUG-02.py |
 | BUG-01 | `backtesting` con `initial_train_size=None` sobre un forecaster ajustado evalúa in-sample sin aviso (métricas 2,5 veces optimistas) | P2 | | S | Reproducido. Solo aviso silenciable (uso documentado) | R27 §4; R27-repro/BUG-01.py |
@@ -180,6 +179,8 @@ publicada (P1.1 de la sección 11) y hay que pasar `/release-note consolidate`.
 | SEARCH-equivalent-date-ms | `grid_search_equivalent_date` multiserie | P4 | FE-04 | S | Después de FE-04 | R27 §5 |
 | ISSUE-995 | Pruning de Optuna en la búsqueda bayesiana | P4 | | M | Sin verificar; pregunta abierta desde 2025-07 | [#995](https://github.com/skforecast/skforecast/issues/995) |
 | SHORT-c2-cold-start | Predecir series con menos historia que la ventana (cold start), solo como argumento explícito del usuario | P4 | | M | Aparcada | SHORT |
+| PERF-njobs-small-forecaster-bytes | Backtesting en paralelo: enviar el forecaster serializado como `bytes` cuando es pequeño y como array (fichero compartido de joblib) cuando es grande, con un umbral propio. De paso, los forecasters pequeños de más de 1 MB dejarían de depender de la carpeta temporal de joblib (BUG-njobs-temp-folder) | P4 | | S | Propuesta sin validar (2026-11-23). Tres medidas en Windows, 20 folds sin refit, con fichero frente a sin él: 2,7 MB, 0,26 frente a 0,20 s; 54 MB, 0,71 frente a 1,11 s; 180 MB, 2,5 frente a 5,0 s. Antes de hacer nada, validar: dónde está el cruce, Linux (joblib escribe en `/dev/shm`), cuánto pesa en una búsqueda real sin refit, y que no anula `joblib.parallel_config(max_nbytes=...)`. Ganancia esperable pequeña (0,06 s por llamada con 2,7 MB) | Relacionado con PERF-n_jobs-next (1) y (5); medidas de la sesión de BUG-njobs-temp-folder, sin documento |
+| FE-njobs-temp-folder-retry | Backtesting en paralelo: si joblib no puede escribir en su carpeta temporal, repetir la llamada con `max_nbytes=None` y un aviso, en lugar de fallar con el error explicado | P4 | | S | Probable descarte: al hacer BUG-njobs-temp-folder se eligió el mensaje claro sin reintento (2026-11-23). Propuesta sin validar: los fallos que la descartaron salen de una sola revisión y no están todos reproducidos (con `ForecasterDirect` los workers se reinician dos veces por candidato; la barra de progreso queda en rojo en notebooks; un `PicklingError` dentro de un fold con `n_jobs=1` o hilos repetiría todos los folds; los datos grandes pasan a copiarse en cada worker; necesita estado en el proceso). Medido: fallar y reintentar cuesta 2,84 s por llamada, frente a 0,15 s de fallar. Validar esos fallos antes de retomarla, y solo si hay demanda | BUG-njobs-temp-folder (#1535, sección 13); ninguna otra librería revisada reintenta (scikit-learn, pandas, optuna, sktime) |
 
 ## 5. Forecasters y multiserie
 
@@ -217,6 +218,7 @@ publicada (P1.1 de la sección 11) y hay que pasar `/release-note consolidate`.
 | PERF-one-step-ahead-inverse | Inversa del escalador con `transform_numpy` en la validación one-step-ahead multiserie | P4 | | S | Aplazada en #1520 (`transformer_series` en multiserie es poco habitual) | PREP (T4) |
 | PERF-scalers-extension | Atajo de `transform_numpy` para `MinMaxScaler` y `RobustScaler` (V3) | P4 | | S | Ampliación de #1519. Pierde valor en el backtesting multiserie con PERF-backtesting-ms-fast-path (el escalador se aplica una vez por serie, no por fold) | PREP (T1, V3) |
 | TODO-multivariate-gap | Formato largo con varios niveles y `gap>0` en multivariante (`_validation.py`, buscar el TODO) | P4 | | S | Sin verificar: comprobar antes si es un caso real | R27 §5 |
+| BUG-direct-fit-temp-folder | `ForecasterDirect.fit` y `ForecasterDirectMultiVariate.fit` con `n_jobs > 1` y matrices de entrenamiento de más de 1 MB: si joblib no puede escribir en su carpeta temporal, fallan con `PicklingError: Could not pickle the task to send it to the workers.`, sin explicar. El backtesting ya lo explica (BUG-njobs-temp-folder), pero solo dentro de sus folds: no en un `fit` directo ni en el ajuste inicial del backtesting. Propuesta: llamar ahí a `_explain_joblib_temp_folder_error` (moverla a `utils`) | P4 | | XS a S | Propuesta sin validar (2026-11-23): deducido del código y de la revisión de BUG-njobs-temp-folder, sin reproducir con un caso real. Ya pasaba en la 0.27 (no es regresión). Validar antes: reproducirlo y ver si el caso es real (carpeta temporal no escribible). Si se hace, un mismo error puede pasar dos veces por la función (el `fit` dentro de un fold en el proceso principal): hay que evitar que el mensaje se amplíe dos veces | BUG-njobs-temp-folder (#1535, sección 13); `_explain_joblib_temp_folder_error` en `model_selection/_validation.py` |
 
 ## 6. Preprocessing
 
@@ -239,6 +241,7 @@ publicada (P1.1 de la sección 11) y hay que pasar `/release-note consolidate`.
 | PERF-02 | Ajuste de Ets y Sarimax de 3 a 70 veces más lento con carga en la máquina | P3 | | S | Volver a medir: BUG-08 (#1425) cambió el escenario | R27 §4; R27-repro/PERF-02.py |
 | DEP-arima-dictstyle | `FutureWarning` sin versión desde la 0.22 (`_arima_base.py`) | P3 | D-ARIMA | S | Decisión pendiente D-ARIMA | R27 §6 |
 | PERF-arima-seasonal-kalman | Kalman de Arima estacional más rápido (14 ms por evaluación, 729 evaluaciones con n=5000 y m=24) | P4 | | L | | R27 §5; `402be62d6:dev/roadmap_0.27.0/work/lens_stats.md` |
+| MAINT-arima-unused-constants | Dos constantes de `_arima_base.py` que no usa nadie: las funciones `@njit` escriben el valor a mano. `_JACOBIAN_STEP_SIZE` (`h = 1e-3` en `compute_arima_transform_gradient`, con una raya larga en el comentario) y `_DIFFUSE_INNOVATION_VARIANCE_THRESHOLD` (`F < 1e4`, dos veces en `_arima_kalman_core`). Cambiar la constante no cambia nada. Usarlas en las funciones o borrarlas | P4 | | XS | Encontrado el 2026-11-23 (revisión de BUG-njobs-temp-folder). Sin efecto en los resultados. Si se usan en las funciones, comprobar que los resultados no cambian (numba toma las constantes del módulo al compilar, con `cache=True`) | Buscar los dos nombres en `skforecast/stats/arima/_arima_base.py` |
 
 ## 8. Utilidades, documentación, experimental y deep learning
 
@@ -321,8 +324,8 @@ Cómo se elige lo siguiente:
 ### P1, en este orden
 
 1. **Regresiones y fallos nuevos de la 0.28.x frente a la 0.27.0** (bloquean la publicación):
-   BUG-njobs-temp-folder (XS), BUG-load-pytz (XS) y PERF-njobs-auto-first-fold (medir antes
-   el efecto en tiempo real; si no va más lenta que en la 0.27, baja a P3). Al final,
+   BUG-load-pytz (XS) y PERF-njobs-auto-first-fold (medir antes el efecto en tiempo real;
+   si no va más lenta que en la 0.27, baja a P3). Al final,
    DOC-028-review: corrige las notas de la versión, que deben recoger también estos arreglos
    (cadena C9).
 2. BUG-ms-exog-rangeindex (cadena C1).
@@ -384,8 +387,9 @@ orden de la subsección "Rendimiento y numpy interno".
 - **C7. `fit` multiserie:** PERF-ms-fit-small y PERF-ms-train-pandas3 (misma función),
   seguidas; el punto (3) de la segunda se solapa con la validación V1 de
   PERF-categorical-codes.
-- **C8. `n_jobs` (#1503):** BUG-njobs-temp-folder, PERF-njobs-auto-first-fold y, después,
-  PERF-n_jobs-next (sus medidas, con los dos arreglos ya fusionados).
+- **C8. `n_jobs` (#1503):** PERF-njobs-auto-first-fold (después de #1535, que toca los
+  mismos `except` de `_validation.py`) y, después, PERF-n_jobs-next (sus medidas, con los
+  dos arreglos ya fusionados).
 - **C9. Notas, mensajes y contexto IA:** DOC-028-review después de los arreglos de P1.1;
   QW-07 (b) y DOC-skills-percentiles-stale juntos. El contexto IA se regenera una vez por PR,
   al final.
@@ -488,6 +492,13 @@ Se vacía al publicar la 0.28.0. Todo fusionado en `0.28.x`.
   series desfasadas, cada una con sus fechas; regresión de la 0.28.x). Hallazgos previos,
   iguales en 0.27.0, en BUG-wide-to-long-inferred-freq, BUG-utc-midnight-anchored-freq,
   BUG-splitter-positional-cuts y BUG-splitter-pandas2-dst-union.
+- BUG-njobs-temp-folder: #1535 (si joblib no puede escribir en su carpeta temporal, el
+  `PicklingError` del backtesting en paralelo explica la causa y tres remedios:
+  `JOBLIB_TEMP_FOLDER`, `joblib.parallel_config(max_nbytes=None)` o `n_jobs=1`; sin
+  reintento, y en las búsquedas el aviso de candidatos saltados lleva la explicación).
+  Comprobado en Windows con Python 3.13 y 3.14 y joblib 1.3.0 y 1.6.0; Linux y macOS, sin
+  comprobar. Lo que queda, sin validar, en PERF-njobs-small-forecaster-bytes,
+  FE-njobs-temp-folder-retry y BUG-direct-fit-temp-folder.
 - PERF-predict-numpy, bloque A: #1516.
 - PERF-multiseries-names-pyarrow: #1530 (`predict` y backtesting de multiserie, del 21 al 86 %,
   mismos resultados; informe en MSPERF `MEDIDAS.md` §17). Hallazgos previos sin tocar, en MSPERF
