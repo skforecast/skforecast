@@ -2,6 +2,7 @@
 # ==============================================================================
 import re
 import sys
+import pickle
 import warnings
 import pytest
 from unittest.mock import patch
@@ -30,6 +31,7 @@ from skforecast.model_selection import TimeSeriesFold, backtesting_forecaster_mu
 from skforecast.model_selection._validation import _deserialize_forecaster_and_run_fold
 
 # Fixtures
+from ..fixtures_model_selection import raise_joblib_temp_folder_error
 from ....recursive.tests.tests_forecaster_recursive_multiseries.fixtures_forecaster_recursive_multiseries import expected_df_to_long_format
 from ..fixtures_model_selection_multiseries import (
     series_wide_range,
@@ -8094,5 +8096,39 @@ def test_backtesting_forecaster_multiseries_ValueError_when_n_jobs_is_0(refit):
             cv            = cv,
             metric        = 'mean_absolute_error',
             n_jobs        = 0,
+            show_progress = False
+        )
+
+
+def test_backtesting_forecaster_multiseries_PicklingError_explained_when_joblib_cannot_write_temp_folder():
+    """
+    Test that the error raised by joblib when it cannot write the arrays of
+    the tasks to its temporary folder explains the cause and how to solve it.
+    `Parallel` is mocked with one that raises that error, so no workers are
+    started.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator=Ridge(random_state=123), lags=3
+                 )
+    cv = TimeSeriesFold(steps=10, initial_train_size=10, refit=False, verbose=False)
+
+    err_msg = re.escape(
+        "Could not pickle the task to send it to the workers. joblib could not "
+        "write to its temporary folder the large arrays that it sends to the "
+        "worker processes (more than 1 MB by default)."
+    )
+    with (
+        patch(
+            "skforecast.model_selection._validation.Parallel",
+            side_effect=lambda **kwargs: raise_joblib_temp_folder_error
+        ),
+        pytest.raises(pickle.PicklingError, match=err_msg)
+    ):
+        backtesting_forecaster_multiseries(
+            forecaster    = forecaster,
+            series        = series_wide_range,
+            cv            = cv,
+            metric        = 'mean_absolute_error',
+            n_jobs        = 2,
             show_progress = False
         )

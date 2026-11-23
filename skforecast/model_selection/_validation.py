@@ -8,6 +8,7 @@
 from __future__ import annotations
 from typing import Callable, Any
 from copy import deepcopy
+import builtins
 import os
 import pickle
 import time
@@ -200,7 +201,9 @@ def _serialize_forecaster_for_workers(
     Large forecasters, for example with a `RandomForestRegressor` or a
     `KNeighborsRegressor` (which stores its training data), are then written
     once instead of being sent with each batch, and the workers share the
-    serialized bytes instead of keeping a copy each.
+    serialized bytes instead of keeping a copy each. If joblib cannot write to
+    its temporary folder, the backtesting fails with the error that
+    `_explain_joblib_temp_folder_error` explains.
 
     It is also serialized when the active backend of joblib runs the tasks in
     threads (for example, inside `joblib.parallel_config(backend="threading")`):
@@ -241,6 +244,78 @@ def _serialize_forecaster_for_workers(
     return np.frombuffer(
         dumps(forecaster, protocol=pickle.HIGHEST_PROTOCOL), dtype=np.uint8
     )
+
+
+def _explain_joblib_temp_folder_error(error: Exception) -> None:
+    """
+    Extend the message of the error raised by `joblib.Parallel` when joblib
+    cannot write to its temporary folder, with the cause and how to solve it.
+    Any other error is left as it is.
+
+    joblib writes the arrays of more than 1 MB of the tasks (`max_nbytes`) to
+    a file in its temporary folder, and the forecaster serialized by
+    `_serialize_forecaster_for_workers` is one of them. If the folder cannot be
+    written (it does not exist, it is read-only or the disk is full), the tasks
+    cannot be sent and the folds fail with `PicklingError: Could not pickle the
+    task to send it to the workers.`, which does not say why. That failure is
+    told apart from an argument that cannot be pickled by its cause, the text
+    of the traceback of the thread that pickles the tasks: it goes through the
+    module of joblib that writes the arrays (`_memmapping_reducer`, as every
+    array does, also those pickled with the task) and its error is an
+    `OSError`.
+
+    The message is extended in the same error, without raising a new one, so
+    the explanation is also in the warning of the candidates skipped of a
+    hyperparameter search, which shows the text of the error of each candidate.
+    The text added is always the same (the folder is in the cause of the
+    error), so that warning groups the candidates under one error. It does not
+    name the forecaster or the folds: the error can also come from the
+    `Parallel` of a forecaster that fits its estimators in parallel
+    (`ForecasterDirect`), when a fold fits it in the main process.
+
+    Only the default backend of joblib (loky) is covered. With the
+    multiprocessing backend, joblib raises the `OSError` itself, with the
+    folder in its message.
+
+    Parameters
+    ----------
+    error : Exception
+        Error raised by the `joblib.Parallel` that runs the folds.
+
+    Returns
+    -------
+    None
+
+    """
+
+    if not isinstance(error, pickle.PicklingError):
+        return
+
+    cause = str(error.__cause__)
+    if "_memmapping_reducer" not in cause:
+        return
+
+    # NOTE: The line of the traceback with the error is `<error type>: <message>`.
+    # It is not always the last one: since Python 3.14, the errors raised while
+    # pickling have a note for each object that contains the one that failed.
+    error_types = [
+        getattr(builtins, line.split(":")[0], None) for line in cause.splitlines()
+    ]
+    if not any(
+        isinstance(error_type, type) and issubclass(error_type, OSError)
+        for error_type in error_types
+    ):
+        return
+
+    explanation = (
+        "joblib could not write to its temporary folder the large arrays that it "
+        "sends to the worker processes (more than 1 MB by default). Set the "
+        "environment variable `JOBLIB_TEMP_FOLDER` to a writable folder with "
+        "enough free space, run the function inside `with "
+        "joblib.parallel_config(max_nbytes=None):` to send them without that "
+        "folder, or do not use parallel processes (`n_jobs=1`)."
+    )
+    error.args = (f"{error} {explanation}",)
 
 
 def _deserialize_forecaster_and_run_fold(
@@ -919,6 +994,7 @@ def _backtesting_forecaster(
             for fold, fold_data in fold_items
         )
     except Exception as error:
+        _explain_joblib_temp_folder_error(error)
         _reemit_worker_warnings(
             [(None, getattr(error, _WORKER_WARNINGS_ATTRIBUTE, None))]
         )
@@ -1972,6 +2048,7 @@ def _backtesting_forecaster_multiseries(
             for data_fold in data_folds_list
         )
     except Exception as error:
+        _explain_joblib_temp_folder_error(error)
         _reemit_worker_warnings(
             [(None, getattr(error, _WORKER_WARNINGS_ATTRIBUTE, None))]
         )
@@ -2802,6 +2879,7 @@ def _backtesting_stats(
             for fold in folds_tqdm
         )
     except Exception as error:
+        _explain_joblib_temp_folder_error(error)
         _reemit_worker_warnings(
             [(None, getattr(error, _WORKER_WARNINGS_ATTRIBUTE, None))]
         )

@@ -1,6 +1,7 @@
 # Unit test backtesting_stats
 # ==============================================================================
 import re
+import pickle
 import warnings
 import platform
 from unittest.mock import patch
@@ -20,6 +21,7 @@ from skforecast.model_selection._validation import _deserialize_forecaster_and_r
 from skforecast.exceptions import IgnoredArgumentWarning
 
 # Fixtures
+from ..fixtures_model_selection import raise_joblib_temp_folder_error
 from ....stats.tests.tests_arima.fixtures_arima import air_passengers, tol_pred
 from ....recursive.tests.tests_forecaster_stats.fixtures_forecaster_stats import y_datetime
 from ....recursive.tests.tests_forecaster_stats.fixtures_forecaster_stats import exog_datetime
@@ -2457,6 +2459,44 @@ def test_backtesting_stats_ValueError_when_n_jobs_is_0(refit):
             cv                = cv,
             metric            = "mean_absolute_error",
             n_jobs            = 0,
+            show_progress     = False,
+            suppress_warnings = True
+        )
+
+
+def test_backtesting_stats_PicklingError_explained_when_joblib_cannot_write_temp_folder():
+    """
+    Test that the error raised by joblib when it cannot write the arrays of
+    the tasks to its temporary folder explains the cause and how to solve it.
+    `Parallel` is mocked with one that raises that error, so no workers are
+    started.
+    """
+    forecaster = ForecasterStats(estimator=Arima(order=(1, 0, 0)))
+    cv = TimeSeriesFold(
+             steps              = 6,
+             initial_train_size = len(y_datetime) - 12,
+             refit              = False,
+             verbose            = False
+         )
+
+    err_msg = re.escape(
+        "Could not pickle the task to send it to the workers. joblib could not "
+        "write to its temporary folder the large arrays that it sends to the "
+        "worker processes (more than 1 MB by default)."
+    )
+    with (
+        patch(
+            "skforecast.model_selection._validation.Parallel",
+            side_effect=lambda **kwargs: raise_joblib_temp_folder_error
+        ),
+        pytest.raises(pickle.PicklingError, match=err_msg)
+    ):
+        backtesting_stats(
+            forecaster        = forecaster,
+            y                 = y_datetime,
+            cv                = cv,
+            metric            = "mean_absolute_error",
+            n_jobs            = 2,
             show_progress     = False,
             suppress_warnings = True
         )
