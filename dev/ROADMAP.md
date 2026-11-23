@@ -75,7 +75,7 @@ Los documentos borrados se leen con `git show <commit>:<ruta>`.
 | `preprocessing_speedups/` | Plan y kit de validación de los atajos de preprocesado (en curso) | Se cierren PERF-categorical-codes, STUDY-fit-insample-binning y PERF-one-step-ahead-inverse |
 | `backtesting_multiseries_speedups/` | Plan de PERF-backtesting-folds-positions y de la segunda parte de PERF-03, con las medidas y los prototipos de la revisión del 2026-11-19 | Se cierren PERF-backtesting-folds-positions y PERF-03 |
 | `pandas_numpy_review/` | Estudio del uso de pandas frente a numpy dentro de los forecasters (`INFORME.md`), su revisión independiente (`REVISION.md`), y los prototipos, scripts y medidas de los dos (2026-11-19); la sección 11 de la revisión prueba la opción (a') de D-NP2 con un parche (2026-11-20) | Se cierren BUG-ms-fit-dataframe-categorical, PERF-exog-float-matrix y MAINT-ms-predict-core, y se decida PERF-backtesting-ms-fast-path (el prototipo y su batería son su especificación) |
-| `review_028/` | Informe de la revisión de la 0.28.x frente a la 0.27.x (2026-11-21) y los scripts mínimos de sus hallazgos | Se cierren BUG-skops-tz-dst, PERF-njobs-auto-first-fold, BUG-rnn-old-pickle, DOC-028-review, BUG-wide-to-long-inferred-freq, BUG-utc-midnight-anchored-freq, BUG-splitter-positional-cuts y BUG-splitter-pandas2-dst-union |
+| `review_028/` | Informe de la revisión de la 0.28.x frente a la 0.27.x (2026-11-21) y los scripts mínimos de sus hallazgos | Se cierren BUG-skops-tz-dst, BUG-rnn-old-pickle, DOC-028-review, BUG-wide-to-long-inferred-freq, BUG-utc-midnight-anchored-freq, BUG-splitter-positional-cuts y BUG-splitter-pandas2-dst-union |
 | `pandas3_migration/` | Estudio, decisiones y arnés de la migración a pandas 3, y su informe final (`INFORME_0.28_pandas3.md`, DOC-pandas3-report) | Se cierre MAINT-pandas3-final-crossenv (el A/B de las búsquedas puede usar el arnés); antes, mover la lista "Al retirar pandas 2" a MAINT-drop-pandas2. El arnés lo usan también PERF-predict-numpy y otros: decidir entonces si pasa a `benchmarks/` o `tools/`. Después, el informe se cita por commit |
 
 ---
@@ -151,7 +151,6 @@ publicada (P1.1 de la sección 11) y hay que pasar `/release-note consolidate`.
 
 | ID | Qué | Prioridad | Requiere | Esfuerzo | Estado | Detalle |
 |---|---|---|---|---|---|---|
-| PERF-njobs-auto-first-fold | `n_jobs='auto'` sin refit (HGB, CatBoost) decide con el tiempo del fold 0, y el primer `predict` de una sesión tarda unas 10 veces más que los siguientes (12,5 frente a 0,9 ms): con unos 600 folds o más (1200 en Windows) la primera llamada siempre paraleliza, y puede ir más lenta que en 0.27. Estimar con un fold caliente (predecir los folds 0 y 1 y usar el más rápido) | P1 | | XS a S | En curso, rama `fix/njobs-auto-first-fold` (2026-11-23): con 4 folds o más se predicen los dos primeros en el proceso principal y se estima con el menor de los dos tiempos. Medido en Windows (22 CPU, pandas 2.3.3 y 3.1.1 con y sin `pyarrow`, sin diferencias): el exceso del fold 0 son 45 ms de crear el `ThreadpoolController` (277 DLL cargadas), 1,2 s con window features de numba (`ratio_min_max`) y unos 5 ms con CatBoost, y a partir de unos 200 a 270 folds la primera llamada siempre paralelizaba. Primera llamada de un proceso nuevo, base frente a rama: 1000 folds de 1 paso, de 5,0 a 5,3 s a 1,0 a 1,1 s (1,1 s en la 0.27); 300 folds de 6 pasos, de 5,3 a 5,4 s a 2,0 a 2,2 s; 365 folds de 24 pasos (6 a 8 s de trabajo real), de 6,0 a 6,5 s en paralelo a 6,8 a 7,1 s en un proceso; 1000 folds de 24 pasos, sigue en paralelo (7,1 a 7,5 s frente a 7,3 a 7,8 s). Batería de 968 casos idéntica entre base y rama con pandas 2 y 3. Costes aceptados: con 3 folds ya no se paraleliza, y con pocos folds muy caros un fold más se predice en el proceso principal. Linux y macOS, sin comprobar. Decisión del 2026-11-21: 1000 folds, `n_jobs` 3 en la primera llamada y 1 en la segunda (4 CPU) | REV28 §4; `repro/njobs_auto_first_fold.py`; NJOBS propuesta 3 |
 | BUG-02 | Con `fold_stride < steps` las métricas solo miden los primeros horizontes y las búsquedas eligen por el error a 1 paso | P2 | D-BUG02 | S | Decisión pendiente D-BUG02 | R27 §4; R27-repro/BUG-02.py |
 | BUG-01 | `backtesting` con `initial_train_size=None` sobre un forecaster ajustado evalúa in-sample sin aviso (métricas 2,5 veces optimistas) | P2 | | S | Reproducido. Solo aviso silenciable (uso documentado) | R27 §4; R27-repro/BUG-01.py |
 | BUG-11 | `backtesting_forecaster` con `ForecasterEquivalentDate` e `interval` da `AttributeError` (`predict_quantiles`) con el método por defecto | P2 | | S | Reproducido | R27 §4; R27-repro/BUG-11.py |
@@ -332,10 +331,8 @@ Cómo se elige lo siguiente:
 ### P1, en este orden
 
 1. **Regresiones y fallos nuevos de la 0.28.x frente a la 0.27.0** (bloquean la publicación):
-   PERF-njobs-auto-first-fold (medir antes el efecto en tiempo real; si no va más lenta
-   que en la 0.27, baja a P3). Al final,
-   DOC-028-review: corrige las notas de la versión, que deben recoger también estos arreglos
-   (cadena C9).
+   cerrados (sección 13). Falta DOC-028-review: corrige las notas de la versión, que deben
+   recoger también esos arreglos (cadena C9).
 2. BUG-ms-exog-rangeindex (cadena C1).
 3. BUG-ms-fit-dataframe-categorical con sus requisitos PERF-exog-float-matrix, CAT-T2 y
    CAT-T3 (cadena C2). Si la cadena se retrasa, QW-ms-category-warning protege mientras tanto.
@@ -395,9 +392,8 @@ orden de la subsección "Rendimiento y numpy interno".
 - **C7. `fit` multiserie:** PERF-ms-fit-small y PERF-ms-train-pandas3 (misma función),
   seguidas; el punto (3) de la segunda se solapa con la validación V1 de
   PERF-categorical-codes.
-- **C8. `n_jobs` (#1503):** PERF-njobs-auto-first-fold (después de #1535, que toca los
-  mismos `except` de `_validation.py`) y, después, PERF-n_jobs-next (sus medidas, con los
-  dos arreglos ya fusionados).
+- **C8. `n_jobs` (#1503):** PERF-n_jobs-next (sus medidas, con #1535 y #1538 ya
+  fusionados).
 - **C9. Notas, mensajes y contexto IA:** DOC-028-review después de los arreglos de P1.1;
   QW-07 (b) y DOC-skills-percentiles-stale juntos. El contexto IA se regenera una vez por PR,
   al final.
@@ -515,6 +511,19 @@ Se vacía al publicar la 0.28.0. Todo fusionado en `0.28.x`.
   con joblib 1.3.0 y 1.6.0; un entorno sin `pytz`, `ForecasterRnn`, `ForecasterFoundation`,
   Linux y macOS, sin comprobar. Lo que queda, en FE-load-pytz-zoneinfo y en la fila
   BUG-skops-tz-dst.
+- PERF-njobs-auto-first-fold: #1538 (con `n_jobs='auto'`, sin refit y 4 folds o más,
+  `backtesting_forecaster` predice los dos primeros folds en el proceso principal y estima
+  la carga con el más rápido; el fold 0 la inflaba por sí solo: 45 ms de crear el
+  `ThreadpoolController` en Windows, 1,2 s con window features de numba y unos 5 ms con
+  CatBoost). Primera llamada de un proceso nuevo en Windows (22 CPU; pandas 2.3.3 y 3.1.1
+  con y sin `pyarrow`, sin diferencias): 1000 folds de 1 paso, de 5,0 a 5,3 s a 1,0 a
+  1,1 s (1,1 s en la 0.27); 300 folds de 6 pasos, de 5,3 a 5,4 s a 2,0 a 2,2 s. Batería de
+  968 casos idéntica entre base y rama con pandas 2 y 3. Costes aceptados: con 3 folds ya
+  no se paraleliza, y con pocos folds muy caros un fold más se predice en el proceso
+  principal. Linux y macOS, sin comprobar. Script en REV28
+  `repro/njobs_auto_first_fold.py`. De paso, las notas de la 0.27.0 y la 0.28.0 pierden
+  los detalles de las medidas (hardware, tamaños, tiempos absolutos) y el skill
+  `release-note` recoge ese criterio.
 - PERF-predict-numpy, bloque A: #1516.
 - PERF-multiseries-names-pyarrow: #1530 (`predict` y backtesting de multiserie, del 21 al 86 %,
   mismos resultados; informe en MSPERF `MEDIDAS.md` §17). Hallazgos previos sin tocar, en MSPERF
