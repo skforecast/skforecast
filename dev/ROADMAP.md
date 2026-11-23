@@ -303,9 +303,9 @@ Cerradas el 2026-11-20, cada una en la fila de su elemento: D-NP2 = (a') (BUG-ms
 
 Cómo se elige lo siguiente:
 
-1. **Lo que está en curso se termina primero**, salvo que aparezca algo de un nivel
-   superior: STUDY-fit-insample-binning (#1520), SEARCH-initial-trials (#1492) y la guía de
-   #1476 (ISSUE-1131).
+1. **Lo que está en curso no adelanta a lo de un nivel superior**: espera su turno por nivel.
+   STUDY-fit-insample-binning (#1520), SEARCH-initial-trials (#1492) y la guía de #1476
+   (ISSUE-1131) son P3 y van después de P1 y P2.
 2. **Las decisiones (sección 10) se abren en cuanto se sabe que hacen falta**: cuestan días de
    calendario, no esfuerzo. Primero las que bloquean un P1 o un P2: D-BUG02, D-SKIPFOLDS,
    D-QW02 y D-FAR.
@@ -322,8 +322,9 @@ Cómo se elige lo siguiente:
 
 1. **Regresiones y fallos nuevos de la 0.28.x frente a la 0.27.0** (bloquean la publicación):
    BUG-njobs-temp-folder (XS), BUG-load-pytz (XS) y PERF-njobs-auto-first-fold (medir antes
-   el efecto en tiempo real; si no va más lenta que en la 0.27, baja a P3). Al final, DOC-028-review: corrige las notas de
-   la versión, que deben recoger también estos arreglos (cadena C9).
+   el efecto en tiempo real; si no va más lenta que en la 0.27, baja a P3). Al final,
+   DOC-028-review: corrige las notas de la versión, que deben recoger también estos arreglos
+   (cadena C9).
 2. BUG-ms-exog-rangeindex (cadena C1).
 3. BUG-ms-fit-dataframe-categorical con sus requisitos PERF-exog-float-matrix, CAT-T2 y
    CAT-T3 (cadena C2). Si la cadena se retrasa, QW-ms-category-warning protege mientras tanto.
