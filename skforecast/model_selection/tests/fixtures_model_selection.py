@@ -1,5 +1,6 @@
 # Fixtures model_selection
 # ==============================================================================
+import pickle
 import numpy as np
 import pandas as pd
 
@@ -731,3 +732,19 @@ y_intermittent = pd.Series(
     name = 'y',
     index = pd.date_range(start='2020-01-01', periods=80, freq='D')
 )
+
+
+def raise_joblib_temp_folder_error(tasks):
+    """
+    Raise the error of joblib when it cannot write the large arrays of the
+    tasks to its temporary folder: a `PicklingError` whose cause is the text
+    of the traceback of the thread that pickles the tasks. It replaces the
+    callable that `joblib.Parallel` returns.
+    """
+    cause = RuntimeError(
+        'File "joblib/_memmapping_reducer.py", line 442, in __call__\n'
+        "FileNotFoundError: [Errno 2] No such file or directory: '/not/writable'"
+    )
+    raise pickle.PicklingError(
+        "Could not pickle the task to send it to the workers."
+    ) from cause

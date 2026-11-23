@@ -2,15 +2,17 @@
 # ==============================================================================
 import re
 import sys
+import pickle
 import threading
 import warnings
 import pytest
 from unittest.mock import patch
 import numpy as np
 import pandas as pd
-from joblib import Parallel, cpu_count, parallel_config
+from joblib import Parallel, cpu_count, effective_n_jobs, parallel_config
 from scipy.stats import norm
 from sklearn.linear_model import Ridge, LogisticRegression
+from sklearn.neighbors import KNeighborsRegressor
 from sklearn.ensemble import (
     HistGradientBoostingClassifier,
     HistGradientBoostingRegressor,
@@ -34,6 +36,7 @@ from skforecast.exceptions import IgnoredArgumentWarning, MissingValuesWarning
 
 # Fixtures
 from ..fixtures_model_selection import y, y_clf, exog
+from ..fixtures_model_selection import raise_joblib_temp_folder_error
 
 
 def test_backtesting_forecaster_TypeError_when_forecaster_not_supported_types():
@@ -1452,3 +1455,94 @@ def test_backtesting_forecaster_ValueError_when_n_jobs_is_0(refit):
             n_jobs        = 0,
             show_progress = False
         )
+
+
+def test_backtesting_forecaster_PicklingError_explained_when_joblib_cannot_write_temp_folder():
+    """
+    Test that the error raised by joblib when it cannot write the arrays of
+    the tasks to its temporary folder explains the cause and how to solve it.
+    `Parallel` is mocked with one that raises that error, so no workers are
+    started.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(random_state=123), lags=3)
+    cv = TimeSeriesFold(steps=10, initial_train_size=30, refit=False, verbose=False)
+
+    err_msg = re.escape(
+        "Could not pickle the task to send it to the workers. joblib could not "
+        "write to its temporary folder the large arrays that it sends to the "
+        "worker processes (more than 1 MB by default)."
+    )
+    with (
+        patch(
+            "skforecast.model_selection._validation.Parallel",
+            side_effect=lambda **kwargs: raise_joblib_temp_folder_error
+        ),
+        pytest.raises(pickle.PicklingError, match=err_msg)
+    ):
+        backtesting_forecaster(
+            forecaster    = forecaster,
+            y             = y,
+            cv            = cv,
+            metric        = 'mean_absolute_error',
+            n_jobs        = 2,
+            show_progress = False
+        )
+
+
+def test_backtesting_forecaster_PicklingError_explained_with_unwritable_joblib_temp_folder(
+    tmp_path, monkeypatch
+):
+    """
+    Test that, when the folds run in worker processes and joblib cannot write
+    a forecaster of more than 1 MB to its temporary folder, the error explains
+    the cause, and that the backtesting runs inside
+    `parallel_config(max_nbytes=None)`, as the error suggests, with the same
+    output as with `n_jobs=1`. `JOBLIB_TEMP_FOLDER` is a path below a file, so
+    it cannot be created in any operating system. The forecaster has a
+    `KNeighborsRegressor`, which stores its training data.
+    """
+    if effective_n_jobs(2) == 1:
+        pytest.skip("joblib runs the folds in the main process.")
+
+    not_a_folder = tmp_path / "not_a_folder"
+    not_a_folder.write_text("")
+    monkeypatch.setenv("JOBLIB_TEMP_FOLDER", str(not_a_folder / "joblib"))
+
+    y_large = pd.Series(np.arange(20_000, dtype=float), name="y")
+    cv = TimeSeriesFold(
+             steps              = 5,
+             initial_train_size = 19_990,
+             refit              = False,
+             verbose            = False
+         )
+
+    def run_backtesting(n_jobs):
+        forecaster = ForecasterRecursive(estimator=KNeighborsRegressor(), lags=10)
+
+        return backtesting_forecaster(
+                   forecaster    = forecaster,
+                   y             = y_large,
+                   cv            = cv,
+                   metric        = "mean_absolute_error",
+                   n_jobs        = n_jobs,
+                   show_progress = False
+               )
+
+    err_msg = re.escape(
+        "Could not pickle the task to send it to the workers. joblib could not "
+        "write to its temporary folder the large arrays that it sends to the "
+        "worker processes (more than 1 MB by default)."
+    )
+    with pytest.raises(pickle.PicklingError, match=err_msg):
+        run_backtesting(n_jobs=2)
+
+    with parallel_config(max_nbytes=None):
+        metric, predictions = run_backtesting(n_jobs=2)
+    expected_metric, expected_predictions = run_backtesting(n_jobs=1)
+
+    pd.testing.assert_frame_equal(metric, expected_metric)
+    pd.testing.assert_frame_equal(predictions, expected_predictions)
+    # NOTE: The 5 nearest neighbors of every window to predict are the last 5
+    # windows of the training set, whose targets are 19985, ..., 19989.
+    assert metric.loc[0, "mean_absolute_error"] == pytest.approx(7.5)
+    np.testing.assert_allclose(predictions["pred"].to_numpy(), np.full(10, 19987.0))

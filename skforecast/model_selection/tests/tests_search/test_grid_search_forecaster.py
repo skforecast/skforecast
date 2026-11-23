@@ -27,6 +27,7 @@ from functools import partial, partialmethod
 
 # Fixtures
 from ..fixtures_model_selection import y, y_clf, exog
+from ..fixtures_model_selection import raise_joblib_temp_folder_error
 
 tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)  # hide progress bar
 
@@ -554,3 +555,53 @@ def test_grid_search_forecaster_warning_of_fold_that_fails_in_process_kept_with_
     assert expected[1][1][0] is RuntimeWarning
     assert "ValueError: Error of the fold." in expected[1][1][1]
     assert results == expected
+
+
+def test_grid_search_forecaster_skipped_candidates_warning_explains_joblib_temp_folder_error():
+    """
+    Test that, when joblib cannot write the arrays of the tasks to its
+    temporary folder, the warning of the candidates skipped of the search
+    explains the cause and how to solve it, once for all the candidates.
+    `Parallel` is mocked with one that raises that error, so no workers are
+    started.
+    """
+    forecaster = ForecasterRecursive(estimator=Ridge(random_state=123), lags=3)
+    cv = TimeSeriesFold(steps=2, initial_train_size=40, refit=False)
+
+    with (
+        patch(
+            "skforecast.model_selection._validation.Parallel",
+            side_effect=lambda **kwargs: raise_joblib_temp_folder_error
+        ),
+        warnings.catch_warnings(record=True) as record
+    ):
+        warnings.simplefilter("always")
+        results = grid_search_forecaster(
+            forecaster    = forecaster,
+            y             = y,
+            cv            = cv,
+            param_grid    = {'alpha': [0.1, 1.0]},
+            metric        = 'mean_absolute_error',
+            return_best   = False,
+            n_jobs        = 2,
+            show_progress = False
+        )
+
+    skipped_warnings = [
+        str(w.message) for w in record if w.category is RuntimeWarning
+    ]
+    expected_warning = (
+        "Parameters skipped: 2 of 2 candidates raise an error, so the results "
+        "are empty.\n\n"
+        "PicklingError: Could not pickle the task to send it to the workers. "
+        "joblib could not write to its temporary folder the large arrays that "
+        "it sends to the worker processes (more than 1 MB by default). Set the "
+        "environment variable `JOBLIB_TEMP_FOLDER` to a writable folder with "
+        "enough free space, run the function inside `with "
+        "joblib.parallel_config(max_nbytes=None):` to send them without that "
+        "folder, or do not use parallel processes (`n_jobs=1`).\n"
+        "  - lags: [1, 2, 3] (2 candidates)"
+    )
+
+    assert results.empty
+    assert skipped_warnings == [expected_warning]
