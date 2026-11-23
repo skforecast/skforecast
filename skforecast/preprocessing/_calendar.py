@@ -686,13 +686,16 @@ def _freq_to_timedelta_unit(freq_str: str) -> str:
 
     """
 
-    # Strip leading digit multiplier and weekday suffix (e.g. "2h" -> "h", "W-MON" -> "W")
-    normalized = freq_str.partition("-")[0].partition("_")[0]
+    # Strip leading sign (+/-) and weekday suffix (e.g. "-1D" -> "1D", "W-MON" -> "W")
+    cleaned = freq_str.lstrip("+-")
+    normalized = cleaned.partition("-")[0].partition("_")[0]
     normalized = re.sub(r"^\d+", "", normalized)
 
     _coarse = {
-        "YE", "YS", "Y", "A", "AS", "QE", "QS", "Q",
+        "YE", "YS", "Y", "A", "AS", "BYE", "BYS", "BY", "BA", "BAS",
+        "QE", "QS", "Q", "BQE", "BQS", "BQ",
         "ME", "MS", "M", "BM", "BMS", "BME", "CBM", "CBMS", "CBME",
+        "SME", "SMS", "SM",
         "W", "D", "B", "C",
     }
     if normalized in _coarse:

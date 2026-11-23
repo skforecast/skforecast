@@ -446,6 +446,10 @@ def test_calculate_distance_from_holiday_warns_and_fills_nan_in_series():
         ("D", "D"), ("B", "D"), ("W", "D"), ("W-MON", "D"), ("W-FRI", "D"),
         ("ME", "D"), ("MS", "D"), ("BME", "D"), ("QE", "D"), ("QS", "D"),
         ("YE", "D"), ("YS", "D"),
+        ("SME", "D"), ("SMS", "D"), ("SM", "D"),
+        ("BQE", "D"), ("BQS", "D"), ("BQ", "D"),
+        ("BYE", "D"), ("BYS", "D"), ("BY", "D"), ("BA", "D"), ("BAS", "D"),
+        ("-1D", "D"),
         # Sub-daily
         ("h", "h"), ("H", "h"),
         ("min", "m"), ("T", "m"),
@@ -483,3 +487,24 @@ def test_calculate_distance_from_holiday_subday_frequencies(freq):
     assert result["time_to_holiday"].iloc[2] == 0
     assert result["time_since_holiday"].iloc[3] == 1
     assert result["time_since_holiday"].iloc[4] == 2
+
+
+@pytest.mark.parametrize("freq", ["SME", "SMS", "BQE", "BQS", "BYE", "BYS"])
+def test_calculate_distance_from_holiday_semi_month_business_quarter_year(freq):
+    """
+    Test that semi-month, business quarter, and business year index frequencies
+    produce distances in days instead of hours (Fixes #1507).
+    """
+    index = pd.date_range("2021-01-01", periods=4, freq=freq)
+    X = pd.DataFrame({"is_holiday": [False, False, True, False]}, index=index)
+    result = calculate_distance_from_holiday(X, holiday_column="is_holiday")
+
+    expected_days = {
+        "SME": [31, 15, 0, 0],
+        "SMS": [31, 17, 0, 0],
+        "BQE": [183, 92, 0, 0],
+        "BQS": [181, 91, 0, 0],
+        "BYE": [728, 364, 0, 0],
+        "BYS": [731, 364, 0, 0],
+    }
+    assert result["time_to_holiday"].tolist() == expected_days[freq]
