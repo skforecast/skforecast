@@ -15,6 +15,7 @@ Skforecast is a Python library for time series forecasting using scikit-learn co
 - Version: 0.28.0
 - License: BSD-3-Clause
 - Python: 3.11, 3.12, 3.13, 3.14
+- Dependencies: numpy >= 2.0, pandas >= 2.3, < 4.0 (pandas 2.3 and pandas 3 supported)
 - Repository: https://github.com/skforecast/skforecast
 - Documentation: https://skforecast.org
 - PyPI: https://pypi.org/project/skforecast/
@@ -2398,6 +2399,8 @@ pip install tirex-2                # For TiRex-2 (Python >= 3.11)
 `uni2ts` declares `numpy~=1.26.0` and `scipy~=1.11.3`, but works with numpy 2: after `pip install uni2ts "pandas>=2.3"`, run `pip install "numpy>=2" "scipy>=1.13"` (ignore the pip conflict message about `uni2ts`).
 
 Models are downloaded from HuggingFace on first use.
+
+The backends of Moirai-2 and TabPFN-TS depend on `gluonts`, which requires pandas 2: installing them in an environment with pandas 3 downgrades it to pandas 2.3.
 
 ## Quick Start (single series)
 
@@ -6573,7 +6576,7 @@ With pandas 3, `tz_convert` drops calendar frequencies (`'D'`, `'W'`, `'MS'`), s
 # ❌ pandas 3: idx.freq is None
 idx = pd.date_range('2021-02-15', periods=90, freq='D', tz='UTC').tz_convert('Europe/Madrid')
 
-# ✅ Same dates, frequency kept with pandas 2 and 3 (results identical to 'D' with pandas 2)
+# ✅ Same dates, frequency kept and same results with pandas 2 and 3
 idx = pd.date_range('2021-02-15', periods=90, freq='24h', tz='UTC').tz_convert('Europe/Madrid')
 # Weekly: freq='168h'. Dates at local midnight: build the index in local time or use .asfreq('D')
 
@@ -6808,7 +6811,7 @@ forecaster.fit(y=y_train)
 joblib.dump(forecaster, 'forecaster_v0.22.pkl')
 ```
 
-Forecasters saved with pandas 3 using `joblib`, `pickle` or `cloudpickle` cannot be loaded with pandas 2 (an empty `AssertionError`, with a note from `load_forecaster`); files saved with pandas 2 load with pandas 3, but with those backends pandas 2 stores some time zones as `pytz` objects (named zones such as `'Europe/Madrid'`, and dates with a time zone read from Arrow or Parquet), and the pandas 3 environment needs `pip install pytz` (otherwise `ModuleNotFoundError: No module named 'pytz'`, with a note from `load_forecaster`). To share a forecaster between pandas 2.3 and pandas 3, save it with `backend='skops'`, and get the `trusted` list from each file with `skops.io.get_untrusted_types(file=...)`: the type names depend on the pandas version that saved it.
+Forecasters trained with a `DatetimeIndex` and saved with pandas 3 using `joblib`, `pickle` or `cloudpickle` cannot be loaded with pandas 2 (an empty `AssertionError`, with a note from `load_forecaster`); files saved with pandas 2 load with pandas 3, but with those backends pandas 2 stores some time zones as `pytz` objects (named zones such as `'Europe/Madrid'`, and dates with a time zone read from Arrow or Parquet), and the pandas 3 environment needs `pip install pytz` (otherwise `ModuleNotFoundError: No module named 'pytz'`, with a note from `load_forecaster`). To share a forecaster between pandas 2.3 and pandas 3, save it with `backend='skops'`, and get the `trusted` list from each file with `skops.io.get_untrusted_types(file=...)`: the type names depend on the pandas version that saved it.
 
 **Best practices:**
 - Always retrain and re-save forecasters after upgrading skforecast.
@@ -7040,6 +7043,7 @@ ForecasterRnn(
     transformer_exog=MinMaxScaler(feature_range=(0, 1)),    # transformer | None
     fit_kwargs=None,                   # dict, extra kwargs passed to model.fit() (plus series_val / exog_val)
     binner_kwargs=None,                # dict, kwargs for QuantileBinner (binned residuals)
+    warm_start=False,                  # bool, True continues from the weights of the previous fit
     forecaster_id=None,                # str | int, optional identifier
 )
 ```

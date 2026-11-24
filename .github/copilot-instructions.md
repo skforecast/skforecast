@@ -100,6 +100,7 @@ Skforecast is a Python library for time series forecasting using scikit-learn co
 - Version: 0.28.0
 - License: BSD-3-Clause
 - Python: 3.11, 3.12, 3.13, 3.14
+- Dependencies: numpy >= 2.0, pandas >= 2.3, < 4.0 (pandas 2.3 and pandas 3 supported)
 - Repository: https://github.com/skforecast/skforecast
 - Documentation: https://skforecast.org
 - PyPI: https://pypi.org/project/skforecast/
