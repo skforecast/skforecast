@@ -2138,3 +2138,135 @@ def test_predict_output_when_last_window_NaN_before_last_values_of_level_and_dif
     )
 
     assert not predictions['pred'].isna().any()
+
+
+@pytest.mark.parametrize(
+    'dtype',
+    ['bool', 'Int64', 'double[pyarrow]'],
+    ids=lambda dtype: f'dtype: {dtype}'
+)
+@pytest.mark.parametrize(
+    'exog_as_dict',
+    [False, True],
+    ids=lambda exog_as_dict: f'exog_as_dict: {exog_as_dict}'
+)
+def test_predict_output_when_exog_has_bool_nullable_or_pyarrow_column(exog_as_dict, dtype):
+    """
+    Test predict output when exog has a bool, nullable or pyarrow column next
+    to a float column, with the same exog for all the series (DataFrame) and
+    with a dict. The values of exog are float64 arrays, not object arrays,
+    and the predictions are the same for all the dtypes.
+    """
+    if 'pyarrow' in dtype:
+        pytest.importorskip('pyarrow')
+    exog_2 = [1, 0, 0, 1, 1] * 10
+    if dtype == 'bool':
+        exog_2 = [bool(value) for value in exog_2]
+    df_exog = pd.DataFrame({
+        'exog_1': exog_wide_range['exog_1'].to_numpy(),
+        'exog_2': pd.array(exog_2, dtype=dtype)
+    })
+    exog_predict = df_exog.iloc[:5].copy()
+    exog_predict.index = pd.RangeIndex(start=50, stop=55)
+    if exog_as_dict:
+        exog_predict = {'l1': exog_predict, 'l2': exog_predict}
+
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
+    forecaster.fit(series=series_dict_range, exog=df_exog, suppress_warnings=True)
+    exog_values_dict = forecaster._create_predict_inputs(
+        steps=5, exog=exog_predict
+    )[1]
+    predictions = forecaster.predict(
+        steps=5, exog=exog_predict, suppress_warnings=True
+    )
+
+    expected = pd.DataFrame(
+                   data    = np.array([[0.48496974, 0.50582914],
+                                       [0.47171787, 0.48922136],
+                                       [0.57275975, 0.58670056],
+                                       [0.59248905, 0.58510471],
+                                       [0.55717747, 0.54866395]]),
+                   index   = pd.RangeIndex(start=50, stop=55, step=1),
+                   columns = ['l1', 'l2']
+               )
+    expected = expected_df_to_long_format(expected)
+
+    assert all(
+        exog_values.dtype == np.float64
+        for exog_values in exog_values_dict.values()
+    )
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
+@pytest.mark.parametrize(
+    'dtype',
+    ['Int64', 'Float64', 'boolean'],
+    ids=lambda dtype: f'dtype: {dtype}'
+)
+@pytest.mark.parametrize(
+    'exog_as_dict',
+    [False, True],
+    ids=lambda exog_as_dict: f'exog_as_dict: {exog_as_dict}'
+)
+def test_predict_ValueError_when_nullable_exog_has_missing_values(exog_as_dict, dtype):
+    """
+    Test predict raises the ValueError of NaN in the predictors, not a
+    TypeError, when a nullable column of exog next to a float column has a
+    missing value and the estimator does not accept NaN.
+    """
+    exog_2 = [1, 0, 0, 1, 1] * 10
+    if dtype == 'boolean':
+        exog_2 = [bool(value) for value in exog_2]
+    df_exog = pd.DataFrame({
+        'exog_1': exog_wide_range['exog_1'].to_numpy(),
+        'exog_2': pd.array(exog_2, dtype=dtype)
+    })
+    exog_predict = df_exog.iloc[:5].copy()
+    exog_predict.index = pd.RangeIndex(start=50, stop=55)
+    exog_predict.loc[51, 'exog_2'] = pd.NA
+    if exog_as_dict:
+        exog_predict = {'l1': exog_predict, 'l2': exog_predict}
+
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=3)
+    forecaster.fit(series=series_dict_range, exog=df_exog, suppress_warnings=True)
+
+    err_msg = re.escape(
+        "Input X contains NaN in the predictors ['exog_2'] of series "
+        "['l1', 'l2'] at step 2 (51)."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        forecaster.predict(steps=5, exog=exog_predict, suppress_warnings=True)
+
+
+@pytest.mark.parametrize(
+    'dtype',
+    ['Int64', 'Float64', 'boolean'],
+    ids=lambda dtype: f'dtype: {dtype}'
+)
+def test_predict_output_when_HistGradientBoostingRegressor_and_nullable_exog_has_missing_values(dtype):
+    """
+    Test predict returns predictions without NaN when a nullable column of
+    exog next to a float column has a missing value and the estimator accepts
+    NaN.
+    """
+    exog_2 = [1, 0, 0, 1, 1] * 10
+    if dtype == 'boolean':
+        exog_2 = [bool(value) for value in exog_2]
+    df_exog = pd.DataFrame({
+        'exog_1': exog_wide_range['exog_1'].to_numpy(),
+        'exog_2': pd.array(exog_2, dtype=dtype)
+    })
+    exog_predict = df_exog.iloc[:5].copy()
+    exog_predict.index = pd.RangeIndex(start=50, stop=55)
+    exog_predict.loc[51, 'exog_2'] = pd.NA
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        HistGradientBoostingRegressor(random_state=123), lags=3
+    )
+    forecaster.fit(series=series_dict_range, exog=df_exog, suppress_warnings=True)
+    predictions = forecaster.predict(
+        steps=5, exog=exog_predict, suppress_warnings=True
+    )
+
+    assert predictions.shape == (10, 2)
+    assert not predictions['pred'].isna().any()

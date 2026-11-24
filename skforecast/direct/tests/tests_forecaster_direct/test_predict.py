@@ -1364,3 +1364,112 @@ def test_predict_output_when_NaN_is_not_in_last_values_of_series_and_differentia
     predictions = forecaster.predict(steps=3, suppress_warnings=True)
 
     assert not predictions.isna().any()
+
+
+@pytest.mark.parametrize(
+    'dtype',
+    ['bool', 'Int64', 'double[pyarrow]'],
+    ids=lambda dtype: f'dtype: {dtype}'
+)
+def test_predict_output_when_exog_has_bool_nullable_or_pyarrow_column(dtype):
+    """
+    Test predict output when exog has a bool, nullable or pyarrow column next
+    to a float column. The predictions are the same for all the dtypes.
+    """
+    if 'pyarrow' in dtype:
+        pytest.importorskip('pyarrow')
+    exog_2 = [1, 0, 0, 1, 1] * 10
+    if dtype == 'bool':
+        exog_2 = [bool(value) for value in exog_2]
+    df_exog = pd.DataFrame({
+        'exog_1': exog_categorical.to_numpy(),
+        'exog_2': pd.array(exog_2, dtype=dtype)
+    })
+    exog_predict = df_exog.iloc[:5].copy()
+    exog_predict.index = pd.RangeIndex(start=50, stop=55)
+
+    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=3)
+    forecaster.fit(y=y_categorical, exog=df_exog)
+    predictions = forecaster.predict(exog=exog_predict)
+
+    expected = pd.Series(
+                   data  = np.array([0.66365835, 0.39878081, 0.42025715]),
+                   index = pd.RangeIndex(start=50, stop=53, step=1),
+                   name  = 'pred'
+               )
+
+    pd.testing.assert_series_equal(predictions, expected)
+
+
+@pytest.mark.parametrize(
+    'categorical_features',
+    ['auto', ['exog_2']],
+    ids=lambda cf: f'categorical_features: {cf}'
+)
+def test_predict_output_when_HistGradientBoostingRegressor_and_exog_has_category_and_bool(categorical_features):
+    """
+    Test predict output when using HistGradientBoostingRegressor and exog has
+    a categorical column and a bool column. With a list of categorical
+    features, exog also has a category with integer categories that is not in
+    the list and is used as a numeric column.
+    """
+    df_exog = pd.DataFrame({
+        'exog_1': exog_categorical.to_numpy(),
+        'exog_2': pd.Categorical(['a', 'b', 'c', 'd', 'e'] * 10),
+        'exog_3': [True, False, False, True, True] * 10
+    })
+    if categorical_features != 'auto':
+        df_exog['exog_4'] = pd.Categorical([10, 20, 30, 40, 50] * 10)
+    exog_predict = df_exog.iloc[:5].copy()
+    exog_predict.index = pd.RangeIndex(start=50, stop=55)
+
+    forecaster = ForecasterDirect(
+                     estimator            = HistGradientBoostingRegressor(random_state=123),
+                     lags                 = 3,
+                     steps                = 3,
+                     categorical_features = categorical_features
+                 )
+    forecaster.fit(y=y_categorical, exog=df_exog)
+    predictions = forecaster.predict(exog=exog_predict)
+
+    expected = pd.Series(
+                   data  = np.array([0.58715913, 0.48103535, 0.48194267]),
+                   index = pd.RangeIndex(start=50, stop=53, step=1),
+                   name  = 'pred'
+               )
+
+    pd.testing.assert_series_equal(predictions, expected)
+
+
+@pytest.mark.parametrize(
+    'dtype',
+    ['Int64', 'Float64', 'boolean'],
+    ids=lambda dtype: f'dtype: {dtype}'
+)
+def test_predict_MissingValuesWarning_and_ValueError_when_nullable_exog_has_missing_values(dtype):
+    """
+    Test predict issues a MissingValuesWarning and raises the ValueError of
+    NaN in the predictors, not a TypeError, when a nullable column of exog
+    has a missing value and the estimator does not accept NaN.
+    """
+    exog_2 = [1, 0, 0, 1, 1] * 10
+    if dtype == 'boolean':
+        exog_2 = [bool(value) for value in exog_2]
+    df_exog = pd.DataFrame({
+        'exog_1': exog_categorical.to_numpy(),
+        'exog_2': pd.array(exog_2, dtype=dtype)
+    })
+    exog_predict = df_exog.iloc[:5].copy()
+    exog_predict.index = pd.RangeIndex(start=50, stop=55)
+    exog_predict.loc[51, 'exog_2'] = pd.NA
+
+    forecaster = ForecasterDirect(LinearRegression(), lags=3, steps=3)
+    forecaster.fit(y=y_categorical, exog=df_exog)
+
+    warn_msg = re.escape("`exog` has missing values.")
+    err_msg = re.escape(
+        "Input X contains NaN in the predictors ['exog_2'] at step 2 (51)."
+    )
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        with pytest.raises(ValueError, match=err_msg):
+            forecaster.predict(exog=exog_predict)

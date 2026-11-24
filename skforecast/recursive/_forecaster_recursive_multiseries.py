@@ -33,6 +33,7 @@ from ..exceptions import (
 from ..utils import _pandas_compat as compat
 from ..utils import (
     _all_samples_removed_message,
+    _exog_to_numpy,
     _filter_nan_train_X_y,
     _date_range_from_index,
     initialize_lags,
@@ -2884,7 +2885,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                     )
                 
                 # NOTE: Only check dtypes if they are not the same as seen in training
-                if not exog.dtypes.to_dict() == self.exog_dtypes_out_:
+                exog_dtypes = exog.dtypes
+                if not exog_dtypes.to_dict() == self.exog_dtypes_out_:
                     check_exog_dtypes(exog=exog, call_check_exog=False)
                 
                 if not exog_has_nan and exog.iloc[:steps].isna().to_numpy().any():
@@ -3031,9 +3033,13 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             # level. The array is the same: `pd.concat` keeps the dtypes of the
             # copies and `to_numpy` combines them in the same way. Without
             # levels, `pd.concat` is kept, it raises the usual error.
+            # `_exog_to_numpy` converts to float the dtypes that would give
+            # an array of dtype object (bool, nullable or pyarrow columns
+            # next to other columns).
             if not isinstance(exog, dict) and levels:
                 exog_values_all_levels = np.tile(
-                    exog_values.to_numpy(), (len(levels), 1)
+                    _exog_to_numpy(exog_values, dtypes=exog_dtypes.tolist()),
+                    (len(levels), 1)
                 )
             else:
                 exog_values_all_levels = pd.concat(exog_values_all_levels)
@@ -3054,13 +3060,16 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             
                 # NOTE: Only check dtypes if they are not the same as seen in
                 # training. Missing values are already warned in `check_predict_input`.
-                if not exog_values_all_levels.dtypes.to_dict() == self.exog_dtypes_out_:
+                exog_dtypes_all_levels = exog_values_all_levels.dtypes
+                if not exog_dtypes_all_levels.to_dict() == self.exog_dtypes_out_:
                     check_exog_dtypes(
                         exog=exog_values_all_levels, call_check_exog=False
                     )
-            
-            if isinstance(exog_values_all_levels, pd.DataFrame):
-                exog_values_all_levels = exog_values_all_levels.to_numpy()
+
+                exog_values_all_levels = _exog_to_numpy(
+                    exog_values_all_levels, dtypes=exog_dtypes_all_levels.tolist()
+                )
+
             exog_values_dict = {
                 i + 1: exog_values_all_levels[i::steps, :] 
                 for i in range(steps)

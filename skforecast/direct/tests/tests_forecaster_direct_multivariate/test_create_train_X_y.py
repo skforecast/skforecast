@@ -4388,3 +4388,101 @@ def test_create_train_X_y_output_is_writeable_when_only_one_window_feature(estim
         index = pd.RangeIndex(start=4, stop=10, step=1)
     )
     pd.testing.assert_frame_equal(X_train, expected)
+
+
+@pytest.mark.parametrize(
+    'dtype',
+    ['bool', 'Int64', 'double[pyarrow]'],
+    ids=lambda dtype: f'dtype: {dtype}'
+)
+def test_create_train_X_y_output_is_float_when_exog_has_bool_nullable_or_pyarrow_column(dtype):
+    """
+    Test the training matrix of _create_train_X_y is a float64 array, not an
+    object array, when exog has a bool, nullable or pyarrow column next to a
+    float column, and create_train_X_y keeps the dtypes of exog.
+    """
+    series = pd.DataFrame({'l1': np.arange(10, dtype=float),
+                           'l2': np.arange(50, 60, dtype=float)})
+    if 'pyarrow' in dtype:
+        pytest.importorskip('pyarrow')
+    exog_2 = [1, 0, 0, 1, 1, 0, 1, 0, 0, 1]
+    if dtype == 'bool':
+        exog_2 = [bool(value) for value in exog_2]
+    exog = pd.DataFrame({
+        'exog_1': np.arange(100, 110, dtype=float),
+        'exog_2': pd.array(exog_2, dtype=dtype)
+    })
+
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level='l1', lags=3, steps=2, transformer_series=None
+    )
+    results = forecaster._create_train_X_y(series=series, exog=exog)
+    X_train, _ = forecaster.create_train_X_y(series=series, exog=exog)
+
+    expected_X_autoreg = np.array([[2., 1., 0., 52., 51., 50.],
+                                   [3., 2., 1., 53., 52., 51.],
+                                   [4., 3., 2., 54., 53., 52.],
+                                   [5., 4., 3., 55., 54., 53.],
+                                   [6., 5., 4., 56., 55., 54.],
+                                   [7., 6., 5., 57., 56., 55.]])
+    expected_X_exog = np.array([[103., 1.],
+                                [104., 1.],
+                                [105., 0.],
+                                [106., 1.],
+                                [107., 0.],
+                                [108., 0.],
+                                [109., 1.]])
+    expected_dtypes = {
+        'exog_1': np.dtype('float64'),
+        'exog_2': exog['exog_2'].dtype
+    }
+
+    np.testing.assert_array_equal(results[0], expected_X_autoreg)
+    assert results[1].dtype == np.float64
+    np.testing.assert_array_equal(results[1], expected_X_exog)
+    assert results[12] == expected_dtypes
+    assert results[13] == expected_dtypes
+    for step in [1, 2]:
+        col = f'exog_2_step_{step}'
+        assert X_train[col].dtype == exog['exog_2'].dtype
+        assert X_train[col].tolist() == exog_2[2 + step: 8 + step]
+
+
+@pytest.mark.parametrize(
+    'dtype',
+    ['Int64', 'Float64', 'boolean'],
+    ids=lambda dtype: f'dtype: {dtype}'
+)
+def test_create_train_X_y_output_has_nan_when_nullable_exog_has_missing_values(dtype):
+    """
+    Test the training matrix of _create_train_X_y is a float64 array with NaN
+    in the place of the missing value of a nullable column of exog, and a
+    MissingValuesWarning is issued.
+    """
+    series = pd.DataFrame({'l1': np.arange(10, dtype=float),
+                           'l2': np.arange(50, 60, dtype=float)})
+    exog_2 = [1, 0, 0, 1, 1, 0, 1, pd.NA, 0, 1]
+    if dtype == 'boolean':
+        exog_2 = [value if value is pd.NA else bool(value) for value in exog_2]
+    exog = pd.DataFrame({
+        'exog_1': np.arange(100, 110, dtype=float),
+        'exog_2': pd.array(exog_2, dtype=dtype)
+    })
+
+    forecaster = ForecasterDirectMultiVariate(
+        LinearRegression(), level='l1', lags=3, steps=2, transformer_series=None
+    )
+    warn_msg = re.escape("Some rows of the training matrix have missing values.")
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        results = forecaster._create_train_X_y(series=series, exog=exog)
+
+    expected_X_exog = np.array([[103., 1.],
+                                [104., 1.],
+                                [105., 0.],
+                                [106., 1.],
+                                [107., np.nan],
+                                [108., 0.],
+                                [109., 1.]])
+
+    assert results[1].dtype == np.float64
+    np.testing.assert_array_equal(results[1], expected_X_exog)

@@ -82,6 +82,22 @@ _SKLEARN_C_CONTIGUOUS_ESTIMATORS = frozenset({
     'Ridge',
 })
 
+# Nullable (masked) dtypes of pandas that `_exog_to_numpy` converts to float.
+# Listed with their public classes: their common base class is private.
+_NULLABLE_NUMERIC_DTYPES = (
+    pd.BooleanDtype,
+    pd.Int8Dtype,
+    pd.Int16Dtype,
+    pd.Int32Dtype,
+    pd.Int64Dtype,
+    pd.UInt8Dtype,
+    pd.UInt16Dtype,
+    pd.UInt32Dtype,
+    pd.UInt64Dtype,
+    pd.Float32Dtype,
+    pd.Float64Dtype,
+)
+
 # Appended (it starts with a space) to the errors raised when a timezone-aware
 # DatetimeIndex has no frequency. Empty with pandas 2, where `tz_convert`
 # keeps the frequency.
@@ -1137,6 +1153,94 @@ def get_exog_dtypes(
         exog_dtypes = exog.dtypes.to_dict()
     
     return exog_dtypes
+
+
+def _exog_to_numpy(
+    exog: pd.DataFrame,
+    dtypes: list | None = None
+) -> np.ndarray:
+    """
+    Values of `exog` as a numpy array that is never of dtype `object` when all
+    its columns are boolean, integer or float.
+
+    `DataFrame.to_numpy()` returns an `object` array when the dtypes of the
+    columns cannot be combined by numpy: a `bool` column next to numeric ones,
+    or nullable (`boolean`, `Int64`, `Float64`...) and pyarrow columns next to
+    any other column. An `object` array of numbers is slower and uses more
+    memory in the estimators, its missing values (`pd.NA`) cannot be converted
+    to float, and some estimators do not accept it.
+
+    The decision depends only on the dtypes, never on the values:
+
+    - If any column is not boolean, integer, float (numpy, nullable or
+    pyarrow) or a category with integer categories, the result is
+    `exog.to_numpy()`. Text, dates, timedeltas, categories with other
+    categories, complex and decimal numbers, and sparse columns are not
+    converted.
+    - Otherwise, if there is a nullable, pyarrow or category column, or
+    numpy booleans next to numpy integers or floats, the result is a float64
+    array where the missing values are NaN. The values of a category are
+    its categories, not its codes.
+    - Otherwise (numpy dtypes that numpy combines: all float, all integer,
+    integer and float, all boolean), the result is `exog.to_numpy()`.
+
+    Parameters
+    ----------
+    exog : pandas DataFrame
+        Exogenous variable/s included as predictor/s.
+    dtypes : list, default None
+        Dtypes of the columns of `exog`, in the same order
+        (`exog.dtypes.tolist()`). If `None`, they are extracted from `exog`.
+        It avoids extracting them twice when the caller already has them.
+
+    Returns
+    -------
+    exog_values : numpy ndarray
+        Values of `exog`.
+
+    Notes
+    -----
+    Integers above 2^53 are rounded when they are converted to float64, so
+    they are not recovered exactly when the array is cast back to the integer
+    dtype (as `create_train_X_y` and `create_predict_X` do). If the rounded
+    value is outside the range of the dtype (values next to 2^63 or 2^64),
+    the cast back overflows without error with a numpy dtype and raises a
+    `TypeError` with a nullable one.
+
+    """
+
+    if dtypes is None:
+        dtypes = exog.dtypes.tolist()
+
+    has_bool = False
+    has_number = False
+    has_extension = False
+    for dtype in dtypes:
+        if isinstance(dtype, np.dtype):
+            kind = dtype.kind
+            if kind in "iuf":
+                has_number = True
+            elif kind == "b":
+                has_bool = True
+            else:
+                return exog.to_numpy()
+        elif isinstance(dtype, _NULLABLE_NUMERIC_DTYPES):
+            has_extension = True
+        elif isinstance(dtype, pd.ArrowDtype):
+            if dtype.kind not in "biuf":
+                return exog.to_numpy()
+            has_extension = True
+        elif isinstance(dtype, pd.CategoricalDtype):
+            if not pd.api.types.is_integer_dtype(dtype.categories.dtype):
+                return exog.to_numpy()
+            has_extension = True
+        else:
+            return exog.to_numpy()
+
+    if has_extension or (has_bool and has_number):
+        return exog.to_numpy(dtype=float, na_value=np.nan)
+
+    return exog.to_numpy()
 
 
 def check_exog_dtypes(

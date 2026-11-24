@@ -537,3 +537,108 @@ def test_predict_output_when_last_window_argument_has_NaN():
                )
 
     pd.testing.assert_series_equal(predictions, expected)
+
+
+@pytest.mark.parametrize(
+    'dtype',
+    ['bool', 'Int64', 'double[pyarrow]'],
+    ids=lambda dtype: f'dtype: {dtype}'
+)
+def test_predict_proba_output_when_exog_has_bool_nullable_or_pyarrow_column(dtype):
+    """
+    Test predict_proba output when exog has a bool, nullable or pyarrow column
+    next to a float column. The values of exog are a float64 array, not an
+    object array, and the predictions are the same for all the dtypes.
+    """
+    if 'pyarrow' in dtype:
+        pytest.importorskip('pyarrow')
+    exog_2 = [1, 0, 0, 1, 1] * 10
+    if dtype == 'bool':
+        exog_2 = [bool(value) for value in exog_2]
+    df_exog = pd.DataFrame({
+        'exog_1': exog.to_numpy(),
+        'exog_2': pd.array(exog_2, dtype=dtype)
+    })
+    exog_predict = df_exog.iloc[:5].copy()
+    exog_predict.index = pd.RangeIndex(start=50, stop=55)
+
+    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=3)
+    forecaster.fit(y=y, exog=df_exog)
+    exog_values = forecaster._create_predict_inputs(steps=5, exog=exog_predict)[1]
+    predictions = forecaster.predict_proba(steps=5, exog=exog_predict)
+
+    expected = pd.DataFrame(
+                   data    = np.array([[0.27483561, 0.46440463, 0.26075975],
+                                       [0.19098039, 0.52627509, 0.28274452],
+                                       [0.21704984, 0.56452178, 0.21842838],
+                                       [0.24245638, 0.44716149, 0.31038213],
+                                       [0.22495508, 0.43186334, 0.34318158]]),
+                   index   = pd.RangeIndex(start=50, stop=55, step=1),
+                   columns = ['1_proba', '2_proba', '3_proba']
+               )
+
+    assert exog_values.dtype == np.float64
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
+def test_predict_proba_output_when_HistGradientBoostingClassifier_and_exog_has_float_and_bool():
+    """
+    Test predict_proba output when using HistGradientBoostingClassifier and
+    exog has a float column and a bool column.
+    """
+    df_exog = pd.DataFrame({
+        'exog_1': exog.to_numpy(),
+        'exog_2': [True, False, False, True, True] * 10
+    })
+    exog_predict = df_exog.iloc[:5].copy()
+    exog_predict.index = pd.RangeIndex(start=50, stop=55)
+
+    forecaster = ForecasterRecursiveClassifier(
+        HistGradientBoostingClassifier(random_state=123), lags=3
+    )
+    forecaster.fit(y=y, exog=df_exog)
+    predictions = forecaster.predict_proba(steps=5, exog=exog_predict)
+
+    expected = pd.DataFrame(
+                   data    = np.array([[0.11439177, 0.51582837, 0.36977986],
+                                       [0.38509477, 0.387823  , 0.22708223],
+                                       [0.48872209, 0.32246487, 0.18881304],
+                                       [0.34361371, 0.4637224 , 0.19266389],
+                                       [0.16468338, 0.48653569, 0.34878093]]),
+                   index   = pd.RangeIndex(start=50, stop=55, step=1),
+                   columns = ['1_proba', '2_proba', '3_proba']
+               )
+
+    pd.testing.assert_frame_equal(predictions, expected)
+
+
+@pytest.mark.parametrize(
+    'dtype',
+    ['Int64', 'Float64', 'boolean'],
+    ids=lambda dtype: f'dtype: {dtype}'
+)
+def test_predict_MissingValuesWarning_and_ValueError_when_nullable_exog_has_missing_values(dtype):
+    """
+    Test predict issues a MissingValuesWarning and the estimator raises its
+    ValueError of NaN, not a TypeError, when a nullable column of exog has a
+    missing value and the estimator does not accept NaN.
+    """
+    exog_2 = [1, 0, 0, 1, 1] * 10
+    if dtype == 'boolean':
+        exog_2 = [bool(value) for value in exog_2]
+    df_exog = pd.DataFrame({
+        'exog_1': exog.to_numpy(),
+        'exog_2': pd.array(exog_2, dtype=dtype)
+    })
+    exog_predict = df_exog.iloc[:5].copy()
+    exog_predict.index = pd.RangeIndex(start=50, stop=55)
+    exog_predict.loc[51, 'exog_2'] = pd.NA
+
+    forecaster = ForecasterRecursiveClassifier(LogisticRegression(), lags=3)
+    forecaster.fit(y=y, exog=df_exog)
+
+    warn_msg = re.escape("`exog` has missing values.")
+    err_msg = re.escape("Input X contains NaN.")
+    with pytest.warns(MissingValuesWarning, match=warn_msg):
+        with pytest.raises(ValueError, match=err_msg):
+            forecaster.predict(steps=5, exog=exog_predict)

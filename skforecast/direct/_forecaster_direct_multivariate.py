@@ -31,6 +31,7 @@ from ..exceptions import (
 from ..utils import _pandas_compat as compat
 from ..utils import (
     _all_samples_removed_message,
+    _exog_to_numpy,
     _prefers_c_contiguous_X,
     _warn_nan_training_rows_direct,
     initialize_lags,
@@ -1214,7 +1215,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             X_train_exog_names_out_ = exog.columns.to_list()
             exog_dtypes_out_ = get_exog_dtypes(exog=exog)
 
-            exog = exog.to_numpy()
+            exog = _exog_to_numpy(exog)
 
             if len_exog == len_series:
                 if not exog_index.equals(series_index):
@@ -2406,9 +2407,10 @@ class ForecasterDirectMultiVariate(ForecasterBase):
             # missing values: it is skipped when the values, which are extracted
             # anyway, cannot have them (integer or boolean array) or are a float
             # array without NaN.
-            exog_values = exog.to_numpy()
+            exog_dtypes = exog.dtypes.tolist()
+            exog_values = _exog_to_numpy(exog, dtypes=exog_dtypes)
             if not (
-                exog.dtypes.tolist() == list(self.exog_dtypes_out_.values())
+                exog_dtypes == list(self.exog_dtypes_out_.values())
                 and exog.columns.tolist() == list(self.exog_dtypes_out_)
             ):
                 check_exog_dtypes(exog=exog)
