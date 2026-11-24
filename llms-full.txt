@@ -2335,7 +2335,7 @@ exog_dict = reshape_exog_long_to_dict(exog_long, freq='D')
 
 1. **Mismatched series lengths**: ForecasterRecursiveMultiSeries handles different-length series if `dropna_from_series=True`.
 2. **Wrong encoding for categorical regressor**: Use `encoding='ordinal_category'` with regressors that natively handle categoricals (LightGBM, CatBoost).
-3. **Exog keys not matching the series names**: Any exog format (wide, long or dict) can be combined with any series format. A wide exog is shared by all series and aligned with each one by date; a dict or long exog must use the series names as keys, otherwise those series get NaN exog values (`MissingExogWarning`).
+3. **Exog keys not matching the series names**: Any exog format (wide, long or dict) can be combined with any series format. A wide exog is shared by all series and aligned with each one by date; a dict or long exog must use the series names as keys, otherwise those series get NaN exog values (`MissingExogWarning`). With a `RangeIndex`, the `exog` of `predict` must not start before the first step predicted (`ValueError`): its index has to continue the one of the series, not start again at 0.
 4. **Forgetting `levels` parameter**: By default `predict()` forecasts all series. Use `levels` to limit predictions.
 5. **Unexpected scaling in ForecasterDirectMultiVariate**: `transformer_series` defaults to `StandardScaler()`, unlike other forecasters that default to `None`. Set `transformer_series=None` explicitly if you don't want automatic scaling.
 6. **Comparing search candidates on different points**: with series of different length, a candidate with more lags does not predict the short series in the first folds. The column `n_evaluated` of the backtesting metrics and of the `*_multiseries` search results counts the points in each metric; when it differs between candidates, the search warns (`MissingValuesWarning`). Pass in `levels` the series that every candidate predicts in every fold to compare them on the same points (see the `hyperparameter-optimization` skill).
@@ -6671,6 +6671,24 @@ of the `gap` does not matter. If NaN predictions reach the scored dates:
 # If predicting 10 steps ahead, exog_test must have at least 10 rows
 # with dates matching the expected forecast dates
 exog_test = exog.loc[forecast_start:forecast_end]
+predictions = forecaster.predict(steps=10, exog=exog_test)
+```
+
+### "ValueError: `exog` has values before the first step predicted"
+
+`ForecasterRecursiveMultiSeries` with series of `RangeIndex`. It aligns the
+`exog` of the prediction methods with the predictions by the labels of its
+index, not by position, so an `exog` whose index was reset (it starts at 0)
+would use the values of other steps. With a `DatetimeIndex` the dates are
+unambiguous and an `exog` that includes the training period is accepted.
+
+```python
+# Series trained with index 0..99: the first step predicted is 100
+# Fix 1: exog includes previous values, select from the first step
+predictions = forecaster.predict(steps=10, exog=exog.loc[100:])
+
+# Fix 2: the index of exog was reset (0, 1, 2...), make it follow the series
+exog_test.index = pd.RangeIndex(start=100, stop=100 + len(exog_test))
 predictions = forecaster.predict(steps=10, exog=exog_test)
 ```
 
