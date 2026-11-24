@@ -39,20 +39,22 @@ class ForecasterEquivalentDate():
     date. It also allows to aggregate multiple past values of the equivalent
     date using a function (e.g. mean, median, max, min, etc.). The equivalent
     date is calculated by moving back in time a specified number of steps (offset).
-    The offset can be defined as an integer or as a pandas DateOffset. This
+    The offset can be defined as an integer or as a pandas offset. This
     approach is useful as a baseline, but it is a simplistic method and may not
     capture complex underlying patterns.
     
     Parameters
     ----------
-    offset : int, pandas.tseries.offsets.DateOffset
+    offset : int, pandas offset
         Number of steps to go back in time to find the most recent equivalent
         date to the target period.
         If `offset` is an integer, it represents the number of steps to go back
         in time. For example, if the frequency of the time series is daily, 
         `offset = 7` means that the most recent data similar to the target
         period is the value observed 7 days ago.
-        Pandas DateOffsets can also be used to move forward a given number of 
+        A pandas offset is any offset of `pandas.tseries.offsets` (for example,
+        `Day`, `Hour`, `BDay` or `MonthBegin`) or a `pandas.DateOffset`. It can
+        be used to move back a given number of
         valid dates. For example, Bday(2) can be used to move back two business 
         days. If the date does not start on a valid date, it is first moved to a 
         valid date. For example, if the date is a Saturday, it is moved to the 
@@ -83,14 +85,16 @@ class ForecasterEquivalentDate():
     
     Attributes
     ----------
-    offset : int, pandas.tseries.offsets.DateOffset
+    offset : int, pandas offset
         Number of steps to go back in time to find the most recent equivalent
         date to the target period.
         If `offset` is an integer, it represents the number of steps to go back
         in time. For example, if the frequency of the time series is daily, 
         `offset = 7` means that the most recent data similar to the target
         period is the value observed 7 days ago.
-        Pandas DateOffsets can also be used to move forward a given number of 
+        A pandas offset is any offset of `pandas.tseries.offsets` (for example,
+        `Day`, `Hour`, `BDay` or `MonthBegin`) or a `pandas.DateOffset`. It can
+        be used to move back a given number of
         valid dates. For example, Bday(2) can be used to move back two business 
         days. If the date does not start on a valid date, it is first moved to a 
         valid date. For example, if the date is a Saturday, it is moved to the 
@@ -101,7 +105,7 @@ class ForecasterEquivalentDate():
         https://pandas.pydata.org/docs/reference/offset_frequency.html.
     n_offsets : int
         Number of equivalent dates (multiple of offset) used in the prediction.
-        If `offset` is greater than 1, the value at the equivalent dates is
+        If `n_offsets` is greater than 1, the value at the equivalent dates is
         aggregated using the `agg_func` function. For example, if the frequency
         of the time series is daily, `offset = 7`, `n_offsets = 2` and
         `agg_func = np.mean`, the predicted value will be the mean of the values

@@ -60,7 +60,7 @@ class TimeSeriesSplitter:
     Examples
     --------
     >>> import pandas as pd
-    >>> from skforecast.utils.splitter import TimeSeriesSplitter
+    >>> from skforecast.experimental._splitter import TimeSeriesSplitter
 
     >>> # Single series (backward compatible)
     >>> df1 = pd.DataFrame(
