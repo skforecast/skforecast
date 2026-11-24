@@ -1,0 +1,83 @@
+Python 3.13.18 | holidays 0.109 | pandas 2.3.3 | numpy 2.5.5
+
+== 1. Identidad con la consulta marca a marca
+diario naive                       n=  2192 unit=ns festivos=   72 identico=True
+horario naive                      n= 52608 unit=ns festivos= 1728 identico=True
+horario Europe/Madrid              n= 52608 unit=ns festivos= 1728 identico=True
+horario UTC convertido a Madrid    n= 52608 unit=ns festivos= 1728 identico=True
+15 min Europe/Madrid               n= 70176 unit=ns festivos= 2304 identico=True
+dias laborables                    n=  1566 unit=ns festivos=   64 identico=True
+sin freq, desordenado no           n=     4 unit=ns festivos=    3 identico=True
+2024-12-24 23:30 UTC visto desde Madrid es festivo: 1
+2024-12-31 23:30 UTC visto desde Madrid: anos pedidos [2025] | es festivo: 1
+
+== 2. Fechas propias: tipos de entrada
+lista de str                       fechas= 2 horas festivas=48
+lista de date                      fechas= 2 horas festivas=48
+lista de Timestamp con hora        fechas= 2 horas festivas=48
+DatetimeIndex                      fechas= 2 horas festivas=48
+DatetimeIndex con tz               fechas= 2 horas festivas=48
+numpy datetime64                   fechas= 2 horas festivas=48
+con duplicados                     fechas= 2 horas festivas=48
+claves de un objeto de holidays    fechas= 9 horas festivas=216
+con None -> ValueError `holidays` contains missing dates.
+
+== 3. Errores del paquete
+pais inexistente           -> NotImplementedError: Country XX not available
+subdiv inexistente         -> NotImplementedError: Entity `ES` does not have subdivision ZZ
+kwarg desconocido          -> ValueError: Option is not supported: foo.
+categoria no soportada     -> ValueError: Category is not supported: bank.
+codigo en minusculas 'es'  -> NotImplementedError: Country es not available
+nombre 'Spain'             -> sin error
+alpha-3 'ESP': 9
+paises (sin alias): 250 | 'ES' in supported: True
+
+== 4. Anos cubiertos por pais
+ES: start_year=2008 end_year=2100 festivos por ano={1900: 0, 1990: 0, 2024: 9, 2040: 9, 2080: 9, 2150: 0}
+US: start_year=1777 end_year=2100 festivos por ano={1900: 7, 1990: 11, 2024: 11, 2040: 13, 2080: 11, 2150: 0}
+GB: start_year=1872 end_year=2100 festivos por ano={1900: 3, 1990: 6, 2024: 6, 2040: 7, 2080: 6, 2150: 0}
+DE: start_year=1991 end_year=2100 festivos por ano={1900: 0, 1990: 0, 2024: 9, 2040: 9, 2080: 9, 2150: 0}
+IN: start_year=1948 end_year=2100 festivos por ano={1900: 0, 1990: 9, 2024: 18, 2040: 10, 2080: 10, 2150: 0}
+    aviso del paquete: Requested Holidays are available only from 2001 to 2035.
+CN: start_year=1950 end_year=2100 festivos por ano={1900: 0, 1990: 7, 2024: 21, 2040: 16, 2080: 16, 2150: 0}
+SA: start_year=1901 end_year=2100 festivos por ano={1900: 0, 1990: 10, 2024: 12, 2040: 13, 2080: 11, 2150: 0}
+IL: start_year=1948 end_year=2100 festivos por ano={1900: 0, 1990: 9, 2024: 9, 2040: 9, 2080: 9, 2150: 0}
+JP: start_year=1949 end_year=2099 festivos por ano={1900: 0, 1990: 19, 2024: 21, 2040: 18, 2080: 21, 2150: 0}
+BR: start_year=1890 end_year=2100 festivos por ano={1900: 11, 1990: 9, 2024: 10, 2040: 10, 2080: 10, 2150: 0}
+MX: start_year=1901 end_year=2100 festivos por ano={1900: 0, 1990: 7, 2024: 8, 2040: 7, 2080: 7, 2150: 0}
+
+== 5. Coste de resolver las fechas (min de 5)
+ES: 1 ano   0.23 ms | 10 anos   1.31 ms
+US: 1 ano   0.25 ms | 10 anos   0.89 ms
+DE: 1 ano   0.17 ms | 10 anos   0.84 ms
+IN: 1 ano   0.35 ms | 10 anos   1.72 ms
+CN: 1 ano   0.85 ms | 10 anos   2.47 ms
+SA: 1 ano   0.34 ms | 10 anos   2.71 ms
+is_holiday, 87672 horas: 4.68 ms
+transform de 24 pasos (resolver + marcar): 0.46 ms
+
+== 6. Opciones que cambian el resultado
+US 2021-07-05 (4 de julio en domingo): observed=True -> True | observed=False -> False
+ES 2024: nacional 9 | MD 12 | CT 13
+ES: categorias=('public',) por defecto={'public'}
+US: categorias=('government', 'half_day', 'public', 'unofficial') por defecto={'public'}
+DE: categorias=('catholic', 'public', 'school') por defecto={'public'}
+GB: categorias=('public',) por defecto={'public'}
+JP: categorias=('bank', 'public') por defecto={'public'}
+union MD + CT 2024: 16 festivos
+
+== 7. Persistencia de los parametros con skops
+str                  -> ok, tipos no confiables: []
+dict                 -> ok, tipos no confiables: []
+lista de str         -> ok, tipos no confiables: []
+lista de date        -> ok, tipos no confiables: ['datetime.date']
+lista de Timestamp   -> ok, tipos no confiables: ['pandas._libs.tslibs.timestamps.Timestamp']
+DatetimeIndex        -> TypeError: no default __reduce__ due to non-trivial __cinit__
+numpy datetime64     -> ok, tipos no confiables: []
+
+== 8. El objeto de `holidays` como parametro, y coste del import
+repr sin consultar: holidays.country_holidays('ES', subdiv='MD') | len: 0
+repr tras una consulta: len(repr) = 651 | len: 12
+deepcopy igual: True | pickle igual: True
+consulta marca a marca, 87672 horas: 154 ms
+import holidays despues de pandas: min 51 ms, max 60 ms (5 procesos nuevos)
