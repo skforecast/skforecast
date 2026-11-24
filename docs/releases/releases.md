@@ -111,7 +111,7 @@ The main changes in this release are:
 
 + <code>[ForecasterRecursiveMultiSeries]</code> raised a `TypeError` when a text exogenous variable had different text dtypes in different series, such as `string` and `object`, or, with pandas 3, `str` and `object` (a column with all values missing is `object`). ([#1497](https://github.com/skforecast/skforecast/pull/1497))
 
-+ The prediction methods of <code>[ForecasterRecursiveMultiSeries]</code> with series of `RangeIndex` accepted an `exog` whose index had been reset (it starts at 0 instead of at the first step predicted) and, when it had enough rows, used the values of other steps without any warning. An `exog` with a `RangeIndex` that starts before the first step predicted now raises a `ValueError` that explains how to select its values or set its index.
++ The prediction methods of <code>[ForecasterRecursiveMultiSeries]</code> with series of `RangeIndex` accepted an `exog` whose index had been reset (it starts at 0 instead of at the first step predicted) and, when it had enough rows, used the values of other steps without any warning. An `exog` with a `RangeIndex` that starts before the first step predicted now raises a `ValueError` that explains how to select its values or set its index. ([#1540](https://github.com/skforecast/skforecast/pull/1540))
 
 + Hyperparameter searches with <code>[OneStepAheadFold]</code> and <code>[ForecasterRecursiveMultiSeries]</code> with `encoding='onehot'` and integer series names raised a `FutureWarning` of pandas about downcasting. ([#1497](https://github.com/skforecast/skforecast/pull/1497))
 
