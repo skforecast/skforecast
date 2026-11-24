@@ -1293,6 +1293,71 @@ def check_interval(
             )
 
 
+def _check_exog_range_index_start(
+    exog_name: str,
+    exog_index: pd.RangeIndex,
+    expected_index: pd.RangeIndex
+) -> None:
+    """
+    Check that an `exog` with a `RangeIndex` that is aligned with the
+    predictions by its index (`ForecasterRecursiveMultiSeries`) has no values
+    before the first step predicted. A `ValueError` is raised otherwise.
+
+    The labels of a `RangeIndex` are positions, not dates, so an `exog` with
+    labels before the first step predicted can be one whose index was reset
+    (it starts at 0): aligning it by its index would use the values of other
+    steps without any warning. It cannot be told apart from an `exog` that
+    includes the values previous to the steps predicted, so both are rejected.
+
+    Parameters
+    ----------
+    exog_name : str
+        Name of `exog` used in the error message.
+    exog_index : pandas RangeIndex
+        Index of `exog`.
+    expected_index : pandas RangeIndex
+        Index of the steps predicted, from 1 to the last step. It is created
+        with `expand_index` from the index of `last_window`.
+
+    Returns
+    -------
+    None
+
+    """
+
+    if len(exog_index) == 0:
+        return
+
+    # NOTE: The earliest label, in the direction of the series, is compared
+    # instead of the first one, so the order of `exog` does not matter: one in
+    # descending order is aligned in the same way.
+    step = expected_index.step
+    first_step = expected_index[0]
+    earliest = exog_index.min() if step > 0 else exog_index.max()
+    if (earliest - first_step) * step >= 0:
+        return
+
+    new_index = (
+        f"pd.RangeIndex(start={first_step}, stop={first_step} + n)"
+        if step == 1
+        else f"pd.RangeIndex(start={first_step}, "
+             f"stop={first_step} + {step} * n, step={step})"
+    )
+    raise ValueError(
+        f"{exog_name} has values before the first step predicted.\n"
+        f"    Earliest index of {exog_name} : {earliest}.\n"
+        f"    First step predicted : {first_step}.\n"
+        f"With a RangeIndex, `exog` is aligned with the predictions by the "
+        f"labels of its index, not by position, and they would not match the "
+        f"steps predicted if the index was reset.\n"
+        f"    - If it includes values previous to the steps predicted, select "
+        f"the values from the first step, for example with "
+        f"`.loc[{first_step}:]`.\n"
+        f"    - If its index was reset, set an index that starts at the first "
+        f"step: `{new_index}`, where `n` is its number of rows."
+    )
+
+
 def _check_exog_alignment(
     exog_name: str,
     exog_index: pd.Index,
@@ -1311,7 +1376,8 @@ def _check_exog_alignment(
     the dates of the steps predicted. A `MissingValuesWarning` is issued if
     some of them are missing, since their values are filled with NaN, and a
     `ValueError` is raised if its index has duplicated dates, since it cannot
-    be aligned.
+    be aligned. That a `RangeIndex` has no values before the first step
+    predicted must have already been checked.
 
     Parameters
     ----------
@@ -1729,6 +1795,20 @@ def check_predict_input(
             if not isinstance(exog_to_check, (pd.Series, pd.DataFrame)):
                 raise TypeError(
                     f"{exog_name} must be a pandas Series or DataFrame. Got {type(exog_to_check)}"
+                )
+
+            # NOTE: Checked before the warnings about missing values: they say
+            # that the values are filled with NaN, and this error would follow.
+            # An index of another type raises its own error below.
+            if (
+                align_by_index
+                and isinstance(expected_index, pd.RangeIndex)
+                and isinstance(exog_to_check.index, pd.RangeIndex)
+            ):
+                _check_exog_range_index_start(
+                    exog_name      = exog_name,
+                    exog_index     = exog_to_check.index,
+                    expected_index = expected_index
                 )
 
             # NOTE: `exog` can be long and of any dtype, `DataFrame.isna` checks

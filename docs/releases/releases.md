@@ -46,6 +46,8 @@ The main changes in this release are:
 
     + <code>[reshape_series_wide_to_long]</code> no longer assumes a daily frequency when the index has none: it infers it from the dates. Business-day data no longer gets rows of NaN on weekends, and data with missing dates (for example, business days with a holiday) or fewer than 3 dates raises a `ValueError`: set the frequency first, with `data.asfreq('D')`, or `'B'` for business days.
 
+    + <code>[ForecasterRecursiveMultiSeries]</code> with series of `RangeIndex`: the prediction methods raise a `ValueError` when the index of `exog` starts before the first step predicted, for example an `exog` that includes the training period or one shared by series that end at different positions. Select the values from the first step: `exog.loc[first_step:]`.
+
 
 **Added**
 
@@ -108,6 +110,8 @@ The main changes in this release are:
 + Fixed two issues in <code>[calculate_distance_from_holiday]</code> with daily or coarser timezone-aware dates that contain a daylight saving change. The distances were in hours instead of days when the index had no frequency and advanced in fixed UTC steps (UTC dates converted to a local timezone), and one day short across the spring change with dates in local time, in the index or in `date_column`. An index without frequency and fewer than three dates raised a `ValueError` instead of a warning. ([#1505](https://github.com/skforecast/skforecast/pull/1505))
 
 + <code>[ForecasterRecursiveMultiSeries]</code> raised a `TypeError` when a text exogenous variable had different text dtypes in different series, such as `string` and `object`, or, with pandas 3, `str` and `object` (a column with all values missing is `object`). ([#1497](https://github.com/skforecast/skforecast/pull/1497))
+
++ The prediction methods of <code>[ForecasterRecursiveMultiSeries]</code> with series of `RangeIndex` accepted an `exog` whose index had been reset (it starts at 0 instead of at the first step predicted) and, when it had enough rows, used the values of other steps without any warning. An `exog` with a `RangeIndex` that starts before the first step predicted now raises a `ValueError` that explains how to select its values or set its index. ([#1540](https://github.com/skforecast/skforecast/pull/1540))
 
 + Hyperparameter searches with <code>[OneStepAheadFold]</code> and <code>[ForecasterRecursiveMultiSeries]</code> with `encoding='onehot'` and integer series names raised a `FutureWarning` of pandas about downcasting. ([#1497](https://github.com/skforecast/skforecast/pull/1497))
 

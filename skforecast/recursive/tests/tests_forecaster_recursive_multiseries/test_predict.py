@@ -5,6 +5,7 @@ import warnings
 import pytest
 import numpy as np
 import pandas as pd
+from scipy.stats import norm
 from sklearn.exceptions import NotFittedError
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
@@ -993,6 +994,120 @@ def test_predict_output_when_exog_wide_is_not_aligned_same_as_exog_dict(
 
     pd.testing.assert_frame_equal(predictions_wide, expected)
     pd.testing.assert_frame_equal(predictions_dict, expected)
+
+
+@pytest.mark.parametrize(
+    'exog_format', ['wide', 'dict'], ids=lambda fmt: f'exog: {fmt}'
+)
+@pytest.mark.parametrize(
+    'method, kwargs',
+    [('predict', {}),
+     ('predict_interval', {}),
+     ('predict_bootstrapping', {}),
+     ('predict_quantiles', {}),
+     ('predict_dist', {'distribution': norm}),
+     ('create_predict_X', {})],
+    ids=['predict', 'predict_interval', 'predict_bootstrapping',
+         'predict_quantiles', 'predict_dist', 'create_predict_X']
+)
+def test_predict_ValueError_when_exog_RangeIndex_starts_before_first_step(
+    method, kwargs, exog_format
+):
+    """
+    Test all the prediction methods raise a ValueError when the series have a
+    RangeIndex and the index of `exog` (wide or dict) was reset, so it starts
+    at 0 instead of at the first step predicted. `exog` is aligned with the
+    predictions by the labels of its index: before, the rows labeled 50 to 54
+    were used without any warning, which do not exist in a shorter `exog`
+    (NaN) and are the values of other steps in a longer one.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5)
+    forecaster.fit(
+        series                    = series_dict_range,
+        exog                      = exog_wide_range[['exog_1']],
+        store_in_sample_residuals = True
+    )
+    exog_pred = pd.DataFrame(
+        data  = {'exog_1': np.arange(100, dtype=float)},
+        index = pd.RangeIndex(start=0, stop=100)
+    )
+    exog_name = "`exog`"
+    if exog_format == 'dict':
+        exog_pred = {'l1': exog_pred, 'l2': exog_pred}
+        exog_name = "`exog` for series 'l1'"
+
+    err_msg = re.escape(
+        f"{exog_name} has values before the first step predicted.\n"
+        f"    Earliest index of {exog_name} : 0.\n"
+        f"    First step predicted : 50.\n"
+        f"With a RangeIndex, `exog` is aligned with the predictions by the "
+        f"labels of its index, not by position, and they would not match the "
+        f"steps predicted if the index was reset.\n"
+        f"    - If it includes values previous to the steps predicted, select "
+        f"the values from the first step, for example with `.loc[50:]`.\n"
+        f"    - If its index was reset, set an index that starts at the first "
+        f"step: `pd.RangeIndex(start=50, stop=50 + n)`, where `n` is its "
+        f"number of rows."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        getattr(forecaster, method)(steps=5, exog=exog_pred, **kwargs)
+
+
+def test_predict_output_when_exog_RangeIndex_and_series_end_at_different_index():
+    """
+    Test predict when the series have a RangeIndex and end at different
+    positions ('l1' at 49 and 'l2' at 39), with an `exog` that starts at 40:
+    predicting 'l2' (first step 40) uses its values from 40, and predicting
+    'l1' (first step 50) raises a ValueError, since `exog` starts before its
+    first step, until `exog` is selected from 50.
+    """
+    exog = pd.DataFrame(
+        data  = {'exog_1': np.tile(exog_wide_range['exog_1'].to_numpy(), 2)},
+        index = pd.RangeIndex(start=0, stop=100)
+    )
+    series = {
+        'l1': series_dict_range['l1'],
+        'l2': series_dict_range['l2'].iloc[:40]
+    }
+    exog_pred = exog.iloc[40:]
+
+    forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5)
+    forecaster.fit(series=series, exog=exog.iloc[:50])
+
+    err_msg = re.escape(
+        "`exog` has values before the first step predicted.\n"
+        "    Earliest index of `exog` : 40.\n"
+        "    First step predicted : 50.\n"
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        forecaster.predict(steps=5, levels=['l1'], exog=exog_pred)
+
+    predictions_l2 = forecaster.predict(steps=5, levels=['l2'], exog=exog_pred)
+    predictions_l1 = forecaster.predict(
+        steps=5, levels=['l1'], exog=exog_pred.loc[50:]
+    )
+
+    expected_l2 = expected_df_to_long_format(
+        pd.DataFrame(
+            data    = np.array([0.5618763921715763, 0.6121198569413201,
+                                0.5159279168770733, 0.523102250097231,
+                                0.5142220614901246]),
+            index   = pd.RangeIndex(start=40, stop=45),
+            columns = ['l2']
+        )
+    )
+    expected_l1 = expected_df_to_long_format(
+        pd.DataFrame(
+            data    = np.array([0.5226611295661129, 0.42588554459415,
+                                0.5077919258710316, 0.5472769680410725,
+                                0.5220580671038025]),
+            index   = pd.RangeIndex(start=50, stop=55),
+            columns = ['l1']
+        )
+    )
+
+    pd.testing.assert_frame_equal(predictions_l2, expected_l2)
+    pd.testing.assert_frame_equal(predictions_l1, expected_l1)
 
 
 @pytest.mark.parametrize("differentiation", 

@@ -183,6 +183,24 @@ exog_test = exog.loc[forecast_start:forecast_end]
 predictions = forecaster.predict(steps=10, exog=exog_test)
 ```
 
+### "ValueError: `exog` has values before the first step predicted"
+
+`ForecasterRecursiveMultiSeries` with series of `RangeIndex`. It aligns the
+`exog` of the prediction methods with the predictions by the labels of its
+index, not by position, so an `exog` whose index was reset (it starts at 0)
+would use the values of other steps. With a `DatetimeIndex` the dates are
+unambiguous and an `exog` that includes the training period is accepted.
+
+```python
+# Series trained with index 0..99: the first step predicted is 100
+# Fix 1: exog includes previous values, select from the first step
+predictions = forecaster.predict(steps=10, exog=exog.loc[100:])
+
+# Fix 2: the index of exog was reset (0, 1, 2...), make it follow the series
+exog_test.index = pd.RangeIndex(start=100, stop=100 + len(exog_test))
+predictions = forecaster.predict(steps=10, exog=exog_test)
+```
+
 ## Wrong Backtesting Function
 
 ```python

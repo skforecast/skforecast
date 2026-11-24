@@ -1968,6 +1968,207 @@ def test_check_predict_input_ValueError_when_MultiSeries_exog_has_duplicated_dat
         )
 
 
+@pytest.mark.parametrize(
+    'last_window_index, window_size, exog_index, exog_format, exog_earliest, '
+    'first_step, new_index',
+    [
+        (pd.RangeIndex(start=0, stop=10), 5,
+         pd.RangeIndex(start=0, stop=30), 'wide', 0, 10,
+         'pd.RangeIndex(start=10, stop=10 + n)'),
+        (pd.RangeIndex(start=0, stop=10), 5,
+         pd.RangeIndex(start=0, stop=30), 'series', 0, 10,
+         'pd.RangeIndex(start=10, stop=10 + n)'),
+        (pd.RangeIndex(start=0, stop=10), 5,
+         pd.RangeIndex(start=0, stop=30), 'dict', 0, 10,
+         'pd.RangeIndex(start=10, stop=10 + n)'),
+        (pd.RangeIndex(start=0, stop=10), 5,
+         pd.RangeIndex(start=0, stop=3), 'wide', 0, 10,
+         'pd.RangeIndex(start=10, stop=10 + n)'),
+        (pd.RangeIndex(start=0, stop=10), 5,
+         pd.RangeIndex(start=9, stop=30), 'wide', 9, 10,
+         'pd.RangeIndex(start=10, stop=10 + n)'),
+        (pd.RangeIndex(start=0, stop=10), 5,
+         pd.RangeIndex(start=29, stop=-1, step=-1), 'wide', 0, 10,
+         'pd.RangeIndex(start=10, stop=10 + n)'),
+        (pd.RangeIndex(start=0, stop=10), 3,
+         pd.RangeIndex(start=7, stop=30), 'dict', 7, 10,
+         'pd.RangeIndex(start=10, stop=10 + n)'),
+        (pd.RangeIndex(start=0, stop=20, step=2), 5,
+         pd.RangeIndex(start=0, stop=60, step=2), 'wide', 0, 20,
+         'pd.RangeIndex(start=20, stop=20 + 2 * n, step=2)'),
+        (pd.RangeIndex(start=0, stop=-10, step=-1), 5,
+         pd.RangeIndex(start=0, stop=-30, step=-1), 'wide', 0, -10,
+         'pd.RangeIndex(start=-10, stop=-10 + -1 * n, step=-1)'),
+    ],
+    ids=['wide', 'series', 'dict', 'shorter_than_steps', 'one_step_before',
+         'descending', 'last_window_longer_than_window_size', 'step_2',
+         'negative_step']
+)
+def test_check_predict_input_ValueError_when_MultiSeries_exog_RangeIndex_starts_before_first_step(
+    last_window_index, window_size, exog_index, exog_format, exog_earliest,
+    first_step, new_index
+):
+    """
+    Test ValueError is raised in ForecasterRecursiveMultiSeries when the
+    RangeIndex of `exog` (wide, Series or dict) has labels before the first
+    step predicted, in ascending or descending order: an `exog` whose index
+    was reset, or one that includes values previous to the steps predicted.
+    `exog` is aligned with the predictions by the labels of its index, so the
+    values of other steps would be used. It is the only error or warning
+    raised, also when `exog` has fewer values than steps.
+    """
+    last_window = pd.DataFrame(
+        data  = {'l1': np.arange(10, dtype=float)},
+        index = last_window_index
+    )
+    exog = pd.DataFrame(
+        data  = {'exog1': np.arange(len(exog_index), dtype=float)},
+        index = exog_index
+    )
+    if exog_format == 'series':
+        exog = exog['exog1']
+    elif exog_format == 'dict':
+        exog = {'l1': exog}
+    exog_name = "`exog`" if exog_format != 'dict' else "`exog` for series 'l1'"
+
+    err_msg = re.escape(
+        f"{exog_name} has values before the first step predicted.\n"
+        f"    Earliest index of {exog_name} : {exog_earliest}.\n"
+        f"    First step predicted : {first_step}.\n"
+        f"With a RangeIndex, `exog` is aligned with the predictions by the "
+        f"labels of its index, not by position, and they would not match the "
+        f"steps predicted if the index was reset.\n"
+        f"    - If it includes values previous to the steps predicted, select "
+        f"the values from the first step, for example with "
+        f"`.loc[{first_step}:]`.\n"
+        f"    - If its index was reset, set an index that starts at the first "
+        f"step: `{new_index}`, where `n` is its number of rows."
+    )
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
+        with pytest.raises(ValueError, match = err_msg):
+            check_predict_input(
+                forecaster_name  = 'ForecasterRecursiveMultiSeries',
+                steps            = 5,
+                is_fitted        = True,
+                exog_in_         = True,
+                index_type_      = pd.RangeIndex,
+                index_freq_      = last_window_index.step,
+                window_size      = window_size,
+                last_window      = last_window,
+                exog             = exog,
+                exog_names_in_   = ['exog1'],
+                levels           = ['l1'],
+                series_names_in_ = ['l1']
+            )
+
+
+@pytest.mark.parametrize(
+    'last_window_index, exog',
+    [
+        (pd.RangeIndex(start=0, stop=10),
+         pd.Series(np.arange(20, dtype=float),
+                   index=pd.RangeIndex(start=10, stop=30), name='exog1')),
+        (pd.RangeIndex(start=0, stop=20, step=2),
+         pd.Series(np.arange(20, dtype=float),
+                   index=pd.RangeIndex(start=20, stop=60, step=2), name='exog1')),
+        (pd.RangeIndex(start=0, stop=-10, step=-1),
+         pd.Series(np.arange(20, dtype=float),
+                   index=pd.RangeIndex(start=-10, stop=-30, step=-1), name='exog1')),
+        (pd.RangeIndex(start=0, stop=10),
+         pd.Series(np.arange(10, dtype=float),
+                   index=pd.RangeIndex(start=19, stop=9, step=-1), name='exog1')),
+        (pd.RangeIndex(start=0, stop=10),
+         {'l1': pd.Series(np.arange(20, dtype=float),
+                          index=pd.RangeIndex(start=10, stop=30), name='exog1'),
+          'l2': pd.Series(np.arange(30, dtype=float),
+                          index=pd.RangeIndex(start=0, stop=30), name='exog1')}),
+    ],
+    ids=['starts_at_first_step', 'step_2', 'negative_step', 'descending',
+         'dict_starts_before_only_in_level_not_predicted']
+)
+def test_check_predict_input_no_error_when_MultiSeries_exog_RangeIndex_does_not_start_before_first_step(
+    last_window_index, exog
+):
+    """
+    Test no error or warning is raised in ForecasterRecursiveMultiSeries when
+    the RangeIndex of `exog` has the labels of all the steps predicted and does
+    not start before the first one: it starts at the first step (also with a
+    step other than 1 or negative), it is in descending order, or only the
+    `exog` of a level that is not predicted starts before.
+    """
+    last_window = pd.DataFrame(
+        data  = {'l1': np.arange(10, dtype=float)},
+        index = last_window_index
+    )
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
+        check_predict_input(
+            forecaster_name  = 'ForecasterRecursiveMultiSeries',
+            steps            = 5,
+            is_fitted        = True,
+            exog_in_         = True,
+            index_type_      = pd.RangeIndex,
+            index_freq_      = last_window_index.step,
+            window_size      = 5,
+            last_window      = last_window,
+            exog             = exog,
+            exog_names_in_   = ['exog1'],
+            levels           = ['l1'],
+            series_names_in_ = ['l1', 'l2']
+        )
+
+
+@pytest.mark.parametrize(
+    'exog_format', ['wide', 'dict'], ids=lambda fmt: f'exog: {fmt}'
+)
+def test_check_predict_input_MissingValuesWarning_when_MultiSeries_exog_RangeIndex_starts_after_first_step(
+    exog_format
+):
+    """
+    Test MissingValuesWarning, and no error, is raised in
+    ForecasterRecursiveMultiSeries when the RangeIndex of `exog` (wide or dict)
+    starts after the first step predicted. Its labels cannot be the positions
+    of a reset index, so it is aligned with the predictions and the steps
+    without value are NaN.
+    """
+    last_window = pd.DataFrame(
+        data  = {'l1': np.arange(10, dtype=float)},
+        index = pd.RangeIndex(start=0, stop=10)
+    )
+    exog = pd.Series(
+        data  = np.arange(5, dtype=float),
+        index = pd.RangeIndex(start=12, stop=17),
+        name  = 'exog1'
+    )
+    if exog_format == 'dict':
+        exog = {'l1': exog}
+    exog_name = "`exog`" if exog_format == 'wide' else "`exog` for series 'l1'"
+
+    warn_msg = re.escape(
+        f"{exog_name} has no value for some of the 5 steps predicted. The "
+        f"first one is 10 (position 0). Missing values are filled with NaN. "
+        f"Most of machine learning models do not allow missing values. "
+        f"Prediction method may fail."
+    )
+    with pytest.warns(MissingValuesWarning, match = warn_msg):
+        check_predict_input(
+            forecaster_name  = 'ForecasterRecursiveMultiSeries',
+            steps            = 5,
+            is_fitted        = True,
+            exog_in_         = True,
+            index_type_      = pd.RangeIndex,
+            index_freq_      = 1,
+            window_size      = 5,
+            last_window      = last_window,
+            exog             = exog,
+            exog_names_in_   = ['exog1'],
+            levels           = ['l1'],
+            series_names_in_ = ['l1']
+        )
+
+
 def test_check_predict_input_ValueError_when_ForecasterStats_last_window_exog_is_not_None_and_exog_in_is_false():
     """
     Check ValueError is raised when last_window_exog is not None, but exog_in_     
