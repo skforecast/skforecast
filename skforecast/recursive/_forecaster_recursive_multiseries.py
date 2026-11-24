@@ -3503,7 +3503,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             used to calculate the initial predictors, and the predictions start
             right after training data.
         exog : pandas Series, pandas DataFrame, default None
-            Exogenous variable/s included as predictor/s.
+            Exogenous variable/s included as predictor/s. It is aligned with
+            the predictions by its index, not by position, and the steps
+            without a value are filled with NaN. With a `RangeIndex`, it
+            must not start before the first step predicted.
         suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
@@ -3685,7 +3688,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             used to calculate the initial predictors, and the predictions start
             right after training data.
         exog : pandas Series, pandas DataFrame, dict, default None
-            Exogenous variable/s included as predictor/s.
+            Exogenous variable/s included as predictor/s. It is aligned with
+            the predictions by its index, not by position, and the steps
+            without a value are filled with NaN. With a `RangeIndex`, it
+            must not start before the first step predicted.
         suppress_warnings : bool, default False
             If `True`, skforecast warnings will be suppressed during the prediction 
             process. See skforecast.exceptions.warn_skforecast_categories for more
@@ -3789,7 +3795,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             used to calculate the initial predictors, and the predictions start
             right after training data.
         exog : pandas Series, pandas DataFrame, dict, default None
-            Exogenous variable/s included as predictor/s.
+            Exogenous variable/s included as predictor/s. It is aligned with
+            the predictions by its index, not by position, and the steps
+            without a value are filled with NaN. With a `RangeIndex`, it
+            must not start before the first step predicted.
         n_boot : int, default 250
             Number of bootstrapping iterations to perform when estimating prediction
             intervals.
@@ -4143,7 +4152,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             used to calculate the initial predictors, and the predictions start
             right after training data.
         exog : pandas Series, pandas DataFrame, dict, default None
-            Exogenous variable/s included as predictor/s.
+            Exogenous variable/s included as predictor/s. It is aligned with
+            the predictions by its index, not by position, and the steps
+            without a value are filled with NaN. With a `RangeIndex`, it
+            must not start before the first step predicted.
         method : str, default 'conformal'
             Technique used to estimate prediction intervals. Available options:
 
@@ -4299,7 +4311,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             used to calculate the initial predictors, and the predictions start
             right after training data.
         exog : pandas Series, pandas DataFrame, dict, default None
-            Exogenous variable/s included as predictor/s.
+            Exogenous variable/s included as predictor/s. It is aligned with
+            the predictions by its index, not by position, and the steps
+            without a value are filled with NaN. With a `RangeIndex`, it
+            must not start before the first step predicted.
         quantiles : list, tuple, default [0.05, 0.5, 0.95]
             Sequence of quantiles to compute, which must be between 0 and 1 
             inclusive. For example, quantiles of 0.05, 0.5 and 0.95 should be as 
@@ -4396,7 +4411,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             used to calculate the initial predictors, and the predictions start
             right after training data.
         exog : pandas Series, pandas DataFrame, dict, default None
-            Exogenous variable/s included as predictor/s.
+            Exogenous variable/s included as predictor/s. It is aligned with
+            the predictions by its index, not by position, and the steps
+            without a value are filled with NaN. With a `RangeIndex`, it
+            must not start before the first step predicted.
         n_boot : int, default 250
             Number of bootstrapping iterations to perform when estimating prediction
             intervals.
