@@ -148,6 +148,7 @@ ForecasterRnn(
     transformer_exog=MinMaxScaler(feature_range=(0, 1)),    # transformer | None
     fit_kwargs=None,                   # dict, extra kwargs passed to model.fit() (plus series_val / exog_val)
     binner_kwargs=None,                # dict, kwargs for QuantileBinner (binned residuals)
+    warm_start=False,                  # bool, True continues from the weights of the previous fit
     forecaster_id=None,                # str | int, optional identifier
 )
 ```

@@ -448,7 +448,8 @@ def reshape_series_wide_to_long(
     into a long format DataFrame with a MultiIndex. The index of the input DataFrame
     must be a pandas DatetimeIndex with a frequency; if it has none, the frequency
     is inferred from the dates and a `ValueError` is raised if it cannot be
-    inferred (for example, with missing dates). The function reshapes the
+    inferred (missing dates, such as a holiday in business day data, or fewer
+    than 3 dates): set it first with `asfreq`. The function reshapes the
     DataFrame from wide format to long format, where each row corresponds to a
     specific time point and series ID. The resulting DataFrame will have a MultiIndex
     with the series IDs as the first level and a pandas DatetimeIndex as the second
@@ -490,11 +491,21 @@ def reshape_series_wide_to_long(
         # the frequency of descending dates is negative.
         freq = _infer_freq_from_index(data.index.sort_values())
         if freq is None:
+            # NOTE: With a timezone-aware index in fixed UTC steps, `asfreq('D')`
+            # moves to calendar days: the dates after a daylight saving change
+            # are not in the new index and their values are lost.
+            tz_hint = (
+                " If the dates advance in fixed UTC steps (created in UTC and "
+                "converted to a local timezone), use `data.asfreq('24h')` for "
+                "daily data: `asfreq('D')` moves them to calendar days."
+            ) if data.index.tz is not None else ""
             raise ValueError(
                 "`data` index has no frequency and it cannot be inferred: the "
                 "dates are not regularly spaced or there are fewer than 3. Set "
-                "the frequency of the index, for example with "
-                "`data = data.asfreq('D')`."
+                "the frequency of the data first, for example "
+                "`data = data.asfreq('D')` for daily data or "
+                "`data = data.asfreq('B')` for business days. Missing dates "
+                f"are added as rows of NaN.{tz_hint}"
             )
     # NOTE: `names` avoids renaming the index of the user's DataFrame.
     data = data.reset_index(names="datetime")

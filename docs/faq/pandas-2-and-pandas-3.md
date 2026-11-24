@@ -4,7 +4,7 @@ Since version 0.28.0, skforecast supports pandas 2.3 and pandas 3. With the same
 
 What does change are the defaults that pandas 3 changes for every library: the dtype of text, the resolution of dates, the frequency of indexes converted between time zones and copy-on-write. This page lists how they show up in skforecast and how to write code that works with both versions.
 
-The backends of `MoiraiAdapter` and `TabPFNAdapter` (`gluonts`) still require pandas 2: installing them downgrades pandas to 2.3.
+The backends of `MoiraiAdapter` and `TabPFNAdapter` depend on `gluonts`, which requires pandas 2: installing them in an environment with pandas 3 downgrades it to pandas 2.3. For Moirai, use the command of the [foundation models guide](../user_guides/foundation-forecasting-models.ipynb) (`pip install uni2ts "pandas>=2.3"`): `pip install uni2ts` alone installs pandas 2.1, which skforecast does not support.
 
 
 ## Text columns: `str` instead of `object`
@@ -50,7 +50,7 @@ idx.freq  # pandas 2: <Day>, pandas 3: None
 
 Reassigning the frequency (`pd.DatetimeIndex(idx, freq='D')`) also fails with pandas 3 when the dates cross a daylight saving time change. Depending on what the dates represent:
 
-+ **Fixed steps in UTC** (dates created in UTC and converted to a local time zone): use `freq='24h'` for daily data or `freq='168h'` for weekly data. pandas keeps these frequencies in both versions, and the results are identical to those of `freq='D'` with pandas 2. If the data already has such an index, set the frequency with `data.asfreq('24h')`: `data.asfreq('D')` moves to calendar days, and the values after a daylight saving time change become missing values. Keeping the index in UTC also works, and it is the option for monthly data (`'MS'`), which has no equivalent in hours.
++ **Fixed steps in UTC** (dates created in UTC and converted to a local time zone): use `freq='24h'` for daily data or `freq='168h'` for weekly data. pandas keeps these frequencies in both versions, and the results are the same with both. With dates at UTC midnight, they are also identical to those of `freq='D'` with pandas 2, unless UTC midnight is also local midnight in winter (for example, `'Europe/London'` or `'Europe/Lisbon'`). In those time zones, and with dates at another UTC hour (for example, 12:00 UTC), use `'24h'` with pandas 2 too: with `'D'`, the predicted dates after a daylight saving time change can be shifted by one hour, which also gives wrong backtesting metrics. If the data already has such an index, set the frequency with `data.asfreq('24h')`: `data.asfreq('D')` moves to calendar days, and the values after a daylight saving time change become missing values. Keeping the index in UTC also works, and it is the option for monthly data (`'MS'`), which has no equivalent in hours.
 
 + **Calendar days in local time** (every date at local midnight): create the index in the local time zone (`pd.date_range(..., freq='D', tz='Europe/Madrid')`), or call `data.asfreq('D')`.
 
@@ -83,7 +83,7 @@ With pandas 3, the arrays of `out_sample_residuals_` stored by `set_out_sample_r
 
 + A forecaster saved with pandas 2 loads with pandas 3. With `joblib`, `pickle` or `cloudpickle`, the pandas 3 environment needs `pytz` (`pip install pytz`) when the dates of the forecaster have a time zone that pandas 2 stores as a `pytz` object: named time zones such as `'Europe/Madrid'`, and dates with a time zone read from Arrow or Parquet. pandas 3 does not install `pytz`, and without it the file raises a `ModuleNotFoundError`, to which `load_forecaster` adds a note explaining it. With `pytz` installed, the forecaster loads and gives the same predictions. Saving it again with these backends keeps the requirement: to remove it, train the forecaster again with pandas 3, or save it with `backend='skops'` (not available for `ForecasterStats`, `ForecasterFoundation` or `ForecasterRnn`) and check that the new file loads before uninstalling `pytz`.
 
-+ A forecaster saved with pandas 3 with `joblib`, `pickle` or `cloudpickle` cannot be loaded with pandas 2: pandas fails to rebuild some of its objects, and `load_forecaster` adds a note to the error explaining it.
++ A forecaster saved with pandas 3 with `joblib`, `pickle` or `cloudpickle` and trained with dates (a `DatetimeIndex`, with or without time zone) cannot be loaded with pandas 2: pandas fails to rebuild the index, and `load_forecaster` adds a note to the error explaining it. Forecasters trained with a `RangeIndex` load and predict, but to share forecasters between versions use `backend='skops'`.
 
 + `backend='skops'` works in both directions between pandas 2.3 and pandas 3, and does not need `pytz`: it stores the time zone by its name. The list of types to trust depends on the pandas version that saved the file (for example, `pandas.core.indexes.datetimes.DatetimeIndex` in pandas 2 and `pandas.DatetimeIndex` in pandas 3, and `pandas.StringDtype` with text exogenous variables), so a list written for one version does not load files of the other. Get it from each file:
 

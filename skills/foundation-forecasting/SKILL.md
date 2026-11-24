@@ -69,6 +69,8 @@ pip install tirex-2                # For TiRex-2 (Python >= 3.11)
 
 Models are downloaded from HuggingFace on first use.
 
+The backends of Moirai-2 and TabPFN-TS depend on `gluonts`, which requires pandas 2: installing them in an environment with pandas 3 downgrades it to pandas 2.3.
+
 ## Quick Start (single series)
 
 ```python

@@ -2015,8 +2015,10 @@ class ForecasterRnn(ForecasterBase):
 
         self.estimator.set_weights(self._initial_weights)
         if self._initial_compile_config:
-            # NOTE: `safe_mode=False` allows lambda functions (e.g., as loss),
-            # as Keras does when it copies or unpickles a model. The
+            # NOTE: `safe_mode=False` is needed to deserialize lambda functions
+            # (e.g., as loss), as Keras does when it copies or unpickles a
+            # model. A lambda that uses global names still fails in `fit`:
+            # Keras rebuilds it from its bytecode, without its globals. The
             # configuration comes from the estimator of this forecaster.
             compile_config = keras.saving.deserialize_keras_object(
                 self._initial_compile_config, safe_mode=False
