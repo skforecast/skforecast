@@ -48,6 +48,8 @@ The main changes in this release are:
 
     + <code>[ForecasterRecursiveMultiSeries]</code> with series of `RangeIndex`: the prediction methods raise a `ValueError` when the index of `exog` starts before the first step predicted, for example an `exog` that includes the training period or one shared by series that end at different positions. Select the values from the first step: `exog.loc[first_step:]`.
 
+    + Estimators that are a scikit-learn `Pipeline` ending in XGBoost or `HistGradientBoosting`, with categorical features: the forecaster no longer configures them as native categorical features, so the model changes. Pass the estimator without the `Pipeline` to keep them. Forecasters saved with a previous version still predict and keep the configuration set by that version, but fail if they are fitted with other columns: create them again. <code>[ForecasterRecursiveClassifier]</code> with `features_encoding='categorical'` and a `Pipeline` raises a `ValueError`.
+
 
 **Added**
 
@@ -90,6 +92,8 @@ The main changes in this release are:
 
 + `n_jobs=0`, which joblib does not allow, raises a `ValueError` in <code>[backtesting_forecaster]</code>, <code>[backtesting_forecaster_multiseries]</code>, <code>[backtesting_stats]</code>, their hyperparameter searches (before evaluating any candidate; with <code>[OneStepAheadFold]</code>, `n_jobs` is ignored), <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code>; before, it used all the CPUs, or one job with a warning where `n_jobs` was ignored (intermittent refit, or <code>[backtesting_stats]</code> without refit). ([#1513](https://github.com/skforecast/skforecast/pull/1513))
 
++ Native categorical features are no longer configured when the estimator is a scikit-learn `Pipeline`, since its previous steps may transform the columns: they reach its last step with their ordinal encoding, as numeric columns. A `Pipeline` ending in XGBoost or `HistGradientBoosting` gives a different model; pass the estimator without it to keep them. Forecasters saved with a previous version keep the old configuration and must be created again. <code>[ForecasterRecursiveClassifier]</code> with `features_encoding='categorical'` and a `Pipeline` raises a `ValueError`.
+
 + The error raised by <code>[PopulationDriftDetector]</code> when `chunk_size` is not a valid pandas frequency shows the value and the error of pandas, which names the alias to use when the one given was removed (with pandas 3, `'ME'` instead of `'M'`). ([#1510](https://github.com/skforecast/skforecast/pull/1510))
 
 
@@ -122,6 +126,8 @@ The main changes in this release are:
 + `predict` of <code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveClassifier]</code>, <code>[ForecasterDirect]</code> and <code>[ForecasterDirectMultiVariate]</code> raised `TypeError: ufunc 'isnan' not supported` when `exog` had a `bool`, nullable (`boolean`, `Int64`...) or pyarrow column next to other columns, with a `HistGradientBoostingRegressor` and a categorical column, or with a `HistGradientBoostingClassifier`. Forecasters fitted with a previous version must be fitted again. ([#1542](https://github.com/skforecast/skforecast/pull/1542))
 
 + Fixed two issues with missing values in `exog` in <code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveClassifier]</code>, <code>[ForecasterDirect]</code>, <code>[ForecasterDirectMultiVariate]</code> and the prediction methods of <code>[ForecasterRecursiveMultiSeries]</code>. A `pd.NA` in a nullable or pyarrow column next to other columns raised a `TypeError` in `fit` and `predict`. A missing value in an integer `category` column not included in `categorical_features`, next to integer columns, reached the estimator as a very large negative number. Both are now NaN, as in a float column. ([#1542](https://github.com/skforecast/skforecast/pull/1542))
+
++ `fit` raised `ValueError: Pipeline.fit does not accept the categorical_feature parameter` (`cat_features` with CatBoost) when the estimator was a scikit-learn `Pipeline` that ends in a LightGBM or CatBoost model and there were categorical features: categorical exogenous variables, `encoding='ordinal_category'` in <code>[ForecasterRecursiveMultiSeries]</code> or the lags of <code>[ForecasterRecursiveClassifier]</code>. With XGBoost after a scaler, it raised an `XGBoostError`. These pipelines now receive the categorical features with their ordinal encoding (see **Changed**).
 
 + <code>[backtesting_forecaster]</code> with a <code>[ForecasterRecursiveClassifier]</code> and refit chose the predicted class with the classes of the forecaster of the main process, not with those of the model of each fold. When the classes of the training set changed between folds (a class that appears in it or leaves it), a class unknown to the model of a fold was predicted in every step of that fold if the forecaster of the main process knew it, and never predicted otherwise (the main process kept the classes of the last refit with `n_jobs=1` and those of the initial fit with `n_jobs` greater than 1). Each fold now predicts with the classes of its own model, and a class that its model does not know has probability 0 instead of NaN. The hyperparameter searches, whose metrics use the predicted class, were also affected. ([#1511](https://github.com/skforecast/skforecast/pull/1511))
 

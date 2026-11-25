@@ -177,7 +177,7 @@ forecaster.fit(y=y_train, exog=exog_train)
 ```
 
 **`categorical_features` options:**
-- `'auto'` (default): Non-numeric columns (after `transformer_exog`) are automatically detected and encoded using an internal `OrdinalEncoder`. Native categorical support is configured automatically for compatible estimators (LightGBM, CatBoost, XGBoost, HistGradientBoostingRegressor).
+- `'auto'` (default): Non-numeric columns (after `transformer_exog`) are automatically detected and encoded using an internal `OrdinalEncoder`. Native categorical support is configured automatically for compatible estimators (LightGBM, CatBoost, XGBoost, HistGradientBoostingRegressor) when the estimator is passed directly to the forecaster. It is not configured when the estimator is a scikit-learn `Pipeline` (its previous steps may transform the columns): the categorical columns reach its last step with their ordinal encoding, as numeric columns.
 - `list`: Explicit list of column names to treat as categorical (including numeric columns).
 - `None`: No categorical encoding is applied.
 
@@ -1354,7 +1354,10 @@ All ML forecasters include a `categorical_features` parameter (default `'auto'`)
 that automatically detects and encodes non-numeric exogenous columns using an
 internal `OrdinalEncoder` (into float codes, since numpy arrays are used internally).
 Native categorical support is configured automatically for LightGBM, CatBoost,
-XGBoost, and HistGradientBoostingRegressor.
+XGBoost, and HistGradientBoostingRegressor when the estimator is passed directly
+to the forecaster. It is not configured when the estimator is a scikit-learn
+`Pipeline` (its previous steps may transform the columns): the categorical
+columns reach its last step with their ordinal encoding, as numeric columns.
 
 ```python
 forecaster = ForecasterRecursive(
@@ -2212,7 +2215,7 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 | Use `backtesting_forecaster_multiseries` and the `*_multiseries` search functions | `backtesting_forecaster` / `grid_search_forecaster` raises on a multi-series forecaster | Call the `_multiseries` variant with `series=` instead of `y=` |
 | `ForecasterDirectMultiVariate` defaults to `transformer_series=StandardScaler()` | Series are scaled unexpectedly (other forecasters default to `None`) | Pass `transformer_series=None` explicitly if you do not want scaling |
 | `exog` and `series` formats can be combined (wide, long or dict); a dict or long `exog` is matched to the series by name | `MissingExogWarning` about series without exog, whose exog values are NaN | Use the series names as the keys of the exog dict (or the series IDs of a long exog). A wide exog is shared by all series and aligned with each one by date |
-| Regressors with native categorical support need `encoding='ordinal_category'` | Categoricals silently encoded as plain ordinals, degrading the model | Set `encoding='ordinal_category'` for LightGBM / CatBoost / XGBoost / HistGBR |
+| Regressors with native categorical support need `encoding='ordinal_category'` | Categoricals silently encoded as plain ordinals, degrading the model | Set `encoding='ordinal_category'` for LightGBM / CatBoost / XGBoost / HistGBR, passed directly to the forecaster (inside a scikit-learn `Pipeline` native categorical features are not configured) |
 
 ## Data Formats
 
@@ -2334,7 +2337,7 @@ exog_dict = reshape_exog_long_to_dict(exog_long, freq='D')
 ## Common Mistakes
 
 1. **Mismatched series lengths**: ForecasterRecursiveMultiSeries handles different-length series if `dropna_from_series=True`.
-2. **Wrong encoding for categorical regressor**: Use `encoding='ordinal_category'` with regressors that natively handle categoricals (LightGBM, CatBoost).
+2. **Wrong encoding for categorical regressor**: Use `encoding='ordinal_category'` with regressors that natively handle categoricals (LightGBM, CatBoost), passed directly to the forecaster, not inside a scikit-learn `Pipeline`.
 3. **Exog keys not matching the series names**: Any exog format (wide, long or dict) can be combined with any series format. A wide exog is shared by all series and aligned with each one by date; a dict or long exog must use the series names as keys, otherwise those series get NaN exog values (`MissingExogWarning`). With a `RangeIndex`, the `exog` of `predict` must not start before the first step predicted (`ValueError`): its index has to continue the one of the series, not start again at 0.
 4. **Forgetting `levels` parameter**: By default `predict()` forecasts all series. Use `levels` to limit predictions.
 5. **Unexpected scaling in ForecasterDirectMultiVariate**: `transformer_series` defaults to `StandardScaler()`, unlike other forecasters that default to `None`. Set `transformer_series=None` explicitly if you don't want automatic scaling.

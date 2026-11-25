@@ -291,7 +291,10 @@ All ML forecasters include a `categorical_features` parameter (default `'auto'`)
 that automatically detects and encodes non-numeric exogenous columns using an
 internal `OrdinalEncoder` (into float codes, since numpy arrays are used internally).
 Native categorical support is configured automatically for LightGBM, CatBoost,
-XGBoost, and HistGradientBoostingRegressor.
+XGBoost, and HistGradientBoostingRegressor when the estimator is passed directly
+to the forecaster. It is not configured when the estimator is a scikit-learn
+`Pipeline` (its previous steps may transform the columns): the categorical
+columns reach its last step with their ordinal encoding, as numeric columns.
 
 ```python
 forecaster = ForecasterRecursive(

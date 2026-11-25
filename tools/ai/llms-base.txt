@@ -173,7 +173,7 @@ forecaster.fit(y=y_train, exog=exog_train)
 ```
 
 **`categorical_features` options:**
-- `'auto'` (default): Non-numeric columns (after `transformer_exog`) are automatically detected and encoded using an internal `OrdinalEncoder`. Native categorical support is configured automatically for compatible estimators (LightGBM, CatBoost, XGBoost, HistGradientBoostingRegressor).
+- `'auto'` (default): Non-numeric columns (after `transformer_exog`) are automatically detected and encoded using an internal `OrdinalEncoder`. Native categorical support is configured automatically for compatible estimators (LightGBM, CatBoost, XGBoost, HistGradientBoostingRegressor) when the estimator is passed directly to the forecaster. It is not configured when the estimator is a scikit-learn `Pipeline` (its previous steps may transform the columns): the categorical columns reach its last step with their ordinal encoding, as numeric columns.
 - `list`: Explicit list of column names to treat as categorical (including numeric columns).
 - `None`: No categorical encoding is applied.
 
