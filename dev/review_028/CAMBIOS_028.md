@@ -1,8 +1,9 @@
 # Qué cambia en skforecast 0.28 frente a la 0.27
 
-**Estado: revisión completa (partes 1 a 4).** Este documento cubre la migración a pandas 3
+**Estado: revisión completa (partes 1 a 5).** Este documento cubre la migración a pandas 3
 y las dependencias (parte 1), la paralelización (parte 2), el rendimiento de `predict` y del
-backtesting (parte 3) y las correcciones de errores (parte 4).
+backtesting (parte 3), las correcciones de errores (parte 4) y la exógena como matriz float
+y las variables categóricas con un `Pipeline` (parte 5).
 
 ## 0. Cómo leer este documento
 
@@ -14,7 +15,7 @@ backtesting (parte 3) y las correcciones de errores (parte 4).
   Linux con Python 3.12, numpy 2.5 y scikit-learn 1.9, salvo que se diga otra cosa (las de
   paralelización dicen siempre el número de CPU; las de rendimiento son de las pull
   requests, sección 2.8).
-- La revisión se hizo el 2026-11-23 y el 2026-11-24 sobre la rama `0.28.x`, leyendo el
+- La revisión se hizo del 2026-11-23 al 2026-11-25 sobre la rama `0.28.x`, leyendo el
   código de cada pull request y comprobando con experimentos lo que no estaba claro.
 
 
@@ -66,12 +67,20 @@ con un forecaster ya ajustado, y `set_params` y las búsquedas de hiperparámetr
 (antes descartaban todos los candidatos). En el clasificador, el backtesting con refit ya no
 predice clases erróneas cuando las clases cambian entre folds ni depende de `n_jobs`, y
 `predict_proba` ya no falla cuando una clase solo aparece en los primeros valores de la
-serie.
+serie. Una exógena con columnas `bool`, nullable (`Int64`, `boolean`...) o de pyarrow junto
+a otras numéricas llega al modelo como una matriz float: `fit` es unas 4 veces más rápido
+con un modelo lineal, `predict` ya no falla con HistGradientBoosting y una categórica, y un
+`pd.NA` da el error de valores ausentes en lugar de un `TypeError`. Por último, con un
+`Pipeline` como estimador ya no se configuran las categóricas nativas en su último paso:
+con LightGBM y CatBoost fallaba, y con HistGradientBoosting detrás de un escalador trataba
+como categorías los valores escalados. A cambio, un `Pipeline` que termina en
+HistGradientBoosting o XGBoost da otro modelo.
 
 Para publicar quedan un mensaje de error claro para los `ForecasterRnn` guardados con la
 0.27 (hoy, un `AttributeError`), varios fallos previos de fechas con zona horaria que ya
 estaban en la 0.27 y reejecutar cinco notebooks de la documentación con pandas 3 (sección
-5). Las correcciones de documentación P1 ya se hicieron (#1539).
+5). Las correcciones de documentación P1 ya se hicieron (#1539). Fuera de esta revisión, el
+roadmap selecciona además para la 0.28.0 varios fallos previos de categóricas (sección 5).
 
 
 ## 2. Los cambios, por área
@@ -359,7 +368,9 @@ anterior en pandas 2 y 3, y esta revisión lo comprobó de nuevo en los casos du
 cifras son de las pull requests (en Windows, salvo las de `StandardScaler`, en Linux); no se
 han vuelto a medir. Con pandas 3, y más con `pyarrow`, cada objeto de pandas que se crea a
 partir de una lista de nombres (índices, columnas, `reindex`, `concat`) cuesta más que con
-pandas 2. Por eso estos cambios importan más con pandas 3: compensan su sobrecoste.
+pandas 2. Por eso estos cambios importan más con pandas 3: compensan su sobrecoste. La
+conversión de la exógena a una matriz float (#1542), que también acelera `fit`, está en la
+sección 2.9 e) porque además corrige errores.
 
 **a) `predict` y backtesting de `ForecasterRecursiveMultiSeries` (#1530).**
 
@@ -423,10 +434,11 @@ pandas 2. Por eso estos cambios importan más con pandas 3: compensan su sobreco
   con el nombre repetido funciona (antes, `TypeError`). Sigue recomendándose pasar las series
   como diccionario.
 
-### 2.9 Correcciones de errores (#1511, #1514, #1515, #1540)
+### 2.9 Correcciones de errores (#1511, #1514, #1515, #1540, #1542, #1544)
 
-Cuatro errores que ya estaban en la 0.27 y afectan igual a pandas 2 y 3. Tres daban
-resultados erróneos sin aviso; el cuarto, un error.
+Errores que ya estaban en la 0.27 y afectan igual a pandas 2 y 3. Los de a), b) y c) daban
+resultados erróneos sin aviso; los de d), e) y f), sobre todo errores, con algún caso de
+resultado erróneo que se indica.
 
 **a) Exógena con `RangeIndex` en `ForecasterRecursiveMultiSeries` (#1540).**
 
@@ -492,6 +504,52 @@ resultados erróneos sin aviso; el cuarto, un error.
 - **Efecto para el usuario.** Esos casos funcionan; con todas las clases conocidas la salida
   es la misma. Con `XGBClassifier` el caso sigue fallando en `fit` (sección 5).
 
+**e) La exógena llega al modelo como una matriz float (#1542).**
+
+- **Qué cambia.** Los forecasters convierten la exógena a una matriz float64, con NaN en los
+  valores ausentes, cuando todas sus columnas son numéricas, booleanas o `category` de
+  enteros y alguna es `bool` (junto a números), nullable (`Int64`, `boolean`...), de
+  pyarrow o `category`. La decisión depende solo de los tipos de las columnas. En el resto de
+  casos (todo float, enteros y float, texto, fechas...), nada cambia. Afecta a `fit` y
+  `predict` de `ForecasterRecursive`, `ForecasterRecursiveClassifier`, `ForecasterDirect` y
+  `ForecasterDirectMultiVariate`, y a los métodos de predicción de
+  `ForecasterRecursiveMultiSeries`. `create_train_X_y` y `create_predict_X` siguen
+  devolviendo los tipos originales.
+- **Por qué.** Con esas columnas, pandas devuelve una matriz de tipo `object`: el modelo va
+  más lento y usa más memoria, `predict` fallaba con HistGradientBoosting y una categórica
+  (`ufunc 'isnan' not supported`; el `fit` funcionaba) y un `pd.NA` daba
+  `TypeError: float() argument must be ... not 'NAType'` en `fit` y `predict`.
+- **Efecto para el usuario.** Con 100.000 filas y una columna `bool`, `fit` es unas 4 veces
+  más rápido con un modelo lineal (un 15 % con LightGBM) y el pico de memoria al crear la
+  matriz de entrenamiento es 2,5 veces menor. Los errores de HistGradientBoosting y `pd.NA` desaparecen: un
+  valor ausente da el error de valores ausentes de siempre, o NaN si el modelo los acepta.
+  Un caso cambia de resultado: una `category` de enteros que no está en
+  `categorical_features`, con valores ausentes y junto a columnas enteras, llegaba al modelo
+  con −9,2·10¹⁸ en lugar del ausente, **sin aviso**; ahora es NaN, así que un modelo que no
+  acepta NaN da error. Los forecasters con HistGradientBoosting guardados con una versión
+  anterior siguen fallando en `predict` hasta reajustarlos.
+
+**f) Categóricas nativas con un `Pipeline` como estimador (#1544).**
+
+- **Qué cambia.** Con un `Pipeline`, el forecaster ya no configura las categóricas nativas
+  en su último paso. Las variables categóricas llegan a él con su codificación ordinal, como
+  columnas numéricas, igual que con cualquier modelo sin soporte nativo. Si el usuario
+  configura él mismo el último paso, esa configuración se respeta. En
+  `ForecasterRecursiveClassifier`, `features_encoding='categorical'` con un `Pipeline` da
+  un error que explica el motivo.
+- **Por qué.** Los pasos anteriores del `Pipeline` pueden transformar o reordenar las
+  columnas, y la configuración no llegaba bien: con LightGBM y CatBoost, `fit` fallaba (los
+  argumentos iban a `Pipeline.fit` sin el prefijo del paso); con XGBoost detrás de un
+  escalador fallaba también, y HistGradientBoosting detrás de un escalador trataba como
+  categorías los valores escalados, **sin aviso**. Afecta a las exógenas categóricas, a
+  `encoding='ordinal_category'` en multiserie y a los lags del clasificador.
+- **Efecto para el usuario.** Esos pipelines funcionan. Un `Pipeline` que termina en
+  HistGradientBoosting o en XGBoost (sin escalador) da otro modelo, porque pierde las
+  categóricas nativas; en los casos medidos, el error cambia poco y en los dos sentidos.
+  Para conservarlas, hay que pasar el modelo sin el `Pipeline`. Los forecasters guardados
+  con una versión anterior predicen igual, pero fallan si se reajustan sin la columna
+  categórica: hay que crearlos de nuevo.
+
 ### 2.10 Otros cambios menores
 
 - `calculate_distance_from_holiday` cuenta días de calendario con fechas con zona horaria
@@ -509,7 +567,8 @@ resultados erróneos sin aviso; el cuarto, un error.
   fechas desplazadas (#1534, que corrige una regresión introducida por #1497).
 - Tests y CI (#1498, #1499, #1501): los tests no dependen de la versión de pandas, la CI
   prueba pandas 2 y pandas 3, y un job semanal falla ante cualquier aviso de deprecación de
-  pandas nacido en skforecast.
+  pandas nacido en skforecast. La acción `setup-uv` de la CI pasa a la versión 10.4.0
+  (#1545).
 
 
 ## 3. Cambios que pueden romper código o cambiar resultados
@@ -545,6 +604,11 @@ cambian de error.
 | `ForecasterRnn`: ajustes repetidos y backtesting con refit | cambian: cada ajuste empieza desde los pesos iniciales | igual | `warm_start=True` para encadenar los ajustes como antes |
 | `ForecasterRnn` guardado con la 0.27 | predice; `fit`, `set_params` y backtesting con `initial_train_size` dan `AttributeError` | igual | Crearlo de nuevo |
 | Backtesting y búsquedas del clasificador con refit, con clases que cambian entre folds | cambian (antes eran erróneas y dependían de `n_jobs`); probabilidad 0 en lugar de NaN | igual | Ninguna: ahora son correctos |
+| Exógena con una `category` de enteros fuera de `categorical_features`, con valores ausentes y junto a columnas enteras | NaN (antes, −9,2·10¹⁸ sin aviso): error si el modelo no acepta NaN | igual | Declararla en `categorical_features` o imputar los ausentes |
+| Forecaster con HistGradientBoosting, una categórica y una exógena `bool`, guardado con una versión anterior | sigue fallando en `predict` | igual | Reajustarlo |
+| `Pipeline` que termina en HistGradientBoosting o XGBoost, con variables categóricas | otro modelo: sin categóricas nativas | igual | Pasar el modelo sin el `Pipeline` para conservarlas |
+| Forecaster con un `Pipeline` y categóricas, guardado con una versión anterior | predice igual; falla si se reajusta con otras columnas | igual | Crearlo de nuevo |
+| `ForecasterRecursiveClassifier` con `features_encoding='categorical'` y un `Pipeline` | `ValueError` al crearlo | igual | `'auto'` u `'ordinal'` |
 
 
 ## 4. Cómo se verificó
@@ -569,7 +633,15 @@ copia del backtesting vuelve a ellos, dos ajustes con la misma semilla coinciden
 `set_params`, forecasters guardados con la 0.27 y cinco tipos de función de pérdida, que se
 comportan como en la 0.27; solo con pandas 2 y el backend torch); el backtesting del
 clasificador (igual con `n_jobs` 1 y 2, y igual que ajustar a mano cada fold), y las clases
-que solo están en los lags con seis estimadores.
+que solo están en los lags con seis estimadores. En la parte 5 se compararon el código de
+antes y el de después de cada pull request en pandas 2 y 3, con salidas idénticas entre las
+dos versiones. Para la exógena como matriz float: el tipo de la matriz, el tiempo de `fit`,
+los errores de HistGradientBoosting y de `pd.NA` (también con la 0.27), la `category` de
+enteros con ausentes, los tipos de `create_train_X_y` y `create_predict_X`, multiserie con
+exógena ancha y en diccionario, y un forecaster guardado. Para los `Pipeline`: LightGBM,
+CatBoost, XGBoost e HistGradientBoosting sin envolver, en un `Pipeline` y detrás de un
+escalador, en cuatro forecasters; la configuración propia del usuario; forecasters
+guardados, y una búsqueda con `lags_grid`. Sin envolver, los resultados son idénticos.
 
 
 ## 5. Pendiente antes de publicar
@@ -618,10 +690,8 @@ que ahora sugiere también `asfreq('B')`).
     la 0.27 que encontró #1530, los dos con datos no válidos y un mensaje de error poco útil:
     `predict` multiserie con `levels=[]`, ventana y exógena da un error de pandas
     (BUG-ms-predict-empty-levels-window, P4), y una exógena que mezcla float y una columna
-    nullable con valores ausentes da `TypeError` en lugar del error de valores ausentes. Este
-    último se arreglará con PERF-exog-float-matrix, que es P1 en el roadmap por otro fallo
-    previo con exógenas categóricas y booleanas. Ese fallo queda fuera del alcance de esta
-    revisión: hay que decidir aparte si bloquea la publicación. Mejoras para después:
+    nullable con valores ausentes daba `TypeError` en lugar del error de valores ausentes.
+    Este último ya está arreglado (#1542, sección 2.9 e). Mejoras para después:
     validar solo el primer fold del backtesting (PERF-predict-numpy) y usar la conversión
     nueva del formato largo en `reshape_series_long_to_dict` y `reshape_exog_long_to_dict`
     (PERF-reshape-long-to-dict).
@@ -633,10 +703,28 @@ que ahora sugiere también `asfreq('B')`).
     y BUG-splitter-pandas2-dst-union, P2). Como documentación, avisar de que con
     `SVC(probability=True)` la clase de `predict` y la de `predict_proba` (y la del backtesting)
     pueden no coincidir (DOC-classifier-predict-vs-proba, P4).
+12. De la parte 5, ninguno impide publicar: no hay fallos nuevos. Quedan límites previos
+    que encontraron las pull requests: CatBoost dentro de un envoltorio que no copia la
+    matriz (un `Pipeline` sin otro paso, o `TransformedTargetRegressor`) falla en el
+    `predict` multiserie y en los intervalos por bootstrapping
+    (BUG-predict-readonly-wrapped-catboost, P2); los enteros mayores que 2^53 de una exógena
+    que se convierte a float salen redondeados en `create_train_X_y` y `create_predict_X`
+    (BUG-create-X-int-overflow, P3), y LightGBM con categóricas nativas y pocas filas puede
+    dar un modelo peor que sin ellas (DOC-lightgbm-categorical-few-rows, P3).
+
+**Fuera del alcance de esta revisión.** El roadmap fija para la 0.28.0 (selección del
+2026-11-25) varios arreglos de fallos que ya estaban en la 0.27 y que no son regresiones:
+el principal es BUG-ms-fit-dataframe-categorical (P1: en `ForecasterRecursiveMultiSeries`,
+con `categorical_features=None` y una exógena `category` cuyos valores no coinciden con sus
+códigos, LightGBM y XGBoost dan **predicciones erróneas sin aviso**). Antes, una medida con
+datos reales de BUG-catboost-refit-categorical (CatBoost con categóricas que se reajusta
+empeora sin aviso; P1 si se confirma), y después, BUG-predict-readonly-wrapped-catboost y el
+plan de BUG-04. #1542 y #1544 eran requisitos del primero.
 
 
 ## 6. Alcance
 
 La revisión cubre todas las pull requests de la 0.28 que cambian código de la librería. Las
-restantes (#1494, #1518, #1521, #1523 a #1526, #1528 y #1531) no lo cambian. #1536, #1538,
-#1539 y #1540 se unieron durante la revisión y están incluidas en sus partes.
+restantes (#1494, #1518, #1521, #1523 a #1526, #1528, #1531 y #1545) no lo cambian. #1536,
+#1538, #1539 y #1540 se unieron durante la revisión y están incluidas en sus partes; #1542 y
+#1544, después de terminarla, y forman la parte 5.
