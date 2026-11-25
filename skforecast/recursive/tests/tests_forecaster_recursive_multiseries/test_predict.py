@@ -830,6 +830,135 @@ def test_predict_output_when_categorical_features_native_implementation_LGBMRegr
     pd.testing.assert_frame_equal(predictions_2, expected)
 
 
+@pytest.mark.parametrize(
+    'encoding',
+    ['ordinal', 'ordinal_category'],
+    ids=lambda encoding: f'encoding: {encoding}'
+)
+def test_predict_output_when_categorical_features_and_estimator_is_Pipeline(encoding):
+    """
+    Test predict output when the estimator is a Pipeline whose last step is
+    LGBMRegressor and there are categorical variables. Native categorical
+    features are not configured inside a Pipeline, neither the exogenous
+    variables nor the series identifier of `encoding='ordinal_category'`, so
+    the predictions are the same as the ones obtained when the categorical
+    variables are passed already encoded as numeric columns.
+    """
+    df_exog = pd.DataFrame(
+        {'exog_1': exog_wide_range['exog_1'],
+         'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
+         'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)}
+    )
+    df_exog_encoded = pd.DataFrame(
+        {'exog_1': exog_wide_range['exog_1'],
+         'exog_2': [0., 1., 2., 3., 4.] * 10,
+         'exog_3': [0., 1., 2., 3., 4.] * 10}
+    )
+
+    exog_predict = df_exog.copy()
+    exog_predict.index = pd.RangeIndex(start=50, stop=100)
+    exog_predict_encoded = df_exog_encoded.copy()
+    exog_predict_encoded.index = pd.RangeIndex(start=50, stop=100)
+
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator            = make_pipeline(
+                                                StandardScaler(),
+                                                LGBMRegressor(random_state=123, verbose=-1)
+                                            ),
+                     lags                 = 5,
+                     encoding             = encoding,
+                     transformer_series   = None,
+                     categorical_features = None
+                 )
+    forecaster.fit(series=series_dict_range, exog=df_exog_encoded)
+    predictions = forecaster.predict(steps=10, exog=exog_predict_encoded)
+
+    forecaster_2 = ForecasterRecursiveMultiSeries(
+                       estimator            = make_pipeline(
+                                                  StandardScaler(),
+                                                  LGBMRegressor(random_state=123, verbose=-1)
+                                              ),
+                       lags                 = 5,
+                       encoding             = encoding,
+                       transformer_series   = None,
+                       categorical_features = 'auto'
+                   )
+    forecaster_2.fit(series=series_dict_range, exog=df_exog)
+    predictions_2 = forecaster_2.predict(steps=10, exog=exog_predict)
+
+    expected = pd.DataFrame(
+                   data = np.array([[0.5414788364, 0.7407089861],
+                                    [0.4142828692, 0.3577201885],
+                                    [0.5110506645, 0.6972857229],
+                                    [0.8320281742, 0.7824326743],
+                                    [0.6087446596, 0.5310935523],
+                                    [0.3545300306, 0.3285407895],
+                                    [0.5098406414, 0.4298397919],
+                                    [0.5395456356, 0.3793506078],
+                                    [0.4980965072, 0.5260647119],
+                                    [0.63759859  , 0.8213540146]]),
+                   index   = pd.RangeIndex(start=50, stop=60, step=1),
+                   columns = ['l1', 'l2']
+               )
+    expected = expected_df_to_long_format(expected)
+
+    pd.testing.assert_frame_equal(predictions, expected)
+    pd.testing.assert_frame_equal(predictions_2, expected)
+
+
+def test_predict_output_when_estimator_is_Pipeline_that_keeps_DataFrame_and_ordinal_category():
+    """
+    Test predict output when `encoding='ordinal_category'` and the estimator is
+    a Pipeline whose steps keep the training DataFrame as it is
+    (FunctionTransformer without `func`). The forecaster does not configure
+    native categorical features inside the Pipeline, but the training matrix
+    has `_level_skforecast` with category dtype, so LGBMRegressor still treats
+    it as categorical because of its dtype. The predictions are the same as the
+    ones of LGBMRegressor without the Pipeline.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator          = LGBMRegressor(random_state=123, verbose=-1),
+                     lags               = 5,
+                     encoding           = 'ordinal_category',
+                     transformer_series = None
+                 )
+    forecaster.fit(series=series_dict_range)
+    predictions = forecaster.predict(steps=10)
+
+    forecaster_2 = ForecasterRecursiveMultiSeries(
+                       estimator          = make_pipeline(
+                                                FunctionTransformer(),
+                                                LGBMRegressor(random_state=123, verbose=-1)
+                                            ),
+                       lags               = 5,
+                       encoding           = 'ordinal_category',
+                       transformer_series = None
+                   )
+    forecaster_2.fit(series=series_dict_range)
+    predictions_2 = forecaster_2.predict(steps=10)
+
+    assert forecaster_2.estimator[-1].booster_.pandas_categorical == [[0, 1]]
+
+    expected = pd.DataFrame(
+                   data = np.array([[0.6263723464, 0.6341703498],
+                                    [0.5087305258, 0.5726456905],
+                                    [0.3863571976, 0.5517213281],
+                                    [0.5752463933, 0.5926481307],
+                                    [0.6056539549, 0.7855853155],
+                                    [0.4890608155, 0.4387804988],
+                                    [0.5776834801, 0.4364450897],
+                                    [0.5979375666, 0.4050096487],
+                                    [0.5376923395, 0.4659759461],
+                                    [0.503843297 , 0.6030578693]]),
+                   index   = pd.RangeIndex(start=50, stop=60, step=1),
+                   columns = ['l1', 'l2']
+               )
+    expected = expected_df_to_long_format(expected)
+
+    pd.testing.assert_frame_equal(predictions, expected)
+    pd.testing.assert_frame_equal(predictions_2, expected)
+
+
 def test_predict_output_when_window_features():
     """
     Test output of predict when estimator is LGBMRegressor and window features.

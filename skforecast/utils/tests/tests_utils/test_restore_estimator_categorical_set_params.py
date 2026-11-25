@@ -8,6 +8,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from xgboost import XGBRegressor
 
+from skforecast.utils.utils import _get_estimator_categorical_set_params
 from skforecast.utils.utils import _restore_estimator_categorical_set_params
 from skforecast.recursive import ForecasterRecursive
 from skforecast.direct import ForecasterDirect
@@ -85,30 +86,33 @@ def test_histgbr_restores_categorical_features():
 
 
 # ==============================================================================
-# Tests: Pipeline support
+# Tests: Pipeline (nothing to restore)
 # ==============================================================================
-def test_pipeline_with_xgboost_unwraps_and_restores_last_step():
+def test_pipeline_is_not_modified():
     """
-    Test that when the estimator is a Pipeline, the last step is unwrapped
-    and its params are restored correctly.
+    Test that, when the estimator is a Pipeline, the params of its last step
+    are not modified: native categorical features are not configured inside a
+    Pipeline, so `_get_estimator_categorical_set_params` captures nothing and
+    there is nothing to restore.
     """
     pipe = Pipeline([('scaler', StandardScaler()), ('model', XGBRegressor())])
     forecaster = ForecasterRecursive(estimator=pipe, lags=2)
-
-    # Set the initial state on the deep-copied pipeline's last step.
     forecaster.estimator[-1].set_params(
         feature_types=['q', 'c', 'q'], enable_categorical=True
     )
-    snapshot = {'feature_types': ['q', 'c', 'q'], 'enable_categorical': True}
+    snapshot = _get_estimator_categorical_set_params(forecaster)
 
-    # Overwrite with a larger feature_types list.
+    # The user changes the params of the last step after the snapshot.
     forecaster.estimator[-1].set_params(
-        feature_types=['c', 'q', 'c', 'q', 'c', 'q', 'q'], enable_categorical=True
+        feature_types=['c', 'q', 'c', 'q', 'c', 'q', 'q']
     )
 
     _restore_estimator_categorical_set_params(forecaster, params=snapshot)
 
-    assert forecaster.estimator[-1].get_params()['feature_types'] == ['q', 'c', 'q']
+    assert snapshot == {}
+    assert forecaster.estimator[-1].get_params()['feature_types'] == [
+        'c', 'q', 'c', 'q', 'c', 'q', 'q'
+    ]
     assert forecaster.estimator[-1].get_params()['enable_categorical'] is True
 
 

@@ -7,8 +7,10 @@ import pandas as pd
 from catboost import CatBoostClassifier
 from lightgbm import LGBMClassifier
 from xgboost import XGBClassifier
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from skforecast.exceptions import MissingValuesWarning
 from skforecast.preprocessing import RollingFeaturesClassification
@@ -411,6 +413,156 @@ def test_fit_no_categoricals_with_supported_estimators(estimator):
 
     assert forecaster.is_fitted
     assert forecaster.categorical_features_names_in_ is None
+
+
+@pytest.mark.parametrize(
+    "estimator, check_fn",
+    [
+        (
+            CatBoostClassifier(
+                iterations=10, random_seed=123, verbose=0,
+                allow_writing_files=False
+            ),
+            lambda model: model.get_cat_feature_indices() == []
+        ),
+        (
+            LGBMClassifier(verbose=-1, random_state=123),
+            lambda model: model.booster_.params.get('categorical_column') is None
+        ),
+        (
+            XGBClassifier(random_state=123),
+            lambda model: model.get_params()['feature_types'] is None
+        ),
+        (
+            HistGradientBoostingClassifier(random_state=123),
+            lambda model: (
+                model.get_params()['categorical_features'] == 'from_dtype'
+                and model.is_categorical_ is None
+            )
+        ),
+    ],
+    ids=['CatBoostClassifier', 'LGBMClassifier', 'XGBClassifier',
+         'HistGradientBoostingClassifier']
+)
+def test_fit_does_not_configure_categorical_features_when_estimator_is_Pipeline(
+    estimator, check_fn
+):
+    """
+    Test that fit does not configure native categorical features when the
+    estimator is a Pipeline, whatever its last step is (CatBoostClassifier,
+    LGBMClassifier, XGBClassifier, HistGradientBoostingClassifier): the
+    previous steps may transform the columns, so the lags and the categorical
+    exogenous variable reach the last step with their ordinal encoding, as
+    numeric columns, and `use_native_categoricals` is False.
+    """
+    y_cat = pd.Series(
+        np.array(
+            [2, 1, 3, 2, 2, 1, 2, 2, 1, 1, 2, 3, 2, 2, 2, 3, 1, 3, 3, 2],
+            dtype=int
+        ),
+        name='y'
+    )
+    exog_cat = pd.DataFrame({
+        'exog_num': np.arange(100, 120, dtype=float),
+        'exog_cat': pd.Categorical(['a', 'b'] * 10)
+    })
+
+    forecaster = ForecasterRecursiveClassifier(
+        estimator=make_pipeline(StandardScaler(), estimator),
+        lags=3,
+        categorical_features='auto'
+    )
+    forecaster.fit(y=y_cat, exog=exog_cat)
+
+    assert forecaster.is_fitted
+    assert forecaster.use_native_categoricals is False
+    assert forecaster.categorical_features_names_in_ == ['exog_cat']
+    assert 'exog_cat' in forecaster.X_train_features_names_out_
+    assert check_fn(forecaster.estimator[-1])
+
+    # fit_kwargs must not be mutated
+    assert forecaster.fit_kwargs == {}
+
+
+@pytest.mark.parametrize(
+    "estimator, get_model, expected_data",
+    [
+        (
+            CalibratedClassifierCV(
+                estimator=make_pipeline(
+                    StandardScaler(),
+                    LGBMClassifier(
+                        n_estimators=10, min_child_samples=2,
+                        random_state=123, verbose=-1
+                    )
+                ),
+                cv=2
+            ),
+            lambda estimator: estimator.calibrated_classifiers_[0].estimator[-1],
+            np.array([2, 2, 2])
+        ),
+        (
+            make_pipeline(
+                StandardScaler(),
+                CalibratedClassifierCV(
+                    estimator=LGBMClassifier(
+                        n_estimators=10, min_child_samples=2,
+                        random_state=123, verbose=-1
+                    ),
+                    cv=2
+                )
+            ),
+            lambda estimator: estimator[-1].calibrated_classifiers_[0].estimator,
+            np.array([2, 3, 3])
+        ),
+    ],
+    ids=['CalibratedClassifierCV(Pipeline)', 'Pipeline(CalibratedClassifierCV)']
+)
+def test_fit_and_predict_when_Pipeline_nested_with_CalibratedClassifierCV(
+    estimator, get_model, expected_data
+):
+    """
+    Test that fit and predict work when a Pipeline and a
+    CalibratedClassifierCV are nested, in both orders, around LGBMClassifier
+    and there is a categorical feature. Native categorical features are not
+    configured, so `use_native_categoricals` is False, no argument reaches the
+    `fit` of the Pipeline, and the lags and the categorical feature are passed
+    with their ordinal encoding.
+    """
+    y_cat = pd.Series(
+        np.array(
+            [2, 1, 3, 2, 2, 1, 2, 2, 1, 1, 2, 3, 2, 2, 2, 3, 1, 3, 3, 2] * 2,
+            dtype=int
+        ),
+        name='y'
+    )
+    exog_cat = pd.DataFrame({
+        'exog_num': np.arange(100, 140, dtype=float),
+        'exog_cat': pd.Categorical(['a', 'b'] * 20)
+    })
+    exog_predict = pd.DataFrame(
+        {'exog_num': np.arange(140, 143, dtype=float),
+         'exog_cat': pd.Categorical(['a', 'b', 'a'], categories=['a', 'b'])},
+        index=pd.RangeIndex(start=40, stop=43, step=1)
+    )
+
+    forecaster = ForecasterRecursiveClassifier(
+        estimator=estimator, lags=3, categorical_features='auto'
+    )
+    forecaster.fit(y=y_cat, exog=exog_cat)
+    predictions = forecaster.predict(steps=3, exog=exog_predict)
+
+    model = get_model(forecaster.estimator)
+    assert forecaster.use_native_categoricals is False
+    assert model.booster_.params.get('categorical_column') is None
+
+    expected = pd.Series(
+                   data  = expected_data,
+                   index = pd.RangeIndex(start=40, stop=43, step=1),
+                   name  = 'pred'
+               )
+
+    pd.testing.assert_series_equal(predictions, expected)
 
 
 def test_fit_with_interspersed_NaN_and_dropna_from_series_True():

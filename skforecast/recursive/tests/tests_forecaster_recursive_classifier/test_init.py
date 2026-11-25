@@ -4,7 +4,8 @@ import re
 import pytest
 import numpy as np
 from lightgbm import LGBMClassifier
-from sklearn.preprocessing import OrdinalEncoder
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import OrdinalEncoder, StandardScaler
 from sklearn.linear_model import LogisticRegression
 from skforecast.preprocessing import RollingFeaturesClassification
 from skforecast.recursive import ForecasterRecursiveClassifier
@@ -44,6 +45,29 @@ def test_init_ValueError_when_estimator_does_not_support_categorical_features():
         )
 
 
+def test_init_ValueError_when_features_encoding_categorical_and_estimator_is_Pipeline():
+    """
+    Test ValueError is raised when `features_encoding='categorical'` and the
+    estimator is a Pipeline, even if its last step supports categorical
+    features natively: they are not configured inside a Pipeline.
+    """
+    err_msg = re.escape(
+        "`features_encoding='categorical'` requires a estimator that "
+        "supports native categorical features (LightGBM, CatBoost, XGBoost). "
+        "Got Pipeline. Native categorical features are not configured when the "
+        "estimator is a Pipeline, since its previous steps may transform the "
+        "columns. Use 'auto' or 'ordinal' instead."
+    )
+    with pytest.raises(ValueError, match = err_msg):
+        ForecasterRecursiveClassifier(
+            estimator         = make_pipeline(
+                                    StandardScaler(), LGBMClassifier(verbose=-1)
+                                ),
+            lags              = 3,
+            features_encoding = 'categorical'
+        )
+
+
 def test_init_ValueError_when_no_lags_or_window_features():
     """
     Test ValueError is raised when no lags or window_features are passed.
@@ -64,8 +88,11 @@ def test_init_ValueError_when_no_lags_or_window_features():
 @pytest.mark.parametrize("features_encoding, estimator, expected", 
                          [('auto', LogisticRegression(), False), 
                           ('auto', LGBMClassifier(verbose=-1), True), 
-                          ('categorical', LGBMClassifier(verbose=-1), True), 
-                          ('ordinal', LGBMClassifier(verbose=-1), False)], 
+                          ('categorical', LGBMClassifier(verbose=-1), True),
+                          ('ordinal', LGBMClassifier(verbose=-1), False),
+                          ('auto',
+                           make_pipeline(StandardScaler(), LGBMClassifier(verbose=-1)),
+                           False)],
                          ids = lambda dt: f'features_encoding, estimator, expected: {dt}')
 def test_init_use_native_categoricals_set(features_encoding, estimator, expected):
     """

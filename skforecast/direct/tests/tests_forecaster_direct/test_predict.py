@@ -631,6 +631,71 @@ def test_predict_output_when_categorical_features_LGBMRegressor_auto(categorical
     pd.testing.assert_series_equal(predictions_2, expected)
 
 
+@pytest.mark.parametrize(
+    'categorical_features',
+    ['auto', ['exog_2', 'exog_3']],
+    ids=lambda cf: f'categorical_features: {cf}'
+)
+def test_predict_output_when_categorical_features_and_estimator_is_Pipeline(categorical_features):
+    """
+    Test predict output when the estimator is a Pipeline whose last step is
+    LGBMRegressor and there are categorical variables. Native categorical
+    features are not configured inside a Pipeline, so the predictions are the
+    same as the ones obtained when the categorical variables are passed already
+    encoded as numeric columns.
+    """
+    df_exog = pd.DataFrame(
+        {'exog_1': exog_categorical,
+         'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
+         'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)}
+    )
+    df_exog_encoded = pd.DataFrame(
+        {'exog_1': exog_categorical,
+         'exog_2': [0., 1., 2., 3., 4.] * 10,
+         'exog_3': [0., 1., 2., 3., 4.] * 10}
+    )
+
+    exog_predict = df_exog.copy()
+    exog_predict.index = pd.RangeIndex(start=50, stop=100)
+    exog_predict_encoded = df_exog_encoded.copy()
+    exog_predict_encoded.index = pd.RangeIndex(start=50, stop=100)
+
+    forecaster = ForecasterDirect(
+                     estimator            = make_pipeline(
+                                                StandardScaler(),
+                                                LGBMRegressor(random_state=123, verbose=-1)
+                                            ),
+                     lags                 = 5,
+                     steps                = 10,
+                     categorical_features = None
+                 )
+    forecaster.fit(y=y_categorical, exog=df_exog_encoded)
+    predictions = forecaster.predict(steps=10, exog=exog_predict_encoded)
+
+    forecaster_2 = ForecasterDirect(
+                       estimator            = make_pipeline(
+                                                  StandardScaler(),
+                                                  LGBMRegressor(random_state=123, verbose=-1)
+                                              ),
+                       lags                 = 5,
+                       steps                = 10,
+                       categorical_features = categorical_features
+                   )
+    forecaster_2.fit(y=y_categorical, exog=df_exog)
+    predictions_2 = forecaster_2.predict(steps=10, exog=exog_predict)
+
+    expected = pd.Series(
+                   data = np.array([0.5013105907, 0.4927692556, 0.4743392908, 0.4668391937,
+                                    0.4775441175, 0.4736090578, 0.4774939528, 0.4846192327,
+                                    0.4868668129, 0.5022339417]),
+                   index = pd.RangeIndex(start=50, stop=60, step=1),
+                   name = 'pred'
+               )
+
+    pd.testing.assert_series_equal(predictions, expected)
+    pd.testing.assert_series_equal(predictions_2, expected)
+
+
 def test_predict_output_when_with_exog_and_differentiation_is_1_steps_1():
     """
     Test predict output when using LinearRegression as estimator and 

@@ -1314,6 +1314,76 @@ def test_fit_no_categoricals_with_supported_estimators(estimator):
 
 
 @pytest.mark.parametrize(
+    "estimator, check_fn",
+    [
+        (
+            CatBoostRegressor(
+                iterations=10, random_seed=123, verbose=0,
+                allow_writing_files=False
+            ),
+            lambda model: model.get_cat_feature_indices() == []
+        ),
+        (
+            LGBMRegressor(verbose=-1, random_state=123),
+            lambda model: (
+                model.booster_.params.get('categorical_column') is None
+                and model.booster_.pandas_categorical is None
+            )
+        ),
+        (
+            XGBRegressor(random_state=123),
+            lambda model: model.get_params()['feature_types'] is None
+        ),
+        (
+            HistGradientBoostingRegressor(random_state=123),
+            lambda model: (
+                model.get_params()['categorical_features'] == 'from_dtype'
+                and model.is_categorical_ is None
+            )
+        ),
+    ],
+    ids=['CatBoostRegressor', 'LGBMRegressor', 'XGBRegressor', 'HistGradientBoostingRegressor']
+)
+def test_fit_does_not_configure_categorical_features_when_estimator_is_Pipeline(
+    estimator, check_fn
+):
+    """
+    Test that fit does not configure native categorical features when the
+    estimator is a Pipeline, whatever its last step is (CatBoostRegressor,
+    LGBMRegressor, XGBRegressor, HistGradientBoostingRegressor): the previous
+    steps may transform the columns, so the categorical exogenous variable and
+    the series identifier of `encoding='ordinal_category'` reach the last step
+    with their ordinal encoding, as numeric columns.
+    """
+    series = {
+        'l1': pd.Series(np.arange(20, dtype=float)),
+        'l2': pd.Series(np.arange(20, dtype=float))
+    }
+    exog = pd.DataFrame({
+        'exog_num': np.arange(100, 120, dtype=float),
+        'exog_cat': pd.Categorical(['a', 'b'] * 10)
+    })
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=make_pipeline(StandardScaler(), estimator),
+        lags=3,
+        encoding='ordinal_category',
+        transformer_series=None,
+        categorical_features='auto'
+    )
+    forecaster.fit(series=series, exog=exog, suppress_warnings=True)
+
+    assert forecaster.is_fitted
+    assert forecaster.categorical_features_names_in_ == ['exog_cat']
+    assert 'exog_cat' in forecaster.X_train_features_names_out_
+    assert '_level_skforecast' in forecaster.X_train_features_names_out_
+    assert check_fn(forecaster.estimator[-1])
+
+    # fit_kwargs must not be mutated
+    assert forecaster.fit_kwargs == {}
+
+
+@pytest.mark.parametrize(
     "exog_format",
     ['wide', 'dict'],
     ids=lambda exog_format: f'exog_format: {exog_format}'
