@@ -1,0 +1,139 @@
+BUG-catboost-refit-categorical: medida con datos reales (sesión del 2026-11-25)
+===============================================================================
+
+Salida de compare.py con los dos entornos (pandas 2.3.3 y 3.1.1), sobre el código de
+0.28.x en ac8377174 (preds_pandas2 y preds_pandas3) y sobre la 0.27.0 instalada
+(preds_pandas2_v0270). Python 3.13.18, numpy 2.5.5, scikit-learn 1.9.1, CatBoost 1.2.10,
+joblib 1.6.0, Windows 11. CatBoost con 100 iteraciones y thread_count=4, salvo el caso
+default1000 (1.000 iteraciones, 4 folds) y bt_auto (thread_count=1).
+
+Cómo leerlo: 'ref' es el backtesting con refit clonando el estimador antes de cada fit
+(un objeto CatBoost nuevo en cada fold); 'bt1', 'bt2' y 'bt_auto' son el backtesting con
+refit tal cual, con n_jobs=1, 2 y 'auto'. Las demás variantes, en run_variant.py.
+'identical folds 2/8 ==xxxxxx' marca cada fold: '=' idéntico a la referencia, 'x' distinto.
+Los tiempos no son una medida de rendimiento: seis tandas corrían a la vez.
+
+BLOCKED: la ejecución no terminó. Las de 'stopped from outside' se cortaron a los 600 s
+(en secuencial tardan de 50 a 160 s), con los procesos de trabajo consumiendo CPU.
+FAILED (bikeS_guide_fixed_default1000, bt2): joblib TerminatedWorkerError, un proceso de
+trabajo murió.
+
+python 3.13.18 | numpy 2.5.5 | pandas 2.3.3
+
+===== preds_pandas2 =====
+
+bikeL_calendar_fixed  (folds 8, points 1344, mean |y| 279.9)
+  ref             MAE   125.2658  (    97 s)
+  bt1             MAE   119.5509  (    91 s)  vs ref: mean |diff| 20.0102, max 335.4962, MAE ratio 0.954, identical folds 2/8 ==xxxxxx
+  bt2             BLOCKED (stopped from outside after 786 s)
+  prefit1         MAE   119.5509  (   148 s)  vs ref: mean |diff| 20.0102, max 335.4962, MAE ratio 0.954, identical folds 2/8 ==xxxxxx
+
+bikeS_calendar_expanding  (folds 14, points 336, mean |y| 284.8)
+  ref             MAE    60.2280  (   134 s)
+  bt1             MAE    57.3111  (   122 s)  vs ref: mean |diff| 11.1318, max 192.0417, MAE ratio 0.952, identical folds 8/14 =x==x===x=xxx=
+  bt2             BLOCKED (stopped from outside after 605 s)
+
+bikeS_calendar_fixed  (folds 14, points 336, mean |y| 284.8)
+  ref             MAE    61.1361  (   159 s)
+  manual          MAE    61.1361  (   140 s)  identical to ref
+  bt1             MAE    68.1372  (   136 s)  vs ref: mean |diff| 17.4606, max 256.1818, MAE ratio 1.115, identical folds 4/14 ====xxxxxxxxxx
+  bt2             BLOCKED (stopped from outside after 612 s)
+  prefit1         MAE    68.1372  (   192 s)  vs ref: mean |diff| 17.4606, max 256.1818, MAE ratio 1.115, identical folds 4/14 ====xxxxxxxxxx
+  ref_s7          MAE    54.4783  (   162 s)  vs ref: mean |diff| 55.4452, max 346.8792, MAE ratio 0.891
+  norefit         MAE    71.6955  (    20 s)
+  prefit_norefit  MAE    71.6955  (    36 s)  identical to norefit
+  oh_ref          MAE    65.6130  (    24 s)  vs ref: mean |diff| 62.2030, max 351.3999, MAE ratio 1.073
+  oh_bt1          MAE    65.6130  (    64 s)  identical to oh_ref
+
+bikeS_guide_expanding  (folds 14, points 336, mean |y| 284.8)
+  ref             MAE    60.0428  (   163 s)
+  bt1             MAE    58.9041  (   115 s)  vs ref: mean |diff| 3.6526, max 106.0390, MAE ratio 0.981, identical folds 7/14 =x======xxxxxx
+  bt2             BLOCKED (stopped from outside after 623 s)
+
+bikeS_guide_fixed  (folds 14, points 336, mean |y| 284.8)
+  ref             MAE    68.0954  (   158 s)
+  manual          MAE    68.0954  (   140 s)  identical to ref
+  bt1             MAE    68.3679  (   135 s)  vs ref: mean |diff| 8.2491, max 138.9162, MAE ratio 1.004, identical folds 6/14 =====x=xxxxxxx
+  bt2             BLOCKED (stopped from outside after 614 s)
+  bt_auto         BLOCKED (time limit of the driver, 601 s)
+  prefit1         MAE    68.3679  (   190 s)  vs ref: mean |diff| 8.2491, max 138.9162, MAE ratio 1.004, identical folds 6/14 =====x=xxxxxxx
+  ref_s7          MAE    71.5197  (   161 s)  vs ref: mean |diff| 54.1510, max 334.9744, MAE ratio 1.050
+  norefit         MAE    70.8039  (    22 s)
+  prefit_norefit  MAE    70.8039  (    52 s)  identical to norefit
+
+bikeS_guide_fixed_default1000  (folds 4, points 96, mean |y| 300.4)
+  ref             MAE    36.2086  (   408 s)
+  bt1             MAE    34.3207  (   657 s)  vs ref: mean |diff| 3.8088, max 41.7512, MAE ratio 0.948, identical folds 1/4 =xxx
+  bt2             FAILED (error 1 after 246 s, see its log)
+
+store_ordcat_exog_fixed  (folds 8, points 560, mean |y| 17.9)
+  ref             MAE     3.4229  (    94 s)
+  bt1             MAE     3.4969  (    89 s)  vs ref: mean |diff| 0.5969, max 3.8947, MAE ratio 1.022, identical folds 2/8 =x=xxxxx
+  bt2             BLOCKED (stopped from outside after 791 s)
+  prefit1         MAE     3.4969  (   145 s)  vs ref: mean |diff| 0.5969, max 3.8947, MAE ratio 1.022, identical folds 2/8 =x=xxxxx
+  ref_s7          MAE     3.4249  (    99 s)  vs ref: mean |diff| 1.0127, max 4.4210, MAE ratio 1.001
+  norefit         MAE     3.4676  (    17 s)
+  prefit_norefit  MAE     3.4676  (    27 s)  identical to norefit
+
+store_ordcat_noexog_fixed  (folds 8, points 560, mean |y| 17.9)
+  ref             MAE     3.7397  (    50 s)
+  bt1             MAE     3.7387  (    50 s)  vs ref: mean |diff| 0.0121, max 1.1543, MAE ratio 1.000, identical folds 5/8 =====xxx
+  bt2             BLOCKED (stopped from outside after 606 s)
+
+store_ordinal_exog_fixed  (folds 8, points 560, mean |y| 17.9)
+  ref             MAE     3.4098  (    90 s)
+  bt1             MAE     3.4672  (   102 s)  vs ref: mean |diff| 0.6963, max 5.9742, MAE ratio 1.017, identical folds 2/8 =x=xxxxx
+  bt2             BLOCKED (stopped from outside after 602 s)
+  oh_ref          MAE     3.5191  (     5 s)  vs ref: mean |diff| 1.2252, max 5.8192, MAE ratio 1.032
+  oh_bt1          MAE     3.5191  (     5 s)  identical to oh_ref
+
+vic_calendar_fixed  (folds 8, points 1344, mean |y| 4844.1)
+  ref             MAE   442.4551  (   102 s)
+  bt1             MAE   457.8529  (    96 s)  vs ref: mean |diff| 83.4867, max 1491.1012, MAE ratio 1.035, identical folds 1/8 =xxxxxxx
+  bt2             BLOCKED (stopped from outside after 606 s)
+  prefit1         MAE   457.8529  (    72 s)  vs ref: mean |diff| 83.4867, max 1491.1012, MAE ratio 1.035, identical folds 1/8 =xxxxxxx
+
+===== preds_pandas2_v0270 =====
+
+bikeS_guide_fixed  (folds 14, points 336, mean |y| 284.8)
+  ref             MAE    68.0954  (   120 s)
+  bt1             MAE    68.3679  (    92 s)  vs ref: mean |diff| 8.2491, max 138.9162, MAE ratio 1.004, identical folds 6/14 =====x=xxxxxxx
+  bt2             BLOCKED (time limit of the driver, 601 s)
+  bt_auto         BLOCKED (time limit of the driver, 601 s)
+
+python 3.13.18 | numpy 2.5.5 | pandas 3.1.1
+
+===== preds_pandas3 =====
+
+bikeS_calendar_fixed  (folds 14, points 336, mean |y| 284.8)
+  ref             MAE    61.1361  (   159 s)
+  bt1             MAE    68.1372  (   140 s)  vs ref: mean |diff| 17.4606, max 256.1818, MAE ratio 1.115, identical folds 4/14 ====xxxxxxxxxx
+  bt2             BLOCKED (stopped from outside after 675 s)
+
+store_ordcat_exog_fixed  (folds 8, points 560, mean |y| 17.9)
+  ref             MAE     3.4229  (   132 s)
+  bt1             MAE     3.4969  (    98 s)  vs ref: mean |diff| 0.5969, max 3.8947, MAE ratio 1.022, identical folds 2/8 =x=xxxxx
+  bt2             BLOCKED (stopped from outside after 623 s)
+
+
+Ejecuciones cortadas desde fuera (segundos de CPU de los dos procesos de trabajo)
+---------------------------------------------------------------------------------
+p2 store_ordcat_exog_fixed bt2 killed after 791 s; cpu seconds of the workers: 440, 637
+p2 bikeL_calendar_fixed bt2 killed after 786 s; cpu seconds of the workers: 634, 438
+p3 bikeS_calendar_fixed bt2 killed after 675 s; cpu seconds of the workers: 331, 527
+p2 bikeS_guide_fixed bt2 killed after 614 s; cpu seconds of the workers: 444, 226
+p2 bikeS_calendar_fixed bt2 killed after 612 s; cpu seconds of the workers: 224, 436
+p3 store_ordcat_exog_fixed bt2 killed after 623 s; cpu seconds of the workers: 560, 573
+p2 vic_calendar_fixed bt2 killed after 606 s; cpu seconds of the workers: 560, 570
+p2 store_ordinal_exog_fixed bt2 killed after 602 s; cpu seconds of the workers: 568, 569
+p2 bikeS_guide_expanding bt2 killed after 623 s; cpu seconds of the workers: 618, 612
+p2 bikeS_calendar_expanding bt2 killed after 605 s; cpu seconds of the workers: 590, 589
+p2 store_ordcat_noexog_fixed bt2 killed after 606 s; cpu seconds of the workers: 590, 589
+
+Otras comprobaciones de la sesión
+---------------------------------
+saveload_refit.py (ajustar, guardar, cargar, reajustar con los datos desplazados una
+semana y predecir): 'same' y 'saveload', con 'recursive' y 'multi': las cuatro terminan
+e idénticas a un forecaster nuevo (max abs diff 0.0).
+../catboost_copy_refit_hang.py (CatBoost solo, 300 a 1.500 filas sintéticas): sus
+resultados están en su docstring.
