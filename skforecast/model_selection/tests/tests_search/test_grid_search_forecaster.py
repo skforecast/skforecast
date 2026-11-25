@@ -11,9 +11,11 @@ from sklearn.metrics import r2_score, zero_one_loss
 from skforecast.metrics import mean_absolute_scaled_error
 from skforecast.metrics import root_mean_squared_scaled_error
 from sklearn.linear_model import Ridge, LogisticRegression
+from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.tree import DecisionTreeRegressor
+from lightgbm import LGBMRegressor
 from skforecast.recursive import ForecasterRecursive, ForecasterRecursiveClassifier
 from skforecast.direct import ForecasterDirect
 from skforecast.model_selection import backtesting_forecaster
@@ -605,3 +607,73 @@ def test_grid_search_forecaster_skipped_candidates_warning_explains_joblib_temp_
 
     assert results.empty
     assert skipped_warnings == [expected_warning]
+
+
+@pytest.mark.parametrize(
+    "forecaster_class, forecaster_kwargs",
+    [(ForecasterRecursive, {}), (ForecasterDirect, {'steps': 1})],
+    ids=['ForecasterRecursive', 'ForecasterDirect']
+)
+def test_output_grid_search_forecaster_OneStepAheadFold_when_Pipeline_and_categorical_features(
+    forecaster_class, forecaster_kwargs
+):
+    """
+    Test output of grid_search_forecaster with OneStepAheadFold when the
+    estimator is a Pipeline whose last step is LGBMRegressor and exog has a
+    categorical feature. Native categorical features are not configured inside
+    a Pipeline, so the categorical feature is passed with its ordinal encoding
+    and every candidate is fitted.
+    """
+    exog_cat = pd.DataFrame(
+        {'exog_cat': pd.Categorical(['f', 'g', 'h', 'g', 'f'] * 10)},
+        index=y.index
+    )
+    forecaster = forecaster_class(
+        estimator = make_pipeline(
+                        StandardScaler(),
+                        LGBMRegressor(
+                            n_estimators=10, min_child_samples=5,
+                            random_state=123, verbose=-1
+                        )
+                    ),
+        lags      = 3,
+        **forecaster_kwargs
+    )
+    cv = OneStepAheadFold(initial_train_size=35)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        results = grid_search_forecaster(
+            forecaster    = forecaster,
+            y             = y,
+            exog          = exog_cat,
+            cv            = cv,
+            param_grid    = {'lgbmregressor__max_depth': [2, 3]},
+            lags_grid     = [3, 5],
+            metric        = 'mean_absolute_error',
+            return_best   = False,
+            verbose       = False,
+            show_progress = False
+        )
+
+    expected_results = pd.DataFrame(
+        {
+            "lags": [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3], [1, 2, 3]],
+            "lags_label": [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3], [1, 2, 3]],
+            "params": [
+                {'lgbmregressor__max_depth': 2},
+                {'lgbmregressor__max_depth': 3},
+                {'lgbmregressor__max_depth': 3},
+                {'lgbmregressor__max_depth': 2},
+            ],
+            "mean_absolute_error": np.array(
+                [0.24459521888516955, 0.2500074458080383,
+                 0.2528821701513807, 0.2536187343223046]
+            ),
+            "lgbmregressor__max_depth": np.array([2, 3, 3, 2]),
+        },
+        index=pd.RangeIndex(start=0, stop=4, step=1),
+    )
+    expected_results.insert(4, 'n_evaluated', [15] * 4)
+
+    pd.testing.assert_frame_equal(results, expected_results)

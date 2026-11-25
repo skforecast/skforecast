@@ -639,11 +639,18 @@ def configure_estimator_categorical_features(
     CatBoostRegressor/CatBoostClassifier, XGBRegressor/XGBClassifier,
     HistGradientBoostingRegressor/HistGradientBoostingClassifier (sklearn).
 
+    If the estimator is a Pipeline, nothing is configured: `fit_kwargs` is
+    returned unchanged and the params of its steps are neither set nor reset.
+    The previous steps may transform, reorder or drop the columns, so the
+    column indices and the ordinal codes of the categorical features are not
+    guaranteed to reach the last step. The categorical features are passed
+    with their ordinal encoding, as for any other estimator.
+
     Parameters
     ----------
     estimator : object
-        Estimator object. If the estimator is a Pipeline, the last step is
-        used.
+        Estimator object. If the estimator is a Pipeline, native categorical
+        features are not configured.
     categorical_features_names_in_ : list, None
         Names of the categorical features. If `None` or empty, any previously
         set categorical configuration on the estimator is reset.
@@ -662,7 +669,7 @@ def configure_estimator_categorical_features(
     """
 
     if isinstance(estimator, Pipeline):
-        estimator = estimator[-1]
+        return fit_kwargs
 
     estimator_name = type(estimator).__name__
     module = type(estimator).__module__.split('.')[0]
@@ -761,8 +768,10 @@ def cast_catboost_categorical_columns(
     `-1` before casting. `-1` cannot collide with the encoder's output range
     (`0..n-1`) and is treated by CatBoost as a novel category.
 
-    No-op if `cat_features` is not in `fit_kwargs` or the estimator (or the
-    last step of a Pipeline) is not a CatBoost model.
+    No-op if `cat_features` is not in `fit_kwargs` or the estimator is not a
+    CatBoost model. A Pipeline is never cast, also when its last step is
+    CatBoost, since `configure_estimator_categorical_features` does not
+    configure native categorical features inside a Pipeline.
 
     Parameters
     ----------
@@ -774,7 +783,7 @@ def cast_catboost_categorical_columns(
         `'cat_features'` (a list of int indices) for the cast to run.
     estimator : object
         Estimator the matrix will be passed to. The cast only runs if this
-        is a CatBoost estimator (or a `Pipeline` whose last step is).
+        is a CatBoost estimator.
 
     Returns
     -------
@@ -787,10 +796,7 @@ def cast_catboost_categorical_columns(
     if 'cat_features' not in fit_kwargs:
         return X
 
-    target_estimator = estimator
-    if isinstance(target_estimator, Pipeline):
-        target_estimator = target_estimator[-1]
-    if type(target_estimator).__module__.split('.')[0] != 'catboost':
+    if type(estimator).__module__.split('.')[0] != 'catboost':
         return X
 
     cat_idx = np.asarray(fit_kwargs['cat_features'])
@@ -815,8 +821,10 @@ def cast_catboost_categorical_columns_dataframe(
     * `pandas.Categorical` — converted via `.cat.codes` (NaN -> -1 by default).
     * float (with NaN from the `OrdinalEncoder`) — `fillna(-1).astype(int)`.
 
-    No-op if `cat_features` is not in `fit_kwargs` or the estimator (or the
-    last step of a Pipeline) is not a CatBoost model.
+    No-op if `cat_features` is not in `fit_kwargs` or the estimator is not a
+    CatBoost model. A Pipeline is never cast, also when its last step is
+    CatBoost, since `configure_estimator_categorical_features` does not
+    configure native categorical features inside a Pipeline.
 
     Parameters
     ----------
@@ -827,7 +835,7 @@ def cast_catboost_categorical_columns_dataframe(
         `'cat_features'` (a list of int indices) for the cast to run.
     estimator : object
         Estimator the matrix will be passed to. The cast only runs if this
-        is a CatBoost estimator (or a `Pipeline` whose last step is).
+        is a CatBoost estimator.
     feature_names : list of str
         Column names of `X` in positional order; used to translate the
         integer indices in `fit_kwargs['cat_features']` to column labels.
@@ -843,10 +851,7 @@ def cast_catboost_categorical_columns_dataframe(
     if 'cat_features' not in fit_kwargs:
         return X
 
-    target_estimator = estimator
-    if isinstance(target_estimator, Pipeline):
-        target_estimator = target_estimator[-1]
-    if type(target_estimator).__module__.split('.')[0] != 'catboost':
+    if type(estimator).__module__.split('.')[0] != 'catboost':
         return X
 
     X = X.copy()
@@ -967,8 +972,10 @@ def _get_estimator_categorical_set_params(
     """
     Return the current values of the estimator-level params that
     `configure_estimator_categorical_features` sets via `set_params` for
-    XGBoost and HistGradientBoosting estimators.  For all other estimators an
-    empty dict is returned so callers can treat this as a no-op.
+    XGBoost and HistGradientBoosting estimators.  For all other estimators,
+    including a Pipeline whose last step is one of them (nothing is configured
+    inside a Pipeline), an empty dict is returned so callers can treat this as
+    a no-op.
 
     The function selects the estimator object that is actually mutated by
     `configure_estimator_categorical_features`:
@@ -995,9 +1002,6 @@ def _get_estimator_categorical_set_params(
     else:
         estimator = forecaster.estimator
 
-    if isinstance(estimator, Pipeline):
-        estimator = estimator[-1]
-
     module = type(estimator).__module__.split('.')[0]
     estimator_name = type(estimator).__name__
 
@@ -1022,7 +1026,8 @@ def _restore_estimator_categorical_set_params(
 ) -> None:
     """
     Restore the estimator-level params previously captured by
-    `_get_estimator_categorical_set_params`.  No-op when `params` is empty.
+    `_get_estimator_categorical_set_params`.  No-op when `params` is empty,
+    which is always the case when the estimator is a Pipeline.
 
     Parameters
     ----------
@@ -1040,9 +1045,6 @@ def _restore_estimator_categorical_set_params(
         estimator = forecaster.estimators_[1]
     else:
         estimator = forecaster.estimator
-
-    if isinstance(estimator, Pipeline):
-        estimator = estimator[-1]
 
     estimator.set_params(**params)
 

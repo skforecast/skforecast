@@ -7,6 +7,7 @@ from joblib import Parallel, cpu_count
 import os
 import numpy as np
 import pandas as pd
+from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestRegressor, HistGradientBoostingRegressor
 from sklearn.tree import DecisionTreeRegressor
@@ -1574,6 +1575,89 @@ def test_bayesian_search_forecaster_xgboost_categorical_no_ValueError_on_cache_h
     pd.testing.assert_frame_equal(
         results.drop(columns=['trial_number']), expected_results, atol=1e-4
     )
+
+
+@pytest.mark.parametrize(
+    "model, param_name, categorical_param, expected_param, expected_metric",
+    [
+        (
+            XGBRegressor(n_estimators=10, random_state=123, verbosity=0),
+            'xgbregressor__n_estimators',
+            'feature_types',
+            None,
+            [0.2531033019, 0.2531033019, 0.2602298796,
+             0.2602298796, 0.2702176203, 0.3187309939]
+        ),
+        (
+            HistGradientBoostingRegressor(
+                max_iter=10, min_samples_leaf=3, random_state=123
+            ),
+            'histgradientboostingregressor__max_iter',
+            'categorical_features',
+            'from_dtype',
+            [0.2399583849, 0.2399583849, 0.2453077593,
+             0.2461604064, 0.2461604064, 0.2742500290]
+        ),
+    ],
+    ids=['XGBRegressor', 'HistGradientBoostingRegressor']
+)
+def test_bayesian_search_forecaster_OneStepAheadFold_when_Pipeline_and_categorical_features(
+    model, param_name, categorical_param, expected_param, expected_metric
+):
+    """
+    Test output of bayesian_search_forecaster with OneStepAheadFold when the
+    estimator is a Pipeline whose last step is XGBRegressor or
+    HistGradientBoostingRegressor, exog has a categorical feature and the
+    search space includes several lags (cached splits). Native categorical
+    features are not configured inside a Pipeline, so no param of its last
+    step is captured, restored or modified: every trial is evaluated, with
+    the same results as when the categorical feature is passed already
+    encoded as a numeric column.
+    """
+    exog_cat = pd.DataFrame(
+        {'exog_cat': pd.Categorical(['f', 'g', 'h', 'g', 'f'] * 10)},
+        index=y.index
+    )
+    exog_encoded = pd.DataFrame(
+        {'exog_cat': [0., 1., 2., 1., 0.] * 10}, index=y.index
+    )
+
+    def search_space(trial):
+        return {
+            'lags': trial.suggest_categorical('lags', [3, 5]),
+            param_name: trial.suggest_int(param_name, 5, 10),
+        }
+
+    results = {}
+    for key, exog_search in [('categorical', exog_cat), ('encoded', exog_encoded)]:
+        forecaster = ForecasterRecursive(
+            estimator = make_pipeline(StandardScaler(), model),
+            lags      = 3
+        )
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            results[key], _ = bayesian_search_forecaster(
+                forecaster    = forecaster,
+                y             = y,
+                exog          = exog_search,
+                cv            = OneStepAheadFold(initial_train_size=35),
+                search_space  = search_space,
+                metric        = 'mean_absolute_error',
+                n_trials      = 6,
+                random_state  = 123,
+                return_best   = True,
+                verbose       = False,
+                show_progress = False
+            )
+
+        last_step_params = forecaster.estimator[-1].get_params()
+        assert last_step_params[categorical_param] == expected_param
+
+    assert results['categorical']['lags'].map(len).to_list() == [3, 3, 3, 3, 3, 5]
+    np.testing.assert_allclose(
+        results['categorical']['mean_absolute_error'], expected_metric
+    )
+    pd.testing.assert_frame_equal(results['categorical'], results['encoded'])
 
 
 @pytest.mark.parametrize(

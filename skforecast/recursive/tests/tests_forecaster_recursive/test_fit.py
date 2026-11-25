@@ -5,8 +5,10 @@ import pytest
 from pytest import approx
 import numpy as np
 import pandas as pd
+from sklearn.compose import TransformedTargetRegressor
 from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from catboost import CatBoostRegressor
 from lightgbm import LGBMRegressor
@@ -472,6 +474,135 @@ def test_fit_no_categoricals_with_supported_estimators(estimator):
 
     assert forecaster.is_fitted
     assert forecaster.categorical_features_names_in_ is None
+
+
+@pytest.mark.parametrize(
+    "estimator, check_fn",
+    [
+        (
+            CatBoostRegressor(
+                iterations=10, random_seed=123, verbose=0,
+                allow_writing_files=False
+            ),
+            lambda model: model.get_cat_feature_indices() == []
+        ),
+        (
+            LGBMRegressor(verbose=-1, random_state=123),
+            lambda model: model.booster_.params.get('categorical_column') is None
+        ),
+        (
+            XGBRegressor(random_state=123),
+            lambda model: model.get_params()['feature_types'] is None
+        ),
+        (
+            HistGradientBoostingRegressor(random_state=123),
+            lambda model: (
+                model.get_params()['categorical_features'] == 'from_dtype'
+                and model.is_categorical_ is None
+            )
+        ),
+    ],
+    ids=['CatBoostRegressor', 'LGBMRegressor', 'XGBRegressor', 'HistGradientBoostingRegressor']
+)
+def test_fit_does_not_configure_categorical_features_when_estimator_is_Pipeline(
+    estimator, check_fn
+):
+    """
+    Test that fit does not configure native categorical features when the
+    estimator is a Pipeline, whatever its last step is (CatBoostRegressor,
+    LGBMRegressor, XGBRegressor, HistGradientBoostingRegressor): the previous
+    steps may transform the columns, so the categorical features reach the
+    last step with their ordinal encoding, as numeric columns.
+    """
+    y_cat = pd.Series(np.arange(20, dtype=float), name='y')
+    exog_cat = pd.DataFrame({
+        'exog_num': np.arange(100, 120, dtype=float),
+        'exog_cat': pd.Categorical(['a', 'b'] * 10)
+    })
+
+    forecaster = ForecasterRecursive(
+        estimator=make_pipeline(StandardScaler(), estimator),
+        lags=3,
+        categorical_features='auto'
+    )
+    forecaster.fit(y=y_cat, exog=exog_cat)
+
+    assert forecaster.is_fitted
+    assert forecaster.categorical_features_names_in_ == ['exog_cat']
+    assert 'exog_cat' in forecaster.X_train_features_names_out_
+    assert check_fn(forecaster.estimator[-1])
+
+    # fit_kwargs must not be mutated
+    assert forecaster.fit_kwargs == {}
+
+
+@pytest.mark.parametrize(
+    "estimator, get_model",
+    [
+        (
+            TransformedTargetRegressor(
+                regressor=make_pipeline(
+                    StandardScaler(),
+                    LGBMRegressor(
+                        n_estimators=10, min_child_samples=2,
+                        random_state=123, verbose=-1
+                    )
+                )
+            ),
+            lambda estimator: estimator.regressor_[-1]
+        ),
+        (
+            make_pipeline(
+                StandardScaler(),
+                TransformedTargetRegressor(
+                    regressor=LGBMRegressor(
+                        n_estimators=10, min_child_samples=2,
+                        random_state=123, verbose=-1
+                    )
+                )
+            ),
+            lambda estimator: estimator[-1].regressor_
+        ),
+    ],
+    ids=['TransformedTargetRegressor(Pipeline)', 'Pipeline(TransformedTargetRegressor)']
+)
+def test_fit_and_predict_when_Pipeline_nested_with_TransformedTargetRegressor(
+    estimator, get_model
+):
+    """
+    Test that fit and predict work when a Pipeline and a
+    TransformedTargetRegressor are nested, in both orders, around
+    LGBMRegressor and there is a categorical feature. Native categorical
+    features are not configured, so no argument reaches the `fit` of the
+    Pipeline and the categorical feature is passed with its ordinal encoding.
+    """
+    y_cat = pd.Series(np.arange(20, dtype=float), name='y')
+    exog_cat = pd.DataFrame({
+        'exog_num': np.arange(100, 120, dtype=float),
+        'exog_cat': pd.Categorical(['a', 'b'] * 10)
+    })
+    exog_predict = pd.DataFrame(
+        {'exog_num': np.arange(120, 123, dtype=float),
+         'exog_cat': pd.Categorical(['a', 'b', 'a'], categories=['a', 'b'])},
+        index=pd.RangeIndex(start=20, stop=23, step=1)
+    )
+
+    forecaster = ForecasterRecursive(
+        estimator=estimator, lags=3, categorical_features='auto'
+    )
+    forecaster.fit(y=y_cat, exog=exog_cat)
+    predictions = forecaster.predict(steps=3, exog=exog_predict)
+
+    model = get_model(forecaster.estimator)
+    assert model.booster_.params.get('categorical_column') is None
+
+    expected = pd.Series(
+                   data  = np.array([15.8849117279, 14.2566078107, 14.2566078107]),
+                   index = pd.RangeIndex(start=20, stop=23, step=1),
+                   name  = 'pred'
+               )
+
+    pd.testing.assert_series_equal(predictions, expected)
 
 
 def test_fit_with_interspersed_NaN_and_dropna_from_series_True():

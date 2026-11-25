@@ -411,44 +411,73 @@ def test_catboost_warning_when_overriding_cat_features_in_fit_kwargs():
 
 
 # ==============================================================================
-# Tests: Pipeline support
+# Tests: Pipeline (native categorical features are not configured)
 # ==============================================================================
-def test_pipeline_extracts_last_step_lgbm():
+@pytest.mark.parametrize(
+    'model',
+    [
+        LGBMRegressor(verbose=-1),
+        CatBoostRegressor(verbose=0, allow_writing_files=False),
+        XGBRegressor(),
+        HistGradientBoostingRegressor(),
+    ],
+    ids=['LGBMRegressor', 'CatBoostRegressor', 'XGBRegressor',
+         'HistGradientBoostingRegressor']
+)
+def test_pipeline_is_not_configured_when_categorical_features(model):
     """
-    Test that when the estimator is a Pipeline, the last step is used
-    for categorical configuration (LightGBM).
+    Test that, when the estimator is a Pipeline, native categorical features
+    are not configured: `fit_kwargs` is returned unchanged (LightGBM and
+    CatBoost) and the params of the last step are not set (XGBoost and
+    HistGradientBoosting). The previous steps may transform or reorder the
+    columns, so the categorical columns are passed with their ordinal encoding.
     """
-    pipe = Pipeline([
-        ('scaler', StandardScaler()),
-        ('model', LGBMRegressor(verbose=-1))
-    ])
-    features = ['lag_1', 'cat_a']
+    pipe = Pipeline([('scaler', StandardScaler()), ('model', model)])
     result = configure_estimator_categorical_features(
         estimator=pipe,
         categorical_features_names_in_=['cat_a'],
-        X_train_features_names_out_=features,
-        fit_kwargs={}
+        X_train_features_names_out_=['lag_1', 'cat_a'],
+        fit_kwargs={'some_arg': 123}
     )
-    assert result == {'categorical_feature': [1]}
+
+    assert result == {'some_arg': 123}
+    model_params = pipe[-1].get_params()
+    if isinstance(model, XGBRegressor):
+        assert model_params['feature_types'] is None
+    if isinstance(model, HistGradientBoostingRegressor):
+        assert model_params['categorical_features'] == 'from_dtype'
 
 
-def test_pipeline_extracts_last_step_xgboost():
+@pytest.mark.parametrize(
+    'categorical_features_names_in_',
+    [None, [], ['cat_a']],
+    ids=lambda names: f'categorical_features_names_in_: {names}'
+)
+def test_pipeline_keeps_categorical_params_of_last_step(
+    categorical_features_names_in_
+):
     """
-    Test that when the estimator is a Pipeline, the last step is used
-    for categorical configuration (XGBoost).
+    Test that, when the estimator is a Pipeline, the categorical params the
+    user has set on its last step are kept, with and without categorical
+    features: they are neither overridden nor reset.
     """
-    pipe = Pipeline([
+    pipe_xgboost = Pipeline([
         ('scaler', StandardScaler()),
-        ('model', XGBRegressor())
+        ('model', XGBRegressor(feature_types=['c', 'q'], enable_categorical=True))
     ])
-    features = ['lag_1', 'cat_a']
-    configure_estimator_categorical_features(
-        estimator=pipe,
-        categorical_features_names_in_=['cat_a'],
-        X_train_features_names_out_=features,
-        fit_kwargs={}
-    )
-    # The last step of the pipeline should have been modified
-    model = pipe[-1]
-    assert model.get_params()['feature_types'] == ['q', 'c']
-    assert model.get_params()['enable_categorical'] is True
+    pipe_histgbr = Pipeline([
+        ('scaler', StandardScaler()),
+        ('model', HistGradientBoostingRegressor(categorical_features=[0]))
+    ])
+    for pipe in (pipe_xgboost, pipe_histgbr):
+        result = configure_estimator_categorical_features(
+            estimator=pipe,
+            categorical_features_names_in_=categorical_features_names_in_,
+            X_train_features_names_out_=['lag_1', 'cat_a'],
+            fit_kwargs={}
+        )
+        assert result == {}
+
+    assert pipe_xgboost[-1].get_params()['feature_types'] == ['c', 'q']
+    assert pipe_xgboost[-1].get_params()['enable_categorical'] is True
+    assert pipe_histgbr[-1].get_params()['categorical_features'] == [0]

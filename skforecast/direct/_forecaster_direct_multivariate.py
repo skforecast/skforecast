@@ -120,7 +120,13 @@ class ForecasterDirectMultiVariate(ForecasterBase):
     categorical_features : str, list, default 'auto'
         Specifies which exogenous variables should be treated as categorical
         features. Categorical features are encoded using an `OrdinalEncoder`
-        internally managed by the forecaster.
+        internally managed by the forecaster. If the estimator supports
+        categorical features natively (LightGBM, CatBoost, XGBoost and
+        scikit-learn HistGradientBoosting), it is also configured to treat
+        them as categorical. This is not done when the estimator is a
+        scikit-learn Pipeline, since its previous steps may transform the
+        columns: the categorical features reach its last step with their
+        ordinal encoding, as numeric columns.
 
         - If `'auto'`: after applying `transformer_exog`, any column with a
         non-numeric dtype is treated as categorical.

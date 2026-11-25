@@ -7,6 +7,7 @@ from itertools import chain
 import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.ensemble import HistGradientBoostingRegressor
@@ -765,6 +766,73 @@ def test_fit_no_categoricals_with_supported_estimators(estimator):
 
     assert forecaster.is_fitted
     assert forecaster.categorical_features_names_in_ is None
+
+
+@pytest.mark.parametrize(
+    "estimator, check_fn",
+    [
+        (
+            CatBoostRegressor(
+                iterations=10, random_seed=123, verbose=0,
+                allow_writing_files=False
+            ),
+            lambda model: model.get_cat_feature_indices() == []
+        ),
+        (
+            LGBMRegressor(verbose=-1, random_state=123),
+            lambda model: model.booster_.params.get('categorical_column') is None
+        ),
+        (
+            XGBRegressor(random_state=123),
+            lambda model: model.get_params()['feature_types'] is None
+        ),
+        (
+            HistGradientBoostingRegressor(random_state=123),
+            lambda model: (
+                model.get_params()['categorical_features'] == 'from_dtype'
+                and model.is_categorical_ is None
+            )
+        ),
+    ],
+    ids=['CatBoostRegressor', 'LGBMRegressor', 'XGBRegressor', 'HistGradientBoostingRegressor']
+)
+def test_fit_does_not_configure_categorical_features_when_estimator_is_Pipeline(
+    estimator, check_fn
+):
+    """
+    Test that fit does not configure native categorical features when the
+    estimator is a Pipeline, whatever its last step is (CatBoostRegressor,
+    LGBMRegressor, XGBRegressor, HistGradientBoostingRegressor): the previous
+    steps may transform the columns, so the categorical features reach the
+    last step of each step estimator with their ordinal encoding, as numeric
+    columns.
+    """
+    series_cat = pd.DataFrame({
+        'l1': np.arange(20, dtype=float),
+        'l2': np.arange(100, 120, dtype=float)
+    })
+    exog_cat = pd.DataFrame({
+        'exog_num': np.arange(100, 120, dtype=float),
+        'exog_cat': pd.Categorical(['a', 'b'] * 10)
+    })
+
+    forecaster = ForecasterDirectMultiVariate(
+        estimator=make_pipeline(StandardScaler(), estimator),
+        level='l1',
+        lags=3,
+        steps=2,
+        categorical_features='auto'
+    )
+    forecaster.fit(series=series_cat, exog=exog_cat)
+
+    assert forecaster.is_fitted
+    assert forecaster.categorical_features_names_in_ == ['exog_cat']
+    assert 'exog_cat' in forecaster.X_train_features_names_out_
+    for step_est in forecaster.estimators_.values():
+        assert check_fn(step_est[-1])
+
+    # fit_kwargs must not be mutated
+    assert forecaster.fit_kwargs == {}
 
 
 def test_fit_with_interspersed_NaN_and_dropna_from_series_True():

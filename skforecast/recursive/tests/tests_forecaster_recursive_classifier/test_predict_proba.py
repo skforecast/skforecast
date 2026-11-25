@@ -399,6 +399,78 @@ def test_predict_proba_output_when_categorical_features_CatBoostClassifier(categ
 
 
 @pytest.mark.parametrize(
+    'categorical_features',
+    ['auto', ['exog_2', 'exog_3']],
+    ids=lambda cf: f'categorical_features: {cf}'
+)
+def test_predict_proba_output_when_categorical_features_and_estimator_is_Pipeline(categorical_features):
+    """
+    Test predict_proba output when the estimator is a Pipeline whose last step
+    is LGBMClassifier and there are categorical variables. Native categorical
+    features are not configured inside a Pipeline, so the probabilities are the
+    same as the ones obtained with `features_encoding='ordinal'` and the
+    categorical exogenous variables passed already encoded as numeric columns.
+    """
+    df_exog = pd.DataFrame(
+        {'exog_1': exog.to_numpy(),
+         'exog_2': ['a', 'b', 'c', 'd', 'e'] * 10,
+         'exog_3': pd.Categorical(['F', 'G', 'H', 'I', 'J'] * 10)}
+    )
+    df_exog_encoded = pd.DataFrame(
+        {'exog_1': exog.to_numpy(),
+         'exog_2': [0., 1., 2., 3., 4.] * 10,
+         'exog_3': [0., 1., 2., 3., 4.] * 10}
+    )
+
+    df_exog_predict = df_exog.iloc[:10, :].copy()
+    df_exog_predict.index = pd.RangeIndex(start=50, stop=60)
+    df_exog_predict_encoded = df_exog_encoded.iloc[:10, :].copy()
+    df_exog_predict_encoded.index = pd.RangeIndex(start=50, stop=60)
+
+    forecaster = ForecasterRecursiveClassifier(
+                     estimator            = make_pipeline(
+                                                StandardScaler(),
+                                                LGBMClassifier(verbose=-1, random_state=123)
+                                            ),
+                     lags                 = 5,
+                     features_encoding    = 'ordinal',
+                     categorical_features = None
+                 )
+    forecaster.fit(y=y, exog=df_exog_encoded)
+    predictions = forecaster.predict_proba(steps=10, exog=df_exog_predict_encoded)
+
+    forecaster_2 = ForecasterRecursiveClassifier(
+                       estimator            = make_pipeline(
+                                                  StandardScaler(),
+                                                  LGBMClassifier(verbose=-1, random_state=123)
+                                              ),
+                       lags                 = 5,
+                       features_encoding    = 'auto',
+                       categorical_features = categorical_features
+                   )
+    forecaster_2.fit(y=y, exog=df_exog)
+    predictions_2 = forecaster_2.predict_proba(steps=10, exog=df_exog_predict)
+
+    expected = pd.DataFrame(
+                   data    = np.array([[0.2023783099, 0.3976026685, 0.4000190216],
+                                       [0.2747071609, 0.498033755 , 0.2272590841],
+                                       [0.2747071609, 0.498033755 , 0.2272590841],
+                                       [0.3028959601, 0.363920028 , 0.3331840119],
+                                       [0.2023783099, 0.3976026685, 0.4000190216],
+                                       [0.2023783099, 0.3976026685, 0.4000190216],
+                                       [0.2023783099, 0.3976026685, 0.4000190216],
+                                       [0.2747071609, 0.498033755 , 0.2272590841],
+                                       [0.2747071609, 0.498033755 , 0.2272590841],
+                                       [0.3028959601, 0.363920028 , 0.3331840119]]),
+                   index   = pd.RangeIndex(start=50, stop=60, step=1),
+                   columns = ['1_proba', '2_proba', '3_proba']
+               )
+
+    pd.testing.assert_frame_equal(predictions, expected)
+    pd.testing.assert_frame_equal(predictions_2, expected)
+
+
+@pytest.mark.parametrize(
     'features_encoding, categorical_features, use_exog_cat, expected_data',
     [
         ('auto', 'auto', True,

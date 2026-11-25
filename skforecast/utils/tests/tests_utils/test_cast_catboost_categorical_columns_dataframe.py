@@ -220,36 +220,25 @@ def test_input_dataframe_is_not_mutated():
 
 
 # ==============================================================================
-# Tests: Pipeline support
+# Tests: Pipeline (never cast)
 # ==============================================================================
-def test_pipeline_wrapping_catboost_triggers_cast():
+@pytest.mark.parametrize(
+    'model',
+    [
+        CatBoostRegressor(verbose=0, allow_writing_files=False),
+        LGBMRegressor(verbose=-1),
+    ],
+    ids=['CatBoostRegressor', 'LGBMRegressor']
+)
+def test_pipeline_returns_X_unchanged(model):
     """
-    Test that the cast runs when the estimator is a Pipeline whose last
-    step is CatBoost.
-    """
-    pipe = Pipeline([
-        ('scaler', StandardScaler()),
-        ('model', CatBoostRegressor(verbose=0, allow_writing_files=False)),
-    ])
-    X = pd.DataFrame({'lag_1': [1.0, 2.0], 'cat_a': [0.0, np.nan]})
-    fit_kwargs = {'cat_features': [1]}
-
-    result = cast_catboost_categorical_columns_dataframe(
-        X=X, fit_kwargs=fit_kwargs, estimator=pipe,
-        feature_names=['lag_1', 'cat_a'],
-    )
-
-    np.testing.assert_array_equal(result['cat_a'].to_numpy(), np.array([0, -1]))
-
-
-def test_pipeline_wrapping_non_catboost_returns_X_unchanged():
-    """
-    Test that a Pipeline whose last step is not CatBoost triggers the
-    no-op path.
+    Test that the cast is skipped when the estimator is a Pipeline, also when
+    its last step is CatBoost: native categorical features are not configured
+    inside a Pipeline, as in `configure_estimator_categorical_features`.
     """
     pipe = Pipeline([
         ('scaler', StandardScaler()),
-        ('model', LGBMRegressor(verbose=-1)),
+        ('model', model),
     ])
     X = pd.DataFrame({'lag_1': [1.0, 2.0], 'cat_a': [0.0, np.nan]})
     fit_kwargs = {'cat_features': [1]}

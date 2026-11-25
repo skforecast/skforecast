@@ -96,19 +96,27 @@ def test_histgbr_returns_categorical_features_after_set_params():
 
 
 # ==============================================================================
-# Tests: Pipeline support
+# Tests: Pipeline (no params to capture)
 # ==============================================================================
-def test_pipeline_with_xgboost_unwraps_last_step():
+@pytest.mark.parametrize(
+    'model',
+    [
+        XGBRegressor(feature_types=['c', 'q'], enable_categorical=True),
+        HistGradientBoostingRegressor(categorical_features=[0]),
+    ],
+    ids=['XGBRegressor', 'HistGradientBoostingRegressor']
+)
+def test_pipeline_returns_empty_dict(model):
     """
-    Test that when the estimator is a Pipeline, the last step is unwrapped
-    and its XGBoost params are returned.
+    Test that an empty dict is returned when the estimator is a Pipeline,
+    also when its last step is XGBoost or HistGradientBoosting:
+    `configure_estimator_categorical_features` does not set any param inside
+    a Pipeline, so there is nothing to capture.
     """
-    xgb = XGBRegressor()
-    xgb.set_params(feature_types=['c', 'q'], enable_categorical=True)
-    pipe = Pipeline([('scaler', StandardScaler()), ('model', xgb)])
+    pipe = Pipeline([('scaler', StandardScaler()), ('model', model)])
     forecaster = ForecasterRecursive(estimator=pipe, lags=2)
     result = _get_estimator_categorical_set_params(forecaster)
-    assert result == {'feature_types': ['c', 'q'], 'enable_categorical': True}
+    assert result == {}
 
 
 # ==============================================================================

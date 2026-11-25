@@ -73,7 +73,9 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         window features that return class values):
         
         - 'auto': Use categorical dtype if estimator supports native categorical
-        features (LightGBM, CatBoost, XGBoost), otherwise numeric encoding.
+        features (LightGBM, CatBoost, XGBoost), otherwise numeric encoding. A
+        scikit-learn Pipeline is treated as an estimator without native
+        support, whatever its last step is.
         - 'categorical': Force categorical dtype (requires compatible estimator).
         - 'ordinal': Use ordinal encoding (0, 1, 2, ...). The estimator will 
         treat class codes as numeric values, assuming an ordinal relationship 
@@ -87,8 +89,12 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         forecaster. `inverse_transform` is not available when using ColumnTransformers.
     categorical_features : str, list, default 'auto'
         Specifies which exogenous variables should be treated as categorical
-        by the estimator's native categorical feature handling.
- 
+        by the estimator's native categorical feature handling. Native
+        categorical features are not configured when the estimator is a
+        scikit-learn Pipeline, since its previous steps may transform the
+        columns: the categorical features reach its last step with their
+        ordinal encoding, as numeric columns.
+
         - 'auto': Automatically detect categorical columns (non-numeric, non-bool)
         after `transformer_exog`.
         - list: Explicit list of column names to treat as categorical.
@@ -135,6 +141,8 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         window features that return class values).
     use_native_categoricals : bool
         Indicates whether the estimator supports native categorical features.
+        It is `False` when the estimator is a scikit-learn Pipeline, whatever
+        its last step is.
     classes_ : list
         List of class labels seen during training.
     class_codes_ : list
@@ -251,7 +259,10 @@ class ForecasterRecursiveClassifier(ForecasterBase):
     parameter. Setting categorical features directly on the estimator or via
     `fit_kwargs` is not supported, as the forecaster always overwrites
     the estimator's categorical configuration during `fit` to include both
-    autoregressive and exogenous categorical indices.
+    autoregressive and exogenous categorical indices. The exception is an
+    estimator that is a scikit-learn Pipeline: native categorical features
+    are not configured inside it, and the lags and the categorical exogenous
+    variables reach its last step with their ordinal encoding.
 
     **Difference between `features_encoding` and `categorical_features`:**
 
@@ -326,10 +337,18 @@ class ForecasterRecursiveClassifier(ForecasterBase):
             if supports_categorical:
                 self.use_native_categoricals = True
             else:
+                pipeline_note = (
+                    " Native categorical features are not configured when the "
+                    "estimator is a Pipeline, since its previous steps may "
+                    "transform the columns."
+                    if isinstance(estimator, Pipeline)
+                    else ""
+                )
                 raise ValueError(
                     f"`features_encoding='categorical'` requires a estimator that "
                     f"supports native categorical features (LightGBM, CatBoost, XGBoost). "
-                    f"Got {type(estimator).__name__}. Use 'auto' or 'ordinal' instead."
+                    f"Got {type(estimator).__name__}.{pipeline_note} Use 'auto' or "
+                    f"'ordinal' instead."
                 )
         elif features_encoding == 'auto':
             if supports_categorical:
@@ -575,10 +594,13 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         """
         Check if estimator supports native categorical features.
         Checks by class name to avoid importing optional dependencies.
+        A Pipeline is not supported, whatever its last step is: native
+        categorical features are not configured inside a Pipeline, since its
+        previous steps may transform, reorder or drop the columns.
         """
 
         if isinstance(estimator, Pipeline):
-            estimator = estimator[-1]
+            return False
         if type(estimator).__name__ == 'CalibratedClassifierCV':
             estimator = estimator.estimator         
         
@@ -1070,7 +1092,11 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         indices are combined with the autoregressive categorical indices when 
         configuring the estimator's native categorical handling. The forecaster 
         always overwrites the estimator's categorical configuration to include 
-        both autoregressive and exogenous categorical indices.
+        both autoregressive and exogenous categorical indices. The exception
+        is an estimator that is a scikit-learn Pipeline: native categorical
+        features are not configured inside it, and the lags and the
+        categorical exogenous variables reach its last step with their
+        ordinal encoding.
         Related attributes: `categorical_encoder` (`OrdinalEncoder`), 
         `categorical_features_names_in_`.
 
@@ -1356,7 +1382,11 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         indices are combined with the autoregressive categorical indices when 
         configuring the estimator's native categorical handling. The forecaster 
         always overwrites the estimator's categorical configuration to include 
-        both autoregressive and exogenous categorical indices.
+        both autoregressive and exogenous categorical indices. The exception
+        is an estimator that is a scikit-learn Pipeline: native categorical
+        features are not configured inside it, and the lags and the
+        categorical exogenous variables reach its last step with their
+        ordinal encoding.
         Related attributes: `categorical_encoder` (`OrdinalEncoder`), 
         `categorical_features_names_in_`.
         
