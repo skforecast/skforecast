@@ -76,3 +76,8 @@ model_id = "mistralai/Timestral-5M"
 adapter = "TiRex2Adapter"
 backend_package = "tirex-2"
 model_id = "NX-AI/TiRex-2"
+
+[ci_proto]
+adapter = "CIprotoAdapter"
+backend_package = "continuousintelligence>=0.2.0"
+model_id = "ContinuousIntelligence/ci-proto"

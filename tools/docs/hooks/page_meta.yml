@@ -129,6 +129,12 @@ user_guides/dependent-multi-series-multivariate-forecasting.ipynb:
     Multivariate time series forecasting in Python with
     ForecasterDirectMultiVariate: predict a series from the lags of several series.
 
+user_guides/foundation-ci-proto.md:
+  title: Forecasting with ci-proto
+  description: >-
+    Forecast with ci-proto in skforecast using past and known-future covariates,
+    categorical inputs, calendar dates, native quantiles and long contexts.
+
 user_guides/foundation-forecasting-models.ipynb:
   title: Forecasting with foundation models
   description: >-

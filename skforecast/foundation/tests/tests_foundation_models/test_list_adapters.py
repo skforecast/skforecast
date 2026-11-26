@@ -20,6 +20,7 @@ def test_list_adapters_output():
         ("TimesFM25Adapter", "google/timesfm-2.5-200m-pytorch"),
         ("TimesFM3Adapter", "google/timesfm-3.0-pytorch"),
         ("TiRex2Adapter", "NX-AI/TiRex-2"),
+        ("CIprotoAdapter", "ContinuousIntelligence/ci-proto"),
         ("MoiraiAdapter", "Salesforce/moirai-2.0-R-small"),
         ("TabICLAdapter", "soda-inria/tabicl"),
         ("TabPFNAdapter", "priorlabs/tabpfn-ts"),
@@ -116,6 +117,8 @@ def test_list_adapters_every_adapter_declares_its_capabilities(adapter_cls):
     assert quantiles is None or list(quantiles) == sorted(set(quantiles))
 
     context_length = inspect.signature(adapter_cls).parameters["context_length"]
-    assert isinstance(context_length.default, int)
+    assert context_length.default is None or (
+        isinstance(context_length.default, int) and context_length.default > 0
+    )
 
     assert get_model_info(adapter_cls.default_model_id).adapter == adapter_cls.__name__

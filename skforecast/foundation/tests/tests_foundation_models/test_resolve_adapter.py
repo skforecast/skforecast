@@ -14,6 +14,7 @@ from skforecast.foundation._adapters import (
     TSICLAdapter,
     TimestralAdapter,
     TiRex2Adapter,
+    CIprotoAdapter,
     _resolve_adapter,
     _ADAPTER_REGISTRY,
 )
@@ -42,6 +43,7 @@ from skforecast.foundation._adapters import (
         ("mistralai/Timestral-123M", TimestralAdapter),
         ("mistralai/Timestral-209M", TimestralAdapter),
         ("NX-AI/TiRex-2", TiRex2Adapter),
+        ("ContinuousIntelligence/ci-proto", CIprotoAdapter),
     ],
     ids=lambda x: str(x),
 )

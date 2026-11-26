@@ -164,7 +164,7 @@ FoundationModel(
                                #   torch_dtype : object (Chronos-2, T0)
                                #   cross_learning : bool (Chronos-2 only)
                                #   max_horizon, forecast_config_kwargs (TimesFM 2.5 only)
-                               #   predict_kwargs (Chronos-2, TimesFM 3.0, Timestral, TiRex-2)
+                               #   predict_kwargs (Chronos-2, TimesFM 3.0, Timestral, TiRex-2, ci-proto)
                                #   point_estimate, tabicl_config, temporal_features, show_progress (TabICL)
                                #   mode, point_estimate, tabpfn_model_config, temporal_features, show_progress (TabPFN-TS)
                                #   (T0 uses only context_length, device_map, torch_dtype)

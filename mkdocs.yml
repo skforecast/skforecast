@@ -55,6 +55,7 @@ nav:
       - Dependent multivariate series forecasting: user_guides/dependent-multi-series-multivariate-forecasting.ipynb
     - Foundation Models:
       - Forecasting with foundation models: user_guides/foundation-forecasting-models.ipynb
+      - Forecasting with ci-proto: user_guides/foundation-ci-proto.md
       - Heterogeneous series with different lengths, exogenous variables and missing values: user_guides/foundation-forecasting-with-heterogeneous-series.ipynb
     - Statistical Models:
       - ForecasterStats: user_guides/forecasting-statistical-models.ipynb

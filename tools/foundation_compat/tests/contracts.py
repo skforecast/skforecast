@@ -190,6 +190,21 @@ BACKEND_CONTRACTS = {
         },
         {"target": "timestral:Forecast", "kwargs": ["quantiles", "quantile_levels"]},
     ],
+    "ci_proto": [
+        {
+            "target": "continuousintelligence:load_model",
+            "n_positional": 1,
+            "kwargs": ["device", "revision"],
+        },
+        {"target": "continuousintelligence:Forecaster.quantiles"},
+        {
+            "target": "continuousintelligence:Forecaster.forecast",
+            "kwargs": [
+                "history", "horizon", "past_covariates", "future_covariates",
+                "categorical_past", "categorical_future", "timestamps", "freq",
+            ],
+        },
+    ],
     "tirex2": [
         {"target": "tirex2:load_model", "n_positional": 1, "kwargs": ["device"]},
         {

@@ -44,8 +44,9 @@ class FoundationModelInfo:
         Model ID prefixes routed to `adapter`.
     default_model_id : str
         Model ID used by default for `adapter`.
-    default_context_length : int
+    default_context_length : int, None
         Default maximum number of historical observations used as context.
+        `None` retains all available history.
     backend_package : str
         Package that provides the backend, as passed to `pip install`.
     allow_exog : bool
@@ -107,7 +108,7 @@ class FoundationModelInfo:
     adapter: str
     model_id_prefixes: tuple[str, ...]
     default_model_id: str
-    default_context_length: int
+    default_context_length: int | None
     backend_package: str
     allow_exog: bool
     supports_past_only_covariates: bool
@@ -254,8 +255,13 @@ def list_adapters(
     ]
 
     if as_frame:
+        context_lengths = [adapter.default_context_length for adapter in adapters]
         adapters = pd.DataFrame(
             [asdict(adapter) for adapter in adapters]
         ).set_index("adapter")
+        if any(length is None for length in context_lengths):
+            adapters["default_context_length"] = pd.Series(
+                context_lengths, index=adapters.index, dtype=object
+            )
 
     return adapters

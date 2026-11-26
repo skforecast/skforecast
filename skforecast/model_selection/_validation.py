@@ -3345,11 +3345,15 @@ def _backtesting_foundation(
     cv = deepcopy(cv)
 
     if cv.refit is True or cv.fixed_train_size is False:
+        context_message = (
+            "using all available history."
+            if forecaster.context_length is None else
+            f"up to the maximum context length ({forecaster.context_length})."
+        )
         warnings.warn(
-            f"Foundation models are zero-shot and do not learn from training data. "
-            f"Arguments `refit` and `fixed_train_size` have no effect and are "
-            f"ignored. The context window grows with each fold up to the maximum "
-            f"context length ({forecaster.context_length}).",
+            "Foundation models are zero-shot and do not learn from training data. "
+            "Arguments `refit` and `fixed_train_size` have no effect and are "
+            f"ignored. The context window grows with each fold {context_message}",
             IgnoredArgumentWarning
         )
     cv.refit = True
@@ -3364,11 +3368,16 @@ def _backtesting_foundation(
                  levels     = levels
              )
 
+    # Fold splitting needs a finite last window; the actual context is rebuilt
+    # from the training span below, so one observation suffices when unbounded.
     cv.set_params({
-        'window_size': forecaster.window_size,
+        'window_size': forecaster.window_size or 1,
         'return_all_indexes': False,
         'verbose': verbose,
     })
+    context_start = (
+        -forecaster.context_length if forecaster.context_length is not None else None
+    )
     overlapping_folds = cv.overlapping_folds
 
     if not isinstance(metric, list):
@@ -3428,7 +3437,7 @@ def _backtesting_foundation(
             series_name: (
                 series[series_name]
                 .loc[level_series.index[0]:train_loc_end]
-                .iloc[-forecaster.context_length :]
+                .iloc[context_start :]
             )
             for series_name, level_series in context.items()
             if series[series_name].loc[test_loc_start:test_loc_end].notna().any()
@@ -3464,7 +3473,7 @@ def _backtesting_foundation(
         if exog is not None:
             context_exog = {
                 series_name: (
-                    series_exog.iloc[-forecaster.context_length :]
+                    series_exog.iloc[context_start :]
                     if series_exog is not None
                     else None
                 )
