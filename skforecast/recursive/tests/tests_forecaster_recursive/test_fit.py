@@ -1,6 +1,13 @@
 # Unit test fit ForecasterRecursive
 # ==============================================================================
+import json
+import os
+import pickle
 import re
+import subprocess
+import sys
+import textwrap
+from pathlib import Path
 import pytest
 from pytest import approx
 import numpy as np
@@ -722,3 +729,134 @@ def test_fit_predictions_equal_with_c_contiguous_training_matrix():
                          0.49070097324783774, 0.48362170469052196])
 
     np.testing.assert_allclose(predictions, expected, rtol=1e-12, atol=0)
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    [
+        CatBoostRegressor(iterations=2, verbose=0, allow_writing_files=False),
+        make_pipeline(
+            StandardScaler(),
+            CatBoostRegressor(iterations=2, verbose=0, allow_writing_files=False)
+        ),
+    ],
+    ids=["CatBoostRegressor", "Pipeline"]
+)
+def test_fit_replaces_fitted_CatBoost_estimator_with_unfitted_clone(estimator):
+    """
+    Test that the first fit keeps the estimator object and that a CatBoost
+    estimator that is already fitted, also as the last step of a Pipeline or in
+    a forecaster copied with pickle, is replaced with a clone before it is
+    fitted again. No categorical features are used: CatBoost can block when a
+    fitted model with categorical features is fitted again.
+    """
+    forecaster = ForecasterRecursive(estimator=estimator, lags=3)
+    estimator_new = forecaster.estimator
+    forecaster.fit(y=y)
+    estimator_first_fit = forecaster.estimator
+    forecaster_copy = pickle.loads(pickle.dumps(forecaster))
+    estimator_copy = forecaster_copy.estimator
+    forecaster.fit(y=y)
+    forecaster_copy.fit(y=y)
+
+    assert estimator_first_fit is estimator_new
+    assert forecaster.estimator is not estimator_first_fit
+    assert forecaster_copy.estimator is not estimator_copy
+    assert forecaster.is_fitted
+    assert forecaster_copy.is_fitted
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    [LinearRegression(), LGBMRegressor(n_estimators=2, verbose=-1)],
+    ids=lambda estimator: f"estimator: {type(estimator).__name__}"
+)
+def test_fit_keeps_estimator_object_when_fitted_again_and_not_CatBoost(estimator):
+    """
+    Test that an estimator that is not a CatBoost model is fitted again without
+    being replaced with a clone.
+    """
+    forecaster = ForecasterRecursive(estimator=estimator, lags=3)
+    estimator_new = forecaster.estimator
+    forecaster.fit(y=y)
+    forecaster.fit(y=y)
+
+    assert forecaster.estimator is estimator_new
+
+
+def test_fit_predict_output_when_CatBoost_with_categorical_features_fitted_again():
+    """
+    Test that a forecaster with a CatBoost estimator and categorical features
+    that is fitted again, the same object or a copy made with pickle, predicts
+    as a new forecaster fitted with the same data. With categorical features,
+    CatBoost does not give the model of a new object when a fitted model is
+    fitted again, and `predict` can block forever with a copy, so the fits run
+    in a subprocess with a time limit.
+    """
+    code = textwrap.dedent("""
+        import json
+        import pickle
+        import numpy as np
+        import pandas as pd
+        from catboost import CatBoostRegressor
+        from skforecast.recursive import ForecasterRecursive
+
+        rng = np.random.RandomState(7)
+        n = 260
+        index = pd.date_range("2020-01-01", periods=n, freq="D")
+        codes = rng.permutation(np.arange(n) % 6)
+        effect = np.array([5.0, -3.0, 9.0, 0.0, -8.0, 2.0])
+        y = pd.Series(
+            effect[codes] + rng.normal(scale=0.3, size=n), index=index, name="y"
+        )
+        exog = pd.DataFrame(
+            {"c": pd.Categorical(codes), "x": rng.normal(size=n)}, index=index
+        )
+
+        def create_forecaster():
+            return ForecasterRecursive(
+                estimator=CatBoostRegressor(
+                    iterations=30, depth=3, verbose=0, thread_count=1,
+                    random_seed=1, allow_writing_files=False
+                ),
+                lags=3
+            )
+
+        forecaster = create_forecaster()
+        forecaster.fit(y=y.iloc[:200], exog=exog.iloc[:200])
+        forecasters = {
+            "new": create_forecaster(),
+            "pickle": pickle.loads(pickle.dumps(forecaster)),
+            "same": forecaster
+        }
+        predictions = {}
+        for name, forecaster in forecasters.items():
+            forecaster.fit(y=y.iloc[50:250], exog=exog.iloc[50:250])
+            predictions[name] = forecaster.predict(
+                steps=5, exog=exog.iloc[250:255]
+            ).to_list()
+        print(json.dumps(predictions))
+    """)
+    repo_root = Path(__file__).resolve().parents[4]
+
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        capture_output = True,
+        encoding       = "utf-8",
+        errors         = "replace",
+        cwd            = repo_root,
+        env            = {**os.environ, "PYTHONPATH": str(repo_root)},
+        timeout        = 120
+    )
+
+    assert result.returncode == 0, result.stderr
+    predictions = json.loads(result.stdout.splitlines()[-1])
+
+    # NOTE: CatBoost results with categorical features change between platforms
+    # (Linux, macOS), so the expected values are not hardcoded. They are the
+    # predictions of a new forecaster fitted with the same data in the subprocess.
+    expected = np.array(predictions["new"])
+
+    assert expected.shape == (5,)
+    np.testing.assert_array_almost_equal(predictions["same"], expected)
+    np.testing.assert_array_almost_equal(predictions["pickle"], expected)

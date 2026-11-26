@@ -43,6 +43,7 @@ from ..utils import (
     get_style_repr_html,
     set_cpu_gpu_device,
     _get_catboost_cat_feature_indices,
+    _is_fitted_catboost,
     manage_warnings
 )
 
@@ -1413,6 +1414,11 @@ class ForecasterRecursiveClassifier(ForecasterBase):
         self.n_classes_                         = None
         self.encoding_mapping_                  = None
         self.code_to_class_mapping_             = None
+        # NOTE: With categorical features, CatBoost does not give the model of
+        # a new object when a fitted model is fitted again (see
+        # `_is_fitted_catboost`), so it is replaced with an unfitted clone.
+        if _is_fitted_catboost(self.estimator):
+            self.estimator = clone(self.estimator)
 
         (
             X_train,

@@ -47,6 +47,7 @@ from ..utils import (
     configure_estimator_categorical_features,
     cast_catboost_categorical_columns,
     _get_catboost_cat_feature_indices,
+    _is_fitted_catboost,
     input_to_frame,
     date_to_index_position,
     expand_index,
@@ -1333,6 +1334,11 @@ class ForecasterRecursive(ForecasterBase):
         self.binner_intervals_                    = None
         self.is_fitted                            = False
         self.fit_date                             = None
+        # NOTE: With categorical features, CatBoost does not give the model of
+        # a new object when a fitted model is fitted again (see
+        # `_is_fitted_catboost`), so it is replaced with an unfitted clone.
+        if _is_fitted_catboost(self.estimator):
+            self.estimator = clone(self.estimator)
 
         (
             X_train,
