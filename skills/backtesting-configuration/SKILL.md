@@ -4,7 +4,8 @@ description: >
   Configures TimeSeriesFold parameters for backtesting based on deployment
   scenarios. Maps business requirements (retraining frequency, forecast
   horizon, data budget) to cross-validation strategy parameters.
-  Use when the user describes how they plan to deploy or evaluate a model.
+  Use when the user describes how they plan to deploy or evaluate a model, or
+  backtests with exogenous variables that are forecasts (weather, prices).
 ---
 
 # Backtesting Configuration
@@ -160,6 +161,52 @@ by_step = predictions.assign(
 | Non-overlapping evaluation (default) | `fold_stride=None` (equals steps) |
 | Sliding window evaluation (1-step shift) | `fold_stride=1` |
 | Sparse evaluation (save compute) | `fold_stride=steps * 2` |
+
+### Forecasted exogenous variables
+
+When an exogenous variable is a forecast itself (weather, prices, plans), its
+observed values were not known when each fold is predicted: a backtest with them
+is optimistic (look-ahead bias). With an archive of forecasts (one row per value:
+`timestamp`, `published_at`, value), build a point-in-time column: for each
+timestamp, the last value published at or before the moment it is predicted,
+derived from the folds. A single column holds one value per timestamp, so it
+requires `fold_stride >= steps`.
+
+```python
+# initial_train_size as an integer; archive: 'timestamp', 'published_at', 'temperature'
+position = np.arange(len(data))
+fold = (position - (cv.initial_train_size + cv.gap)) // cv.fold_stride
+prediction_time = pd.Series(
+    data.index[cv.initial_train_size] + fold * cv.fold_stride * data.index.freq,
+    index=data.index,
+)
+available = archive.merge(
+    prediction_time.rename('prediction_time'), left_on='timestamp', right_index=True
+)
+available = available[available['published_at'] <= available['prediction_time']]
+forecast = (
+    available.sort_values('published_at')
+    .groupby('timestamp')['temperature'].last()
+    .reindex(data.index)
+)
+
+# refit=False: observed values to train, forecasts available at each prediction to predict
+is_train = position < cv.initial_train_size
+exog = data[['temperature']].assign(
+    temperature=data['temperature'].where(is_train, forecast)
+)
+```
+
+- The observed-plus-forecasts column is only valid with `refit=False`. With
+  `refit=True`, train with the point-in-time forecasts in every row
+  (`exog = data[['temperature']].assign(temperature=forecast)`), or loop over
+  `cv.split()` calling `fit` and `predict` per fold.
+- Overlapping folds (`fold_stride < steps`): split them into several
+  non-overlapping backtests, each with its own column (e.g. 7 weekly backtests
+  whose `initial_train_size` differs by one day).
+- Check `forecast.isna().sum()`: timestamps with no forecast published in time
+  are NaN, which estimators such as LightGBM accept silently.
+- Guide: https://skforecast.org/latest/user_guides/forecasted-exogenous-variables.html
 
 ## Examples
 
