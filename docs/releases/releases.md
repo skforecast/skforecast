@@ -64,6 +64,8 @@ The main changes in this release are:
 
 + The panels of <code>[show_datasets_info]</code>, <code>[fetch_dataset]</code>, <code>[load_demo_dataset]</code> and the out-of-range summary of <code>[RangeDriftDetector]</code> are 88 characters wide, like the skforecast warnings, and the URL of each dataset is a clickable link. ([#1493](https://github.com/skforecast/skforecast/pull/1493))
 
++ The `m5` dataset of <code>[fetch_dataset]</code> now includes the 28 days of the official test period of the competition (d_1942 to d_1969, up to 2016-06-19). It is built from the data published by the organizers of the M5 competition, its rows are sorted by date and the SNAP columns are `int8`. The file is hosted on Hugging Face, so every version of skforecast reads the new one. ([#1547](https://github.com/skforecast/skforecast/pull/1547))
+
 + Removed support for Python 3.10, which reached its end of life in October 2026: skforecast now requires Python 3.11 or later. With Python 3.10, pip keeps installing skforecast 0.27.0. ([#1496](https://github.com/skforecast/skforecast/pull/1496))
 
 + The minimum supported versions of numpy and pandas are now 2.0 and 2.3 (previously 1.26.1 and 2.2): numpy 1.x no longer receives fixes and 2.3 is the only maintained pandas 2 series. The other minimums rise to versions that work with numpy 2: scipy 1.13, numba 0.60, statsmodels 0.14.6 and matplotlib 3.8.4. Installing skforecast 0.28.0 upgrades these libraries if they are older; to keep numpy 1.x or pandas 2.2, pin `skforecast<0.28`. ([#1500](https://github.com/skforecast/skforecast/pull/1500))

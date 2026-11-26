@@ -516,14 +516,23 @@ datasets = {
         'freq': 'D',
         'file_type': 'parquet',
         'description': (
-            "Daily sales data from the M5 competition with product metadata and "
-            "calendar data. Series ids keep the `_evaluation` suffix of the Kaggle "
-            "files; `sell_price` is NaN before the product was first sold. Long "
-            "format: one row per series and date."
+            "Daily unit sales of the M5 Accuracy competition: 3049 products in 10 "
+            "Walmart stores of California, Texas and Wisconsin (30490 series), with "
+            "the product and store hierarchy, weekly sell prices, calendar events "
+            "and SNAP days. Long format: one row per series and day, sorted by date, "
+            "from d_1 to d_1969 (2011-01-29 to 2016-06-19): training d_1 to d_1913, "
+            "validation d_1914 to d_1941 (2016-04-25 to 2016-05-22) and test d_1942 "
+            "to d_1969 (2016-05-23 to 2016-06-19). Series ids are "
+            "`<item_id>_<store_id>_evaluation`, as in the evaluation phase of the "
+            "competition; `sell_price` is NaN when the product was not on sale that "
+            "week."
         ),
         'source': (
-            "Addison Howard, inversion, Spyros Makridakis, and vangelis. "
-            "M5 Forecasting - Accuracy. https://kaggle.com/competitions/m5-forecasting-accuracy, 2020. Kaggle."
+            "Makridakis, S., Spiliotis, E. and Assimakopoulos, V. (2022). M5 accuracy "
+            "competition: Results, findings, and conclusions. International Journal "
+            "of Forecasting, 38(4), 1346-1364. "
+            "https://doi.org/10.1016/j.ijforecast.2021.11.013. Data published by the "
+            "organizers of the competition: https://github.com/Mcompetitions/M5-methods"
         )
     },
     'ett_m1': {
