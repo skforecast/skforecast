@@ -994,10 +994,21 @@ def _is_fitted_catboost(estimator: object) -> bool:
     not affected, so the forecasters that fit the same estimator object in
     every `fit` replace it with a clone when this function returns `True`.
 
+    The case of the copy is reported in [1]_ (with version 1.2.8) and fixed in
+    the CatBoost repository after version 1.2.10. That fix trains into a new
+    model object, so it may also cover the model fitted twice without a copy,
+    but this has not been checked.
+
     This function and its calls in `fit` can be removed when the CatBoost
-    versions with the bug are no longer supported. The tests of `fit` and of
-    backtesting with refit that compare a CatBoost model with categorical
-    features with a new forecaster must pass without them.
+    versions with the bug (1.2.10 and earlier) are no longer supported. The
+    tests of `fit` and of backtesting with refit that compare a CatBoost model
+    with categorical features with a new forecaster must pass without them.
+
+    References
+    ----------
+    .. [1] Deepcopy of model with categorical features causes infinite hang
+           during prediction after refitting. CatBoost issue 2905.
+           https://github.com/catboost/catboost/issues/2905
 
     """
 
