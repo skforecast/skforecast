@@ -10,6 +10,7 @@ from .utils import (
     _filter_nan_train_X_y,
     _get_catboost_cat_feature_indices,
     _get_estimator_categorical_set_params,
+    _is_fitted_catboost,
     _NonFinitePredictorsError,
     _prefers_c_contiguous_X,
     _resolve_n_jobs,

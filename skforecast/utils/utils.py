@@ -966,6 +966,49 @@ def _get_catboost_cat_feature_indices(estimator: object) -> np.ndarray:
     return np.array(estimator.get_cat_feature_indices(), dtype=int)
 
 
+def _is_fitted_catboost(estimator: object) -> bool:
+    """
+    Check if an estimator is a CatBoost model (regressor or classifier) that is
+    already fitted. If the estimator is a scikit-learn Pipeline, its last step
+    is checked.
+
+    Parameters
+    ----------
+    estimator : object
+        Estimator or Pipeline.
+
+    Returns
+    -------
+    is_fitted_catboost : bool
+        `True` if the estimator, or the last step of the Pipeline, is a fitted
+        CatBoost model, also when it is a copy of one made with `pickle` or
+        `copy.deepcopy`.
+
+    Notes
+    -----
+    Workaround for a bug of CatBoost, seen in version 1.2.10. With categorical
+    features, fitting again a model that is already fitted does not give the
+    model of a new object, and a copy of a fitted model (`pickle`,
+    `copy.deepcopy`, the processes of a parallel backtesting) that is fitted
+    again can block `predict` forever or end the process. An unfitted clone is
+    not affected, so the forecasters that fit the same estimator object in
+    every `fit` replace it with a clone when this function returns `True`.
+
+    This function and its calls in `fit` can be removed when the CatBoost
+    versions with the bug are no longer supported. The tests of `fit` and of
+    backtesting with refit that compare a CatBoost model with categorical
+    features with a new forecaster must pass without them.
+
+    """
+
+    if isinstance(estimator, Pipeline):
+        estimator = estimator[-1]
+    if type(estimator).__module__.split(".")[0] != "catboost":
+        return False
+
+    return estimator.is_fitted()
+
+
 def _get_estimator_categorical_set_params(
     forecaster: object
 ) -> dict[str, object]:
