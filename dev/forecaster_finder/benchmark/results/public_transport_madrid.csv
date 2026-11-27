@@ -1,0 +1,29 @@
+case,history,history_obs,model,family,MASE,seconds,question,n_series
+public_transport_madrid,90,90,Seasonal naive,Baseline,0.5768419086350468,0.006055995999986408,"1 series, no extra info, daily",1
+public_transport_madrid,90,90,LightGBM,ML,0.8125846383262348,0.11173561100008556,"1 series, no extra info, daily",1
+public_transport_madrid,90,90,Ridge,ML,0.8610731419040711,0.040163596999946094,"1 series, no extra info, daily",1
+public_transport_madrid,90,90,LightGBM (diff),ML,1.3581478757612406,0.12506836099987595,"1 series, no extra info, daily",1
+public_transport_madrid,90,90,Ridge (diff),ML,1.0708468240508888,0.052237869000009596,"1 series, no extra info, daily",1
+public_transport_madrid,90,90,Chronos-2,Foundation,0.5537525734710548,0.4394965530000263,"1 series, no extra info, daily",1
+public_transport_madrid,90,90,AutoETS,Statistical,0.6115164652677437,0.4308791660000679,"1 series, no extra info, daily",1
+public_transport_madrid,182,182,Seasonal naive,Baseline,0.5768419086350468,0.006085487999826,"1 series, no extra info, daily",1
+public_transport_madrid,182,182,LightGBM,ML,0.9426963448579054,0.20618715299997348,"1 series, no extra info, daily",1
+public_transport_madrid,182,182,Ridge,ML,0.8186146951606471,0.051708130999941204,"1 series, no extra info, daily",1
+public_transport_madrid,182,182,LightGBM (diff),ML,1.0248303816704232,0.14460169599988149,"1 series, no extra info, daily",1
+public_transport_madrid,182,182,Ridge (diff),ML,0.7168368652085103,0.04149843100003636,"1 series, no extra info, daily",1
+public_transport_madrid,182,182,Chronos-2,Foundation,0.5460536624479244,0.45464649299992743,"1 series, no extra info, daily",1
+public_transport_madrid,182,182,AutoETS,Statistical,0.7896805187864381,0.6500036120000914,"1 series, no extra info, daily",1
+public_transport_madrid,365,365,Seasonal naive,Baseline,0.5768419086350468,0.0056783109998832515,"1 series, no extra info, daily",1
+public_transport_madrid,365,365,LightGBM,ML,0.7775253994217459,0.2034419680001065,"1 series, no extra info, daily",1
+public_transport_madrid,365,365,Ridge,ML,0.6684422042663082,0.05064513199999965,"1 series, no extra info, daily",1
+public_transport_madrid,365,365,LightGBM (diff),ML,0.7784065666982802,0.1650609800001348,"1 series, no extra info, daily",1
+public_transport_madrid,365,365,Ridge (diff),ML,0.6233900170041282,0.03783721900003911,"1 series, no extra info, daily",1
+public_transport_madrid,365,365,Chronos-2,Foundation,0.25437895770892976,0.4104935479999767,"1 series, no extra info, daily",1
+public_transport_madrid,365,365,AutoETS,Statistical,0.5869372121163197,1.0361236780001946,"1 series, no extra info, daily",1
+public_transport_madrid,full,547,Seasonal naive,Baseline,0.5768419086350468,0.006071776999988288,"1 series, no extra info, daily",1
+public_transport_madrid,full,547,LightGBM,ML,0.8017493392240177,0.24275514800001474,"1 series, no extra info, daily",1
+public_transport_madrid,full,547,Ridge,ML,0.6718136259109544,0.052058904999967126,"1 series, no extra info, daily",1
+public_transport_madrid,full,547,LightGBM (diff),ML,0.6513111885515868,0.18277396799999224,"1 series, no extra info, daily",1
+public_transport_madrid,full,547,Ridge (diff),ML,0.6163191278077753,0.05357506999985162,"1 series, no extra info, daily",1
+public_transport_madrid,full,547,Chronos-2,Foundation,0.22972254585194818,0.45654981799998495,"1 series, no extra info, daily",1
+public_transport_madrid,full,547,AutoETS,Statistical,0.565763917302183,1.308119384000065,"1 series, no extra info, daily",1

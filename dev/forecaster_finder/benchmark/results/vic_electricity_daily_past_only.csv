@@ -1,0 +1,6 @@
+case,history,history_obs,model,family,MASE,seconds,question,n_series
+vic_electricity_daily_past_only,full,927,Seasonal naive,Baseline,0.7980907466226828,0.005823743000064496,"1 series, temperature known only up to today",1
+vic_electricity_daily_past_only,full,927,LightGBM (no exog),ML,0.6325052332529586,0.14869995300000483,"1 series, temperature known only up to today",1
+vic_electricity_daily_past_only,full,927,LightGBM drivers (DirectMultiVariate),ML,0.6206304398672319,4.913728810000066,"1 series, temperature known only up to today",1
+vic_electricity_daily_past_only,full,927,Chronos-2 (no exog),Foundation,0.483563132836988,0.5368365360000098,"1 series, temperature known only up to today",1
+vic_electricity_daily_past_only,full,927,Chronos-2 (past-only covariates),Foundation,0.49410551828464444,0.696137237999892,"1 series, temperature known only up to today",1

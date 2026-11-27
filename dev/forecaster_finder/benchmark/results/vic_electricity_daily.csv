@@ -1,0 +1,36 @@
+case,history,history_obs,model,family,MASE,seconds,question,n_series
+vic_electricity_daily,90,90,Seasonal naive,Baseline,0.7980907466226828,0.02381264799987548,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,90,90,LightGBM,ML,0.5746330991121749,0.13867773199990552,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,90,90,Ridge,ML,0.8043368116105692,0.05522048300008464,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,90,90,LightGBM (diff),ML,1.874847693639717,0.1182687390000865,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,90,90,Ridge (diff),ML,1.7435708271511507,0.04334924299996601,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,90,90,Chronos-2,Foundation,0.5352132566018641,3.4047844379999788,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,90,90,AutoETS,Statistical,1.2610917548011358,0.9606385590000173,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,182,182,Seasonal naive,Baseline,0.7980907466226828,0.0057734409999739,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,182,182,LightGBM,ML,0.5817389055638104,0.17483107599991854,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,182,182,Ridge,ML,2.8908655229245728,0.047657883999818296,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,182,182,LightGBM (diff),ML,1.566011159906287,0.13589956900000288,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,182,182,Ridge (diff),ML,2.2600392297419023,0.049078960999850096,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,182,182,Chronos-2,Foundation,0.5945937349490469,0.5027285579999443,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,182,182,AutoETS,Statistical,0.9315755181247469,0.7901996279999821,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,365,365,Seasonal naive,Baseline,0.7980907466226828,0.0059827819998190535,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,365,365,LightGBM,ML,0.3298970433654392,0.19111689500005014,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,365,365,Ridge,ML,0.8719288499254775,0.06972742200014181,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,365,365,LightGBM (diff),ML,0.8859422228203854,0.18011882999985573,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,365,365,Ridge (diff),ML,0.9252035538928574,0.049783742000045095,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,365,365,Chronos-2,Foundation,0.4008509184410866,0.5179585579999184,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,365,365,AutoETS,Statistical,0.9263600457677637,1.1762595650000094,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,730,730,Seasonal naive,Baseline,0.7980907466226828,0.0064275700001417135,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,730,730,LightGBM,ML,0.2960880799346571,0.229978987000095,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,730,730,Ridge,ML,0.8256175146401984,0.05260665700006939,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,730,730,LightGBM (diff),ML,0.7601049774489321,0.29764750600020307,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,730,730,Ridge (diff),ML,0.9499873867614989,0.06182236200015723,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,730,730,Chronos-2,Foundation,0.37357537434410176,0.5936020419999295,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,730,730,AutoETS,Statistical,0.9480366647499816,1.8222041940000508,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,full,927,Seasonal naive,Baseline,0.7980907466226828,0.006751897000185636,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,full,927,LightGBM,ML,0.3010980569297659,0.24280175399985637,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,full,927,Ridge,ML,0.8215197399713076,0.054734257999825786,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,full,927,LightGBM (diff),ML,0.7483751899858226,0.16491971899995406,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,full,927,Ridge (diff),ML,0.9673706533723683,0.04506790799996452,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,full,927,Chronos-2,Foundation,0.39338843419960745,1.1475708200000554,"1 series, info known in advance (temperature, holidays)",1
+vic_electricity_daily,full,927,AutoETS,Statistical,0.9447189866909403,2.1689433129999998,"1 series, info known in advance (temperature, holidays)",1

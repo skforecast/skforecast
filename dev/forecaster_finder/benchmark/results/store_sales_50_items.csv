@@ -1,0 +1,16 @@
+case,history,history_obs,model,family,MASE,seconds,question,n_series
+store_sales_50_items,182,182,Seasonal naive,Baseline,1.0048788932208204,0.27721835300008024,"50 series, daily, no extra info",50
+store_sales_50_items,182,182,LightGBM,ML,1.0776359794560062,0.46014377699998477,"50 series, daily, no extra info",50
+store_sales_50_items,182,182,LightGBM (diff),ML,0.7863314596383307,0.5237550110000484,"50 series, daily, no extra info",50
+store_sales_50_items,182,182,Ridge,ML,0.8014889507302704,0.20801904800009652,"50 series, daily, no extra info",50
+store_sales_50_items,182,182,Chronos-2,Foundation,0.7849416711734802,2.084689858000047,"50 series, daily, no extra info",50
+store_sales_50_items,365,365,Seasonal naive,Baseline,1.0048788932208204,0.30097598700012895,"50 series, daily, no extra info",50
+store_sales_50_items,365,365,LightGBM,ML,0.6542195344711792,0.5834927089999837,"50 series, daily, no extra info",50
+store_sales_50_items,365,365,LightGBM (diff),ML,0.7610653404338149,0.591102557999875,"50 series, daily, no extra info",50
+store_sales_50_items,365,365,Ridge,ML,0.7741699393448569,0.1897988240000359,"50 series, daily, no extra info",50
+store_sales_50_items,365,365,Chronos-2,Foundation,0.709074308206129,2.589203143000077,"50 series, daily, no extra info",50
+store_sales_50_items,full,1602,Seasonal naive,Baseline,1.0048788932208204,0.2709674110001288,"50 series, daily, no extra info",50
+store_sales_50_items,full,1602,LightGBM,ML,0.7183480571659904,0.9391069390001121,"50 series, daily, no extra info",50
+store_sales_50_items,full,1602,LightGBM (diff),ML,0.751638560115388,1.2381081840001116,"50 series, daily, no extra info",50
+store_sales_50_items,full,1602,Ridge,ML,0.7672673573021239,0.2979760789999091,"50 series, daily, no extra info",50
+store_sales_50_items,full,1602,Chronos-2,Foundation,0.6618723214324678,9.551320730999805,"50 series, daily, no extra info",50

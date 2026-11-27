@@ -1,0 +1,33 @@
+case,history,history_obs,model,family,MASE,seconds,question,n_series
+expenditures_australia_monthly,36,36,Seasonal naive,Baseline,1.9789072426937735,0.006220823999910863,"1 series, monthly history",1
+expenditures_australia_monthly,36,36,LightGBM,ML,4.009579899317956,0.052964398000085566,"1 series, monthly history",1
+expenditures_australia_monthly,36,36,Ridge,ML,22.14159615717571,0.023257220999994388,"1 series, monthly history",1
+expenditures_australia_monthly,36,36,LightGBM (diff),ML,4.697824590231998,0.04536121399996773,"1 series, monthly history",1
+expenditures_australia_monthly,36,36,Ridge (diff),ML,2.6725607540930247,0.02287164699987443,"1 series, monthly history",1
+expenditures_australia_monthly,36,36,Chronos-2,Foundation,1.1659629605271873,0.371674209000048,"1 series, monthly history",1
+expenditures_australia_monthly,36,36,AutoETS,Statistical,1.2768572643076874,0.7551067550000425,"1 series, monthly history",1
+expenditures_australia_monthly,36,36,AutoARIMA,Statistical,1.224650571791615,0.34792005600002085,"1 series, monthly history",1
+expenditures_australia_monthly,60,60,Seasonal naive,Baseline,1.9789072426937735,0.007362884000031045,"1 series, monthly history",1
+expenditures_australia_monthly,60,60,LightGBM,ML,3.6164329324440363,0.06861864600000445,"1 series, monthly history",1
+expenditures_australia_monthly,60,60,Ridge,ML,5.728145717125423,0.022220463999929052,"1 series, monthly history",1
+expenditures_australia_monthly,60,60,LightGBM (diff),ML,2.2529955144798093,0.060358682000014596,"1 series, monthly history",1
+expenditures_australia_monthly,60,60,Ridge (diff),ML,2.144520879830697,0.02258206400006202,"1 series, monthly history",1
+expenditures_australia_monthly,60,60,Chronos-2,Foundation,1.0232038343624268,0.37980609600003845,"1 series, monthly history",1
+expenditures_australia_monthly,60,60,AutoETS,Statistical,1.2351182988120717,0.4409309289999328,"1 series, monthly history",1
+expenditures_australia_monthly,60,60,AutoARIMA,Statistical,1.3718723761085045,0.715727329999936,"1 series, monthly history",1
+expenditures_australia_monthly,120,120,Seasonal naive,Baseline,1.9789072426937735,0.00601443499999732,"1 series, monthly history",1
+expenditures_australia_monthly,120,120,LightGBM,ML,4.113041284642302,0.09882397699993817,"1 series, monthly history",1
+expenditures_australia_monthly,120,120,Ridge,ML,1.9880299032481292,0.02472368999997343,"1 series, monthly history",1
+expenditures_australia_monthly,120,120,LightGBM (diff),ML,1.775097270609877,0.09906930600004671,"1 series, monthly history",1
+expenditures_australia_monthly,120,120,Ridge (diff),ML,1.62314107038291,0.024150193999957992,"1 series, monthly history",1
+expenditures_australia_monthly,120,120,Chronos-2,Foundation,1.2697757215229248,0.4313982019998548,"1 series, monthly history",1
+expenditures_australia_monthly,120,120,AutoETS,Statistical,0.9527786923326007,1.0238713930000358,"1 series, monthly history",1
+expenditures_australia_monthly,120,120,AutoARIMA,Statistical,1.1744197157433,2.8277090249998764,"1 series, monthly history",1
+expenditures_australia_monthly,full,393,Seasonal naive,Baseline,1.9789072426937735,0.005621037999844702,"1 series, monthly history",1
+expenditures_australia_monthly,full,393,LightGBM,ML,4.16101204253033,0.11056427600010466,"1 series, monthly history",1
+expenditures_australia_monthly,full,393,Ridge,ML,2.2265063858109193,0.022108751000132543,"1 series, monthly history",1
+expenditures_australia_monthly,full,393,LightGBM (diff),ML,1.550358451224071,0.11440418400002272,"1 series, monthly history",1
+expenditures_australia_monthly,full,393,Ridge (diff),ML,1.907758513857044,0.022680436999962694,"1 series, monthly history",1
+expenditures_australia_monthly,full,393,Chronos-2,Foundation,1.3583905786742905,0.40076006899994354,"1 series, monthly history",1
+expenditures_australia_monthly,full,393,AutoETS,Statistical,1.254208713585657,1.6997846780000145,"1 series, monthly history",1
+expenditures_australia_monthly,full,393,AutoARIMA,Statistical,1.2309712793786183,1.3356720500000847,"1 series, monthly history",1

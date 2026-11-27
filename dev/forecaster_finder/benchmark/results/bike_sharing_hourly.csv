@@ -1,0 +1,13 @@
+case,history,history_obs,model,family,MASE,seconds,question,n_series
+bike_sharing_hourly,2160,2160,Seasonal naive,Baseline,0.6952579463256984,0.010914236999951754,"1 series, hourly, weather known in advance",1
+bike_sharing_hourly,2160,2160,LightGBM,ML,0.6522913911370631,0.3112315219998436,"1 series, hourly, weather known in advance",1
+bike_sharing_hourly,2160,2160,Ridge,ML,0.7333149885270408,0.15832908099991982,"1 series, hourly, weather known in advance",1
+bike_sharing_hourly,2160,2160,LightGBM (diff),ML,0.8303323934804314,0.3143096969999988,"1 series, hourly, weather known in advance",1
+bike_sharing_hourly,2160,2160,Ridge (diff),ML,0.6490614203941587,0.1600102649999826,"1 series, hourly, weather known in advance",1
+bike_sharing_hourly,2160,2160,Chronos-2,Foundation,0.4355068122603303,4.089386190999903,"1 series, hourly, weather known in advance",1
+bike_sharing_hourly,full,8928,Seasonal naive,Baseline,0.6952579463256984,0.010379558000067846,"1 series, hourly, weather known in advance",1
+bike_sharing_hourly,full,8928,LightGBM,ML,0.49570762322401435,0.41272616200012635,"1 series, hourly, weather known in advance",1
+bike_sharing_hourly,full,8928,Ridge,ML,0.7013909434759529,0.16500844500001222,"1 series, hourly, weather known in advance",1
+bike_sharing_hourly,full,8928,LightGBM (diff),ML,0.5641784756094945,0.5023575219997838,"1 series, hourly, weather known in advance",1
+bike_sharing_hourly,full,8928,Ridge (diff),ML,0.6432377294420342,0.23344827899995835,"1 series, hourly, weather known in advance",1
+bike_sharing_hourly,full,8928,Chronos-2,Foundation,0.44058266537296414,12.084079196999937,"1 series, hourly, weather known in advance",1
