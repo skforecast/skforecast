@@ -46,6 +46,16 @@ Studio, consultoría) sin captar datos personales.
 Principio de diseño, que sale del estudio: **cada regla del test está medida**. Una pregunta
 solo se queda si su respuesta cambia lo que funciona mejor o el código que hay que escribir.
 
+**Alcance: un árbol de decisión sencillo.** El test decide qué forecasters probar, en qué
+orden y contra qué baseline. No decide la configuración: lags, diferenciación,
+hiperparámetros o qué variables crear siguen en las guías y en las skills
+(`feature-engineering`, `hyperparameter-optimization`...). El fragmento de código del
+resultado es un punto de partida que funciona, con valores fijos según la frecuencia, y no se
+presenta como recomendación: enlaza a las guías para ajustarlo. Por la misma razón, el
+resultado no da consejos de configuración (la maqueta del informe tenía uno sobre
+`differentiation=1` que sobra). Las configuraciones del estudio solo tienen que ser
+razonables para que la comparación entre familias sea justa.
+
 ## 3. Referentes (resumen)
 
 El detalle, con enlaces y la distinción entre lo verificado y lo que es opinión, está en el
