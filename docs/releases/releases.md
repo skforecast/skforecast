@@ -52,6 +52,8 @@ The main changes in this release are:
 
     + CatBoost estimators with categorical features: the predictions and metrics of backtesting and hyperparameter search with refit change, because each refit now gives the model of a new forecaster (see **Fixed**). ([#1546](https://github.com/skforecast/skforecast/pull/1546))
 
+    + <code>[ForecasterRecursiveMultiSeries]</code> with `categorical_features=None` and an exogenous variable of dtype `category`: LightGBM, XGBoost and `HistGradientBoosting` no longer detect it as categorical by its dtype, they receive its values as a numeric column, so the model changes, also when the predictions were right. Use `categorical_features='auto'` to keep it categorical. Forecasters saved with a previous version that gave wrong predictions (see **Fixed**) must be fitted again.
+
 
 **Added**
 
@@ -98,6 +100,8 @@ The main changes in this release are:
 
 + Native categorical features are no longer configured when the estimator is a scikit-learn `Pipeline`, since its previous steps may transform the columns: they reach its last step with their ordinal encoding, as numeric columns. A `Pipeline` ending in XGBoost or `HistGradientBoosting` gives a different model; pass the estimator without it to keep them. Forecasters saved with a previous version keep the old configuration and must be created again. <code>[ForecasterRecursiveClassifier]</code> with `features_encoding='categorical'` and a `Pipeline` raises a `ValueError`. ([#1544](https://github.com/skforecast/skforecast/pull/1544))
 
++ In <code>[ForecasterRecursiveMultiSeries]</code>, an exogenous variable of dtype `category` that is not included in `categorical_features` (`None`, or a list without it) is passed to the estimator with its values, not with its category codes, and `fit` issues a `DataTypeWarning`. If it is left out of a list and its categories are not numbers, `fit` raises a `TypeError` that names the column. `create_train_X_y` and `create_predict_X` return it with its values too, as a float column. [User guide](../user_guides/categorical-features.ipynb)
+
 + The error raised by <code>[PopulationDriftDetector]</code> when `chunk_size` is not a valid pandas frequency shows the value and the error of pandas, which names the alias to use when the one given was removed (with pandas 3, `'ME'` instead of `'M'`). ([#1510](https://github.com/skforecast/skforecast/pull/1510))
 
 
@@ -134,6 +138,10 @@ The main changes in this release are:
 + `fit` raised `ValueError: Pipeline.fit does not accept the categorical_feature parameter` (`cat_features` with CatBoost) when the estimator was a scikit-learn `Pipeline` that ends in a LightGBM or CatBoost model and there were categorical features: categorical exogenous variables, `encoding='ordinal_category'` in <code>[ForecasterRecursiveMultiSeries]</code> or the lags of <code>[ForecasterRecursiveClassifier]</code>. With XGBoost after a scaler, it raised an `XGBoostError`. These pipelines now receive the categorical features with their ordinal encoding (see **Changed**). ([#1544](https://github.com/skforecast/skforecast/pull/1544))
 
 + With a CatBoost estimator and categorical features, fitting again a fitted <code>[ForecasterRecursive]</code>, <code>[ForecasterRecursiveMultiSeries]</code> or <code>[ForecasterRecursiveClassifier]</code> gave a model different from that of a new forecaster, and a backtesting or hyperparameter search with refit and more than one job (the choice of `n_jobs='auto'`) could run forever. It is a bug of CatBoost: the forecasters now fit an unfitted clone of every CatBoost estimator, so the metrics of these backtestings change and `forecaster.estimator` is a new object after each refit. ([#1546](https://github.com/skforecast/skforecast/pull/1546))
+
++ <code>[ForecasterRecursiveMultiSeries]</code> gave wrong predictions, without any warning, with LightGBM, XGBoost or CatBoost when an exogenous variable of dtype `category` was not included in `categorical_features` (`None`, or a list without it) and its values were not its codes (for example, 10, 20, 30): the estimator was fitted with the codes and predicted with the values. The searches with <code>[OneStepAheadFold]</code> hid it, since their metrics did not match those of `predict`. The estimator now receives the values in both (see **Changed**).
+
++ `fit` of <code>[ForecasterRecursiveMultiSeries]</code> with a CatBoost estimator raised a `TypeError` when `cat_features` was given by name in `fit_kwargs`, and a `CatBoostError` when an exogenous variable of dtype `category` was not included in `categorical_features` (`None`, or a list without it) nor in `cat_features`. Names are now accepted and that column is passed with its values. A `cat_features` column given in `fit_kwargs` with non-integer values was truncated to integers; it now raises a `TypeError` that names it.
 
 + <code>[backtesting_forecaster]</code> with a <code>[ForecasterRecursiveClassifier]</code> and refit chose the predicted class with the classes of the forecaster of the main process, not with those of the model of each fold. When the classes of the training set changed between folds (a class that appears in it or leaves it), a class unknown to the model of a fold was predicted in every step of that fold if the forecaster of the main process knew it, and never predicted otherwise (the main process kept the classes of the last refit with `n_jobs=1` and those of the initial fit with `n_jobs` greater than 1). Each fold now predicts with the classes of its own model, and a class that its model does not know has probability 0 instead of NaN. The hyperparameter searches, whose metrics use the predicted class, were also affected. ([#1511](https://github.com/skforecast/skforecast/pull/1511))
 

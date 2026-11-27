@@ -263,10 +263,14 @@ forecaster.fit(y=y_train, exog=exog_train)
 
 **`categorical_features` options:**
 - `'auto'` (default): Non-numeric columns (after `transformer_exog`) are automatically detected and encoded using an internal `OrdinalEncoder`. Native categorical support is configured automatically for compatible estimators (LightGBM, CatBoost, XGBoost, HistGradientBoostingRegressor) when the estimator is passed directly to the forecaster. It is not configured when the estimator is a scikit-learn `Pipeline` (its previous steps may transform the columns): the categorical columns reach its last step with their ordinal encoding, as numeric columns.
-- `list`: Explicit list of column names to treat as categorical (including numeric columns).
-- `None`: No categorical encoding is applied.
+- `list`: Explicit list of column names to treat as categorical (including numeric columns). A `category` column left out of the list is passed to the estimator with its values, as a numeric column.
+- `None`: No categorical encoding is applied. A column of dtype `category` must have integer categories, and the estimator receives its values (not its category codes) as a numeric column, in `fit` and in `predict`.
 
-**Important:** When `categorical_features` is not `None` do not set categorical features directly on the estimator or via `fit_kwargs`. The forecaster manages categorical configuration internally and overwrites any estimator-level settings.
+ForecasterRecursiveMultiSeries issues a `DataTypeWarning` in `fit` when a `category` column is not included in `categorical_features` (`None`, or a list without it).
+
+**Important:** When `categorical_features` is not `None` do not set categorical features directly on the estimator or via `fit_kwargs`. The forecaster manages categorical configuration internally and overwrites any estimator-level settings. If they are set on the estimator or in `fit_kwargs` with `categorical_features=None`, the estimator reads the values of the column as the categories: use small, non-negative integers (ideally `0, 1, 2...`). LightGBM treats negative values as missing; XGBoost raises an error with them and needs more time and memory the larger the values are.
+
+**LightGBM with few rows per category:** native categorical splits need enough rows per category (`min_data_per_group`, 100 by default). With fewer, the model can be worse than with the column as numeric: lower `min_data_per_group`, or encode the column with an `OrdinalEncoder` in `transformer_exog` so it is passed as numeric.
 
 **Choosing an encoding strategy:**
 
